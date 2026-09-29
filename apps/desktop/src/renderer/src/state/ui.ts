@@ -37,3 +37,16 @@ export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);
 
 /** The search the list runs; empty means no search. */
 export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
+
+/**
+ * Per-message choices that last for the session: the background picked with
+ * the message's toggle (null follows the preference) and whether remote
+ * images were loaded once.
+ */
+export const messageBackgroundAtom = Atom.family((_messageId: string) =>
+  Atom.make<"light" | "dark" | null>(null).pipe(Atom.keepAlive),
+);
+
+export const imagesLoadedAtom = Atom.family((_messageId: string) =>
+  Atom.make(false).pipe(Atom.keepAlive),
+);

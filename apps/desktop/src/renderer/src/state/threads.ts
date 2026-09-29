@@ -4,6 +4,7 @@
  * what it has loaded; asking for one more page fetches only that page, and a
  * refresh (a change invalidated "threads") reloads every page on screen.
  */
+import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { Effect, Option } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
@@ -12,7 +13,7 @@ import type { AppError } from "../errors";
 import { MailClient } from "../rpc";
 import { OVERVIEW, scopeAccountIds } from "../view";
 import { Keys } from "./keys";
-import { accountsAtom } from "./queries";
+import { accountsAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchAtom, viewAtom } from "./ui";
 
 const PAGE = 100;
@@ -72,10 +73,12 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
   const search = get(searchAtom);
   if (search) return { ...common, search };
   const filters = get(filtersAtom);
+  const grouping = AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping;
   // Optional fields are left out rather than set to undefined: the main
   // process decodes the query strictly.
   return {
     ...common,
+    ...(grouping ? {} : { flat: true }),
     mailbox: view.mailbox,
     ...(view.label ? { label: view.label.id } : {}),
     ...(filters.unread ? { unreadOnly: true } : {}),

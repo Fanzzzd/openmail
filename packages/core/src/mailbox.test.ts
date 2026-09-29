@@ -254,3 +254,80 @@ it("threads for models drop quoted history and keep the newest text in budget", 
   assert.ok(thread.truncated > 0);
   assert.ok(thread.messages[0]!.text.length <= 30);
 });
+
+const RELATED = [
+  "From: Alice <alice@example.com>",
+  "To: me@gmail.com",
+  "Subject: Logo",
+  "MIME-Version: 1.0",
+  'Content-Type: multipart/mixed; boundary="mix"',
+  "",
+  "--mix",
+  'Content-Type: multipart/related; boundary="rel"',
+  "",
+  "--rel",
+  "Content-Type: text/html; charset=utf-8",
+  "",
+  '<p>Hi <img src="cid:logo@x"></p>',
+  "--rel",
+  "Content-Type: image/png",
+  "Content-ID: <logo@x>",
+  "Content-Transfer-Encoding: base64",
+  "",
+  "iVBORw0KGgo=",
+  "--rel--",
+  "--mix",
+  'Content-Type: text/plain; name="报价.txt"',
+  'Content-Disposition: attachment; filename="报价.txt"',
+  "Content-Transfer-Encoding: base64",
+  "",
+  Buffer.from("价格表").toString("base64"),
+  "--mix",
+  'Content-Type: text/plain; name="报价.txt"',
+  'Content-Disposition: attachment; filename="报价.txt"',
+  "",
+  "second copy",
+  "--mix--",
+  "",
+].join("\r\n");
+
+it.effect("reads original source, attachments and inline images from the provider", () => {
+  const listed = { filename: "报价.txt", mimeType: "text/plain", size: 9 };
+  return withGmail(
+    [incoming("m1", { bodyHtml: '<img src="cid:logo@x">', attachments: [listed, listed] })],
+    (m, server) =>
+      Effect.gen(function* () {
+        server.raw.set("m1", new TextEncoder().encode(RELATED));
+        const [thread] = yield* m.threads({});
+        const id = thread!.id;
+
+        const raw = yield* m.rawMessage(id);
+        assert.include(raw, "Subject: Logo");
+
+        const first = yield* m.attachment(id, 0);
+        assert.strictEqual(first.filename, "报价.txt");
+        assert.strictEqual(new TextDecoder().decode(first.data), "价格表");
+        const second = yield* m.attachment(id, 1);
+        assert.strictEqual(new TextDecoder().decode(second.data), "second copy");
+        const missing = yield* Effect.flip(m.attachment(id, 2));
+        assert.strictEqual(missing._tag, "NotFound");
+
+        const inline = yield* m.inlineImages(id);
+        assert.deepStrictEqual(Object.keys(inline), ["logo@x"]);
+        assert.match(inline["logo@x"] ?? "", /^data:image\/png;base64,/);
+      }),
+  );
+});
+
+it.effect("the remote image allowlist stores addresses and domains in lower case", () =>
+  withGmail([], (m) =>
+    Effect.gen(function* () {
+      yield* m.setImageSender("News@Shop.com", true);
+      yield* m.setImageSender("@Example.ORG", true);
+      yield* m.setImageSender("  ", true);
+      assert.deepStrictEqual(yield* m.imageSenders, ["example.org", "news@shop.com"]);
+      yield* m.setImageSender("EXAMPLE.org", false);
+      assert.deepStrictEqual(yield* m.imageSenders, ["news@shop.com"]);
+    }),
+  ),
+);

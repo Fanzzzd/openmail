@@ -76,6 +76,13 @@ export const ModelThread = Schema.Struct({
 });
 export type ModelThread = typeof ModelThread.Type;
 
+/** An attachment's content, fetched from the provider. */
+export interface AttachmentContent {
+  readonly filename: string;
+  readonly mimeType: string;
+  readonly data: Uint8Array;
+}
+
 export type SignInError = AuthError | ProviderError | ClientNotConfigured | InvalidInput;
 /** What performing a command can fail with. Policy denials are an Outcome, not an error. */
 export type PerformError = NotFound | InvalidInput | AuthError | PermanentError | ProviderError;
@@ -99,6 +106,16 @@ export class Mailbox extends Context.Service<
     threads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
     thread(id: string): Effect.Effect<Message[], NotFound>;
     threadForModel(id: string, maxChars?: number): Effect.Effect<ModelThread, NotFound>;
+    /** The message's original source (RFC 5322) from the provider, as text. */
+    rawMessage(id: string): Effect.Effect<string, PerformError>;
+    /** One attachment of a message, by its position in `Message.attachments`. */
+    attachment(messageId: string, index: number): Effect.Effect<AttachmentContent, PerformError>;
+    /** The message's inline images (cid: parts) as data: URLs keyed by Content-ID. */
+    inlineImages(messageId: string): Effect.Effect<Record<string, string>, PerformError>;
+    /** Addresses and domains whose mail loads remote images without asking. */
+    readonly imageSenders: Effect.Effect<string[]>;
+    /** Adds (allowed) or removes an address ("news@shop.com") or domain ("shop.com"). */
+    setImageSender(entry: string, allowed: boolean): Effect.Effect<void>;
     labels(accountIds?: readonly string[]): Effect.Effect<Label[]>;
     readonly unreadCounts: Effect.Effect<Record<string, number>>;
     unreadByLabel(

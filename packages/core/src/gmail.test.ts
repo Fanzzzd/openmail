@@ -395,6 +395,46 @@ it.effect("raw messages come back as bytes", () =>
   }),
 );
 
+it.effect(
+  "attachments come inline or through the attachments endpoint, by name and occurrence",
+  () =>
+    Effect.gen(function* () {
+      const part = (filename: string, body: Record<string, unknown>) => ({
+        mimeType: "application/pdf",
+        filename,
+        body,
+      });
+      const http = fakeHttp({
+        "GET /messages/m1": (url) => {
+          assert.strictEqual(url.searchParams.get("format"), "full");
+          return {
+            json: {
+              ...message("m1", ["INBOX"]),
+              payload: {
+                mimeType: "multipart/mixed",
+                body: { size: 0 },
+                parts: [
+                  { mimeType: "text/plain", body: { size: 2, data: b64("hi") } },
+                  part("a.pdf", { size: 3, data: b64("one") }),
+                  part("a.pdf", { size: 9, attachmentId: "ATT2" }),
+                ],
+              },
+            },
+          };
+        },
+        "GET /messages/m1/attachments/ATT2": { json: { size: 3, data: b64("two") } },
+      });
+      const [first, second] = yield* run(http, (a) =>
+        Effect.all([
+          a.fetchAttachment(account, "m1", { index: 0, filename: "a.pdf", occurrence: 0 }),
+          a.fetchAttachment(account, "m1", { index: 1, filename: "a.pdf", occurrence: 1 }),
+        ]),
+      );
+      assert.strictEqual(Buffer.from(first).toString(), "one");
+      assert.strictEqual(Buffer.from(second).toString(), "two");
+    }),
+);
+
 it.effect("a dropped connection is retried, not reported", () =>
   Effect.gen(function* () {
     let calls = 0;

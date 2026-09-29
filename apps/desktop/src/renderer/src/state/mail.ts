@@ -65,6 +65,31 @@ export const decideProposal = (id: number, approve: boolean) =>
 export const reauthAccount = (accountId: string) =>
   withMail((call) => call("Reauth", { accountId })).pipe(Reactivity.mutation(MAIL_KEYS));
 
+/** Asks where to save the attachment and writes it. Succeeds with false when cancelled. */
+export const saveAttachment = (messageId: string, index: number) =>
+  withMail((call) => call("SaveAttachment", { messageId, index }));
+
+/** Opens the attachment with its default app, from a temporary copy. */
+export const openAttachment = (messageId: string, index: number) =>
+  withMail((call) => call("OpenAttachment", { messageId, index }));
+
+/** Asks for a folder and saves every attachment of the message. Succeeds with the count. */
+export const saveAllAttachments = (messageId: string) =>
+  withMail((call) => call("SaveAllAttachments", { messageId }));
+
+/** Prints the thread of `id` (or only message `only`), or saves it as PDF with `pdf`. */
+export const printThread = (request: {
+  id: string;
+  only?: string;
+  pdf: boolean;
+  headings: { from: string; to: string; cc: string; date: string };
+  locale: string;
+}) => withMail((call) => call("PrintThread", request));
+
+/** Opens the thread in a window of its own. */
+export const openThreadWindow = (id: string) =>
+  withMail((call) => call("OpenThreadWindow", { id }));
+
 /** Starts a sync of every account. Progress and results arrive as events. */
 export const syncNow = withMail((call) => call("Sync", undefined));
 

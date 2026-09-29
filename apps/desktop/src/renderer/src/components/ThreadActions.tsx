@@ -3,6 +3,7 @@ import { Toggle } from "@base-ui/react/toggle";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useLingui } from "@lingui/react/macro";
 import {
+  AppWindow,
   Archive,
   Bookmark,
   Forward,
@@ -41,8 +42,10 @@ interface Props {
   /** User labels or folders of the thread's account. */
   labels: readonly Label[];
   onOp: (op: MailOp) => void;
-  /** `asAttachment` forwards the original as an .eml file. */
-  onCompose: (mode: ComposeMode, asAttachment?: boolean) => void;
+  /** `asAttachment` forwards the original as an .eml file. Unset hides reply and forward. */
+  onCompose?: ((mode: ComposeMode, asAttachment?: boolean) => void) | undefined;
+  /** Opens the thread in a window of its own. Unset hides the button. */
+  onOpenWindow?: (() => void) | undefined;
   /** The label or folder picker; L or V opens it from the keyboard. */
   labelPicker: boolean;
   onLabelPicker: (open: boolean) => void;
@@ -67,6 +70,7 @@ export function ThreadActions({
   labels,
   onOp,
   onCompose,
+  onOpenWindow,
   labelPicker,
   onLabelPicker,
 }: Props) {
@@ -148,21 +152,41 @@ export function ThreadActions({
           }
         />
       )}
-      <Divider />
-      <Action icon={Reply} label={t`Reply`} shortcut="R" onClick={() => onCompose("reply")} />
-      <Action
-        icon={ReplyAll}
-        label={t`Reply all`}
-        shortcut="A"
-        onClick={() => onCompose("replyAll")}
-      />
-      <Action icon={Forward} label={t`Forward`} shortcut="F" onClick={() => onCompose("forward")} />
-      <Action
-        icon={MailPlus}
-        label={t`Forward as attachment`}
-        shortcut="⇧F"
-        onClick={() => onCompose("forward", true)}
-      />
+      {onCompose && (
+        <>
+          <Divider />
+          <Action icon={Reply} label={t`Reply`} shortcut="R" onClick={() => onCompose("reply")} />
+          <Action
+            icon={ReplyAll}
+            label={t`Reply all`}
+            shortcut="A"
+            onClick={() => onCompose("replyAll")}
+          />
+          <Action
+            icon={Forward}
+            label={t`Forward`}
+            shortcut="F"
+            onClick={() => onCompose("forward")}
+          />
+          <Action
+            icon={MailPlus}
+            label={t`Forward as attachment`}
+            shortcut="⇧F"
+            onClick={() => onCompose("forward", true)}
+          />
+        </>
+      )}
+      {onOpenWindow && (
+        <>
+          <Divider />
+          <Action
+            icon={AppWindow}
+            label={t`Open in New Window`}
+            shortcut="⇧⌘O"
+            onClick={onOpenWindow}
+          />
+        </>
+      )}
     </Toolbar.Root>
   );
 }
@@ -177,21 +201,34 @@ export function ThreadMenuItems({
   labels,
   onOp,
   onCompose,
+  onOpenWindow,
 }: Omit<Props, "labelPicker" | "onLabelPicker">) {
   const { t } = useLingui();
   const folders = state.provider !== "gmail";
   return (
     <>
-      <MenuItem icon={Reply} shortcut="R" onClick={() => onCompose("reply")}>
-        {t`Reply`}
-      </MenuItem>
-      <MenuItem icon={ReplyAll} shortcut="A" onClick={() => onCompose("replyAll")}>
-        {t`Reply all`}
-      </MenuItem>
-      <MenuItem icon={Forward} shortcut="F" onClick={() => onCompose("forward")}>
-        {t`Forward`}
-      </MenuItem>
-      <MenuSeparator />
+      {onOpenWindow && (
+        <>
+          <MenuItem icon={AppWindow} shortcut="⇧⌘O" onClick={onOpenWindow}>
+            {t`Open in New Window`}
+          </MenuItem>
+          <MenuSeparator />
+        </>
+      )}
+      {onCompose && (
+        <>
+          <MenuItem icon={Reply} shortcut="R" onClick={() => onCompose("reply")}>
+            {t`Reply`}
+          </MenuItem>
+          <MenuItem icon={ReplyAll} shortcut="A" onClick={() => onCompose("replyAll")}>
+            {t`Reply all`}
+          </MenuItem>
+          <MenuItem icon={Forward} shortcut="F" onClick={() => onCompose("forward")}>
+            {t`Forward`}
+          </MenuItem>
+          <MenuSeparator />
+        </>
+      )}
       {moveBack(state, mailbox) ? (
         <MenuItem icon={Inbox} shortcut="⇧⌘I" onClick={() => onOp({ kind: "inbox" })}>
           {t`Move to Inbox`}

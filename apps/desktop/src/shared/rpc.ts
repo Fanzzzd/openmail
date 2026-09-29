@@ -45,6 +45,19 @@ const Counts = Schema.Record(Schema.String, Schema.Number);
 const PrefsPatch = Schema.Struct({
   undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
   language: Schema.optionalKey(Prefs.fields.language),
+  markReadDelay: Schema.optionalKey(Prefs.fields.markReadDelay),
+  readerZoom: Schema.optionalKey(Prefs.fields.readerZoom),
+  messageBackground: Schema.optionalKey(Prefs.fields.messageBackground),
+  threadGrouping: Schema.optionalKey(Prefs.fields.threadGrouping),
+  threadOrder: Schema.optionalKey(Prefs.fields.threadOrder),
+});
+
+/** Header labels for printing, in the UI language. */
+export const PrintHeadings = Schema.Struct({
+  from: Schema.String,
+  to: Schema.String,
+  cc: Schema.String,
+  date: Schema.String,
 });
 const AccountIds = Schema.optionalKey(Schema.Array(Schema.String));
 const error = MailError;
@@ -71,6 +84,52 @@ export class MailRpcs extends RpcGroup.make(
   // Reading
   Rpc.make("Threads", { payload: { query: ThreadQuery }, success: Schema.Array(ThreadSummary) }),
   Rpc.make("Thread", { payload: { id: Schema.String }, success: Schema.Array(Message), error }),
+  /** The message's original source from the provider (View Original). */
+  Rpc.make("RawMessage", { payload: { id: Schema.String }, success: Schema.String, error }),
+  /** Inline (cid:) images of a message as data: URLs by Content-ID. */
+  Rpc.make("InlineImages", {
+    payload: { id: Schema.String },
+    success: Schema.Record(Schema.String, Schema.String),
+    error,
+  }),
+  Rpc.make("ImageSenders", { success: Schema.Array(Schema.String) }),
+  /** Adds or removes an address or a domain on the remote image allowlist. */
+  Rpc.make("SetImageSender", { payload: { entry: Schema.String, allowed: Schema.Boolean } }),
+  /** Asks where to save, then writes the attachment. False when the person cancelled. */
+  Rpc.make("SaveAttachment", {
+    payload: { messageId: Schema.String, index: Schema.Int },
+    success: Schema.Boolean,
+    error,
+  }),
+  /** Writes the attachment to a temporary folder and opens it with its default app. */
+  Rpc.make("OpenAttachment", {
+    payload: { messageId: Schema.String, index: Schema.Int },
+    error,
+  }),
+  /** Asks for a folder, then writes every attachment. Returns how many were saved. */
+  Rpc.make("SaveAllAttachments", {
+    payload: { messageId: Schema.String },
+    success: Schema.Int,
+    error,
+  }),
+  /**
+   * Prints the thread of `id`, or only message `only`, from a hidden window.
+   * With `pdf` it asks where to save and writes a PDF instead. False when
+   * the person cancelled.
+   */
+  Rpc.make("PrintThread", {
+    payload: {
+      id: Schema.String,
+      only: Schema.optionalKey(Schema.String),
+      pdf: Schema.Boolean,
+      headings: PrintHeadings,
+      locale: Schema.String,
+    },
+    success: Schema.Boolean,
+    error,
+  }),
+  /** Opens the thread of `id` in a window of its own. */
+  Rpc.make("OpenThreadWindow", { payload: { id: Schema.String } }),
   Rpc.make("Labels", { payload: { accountIds: AccountIds }, success: Schema.Array(Label) }),
   Rpc.make("UnreadCounts", { success: Counts }),
   Rpc.make("UnreadByLabel", {

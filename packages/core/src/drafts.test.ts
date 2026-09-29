@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
 
 import { buildMime } from "./compose.js";
-import type { Actor, IncomingMessage, OutgoingMessage } from "./domain.js";
+import { type Actor, DEFAULT_PREFS, type IncomingMessage, type OutgoingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
 import { type FakeServer, fakeServer, TestMailbox } from "./testing.js";
@@ -427,9 +427,14 @@ it.effect("switching the From account moves the provider's copy", () =>
 it.effect("preferences, signatures and templates are stored in core", () =>
   withMail((m) =>
     Effect.gen(function* () {
-      assert.deepStrictEqual(yield* m.prefs, { undoSendSeconds: 5, language: "system" });
-      yield* m.setPrefs({ undoSendSeconds: 20 });
-      assert.deepStrictEqual(yield* m.prefs, { undoSendSeconds: 20, language: "system" });
+      assert.deepStrictEqual(yield* m.prefs, DEFAULT_PREFS);
+      yield* m.setPrefs({ undoSendSeconds: 20, markReadDelay: "manual", threadGrouping: false });
+      assert.deepStrictEqual(yield* m.prefs, {
+        ...DEFAULT_PREFS,
+        undoSendSeconds: 20,
+        markReadDelay: "manual",
+        threadGrouping: false,
+      });
 
       yield* m.setSignature({ address: "Me@Gmail.com", kind: "new", text: "王\n产品部" });
       yield* m.setSignature({ address: "me@gmail.com", kind: "reply", text: "王" });

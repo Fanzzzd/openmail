@@ -16,6 +16,7 @@ const NOT_FOUND = {
   profile: msg`Can't find this space.`,
   draft: msg`Can't find this draft.`,
   template: msg`Can't find this template.`,
+  attachment: msg`Can't find this attachment.`,
 } as const;
 const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 

@@ -6,6 +6,7 @@ import { simpleParser } from "mailparser";
 import type { Account } from "./domain.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import {
+  attachmentNodes,
   decodeProviderId,
   FolderState,
   encodeProviderId,
@@ -335,5 +336,36 @@ it("a flag fetch turns into Deletes for gone UIDs and Flags for changed ones", (
   assert.deepStrictEqual(
     state.reconcile("INBOX", new Set([1, 2, 3]), new Map([[2, { unread: false, starred: false }]])),
     [],
+  );
+});
+
+it("attachment parts carry their BODY[part] numbers", () => {
+  const nodes = attachmentNodes({
+    type: "multipart/mixed",
+    childNodes: [
+      {
+        type: "multipart/alternative",
+        part: "1",
+        childNodes: [
+          { type: "text/plain", part: "1.1" },
+          { type: "text/html", part: "1.2" },
+        ],
+      },
+      {
+        type: "application/pdf",
+        part: "2",
+        disposition: "attachment",
+        dispositionParameters: { filename: "报价.pdf" },
+        size: 10,
+      },
+      { type: "image/png", part: "3", parameters: { name: "logo.png" } },
+    ],
+  });
+  assert.deepStrictEqual(
+    nodes.map((n) => [n.part, n.attachment.filename]),
+    [
+      ["2", "报价.pdf"],
+      ["3", "logo.png"],
+    ],
   );
 });

@@ -149,6 +149,12 @@ saveDraft(draft)
 
 撰写相关的偏好、签名、模板、联系人黑名单都在 core 的表里（`prefs`、`signatures`、`templates`、`hidden_contacts`），CLI 和以后的手机端读同一份。签名按发件地址和「新邮件 / 回复」区分，`source` 列留给以后同步的 Gmail 签名。收件人补全目前只查本地往来邮件，`Mailbox.suggestContacts` 是以后接入服务器联系人的地方。
 
+### 阅读
+
+原始邮件、附件内容、内嵌图片都经 Mailbox 从 provider 现取，不存进库：`rawMessage`、`attachment(messageId, index)`、`inlineImages`。适配器为此各有 `fetchRaw` 和 `fetchAttachment`，附件按文件名和同名序号定位。保存、打开、打印这些碰文件和窗口的事在 desktop 主进程做，内容仍来自 core。
+
+处理邮件 HTML 的规则在 core 里，不依赖 Node，经 `@openmail/core/schema` 给渲染进程和以后的手机端用：`trackers.ts` 是追踪服务清单，`reader-html.ts` 删掉追踪地址并替换 `cid:`，`print.ts` 拼打印用的文档，`reading.ts` 放标为已读的计时、远程图片白名单的匹配和会话排序。远程图片白名单存在 `image_senders` 表。
+
 ### Platform 端口：给手机留的接缝
 
 core 里直接依赖运行时的只有三处：`node:sqlite`、`@napi-rs/keyring`、本地回环 OAuth 回调。收成一个端口：

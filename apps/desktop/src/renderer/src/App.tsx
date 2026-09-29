@@ -2,8 +2,9 @@ import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { applySignature, DEFAULT_PREFS, holdSend } from "@openmail/core/schema";
+import { applySignature, DEFAULT_PREFS, holdSend, markReadAfter } from "@openmail/core/schema";
 import { Effect, Fiber } from "effect";
+import { constVoid } from "effect/Function";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
@@ -22,7 +23,7 @@ import { MessageList, type SelectionSource } from "./components/MessageList";
 import { Overview } from "./components/Overview";
 import { ProfileEditor } from "./components/ProfileEditor";
 import { Proposals } from "./components/Proposals";
-import { Reader } from "./components/Reader";
+import { Reader, useThreadPrint } from "./components/Reader";
 import { ResizeHandle } from "./components/ResizeHandle";
 import { Settings } from "./components/Settings";
 import { Sidebar } from "./components/Sidebar";
@@ -44,6 +45,7 @@ import {
   discardDraft,
   modifyThreads,
   openDraft,
+  openThreadWindow,
   reauthAccount,
   saveDraft,
   sendMessage,
@@ -179,10 +181,11 @@ export function App() {
   const messages = openThread._tag === "Some" ? openThread.value : undefined;
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
-  const undoSeconds = AsyncResult.getOrElse(
-    useAtomValue(prefsAtom),
-    () => DEFAULT_PREFS,
-  ).undoSendSeconds;
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const undoSeconds = prefs.undoSendSeconds;
+  /** The unread thread just opened with select(); it is marked read after the delay in preferences. */
+  const [readTarget, setReadTarget] = useState<string | null>(null);
+  const print = useThreadPrint((next) => say(next));
 
   /** The local signature for an account: one for new messages, one for replies and forwards. */
   const signatureFor = (accountId: string, mode: ComposeMode) => {
@@ -280,15 +283,30 @@ export function App() {
     );
   };
 
-  /** Selects a thread. Opening an unread thread marks it read, as Mimestream does by default. */
+  /**
+   * Selects a thread. Opening an unread thread marks it read right away, after
+   * a few seconds, or never, as set in Settings > Reading.
+   */
   const select = (id: string | null, source: SelectionSource) => {
     setSelectedId(id);
     setLabelPicker(false);
     setSelectionSource(source);
-    if (id && list.find((thread) => thread.id === id)?.isUnread) {
-      run(modifyThreads([id], { kind: "read", value: true }));
-    }
+    setReadTarget(id && list.find((thread) => thread.id === id)?.isUnread ? id : null);
   };
+
+  const markRead = useEffectEvent((id: string) => {
+    run(modifyThreads([id], { kind: "read", value: true }));
+  });
+  // Moving to another thread before the delay passes leaves this one unread.
+  useEffect(
+    () =>
+      readTarget && readTarget === selectedId
+        ? markReadAfter(prefs.markReadDelay, () => markRead(readTarget))
+        : constVoid,
+    [readTarget, selectedId, prefs.markReadDelay],
+  );
+
+  const openWindow = (id: string) => run(openThreadWindow(id));
 
   const defaultAccount = (): Account | undefined =>
     accountList.find((a) => a.id === (view.accountId ?? scope?.[0])) ?? accountList[0];
@@ -481,6 +499,18 @@ export function App() {
       if (threadState) act({ kind: "read", value: threadState.isUnread });
       return;
     }
+    if (cmd && e.shiftKey && e.key.toLowerCase() === "o") {
+      e.preventDefault();
+      if (selectedId && view.mailbox !== "drafts") openWindow(selectedId);
+      return;
+    }
+    if (cmd && !e.shiftKey && e.key === "p") {
+      e.preventDefault();
+      if (selectedId && threadState) {
+        print(selectedId, false, prefs.threadGrouping ? undefined : selectedId);
+      }
+      return;
+    }
     if (cmd && e.shiftKey && e.key.toLowerCase() === "i") {
       e.preventDefault();
       act({ kind: "inbox" });
@@ -671,6 +701,8 @@ export function App() {
                   stateOf: rowState,
                   onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
                   onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
+                  onOpenWindow: (m) =>
+                    view.mailbox === "drafts" ? openSavedDraft(m.id) : openWindow(m.id),
                 }}
                 onSelect={(id) => {
                   if (view.mailbox !== "drafts") {
@@ -694,6 +726,7 @@ export function App() {
                 onQuery={setQuery}
                 searchRef={searchRef}
                 onEditDraft={openSavedDraft}
+                notify={(next) => say(next)}
                 toolbar={
                   threadState && (
                     <ThreadActions
@@ -702,6 +735,9 @@ export function App() {
                       labels={threadLabels}
                       onOp={(op) => act(op)}
                       onCompose={startCompose}
+                      onOpenWindow={() => {
+                        if (selectedId) openWindow(selectedId);
+                      }}
                       labelPicker={labelPicker}
                       onLabelPicker={setLabelPicker}
                     />

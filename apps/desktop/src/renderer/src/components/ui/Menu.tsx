@@ -1,7 +1,7 @@
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { Check, ChevronRight } from "lucide-react";
-import type { ComponentProps, ComponentType, ReactNode } from "react";
+import type { ComponentProps, ComponentType, ReactElement, ReactNode } from "react";
 
 import { itemClass, kbdClass, popupMotion, popupSurface, separatorClass } from "./styles";
 
@@ -20,6 +20,31 @@ export function ContextMenuContent({ children }: { children: ReactNode }) {
         <Menu.Popup className={popup}>{children}</Menu.Popup>
       </ContextMenu.Positioner>
     </ContextMenu.Portal>
+  );
+}
+
+/**
+ * A menu that opens from a button, like a toolbar's More button. `trigger`
+ * is the button element; it gets the open state and ARIA attributes.
+ */
+export function DropdownMenu({
+  trigger,
+  align = "end",
+  children,
+}: {
+  trigger: ReactElement;
+  align?: "start" | "center" | "end";
+  children: ReactNode;
+}) {
+  return (
+    <Menu.Root>
+      <Menu.Trigger render={trigger} />
+      <Menu.Portal>
+        <Menu.Positioner className="z-[60] outline-none" align={align} sideOffset={4}>
+          <Menu.Popup className={popup}>{children}</Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }
 

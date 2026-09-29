@@ -115,6 +115,19 @@ export const hiddenContactsAtom = MailClient.query("HiddenContacts", undefined, 
   ...cached,
 });
 
+export const imageSendersAtom = MailClient.query("ImageSenders", undefined, {
+  reactivityKeys: [Keys.imageSenders],
+  ...always,
+});
+
+/** A message's inline (cid:) images as data: URLs. Fetched from the provider, so cached a while. */
+export const inlineImagesAtom = (id: string) =>
+  MailClient.query("InlineImages", { id }, { timeToLive: Duration.minutes(10) });
+
+/** A message's original source, for View Original. */
+export const rawMessageAtom = (id: string) =>
+  MailClient.query("RawMessage", { id }, { timeToLive: Duration.minutes(2) });
+
 /** Recipient suggestions for what is typed in a To, Cc or Bcc field, sending from `from`. */
 export const suggestionsAtom = (query: string, from: string | undefined) =>
   MailClient.query("SuggestContacts", from === undefined ? { query } : { query, exclude: from }, {

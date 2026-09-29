@@ -5,6 +5,8 @@ import { BrowserWindow, ipcMain, type IpcMainEvent, webContents } from "electron
 
 import { RPC_CHANNEL } from "../shared/channel";
 import { MailRpcs } from "../shared/rpc";
+import { openAttachment, printThread, saveAllAttachments, saveAttachment } from "./files";
+import { openThreadWindow, windowOf } from "./windows";
 
 /** Brings the app back to the front after a sign-in in the system browser. */
 const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
@@ -88,6 +90,20 @@ const Handlers = MailRpcs.toLayer(
 
       Threads: ({ query }) => m.threads(query),
       Thread: ({ id }) => m.thread(id),
+      RawMessage: ({ id }) => m.rawMessage(id),
+      InlineImages: ({ id }) => m.inlineImages(id),
+      ImageSenders: () => m.imageSenders,
+      SetImageSender: ({ entry, allowed }) => m.setImageSender(entry, allowed),
+      SaveAttachment: ({ messageId, index }, { client }) =>
+        saveAttachment(m, windowOf(client.id), messageId, index),
+      OpenAttachment: ({ messageId, index }) => openAttachment(m, messageId, index),
+      SaveAllAttachments: ({ messageId }, { client }) =>
+        saveAllAttachments(m, windowOf(client.id), messageId),
+      PrintThread: (request, { client }) => printThread(m, windowOf(client.id), request),
+      OpenThreadWindow: ({ id }) =>
+        Effect.sync(() => {
+          openThreadWindow(id);
+        }),
       Labels: ({ accountIds }) => m.labels(accountIds),
       UnreadCounts: () => m.unreadCounts,
       UnreadByLabel: ({ accountIds, within }) => m.unreadByLabel(accountIds, within),

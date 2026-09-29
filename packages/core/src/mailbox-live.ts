@@ -13,6 +13,7 @@ import {
   Stream,
 } from "effect";
 
+import { attachmentRef, inlineImagesFromRaw } from "./attachments.js";
 import type {
   Account,
   Actor,
@@ -33,7 +34,7 @@ import {
   parseRawDraft,
   toDraft,
 } from "./drafts.js";
-import { AuthError, InvalidInput, PermanentError } from "./errors.js";
+import { AuthError, InvalidInput, NotFound, PermanentError } from "./errors.js";
 import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
 import { toModelThread } from "./model-view.js";
@@ -634,6 +635,43 @@ export const MailboxLive = (
         return imported;
       });
 
+      // Reading from the provider
+
+      const source = Effect.fnUntraced(function* (id: string) {
+        const ref = yield* store.messageRef(id);
+        const account = yield* store.getAccount(ref.accountId);
+        return { account, adapter: providers.get(account.provider), providerId: ref.providerId };
+      });
+
+      const rawMessage = Effect.fn("Mailbox.rawMessage")(function* (id: string) {
+        const { account, adapter, providerId } = yield* source(id);
+        const raw = yield* adapter.fetchRaw(account, providerId);
+        // Headers are ASCII; 8-bit bodies in other charsets show replacement characters.
+        return new TextDecoder("utf-8").decode(raw);
+      });
+
+      const attachment = Effect.fn("Mailbox.attachment")(function* (
+        messageId: string,
+        index: number,
+      ) {
+        const message = yield* store.getMessage(messageId);
+        const listed = message.attachments[index];
+        const ref = attachmentRef(message.attachments, index);
+        if (!listed || !ref) {
+          return yield* new NotFound({ what: "attachment", id: `${messageId}#${index}` });
+        }
+        const { account, adapter, providerId } = yield* source(messageId);
+        const data = yield* adapter.fetchAttachment(account, providerId, ref);
+        return { filename: listed.filename, mimeType: listed.mimeType, data };
+      });
+
+      const inlineImages = Effect.fn("Mailbox.inlineImages")(function* (messageId: string) {
+        const { account, adapter, providerId } = yield* source(messageId);
+        return yield* adapter
+          .fetchRaw(account, providerId)
+          .pipe(Effect.flatMap(inlineImagesFromRaw));
+      });
+
       // Pulling
 
       const apply = (account: Account, counts: { changed: number; deleted: number }) =>
@@ -856,6 +894,11 @@ export const MailboxLive = (
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),
+        rawMessage,
+        attachment,
+        inlineImages,
+        imageSenders: store.imageSenders,
+        setImageSender: (entry, allowed) => mutate(store.setImageSender(entry, allowed)),
         labels: (accountIds) => store.listLabels(accountIds),
         unreadCounts: store.unreadCounts,
         unreadByLabel: (accountIds, within) => store.unreadByLabel(accountIds, within),

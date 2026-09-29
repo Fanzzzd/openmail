@@ -194,6 +194,15 @@ export const MIGRATIONS: readonly string[] = [
     address TEXT PRIMARY KEY
   );
   `,
+  `
+  -- Senders whose mail loads remote images without asking: a whole address
+  -- ("news@shop.com") or a domain ("shop.com", which covers its subdomains).
+  -- Lower case. Known trackers stay blocked for these senders too.
+  CREATE TABLE image_senders (
+    entry TEXT PRIMARY KEY,
+    created_at INTEGER NOT NULL
+  );
+  `,
 ];
 
 /**

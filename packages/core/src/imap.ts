@@ -3,6 +3,7 @@ import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapfl
 import { type AddressObject, type ParsedMail, simpleParser } from "mailparser";
 import { createTransport } from "nodemailer";
 
+import { attachmentFromRaw } from "./attachments.js";
 import { buildMime } from "./compose.js";
 import type {
   Account,
@@ -327,18 +328,29 @@ export function addresses(value: AddressObject | AddressObject[] | undefined): A
   return out;
 }
 
-function structureAttachments(node: MessageStructureObject | undefined): Attachment[] {
+/** Leaf parts that are attachments, with their BODY[part] numbers. */
+export function attachmentNodes(
+  node: MessageStructureObject | undefined,
+): { part: string; attachment: Attachment }[] {
   if (!node) return [];
-  const out: Attachment[] = [];
+  const out: { part: string; attachment: Attachment }[] = [];
   const walk = (n: MessageStructureObject) => {
     const filename = n.dispositionParameters?.filename ?? n.parameters?.name;
     if (!n.childNodes?.length && (n.disposition === "attachment" || filename)) {
-      out.push({ filename: filename ?? "attachment", mimeType: n.type, size: n.size ?? 0 });
+      out.push({
+        // A single-part message has no part number; its body is part 1.
+        part: n.part ?? "1",
+        attachment: { filename: filename ?? "attachment", mimeType: n.type, size: n.size ?? 0 },
+      });
     }
     for (const c of n.childNodes ?? []) walk(c);
   };
   walk(node);
   return out;
+}
+
+function structureAttachments(node: MessageStructureObject | undefined): Attachment[] {
+  return attachmentNodes(node).map((n) => n.attachment);
 }
 
 export interface Flags {
@@ -1104,5 +1116,44 @@ export const makeImap: Effect.Effect<ProviderAdapter, never, Secrets> = Effect.g
       return new Uint8Array(m.source);
     }).pipe(Effect.scoped);
 
-  return { connect, pull, push, send, saveDraft, deleteDraft, fetchRaw };
+  /**
+   * Downloads the part through BODY[part], decoded by imapflow. Falls back to
+   * parsing the whole source when the structure names the part differently
+   * than the parser that listed it.
+   */
+  const fetchAttachment: ProviderAdapter["fetchAttachment"] = (account, providerId, ref) =>
+    Effect.gen(function* () {
+      const id = decodeProviderId(providerId);
+      if (Option.isNone(id)) {
+        return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
+      }
+      const { s } = yield* session(account);
+      const same = yield* openFolderOf(s, id.value, true);
+      const uid = String(id.value.uid);
+      const m = same
+        ? yield* call(s, (c) => c.fetchOne(uid, { uid: true, bodyStructure: true }, { uid: true }))
+        : false;
+      if (!m) return yield* new PermanentError({ message: `Message ${providerId} is gone` });
+      const nodes = attachmentNodes(m.bodyStructure);
+      const named = nodes.filter((n) => n.attachment.filename === ref.filename);
+      const node = named[ref.occurrence];
+      if (node) {
+        const bytes = yield* call(s, async (c) => {
+          const download = await c.download(uid, node.part, { uid: true });
+          if (!download.content) return null;
+          const chunks: Buffer[] = [];
+          for await (const chunk of download.content) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+          }
+          return new Uint8Array(Buffer.concat(chunks));
+        });
+        if (bytes) return bytes;
+      }
+      const raw = yield* fetchRaw(account, providerId);
+      const fromRaw = yield* attachmentFromRaw(raw, ref);
+      if (!fromRaw) return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
+      return fromRaw;
+    }).pipe(Effect.scoped);
+
+  return { connect, pull, push, send, saveDraft, deleteDraft, fetchRaw, fetchAttachment };
 });

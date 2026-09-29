@@ -669,6 +669,26 @@ it.effect("deleting a draft that is already gone succeeds; raw MIME comes from $
   }),
 );
 
+it.effect("attachments download from $value, skipping inline parts", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/m1/attachments": {
+        json: {
+          value: [
+            { id: "logo", name: "logo.png", isInline: true },
+            { id: "A1", name: "报价.xlsx", isInline: false },
+          ],
+        },
+      },
+      "GET /me/messages/m1/attachments/A1/$value": { text: "xlsx-bytes" },
+    });
+    const bytes = yield* run(http, (a) =>
+      a.fetchAttachment(account, "m1", { index: 0, filename: "报价.xlsx", occurrence: 0 }),
+    );
+    assert.strictEqual(Buffer.from(bytes).toString(), "xlsx-bytes");
+  }),
+);
+
 const chineseOriginal = Buffer.from(
   "From: li@x.com\r\nSubject: =?UTF-8?B?5Y6f6YKu5Lu2?=\r\nContent-Type: text/plain; charset=utf-8\r\n" +
     "Content-Transfer-Encoding: 8bit\r\n\r\n你好，这是原来的邮件。\r\n",

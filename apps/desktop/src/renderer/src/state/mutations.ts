@@ -22,6 +22,7 @@ export const setSignatureAtom = MailClient.mutation("SetSignature");
 export const saveTemplateAtom = MailClient.mutation("SaveTemplate");
 export const deleteTemplateAtom = MailClient.mutation("DeleteTemplate");
 export const setContactHiddenAtom = MailClient.mutation("SetContactHidden");
+export const setImageSenderAtom = MailClient.mutation("SetImageSender");
 
 /** Autosave of one compose window, keyed by draft id; its value shows the save state. */
 export const saveDraftAtom = Atom.family((_draftId: string) =>

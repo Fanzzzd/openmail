@@ -1,6 +1,7 @@
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
+import { type AttachmentRef, pickAttachment } from "./attachments.js";
 import { buildMime, type Threading } from "./compose.js";
 import type {
   Account,
@@ -56,7 +57,7 @@ export interface GmailPart {
   readonly mimeType: string;
   readonly filename?: string;
   readonly headers?: readonly Header[];
-  readonly body: { readonly data?: string; readonly size: number };
+  readonly body: { readonly data?: string; readonly attachmentId?: string; readonly size: number };
   readonly parts?: readonly GmailPart[];
 }
 
@@ -64,7 +65,11 @@ const GmailPart: Schema.Codec<GmailPart> = Schema.Struct({
   mimeType: Schema.String,
   filename: Schema.optionalKey(Schema.String),
   headers: Schema.optionalKey(Schema.Array(Header)),
-  body: Schema.Struct({ data: Schema.optionalKey(Schema.String), size: Schema.Number }),
+  body: Schema.Struct({
+    data: Schema.optionalKey(Schema.String),
+    attachmentId: Schema.optionalKey(Schema.String),
+    size: Schema.Number,
+  }),
   parts: Schema.optionalKey(Schema.Array(Schema.suspend((): Schema.Codec<GmailPart> => GmailPart))),
 });
 
@@ -133,6 +138,7 @@ const DraftList = Schema.Struct({
 });
 
 const RawMessage = Schema.Struct({ raw: Schema.String });
+const AttachmentBody = Schema.Struct({ data: Schema.String });
 
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
 class ApiError extends Data.TaggedError("ApiError")<{ status: number; body: string }> {}
@@ -580,6 +586,30 @@ export const makeGmail: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
+  const fetchAttachment = Effect.fn("Gmail.fetchAttachment")(
+    function* (account: Account, providerId: string, ref: AttachmentRef) {
+      const message = yield* get(account.id, GmailMessage, `/messages/${providerId}`, {
+        format: "full",
+      });
+      const part = pickAttachment(attachmentParts(message.payload), (p) => p.filename ?? "", ref);
+      if (!part) {
+        return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
+      }
+      // Small parts come inline; bigger ones through the attachments endpoint.
+      const data = part.body.data
+        ? part.body.data
+        : part.body.attachmentId
+          ? (yield* get(
+              account.id,
+              AttachmentBody,
+              `/messages/${providerId}/attachments/${part.body.attachmentId}`,
+            )).data
+          : "";
+      return new Uint8Array(Buffer.from(data, "base64url"));
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
   return {
     connect,
     pull,
@@ -588,6 +618,7 @@ export const makeGmail: Effect.Effect<
     saveDraft,
     deleteDraft,
     fetchRaw,
+    fetchAttachment,
   } satisfies ProviderAdapter;
 });
 
@@ -610,6 +641,17 @@ export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
     default:
       return op.value ? { add: [op.labelId], remove: [] } : { add: [], remove: [op.labelId] };
   }
+}
+
+/** Parts with a filename, in the order `parseGmailMessage` lists them as attachments. */
+export function attachmentParts(payload: GmailPart): GmailPart[] {
+  const out: GmailPart[] = [];
+  const walk = (part: GmailPart) => {
+    if (part.filename) out.push(part);
+    for (const child of part.parts ?? []) walk(child);
+  };
+  walk(payload);
+  return out;
 }
 
 export function parseGmailMessage(raw: GmailMessage): IncomingMessage {

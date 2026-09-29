@@ -44,9 +44,21 @@ msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
+msgstr "{count, plural, other {已拦截 # 个追踪器}}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
+msgstr "{count, plural, other {已保存 # 个附件}}"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
 msgstr "{count} 未读"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "{delay, plural, one {# second} other {# seconds}}"
+msgstr "{delay, plural, other {# 秒}}"
 
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
@@ -68,6 +80,10 @@ msgstr "{name} 客户端"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {# 个会话}}"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
+msgstr "{pixels, plural, other {# 个追踪像素}}"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, other {# 秒}}"
@@ -76,6 +92,10 @@ msgstr "{seconds, plural, other {# 秒}}"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 邮箱"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
+msgstr "域名包括它的子域名。对这些发件人，已知的追踪器照样拦截。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Account"
@@ -91,6 +111,7 @@ msgid "Action"
 msgstr "操作"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Action failed: {reason}"
 msgstr "操作失败：{reason}"
 
@@ -98,7 +119,12 @@ msgstr "操作失败：{reason}"
 msgid "Activity"
 msgstr "操作记录"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Actual size"
+msgstr "实际大小"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Add"
 msgstr "添加"
 
@@ -143,6 +169,10 @@ msgstr "写信时自动加上；换发件账户时跟着换。签名只存在本
 #: src/renderer/src/App.tsx
 msgid "Added star"
 msgstr "已加星标"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Address or domain"
+msgstr "地址或域名"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
@@ -202,6 +232,26 @@ msgstr "这个空间的所有账户"
 msgid "All Mail"
 msgstr "所有邮件"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Always from this sender"
+msgstr "总是加载此发件人的图片"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always light"
+msgstr "始终浅色"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {address}"
+msgstr "总是加载 {address} 的图片"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {domain}"
+msgstr "总是加载 {domain} 的图片"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always load remote images from"
+msgstr "总是加载以下发件人的远程图片"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
@@ -244,6 +294,14 @@ msgstr "返回"
 msgid "Bcc"
 msgstr "密送"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Bigger text"
+msgstr "放大文字"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Blocked before loading:"
+msgstr "加载前已拦截："
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Body"
 msgstr "正文"
@@ -251,6 +309,10 @@ msgstr "正文"
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "找不到这个账户。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this attachment."
+msgstr "找不到这个附件。"
 
 #: src/renderer/src/errors.ts
 msgid "Can't find this draft."
@@ -288,6 +350,7 @@ msgid "Cancel"
 msgstr "取消"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "Cc"
 msgstr "抄送"
 
@@ -306,6 +369,7 @@ msgstr "选择邮箱服务商。"
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/RawMessage.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -337,13 +401,37 @@ msgstr "继续编辑"
 msgid "Conversation actions"
 msgstr "会话操作"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Conversations"
+msgstr "会话"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copied"
+msgstr "已复制"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copy"
+msgstr "复制"
+
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
 msgstr "丢弃失败：{reason}"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Couldn't get the attachment: {reason}"
+msgstr "无法获取附件：{reason}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't print: {reason}"
+msgstr "无法打印：{reason}"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
 msgstr "保存失败"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't save the PDF: {reason}"
+msgstr "无法保存 PDF：{reason}"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't send: {reason}"
@@ -368,6 +456,14 @@ msgstr "在 Apple 账户的「登录与安全」里生成 App 专用密码。"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
 msgstr "自定义图标"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Dark background"
+msgstr "深色背景"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Date"
+msgstr "日期"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -454,6 +550,7 @@ msgid "Forward as attachment"
 msgstr "作为附件转发"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "From"
 msgstr "发件人"
 
@@ -477,6 +574,18 @@ msgstr "生成授权码"
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
 msgstr "把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 ⌃1 到 ⌃9 切换。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Group messages into conversations"
+msgstr "按会话归组邮件"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Headers"
+msgstr "邮件头"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
+msgstr "会话打开多久后标为已读。选手动时，只有按 U 或点工具栏才会标记。"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Icon"
 msgstr "图标"
@@ -497,6 +606,10 @@ msgstr "重要"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "在「{elsewhere}」"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
+msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -532,13 +645,21 @@ msgstr "语言"
 msgid "Last sync failed"
 msgstr "上次同步失败"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Light background"
+msgstr "浅色背景"
+
+#: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "加载图片"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
 msgstr "读取设置…"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Loading the original from the server…"
+msgstr "正在从服务器读取原始邮件…"
 
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
@@ -547,6 +668,14 @@ msgstr "和后台的连接出错了。"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Mailboxes"
 msgstr "邮箱"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Manually"
+msgstr "手动"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Many HTML emails are designed for white. Each message's menu can switch its background."
+msgstr "很多 HTML 邮件按白色背景设计。每封邮件的菜单里可以单独切换背景。"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -559,6 +688,7 @@ msgid "Mark as not important"
 msgstr "取消重要"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as read"
 msgstr "标为已读"
@@ -591,6 +721,26 @@ msgstr "已标为已读"
 #: src/renderer/src/App.tsx
 msgid "Marked as unread"
 msgstr "已标为未读"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Match appearance"
+msgstr "跟随外观"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Message actions"
+msgstr "邮件操作"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message background"
+msgstr "邮件背景"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message order in a conversation"
+msgstr "会话内的邮件顺序"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "More actions"
+msgstr "更多操作"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
@@ -649,6 +799,14 @@ msgstr "新邮件"
 msgid "New space"
 msgstr "新建空间"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Newest first"
+msgstr "最新的在前"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "news@shop.com or shop.com"
+msgstr "news@shop.com 或 shop.com"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No accounts yet"
 msgstr "还没有账户"
@@ -693,6 +851,10 @@ msgstr "未同步"
 msgid "Off"
 msgstr "关闭"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Oldest first"
+msgstr "最早的在前"
+
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
@@ -700,6 +862,15 @@ msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示�
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open"
+msgstr "打开"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Open in New Window"
+msgstr "在新窗口中打开"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
@@ -713,9 +884,17 @@ msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure �
 msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
 msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Order"
+msgstr "顺序"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Organize directly"
 msgstr "直接整理"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Original message"
+msgstr "原始邮件"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Original message (.eml)"
@@ -746,6 +925,14 @@ msgstr "端口"
 msgid "Primary"
 msgstr "主要"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Print message…"
+msgstr "打印这封邮件…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Print…"
+msgstr "打印…"
+
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "推广"
@@ -759,6 +946,10 @@ msgstr "QQ 邮箱"
 msgid "Read only"
 msgstr "只读"
 
+#: src/renderer/src/components/Settings.tsx
+msgid "Reading"
+msgstr "阅读"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Reject"
 msgstr "拒绝"
@@ -767,10 +958,11 @@ msgstr "拒绝"
 msgid "Reject suggestion"
 msgstr "拒绝建议"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "已阻止远程图片，防止发件人追踪是否已读。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove"
 msgstr "移除"
@@ -843,6 +1035,10 @@ msgstr "恢复"
 msgid "Review and Send"
 msgstr "检查并发送"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Right away"
+msgstr "立即"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "执行"
@@ -853,13 +1049,39 @@ msgstr "执行"
 msgid "Save"
 msgstr "保存"
 
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save {0}"
+msgstr "保存 {0}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save all…"
+msgstr "全部保存…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save as PDF…"
+msgstr "保存为 PDF…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save message as PDF…"
+msgstr "将这封邮件保存为 PDF…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
 msgstr "把这封邮件存为模板…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save…"
+msgstr "保存…"
+
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "已保存"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Saved as PDF"
+msgstr "已保存为 PDF"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved on this Mac. Syncs when online."
@@ -937,6 +1159,10 @@ msgstr "只看星标"
 msgid "Show only unread"
 msgstr "只看未读"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Show original"
+msgstr "显示原始邮件"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
@@ -953,6 +1179,10 @@ msgstr "登录失败：{reason}"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Signatures"
 msgstr "签名"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Smaller text"
+msgstr "缩小文字"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SMTP encryption"
@@ -995,6 +1225,14 @@ msgstr "星标"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS（通常是 587）"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {address}"
+msgstr "不再自动加载 {address} 的图片"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {domain}"
+msgstr "不再自动加载 {domain} 的图片"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx
@@ -1054,6 +1292,10 @@ msgstr "模板"
 msgid "Templates…"
 msgstr "模板…"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Text size"
+msgstr "文字大小"
+
 #: src/renderer/src/errors.ts
 msgid "The {client} OAuth client is not set up yet."
 msgstr "还没有填写 {client} 的 OAuth 客户端。"
@@ -1069,6 +1311,10 @@ msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮�
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "The rest is left out here. Copy gets the whole message."
+msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
@@ -1101,6 +1347,7 @@ msgid "Time"
 msgstr "时间"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "To"
 msgstr "收件人"
 

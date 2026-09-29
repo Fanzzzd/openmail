@@ -199,6 +199,8 @@ export const ThreadQuery = Schema.Struct({
   unreadOnly: Schema.optionalKey(Schema.Boolean),
   starredOnly: Schema.optionalKey(Schema.Boolean),
   search: Schema.optionalKey(Schema.String),
+  /** One row per message instead of per conversation (conversation grouping off). */
+  flat: Schema.optionalKey(Schema.Boolean),
   /** Page cursor: the `date` of the oldest thread already shown. */
   before: Schema.optionalKey(Schema.Number),
   limit: Schema.optionalKey(Schema.Int),
@@ -310,16 +312,49 @@ export const UNDO_SEND_SECONDS = [0, 5, 10, 20, 30] as const;
 export const LANGUAGES = ["system", "zh-CN", "en"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
+// Reading settings
+
+/** Seconds a thread stays open before it is marked read; "manual" never marks it. */
+export const MARK_READ_DELAYS = [0, 1, 3, 5, "manual"] as const;
+export type MarkReadDelay = (typeof MARK_READ_DELAYS)[number];
+
+/** Seven text sizes for the reader, as a percentage of the normal size. */
+export const READER_ZOOMS = [80, 90, 100, 110, 125, 150, 175] as const;
+export type ReaderZoom = (typeof READER_ZOOMS)[number];
+
+/**
+ * The background messages open on. Many HTML mails assume white, so "light"
+ * keeps them white in dark mode; "theme" follows the app's appearance.
+ */
+export const MESSAGE_BACKGROUNDS = ["light", "theme"] as const;
+
+export const THREAD_ORDERS = ["oldest", "newest"] as const;
+
 /** App preferences, stored in core so the CLI and a mobile app see the same values. */
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
+  markReadDelay: Schema.Literals(MARK_READ_DELAYS),
+  readerZoom: Schema.Literals(READER_ZOOMS),
+  messageBackground: Schema.Literals(MESSAGE_BACKGROUNDS),
+  /** Group messages into conversations. Off lists every message on its own. */
+  threadGrouping: Schema.Boolean,
+  /** Message order inside an open conversation. */
+  threadOrder: Schema.Literals(THREAD_ORDERS),
 });
 export type Prefs = typeof Prefs.Type;
 
-export const DEFAULT_PREFS: Prefs = { undoSendSeconds: 5, language: "system" };
+export const DEFAULT_PREFS: Prefs = {
+  undoSendSeconds: 5,
+  language: "system",
+  markReadDelay: 0,
+  readerZoom: 100,
+  messageBackground: "light",
+  threadGrouping: true,
+  threadOrder: "oldest",
+};
 
 /** Signatures differ for new messages and for replies and forwards. */
 export const SignatureKind = Schema.Literals(["new", "reply"]);

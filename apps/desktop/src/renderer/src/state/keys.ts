@@ -27,6 +27,8 @@ export const Keys = {
   templates: "templates",
   /** Recipient suggestions and the addresses hidden from them. */
   contacts: "contacts",
+  /** Senders and domains allowed to load remote images. */
+  imageSenders: "image-senders",
 } as const;
 
 export const threadKey = (id: string) => `${Keys.thread}:${id}`;
@@ -55,4 +57,5 @@ export const MAIL_KEYS = [
   Keys.signatures,
   Keys.templates,
   Keys.contacts,
+  Keys.imageSenders,
 ];

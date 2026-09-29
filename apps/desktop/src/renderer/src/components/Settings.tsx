@@ -15,14 +15,16 @@ import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from ".
 import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
 import { ComposeSettings } from "./ComposeSettings";
 import { ProviderIcon } from "./ProviderIcon";
+import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-type Tab = "accounts" | "general" | "compose" | "ai" | "log";
+type Tab = "accounts" | "general" | "reading" | "compose" | "ai" | "log";
 
 const TABS: { id: Tab; label: MessageDescriptor }[] = [
   { id: "accounts", label: msg`Accounts` },
   { id: "general", label: msg`General` },
+  { id: "reading", label: msg`Reading` },
   { id: "compose", label: msg`Compose` },
   { id: "ai", label: msg`AI Access` },
   { id: "log", label: msg`Activity` },
@@ -71,6 +73,9 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
         </Tabs.Panel>
         <Tabs.Panel value="general" className={panel}>
           <General />
+        </Tabs.Panel>
+        <Tabs.Panel value="reading" className={panel}>
+          <ReadingSettings />
         </Tabs.Panel>
         <Tabs.Panel value="compose" className={panel}>
           <ComposeSettings accounts={accounts} />

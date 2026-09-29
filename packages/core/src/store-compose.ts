@@ -1,6 +1,6 @@
 /**
- * The Store's SQL for writing mail: drafts, preferences, signatures,
- * templates and recipient suggestions. Part of the Store service (store.ts
+ * The Store's SQL for writing and reading settings: drafts, preferences,
+ * signatures, templates, recipient suggestions and the remote image allowlist. Part of the Store service (store.ts
  * spreads these into it); split out to keep each file readable.
  */
 import { Clock, Effect, Option, Schema } from "effect";
@@ -21,6 +21,7 @@ import {
   type ThreadSummary,
 } from "./domain.js";
 import { NotFound } from "./errors.js";
+import { imageSenderKey } from "./reading.js";
 import type { StoredDraft } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 
@@ -58,6 +59,7 @@ const TemplateRow = Schema.Struct({
 const ContactRow = Schema.Struct({ address: Schema.String, name: Schema.NullOr(Schema.String) });
 const AddressRow = Schema.Struct({ address: Schema.String });
 const IdRow = Schema.Struct({ id: Schema.String });
+const EntryRow = Schema.Struct({ entry: Schema.String });
 
 function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
   const remote: DraftRemote | null =
@@ -232,13 +234,20 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
   const prefs = all(PrefRow)(sql`SELECT key, value_json FROM prefs`).pipe(
     Effect.map((rows): Prefs => {
       const stored = new Map(rows.map((r) => [r.key, r.value_json]));
+      const f = Prefs.fields;
+      const d = DEFAULT_PREFS;
       return {
-        undoSendSeconds: pref(
-          Prefs.fields.undoSendSeconds,
-          stored.get("undoSendSeconds"),
-          DEFAULT_PREFS.undoSendSeconds,
+        undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
+        language: pref(f.language, stored.get("language"), d.language),
+        markReadDelay: pref(f.markReadDelay, stored.get("markReadDelay"), d.markReadDelay),
+        readerZoom: pref(f.readerZoom, stored.get("readerZoom"), d.readerZoom),
+        messageBackground: pref(
+          f.messageBackground,
+          stored.get("messageBackground"),
+          d.messageBackground,
         ),
-        language: pref(Prefs.fields.language, stored.get("language"), DEFAULT_PREFS.language),
+        threadGrouping: pref(f.threadGrouping, stored.get("threadGrouping"), d.threadGrouping),
+        threadOrder: pref(f.threadOrder, stored.get("threadOrder"), d.threadOrder),
       };
     }),
     Effect.withSpan("Store.prefs"),
@@ -381,7 +390,31 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       : run(sql`DELETE FROM hidden_contacts WHERE address = ${key}`);
   });
 
+  // Remote images
+
+  const imageSenders = all(EntryRow)(sql`SELECT entry FROM image_senders ORDER BY entry`).pipe(
+    Effect.map((rows) => rows.map((r) => r.entry)),
+    Effect.withSpan("Store.imageSenders"),
+  );
+
+  const setImageSender = Effect.fn("Store.setImageSender")(function* (
+    entry: string,
+    allowed: boolean,
+  ) {
+    const key = imageSenderKey(entry);
+    if (!key) return;
+    if (!allowed) {
+      yield* run(sql`DELETE FROM image_senders WHERE entry = ${key}`);
+      return;
+    }
+    const now = yield* Clock.currentTimeMillis;
+    yield* run(sql`INSERT INTO image_senders (entry, created_at) VALUES (${key}, ${now})
+      ON CONFLICT DO NOTHING`);
+  });
+
   return {
+    imageSenders,
+    setImageSender,
     localDrafts,
     getDraft,
     draftByRemoteMessage,

@@ -487,10 +487,23 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       );
     };
 
+    /** Conversation grouping off: each message in the view is its own row, newest first. */
+    const messageList = (q: ThreadQuery, limit: number) =>
+      all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m
+        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
+        ORDER BY m.date DESC LIMIT ${limit}`).pipe(
+        Effect.map((rows) =>
+          rows.map((r): ThreadSummary => {
+            const summary = toSummary(r);
+            return { ...summary, threadCount: 1, participants: [summary.from] };
+          }),
+        ),
+      );
+
     const listThreads = Effect.fn("Store.listThreads")(function* (q: ThreadQuery) {
       const limit = q.limit ?? 50;
       if (q.search !== undefined) return yield* search(q, q.search, limit);
-      const threads = yield* threadList(q, limit);
+      const threads = yield* (q.flat ? messageList : threadList)(q, limit);
       // The Drafts list also shows drafts the provider has no copy of yet.
       const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
       if (q.mailbox !== "drafts" || !plain) return threads;
@@ -830,6 +843,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       releasePendingOp,
       removePendingOp,
       failPendingOp,
+      imageSenders: compose.imageSenders,
+      setImageSender: compose.setImageSender,
       getDraft: compose.getDraft,
       draftByRemoteMessage: compose.draftByRemoteMessage,
       draftByProposal: compose.draftByProposal,

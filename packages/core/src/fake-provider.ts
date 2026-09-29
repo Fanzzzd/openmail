@@ -1,5 +1,6 @@
 import { Effect, Option, Stream } from "effect";
 
+import { attachmentFromRaw } from "./attachments.js";
 import { buildMime } from "./compose.js";
 import type { DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
 import { PermanentError, type ProviderFailure } from "./errors.js";
@@ -151,6 +152,21 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
           if (!id || !draft) return;
           server.drafts.delete(id);
           server.messages.delete(draft.messageId);
+        }),
+      ),
+    fetchAttachment: (_account, providerId, ref) =>
+      Effect.andThen(
+        failOnce,
+        Effect.suspend(() => {
+          const raw = server.raw.get(providerId);
+          if (!raw) return Effect.fail(new PermanentError({ message: `No source ${providerId}` }));
+          return attachmentFromRaw(raw, ref).pipe(
+            Effect.flatMap((bytes) =>
+              bytes
+                ? Effect.succeed(bytes)
+                : Effect.fail(new PermanentError({ message: `No attachment ${ref.filename}` })),
+            ),
+          );
         }),
       ),
     fetchRaw: (account, providerId) =>

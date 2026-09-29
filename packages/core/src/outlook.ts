@@ -1,6 +1,7 @@
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
+import { type AttachmentRef, pickAttachment } from "./attachments.js";
 import type {
   Account,
   Address,
@@ -146,6 +147,16 @@ const AttachmentList = Schema.Struct({
       name: Schema.String,
       contentType: Schema.String,
       size: Schema.Number,
+      isInline: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
+});
+
+const AttachmentNames = Schema.Struct({
+  value: Schema.Array(
+    Schema.Struct({
+      id: Schema.String,
+      name: Schema.String,
       isInline: Schema.optionalKey(Schema.Boolean),
     }),
   ),
@@ -748,6 +759,31 @@ export const makeOutlook: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
+  const fetchAttachment = Effect.fn("Outlook.fetchAttachment")(
+    function* (account: Account, providerId: string, ref: AttachmentRef) {
+      // The same list, order and filter as the attachments stored on the message.
+      const { value } = yield* get(
+        account.id,
+        AttachmentNames,
+        `/me/messages/${providerId}/attachments?$select=id,name,isInline`,
+      );
+      const found = pickAttachment(
+        value.filter((a) => !a.isInline),
+        (a) => a.name,
+        ref,
+      );
+      if (!found) {
+        return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
+      }
+      // $value is the file for file attachments and MIME for attached messages.
+      return yield* getBytes(
+        account.id,
+        `/me/messages/${providerId}/attachments/${found.id}/$value`,
+      );
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
   return {
     connect,
     pull,
@@ -756,6 +792,7 @@ export const makeOutlook: Effect.Effect<
     saveDraft,
     deleteDraft,
     fetchRaw,
+    fetchAttachment,
   } satisfies ProviderAdapter;
 });
 

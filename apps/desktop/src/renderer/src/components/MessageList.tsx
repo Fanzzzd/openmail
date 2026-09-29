@@ -42,6 +42,8 @@ export interface RowActions {
     mode: "reply" | "replyAll" | "forward",
     asAttachment?: boolean,
   ) => void;
+  /** Opens the thread in a window of its own; also on double-click. */
+  onOpenWindow: (thread: ThreadSummary) => void;
 }
 
 export function MessageList({
@@ -152,6 +154,7 @@ export function MessageList({
               rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
               showAccount={showAccount}
               onSelect={() => onSelect(m.id)}
+              onOpen={() => rowActions.onOpenWindow(m)}
             />
           ))}
         </ContextMenuTrigger>
@@ -172,6 +175,7 @@ function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActio
         labels={actions.labels.filter((l) => l.accountId === thread.accountId)}
         onOp={(op) => actions.onOp(thread, state, op)}
         onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
+        onOpenWindow={() => actions.onOpenWindow(thread)}
       />
     </ContextMenuContent>
   );
@@ -213,6 +217,7 @@ function Row({
   rule,
   showAccount,
   onSelect,
+  onOpen,
 }: {
   thread: ThreadSummary;
   labels: Map<string, Label>;
@@ -223,6 +228,8 @@ function Row({
   rule: boolean;
   showAccount: boolean;
   onSelect: () => void;
+  /** Double-click: open in a window of its own. */
+  onOpen: () => void;
 }) {
   const { i18n } = useLingui();
   const muted = accent ? "text-white/75" : "text-neutral-500 dark:text-neutral-400";
@@ -232,6 +239,7 @@ function Row({
       type="button"
       data-id={m.id}
       onClick={onSelect}
+      onDoubleClick={onOpen}
       className={`relative block w-full rounded-lg py-2.5 pr-3 pl-7 text-left ${
         menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
       } ${

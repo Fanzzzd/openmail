@@ -165,6 +165,25 @@ it.effect("threads collapse to their newest message and roll up unread", () =>
       );
       assert.strictEqual((yield* store.listThreads({ before: 2 })).length, 0);
       assert.deepStrictEqual(yield* store.threadMessageIds(`${id}/b`), [`${id}/a`, `${id}/b`]);
+
+      // Grouping off: every message is a row, and paging goes by message date.
+      const flat = yield* store.listThreads({ flat: true });
+      assert.deepStrictEqual(
+        flat.map((t) => [t.id, t.threadCount, t.isUnread]),
+        [
+          [`${id}/c`, 1, true],
+          [`${id}/b`, 1, false],
+          [`${id}/a`, 1, true],
+        ],
+      );
+      assert.deepStrictEqual(
+        (yield* store.listThreads({ flat: true, before: 2 })).map((t) => t.id),
+        [`${id}/a`],
+      );
+      assert.deepStrictEqual(
+        (yield* store.listThreads({ flat: true, unreadOnly: true })).map((t) => t.id),
+        [`${id}/c`, `${id}/a`],
+      );
     }),
   ),
 );

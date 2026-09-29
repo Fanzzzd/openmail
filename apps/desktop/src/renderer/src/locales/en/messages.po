@@ -38,9 +38,21 @@ msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} unre
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
+msgstr "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
+msgstr "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
 msgstr "{count} unread"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "{delay, plural, one {# second} other {# seconds}}"
+msgstr "{delay, plural, one {# second} other {# seconds}}"
 
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
@@ -62,6 +74,10 @@ msgstr "{name} client"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# conversation} other {# conversations}}"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
+msgstr "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, one {# second} other {# seconds}}"
@@ -70,6 +86,10 @@ msgstr "{seconds, plural, one {# second} other {# seconds}}"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
+msgstr "A domain covers its subdomains. Known trackers stay blocked for these senders too."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Account"
@@ -85,6 +105,7 @@ msgid "Action"
 msgstr "Action"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Action failed: {reason}"
 msgstr "Action failed: {reason}"
 
@@ -92,7 +113,12 @@ msgstr "Action failed: {reason}"
 msgid "Activity"
 msgstr "Activity"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Actual size"
+msgstr "Actual size"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Add"
 msgstr "Add"
 
@@ -137,6 +163,10 @@ msgstr "Added as you write, and switched when you change the From account. Signa
 #: src/renderer/src/App.tsx
 msgid "Added star"
 msgstr "Added star"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Address or domain"
+msgstr "Address or domain"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
@@ -196,6 +226,26 @@ msgstr "All accounts in this space"
 msgid "All Mail"
 msgstr "All Mail"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Always from this sender"
+msgstr "Always from this sender"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always light"
+msgstr "Always light"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {address}"
+msgstr "Always load images from {address}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {domain}"
+msgstr "Always load images from {domain}"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always load remote images from"
+msgstr "Always load remote images from"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "App-specific password"
@@ -238,6 +288,14 @@ msgstr "Back"
 msgid "Bcc"
 msgstr "Bcc"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Bigger text"
+msgstr "Bigger text"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Blocked before loading:"
+msgstr "Blocked before loading:"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Body"
 msgstr "Body"
@@ -245,6 +303,10 @@ msgstr "Body"
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "Can't find this account."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this attachment."
+msgstr "Can't find this attachment."
 
 #: src/renderer/src/errors.ts
 msgid "Can't find this draft."
@@ -282,6 +344,7 @@ msgid "Cancel"
 msgstr "Cancel"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "Cc"
 msgstr "Cc"
 
@@ -300,6 +363,7 @@ msgstr "Choose your email provider."
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/RawMessage.tsx
 msgid "Close"
 msgstr "Close"
 
@@ -331,13 +395,37 @@ msgstr "Continue editing"
 msgid "Conversation actions"
 msgstr "Conversation actions"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Conversations"
+msgstr "Conversations"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copied"
+msgstr "Copied"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copy"
+msgstr "Copy"
+
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
 msgstr "Couldn't discard: {reason}"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Couldn't get the attachment: {reason}"
+msgstr "Couldn't get the attachment: {reason}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't print: {reason}"
+msgstr "Couldn't print: {reason}"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
 msgstr "Couldn't save"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't save the PDF: {reason}"
+msgstr "Couldn't save the PDF: {reason}"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't send: {reason}"
@@ -362,6 +450,14 @@ msgstr "Create an app-specific password under Sign-In and Security in your Apple
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
 msgstr "Custom icon"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Dark background"
+msgstr "Dark background"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Date"
+msgstr "Date"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -448,6 +544,7 @@ msgid "Forward as attachment"
 msgstr "Forward as attachment"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "From"
 msgstr "From"
 
@@ -471,6 +568,18 @@ msgstr "Generate authorization code"
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
 msgstr "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Group messages into conversations"
+msgstr "Group messages into conversations"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Headers"
+msgstr "Headers"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
+msgstr "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Icon"
 msgstr "Icon"
@@ -491,6 +600,10 @@ msgstr "Important"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "In “{elsewhere}”"
 msgstr "In “{elsewhere}”"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
+msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -526,13 +639,21 @@ msgstr "Language"
 msgid "Last sync failed"
 msgstr "Last sync failed"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Light background"
+msgstr "Light background"
+
+#: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "Load images"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
 msgstr "Loading settings…"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Loading the original from the server…"
+msgstr "Loading the original from the server…"
 
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
@@ -541,6 +662,14 @@ msgstr "Lost the connection to the background process."
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Mailboxes"
 msgstr "Mailboxes"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Manually"
+msgstr "Manually"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Many HTML emails are designed for white. Each message's menu can switch its background."
+msgstr "Many HTML emails are designed for white. Each message's menu can switch its background."
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -553,6 +682,7 @@ msgid "Mark as not important"
 msgstr "Mark as not important"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as read"
 msgstr "Mark as read"
@@ -585,6 +715,26 @@ msgstr "Marked as read"
 #: src/renderer/src/App.tsx
 msgid "Marked as unread"
 msgstr "Marked as unread"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Match appearance"
+msgstr "Match appearance"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Message actions"
+msgstr "Message actions"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message background"
+msgstr "Message background"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message order in a conversation"
+msgstr "Message order in a conversation"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "More actions"
+msgstr "More actions"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
@@ -643,6 +793,14 @@ msgstr "New messages"
 msgid "New space"
 msgstr "New space"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Newest first"
+msgstr "Newest first"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "news@shop.com or shop.com"
+msgstr "news@shop.com or shop.com"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No accounts yet"
 msgstr "No accounts yet"
@@ -687,6 +845,10 @@ msgstr "Not synced"
 msgid "Off"
 msgstr "Off"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Oldest first"
+msgstr "Oldest first"
+
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
@@ -694,6 +856,15 @@ msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow th
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open"
+msgstr "Open"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Open in New Window"
+msgstr "Open in New Window"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
@@ -707,9 +878,17 @@ msgstr "openmail signs in with an OAuth client you register yourself. First ente
 msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
 msgstr "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Order"
+msgstr "Order"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Organize directly"
 msgstr "Organize directly"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Original message"
+msgstr "Original message"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Original message (.eml)"
@@ -740,6 +919,14 @@ msgstr "Port"
 msgid "Primary"
 msgstr "Primary"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Print message…"
+msgstr "Print message…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Print…"
+msgstr "Print…"
+
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Promotions"
@@ -753,6 +940,10 @@ msgstr "QQ Mail"
 msgid "Read only"
 msgstr "Read only"
 
+#: src/renderer/src/components/Settings.tsx
+msgid "Reading"
+msgstr "Reading"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Reject"
 msgstr "Reject"
@@ -761,10 +952,11 @@ msgstr "Reject"
 msgid "Reject suggestion"
 msgstr "Reject suggestion"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Remote images are blocked so the sender can't tell if you read this."
 
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove"
 msgstr "Remove"
@@ -837,6 +1029,10 @@ msgstr "Restore"
 msgid "Review and Send"
 msgstr "Review and Send"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Right away"
+msgstr "Right away"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "Run"
@@ -847,13 +1043,39 @@ msgstr "Run"
 msgid "Save"
 msgstr "Save"
 
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save {0}"
+msgstr "Save {0}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save all…"
+msgstr "Save all…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save as PDF…"
+msgstr "Save as PDF…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save message as PDF…"
+msgstr "Save message as PDF…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
 msgstr "Save this message as a template…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save…"
+msgstr "Save…"
+
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "Saved"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Saved as PDF"
+msgstr "Saved as PDF"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved on this Mac. Syncs when online."
@@ -931,6 +1153,10 @@ msgstr "Show only starred"
 msgid "Show only unread"
 msgstr "Show only unread"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Show original"
+msgstr "Show original"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
@@ -947,6 +1173,10 @@ msgstr "Sign-in failed: {reason}"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Signatures"
 msgstr "Signatures"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Smaller text"
+msgstr "Smaller text"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SMTP encryption"
@@ -989,6 +1219,14 @@ msgstr "Starred"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
 msgstr "STARTTLS (usually 587)"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {address}"
+msgstr "Stop loading images from {address}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {domain}"
+msgstr "Stop loading images from {domain}"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx
@@ -1048,6 +1286,10 @@ msgstr "Templates"
 msgid "Templates…"
 msgstr "Templates…"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Text size"
+msgstr "Text size"
+
 #: src/renderer/src/errors.ts
 msgid "The {client} OAuth client is not set up yet."
 msgstr "The {client} OAuth client is not set up yet."
@@ -1063,6 +1305,10 @@ msgstr "The button below opens the {name} sign-in page. openmail only reads your
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "The message mentions an attachment, but none is added."
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "The rest is left out here. Copy gets the whole message."
+msgstr "The rest is left out here. Copy gets the whole message."
 
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
@@ -1095,6 +1341,7 @@ msgid "Time"
 msgstr "Time"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
 msgid "To"
 msgstr "To"
 
