@@ -19,6 +19,7 @@
     "@lingui/react": "^6.8.0",
     "@openmail/core": "workspace:*",
     "effect": "4.0.0-rc.118",
+    "react-resizable-panels": "^4.14.1",
     "scheduler": "^0.27.0"
   },
   "devDependencies": {

@@ -6,6 +6,7 @@ import { applySignature, DEFAULT_PREFS, holdSend } from "@openmail/core/schema";
 import { Effect, Fiber } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
 import type { Account, MailOp, OutgoingMessage, Profile, Proposal } from "../../shared/api";
 import { AddAccountDialog } from "./components/AddAccountDialog";
@@ -15,6 +16,7 @@ import { Overview } from "./components/Overview";
 import { ProfileEditor } from "./components/ProfileEditor";
 import { Proposals } from "./components/Proposals";
 import { Reader } from "./components/Reader";
+import { ResizeHandle } from "./components/ResizeHandle";
 import { Settings } from "./components/Settings";
 import { Sidebar } from "./components/Sidebar";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
@@ -545,85 +547,127 @@ export function App() {
   const user = viewAccount?.email.split("@")[0];
   const title = viewAccount ? t`${baseTitle}: ${user}` : baseTitle;
 
+  // Pane widths persist per layout: mail has three panes, the overview and
+  // the empty state two.
+  const paneMode = !hasAccounts ? "empty" : view.space === OVERVIEW ? "overview" : "mail";
+  const panes = useDefaultLayout({
+    id: `openmail:panes:${paneMode}`,
+    panelIds: paneMode === "mail" ? ["sidebar", "list", "reader"] : ["sidebar", "main"],
+    storage: localStorage,
+  });
+
   return (
-    <div className="flex h-full text-[13px] text-neutral-900 dark:text-neutral-100">
-      <Sidebar
-        view={view}
-        // The overview has no list; picking a mailbox there opens it in All.
-        onView={(v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v)}
-        onSpace={switchSpace}
-        onEditProfile={setEditing}
-        accounts={accountList}
-        profiles={profileList}
-        unread={counts}
-        syncState={syncState}
-        progress={progress}
-        proposals={proposals.length}
-        onAddAccount={() => setDialog("add")}
-        onCompose={() => startCompose("new")}
-        onReauth={reauth}
-        onProposals={() => setDialog("proposals")}
-        onSettings={() => setDialog("settings")}
-      />
-      {!hasAccounts ? (
-        <main className="flex-1 bg-white dark:bg-neutral-900">
-          <div className="drag h-13" />
-        </main>
-      ) : view.space === OVERVIEW ? (
-        <Overview
-          accounts={accountList}
-          profiles={profileList}
-          unread={counts}
-          syncState={syncState}
-          onOpen={switchSpace}
-          onEditProfile={setEditing}
-        />
-      ) : (
-        <>
-          <MessageList
-            title={title}
-            threads={list}
-            loading={threads.loading}
-            showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
-            searching={search !== ""}
-            filters={filters}
-            onFilters={setFilters}
-            labels={labelMap}
-            selectedId={selectedId}
-            selectionSource={selectionSource}
-            onSelect={(id) => {
-              if (view.mailbox !== "drafts") {
-                select(id, "mouse");
-                return;
-              }
-              // Drafts open in the compose window.
-              setSelectedId(id);
-              openSavedDraft(id);
-            }}
-            onEndReached={() => {
-              if (threads.canLoadMore) loadMore();
-            }}
+    <div className="h-full text-[13px] text-neutral-900 dark:text-neutral-100">
+      <Group
+        key={paneMode}
+        orientation="horizontal"
+        className="h-full"
+        defaultLayout={panes.defaultLayout}
+        onLayoutChanged={panes.onLayoutChanged}
+        resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
+      >
+        <Panel
+          id="sidebar"
+          defaultSize={232}
+          minSize={190}
+          maxSize={380}
+          groupResizeBehavior="preserve-pixel-size"
+        >
+          <Sidebar
+            view={view}
+            // The overview has no list; picking a mailbox there opens it in All.
+            onView={(v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v)}
+            onSpace={switchSpace}
+            onEditProfile={setEditing}
+            accounts={accountList}
+            profiles={profileList}
+            unread={counts}
+            syncState={syncState}
+            progress={progress}
+            proposals={proposals.length}
+            onAddAccount={() => setDialog("add")}
+            onCompose={() => startCompose("new")}
+            onReauth={reauth}
+            onProposals={() => setDialog("proposals")}
+            onSettings={() => setDialog("settings")}
           />
-          <Reader
-            messageId={selectedId}
-            query={query}
-            onQuery={setQuery}
-            searchRef={searchRef}
-            onEditDraft={openSavedDraft}
-            toolbar={
-              threadState && (
-                <ThreadActions
-                  state={threadState}
-                  mailbox={view.mailbox}
-                  labels={threadLabels}
-                  onOp={(op) => act(op)}
-                  onCompose={startCompose}
-                />
-              )
-            }
-          />
-        </>
-      )}
+        </Panel>
+        <ResizeHandle />
+        {!hasAccounts ? (
+          <Panel id="main" minSize={360}>
+            <main className="h-full bg-white dark:bg-neutral-900">
+              <div className="drag h-13" />
+            </main>
+          </Panel>
+        ) : view.space === OVERVIEW ? (
+          <Panel id="main" minSize={360}>
+            <Overview
+              accounts={accountList}
+              profiles={profileList}
+              unread={counts}
+              syncState={syncState}
+              onOpen={switchSpace}
+              onEditProfile={setEditing}
+            />
+          </Panel>
+        ) : (
+          <>
+            <Panel
+              id="list"
+              defaultSize={380}
+              minSize={280}
+              maxSize={720}
+              groupResizeBehavior="preserve-pixel-size"
+            >
+              <MessageList
+                title={title}
+                threads={list}
+                loading={threads.loading}
+                showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
+                searching={search !== ""}
+                filters={filters}
+                onFilters={setFilters}
+                labels={labelMap}
+                selectedId={selectedId}
+                selectionSource={selectionSource}
+                onSelect={(id) => {
+                  if (view.mailbox !== "drafts") {
+                    select(id, "mouse");
+                    return;
+                  }
+                  // Drafts open in the compose window.
+                  setSelectedId(id);
+                  openSavedDraft(id);
+                }}
+                onEndReached={() => {
+                  if (threads.canLoadMore) loadMore();
+                }}
+              />
+            </Panel>
+            <ResizeHandle />
+            <Panel id="reader" minSize={360}>
+              <Reader
+                messageId={selectedId}
+                query={query}
+                onQuery={setQuery}
+                searchRef={searchRef}
+                onEditDraft={openSavedDraft}
+                toolbar={
+                  threadState && (
+                    <ThreadActions
+                      state={threadState}
+                      mailbox={view.mailbox}
+                      labels={threadLabels}
+                      onOp={(op) => act(op)}
+                      onCompose={startCompose}
+                    />
+                  )
+                }
+              />
+            </Panel>
+          </>
+        )}
+      </Group>
       {editing && (
         <ProfileEditor
           profile={editing === "new" ? undefined : editing}

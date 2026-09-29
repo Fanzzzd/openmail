@@ -146,7 +146,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex w-58 shrink-0 flex-col border-r border-black/5 bg-neutral-100/60 dark:border-white/5 dark:bg-neutral-950/70">
+    <aside className="flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70">
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
         <button
           type="button"

@@ -52,7 +52,7 @@ export function MessageList({
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
 
   return (
-    <section className="flex w-[380px] shrink-0 flex-col border-r border-black/5 bg-white dark:border-white/5 dark:bg-neutral-900">
+    <section className="flex h-full w-full flex-col bg-white dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
           {searching ? <Trans>Search results</Trans> : title}

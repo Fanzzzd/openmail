@@ -26,7 +26,7 @@ export function Reader({ messageId, query, onQuery, searchRef, toolbar, onEditDr
   const messages = thread._tag === "Some" ? thread.value : undefined;
 
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-white dark:bg-neutral-900">
+    <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-3 px-4">
         <div className="min-w-0 flex-1">{messageId && messages ? toolbar : null}</div>
         <label className="flex h-7 w-60 items-center gap-1.5 rounded-md border border-black/10 px-2 dark:border-white/10">

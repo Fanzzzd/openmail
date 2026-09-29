@@ -51,7 +51,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
   const accountCount = accounts.length;
 
   return (
-    <main className="flex min-w-0 flex-1 flex-col bg-white dark:bg-neutral-900">
+    <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-3 px-7">
         <h1 className="text-[17px] font-bold">
           <Trans>Overview</Trans>

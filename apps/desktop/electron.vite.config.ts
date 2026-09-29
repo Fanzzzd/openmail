@@ -31,7 +31,12 @@ export default defineConfig({
     // from optimizing one mid-session, which loads a second copy of React
     // and breaks hooks until a restart. Add new subpaths here.
     optimizeDeps: {
-      include: ["@base-ui/react/radio", "@base-ui/react/radio-group", "@base-ui/react/tabs"],
+      include: [
+        "@base-ui/react/radio",
+        "@base-ui/react/radio-group",
+        "@base-ui/react/tabs",
+        "react-resizable-panels",
+      ],
     },
   },
 });
