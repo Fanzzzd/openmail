@@ -1,9 +1,13 @@
 import { Effect, Option, Stream } from "effect";
 
-import type { IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
-import type { ProviderFailure } from "./errors.js";
-import type { Change, ConnectInput, ProviderAdapter } from "./services.js";
+import { buildMime } from "./compose.js";
+import type { DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
+import { PermanentError, type ProviderFailure } from "./errors.js";
+import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "./services.js";
 import { applyOpToLabels } from "./store.js";
+
+/** Ids handed out by fake servers; unique across servers so tests never mix them up. */
+let counter = 0;
 
 /** A provider's server side, in memory. Tests read and change it directly. */
 export interface FakeServer {
@@ -16,7 +20,13 @@ export interface FakeServer {
     message: OutgoingMessage;
     original: Option.Option<{ providerId: string; threadId: string }>;
   }[];
-  /** The next push, send or pull fails with this, once. */
+  /** Drafts by draft id. Like Gmail, each save gives the draft a new message id. */
+  drafts: Map<string, { messageId: string; push: DraftPush }>;
+  /** Raw MIME the adapter hands out by message id; others are built from `messages`. */
+  raw: Map<string, Uint8Array>;
+  /** Every draft save and delete, in order. */
+  draftLog: ({ kind: "save"; push: DraftPush } | { kind: "delete"; remote: DraftRemote })[];
+  /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
 }
 
@@ -27,6 +37,9 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     connects: [],
     pushed: [],
     sent: [],
+    drafts: new Map(),
+    raw: new Map(),
+    draftLog: [],
   };
 }
 
@@ -35,6 +48,7 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
  * pull; the cursor counts pulls so tests can see checkpoints land.
  */
 export function makeFakeProvider(server: FakeServer): ProviderAdapter {
+  let pulled = new Set<string>();
   const failOnce = Effect.suspend(() => {
     const failure = server.failNext;
     server.failNext = undefined;
@@ -50,12 +64,16 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
       Stream.unwrap(
         Effect.map(failOnce, () => {
           const next = String(Number(Option.getOrElse(cursor, () => "0")) + 1);
+          // Messages gone since the last pull are reported deleted, as Gmail history does.
+          const gone = [...pulled].filter((id) => !server.messages.has(id));
+          pulled = new Set(server.messages.keys());
           const changes: Change[] = [
             { _tag: "Labels", labels: [] },
             ...[...server.messages.values()].map((message): Change => ({
               _tag: "Upsert",
               message,
             })),
+            ...gone.map((providerId): Change => ({ _tag: "Delete", providerId })),
             { _tag: "Progress", fetched: server.messages.size, total: server.messages.size },
             { _tag: "Cursor", cursor: next },
           ];
@@ -85,5 +103,79 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
           server.sent.push({ message, original });
         }),
       ),
+    saveDraft: (_account, push) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync((): DraftRemote => {
+          server.draftLog.push({ kind: "save", push });
+          const known = push.remote?.draftId ?? findDraft(server, push.remote?.messageId);
+          const draftId = known && server.drafts.has(known) ? known : `d${++counter}`;
+          const previous = server.drafts.get(draftId);
+          if (previous) server.messages.delete(previous.messageId);
+          const messageId = `dm${++counter}`;
+          server.drafts.set(draftId, { messageId, push });
+          const m = push.message;
+          server.messages.set(messageId, {
+            providerId: messageId,
+            threadId: Option.match(push.original, {
+              onNone: () => `t-${messageId}`,
+              onSome: (o) => o.threadId,
+            }),
+            subject: m.subject,
+            from: { name: "", address: server.email },
+            to: m.to,
+            cc: m.cc,
+            date: 2_000 + counter,
+            snippet: m.text.slice(0, 50),
+            bodyText: m.text,
+            bodyHtml: m.html ?? "",
+            labels: ["DRAFT"],
+            attachments: m.attachments.map((a) => ({
+              filename: a.filename,
+              mimeType: a.mimeType,
+              size: (a.content.length * 3) / 4,
+            })),
+            isUnread: false,
+            isStarred: false,
+          });
+          return { draftId, messageId };
+        }),
+      ),
+    deleteDraft: (_account, remote) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          server.draftLog.push({ kind: "delete", remote });
+          const id = remote.draftId ?? findDraft(server, remote.messageId);
+          const draft = id === undefined ? undefined : server.drafts.get(id);
+          if (!id || !draft) return;
+          server.drafts.delete(id);
+          server.messages.delete(draft.messageId);
+        }),
+      ),
+    fetchRaw: (account, providerId) =>
+      Effect.andThen(
+        failOnce,
+        Effect.suspend(() => {
+          const raw = server.raw.get(providerId);
+          if (raw) return Effect.succeed(raw);
+          const m = server.messages.get(providerId);
+          if (!m) return Effect.fail(new PermanentError({ message: `No message ${providerId}` }));
+          return buildMime(m.from.address ? m.from : { name: "", address: account.email }, {
+            to: m.to,
+            cc: m.cc,
+            bcc: [],
+            subject: m.subject,
+            text: m.bodyText,
+            attachments: [],
+          }).pipe(Effect.map((b) => new Uint8Array(b)));
+        }),
+      ),
   };
+}
+
+function findDraft(server: FakeServer, messageId: string | null | undefined): string | undefined {
+  if (!messageId) return undefined;
+  for (const [id, d] of server.drafts) if (d.messageId === messageId) return id;
+  return undefined;
 }

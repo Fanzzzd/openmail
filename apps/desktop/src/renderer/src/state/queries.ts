@@ -94,3 +94,30 @@ export const clientSetupAtom = MailClient.query("ClientSetup", undefined, {
 
 /** Server settings and notes for the IMAP providers core knows. Never changes. */
 export const imapPresetsAtom = MailClient.query("ImapPresets", undefined, always);
+
+export const prefsAtom = MailClient.query("Prefs", undefined, {
+  reactivityKeys: [Keys.prefs],
+  ...always,
+});
+
+export const signaturesAtom = MailClient.query("Signatures", undefined, {
+  reactivityKeys: [Keys.signatures],
+  ...always,
+});
+
+export const templatesAtom = MailClient.query("Templates", undefined, {
+  reactivityKeys: [Keys.templates],
+  ...cached,
+});
+
+export const hiddenContactsAtom = MailClient.query("HiddenContacts", undefined, {
+  reactivityKeys: [Keys.contacts],
+  ...cached,
+});
+
+/** Recipient suggestions for what is typed in a To, Cc or Bcc field, sending from `from`. */
+export const suggestionsAtom = (query: string, from: string | undefined) =>
+  MailClient.query("SuggestContacts", from === undefined ? { query } : { query, exclude: from }, {
+    reactivityKeys: [Keys.contacts],
+    timeToLive: Duration.seconds(30),
+  });

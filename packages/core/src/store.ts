@@ -5,7 +5,7 @@
  */
 import { Clock, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { isSqlError, type SqlError } from "effect/sql/SqlError";
+import { isSqlError } from "effect/sql/SqlError";
 import type { Fragment } from "effect/sql/Statement";
 
 import {
@@ -19,7 +19,7 @@ import {
   ImapSettings,
   type IncomingMessage,
   type Label,
-  MailOp,
+  type MailOp,
   type MailboxView,
   type Message,
   type MessageSummary,
@@ -27,11 +27,14 @@ import {
   type ProfileInput,
   type Proposal,
   Provider,
+  QueuedOp,
   type ThreadQuery,
   type ThreadSummary,
 } from "./domain.js";
 import { NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
+import { all, first, run } from "./sql-rows.js";
+import { makeComposeStore } from "./store-compose.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
 // so the mapping functions below only rename fields.
@@ -70,7 +73,12 @@ const MessageRow = Schema.Struct({
   cc_json: Schema.fromJsonString(Schema.Array(Address)),
   body_text: Schema.String,
   body_html: Schema.String,
+  draft_id: Schema.NullOr(Schema.String),
 });
+
+/** Messages with the local draft each one is a copy of, for MessageRow. */
+const MESSAGE_COLUMNS = `m.*, (SELECT d.id FROM drafts d
+  WHERE d.account_id = m.account_id AND d.remote_message_id = m.provider_id) AS draft_id`;
 
 const ThreadRow = Schema.Struct({
   ...summaryRowFields,
@@ -91,7 +99,7 @@ const PendingOpRow = Schema.Struct({
   id: Schema.Number,
   account_id: Schema.String,
   provider_id: Schema.String,
-  op_json: Schema.fromJsonString(MailOp),
+  op_json: Schema.fromJsonString(QueuedOp),
   attempts: Schema.Number,
   last_error: Schema.NullOr(Schema.String),
 });
@@ -126,27 +134,8 @@ const Cursor = Schema.Struct({ sync_cursor: Schema.NullOr(Schema.String) });
 const Mode = Schema.Struct({ modify: AgentWriteMode });
 const Next = Schema.Struct({ next: Schema.Number });
 
-type Query = Effect.Effect<ReadonlyArray<unknown>, SqlError>;
-
-/** Runs a query and decodes every row. */
-function all<A, I>(schema: Schema.Codec<A, I>) {
-  const decode = Schema.decodeUnknownEffect(Schema.Array(schema));
-  return (query: Query): Effect.Effect<ReadonlyArray<A>> =>
-    query.pipe(
-      Effect.flatMap((rows) => decode(rows)),
-      Effect.orDie,
-    );
-}
-
-/** Runs a query and decodes the first row, if any. */
-function first<A, I>(schema: Schema.Codec<A, I>) {
-  const rows = all(schema);
-  return (query: Query): Effect.Effect<Option.Option<A>> =>
-    Effect.map(rows(query), (r) => Option.fromNullishOr(r[0]));
-}
-
-const run = (query: Effect.Effect<unknown, SqlError>): Effect.Effect<void> =>
-  Effect.orDie(Effect.asVoid(query));
+/** A claim on a queued op older than this belongs to a process that died mid-push. */
+const CLAIM_TTL = 2 * 60_000;
 
 function toAccount(r: typeof AccountRow.Type): Account {
   return {
@@ -186,6 +175,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     bodyText: r.body_text,
     bodyHtml: r.body_html,
     attachments: r.attachments_json,
+    ...(r.draft_id === null ? {} : { draftId: r.draft_id }),
   };
 }
 
@@ -289,6 +279,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
   Store,
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
+    const compose = makeComposeStore(sql);
 
     const hasLabel = (label: string) =>
       sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
@@ -496,14 +487,23 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       );
     };
 
-    const listThreads = Effect.fn("Store.listThreads")((q: ThreadQuery) =>
-      q.search === undefined ? threadList(q, q.limit ?? 50) : search(q, q.search, q.limit ?? 50),
-    );
+    const listThreads = Effect.fn("Store.listThreads")(function* (q: ThreadQuery) {
+      const limit = q.limit ?? 50;
+      if (q.search !== undefined) return yield* search(q, q.search, limit);
+      const threads = yield* threadList(q, limit);
+      // The Drafts list also shows drafts the provider has no copy of yet.
+      const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
+      if (q.mailbox !== "drafts" || !plain) return threads;
+      const local = yield* compose.localDrafts(q, limit);
+      return [...threads, ...local].toSorted((a, b) => b.date - a.date).slice(0, limit);
+    });
 
     const getMessage = Effect.fn("Store.getMessage")(function* (
       id: string,
     ): Effect.fn.Return<Message, NotFound> {
-      const row = yield* first(MessageRow)(sql`SELECT m.* FROM messages m WHERE m.id = ${id}`);
+      const row = yield* first(MessageRow)(
+        sql`SELECT ${sql.literal(MESSAGE_COLUMNS)} FROM messages m WHERE m.id = ${id}`,
+      );
       if (Option.isNone(row)) return yield* new NotFound({ what: "message", id });
       return toMessage(row.value);
     });
@@ -515,7 +515,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         sql`SELECT account_id, thread_id FROM messages WHERE id = ${id}`,
       );
       if (Option.isNone(key)) return yield* new NotFound({ what: "message", id });
-      const rows = yield* all(MessageRow)(sql`SELECT m.* FROM messages m
+      const rows = yield* all(MessageRow)(sql`SELECT ${sql.literal(MESSAGE_COLUMNS)} FROM messages m
         WHERE account_id = ${key.value.account_id} AND thread_id = ${key.value.thread_id}
         ORDER BY date`);
       return rows.map(toMessage);
@@ -668,7 +668,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const enqueueOp = Effect.fn("Store.enqueueOp")(function* (
       account: string,
       providerId: string,
-      op: MailOp,
+      op: QueuedOp,
     ) {
       const now = yield* Clock.currentTimeMillis;
       yield* run(sql`INSERT INTO pending_ops (account_id, provider_id, op_json, created_at)
@@ -692,13 +692,25 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       Effect.withSpan("Store.listPendingOps"),
     );
 
+    const claimPendingOp = Effect.fn("Store.claimPendingOp")(function* (id: number) {
+      const now = yield* Clock.currentTimeMillis;
+      const row = yield* first(Id)(sql`UPDATE pending_ops SET claimed_at = ${now}
+        WHERE id = ${id} AND (claimed_at IS NULL OR claimed_at < ${now - CLAIM_TTL})
+        RETURNING id`);
+      return Option.isSome(row);
+    });
+
     const removePendingOp = Effect.fn("Store.removePendingOp")((id: number) =>
       run(sql`DELETE FROM pending_ops WHERE id = ${id}`),
     );
 
+    const releasePendingOp = Effect.fn("Store.releasePendingOp")((id: number) =>
+      run(sql`UPDATE pending_ops SET claimed_at = NULL WHERE id = ${id}`),
+    );
+
     const failPendingOp = Effect.fn("Store.failPendingOp")((id: number, error: string) =>
-      run(sql`UPDATE pending_ops SET attempts = attempts + 1, last_error = ${error}
-        WHERE id = ${id}`),
+      run(sql`UPDATE pending_ops SET attempts = attempts + 1, last_error = ${error},
+        claimed_at = NULL WHERE id = ${id}`),
     );
 
     // Audit, agent policy, proposals
@@ -814,8 +826,28 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       deleteProfile,
       enqueueOp,
       listPendingOps,
+      claimPendingOp,
+      releasePendingOp,
       removePendingOp,
       failPendingOp,
+      getDraft: compose.getDraft,
+      draftByRemoteMessage: compose.draftByRemoteMessage,
+      draftByProposal: compose.draftByProposal,
+      putDraft: compose.putDraft,
+      setDraftRemote: compose.setDraftRemote,
+      deleteDraft: compose.deleteDraft,
+      enqueueDraftSave: compose.enqueueDraftSave,
+      dropSyncedDrafts: compose.dropSyncedDrafts,
+      prefs: compose.prefs,
+      setPrefs: compose.setPrefs,
+      signatures: compose.signatures,
+      setSignature: compose.setSignature,
+      templates: compose.templates,
+      saveTemplate: compose.saveTemplate,
+      deleteTemplate: compose.deleteTemplate,
+      suggestContacts: compose.suggestContacts,
+      hiddenContacts: compose.hiddenContacts,
+      setContactHidden: compose.setContactHidden,
       audit,
       listAudit,
       agentWriteMode,

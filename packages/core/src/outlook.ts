@@ -5,6 +5,7 @@ import type {
   Account,
   Address,
   Attachment,
+  DraftRemote,
   IncomingMessage,
   Label,
   MailOp,
@@ -18,12 +19,14 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "./errors.js";
-import { htmlToText } from "./mime.js";
+import { buildMime } from "./compose.js";
+import { htmlDocument, htmlToText } from "./mime.js";
 import {
   AppConfig,
   type Change,
   type ConnectInput,
   type Connected,
+  type DraftPush,
   OAuth,
   type ProviderAdapter,
   Secrets,
@@ -77,6 +80,7 @@ const CONCURRENCY = 6;
 
 /** sendMail and attachment POSTs carry files inline; Graph caps a request at 4 MB. */
 const INLINE_ATTACHMENT_LIMIT = 3 * 1024 * 1024;
+const REQUEST_LIMIT = 4 * 1024 * 1024;
 
 // Provider JSON. Only the fields openmail reads; extra fields are ignored.
 // Drafts come with null subject, sender and sent time, so those are lenient.
@@ -144,6 +148,12 @@ const AttachmentList = Schema.Struct({
       size: Schema.Number,
       isInline: Schema.optionalKey(Schema.Boolean),
     }),
+  ),
+});
+
+const AttachmentIds = Schema.Struct({
+  value: Schema.Array(
+    Schema.Struct({ id: Schema.String, isInline: Schema.optionalKey(Schema.Boolean) }),
   ),
 });
 
@@ -283,7 +293,16 @@ export const makeOutlook: Effect.Effect<
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
     accessToken(accountId).pipe(
       Effect.flatMap((token) => execute(token, request)),
-      // A rejected token may still sit in the cache; the next call refreshes.
+      // The provider can reject an access token before it expires. Drop it,
+      // refresh, and retry once; only a failed refresh means signing in again.
+      Effect.catchIf(
+        (e) => e._tag === "ApiError" && e.status === 401,
+        () =>
+          Effect.sync(() => tokens.delete(accountId)).pipe(
+            Effect.andThen(accessToken(accountId)),
+            Effect.flatMap((token) => execute(token, request)),
+          ),
+      ),
       Effect.tapError((e) =>
         e._tag === "ApiError" && (e.status === 401 || e.status === 403)
           ? Effect.sync(() => tokens.delete(accountId))
@@ -298,15 +317,47 @@ export const makeOutlook: Effect.Effect<
       HttpClientRequest.get(path.startsWith("https://") ? path : `${GRAPH}${path}`),
     ).pipe(Effect.flatMap(decode(schema)));
 
-  const write = (accountId: string, method: "POST" | "PATCH", path: string, body?: unknown) => {
-    const request = (method === "POST" ? HttpClientRequest.post : HttpClientRequest.patch)(
-      `${GRAPH}${path}`,
-    );
+  const write = (
+    accountId: string,
+    method: "POST" | "PATCH" | "DELETE",
+    path: string,
+    body?: unknown,
+  ) => {
+    const make = {
+      POST: HttpClientRequest.post,
+      PATCH: HttpClientRequest.patch,
+      DELETE: HttpClientRequest.delete,
+    }[method];
+    const request = make(`${GRAPH}${path}`);
     return api(
       accountId,
       body === undefined ? request : HttpClientRequest.bodyJsonUnsafe(request, body),
     );
   };
+
+  /** A GET whose body is not JSON (a message's MIME source). */
+  const getBytes = (accountId: string, path: string) =>
+    accessToken(accountId).pipe(
+      Effect.flatMap((token) =>
+        Effect.gen(function* () {
+          const res = yield* http.execute(
+            HttpClientRequest.get(`${GRAPH}${path}`).pipe(
+              HttpClientRequest.bearerToken(token),
+              HttpClientRequest.setHeaders(PREFER),
+            ),
+          );
+          if (res.status < 200 || res.status >= 300) {
+            return yield* new ApiError({ status: res.status, body: yield* res.text });
+          }
+          return new Uint8Array(yield* res.arrayBuffer);
+        }).pipe(
+          Effect.catchTag("HttpClientError", (e) =>
+            Effect.fail(new ApiError({ status: 0, body: e.message })),
+          ),
+          Effect.retry(RETRY),
+        ),
+      ),
+    );
 
   const connect = Effect.fn("Outlook.connect")(function* (
     input: ConnectInput,
@@ -571,14 +622,23 @@ export const makeOutlook: Effect.Effect<
     ) {
       yield* checkAttachmentSize(message);
       const fields = graphFields(message);
-      const attachments = message.attachments.map((a) => ({
-        "@odata.type": "#microsoft.graph.fileAttachment",
-        name: a.filename,
-        contentType: a.mimeType,
-        contentBytes: a.content,
-      }));
+      const attachments = message.attachments.map(fileAttachment);
       const mode = message.mode ?? "new";
-      if (Option.isNone(original) || mode === "new") {
+      if ((Option.isNone(original) || mode === "new") && forwardsMessage(message)) {
+        // A forwarded .eml goes out as raw MIME, which Graph's sendMail also
+        // takes: as a JSON fileAttachment Exchange re-encodes the .eml as an
+        // opaque base64 file, and Gmail previews it as text in a guessed
+        // charset. In MIME it is a real message/rfc822 part.
+        const mime = yield* buildMime({ name: "", address: account.email }, message);
+        const body = mime.toString("base64");
+        yield* checkRequestSize(body);
+        yield* api(
+          account.id,
+          HttpClientRequest.post(`${GRAPH}/me/sendMail`).pipe(
+            HttpClientRequest.bodyText(body, "text/plain"),
+          ),
+        );
+      } else if (Option.isNone(original) || mode === "new") {
         yield* write(account.id, "POST", "/me/sendMail", {
           message: { ...fields, attachments },
           saveToSentItems: true,
@@ -606,8 +666,107 @@ export const makeOutlook: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
-  return { connect, pull, push, send } satisfies ProviderAdapter;
+  /**
+   * Outlook drafts are messages in the Drafts folder, edited in place, so the
+   * id stays the same across saves. Replies are created with createReply so
+   * Outlook threads them; new messages and forwards are plain drafts (the
+   * send path forwards the original's attachments itself).
+   */
+  const saveDraft = Effect.fn("Outlook.saveDraft")(
+    function* (account: Account, draft: DraftPush) {
+      const { message, original } = draft;
+      yield* checkAttachmentSize(message);
+      const fields = graphFields(message);
+      const attachments = message.attachments.map(fileAttachment);
+      const addAttachments = (id: string) =>
+        Effect.forEach(
+          attachments,
+          (a) => write(account.id, "POST", `/me/messages/${id}/attachments`, a),
+          { discard: true },
+        );
+
+      const create = Effect.gen(function* () {
+        const mode = message.mode ?? "new";
+        if (Option.isSome(original) && (mode === "reply" || mode === "replyAll")) {
+          const action = mode === "reply" ? "createReply" : "createReplyAll";
+          const created = yield* write(
+            account.id,
+            "POST",
+            `/me/messages/${original.value.providerId}/${action}`,
+          ).pipe(Effect.flatMap(decode(WithId)));
+          yield* write(account.id, "PATCH", `/me/messages/${created.id}`, fields);
+          yield* addAttachments(created.id);
+          return created.id;
+        }
+        const created = yield* write(account.id, "POST", "/me/messages", {
+          ...fields,
+          attachments,
+        }).pipe(Effect.flatMap(decode(WithId)));
+        return created.id;
+      });
+
+      const update = (id: string) =>
+        Effect.gen(function* () {
+          yield* write(account.id, "PATCH", `/me/messages/${id}`, fields);
+          if (!draft.replaceAttachments) return id;
+          const current = yield* get(
+            account.id,
+            AttachmentIds,
+            `/me/messages/${id}/attachments?$select=id,isInline`,
+          );
+          for (const a of current.value.filter((x) => !x.isInline)) {
+            yield* write(account.id, "DELETE", `/me/messages/${id}/attachments/${a.id}`);
+          }
+          yield* addAttachments(id);
+          return id;
+        });
+
+      const known = draft.remote?.messageId ?? draft.remote?.draftId;
+      // Deleted in another client meanwhile: the person is still writing it.
+      const id = known
+        ? yield* update(known).pipe(Effect.catchIf(is404, () => create))
+        : yield* create;
+      return { draftId: id, messageId: id } satisfies DraftRemote;
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  const deleteDraft = Effect.fn("Outlook.deleteDraft")(
+    function* (account: Account, remote: DraftRemote) {
+      const id = remote.messageId ?? remote.draftId;
+      if (!id) return;
+      yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
+        Effect.catchIf(is404, () => Effect.void),
+      );
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  const fetchRaw = Effect.fn("Outlook.fetchRaw")(
+    (account: Account, providerId: string) =>
+      getBytes(account.id, `/me/messages/${providerId}/$value`),
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  return {
+    connect,
+    pull,
+    push,
+    send,
+    saveDraft,
+    deleteDraft,
+    fetchRaw,
+  } satisfies ProviderAdapter;
 });
+
+function fileAttachment(a: OutgoingMessage["attachments"][number]) {
+  return {
+    "@odata.type": "#microsoft.graph.fileAttachment",
+    name: a.filename,
+    contentType: a.mimeType,
+    contentBytes: a.content,
+  };
+}
 
 /** Where each moving op sends an Outlook message. Well-known names work as destination ids. */
 export function destination(op: MailOp): string | null {
@@ -634,13 +793,25 @@ function graphFields(message: OutgoingMessage) {
   return {
     subject: message.subject,
     body: message.html
-      ? { contentType: "html", content: message.html }
+      ? { contentType: "html", content: htmlDocument(message.html) }
       : { contentType: "text", content: message.text },
     toRecipients: recipients(message.to),
     ccRecipients: recipients(message.cc),
     bccRecipients: recipients(message.bcc),
   };
 }
+
+const checkRequestSize = (body: string) =>
+  body.length > REQUEST_LIMIT
+    ? Effect.fail(
+        new PermanentError({
+          message: "Outlook messages over 3 MB with a forwarded message are not supported yet",
+        }),
+      )
+    : Effect.void;
+
+const forwardsMessage = (message: OutgoingMessage) =>
+  message.attachments.some((a) => a.mimeType.toLowerCase() === "message/rfc822");
 
 const checkAttachmentSize = (message: OutgoingMessage) =>
   message.attachments.reduce((n, a) => n + (a.content.length * 3) / 4, 0) > INLINE_ATTACHMENT_LIMIT

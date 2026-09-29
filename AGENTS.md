@@ -28,3 +28,19 @@ pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
 ```
 
 lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion` 的警告只允许出现在 IO 边界（SQLite 行、HTTP JSON）。
+
+界面文案用 Lingui，代码里写英文原文，中文在 `apps/desktop/src/renderer/src/locales/zh-CN/messages.po`。改了渲染层文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，再补上空的 `msgstr`。`pnpm test` 会跑 `lingui check`：目录和代码不同步，或者缺中文翻译，都会失败。
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues of the private repo `Fanzzzd/openmail`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels, unchanged. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root. See `docs/agents/domain.md`.

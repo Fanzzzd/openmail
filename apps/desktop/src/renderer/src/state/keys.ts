@@ -22,6 +22,11 @@ export const Keys = {
   agentMode: "agent-mode",
   /** Which OAuth clients are configured. */
   setup: "setup",
+  prefs: "prefs",
+  signatures: "signatures",
+  templates: "templates",
+  /** Recipient suggestions and the addresses hidden from them. */
+  contacts: "contacts",
 } as const;
 
 export const threadKey = (id: string) => `${Keys.thread}:${id}`;
@@ -46,4 +51,8 @@ export const MAIL_KEYS = [
   Keys.audit,
   Keys.agentMode,
   Keys.setup,
+  Keys.prefs,
+  Keys.signatures,
+  Keys.templates,
+  Keys.contacts,
 ];

@@ -10,9 +10,9 @@ import { AtomRegistry, Reactivity } from "effect/reactivity";
 import { useContext } from "react";
 import { RegistryContext } from "@effect/atom-react";
 
-import type { MailOp, OutgoingMessage } from "../../../shared/api";
+import type { DraftInput, MailOp, OutgoingMessage } from "../../../shared/api";
 import { MailClient } from "../rpc";
-import { MAIL_KEYS, threadChangeKeys } from "./keys";
+import { Keys, MAIL_KEYS, threadChangeKeys } from "./keys";
 
 /** What the Effects below need; `MailClient.runtime` provides all of it. */
 export type MailEnv = MailClient | Reactivity.Reactivity | AtomRegistry.AtomRegistry | Scope.Scope;
@@ -32,9 +32,31 @@ export const modifyThreads = (threads: readonly string[], op: MailOp) =>
     Reactivity.mutation(threadChangeKeys(threads)),
   );
 
-/** Sends as the person at the app. Only after the undo window has passed. */
-export const sendMessage = (accountId: string, message: OutgoingMessage) =>
-  withMail((call) => call("Send", { accountId, message })).pipe(Reactivity.mutation(MAIL_KEYS));
+/**
+ * Sends as the person at the app. Only after the undo window has passed.
+ * `draftId` names the saved draft this sends; `archive` archives the thread
+ * replied to (send and archive).
+ */
+export const sendMessage = (
+  accountId: string,
+  message: OutgoingMessage,
+  options: { draftId?: string; archive?: boolean } = {},
+) =>
+  withMail((call) => call("Send", { accountId, message, ...options })).pipe(
+    Reactivity.mutation(MAIL_KEYS),
+  );
+
+/** Saves the draft locally; the main process pushes it to the provider. */
+export const saveDraft = (draft: DraftInput) =>
+  withMail((call) => call("SaveDraft", { draft })).pipe(Reactivity.mutation([Keys.threads]));
+
+export const discardDraft = (id: string) =>
+  withMail((call) => call("DiscardDraft", { id })).pipe(
+    Reactivity.mutation([Keys.threads, Keys.thread, Keys.proposals, Keys.audit]),
+  );
+
+/** A draft to edit: a local draft id, a draft message id, or "proposal:<id>". */
+export const openDraft = (id: string) => withMail((call) => call("OpenDraft", { id }));
 
 export const decideProposal = (id: number, approve: boolean) =>
   withMail((call) => call("DecideProposal", { id, approve })).pipe(Reactivity.mutation(MAIL_KEYS));

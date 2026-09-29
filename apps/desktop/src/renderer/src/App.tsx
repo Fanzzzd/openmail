@@ -1,5 +1,9 @@
 import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
-import { Cause, Effect } from "effect";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
+import { applySignature, DEFAULT_PREFS, holdSend } from "@openmail/core/schema";
+import { Effect, Fiber } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 
@@ -15,14 +19,24 @@ import { Settings } from "./components/Settings";
 import { Sidebar } from "./components/Sidebar";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
-import { type Draft, draftFor, emptyDraft, formatAddress } from "./draft";
+import {
+  type ComposeMode,
+  type Draft,
+  draftFor,
+  emptyDraft,
+  fromStored,
+  isEmpty,
+  toDraftInput,
+} from "./draft";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "./state/events";
 import {
-  decideProposal,
+  discardDraft,
   modifyThreads,
+  openDraft,
   reauthAccount,
+  saveDraft,
   sendMessage,
   syncNow,
   useRunMail,
@@ -30,8 +44,10 @@ import {
 import {
   accountsAtom,
   labelsAtom,
+  prefsAtom,
   profilesAtom,
   proposalsAtom,
+  signaturesAtom,
   threadAtom,
   unreadCountsAtom,
 } from "./state/queries";
@@ -54,20 +70,18 @@ import {
   type View,
 } from "./view";
 
-/** How long a sent message waits so the person can take it back. */
-const UNDO_SEND_MS = 5000;
-
 type Dialog = "add" | "settings" | "proposals" | null;
 
-const OP_DONE: Record<MailOp["kind"], (op: MailOp) => string> = {
-  read: (op) => (op.kind === "read" && op.value ? "已标为已读" : "已标为未读"),
-  star: (op) => (op.kind === "star" && op.value ? "已加星标" : "已去掉星标"),
-  important: (op) => (op.kind === "important" && op.value ? "已标为重要" : "已取消重要"),
-  archive: () => "已归档",
-  inbox: () => "已移回收件箱",
-  trash: () => "已删除",
-  spam: () => "已报告为垃圾邮件",
-  label: (op) => (op.kind === "label" && op.value ? "已加标签" : "已去掉标签"),
+const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
+  read: (op) => (op.kind === "read" && op.value ? msg`Marked as read` : msg`Marked as unread`),
+  star: (op) => (op.kind === "star" && op.value ? msg`Added star` : msg`Removed star`),
+  important: (op) =>
+    op.kind === "important" && op.value ? msg`Marked as important` : msg`Marked as not important`,
+  archive: () => msg`Archived`,
+  inbox: () => msg`Moved to Inbox`,
+  trash: () => msg`Deleted`,
+  spam: () => msg`Reported as spam`,
+  label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };
 
 /** Ops that take the thread out of the list it is in. */
@@ -119,6 +133,7 @@ export function App() {
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
+  const { t, i18n } = useLingui();
 
   const [view, setView] = useAtom(viewAtom);
   const remembered = useAtomValue(rememberedViewsAtom);
@@ -131,12 +146,12 @@ export function App() {
   const syncState = useAtomValue(syncStateAtom);
   const progress = useAtomValue(syncProgressAtom);
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [compose, setCompose] = useState<{ draft: Draft; proposalId?: number } | null>(null);
+  const [compose, setCompose] = useState<Draft | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const undoRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const hideToast = useCallback(() => setToast(null), []);
-  const say = (t: Omit<ToastState, "id">) => setToast({ ...t, id: Date.now() });
+  const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
 
   const accounts = useAtomValue(accountsAtom);
   const accountList = AsyncResult.getOrElse(accounts, () => []);
@@ -149,10 +164,26 @@ export function App() {
 
   const [threads, loadMore] = useAtom(threadListAtom);
   const list = threads.threads;
-  const selected = list.find((t) => t.id === selectedId);
+  const selected = list.find((thread) => thread.id === selectedId);
   const openThread = AsyncResult.value(useAtomValue(threadAtom(selectedId)));
   const messages = openThread._tag === "Some" ? openThread.value : undefined;
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
+  const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
+  const undoSeconds = AsyncResult.getOrElse(
+    useAtomValue(prefsAtom),
+    () => DEFAULT_PREFS,
+  ).undoSendSeconds;
+
+  /** The local signature for an account: one for new messages, one for replies and forwards. */
+  const signatureFor = (accountId: string, mode: ComposeMode) => {
+    const address = accountList.find((a) => a.id === accountId)?.email.toLowerCase();
+    const kind = mode === "new" ? "new" : "reply";
+    return signatures.find((s) => s.address === address && s.kind === kind)?.text;
+  };
+  const signed = (d: Draft): Draft => ({
+    ...d,
+    body: applySignature(d.body, undefined, signatureFor(d.accountId, d.mode)),
+  });
 
   const selectedAccount = accountList.find(
     (a) => a.id === (selected?.accountId ?? messages?.[0]?.accountId),
@@ -179,14 +210,17 @@ export function App() {
     const back = inverse(op, threadState);
     const leaves = MOVES.has(op.kind) || (op.kind === "label" && threadState.provider !== "gmail");
     if (leaves) {
-      const index = list.findIndex((t) => t.id === id);
+      const index = list.findIndex((thread) => thread.id === id);
       const next = list[index + 1] ?? list[index - 1];
       select(next?.id ?? null, selectionSource);
     }
     run(
       modifyThreads([id], op).pipe(
         Effect.matchCause({
-          onFailure: (cause) => say({ text: `操作失败：${causeText(cause)}`, tone: "error" }),
+          onFailure: (cause) => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Action failed: ${reason}`, tone: "error" });
+          },
           onSuccess: (outcome) => {
             // The change applied locally even when the push waits for a new
             // sign-in, so it can still be undone.
@@ -200,11 +234,15 @@ export function App() {
                   }
                 : null;
             undoRef.current = undo;
-            const action = undo ? { action: { label: "撤销", run: undo } } : {};
+            const action = undo ? { action: { label: t`Undo`, run: undo } } : {};
             say(
               needsReauth
-                ? { text: "账户登录已失效，改动会在重新登录后同步", tone: "error", ...action }
-                : { text: OP_DONE[op.kind](op), ...action },
+                ? {
+                    text: t`The account's sign-in has expired. Changes will sync after you sign in again.`,
+                    tone: "error",
+                    ...action,
+                  }
+                : { text: i18n._(OP_DONE[op.kind](op)), ...action },
             );
           },
         }),
@@ -216,7 +254,7 @@ export function App() {
   const select = (id: string | null, source: SelectionSource) => {
     setSelectedId(id);
     setSelectionSource(source);
-    if (id && list.find((t) => t.id === id)?.isUnread) {
+    if (id && list.find((thread) => thread.id === id)?.isUnread) {
       run(modifyThreads([id], { kind: "read", value: true }));
     }
   };
@@ -224,10 +262,10 @@ export function App() {
   const defaultAccount = (): Account | undefined =>
     accountList.find((a) => a.id === (view.accountId ?? scope?.[0])) ?? accountList[0];
 
-  const startCompose = (mode: Draft["mode"]) => {
+  const startCompose = (mode: Draft["mode"], asAttachment = false) => {
     if (mode === "new") {
       const account = defaultAccount();
-      if (account) setCompose({ draft: emptyDraft(account.id) });
+      if (account) setCompose(signed(emptyDraft(account.id)));
       return;
     }
     if (!selectedId) return;
@@ -238,63 +276,106 @@ export function App() {
           Effect.sync(() => {
             const last = thread.at(-1);
             const account = accountList.find((a) => a.id === last?.accountId);
-            if (last && account) setCompose({ draft: draftFor(mode, last, account) });
+            if (last && account) setCompose(signed(draftFor(mode, last, account, asAttachment)));
           }),
         ),
       ),
     );
   };
 
-  const openProposal = (p: Proposal) => {
-    if (p.command.kind !== "send" && p.command.kind !== "draft") return;
-    const m = p.command.message;
-    setDialog(null);
-    setCompose({
-      proposalId: p.id,
-      draft: {
-        mode: m.mode ?? "new",
-        accountId: p.command.accountId,
-        to: m.to.map(formatAddress).join(", "),
-        cc: m.cc.map(formatAddress).join(", "),
-        bcc: m.bcc.map(formatAddress).join(", "),
-        subject: m.subject,
-        body: m.text,
-        attachments: m.attachments,
-        ...(m.inReplyTo ? { inReplyTo: m.inReplyTo } : {}),
-      },
-    });
-  };
-
-  /** Holds the message for UNDO_SEND_MS, then sends it. Undo reopens the draft. */
-  const send = (draft: Draft, message: OutgoingMessage, proposalId?: number) => {
-    setCompose(null);
-    const reopen = () => setCompose({ draft, ...(proposalId !== undefined ? { proposalId } : {}) });
-    const sending = run(
-      Effect.sleep(UNDO_SEND_MS).pipe(
-        Effect.andThen(sendMessage(draft.accountId, message)),
-        Effect.andThen(proposalId === undefined ? Effect.void : decideProposal(proposalId, true)),
+  /** Opens a saved draft: a local draft id, a draft message, or "proposal:<id>". */
+  const openSavedDraft = (id: string) =>
+    run(
+      openDraft(id).pipe(
         Effect.matchCause({
-          onSuccess: () => say({ text: "已发送" }),
+          onSuccess: (d) => setCompose(fromStored(d)),
           onFailure: (cause) => {
-            // Undo interrupts the wait; the draft is already back.
-            if (Cause.hasInterruptsOnly(cause)) return;
-            say({ text: `发送失败：${causeText(cause)}`, tone: "error" });
-            reopen();
+            const reason = causeText(i18n, cause);
+            say({ text: t`Can't open the draft: ${reason}`, tone: "error" });
           },
         }),
       ),
     );
-    say({
-      text: "正在发送…",
-      duration: UNDO_SEND_MS,
-      action: {
-        label: "撤销",
-        run: () => {
-          sending.interruptUnsafe();
-          reopen();
-        },
-      },
+
+  const openProposal = (p: Proposal) => {
+    if (p.command.kind !== "send" && p.command.kind !== "draft") return;
+    setDialog(null);
+    openSavedDraft(`proposal:${p.id}`);
+  };
+
+  /** Closing keeps the draft; an untouched or empty one is not saved. */
+  const closeCompose = (draft: Draft, changed: boolean) => {
+    setCompose(null);
+    if (changed && !isEmpty(draft)) run(saveDraft(toDraftInput(draft)));
+  };
+
+  const discard = (draft: Draft) => {
+    setCompose(null);
+    run(
+      discardDraft(draft.id).pipe(
+        Effect.matchCause({
+          onSuccess: () => say({ text: t`Draft discarded` }),
+          onFailure: (cause) => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Couldn't discard: ${reason}`, tone: "error" });
+          },
+        }),
+      ),
+    );
+  };
+
+  /**
+   * Saves the draft (so quitting during the wait loses nothing), holds the
+   * message for the undo window from preferences, then sends it. The window
+   * is a timer (`holdSend`) that undo clears, so a message taken back never
+   * reaches the main process. Undo, from the toast or ⌘Z, reopens the draft.
+   */
+  const send = (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => {
+    setCompose(null);
+    const reopen = () => setCompose(draft);
+    const saved = run(saveDraft(toDraftInput(draft)));
+    const deliver = () =>
+      run(
+        Fiber.join(saved).pipe(
+          Effect.andThen(
+            sendMessage(draft.accountId, message, {
+              draftId: draft.id,
+              ...(options.archive ? { archive: true } : {}),
+            }),
+          ),
+          Effect.matchCause({
+            onSuccess: () => {
+              say({ text: options.archive ? t`Sent and archived` : t`Sent` });
+              // The archived thread leaves the list; move on as E does.
+              if (options.archive && selectedId === draft.inReplyTo) {
+                const index = list.findIndex((thread) => thread.id === selectedId);
+                const next = list[index + 1] ?? list[index - 1];
+                setSelectedId(next?.id ?? null);
+              }
+            },
+            onFailure: (cause) => {
+              const reason = causeText(i18n, cause);
+              say({ text: t`Couldn't send: ${reason}`, tone: "error" });
+              reopen();
+            },
+          }),
+        ),
+      );
+    const delay = undoSeconds * 1000;
+    if (delay === 0) {
+      say({ text: t`Sending…` });
+      deliver();
+      return;
+    }
+    const held = holdSend(delay, () => {
+      if (undoRef.current === undo) undoRef.current = null;
+      deliver();
     });
+    const undo = () => {
+      if (held.undo()) reopen();
+    };
+    undoRef.current = undo;
+    say({ text: t`Sending…`, duration: delay, action: { label: t`Undo`, run: undo } });
   };
 
   const reauth = (account: Account) => {
@@ -302,12 +383,18 @@ export function App() {
       setDialog("add");
       return;
     }
-    say({ text: "请在浏览器里完成授权", duration: 60_000 });
+    say({ text: t`Finish signing in in your browser`, duration: 60_000 });
     run(
       reauthAccount(account.id).pipe(
         Effect.matchCause({
-          onSuccess: () => say({ text: `${account.email} 已重新登录` }),
-          onFailure: (cause) => say({ text: `登录失败：${causeText(cause)}`, tone: "error" }),
+          onSuccess: () => {
+            const email = account.email;
+            say({ text: t`${email} is signed in again` });
+          },
+          onFailure: (cause) => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Sign-in failed: ${reason}`, tone: "error" });
+          },
         }),
       ),
     );
@@ -421,6 +508,7 @@ export function App() {
         r: () => startCompose("reply"),
         a: () => startCompose("replyAll"),
         f: () => startCompose("forward"),
+        F: () => startCompose("forward", true),
       };
       const handler = single[e.key];
       if (handler) {
@@ -448,12 +536,14 @@ export function App() {
 
   const hasAccounts = accountList.length > 0;
   const viewAccount = accountList.find((a) => a.id === (view.label?.accountId ?? view.accountId));
+  const category = view.label ? CATEGORY_NAMES[view.label.id] : undefined;
   const baseTitle = view.label
-    ? (CATEGORY_NAMES[view.label.id] ??
-      labelMap.get(`${view.label.accountId}/${view.label.id}`)?.name ??
-      "标签")
-    : MAILBOX_NAMES[view.mailbox];
-  const title = viewAccount ? `${baseTitle}：${viewAccount.email.split("@")[0]}` : baseTitle;
+    ? category
+      ? i18n._(category)
+      : (labelMap.get(`${view.label.accountId}/${view.label.id}`)?.name ?? t`Label`)
+    : i18n._(MAILBOX_NAMES[view.mailbox]);
+  const user = viewAccount?.email.split("@")[0];
+  const title = viewAccount ? t`${baseTitle}: ${user}` : baseTitle;
 
   return (
     <div className="flex h-full text-[13px] text-neutral-900 dark:text-neutral-100">
@@ -501,7 +591,15 @@ export function App() {
             labels={labelMap}
             selectedId={selectedId}
             selectionSource={selectionSource}
-            onSelect={(id) => select(id, "mouse")}
+            onSelect={(id) => {
+              if (view.mailbox !== "drafts") {
+                select(id, "mouse");
+                return;
+              }
+              // Drafts open in the compose window.
+              setSelectedId(id);
+              openSavedDraft(id);
+            }}
             onEndReached={() => {
               if (threads.canLoadMore) loadMore();
             }}
@@ -511,6 +609,7 @@ export function App() {
             query={query}
             onQuery={setQuery}
             searchRef={searchRef}
+            onEditDraft={openSavedDraft}
             toolbar={
               threadState && (
                 <ThreadActions
@@ -544,7 +643,8 @@ export function App() {
           {...(hasAccounts ? { onClose: () => setDialog(null) } : {})}
           onAdded={(a) => {
             setDialog(null);
-            say({ text: `已添加 ${a.email}，正在同步` });
+            const email = a.email;
+            say({ text: t`Added ${email}. Syncing…` });
           }}
         />
       )}
@@ -565,11 +665,13 @@ export function App() {
       )}
       {compose && (
         <Composer
-          key={compose.proposalId ?? compose.draft.inReplyTo ?? "new"}
-          draft={compose.draft}
+          key={compose.id}
+          draft={compose}
           accounts={accountList}
-          onClose={() => setCompose(null)}
-          onSend={(draft, message) => send(draft, message, compose.proposalId)}
+          signatureFor={signatureFor}
+          onClose={closeCompose}
+          onDiscard={discard}
+          onSend={send}
         />
       )}
       <Toast toast={toast} onDone={hideToast} />

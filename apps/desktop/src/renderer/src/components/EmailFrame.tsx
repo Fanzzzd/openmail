@@ -1,3 +1,4 @@
+import { Trans } from "@lingui/react/macro";
 import { ImageOff } from "lucide-react";
 import { type SyntheticEvent, useEffect, useRef, useState } from "react";
 
@@ -49,13 +50,15 @@ export function EmailFrame({ html }: { html: string }) {
       {hasRemote && !remote && (
         <div className="mb-3 flex items-center gap-2 rounded-md bg-neutral-100 px-3 py-2 text-[12px] text-neutral-600 dark:bg-white/5 dark:text-neutral-400">
           <ImageOff className="size-3.5" />
-          <span className="flex-1">已阻止远程图片，防止发件人追踪是否已读。</span>
+          <span className="flex-1">
+            <Trans>Remote images are blocked so the sender can't tell if you read this.</Trans>
+          </span>
           <button
             type="button"
             onClick={() => setRemote(true)}
             className="font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
-            加载图片
+            <Trans>Load images</Trans>
           </button>
         </div>
       )}

@@ -1,20 +1,23 @@
+import type { I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { Address } from "@openmail/core/schema";
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
 /** List timestamps: time today, weekday this week, date otherwise. */
-export function shortDate(ms: number): string {
+export function shortDate(ms: number, i18n: I18n): string {
+  const locale = i18n.locale;
   const d = new Date(ms);
   const now = new Date();
-  if (sameDay(d, now)) return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+  if (sameDay(d, now)) return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, yesterday)) return "昨天";
+  if (sameDay(d, yesterday)) return i18n._(msg`Yesterday`);
   if (now.getTime() - ms < 6 * 86_400_000)
-    return d.toLocaleDateString("zh-CN", { weekday: "short" });
+    return d.toLocaleDateString(locale, { weekday: "short" });
   if (d.getFullYear() === now.getFullYear())
-    return d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
-  return d.toLocaleDateString("zh-CN");
+    return d.toLocaleDateString(locale, { month: "numeric", day: "numeric" });
+  return d.toLocaleDateString(locale);
 }
 
 export function displayName(a: Address): string {
@@ -45,19 +48,20 @@ export function formatBytes(n: number): string {
   return `${(n / 1024 ** 2).toFixed(1)} MB`;
 }
 
-/** Thread headers: 今天 18:24, 昨天 18:24, 9月21日 18:24, or a full date in older years. */
-export function threadDate(ms: number): string {
+/** Thread headers: "Today 18:24", "Yesterday 18:24", "September 21 18:24", or a full date in older years. */
+export function threadDate(ms: number, i18n: I18n): string {
+  const locale = i18n.locale;
   const d = new Date(ms);
   const now = new Date();
-  const time = d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+  const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return `今天 ${time}`;
-  if (sameDay(d, yesterday)) return `昨天 ${time}`;
+  if (sameDay(d, now)) return i18n._(msg`Today ${time}`);
+  if (sameDay(d, yesterday)) return i18n._(msg`Yesterday ${time}`);
   const day =
     d.getFullYear() === now.getFullYear()
-      ? d.toLocaleDateString("zh-CN", { month: "long", day: "numeric" })
-      : d.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
+      ? d.toLocaleDateString(locale, { month: "long", day: "numeric" })
+      : d.toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" });
   return `${day} ${time}`;
 }
 

@@ -1,4 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
+import { plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { CircleAlert, Layers, Pencil, Plus, RefreshCw } from "lucide-react";
 
@@ -29,6 +31,7 @@ interface Props {
  * newest unread conversations. Accounts outside any profile form their own group.
  */
 export function Overview({ accounts, profiles, unread, syncState, onOpen, onEditProfile }: Props) {
+  const { t } = useLingui();
   const run = useRunMail();
   const groups: Group[] = profiles.map((p) => ({
     space: p.id,
@@ -40,18 +43,21 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
   if (ungrouped.length) {
     groups.push({
       space: ALL,
-      title: profiles.length ? "未分组" : "全部账户",
+      title: profiles.length ? t`Ungrouped` : t`All accounts`,
       accounts: ungrouped,
     });
   }
   const total = accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
+  const accountCount = accounts.length;
 
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-white dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-3 px-7">
-        <h1 className="text-[17px] font-bold">总览</h1>
+        <h1 className="text-[17px] font-bold">
+          <Trans>Overview</Trans>
+        </h1>
         <span className="text-[13px] text-neutral-500">
-          {accounts.length} 个账户，{total} 封未读
+          {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${total} unread`}
         </span>
         <span className="flex-1" />
         <button
@@ -60,7 +66,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
           className="flex h-7 items-center gap-1.5 rounded-md border border-black/10 px-2.5 text-[13px] hover:bg-black/[0.03] dark:border-white/10 dark:hover:bg-white/5"
         >
           <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
-          同步全部
+          <Trans>Sync All</Trans>
         </button>
       </header>
 
@@ -68,7 +74,10 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
         {profiles.length === 0 && (
           <div className="mb-6 flex items-center gap-4 rounded-xl border border-dashed border-black/15 p-4 dark:border-white/15">
             <p className="flex-1 text-[13px] leading-relaxed text-neutral-600 dark:text-neutral-300">
-              把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 ⌃1 到 ⌃9 切换。
+              <Trans>
+                Group accounts into spaces, like “Work” and “Personal”. Each space has its own
+                inbox. Switch with ⌃1 to ⌃9.
+              </Trans>
             </p>
             <button
               type="button"
@@ -76,7 +85,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
               className="flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-blue-600 px-3 text-[13px] font-medium text-white"
             >
               <Plus className="size-4" />
-              新建空间
+              <Trans>New space</Trans>
             </button>
           </div>
         )}
@@ -107,6 +116,7 @@ function GroupCard({
   onOpen: Props["onOpen"];
   onEdit?: () => void;
 }) {
+  const { t, i18n } = useLingui();
   const ids = group.accounts.map((a) => a.id);
   const threads = AsyncResult.getOrElse(useAtomValue(unreadInboxAtom(ids)), () => null);
   const count = group.accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
@@ -133,12 +143,14 @@ function GroupCard({
           {group.title}
         </button>
         {count > 0 && (
-          <span className="text-[13px] text-neutral-500 tabular-nums">{count} 未读</span>
+          <span className="text-[13px] text-neutral-500 tabular-nums">
+            <Trans>{count} unread</Trans>
+          </span>
         )}
         {onEdit && (
           <button
             type="button"
-            title="编辑空间"
+            title={t`Edit space`}
             onClick={onEdit}
             className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
           >
@@ -149,7 +161,9 @@ function GroupCard({
 
       <ul className="px-4 pb-2">
         {group.accounts.length === 0 && (
-          <li className="py-1 text-[13px] text-neutral-400">还没有账户</li>
+          <li className="py-1 text-[13px] text-neutral-400">
+            <Trans>No accounts yet</Trans>
+          </li>
         )}
         {group.accounts.map((a) => (
           <li key={a.id} className="flex items-center gap-2 py-1 text-[13px]">
@@ -161,11 +175,11 @@ function GroupCard({
                 title={a.lastSyncError}
               >
                 <CircleAlert className="size-3.5" />
-                同步失败
+                <Trans>Sync failed</Trans>
               </span>
             ) : (
               <span className="shrink-0 text-[12px] text-neutral-400">
-                {a.lastSyncedAt ? shortDate(a.lastSyncedAt) : "未同步"}
+                {a.lastSyncedAt ? shortDate(a.lastSyncedAt, i18n) : t`Not synced`}
               </span>
             )}
             <span className="w-6 shrink-0 text-right text-neutral-500 tabular-nums">
@@ -177,19 +191,21 @@ function GroupCard({
 
       <div className="mt-auto border-t border-black/[0.06] px-2 py-1.5 dark:border-white/[0.08]">
         {threads?.length === 0 && (
-          <p className="px-2 py-2 text-[13px] text-neutral-400">收件箱没有未读</p>
+          <p className="px-2 py-2 text-[13px] text-neutral-400">
+            <Trans>No unread mail in the inbox</Trans>
+          </p>
         )}
-        {threads?.map((t) => (
+        {threads?.map((thread) => (
           <button
-            key={t.id}
+            key={thread.id}
             type="button"
-            onClick={() => onOpen(group.space, t.id)}
+            onClick={() => onOpen(group.space, thread.id)}
             className="flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-black/[0.04] dark:hover:bg-white/5"
           >
-            <span className="w-24 shrink-0 truncate font-semibold">{displayName(t.from)}</span>
-            <span className="min-w-0 flex-1 truncate">{t.subject || "（无主题）"}</span>
+            <span className="w-24 shrink-0 truncate font-semibold">{displayName(thread.from)}</span>
+            <span className="min-w-0 flex-1 truncate">{thread.subject || t`(No subject)`}</span>
             <span className="shrink-0 text-[12px] text-neutral-400 tabular-nums">
-              {shortDate(t.date)}
+              {shortDate(thread.date, i18n)}
             </span>
           </button>
         ))}

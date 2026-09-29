@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+
 import type { Account, Mailbox } from "../../shared/api";
 
 /** "overview", "all", or a profile id. Spaces switch like Arc spaces. */
@@ -20,23 +23,24 @@ export interface Filters {
   starred: boolean;
 }
 
-export const MAILBOX_NAMES: Record<Mailbox, string> = {
-  inbox: "收件箱",
-  important: "重要",
-  starred: "星标",
-  sent: "已发送",
-  drafts: "草稿",
-  spam: "垃圾邮件",
-  trash: "已删除",
-  all: "所有邮件",
+/** Mailbox names; render with `i18n._(MAILBOX_NAMES[mailbox])`. */
+export const MAILBOX_NAMES: Record<Mailbox, MessageDescriptor> = {
+  inbox: msg`Inbox`,
+  important: msg`Important`,
+  starred: msg`Starred`,
+  sent: msg`Sent`,
+  drafts: msg`Drafts`,
+  spam: msg`Spam`,
+  trash: msg`Trash`,
+  all: msg`All Mail`,
 };
 
-export const CATEGORY_NAMES: Record<string, string> = {
-  CATEGORY_PERSONAL: "主要",
-  CATEGORY_SOCIAL: "社交",
-  CATEGORY_PROMOTIONS: "推广",
-  CATEGORY_UPDATES: "动态",
-  CATEGORY_FORUMS: "论坛",
+export const CATEGORY_NAMES: Record<string, MessageDescriptor> = {
+  CATEGORY_PERSONAL: msg`Primary`,
+  CATEGORY_SOCIAL: msg`Social`,
+  CATEGORY_PROMOTIONS: msg`Promotions`,
+  CATEGORY_UPDATES: msg`Updates`,
+  CATEGORY_FORUMS: msg`Forums`,
 };
 
 /** Accounts that belong to a space. */

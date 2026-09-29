@@ -7,20 +7,27 @@ import { Context, type Effect, type Option, type Stream } from "effect";
 
 import type {
   Account,
+  Address,
   AgentWriteMode,
   AuditEntry,
   Actor,
   Command,
+  DraftRemote,
   ImapSettings,
   IncomingMessage,
   Label,
   MailOp,
   Message,
   OutgoingMessage,
+  Prefs,
   Profile,
   ProfileInput,
   Proposal,
   Provider,
+  QueuedOp,
+  Signature,
+  Template,
+  TemplateInput,
   ThreadQuery,
   ThreadSummary,
 } from "./domain.js";
@@ -107,10 +114,24 @@ export class OAuth extends Context.Service<
 export interface PendingOp {
   id: number;
   accountId: string;
+  /** The message a MailOp changes; the draft id or remote id for draft ops. */
   providerId: string;
-  op: MailOp;
+  op: QueuedOp;
   attempts: number;
   lastError: string | null;
+}
+
+/** A draft as the store keeps it, with where the provider has its copy. */
+export interface StoredDraft {
+  id: string;
+  accountId: string;
+  message: OutgoingMessage;
+  updatedAt: number;
+  proposalId: number | null;
+  /** Null until a push lands. */
+  remote: DraftRemote | null;
+  /** attachmentsKey() of the attachments last pushed. */
+  pushedAttachments: string | null;
 }
 
 /**
@@ -179,10 +200,69 @@ export class Store extends Context.Service<
     deleteProfile(id: string): Effect.Effect<void>;
 
     // Outgoing change queue
-    enqueueOp(accountId: string, providerId: string, op: MailOp): Effect.Effect<void>;
+    enqueueOp(accountId: string, providerId: string, op: QueuedOp): Effect.Effect<void>;
     readonly listPendingOps: Effect.Effect<PendingOp[]>;
+    /**
+     * Marks the op as being pushed. False when another process (app, CLI, MCP)
+     * holds a live claim on it, so no op is pushed twice at once.
+     */
+    claimPendingOp(id: number): Effect.Effect<boolean>;
+    /** Gives the claim back without counting an attempt (the account needs a new sign-in). */
+    releasePendingOp(id: number): Effect.Effect<void>;
     removePendingOp(id: number): Effect.Effect<void>;
+    /** Counts a failed attempt and releases the claim. */
     failPendingOp(id: number, error: string): Effect.Effect<void>;
+
+    // Drafts
+    getDraft(id: string): Effect.Effect<Option.Option<StoredDraft>>;
+    draftByRemoteMessage(
+      accountId: string,
+      messageId: string,
+    ): Effect.Effect<Option.Option<StoredDraft>>;
+    draftByProposal(proposalId: number): Effect.Effect<Option.Option<StoredDraft>>;
+    /** Inserts the draft or replaces its content. Where the provider keeps it stays as is. */
+    putDraft(draft: {
+      id: string;
+      accountId: string;
+      message: OutgoingMessage;
+      proposalId?: number | null;
+    }): Effect.Effect<StoredDraft>;
+    /** Records the provider's copy. False when the draft was deleted locally meanwhile. */
+    setDraftRemote(
+      id: string,
+      remote: DraftRemote | null,
+      pushedAttachments: string | null,
+    ): Effect.Effect<boolean>;
+    /** Deletes the draft and its queued saves that are not being pushed. */
+    deleteDraft(id: string): Effect.Effect<void>;
+    /** Queues a push of the draft unless one is already waiting. */
+    enqueueDraftSave(accountId: string, draftId: string): Effect.Effect<void>;
+    /**
+     * Deletes drafts whose provider copy is gone (the message, or every message
+     * of the account when `messageId` is unset), unless a push is queued.
+     */
+    dropSyncedDrafts(accountId: string, messageId?: string): Effect.Effect<void>;
+
+    // Compose settings
+    readonly prefs: Effect.Effect<Prefs>;
+    setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
+    readonly signatures: Effect.Effect<Signature[]>;
+    /** Empty text removes the signature. */
+    setSignature(signature: Signature): Effect.Effect<void>;
+    readonly templates: Effect.Effect<Template[]>;
+    /** Creates a template when `id` is null. */
+    saveTemplate(id: string | null, input: TemplateInput): Effect.Effect<Template, NotFound>;
+    deleteTemplate(id: string): Effect.Effect<void>;
+
+    // Contacts
+    /**
+     * People from local mail history, best first, hidden ones and `exclude`
+     * (the address being written from) left out. The person's other
+     * accounts stay in: writing to yourself elsewhere is common.
+     */
+    suggestContacts(query: string, limit: number, exclude?: string): Effect.Effect<Address[]>;
+    readonly hiddenContacts: Effect.Effect<string[]>;
+    setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 
     // Audit, agent policy, proposals
     audit(entry: {
@@ -260,6 +340,25 @@ export interface ProviderAdapter {
     message: OutgoingMessage,
     original: Option.Option<{ providerId: string; threadId: string }>,
   ): Effect.Effect<void, ProviderFailure>;
+  /**
+   * Creates the provider's copy of a draft (`remote` null) or replaces it.
+   * Returns where it lives now; Gmail and IMAP give it a new message id on
+   * every save. A copy deleted on the server meanwhile is created again.
+   */
+  saveDraft(account: Account, draft: DraftPush): Effect.Effect<DraftRemote, ProviderFailure>;
+  /** Deletes the provider's copy. One that is already gone counts as deleted. */
+  deleteDraft(account: Account, remote: DraftRemote): Effect.Effect<void, ProviderFailure>;
+  /** The message as raw RFC 5322 bytes: for forwarding as an attachment and opening drafts. */
+  fetchRaw(account: Account, providerId: string): Effect.Effect<Uint8Array, ProviderFailure>;
+}
+
+export interface DraftPush {
+  readonly remote: DraftRemote | null;
+  /** Ready to send: Markdown rendered, a forwarded original attached. */
+  readonly message: OutgoingMessage;
+  readonly original: Option.Option<{ providerId: string; threadId: string }>;
+  /** The attachments changed since the last push (providers that upload them one by one). */
+  readonly replaceAttachments: boolean;
 }
 
 export class Providers extends Context.Service<

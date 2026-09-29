@@ -1,4 +1,7 @@
 import { useAtom } from "@effect/atom-react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { Radio } from "@base-ui/react/radio";
+import { RadioGroup } from "@base-ui/react/radio-group";
 import { Exit } from "effect";
 import { useEffect, useState } from "react";
 
@@ -35,6 +38,7 @@ interface Props {
  * one profile, so checking it here moves it out of its current one.
  */
 export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, onDeleted }: Props) {
+  const { t, i18n } = useLingui();
   const [name, setName] = useState(profile?.name ?? "");
   const [icon, setIcon] = useState(profile?.icon ?? ICONS[0]!);
   const [color, setColor] = useState<ProfileColor>(profile?.color ?? "blue");
@@ -73,26 +77,27 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const error = resultError(save) ?? resultError(remove);
+  const error = resultError(i18n, save) ?? resultError(i18n, remove);
+  const title = profile ? t`Edit space` : t`New space`;
   const profileName = (id: string | null) => profiles.find((p) => p.id === id)?.name;
 
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <form
-        aria-label={profile ? "编辑空间" : "新建空间"}
+        aria-label={title}
         className="w-[400px] rounded-xl bg-white p-5 text-[13px] shadow-2xl dark:bg-neutral-800"
         onSubmit={(e) => {
           e.preventDefault();
           if (name.trim()) void submit();
         }}
       >
-        <h2 className="text-[15px] font-semibold">{profile ? "编辑空间" : "新建空间"}</h2>
+        <h2 className="text-[15px] font-semibold">{title}</h2>
 
         <div className="mt-4 flex items-center gap-3">
           <span
@@ -104,29 +109,35 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="名称，比如 工作"
+            placeholder={t`Name, like Work`}
             className="h-8 min-w-0 flex-1 rounded-md border border-black/10 bg-transparent px-2.5 text-[14px] outline-none focus:border-blue-500 dark:border-white/15"
           />
         </div>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">图标</legend>
+          <legend className="mb-1.5 text-[12px] text-neutral-500">
+            <Trans>Icon</Trans>
+          </legend>
           <div className="flex items-center gap-1">
-            {ICONS.map((i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIcon(i)}
-                className={`flex size-8 items-center justify-center rounded-md text-[17px] ${
-                  icon === i ? "bg-black/10 dark:bg-white/15" : "hover:bg-black/5"
-                }`}
-              >
-                {i}
-              </button>
-            ))}
+            <RadioGroup<string>
+              aria-label={t`Icon`}
+              value={icon}
+              onValueChange={setIcon}
+              className="flex items-center gap-1"
+            >
+              {ICONS.map((i) => (
+                <Radio.Root
+                  key={i}
+                  value={i}
+                  className="flex size-8 items-center justify-center rounded-md text-[17px] outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-blue-500/60 data-checked:bg-black/10 dark:hover:bg-white/5 dark:data-checked:bg-white/15"
+                >
+                  {i}
+                </Radio.Root>
+              ))}
+            </RadioGroup>
             <input
-              aria-label="自定义图标"
-              placeholder="其他"
+              aria-label={t`Custom icon`}
+              placeholder={t`Other`}
               onChange={(e) => {
                 const g = firstGrapheme(e.target.value);
                 if (g) setIcon(g);
@@ -137,26 +148,30 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">颜色</legend>
-          <div className="flex gap-2">
+          <legend className="mb-1.5 text-[12px] text-neutral-500">
+            <Trans>Color</Trans>
+          </legend>
+          <RadioGroup<ProfileColor>
+            aria-label={t`Color`}
+            value={color}
+            onValueChange={setColor}
+            className="flex gap-2"
+          >
             {COLORS.map((c) => (
-              <button
+              <Radio.Root
                 key={c}
-                type="button"
+                value={c}
                 aria-label={c}
-                onClick={() => setColor(c)}
-                className={`size-6 rounded-full ${PROFILE_BG[c]} ${
-                  color === c
-                    ? "ring-2 ring-offset-2 ring-neutral-400 dark:ring-offset-neutral-800"
-                    : ""
-                }`}
+                className={`size-6 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-blue-500/60 data-checked:ring-2 data-checked:ring-neutral-400 dark:ring-offset-neutral-800 ${PROFILE_BG[c]}`}
               />
             ))}
-          </div>
+          </RadioGroup>
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">账户</legend>
+          <legend className="mb-1.5 text-[12px] text-neutral-500">
+            <Trans>Accounts</Trans>
+          </legend>
           <div className="max-h-48 space-y-px overflow-y-auto">
             {accounts.map((a) => {
               const elsewhere =
@@ -182,7 +197,11 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                   <span className="min-w-0 flex-1 truncate">{a.email}</span>
                   {elsewhere && (
                     <span className="shrink-0 text-[12px] text-neutral-400">
-                      {members.has(a.id) ? `从「${elsewhere}」移过来` : `在「${elsewhere}」`}
+                      {members.has(a.id) ? (
+                        <Trans>Moves from “{elsewhere}”</Trans>
+                      ) : (
+                        <Trans>In “{elsewhere}”</Trans>
+                      )}
                     </span>
                   )}
                 </label>
@@ -200,7 +219,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
               onClick={() => void deleteProfile(profile.id)}
               className="h-8 rounded-md px-3 text-red-600 hover:bg-red-500/10"
             >
-              删除空间
+              <Trans>Delete Space</Trans>
             </button>
           )}
           <span className="flex-1" />
@@ -209,14 +228,14 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             onClick={onClose}
             className="h-8 rounded-md px-3 hover:bg-black/5 dark:hover:bg-white/10"
           >
-            取消
+            <Trans>Cancel</Trans>
           </button>
           <button
             type="submit"
             disabled={!name.trim() || save.waiting}
             className="h-8 rounded-md bg-blue-600 px-4 font-medium text-white disabled:opacity-40"
           >
-            {profile ? "保存" : "创建"}
+            {profile ? <Trans>Save</Trans> : <Trans>Create</Trans>}
           </button>
         </div>
       </form>

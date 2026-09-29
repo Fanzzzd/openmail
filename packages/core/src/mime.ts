@@ -25,6 +25,15 @@ export function decodeHeader(value: string): string {
     );
 }
 
+/**
+ * UTF-8 if the bytes are valid UTF-8, else the declared charset. For sources
+ * that may already have converted the text to UTF-8 (Gmail's API).
+ */
+export function decodeUtf8First(bytes: Uint8Array, charset?: string): string {
+  const utf8 = Result.try(() => new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  return Result.getOrElse(utf8, () => decodeBytes(bytes, charset));
+}
+
 /** Decodes with the declared charset; falls back to UTF-8 when ICU does not know it. */
 export function decodeBytes(bytes: Uint8Array, charset = "utf-8"): string {
   // TextDecoder throws a RangeError for a label it does not know.
@@ -80,4 +89,22 @@ export function htmlToText(html: string): string {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+const META_CHARSET = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';
+
+/**
+ * Outgoing HTML as a whole document that declares UTF-8 itself. Exchange
+ * takes the charset of an HTML body from the HTML: a Markdown fragment sent
+ * through Graph arrived in Gmail as UTF-8 bytes labeled GBK. Raw MIME parts
+ * declare utf-8 in their header too; the <meta> costs nothing there. A
+ * document that already declares a charset is left alone.
+ */
+export function htmlDocument(html: string): string {
+  if (/<meta[^>]+charset/i.test(html)) return html;
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, (head) => head + META_CHARSET);
+  if (/<html[^>]*>/i.test(html)) {
+    return html.replace(/<html[^>]*>/i, (tag) => `${tag}<head>${META_CHARSET}</head>`);
+  }
+  return `<!DOCTYPE html><html><head>${META_CHARSET}</head><body>${html}</body></html>`;
 }

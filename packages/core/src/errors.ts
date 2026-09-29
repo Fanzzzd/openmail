@@ -31,7 +31,7 @@ export class ClientNotConfigured extends Schema.TaggedError<ClientNotConfigured>
 ) {}
 
 export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
-  what: Schema.Literals(["account", "message", "proposal", "profile"]),
+  what: Schema.Literals(["account", "message", "proposal", "profile", "draft", "template"]),
   id: Schema.String,
 }) {}
 

@@ -1,4 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import {
   Bookmark,
@@ -111,6 +112,7 @@ export function Sidebar({
 }: Props) {
   const [categoriesOpen, setCategoriesOpen] = useState(true);
   const run = useRunMail();
+  const { t, i18n } = useLingui();
 
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
@@ -124,12 +126,31 @@ export function Sidebar({
   const hasGmail = accounts.some((a) => a.provider === "gmail" && (!scope || scope.includes(a.id)));
   const spaceUnread = members.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
+  /** The footer line: progress while syncing, then failures or the last sync time. */
+  const syncStatus = () => {
+    if (syncState.running) {
+      if (!progress) return t`Syncing…`;
+      const { fetched, total } = progress;
+      return t`Syncing ${fetched}/${total}`;
+    }
+    if (syncState.errors.length) {
+      const count = syncState.errors.length;
+      return t`Sync failed (${count})`;
+    }
+    if (!syncState.lastFinishedAt) return "";
+    const time = new Date(syncState.lastFinishedAt).toLocaleTimeString(i18n.locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return t`Synced ${time}`;
+  };
+
   return (
     <aside className="flex w-58 shrink-0 flex-col border-r border-black/5 bg-neutral-100/60 dark:border-white/5 dark:bg-neutral-950/70">
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
         <button
           type="button"
-          title="添加邮箱"
+          title={t`Add email account`}
           onClick={onAddAccount}
           className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
         >
@@ -137,7 +158,7 @@ export function Sidebar({
         </button>
         <button
           type="button"
-          title="写邮件 (⌘N)"
+          title={t`New message (⌘N)`}
           onClick={onCompose}
           className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
         >
@@ -147,12 +168,12 @@ export function Sidebar({
 
       <div className="flex items-center gap-2 px-4.5 pb-3">
         <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
-          {profile ? `${profile.icon} ${profile.name}` : "全部账户"}
+          {profile ? `${profile.icon} ${profile.name}` : <Trans>All accounts</Trans>}
         </span>
         {profile && (
           <button
             type="button"
-            title="编辑空间"
+            title={t`Edit space`}
             onClick={() => onEditProfile(profile)}
             className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
           >
@@ -172,8 +193,8 @@ export function Sidebar({
                   <Layers className="size-3.5" />
                 </span>
               }
-              label="全部"
-              title="这个空间的所有账户"
+              label={t`All`}
+              title={t`All accounts in this space`}
               badge={spaceUnread}
             />
             {members.map((a) => (
@@ -183,7 +204,7 @@ export function Sidebar({
                 onClick={() => onView({ ...view, accountId: a.id, label: undefined })}
                 icon={<AccountAvatar account={a} />}
                 label={a.email.split("@")[0] ?? a.email}
-                sublabel={a.needsReauth ? "需要重新登录" : a.email.split("@")[1]}
+                sublabel={a.needsReauth ? t`Needs sign-in` : a.email.split("@")[1]}
                 warn={a.needsReauth}
                 title={a.email}
                 badge={unread[a.id] ?? 0}
@@ -193,15 +214,19 @@ export function Sidebar({
         )}
         {members.length === 0 && (
           <p className="px-2 pb-4 text-[12px] leading-relaxed text-neutral-500">
-            这个空间还没有账户。
-            {profile && (
-              <button
-                type="button"
-                onClick={() => onEditProfile(profile)}
-                className="text-blue-600 dark:text-blue-400"
-              >
-                添加账户
-              </button>
+            {profile ? (
+              <Trans>
+                This space has no accounts yet.{" "}
+                <button
+                  type="button"
+                  onClick={() => onEditProfile(profile)}
+                  className="text-blue-600 dark:text-blue-400"
+                >
+                  Add account
+                </button>
+              </Trans>
+            ) : (
+              <Trans>This space has no accounts yet.</Trans>
             )}
           </p>
         )}
@@ -212,13 +237,15 @@ export function Sidebar({
               key={a.id}
               className="mx-1 mb-3 rounded-lg bg-red-500/[0.08] px-3 py-2 text-[12px] leading-relaxed"
             >
-              <p className="text-red-700 dark:text-red-300">{a.email} 的登录已失效，暂停同步。</p>
+              <p className="text-red-700 dark:text-red-300">
+                <Trans>{a.email}'s sign-in has expired. Sync is paused.</Trans>
+              </p>
               <button
                 type="button"
                 onClick={() => onReauth(a)}
                 className="mt-1 font-semibold text-red-700 hover:underline dark:text-red-300"
               >
-                重新登录
+                <Trans>Sign in again</Trans>
               </button>
             </div>
           ))}
@@ -229,20 +256,20 @@ export function Sidebar({
               active={false}
               onClick={onProposals}
               icon={<Sparkles className="size-4.5 text-violet-500" />}
-              label="AI 建议"
+              label={t`AI suggestions`}
               badge={proposals}
             />
           </div>
         )}
 
-        <Section title="邮箱">
+        <Section title={t`Mailboxes`}>
           {MAILBOXES.map(({ id, icon: Icon, color }) => (
             <div key={id}>
               <Item
                 active={view.mailbox === id && !view.label}
                 onClick={() => onView({ ...view, mailbox: id, label: undefined })}
                 icon={<Icon className={`size-4.5 ${color}`} />}
-                label={MAILBOX_NAMES[id]}
+                label={i18n._(MAILBOX_NAMES[id])}
                 badge={
                   id === "inbox" ? (byLabel.INBOX ?? 0) : id === "spam" ? (byLabel.SPAM ?? 0) : 0
                 }
@@ -250,7 +277,7 @@ export function Sidebar({
                   id === "inbox" && hasGmail ? (
                     <button
                       type="button"
-                      aria-label={categoriesOpen ? "收起分类" : "展开分类"}
+                      aria-label={categoriesOpen ? t`Collapse categories` : t`Expand categories`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setCategoriesOpen((v) => !v);
@@ -278,7 +305,7 @@ export function Sidebar({
                       active={view.mailbox === "inbox" && view.label?.id === cat}
                       onClick={() => onView({ ...view, mailbox: "inbox", label: { id: cat } })}
                       icon={<CatIcon className="size-4 text-blue-400" />}
-                      label={name}
+                      label={i18n._(name)}
                       badge={inInbox[cat] ?? 0}
                     />
                   );
@@ -298,19 +325,11 @@ export function Sidebar({
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-neutral-500">
         <span className="min-w-0 flex-1 truncate" title={syncState.errors.join("\n")}>
-          {syncState.running
-            ? progress
-              ? `同步中 ${progress.fetched}/${progress.total}`
-              : "同步中…"
-            : syncState.errors.length
-              ? `同步失败（${syncState.errors.length}）`
-              : syncState.lastFinishedAt
-                ? `已同步 ${new Date(syncState.lastFinishedAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`
-                : ""}
+          {syncStatus()}
         </span>
         <button
           type="button"
-          title="设置 (⌘,)"
+          title={t`Settings (⌘,)`}
           onClick={onSettings}
           className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
         >
@@ -318,7 +337,7 @@ export function Sidebar({
         </button>
         <button
           type="button"
-          title="立即同步 (⌘R)"
+          title={t`Sync now (⌘R)`}
           onClick={() => run(syncNow)}
           className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
         >
@@ -353,11 +372,19 @@ function SpaceSwitcher({
   onSpace: (space: SpaceId) => void;
   onEditProfile: (profile: Profile | "new") => void;
 }) {
+  const { t } = useLingui();
+  /** Name, shortcut for the first seven spaces (⌃3 to ⌃9), and the right-click hint. */
+  const spaceTitle = (p: Profile, i: number) => {
+    const name = p.name;
+    if (i >= 7) return t`${name}, right-click to edit`;
+    const key = i + 3;
+    return t`${name} (⌃${key}), right-click to edit`;
+  };
   return (
     <div className="flex items-center gap-1 overflow-x-auto border-t border-black/5 px-2.5 py-2 dark:border-white/5">
       <button
         type="button"
-        title="总览 (⌃1)"
+        title={t`Overview (⌃1)`}
         onClick={() => onSpace(OVERVIEW)}
         className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-300 ${ring(space === OVERVIEW)}`}
       >
@@ -365,7 +392,7 @@ function SpaceSwitcher({
       </button>
       <button
         type="button"
-        title="全部账户 (⌃2)"
+        title={t`All accounts (⌃2)`}
         onClick={() => onSpace(ALL)}
         className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-300 ${ring(space === ALL)}`}
       >
@@ -378,7 +405,7 @@ function SpaceSwitcher({
         <button
           key={p.id}
           type="button"
-          title={`${p.name}${i < 7 ? ` (⌃${i + 3})` : ""}，右键编辑`}
+          title={spaceTitle(p, i)}
           onClick={() => onSpace(p.id)}
           onContextMenu={(e) => {
             e.preventDefault();
@@ -395,7 +422,7 @@ function SpaceSwitcher({
       ))}
       <button
         type="button"
-        title="新建空间"
+        title={t`New space`}
         onClick={() => onEditProfile("new")}
         className="flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
       >
@@ -418,12 +445,13 @@ function LabelSections({
   onView: (v: View) => void;
   unread: Readonly<Record<string, number>>;
 }) {
+  const { t } = useLingui();
   const groups = new Map<string, Label[]>();
   for (const l of labels) groups.set(l.accountId, [...(groups.get(l.accountId) ?? []), l]);
   return [...groups].map(([accountId, list]) => {
     const email = accounts.find((a) => a.id === accountId)?.email ?? accountId;
     return (
-      <Section key={accountId} title={groups.size > 1 ? email : "标签"}>
+      <Section key={accountId} title={groups.size > 1 ? email : t`Labels`}>
         {list.map((l) => (
           <Item
             key={l.id}

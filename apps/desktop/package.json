@@ -9,18 +9,27 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "check-types": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "package": "electron-vite build && electron-builder"
+    "package": "electron-vite build && electron-builder",
+    "test": "lingui check sync --clean && lingui check missing",
+    "i18n:extract": "lingui extract --clean"
   },
   "dependencies": {
     "@effect/atom-react": "4.0.0-rc.118",
+    "@lingui/core": "^6.8.0",
+    "@lingui/react": "^6.8.0",
     "@openmail/core": "workspace:*",
     "effect": "4.0.0-rc.118",
     "scheduler": "^0.27.0"
   },
   "devDependencies": {
+    "@base-ui/react": "^1.8.0",
     "@iconify-json/logos": "^1.2.14",
     "@iconify-json/selfhst": "^1.2.21",
     "@iconify-json/thesvg-color": "^1.2.13",
+    "@lingui/babel-plugin-lingui-macro": "^6.8.0",
+    "@lingui/cli": "^6.8.0",
+    "@lingui/format-po": "^6.8.0",
+    "@lingui/vite-plugin": "^6.8.0",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",
     "@tailwindcss/vite": "^4.3.3",

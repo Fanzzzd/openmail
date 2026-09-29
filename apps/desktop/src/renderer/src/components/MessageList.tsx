@@ -1,3 +1,4 @@
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Paperclip, Star } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -38,6 +39,7 @@ export function MessageList({
   onSelect,
   onEndReached,
 }: Props) {
+  const { t } = useLingui();
   const listRef = useRef<HTMLDivElement>(null);
 
   // Keep the keyboard selection in view.
@@ -53,21 +55,21 @@ export function MessageList({
     <section className="flex w-[380px] shrink-0 flex-col border-r border-black/5 bg-white dark:border-white/5 dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
-          {searching ? "搜索结果" : title}
+          {searching ? <Trans>Search results</Trans> : title}
         </h1>
         {!searching && (
           <>
             <FilterChip
               active={filters.unread}
               onClick={() => onFilters({ ...filters, unread: !filters.unread })}
-              label="未读"
-              title="只看未读 (⌥⌘L)"
+              label={t`Unread`}
+              title={t`Show only unread (⌥⌘L)`}
             />
             <FilterChip
               active={filters.starred}
               onClick={() => onFilters({ ...filters, starred: !filters.starred })}
-              label="星标"
-              title="只看星标"
+              label={t`Starred`}
+              title={t`Show only starred`}
             />
           </>
         )}
@@ -83,11 +85,13 @@ export function MessageList({
       >
         {threads.length === 0 && !loading && (
           <p className="p-8 text-center text-neutral-400">
-            {searching
-              ? "没有匹配的邮件"
-              : filters.unread || filters.starred
-                ? "没有符合筛选的邮件"
-                : "这里没有邮件"}
+            {searching ? (
+              <Trans>No matching messages</Trans>
+            ) : filters.unread || filters.starred ? (
+              <Trans>No messages match the filters</Trans>
+            ) : (
+              <Trans>No messages here</Trans>
+            )}
           </p>
         )}
         {threads.map((m, i) => (
@@ -149,6 +153,7 @@ function Row({
   showAccount: boolean;
   onSelect: () => void;
 }) {
+  const { i18n } = useLingui();
   const muted = accent ? "text-white/75" : "text-neutral-500 dark:text-neutral-400";
   const chips = m.labels.flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? []).slice(0, 2);
   return (
@@ -180,9 +185,13 @@ function Row({
             className={`size-1.5 shrink-0 self-center rounded-full ${avatarColor(m.accountId.split(":")[1] ?? "")}`}
           />
         )}
-        <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>{shortDate(m.date)}</span>
+        <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
+          {shortDate(m.date, i18n)}
+        </span>
       </span>
-      <span className="mt-0.5 block truncate text-[13px]">{m.subject || "（无主题）"}</span>
+      <span className="mt-0.5 block truncate text-[13px]">
+        {m.subject || <Trans>(No subject)</Trans>}
+      </span>
       <span className="mt-0.5 flex items-center gap-1.5">
         <span className={`min-w-0 flex-1 truncate text-[13px] ${muted}`}>{m.snippet}</span>
         {chips.map((l) => (

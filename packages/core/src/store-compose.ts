@@ -1,0 +1,405 @@
+/**
+ * The Store's SQL for writing mail: drafts, preferences, signatures,
+ * templates and recipient suggestions. Part of the Store service (store.ts
+ * spreads these into it); split out to keep each file readable.
+ */
+import { Clock, Effect, Option, Schema } from "effect";
+import type { SqlClient } from "effect/sql";
+import type { Fragment } from "effect/sql/Statement";
+
+import {
+  Address,
+  DEFAULT_PREFS,
+  type DraftRemote,
+  OutgoingMessage,
+  Prefs,
+  type Signature,
+  SignatureKind,
+  type Template,
+  type TemplateInput,
+  type ThreadQuery,
+  type ThreadSummary,
+} from "./domain.js";
+import { NotFound } from "./errors.js";
+import type { StoredDraft } from "./services.js";
+import { all, first, run } from "./sql-rows.js";
+
+const DraftRow = Schema.Struct({
+  id: Schema.String,
+  account_id: Schema.String,
+  message_json: Schema.fromJsonString(OutgoingMessage),
+  updated_at: Schema.Number,
+  proposal_id: Schema.NullOr(Schema.Number),
+  remote_draft_id: Schema.NullOr(Schema.String),
+  remote_message_id: Schema.NullOr(Schema.String),
+  pushed_attachments: Schema.NullOr(Schema.String),
+});
+
+const LocalDraftRow = Schema.Struct({
+  ...DraftRow.fields,
+  email: Schema.String,
+});
+
+const PrefRow = Schema.Struct({ key: Schema.String, value_json: Schema.String });
+const SignatureRow = Schema.Struct({
+  address: Schema.String,
+  kind: SignatureKind,
+  text: Schema.String,
+});
+const TemplateRow = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  subject: Schema.String,
+  to_json: Schema.fromJsonString(Schema.Array(Address)),
+  cc_json: Schema.fromJsonString(Schema.Array(Address)),
+  body: Schema.String,
+  updated_at: Schema.Number,
+});
+const ContactRow = Schema.Struct({ address: Schema.String, name: Schema.NullOr(Schema.String) });
+const AddressRow = Schema.Struct({ address: Schema.String });
+const IdRow = Schema.Struct({ id: Schema.String });
+
+function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
+  const remote: DraftRemote | null =
+    r.remote_draft_id === null && r.remote_message_id === null
+      ? null
+      : { draftId: r.remote_draft_id, messageId: r.remote_message_id };
+  return {
+    id: r.id,
+    accountId: r.account_id,
+    message: r.message_json,
+    updatedAt: r.updated_at,
+    proposalId: r.proposal_id,
+    remote,
+    pushedAttachments: r.pushed_attachments,
+  };
+}
+
+function toTemplate(r: typeof TemplateRow.Type): Template {
+  return {
+    id: r.id,
+    name: r.name,
+    subject: r.subject,
+    to: r.to_json,
+    cc: r.cc_json,
+    body: r.body,
+    updatedAt: r.updated_at,
+  };
+}
+
+/** One stored preference, or the default when it is missing or no longer valid. */
+function pref<A, I>(schema: Schema.Codec<A, I>, raw: string | undefined, fallback: A): A {
+  if (raw === undefined) return fallback;
+  return Option.getOrElse(
+    Schema.decodeUnknownOption(Schema.fromJsonString(schema))(raw),
+    () => fallback,
+  );
+}
+
+/** Suggestions lose half their weight after this many milliseconds (30 days). */
+const MONTH = 30 * 86_400_000;
+
+export function makeComposeStore(sql: SqlClient.SqlClient) {
+  const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
+    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments`);
+
+  const hasLabel = (label: string) =>
+    sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
+
+  // A queued push of one draft, found by the draft id inside the op.
+  const saveOpFor = (draftId: Fragment | string) =>
+    sql`json_extract(op_json, '$.kind') = 'saveDraft'
+      AND json_extract(op_json, '$.draftId') = ${draftId}`;
+
+  const draftWhere = (where: Fragment) =>
+    first(DraftRow)(sql`SELECT ${DRAFT_COLUMNS} FROM drafts d WHERE ${where}`).pipe(
+      Effect.map(Option.map(toStoredDraft)),
+    );
+
+  const getDraft = Effect.fn("Store.getDraft")((id: string) => draftWhere(sql`d.id = ${id}`));
+
+  const draftByRemoteMessage = Effect.fn("Store.draftByRemoteMessage")(
+    (accountId: string, messageId: string) =>
+      draftWhere(sql`d.account_id = ${accountId} AND d.remote_message_id = ${messageId}`),
+  );
+
+  const draftByProposal = Effect.fn("Store.draftByProposal")((proposalId: number) =>
+    draftWhere(sql`d.proposal_id = ${proposalId}`),
+  );
+
+  const putDraft = Effect.fn("Store.putDraft")(function* (draft: {
+    id: string;
+    accountId: string;
+    message: OutgoingMessage;
+    proposalId?: number | null;
+  }) {
+    const now = yield* Clock.currentTimeMillis;
+    yield* run(sql`INSERT INTO drafts (id, account_id, message_json, updated_at, proposal_id)
+      VALUES (${draft.id}, ${draft.accountId}, ${JSON.stringify(draft.message)}, ${now},
+        ${draft.proposalId ?? null})
+      ON CONFLICT(id) DO UPDATE SET account_id = excluded.account_id,
+        message_json = excluded.message_json, updated_at = excluded.updated_at,
+        proposal_id = COALESCE(excluded.proposal_id, drafts.proposal_id)`);
+    const saved = yield* getDraft(draft.id);
+    if (Option.isNone(saved)) return yield* Effect.die("A draft just written is missing");
+    return saved.value;
+  });
+
+  const setDraftRemote = Effect.fn("Store.setDraftRemote")(function* (
+    id: string,
+    remote: DraftRemote | null,
+    pushedAttachments: string | null,
+  ) {
+    const row = yield* first(IdRow)(sql`UPDATE drafts SET
+        remote_draft_id = ${remote?.draftId ?? null},
+        remote_message_id = ${remote?.messageId ?? null},
+        pushed_attachments = ${pushedAttachments}
+      WHERE id = ${id} RETURNING id`);
+    return Option.isSome(row);
+  });
+
+  const deleteDraft = Effect.fn("Store.deleteDraft")(function* (id: string) {
+    yield* run(sql`DELETE FROM drafts WHERE id = ${id}`);
+    // A push already running (claimed) finds the draft gone and removes its copy.
+    yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+  });
+
+  const enqueueDraftSave = Effect.fn("Store.enqueueDraftSave")(function* (
+    accountId: string,
+    draftId: string,
+  ) {
+    const now = yield* Clock.currentTimeMillis;
+    // A waiting push reads the latest content when it runs, so one is enough.
+    // It is replaced rather than kept so it carries the draft's current account.
+    yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(draftId)}`);
+    yield* run(sql`INSERT INTO pending_ops (account_id, provider_id, op_json, created_at)
+      VALUES (${accountId}, ${draftId}, ${JSON.stringify({ kind: "saveDraft", draftId })},
+        ${now})`);
+  });
+
+  const dropSyncedDrafts = Effect.fn("Store.dropSyncedDrafts")(
+    (accountId: string, messageId?: string) =>
+      run(sql`DELETE FROM drafts WHERE account_id = ${accountId}
+        AND remote_message_id IS NOT NULL
+        ${messageId === undefined ? sql.literal("") : sql`AND remote_message_id = ${messageId}`}
+        AND NOT EXISTS (SELECT 1 FROM pending_ops WHERE ${saveOpFor(sql.literal("drafts.id"))})`),
+  );
+
+  /**
+   * Drafts the Drafts list cannot show from `messages`: never pushed, or
+   * pushed but not pulled back yet. Newest first, as thread rows.
+   */
+  const localDrafts = (q: ThreadQuery, limit: number) => {
+    const where: Fragment[] = [
+      sql`(d.remote_message_id IS NULL OR NOT EXISTS (SELECT 1 FROM messages m
+        WHERE m.account_id = d.account_id AND m.provider_id = d.remote_message_id))`,
+    ];
+    if (q.accountIds) {
+      where.push(
+        q.accountIds.length ? sql`d.account_id IN ${sql.in(q.accountIds)}` : sql.literal("0"),
+      );
+    }
+    if (q.before !== undefined) where.push(sql`d.updated_at < ${q.before}`);
+    return all(LocalDraftRow)(sql`SELECT ${DRAFT_COLUMNS}, a.email FROM drafts d
+      JOIN accounts a ON a.id = d.account_id
+      WHERE ${sql.and(where)} ORDER BY d.updated_at DESC LIMIT ${limit}`).pipe(
+      Effect.map((rows) =>
+        rows.map((r): ThreadSummary => {
+          const me = { name: "", address: r.email };
+          const m = r.message_json;
+          return {
+            id: r.id,
+            accountId: r.account_id,
+            threadId: r.id,
+            subject: m.subject,
+            from: me,
+            date: r.updated_at,
+            snippet: m.text.replace(/\s+/g, " ").trim().slice(0, 200),
+            labels: ["DRAFT"],
+            isUnread: false,
+            isStarred: false,
+            hasAttachments: m.attachments.length > 0 || m.forwardAsAttachment === true,
+            threadCount: 1,
+            participants: [me],
+          };
+        }),
+      ),
+    );
+  };
+
+  // Preferences
+
+  const prefs = all(PrefRow)(sql`SELECT key, value_json FROM prefs`).pipe(
+    Effect.map((rows): Prefs => {
+      const stored = new Map(rows.map((r) => [r.key, r.value_json]));
+      return {
+        undoSendSeconds: pref(
+          Prefs.fields.undoSendSeconds,
+          stored.get("undoSendSeconds"),
+          DEFAULT_PREFS.undoSendSeconds,
+        ),
+        language: pref(Prefs.fields.language, stored.get("language"), DEFAULT_PREFS.language),
+      };
+    }),
+    Effect.withSpan("Store.prefs"),
+  );
+
+  const setPrefs = Effect.fn("Store.setPrefs")(function* (patch: Partial<Prefs>) {
+    for (const [key, value] of Object.entries(patch)) {
+      yield* run(sql`INSERT INTO prefs (key, value_json) VALUES (${key}, ${JSON.stringify(value)})
+        ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json`);
+    }
+  });
+
+  // Signatures
+
+  const signatures = all(SignatureRow)(
+    sql`SELECT address, kind, text FROM signatures WHERE source = 'local' ORDER BY address, kind`,
+  ).pipe(
+    Effect.map((rows): Signature[] => [...rows]),
+    Effect.withSpan("Store.signatures"),
+  );
+
+  const setSignature = Effect.fn("Store.setSignature")((s: Signature) => {
+    const address = s.address.trim().toLowerCase();
+    return s.text.trim()
+      ? run(sql`INSERT INTO signatures (address, kind, source, text)
+          VALUES (${address}, ${s.kind}, 'local', ${s.text})
+          ON CONFLICT(address, kind, source) DO UPDATE SET text = excluded.text`)
+      : run(sql`DELETE FROM signatures
+          WHERE address = ${address} AND kind = ${s.kind} AND source = 'local'`);
+  });
+
+  // Templates
+
+  const TEMPLATE_COLUMNS = sql.literal("id, name, subject, to_json, cc_json, body, updated_at");
+
+  const templates = all(TemplateRow)(
+    sql`SELECT ${TEMPLATE_COLUMNS} FROM templates ORDER BY name COLLATE NOCASE, id`,
+  ).pipe(
+    Effect.map((rows) => rows.map(toTemplate)),
+    Effect.withSpan("Store.templates"),
+  );
+
+  const saveTemplate = Effect.fn("Store.saveTemplate")(function* (
+    id: string | null,
+    input: TemplateInput,
+  ): Effect.fn.Return<Template, NotFound> {
+    const now = yield* Clock.currentTimeMillis;
+    const key = id ?? crypto.randomUUID();
+    const values = {
+      name: input.name.trim(),
+      subject: input.subject,
+      to: JSON.stringify(input.to),
+      cc: JSON.stringify(input.cc),
+      body: input.body,
+    };
+    const row = yield* first(TemplateRow)(
+      id === null
+        ? sql`INSERT INTO templates (id, name, subject, to_json, cc_json, body, updated_at)
+            VALUES (${key}, ${values.name}, ${values.subject}, ${values.to}, ${values.cc},
+              ${values.body}, ${now}) RETURNING ${TEMPLATE_COLUMNS}`
+        : sql`UPDATE templates SET name = ${values.name}, subject = ${values.subject},
+            to_json = ${values.to}, cc_json = ${values.cc}, body = ${values.body},
+            updated_at = ${now} WHERE id = ${key} RETURNING ${TEMPLATE_COLUMNS}`,
+    );
+    if (Option.isNone(row)) return yield* new NotFound({ what: "template", id: key });
+    return toTemplate(row.value);
+  });
+
+  const deleteTemplate = Effect.fn("Store.deleteTemplate")((id: string) =>
+    run(sql`DELETE FROM templates WHERE id = ${id}`),
+  );
+
+  // Contacts
+
+  /**
+   * Everyone the person wrote to (weight 3 in To, 2 in Cc) or heard from
+   * (weight 1), each occurrence discounted by age: weight / (1 + age / 30
+   * days). Frequency and recency add up in one score.
+   */
+  const suggestContacts = Effect.fn("Store.suggestContacts")(function* (
+    query: string,
+    limit: number,
+    exclude?: string,
+  ) {
+    const now = yield* Clock.currentTimeMillis;
+    const escaped = query
+      .trim()
+      .toLowerCase()
+      .replace(/[\\%_]/g, (c) => `\\${c}`);
+    const like = `%${escaped}%`;
+    const sent = hasLabel("SENT");
+    const rows = yield* all(ContactRow)(sql`
+      WITH hits AS (
+        SELECT lower(json_extract(r.value, '$.address')) AS address,
+          json_extract(r.value, '$.name') AS name, m.date AS date, 3.0 AS weight
+        FROM messages m, json_each(m.to_json) r WHERE ${sent}
+        UNION ALL
+        SELECT lower(json_extract(r.value, '$.address')), json_extract(r.value, '$.name'),
+          m.date, 2.0
+        FROM messages m, json_each(m.cc_json) r WHERE ${sent}
+        UNION ALL
+        SELECT lower(m.from_addr), m.from_name, m.date, 1.0 FROM messages m
+        WHERE NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
+          AND NOT ${hasLabel("DRAFT")}
+      ),
+      matched AS (
+        SELECT * FROM hits
+        WHERE address LIKE '%@%'
+          AND address != ${exclude?.trim().toLowerCase() ?? ""}
+          AND address NOT IN (SELECT address FROM hidden_contacts)
+          AND address NOT LIKE '%noreply%' AND address NOT LIKE '%no-reply%'
+          AND address NOT LIKE '%donotreply%'
+      ),
+      scored AS (
+        SELECT address, SUM(weight / (1.0 + MAX(${now} - date, 0) / (${MONTH} * 1.0))) AS score
+        FROM matched GROUP BY address
+        HAVING MAX(address LIKE ${like} ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ${like} ESCAPE '\\')
+      )
+      SELECT s.address,
+        (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
+          ORDER BY h.date DESC LIMIT 1) AS name
+      FROM scored s ORDER BY s.score DESC, s.address LIMIT ${limit}`);
+    return rows.map((r): Address => ({ name: r.name ?? "", address: r.address }));
+  });
+
+  const hiddenContacts = all(AddressRow)(
+    sql`SELECT address FROM hidden_contacts ORDER BY address`,
+  ).pipe(
+    Effect.map((rows) => rows.map((r) => r.address)),
+    Effect.withSpan("Store.hiddenContacts"),
+  );
+
+  const setContactHidden = Effect.fn("Store.setContactHidden")((
+    address: string,
+    hidden: boolean,
+  ) => {
+    const key = address.trim().toLowerCase();
+    return hidden
+      ? run(sql`INSERT INTO hidden_contacts (address) VALUES (${key}) ON CONFLICT DO NOTHING`)
+      : run(sql`DELETE FROM hidden_contacts WHERE address = ${key}`);
+  });
+
+  return {
+    localDrafts,
+    getDraft,
+    draftByRemoteMessage,
+    draftByProposal,
+    putDraft,
+    setDraftRemote,
+    deleteDraft,
+    enqueueDraftSave,
+    dropSyncedDrafts,
+    prefs,
+    setPrefs,
+    signatures,
+    setSignature,
+    templates,
+    saveTemplate,
+    deleteTemplate,
+    suggestContacts,
+    hiddenContacts,
+    setContactHidden,
+  };
+}

@@ -35,6 +35,19 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     audit: () => notUsed("audit"),
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
+    openDraft: () => notUsed("openDraft"),
+    saveDraft: () => notUsed("saveDraft"),
+    discardDraft: () => notUsed("discardDraft"),
+    prefs: notUsed("prefs"),
+    setPrefs: () => notUsed("setPrefs"),
+    signatures: notUsed("signatures"),
+    setSignature: () => notUsed("setSignature"),
+    templates: notUsed("templates"),
+    saveTemplate: () => notUsed("saveTemplate"),
+    deleteTemplate: () => notUsed("deleteTemplate"),
+    suggestContacts: () => notUsed("suggestContacts"),
+    hiddenContacts: notUsed("hiddenContacts"),
+    setContactHidden: () => notUsed("setContactHidden"),
     sync: () => notUsed("sync"),
     syncState: notUsed("syncState"),
     events: Stream.empty,
@@ -159,7 +172,7 @@ it.effect("a denied modify tells the model where the person can allow it", () =>
   }),
 );
 
-it.effect("draft_message only ever performs a send command as the agent", () =>
+it.effect("draft_message only ever performs a draft command as the agent", () =>
   Effect.gen(function* () {
     const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 3 });
     const result = yield* run(
@@ -185,7 +198,7 @@ it.effect("draft_message only ever performs a send command as the agent", () =>
       rationale: "Alice asked for a date.",
     });
     assert.deepStrictEqual(only.command, {
-      kind: "send",
+      kind: "draft",
       accountId: "gmail:me@example.com",
       message: {
         to: [

@@ -1,0 +1,1239 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-29 18:32+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh-CN\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. Separator between list items
+#. Separator between list items
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid ", "
+msgstr "、"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "(no recipients)"
+msgstr "（未填收件人）"
+
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "(No subject)"
+msgstr "（无主题）"
+
+#. placeholder {0}: a.email
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{0}'s sign-in has expired. Sync is paused."
+msgstr "{0} 的登录已失效，暂停同步。"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
+msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
+
+#: src/renderer/src/App.tsx
+msgid "{baseTitle}: {user}"
+msgstr "{baseTitle}：{user}"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{count} unread"
+msgstr "{count} 未读"
+
+#: src/renderer/src/App.tsx
+msgid "{email} is signed in again"
+msgstr "{email} 已重新登录"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "{label} suggestions"
+msgstr "{label}建议"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{more} more"
+msgstr "还有 {more} 个"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{name} (⌃{key}), right-click to edit"
+msgstr "{name} (⌃{key})，右键编辑"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "{name} client"
+msgstr "{name} 客户端"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{name}, right-click to edit"
+msgstr "{name}，右键编辑"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
+msgstr "{op} {count, plural, other {# 个会话}}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "{seconds, plural, one {# second} other {# seconds}}"
+msgstr "{seconds, plural, other {# 秒}}"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "163 Mail"
+msgstr "163 邮箱"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Account"
+msgstr "账户"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Accounts"
+msgstr "账户"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Action"
+msgstr "操作"
+
+#: src/renderer/src/App.tsx
+msgid "Action failed: {reason}"
+msgstr "操作失败：{reason}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Activity"
+msgstr "操作记录"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add"
+msgstr "添加"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add {provider}"
+msgstr "添加 {provider}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add at least one recipient"
+msgstr "至少填一个收件人"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add attachment"
+msgstr "返回添加附件"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Add email account"
+msgstr "添加邮箱"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add label"
+msgstr "加标签"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add star"
+msgstr "加星标"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add Your First Account"
+msgstr "添加第一个邮箱"
+
+#: src/renderer/src/App.tsx
+msgid "Added {email}. Syncing…"
+msgstr "已添加 {email}，正在同步"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
+msgstr "写信时自动加上；换发件账户时跟着换。签名只存在本机。"
+
+#: src/renderer/src/App.tsx
+msgid "Added star"
+msgstr "已加星标"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Addresses no longer suggested"
+msgstr "不再建议的地址"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "After you click Send, the message waits this long. You can undo it until then."
+msgstr "点发送后先等这么久，期间可以撤销。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI ({agent})"
+msgstr "AI（{agent}）"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI Access"
+msgstr "AI 权限"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
+msgstr "AI 可以直接归档、打标签、标已读。每次改动都记在操作记录里，可以撤销。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can read and search mail, but can't change anything."
+msgstr "AI 能读邮件、搜索，不能改动任何东西。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
+msgstr "AI 通过 MCP 连接 openmail，比如 Claude Code。这里决定它能不能改动邮件。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "AI draft"
+msgstr "AI 草稿"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI permission to change mail"
+msgstr "AI 改动邮件的权限"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "AI suggestions"
+msgstr "AI 建议"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All"
+msgstr "全部"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts"
+msgstr "全部账户"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts (⌃2)"
+msgstr "全部账户 (⌃2)"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts in this space"
+msgstr "这个空间的所有账户"
+
+#: src/renderer/src/view.ts
+msgid "All Mail"
+msgstr "所有邮件"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "App-specific password"
+msgstr "应用专用密码"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Approve suggestion"
+msgstr "确认建议"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Archive"
+msgstr "归档"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Archive (E)"
+msgstr "归档 (E)"
+
+#: src/renderer/src/App.tsx
+msgid "Archived"
+msgstr "已归档"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Ask me first"
+msgstr "先问我"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Attach files"
+msgstr "添加附件"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Attachments of the original message are not forwarded"
+msgstr "原邮件的附件不会一起转发"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Authorization code"
+msgstr "授权码"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Back"
+msgstr "返回"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Bcc"
+msgstr "密送"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Body"
+msgstr "正文"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this account."
+msgstr "找不到这个账户。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this draft."
+msgstr "找不到这个草稿。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this message."
+msgstr "找不到这个邮件。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this proposal."
+msgstr "找不到这个建议。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this space."
+msgstr "找不到这个空间。"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this template."
+msgstr "找不到这个模板。"
+
+#: src/renderer/src/App.tsx
+msgid "Can't open the draft: {reason}"
+msgstr "打不开草稿：{reason}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "Can't reach the mail server right now: {0}"
+msgstr "暂时连不上邮件服务器：{0}"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Cancel"
+msgstr "取消"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Cc"
+msgstr "抄送"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Cc: {cc}"
+msgstr "抄送：{cc}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Cc/Bcc"
+msgstr "抄送/密送"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Choose your email provider."
+msgstr "选择邮箱服务商。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Close"
+msgstr "关闭"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Close. The draft is saved."
+msgstr "关闭，草稿会保存"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Collapse categories"
+msgstr "收起分类"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Color"
+msgstr "颜色"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Compose"
+msgstr "撰写"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Confirm removal"
+msgstr "确认移除"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Continue editing"
+msgstr "继续编辑"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't discard: {reason}"
+msgstr "丢弃失败：{reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't save"
+msgstr "保存失败"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't send: {reason}"
+msgstr "发送失败：{reason}"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Create"
+msgstr "创建"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Account Security in your Yahoo account."
+msgstr "在 Yahoo 账户的「账户安全」里生成应用密码。"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
+msgstr "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
+msgstr "在 Apple 账户的「登录与安全」里生成 App 专用密码。"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Custom icon"
+msgstr "自定义图标"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Delete"
+msgstr "删除"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Delete (#)"
+msgstr "删除 (#)"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Delete Space"
+msgstr "删除空间"
+
+#: src/renderer/src/App.tsx
+msgid "Deleted"
+msgstr "已删除"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Denied"
+msgstr "被拒绝"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Discard draft"
+msgstr "丢弃草稿"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Don't attach the original message"
+msgstr "不附上原邮件"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Draft"
+msgstr "草稿"
+
+#: src/renderer/src/App.tsx
+msgid "Draft discarded"
+msgstr "草稿已丢弃"
+
+#: src/renderer/src/view.ts
+msgid "Drafts"
+msgstr "草稿"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Edit space"
+msgstr "编辑空间"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Email address"
+msgstr "邮箱地址"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter the IMAP and SMTP servers your email provider gives you."
+msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Expand categories"
+msgstr "展开分类"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Finish signing in in your browser"
+msgstr "请在浏览器里完成授权"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Finish signing in in your browser, then come back here."
+msgstr "请在浏览器里完成授权。完成后回到这里。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Follow system"
+msgstr "跟随系统"
+
+#: src/renderer/src/view.ts
+msgid "Forums"
+msgstr "论坛"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Forward"
+msgstr "转发"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward (F)"
+msgstr "转发 (F)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward as attachment (⇧F)"
+msgstr "作为附件转发 (⇧F)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "From"
+msgstr "发件人"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "From {from} to {to}"
+msgstr "从 {from} 发给 {to}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "General"
+msgstr "通用"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate app-specific password"
+msgstr "生成应用专用密码"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate authorization code"
+msgstr "生成授权码"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
+msgstr "把账户分进空间，比如「工作」和「个人」。每个空间有自己的收件箱，用 ⌃1 到 ⌃9 切换。"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Icon"
+msgstr "图标"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP account"
+msgstr "IMAP 账户"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP server"
+msgstr "IMAP 服务器"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/view.ts
+msgid "Important"
+msgstr "重要"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "In “{elsewhere}”"
+msgstr "在「{elsewhere}」"
+
+#: src/renderer/src/view.ts
+msgid "Inbox"
+msgstr "收件箱"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Label"
+msgstr "标签"
+
+#: src/renderer/src/App.tsx
+msgid "Label added"
+msgstr "已加标签"
+
+#: src/renderer/src/App.tsx
+msgid "Label removed"
+msgstr "已去掉标签"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Labels"
+msgstr "标签"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels (L)"
+msgstr "标签 (L)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels…"
+msgstr "标签…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Language"
+msgstr "语言"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Last sync failed"
+msgstr "上次同步失败"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Load images"
+msgstr "加载图片"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Loading settings…"
+msgstr "读取设置…"
+
+#: src/renderer/src/errors.ts
+msgid "Lost the connection to the background process."
+msgstr "和后台的连接出错了。"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Mailboxes"
+msgstr "邮箱"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as important"
+msgstr "标为重要"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as important (=)"
+msgstr "标为重要 (=)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as not important"
+msgstr "取消重要"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as not important (=)"
+msgstr "取消重要 (=)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as read"
+msgstr "标为已读"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as read (U)"
+msgstr "标为已读 (U)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as unread"
+msgstr "标为未读"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as unread (U)"
+msgstr "标为未读 (U)"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Mark read/unread"
+msgstr "标记已读/未读"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Markdown works: **bold**, `code`, ```code block```"
+msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as important"
+msgstr "已标为重要"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as not important"
+msgstr "已取消重要"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as read"
+msgstr "已标为已读"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as unread"
+msgstr "已标为未读"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder (V)"
+msgstr "移到文件夹 (V)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder…"
+msgstr "移到文件夹…"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Move to Inbox"
+msgstr "移回收件箱"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Inbox (⇧⌘I)"
+msgstr "移回收件箱 (⇧⌘I)"
+
+#: src/renderer/src/App.tsx
+msgid "Moved to Inbox"
+msgstr "已移回收件箱"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Moves from “{elsewhere}”"
+msgstr "从「{elsewhere}」移过来"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Name the template, then press Return"
+msgstr "给模板起个名字，回车保存"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Name, like Work"
+msgstr "名称，比如 工作"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Needs sign-in"
+msgstr "需要重新登录"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "New draft"
+msgstr "新草稿"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "New Message"
+msgstr "新邮件"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New message (⌘N)"
+msgstr "写邮件 (⌘N)"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "New messages"
+msgstr "新邮件"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New space"
+msgstr "新建空间"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No accounts yet"
+msgstr "还没有账户"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "No activity yet."
+msgstr "还没有操作记录。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No matching messages"
+msgstr "没有匹配的邮件"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages here"
+msgstr "这里没有邮件"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages match the filters"
+msgstr "没有符合筛选的邮件"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "No suggestions waiting for review."
+msgstr "没有待确认的建议。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "No templates yet. Use {token} for the first recipient's name."
+msgstr "还没有模板。可以用 {token} 代入第一个收件人的名字。"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
+msgstr "还没有模板。写信时按 ⌘/，选「把这封邮件存为模板」。"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No unread mail in the inbox"
+msgstr "收件箱没有未读"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Not synced"
+msgstr "未同步"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Off"
+msgstr "关闭"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
+msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Organize directly"
+msgstr "直接整理"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Original message (.eml)"
+msgstr "原邮件（.eml）"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Other"
+msgstr "其他"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Other IMAP"
+msgstr "其他 IMAP"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Overview"
+msgstr "总览"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Overview (⌃1)"
+msgstr "总览 (⌃1)"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Password"
+msgstr "密码"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Port"
+msgstr "端口"
+
+#: src/renderer/src/view.ts
+msgid "Primary"
+msgstr "主要"
+
+#: src/renderer/src/view.ts
+msgid "Promotions"
+msgstr "推广"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "QQ Mail"
+msgstr "QQ 邮箱"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Read only"
+msgstr "只读"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Reject"
+msgstr "拒绝"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Reject suggestion"
+msgstr "拒绝建议"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Remote images are blocked so the sender can't tell if you read this."
+msgstr "已阻止远程图片，防止发件人追踪是否已读。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove"
+msgstr "移除"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Remove {0}"
+msgstr "移除 {0}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove account"
+msgstr "移除账户"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove label"
+msgstr "去掉标签"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove star"
+msgstr "去掉星标"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
+msgstr "从 openmail 移除这个账户和它的本地邮件。服务器上的邮件不受影响。"
+
+#: src/renderer/src/App.tsx
+msgid "Removed star"
+msgstr "已去掉星标"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Replies and forwards"
+msgstr "回复和转发"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply"
+msgstr "回复"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply (R)"
+msgstr "回复 (R)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply All"
+msgstr "回复全部"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply all (A)"
+msgstr "回复全部 (A)"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Report spam"
+msgstr "报告垃圾邮件"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Report spam (!)"
+msgstr "报告垃圾邮件 (!)"
+
+#: src/renderer/src/App.tsx
+msgid "Reported as spam"
+msgstr "已报告为垃圾邮件"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Restore"
+msgstr "恢复"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Review and Send"
+msgstr "检查并发送"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Run"
+msgstr "执行"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Save"
+msgstr "保存"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this message as a template…"
+msgstr "把这封邮件存为模板…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved"
+msgstr "已保存"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Syncs when online."
+msgstr "已存到本机，联网后同步"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saving…"
+msgstr "正在保存…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgctxt "in progress"
+msgid "Saving…"
+msgstr "保存中…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Search  /"
+msgstr "搜索  /"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search results"
+msgstr "搜索结果"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Search templates"
+msgstr "搜索模板"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Select a message"
+msgstr "选择一封邮件"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Send"
+msgstr "发送"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send (⌘↩)"
+msgstr "发送 (⌘↩)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send and archive"
+msgstr "发送并归档"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send and archive (⇧⌘↩)"
+msgstr "发送并归档 (⇧⌘↩)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send anyway"
+msgstr "仍然发送"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Send failed"
+msgstr "发送失败"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
+msgstr "发信不受这个设置影响。AI 写的邮件都会进「AI 建议」，由你在写信窗口里检查后发出。"
+
+#: src/renderer/src/App.tsx
+msgid "Sending…"
+msgstr "正在发送…"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/view.ts
+msgid "Sent"
+msgstr "已发送"
+
+#: src/renderer/src/App.tsx
+msgid "Sent and archived"
+msgstr "已发送并归档"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Settings"
+msgstr "设置"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Settings (⌘,)"
+msgstr "设置 (⌘,)"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only starred"
+msgstr "只看星标"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only unread (⌥⌘L)"
+msgstr "只看未读 (⌥⌘L)"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sign in again"
+msgstr "重新登录"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign In with Browser"
+msgstr "在浏览器中登录"
+
+#: src/renderer/src/App.tsx
+msgid "Sign-in failed: {reason}"
+msgstr "登录失败：{reason}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Signatures"
+msgstr "签名"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP encryption"
+msgstr "SMTP 加密"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP server"
+msgstr "SMTP 服务器"
+
+#: src/renderer/src/view.ts
+msgid "Social"
+msgstr "社交"
+
+#: src/renderer/src/errors.ts
+msgid "Something went wrong. Please try again."
+msgstr "出了点问题，请再试一次。"
+
+#: src/renderer/src/view.ts
+msgid "Spam"
+msgstr "垃圾邮件"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SSL/TLS (usually 465)"
+msgstr "SSL/TLS（通常是 465）"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Star"
+msgstr "星标"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Star (S)"
+msgstr "加星标 (S)"
+
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/view.ts
+msgid "Starred"
+msgstr "星标"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "STARTTLS (usually 587)"
+msgstr "STARTTLS（通常是 587）"
+
+#. placeholder {0}: a.address
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Stop suggesting {0}"
+msgstr "不再建议 {0}"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Stop suggesting this address"
+msgstr "不再建议这个地址"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Subject"
+msgstr "主题"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Suggested"
+msgstr "提出建议"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync All"
+msgstr "同步全部"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync failed"
+msgstr "同步失败"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sync failed ({count})"
+msgstr "同步失败（{count}）"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sync now (⌘R)"
+msgstr "立即同步 (⌘R)"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Synced {time}"
+msgstr "已同步 {time}"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing {fetched}/{total}"
+msgstr "同步中 {fetched}/{total}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Syncing normally"
+msgstr "正常"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing…"
+msgstr "同步中…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Template name"
+msgstr "模板名称"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Templates"
+msgstr "模板"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Templates (⌘/)"
+msgstr "模板 (⌘/)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Templates…"
+msgstr "模板…"
+
+#: src/renderer/src/errors.ts
+msgid "The {client} OAuth client is not set up yet."
+msgstr "还没有填写 {client} 的 OAuth 客户端。"
+
+#: src/renderer/src/App.tsx
+msgid "The account's sign-in has expired. Changes will sync after you sign in again."
+msgstr "账户登录已失效，改动会在重新登录后同步"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
+msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮件，令牌存在系统钥匙串里。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "The message mentions an attachment, but none is added."
+msgstr "正文提到了附件，但还没有添加。"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server refused this action: {0}"
+msgstr "服务器拒绝了这个操作：{0}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server rejected the sign-in. {0}"
+msgstr "服务器拒绝了登录。{0}"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
+msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应用专用密码或授权码，不是网页登录密码。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "These are not email addresses: {list}"
+msgstr "这些不是邮件地址：{list}"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet."
+msgstr "这个空间还没有账户。"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet. <0>Add account</0>"
+msgstr "这个空间还没有账户。<0>添加账户</0>"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Time"
+msgstr "时间"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "To"
+msgstr "收件人"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "To: {to}"
+msgstr "收件人：{to}"
+
+#: src/renderer/src/format.ts
+msgid "Today {time}"
+msgstr "今天 {time}"
+
+#: src/renderer/src/view.ts
+msgid "Trash"
+msgstr "已删除"
+
+#: src/renderer/src/App.tsx
+msgid "Undo"
+msgstr "撤销"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Undo Send"
+msgstr "撤销发送"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Undo send delay"
+msgstr "撤销发送的时长"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Ungrouped"
+msgstr "未分组"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "unknown"
+msgstr "未知"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unread"
+msgstr "未读"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Unstar (S)"
+msgstr "去掉星标 (S)"
+
+#: src/renderer/src/view.ts
+msgid "Updates"
+msgstr "动态"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Username (defaults to the email address)"
+msgstr "用户名（不填就用邮箱地址）"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Verifying…"
+msgstr "正在验证…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Waiting for sign-in…"
+msgstr "等待授权…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
+msgstr "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这台电脑上。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
+msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你确认后才执行。"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Who"
+msgstr "谁"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Write in Markdown"
+msgstr "用 Markdown 写正文"
+
+#: src/renderer/src/format.ts
+msgid "Yesterday"
+msgstr "昨天"
+
+#: src/renderer/src/format.ts
+msgid "Yesterday {time}"
+msgstr "昨天 {time}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You"
+msgstr "你"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You (command line)"
+msgstr "你（命令行）"

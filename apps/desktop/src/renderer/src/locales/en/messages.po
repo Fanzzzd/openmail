@@ -1,0 +1,1233 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-29 18:32+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+#. Separator between list items
+#. Separator between list items
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid ", "
+msgstr ", "
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "(no recipients)"
+msgstr "(no recipients)"
+
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "(No subject)"
+msgstr "(No subject)"
+
+#. placeholder {0}: a.email
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{0}'s sign-in has expired. Sync is paused."
+msgstr "{0}'s sign-in has expired. Sync is paused."
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
+msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
+
+#: src/renderer/src/App.tsx
+msgid "{baseTitle}: {user}"
+msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{count} unread"
+msgstr "{count} unread"
+
+#: src/renderer/src/App.tsx
+msgid "{email} is signed in again"
+msgstr "{email} is signed in again"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "{label} suggestions"
+msgstr "{label} suggestions"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{more} more"
+msgstr "{more} more"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{name} (⌃{key}), right-click to edit"
+msgstr "{name} (⌃{key}), right-click to edit"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "{name} client"
+msgstr "{name} client"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{name}, right-click to edit"
+msgstr "{name}, right-click to edit"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
+msgstr "{op} {count, plural, one {# conversation} other {# conversations}}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "{seconds, plural, one {# second} other {# seconds}}"
+msgstr "{seconds, plural, one {# second} other {# seconds}}"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "163 Mail"
+msgstr "163 Mail"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Account"
+msgstr "Account"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Accounts"
+msgstr "Accounts"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Action"
+msgstr "Action"
+
+#: src/renderer/src/App.tsx
+msgid "Action failed: {reason}"
+msgstr "Action failed: {reason}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Activity"
+msgstr "Activity"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add"
+msgstr "Add"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add {provider}"
+msgstr "Add {provider}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add at least one recipient"
+msgstr "Add at least one recipient"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add attachment"
+msgstr "Add attachment"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Add email account"
+msgstr "Add email account"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add label"
+msgstr "Add label"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add star"
+msgstr "Add star"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add Your First Account"
+msgstr "Add Your First Account"
+
+#: src/renderer/src/App.tsx
+msgid "Added {email}. Syncing…"
+msgstr "Added {email}. Syncing…"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
+msgstr "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
+
+#: src/renderer/src/App.tsx
+msgid "Added star"
+msgstr "Added star"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Addresses no longer suggested"
+msgstr "Addresses no longer suggested"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "After you click Send, the message waits this long. You can undo it until then."
+msgstr "After you click Send, the message waits this long. You can undo it until then."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI ({agent})"
+msgstr "AI ({agent})"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI Access"
+msgstr "AI Access"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
+msgstr "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can read and search mail, but can't change anything."
+msgstr "AI can read and search mail, but can't change anything."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
+msgstr "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "AI draft"
+msgstr "AI draft"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI permission to change mail"
+msgstr "AI permission to change mail"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "AI suggestions"
+msgstr "AI suggestions"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All"
+msgstr "All"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts"
+msgstr "All accounts"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts (⌃2)"
+msgstr "All accounts (⌃2)"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts in this space"
+msgstr "All accounts in this space"
+
+#: src/renderer/src/view.ts
+msgid "All Mail"
+msgstr "All Mail"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "App-specific password"
+msgstr "App-specific password"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Approve suggestion"
+msgstr "Approve suggestion"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Archive"
+msgstr "Archive"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Archive (E)"
+msgstr "Archive (E)"
+
+#: src/renderer/src/App.tsx
+msgid "Archived"
+msgstr "Archived"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Ask me first"
+msgstr "Ask me first"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Attach files"
+msgstr "Attach files"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Attachments of the original message are not forwarded"
+msgstr "Attachments of the original message are not forwarded"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Authorization code"
+msgstr "Authorization code"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Back"
+msgstr "Back"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Bcc"
+msgstr "Bcc"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Body"
+msgstr "Body"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this account."
+msgstr "Can't find this account."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this draft."
+msgstr "Can't find this draft."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this message."
+msgstr "Can't find this message."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this proposal."
+msgstr "Can't find this proposal."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this space."
+msgstr "Can't find this space."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this template."
+msgstr "Can't find this template."
+
+#: src/renderer/src/App.tsx
+msgid "Can't open the draft: {reason}"
+msgstr "Can't open the draft: {reason}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "Can't reach the mail server right now: {0}"
+msgstr "Can't reach the mail server right now: {0}"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Cc"
+msgstr "Cc"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Cc: {cc}"
+msgstr "Cc: {cc}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Cc/Bcc"
+msgstr "Cc/Bcc"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Choose your email provider."
+msgstr "Choose your email provider."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Close"
+msgstr "Close"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Close. The draft is saved."
+msgstr "Close. The draft is saved."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Collapse categories"
+msgstr "Collapse categories"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Color"
+msgstr "Color"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Compose"
+msgstr "Compose"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Confirm removal"
+msgstr "Confirm Remove"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Continue editing"
+msgstr "Continue editing"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't discard: {reason}"
+msgstr "Couldn't discard: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't save"
+msgstr "Couldn't save"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't send: {reason}"
+msgstr "Couldn't send: {reason}"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Create"
+msgstr "Create"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Account Security in your Yahoo account."
+msgstr "Create an app password under Account Security in your Yahoo account."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
+msgstr "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
+msgstr "Create an app-specific password under Sign-In and Security in your Apple Account."
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Custom icon"
+msgstr "Custom icon"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Delete"
+msgstr "Delete"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Delete (#)"
+msgstr "Delete (#)"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Delete Space"
+msgstr "Delete Space"
+
+#: src/renderer/src/App.tsx
+msgid "Deleted"
+msgstr "Deleted"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Denied"
+msgstr "Denied"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Discard draft"
+msgstr "Discard draft"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Don't attach the original message"
+msgstr "Don't attach the original message"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Draft"
+msgstr "Draft"
+
+#: src/renderer/src/App.tsx
+msgid "Draft discarded"
+msgstr "Draft discarded"
+
+#: src/renderer/src/view.ts
+msgid "Drafts"
+msgstr "Drafts"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Edit space"
+msgstr "Edit space"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Email address"
+msgstr "Email address"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter the IMAP and SMTP servers your email provider gives you."
+msgstr "Enter the IMAP and SMTP servers your email provider gives you."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Expand categories"
+msgstr "Expand categories"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Finish signing in in your browser"
+msgstr "Finish signing in in your browser"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Finish signing in in your browser, then come back here."
+msgstr "Finish signing in in your browser, then come back here."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Follow system"
+msgstr "Follow system"
+
+#: src/renderer/src/view.ts
+msgid "Forums"
+msgstr "Forums"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Forward"
+msgstr "Forward"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward (F)"
+msgstr "Forward (F)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward as attachment (⇧F)"
+msgstr "Forward as attachment (⇧F)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "From"
+msgstr "From"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "From {from} to {to}"
+msgstr "From {from} to {to}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "General"
+msgstr "General"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate app-specific password"
+msgstr "Generate app-specific password"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate authorization code"
+msgstr "Generate authorization code"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
+msgstr "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Icon"
+msgstr "Icon"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP account"
+msgstr "IMAP account"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP server"
+msgstr "IMAP server"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/view.ts
+msgid "Important"
+msgstr "Important"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "In “{elsewhere}”"
+msgstr "In “{elsewhere}”"
+
+#: src/renderer/src/view.ts
+msgid "Inbox"
+msgstr "Inbox"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Label"
+msgstr "Label"
+
+#: src/renderer/src/App.tsx
+msgid "Label added"
+msgstr "Label added"
+
+#: src/renderer/src/App.tsx
+msgid "Label removed"
+msgstr "Label removed"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Labels"
+msgstr "Labels"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels (L)"
+msgstr "Labels (L)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels…"
+msgstr "Labels…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Language"
+msgstr "Language"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Last sync failed"
+msgstr "Last sync failed"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Load images"
+msgstr "Load images"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Loading settings…"
+msgstr "Loading settings…"
+
+#: src/renderer/src/errors.ts
+msgid "Lost the connection to the background process."
+msgstr "Lost the connection to the background process."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Mailboxes"
+msgstr "Mailboxes"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as important"
+msgstr "Mark as important"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as important (=)"
+msgstr "Mark as important (=)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as not important"
+msgstr "Mark as not important"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as not important (=)"
+msgstr "Mark as not important (=)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as read"
+msgstr "Mark as read"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as read (U)"
+msgstr "Mark as read (U)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mark as unread"
+msgstr "Mark as unread"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as unread (U)"
+msgstr "Mark as unread (U)"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Mark read/unread"
+msgstr "Mark read/unread"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Markdown works: **bold**, `code`, ```code block```"
+msgstr "Markdown works: **bold**, `code`, ```code block```"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as important"
+msgstr "Marked as important"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as not important"
+msgstr "Marked as not important"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as read"
+msgstr "Marked as read"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as unread"
+msgstr "Marked as unread"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder (V)"
+msgstr "Move to folder (V)"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder…"
+msgstr "Move to folder…"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Move to Inbox"
+msgstr "Move to Inbox"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Inbox (⇧⌘I)"
+msgstr "Move to Inbox (⇧⌘I)"
+
+#: src/renderer/src/App.tsx
+msgid "Moved to Inbox"
+msgstr "Moved to Inbox"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Moves from “{elsewhere}”"
+msgstr "Moves from “{elsewhere}”"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Name the template, then press Return"
+msgstr "Name the template, then press Return"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Name, like Work"
+msgstr "Name, like Work"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Needs sign-in"
+msgstr "Needs sign-in"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "New draft"
+msgstr "New draft"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "New Message"
+msgstr "New Message"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New message (⌘N)"
+msgstr "New message (⌘N)"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "New messages"
+msgstr "New messages"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New space"
+msgstr "New space"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No accounts yet"
+msgstr "No accounts yet"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "No activity yet."
+msgstr "No activity yet."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No matching messages"
+msgstr "No matching messages"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages here"
+msgstr "No messages here"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages match the filters"
+msgstr "No messages match the filters"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "No suggestions waiting for review."
+msgstr "No suggestions waiting for review."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "No templates yet. Use {token} for the first recipient's name."
+msgstr "No templates yet. Use {token} for the first recipient's name."
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
+msgstr "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No unread mail in the inbox"
+msgstr "No unread mail in the inbox"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Not synced"
+msgstr "Not synced"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Off"
+msgstr "Off"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
+msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Organize directly"
+msgstr "Organize directly"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Original message (.eml)"
+msgstr "Original message (.eml)"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Other"
+msgstr "Other"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Other IMAP"
+msgstr "Other IMAP"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Overview"
+msgstr "Overview"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Overview (⌃1)"
+msgstr "Overview (⌃1)"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Password"
+msgstr "Password"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Port"
+msgstr "Port"
+
+#: src/renderer/src/view.ts
+msgid "Primary"
+msgstr "Primary"
+
+#: src/renderer/src/view.ts
+msgid "Promotions"
+msgstr "Promotions"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "QQ Mail"
+msgstr "QQ Mail"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Read only"
+msgstr "Read only"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Reject"
+msgstr "Reject"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Reject suggestion"
+msgstr "Reject suggestion"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Remote images are blocked so the sender can't tell if you read this."
+msgstr "Remote images are blocked so the sender can't tell if you read this."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove"
+msgstr "Remove"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Remove {0}"
+msgstr "Remove {0}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove account"
+msgstr "Remove account"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove label"
+msgstr "Remove label"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove star"
+msgstr "Remove star"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
+msgstr "Remove this account and its local mail from openmail. Mail on the server is not affected."
+
+#: src/renderer/src/App.tsx
+msgid "Removed star"
+msgstr "Removed star"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Replies and forwards"
+msgstr "Replies and forwards"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply"
+msgstr "Reply"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply (R)"
+msgstr "Reply (R)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply All"
+msgstr "Reply All"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply all (A)"
+msgstr "Reply all (A)"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Report spam"
+msgstr "Report spam"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Report spam (!)"
+msgstr "Report spam (!)"
+
+#: src/renderer/src/App.tsx
+msgid "Reported as spam"
+msgstr "Reported as spam"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Restore"
+msgstr "Restore"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Review and Send"
+msgstr "Review and Send"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Run"
+msgstr "Run"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Save"
+msgstr "Save"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this message as a template…"
+msgstr "Save this message as a template…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved"
+msgstr "Saved"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Syncs when online."
+msgstr "Saved on this Mac. Syncs when online."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saving…"
+msgstr "Saving…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgctxt "in progress"
+msgid "Saving…"
+msgstr "Saving…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Search  /"
+msgstr "Search  /"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search results"
+msgstr "Search results"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Search templates"
+msgstr "Search templates"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Select a message"
+msgstr "Select a message"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Send"
+msgstr "Send"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send (⌘↩)"
+msgstr "Send (⌘↩)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send and archive"
+msgstr "Send and archive"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send and archive (⇧⌘↩)"
+msgstr "Send and archive (⇧⌘↩)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send anyway"
+msgstr "Send anyway"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Send failed"
+msgstr "Send failed"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
+msgstr "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
+
+#: src/renderer/src/App.tsx
+msgid "Sending…"
+msgstr "Sending…"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/view.ts
+msgid "Sent"
+msgstr "Sent"
+
+#: src/renderer/src/App.tsx
+msgid "Sent and archived"
+msgstr "Sent and archived"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Settings"
+msgstr "Settings"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Settings (⌘,)"
+msgstr "Settings (⌘,)"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only starred"
+msgstr "Show only starred"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only unread (⌥⌘L)"
+msgstr "Show only unread (⌥⌘L)"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sign in again"
+msgstr "Sign in again"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign In with Browser"
+msgstr "Sign In with Browser"
+
+#: src/renderer/src/App.tsx
+msgid "Sign-in failed: {reason}"
+msgstr "Sign-in failed: {reason}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Signatures"
+msgstr "Signatures"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP encryption"
+msgstr "SMTP encryption"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP server"
+msgstr "SMTP server"
+
+#: src/renderer/src/view.ts
+msgid "Social"
+msgstr "Social"
+
+#: src/renderer/src/errors.ts
+msgid "Something went wrong. Please try again."
+msgstr "Something went wrong. Please try again."
+
+#: src/renderer/src/view.ts
+msgid "Spam"
+msgstr "Spam"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SSL/TLS (usually 465)"
+msgstr "SSL/TLS (usually 465)"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Star"
+msgstr "Star"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Star (S)"
+msgstr "Star (S)"
+
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/view.ts
+msgid "Starred"
+msgstr "Starred"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "STARTTLS (usually 587)"
+msgstr "STARTTLS (usually 587)"
+
+#. placeholder {0}: a.address
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Stop suggesting {0}"
+msgstr "Stop suggesting {0}"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Stop suggesting this address"
+msgstr "Stop suggesting this address"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Subject"
+msgstr "Subject"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Suggested"
+msgstr "Suggested"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync All"
+msgstr "Sync All"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync failed"
+msgstr "Sync failed"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sync failed ({count})"
+msgstr "Sync failed ({count})"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sync now (⌘R)"
+msgstr "Sync now (⌘R)"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Synced {time}"
+msgstr "Synced {time}"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing {fetched}/{total}"
+msgstr "Syncing {fetched}/{total}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Syncing normally"
+msgstr "Syncing normally"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing…"
+msgstr "Syncing…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Template name"
+msgstr "Template name"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Templates"
+msgstr "Templates"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Templates (⌘/)"
+msgstr "Templates (⌘/)"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Templates…"
+msgstr "Templates…"
+
+#: src/renderer/src/errors.ts
+msgid "The {client} OAuth client is not set up yet."
+msgstr "The {client} OAuth client is not set up yet."
+
+#: src/renderer/src/App.tsx
+msgid "The account's sign-in has expired. Changes will sync after you sign in again."
+msgstr "The account's sign-in has expired. Changes will sync after you sign in again."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
+msgstr "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "The message mentions an attachment, but none is added."
+msgstr "The message mentions an attachment, but none is added."
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server refused this action: {0}"
+msgstr "The server refused this action: {0}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server rejected the sign-in. {0}"
+msgstr "The server rejected the sign-in. {0}"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
+msgstr "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "These are not email addresses: {list}"
+msgstr "These are not email addresses: {list}"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet."
+msgstr "This space has no accounts yet."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet. <0>Add account</0>"
+msgstr "This space has no accounts yet. <0>Add account</0>"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Time"
+msgstr "Time"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "To"
+msgstr "To"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "To: {to}"
+msgstr "To: {to}"
+
+#: src/renderer/src/format.ts
+msgid "Today {time}"
+msgstr "Today {time}"
+
+#: src/renderer/src/view.ts
+msgid "Trash"
+msgstr "Trash"
+
+#: src/renderer/src/App.tsx
+msgid "Undo"
+msgstr "Undo"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Undo Send"
+msgstr "Undo Send"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Undo send delay"
+msgstr "Undo send delay"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Ungrouped"
+msgstr "Ungrouped"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "unknown"
+msgstr "unknown"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unread"
+msgstr "Unread"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Unstar (S)"
+msgstr "Unstar (S)"
+
+#: src/renderer/src/view.ts
+msgid "Updates"
+msgstr "Updates"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Username (defaults to the email address)"
+msgstr "Username (defaults to the email address)"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Verifying…"
+msgstr "Verifying…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Waiting for sign-in…"
+msgstr "Waiting for sign-in…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
+msgstr "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
+msgstr "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Who"
+msgstr "Who"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Write in Markdown"
+msgstr "Write in Markdown"
+
+#: src/renderer/src/format.ts
+msgid "Yesterday"
+msgstr "Yesterday"
+
+#: src/renderer/src/format.ts
+msgid "Yesterday {time}"
+msgstr "Yesterday {time}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You"
+msgstr "You"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You (command line)"
+msgstr "You (command line)"

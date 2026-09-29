@@ -5,6 +5,7 @@ import { buildMime, type Threading } from "./compose.js";
 import type {
   Account,
   Attachment,
+  DraftRemote,
   IncomingMessage,
   Label,
   MailOp,
@@ -18,12 +19,13 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "./errors.js";
-import { charsetOf, decodeBytes, decodeHeader, htmlToText, parseAddressList } from "./mime.js";
+import { charsetOf, decodeHeader, decodeUtf8First, htmlToText, parseAddressList } from "./mime.js";
 import {
   AppConfig,
   type Change,
   type ConnectInput,
   type Connected,
+  type DraftPush,
   OAuth,
   type ProviderAdapter,
   Secrets,
@@ -120,6 +122,18 @@ const Metadata = Schema.Struct({
   payload: Schema.Struct({ headers: Schema.optionalKey(Schema.Array(Header)) }),
 });
 
+const GmailDraft = Schema.Struct({
+  id: Schema.String,
+  message: Schema.Struct({ id: Schema.String }),
+});
+
+const DraftList = Schema.Struct({
+  drafts: Schema.optionalKey(Schema.Array(GmailDraft)),
+  nextPageToken: Schema.optionalKey(Schema.String),
+});
+
+const RawMessage = Schema.Struct({ raw: Schema.String });
+
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
 class ApiError extends Data.TaggedError("ApiError")<{ status: number; body: string }> {}
 
@@ -132,6 +146,8 @@ const isTransient = (e: ApiError) =>
   (e.status === 403 && /rateLimitExceeded/i.test(e.body));
 
 const RETRY = { schedule: Schedule.exponential("500 millis"), times: 4, while: isTransient };
+
+const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 
 /**
  * Maps a failed call to what the op queue does next: sign in again, drop the
@@ -234,7 +250,16 @@ export const makeGmail: Effect.Effect<
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
     accessToken(accountId).pipe(
       Effect.flatMap((token) => execute(token, request)),
-      // A rejected token may still sit in the cache; the next call refreshes.
+      // The provider can reject an access token before it expires. Drop it,
+      // refresh, and retry once; only a failed refresh means signing in again.
+      Effect.catchIf(
+        (e) => e._tag === "ApiError" && e.status === 401,
+        () =>
+          Effect.sync(() => tokens.delete(accountId)).pipe(
+            Effect.andThen(accessToken(accountId)),
+            Effect.flatMap((token) => execute(token, request)),
+          ),
+      ),
       Effect.tapError((e) =>
         e._tag === "ApiError" && (e.status === 401 || e.status === 403)
           ? Effect.sync(() => tokens.delete(accountId))
@@ -259,6 +284,12 @@ export const makeGmail: Effect.Effect<
         ? HttpClientRequest.post(`${API}${path}`)
         : HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.post(`${API}${path}`), body),
     );
+
+  const put = (accountId: string, path: string, body: unknown) =>
+    api(accountId, HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.put(`${API}${path}`), body));
+
+  const del = (accountId: string, path: string) =>
+    api(accountId, HttpClientRequest.delete(`${API}${path}`));
 
   const connect = Effect.fn("Gmail.connect")(function* (
     input: ConnectInput,
@@ -476,7 +507,88 @@ export const makeGmail: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
-  return { connect, pull, push, send } satisfies ProviderAdapter;
+  /**
+   * The draft id behind a draft message. Gmail keeps the draft id stable but
+   * gives the message a new id on every save; a draft that came in through a
+   * pull is only known by its message id.
+   */
+  const findDraftId = Effect.fnUntraced(function* (accountId: string, messageId: string) {
+    let pageToken: string | undefined;
+    do {
+      const page = yield* get(accountId, DraftList, "/drafts", {
+        maxResults: "500",
+        ...(pageToken ? { pageToken } : {}),
+      });
+      const found = page.drafts?.find((d) => d.message.id === messageId);
+      if (found) return Option.some(found.id);
+      pageToken = page.nextPageToken;
+    } while (pageToken);
+    return Option.none<string>();
+  });
+
+  const draftIdOf = (accountId: string, remote: DraftRemote | null) =>
+    remote?.draftId
+      ? Effect.succeed(Option.some(remote.draftId))
+      : remote?.messageId
+        ? findDraftId(accountId, remote.messageId)
+        : Effect.succeed(Option.none<string>());
+
+  const saveDraft = Effect.fn("Gmail.saveDraft")(
+    function* (account: Account, draft: DraftPush) {
+      const { message, original } = draft;
+      let threading: Threading = {};
+      let threadId: string | undefined;
+      if (Option.isSome(original)) {
+        threading = yield* fetchThreading(account.id, original.value.providerId);
+        if (message.mode !== "forward") threadId = original.value.threadId;
+      }
+      const raw = yield* buildMime({ name: "", address: account.email }, message, threading);
+      const body = {
+        message: { raw: raw.toString("base64url"), ...(threadId ? { threadId } : {}) },
+      };
+      const create = post(account.id, "/drafts", body);
+      const existing = yield* draftIdOf(account.id, draft.remote);
+      const saved = yield* (
+        Option.isSome(existing)
+          ? // Deleted in another client meanwhile: the person is still writing it.
+            put(account.id, `/drafts/${existing.value}`, body).pipe(
+              Effect.catchIf(is404, () => create),
+            )
+          : create
+      ).pipe(Effect.flatMap(decode(GmailDraft)));
+      return { draftId: saved.id, messageId: saved.message.id } satisfies DraftRemote;
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  const deleteDraft = Effect.fn("Gmail.deleteDraft")(
+    function* (account: Account, remote: DraftRemote) {
+      const id = yield* draftIdOf(account.id, remote);
+      if (Option.isNone(id)) return;
+      yield* del(account.id, `/drafts/${id.value}`).pipe(Effect.catchIf(is404, () => Effect.void));
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  const fetchRaw = Effect.fn("Gmail.fetchRaw")(
+    function* (account: Account, providerId: string) {
+      const { raw } = yield* get(account.id, RawMessage, `/messages/${providerId}`, {
+        format: "raw",
+      });
+      return new Uint8Array(Buffer.from(raw, "base64url"));
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  return {
+    connect,
+    pull,
+    push,
+    send,
+    saveDraft,
+    deleteDraft,
+    fetchRaw,
+  } satisfies ProviderAdapter;
 });
 
 export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
@@ -514,7 +626,10 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
       const partHeaders = new Map(
         (part.headers ?? []).map((h) => [h.name.toLowerCase(), h.value] as const),
       );
-      const decoded = decodeBytes(
+      // Gmail's API hands text parts over already converted to UTF-8, while
+      // the part header keeps the sender's charset (gb2312 from Outlook,
+      // for example). Decoding by the header would garble them.
+      const decoded = decodeUtf8First(
         Buffer.from(part.body.data, "base64url"),
         charsetOf(partHeaders.get("content-type")),
       );

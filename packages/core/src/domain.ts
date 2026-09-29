@@ -132,6 +132,12 @@ export const Message = Schema.Struct({
   bodyText: Schema.String,
   bodyHtml: Schema.String,
   attachments: Schema.Array(Attachment),
+  /**
+   * The local draft this message is the provider's copy of. It outlives the
+   * message: Gmail and IMAP replace the message on every save, so a thread
+   * read before the save still opens the draft by this id.
+   */
+  draftId: Schema.optionalKey(Schema.String),
 });
 export type Message = typeof Message.Type;
 
@@ -243,8 +249,106 @@ export const OutgoingMessage = Schema.Struct({
   /** Local message id this replies to or forwards; sets threading headers. */
   inReplyTo: Schema.optionalKey(Schema.String),
   mode: Schema.optionalKey(ComposeMode),
+  /** `text` is Markdown. Core renders the HTML part at send time; `html` is ignored. */
+  markdown: Schema.optionalKey(Schema.Boolean),
+  /**
+   * Forward `inReplyTo` as an attached .eml (message/rfc822) instead of
+   * quoting it. Core fetches the original's raw MIME at send time.
+   */
+  forwardAsAttachment: Schema.optionalKey(Schema.Boolean),
 });
 export type OutgoingMessage = typeof OutgoingMessage.Type;
+
+// Drafts
+
+/**
+ * A draft is a local record keyed by its own id. The provider's copy is a
+ * mirror that follows it through the change queue.
+ */
+export const Draft = Schema.Struct({
+  /** Local id, "draft:<uuid>". The app picks it, so autosaves never create two. */
+  id: Schema.String,
+  accountId: Schema.String,
+  message: OutgoingMessage,
+  updatedAt: Schema.Number,
+  /** Set when an agent wrote it. Sending approves the proposal, discarding rejects it. */
+  proposalId: Schema.NullOr(Schema.Number),
+  /** A copy exists on the provider. False until the first push lands. */
+  synced: Schema.Boolean,
+});
+export type Draft = typeof Draft.Type;
+
+export const DraftInput = Schema.Struct({
+  id: Schema.String,
+  accountId: Schema.String,
+  message: OutgoingMessage,
+});
+export type DraftInput = typeof DraftInput.Type;
+
+/** Where the provider keeps a draft. Gmail has a draft id; Outlook and IMAP only a message id. */
+export const DraftRemote = Schema.Struct({
+  draftId: Schema.NullOr(Schema.String),
+  messageId: Schema.NullOr(Schema.String),
+});
+export type DraftRemote = typeof DraftRemote.Type;
+
+/** Draft changes waiting in the queue next to MailOps. */
+export const DraftOp = Schema.Union([
+  /** Push the draft's current content; the queue reads it when the op runs. */
+  Schema.Struct({ kind: Schema.Literal("saveDraft"), draftId: Schema.String }),
+  Schema.Struct({ kind: Schema.Literal("deleteDraft"), remote: DraftRemote }),
+]);
+export type DraftOp = typeof DraftOp.Type;
+
+export const QueuedOp = Schema.Union([MailOp, DraftOp]);
+export type QueuedOp = typeof QueuedOp.Type;
+
+// Compose settings
+
+export const UNDO_SEND_SECONDS = [0, 5, 10, 20, 30] as const;
+
+export const LANGUAGES = ["system", "zh-CN", "en"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+/** App preferences, stored in core so the CLI and a mobile app see the same values. */
+export const Prefs = Schema.Struct({
+  /** How long Send waits so the person can take the message back. */
+  undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
+  /** UI language. "system" follows the OS language. */
+  language: Schema.Literals(LANGUAGES),
+});
+export type Prefs = typeof Prefs.Type;
+
+export const DEFAULT_PREFS: Prefs = { undoSendSeconds: 5, language: "system" };
+
+/** Signatures differ for new messages and for replies and forwards. */
+export const SignatureKind = Schema.Literals(["new", "reply"]);
+export type SignatureKind = typeof SignatureKind.Type;
+
+/** A local signature for one sending address. Empty text means none. */
+export const Signature = Schema.Struct({
+  address: Schema.String,
+  kind: SignatureKind,
+  text: Schema.String,
+});
+export type Signature = typeof Signature.Type;
+
+/** Template text may use {first_name}, {last_name}, {name} and {email} of the first recipient. */
+export const TemplateInput = Schema.Struct({
+  name: Schema.String,
+  subject: Schema.String,
+  to: Schema.Array(Address),
+  cc: Schema.Array(Address),
+  body: Schema.String,
+});
+export type TemplateInput = typeof TemplateInput.Type;
+
+export const Template = Schema.Struct({
+  id: Schema.String,
+  ...TemplateInput.fields,
+  updatedAt: Schema.Number,
+});
+export type Template = typeof Template.Type;
 
 /**
  * Every change to mail or accounts is one of these values, so the same thing
@@ -261,8 +365,12 @@ export const Command = Schema.Union([
     kind: Schema.Literal("send"),
     accountId: Schema.String,
     message: OutgoingMessage,
+    /** The saved draft this sends. It is removed locally and on the provider once sent. */
+    draftId: Schema.optionalKey(Schema.String),
+    /** Archive the thread of `inReplyTo` after sending (send and archive). */
+    archive: Schema.optionalKey(Schema.Boolean),
   }),
-  /** A message for a person to finish and send from the app. */
+  /** A message for a person to finish and send from the app. Agents only; it becomes a synced draft. */
   Schema.Struct({
     kind: Schema.Literal("draft"),
     accountId: Schema.String,

@@ -3,27 +3,50 @@ import {
   Deferred,
   Duration,
   Effect,
+  FiberSet,
   Layer,
   Option,
   PubSub,
   Ref,
   Schedule,
+  Semaphore,
   Stream,
 } from "effect";
 
-import type { Account, Actor, Command, FlushResult, Outcome, SyncResult } from "./domain.js";
+import type {
+  Account,
+  Actor,
+  Command,
+  DraftInput,
+  FlushResult,
+  Message,
+  Outcome,
+  OutgoingMessage,
+  SyncResult,
+} from "./domain.js";
 import { actorLabel } from "./domain.js";
-import { AuthError, InvalidInput } from "./errors.js";
+import {
+  attachmentsKey,
+  importedMessage,
+  originalAttachment,
+  type ParsedDraft,
+  parseRawDraft,
+  toDraft,
+} from "./drafts.js";
+import { AuthError, InvalidInput, PermanentError } from "./errors.js";
 import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
+import { renderMarkdown } from "./markdown.js";
 import { toModelThread } from "./model-view.js";
 import { decide } from "./policy.js";
 import {
   AppConfig,
   type Change,
   type ConnectInput,
+  type PendingOp,
   Providers,
   Secrets,
   Store,
+  type StoredDraft,
 } from "./services.js";
 import { folderTarget } from "./store.js";
 
@@ -32,10 +55,33 @@ const MAX_ATTEMPTS = 5;
 /** Upserts from a pull land in transactions of this many, or every quarter second. */
 const WRITE_BATCH = 200;
 const DEFAULT_MODEL_CHARS = 12_000;
+const DEFAULT_SUGGESTIONS = 8;
+
+/**
+ * A pull that failed on the network (no status: the connection dropped, DNS
+ * failed after a wake from sleep), throttling or a 5xx is tried again before
+ * the sync counts as failed. The adapters already retry each request for
+ * about 8 s; this covers an outage that outlasts that.
+ */
+const isTransientPull = (e: { readonly _tag: string; readonly status?: number | undefined }) =>
+  e._tag === "ProviderError" && (e.status === undefined || e.status === 429 || e.status >= 500);
+const PULL_RETRY = {
+  schedule: Schedule.exponential("5 seconds"),
+  times: 2,
+  while: isTransientPull,
+};
+
+const newDraftId = () => `draft:${crypto.randomUUID()}`;
 
 export interface MailboxOptions {
   /** Sync every account on this interval, starting right away. The desktop app sets it; CLI and MCP don't. */
   autoSync?: Duration.Input;
+  /**
+   * Push draft saves in the background (default) so saving never waits for
+   * the network. Short-lived processes and tests set false: the save then
+   * returns after the push was tried.
+   */
+  backgroundFlush?: boolean;
 }
 
 export const MailboxLive = (
@@ -63,6 +109,88 @@ export const MailboxLive = (
 
       // Pushing the queue
 
+      /** Background work (queue flushes after a draft save) that dies with the layer. */
+      const background = yield* FiberSet.make();
+      /** One flush at a time in this process; claims keep other processes off the same op. */
+      const flushLock = yield* Semaphore.make(1);
+
+      /**
+       * A message ready for the provider: Markdown rendered, and for a forward
+       * as attachment the original fetched as an .eml and the message turned
+       * into a new one. `original` is what replies and forwards thread on.
+       */
+      const prepare = Effect.fnUntraced(function* (message: OutgoingMessage) {
+        const out: OutgoingMessage = message.markdown
+          ? { ...message, html: renderMarkdown(message.text) }
+          : message;
+        if (!message.inReplyTo) return { message: out, original: Option.none() };
+        const ref = yield* store.messageRef(message.inReplyTo);
+        const source = yield* store.getMessage(message.inReplyTo);
+        if (!message.forwardAsAttachment) {
+          return {
+            message: out,
+            original: Option.some({ providerId: ref.providerId, threadId: source.threadId }),
+          };
+        }
+        // The original lives on the account that received it.
+        const owner = yield* store.getAccount(ref.accountId);
+        const raw = yield* providers.get(owner.provider).fetchRaw(owner, ref.providerId);
+        const forwarded: OutgoingMessage = {
+          to: out.to,
+          cc: out.cc,
+          bcc: out.bcc,
+          subject: out.subject,
+          text: out.text,
+          ...(out.html === undefined ? {} : { html: out.html }),
+          attachments: [...out.attachments, originalAttachment(source.subject, raw)],
+          mode: "new",
+        };
+        return { message: forwarded, original: Option.none() };
+      });
+
+      /** Pushes a draft's current content. A draft discarded meanwhile loses its new copy too. */
+      const pushDraft = Effect.fnUntraced(function* (account: Account, draftId: string) {
+        const stored = yield* store.getDraft(draftId);
+        // Discarded, or moved to another account (a newer op pushes it there).
+        if (Option.isNone(stored) || stored.value.accountId !== account.id) return;
+        const draft = stored.value;
+        const adapter = providers.get(account.provider);
+        const { message, original } = yield* prepare(draft.message).pipe(
+          Effect.catchTag("NotFound", (e) =>
+            Effect.fail(new PermanentError({ message: `The original ${e.what} is gone` })),
+          ),
+        );
+        const key = attachmentsKey(message.attachments);
+        const remote = yield* adapter.saveDraft(account, {
+          remote: draft.remote,
+          message,
+          original,
+          replaceAttachments: key !== draft.pushedAttachments,
+        });
+        if (!(yield* store.setDraftRemote(draftId, remote, key))) {
+          yield* adapter.deleteDraft(account, remote);
+          return;
+        }
+        // Gmail and IMAP replace the message; the old local copy would show twice.
+        const old = draft.remote?.messageId;
+        if (old && old !== remote.messageId) yield* store.deleteMessage(account.id, old);
+        // A reader showing the old copy, or the Drafts list, has to look again.
+        // Pushes run in the background, so nothing else tells the app.
+        if (old !== remote.messageId) yield* changed;
+      });
+
+      const pushOp = (account: Account, pending: PendingOp) => {
+        const { op } = pending;
+        switch (op.kind) {
+          case "saveDraft":
+            return pushDraft(account, op.draftId);
+          case "deleteDraft":
+            return providers.get(account.provider).deleteDraft(account, op.remote);
+          default:
+            return providers.get(account.provider).push(account, pending.providerId, op);
+        }
+      };
+
       const flush = Effect.fn("Mailbox.flush")(function* () {
         const result = { done: 0, failed: 0, reauth: [] as string[] };
         for (const pending of yield* store.listPendingOps) {
@@ -76,15 +204,17 @@ export const MailboxLive = (
             result.reauth.push(account.value.id);
             continue;
           }
-          const adapter = providers.get(account.value.provider);
-          yield* adapter.push(account.value, pending.providerId, pending.op).pipe(
+          if (!(yield* store.claimPendingOp(pending.id))) continue;
+          yield* pushOp(account.value, pending).pipe(
             Effect.andThen(store.removePendingOp(pending.id)),
             Effect.andThen(Effect.sync(() => result.done++)),
             Effect.catchTags({
               AuthError: () =>
-                store
-                  .setNeedsReauth(account.value.id, true)
-                  .pipe(Effect.andThen(Effect.sync(() => result.reauth.push(account.value.id)))),
+                Effect.all([
+                  store.setNeedsReauth(account.value.id, true),
+                  store.releasePendingOp(pending.id),
+                  Effect.sync(() => result.reauth.push(account.value.id)),
+                ]),
               PermanentError: () =>
                 store
                   .removePendingOp(pending.id)
@@ -98,7 +228,17 @@ export const MailboxLive = (
           );
         }
         return result satisfies FlushResult;
-      });
+      }, flushLock.withPermits(1));
+
+      /** Flushes without making the caller wait for the network. */
+      const flushNow = flush().pipe(
+        Effect.flatMap((result) => (result.reauth.length ? changed : Effect.void)),
+        Effect.catchCause((cause) => Effect.logWarning("flush failed", cause)),
+      );
+      const flushLater =
+        options.backgroundFlush === false
+          ? flushNow
+          : FiberSet.run(background, flushNow).pipe(Effect.asVoid);
 
       // Running commands
 
@@ -148,6 +288,30 @@ export const MailboxLive = (
         return result;
       });
 
+      /** Settles an agent's message proposal once the person sent or discarded its draft. */
+      const settleProposal = Effect.fnUntraced(function* (proposalId: number, approve: boolean) {
+        const proposal = yield* store.getProposal(proposalId).pipe(Effect.option);
+        if (Option.isNone(proposal) || proposal.value.status !== "pending") return;
+        yield* store.setProposalStatus(proposalId, approve ? "approved" : "rejected");
+        yield* store.audit({
+          actor: { kind: "user", surface: "app" },
+          action: approve ? "approve" : "reject",
+          detail: { proposalId, proposer: actorLabel(proposal.value.actor) },
+        });
+      });
+
+      /** Deletes a draft here and queues deleting the provider's copy. */
+      const removeDraft = Effect.fnUntraced(function* (draft: StoredDraft) {
+        yield* store.deleteDraft(draft.id);
+        const { remote } = draft;
+        if (!remote) return;
+        yield* store.enqueueOp(draft.accountId, remote.messageId ?? remote.draftId ?? draft.id, {
+          kind: "deleteDraft",
+          remote,
+        });
+        if (remote.messageId) yield* store.deleteMessage(draft.accountId, remote.messageId);
+      });
+
       const send = Effect.fn("Mailbox.send")(function* (
         command: Extract<Command, { kind: "send" }>,
         actor: Actor,
@@ -160,23 +324,21 @@ export const MailboxLive = (
         if (account.needsReauth) {
           yield* new AuthError({ accountId, message: "Sign in again before sending." });
         }
-        const original = message.inReplyTo
-          ? Option.some({
-              providerId: (yield* store.messageRef(message.inReplyTo)).providerId,
-              threadId: (yield* store.getMessage(message.inReplyTo)).threadId,
-            })
-          : Option.none();
+        const prepared = yield* prepare(message);
         const detail = {
           to: message.to.map((a) => a.address),
           cc: message.cc.map((a) => a.address),
           bcc: message.bcc.map((a) => a.address),
           subject: message.subject,
           mode: message.mode ?? "new",
-          attachments: message.attachments.length,
+          attachments: prepared.message.attachments.length,
+          ...(message.markdown ? { markdown: true } : {}),
+          ...(message.forwardAsAttachment ? { forwardAsAttachment: true } : {}),
+          ...(command.draftId ? { draftId: command.draftId } : {}),
         };
         yield* providers
           .get(account.provider)
-          .send(account, message, original)
+          .send(account, prepared.message, prepared.original)
           .pipe(
             Effect.tapError((error) =>
               Effect.all([
@@ -191,15 +353,44 @@ export const MailboxLive = (
             ),
           );
         yield* store.audit({ actor, accountId, action: "send", detail });
+
+        // The mail is out. What follows only tidies up and must not fail the send.
+        const draft = command.draftId
+          ? yield* store.getDraft(command.draftId)
+          : Option.none<StoredDraft>();
+        if (Option.isSome(draft)) {
+          yield* store.transaction(removeDraft(draft.value));
+          if (draft.value.proposalId !== null) yield* settleProposal(draft.value.proposalId, true);
+        }
+        let flushed: FlushResult | undefined;
+        if (command.archive && message.inReplyTo) {
+          flushed = yield* modify(
+            { kind: "modify", threads: [message.inReplyTo], op: { kind: "archive" } },
+            actor,
+          ).pipe(
+            Effect.catch((error) =>
+              Effect.logWarning(`Sent, but archiving failed: ${error.message}`).pipe(
+                Effect.as(undefined),
+              ),
+            ),
+          );
+        } else if (Option.isSome(draft)) {
+          yield* flushLater;
+        }
+        yield* changed;
+        return flushed;
       });
 
       const run = Effect.fn("Mailbox.run")(function* (command: Command, actor: Actor) {
         switch (command.kind) {
           case "modify":
             return { status: "applied", flush: yield* modify(command, actor) } satisfies Outcome;
-          case "send":
-            yield* send(command, actor);
-            return { status: "applied" } satisfies Outcome;
+          case "send": {
+            const flushed = yield* send(command, actor);
+            return (
+              flushed ? { status: "applied", flush: flushed } : { status: "applied" }
+            ) satisfies Outcome;
+          }
           case "removeAccount":
             yield* store.getAccount(command.accountId);
             yield* store.removeAccount(command.accountId);
@@ -241,8 +432,37 @@ export const MailboxLive = (
           return decision satisfies Outcome;
         }
         if (decision.status === "proposed") {
-          const proposalId = yield* store.insertProposal(actor, command);
-          yield* store.audit({ actor, action: "proposed", detail: { proposalId, command } });
+          // An agent's message becomes a real draft that syncs like any other
+          // and waits in the Drafts list for the person to send or discard.
+          const message =
+            command.kind === "send" || command.kind === "draft"
+              ? Option.some({ accountId: command.accountId, message: command.message })
+              : Option.none();
+          if (Option.isSome(message)) yield* store.getAccount(message.value.accountId);
+          const proposalId = yield* store.transaction(
+            Effect.gen(function* () {
+              const id = yield* store.insertProposal(actor, command);
+              if (Option.isSome(message)) {
+                const draft = yield* store.putDraft({
+                  id: newDraftId(),
+                  ...message.value,
+                  proposalId: id,
+                });
+                // Read-only agents change nothing on the server: the draft
+                // stays local until the person saves it from the composer.
+                // Otherwise the app's next flush pushes it, not the agent's process.
+                const push =
+                  actor.kind === "agent" && (yield* store.agentWriteMode(actor.name)) !== "off";
+                if (push) yield* store.enqueueDraftSave(draft.accountId, draft.id);
+              }
+              yield* store.audit({
+                actor,
+                action: "proposed",
+                detail: { proposalId: id, command },
+              });
+              return id;
+            }),
+          );
           yield* changed;
           return { status: "proposed", proposalId } satisfies Outcome;
         }
@@ -267,12 +487,151 @@ export const MailboxLive = (
           action: approve ? "approve" : "reject",
           detail: { proposalId: id, proposer: actorLabel(proposal.actor) },
         });
-        yield* changed;
-        // Messages an agent proposed are sent from the compose window, by the
-        // person, before the app marks the proposal approved.
-        if (!approve || proposal.command.kind !== "modify")
+        // Messages an agent proposed are sent from the compose window, as a
+        // draft; sending approves the proposal. Rejecting one discards its draft.
+        if (proposal.command.kind !== "modify") {
+          const draft = yield* store.draftByProposal(id);
+          if (!approve && Option.isSome(draft)) {
+            yield* store.transaction(removeDraft(draft.value));
+            yield* flushLater;
+          }
+          yield* changed;
           return { status: "applied" } satisfies Outcome;
+        }
+        yield* changed;
+        if (!approve) return { status: "applied" } satisfies Outcome;
         return yield* run(proposal.command, person);
+      });
+
+      // Drafts
+
+      const saveDraft = Effect.fn("Mailbox.saveDraft")(function* (input: DraftInput) {
+        yield* store.getAccount(input.accountId);
+        const saved = yield* store.transaction(
+          Effect.gen(function* () {
+            const existing = yield* store.getDraft(input.id);
+            if (Option.isSome(existing)) {
+              const old = existing.value;
+              // A new From account: the copy on the old account goes.
+              if (old.accountId !== input.accountId && old.remote) {
+                yield* removeDraft(old);
+              }
+            } else {
+              yield* store.audit({
+                actor: { kind: "user", surface: "app" },
+                accountId: input.accountId,
+                action: "draft",
+                detail: { draftId: input.id, subject: input.message.subject },
+              });
+            }
+            const draft = yield* store.putDraft({
+              id: input.id,
+              accountId: input.accountId,
+              message: input.message,
+            });
+            yield* store.enqueueDraftSave(input.accountId, input.id);
+            return draft;
+          }),
+        );
+        yield* flushLater;
+        // With an inline flush the push already happened; show that.
+        return toDraft(Option.getOrElse(yield* store.getDraft(input.id), () => saved));
+      });
+
+      const discardDraft = Effect.fn("Mailbox.discardDraft")(function* (id: string) {
+        const draft = yield* store.getDraft(id);
+        if (Option.isNone(draft)) return;
+        yield* store.transaction(
+          Effect.gen(function* () {
+            yield* removeDraft(draft.value);
+            yield* store.audit({
+              actor: { kind: "user", surface: "app" },
+              accountId: draft.value.accountId,
+              action: "discard_draft",
+              detail: { draftId: id, subject: draft.value.message.subject },
+            });
+          }),
+        );
+        if (draft.value.proposalId !== null) yield* settleProposal(draft.value.proposalId, false);
+        yield* flushLater;
+        yield* changed;
+      });
+
+      /** A draft message from the Drafts list that openmail has no local draft for yet. */
+      const importDraft = Effect.fnUntraced(function* (message: Message) {
+        const { providerId } = yield* store.messageRef(message.id);
+        const account = yield* store.getAccount(message.accountId);
+        const fallback: ParsedDraft = {
+          to: [...message.to],
+          cc: [...message.cc],
+          bcc: [],
+          subject: message.subject,
+          text: message.bodyText,
+          attachments: [],
+          isReply: false,
+        };
+        const parsed = yield* providers
+          .get(account.provider)
+          .fetchRaw(account, providerId)
+          .pipe(
+            Effect.flatMap(parseRawDraft),
+            // Offline: without attachments the stored copy has everything.
+            Effect.catch((error) =>
+              message.attachments.length > 0 ? Effect.fail(error) : Effect.succeed(fallback),
+            ),
+          );
+        const thread = yield* store.getThread(message.id);
+        return yield* store.transaction(
+          Effect.gen(function* () {
+            const draft = yield* store.putDraft({
+              id: newDraftId(),
+              accountId: account.id,
+              message: importedMessage(parsed, thread),
+            });
+            yield* store.setDraftRemote(
+              draft.id,
+              // Gmail's draft id is looked up by message id when first needed.
+              { draftId: account.provider === "gmail" ? null : providerId, messageId: providerId },
+              attachmentsKey(parsed.attachments),
+            );
+            return yield* store.getDraft(draft.id).pipe(Effect.map(Option.getOrThrow));
+          }),
+        );
+      });
+
+      const openDraft = Effect.fn("Mailbox.openDraft")(function* (id: string) {
+        const proposalRef = /^proposal:(\d+)$/.exec(id);
+        if (proposalRef) {
+          const proposalId = Number(proposalRef[1]);
+          const linked = yield* store.draftByProposal(proposalId);
+          if (Option.isSome(linked)) return toDraft(linked.value);
+          // A proposal from before drafts were synced: it becomes one now.
+          const proposal = yield* store.getProposal(proposalId);
+          const { command } = proposal;
+          if (command.kind !== "send" && command.kind !== "draft") {
+            return yield* new InvalidInput({ message: `Proposal ${proposalId} is not a message.` });
+          }
+          const draft = yield* store.putDraft({
+            id: newDraftId(),
+            accountId: command.accountId,
+            message: command.message,
+            proposalId,
+          });
+          yield* store.enqueueDraftSave(draft.accountId, draft.id);
+          return toDraft(draft);
+        }
+        const local = yield* store.getDraft(id);
+        if (Option.isSome(local)) return toDraft(local.value);
+        const message = yield* store.getMessage(id);
+        const { providerId } = yield* store.messageRef(id);
+        const linked = yield* store.draftByRemoteMessage(message.accountId, providerId);
+        if (Option.isSome(linked)) return toDraft(linked.value);
+        if (!message.labels.includes("DRAFT")) {
+          return yield* new InvalidInput({ message: "This message is not a draft." });
+        }
+        const imported = toDraft(yield* importDraft(message));
+        yield* changed;
+        return imported;
       });
 
       // Pulling
@@ -285,10 +644,18 @@ export const MailboxLive = (
               case "Upsert":
                 counts.changed++;
                 writes.push(store.upsertMessage(account.id, change.message));
+                // Gmail keeps the message id when a draft is sent elsewhere; it only loses DRAFT.
+                if (!change.message.labels.includes("DRAFT")) {
+                  writes.push(store.dropSyncedDrafts(account.id, change.message.providerId));
+                }
                 break;
               case "Delete":
                 counts.deleted++;
-                writes.push(store.deleteMessage(account.id, change.providerId));
+                writes.push(
+                  store.deleteMessage(account.id, change.providerId),
+                  // A draft deleted or sent in another client goes here too.
+                  store.dropSyncedDrafts(account.id, change.providerId),
+                );
                 break;
               case "Flags":
                 counts.changed++;
@@ -303,7 +670,11 @@ export const MailboxLive = (
                 writes.push(store.deleteMessagesWithLabel(account.id, change.label));
                 break;
               case "Reset":
-                writes.push(store.deleteAccountMessages(account.id));
+                writes.push(
+                  store.deleteAccountMessages(account.id),
+                  // Their copies come back under new ids and open as drafts again.
+                  store.dropSyncedDrafts(account.id),
+                );
                 break;
               case "Labels":
                 writes.push(store.replaceLabels(account.id, change.labels));
@@ -335,7 +706,6 @@ export const MailboxLive = (
         if (account.needsReauth) {
           return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
         }
-        const cursor = yield* store.getSyncCursor(account.id);
         const failed = (text: string, auth: boolean) =>
           Effect.gen(function* () {
             if (auth) yield* store.setNeedsReauth(account.id, true);
@@ -347,23 +717,36 @@ export const MailboxLive = (
               ...(auth ? { needsReauth: true } : {}),
             } satisfies SyncResult;
           });
-        return yield* providers
-          .get(account.provider)
-          .pull(account, cursor)
-          .pipe(
-            Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
-            Stream.runForEach(apply(account, counts)),
-            Effect.andThen(store.setSyncError(account.id, null)),
-            // `counts` is filled while the stream runs, so read it afterwards.
-            Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
-            Effect.catch((error) => failed(error.message, error._tag === "AuthError")),
-            // A bug in one provider must not stop the other accounts from syncing.
-            Effect.catchCause((cause) =>
-              Effect.logError("sync crashed", cause).pipe(
-                Effect.andThen(failed(String(Cause.squash(cause)), false)),
+        // A retry starts from the cursor the failed attempt left: batches it
+        // wrote stay, and the cursor only moves once a whole pull is in.
+        const pull = Effect.sync(() => {
+          counts.changed = 0;
+          counts.deleted = 0;
+        }).pipe(
+          Effect.andThen(store.getSyncCursor(account.id)),
+          Effect.flatMap((cursor) =>
+            providers
+              .get(account.provider)
+              .pull(account, cursor)
+              .pipe(
+                Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
+                Stream.runForEach(apply(account, counts)),
               ),
+          ),
+        );
+        return yield* pull.pipe(
+          Effect.retry(PULL_RETRY),
+          Effect.andThen(store.setSyncError(account.id, null)),
+          // `counts` is filled while the stream runs, so read it afterwards.
+          Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
+          Effect.catch((error) => failed(error.message, error._tag === "AuthError")),
+          // A bug in one provider must not stop the other accounts from syncing.
+          Effect.catchCause((cause) =>
+            Effect.logError("sync crashed", cause).pipe(
+              Effect.andThen(failed(String(Cause.squash(cause)), false)),
             ),
-          );
+          ),
+        );
       });
 
       const runSync = Effect.fn("Mailbox.runSync")(function* (accountId?: string) {
@@ -490,6 +873,23 @@ export const MailboxLive = (
         audit: (limit) => store.listAudit(limit),
         agentWriteMode: store.agentWriteMode("*"),
         setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
+
+        openDraft,
+        saveDraft,
+        discardDraft,
+
+        prefs: store.prefs,
+        setPrefs: (patch) => mutate(store.setPrefs(patch)),
+        signatures: store.signatures,
+        setSignature: (signature) => mutate(store.setSignature(signature)),
+        templates: store.templates,
+        saveTemplate: (input, id) => mutate(store.saveTemplate(id ?? null, input)),
+        deleteTemplate: (id) => mutate(store.deleteTemplate(id)),
+
+        suggestContacts: (query, { limit = DEFAULT_SUGGESTIONS, exclude } = {}) =>
+          store.suggestContacts(query, limit, exclude),
+        hiddenContacts: store.hiddenContacts,
+        setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
 
         sync: (accountId) => sync(accountId),
         syncState: Ref.get(state),

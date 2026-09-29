@@ -1,5 +1,6 @@
 import { assert, it } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Fiber } from "effect";
+import { TestClock } from "effect/testing";
 
 import type { Actor, IncomingMessage } from "./domain.js";
 import { AuthError, ProviderError } from "./errors.js";
@@ -179,6 +180,35 @@ it.effect("a transient push failure retries on the next sync", () =>
       assert.strictEqual(server.pushed.length, 0);
       yield* m.sync();
       assert.strictEqual(server.pushed.length, 1);
+    }),
+  ),
+);
+
+it.effect("a pull that fails on the network is tried again and the sync succeeds", () =>
+  withGmail([incoming("m1")], (m, server) =>
+    Effect.gen(function* () {
+      server.messages.set("m2", incoming("m2"));
+      server.failNext = new ProviderError({
+        message: "Gmail API 0: Transport error (GET /labels)",
+      });
+      const fiber = yield* Effect.forkChild(m.sync());
+      yield* TestClock.adjust("5 seconds");
+      const [result] = yield* Fiber.join(fiber);
+      assert.strictEqual(result?.error, undefined);
+      assert.deepStrictEqual((yield* m.syncState).errors, []);
+      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, null);
+      assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+    }),
+  ),
+);
+
+it.effect("a pull the provider refuses fails the sync without waiting", () =>
+  withGmail([incoming("m1")], (m, server) =>
+    Effect.gen(function* () {
+      server.failNext = new ProviderError({ message: "Gmail API 400: bad", status: 400 });
+      const [result] = yield* m.sync();
+      assert.strictEqual(result?.error, "Gmail API 400: bad");
+      assert.strictEqual((yield* m.accounts)[0]?.lastSyncError, "Gmail API 400: bad");
     }),
   ),
 );

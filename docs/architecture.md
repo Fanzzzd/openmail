@@ -52,8 +52,14 @@ mailbox.subscribe(listener)      // 同步进度、队列状态、待确认的 A
 ```ts
 type Command =
   | { kind: "modify"; threads: string[]; op: MailOp }
-  | { kind: "send"; accountId: string; message: OutgoingMessage }
-  | { kind: "draft"; accountId: string; message: OutgoingMessage }
+  | {
+      kind: "send";
+      accountId: string;
+      message: OutgoingMessage;
+      draftId?: string;
+      archive?: boolean;
+    }
+  | { kind: "draft"; accountId: string; message: OutgoingMessage } // 只有模型用，见「草稿」
   | { kind: "removeAccount"; accountId: string };
 
 type Actor =
@@ -110,6 +116,38 @@ interface Provider {
 - 有 fake provider（内存里的一组邮件和操作日志）后，整条 `do → push → pull` 能在测试里跑，不碰网络和钥匙串。
 
 gmail、outlook、imap、fake 四个适配器，这是真实的接缝。
+
+### 草稿
+
+草稿单独一张 `drafts` 表，不放进 `messages`。理由：
+
+- `messages` 是 provider 的镜像，主键是 provider 给的 id。草稿在推到服务器之前没有这个 id，离线写的草稿也要能存。
+- 草稿要存 `messages` 没有的东西：密送、附件内容、Markdown 开关、作为附件转发的标记。
+- 同步会整行覆盖 `messages`。编辑中的草稿如果也在这张表里，一次拉取就会冲掉没推上去的改动。
+
+一条草稿由本地 id（`draft:<uuid>`）标识，app 自己生成，所以自动保存多少次都是同一条。服务器上的副本记在 `remote_draft_id`（Gmail 的 draft id）和 `remote_message_id`（三家都有的 message id）。拉取回来的服务器副本照常进 `messages`（标签 DRAFT），靠 `remote_message_id` 和本地草稿对上。「草稿」列表是两者的并集：`messages` 里的草稿，加上服务器还没有副本的本地草稿。读会话时，每封草稿副本带上它对应的本地草稿 id（`Message.draftId`），阅读区按这个 id 打开草稿。Gmail 和 IMAP 每次保存都换 message id，本地 id 不变。
+
+写入顺序和其他改动一样，先本地，再排队：
+
+```
+saveDraft(draft)
+  → 写 drafts（本地立即可见）
+  → pending_ops 里放一条 saveDraft（同一草稿只留一条，推送时读最新内容）
+  → 后台 flush：prepare（渲染 Markdown、取原邮件做 .eml）→ Provider.saveDraft → 记下服务器 id
+```
+
+- Gmail 用 `users.drafts` create / update / delete，每次保存 message id 会变，旧的本地副本当场删掉。Outlook 的草稿是 Drafts 文件夹里的邮件，原地 PATCH，回复用 `createReply` 建，这样会话能对上。IMAP 用 APPEND 放进 Drafts 文件夹，带 `\Draft` 标记，再删掉旧的那封；服务器没有 UIDPLUS 时按 Message-ID 找回新的 UID。
+- 发送已保存的草稿走普通发送路径，发完删本地草稿，再排队删服务器副本。三家共用一条发送路径，离线写的草稿联网后照样能发。没有用 Gmail `drafts.send` 和 Graph `/send`。
+- 丢弃：删本地草稿，排队删服务器副本。
+- 别的客户端删了或发出了草稿：拉取时对应的 message 被删除，或者去掉了 DRAFT 标签，本地草稿跟着删，前提是它没有待推送的改动。本地有未推送的改动时，本地版本优先，推送时如果服务器副本已经没了就重建。
+- 别的客户端新建的草稿：在列表里打开时，core 用 `Provider.fetchRaw` 取原始 MIME，解析出密送和附件内容，存成本地草稿。离线且没有附件时用 `messages` 里的内容。
+- 换发件账户：旧账户上的副本排队删除，新账户上重新建。
+
+队列现在由 app、CLI、MCP 三个进程共用。`pending_ops.claimed_at` 记录谁在推送哪一条，两分钟内的认领算有效，所以同一条草稿不会被两个进程各建一份。
+
+模型写的草稿走 `perform({ kind: "draft" })`。策略照旧给出 `proposed`，core 同时建一条带 `proposal_id` 的本地草稿，由 app 的下一次同步推到服务器。人在写信窗口里打开它，发出去就批准提议，丢弃就拒绝提议。模型的进程不推送，也没有任何入口能发信。
+
+撰写相关的偏好、签名、模板、联系人黑名单都在 core 的表里（`prefs`、`signatures`、`templates`、`hidden_contacts`），CLI 和以后的手机端读同一份。签名按发件地址和「新邮件 / 回复」区分，`source` 列留给以后同步的 Gmail 签名。收件人补全目前只查本地往来邮件，`Mailbox.suggestContacts` 是以后接入服务器联系人的地方。
 
 ### Platform 端口：给手机留的接缝
 

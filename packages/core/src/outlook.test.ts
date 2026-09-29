@@ -1,7 +1,9 @@
 import { assert, it } from "@effect/vitest";
 
-import { Effect, Layer, Option, Schema, Stream } from "effect";
-import { HttpClient, HttpClientResponse } from "effect/http";
+import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
+import { TestClock } from "effect/testing";
+import { simpleParser } from "mailparser";
 
 import type { Account } from "./domain.js";
 import { makeOutlook, parseGraphMessage } from "./outlook.js";
@@ -14,12 +16,13 @@ interface Call {
   method: string;
   url: URL;
   body: unknown;
+  contentType: string;
   prefer: string | undefined;
 }
 
 const parseJson = (text: string): unknown => JSON.parse(text);
 
-type Reply = { status?: number; json?: unknown };
+type Reply = { status?: number; json?: unknown; text?: string };
 
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under
@@ -30,17 +33,23 @@ function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
   const calls: Call[] = [];
   const client = HttpClient.make((request, url) =>
     Effect.sync(() => {
-      const body =
-        request.body._tag === "Uint8Array"
-          ? parseJson(new TextDecoder().decode(request.body.body))
-          : undefined;
-      calls.push({ method: request.method, url, body, prefer: request.headers["prefer"] });
+      const text =
+        request.body._tag === "Uint8Array" ? new TextDecoder().decode(request.body.body) : "";
+      const contentType = request.body._tag === "Uint8Array" ? request.body.contentType : "";
+      const body = contentType.startsWith("application/json") ? parseJson(text) : text || undefined;
+      calls.push({
+        method: request.method,
+        url,
+        body,
+        contentType,
+        prefer: request.headers["prefer"],
+      });
       const path = url.pathname.replace("/v1.0", "");
       const route = routes[`${request.method} ${path}`];
       const reply = typeof route === "function" ? route(url) : (route ?? { status: 404 });
       return HttpClientResponse.fromWeb(
         request,
-        new Response(reply.json === undefined ? null : JSON.stringify(reply.json), {
+        new Response(reply.text ?? (reply.json === undefined ? null : JSON.stringify(reply.json)), {
           status: reply.status ?? 200,
         }),
       );
@@ -398,6 +407,25 @@ it.effect("403 is an AuthError on reads and writes; 404 on a write is permanent"
   }),
 );
 
+it.effect("a rejected access token is refreshed and the request retried once", () =>
+  Effect.gen(function* () {
+    let patches = 0;
+    const http = fakeHttp({
+      "PATCH /me/messages/p": () => (++patches === 1 ? { status: 401, json: {} } : { json: {} }),
+      "PATCH /me/messages/never": { status: 401, json: {} },
+    });
+    const refused = yield* run(http, (a) =>
+      a
+        .push(account, "p", { kind: "read", value: true })
+        .pipe(Effect.andThen(Effect.flip(a.push(account, "never", { kind: "read", value: true })))),
+    );
+    assert.strictEqual(patches, 2);
+    // A token that is still refused after a fresh one means signing in again.
+    assert.strictEqual(refused._tag, "AuthError");
+    assert.strictEqual(http.calls.filter((c) => c.url.pathname.endsWith("/never")).length, 2);
+  }),
+);
+
 it.effect("a rotated refresh token is saved to the keychain", () =>
   Effect.gen(function* () {
     const http = fakeHttp({ "PATCH /me/messages/p": { json: {} } });
@@ -524,3 +552,219 @@ it("a read plain-text message in Sent has only the folder label", () => {
   assert.strictEqual(m.bodyText, "纯文本正文");
   assert.strictEqual(m.bodyHtml, "");
 });
+
+const draftMessage = {
+  to: [{ name: "王工", address: "wang@contoso.com" }],
+  cc: [],
+  bcc: [],
+  subject: "报价",
+  text: "草稿",
+  attachments: [{ filename: "a.txt", mimeType: "text/plain", content: "aGk=" }],
+};
+
+const paths = (calls: readonly Call[]) =>
+  calls.map((c) => `${c.method} ${c.url.pathname.replace("/v1.0", "")}`);
+
+it.effect(
+  "drafts are messages in Drafts: created, patched, attachments replaced only when changed",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "POST /me/messages": { status: 201, json: { id: "d1" } },
+        "PATCH /me/messages/d1": { json: {} },
+        "GET /me/messages/d1/attachments": {
+          json: { value: [{ id: "a1" }, { id: "logo", isInline: true }] },
+        },
+        "DELETE /me/messages/d1/attachments/a1": { status: 204 },
+        "POST /me/messages/d1/attachments": { status: 201, json: {} },
+        "PATCH /me/messages/gone": { status: 404, json: { error: { code: "ErrorItemNotFound" } } },
+      });
+      const push = (remote: { draftId: string; messageId: string } | null, replace: boolean) => ({
+        remote,
+        message: draftMessage,
+        original: Option.none(),
+        replaceAttachments: replace,
+      });
+      const ids = yield* run(http, (a) =>
+        Effect.all([
+          a.saveDraft(account, push(null, true)),
+          a.saveDraft(account, push({ draftId: "d1", messageId: "d1" }, false)),
+          a.saveDraft(account, push({ draftId: "d1", messageId: "d1" }, true)),
+          // Deleted in Outlook meanwhile: created again.
+          a.saveDraft(account, push({ draftId: "gone", messageId: "gone" }, false)),
+        ]),
+      );
+      assert.deepStrictEqual(
+        ids.map((r) => r.messageId),
+        ["d1", "d1", "d1", "d1"],
+      );
+      assert.deepStrictEqual(paths(http.calls), [
+        "POST /me/messages",
+        "PATCH /me/messages/d1",
+        "PATCH /me/messages/d1",
+        "GET /me/messages/d1/attachments",
+        "DELETE /me/messages/d1/attachments/a1",
+        "POST /me/messages/d1/attachments",
+        "PATCH /me/messages/gone",
+        "POST /me/messages",
+      ]);
+      const created = Schema.decodeUnknownSync(
+        Schema.Struct({
+          subject: Schema.String,
+          bccRecipients: Schema.Array(Schema.Unknown),
+          attachments: Schema.Array(Schema.Unknown),
+        }),
+      )(http.calls[0]?.body);
+      assert.strictEqual(created.subject, "报价");
+      assert.deepStrictEqual(created.attachments, [
+        {
+          "@odata.type": "#microsoft.graph.fileAttachment",
+          name: "a.txt",
+          contentType: "text/plain",
+          contentBytes: "aGk=",
+        },
+      ]);
+    }),
+);
+
+it.effect("reply drafts start from createReply so Outlook threads them", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /me/messages/orig/createReplyAll": { status: 201, json: { id: "d2" } },
+      "PATCH /me/messages/d2": { json: {} },
+      "POST /me/messages/d2/attachments": { status: 201, json: {} },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        remote: null,
+        message: { ...draftMessage, mode: "replyAll" },
+        original: Option.some({ providerId: "orig", threadId: "conv-1" }),
+        replaceAttachments: true,
+      }),
+    );
+    assert.deepStrictEqual(remote, { draftId: "d2", messageId: "d2" });
+    assert.deepStrictEqual(paths(http.calls), [
+      "POST /me/messages/orig/createReplyAll",
+      "PATCH /me/messages/d2",
+      "POST /me/messages/d2/attachments",
+    ]);
+  }),
+);
+
+it.effect("deleting a draft that is already gone succeeds; raw MIME comes from $value", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "DELETE /me/messages/d1": { status: 204 },
+      "DELETE /me/messages/gone": { status: 404, json: { error: { code: "ErrorItemNotFound" } } },
+      "GET /me/messages/m1/$value": { text: "Subject: hi\r\n\r\nbody" },
+    });
+    const raw = yield* run(http, (a) =>
+      Effect.gen(function* () {
+        yield* a.deleteDraft(account, { draftId: "d1", messageId: "d1" });
+        yield* a.deleteDraft(account, { draftId: null, messageId: "gone" });
+        return yield* a.fetchRaw(account, "m1");
+      }),
+    );
+    assert.strictEqual(Buffer.from(raw).toString(), "Subject: hi\r\n\r\nbody");
+  }),
+);
+
+const chineseOriginal = Buffer.from(
+  "From: li@x.com\r\nSubject: =?UTF-8?B?5Y6f6YKu5Lu2?=\r\nContent-Type: text/plain; charset=utf-8\r\n" +
+    "Content-Transfer-Encoding: 8bit\r\n\r\n你好，这是原来的邮件。\r\n",
+);
+
+it.effect("a forwarded original goes out as raw MIME with a message/rfc822 part", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /me/sendMail": { status: 202 } });
+    const eml = {
+      filename: "报价.eml",
+      mimeType: "message/rfc822",
+      content: chineseOriginal.toString("base64"),
+    };
+    yield* run(http, (a) =>
+      a.send(
+        account,
+        { ...draftMessage, bcc: [{ name: "", address: "hidden@x.com" }], attachments: [eml] },
+        Option.none(),
+      ),
+    );
+    const [call] = http.calls;
+    assert.strictEqual(call?.contentType, "text/plain");
+    assert.strictEqual(typeof call?.body, "string");
+    const parsed = yield* Effect.promise(() =>
+      simpleParser(Buffer.from(String(call?.body), "base64")),
+    );
+    assert.strictEqual(parsed.subject, "报价");
+    assert.strictEqual(parsed.text?.trim(), "草稿");
+    // Graph reads Bcc from the MIME headers and strips it.
+    assert.match(Buffer.from(String(call?.body), "base64").toString(), /^Bcc: hidden@x\.com/m);
+    const forwarded = parsed.attachments.find((a) => a.contentType === "message/rfc822");
+    assert.strictEqual(forwarded?.filename, "报价.eml");
+    assert.isTrue(forwarded?.content.equals(chineseOriginal));
+    const inner = yield* Effect.promise(() => simpleParser(forwarded.content));
+    assert.strictEqual(inner.subject, "原邮件");
+    assert.strictEqual(inner.text?.trim(), "你好，这是原来的邮件。");
+  }),
+);
+
+it.effect("an HTML body goes to Graph as a document that declares UTF-8", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /me/sendMail": { status: 202 } });
+    yield* run(http, (a) =>
+      a.send(
+        account,
+        {
+          ...draftMessage,
+          subject: "粗体 和 code",
+          text: "**粗体** 和 `code`",
+          html: "<p><strong>粗体</strong> 和 <code>code</code></p>",
+        },
+        Option.none(),
+      ),
+    );
+    const [call] = http.calls;
+    assert.strictEqual(call?.contentType, "application/json");
+    const { message } = Schema.decodeUnknownSync(
+      Schema.Struct({
+        message: Schema.Struct({
+          subject: Schema.String,
+          body: Schema.Struct({ contentType: Schema.String, content: Schema.String }),
+        }),
+      }),
+    )(call?.body);
+    assert.strictEqual(message.subject, "粗体 和 code");
+    assert.strictEqual(message.body.contentType, "html");
+    assert.match(
+      message.body.content,
+      /^<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text\/html; charset=utf-8"><\/head><body><p><strong>粗体<\/strong> 和/,
+    );
+  }),
+);
+
+it.effect("a dropped connection is retried, not reported", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    // Fails twice at the transport level, then answers.
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() =>
+        ++calls <= 2
+          ? Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({ request, description: "offline" }),
+              }),
+            )
+          : Effect.succeed(
+              HttpClientResponse.fromWeb(request, new Response(null, { status: 204 })),
+            ),
+      ),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient)(client), calls: [] };
+    const fiber = yield* Effect.forkChild(
+      run(http, (a) => a.push(account, "m1", { kind: "read", value: true })),
+    );
+    yield* TestClock.adjust("2 seconds");
+    yield* Fiber.join(fiber);
+    assert.strictEqual(calls, 3);
+  }),
+);

@@ -4,6 +4,9 @@ import ICloudIcon from "~icons/selfhst/icloud";
 import OutlookIcon from "~icons/selfhst/microsoft-outlook";
 import YahooIcon from "~icons/selfhst/yahoo";
 import QQIcon from "~icons/thesvg-color/qq";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { Mail } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
@@ -20,20 +23,23 @@ export type ProviderIconName =
 type Svg = ComponentType<SVGProps<SVGSVGElement>>;
 
 // Brand marks from Iconify packages; sources and licenses in docs/design/icons.md.
-const ICONS = new Map<string, { icon: Svg; label: string }>([
+// Labels are brand names; only the ones with a translated product name go
+// through the catalog.
+const ICONS = new Map<string, { icon: Svg; label: string | MessageDescriptor }>([
   ["gmail", { icon: GmailIcon, label: "Gmail" }],
   ["outlook", { icon: OutlookIcon, label: "Outlook" }],
   ["icloud", { icon: ICloudIcon, label: "iCloud" }],
   ["yahoo", { icon: YahooIcon, label: "Yahoo" }],
-  ["qq", { icon: QQIcon, label: "QQ 邮箱" }],
+  ["qq", { icon: QQIcon, label: msg`QQ Mail` }],
   ["fastmail", { icon: FastmailIcon, label: "Fastmail" }],
 ]);
 
 /** NetEase has no mark in any open icon set; its app icon is a red square with "163". */
 function NetEase({ className }: { className?: string }) {
+  const { t } = useLingui();
   return (
     <svg viewBox="0 0 24 24" className={className}>
-      <title>163 邮箱</title>
+      <title>{t`163 Mail`}</title>
       <rect width="24" height="24" rx="5.5" fill="#D8262E" />
       <text
         x="12"
@@ -59,9 +65,11 @@ export function ProviderIcon({
   provider: ProviderIconName | (string & {});
   className?: string;
 }) {
+  const { i18n } = useLingui();
   if (provider === "163") return <NetEase className={className} />;
   const entry = ICONS.get(provider);
   if (!entry) return <Mail className={`${className} text-neutral-500`} aria-label="IMAP" />;
   const Icon = entry.icon;
-  return <Icon className={className} aria-label={entry.label} />;
+  const label = typeof entry.label === "string" ? entry.label : i18n._(entry.label);
+  return <Icon className={className} aria-label={label} />;
 }

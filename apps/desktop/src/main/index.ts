@@ -59,13 +59,18 @@ function createWindow(): BrowserWindow {
   });
   win.webContents.on("will-navigate", (event) => event.preventDefault());
 
+  // The renderer picks its UI language from the OS language unless the person
+  // chose one in Settings.
+  const query = { system: app.getPreferredSystemLanguages()[0] ?? app.getLocale() };
   if (process.env.ELECTRON_RENDERER_URL) {
     win.webContents.on("console-message", ({ level, message }) => {
       if (level === "warning" || level === "error") console.log(`[renderer ${level}] ${message}`);
     });
-    void win.loadURL(process.env.ELECTRON_RENDERER_URL);
+    const url = new URL(process.env.ELECTRON_RENDERER_URL);
+    url.search = new URLSearchParams(query).toString();
+    void win.loadURL(url.toString());
   } else {
-    void win.loadFile(path.join(here, "../renderer/index.html"));
+    void win.loadFile(path.join(here, "../renderer/index.html"), { query });
   }
   win.once("ready-to-show", () => win.show());
   return win;

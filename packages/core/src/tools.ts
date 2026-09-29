@@ -2,7 +2,8 @@
  * The tools a language model gets. The MCP server and the in-app assistant
  * both use `MailToolkit`, so each tool is defined once. Every change goes
  * through `Mailbox.perform` as an agent, which means policy decides whether
- * it runs, waits for the person, or is refused. No tool sends mail.
+ * it runs, waits for the person, or is refused. No tool sends mail; a drafted
+ * message becomes a synced draft that only the person can send.
  */
 import { Context, Effect, Layer, Option, Schema } from "effect";
 import { McpSchema, Tool, Toolkit } from "effect/ai";
@@ -266,7 +267,7 @@ const ModifyThreads = Tool.make("modify_threads", {
 
 const DraftMessage = Tool.make("draft_message", {
   description:
-    "Write an email for the person to review. It never sends: the draft waits in openmail, where the person reads it, can edit it, and sends or discards it. There is no tool that sends mail. For a reply, pass reply_to_message_id and mode reply or replyAll; the subject and threading follow the original.",
+    "Write an email for the person to review. It never sends: it is saved as a draft in the person's Drafts (in openmail and, after the app's next sync, on the mail server) and listed under AI 建议. The person reads it, can edit it, and sends or discards it. There is no tool that sends mail. For a reply, pass reply_to_message_id and mode reply or replyAll; the subject and threading follow the original.",
   parameters: Schema.Struct({
     account_id: AccountId.annotate({ description: "The account to send from (list_accounts)." }),
     to: Recipients,
@@ -463,7 +464,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
         const outcome = yield* mailbox
           .perform(
             {
-              kind: "send",
+              kind: "draft",
               accountId: p.account_id,
               message: {
                 to,
@@ -483,8 +484,8 @@ export const MailToolkitLayer = MailToolkit.toLayer(
           outcome,
           message:
             outcome.status === "proposed"
-              ? `The draft is waiting in openmail (proposal ${outcome.proposalId}). The person reviews it there and sends it or discards it. Nothing has been sent.`
-              : describe(outcome, "Sent."),
+              ? `Saved as a draft for the person to review (proposal ${outcome.proposalId}). They send it or discard it in openmail. Nothing has been sent.`
+              : describe(outcome, "Saved as a draft."),
         };
       }),
     });

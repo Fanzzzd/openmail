@@ -5,8 +5,11 @@
  */
 import {
   Account,
+  Address,
   AgentWriteMode,
   AuditEntry,
+  Draft,
+  DraftInput,
   ImapConnectInput,
   ImapPreset,
   Label,
@@ -16,11 +19,15 @@ import {
   Message,
   Outcome,
   OutgoingMessage,
+  Prefs,
   Profile,
   ProfileInput,
   Proposal,
+  Signature,
   SyncResult,
   SyncState,
+  Template,
+  TemplateInput,
   ThreadQuery,
   ThreadSummary,
 } from "@openmail/core/schema";
@@ -34,6 +41,11 @@ export const ConnectInput = Schema.Union([
 ]);
 
 const Counts = Schema.Record(Schema.String, Schema.Number);
+/** Only the preferences being changed. */
+const PrefsPatch = Schema.Struct({
+  undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
+  language: Schema.optionalKey(Prefs.fields.language),
+});
 const AccountIds = Schema.optionalKey(Schema.Array(Schema.String));
 const error = MailError;
 
@@ -83,10 +95,42 @@ export class MailRpcs extends RpcGroup.make(
   }),
   /** Called only after the person pressed Send and the undo window passed. */
   Rpc.make("Send", {
-    payload: { accountId: Schema.String, message: OutgoingMessage },
+    payload: {
+      accountId: Schema.String,
+      message: OutgoingMessage,
+      /** The saved draft being sent; it is removed once the message is out. */
+      draftId: Schema.optionalKey(Schema.String),
+      /** Send and archive: archive the replied-to thread afterwards. */
+      archive: Schema.optionalKey(Schema.Boolean),
+    },
     success: Outcome,
     error,
   }),
+
+  // Drafts
+  /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
+  Rpc.make("OpenDraft", { payload: { id: Schema.String }, success: Draft, error }),
+  Rpc.make("SaveDraft", { payload: { draft: DraftInput }, success: Draft, error }),
+  Rpc.make("DiscardDraft", { payload: { id: Schema.String } }),
+
+  // Compose settings
+  Rpc.make("Prefs", { success: Prefs }),
+  Rpc.make("SetPrefs", { payload: { patch: PrefsPatch } }),
+  Rpc.make("Signatures", { success: Schema.Array(Signature) }),
+  Rpc.make("SetSignature", { payload: { signature: Signature } }),
+  Rpc.make("Templates", { success: Schema.Array(Template) }),
+  Rpc.make("SaveTemplate", {
+    payload: { input: TemplateInput, id: Schema.optionalKey(Schema.String) },
+    success: Template,
+    error,
+  }),
+  Rpc.make("DeleteTemplate", { payload: { id: Schema.String } }),
+  Rpc.make("SuggestContacts", {
+    payload: { query: Schema.String, exclude: Schema.optionalKey(Schema.String) },
+    success: Schema.Array(Address),
+  }),
+  Rpc.make("HiddenContacts", { success: Schema.Array(Schema.String) }),
+  Rpc.make("SetContactHidden", { payload: { address: Schema.String, hidden: Schema.Boolean } }),
   Rpc.make("Audit", { payload: { limit: Schema.Int }, success: Schema.Array(AuditEntry) }),
   Rpc.make("Proposals", { success: Schema.Array(Proposal) }),
   Rpc.make("DecideProposal", {

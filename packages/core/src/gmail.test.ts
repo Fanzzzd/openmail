@@ -1,7 +1,8 @@
 import { assert, it } from "@effect/vitest";
 
-import { Effect, Layer, Option, Schema, Stream } from "effect";
-import { HttpClient, HttpClientResponse } from "effect/http";
+import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
+import { TestClock } from "effect/testing";
 
 import type { Account, OutgoingMessage } from "./domain.js";
 import { makeGmail, parseGmailMessage } from "./gmail.js";
@@ -296,3 +297,125 @@ it("parses nested parts with their declared charset", () => {
   ]);
   assert.deepStrictEqual(m.labels, []);
 });
+
+it("reads text Gmail already converted to UTF-8 even when the header names another charset", () => {
+  // Outlook re-encodes Chinese mail as gb2312; Gmail's API returns it as UTF-8.
+  const utf8 = Buffer.from("粗体 和 代码", "utf8").toString("base64url");
+  const m = parseGmailMessage({
+    id: "m",
+    threadId: "t",
+    internalDate: "1",
+    payload: {
+      mimeType: "text/html",
+      headers: [{ name: "Content-Type", value: 'text/html; charset="gb2312"' }],
+      body: { size: 18, data: utf8 },
+    },
+  });
+  assert.strictEqual(m.bodyHtml, "粗体 和 代码");
+});
+
+const DraftBody = Schema.Struct({
+  message: Schema.Struct({ raw: Schema.String, threadId: Schema.optionalKey(Schema.String) }),
+});
+
+it.effect("drafts are created, updated in place, recreated when gone and deleted", () =>
+  Effect.gen(function* () {
+    const draft = (id: string, messageId: string) => ({ json: { id, message: { id: messageId } } });
+    const http = fakeHttp({
+      "GET /messages/orig": {
+        json: { payload: { headers: [{ name: "Message-ID", value: "<orig@x.com>" }] } },
+      },
+      "POST /drafts": draft("r1", "m-a"),
+      "PUT /drafts/r1": draft("r1", "m-b"),
+      "PUT /drafts/gone": { status: 404, json: { error: { code: 404 } } },
+      "GET /drafts": { json: { drafts: [{ id: "r9", message: { id: "m-9" } }] } },
+      "PUT /drafts/r9": draft("r9", "m-10"),
+      "DELETE /drafts/r1": { status: 204 },
+      "DELETE /drafts/r9": { status: 404, json: { error: { code: 404 } } },
+    });
+    const reply = { ...outgoing, mode: "reply" as const };
+    const push = (remote: { draftId: string | null; messageId: string | null } | null) => ({
+      remote,
+      message: reply,
+      original: Option.some({ providerId: "orig", threadId: "t-orig" }),
+      replaceAttachments: false,
+    });
+    const results = yield* run(http, (a) =>
+      Effect.gen(function* () {
+        return [
+          yield* a.saveDraft(account, push(null)),
+          yield* a.saveDraft(account, push({ draftId: "r1", messageId: "m-a" })),
+          // Deleted in Gmail meanwhile: created again.
+          yield* a.saveDraft(account, push({ draftId: "gone", messageId: "x" })),
+          // Known only by message id (it came in through a pull).
+          yield* a.saveDraft(account, push({ draftId: null, messageId: "m-9" })),
+          yield* a.deleteDraft(account, { draftId: "r1", messageId: "m-b" }),
+          yield* a.deleteDraft(account, { draftId: null, messageId: "m-9" }),
+          yield* a.deleteDraft(account, { draftId: null, messageId: "unknown" }),
+        ];
+      }),
+    );
+    assert.deepStrictEqual(results.slice(0, 4), [
+      { draftId: "r1", messageId: "m-a" },
+      { draftId: "r1", messageId: "m-b" },
+      { draftId: "r1", messageId: "m-a" },
+      { draftId: "r9", messageId: "m-10" },
+    ]);
+    const writes = http.calls.filter((c) => c.method !== "GET");
+    assert.deepStrictEqual(
+      writes.map((c) => `${c.method} ${c.url.pathname.replace("/gmail/v1/users/me", "")}`),
+      [
+        "POST /drafts",
+        "PUT /drafts/r1",
+        "PUT /drafts/gone",
+        "POST /drafts",
+        "PUT /drafts/r9",
+        "DELETE /drafts/r1",
+        "DELETE /drafts/r9",
+      ],
+    );
+    const body = Schema.decodeUnknownSync(DraftBody)(writes[0]?.body);
+    assert.strictEqual(body.message.threadId, "t-orig");
+    const mime = Buffer.from(body.message.raw, "base64url").toString();
+    assert.match(mime, /^In-Reply-To: <orig@x\.com>/m);
+    assert.match(mime, /^Bcc: hidden@x\.com/m);
+  }),
+);
+
+it.effect("raw messages come back as bytes", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /messages/m1": (url) => {
+        assert.strictEqual(url.searchParams.get("format"), "raw");
+        return { json: { raw: b64("Subject: hi\r\n\r\nbody") } };
+      },
+    });
+    const raw = yield* run(http, (a) => a.fetchRaw(account, "m1"));
+    assert.strictEqual(Buffer.from(raw).toString(), "Subject: hi\r\n\r\nbody");
+  }),
+);
+
+it.effect("a dropped connection is retried, not reported", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    // Fails twice at the transport level, then answers.
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() =>
+        ++calls <= 2
+          ? Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({ request, description: "offline" }),
+              }),
+            )
+          : Effect.succeed(
+              HttpClientResponse.fromWeb(request, new Response(JSON.stringify({ raw: b64("hi") }))),
+            ),
+      ),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient)(client), calls: [] };
+    const fiber = yield* Effect.forkChild(run(http, (a) => a.fetchRaw(account, "m1")));
+    yield* TestClock.adjust("2 seconds");
+    assert.strictEqual(Buffer.from(yield* Fiber.join(fiber)).toString(), "hi");
+    assert.strictEqual(calls, 3);
+  }),
+);

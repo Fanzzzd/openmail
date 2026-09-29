@@ -1,4 +1,7 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
+import type { I18n, MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { ChevronLeft, ExternalLink, X } from "lucide-react";
@@ -8,6 +11,7 @@ import type { Account, ImapConnectInput } from "../../../shared/api";
 import { type AppError, causeText, resultError } from "../errors";
 import { connectAtom, saveClientAtom } from "../state/mutations";
 import { clientSetupAtom, imapPresetsAtom } from "../state/queries";
+import { PRESET_NAMES, PRESET_NOTES } from "./imapPresetText";
 import { ProviderIcon, type ProviderIconName } from "./ProviderIcon";
 
 type OAuthProvider = "gmail" | "outlook";
@@ -15,16 +19,20 @@ type OAuthProvider = "gmail" | "outlook";
 type ImapChoice = "icloud" | "yahoo" | "qq" | "163" | "fastmail" | "custom";
 type Choice = OAuthProvider | ImapChoice;
 
-const TILES: { id: Choice; icon: ProviderIconName; label: string }[] = [
+/** Brand names stay as they are; the rest are translated. */
+const TILES: { id: Choice; icon: ProviderIconName; label: string | MessageDescriptor }[] = [
   { id: "gmail", icon: "gmail", label: "Gmail" },
   { id: "outlook", icon: "outlook", label: "Outlook" },
   { id: "icloud", icon: "icloud", label: "iCloud" },
   { id: "yahoo", icon: "yahoo", label: "Yahoo" },
-  { id: "qq", icon: "qq", label: "QQ 邮箱" },
-  { id: "163", icon: "163", label: "163 邮箱" },
+  { id: "qq", icon: "qq", label: PRESET_NAMES.qq! },
+  { id: "163", icon: "163", label: PRESET_NAMES["163"]! },
   { id: "fastmail", icon: "fastmail", label: "Fastmail" },
-  { id: "custom", icon: "imap", label: "其他 IMAP" },
+  { id: "custom", icon: "imap", label: msg`Other IMAP` },
 ];
+
+const tileLabel = (i18n: I18n, label: string | MessageDescriptor) =>
+  typeof label === "string" ? label : i18n._(label);
 
 const isOAuth = (c: Choice): c is OAuthProvider => c === "gmail" || c === "outlook";
 
@@ -39,8 +47,9 @@ interface Props {
  * the browser (Gmail, Outlook) or with an app password (IMAP providers).
  */
 export function AddAccountDialog({ onClose, onAdded }: Props) {
+  const { t, i18n } = useLingui();
   const [choice, setChoice] = useState<Choice | null>(null);
-  const tile = TILES.find((t) => t.id === choice);
+  const tile = TILES.find((item) => item.id === choice);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,12 +59,17 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const title = tile ? `添加 ${tile.label}` : onClose ? "添加邮箱" : "添加第一个邮箱";
+  const provider = tile ? tileLabel(i18n, tile.label) : "";
+  const title = tile
+    ? t`Add ${provider}`
+    : onClose
+      ? t`Add email account`
+      : t`Add Your First Account`;
 
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
+      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
@@ -70,7 +84,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
           {tile && (
             <button
               type="button"
-              aria-label="返回"
+              aria-label={t`Back`}
               onClick={() => setChoice(null)}
               className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
             >
@@ -82,7 +96,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
           {onClose && (
             <button
               type="button"
-              aria-label="关闭"
+              aria-label={t`Close`}
               onClick={onClose}
               className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
             >
@@ -94,21 +108,26 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
         {choice === null && (
           <>
             <p className="mt-1.5 text-neutral-500">
-              {onClose
-                ? "选择邮箱服务商。"
-                : "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这台电脑上。"}
+              {onClose ? (
+                <Trans>Choose your email provider.</Trans>
+              ) : (
+                <Trans>
+                  Welcome to openmail. Choose your email provider. Your credentials stay on this
+                  computer.
+                </Trans>
+              )}
             </p>
             <div className="mt-5 grid grid-cols-4 gap-2">
-              {TILES.map((t) => (
+              {TILES.map((item) => (
                 <button
-                  key={t.id}
+                  key={item.id}
                   type="button"
-                  onClick={() => setChoice(t.id)}
+                  onClick={() => setChoice(item.id)}
                   className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:ring-white/10 dark:hover:bg-white/5"
                 >
-                  <ProviderIcon provider={t.icon} className="size-8" />
+                  <ProviderIcon provider={item.icon} className="size-8" />
                   <span className="text-[12px] text-neutral-700 dark:text-neutral-300">
-                    {t.label}
+                    {tileLabel(i18n, item.label)}
                   </span>
                 </button>
               ))}
@@ -128,28 +147,25 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
 }
 
 /** An IMAP server that rejects the login almost always got the web password. */
-function imapErrorText(result: AsyncResult.AsyncResult<Account, AppError>): string | null {
+function imapErrorText(
+  i18n: I18n,
+  result: AsyncResult.AsyncResult<Account, AppError>,
+): string | null {
   if (result._tag !== "Failure") return null;
   const error = Cause.findErrorOption(result.cause);
   if (error._tag === "Some" && error.value._tag === "AuthError") {
-    return "服务器拒绝了登录。请检查邮箱地址，并确认填的是应用专用密码或授权码，不是网页登录密码。";
+    return i18n._(
+      msg`The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password.`,
+    );
   }
-  return causeText(result.cause);
+  return causeText(i18n, result.cause);
 }
 
 // Gmail and Outlook
 
-const OAUTH_COPY: Record<OAuthProvider, { name: string; note: string; doc: string }> = {
-  gmail: {
-    name: "Google",
-    note: "Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。",
-    doc: "docs/setup-google.md",
-  },
-  outlook: {
-    name: "Microsoft",
-    note: "Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。",
-    doc: "docs/setup-microsoft.md",
-  },
+const OAUTH_COPY: Record<OAuthProvider, { name: string; doc: string }> = {
+  gmail: { name: "Google", doc: "docs/setup-google.md" },
+  outlook: { name: "Microsoft", doc: "docs/setup-microsoft.md" },
 };
 
 function OAuthStep({
@@ -159,6 +175,7 @@ function OAuthStep({
   provider: OAuthProvider;
   onAdded: (account: Account) => void;
 }) {
+  const { t, i18n } = useLingui();
   const setup = AsyncResult.getOrElse(useAtomValue(clientSetupAtom), () => null);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
@@ -166,22 +183,28 @@ function OAuthStep({
 
   const [saveClient, runSaveClient] = useAtom(saveClientAtom);
   const [signIn, runSignIn] = useAtom(connectAtom(provider), { mode: "promiseExit" });
-  const saveError = resultError(saveClient);
-  const signInError = resultError(signIn);
+  const saveError = resultError(i18n, saveClient);
+  const signInError = resultError(i18n, signIn);
 
   const signInNow = async () => {
     const exit = await runSignIn({ provider });
     if (Exit.isSuccess(exit)) onAdded(exit.value);
   };
 
-  if (!setup) return <p className="mt-5 text-neutral-500">读取设置…</p>;
+  if (!setup)
+    return (
+      <p className="mt-5 text-neutral-500">
+        <Trans>Loading settings…</Trans>
+      </p>
+    );
   const configured = provider === "gmail" ? setup.googleConfigured : setup.microsoftConfigured;
 
   if (!configured) {
     const ready = clientId.trim() && (provider === "outlook" || clientSecret.trim());
+    const { name, doc } = copy;
     return (
       <form
-        aria-label={`${copy.name} 客户端`}
+        aria-label={t`${name} client`}
         className="mt-4"
         onSubmit={(e) => {
           e.preventDefault();
@@ -194,7 +217,20 @@ function OAuthStep({
         }}
       >
         <p className="text-neutral-500">
-          openmail 用你自己注册的 OAuth 客户端登录。先填入{copy.note}步骤见仓库里的 {copy.doc}。
+          {provider === "gmail" ? (
+            <Trans>
+              openmail signs in with an OAuth client you register yourself. First enter the OAuth
+              client you created in Google Cloud, with the Desktop app type. See {doc} in the
+              repository for the steps.
+            </Trans>
+          ) : (
+            <Trans>
+              openmail signs in with an OAuth client you register yourself. First enter the app you
+              registered in Azure, with the Mobile and desktop applications type. Only personal
+              outlook.com and Hotmail accounts are supported. See {doc} in the repository for the
+              steps.
+            </Trans>
+          )}
         </p>
         <Field
           label={provider === "gmail" ? "Client ID" : "Application (client) ID"}
@@ -208,24 +244,38 @@ function OAuthStep({
         {saveError && <ErrorLine text={saveError} />}
         <Actions>
           <PrimaryButton disabled={!ready || saveClient.waiting}>
-            {saveClient.waiting ? "保存中…" : "保存"}
+            {saveClient.waiting ? (
+              <Trans context="in progress">Saving…</Trans>
+            ) : (
+              <Trans>Save</Trans>
+            )}
           </PrimaryButton>
         </Actions>
       </form>
     );
   }
 
+  const { name } = copy;
   return (
     <div className="mt-4">
       <p className="text-neutral-500">
-        {signIn.waiting
-          ? "请在浏览器里完成授权。完成后回到这里。"
-          : `点下面的按钮会打开 ${copy.name} 的登录页。openmail 只读取邮件，令牌存在系统钥匙串里。`}
+        {signIn.waiting ? (
+          <Trans>Finish signing in in your browser, then come back here.</Trans>
+        ) : (
+          <Trans>
+            The button below opens the {name} sign-in page. openmail only reads your mail. Tokens
+            are kept in the system keychain.
+          </Trans>
+        )}
       </p>
       {signInError && <ErrorLine text={signInError} />}
       <Actions>
         <PrimaryButton disabled={signIn.waiting} onClick={() => void signInNow()}>
-          {signIn.waiting ? "等待授权…" : "在浏览器中登录"}
+          {signIn.waiting ? (
+            <Trans>Waiting for sign-in…</Trans>
+          ) : (
+            <Trans>Sign In with Browser</Trans>
+          )}
         </PrimaryButton>
       </Actions>
     </div>
@@ -241,8 +291,11 @@ function ImapStep({
   preset: ImapChoice;
   onAdded: (account: Account) => void;
 }) {
+  const { t, i18n } = useLingui();
   const presets = AsyncResult.getOrElse(useAtomValue(imapPresetsAtom), () => null);
   const info = preset === "custom" ? undefined : presets?.[preset];
+  const presetNote = PRESET_NOTES[preset];
+  const note = presetNote ? i18n._(presetNote) : info?.note;
   const custom = preset === "custom";
   const authCode = preset === "qq" || preset === "163";
 
@@ -256,7 +309,7 @@ function ImapStep({
   const [smtpSecure, setSmtpSecure] = useState(true);
 
   const [add, runAdd] = useAtom(connectAtom(preset), { mode: "promiseExit" });
-  const addError = imapErrorText(add);
+  const addError = imapErrorText(i18n, add);
 
   const submit = async () => {
     const base = { preset, email: email.trim(), password };
@@ -279,21 +332,29 @@ function ImapStep({
 
   const ready =
     email.includes("@") && password && (!custom || (imapHost.trim() && smtpHost.trim()));
-  const secretLabel = custom ? "密码" : authCode ? "授权码" : "应用专用密码";
+  const secretLabel = custom
+    ? t`Password`
+    : authCode
+      ? t`Authorization code`
+      : t`App-specific password`;
 
   return (
     <form
-      aria-label="IMAP 账户"
+      aria-label={t`IMAP account`}
       className="mt-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (ready && !add.waiting) void submit();
       }}
     >
-      {info?.note && <p className="text-neutral-500">{info.note}</p>}
-      {custom && <p className="text-neutral-500">填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。</p>}
+      {info && note && <p className="text-neutral-500">{note}</p>}
+      {custom && (
+        <p className="text-neutral-500">
+          <Trans>Enter the IMAP and SMTP servers your email provider gives you.</Trans>
+        </p>
+      )}
 
-      <Field label="邮箱地址" value={email} onChange={setEmail} type="email" autoFocus />
+      <Field label={t`Email address`} value={email} onChange={setEmail} type="email" autoFocus />
       <Field label={secretLabel} value={password} onChange={setPassword} password />
       {info?.appPasswordUrl && (
         <a
@@ -302,29 +363,37 @@ function ImapStep({
           rel="noreferrer"
           className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-blue-600 hover:underline dark:text-blue-400"
         >
-          {authCode ? "生成授权码" : "生成应用专用密码"}
+          {authCode ? (
+            <Trans>Generate authorization code</Trans>
+          ) : (
+            <Trans>Generate app-specific password</Trans>
+          )}
           <ExternalLink className="size-3" />
         </a>
       )}
 
       {custom && (
         <>
-          <Field label="用户名（不填就用邮箱地址）" value={username} onChange={setUsername} />
+          <Field
+            label={t`Username (defaults to the email address)`}
+            value={username}
+            onChange={setUsername}
+          />
           <div className="flex gap-2">
             <div className="flex-1">
-              <Field label="IMAP 服务器" value={imapHost} onChange={setImapHost} />
+              <Field label={t`IMAP server`} value={imapHost} onChange={setImapHost} />
             </div>
             <div className="w-20">
-              <Field label="端口" value={imapPort} onChange={setImapPort} inputMode="numeric" />
+              <Field label={t`Port`} value={imapPort} onChange={setImapPort} inputMode="numeric" />
             </div>
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <Field label="SMTP 服务器" value={smtpHost} onChange={setSmtpHost} />
+              <Field label={t`SMTP server`} value={smtpHost} onChange={setSmtpHost} />
             </div>
             <div className="w-20">
               <Field
-                label="端口"
+                label={t`Port`}
                 value={smtpPort}
                 onChange={(v) => {
                   setSmtpPort(v);
@@ -336,14 +405,14 @@ function ImapStep({
             </div>
           </div>
           <label className="mt-3 block text-[12px] font-medium text-neutral-500">
-            SMTP 加密
+            <Trans>SMTP encryption</Trans>
             <select
               value={smtpSecure ? "tls" : "starttls"}
               onChange={(e) => setSmtpSecure(e.target.value === "tls")}
               className="mt-1 h-8 w-full rounded-md border border-black/10 bg-transparent px-2 text-[13px] text-neutral-900 outline-none focus:border-blue-500 dark:border-white/15 dark:text-neutral-100"
             >
-              <option value="tls">SSL/TLS（通常是 465）</option>
-              <option value="starttls">STARTTLS（通常是 587）</option>
+              <option value="tls">{t`SSL/TLS (usually 465)`}</option>
+              <option value="starttls">{t`STARTTLS (usually 587)`}</option>
             </select>
           </label>
         </>
@@ -352,7 +421,7 @@ function ImapStep({
       {addError && <ErrorLine text={addError} />}
       <Actions>
         <PrimaryButton disabled={!ready || add.waiting}>
-          {add.waiting ? "正在验证…" : "添加"}
+          {add.waiting ? <Trans>Verifying…</Trans> : <Trans>Add</Trans>}
         </PrimaryButton>
       </Actions>
     </form>

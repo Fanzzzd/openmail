@@ -7,16 +7,26 @@
 import { Effect } from "effect";
 import { Atom, Reactivity } from "effect/reactivity";
 
-import type { Account, Profile, ProfileInput } from "../../../shared/api";
+import type { Account, DraftInput, Profile, ProfileInput } from "../../../shared/api";
 import type { ConnectInput as ConnectInputSchema } from "../../../shared/rpc";
 import { MailClient } from "../rpc";
 import { Keys, MAIL_KEYS } from "./keys";
-import { decideProposal, reauthAccount, withMail } from "./mail";
+import { decideProposal, reauthAccount, saveDraft, withMail } from "./mail";
 
 type ConnectInput = typeof ConnectInputSchema.Type;
 
 export const setAgentModeAtom = MailClient.mutation("SetAgentWriteMode");
 export const deleteProfileAtom = MailClient.mutation("DeleteProfile");
+export const setPrefsAtom = MailClient.mutation("SetPrefs");
+export const setSignatureAtom = MailClient.mutation("SetSignature");
+export const saveTemplateAtom = MailClient.mutation("SaveTemplate");
+export const deleteTemplateAtom = MailClient.mutation("DeleteTemplate");
+export const setContactHiddenAtom = MailClient.mutation("SetContactHidden");
+
+/** Autosave of one compose window, keyed by draft id; its value shows the save state. */
+export const saveDraftAtom = Atom.family((_draftId: string) =>
+  MailClient.runtime.fn((draft: DraftInput) => saveDraft(draft)),
+);
 
 /**
  * Connects a Gmail, Outlook or IMAP account. One atom per provider choice, so

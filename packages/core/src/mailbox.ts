@@ -9,16 +9,23 @@ import { SyncProgress as SyncProgressSchema } from "./domain.js";
 import type {
   Account,
   Actor,
+  Address,
   AgentWriteMode,
   AuditEntry,
   Command,
+  Draft,
+  DraftInput,
   Label,
   Message,
   Outcome,
+  Prefs,
   Profile,
   ProfileInput,
   Proposal,
+  Signature,
   SyncResult,
+  Template,
+  TemplateInput,
   ThreadQuery,
   ThreadSummary,
 } from "./domain.js";
@@ -119,6 +126,45 @@ export class Mailbox extends Context.Service<
     /** Default write mode for agents without their own policy. */
     readonly agentWriteMode: Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(mode: AgentWriteMode): Effect.Effect<void>;
+
+    // Drafts. The person's own drafts; agents write theirs through perform({ kind: "draft" }).
+    /**
+     * The draft to edit, by local draft id, by the id of a draft message in
+     * the Drafts list (one written in another client is fetched from the
+     * provider and kept locally), or as "proposal:<id>" for an agent's draft.
+     */
+    openDraft(id: string): Effect.Effect<Draft, PerformError>;
+    /** Saves locally right away; the provider's copy follows through the change queue. */
+    saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound>;
+    /** Deletes the draft here and on the provider. An agent's draft rejects its proposal. */
+    discardDraft(id: string): Effect.Effect<void>;
+
+    // Compose settings
+    readonly prefs: Effect.Effect<Prefs>;
+    setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
+    /** Local signatures. Provider signatures (Gmail sendAs) are a later source behind this. */
+    readonly signatures: Effect.Effect<Signature[]>;
+    setSignature(signature: Signature): Effect.Effect<void>;
+    readonly templates: Effect.Effect<Template[]>;
+    /** Creates a template, or updates the one with `id`. */
+    saveTemplate(input: TemplateInput, id?: string): Effect.Effect<Template, NotFound>;
+    deleteTemplate(id: string): Effect.Effect<void>;
+
+    // Recipients
+    /**
+     * Addresses for the To, Cc and Bcc fields, from local mail history: people
+     * written to and heard from, ranked by frequency and recency. Provider
+     * contacts (Google, Outlook) are a later source behind this call.
+     * `exclude` is the address the message is written from; the person's
+     * other accounts are suggested like anyone else.
+     */
+    suggestContacts(
+      query: string,
+      options?: { readonly limit?: number; readonly exclude?: string },
+    ): Effect.Effect<Address[]>;
+    readonly hiddenContacts: Effect.Effect<string[]>;
+    /** Hides an address from suggestions, or shows it again. */
+    setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 
     // Sync
     /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */

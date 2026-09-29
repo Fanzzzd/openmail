@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <path id="body" d="M664 100L717 100.5L745.6 102L768.7 104.5L788.8 108L806.6 112.6L822.7 118.1L837.3 124.7L850.5 132.3L862.5 140.9L873.4 150.6L883.1 161.5L891.7 173.5L899.3 186.7L905.9 201.3L911.4 217.4L916 235.2L919.5 255.3L922 278.4L923.5 307L924 360L924 664L923.5 717L922 745.6L919.5 768.7L916 788.8L911.4 806.6L905.9 822.7L899.3 837.3L891.7 850.5L883.1 862.5L873.4 873.4L862.5 883.1L850.5 891.7L837.3 899.3L822.7 905.9L806.6 911.4L788.8 916L768.7 919.5L745.6 922L717 923.5L664 924L360 924L307 923.5L278.4 922L255.3 919.5L235.2 916L217.4 911.4L201.3 905.9L186.7 899.3L173.5 891.7L161.5 883.1L150.6 873.4L140.9 862.5L132.3 850.5L124.7 837.3L118.1 822.7L112.6 806.6L108 788.8L104.5 768.7L102 745.6L100.5 717L100 664L100 360L100.5 307L102 278.4L104.5 255.3L108 235.2L112.6 217.4L118.1 201.3L124.7 186.7L132.3 173.5L140.9 161.5L150.6 150.6L161.5 140.9L173.5 132.3L186.7 124.7L201.3 118.1L217.4 112.6L235.2 108L255.3 104.5L278.4 102L307 100.5L360 100Z"/>
+    <clipPath id="clip"><use href="#body"/></clipPath>
+    <linearGradient id="bg" x1="0" y1="100" x2="0" y2="924" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7F8FA"/>
+      <stop offset="1" stop-color="#DCE0E8"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="100" x2="0" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="iconShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dy="10"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12"/>
+      <feOffset dy="12"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.25"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+  </defs>
+  <g filter="url(#iconShadow)"><use href="#body" fill="url(#bg)"/></g>
+  <use href="#body" fill="url(#sheen)"/>
+  <g clip-path="url(#clip)">
+
+    <g filter="url(#soft)">
+      <rect x="200" y="300" width="624" height="440" rx="36" fill="#FFFFFF"/>
+    </g>
+    <path d="M222 322 L512 560 L802 322" fill="none" stroke="#C9CFDA" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M222 718 L430 540 M802 718 L594 540" fill="none" stroke="#C9CFDA" stroke-width="22" stroke-linecap="round"/>
+    <g filter="url(#soft)">
+      <path d="M667.0 560.0 L675.7 574.3 L677.4 589.2 L670.2 602.4 L656.8 612.7 L642.4 620.8 L631.8 629.1 L626.5 640.1 L624.1 654.1 L620.5 668.5 L612.4 679.6 L599.5 684.9 L584.3 685.3 L570.1 684.6 L558.4 687.5 L548.6 696.4 L538.4 709.5 L526.1 721.5 L512.0 727.0 L497.7 723.7 L484.9 713.6 L474.0 701.8 L463.4 693.5 L451.2 690.4 L436.9 690.1 L422.1 688.4 L410.2 681.3 L403.5 668.5 L401.6 652.7 L401.0 637.8 L397.1 626.3 L387.4 618.1 L373.2 610.5 L359.2 600.9 L350.7 588.4 L350.5 574.1 L357.0 560.0 L365.2 547.2 L370.2 535.0 L370.2 522.0 L367.2 507.3 L366.3 492.0 L371.5 478.9 L383.6 470.1 L399.9 465.9 L415.5 463.5 L427.1 458.8 L434.2 449.0 L439.7 434.7 L446.7 420.1 L457.4 409.9 L471.1 407.2 L485.6 410.5 L499.3 415.4 L512.0 417.0 L524.8 413.2 L539.1 406.4 L554.4 401.8 L568.8 403.9 L580.0 414.3 L587.1 429.9 L592.1 445.5 L598.4 457.1 L608.5 463.5 L622.4 467.3 L636.9 472.5 L647.7 481.7 L651.9 494.7 L650.8 509.5 L648.4 523.4 L649.7 535.7 L656.6 547.3 Z" fill="#C0162F"/>
+    </g>
+    <ellipse cx="512" cy="566" rx="58" ry="52" fill="none" stroke="#8E0D20" stroke-width="36"/>
+    <path d="M430 480 A120 120 0 0 1 560 452" fill="none" stroke="#E4495E" stroke-width="16" stroke-linecap="round"/>
+
+  </g>
+</svg>

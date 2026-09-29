@@ -20,12 +20,15 @@ body {
   cursor: default;
 }
 
-/* Window dragging: titlebar strips opt in, controls inside them opt out. */
+/* Window dragging: titlebar strips opt in, controls inside them opt out.
+   Electron applies drag regions below every overlay, so dialogs that can
+   cover a titlebar strip opt out too (no-drag). */
 .drag {
   -webkit-app-region: drag;
 }
 .drag button,
-.drag input {
+.drag input,
+.no-drag {
   -webkit-app-region: no-drag;
 }
 

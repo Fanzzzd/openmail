@@ -51,10 +51,19 @@ const loopbackServer = Effect.acquireRelease(
     }),
 );
 
+/**
+ * The page the browser shows after the redirect. Core does not know the app's
+ * UI language, so it says the same thing in English and Chinese.
+ */
 function page(ok: boolean, error: string | null): string {
-  return `<meta charset="utf-8"><body style="font:16px system-ui;padding:3rem">${
-    ok ? "已登录，可以关闭这个页面回到 openmail。" : `登录失败：${error ?? "state mismatch"}`
-  }</body>`;
+  const reason = error ?? "state mismatch";
+  const [en, zh] = ok
+    ? [
+        "Signed in. You can close this page and go back to openmail.",
+        "已登录，可以关闭这个页面回到 openmail。",
+      ]
+    : [`Sign-in failed: ${reason}`, `登录失败：${reason}`];
+  return `<meta charset="utf-8"><body style="font:16px system-ui;padding:3rem"><p lang="en">${en}</p><p lang="zh-CN">${zh}</p></body>`;
 }
 
 export const OAuthLoopback: Layer.Layer<

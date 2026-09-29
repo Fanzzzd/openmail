@@ -1,21 +1,31 @@
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import type { I18n, MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
 import { useEffect, useState } from "react";
 
-import type { Account, AgentWriteMode } from "../../../shared/api";
+import type { Account, AgentWriteMode, Language } from "../../../shared/api";
 import { resultError } from "../errors";
 import { Keys } from "../state/keys";
-import { reauthAtom, removeAccountAtom, setAgentModeAtom } from "../state/mutations";
-import { agentModeAtom, auditAtom } from "../state/queries";
+import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from "../state/mutations";
+import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
+import { ComposeSettings } from "./ComposeSettings";
 import { ProviderIcon } from "./ProviderIcon";
+import { SegmentedControl } from "./SegmentedControl";
 
-type Tab = "accounts" | "ai" | "log";
+type Tab = "accounts" | "general" | "compose" | "ai" | "log";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "accounts", label: "账户" },
-  { id: "ai", label: "AI 权限" },
-  { id: "log", label: "操作记录" },
+const TABS: { id: Tab; label: MessageDescriptor }[] = [
+  { id: "accounts", label: msg`Accounts` },
+  { id: "general", label: msg`General` },
+  { id: "compose", label: msg`Compose` },
+  { id: "ai", label: msg`AI Access` },
+  { id: "log", label: msg`Activity` },
 ];
+
+const panel = "min-h-0 flex-1 overflow-y-auto p-5 outline-none";
 
 interface Props {
   accounts: readonly Account[];
@@ -25,6 +35,7 @@ interface Props {
 }
 
 export function Settings({ accounts, initialTab = "accounts", onClose, onAddAccount }: Props) {
+  const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
 
   useEffect(() => {
@@ -38,36 +49,50 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <section
-        aria-label="设置"
+        aria-label={t`Settings`}
         className="flex h-[520px] w-[640px] flex-col overflow-hidden rounded-xl bg-white text-[13px] shadow-2xl dark:bg-neutral-800"
       >
-        <nav className="flex shrink-0 justify-center gap-1 border-b border-black/[0.07] py-2 dark:border-white/[0.08]">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`h-7 rounded-md px-3 font-medium ${
-                tab === t.id
-                  ? "bg-black/[0.07] dark:bg-white/10"
-                  : "text-neutral-500 hover:bg-black/[0.04] dark:text-neutral-400 dark:hover:bg-white/5"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {tab === "accounts" && <Accounts accounts={accounts} onAddAccount={onAddAccount} />}
-          {tab === "ai" && <AgentPolicy />}
-          {tab === "log" && <AuditLog accounts={accounts} />}
-        </div>
+        <Tabs.Root
+          value={tab}
+          onValueChange={(value) => {
+            const next = TABS.find((item) => item.id === value);
+            if (next) setTab(next.id);
+          }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <Tabs.List className="flex shrink-0 justify-center gap-1 border-b border-black/[0.07] py-2 dark:border-white/[0.08]">
+            {TABS.map((item) => (
+              <Tabs.Tab
+                key={item.id}
+                value={item.id}
+                className="h-7 rounded-md px-3 font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
+              >
+                {i18n._(item.label)}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+          <Tabs.Panel value="accounts" className={panel}>
+            <Accounts accounts={accounts} onAddAccount={onAddAccount} />
+          </Tabs.Panel>
+          <Tabs.Panel value="general" className={panel}>
+            <General />
+          </Tabs.Panel>
+          <Tabs.Panel value="compose" className={panel}>
+            <ComposeSettings accounts={accounts} />
+          </Tabs.Panel>
+          <Tabs.Panel value="ai" className={panel}>
+            <AgentPolicy />
+          </Tabs.Panel>
+          <Tabs.Panel value="log" className={panel}>
+            <AuditLog accounts={accounts} />
+          </Tabs.Panel>
+        </Tabs.Root>
       </section>
     </div>
   );
@@ -92,22 +117,23 @@ function Accounts({
         onClick={onAddAccount}
         className="mt-3 h-7 rounded-md border border-black/10 px-3 font-medium hover:bg-black/[0.04] dark:border-white/15 dark:hover:bg-white/5"
       >
-        添加邮箱
+        <Trans>Add email account</Trans>
       </button>
     </div>
   );
 }
 
 function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccount: () => void }) {
+  const { t, i18n } = useLingui();
   const [confirming, setConfirming] = useState(false);
   const [reauth, runReauth] = useAtom(reauthAtom(a.id));
   const [remove, runRemove] = useAtom(removeAccountAtom(a.id));
 
   const status = a.needsReauth
-    ? { text: "需要重新登录", className: "text-red-500" }
+    ? { text: t`Needs sign-in`, className: "text-red-500" }
     : a.lastSyncError
-      ? { text: "上次同步失败", className: "text-orange-500" }
-      : { text: "正常", className: "text-neutral-400" };
+      ? { text: t`Last sync failed`, className: "text-orange-500" }
+      : { text: t`Syncing normally`, className: "text-neutral-400" };
 
   return (
     <li className="flex items-center gap-3 px-3 py-2.5">
@@ -118,7 +144,9 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
           className={`block truncate text-[12px] ${status.className}`}
           title={a.lastSyncError ?? undefined}
         >
-          {reauth.waiting ? "请在浏览器里完成授权" : (resultError(reauth) ?? status.text)}
+          {reauth.waiting
+            ? t`Finish signing in in your browser`
+            : (resultError(i18n, reauth) ?? status.text)}
         </span>
       </span>
       <button
@@ -128,7 +156,7 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
         onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth())}
         className="h-7 shrink-0 rounded-md px-2.5 text-blue-600 hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
       >
-        重新登录
+        <Trans>Sign in again</Trans>
       </button>
       {confirming ? (
         <button
@@ -138,55 +166,95 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
           onBlur={() => setConfirming(false)}
           className="h-7 shrink-0 rounded-md bg-red-600 px-2.5 font-medium text-white hover:bg-red-700"
         >
-          确认移除
+          <Trans>Confirm removal</Trans>
         </button>
       ) : (
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          title="从 openmail 移除这个账户和它的本地邮件。服务器上的邮件不受影响。"
+          title={t`Remove this account and its local mail from openmail. Mail on the server is not affected.`}
           className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
         >
-          移除
+          <Trans>Remove</Trans>
         </button>
       )}
     </li>
   );
 }
 
-const MODES: { id: AgentWriteMode; label: string; detail: string }[] = [
+const MODES: { id: AgentWriteMode; label: MessageDescriptor; detail: MessageDescriptor }[] = [
   {
     id: "off",
-    label: "只读",
-    detail: "AI 能读邮件、搜索，不能改动任何东西。",
+    label: msg`Read only`,
+    detail: msg`AI can read and search mail, but can't change anything.`,
   },
   {
     id: "propose",
-    label: "先问我",
-    detail: "AI 想归档、打标签、标已读时，先放进「AI 建议」，你确认后才执行。",
+    label: msg`Ask me first`,
+    detail: msg`When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve.`,
   },
   {
     id: "allow",
-    label: "直接整理",
-    detail: "AI 可以直接归档、打标签、标已读。每次改动都记在操作记录里，可以撤销。",
+    label: msg`Organize directly`,
+    detail: msg`AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone.`,
   },
 ];
 
+/** "中文" and "English" are shown in their own language, whatever the UI language is. */
+const LANGUAGES: { id: Language; label: string | MessageDescriptor }[] = [
+  { id: "system", label: msg`Follow system` },
+  { id: "zh-CN", label: "中文" },
+  { id: "en", label: "English" },
+];
+
+function General() {
+  const { t, i18n } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  return (
+    <section>
+      <h3 className="mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400">
+        <Trans>Language</Trans>
+      </h3>
+      <SegmentedControl
+        aria-label={t`Language`}
+        value={prefs?.language ?? null}
+        options={LANGUAGES.map((l) => ({
+          value: l.id,
+          label: typeof l.label === "string" ? l.label : i18n._(l.label),
+        }))}
+        onValueChange={(language) =>
+          setPrefs({
+            payload: { patch: { language } },
+            reactivityKeys: [Keys.prefs],
+          })
+        }
+      />
+    </section>
+  );
+}
+
 function AgentPolicy() {
+  const { i18n } = useLingui();
   const mode = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
   const setMode = useAtomSet(setAgentModeAtom);
 
   return (
     <div>
       <p className="text-neutral-500 dark:text-neutral-400">
-        AI 通过 MCP 连接 openmail，比如 Claude Code。这里决定它能不能改动邮件。
+        <Trans>
+          AI connects to openmail over MCP, for example Claude Code. This decides whether it can
+          change your mail.
+        </Trans>
       </p>
       <fieldset className="mt-4 space-y-2">
-        <legend className="sr-only">AI 改动邮件的权限</legend>
+        <legend className="sr-only">
+          <Trans>AI permission to change mail</Trans>
+        </legend>
         {MODES.map((m) => (
           <label
             key={m.id}
-            aria-label={m.label}
+            aria-label={i18n._(m.label)}
             className={`flex cursor-pointer gap-3 rounded-lg border p-3 ${
               mode === m.id
                 ? "border-blue-500 bg-blue-500/5"
@@ -203,69 +271,94 @@ function AgentPolicy() {
               className="mt-0.5 accent-blue-600"
             />
             <span>
-              <span className="block font-medium">{m.label}</span>
-              <span className="block text-neutral-500 dark:text-neutral-400">{m.detail}</span>
+              <span className="block font-medium">{i18n._(m.label)}</span>
+              <span className="block text-neutral-500 dark:text-neutral-400">
+                {i18n._(m.detail)}
+              </span>
             </span>
           </label>
         ))}
       </fieldset>
       <p className="mt-4 text-neutral-500 dark:text-neutral-400">
-        发信不受这个设置影响。AI 写的邮件都会进「AI 建议」，由你在写信窗口里检查后发出。
+        <Trans>
+          Sending is not affected by this setting. Every message AI writes goes into AI suggestions,
+          and you review and send it from the compose window.
+        </Trans>
       </p>
     </div>
   );
 }
 
-const ACTION_NAMES: Record<string, string> = {
-  read: "标记已读/未读",
-  star: "星标",
-  important: "重要",
-  archive: "归档",
-  inbox: "移回收件箱",
-  trash: "删除",
-  spam: "报告垃圾邮件",
-  label: "标签",
-  send: "发送",
-  send_failed: "发送失败",
-  proposed: "提出建议",
-  approve: "确认建议",
-  reject: "拒绝建议",
-  denied: "被拒绝",
-  removeAccount: "移除账户",
+const ACTION_NAMES: Record<string, MessageDescriptor> = {
+  read: msg`Mark read/unread`,
+  star: msg`Star`,
+  important: msg`Important`,
+  archive: msg`Archive`,
+  inbox: msg`Move to Inbox`,
+  trash: msg`Delete`,
+  spam: msg`Report spam`,
+  label: msg`Label`,
+  send: msg`Send`,
+  send_failed: msg`Send failed`,
+  draft: msg`New draft`,
+  discard_draft: msg`Discard draft`,
+  proposed: msg`Suggested`,
+  approve: msg`Approve suggestion`,
+  reject: msg`Reject suggestion`,
+  denied: msg`Denied`,
+  removeAccount: msg`Remove account`,
 };
 
-function actorName(actor: string): string {
-  if (actor.startsWith("user:")) return actor === "user:cli" ? "你（命令行）" : "你";
-  return `AI（${actor.split(":").slice(2).join(":") || "未知"}）`;
+function actorName(i18n: I18n, actor: string): string {
+  if (actor.startsWith("user:"))
+    return actor === "user:cli" ? i18n._(msg`You (command line)`) : i18n._(msg`You`);
+  const agent = actor.split(":").slice(2).join(":") || i18n._(msg`unknown`);
+  return i18n._(msg`AI (${agent})`);
 }
 
 function AuditLog({ accounts }: { accounts: readonly Account[] }) {
+  const { i18n } = useLingui();
   const log = AsyncResult.getOrElse(useAtomValue(auditAtom), () => []);
   const email = (id: string | null) => accounts.find((a) => a.id === id)?.email ?? "";
-  if (!log.length) return <p className="text-neutral-400">还没有操作记录。</p>;
+  if (!log.length)
+    return (
+      <p className="text-neutral-400">
+        <Trans>No activity yet.</Trans>
+      </p>
+    );
   return (
     <table className="w-full text-left">
       <thead className="text-[12px] text-neutral-400">
         <tr>
-          <th className="pb-2 font-medium">时间</th>
-          <th className="pb-2 font-medium">谁</th>
-          <th className="pb-2 font-medium">操作</th>
-          <th className="pb-2 font-medium">账户</th>
+          <th className="pb-2 font-medium">
+            <Trans>Time</Trans>
+          </th>
+          <th className="pb-2 font-medium">
+            <Trans>Who</Trans>
+          </th>
+          <th className="pb-2 font-medium">
+            <Trans>Action</Trans>
+          </th>
+          <th className="pb-2 font-medium">
+            <Trans>Account</Trans>
+          </th>
         </tr>
       </thead>
       <tbody>
         {log.map((e, i) => (
           <tr key={i} className="border-t border-black/[0.06] dark:border-white/[0.06]">
             <td className="py-1.5 pr-3 whitespace-nowrap text-neutral-500 tabular-nums">
-              {new Date(e.at).toLocaleString("zh-CN", {
+              {new Date(e.at).toLocaleString(i18n.locale, {
                 month: "numeric",
                 day: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
               })}
             </td>
-            <td className="py-1.5 pr-3 whitespace-nowrap">{actorName(e.actor)}</td>
-            <td className="py-1.5 pr-3">{ACTION_NAMES[e.action] ?? e.action}</td>
+            <td className="py-1.5 pr-3 whitespace-nowrap">{actorName(i18n, e.actor)}</td>
+            <td className="py-1.5 pr-3">
+              {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
+            </td>
             <td className="max-w-40 truncate py-1.5 text-neutral-500">{email(e.accountId)}</td>
           </tr>
         ))}

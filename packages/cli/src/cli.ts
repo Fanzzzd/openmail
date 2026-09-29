@@ -570,7 +570,11 @@ Command.run(openmail, { version: "0.1.0" }).pipe(
   }),
   Effect.provide(
     Layer.mergeAll(
-      NodeMailbox({ browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)) }),
+      // A CLI run ends right after the command, so queue pushes happen before it returns.
+      NodeMailbox({
+        browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
+        backgroundFlush: false,
+      }),
       NodeServices.layer,
     ),
   ),

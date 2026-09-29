@@ -99,7 +99,33 @@ const Handlers = MailRpcs.toLayer(
       AssignProfile: ({ accountId, profileId }) => m.assignProfile(accountId, profileId),
 
       Modify: ({ threads, op }) => m.perform({ kind: "modify", threads, op }, USER),
-      Send: ({ accountId, message }) => m.perform({ kind: "send", accountId, message }, USER),
+      Send: ({ accountId, message, draftId, archive }) =>
+        m.perform(
+          {
+            kind: "send",
+            accountId,
+            message,
+            ...(draftId === undefined ? {} : { draftId }),
+            ...(archive === undefined ? {} : { archive }),
+          },
+          USER,
+        ),
+
+      OpenDraft: ({ id }) => m.openDraft(id),
+      SaveDraft: ({ draft }) => m.saveDraft(draft),
+      DiscardDraft: ({ id }) => m.discardDraft(id),
+
+      Prefs: () => m.prefs,
+      SetPrefs: ({ patch }) => m.setPrefs(patch),
+      Signatures: () => m.signatures,
+      SetSignature: ({ signature }) => m.setSignature(signature),
+      Templates: () => m.templates,
+      SaveTemplate: ({ input, id }) => m.saveTemplate(input, id),
+      DeleteTemplate: ({ id }) => m.deleteTemplate(id),
+      SuggestContacts: ({ query, exclude }) =>
+        m.suggestContacts(query, exclude === undefined ? {} : { exclude }),
+      HiddenContacts: () => m.hiddenContacts,
+      SetContactHidden: ({ address, hidden }) => m.setContactHidden(address, hidden),
       Audit: ({ limit }) => m.audit(limit),
       Proposals: () => m.proposals,
       DecideProposal: ({ id, approve }) => m.decideProposal(id, approve, "app"),

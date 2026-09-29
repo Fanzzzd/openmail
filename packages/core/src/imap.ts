@@ -8,6 +8,7 @@ import type {
   Account,
   Address,
   Attachment,
+  DraftRemote,
   ImapSettings,
   IncomingMessage,
   MailOp,
@@ -22,7 +23,13 @@ import {
 } from "./errors.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import { htmlToText } from "./mime.js";
-import { type Change, type ConnectInput, type ProviderAdapter, Secrets } from "./services.js";
+import {
+  type Change,
+  type ConnectInput,
+  type DraftPush,
+  type ProviderAdapter,
+  Secrets,
+} from "./services.js";
 
 /** First sync pulls this window per folder; older mail is left on the server. */
 const INITIAL_DAYS = 90;
@@ -305,7 +312,8 @@ export function threadIdOf(h: {
   return messageIds(h.references)[0] ?? messageIds(h.inReplyTo)[0] ?? messageIds(h.messageId)[0];
 }
 
-function addresses(value: AddressObject | AddressObject[] | undefined): Address[] {
+/** Addresses of a mailparser header value, groups flattened. */
+export function addresses(value: AddressObject | AddressObject[] | undefined): Address[] {
   const objects = Array.isArray(value) ? value : value ? [value] : [];
   const out: Address[] = [];
   for (const o of objects) {
@@ -910,6 +918,54 @@ const saveSent = Effect.fnUntraced(function* (s: Session, raw: Buffer, serverSav
   yield* call(s, (c) => c.append(sent, raw, ["\\Seen"]));
 });
 
+// Drafts
+
+/** Opens the message's folder if it still has the same UIDVALIDITY. False when it was rebuilt. */
+const openFolderOf = (s: Session, ref: { path: string; uidValidity: string }, readOnly: boolean) =>
+  Effect.tryPromise({
+    try: () => s.client.mailboxOpen(ref.path, { readOnly }),
+    catch: (error): ProviderFailure =>
+      isRefusal(error)
+        ? new PermanentError({ message: `Folder ${ref.path} is gone: ${describe(error)}` })
+        : failure(s.accountId, s.settings.imapHost, error),
+  }).pipe(Effect.map((mailbox) => String(mailbox.uidValidity) === ref.uidValidity));
+
+/** Deletes one message by provider id. One that is already gone counts as deleted. */
+const deleteMessage = Effect.fnUntraced(function* (s: Session, providerId: string) {
+  const ref = decodeProviderId(providerId);
+  if (Option.isNone(ref)) return;
+  const same = yield* openFolderOf(s, ref.value, false).pipe(
+    Effect.catchTag("PermanentError", () => Effect.succeed(false)),
+  );
+  if (!same) return;
+  yield* call(s, (c) => c.messageDelete(String(ref.value.uid), { uid: true }));
+});
+
+/**
+ * Files the draft in Drafts with the \Draft flag and removes the copy it
+ * replaces; IMAP messages cannot be edited in place. The new UID comes from
+ * UIDPLUS, or from a search by Message-ID on servers without it.
+ */
+const appendDraft = Effect.fnUntraced(function* (s: Session, raw: Buffer, previous: string | null) {
+  const list = yield* call(s, (c) => c.list());
+  const drafts = yield* ensureFolder(s, list, "\\Drafts", "Drafts");
+  const appended = yield* call(s, (c) => c.append(drafts, raw, ["\\Draft", "\\Seen"]));
+  let uid = appended ? appended.uid : undefined;
+  let uidValidity = appended ? appended.uidValidity : undefined;
+  if (uid === undefined || uidValidity === undefined) {
+    const mailbox = yield* call(s, (c) => c.mailboxOpen(drafts, { readOnly: true }));
+    uidValidity = mailbox.uidValidity;
+    const messageId = parseHeaders(raw).get("message-id");
+    const found = messageId
+      ? yield* call(s, (c) => c.search({ header: { "message-id": messageId } }, { uid: true }))
+      : false;
+    uid = found && found.length ? Math.max(...found) : undefined;
+  }
+  if (previous) yield* deleteMessage(s, previous);
+  const id = uid === undefined ? null : encodeProviderId(drafts, uidValidity, uid);
+  return { draftId: id, messageId: id } satisfies DraftRemote;
+});
+
 const connect = Effect.fnUntraced(function* (input: ConnectInput) {
   if (input.provider !== "imap") {
     return yield* new InvalidInput({ message: `Not an IMAP sign-in: ${input.provider}` });
@@ -1003,5 +1059,50 @@ export const makeImap: Effect.Effect<ProviderAdapter, never, Secrets> = Effect.g
       );
     }).pipe(Effect.scoped);
 
-  return { connect, pull, push, send };
+  const saveDraft: ProviderAdapter["saveDraft"] = (account, draft: DraftPush) =>
+    Effect.gen(function* () {
+      const { s } = yield* session(account);
+      const threading = Option.isSome(draft.original)
+        ? yield* threadingOf(s, draft.original.value.providerId)
+        : {};
+      const raw = yield* buildMime(
+        { name: "", address: account.email },
+        draft.message,
+        threading,
+      ).pipe(
+        Effect.mapError(
+          (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),
+        ),
+      );
+      return yield* appendDraft(s, raw, draft.remote?.messageId ?? null);
+    }).pipe(Effect.scoped);
+
+  const deleteDraft: ProviderAdapter["deleteDraft"] = (account, remote) =>
+    Effect.gen(function* () {
+      const id = remote.messageId ?? remote.draftId;
+      if (!id) return;
+      const { s } = yield* session(account);
+      yield* deleteMessage(s, id);
+    }).pipe(Effect.scoped);
+
+  const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId) =>
+    Effect.gen(function* () {
+      const ref = decodeProviderId(providerId);
+      if (Option.isNone(ref)) {
+        return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
+      }
+      const { s } = yield* session(account);
+      const same = yield* openFolderOf(s, ref.value, true);
+      const m = same
+        ? yield* call(s, (c) =>
+            c.fetchOne(String(ref.value.uid), { uid: true, source: true }, { uid: true }),
+          )
+        : false;
+      if (!m || !m.source) {
+        return yield* new PermanentError({ message: `Message ${providerId} is gone` });
+      }
+      return new Uint8Array(m.source);
+    }).pipe(Effect.scoped);
+
+  return { connect, pull, push, send, saveDraft, deleteDraft, fetchRaw };
 });

@@ -1,8 +1,10 @@
+import { useLingui } from "@lingui/react/macro";
 import {
   Archive,
   Bookmark,
   Forward,
   Inbox,
+  MailPlus,
   MailOpen,
   Mail,
   Reply,
@@ -32,11 +34,13 @@ interface Props {
   /** User labels or folders of the thread's account. */
   labels: Label[];
   onOp: (op: MailOp) => void;
-  onCompose: (mode: "reply" | "replyAll" | "forward") => void;
+  /** `asAttachment` forwards the original as an .eml file. */
+  onCompose: (mode: "reply" | "replyAll" | "forward", asAttachment?: boolean) => void;
 }
 
 /** Mimestream-style toolbar above the reader. Titles carry the keyboard shortcut. */
 export function ThreadActions({ state, mailbox, labels, onOp, onCompose }: Props) {
+  const { t } = useLingui();
   const [labelMenu, setLabelMenu] = useState(false);
   const out = mailbox === "trash" || mailbox === "spam" || !state.labels.includes("INBOX");
   const folders = state.provider !== "gmail";
@@ -44,29 +48,33 @@ export function ThreadActions({ state, mailbox, labels, onOp, onCompose }: Props
   return (
     <div className="flex items-center gap-0.5">
       {out && (mailbox === "trash" || mailbox === "spam" || folders) ? (
-        <Button icon={Inbox} title="移回收件箱 (⇧⌘I)" onClick={() => onOp({ kind: "inbox" })} />
+        <Button
+          icon={Inbox}
+          title={t`Move to Inbox (⇧⌘I)`}
+          onClick={() => onOp({ kind: "inbox" })}
+        />
       ) : (
-        <Button icon={Archive} title="归档 (E)" onClick={() => onOp({ kind: "archive" })} />
+        <Button icon={Archive} title={t`Archive (E)`} onClick={() => onOp({ kind: "archive" })} />
       )}
-      <Button icon={Trash2} title="删除 (#)" onClick={() => onOp({ kind: "trash" })} />
+      <Button icon={Trash2} title={t`Delete (#)`} onClick={() => onOp({ kind: "trash" })} />
       {mailbox !== "spam" && (
         <Button
           icon={ShieldAlert}
-          title="报告垃圾邮件 (!)"
+          title={t`Report spam (!)`}
           onClick={() => onOp({ kind: "spam" })}
         />
       )}
       <Divider />
       <Button
         icon={state.isUnread ? MailOpen : Mail}
-        title={state.isUnread ? "标为已读 (U)" : "标为未读 (U)"}
+        title={state.isUnread ? t`Mark as read (U)` : t`Mark as unread (U)`}
         onClick={() => onOp({ kind: "read", value: state.isUnread })}
       />
       <Button
         icon={Star}
         active={state.isStarred}
         activeClass="fill-amber-400 text-amber-400"
-        title={state.isStarred ? "去掉星标 (S)" : "加星标 (S)"}
+        title={state.isStarred ? t`Unstar (S)` : t`Star (S)`}
         onClick={() => onOp({ kind: "star", value: !state.isStarred })}
       />
       {state.provider === "gmail" && (
@@ -74,7 +82,7 @@ export function ThreadActions({ state, mailbox, labels, onOp, onCompose }: Props
           icon={Bookmark}
           active={state.isImportant}
           activeClass="fill-orange-400 text-orange-400"
-          title={state.isImportant ? "取消重要 (=)" : "标为重要 (=)"}
+          title={state.isImportant ? t`Mark as not important (=)` : t`Mark as important (=)`}
           onClick={() => onOp({ kind: "important", value: !state.isImportant })}
         />
       )}
@@ -82,7 +90,7 @@ export function ThreadActions({ state, mailbox, labels, onOp, onCompose }: Props
         <span className="relative">
           <Button
             icon={Tag}
-            title={folders ? "移到文件夹 (V)" : "标签 (L)"}
+            title={folders ? t`Move to folder (V)` : t`Labels (L)`}
             onClick={() => setLabelMenu((v) => !v)}
           />
           {labelMenu && (
@@ -100,9 +108,14 @@ export function ThreadActions({ state, mailbox, labels, onOp, onCompose }: Props
         </span>
       )}
       <Divider />
-      <Button icon={Reply} title="回复 (R)" onClick={() => onCompose("reply")} />
-      <Button icon={ReplyAll} title="回复全部 (A)" onClick={() => onCompose("replyAll")} />
-      <Button icon={Forward} title="转发 (F)" onClick={() => onCompose("forward")} />
+      <Button icon={Reply} title={t`Reply (R)`} onClick={() => onCompose("reply")} />
+      <Button icon={ReplyAll} title={t`Reply all (A)`} onClick={() => onCompose("replyAll")} />
+      <Button icon={Forward} title={t`Forward (F)`} onClick={() => onCompose("forward")} />
+      <Button
+        icon={MailPlus}
+        title={t`Forward as attachment (⇧F)`}
+        onClick={() => onCompose("forward", true)}
+      />
     </div>
   );
 }
@@ -120,6 +133,7 @@ function LabelMenu({
   onPick: (label: Label, value: boolean) => void;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const [filter, setFilter] = useState("");
   const shown = labels.filter((l) => l.name.toLowerCase().includes(filter.toLowerCase()));
   return (
@@ -136,7 +150,7 @@ function LabelMenu({
             onPick(shown[0], !current.includes(shown[0].id));
           }
         }}
-        placeholder={folders ? "移到文件夹…" : "标签…"}
+        placeholder={folders ? t`Move to folder…` : t`Labels…`}
         className="h-8 w-full border-b border-black/[0.07] bg-transparent px-3 text-[13px] outline-none dark:border-white/[0.08]"
       />
       <ul className="max-h-64 overflow-y-auto py-1">

@@ -2,7 +2,8 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { DatabaseSync } from "node:sqlite";
 
 import { assert, it } from "@effect/vitest";
-import { Effect, Exit, FileSystem, Layer, Path, Schema } from "effect";
+import { Effect, Exit, FileSystem, Layer, Option, Path, Schema } from "effect";
+import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 
 import { databaseLayer, MIGRATIONS, splitStatements } from "./db.js";
@@ -528,4 +529,91 @@ it.effect("a database from an older version migrates without losing mail", () =>
     yield* withStore(check, databaseLayer(file).pipe(Layer.provide(disk)));
     yield* withStore(check, databaseLayer(file).pipe(Layer.provide(disk)));
   }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);
+
+it.effect("a queued op is pushed by one process at a time; claims expire", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const { id } = yield* store.upsertAccount("gmail", "me@example.com");
+      yield* store.enqueueOp(id, "m1", { kind: "archive" });
+      const [op] = yield* store.listPendingOps;
+      assert.ok(op);
+      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+      // Another process (the CLI next to the app) finds it taken.
+      assert.strictEqual(yield* store.claimPendingOp(op.id), false);
+      yield* store.releasePendingOp(op.id);
+      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+      // A claim left by a process that died mid-push runs out after two minutes.
+      yield* TestClock.adjust("3 minutes");
+      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+    }),
+  ),
+);
+
+it.effect("draft saves coalesce, and a pull only drops drafts with nothing left to push", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const { id } = yield* store.upsertAccount("gmail", "me@example.com");
+      const message = { to: [], cc: [], bcc: [], subject: "s", text: "t", attachments: [] };
+      for (const draft of ["draft:a", "draft:b"]) {
+        yield* store.putDraft({ id: draft, accountId: id, message });
+        yield* store.setDraftRemote(
+          draft,
+          { draftId: `r-${draft}`, messageId: `m-${draft}` },
+          null,
+        );
+      }
+      yield* store.enqueueDraftSave(id, "draft:b");
+      yield* store.enqueueDraftSave(id, "draft:b");
+      assert.strictEqual((yield* store.listPendingOps).length, 1);
+
+      yield* store.dropSyncedDrafts(id);
+      assert.ok(Option.isNone(yield* store.getDraft("draft:a")));
+      assert.ok(Option.isSome(yield* store.getDraft("draft:b")));
+
+      // Deleting a draft takes its waiting push with it.
+      yield* store.deleteDraft("draft:b");
+      assert.deepStrictEqual(yield* store.listPendingOps, []);
+      assert.strictEqual(
+        yield* store.setDraftRemote("draft:b", { draftId: "x", messageId: "y" }, null),
+        false,
+      );
+    }),
+  ),
+);
+
+it.effect("local drafts join the Drafts list only for unfiltered views", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const { id } = yield* store.upsertAccount("gmail", "me@example.com");
+      yield* store.upsertMessage(
+        id,
+        message({ providerId: "d1", labels: ["DRAFT"], date: 5, isUnread: false }),
+      );
+      yield* store.putDraft({
+        id: "draft:a",
+        accountId: id,
+        message: { to: [], cc: [], bcc: [], subject: "本地", text: "正文", attachments: [] },
+      });
+      const ids = (list: readonly { id: string }[]) => list.map((t) => t.id);
+      assert.deepStrictEqual(ids(yield* store.listThreads({ mailbox: "drafts" })), [
+        `${id}/d1`,
+        "draft:a",
+      ]);
+      assert.deepStrictEqual(
+        ids(yield* store.listThreads({ mailbox: "drafts", unreadOnly: true })),
+        [],
+      );
+      assert.deepStrictEqual(
+        ids(yield* store.listThreads({ mailbox: "drafts", accountIds: [] })),
+        [],
+      );
+      // Linked to the pulled copy: shown once.
+      yield* store.setDraftRemote("draft:a", { draftId: null, messageId: "d1" }, null);
+      assert.deepStrictEqual(ids(yield* store.listThreads({ mailbox: "drafts" })), [`${id}/d1`]);
+    }),
+  ),
 );

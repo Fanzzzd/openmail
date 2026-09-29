@@ -138,6 +138,62 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX proposals_pending ON proposals(status, created_at);
   `,
+  `
+  -- Drafts being written. Separate from messages, which mirror the provider:
+  -- a draft exists before the provider has an id for it, and it keeps what
+  -- messages does not store (Bcc, attachment content, the Markdown flag). The
+  -- provider's copy shows up in messages (label DRAFT) after a pull and is
+  -- linked back by remote_message_id.
+  CREATE TABLE drafts (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    message_json TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    proposal_id INTEGER REFERENCES proposals(id) ON DELETE SET NULL,
+    remote_draft_id TEXT,
+    remote_message_id TEXT,
+    -- Names and sizes of the attachments as last pushed, so a push re-uploads
+    -- them only when they changed.
+    pushed_attachments TEXT
+  );
+  CREATE INDEX drafts_remote ON drafts(account_id, remote_message_id);
+  CREATE INDEX drafts_proposal ON drafts(proposal_id);
+
+  -- A queued op being pushed right now, by this process or another (app, CLI
+  -- and MCP share the queue). Claims older than two minutes count as dead.
+  ALTER TABLE pending_ops ADD COLUMN claimed_at INTEGER;
+
+  -- App preferences shared by every surface. One JSON value per key.
+  CREATE TABLE prefs (
+    key TEXT PRIMARY KEY,
+    value_json TEXT NOT NULL
+  );
+
+  -- Signatures per sending address. source 'local' is typed in openmail;
+  -- provider signatures (Gmail sendAs) will sync in as their own source.
+  CREATE TABLE signatures (
+    address TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('new', 'reply')),
+    source TEXT NOT NULL DEFAULT 'local',
+    text TEXT NOT NULL,
+    PRIMARY KEY (address, kind, source)
+  );
+
+  CREATE TABLE templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    to_json TEXT NOT NULL,
+    cc_json TEXT NOT NULL,
+    body TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+
+  -- Addresses the person hid from recipient suggestions. Lower case.
+  CREATE TABLE hidden_contacts (
+    address TEXT PRIMARY KEY
+  );
+  `,
 ];
 
 /**
