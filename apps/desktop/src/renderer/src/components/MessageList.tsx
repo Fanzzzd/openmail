@@ -1,10 +1,14 @@
+import { Toggle } from "@base-ui/react/toggle";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Paperclip, Star } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { Label, ThreadSummary } from "../../../shared/api";
+import type { Label, MailOp, Mailbox, ThreadSummary } from "../../../shared/api";
 import { avatarColor, displayName, shortDate } from "../format";
 import type { Filters } from "../view";
+import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
+import { ThreadMenuItems, type ThreadState } from "./ThreadActions";
+import { Tip } from "./ui/Tip";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
@@ -23,6 +27,21 @@ interface Props {
   selectionSource: SelectionSource;
   onSelect: (id: string) => void;
   onEndReached: () => void;
+  /** What a row's context menu needs; the same handlers as the reader toolbar. */
+  rowActions: RowActions;
+}
+
+export interface RowActions {
+  mailbox: Mailbox;
+  /** User labels of every account. */
+  labels: readonly Label[];
+  stateOf: (thread: ThreadSummary) => ThreadState | null;
+  onOp: (thread: ThreadSummary, state: ThreadState, op: MailOp) => void;
+  onCompose: (
+    thread: ThreadSummary,
+    mode: "reply" | "replyAll" | "forward",
+    asAttachment?: boolean,
+  ) => void;
 }
 
 export function MessageList({
@@ -38,9 +57,14 @@ export function MessageList({
   selectionSource,
   onSelect,
   onEndReached,
+  rowActions,
 }: Props) {
   const { t } = useLingui();
   const listRef = useRef<HTMLDivElement>(null);
+  /** The row under the pointer at the right-click, set before the menu opens. */
+  const pressed = useRef<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const menuThread = threads.find((m) => m.id === menuFor);
 
   // Keep the keyboard selection in view.
   useEffect(() => {
@@ -61,71 +85,115 @@ export function MessageList({
           <>
             <FilterChip
               active={filters.unread}
-              onClick={() => onFilters({ ...filters, unread: !filters.unread })}
+              onChange={(unread) => onFilters({ ...filters, unread })}
               label={t`Unread`}
-              title={t`Show only unread (⌥⌘L)`}
+              tip={t`Show only unread`}
+              shortcut="⌥⌘L"
             />
             <FilterChip
               active={filters.starred}
-              onClick={() => onFilters({ ...filters, starred: !filters.starred })}
+              onChange={(starred) => onFilters({ ...filters, starred })}
               label={t`Starred`}
-              title={t`Show only starred`}
+              tip={t`Show only starred`}
             />
           </>
         )}
       </header>
 
-      <div
-        ref={listRef}
-        onScroll={(e) => {
-          const el = e.currentTarget;
-          if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) onEndReached();
+      <ContextMenuRoot
+        onOpenChange={(open, details) => {
+          // Only rows have a menu; a right-click on empty space does nothing.
+          if (open && !pressed.current) {
+            details.cancel();
+            return;
+          }
+          if (open) setMenuFor(pressed.current);
         }}
-        className="flex-1 overflow-y-auto px-2 pb-2"
+        onOpenChangeComplete={(open) => {
+          if (!open) setMenuFor(null);
+        }}
       >
-        {threads.length === 0 && !loading && (
-          <p className="p-8 text-center text-neutral-400">
-            {searching ? (
-              <Trans>No matching messages</Trans>
-            ) : filters.unread || filters.starred ? (
-              <Trans>No messages match the filters</Trans>
-            ) : (
-              <Trans>No messages here</Trans>
-            )}
-          </p>
-        )}
-        {threads.map((m, i) => (
-          <Row
-            key={m.id}
-            thread={m}
-            labels={labels}
-            selected={i === selectedIndex}
-            accent={i === selectedIndex && selectionSource === "keyboard"}
-            // Mimestream drops the rule under the selected row and under the row above it.
-            rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
-            showAccount={showAccount}
-            onSelect={() => onSelect(m.id)}
-          />
-        ))}
-      </div>
+        <ContextMenuTrigger
+          render={
+            <div
+              ref={listRef}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) onEndReached();
+              }}
+              onContextMenuCapture={(e) => {
+                const row = e.target instanceof Element ? e.target.closest("[data-id]") : null;
+                pressed.current = row?.getAttribute("data-id") ?? null;
+              }}
+              className="flex-1 overflow-y-auto px-2 pb-2"
+            />
+          }
+        >
+          {threads.length === 0 && !loading && (
+            <p className="p-8 text-center text-neutral-400">
+              {searching ? (
+                <Trans>No matching messages</Trans>
+              ) : filters.unread || filters.starred ? (
+                <Trans>No messages match the filters</Trans>
+              ) : (
+                <Trans>No messages here</Trans>
+              )}
+            </p>
+          )}
+          {threads.map((m, i) => (
+            <Row
+              key={m.id}
+              thread={m}
+              labels={labels}
+              selected={i === selectedIndex}
+              accent={i === selectedIndex && selectionSource === "keyboard"}
+              menuOpen={m.id === menuFor}
+              // Mimestream drops the rule under the selected row and under the row above it.
+              rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
+              showAccount={showAccount}
+              onSelect={() => onSelect(m.id)}
+            />
+          ))}
+        </ContextMenuTrigger>
+        {menuThread && <RowMenu thread={menuThread} actions={rowActions} />}
+      </ContextMenuRoot>
     </section>
   );
 }
 
-function FilterChip(props: { active: boolean; onClick: () => void; label: string; title: string }) {
+function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActions }) {
+  const state = actions.stateOf(thread);
+  if (!state) return null;
   return (
-    <button
-      type="button"
-      title={props.title}
-      onClick={props.onClick}
-      className={`h-6 shrink-0 rounded-full px-2.5 text-[12px] font-medium ${
-        props.active
-          ? "bg-blue-600 text-white"
-          : "text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
-      }`}
-    >
-      {props.label}
-    </button>
+    <ContextMenuContent>
+      <ThreadMenuItems
+        state={state}
+        mailbox={actions.mailbox}
+        labels={actions.labels.filter((l) => l.accountId === thread.accountId)}
+        onOp={(op) => actions.onOp(thread, state, op)}
+        onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
+      />
+    </ContextMenuContent>
+  );
+}
+
+function FilterChip(props: {
+  active: boolean;
+  onChange: (active: boolean) => void;
+  label: string;
+  tip: string;
+  shortcut?: string;
+}) {
+  return (
+    <Tip label={props.tip} shortcut={props.shortcut}>
+      <Toggle
+        pressed={props.active}
+        onPressedChange={props.onChange}
+        className="h-6 shrink-0 rounded-full px-2.5 text-[12px] font-medium text-neutral-500 outline-offset-1 outline-blue-500/60 hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:text-neutral-400 dark:hover:bg-white/10 dark:data-pressed:text-white"
+      >
+        {props.label}
+      </Toggle>
+    </Tip>
   );
 }
 
@@ -141,6 +209,7 @@ function Row({
   labels,
   selected,
   accent,
+  menuOpen,
   rule,
   showAccount,
   onSelect,
@@ -149,6 +218,8 @@ function Row({
   labels: Map<string, Label>;
   selected: boolean;
   accent: boolean;
+  /** The context menu is open for this row: outlined, as in macOS Mail. */
+  menuOpen: boolean;
   rule: boolean;
   showAccount: boolean;
   onSelect: () => void;
@@ -162,6 +233,8 @@ function Row({
       data-id={m.id}
       onClick={onSelect}
       className={`relative block w-full rounded-lg py-2.5 pr-3 pl-7 text-left ${
+        menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
+      } ${
         accent
           ? "bg-blue-600 text-white"
           : selected

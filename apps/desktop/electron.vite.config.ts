@@ -32,9 +32,21 @@ export default defineConfig({
     // and breaks hooks until a restart. Add new subpaths here.
     optimizeDeps: {
       include: [
+        "@base-ui/react/alert-dialog",
+        "@base-ui/react/autocomplete",
+        "@base-ui/react/checkbox",
+        "@base-ui/react/combobox",
+        "@base-ui/react/context-menu",
+        "@base-ui/react/dialog",
+        "@base-ui/react/menu",
+        "@base-ui/react/popover",
         "@base-ui/react/radio",
         "@base-ui/react/radio-group",
+        "@base-ui/react/select",
         "@base-ui/react/tabs",
+        "@base-ui/react/toggle",
+        "@base-ui/react/toolbar",
+        "@base-ui/react/tooltip",
         "react-resizable-panels",
       ],
     },

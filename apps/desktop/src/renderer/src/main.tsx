@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 import { LocaleProvider } from "./components/LocaleProvider";
+import { TipProvider } from "./components/ui/Tip";
 import "./styles.css";
 
 // One atom registry for the window. Data atoms refetch when a change
@@ -12,7 +13,9 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RegistryProvider>
       <LocaleProvider>
-        <App />
+        <TipProvider>
+          <App />
+        </TipProvider>
       </LocaleProvider>
     </RegistryProvider>
   </StrictMode>,

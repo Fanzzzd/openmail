@@ -9,6 +9,7 @@ import { avatarColor, displayName, PROFILE_BG, shortDate } from "../format";
 import { syncNow, useRunMail } from "../state/mail";
 import { unreadInboxAtom } from "../state/queries";
 import { ALL, type SpaceId } from "../view";
+import { Tip } from "./ui/Tip";
 
 interface Group {
   space: SpaceId;
@@ -148,14 +149,16 @@ function GroupCard({
           </span>
         )}
         {onEdit && (
-          <button
-            type="button"
-            title={t`Edit space`}
-            onClick={onEdit}
-            className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            <Pencil className="size-3.5" />
-          </button>
+          <Tip label={t`Edit space`}>
+            <button
+              type="button"
+              aria-label={t`Edit space`}
+              onClick={onEdit}
+              className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          </Tip>
         )}
       </header>
 

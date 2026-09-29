@@ -2,9 +2,11 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { Radio } from "@base-ui/react/radio";
+import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { Account, AgentWriteMode, Language } from "../../../shared/api";
 import { resultError } from "../errors";
@@ -13,7 +15,8 @@ import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from ".
 import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
 import { ComposeSettings } from "./ComposeSettings";
 import { ProviderIcon } from "./ProviderIcon";
-import { SegmentedControl } from "./SegmentedControl";
+import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
+import { SegmentedControl } from "./ui/SegmentedControl";
 
 type Tab = "accounts" | "general" | "compose" | "ai" | "log";
 
@@ -38,63 +41,48 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
   const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      role="presentation"
-      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <Dialog
+      aria-label={t`Settings`}
+      onClose={onClose}
+      className="flex h-[520px] w-[640px] flex-col overflow-hidden"
     >
-      <section
-        aria-label={t`Settings`}
-        className="flex h-[520px] w-[640px] flex-col overflow-hidden rounded-xl bg-white text-[13px] shadow-2xl dark:bg-neutral-800"
+      <Tabs.Root
+        value={tab}
+        onValueChange={(value) => {
+          const next = TABS.find((item) => item.id === value);
+          if (next) setTab(next.id);
+        }}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <Tabs.Root
-          value={tab}
-          onValueChange={(value) => {
-            const next = TABS.find((item) => item.id === value);
-            if (next) setTab(next.id);
-          }}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <Tabs.List className="flex shrink-0 justify-center gap-1 border-b border-black/[0.07] py-2 dark:border-white/[0.08]">
-            {TABS.map((item) => (
-              <Tabs.Tab
-                key={item.id}
-                value={item.id}
-                className="h-7 rounded-md px-3 font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
-              >
-                {i18n._(item.label)}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-          <Tabs.Panel value="accounts" className={panel}>
-            <Accounts accounts={accounts} onAddAccount={onAddAccount} />
-          </Tabs.Panel>
-          <Tabs.Panel value="general" className={panel}>
-            <General />
-          </Tabs.Panel>
-          <Tabs.Panel value="compose" className={panel}>
-            <ComposeSettings accounts={accounts} />
-          </Tabs.Panel>
-          <Tabs.Panel value="ai" className={panel}>
-            <AgentPolicy />
-          </Tabs.Panel>
-          <Tabs.Panel value="log" className={panel}>
-            <AuditLog accounts={accounts} />
-          </Tabs.Panel>
-        </Tabs.Root>
-      </section>
-    </div>
+        <Tabs.List className="flex shrink-0 justify-center gap-1 border-b border-black/[0.07] py-2 dark:border-white/[0.08]">
+          {TABS.map((item) => (
+            <Tabs.Tab
+              key={item.id}
+              value={item.id}
+              className="h-7 rounded-md px-3 font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
+            >
+              {i18n._(item.label)}
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
+        <Tabs.Panel value="accounts" className={panel}>
+          <Accounts accounts={accounts} onAddAccount={onAddAccount} />
+        </Tabs.Panel>
+        <Tabs.Panel value="general" className={panel}>
+          <General />
+        </Tabs.Panel>
+        <Tabs.Panel value="compose" className={panel}>
+          <ComposeSettings accounts={accounts} />
+        </Tabs.Panel>
+        <Tabs.Panel value="ai" className={panel}>
+          <AgentPolicy />
+        </Tabs.Panel>
+        <Tabs.Panel value="log" className={panel}>
+          <AuditLog accounts={accounts} />
+        </Tabs.Panel>
+      </Tabs.Root>
+    </Dialog>
   );
 }
 
@@ -128,6 +116,7 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
   const [confirming, setConfirming] = useState(false);
   const [reauth, runReauth] = useAtom(reauthAtom(a.id));
   const [remove, runRemove] = useAtom(removeAccountAtom(a.id));
+  const email = a.email;
 
   const status = a.needsReauth
     ? { text: t`Needs sign-in`, className: "text-red-500" }
@@ -158,26 +147,31 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
       >
         <Trans>Sign in again</Trans>
       </button>
-      {confirming ? (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+      >
+        <Trans>Remove</Trans>
+      </button>
+      <Alert
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={t`Remove ${email}?`}
+        description={t`Remove this account and its local mail from openmail. Mail on the server is not affected.`}
+      >
+        <AlertCancel>
+          <Trans>Cancel</Trans>
+        </AlertCancel>
         <button
           type="button"
           disabled={remove.waiting}
           onClick={() => runRemove()}
-          onBlur={() => setConfirming(false)}
-          className="h-7 shrink-0 rounded-md bg-red-600 px-2.5 font-medium text-white hover:bg-red-700"
+          className={alertDanger}
         >
           <Trans>Confirm removal</Trans>
         </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          title={t`Remove this account and its local mail from openmail. Mail on the server is not affected.`}
-          className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
-        >
-          <Trans>Remove</Trans>
-        </button>
-      )}
+      </Alert>
     </li>
   );
 }
@@ -235,7 +229,7 @@ function General() {
 }
 
 function AgentPolicy() {
-  const { i18n } = useLingui();
+  const { t, i18n } = useLingui();
   const mode = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
   const setMode = useAtomSet(setAgentModeAtom);
 
@@ -247,38 +241,34 @@ function AgentPolicy() {
           change your mail.
         </Trans>
       </p>
-      <fieldset className="mt-4 space-y-2">
-        <legend className="sr-only">
-          <Trans>AI permission to change mail</Trans>
-        </legend>
+      <RadioGroup<AgentWriteMode | null>
+        aria-label={t`AI permission to change mail`}
+        value={mode}
+        onValueChange={(next) => {
+          if (next)
+            setMode({ payload: { mode: next }, reactivityKeys: [Keys.agentMode, Keys.audit] });
+        }}
+        className="mt-4 space-y-2"
+      >
         {MODES.map((m) => (
-          <label
+          <Radio.Root<AgentWriteMode | null>
             key={m.id}
+            value={m.id}
             aria-label={i18n._(m.label)}
-            className={`flex cursor-pointer gap-3 rounded-lg border p-3 ${
-              mode === m.id
-                ? "border-blue-500 bg-blue-500/5"
-                : "border-black/10 dark:border-white/10"
-            }`}
+            className="group flex cursor-pointer gap-3 rounded-lg border border-black/10 p-3 outline-offset-1 outline-blue-500/60 focus-visible:outline-[3px] data-checked:border-blue-500 data-checked:bg-blue-500/5 dark:border-white/10 dark:data-checked:border-blue-500"
           >
-            <input
-              type="radio"
-              name="agent-mode"
-              checked={mode === m.id}
-              onChange={() =>
-                setMode({ payload: { mode: m.id }, reactivityKeys: [Keys.agentMode, Keys.audit] })
-              }
-              className="mt-0.5 accent-blue-600"
-            />
+            <span className="mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0.5px_1px_rgb(0_0_0/0.15)] ring-1 ring-black/20 group-data-checked:bg-blue-500 group-data-checked:ring-blue-600 dark:bg-white/10 dark:ring-white/20 dark:group-data-checked:bg-blue-500 dark:group-data-checked:ring-blue-500">
+              <Radio.Indicator className="size-1.5 rounded-full bg-white" />
+            </span>
             <span>
               <span className="block font-medium">{i18n._(m.label)}</span>
               <span className="block text-neutral-500 dark:text-neutral-400">
                 {i18n._(m.detail)}
               </span>
             </span>
-          </label>
+          </Radio.Root>
         ))}
-      </fieldset>
+      </RadioGroup>
       <p className="mt-4 text-neutral-500 dark:text-neutral-400">
         <Trans>
           Sending is not affected by this setting. Every message AI writes goes into AI suggestions,

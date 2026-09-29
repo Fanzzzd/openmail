@@ -8,7 +8,14 @@ import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
-import type { Account, MailOp, OutgoingMessage, Profile, Proposal } from "../../shared/api";
+import type {
+  Account,
+  MailOp,
+  OutgoingMessage,
+  Profile,
+  Proposal,
+  ThreadSummary,
+} from "../../shared/api";
 import { AddAccountDialog } from "./components/AddAccountDialog";
 import { Composer } from "./components/Composer";
 import { MessageList, type SelectionSource } from "./components/MessageList";
@@ -149,6 +156,7 @@ export function App() {
   const progress = useAtomValue(syncProgressAtom);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [compose, setCompose] = useState<Draft | null>(null);
+  const [labelPicker, setLabelPicker] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const undoRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -202,16 +210,36 @@ export function App() {
       : null;
   const threadLabels = labels.filter((l) => l.accountId === selectedAccount?.id);
 
+  /** A list row's state, for its context menu; the list already has what the menu needs. */
+  const rowState = (m: ThreadSummary): ThreadState | null => {
+    const account = accountList.find((a) => a.id === m.accountId);
+    if (!account) return null;
+    return {
+      provider: account.provider,
+      isUnread: m.isUnread,
+      isStarred: m.isStarred,
+      isImportant: m.labels.includes("IMPORTANT"),
+      labels: [...m.labels],
+    };
+  };
+
   /**
-   * Runs an op on the selected thread. Moves select the next thread, the way
-   * Mimestream does; every visible op can be undone with ⌘Z.
+   * Runs an op on the selected thread, or on `target` (a row's context menu).
+   * Moving the selected thread selects the next one, the way Mimestream does;
+   * every visible op can be undone with ⌘Z.
    */
-  const act = (op: MailOp, opts: { quiet?: boolean } = {}) => {
-    if (!selectedId || !threadState) return;
-    const id = selectedId;
-    const back = inverse(op, threadState);
-    const leaves = MOVES.has(op.kind) || (op.kind === "label" && threadState.provider !== "gmail");
-    if (leaves) {
+  const act = (
+    op: MailOp,
+    opts: { quiet?: boolean } = {},
+    target?: { id: string; state: ThreadState },
+  ) => {
+    const id = target?.id ?? selectedId;
+    const state = target?.state ?? threadState;
+    if (!id || !state) return;
+    const back = inverse(op, state);
+    const leaves = MOVES.has(op.kind) || (op.kind === "label" && state.provider !== "gmail");
+    const wasSelected = id === selectedId;
+    if (leaves && wasSelected) {
       const index = list.findIndex((thread) => thread.id === id);
       const next = list[index + 1] ?? list[index - 1];
       select(next?.id ?? null, selectionSource);
@@ -232,7 +260,7 @@ export function App() {
               back && !opts.quiet
                 ? () => {
                     run(modifyThreads([id], back));
-                    if (leaves) setSelectedId(id);
+                    if (leaves && wasSelected) setSelectedId(id);
                   }
                 : null;
             undoRef.current = undo;
@@ -255,6 +283,7 @@ export function App() {
   /** Selects a thread. Opening an unread thread marks it read, as Mimestream does by default. */
   const select = (id: string | null, source: SelectionSource) => {
     setSelectedId(id);
+    setLabelPicker(false);
     setSelectionSource(source);
     if (id && list.find((thread) => thread.id === id)?.isUnread) {
       run(modifyThreads([id], { kind: "read", value: true }));
@@ -264,16 +293,16 @@ export function App() {
   const defaultAccount = (): Account | undefined =>
     accountList.find((a) => a.id === (view.accountId ?? scope?.[0])) ?? accountList[0];
 
-  const startCompose = (mode: Draft["mode"], asAttachment = false) => {
+  const startCompose = (mode: Draft["mode"], asAttachment = false, id = selectedId) => {
     if (mode === "new") {
       const account = defaultAccount();
       if (account) setCompose(signed(emptyDraft(account.id)));
       return;
     }
-    if (!selectedId) return;
+    if (!id) return;
     // The reader usually has the thread loaded already; this waits for it if not.
     run(
-      Atom.getResult(threadAtom(selectedId)).pipe(
+      Atom.getResult(threadAtom(id)).pipe(
         Effect.tap((thread) =>
           Effect.sync(() => {
             const last = thread.at(-1);
@@ -421,8 +450,10 @@ export function App() {
   };
 
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    // Dialogs and the compose window handle their own keys.
-    if (dialog || compose || editing) return;
+    // Dialogs and the compose window handle their own keys, and so do open
+    // menus and pickers (typeahead must not archive the selected thread).
+    if (dialog || compose || editing || e.defaultPrevented) return;
+    if (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]')) return;
     const typing =
       e.target instanceof HTMLInputElement ||
       e.target instanceof HTMLTextAreaElement ||
@@ -511,6 +542,10 @@ export function App() {
         a: () => startCompose("replyAll"),
         f: () => startCompose("forward"),
         F: () => startCompose("forward", true),
+        // L labels on Gmail, V moves to a folder elsewhere.
+        [threadState.provider === "gmail" ? "l" : "v"]: () => {
+          if (threadLabels.length) setLabelPicker(true);
+        },
       };
       const handler = single[e.key];
       if (handler) {
@@ -630,6 +665,13 @@ export function App() {
                 labels={labelMap}
                 selectedId={selectedId}
                 selectionSource={selectionSource}
+                rowActions={{
+                  mailbox: view.mailbox,
+                  labels,
+                  stateOf: rowState,
+                  onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
+                  onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
+                }}
                 onSelect={(id) => {
                   if (view.mailbox !== "drafts") {
                     select(id, "mouse");
@@ -660,6 +702,8 @@ export function App() {
                       labels={threadLabels}
                       onOp={(op) => act(op)}
                       onCompose={startCompose}
+                      labelPicker={labelPicker}
+                      onLabelPicker={setLabelPicker}
                     />
                   )
                 }

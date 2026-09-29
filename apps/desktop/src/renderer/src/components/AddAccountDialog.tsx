@@ -5,7 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { ChevronLeft, ExternalLink, X } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import type { Account, ImapConnectInput } from "../../../shared/api";
 import { type AppError, causeText, resultError } from "../errors";
@@ -13,6 +13,8 @@ import { connectAtom, saveClientAtom } from "../state/mutations";
 import { clientSetupAtom, imapPresetsAtom } from "../state/queries";
 import { PRESET_NAMES, PRESET_NOTES } from "./imapPresetText";
 import { ProviderIcon, type ProviderIconName } from "./ProviderIcon";
+import { Dialog } from "./ui/Dialog";
+import { SegmentedControl } from "./ui/SegmentedControl";
 
 type OAuthProvider = "gmail" | "outlook";
 /** IMAP preset keys in core, plus "custom" for any other server. */
@@ -51,14 +53,6 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const tile = TILES.find((item) => item.id === choice);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose?.();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const provider = tile ? tileLabel(i18n, tile.label) : "";
   const title = tile
     ? t`Add ${provider}`
@@ -67,82 +61,74 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
       : t`Add Your First Account`;
 
   return (
-    <div
-      role="presentation"
-      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose?.();
-      }}
+    <Dialog
+      aria-label={title}
+      onClose={onClose}
+      className="w-[460px] rounded-2xl p-6"
+      backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >
-      <dialog
-        open
-        aria-modal="true"
-        aria-label={title}
-        className="relative m-0 w-[460px] rounded-2xl border-0 bg-white p-6 text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/5 dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10"
-      >
-        <header className="flex h-7 items-center gap-2">
-          {tile && (
-            <button
-              type="button"
-              aria-label={t`Back`}
-              onClick={() => setChoice(null)}
-              className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-          )}
-          {tile && <ProviderIcon provider={tile.icon} className="size-5 shrink-0" />}
-          <h2 className="flex-1 text-[15px] font-semibold">{title}</h2>
-          {onClose && (
-            <button
-              type="button"
-              aria-label={t`Close`}
-              onClick={onClose}
-              className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              <X className="size-4" />
-            </button>
-          )}
-        </header>
+      <header className="flex h-7 items-center gap-2">
+        {tile && (
+          <button
+            type="button"
+            aria-label={t`Back`}
+            onClick={() => setChoice(null)}
+            className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+        )}
+        {tile && <ProviderIcon provider={tile.icon} className="size-5 shrink-0" />}
+        <h2 className="flex-1 text-[15px] font-semibold">{title}</h2>
+        {onClose && (
+          <button
+            type="button"
+            aria-label={t`Close`}
+            onClick={onClose}
+            className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <X className="size-4" />
+          </button>
+        )}
+      </header>
 
-        {choice === null && (
-          <>
-            <p className="mt-1.5 text-neutral-500">
-              {onClose ? (
-                <Trans>Choose your email provider.</Trans>
-              ) : (
-                <Trans>
-                  Welcome to openmail. Choose your email provider. Your credentials stay on this
-                  computer.
-                </Trans>
-              )}
-            </p>
-            <div className="mt-5 grid grid-cols-4 gap-2">
-              {TILES.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setChoice(item.id)}
-                  className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:ring-white/10 dark:hover:bg-white/5"
-                >
-                  <ProviderIcon provider={item.icon} className="size-8" />
-                  <span className="text-[12px] text-neutral-700 dark:text-neutral-300">
-                    {tileLabel(i18n, item.label)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+      {choice === null && (
+        <>
+          <p className="mt-1.5 text-neutral-500">
+            {onClose ? (
+              <Trans>Choose your email provider.</Trans>
+            ) : (
+              <Trans>
+                Welcome to openmail. Choose your email provider. Your credentials stay on this
+                computer.
+              </Trans>
+            )}
+          </p>
+          <div className="mt-5 grid grid-cols-4 gap-2">
+            {TILES.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setChoice(item.id)}
+                className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:ring-white/10 dark:hover:bg-white/5"
+              >
+                <ProviderIcon provider={item.icon} className="size-8" />
+                <span className="text-[12px] text-neutral-700 dark:text-neutral-300">
+                  {tileLabel(i18n, item.label)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-        {choice !== null && isOAuth(choice) && (
-          <OAuthStep key={choice} provider={choice} onAdded={onAdded} />
-        )}
-        {choice !== null && !isOAuth(choice) && (
-          <ImapStep key={choice} preset={choice} onAdded={onAdded} />
-        )}
-      </dialog>
-    </div>
+      {choice !== null && isOAuth(choice) && (
+        <OAuthStep key={choice} provider={choice} onAdded={onAdded} />
+      )}
+      {choice !== null && !isOAuth(choice) && (
+        <ImapStep key={choice} preset={choice} onAdded={onAdded} />
+      )}
+    </Dialog>
   );
 }
 
@@ -404,17 +390,21 @@ function ImapStep({
               />
             </div>
           </div>
-          <label className="mt-3 block text-[12px] font-medium text-neutral-500">
-            <Trans>SMTP encryption</Trans>
-            <select
+          <div className="mt-3">
+            <span className="block text-[12px] font-medium text-neutral-500">
+              <Trans>SMTP encryption</Trans>
+            </span>
+            <SegmentedControl
+              aria-label={t`SMTP encryption`}
               value={smtpSecure ? "tls" : "starttls"}
-              onChange={(e) => setSmtpSecure(e.target.value === "tls")}
-              className="mt-1 h-8 w-full rounded-md border border-black/10 bg-transparent px-2 text-[13px] text-neutral-900 outline-none focus:border-blue-500 dark:border-white/15 dark:text-neutral-100"
-            >
-              <option value="tls">{t`SSL/TLS (usually 465)`}</option>
-              <option value="starttls">{t`STARTTLS (usually 587)`}</option>
-            </select>
-          </label>
+              options={[
+                { value: "tls", label: t`SSL/TLS (usually 465)` },
+                { value: "starttls", label: t`STARTTLS (usually 587)` },
+              ]}
+              onValueChange={(v) => setSmtpSecure(v === "tls")}
+              className="mt-1 w-full"
+            />
+          </div>
         </>
       )}
 

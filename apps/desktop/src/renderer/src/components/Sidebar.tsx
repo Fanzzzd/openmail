@@ -1,7 +1,9 @@
+import { Toolbar } from "@base-ui/react/toolbar";
 import { useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import {
+  ArrowRight,
   Bookmark,
   ChevronDown,
   ChevronRight,
@@ -26,7 +28,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { type ComponentType, type ReactNode, useState } from "react";
+import { type ComponentType, type ReactNode, useRef, useState } from "react";
 
 import type {
   Account,
@@ -40,6 +42,14 @@ import { avatarColor, PROFILE_BG } from "../format";
 import { syncNow, useRunMail } from "../state/mail";
 import { labelsAtom, unreadByLabelAtom } from "../state/queries";
 import { ProviderIcon } from "./ProviderIcon";
+import {
+  ContextMenuContent,
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  MenuItem,
+  MenuSeparator,
+} from "./ui/Menu";
+import { Tip } from "./ui/Tip";
 import {
   ALL,
   CATEGORY_NAMES,
@@ -148,22 +158,26 @@ export function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70">
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
-        <button
-          type="button"
-          title={t`Add email account`}
-          onClick={onAddAccount}
-          className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
-        >
-          <Plus className="size-4.5" />
-        </button>
-        <button
-          type="button"
-          title={t`New message (⌘N)`}
-          onClick={onCompose}
-          className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
-        >
-          <SquarePen className="size-4.5" />
-        </button>
+        <Tip label={t`Add email account`}>
+          <button
+            type="button"
+            aria-label={t`Add email account`}
+            onClick={onAddAccount}
+            className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
+          >
+            <Plus className="size-4.5" />
+          </button>
+        </Tip>
+        <Tip label={t`New message`} shortcut="⌘N">
+          <button
+            type="button"
+            aria-label={t`New message`}
+            onClick={onCompose}
+            className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
+          >
+            <SquarePen className="size-4.5" />
+          </button>
+        </Tip>
       </div>
 
       <div className="flex items-center gap-2 px-4.5 pb-3">
@@ -171,14 +185,16 @@ export function Sidebar({
           {profile ? `${profile.icon} ${profile.name}` : <Trans>All accounts</Trans>}
         </span>
         {profile && (
-          <button
-            type="button"
-            title={t`Edit space`}
-            onClick={() => onEditProfile(profile)}
-            className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            <Pencil className="size-3.5" />
-          </button>
+          <Tip label={t`Edit space`}>
+            <button
+              type="button"
+              aria-label={t`Edit space`}
+              onClick={() => onEditProfile(profile)}
+              className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          </Tip>
         )}
       </div>
 
@@ -327,22 +343,26 @@ export function Sidebar({
         <span className="min-w-0 flex-1 truncate" title={syncState.errors.join("\n")}>
           {syncStatus()}
         </span>
-        <button
-          type="button"
-          title={t`Settings (⌘,)`}
-          onClick={onSettings}
-          className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          <SettingsIcon className="size-3.5" />
-        </button>
-        <button
-          type="button"
-          title={t`Sync now (⌘R)`}
-          onClick={() => run(syncNow)}
-          className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
-        </button>
+        <Tip label={t`Settings`} shortcut="⌘," side="top">
+          <button
+            type="button"
+            aria-label={t`Settings`}
+            onClick={onSettings}
+            className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <SettingsIcon className="size-3.5" />
+          </button>
+        </Tip>
+        <Tip label={t`Sync now`} shortcut="⌘R" side="top">
+          <button
+            type="button"
+            aria-label={t`Sync now`}
+            onClick={() => run(syncNow)}
+            className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
+          </button>
+        </Tip>
       </footer>
 
       <SpaceSwitcher
@@ -360,6 +380,9 @@ const ring = (active: boolean) =>
     ? "bg-white shadow-sm ring-1 ring-black/10 dark:bg-white/15 dark:ring-white/10"
     : "hover:bg-black/5 dark:hover:bg-white/10";
 
+const cell = (active: boolean) =>
+  `flex size-8 shrink-0 items-center justify-center rounded-lg outline-offset-0 outline-blue-500/60 focus-visible:outline-[3px] ${ring(active)}`;
+
 /** Arc-style row of spaces at the bottom of the sidebar. ⌃1 is the overview. */
 function SpaceSwitcher({
   space,
@@ -373,62 +396,102 @@ function SpaceSwitcher({
   onEditProfile: (profile: Profile | "new") => void;
 }) {
   const { t } = useLingui();
-  /** Name, shortcut for the first seven spaces (⌃3 to ⌃9), and the right-click hint. */
-  const spaceTitle = (p: Profile, i: number) => {
-    const name = p.name;
-    if (i >= 7) return t`${name}, right-click to edit`;
-    const key = i + 3;
-    return t`${name} (⌃${key}), right-click to edit`;
-  };
+  const [menuFor, setMenuFor] = useState<Profile | null>(null);
+  /** The space under the pointer at the right-click, set before the menu opens. */
+  const pressed = useRef<Profile | null>(null);
   return (
-    <div className="flex items-center gap-1 overflow-x-auto border-t border-black/5 px-2.5 py-2 dark:border-white/5">
-      <button
-        type="button"
-        title={t`Overview (⌃1)`}
-        onClick={() => onSpace(OVERVIEW)}
-        className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-300 ${ring(space === OVERVIEW)}`}
-      >
-        <LayoutGrid className="size-4" />
-      </button>
-      <button
-        type="button"
-        title={t`All accounts (⌃2)`}
-        onClick={() => onSpace(ALL)}
-        className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-600 dark:text-neutral-300 ${ring(space === ALL)}`}
-      >
-        <Layers className="size-4" />
-      </button>
-      {profiles.length > 0 && (
-        <span className="mx-0.5 h-5 w-px shrink-0 bg-black/10 dark:bg-white/10" />
-      )}
-      {profiles.map((p, i) => (
-        <button
-          key={p.id}
-          type="button"
-          title={spaceTitle(p, i)}
-          onClick={() => onSpace(p.id)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            onEditProfile(p);
-          }}
-          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${ring(space === p.id)}`}
+    <Toolbar.Root
+      aria-label={t`Spaces`}
+      className="flex items-center gap-1 overflow-x-auto border-t border-black/5 px-2.5 py-2 dark:border-white/5"
+    >
+      <Tip label={t`Overview`} shortcut="⌃1" side="top">
+        <Toolbar.Button
+          aria-label={t`Overview`}
+          aria-current={space === OVERVIEW || undefined}
+          onClick={() => onSpace(OVERVIEW)}
+          className={`${cell(space === OVERVIEW)} text-neutral-600 dark:text-neutral-300`}
         >
-          <span
-            className={`flex size-6 items-center justify-center rounded-full text-[13px] ${PROFILE_BG[p.color]}`}
-          >
-            {p.icon}
-          </span>
-        </button>
-      ))}
-      <button
-        type="button"
-        title={t`New space`}
-        onClick={() => onEditProfile("new")}
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+          <LayoutGrid className="size-4" />
+        </Toolbar.Button>
+      </Tip>
+      <Tip label={t`All accounts`} shortcut="⌃2" side="top">
+        <Toolbar.Button
+          aria-label={t`All accounts`}
+          aria-current={space === ALL || undefined}
+          onClick={() => onSpace(ALL)}
+          className={`${cell(space === ALL)} text-neutral-600 dark:text-neutral-300`}
+        >
+          <Layers className="size-4" />
+        </Toolbar.Button>
+      </Tip>
+      {profiles.length > 0 && (
+        <Toolbar.Separator className="mx-0.5 h-5 w-px shrink-0 bg-black/10 dark:bg-white/10" />
+      )}
+      <ContextMenuRoot
+        onOpenChange={(open, details) => {
+          if (!open) return;
+          if (pressed.current) setMenuFor(pressed.current);
+          else details.cancel();
+        }}
+        onOpenChangeComplete={(open) => {
+          if (!open) setMenuFor(null);
+        }}
       >
-        <Plus className="size-4" />
-      </button>
-    </div>
+        <ContextMenuTrigger
+          render={
+            <span
+              className="flex items-center gap-1"
+              onContextMenuCapture={() => {
+                pressed.current = null;
+              }}
+            />
+          }
+        >
+          {profiles.map((p, i) => (
+            <Tip key={p.id} label={p.name} shortcut={i < 7 ? `⌃${i + 3}` : undefined} side="top">
+              <Toolbar.Button
+                aria-label={p.name}
+                aria-current={space === p.id || undefined}
+                onClick={() => onSpace(p.id)}
+                onContextMenu={() => {
+                  pressed.current = p;
+                }}
+                className={cell(space === p.id)}
+              >
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full text-[13px] ${PROFILE_BG[p.color]}`}
+                >
+                  {p.icon}
+                </span>
+              </Toolbar.Button>
+            </Tip>
+          ))}
+        </ContextMenuTrigger>
+        {menuFor && (
+          <ContextMenuContent>
+            <MenuItem icon={Pencil} onClick={() => onEditProfile(menuFor)}>
+              {t`Edit space`}
+            </MenuItem>
+            <MenuItem icon={ArrowRight} onClick={() => onSpace(menuFor.id)}>
+              {t`Open space`}
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem icon={Plus} onClick={() => onEditProfile("new")}>
+              {t`New space`}
+            </MenuItem>
+          </ContextMenuContent>
+        )}
+      </ContextMenuRoot>
+      <Tip label={t`New space`} side="top">
+        <Toolbar.Button
+          aria-label={t`New space`}
+          onClick={() => onEditProfile("new")}
+          className={`${cell(false)} text-neutral-400`}
+        >
+          <Plus className="size-4" />
+        </Toolbar.Button>
+      </Tip>
+    </Toolbar.Root>
   );
 }
 
@@ -511,35 +574,36 @@ function Tile(props: {
   badge: number;
 }) {
   return (
-    <button
-      type="button"
-      title={props.title}
-      onClick={props.onClick}
-      className={`flex min-w-0 flex-col gap-1.5 rounded-lg px-2.5 py-2 text-left ${
-        props.active
-          ? "bg-black/[0.08] dark:bg-white/12"
-          : "bg-black/[0.03] hover:bg-black/[0.05] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
-      }`}
-    >
-      <span className="flex items-center justify-between">
-        {props.icon}
-        {props.badge > 0 && (
-          <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
-            {props.badge}
-          </span>
-        )}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[13px] font-medium">{props.label}</span>
-        {props.sublabel && (
-          <span
-            className={`block truncate text-[11px] ${props.warn ? "text-red-500" : "text-neutral-500 dark:text-neutral-400"}`}
-          >
-            {props.sublabel}
-          </span>
-        )}
-      </span>
-    </button>
+    <Tip label={props.title}>
+      <button
+        type="button"
+        onClick={props.onClick}
+        className={`flex min-w-0 flex-col gap-1.5 rounded-lg px-2.5 py-2 text-left ${
+          props.active
+            ? "bg-black/[0.08] dark:bg-white/12"
+            : "bg-black/[0.03] hover:bg-black/[0.05] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
+        }`}
+      >
+        <span className="flex items-center justify-between">
+          {props.icon}
+          {props.badge > 0 && (
+            <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
+              {props.badge}
+            </span>
+          )}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-medium">{props.label}</span>
+          {props.sublabel && (
+            <span
+              className={`block truncate text-[11px] ${props.warn ? "text-red-500" : "text-neutral-500 dark:text-neutral-400"}`}
+            >
+              {props.sublabel}
+            </span>
+          )}
+        </span>
+      </button>
+    </Tip>
   );
 }
 

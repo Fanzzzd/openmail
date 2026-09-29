@@ -14,7 +14,7 @@ import {
   setSignatureAtom,
 } from "../state/mutations";
 import { hiddenContactsAtom, prefsAtom, signaturesAtom, templatesAtom } from "../state/queries";
-import { SegmentedControl } from "./SegmentedControl";
+import { SegmentedControl } from "./ui/SegmentedControl";
 
 const heading = "mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400";
 const box = "rounded-lg border border-black/10 dark:border-white/10";

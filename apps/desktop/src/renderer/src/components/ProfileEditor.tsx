@@ -3,13 +3,15 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Exit } from "effect";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type { Account, Profile, ProfileColor } from "../../../shared/api";
 import { resultError } from "../errors";
 import { avatarColor, firstGrapheme, PROFILE_BG } from "../format";
 import { Keys } from "../state/keys";
 import { deleteProfileAtom, saveProfileAtom } from "../state/mutations";
+import { Checkbox } from "./ui/Checkbox";
+import { Dialog } from "./ui/Dialog";
 
 const ICONS = ["💼", "🏠", "🏭", "🧪", "🎓", "✈️", "💰", "⭐"];
 const COLORS: ProfileColor[] = [
@@ -69,29 +71,14 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
     }
   };
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const error = resultError(i18n, save) ?? resultError(i18n, remove);
   const title = profile ? t`Edit space` : t`New space`;
   const profileName = (id: string | null) => profiles.find((p) => p.id === id)?.name;
 
   return (
-    <div
-      role="presentation"
-      className="no-drag fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <Dialog aria-label={title} onClose={onClose} className="w-[400px]">
       <form
-        aria-label={title}
-        className="w-[400px] rounded-xl bg-white p-5 text-[13px] shadow-2xl dark:bg-neutral-800"
+        className="p-5"
         onSubmit={(e) => {
           e.preventDefault();
           if (name.trim()) void submit();
@@ -181,13 +168,12 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                   key={a.id}
                   className="flex h-8 items-center gap-2.5 rounded-md px-2 hover:bg-black/[0.04] dark:hover:bg-white/5"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={members.has(a.id)}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setMembers((prev) => {
                         const next = new Set(prev);
-                        if (e.target.checked) next.add(a.id);
+                        if (checked) next.add(a.id);
                         else next.delete(a.id);
                         return next;
                       })
@@ -239,6 +225,6 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
           </button>
         </div>
       </form>
-    </div>
+    </Dialog>
   );
 }

@@ -60,17 +60,9 @@ msgstr "{label}建议"
 msgid "{more} more"
 msgstr "还有 {more} 个"
 
-#: src/renderer/src/components/Sidebar.tsx
-msgid "{name} (⌃{key}), right-click to edit"
-msgstr "{name} (⌃{key})，右键编辑"
-
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "{name} client"
 msgstr "{name} 客户端"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "{name}, right-click to edit"
-msgstr "{name}，右键编辑"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
@@ -203,10 +195,6 @@ msgid "All accounts"
 msgstr "全部账户"
 
 #: src/renderer/src/components/Sidebar.tsx
-msgid "All accounts (⌃2)"
-msgstr "全部账户 (⌃2)"
-
-#: src/renderer/src/components/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "这个空间的所有账户"
 
@@ -224,12 +212,9 @@ msgstr "确认建议"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Archive"
 msgstr "归档"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Archive (E)"
-msgstr "归档 (E)"
 
 #: src/renderer/src/App.tsx
 msgid "Archived"
@@ -296,7 +281,9 @@ msgstr "打不开草稿：{reason}"
 msgid "Can't reach the mail server right now: {0}"
 msgstr "暂时连不上邮件服务器：{0}"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Settings.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -317,6 +304,7 @@ msgid "Choose your email provider."
 msgstr "选择邮箱服务商。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Close"
 msgstr "关闭"
@@ -344,6 +332,10 @@ msgstr "确认移除"
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "继续编辑"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Conversation actions"
+msgstr "会话操作"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -380,12 +372,9 @@ msgstr "自定义图标"
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Delete"
 msgstr "删除"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Delete (#)"
-msgstr "删除 (#)"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -456,16 +445,13 @@ msgid "Forums"
 msgstr "论坛"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "转发"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Forward (F)"
-msgstr "转发 (F)"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Forward as attachment (⇧F)"
-msgstr "作为附件转发 (⇧F)"
+msgid "Forward as attachment"
+msgstr "作为附件转发"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "From"
@@ -530,12 +516,9 @@ msgid "Label removed"
 msgstr "已去掉标签"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels"
 msgstr "标签"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Labels (L)"
-msgstr "标签 (L)"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels…"
@@ -566,36 +549,24 @@ msgid "Mailboxes"
 msgstr "邮箱"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as important"
 msgstr "标为重要"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as important (=)"
-msgstr "标为重要 (=)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as not important"
 msgstr "取消重要"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as not important (=)"
-msgstr "取消重要 (=)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as read"
 msgstr "标为已读"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as read (U)"
-msgstr "标为已读 (U)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as unread"
 msgstr "标为未读"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as unread (U)"
-msgstr "标为未读 (U)"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Mark read/unread"
@@ -622,8 +593,8 @@ msgid "Marked as unread"
 msgstr "已标为未读"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Move to folder (V)"
-msgstr "移到文件夹 (V)"
+msgid "Move to folder"
+msgstr "移到文件夹"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder…"
@@ -631,12 +602,9 @@ msgstr "移到文件夹…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "移回收件箱"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Move to Inbox (⇧⌘I)"
-msgstr "移回收件箱 (⇧⌘I)"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -663,13 +631,13 @@ msgstr "需要重新登录"
 msgid "New draft"
 msgstr "新草稿"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New message"
+msgstr "写邮件"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "New Message"
 msgstr "新邮件"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "New message (⌘N)"
-msgstr "写邮件 (⌘N)"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "New messages"
@@ -733,6 +701,10 @@ msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示�
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Open space"
+msgstr "打开空间"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
@@ -758,12 +730,9 @@ msgid "Other IMAP"
 msgstr "其他 IMAP"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Overview"
 msgstr "总览"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Overview (⌃1)"
-msgstr "总览 (⌃1)"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
@@ -812,6 +781,14 @@ msgid "Remove {0}"
 msgstr "移除 {0}"
 
 #: src/renderer/src/components/Settings.tsx
+msgid "Remove {email}?"
+msgstr "移除 {email}？"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Remove {text}"
+msgstr "移除 {text}"
+
+#: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "移除账户"
 
@@ -836,29 +813,23 @@ msgid "Replies and forwards"
 msgstr "回复和转发"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "回复"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Reply (R)"
-msgstr "回复 (R)"
+msgid "Reply all"
+msgstr "回复全部"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
 msgstr "回复全部"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Reply all (A)"
-msgstr "回复全部 (A)"
-
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Report spam"
 msgstr "报告垃圾邮件"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Report spam (!)"
-msgstr "报告垃圾邮件 (!)"
 
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
@@ -925,16 +896,8 @@ msgid "Send"
 msgstr "发送"
 
 #: src/renderer/src/components/Composer.tsx
-msgid "Send (⌘↩)"
-msgstr "发送 (⌘↩)"
-
-#: src/renderer/src/components/Composer.tsx
 msgid "Send and archive"
 msgstr "发送并归档"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Send and archive (⇧⌘↩)"
-msgstr "发送并归档 (⇧⌘↩)"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Send anyway"
@@ -962,20 +925,17 @@ msgid "Sent and archived"
 msgstr "已发送并归档"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Settings"
 msgstr "设置"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Settings (⌘,)"
-msgstr "设置 (⌘,)"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
 msgstr "只看星标"
 
 #: src/renderer/src/components/MessageList.tsx
-msgid "Show only unread (⌥⌘L)"
-msgstr "只看未读 (⌥⌘L)"
+msgid "Show only unread"
+msgstr "只看未读"
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -1010,6 +970,10 @@ msgstr "社交"
 msgid "Something went wrong. Please try again."
 msgstr "出了点问题，请再试一次。"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Spaces"
+msgstr "空间"
+
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "垃圾邮件"
@@ -1019,12 +983,9 @@ msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS（通常是 465）"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "星标"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Star (S)"
-msgstr "加星标 (S)"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/view.ts
@@ -1039,10 +1000,6 @@ msgstr "STARTTLS（通常是 587）"
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "不再建议 {0}"
-
-#: src/renderer/src/components/RecipientField.tsx
-msgid "Stop suggesting this address"
-msgstr "不再建议这个地址"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Subject"
@@ -1065,8 +1022,8 @@ msgid "Sync failed ({count})"
 msgstr "同步失败（{count}）"
 
 #: src/renderer/src/components/Sidebar.tsx
-msgid "Sync now (⌘R)"
-msgstr "立即同步 (⌘R)"
+msgid "Sync now"
+msgstr "立即同步"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -1088,13 +1045,10 @@ msgstr "同步中…"
 msgid "Template name"
 msgstr "模板名称"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Templates"
 msgstr "模板"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Templates (⌘/)"
-msgstr "模板 (⌘/)"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Templates…"
@@ -1187,8 +1141,8 @@ msgid "Unread"
 msgstr "未读"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Unstar (S)"
-msgstr "去掉星标 (S)"
+msgid "Unstar"
+msgstr "去掉星标"
 
 #: src/renderer/src/view.ts
 msgid "Updates"

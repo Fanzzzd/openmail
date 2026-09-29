@@ -54,17 +54,9 @@ msgstr "{label} suggestions"
 msgid "{more} more"
 msgstr "{more} more"
 
-#: src/renderer/src/components/Sidebar.tsx
-msgid "{name} (⌃{key}), right-click to edit"
-msgstr "{name} (⌃{key}), right-click to edit"
-
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "{name} client"
 msgstr "{name} client"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "{name}, right-click to edit"
-msgstr "{name}, right-click to edit"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
@@ -197,10 +189,6 @@ msgid "All accounts"
 msgstr "All accounts"
 
 #: src/renderer/src/components/Sidebar.tsx
-msgid "All accounts (⌃2)"
-msgstr "All accounts (⌃2)"
-
-#: src/renderer/src/components/Sidebar.tsx
 msgid "All accounts in this space"
 msgstr "All accounts in this space"
 
@@ -218,12 +206,9 @@ msgstr "Approve suggestion"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Archive"
 msgstr "Archive"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Archive (E)"
-msgstr "Archive (E)"
 
 #: src/renderer/src/App.tsx
 msgid "Archived"
@@ -290,7 +275,9 @@ msgstr "Can't open the draft: {reason}"
 msgid "Can't reach the mail server right now: {0}"
 msgstr "Can't reach the mail server right now: {0}"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Settings.tsx
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -311,6 +298,7 @@ msgid "Choose your email provider."
 msgstr "Choose your email provider."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Close"
 msgstr "Close"
@@ -338,6 +326,10 @@ msgstr "Confirm Remove"
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "Continue editing"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Conversation actions"
+msgstr "Conversation actions"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -374,12 +366,9 @@ msgstr "Custom icon"
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Delete"
 msgstr "Delete"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Delete (#)"
-msgstr "Delete (#)"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -450,16 +439,13 @@ msgid "Forums"
 msgstr "Forums"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "Forward"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Forward (F)"
-msgstr "Forward (F)"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Forward as attachment (⇧F)"
-msgstr "Forward as attachment (⇧F)"
+msgid "Forward as attachment"
+msgstr "Forward as attachment"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "From"
@@ -524,12 +510,9 @@ msgid "Label removed"
 msgstr "Label removed"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels"
 msgstr "Labels"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Labels (L)"
-msgstr "Labels (L)"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels…"
@@ -560,36 +543,24 @@ msgid "Mailboxes"
 msgstr "Mailboxes"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as important"
 msgstr "Mark as important"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as important (=)"
-msgstr "Mark as important (=)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as not important"
 msgstr "Mark as not important"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as not important (=)"
-msgstr "Mark as not important (=)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as read"
 msgstr "Mark as read"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as read (U)"
-msgstr "Mark as read (U)"
-
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as unread"
 msgstr "Mark as unread"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Mark as unread (U)"
-msgstr "Mark as unread (U)"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Mark read/unread"
@@ -616,8 +587,8 @@ msgid "Marked as unread"
 msgstr "Marked as unread"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Move to folder (V)"
-msgstr "Move to folder (V)"
+msgid "Move to folder"
+msgstr "Move to folder"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder…"
@@ -625,12 +596,9 @@ msgstr "Move to folder…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "Move to Inbox"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Move to Inbox (⇧⌘I)"
-msgstr "Move to Inbox (⇧⌘I)"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -657,13 +625,13 @@ msgstr "Needs sign-in"
 msgid "New draft"
 msgstr "New draft"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New message"
+msgstr "New message"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "New Message"
 msgstr "New Message"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "New message (⌘N)"
-msgstr "New message (⌘N)"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "New messages"
@@ -727,6 +695,10 @@ msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow th
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Open space"
+msgstr "Open space"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -752,12 +724,9 @@ msgid "Other IMAP"
 msgstr "Other IMAP"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Overview"
 msgstr "Overview"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Overview (⌃1)"
-msgstr "Overview (⌃1)"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
@@ -806,6 +775,14 @@ msgid "Remove {0}"
 msgstr "Remove {0}"
 
 #: src/renderer/src/components/Settings.tsx
+msgid "Remove {email}?"
+msgstr "Remove {email}?"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Remove {text}"
+msgstr "Remove {text}"
+
+#: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "Remove account"
 
@@ -830,29 +807,23 @@ msgid "Replies and forwards"
 msgstr "Replies and forwards"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "Reply"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Reply (R)"
-msgstr "Reply (R)"
+msgid "Reply all"
+msgstr "Reply all"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
 msgstr "Reply All"
 
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Reply all (A)"
-msgstr "Reply all (A)"
-
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Report spam"
 msgstr "Report spam"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Report spam (!)"
-msgstr "Report spam (!)"
 
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
@@ -919,16 +890,8 @@ msgid "Send"
 msgstr "Send"
 
 #: src/renderer/src/components/Composer.tsx
-msgid "Send (⌘↩)"
-msgstr "Send (⌘↩)"
-
-#: src/renderer/src/components/Composer.tsx
 msgid "Send and archive"
 msgstr "Send and archive"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Send and archive (⇧⌘↩)"
-msgstr "Send and archive (⇧⌘↩)"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Send anyway"
@@ -956,20 +919,17 @@ msgid "Sent and archived"
 msgstr "Sent and archived"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Settings"
 msgstr "Settings"
-
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Settings (⌘,)"
-msgstr "Settings (⌘,)"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
 msgstr "Show only starred"
 
 #: src/renderer/src/components/MessageList.tsx
-msgid "Show only unread (⌥⌘L)"
-msgstr "Show only unread (⌥⌘L)"
+msgid "Show only unread"
+msgstr "Show only unread"
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -1004,6 +964,10 @@ msgstr "Social"
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Spaces"
+msgstr "Spaces"
+
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Spam"
@@ -1013,12 +977,9 @@ msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (usually 465)"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "Star"
-
-#: src/renderer/src/components/ThreadActions.tsx
-msgid "Star (S)"
-msgstr "Star (S)"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/view.ts
@@ -1033,10 +994,6 @@ msgstr "STARTTLS (usually 587)"
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "Stop suggesting {0}"
-
-#: src/renderer/src/components/RecipientField.tsx
-msgid "Stop suggesting this address"
-msgstr "Stop suggesting this address"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Subject"
@@ -1059,8 +1016,8 @@ msgid "Sync failed ({count})"
 msgstr "Sync failed ({count})"
 
 #: src/renderer/src/components/Sidebar.tsx
-msgid "Sync now (⌘R)"
-msgstr "Sync now (⌘R)"
+msgid "Sync now"
+msgstr "Sync now"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -1082,13 +1039,10 @@ msgstr "Syncing…"
 msgid "Template name"
 msgstr "Template name"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Templates"
 msgstr "Templates"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Templates (⌘/)"
-msgstr "Templates (⌘/)"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Templates…"
@@ -1181,8 +1135,8 @@ msgid "Unread"
 msgstr "Unread"
 
 #: src/renderer/src/components/ThreadActions.tsx
-msgid "Unstar (S)"
-msgstr "Unstar (S)"
+msgid "Unstar"
+msgstr "Unstar"
 
 #: src/renderer/src/view.ts
 msgid "Updates"
