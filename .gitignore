@@ -1,0 +1,11 @@
+node_modules
+dist
+out
+release
+.turbo
+*.log
+.DS_Store
+.env*
+
+# Vendor screenshots used only as local design references
+docs/design/refs/

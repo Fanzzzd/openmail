@@ -1,0 +1,348 @@
+/**
+ * The domain as Effect schemas. Every value that crosses a boundary (SQLite
+ * rows, provider JSON, IPC, MCP tool calls) is decoded with one of these, and
+ * the TypeScript types are derived from them.
+ */
+import { Schema } from "effect";
+
+// Accounts
+
+/** gmail and outlook use OAuth and their own APIs; imap covers iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. */
+export const Provider = Schema.Literals(["gmail", "outlook", "imap"]);
+export type Provider = typeof Provider.Type;
+
+/** Non-secret IMAP/SMTP settings. The password lives in the keychain. */
+export const ImapSettings = Schema.Struct({
+  /** Key into IMAP_PRESETS, or "custom". */
+  preset: Schema.String,
+  username: Schema.String,
+  imapHost: Schema.String,
+  imapPort: Schema.Int,
+  smtpHost: Schema.String,
+  smtpPort: Schema.Int,
+  /** true: implicit TLS (993/465). false: STARTTLS. */
+  smtpSecure: Schema.Boolean,
+});
+export type ImapSettings = typeof ImapSettings.Type;
+
+export const Account = Schema.Struct({
+  id: Schema.String,
+  provider: Provider,
+  email: Schema.String,
+  createdAt: Schema.Number,
+  lastSyncedAt: Schema.NullOr(Schema.Number),
+  /** Error from the most recent sync, cleared by the next successful one. */
+  lastSyncError: Schema.NullOr(Schema.String),
+  profileId: Schema.NullOr(Schema.String),
+  /** The provider rejected the stored credentials or a needed scope; sign in again. */
+  needsReauth: Schema.Boolean,
+  /** For imap accounts: which preset or server. Never contains the password. */
+  imap: Schema.optionalKey(ImapSettings),
+});
+export type Account = typeof Account.Type;
+
+export const PROFILE_COLORS = [
+  "blue",
+  "violet",
+  "rose",
+  "orange",
+  "amber",
+  "emerald",
+  "teal",
+  "slate",
+] as const;
+export const ProfileColor = Schema.Literals(PROFILE_COLORS);
+export type ProfileColor = typeof ProfileColor.Type;
+
+/** A named group of accounts, like an Arc space. */
+export const Profile = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  /** One emoji or short text shown on the switcher. */
+  icon: Schema.String,
+  color: ProfileColor,
+  position: Schema.Number,
+});
+export type Profile = typeof Profile.Type;
+
+export const ProfileInput = Schema.Struct({
+  name: Schema.String,
+  icon: Schema.String,
+  color: ProfileColor,
+});
+export type ProfileInput = typeof ProfileInput.Type;
+
+/** A Gmail user label, an Outlook custom folder or an IMAP folder. */
+export const Label = Schema.Struct({
+  accountId: Schema.String,
+  /** The value that appears in `MessageSummary.labels`. */
+  id: Schema.String,
+  name: Schema.String,
+  /** Background color from the provider, if it has one. */
+  color: Schema.NullOr(Schema.String),
+});
+export type Label = typeof Label.Type;
+
+// Messages
+
+export const Address = Schema.Struct({
+  name: Schema.String,
+  address: Schema.String,
+});
+export type Address = typeof Address.Type;
+
+export const Attachment = Schema.Struct({
+  filename: Schema.String,
+  mimeType: Schema.String,
+  size: Schema.Number,
+});
+export type Attachment = typeof Attachment.Type;
+
+const summaryFields = {
+  id: Schema.String,
+  accountId: Schema.String,
+  threadId: Schema.String,
+  subject: Schema.String,
+  from: Address,
+  date: Schema.Number,
+  snippet: Schema.String,
+  labels: Schema.Array(Schema.String),
+  isUnread: Schema.Boolean,
+  isStarred: Schema.Boolean,
+  hasAttachments: Schema.Boolean,
+};
+
+export const MessageSummary = Schema.Struct(summaryFields);
+export type MessageSummary = typeof MessageSummary.Type;
+
+/** One row of a conversation list: the newest message of a thread in the view. */
+export const ThreadSummary = Schema.Struct({
+  ...summaryFields,
+  /** Messages in the whole thread, across mailboxes. */
+  threadCount: Schema.Number,
+  /** Distinct senders in the thread, oldest first. */
+  participants: Schema.Array(Address),
+});
+export type ThreadSummary = typeof ThreadSummary.Type;
+
+export const Message = Schema.Struct({
+  ...summaryFields,
+  to: Schema.Array(Address),
+  cc: Schema.Array(Address),
+  bodyText: Schema.String,
+  bodyHtml: Schema.String,
+  attachments: Schema.Array(Attachment),
+});
+export type Message = typeof Message.Type;
+
+/** A message as a provider hands it over, keyed by the provider's own id. */
+export const IncomingMessage = Schema.Struct({
+  providerId: Schema.String,
+  threadId: Schema.String,
+  subject: Schema.String,
+  from: Address,
+  to: Schema.Array(Address),
+  cc: Schema.Array(Address),
+  date: Schema.Number,
+  snippet: Schema.String,
+  bodyText: Schema.String,
+  bodyHtml: Schema.String,
+  labels: Schema.Array(Schema.String),
+  attachments: Schema.Array(Attachment),
+  isUnread: Schema.Boolean,
+  isStarred: Schema.Boolean,
+});
+export type IncomingMessage = typeof IncomingMessage.Type;
+
+/**
+ * Cross-account views. Gmail labels and Outlook/IMAP folders both map onto
+ * these; a message can sit in several (INBOX and STARRED at once). `all` is
+ * every message outside spam and trash, as in Gmail.
+ */
+export const MAILBOXES = [
+  "inbox",
+  "important",
+  "starred",
+  "sent",
+  "drafts",
+  "spam",
+  "trash",
+  "all",
+] as const;
+/** Named MailboxView so it does not clash with the Mailbox service. */
+export const MailboxView = Schema.Literals(MAILBOXES);
+export type MailboxView = typeof MailboxView.Type;
+
+/** Gmail inbox categories. Each is a system label on the message. */
+export const CATEGORIES = [
+  "CATEGORY_PERSONAL",
+  "CATEGORY_SOCIAL",
+  "CATEGORY_PROMOTIONS",
+  "CATEGORY_UPDATES",
+  "CATEGORY_FORUMS",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+
+/** A list or search over threads. `search` set means full-text search, newest first. */
+export const ThreadQuery = Schema.Struct({
+  mailbox: Schema.optionalKey(MailboxView),
+  /** Limit to these accounts; unset means every account. */
+  accountIds: Schema.optionalKey(Schema.Array(Schema.String)),
+  /** A label or folder id, or a Gmail category. */
+  label: Schema.optionalKey(Schema.String),
+  unreadOnly: Schema.optionalKey(Schema.Boolean),
+  starredOnly: Schema.optionalKey(Schema.Boolean),
+  search: Schema.optionalKey(Schema.String),
+  /** Page cursor: the `date` of the oldest thread already shown. */
+  before: Schema.optionalKey(Schema.Number),
+  limit: Schema.optionalKey(Schema.Int),
+});
+export type ThreadQuery = typeof ThreadQuery.Type;
+
+// Changes
+
+/**
+ * One change to one message. Labels follow Gmail's model; each provider maps
+ * them onto its own (Outlook folders and flags, IMAP folders and flags).
+ */
+export const MailOp = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal("read"), value: Schema.Boolean }),
+  Schema.Struct({ kind: Schema.Literal("star"), value: Schema.Boolean }),
+  Schema.Struct({ kind: Schema.Literal("important"), value: Schema.Boolean }),
+  /** Leave the inbox, keep the message (Gmail archive, Outlook/IMAP Archive folder). */
+  Schema.Struct({ kind: Schema.Literal("archive") }),
+  /** Back to the inbox from archive, trash or spam. */
+  Schema.Struct({ kind: Schema.Literal("inbox") }),
+  Schema.Struct({ kind: Schema.Literal("trash") }),
+  Schema.Struct({ kind: Schema.Literal("spam") }),
+  /** Add or remove a user label. On Outlook and IMAP, adding moves to that folder. */
+  Schema.Struct({ kind: Schema.Literal("label"), labelId: Schema.String, value: Schema.Boolean }),
+]);
+export type MailOp = typeof MailOp.Type;
+
+export const OutgoingAttachment = Schema.Struct({
+  filename: Schema.String,
+  mimeType: Schema.String,
+  /** Base64 content. */
+  content: Schema.String,
+});
+export type OutgoingAttachment = typeof OutgoingAttachment.Type;
+
+export const ComposeMode = Schema.Literals(["new", "reply", "replyAll", "forward"]);
+export type ComposeMode = typeof ComposeMode.Type;
+
+export const OutgoingMessage = Schema.Struct({
+  to: Schema.Array(Address),
+  cc: Schema.Array(Address),
+  bcc: Schema.Array(Address),
+  subject: Schema.String,
+  /** Plain text; always present so every client can read it. */
+  text: Schema.String,
+  html: Schema.optionalKey(Schema.String),
+  attachments: Schema.Array(OutgoingAttachment),
+  /** Local message id this replies to or forwards; sets threading headers. */
+  inReplyTo: Schema.optionalKey(Schema.String),
+  mode: Schema.optionalKey(ComposeMode),
+});
+export type OutgoingMessage = typeof OutgoingMessage.Type;
+
+/**
+ * Every change to mail or accounts is one of these values, so the same thing
+ * can be checked by policy, parked as a proposal, audited and replayed.
+ */
+export const Command = Schema.Union([
+  /** `threads` holds any message id of each thread; the whole thread changes. */
+  Schema.Struct({
+    kind: Schema.Literal("modify"),
+    threads: Schema.Array(Schema.String),
+    op: MailOp,
+  }),
+  Schema.Struct({
+    kind: Schema.Literal("send"),
+    accountId: Schema.String,
+    message: OutgoingMessage,
+  }),
+  /** A message for a person to finish and send from the app. */
+  Schema.Struct({
+    kind: Schema.Literal("draft"),
+    accountId: Schema.String,
+    message: OutgoingMessage,
+  }),
+  Schema.Struct({ kind: Schema.Literal("removeAccount"), accountId: Schema.String }),
+]);
+export type Command = typeof Command.Type;
+
+/** Who asks for a command. Agents are models acting through MCP, rules or the built-in assistant. */
+export const Actor = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal("user"), surface: Schema.Literals(["app", "cli"]) }),
+  Schema.Struct({
+    kind: Schema.Literal("agent"),
+    surface: Schema.Literals(["mcp", "rule", "assistant"]),
+    /** MCP client name, rule name or model name; agent policies are keyed by it. */
+    name: Schema.String,
+    /** Why the agent wants this, shown when a person reviews the proposal. */
+    rationale: Schema.optionalKey(Schema.String),
+  }),
+]);
+export type Actor = typeof Actor.Type;
+
+export function actorLabel(actor: Actor): string {
+  return actor.kind === "user" ? `user:${actor.surface}` : `agent:${actor.surface}:${actor.name}`;
+}
+
+export const FlushResult = Schema.Struct({
+  done: Schema.Number,
+  failed: Schema.Number,
+  /** Accounts that need a new sign-in before their changes can go through. */
+  reauth: Schema.Array(Schema.String),
+});
+export type FlushResult = typeof FlushResult.Type;
+
+/** What `perform` did with a command. */
+export const Outcome = Schema.Union([
+  Schema.Struct({ status: Schema.Literal("applied"), flush: Schema.optionalKey(FlushResult) }),
+  Schema.Struct({ status: Schema.Literal("proposed"), proposalId: Schema.Number }),
+  Schema.Struct({ status: Schema.Literal("denied"), reason: Schema.String }),
+]);
+export type Outcome = typeof Outcome.Type;
+
+export const AgentWriteMode = Schema.Literals(["off", "propose", "allow"]);
+export type AgentWriteMode = typeof AgentWriteMode.Type;
+
+export const Proposal = Schema.Struct({
+  id: Schema.Number,
+  createdAt: Schema.Number,
+  actor: Actor,
+  command: Command,
+  status: Schema.Literals(["pending", "approved", "rejected"]),
+});
+export type Proposal = typeof Proposal.Type;
+
+export const AuditEntry = Schema.Struct({
+  at: Schema.Number,
+  /** actorLabel(): "user:app", "agent:mcp:claude-code" and so on. */
+  actor: Schema.String,
+  accountId: Schema.NullOr(Schema.String),
+  action: Schema.String,
+  detail: Schema.Unknown,
+});
+export type AuditEntry = typeof AuditEntry.Type;
+
+// Sync
+
+export const SyncProgress = Schema.Struct({
+  accountId: Schema.String,
+  fetched: Schema.Number,
+  total: Schema.Number,
+});
+export type SyncProgress = typeof SyncProgress.Type;
+
+export const SyncResult = Schema.Struct({
+  accountId: Schema.String,
+  changed: Schema.Number,
+  deleted: Schema.Number,
+  error: Schema.optionalKey(Schema.String),
+  /** The provider rejected the credentials; the account needs a new sign-in. */
+  needsReauth: Schema.optionalKey(Schema.Boolean),
+});
+export type SyncResult = typeof SyncResult.Type;

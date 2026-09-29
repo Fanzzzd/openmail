@@ -1,0 +1,38 @@
+{
+  "name": "@openmail/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check-types": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@effect/ai-anthropic": "4.0.0-rc.118",
+    "@effect/platform-node": "4.0.0-rc.118",
+    "@effect/sql-sqlite-node": "4.0.0-rc.118",
+    "@napi-rs/keyring": "^2.1.0",
+    "effect": "4.0.0-rc.118",
+    "imapflow": "^2.1.0",
+    "mailparser": "^3.9.29",
+    "nodemailer": "^10.0.11"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.0-rc.118",
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^22.20.4",
+    "typescript": "catalog:",
+    "vitest": "^5.0.2"
+  }
+}

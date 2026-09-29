@@ -1,0 +1,145 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "import", "promise"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "unicorn/prefer-set-has": "error",
+    "react/react-in-jsx-scope": "off",
+    "eslint/no-underscore-dangle": "off",
+    "import/no-unassigned-import": "off",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/media-has-caption": "off",
+    "eslint/no-else-return": "error",
+    "eslint/no-lonely-if": "error",
+    "eslint/no-warning-comments": [
+      "error",
+      {
+        "terms": ["fixme", "xxx", "hack", "todo:"],
+        "location": "anywhere"
+      }
+    ],
+    "eslint/default-case-last": "error",
+    "eslint/no-empty": "error",
+    "eslint/no-promise-executor-return": "error",
+    "eslint/prefer-template": "error",
+    "eslint/no-console": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-empty-function": "error",
+    "unicorn/no-useless-spread": "error",
+    "unicorn/no-useless-fallback-in-spread": "error",
+    "unicorn/no-useless-undefined": [
+      "error",
+      {
+        "checkArguments": false
+      }
+    ],
+    "unicorn/prefer-ternary": "error",
+    "import/no-self-import": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "typescript/no-unnecessary-condition": "error",
+    "typescript/no-unsafe-type-assertion": "warn",
+    "eslint/prefer-object-spread": "error",
+    "typescript/prefer-optional-chain": "error",
+    "unicorn/no-array-for-each": "error"
+  },
+  "overrides": [
+    {
+      "files": ["packages/backend/**"],
+      "rules": {
+        "unicorn/no-array-sort": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "eslint/no-shadow": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/memory-mcp/**",
+        "apps/web/scripts/**",
+        "scripts/**",
+        "apps/mobile/scripts/**"
+      ],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["packages/backend/convex/**"],
+      "rules": {
+        "eslint/no-console": [
+          "error",
+          {
+            "allow": ["warn", "error"]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/main/**"],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["apps/web/src/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@convex-dev/prosemirror-sync/blocknote",
+                "importNames": ["useBlockNoteSync"],
+                "message": "Use useCollabSync from @/lib/collab-sync. onSyncError is optional in the library and omitting it makes a broken collaborative session invisible: the failure rethrows out of a floating promise and the snapshot write swallows it."
+              },
+              {
+                "name": "@convex-dev/presence/react",
+                "importNames": ["default"],
+                "message": "Use usePresenceRoom from @/lib/presence. The heartbeat interval is the entire cost of presence and the library default (10s) is four times what we want; a per-call-site interval drifts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/mobile/**"],
+      "rules": {
+        "unicorn/no-array-sort": "off",
+        "react/style-prop-object": [
+          "error",
+          {
+            "allow": ["StatusBar"]
+          }
+        ]
+      }
+    }
+  ],
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "apps/mobile/.expo/**",
+    "apps/mobile/android/**",
+    "apps/mobile/ios/**",
+    "apps/web/public/vendor/**",
+    "apps/web/public/widget.js",
+    "apps/web/scripts/_tmp-vendor/**",
+    "packages/drawnix/src/**",
+    "packages/drawnix-react-board/src/**",
+    "packages/drawnix-react-text/src/**"
+  ],
+  "options": {
+    "typeAware": true
+  }
+}

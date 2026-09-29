@@ -1,0 +1,39 @@
+/**
+ * What the person is looking at: the view, list filters and search text.
+ * They live in atoms because the thread list atom derives its query from them.
+ */
+import { Atom } from "effect/reactivity";
+
+import { ALL, type Filters, type SpaceId, type View } from "../view";
+
+interface Nav {
+  view: View;
+  /** The last view in each space, so switching back lands where you were, like Arc. */
+  remembered: ReadonlyMap<SpaceId, View>;
+}
+
+const nav = Atom.make<Nav>({ view: { space: ALL, mailbox: "inbox" }, remembered: new Map() }).pipe(
+  Atom.keepAlive,
+);
+
+/** The view on screen. Writing it also remembers it as its space's last view. */
+export const viewAtom = Atom.writable(
+  (get) => get(nav).view,
+  (ctx, view: View) => {
+    const remembered = new Map(ctx.get(nav).remembered).set(view.space, view);
+    ctx.set(nav, { view, remembered });
+  },
+);
+
+/** Where each space was left. */
+export const rememberedViewsAtom = Atom.make((get) => get(nav).remembered);
+
+export const NO_FILTERS: Filters = { unread: false, starred: false };
+
+export const filtersAtom = Atom.make<Filters>(NO_FILTERS).pipe(Atom.keepAlive);
+
+/** The search field as typed. */
+export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);
+
+/** The search the list runs; empty means no search. */
+export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
