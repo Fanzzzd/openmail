@@ -395,7 +395,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       account: string,
       incoming: IncomingMessage,
     ) {
-      if (incoming.labels.some((l) => ["SENT", "DRAFT", "TRASH", "SPAM"].includes(l)))
+      if (incoming.labels.some((l) => ["DRAFT", "TRASH", "SPAM"].includes(l)))
         yield* run(
           sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${incoming.providerId}`,
         );
@@ -974,7 +974,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       );
       const targets = (yield* getThread(id)).filter(
         (member) =>
-          !member.labels.some((l) => ["SENT", "DRAFT", "TRASH", "SPAM"].includes(l)) &&
+          !member.labels.some((l) => ["DRAFT", "TRASH", "SPAM"].includes(l)) &&
           (member.labels.includes("INBOX") ||
             (member.labels.includes("SNOOZED") &&
               previous.some((p) => member.id === `${message.accountId}/${p.provider_id}`))),

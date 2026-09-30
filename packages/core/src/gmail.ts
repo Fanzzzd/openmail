@@ -288,7 +288,11 @@ export const makeGmail: Effect.Effect<
     urlParams?: Record<string, string>,
   ) =>
     api(accountId, HttpClientRequest.get(`${API}${path}`, urlParams ? { urlParams } : {})).pipe(
-      Effect.flatMap(decode(schema)),
+      Effect.flatMap((json) =>
+        decode(schema)(json).pipe(
+          Effect.mapError((e) => new ProviderError({ message: `${e.message} (${path})` })),
+        ),
+      ),
     );
 
   const post = (accountId: string, path: string, body?: unknown) =>

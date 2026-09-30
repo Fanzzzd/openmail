@@ -1174,3 +1174,62 @@ it.effect(
       });
     }),
 );
+
+it.effect(
+  "Gmail settings accepts empty filter lists and keeps permission failures typed before decoding",
+  () =>
+    Effect.gen(function* () {
+      for (const reply of [{ json: {} }, { json: { filter: [] } }, { json: null }, {}]) {
+        const http = fakeHttp({ "GET /settings/filters": reply });
+        assert.deepStrictEqual(yield* run(http, (a) => a.filters(account)), []);
+      }
+      for (const reply of [
+        {
+          status: 403,
+          json: {
+            error: {
+              code: 403,
+              message: "Request had insufficient authentication scopes.",
+              status: "PERMISSION_DENIED",
+            },
+          },
+        },
+        { status: 403 },
+        { status: 403, json: { error: { code: 403, message: "Forbidden" } } },
+      ]) {
+        const http = fakeHttp({
+          "GET /settings/filters": reply,
+          "GET /messages/m1": { json: { raw: b64("mail remains readable") } },
+        });
+        yield* run(http, (a) =>
+          Effect.gen(function* () {
+            const error = yield* a.filters(account).pipe(Effect.flip);
+            assert.strictEqual(error._tag, "SettingsScopeMissing");
+            assert.strictEqual(
+              Buffer.from(yield* a.fetchRaw(account, "m1")).toString(),
+              "mail remains readable",
+            );
+          }),
+        );
+      }
+    }),
+);
+
+it.effect(
+  "Gmail settings does not misclassify API disablement or quota errors as missing scopes",
+  () =>
+    Effect.gen(function* () {
+      for (const body of [
+        "SERVICE_DISABLED: PERMISSION_DENIED",
+        "dailyLimitExceeded: forbidden",
+        "rateLimitExceeded: Forbidden",
+      ]) {
+        const http = fakeHttp({ "GET /settings/filters": { status: 403, json: { error: body } } });
+        const request = yield* Effect.forkChild(
+          run(http, (a) => a.filters(account).pipe(Effect.flip)),
+        );
+        yield* TestClock.adjust("1 minute");
+        assert.strictEqual((yield* Fiber.join(request))._tag, "ProviderError");
+      }
+    }),
+);

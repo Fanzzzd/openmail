@@ -72,6 +72,11 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
       >
         <Trans>New label or folder</Trans>
       </button>
+      {account && account.provider !== "gmail" && (
+        <p className="text-[12px] text-neutral-500">
+          <Trans>Folder colors are stored on this computer only.</Trans>
+        </p>
+      )}
       <p role="alert" className="text-red-500">
         {resultError(i18n, changed)}
       </p>

@@ -413,3 +413,83 @@ it.effect("server search cannot overwrite an optimistic change waiting for push"
     }),
   ),
 );
+
+it.effect(
+  "Gmail snoozes mixed Inbox/Sent conversations from the sent reply and wakes only the Inbox member",
+  () => {
+    const inbox = incoming("original", { threadId: "self-thread", labels: ["INBOX", "SENT"] });
+    const sent = incoming("reply", { threadId: "self-thread", labels: ["SENT"], date: 2000 });
+    const server = fakeServer("me@gmail.com", [inbox, sent]);
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      const account = yield* m.connect({ provider: "gmail" });
+      yield* m.sync();
+      yield* m.snooze([`${account.id}/reply`], 1000);
+      let members = yield* m.thread(`${account.id}/reply`);
+      assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SNOOZED"));
+      assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
+      yield* m.sync();
+      assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+      yield* TestClock.adjust("2 seconds");
+      yield* m.wakeSnoozed();
+      assert.deepStrictEqual(
+        server.pushed.map((p) => p.providerId),
+        ["original", "original"],
+      );
+      members = yield* m.thread(`${account.id}/reply`);
+      assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("INBOX"));
+      assert.ok(members.find((x) => x.id.endsWith("/original"))?.labels.includes("SENT"));
+      assert.deepStrictEqual(members.find((x) => x.id.endsWith("/reply"))?.labels, ["SENT"]);
+      assert.strictEqual(members.find((x) => x.id.endsWith("/reply"))?.isUnread, false);
+    }).pipe(Effect.provide(TestMailbox({ gmail: server })));
+  },
+);
+
+it.effect("Outlook folder colors stay local and remain usable immediately after creation", () => {
+  const server = fakeServer("me@outlook.com");
+  const adapter = makeFakeProvider(server);
+  let colorCalls = 0;
+  const providers = Layer.succeed(Providers, {
+    get: () => ({
+      ...adapter,
+      changeLabel: (...args: Parameters<typeof adapter.changeLabel>) => {
+        if (args[1].kind === "color") colorCalls++;
+        return adapter.changeLabel(...args);
+      },
+    }),
+  });
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    const account = yield* m.connect({ provider: "outlook" });
+    yield* m.changeLabel(account.id, { kind: "create", name: "Test" });
+    const folder = (yield* m.labels([account.id])).find((l) => l.name === "Test");
+    assert.ok(folder);
+    yield* m.changeLabel(account.id, { kind: "color", id: folder.id, color: "#b99aff" });
+    assert.strictEqual(colorCalls, 0);
+    assert.strictEqual(
+      (yield* m.labelPreferences).find((p) => p.id === folder.id)?.color,
+      "#b99aff",
+    );
+    yield* m.changeLabel(account.id, { kind: "rename", id: folder.id, name: "Renamed" });
+    yield* m.sync();
+    assert.strictEqual(
+      (yield* m.labels([account.id])).find((l) => l.id === folder.id)?.name,
+      "Renamed",
+    );
+    assert.strictEqual(
+      (yield* m.labelPreferences).find((p) => p.id === folder.id)?.color,
+      "#b99aff",
+    );
+    yield* m.changeLabel(account.id, { kind: "delete", id: folder.id });
+    assert.ok(!(yield* m.labels([account.id])).some((l) => l.id === folder.id));
+    assert.ok(!(yield* m.labelPreferences).some((p) => p.id === folder.id));
+  }).pipe(
+    Effect.provide(
+      MailboxLive({ backgroundFlush: false }).pipe(
+        Layer.provide(
+          Layer.mergeAll(StoreLive, providers).pipe(Layer.provideMerge(MemoryPlatform())),
+        ),
+      ),
+    ),
+  );
+});

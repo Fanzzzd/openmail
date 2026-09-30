@@ -1251,3 +1251,63 @@ it.effect(
       assert.ok(!cancelled.calls.some((c) => c.method === "POST"));
     }),
 );
+
+it.effect(
+  "Graph mutations return authoritative folder IDs and names while list endpoints still lag",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/mailFolders": {
+          json: {
+            value: [
+              { id: "parent", displayName: "Projects", childFolderCount: 0, totalItemCount: 0 },
+            ],
+          },
+        },
+        "POST /me/mailFolders/parent/childFolders": {
+          status: 201,
+          json: { id: "new-folder", displayName: "Test" },
+        },
+        "PATCH /me/mailFolders/new-folder": { json: { id: "new-folder", displayName: "Renamed" } },
+        "DELETE /me/mailFolders/new-folder": { status: 204 },
+      });
+      yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const created = yield* a.changeLabel(account, {
+            kind: "create",
+            parentId: "parent",
+            name: "Test",
+          });
+          assert.deepStrictEqual(
+            created.find((l) => l.id === "new-folder"),
+            { id: "new-folder", name: "Projects/Test", color: null },
+          );
+          const renamed = yield* a.changeLabel(account, {
+            kind: "rename",
+            id: "new-folder",
+            name: "Renamed",
+          });
+          assert.strictEqual(renamed.find((l) => l.id === "new-folder")?.name, "Projects/Renamed");
+          const removed = yield* a.changeLabel(account, { kind: "delete", id: "new-folder" });
+          assert.ok(!removed.some((l) => l.id === "new-folder"));
+        }),
+      );
+    }),
+);
+
+it.effect("Graph folder creation does not depend on a follow-up listing to retain the new ID", () =>
+  Effect.gen(function* () {
+    let created = false;
+    const http = fakeHttp({
+      "GET /me/mailFolders": () =>
+        created ? { status: 403, json: { error: "listing unavailable" } } : { json: { value: [] } },
+      "POST /me/mailFolders": () => {
+        created = true;
+        return { status: 201, json: { id: "new-id", displayName: "New" } };
+      },
+    });
+    const labels = yield* run(http, (a) => a.changeLabel(account, { kind: "create", name: "New" }));
+    assert.deepStrictEqual(labels, [{ id: "new-id", name: "New", color: null }]);
+    assert.strictEqual(http.calls.at(-1)?.method, "POST");
+  }),
+);

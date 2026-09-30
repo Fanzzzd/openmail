@@ -32,3 +32,5 @@ Desktop 类型客户端的 secret 按 Google 的定义不算机密。openmail �
 联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。只有 `contacts.readonly` 时先补全已保存联系人，缺少可选 `contacts.other.readonly` 不阻止这部分缓存。隐藏地址同时排除本地往来邮件和服务器联系人。日历响应只在点击接受、暂定或拒绝后发送；日历里找不到邀请时，先用 Google Calendar 添加。没有启用 API 时需在上述 Cloud 项目启用，重新登录不能代替启用 API。
 
 依据：[Calendar events](https://developers.google.com/workspace/calendar/api/v3/reference/events)、[People connections](https://developers.google.com/people/api/rest/v1/people.connections/list)、[Other contacts](https://developers.google.com/people/api/rest/v1/otherContacts/list)。
+
+过滤器列表可用已有 `gmail.modify` 或 `gmail.readonly` 读取，成功返回空列表时无需重新登录；创建或删除过滤器仍需 `gmail.settings.basic`。实际 403 权限错误只在设置中提示重新登录，不改变邮件同步状态。依据：[读取列表](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list)、[创建过滤器](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create)。

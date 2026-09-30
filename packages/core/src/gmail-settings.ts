@@ -90,7 +90,13 @@ export function makeGmailSettings<
   const wrap = <A>(account: Account, effect: Effect.Effect<A, E>) =>
     effect.pipe(
       Effect.mapError((e) => {
-        if (e.status === 403 && /insufficient|scope|permission/i.test(e.body ?? ""))
+        if (
+          e.status === 403 &&
+          (!e.body?.trim() || /insufficient|scope|permission|forbidden/i.test(e.body)) &&
+          !/SERVICE_DISABLED|accessNotConfigured|rateLimitExceeded|dailyLimitExceeded/i.test(
+            e.body ?? "",
+          )
+        )
           return new SettingsScopeMissing({
             accountId: account.id,
             message: "Sign in again to enable account settings",
@@ -110,9 +116,9 @@ export function makeGmailSettings<
         account,
         get(
           account.id,
-          Schema.Struct({ filter: Schema.optionalKey(Schema.Array(GmailFilter)) }),
+          Schema.NullOr(Schema.Struct({ filter: Schema.optionalKey(Schema.Array(GmailFilter)) })),
           "/settings/filters",
-        ).pipe(Effect.map((r) => (r.filter ?? []).map(fromFilter))),
+        ).pipe(Effect.map((r) => (r?.filter ?? []).map(fromFilter))),
       ),
     createFilter: (account: Account, input: FilterInput) => {
       const a = input.action;
@@ -201,9 +207,9 @@ export function makeGmailSettings<
         if (missing) return Effect.fail(missing);
         return wrap(
           account,
-          get(account.id, Aliases, "/settings/sendAs").pipe(
+          get(account.id, Schema.NullOr(Aliases), "/settings/sendAs").pipe(
             Effect.map((r): SendAs[] =>
-              (r.sendAs ?? [])
+              (r?.sendAs ?? [])
                 .filter(
                   (a) =>
                     a.verificationStatus === "accepted" ||

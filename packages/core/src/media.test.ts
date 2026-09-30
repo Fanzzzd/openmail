@@ -722,39 +722,41 @@ it.effect("large message-id filters and broad derived queries stay within SQLite
   ),
 );
 
-it.effect("derived candidates are bounded before expanding message ids", () =>
-  withStore(
-    Effect.gen(function* () {
-      const { store, account } = yield* setup;
-      const sql = yield* SqlClient.SqlClient;
-      yield* store.transaction(
-        Effect.gen(function* () {
-          for (let index = 0; index < 1100; index++) {
-            const providerId = `bulk-${index}`;
-            yield* store.upsertMessage(
-              account.id,
-              message({ providerId, threadId: providerId, date: index + 2000 }),
-            );
-            const id = `${account.id}/${providerId}`;
-            const chunk = {
-              messageId: id,
-              text: "bulkneedle",
-              source: { kind: "attachment", index: 0, name: "file.png", mimeType: "image/png" },
-              page: null,
-              region: null,
-              pipelineVersion: "test",
-              visionRevision: null,
-            };
-            yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${id},${chunk.text},${JSON.stringify(chunk)})`;
-          }
-        }),
-      );
-      assert.strictEqual(
-        (yield* store.listThreads({ search: "bulkneedle", limit: 5000 })).length,
-        1024,
-      );
-    }),
-  ),
+it.effect(
+  "derived candidates are bounded before expanding message ids",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account } = yield* setup;
+        const sql = yield* SqlClient.SqlClient;
+        yield* store.transaction(
+          Effect.gen(function* () {
+            for (let index = 0; index < 1100; index++) {
+              const providerId = `bulk-${index}`;
+              yield* store.upsertMessage(
+                account.id,
+                message({ providerId, threadId: providerId, date: index + 2000 }),
+              );
+              const id = `${account.id}/${providerId}`;
+              const chunk = {
+                messageId: id,
+                text: "bulkneedle",
+                source: { kind: "attachment", index: 0, name: "file.png", mimeType: "image/png" },
+                page: null,
+                region: null,
+                pipelineVersion: "test",
+                visionRevision: null,
+              };
+              yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${id},${chunk.text},${JSON.stringify(chunk)})`;
+            }
+          }),
+        );
+        assert.strictEqual(
+          (yield* store.listThreads({ search: "bulkneedle", limit: 5000 })).length,
+          1024,
+        );
+      }),
+    ),
   // Inserts tens of thousands of rows; slow on a loaded machine.
   30_000,
 );

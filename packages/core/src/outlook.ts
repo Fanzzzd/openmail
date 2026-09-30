@@ -441,10 +441,62 @@ export const makeOutlook: Effect.Effect<
     return { email: me.mail ?? me.userPrincipalName, secret: res.refreshToken.value };
   });
 
+  // Server writes are authoritative while Graph folder listings catch up.
+  const pendingFolders = new Map<
+    string,
+    Map<string, { name: string | null; previousName?: string }>
+  >();
+  const rememberFolder = (
+    accountId: string,
+    id: string,
+    change: { name: string | null; previousName?: string },
+  ) => {
+    let pending = pendingFolders.get(accountId);
+    if (!pending) {
+      pending = new Map();
+      pendingFolders.set(accountId, pending);
+    }
+    pending.set(id, change);
+  };
+
+  const mergeFolderChanges = (
+    accountId: string,
+    listedFolders: readonly { id: string; name: string }[],
+    confirmed: boolean,
+  ) => {
+    const pending = pendingFolders.get(accountId);
+    if (!pending) return listedFolders;
+    const folders = new Map(listedFolders.map((folder) => [folder.id, folder]));
+    for (const [id, change] of pending) {
+      const listed = folders.get(id);
+      if (confirmed && ((change.name === null && !listed) || listed?.name === change.name)) {
+        pending.delete(id);
+        continue;
+      }
+      if (change.name === null) {
+        folders.delete(id);
+        if (listed)
+          for (const [childId, child] of folders)
+            if (child.name.startsWith(`${listed.name}/`)) folders.delete(childId);
+      } else {
+        folders.set(id, { id, name: change.name });
+        if (change.previousName)
+          for (const [childId, child] of folders)
+            if (child.name.startsWith(`${change.previousName}/`))
+              folders.set(childId, {
+                ...child,
+                name: `${change.name}${child.name.slice(change.previousName.length)}`,
+              });
+      }
+    }
+    if (!pending.size) pendingFolders.delete(accountId);
+    return [...folders.values()];
+  };
+
   /**
    * User folders, nested names joined with "/". Skipped system folders are left
    * out together with their subfolders (Sync Issues holds Conflicts and so on),
-   * and empty folders are left out so the sidebar only lists folders with mail.
+   * including empty folders so newly created folders can be organized.
    */
   const listCustomFolders = Effect.fnUntraced(function* (accountId: string) {
     const systemIds = yield* Effect.forEach(
@@ -485,7 +537,7 @@ export const makeOutlook: Effect.Effect<
         }
       });
     yield* walk("/me/mailFolders", "");
-    return out;
+    return mergeFolderChanges(accountId, out, true);
   });
 
   /**
@@ -846,8 +898,9 @@ export const makeOutlook: Effect.Effect<
   const settings = makeOutlookSettings(get, write);
   const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
     Effect.gen(function* () {
-      if (change.kind === "create")
-        yield* write(
+      const before = yield* listCustomFolders(account.id);
+      if (change.kind === "create") {
+        const result = yield* write(
           account.id,
           "POST",
           change.parentId
@@ -855,13 +908,34 @@ export const makeOutlook: Effect.Effect<
             : "/me/mailFolders",
           { displayName: change.name },
         );
-      else if (change.kind === "rename")
-        yield* write(account.id, "PATCH", `/me/mailFolders/${encodeURIComponent(change.id)}`, {
-          displayName: change.name,
+        const folder = yield* decode(
+          Schema.Struct({ id: Schema.String, displayName: Schema.optionalKey(Schema.String) }),
+        )(result);
+        const parent = before.find((f) => f.id === change.parentId);
+        rememberFolder(account.id, folder.id, {
+          name: `${parent ? `${parent.name}/` : ""}${folder.displayName ?? change.name}`,
         });
-      else if (change.kind === "delete")
+      } else if (change.kind === "rename") {
+        const old = before.find((f) => f.id === change.id);
+        const result = yield* write(
+          account.id,
+          "PATCH",
+          `/me/mailFolders/${encodeURIComponent(change.id)}`,
+          { displayName: change.name },
+        );
+        const folder = yield* decode(
+          Schema.Struct({ id: Schema.String, displayName: Schema.optionalKey(Schema.String) }),
+        )(result);
+        const prefix = old?.name.slice(0, old.name.lastIndexOf("/") + 1) ?? "";
+        rememberFolder(account.id, folder.id, {
+          name: `${prefix}${folder.displayName ?? change.name}`,
+          ...(old ? { previousName: old.name } : {}),
+        });
+      } else if (change.kind === "delete") {
         yield* write(account.id, "DELETE", `/me/mailFolders/${encodeURIComponent(change.id)}`);
-      return (yield* listCustomFolders(account.id)).map((f) => ({ ...f, color: null }));
+        rememberFolder(account.id, change.id, { name: null });
+      }
+      return mergeFolderChanges(account.id, before, false).map((f) => ({ ...f, color: null }));
     }).pipe(Effect.mapError(writeFailure(account.id)));
   const search: ProviderAdapter["search"] = (account, query) =>
     Effect.gen(function* () {

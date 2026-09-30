@@ -20,3 +20,5 @@ export { htmlToText } from "./mime.js";
 export * from "./media.js";
 export * from "./calendar.js";
 export * from "./contacts.js";
+
+export { deviceErrorReason } from "./device-errors.js";

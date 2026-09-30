@@ -549,11 +549,6 @@ msgstr "无法加载日历邀请。"
 msgid "Couldn't discard: {reason}"
 msgstr "丢弃失败：{reason}"
 
-#. placeholder {0}: e.message
-#: src/renderer/src/errors.ts
-msgid "Couldn't finish this on this computer: {0}"
-msgstr "在这台电脑上没能完成：{0}"
-
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"
@@ -759,6 +754,10 @@ msgstr "请在浏览器里完成授权"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Folder colors are stored on this computer only."
+msgstr "文件夹颜色仅保存在这台电脑上。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Follow system"
@@ -1159,6 +1158,10 @@ msgstr "没有符合筛选的邮件"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "No parent"
 msgstr "无上级文件夹"
+
+#: src/renderer/src/errors.ts
+msgid "no printers are available."
+msgstr "没有可用的打印机。"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "No suggestions waiting for review."
@@ -1860,6 +1863,10 @@ msgstr "过滤器会处理服务器上的新邮件。"
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
+
+#: src/renderer/src/errors.ts
+msgid "the operation failed."
+msgstr "操作失败。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "The organizer differs from the message sender. Check the response recipient before replying."

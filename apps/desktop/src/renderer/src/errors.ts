@@ -45,6 +45,10 @@ const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Outlook automatic replies do not support a custom subject": msg`Outlook automatic replies do not support a custom subject`,
   "Choose a verified send-as address for this account": msg`Choose a verified send-as address for this account`,
 };
+const DEVICE_REASONS: Record<string, MessageDescriptor> = {
+  "no printers are available.": msg`no printers are available.`,
+  "the operation failed.": msg`the operation failed.`,
+};
 const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 
 /**
@@ -64,7 +68,10 @@ export function errorText(i18n: I18n, error: AppError): string {
       return i18n._(msg`The ${client} OAuth client is not set up yet.`);
     },
     NotFound: (e) => i18n._(NOT_FOUND[e.what]),
-    DeviceError: (e) => i18n._(msg`Couldn't finish this on this computer: ${e.message}`),
+    DeviceError: (e) => {
+      const reason = DEVICE_REASONS[e.message];
+      return reason ? i18n._(reason) : e.message;
+    },
     PermanentError: (e) => i18n._(msg`The server refused this action: ${e.message}`),
     ProviderError: (e) => i18n._(msg`Can't reach the mail server right now: ${e.message}`),
     InvalidInput: (e) => {

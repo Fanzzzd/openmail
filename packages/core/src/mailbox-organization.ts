@@ -114,7 +114,12 @@ export function makeOrganizationMailbox(
       !labels.some((l) => l.id === change.parentId)
     )
       yield* new InvalidInput({ message: "Choose a parent folder from this account" });
-    const current = yield* adapter.changeLabel(account, change);
+    // Graph and IMAP have no folder color API. Local colors do not need a
+    // server listing, which can lag immediately after a folder is created.
+    const current =
+      change.kind === "color" && account.provider !== "gmail"
+        ? labels
+        : yield* adapter.changeLabel(account, change);
     yield* store.transaction(
       Effect.gen(function* () {
         yield* store.replaceLabels(accountId, current);

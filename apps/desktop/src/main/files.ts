@@ -8,7 +8,13 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { type Mailbox, type PerformError, DeviceError, printableThread } from "@openmail/core";
+import {
+  type Mailbox,
+  type PerformError,
+  DeviceError,
+  deviceErrorReason,
+  printableThread,
+} from "@openmail/core";
 
 /** A mailbox failure, or one on this computer. */
 type FileError = PerformError | DeviceError;
@@ -34,10 +40,7 @@ export function safeFilename(name: string): string {
   return base || "attachment";
 }
 
-const failed = (what: string) => (error: unknown) =>
-  new DeviceError({
-    message: `${what}: ${error instanceof Error ? error.message : String(error)}`,
-  });
+const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
 
 /**
  * Marks a file as downloaded from the internet, so macOS Gatekeeper checks
@@ -54,7 +57,7 @@ function quarantine(file: string): Effect.Effect<void> {
 const write = (file: string, data: Uint8Array) =>
   Effect.tryPromise({
     try: () => writeFile(file, data),
-    catch: failed("Can't write the file"),
+    catch: failed,
   }).pipe(Effect.andThen(quarantine(file)));
 
 const exists = (file: string) =>
@@ -149,7 +152,7 @@ export const openAttachment: (
   const folder = path.join(app.getPath("temp"), "openmail-attachments", randomUUID());
   yield* Effect.tryPromise({
     try: () => mkdir(folder, { recursive: true }),
-    catch: failed("Can't create a temporary folder"),
+    catch: failed,
   });
   const file = path.join(folder, name);
   yield* write(file, content.data);
@@ -231,7 +234,7 @@ export const printThread: (
       await mkdir(folder, { recursive: true });
       await writeFile(file, html);
     },
-    catch: failed("Can't prepare the printout"),
+    catch: failed,
   });
 
   printSessionCache ??= printSession();
@@ -253,12 +256,12 @@ export const printThread: (
   return yield* Effect.gen(function* () {
     yield* Effect.tryPromise({
       try: () => win.loadFile(file),
-      catch: failed("Can't load the printout"),
+      catch: failed,
     });
     if (pdfPath) {
       const data = yield* Effect.tryPromise({
         try: () => win.webContents.printToPDF({ printBackground: true }),
-        catch: failed("Can't make the PDF"),
+        catch: failed,
       });
       yield* write(pdfPath, data);
       return true;
@@ -267,7 +270,7 @@ export const printThread: (
       win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
         // A cancelled print dialog reports "Print job canceled" or "cancelled".
         if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
-        else resume(Effect.fail(new DeviceError({ message: `Printing failed: ${reason}` })));
+        else resume(Effect.fail(new DeviceError({ message: deviceErrorReason(reason) })));
       });
     });
   }).pipe(
