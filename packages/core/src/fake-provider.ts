@@ -1,9 +1,15 @@
+import type { CalendarInvite, InviteResponse } from "./calendar.js";
 import { Effect, Option, Stream } from "effect";
 
 import { attachmentFromRaw } from "./attachments.js";
 import { buildMime } from "./compose.js";
-import type { DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
-import { PermanentError, SettingsScopeMissing, type ProviderFailure } from "./errors.js";
+import type { Address, DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
+import {
+  FeatureScopeMissing,
+  PermanentError,
+  SettingsScopeMissing,
+  type ProviderFailure,
+} from "./errors.js";
 import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "./services.js";
 import { EMPTY_VACATION, type ServerFilter, type Vacation, type SendAs } from "./organization.js";
 import { matchesSearch } from "./search.js";
@@ -14,6 +20,9 @@ let counter = 0;
 
 /** A provider's server side, in memory. Tests read and change it directly. */
 export interface FakeServer {
+  contacts: Address[];
+  responses: { invite: CalendarInvite; response: InviteResponse }[];
+  featureFailure?: FeatureScopeMissing;
   email: string;
   messages: Map<string, IncomingMessage>;
   /** Every sign-in, as the adapter received it. */
@@ -43,6 +52,8 @@ export interface FakeServer {
 export function fakeServer(email: string, messages: IncomingMessage[] = []): FakeServer {
   return {
     email,
+    contacts: [],
+    responses: [],
     messages: new Map(messages.map((m) => [m.providerId, m])),
     connects: [],
     labels: [],
@@ -74,6 +85,26 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
       server.settingsFailure ? Effect.fail(server.settingsFailure) : failOnce,
   );
   return {
+    contacts: () =>
+      Effect.suspend((): ReturnType<ProviderAdapter["contacts"]> =>
+        server.featureFailure
+          ? Effect.fail(server.featureFailure)
+          : Effect.andThen(
+              failOnce,
+              Effect.sync(() => server.contacts),
+            ),
+      ),
+    respondInvite: (_account, _id, invite, response) =>
+      Effect.suspend((): ReturnType<ProviderAdapter["respondInvite"]> =>
+        server.featureFailure
+          ? Effect.fail(server.featureFailure)
+          : Effect.andThen(
+              failOnce,
+              Effect.sync(() => {
+                server.responses.push({ invite, response });
+              }),
+            ),
+      ),
     search: (_account, query) =>
       Effect.andThen(
         failOnce,

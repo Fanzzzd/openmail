@@ -46,6 +46,14 @@ msgstr "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
 msgstr "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "{count} cached contacts"
+msgstr "{count} cached contacts"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{count} occurrences"
+msgstr "{count} occurrences"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
 msgstr "{count} unread"
@@ -86,6 +94,10 @@ msgstr "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, one {# second} other {# seconds}}"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{text} → {recipient}"
+msgstr "{text} → {recipient}"
+
 #: src/renderer/src/components/imapPresetText.ts
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
@@ -98,6 +110,14 @@ msgstr "A domain covers its subdomains. Known trackers stay blocked for these se
 #: src/renderer/src/errors.ts
 msgid "A label or folder needs a valid name"
 msgstr "A label or folder needs a valid name"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accept"
+msgstr "Accept"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accepted"
+msgstr "Accepted"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -244,6 +264,10 @@ msgstr "All accounts"
 msgid "All accounts in this space"
 msgstr "All accounts in this space"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "All day"
+msgstr "All day"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/view.ts
 msgid "All Mail"
@@ -304,6 +328,10 @@ msgstr "Attachment matches"
 msgid "Attachments of the original message are not forwarded"
 msgstr "Attachments of the original message are not forwarded"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Attendees"
+msgstr "Attendees"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Authorization code"
 msgstr "Authorization code"
@@ -331,6 +359,18 @@ msgstr "Blocked before loading:"
 #: src/renderer/src/components/Composer.tsx
 msgid "Body"
 msgstr "Body"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Calendar invitation"
+msgstr "Calendar invitation"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar response was not sent"
+msgstr "Calendar response was not sent"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar responses require a user action"
+msgstr "Calendar responses require a user action"
 
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
@@ -376,6 +416,10 @@ msgstr "Can't reach the mail server right now: {0}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Cancel"
 msgstr "Cancel"
+
+#: src/renderer/src/errors.ts
+msgid "Cannot build calendar response"
+msgstr "Cannot build calendar response"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
@@ -463,6 +507,10 @@ msgstr "Confirm deletion for a filter with a search query"
 msgid "Confirm removal"
 msgstr "Confirm Remove"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Contact refresh failed. Cached suggestions remain available."
+msgstr "Contact refresh failed. Cached suggestions remain available."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "Contacts only"
@@ -486,6 +534,10 @@ msgstr "Copied"
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "Copy"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Could not load the calendar invitation."
+msgstr "Could not load the calendar invitation."
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -564,6 +616,14 @@ msgstr "Dark background"
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
 msgstr "Date"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Decline"
+msgstr "Decline"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Declined"
+msgstr "Declined"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Default"
@@ -648,6 +708,22 @@ msgstr "End"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Enter the IMAP and SMTP servers your email provider gives you."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} days"
+msgstr "Every {interval} days"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} months"
+msgstr "Every {interval} months"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} weeks"
+msgstr "Every {interval} weeks"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} years"
+msgstr "Every {interval} years"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
@@ -858,6 +934,10 @@ msgstr "Loading…"
 msgid "Local preview: {count} messages"
 msgstr "Local preview: {count} messages"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location"
+msgstr "Location"
+
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
@@ -927,6 +1007,14 @@ msgstr "Match appearance"
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Matched image region"
 msgstr "Matched image region"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting cancelled"
+msgstr "Meeting cancelled"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting response"
+msgstr "Meeting response"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
@@ -1078,6 +1166,10 @@ msgstr "No templates yet. Use {token} for the first recipient's name."
 msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
 msgstr "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "No time zone supplied; shown in your local time."
+msgstr "No time zone supplied; shown in your local time."
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "No unread mail in the inbox"
@@ -1110,6 +1202,10 @@ msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Secu
 msgid "On-device indexing"
 msgstr "On-device indexing"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "One occurrence of a recurring meeting"
+msgstr "One occurrence of a recurring meeting"
+
 #: src/renderer/src/errors.ts
 msgid "Only inbox messages can be snoozed"
 msgstr "Only inbox messages can be snoozed"
@@ -1126,6 +1222,10 @@ msgstr "Open in New Window"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "Open space"
+
+#: src/renderer/src/errors.ts
+msgid "Open this invitation in your calendar to add it before responding"
+msgstr "Open this invitation in your calendar to add it before responding"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1146,6 +1246,10 @@ msgstr "Organize"
 #: src/renderer/src/components/Settings.tsx
 msgid "Organize directly"
 msgstr "Organize directly"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Organizer"
+msgstr "Organizer"
 
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Original message"
@@ -1232,6 +1336,14 @@ msgstr "Read only"
 msgid "Reading"
 msgstr "Reading"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Recurring meeting"
+msgstr "Recurring meeting"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Refresh contacts"
+msgstr "Refresh contacts"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Reject"
 msgstr "Reject"
@@ -1293,6 +1405,22 @@ msgstr "Removed star"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "Rename"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats daily"
+msgstr "Repeats daily"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats monthly"
+msgstr "Repeats monthly"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats weekly"
+msgstr "Repeats weekly"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats yearly"
+msgstr "Repeats yearly"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Replies and forwards"
@@ -1470,6 +1598,14 @@ msgstr "Sent and archived"
 msgid "Server"
 msgstr "Server"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts"
+msgstr "Server contacts"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts refresh every six hours while the app runs. Cached contacts and local correspondents appear in recipient suggestions."
+msgstr "Server contacts refresh every six hours while the app runs. Cached contacts and local correspondents appear in recipient suggestions."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Server filters"
 msgstr "Server filters"
@@ -1511,6 +1647,8 @@ msgstr "Show only unread"
 msgid "Show original"
 msgstr "Show original"
 
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -1524,6 +1662,15 @@ msgstr "Sign in again to enable filters"
 #: src/renderer/src/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
 msgstr "Sign in again to enable filters and automatic replies."
+
+#: src/renderer/src/errors.ts
+msgid "Sign in again to respond to calendar invitations."
+msgstr "Sign in again to respond to calendar invitations."
+
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to sync server contacts."
+msgstr "Sign in again to sync server contacts."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Sign In with Browser"
@@ -1672,6 +1819,10 @@ msgstr "Templates"
 msgid "Templates…"
 msgstr "Templates…"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Tentative"
+msgstr "Tentative"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Text size"
 msgstr "Text size"
@@ -1689,6 +1840,10 @@ msgid "The button below opens the {name} sign-in page. openmail only reads your 
 msgstr "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
 
 #: src/renderer/src/errors.ts
+msgid "The calendar organizer does not match this invitation"
+msgstr "The calendar organizer does not match this invitation"
+
+#: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "The end must be after the start"
 
@@ -1699,6 +1854,10 @@ msgstr "The filter applies to future mail on the server."
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "The message mentions an attachment, but none is added."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "The organizer differs from the message sender. Check the response recipient before replying."
+msgstr "The organizer differs from the message sender. Check the response recipient before replying."
 
 #: src/renderer/src/components/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
@@ -1725,6 +1884,18 @@ msgstr "These are not email addresses: {list}"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
+
+#: src/renderer/src/errors.ts
+msgid "This invitation cannot be answered by this account"
+msgstr "This invitation cannot be answered by this account"
+
+#: src/renderer/src/errors.ts
+msgid "This invitation has a newer update"
+msgstr "This invitation has a newer update"
+
+#: src/renderer/src/errors.ts
+msgid "This meeting has been cancelled"
+msgstr "This meeting has been cancelled"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
@@ -1787,6 +1958,10 @@ msgstr "unknown"
 #: src/renderer/src/errors.ts
 msgid "Unknown label or folder"
 msgstr "Unknown label or folder"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Unknown organizer time zone; showing the original time."
+msgstr "Unknown organizer time zone; showing the original time."
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Unread"

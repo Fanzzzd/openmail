@@ -88,6 +88,12 @@ const Handlers = MailRpcs.toLayer(
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       RemoveAccount: ({ accountId }) => m.perform({ kind: "removeAccount", accountId }, USER),
 
+      Invitations: ({ messageId }) => m.invitations(messageId),
+      RespondInvite: ({ messageId, key, response }) =>
+        m.respondInvite(messageId, key, response, USER),
+      ContactSync: () => m.contactSync,
+      RefreshContacts: ({ accountId }) => m.refreshContacts(accountId),
+
       Threads: ({ query }) => m.threads(query),
       Thread: ({ id }) => m.thread(id),
       RawMessage: ({ id }) => m.rawMessage(id),

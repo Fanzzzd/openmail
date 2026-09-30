@@ -33,6 +33,7 @@ import {
 } from "./services.js";
 
 import { gmailSearch } from "./search.js";
+import { makeGmailFeatures } from "./gmail-features.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -45,6 +46,9 @@ const SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/gmail.settings.basic",
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/contacts.readonly",
+  "https://www.googleapis.com/auth/contacts.other.readonly",
 ];
 
 /** First sync pulls this window, spam and trash included; older mail arrives later through backfill. */
@@ -700,6 +704,11 @@ export const makeGmail: Effect.Effect<
 
   return {
     ...settings,
+    ...makeGmailFeatures(
+      (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),
+      (id, url, body) =>
+        api(id, HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.patch(url), body)),
+    ),
     search,
     changeLabel,
     connect,
@@ -752,7 +761,10 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
   let text = "";
   let html = "";
   const attachments: Attachment[] = [];
+  const calendarParts: GmailPart[] = [];
   const walk = (part: GmailPart) => {
+    if (part.mimeType === "text/calendar" || /\.ics$/i.test(part.filename ?? ""))
+      calendarParts.push(part);
     if (part.filename) {
       attachments.push({ filename: part.filename, mimeType: part.mimeType, size: part.body.size });
     } else if (part.body.data) {
@@ -786,6 +798,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     snippet: decodeEntities(raw.snippet ?? ""),
     bodyText: text || htmlToText(html),
     bodyHtml: html,
+    ...(calendarParts.length ? { hasCalendar: true } : {}),
     labels,
     attachments,
     isUnread: labels.includes("UNREAD"),

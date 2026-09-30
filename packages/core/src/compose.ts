@@ -36,6 +36,7 @@ export const buildMime = Effect.fnUntraced(function* (
     subject: message.subject,
     text: message.text,
     ...(message.html ? { html: htmlDocument(message.html) } : {}),
+    ...(message.calendar ? { icalEvent: message.calendar } : {}),
     ...(replying && threading.messageId
       ? { inReplyTo: threading.messageId, references: references || undefined }
       : {}),

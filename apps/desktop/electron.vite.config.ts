@@ -34,6 +34,7 @@ export default defineConfig({
       include: [
         "@base-ui/react/alert-dialog",
         "@base-ui/react/autocomplete",
+        "@base-ui/react/button",
         "@base-ui/react/checkbox",
         "@base-ui/react/combobox",
         "@base-ui/react/context-menu",

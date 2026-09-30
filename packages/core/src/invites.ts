@@ -1,0 +1,256 @@
+import { Effect, Result, Schema } from "effect";
+import ICAL from "ical.js";
+import { simpleParser } from "mailparser";
+import {
+  inviteCanRespond,
+  type CalendarInvite,
+  type CalendarTime,
+  type InviteResponse,
+} from "./calendar.js";
+export { inviteCanRespond } from "./calendar.js";
+import type { Address, OutgoingMessage } from "./domain.js";
+import { InvalidInput, ProviderError } from "./errors.js";
+import { graphTimestamp } from "./graph-time.js";
+import { decodeBytes } from "./mime.js";
+
+const value = (component: ICAL.Component, name: string): unknown =>
+  component.getFirstPropertyValue(name);
+const text = (component: ICAL.Component, name: string): string => {
+  const v = value(component, name);
+  return typeof v === "string" ? v : "";
+};
+const parameter = (property: ICAL.Property, name: string): string => {
+  const v: unknown = property.getParameter(name);
+  return typeof v === "string" ? v : "";
+};
+const address = (property: ICAL.Property): Address | null => {
+  const v: unknown = property.getFirstValue();
+  if (typeof v !== "string" || !/^mailto:/i.test(v)) return null;
+  const email = v.slice(7);
+  if (!/^[^\s@<>;,]+@[^\s@<>;,]+$/.test(email)) return null;
+  return { name: parameter(property, "cn"), address: email };
+};
+
+function calendarTime(component: ICAL.Component, name: string): CalendarTime | null {
+  const p = component.getFirstProperty(name);
+  const original: unknown = p?.toJSON()[3];
+  if (typeof original === "string") {
+    const fields = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})Z?)?$/.exec(original);
+    if (
+      !fields ||
+      Number(fields[2]) < 1 ||
+      Number(fields[2]) > 12 ||
+      Number(fields[3]) < 1 ||
+      Number(fields[3]) > ICAL.Time.daysInMonth(Number(fields[2]), Number(fields[1])) ||
+      Number(fields[4] ?? 0) > 23 ||
+      Number(fields[5] ?? 0) > 59 ||
+      Number(fields[6] ?? 0) > 59
+    )
+      throw new RangeError("Invalid calendar date");
+  }
+  const time: unknown = p?.getFirstValue();
+  if (!(time instanceof ICAL.Time)) return null;
+  const wall = time.toString();
+  if (time.isDate) return { kind: "date", value: wall };
+  const zone = p ? parameter(p, "tzid") : "";
+  if (!zone && !wall.endsWith("Z")) return { kind: "floating", value: wall };
+  const tz = zone || "UTC";
+  const stamp = Result.try(() => {
+    if (wall.endsWith("Z")) return Date.parse(wall);
+    // A VTIMEZONE carried by this calendar takes priority over the system database.
+    if (time.zone.tzid !== "floating") return time.toUnixTime() * 1000;
+    return graphTimestamp({ dateTime: wall, timeZone: tz });
+  });
+  return { kind: "zoned", value: wall, zone: tz, timestamp: Result.getOrElse(stamp, () => null) };
+}
+
+export interface ParsedInvite {
+  readonly invite: CalendarInvite;
+  readonly event: ICAL.Component;
+  readonly calendar: ICAL.Component;
+}
+
+const MAX_CALENDAR_BYTES = 1024 * 1024;
+const MAX_INVITES = 20;
+const ContentType = Schema.Struct({
+  params: Schema.Struct({ charset: Schema.optionalKey(Schema.String) }),
+});
+const SenderHeader = Schema.Struct({
+  value: Schema.Array(Schema.Struct({ address: Schema.optionalKey(Schema.String) })),
+});
+
+/** Malformed events do not hide valid siblings. Parsing never performs a response. */
+export function parseCalendar(source: string): ParsedInvite[] {
+  if (Buffer.byteLength(source, "utf8") > MAX_CALENDAR_BYTES) return [];
+  const parsed = Result.try(() => ICAL.Component.fromString(source));
+  if (parsed._tag === "Failure" || parsed.success.name !== "vcalendar") return [];
+  const calendar = parsed.success;
+  const method = text(calendar, "method").toUpperCase();
+  if (method !== "REQUEST" && method !== "CANCEL" && method !== "REPLY") return [];
+  const out: ParsedInvite[] = [];
+  for (const event of calendar.getAllSubcomponents("vevent")) {
+    if (out.length === MAX_INVITES) break;
+    const result = Result.try((): CalendarInvite | null => {
+      const uid = text(event, "uid");
+      if (!uid) return null;
+      const sequence = value(event, "sequence");
+      const recurrenceId = calendarTime(event, "recurrence-id");
+      const org = event.getFirstProperty("organizer");
+      const start = calendarTime(event, "dtstart");
+      // REQUEST must carry DTSTART. CANCEL/REPLY can be sparse.
+      if (method === "REQUEST" && !start) return null;
+      let end = calendarTime(event, "dtend");
+      const duration = value(event, "duration");
+      if (!end && duration instanceof ICAL.Duration) {
+        const time = value(event, "dtstart");
+        if (time instanceof ICAL.Time) {
+          const clone = time.clone();
+          clone.addDuration(duration);
+          const temp = new ICAL.Component("vevent");
+          temp.addPropertyWithValue("dtend", clone);
+          const startProperty = event.getFirstProperty("dtstart");
+          const tz = startProperty ? parameter(startProperty, "tzid") : "";
+          if (tz) temp.getFirstProperty("dtend")?.setParameter("tzid", tz);
+          end = calendarTime(temp, "dtend");
+        }
+      }
+      return {
+        key: JSON.stringify([
+          uid,
+          recurrenceId?.value ?? "",
+          typeof sequence === "number" ? sequence : 0,
+        ]),
+        uid,
+        sequence:
+          typeof sequence === "number" && Number.isInteger(sequence) && sequence >= 0
+            ? sequence
+            : 0,
+        method,
+        cancelled: method === "CANCEL" || text(event, "status").toUpperCase() === "CANCELLED",
+        title: text(event, "summary"),
+        start,
+        end,
+        location: text(event, "location"),
+        organizer: org ? address(org) : null,
+        attendees: event.getAllProperties("attendee").flatMap((p) => {
+          const a = address(p);
+          return a ? [{ ...a, status: parameter(p, "partstat") || "NEEDS-ACTION" }] : [];
+        }),
+        recurrence: ["rrule", "rdate", "exdate"].flatMap((name) =>
+          event.getAllProperties(name).map((p) => p.toICALString()),
+        ),
+        recurrenceId,
+      };
+    });
+    if (result._tag === "Success" && result.success)
+      out.push({ invite: result.success, event, calendar });
+  }
+  return out;
+}
+
+/** mailparser exposes inline text/calendar as an attachment too, including base64/QP. */
+export const invitesFromRaw = (raw: Uint8Array) =>
+  Effect.tryPromise({
+    try: () => simpleParser(Buffer.from(raw), { skipImageLinks: true }),
+    catch: () => new ProviderError({ message: "Cannot read calendar invitation" }),
+  }).pipe(
+    Effect.map((mail): ParsedInvite[] => {
+      const sender = Schema.decodeUnknownOption(SenderHeader)(mail.headers.get("sender"));
+      const sourceAddresses = new Set(
+        [
+          ...(mail.from?.value ?? []),
+          ...(sender._tag === "Some" ? sender.value.value : []),
+        ].flatMap((a) => (a.address ? [a.address.toLowerCase()] : [])),
+      );
+      const unique = new Map<string, ParsedInvite>();
+      const add = (source: string) => {
+        for (const p of parseCalendar(source)) {
+          if (unique.size === MAX_INVITES) break;
+          unique.set(`${p.invite.method}:${p.invite.key}`, {
+            ...p,
+            invite: {
+              ...p.invite,
+              organizerMismatch:
+                !!p.invite.organizer &&
+                !sourceAddresses.has(p.invite.organizer.address.toLowerCase()),
+            },
+          });
+        }
+      };
+      for (const attachment of mail.attachments) {
+        if (unique.size === MAX_INVITES) break;
+        if (
+          attachment.content.length > MAX_CALENDAR_BYTES ||
+          (attachment.contentType.toLowerCase() !== "text/calendar" &&
+            !/\.ics$/i.test(attachment.filename ?? ""))
+        )
+          continue;
+        const contentType = Schema.decodeUnknownOption(ContentType)(
+          attachment.headers.get("content-type"),
+        );
+        add(
+          decodeBytes(
+            attachment.content,
+            contentType._tag === "Some" ? contentType.value.params.charset : undefined,
+          ),
+        );
+      }
+      // Also handle a calendar sent as a plain text file/body.
+      if (
+        unique.size < MAX_INVITES &&
+        mail.text?.trimStart().startsWith("BEGIN:VCALENDAR") &&
+        Buffer.byteLength(mail.text, "utf8") <= MAX_CALENDAR_BYTES
+      )
+        add(mail.text.trim());
+      return [...unique.values()];
+    }),
+  );
+
+/** Minimal iTIP REPLY, retaining UID, SEQUENCE, RECURRENCE-ID and sender timezone. */
+export function inviteReply(
+  parsed: ParsedInvite,
+  me: Address,
+  response: InviteResponse,
+  messageId: string,
+): OutgoingMessage {
+  if (!inviteCanRespond(parsed.invite, me.address) || !parsed.invite.organizer)
+    throw new InvalidInput({ message: "This invitation cannot be answered by this account" });
+  const calendar = new ICAL.Component("vcalendar");
+  calendar.addPropertyWithValue("version", "2.0");
+  calendar.addPropertyWithValue("prodid", "-//OpenMail//Calendar//EN");
+  calendar.addPropertyWithValue("method", "REPLY");
+  for (const tz of parsed.calendar.getAllSubcomponents("vtimezone"))
+    calendar.addSubcomponent(ICAL.Component.fromString(tz.toString()));
+  const event = new ICAL.Component("vevent");
+  for (const name of [
+    "uid",
+    "sequence",
+    "recurrence-id",
+    "dtstart",
+    "dtend",
+    "duration",
+    "organizer",
+    "summary",
+  ]) {
+    for (const p of parsed.event.getAllProperties(name))
+      event.addProperty(ICAL.Property.fromString(p.toICALString()));
+  }
+  event.addPropertyWithValue("dtstamp", ICAL.Time.fromJSDate(new Date(), true));
+  const attendee = new ICAL.Property("attendee");
+  attendee.setValue(`mailto:${me.address}`);
+  attendee.setParameter("partstat", response.toUpperCase());
+  if (me.name) attendee.setParameter("cn", me.name);
+  event.addProperty(attendee);
+  calendar.addSubcomponent(event);
+  return {
+    to: [parsed.invite.organizer],
+    cc: [],
+    bcc: [],
+    subject: `${response}: ${parsed.invite.title}`,
+    text: `${me.address}: ${response}\n${parsed.invite.title}`,
+    attachments: [],
+    calendar: { method: "REPLY", content: calendar.toString() },
+    inReplyTo: messageId,
+    mode: "reply",
+  };
+}

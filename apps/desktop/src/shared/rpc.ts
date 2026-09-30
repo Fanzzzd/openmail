@@ -6,6 +6,9 @@
 import {
   DerivedChunk,
   IndexingProgress,
+  CalendarInvite,
+  InviteResponse,
+  ContactSync,
   AccountOrganization,
   FilterCriteria,
   FilterInput,
@@ -99,6 +102,18 @@ export class MailRpcs extends RpcGroup.make(
     success: Schema.Array(DerivedChunk),
   }),
   Rpc.make("MediaImage", { payload: { chunk: DerivedChunk }, success: Schema.String, error }),
+  Rpc.make("Invitations", {
+    payload: { messageId: Schema.String },
+    success: Schema.Array(CalendarInvite),
+    error,
+  }),
+  /** User click only. No MCP write tool maps to this endpoint. */
+  Rpc.make("RespondInvite", {
+    payload: { messageId: Schema.String, key: Schema.String, response: InviteResponse },
+    error,
+  }),
+  Rpc.make("ContactSync", { success: Schema.Array(ContactSync) }),
+  Rpc.make("RefreshContacts", { payload: { accountId: Schema.String }, error }),
 
   // Reading
   Rpc.make("Threads", { payload: { query: ThreadQuery }, success: Schema.Array(ThreadSummary) }),

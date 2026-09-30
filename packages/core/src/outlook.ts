@@ -34,6 +34,7 @@ import {
 } from "./services.js";
 
 import { graphSearch, matchesSearch, parseSearchQuery, searchMailboxLabel } from "./search.js";
+import { makeOutlookFeatures } from "./outlook-features.js";
 import { makeOutlookSettings } from "./outlook-settings.js";
 
 // `consumers` scopes sign-in to personal Microsoft accounts (outlook.com,
@@ -52,6 +53,9 @@ const SCOPES = [
   "Mail.ReadWrite",
   "Mail.Send",
   "MailboxSettings.ReadWrite",
+  "Calendars.ReadWrite",
+  "Contacts.Read",
+  "People.Read",
 ];
 // Immutable ids survive moves between folders, so a message archived here
 // keeps its local row and any queued op still finds it.
@@ -106,6 +110,7 @@ const GraphAddress = Schema.Struct({
 type GraphAddress = typeof GraphAddress.Type;
 
 const GraphMessage = Schema.Struct({
+  "@odata.type": Schema.optionalKey(Schema.String),
   id: Schema.String,
   conversationId: Schema.String,
   subject: Schema.optionalKey(Schema.NullOr(Schema.String)),
@@ -919,6 +924,7 @@ export const makeOutlook: Effect.Effect<
 
   return {
     ...settings,
+    ...makeOutlookFeatures(get, write),
     search,
     changeLabel,
     connect,
@@ -1027,6 +1033,7 @@ export function parseGraphMessage(
     snippet: raw.bodyPreview ?? "",
     bodyText: text,
     bodyHtml: html,
+    ...(/eventMessage/i.test(raw["@odata.type"] ?? "") ? { hasCalendar: true } : {}),
     labels,
     attachments,
     isUnread,

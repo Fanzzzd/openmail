@@ -158,3 +158,9 @@ export const indexingProgressAtom = MailClient.query("IndexingProgress", undefin
 }).pipe(Atom.makeRefreshOnSignal(every10s));
 export const mediaImageAtom = (chunk: import("../../../shared/api").DerivedChunk) =>
   MailClient.query("MediaImage", { chunk }, { timeToLive: Duration.minutes(2) });
+export const invitationsAtom = (messageId: string) =>
+  MailClient.query("Invitations", { messageId }, { timeToLive: Duration.minutes(10) });
+export const contactSyncAtom = MailClient.query("ContactSync", undefined, {
+  reactivityKeys: [Keys.contacts],
+  ...always,
+});

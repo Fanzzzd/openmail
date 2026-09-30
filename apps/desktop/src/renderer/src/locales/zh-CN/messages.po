@@ -52,6 +52,14 @@ msgstr "{count, plural, other {已拦截 # 个追踪器}}"
 msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
 msgstr "{count, plural, other {已保存 # 个附件}}"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "{count} cached contacts"
+msgstr "已缓存 {count} 个联系人"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{count} occurrences"
+msgstr "重复 {count} 次"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
 msgstr "{count} 未读"
@@ -92,6 +100,10 @@ msgstr "{pixels, plural, other {# 个追踪像素}}"
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, other {# 秒}}"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{text} → {recipient}"
+msgstr "{text} → {recipient}"
+
 #: src/renderer/src/components/imapPresetText.ts
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
@@ -104,6 +116,14 @@ msgstr "域名包括它的子域名。对这些发件人，已知的追踪器照
 #: src/renderer/src/errors.ts
 msgid "A label or folder needs a valid name"
 msgstr "请填写有效名称"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accept"
+msgstr "接受"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accepted"
+msgstr "已接受"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -250,6 +270,10 @@ msgstr "全部账户"
 msgid "All accounts in this space"
 msgstr "这个空间的所有账户"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "All day"
+msgstr "全天"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/view.ts
 msgid "All Mail"
@@ -310,6 +334,10 @@ msgstr "附件命中"
 msgid "Attachments of the original message are not forwarded"
 msgstr "原邮件的附件不会一起转发"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Attendees"
+msgstr "参与者"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Authorization code"
 msgstr "授权码"
@@ -337,6 +365,18 @@ msgstr "加载前已拦截："
 #: src/renderer/src/components/Composer.tsx
 msgid "Body"
 msgstr "正文"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Calendar invitation"
+msgstr "日历邀请"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar response was not sent"
+msgstr "日历响应未发送"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar responses require a user action"
+msgstr "日历响应须由用户操作"
 
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
@@ -382,6 +422,10 @@ msgstr "暂时连不上邮件服务器：{0}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Cancel"
 msgstr "取消"
+
+#: src/renderer/src/errors.ts
+msgid "Cannot build calendar response"
+msgstr "无法生成日历响应"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
@@ -469,6 +513,10 @@ msgstr "请确认带查询条件的删除过滤器"
 msgid "Confirm removal"
 msgstr "确认移除"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Contact refresh failed. Cached suggestions remain available."
+msgstr "联系人刷新失败，仍可使用缓存补全。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "仅联系人"
@@ -492,6 +540,10 @@ msgstr "已复制"
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "复制"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Could not load the calendar invitation."
+msgstr "无法加载日历邀请。"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -570,6 +622,14 @@ msgstr "深色背景"
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
 msgstr "日期"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Decline"
+msgstr "拒绝"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Declined"
+msgstr "已拒绝"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Default"
@@ -654,6 +714,22 @@ msgstr "结束"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} days"
+msgstr "每 {interval} 天"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} months"
+msgstr "每 {interval} 个月"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} weeks"
+msgstr "每 {interval} 周"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} years"
+msgstr "每 {interval} 年"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
@@ -864,6 +940,10 @@ msgstr "加载中…"
 msgid "Local preview: {count} messages"
 msgstr "本地预览：{count} 封邮件"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location"
+msgstr "地点"
+
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
@@ -933,6 +1013,14 @@ msgstr "跟随外观"
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Matched image region"
 msgstr "命中的图片区域"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting cancelled"
+msgstr "会议已取消"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting response"
+msgstr "会议响应"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
@@ -1084,6 +1172,10 @@ msgstr "还没有模板。可以用 {token} 代入第一个收件人的名字。
 msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
 msgstr "还没有模板。写信时按 ⌘/，选「把这封邮件存为模板」。"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "No time zone supplied; shown in your local time."
+msgstr "邀请未指定时区，按本地时间显示。"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "收件箱没有未读"
@@ -1116,6 +1208,10 @@ msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMT
 msgid "On-device indexing"
 msgstr "本机索引"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "One occurrence of a recurring meeting"
+msgstr "重复会议中的一次"
+
 #: src/renderer/src/errors.ts
 msgid "Only inbox messages can be snoozed"
 msgstr "只能为收件箱邮件设置提醒"
@@ -1132,6 +1228,10 @@ msgstr "在新窗口中打开"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "打开空间"
+
+#: src/renderer/src/errors.ts
+msgid "Open this invitation in your calendar to add it before responding"
+msgstr "请先在日历中添加此邀请，再响应"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1152,6 +1252,10 @@ msgstr "整理"
 #: src/renderer/src/components/Settings.tsx
 msgid "Organize directly"
 msgstr "直接整理"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Organizer"
+msgstr "组织者"
 
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Original message"
@@ -1238,6 +1342,14 @@ msgstr "只读"
 msgid "Reading"
 msgstr "阅读"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Recurring meeting"
+msgstr "重复会议"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Refresh contacts"
+msgstr "刷新联系人"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Reject"
 msgstr "拒绝"
@@ -1299,6 +1411,22 @@ msgstr "已去掉星标"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "重命名"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats daily"
+msgstr "每天重复"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats monthly"
+msgstr "每月重复"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats weekly"
+msgstr "每周重复"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats yearly"
+msgstr "每年重复"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Replies and forwards"
@@ -1476,6 +1604,14 @@ msgstr "已发送并归档"
 msgid "Server"
 msgstr "服务器"
 
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts"
+msgstr "服务器联系人"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts refresh every six hours while the app runs. Cached contacts and local correspondents appear in recipient suggestions."
+msgstr "应用运行时每 6 小时刷新服务器联系人，缓存与本地往来地址一起用于收件人补全。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Server filters"
 msgstr "服务器过滤器"
@@ -1517,6 +1653,8 @@ msgstr "只看未读"
 msgid "Show original"
 msgstr "显示原始邮件"
 
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -1530,6 +1668,15 @@ msgstr "重新登录以启用过滤器"
 #: src/renderer/src/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
 msgstr "重新登录以启用过滤器和自动回复。"
+
+#: src/renderer/src/errors.ts
+msgid "Sign in again to respond to calendar invitations."
+msgstr "请重新登录以响应日历邀请。"
+
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to sync server contacts."
+msgstr "请重新登录以同步服务器联系人。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Sign In with Browser"
@@ -1678,6 +1825,10 @@ msgstr "模板"
 msgid "Templates…"
 msgstr "模板…"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Tentative"
+msgstr "暂定"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Text size"
 msgstr "文字大小"
@@ -1695,6 +1846,10 @@ msgid "The button below opens the {name} sign-in page. openmail only reads your 
 msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮件，令牌存在系统钥匙串里。"
 
 #: src/renderer/src/errors.ts
+msgid "The calendar organizer does not match this invitation"
+msgstr "日历中的组织者与邀请不一致"
+
+#: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "结束时间须晚于开始时间"
 
@@ -1705,6 +1860,10 @@ msgstr "过滤器会处理服务器上的新邮件。"
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "The organizer differs from the message sender. Check the response recipient before replying."
+msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 
 #: src/renderer/src/components/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
@@ -1731,6 +1890,18 @@ msgstr "这些不是邮件地址：{list}"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "此过滤器会删除符合服务器查询的新邮件，预览最多显示 200 封。"
+
+#: src/renderer/src/errors.ts
+msgid "This invitation cannot be answered by this account"
+msgstr "此账户无法响应该邀请"
+
+#: src/renderer/src/errors.ts
+msgid "This invitation has a newer update"
+msgstr "此邀请已有更新版本"
+
+#: src/renderer/src/errors.ts
+msgid "This meeting has been cancelled"
+msgstr "此会议已取消"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
@@ -1793,6 +1964,10 @@ msgstr "未知"
 #: src/renderer/src/errors.ts
 msgid "Unknown label or folder"
 msgstr "找不到标签或文件夹"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Unknown organizer time zone; showing the original time."
+msgstr "无法识别组织者时区，显示原始时间。"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Unread"

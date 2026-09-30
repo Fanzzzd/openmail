@@ -18,3 +18,5 @@ export * from "./search.js";
 export { htmlToText } from "./mime.js";
 
 export * from "./media.js";
+export * from "./calendar.js";
+export * from "./contacts.js";

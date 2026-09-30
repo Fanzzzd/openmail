@@ -57,6 +57,7 @@ import {
   Store,
   type StoredDraft,
 } from "./services.js";
+import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { folderTarget } from "./store.js";
 
@@ -672,6 +673,8 @@ export const MailboxLive = (
         return imported;
       });
 
+      const features = makeFeatureMailbox(store, providers, changed, perform);
+
       // Reading from the provider
 
       const source = Effect.fnUntraced(function* (id: string) {
@@ -903,7 +906,13 @@ export const MailboxLive = (
           : yield* store.listAccounts;
         const results: SyncResult[] = [];
         // One failing account does not stop the rest.
-        for (const account of accounts) results.push(yield* pullAccount(account));
+        for (const account of accounts) {
+          results.push(yield* pullAccount(account));
+          if (!account.needsReauth)
+            yield* features
+              .refreshContacts(account.id, false)
+              .pipe(Effect.catch(() => Effect.void));
+        }
         const next: SyncState = {
           running: false,
           lastFinishedAt: Date.now(),
@@ -958,6 +967,11 @@ export const MailboxLive = (
           action: "connect",
           detail: {},
         });
+        // New grants must not wait for the optional-feature retry interval.
+        yield* FiberSet.run(
+          background,
+          features.refreshContacts(account.id).pipe(Effect.catch(() => Effect.void)),
+        );
         yield* changed;
         yield* Effect.forkDetach(sync());
         return yield* store.getAccount(account.id).pipe(Effect.orDie);
@@ -991,6 +1005,7 @@ export const MailboxLive = (
 
       return Mailbox.of({
         ...organization,
+        ...features,
         changeLabel: (accountId, change) =>
           organization
             .changeLabel(accountId, change)

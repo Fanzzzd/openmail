@@ -1,4 +1,5 @@
 import { assert, it } from "@effect/vitest";
+import { parseCalendar } from "./invites.js";
 
 import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
@@ -954,6 +955,8 @@ it.effect("personal Outlook consent adds MailboxSettings.ReadWrite and stays on 
         Effect.sync(() => {
           assert.ok(req.scopes.includes("MailboxSettings.ReadWrite"));
           assert.ok(req.scopes.includes("Mail.ReadWrite"));
+          for (const scope of ["Calendars.ReadWrite", "Contacts.Read", "People.Read"])
+            assert.ok(req.scopes.includes(scope));
           assert.ok(req.authUrl.includes("/consumers/"));
           return {
             accessToken: "access-token",
@@ -1095,5 +1098,156 @@ it.effect(
       ).pipe(Effect.result);
       assert.strictEqual(result._tag, "Failure");
       assert.strictEqual(rawCalls, 0);
+    }),
+);
+
+it.effect(
+  "Graph contacts and people pagination merge saved names and reject external next links",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/contacts": (url) =>
+          url.searchParams.has("$skiptoken")
+            ? {
+                json: {
+                  value: [
+                    { displayName: "Second", emailAddresses: [{ address: "second@example.com" }] },
+                  ],
+                },
+              }
+            : {
+                json: {
+                  value: [
+                    { displayName: "Saved", emailAddresses: [{ address: "ONE@example.com" }] },
+                  ],
+                  "@odata.nextLink": `${GRAPH}/me/contacts?$skiptoken=second`,
+                },
+              },
+        "GET /me/people": (url) =>
+          url.searchParams.has("$skiptoken")
+            ? { json: { value: [{ scoredEmailAddresses: [{ address: "last@example.com" }] }] } }
+            : {
+                json: {
+                  value: [
+                    {
+                      displayName: "Recent",
+                      scoredEmailAddresses: [{ address: "one@example.com" }],
+                    },
+                  ],
+                  "@odata.nextLink": `${GRAPH}/me/people?$skiptoken=last`,
+                },
+              },
+      });
+      assert.deepStrictEqual(yield* run(http, (a) => a.contacts(account)), [
+        { name: "Saved", address: "one@example.com" },
+        { name: "Second", address: "second@example.com" },
+        { name: "", address: "last@example.com" },
+      ]);
+      assert.strictEqual(http.calls.length, 4);
+      const bad = fakeHttp({
+        "GET /me/contacts": { json: { value: [], "@odata.nextLink": "https://example.com/steal" } },
+      });
+      const result = yield* run(bad, (a) => a.contacts(account)).pipe(Effect.result);
+      assert.strictEqual(result._tag, "Failure");
+      assert.strictEqual(bad.calls.length, 1);
+    }),
+);
+
+it.effect("Graph responds through accept/tentativelyAccept/decline on the related occurrence", () =>
+  Effect.gen(function* () {
+    const [parsed] = parseCalendar(
+      "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:uid\r\nDTSTART:20261001T090000Z\r\nRECURRENCE-ID:20261001T090000Z\r\nORGANIZER:mailto:alice@example.com\r\nATTENDEE:mailto:me@outlook.com\r\nEND:VEVENT\r\nEND:VCALENDAR",
+    );
+    assert.ok(parsed);
+    const http = fakeHttp({
+      "GET /me/messages/m1": (url) => {
+        assert.strictEqual(url.searchParams.get("$expand"), "microsoft.graph.eventMessage/event");
+        return {
+          json: {
+            event: {
+              id: "occurrence",
+              organizer: { emailAddress: { address: "alice@example.com" } },
+            },
+          },
+        };
+      },
+      "POST /me/events/occurrence/accept": { status: 202 },
+      "POST /me/events/occurrence/tentativelyAccept": { status: 202 },
+      "POST /me/events/occurrence/decline": { status: 202 },
+    });
+    for (const response of ["accepted", "tentative", "declined"] as const)
+      yield* run(http, (a) => a.respondInvite(account, "m1", parsed.invite, response));
+    const writes = http.calls.filter((c) => c.method === "POST");
+    assert.deepStrictEqual(
+      writes.map((c) => c.url.pathname),
+      [
+        "/v1.0/me/events/occurrence/accept",
+        "/v1.0/me/events/occurrence/tentativelyAccept",
+        "/v1.0/me/events/occurrence/decline",
+      ],
+    );
+    for (const c of writes) assert.deepStrictEqual(c.body, { sendResponse: true });
+  }),
+);
+
+it.effect("Graph missing contacts/calendar grants are typed independently from mail auth", () =>
+  Effect.gen(function* () {
+    const [parsed] = parseCalendar(
+      "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:uid\r\nDTSTART:20261001T090000Z\r\nEND:VEVENT\r\nEND:VCALENDAR",
+    );
+    assert.ok(parsed);
+    const forbidden = {
+      status: 403,
+      json: { error: { code: "ErrorAccessDenied", message: "Access is denied" } },
+    };
+    const http = fakeHttp({ "GET /me/contacts": forbidden, "GET /me/messages/m1": forbidden });
+    for (const feature of ["contacts", "calendar"] as const) {
+      const result = yield* run(http, (a) =>
+        feature === "contacts"
+          ? a.contacts(account).pipe(Effect.asVoid)
+          : a.respondInvite(account, "m1", parsed.invite, "accepted"),
+      ).pipe(Effect.result);
+      assert.strictEqual(result._tag, "Failure");
+      if (result._tag === "Failure") {
+        assert.strictEqual(result.failure._tag, "FeatureScopeMissing");
+        if (result.failure._tag === "FeatureScopeMissing")
+          assert.strictEqual(result.failure.feature, feature);
+      }
+    }
+    assert.ok(!http.calls.some((c) => c.method === "POST"));
+  }),
+);
+
+it.effect(
+  "Graph resolves a plain .ics by escaped UID, and does not respond to a cancelled linked event",
+  () =>
+    Effect.gen(function* () {
+      const [parsed] = parseCalendar(
+        "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:uid'quoted\r\nDTSTART:20261001T090000Z\r\nORGANIZER:mailto:alice@example.com\r\nATTENDEE:mailto:me@outlook.com\r\nEND:VEVENT\r\nEND:VCALENDAR",
+      );
+      assert.ok(parsed);
+      const event = { id: "e1", organizer: { emailAddress: { address: "alice@example.com" } } };
+      const http = fakeHttp({
+        "GET /me/messages/m1": {
+          json: { event: { ...event, id: "unrelated", iCalUId: "different-uid" } },
+        },
+        "GET /me/events": (url) => {
+          assert.strictEqual(url.searchParams.get("$filter"), "iCalUId eq 'uid''quoted'");
+          return { json: { value: [event] } };
+        },
+        "POST /me/events/e1/decline": { status: 202 },
+      });
+      yield* run(http, (a) => a.respondInvite(account, "m1", parsed.invite, "declined"));
+      assert.ok(http.calls.some((c) => c.url.pathname === "/v1.0/me/events/e1/decline"));
+      const cancelled = fakeHttp({
+        "GET /me/messages/m1": { json: { event: { ...event, isCancelled: true } } },
+      });
+      assert.strictEqual(
+        (yield* run(cancelled, (a) =>
+          a.respondInvite(account, "m1", parsed.invite, "accepted"),
+        ).pipe(Effect.result))._tag,
+        "Failure",
+      );
+      assert.ok(!cancelled.calls.some((c) => c.method === "POST"));
     }),
 );

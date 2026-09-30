@@ -400,6 +400,11 @@ export function toIncoming(
     snippet: text.replace(/\s+/g, " ").trim().slice(0, 200),
     bodyText: text,
     bodyHtml: html,
+    ...(parsed.attachments.some(
+      (a) => a.contentType === "text/calendar" || /\.ics$/i.test(a.filename ?? ""),
+    )
+      ? { hasCalendar: true }
+      : {}),
     labels,
     attachments:
       meta.attachments ??
@@ -1251,6 +1256,9 @@ export const makeImapWith = (
       vacation: () => unsupported,
       setVacation: () => unsupported,
       sendAs: () => Effect.succeed([]),
+      contacts: () => Effect.succeed([]),
+      respondInvite: () =>
+        Effect.fail(new PermanentError({ message: "IMAP invitations use the send pipeline" })),
     };
   });
 

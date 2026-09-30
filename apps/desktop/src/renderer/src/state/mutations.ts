@@ -110,3 +110,6 @@ export const createFilterAtom = MailClient.mutation("CreateFilter");
 export const deleteFilterAtom = MailClient.mutation("DeleteFilter");
 export const setVacationAtom = MailClient.mutation("SetVacation");
 export const syncSendAsAtom = MailClient.mutation("SyncSendAs");
+
+export const respondInviteAtom = MailClient.mutation("RespondInvite");
+export const refreshContactsAtom = MailClient.mutation("RefreshContacts");

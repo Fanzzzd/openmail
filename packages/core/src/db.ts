@@ -284,6 +284,27 @@ export const MIGRATIONS: readonly string[] = [
       WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
         OR lower(json_extract(value,'$.mimeType'))='application/pdf');
   `,
+  `
+  ALTER TABLE messages ADD COLUMN calendar_hint INTEGER;
+  -- The reader must not fetch raw MIME for every message from an older cache.
+  UPDATE messages SET calendar_hint = EXISTS (
+    SELECT 1 FROM json_each(messages.attachments_json) a
+    WHERE lower(trim(json_extract(a.value, '$.mimeType'))) = 'text/calendar'
+      OR lower(json_extract(a.value, '$.mimeType')) LIKE 'text/calendar;%'
+      OR lower(json_extract(a.value, '$.filename')) LIKE '%.ics'
+  );
+  -- Migration 9: snapshots are replaced only after every provider page succeeds.
+  CREATE TABLE server_contacts (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, name TEXT NOT NULL,
+    PRIMARY KEY(account_id, address)
+  );
+  CREATE TABLE contact_sync (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    refreshed_at INTEGER, attempted_at INTEGER NOT NULL,
+    error TEXT, scope_missing INTEGER NOT NULL DEFAULT 0
+  );
+  `,
 ];
 
 /**

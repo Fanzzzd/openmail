@@ -354,6 +354,8 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         SELECT lower(m.from_addr), m.from_name, m.date, 1.0 FROM messages m
         WHERE NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
           AND NOT ${hasLabel("DRAFT")}
+        UNION ALL
+        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts GROUP BY address
       ),
       matched AS (
         SELECT * FROM hits
@@ -369,8 +371,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         HAVING MAX(address LIKE ${like} ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ${like} ESCAPE '\\')
       )
       SELECT s.address,
-        (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
-          ORDER BY h.date DESC LIMIT 1) AS name
+        COALESCE((SELECT c.name FROM server_contacts c WHERE c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
+          (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
+          ORDER BY h.date DESC LIMIT 1)) AS name
       FROM scored s ORDER BY s.score DESC, s.address LIMIT ${limit}`);
     return rows.map((r): Address => ({ name: r.name ?? "", address: r.address }));
   });

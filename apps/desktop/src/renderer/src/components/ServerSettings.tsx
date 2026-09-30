@@ -26,6 +26,7 @@ import { MailClient } from "../rpc";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
 import { Checkbox } from "./ui/Checkbox";
 import { Select } from "./ui/Select";
+import { ContactSettings } from "./ContactSettings";
 import { formButton, formInput } from "./OrganizationSettings";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
@@ -48,6 +49,7 @@ export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
         options={available.map((a) => ({ value: a.id, label: a.email }))}
       />
       <AccountServerSettings key={id} account={account} />
+      <ContactSettings key={`contacts:${id}`} account={account} />
     </section>
   );
 }

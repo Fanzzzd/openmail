@@ -31,6 +31,7 @@ import type {
   ThreadSummary,
 } from "./domain.js";
 import type {
+  FeatureScopeMissing,
   AuthError,
   ClientNotConfigured,
   InvalidInput,
@@ -39,6 +40,8 @@ import type {
   ProviderError,
   SettingsScopeMissing,
 } from "./errors.js";
+import type { CalendarInvite, InviteResponse } from "./calendar.js";
+import type { ContactSync } from "./contacts.js";
 import type { ClientConfig, ConnectInput } from "./services.js";
 
 import type {
@@ -105,7 +108,8 @@ export type PerformError =
   | AuthError
   | PermanentError
   | ProviderError
-  | SettingsScopeMissing;
+  | SettingsScopeMissing
+  | FeatureScopeMissing;
 
 export class Mailbox extends Context.Service<
   Mailbox,
@@ -121,6 +125,17 @@ export class Mailbox extends Context.Service<
       microsoftConfigured: boolean;
     }>;
     setClient(patch: ClientConfig): Effect.Effect<void>;
+
+    // Calendar invites, fetched from the original MIME including inline parts and .ics files.
+    invitations(messageId: string): Effect.Effect<CalendarInvite[], PerformError>;
+    respondInvite(
+      messageId: string,
+      key: string,
+      response: InviteResponse,
+      actor: Actor,
+    ): Effect.Effect<void, PerformError>;
+    readonly contactSync: Effect.Effect<ContactSync[]>;
+    refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 
     // Reading
     threads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
@@ -216,8 +231,8 @@ export class Mailbox extends Context.Service<
     // Recipients
     /**
      * Addresses for the To, Cc and Bcc fields, from local mail history: people
-     * written to and heard from, ranked by frequency and recency. Provider
-     * contacts (Google, Outlook) are a later source behind this call.
+     * written to and heard from, ranked by frequency and recency, merged with
+     * cached Google and Outlook contacts. Suggestions never require network.
      * `exclude` is the address the message is written from; the person's
      * other accounts are suggested like anyone else.
      */

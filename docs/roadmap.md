@@ -8,14 +8,14 @@ Mimestream 功能清单来自 mimestream.com 的用户指南、FAQ、Trust Cente
 
 scope 按切片添加。已有账户继续收发邮件，缺少新增设置权限时，只在对应设置页提示重新登录。
 
-| 能力                   | Gmail                                     | Outlook (Graph)                |
-| ---------------------- | ----------------------------------------- | ------------------------------ |
-| 读（现状）             | `gmail.readonly`                          | `Mail.Read`                    |
-| 归档、标签、已读       | `gmail.modify`                            | `Mail.ReadWrite`               |
-| 发送                   | `gmail.send`（`gmail.modify` 已含草稿）   | `Mail.Send`                    |
-| 过滤器、自动回复、别名 | `gmail.settings.basic`                    | `MailboxSettings.ReadWrite`    |
-| 联系人补全、头像       | `contacts.readonly`、`directory.readonly` | `Contacts.Read`、`People.Read` |
-| 日历邀请               | `calendar.events`                         | `Calendars.ReadWrite`          |
+| 能力                   | Gmail                                          | Outlook (Graph)                |
+| ---------------------- | ---------------------------------------------- | ------------------------------ |
+| 读（现状）             | `gmail.readonly`                               | `Mail.Read`                    |
+| 归档、标签、已读       | `gmail.modify`                                 | `Mail.ReadWrite`               |
+| 发送                   | `gmail.send`（`gmail.modify` 已含草稿）        | `Mail.Send`                    |
+| 过滤器、自动回复、别名 | `gmail.settings.basic`                         | `MailboxSettings.ReadWrite`    |
+| 联系人补全、头像       | `contacts.readonly`、`contacts.other.readonly` | `Contacts.Read`、`People.Read` |
+| 日历邀请               | `calendar.events`                              | `Calendars.ReadWrite`          |
 
 `gmail.modify` 属于 Google 的 restricted scope。自用的未验证应用在 In production 状态下最多 100 个用户，登录时显示「未经验证」警告，不影响使用。
 
@@ -29,11 +29,11 @@ scope 按切片添加。已有账户继续收发邮件，缺少新增设置权�
 2. 阅读（已完成，待真实账户验证）：标为已读的时机、原始邮件、打印和 PDF、单独窗口、单封背景和字号、追踪器拦截、附件保存和打开、按发件人允许远程图片、会话归组和顺序。
 3. 搜索与整理（已完成，待真实账户验证）：服务器端搜索和本地结果合并、搜索 token、标签和文件夹管理、前往文件夹、稍后提醒、过滤器、自动回复、Gmail 发件别名和签名同步、按账户显示 Gmail 分类。已加 `gmail.settings.basic`、`MailboxSettings.ReadWrite`。
 4. 系统集成：通知、菜单栏、Dock 未读数、`mailto:`、多窗口、深链接、三套快捷键、设置页。
-5. 日历邀请和联系人：邀请横幅、接受拒绝、服务器联系人补全。要加日历和联系人 scope。
+5. 日历邀请和联系人（已完成，待真实账户验证）：邀请横幅、接受暂定拒绝、服务器联系人补全。已加日历和联系人 scope。
 6. 发布：打包、签名公证、自动更新、更早邮件回填、按标签的缓存窗口。签名需要 Apple Developer 账号。
 7. 端侧媒体理解与语义搜索：图片、PDF、音视频附件的内容可搜索，全部在本机算，不上传。设计与实测见下面「切片 7」。
 
-第 3 步已加入设置 scope。第 5 步再加入日历和联系人 scope。重新登录只在使用新增能力时需要。
+第 3 步已加入设置 scope，第 5 步已加入日历和联系人 scope。重新登录只在使用新增能力时需要。
 
 ### 切片 1 撰写：做了什么，留了什么
 
@@ -55,7 +55,7 @@ scope 按切片添加。已有账户继续收发邮件，缺少新增设置权�
 留到后面：
 
 - Gmail 签名同步已在第 3 步接上 `signatures.source`。
-- 服务器联系人补全（Google、Outlook、目录），放在第 5 步。接在 `Mailbox.suggestContacts` 后面。
+- Google、Outlook 服务器联系人补全已在第 5 步接入 `Mailbox.suggestContacts`；Workspace 目录留后续。
 - Markdown 预览。现在只有开关，发出去才看到效果。
 - `@` 提及加收件人。
 - 别的客户端写的 HTML 草稿在 openmail 里按纯文本编辑，保存后格式会丢。
@@ -304,3 +304,23 @@ core 里能直接在手机上跑的：`mime.ts`、`types.ts`、`store.ts`（纯 
 - 真实账户验证：旧授权仍能同步和收发；设置页重新登录后可用；搜索冷缓存邮件及文件夹范围；三家空文件夹和嵌套文件夹创建、重命名和删除；Gmail 标签颜色；关闭 app 后到期提醒、新回复和离线重试；过滤器新邮件命中；自动回复的时区和联系人限制；已验证别名发信、草稿恢复、签名切换；分类开关和组合视图。
 
 协议依据：[Gmail filters](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters)、[Graph search](https://learn.microsoft.com/en-us/graph/search-query-parameter)、[Graph automatic replies](https://learn.microsoft.com/en-us/graph/api/resources/automaticrepliessetting?view=graph-rest-1.0)。
+
+### 切片 5 日历与联系人：做了什么，留了什么
+
+做了：
+
+- 日历：core 用 ical.js 解析原始 MIME 中的 `text/calendar` 和 `.ics`，支持 REQUEST、CANCEL、REPLY、折行和转义、全天、浮动时间、IANA / Windows 时区、邮件自带 VTIMEZONE、重复规则和 RECURRENCE-ID。Reader 横幅列出标题、本地时间与组织者时区、地点、组织者、参与者和重复摘要；未知时区显示原始时间，全天结束日按 DTEND 排他规则换算。
+- 响应：接受、暂定、拒绝都只由用户点击触发。Gmail 按 iCalUID 查主日历，用 `attendeesOmitted` 只 PATCH 本人状态，`sendUpdates=all`。重复实例按 originalStartTime 定位，移动后的开始时间不会选错实例。Outlook 从 eventMessage 取关联事件，再 POST accept / tentativelyAccept / decline，`sendResponse=true`；普通 `.ics` 附件按 iCalUId 查事件。不存在、取消、组织者不符或无法唯一定位时不写。响应前重新取 MIME，账户不是受邀者、同一缓存会话已有更新或取消时拒绝响应。
+- IMAP：走现有 `perform(send)` 管线发送 iTIP REPLY 邮件。保留 UID、SEQUENCE、RECURRENCE-ID、时间和 VTIMEZONE，通过 MailComposer `icalEvent` 生成 `text/calendar; method=REPLY` alternative part，只带匹配到的本人 attendee 和 PARTSTAT，收件人只有组织者。IMAP 按已配置账户、登录地址和 send-as 地址匹配受邀者，回信使用原始 attendee 地址；云端账户由 provider 判断别名归属。IMAP 组织者与 MIME From / Sender 不匹配时警示，响应按钮显示收件地址。邮件发送和日历响应都记审计。读取、同步、MCP 不响应邀请，没有新增 MCP 写工具。
+- 联系人：Gmail 分页读取 People connections 和 otherContacts，Outlook 分页读取 `/me/contacts` 和 `/me/people`。地址小写去重，优先保存的联系人姓名，与本地往来地址一起排序；To、Cc、Bcc 沿用原补全入口。隐藏地址、发件地址排除和数量限制同时适用于两种来源。补全只查本地，离线可用。
+- 刷新：桌面邮件同步检查联系人刷新时间，成功后 6 小时更新，失败后 1 小时再试；手动刷新和重新授权立即尝试。必需来源的全部页面成功才在事务内替换缓存，失败保留旧缓存。缺少 Google otherContacts 的可选权限时仍缓存已保存联系人；服务器联系人只加 0.2 的常量权重，同一地址在多个账户中不累加。登录完成后在后台刷新联系人，不等分页结束。在「设置 > 服务器」增加联系人数量、刷新时间、手动刷新和缺权限重新登录入口。账户删除会级联删除缓存。
+- 权限：OAuth 新增 `calendar.events`、`contacts.readonly`、`contacts.other.readonly`、`Calendars.ReadWrite`、`Contacts.Read`、`People.Read`。缺权限返回带 calendar / contacts 标记的 `FeatureScopeMissing`，只影响该能力，不设置账户 `needsReauth`。官方 API 和 scope 设置见 [setup-google.md](setup-google.md) 与 [setup-microsoft.md](setup-microsoft.md)。
+- 迁移：追加第 8 条占位以给并行切片 7 留编号，第 9 条新增 server_contacts、contact_sync 和 calendar_hint。合并时需合入切片 7 的第 8 条迁移。已有迁移未改，消息仍经 upsertMessage，FTS rowid 保持稳定。
+- 验证：假 HTTP 覆盖两家分页、scope 错误和响应路径；临时数据库覆盖旧版本升级、FTS、缓存重开、去重隐藏和级联删除。另测 MIME 编码、时区、重复实例、三种 iTIP 响应、禁止自动响应和旧邀请保护。完整检查通过，226 项测试通过，lint 仅原有两条警告。隔离 Electron 假 RPC 验证邀请、响应状态、缺权限提示、取消与回复横幅、联系人设置小节，并验证旧普通邮件不请求邀请原文、云端别名可响应、IMAP 警示与响应收件地址，渲染器无错误。
+
+范围与待验证：
+
+- 无冲突检测，不建独立日历视图，不自动创建找不到的事件。Gmail 目前只查 primary 日历；Outlook 普通 `.ics` 的重复实例若无关联 eventMessage，需在日历中处理，避免响应整个系列。
+- 邀请 MIME 在展开邮件时从服务器读取，短期缓存在 Reader 查询中；联系人缓存持久化。离线未缓存的邀请横幅读取会失败。新版同步记录 calendar_hint，普通邮件不额外下载原始 MIME；第 9 条迁移按附件信息回填旧缓存标记；旧邮件没有日历证据时不请求原始 MIME。每个 ICS 上限 1 MiB，每封邮件最多解析 20 个邀请，并按 MIME 声明的字符集解码。
+- 重复摘要显示频率、间隔和次数，展开可看 RRULE、RDATE、EXDATE 原文。只阻止同一已缓存会话中的更新或取消，跨会话或未同步的 IMAP 取消无法预知。未做 Workspace 目录、macOS 通讯录、头像和联系人编辑。
+- 真实账户手动验证：旧授权仍可同步、收发和本地补全；新增能力缺权限的提示及重新登录；Gmail / Outlook 的接受、暂定、拒绝是否通知组织者，重复实例是否只改该次；IMAP 组织者是否识别 REPLY；跨夏令时、全天、未知时区和取消横幅；大量联系人分页、删除后的缓存刷新及隐藏地址恢复。仅使用用户自己的 OAuth client，Outlook 仍限 consumers 租户。

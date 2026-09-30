@@ -135,6 +135,8 @@ export const Message = Schema.Struct({
   cc: Schema.Array(Address),
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  /** Calendar MIME part or provider meeting message; absent on older cached mail. */
+  hasCalendar: Schema.optionalKey(Schema.Boolean),
   attachments: Schema.Array(Attachment),
   /**
    * The local draft this message is the provider's copy of. It outlives the
@@ -157,6 +159,8 @@ export const IncomingMessage = Schema.Struct({
   snippet: Schema.String,
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  /** Calendar MIME part or provider meeting message; absent on older cached mail. */
+  hasCalendar: Schema.optionalKey(Schema.Boolean),
   labels: Schema.Array(Schema.String),
   attachments: Schema.Array(Attachment),
   isUnread: Schema.Boolean,
@@ -275,6 +279,10 @@ export const OutgoingMessage = Schema.Struct({
   text: Schema.String,
   html: Schema.optionalKey(Schema.String),
   attachments: Schema.Array(OutgoingAttachment),
+  /** An iTIP reply, rendered as a calendar alternative by the MIME send pipeline. */
+  calendar: Schema.optionalKey(
+    Schema.Struct({ method: Schema.Literal("REPLY"), content: Schema.String }),
+  ),
   /** Local message id this replies to or forwards; sets threading headers. */
   inReplyTo: Schema.optionalKey(Schema.String),
   mode: Schema.optionalKey(ComposeMode),

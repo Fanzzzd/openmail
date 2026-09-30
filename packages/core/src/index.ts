@@ -41,3 +41,5 @@ export * from "./search.js";
 
 export * from "./media.js";
 export { Indexer, makeIndexer } from "./indexer.js";
+export * from "./calendar.js";
+export * from "./contacts.js";

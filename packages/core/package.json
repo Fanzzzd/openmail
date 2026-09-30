@@ -24,6 +24,7 @@
     "@effect/sql-sqlite-node": "4.0.0-rc.118",
     "@napi-rs/keyring": "^2.1.0",
     "effect": "4.0.0-rc.118",
+    "ical.js": "^2.2.1",
     "imapflow": "^2.1.0",
     "mailparser": "^3.9.29",
     "markdown-it": "^14.3.2",

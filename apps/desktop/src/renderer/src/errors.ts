@@ -19,6 +19,14 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "This invitation cannot be answered by this account": msg`This invitation cannot be answered by this account`,
+  "This meeting has been cancelled": msg`This meeting has been cancelled`,
+  "Open this invitation in your calendar to add it before responding": msg`Open this invitation in your calendar to add it before responding`,
+  "The calendar organizer does not match this invitation": msg`The calendar organizer does not match this invitation`,
+  "Calendar responses require a user action": msg`Calendar responses require a user action`,
+  "Cannot build calendar response": msg`Cannot build calendar response`,
+  "Calendar response was not sent": msg`Calendar response was not sent`,
+  "This invitation has a newer update": msg`This invitation has a newer update`,
   "Only inbox messages can be snoozed": msg`Only inbox messages can be snoozed`,
   "Confirm deletion for a filter with a search query": msg`Confirm deletion for a filter with a search query`,
   "Choose a user label or folder": msg`Choose a user label or folder`,
@@ -45,6 +53,10 @@ const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
  */
 export function errorText(i18n: I18n, error: AppError): string {
   return Match.valueTags(error, {
+    FeatureScopeMissing: (e) =>
+      e.feature === "calendar"
+        ? i18n._(msg`Sign in again to respond to calendar invitations.`)
+        : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
     AuthError: (e) => i18n._(msg`The server rejected the sign-in. ${e.message}`),
     ClientNotConfigured: (e) => {

@@ -33,6 +33,7 @@ import type {
   ThreadSummary,
 } from "./domain.js";
 import type {
+  FeatureScopeMissing,
   AuthError,
   ClientNotConfigured,
   InvalidInput,
@@ -41,6 +42,8 @@ import type {
   SettingsScopeMissing,
   ProviderFailure,
 } from "./errors.js";
+import type { CalendarInvite, InviteResponse } from "./calendar.js";
+import type { ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
 
@@ -286,6 +289,18 @@ export class Store extends Context.Service<
     setImageSender(entry: string, allowed: boolean): Effect.Effect<void>;
 
     // Contacts
+    replaceServerContacts(
+      accountId: string,
+      contacts: readonly Address[],
+      now: number,
+    ): Effect.Effect<void>;
+    readonly contactSync: Effect.Effect<ContactSync[]>;
+    setContactSyncError(
+      accountId: string,
+      now: number,
+      error: string,
+      scopeMissing: boolean,
+    ): Effect.Effect<void>;
     /**
      * People from local mail history, best first, hidden ones and `exclude`
      * (the address being written from) left out. The person's other
@@ -361,6 +376,16 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  contacts(
+    account: Account,
+  ): Effect.Effect<Address[], ProviderFailure | FeatureScopeMissing | InvalidInput>;
+  respondInvite(
+    account: Account,
+    providerId: string,
+    invite: CalendarInvite,
+    response: InviteResponse,
+  ): Effect.Effect<void, ProviderFailure | FeatureScopeMissing | InvalidInput>;
+
   search(account: Account, query: ThreadQuery): Effect.Effect<ProviderSearchPage, ProviderFailure>;
   changeLabel(
     account: Account,

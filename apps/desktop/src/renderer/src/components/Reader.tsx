@@ -8,6 +8,7 @@ import {
   imagesAllowed,
   orderThread,
   prepareMessageHtml,
+  shouldLoadInvitation,
   READER_ZOOMS,
   type ReaderZoom,
 } from "@openmail/core/schema";
@@ -52,6 +53,7 @@ import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
+import { InviteBanner } from "./InviteBanner";
 import { RawMessageDialog } from "./RawMessage";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
@@ -514,6 +516,8 @@ function Expanded({
           )}
         </DropdownMenu>
       </div>
+
+      {shouldLoadInvitation(m) && <InviteBanner message={m} />}
 
       {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
 

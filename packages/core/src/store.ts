@@ -39,6 +39,7 @@ import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import { parseSearchQuery, searchWords, reciprocalRankFusion } from "./search.js";
 import { makeOrganizationStore } from "./store-organization.js";
+import { makeContactStore } from "./store-contacts.js";
 import { makeComposeStore } from "./store-compose.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
@@ -79,6 +80,7 @@ const MessageRow = Schema.Struct({
   body_text: Schema.String,
   body_html: Schema.String,
   draft_id: Schema.NullOr(Schema.String),
+  calendar_hint: Schema.NullOr(Schema.BooleanFromBit),
 });
 
 /** Messages with the local draft each one is a copy of, for MessageRow. */
@@ -180,6 +182,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     bodyText: r.body_text,
     bodyHtml: r.body_html,
     attachments: r.attachments_json,
+    ...(r.calendar_hint === null ? {} : { hasCalendar: r.calendar_hint }),
     ...(r.draft_id === null ? {} : { draftId: r.draft_id }),
   };
 }
@@ -300,6 +303,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const compose = makeComposeStore(sql);
     const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
     const media = makeMediaStore(sql, Option.isSome(capabilities) && capabilities.value.vectors);
+    const contacts = makeContactStore(sql);
     const organization = makeOrganizationStore(sql);
 
     const hasLabel = (label: string) =>
@@ -433,12 +437,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, date, snippet, body_text, body_html, labels_json,
-            attachments_json, is_unread, is_starred)
+            attachments_json, is_unread, is_starred, calendar_hint)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
-            ${m.isStarred ? 1 : 0})
+            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0})
           ON CONFLICT(id) DO UPDATE SET
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
@@ -446,7 +450,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             snippet = excluded.snippet, body_text = excluded.body_text,
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
-            is_starred = excluded.is_starred`)
+            is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint`)
       );
       yield* media.cleanupVectors;
     });
@@ -1062,6 +1066,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       templates: compose.templates,
       saveTemplate: compose.saveTemplate,
       deleteTemplate: compose.deleteTemplate,
+      ...contacts,
       suggestContacts: compose.suggestContacts,
       hiddenContacts: compose.hiddenContacts,
       setContactHidden: compose.setContactHidden,
