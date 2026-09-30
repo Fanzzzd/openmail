@@ -263,7 +263,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
   // Signatures
 
   const signatures = all(SignatureRow)(
-    sql`SELECT address, kind, text FROM signatures WHERE source = 'local' ORDER BY address, kind`,
+    sql`SELECT address, kind, text FROM (SELECT address, kind, text,
+      ROW_NUMBER() OVER (PARTITION BY address, kind ORDER BY source = 'local' DESC) AS rank
+      FROM signatures) WHERE rank=1 ORDER BY address, kind`,
   ).pipe(
     Effect.map((rows): Signature[] => [...rows]),
     Effect.withSpan("Store.signatures"),

@@ -20,6 +20,7 @@ export interface Draft {
   id: string;
   mode: ComposeMode;
   accountId: string;
+  from?: Address;
   to: string;
   cc: string;
   bcc: string;
@@ -171,6 +172,7 @@ export function fromStored(d: StoredDraft): Draft {
     id: d.id,
     mode: m.mode ?? "new",
     accountId: d.accountId,
+    ...(m.from ? { from: m.from } : {}),
     to: m.to.map(formatAddress).join(", "),
     cc: m.cc.map(formatAddress).join(", "),
     bcc: m.bcc.map(formatAddress).join(", "),
@@ -191,6 +193,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
   const bcc = parseAddresses(d.bcc);
   return {
     message: {
+      ...(d.from ? { from: d.from } : {}),
       to: to.addresses,
       cc: cc.addresses,
       bcc: bcc.addresses,

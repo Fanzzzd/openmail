@@ -4,7 +4,7 @@
  * what it has loaded; asking for one more page fetches only that page, and a
  * refresh (a change invalidated "threads") reloads every page on screen.
  */
-import { DEFAULT_PREFS } from "@openmail/core/schema";
+import { DEFAULT_PREFS, mergeSearchResults } from "@openmail/core/schema";
 import { Effect, Option } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
@@ -13,8 +13,8 @@ import type { AppError } from "../errors";
 import { MailClient } from "../rpc";
 import { OVERVIEW, scopeAccountIds } from "../view";
 import { Keys } from "./keys";
-import { accountsAtom, prefsAtom } from "./queries";
-import { filtersAtom, searchAtom, viewAtom } from "./ui";
+import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
+import { filtersAtom, searchAtom, searchScopeAtom, viewAtom } from "./ui";
 
 const PAGE = 100;
 /** Search results come as one page. */
@@ -68,10 +68,29 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
   const view = get(viewAtom);
   if (view.space === OVERVIEW) return null;
   const accounts = AsyncResult.getOrElse(get(accountsAtom), () => []);
-  const scope = scopeAccountIds(view, accounts);
+  const baseScope = scopeAccountIds(view, accounts);
+  const organization = AsyncResult.getOrElse(get(organizationAtom), () => []);
+  const scope = view.label?.id.startsWith("CATEGORY_")
+    ? accounts
+        .filter(
+          (a) =>
+            a.provider === "gmail" &&
+            (!baseScope || baseScope.includes(a.id)) &&
+            organization.find((o) => o.accountId === a.id)?.categories !== false,
+        )
+        .map((a) => a.id)
+    : baseScope;
   const common = scope ? { accountIds: scope } : {};
   const search = get(searchAtom);
-  if (search) return { ...common, search };
+  if (search)
+    return {
+      ...common,
+      search,
+      searchScope: get(searchScopeAtom),
+      mailbox: view.mailbox,
+      ...(view.label ? { label: view.label.id } : {}),
+      flat: !AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping,
+    };
   const filters = get(filtersAtom);
   const grouping = AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping;
   // Optional fields are left out rather than set to undefined: the main
@@ -92,9 +111,32 @@ export interface ThreadList {
   loading: boolean;
   /** Older threads exist and no page is in flight. */
   canLoadMore: boolean;
+  searchingServer: boolean;
+  searchTruncated: boolean;
+  searchErrors: readonly string[];
 }
 
-const EMPTY: ThreadList = { threads: [], loading: false, canLoadMore: false };
+const EMPTY: ThreadList = {
+  threads: [],
+  loading: false,
+  canLoadMore: false,
+  searchingServer: false,
+  searchTruncated: false,
+  searchErrors: [],
+};
+
+// Separate request: local hits can render while the network is in flight.
+const serverList = Atom.family((query: ListQuery) =>
+  MailClient.runtime
+    .atom(
+      Effect.gen(function* () {
+        yield* Effect.sleep("350 millis");
+        const call = yield* MailClient;
+        return yield* call("SearchServer", { query: { ...query, limit: SEARCH_LIMIT } });
+      }),
+    )
+    .pipe(Atom.setIdleTTL("5 minutes")),
+);
 
 /**
  * The list on screen. Until a new query's first page arrives it keeps showing
@@ -105,13 +147,49 @@ export const threadListAtom = Atom.writable(
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
     const result = get(pagedList(query).loaded);
+    const server = query.search === undefined ? null : get(serverList(query));
+    const remote = server ? AsyncResult.getOrElse(server, () => null) : null;
+    const serverState = {
+      searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
+      searchTruncated: remote?.truncated ?? false,
+      searchErrors: remote?.errors.map((e) => `${e.accountId}: ${e.message}`) ?? [],
+    };
+    const liveRemote = remote
+      ? get(
+          MailClient.query(
+            "Threads",
+            {
+              query: {
+                messageIds: remote.threads.map((row) => row.id),
+                limit: SEARCH_LIMIT,
+                flat: query.flat ?? false,
+                mailbox: query.searchScope === "folder" ? (query.mailbox ?? "inbox") : "all",
+                ...(query.searchScope === "folder" && query.label ? { label: query.label } : {}),
+              },
+            },
+            { reactivityKeys: [Keys.threads] },
+          ),
+        )
+      : null;
+    const remoteRows = liveRemote
+      ? AsyncResult.getOrElse(liveRemote, () => remote?.threads ?? [])
+      : [];
     const loaded = AsyncResult.value(result);
     if (loaded._tag === "None") {
       const shown = Option.getOrElse(get.self<ThreadList>(), () => EMPTY);
-      return { ...shown, loading: result._tag === "Initial", canLoadMore: false };
+      return {
+        ...shown,
+        ...serverState,
+        threads: remote ? remoteRows : shown.threads,
+        loading: result._tag === "Initial",
+        canLoadMore: false,
+      };
     }
     return {
-      threads: loaded.value.threads,
+      ...serverState,
+      threads: remote
+        ? mergeSearchResults(loaded.value.threads, remoteRows, query.flat)
+        : loaded.value.threads,
       loading: false,
       canLoadMore: !loaded.value.done && !result.waiting,
     };

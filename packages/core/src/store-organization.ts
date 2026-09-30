@@ -1,0 +1,116 @@
+import { Effect, Schema } from "effect";
+import type { SqlClient } from "effect/sql";
+import type { AccountOrganization, LabelPreference, SendAs } from "./organization.js";
+import { all, run } from "./sql-rows.js";
+
+const LabelPrefRow = Schema.Struct({
+  account_id: Schema.String,
+  id: Schema.String,
+  visible: Schema.BooleanFromBit,
+  favorite: Schema.BooleanFromBit,
+  color: Schema.NullOr(Schema.String),
+});
+const OrganizationRow = Schema.Struct({
+  account_id: Schema.String,
+  categories: Schema.BooleanFromBit,
+});
+const AliasRow = Schema.Struct({
+  account_id: Schema.String,
+  address: Schema.String,
+  name: Schema.String,
+  is_default: Schema.BooleanFromBit,
+  signature: Schema.String,
+});
+const WakeRow = Schema.Struct({ account_id: Schema.String, thread_id: Schema.String });
+const IdRow = Schema.Struct({ id: Schema.String });
+
+export function makeOrganizationStore(sql: SqlClient.SqlClient) {
+  const labelPreferences = all(LabelPrefRow)(sql`SELECT * FROM label_preferences`).pipe(
+    Effect.map((rows) =>
+      rows.map((r) => ({
+        accountId: r.account_id,
+        id: r.id,
+        visible: r.visible,
+        favorite: r.favorite,
+        color: r.color,
+      })),
+    ),
+  );
+  const setLabelPreference = (p: LabelPreference) =>
+    run(sql`INSERT INTO label_preferences (account_id, id, visible, favorite, color)
+    VALUES (${p.accountId}, ${p.id}, ${Number(p.visible)}, ${Number(p.favorite)}, ${p.color})
+    ON CONFLICT(account_id, id) DO UPDATE SET visible=excluded.visible, favorite=excluded.favorite, color=excluded.color`);
+  const moveLabelPreference = (accountId: string, from: string, to: string | null) =>
+    Effect.gen(function* () {
+      if (from === to) return;
+      const old = (yield* labelPreferences).find((p) => p.accountId === accountId && p.id === from);
+      if (old && to) yield* setLabelPreference({ ...old, id: to });
+      yield* run(sql`DELETE FROM label_preferences WHERE account_id=${accountId} AND id=${from}`);
+    });
+  const organization = all(
+    OrganizationRow,
+  )(sql`SELECT a.id AS account_id, COALESCE(o.categories, 1) AS categories
+    FROM accounts a LEFT JOIN account_organization o ON a.id=o.account_id`).pipe(
+    Effect.map((rows) => rows.map((r) => ({ accountId: r.account_id, categories: r.categories }))),
+  );
+  const setOrganization = (p: AccountOrganization) =>
+    run(
+      sql`INSERT INTO account_organization (account_id, categories) VALUES (${p.accountId}, ${Number(p.categories)}) ON CONFLICT(account_id) DO UPDATE SET categories=excluded.categories`,
+    );
+  const sendAs = all(AliasRow)(sql`SELECT * FROM send_as ORDER BY is_default DESC, address`).pipe(
+    Effect.map((rows) =>
+      rows.map((r) => ({
+        accountId: r.account_id,
+        address: r.address,
+        name: r.name,
+        isDefault: r.is_default,
+        signature: r.signature,
+      })),
+    ),
+  );
+  const replaceSendAs = (accountId: string, aliases: readonly SendAs[]) =>
+    Effect.gen(function* () {
+      const previous = yield* all(AliasRow)(
+        sql`SELECT * FROM send_as WHERE account_id=${accountId}`,
+      );
+      for (const old of previous)
+        yield* run(sql`DELETE FROM signatures WHERE address=${old.address} AND source='gmail'`);
+      yield* run(sql`DELETE FROM send_as WHERE account_id=${accountId}`);
+      for (const alias of aliases) {
+        yield* run(
+          sql`INSERT INTO send_as (account_id, address, name, is_default, signature) VALUES (${accountId}, ${alias.address}, ${alias.name}, ${Number(alias.isDefault)}, ${alias.signature})`,
+        );
+        for (const kind of ["new", "reply"]) {
+          if (alias.signature)
+            yield* run(sql`INSERT INTO signatures (address, kind, text, source)
+          VALUES (${alias.address}, ${kind}, ${alias.signature}, 'gmail') ON CONFLICT(address, kind, source)
+          DO UPDATE SET text=excluded.text`);
+        }
+      }
+    });
+  const wakeSnoozed = (now: number) =>
+    Effect.gen(function* () {
+      const due = yield* all(
+        WakeRow,
+      )(sql`UPDATE thread_reminders SET due_at=NULL, woken_at=${now}, wake_pending=1
+      WHERE due_at<=${now} RETURNING account_id, thread_id`);
+      const ids: string[] = [];
+      for (const r of due) {
+        const messages = yield* all(IdRow)(
+          sql`SELECT id FROM messages WHERE account_id=${r.account_id} AND thread_id=${r.thread_id}`,
+        );
+        ids.push(...messages.map((m) => m.id));
+      }
+      return ids;
+    });
+  return {
+    labelPreferences,
+    setLabelPreference,
+    moveLabelPreference,
+    organization,
+    setOrganization,
+    sendAs,
+    replaceSendAs,
+    wakeSnoozed,
+  };
+}

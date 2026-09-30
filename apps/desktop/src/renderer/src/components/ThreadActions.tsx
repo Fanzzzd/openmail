@@ -3,6 +3,8 @@ import { Toggle } from "@base-ui/react/toggle";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useLingui } from "@lingui/react/macro";
 import {
+  Clock,
+  ListFilter,
   AppWindow,
   Archive,
   Bookmark,
@@ -46,6 +48,8 @@ interface Props {
   onCompose?: ((mode: ComposeMode, asAttachment?: boolean) => void) | undefined;
   /** Opens the thread in a window of its own. Unset hides the button. */
   onOpenWindow?: (() => void) | undefined;
+  onSnooze?: (() => void) | undefined;
+  onFilter?: (() => void) | undefined;
   /** The label or folder picker; L or V opens it from the keyboard. */
   labelPicker: boolean;
   onLabelPicker: (open: boolean) => void;
@@ -53,8 +57,18 @@ interface Props {
 
 /** Archive, or back to the inbox when the thread is already out of it. */
 const moveBack = (state: ThreadState, mailbox: Mailbox) => {
-  const out = mailbox === "trash" || mailbox === "spam" || !state.labels.includes("INBOX");
-  return out && (mailbox === "trash" || mailbox === "spam" || state.provider !== "gmail");
+  const out =
+    mailbox === "snoozed" ||
+    mailbox === "trash" ||
+    mailbox === "spam" ||
+    !state.labels.includes("INBOX");
+  return (
+    out &&
+    (mailbox === "snoozed" ||
+      mailbox === "trash" ||
+      mailbox === "spam" ||
+      state.provider !== "gmail")
+  );
 };
 
 const button =
@@ -71,6 +85,8 @@ export function ThreadActions({
   onOp,
   onCompose,
   onOpenWindow,
+  onSnooze,
+  onFilter,
   labelPicker,
   onLabelPicker,
 }: Props) {
@@ -107,6 +123,10 @@ export function ThreadActions({
           shortcut="!"
           onClick={() => onOp({ kind: "spam" })}
         />
+      )}
+      {onSnooze && <Action icon={Clock} label={t`Snooze`} onClick={onSnooze} />}
+      {onFilter && (
+        <Action icon={ListFilter} label={t`Create filter from these messages`} onClick={onFilter} />
       )}
       <Divider />
       <Action
@@ -202,6 +222,8 @@ export function ThreadMenuItems({
   onOp,
   onCompose,
   onOpenWindow,
+  onSnooze,
+  onFilter,
 }: Omit<Props, "labelPicker" | "onLabelPicker">) {
   const { t } = useLingui();
   const folders = state.provider !== "gmail";
@@ -214,6 +236,13 @@ export function ThreadMenuItems({
           </MenuItem>
           <MenuSeparator />
         </>
+      )}
+      {onSnooze && <MenuItem icon={Clock} onClick={onSnooze}>{t`Snooze`}</MenuItem>}
+      {onFilter && (
+        <MenuItem
+          icon={ListFilter}
+          onClick={onFilter}
+        >{t`Create filter from these messages`}</MenuItem>
       )}
       {onCompose && (
         <>
@@ -357,7 +386,7 @@ function Action({
 }: {
   icon: Icon;
   label: string;
-  shortcut: string;
+  shortcut?: string;
   onClick: () => void;
 }) {
   return (
@@ -380,7 +409,7 @@ function Switch({
 }: {
   icon: Icon;
   label: string;
-  shortcut: string;
+  shortcut?: string;
   pressed: boolean;
   pressedClass: string;
   onPressedChange: (pressed: boolean) => void;

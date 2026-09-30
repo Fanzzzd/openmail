@@ -37,10 +37,21 @@ import type {
   InvalidInput,
   NotFound,
   ProviderError,
+  SettingsScopeMissing,
   ProviderFailure,
 } from "./errors.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
+
+import type {
+  AccountOrganization,
+  FilterInput,
+  LabelChange,
+  LabelPreference,
+  SendAs,
+  ServerFilter,
+  Vacation,
+} from "./organization.js";
 
 // Platform
 
@@ -194,6 +205,16 @@ export class Store extends Context.Service<
     ): Effect.Effect<void>;
     listLabels(accountIds?: readonly string[]): Effect.Effect<Label[]>;
 
+    readonly labelPreferences: Effect.Effect<LabelPreference[]>;
+    setLabelPreference(input: LabelPreference): Effect.Effect<void>;
+    moveLabelPreference(accountId: string, from: string, to: string | null): Effect.Effect<void>;
+    readonly organization: Effect.Effect<AccountOrganization[]>;
+    setOrganization(input: AccountOrganization): Effect.Effect<void>;
+    replaceSendAs(accountId: string, aliases: readonly SendAs[]): Effect.Effect<void>;
+    readonly sendAs: Effect.Effect<SendAs[]>;
+    snooze(id: string, due: number): Effect.Effect<void, NotFound>;
+    wakeSnoozed(now: number): Effect.Effect<string[]>;
+
     // Profiles
     readonly listProfiles: Effect.Effect<Profile[]>;
     createProfile(input: ProfileInput): Effect.Effect<Profile>;
@@ -332,7 +353,32 @@ export interface Connected {
  * dependencies (HttpClient, OAuth, AppConfig, Secrets) are captured when the
  * layer builds them, so the methods need nothing further.
  */
+export interface ProviderSearchPage {
+  readonly messages: readonly IncomingMessage[];
+  readonly truncated: boolean;
+}
 export interface ProviderAdapter {
+  search(account: Account, query: ThreadQuery): Effect.Effect<ProviderSearchPage, ProviderFailure>;
+  changeLabel(
+    account: Account,
+    change: LabelChange,
+  ): Effect.Effect<readonly Omit<Label, "accountId">[], ProviderFailure>;
+  filters(account: Account): Effect.Effect<ServerFilter[], ProviderFailure | SettingsScopeMissing>;
+  createFilter(
+    account: Account,
+    input: FilterInput,
+  ): Effect.Effect<ServerFilter, ProviderFailure | SettingsScopeMissing>;
+  deleteFilter(
+    account: Account,
+    id: string,
+  ): Effect.Effect<void, ProviderFailure | SettingsScopeMissing>;
+  vacation(account: Account): Effect.Effect<Vacation, ProviderFailure | SettingsScopeMissing>;
+  setVacation(
+    account: Account,
+    input: Vacation,
+  ): Effect.Effect<void, ProviderFailure | SettingsScopeMissing>;
+  sendAs(account: Account): Effect.Effect<SendAs[], ProviderFailure | SettingsScopeMissing>;
+
   connect(
     input: ConnectInput,
   ): Effect.Effect<Connected, AuthError | ProviderError | ClientNotConfigured | InvalidInput>;

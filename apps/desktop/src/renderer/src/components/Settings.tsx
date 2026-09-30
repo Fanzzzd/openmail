@@ -19,10 +19,15 @@ import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-type Tab = "accounts" | "general" | "reading" | "compose" | "ai" | "log";
+import { OrganizationSettings } from "./OrganizationSettings";
+import { ServerSettings } from "./ServerSettings";
+
+type Tab = "organize" | "server" | "accounts" | "general" | "reading" | "compose" | "ai" | "log";
 
 const TABS: { id: Tab; label: MessageDescriptor }[] = [
   { id: "accounts", label: msg`Accounts` },
+  { id: "organize", label: msg`Organize` },
+  { id: "server", label: msg`Server` },
   { id: "general", label: msg`General` },
   { id: "reading", label: msg`Reading` },
   { id: "compose", label: msg`Compose` },
@@ -47,7 +52,7 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
     <Dialog
       aria-label={t`Settings`}
       onClose={onClose}
-      className="flex h-[520px] w-[640px] flex-col overflow-hidden"
+      className="flex h-[520px] w-[760px] flex-col overflow-hidden"
     >
       <Tabs.Root
         value={tab}
@@ -70,6 +75,12 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
         </Tabs.List>
         <Tabs.Panel value="accounts" className={panel}>
           <Accounts accounts={accounts} onAddAccount={onAddAccount} />
+        </Tabs.Panel>
+        <Tabs.Panel value="organize" className={panel}>
+          <OrganizationSettings accounts={accounts} />
+        </Tabs.Panel>
+        <Tabs.Panel value="server" className={panel}>
+          <ServerSettings accounts={accounts} />
         </Tabs.Panel>
         <Tabs.Panel value="general" className={panel}>
           <General />

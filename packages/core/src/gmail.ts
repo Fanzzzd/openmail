@@ -32,6 +32,9 @@ import {
   Secrets,
 } from "./services.js";
 
+import { gmailSearch } from "./search.js";
+import { makeGmailSettings } from "./gmail-settings.js";
+
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
@@ -41,6 +44,7 @@ const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 const SCOPES = [
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/gmail.settings.basic",
 ];
 
 /** First sync pulls this window, spam and trash included; older mail arrives later through backfill. */
@@ -504,7 +508,11 @@ export const makeGmail: Effect.Effect<
         // Forwards start a new thread; replies stay in the original one.
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
-      const raw = yield* buildMime({ name: "", address: account.email }, message, threading);
+      const raw = yield* buildMime(
+        message.from ?? { name: "", address: account.email },
+        message,
+        threading,
+      );
       yield* post(account.id, "/messages/send", {
         raw: raw.toString("base64url"),
         ...(threadId ? { threadId } : {}),
@@ -548,7 +556,11 @@ export const makeGmail: Effect.Effect<
         threading = yield* fetchThreading(account.id, original.value.providerId);
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
-      const raw = yield* buildMime({ name: "", address: account.email }, message, threading);
+      const raw = yield* buildMime(
+        message.from ?? { name: "", address: account.email },
+        message,
+        threading,
+      );
       const body = {
         message: { raw: raw.toString("base64url"), ...(threadId ? { threadId } : {}) },
       };
@@ -610,7 +622,73 @@ export const makeGmail: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
+  const settings = makeGmailSettings(get, (id, method, path, body) => {
+    if (method === "POST") return post(id, path, body);
+    if (method === "DELETE") return del(id, path);
+    return put(id, path, body);
+  });
+  const search: ProviderAdapter["search"] = (account, query) =>
+    Effect.gen(function* () {
+      const labels = yield* fetchUserLabels(account.id);
+      const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
+      const messages: IncomingMessage[] = [];
+      let pageToken: string | undefined;
+      do {
+        const page = yield* get(account.id, MessageList, "/messages", {
+          q: gmailSearch(query, labels),
+          ...(/(?:^|\s)(?:in|label):"?(?:spam|trash|anywhere)\b/i.test(query.search ?? "") ||
+          (query.searchScope === "folder" &&
+            (query.mailbox === "spam" ||
+              query.mailbox === "trash" ||
+              query.label === "SPAM" ||
+              query.label === "TRASH"))
+            ? { includeSpamTrash: "true" }
+            : {}),
+          maxResults: String(Math.min(500, limit - messages.length)),
+          ...(pageToken ? { pageToken } : {}),
+        });
+        const fetched = yield* Effect.forEach(
+          page.messages ?? [],
+          (m) => fetchMessage(account.id, m.id),
+          { concurrency: CONCURRENCY },
+        );
+        for (const message of fetched) if (Option.isSome(message)) messages.push(message.value);
+        pageToken = page.nextPageToken;
+      } while (pageToken && messages.length < limit);
+      return { messages, truncated: pageToken !== undefined };
+    }).pipe(Effect.mapError(writeFailure(account.id)));
+  const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
+    Effect.gen(function* () {
+      if (change.kind === "create") {
+        const current = yield* fetchUserLabels(account.id);
+        const parent = current.find((l) => l.id === change.parentId)?.name;
+        yield* post(account.id, "/labels", {
+          name: parent ? `${parent}/${change.name}` : change.name,
+          labelListVisibility: "labelShow",
+          messageListVisibility: "show",
+        });
+      } else if (change.kind === "delete")
+        yield* del(account.id, `/labels/${encodeURIComponent(change.id)}`);
+      else {
+        const body =
+          change.kind === "rename"
+            ? { name: change.name }
+            : { color: { backgroundColor: change.color ?? "#ffffff", textColor: "#000000" } };
+        yield* api(
+          account.id,
+          HttpClientRequest.bodyJsonUnsafe(
+            HttpClientRequest.patch(`${API}/labels/${encodeURIComponent(change.id)}`),
+            body,
+          ),
+        );
+      }
+      return yield* fetchUserLabels(account.id);
+    }).pipe(Effect.mapError(writeFailure(account.id)));
+
   return {
+    ...settings,
+    search,
+    changeLabel,
     connect,
     pull,
     push,

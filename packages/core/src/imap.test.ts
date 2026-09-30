@@ -1,6 +1,8 @@
 import { assert, it, layer } from "@effect/vitest";
 
 import { Effect, Exit, Layer, Option, Stream } from "effect";
+import { vi } from "vitest";
+import { ImapFlow, type ListResponse } from "imapflow";
 import { simpleParser } from "mailparser";
 
 import type { Account } from "./domain.js";
@@ -11,6 +13,7 @@ import {
   FolderState,
   encodeProviderId,
   makeImap,
+  makeImapWith,
   mapFolders,
   parseHeaders,
   parseUidSet,
@@ -369,3 +372,125 @@ it("attachment parts carry their BODY[part] numbers", () => {
     ],
   );
 });
+
+it.effect("IMAP folder management uses CREATE/RENAME/DELETE with the server delimiter", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    const folders: ListResponse[] = [
+      {
+        path: "Clients",
+        pathAsListed: "Clients",
+        name: "Clients",
+        delimiter: ".",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+    ];
+    const list = vi.spyOn(client, "list").mockResolvedValue(folders);
+    const create = vi
+      .spyOn(client, "mailboxCreate")
+      .mockResolvedValue({ path: "Clients.New", created: true });
+    const rename = vi
+      .spyOn(client, "mailboxRename")
+      .mockResolvedValue({ path: "Clients", newPath: "Work.Clients" });
+    const remove = vi.spyOn(client, "mailboxDelete").mockResolvedValue({ path: "Clients" });
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    yield* adapter.changeLabel(account, { kind: "create", name: "New", parentId: "Clients" });
+    yield* adapter.changeLabel(account, { kind: "rename", id: "Clients", name: "Work/Clients" });
+    yield* adapter.changeLabel(account, { kind: "delete", id: "Clients" });
+    assert.deepStrictEqual(create.mock.calls, [["Clients.New"]]);
+    assert.deepStrictEqual(rename.mock.calls, [["Clients", "Work.Clients"]]);
+    assert.deepStrictEqual(remove.mock.calls, [["Clients"]]);
+    assert.strictEqual(list.mock.calls.length, 6);
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
+
+it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIME", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "INBOX",
+        pathAsListed: "INBOX",
+        name: "INBOX",
+        delimiter: "/",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+      {
+        path: "Sent",
+        pathAsListed: "Sent",
+        name: "Sent",
+        delimiter: "/",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        specialUse: "\\Sent",
+        listed: true,
+        subscribed: true,
+      },
+    ]);
+    const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+      path: "INBOX",
+      delimiter: "/",
+      flags: new Set(),
+      uidValidity: 7n,
+      uidNext: 2,
+      exists: 1,
+    });
+    const search = vi.spyOn(client, "search").mockResolvedValue([1]);
+    const mime = Buffer.from(
+      'From: alice@example.com\r\nTo: me@qq.com\r\nSubject: Report\r\nMessage-ID: <r@example.com>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="x"\r\n\r\n--x\r\nContent-Type: text/plain\r\n\r\nreport\r\n--x\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename="report.pdf"\r\n\r\npdf\r\n--x--\r\n',
+    );
+    vi.spyOn(client, "fetchAll").mockResolvedValue([
+      {
+        seq: 1,
+        uid: 1,
+        flags: new Set(),
+        internalDate: new Date("2026-09-30"),
+        size: mime.length,
+        source: mime,
+      },
+    ]);
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const page = yield* adapter.search(account, {
+      search: "from:alice filename:pdf is:unread",
+      searchScope: "folder",
+      mailbox: "inbox",
+    });
+    assert.strictEqual(page.messages.length, 1);
+    assert.strictEqual(page.messages[0]?.attachments[0]?.filename, "report.pdf");
+    assert.deepStrictEqual(search.mock.calls, [[{ from: "alice", seen: false }, { uid: true }]]);
+    assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);

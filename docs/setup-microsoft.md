@@ -1,6 +1,6 @@
 # Microsoft (Azure) OAuth 客户端设置
 
-openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 账户。凭证只存在本机。只读，走 Microsoft Graph。
+openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 账户。凭证只存在本机，走 Microsoft Graph。
 
 > 只支持个人账户（outlook.com / hotmail / live）。公司或学校的 Microsoft 365 账户需要租户管理员先给应用授权，openmail 不绕过这一步。
 
@@ -10,7 +10,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 3. **Redirect URI**：平台选 **Public client/native (mobile & desktop)**，值填 `http://localhost`。
    - Azure 的文本框不接受 `http://127.0.0.1`，但 `http://localhost` 对 loopback 是任意端口通配，登录时用哪个端口都能回调。
 4. 注册后，在 **Overview** 页记下 **Application (client) ID**。
-5. 进入 **API permissions → Add a permission → Microsoft Graph → Delegated**，加上 `Mail.Read`、`User.Read`、`offline_access`。个人账户不需要管理员同意。
+5. 进入 **API permissions → Add a permission → Microsoft Graph → Delegated**，加上 `Mail.ReadWrite`、`Mail.Send`、`MailboxSettings.ReadWrite`、`User.Read`、`offline_access`。个人账户不需要管理员同意。
 6. 进入 **Authentication**，确认 **Allow public client flows** 打开（公共客户端用 PKCE，不用密钥）。
 7. 在 openmail 引导页填入 client ID，或用 CLI：
 

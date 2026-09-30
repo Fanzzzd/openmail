@@ -32,6 +32,9 @@ import {
   Secrets,
 } from "./services.js";
 
+import { imapSearch } from "./imap-search.js";
+import { matchesSearch, parseSearchQuery, searchMailboxLabel } from "./search.js";
+
 /** First sync pulls this window per folder; older mail is left on the server. */
 const INITIAL_DAYS = 90;
 /** Newest messages taken per folder on the first sync. */
@@ -384,6 +387,7 @@ export function toIncoming(
   const html = parsed.html || "";
   const text = parsed.text || htmlToText(html);
   const labels = folderLabels(meta.label, meta.flags);
+  if (meta.flags?.has("$Important") || parsed.priority === "high") labels.push("IMPORTANT");
   const received = meta.internalDate ? new Date(meta.internalDate).getTime() : NaN;
   return {
     providerId: meta.providerId,
@@ -998,162 +1002,249 @@ const connect = Effect.fnUntraced(function* (input: ConnectInput) {
 
 // Adapter
 
-export const makeImap: Effect.Effect<ProviderAdapter, never, Secrets> = Effect.gen(function* () {
-  const secrets = yield* Secrets;
+export const makeImapWith = (
+  open: typeof openImap,
+): Effect.Effect<ProviderAdapter, never, Secrets> =>
+  Effect.gen(function* () {
+    const secrets = yield* Secrets;
 
-  const session = (account: Account) =>
-    Effect.gen(function* () {
-      const settings = yield* settingsOf(account);
-      const pass = yield* password(secrets, account);
-      const s = yield* openImap(account.id, settings, pass);
-      return { s, settings, pass };
-    });
-
-  const pull: ProviderAdapter["pull"] = (account, cursor) =>
-    Stream.callback<Change, ProviderFailure>(
-      (queue) =>
-        Effect.gen(function* () {
-          const { s } = yield* session(account);
-          yield* runPull(s, readCursor(cursor), (change) => Queue.offer(queue, change));
-          yield* Queue.end(queue);
-        }).pipe(
-          // A failure of this effect does not end the stream by itself; hand it to the queue.
-          Effect.catchCause((cause) => Queue.failCause(queue, cause)),
-        ),
-      { bufferSize: 64, strategy: "suspend" },
-    );
-
-  const push: ProviderAdapter["push"] = (account, providerId, op) =>
-    op.kind === "important"
-      ? Effect.void
-      : Option.match(decodeProviderId(providerId), {
-          onNone: () =>
-            Effect.fail(new PermanentError({ message: `Not an IMAP message id: ${providerId}` })),
-          onSome: (ref) =>
-            session(account).pipe(
-              Effect.flatMap(({ s }) => applyOp(s, ref, op)),
-              Effect.scoped,
-            ),
-        });
-
-  const send: ProviderAdapter["send"] = (account, message: OutgoingMessage, original) =>
-    Effect.gen(function* () {
-      const recipients = [
-        ...new Set([...message.to, ...message.cc, ...message.bcc].map((a) => a.address)),
-      ];
-      if (!recipients.length) yield* new PermanentError({ message: "No recipients" });
-      const { s, settings, pass } = yield* session(account);
-      const threading = Option.isSome(original)
-        ? yield* threadingOf(s, original.value.providerId)
-        : {};
-      const raw = yield* buildMime({ name: "", address: account.email }, message, threading).pipe(
-        Effect.mapError(
-          (error) => new ProviderError({ message: `Cannot build the message: ${describe(error)}` }),
-        ),
-      );
-
-      const transport = yield* smtpTransport(settings, pass);
-      yield* Effect.tryPromise({
-        try: () =>
-          transport.sendMail({
-            envelope: { from: account.email, to: recipients },
-            raw: stripBcc(raw),
-          }),
-        catch: (error) => failure(account.id, settings.smtpHost, error),
+    const session = (account: Account) =>
+      Effect.gen(function* () {
+        const settings = yield* settingsOf(account);
+        const pass = yield* password(secrets, account);
+        const s = yield* open(account.id, settings, pass);
+        return { s, settings, pass };
       });
 
-      // The mail is out; a failed Sent copy must not make the caller send it again.
-      const serverSaves = IMAP_PRESETS[settings.preset]?.serverSavesSent ?? false;
-      yield* saveSent(s, raw, serverSaves).pipe(
-        Effect.catch((error) =>
-          Effect.logWarning(`Could not file the sent message: ${error.message}`),
-        ),
+    const pull: ProviderAdapter["pull"] = (account, cursor) =>
+      Stream.callback<Change, ProviderFailure>(
+        (queue) =>
+          Effect.gen(function* () {
+            const { s } = yield* session(account);
+            yield* runPull(s, readCursor(cursor), (change) => Queue.offer(queue, change));
+            yield* Queue.end(queue);
+          }).pipe(
+            // A failure of this effect does not end the stream by itself; hand it to the queue.
+            Effect.catchCause((cause) => Queue.failCause(queue, cause)),
+          ),
+        { bufferSize: 64, strategy: "suspend" },
       );
-    }).pipe(Effect.scoped);
 
-  const saveDraft: ProviderAdapter["saveDraft"] = (account, draft: DraftPush) =>
-    Effect.gen(function* () {
-      const { s } = yield* session(account);
-      const threading = Option.isSome(draft.original)
-        ? yield* threadingOf(s, draft.original.value.providerId)
-        : {};
-      const raw = yield* buildMime(
-        { name: "", address: account.email },
-        draft.message,
-        threading,
-      ).pipe(
-        Effect.mapError(
-          (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),
-        ),
-      );
-      return yield* appendDraft(s, raw, draft.remote?.messageId ?? null);
-    }).pipe(Effect.scoped);
+    const push: ProviderAdapter["push"] = (account, providerId, op) =>
+      op.kind === "important"
+        ? Effect.void
+        : Option.match(decodeProviderId(providerId), {
+            onNone: () =>
+              Effect.fail(new PermanentError({ message: `Not an IMAP message id: ${providerId}` })),
+            onSome: (ref) =>
+              session(account).pipe(
+                Effect.flatMap(({ s }) => applyOp(s, ref, op)),
+                Effect.scoped,
+              ),
+          });
 
-  const deleteDraft: ProviderAdapter["deleteDraft"] = (account, remote) =>
-    Effect.gen(function* () {
-      const id = remote.messageId ?? remote.draftId;
-      if (!id) return;
-      const { s } = yield* session(account);
-      yield* deleteMessage(s, id);
-    }).pipe(Effect.scoped);
+    const send: ProviderAdapter["send"] = (account, message: OutgoingMessage, original) =>
+      Effect.gen(function* () {
+        const recipients = [
+          ...new Set([...message.to, ...message.cc, ...message.bcc].map((a) => a.address)),
+        ];
+        if (!recipients.length) yield* new PermanentError({ message: "No recipients" });
+        const { s, settings, pass } = yield* session(account);
+        const threading = Option.isSome(original)
+          ? yield* threadingOf(s, original.value.providerId)
+          : {};
+        const raw = yield* buildMime({ name: "", address: account.email }, message, threading).pipe(
+          Effect.mapError(
+            (error) =>
+              new ProviderError({ message: `Cannot build the message: ${describe(error)}` }),
+          ),
+        );
 
-  const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId) =>
-    Effect.gen(function* () {
-      const ref = decodeProviderId(providerId);
-      if (Option.isNone(ref)) {
-        return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
-      }
-      const { s } = yield* session(account);
-      const same = yield* openFolderOf(s, ref.value, true);
-      const m = same
-        ? yield* call(s, (c) =>
-            c.fetchOne(String(ref.value.uid), { uid: true, source: true }, { uid: true }),
-          )
-        : false;
-      if (!m || !m.source) {
-        return yield* new PermanentError({ message: `Message ${providerId} is gone` });
-      }
-      return new Uint8Array(m.source);
-    }).pipe(Effect.scoped);
-
-  /**
-   * Downloads the part through BODY[part], decoded by imapflow. Falls back to
-   * parsing the whole source when the structure names the part differently
-   * than the parser that listed it.
-   */
-  const fetchAttachment: ProviderAdapter["fetchAttachment"] = (account, providerId, ref) =>
-    Effect.gen(function* () {
-      const id = decodeProviderId(providerId);
-      if (Option.isNone(id)) {
-        return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
-      }
-      const { s } = yield* session(account);
-      const same = yield* openFolderOf(s, id.value, true);
-      const uid = String(id.value.uid);
-      const m = same
-        ? yield* call(s, (c) => c.fetchOne(uid, { uid: true, bodyStructure: true }, { uid: true }))
-        : false;
-      if (!m) return yield* new PermanentError({ message: `Message ${providerId} is gone` });
-      const nodes = attachmentNodes(m.bodyStructure);
-      const named = nodes.filter((n) => n.attachment.filename === ref.filename);
-      const node = named[ref.occurrence];
-      if (node) {
-        const bytes = yield* call(s, async (c) => {
-          const download = await c.download(uid, node.part, { uid: true });
-          if (!download.content) return null;
-          const chunks: Buffer[] = [];
-          for await (const chunk of download.content) {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
-          }
-          return new Uint8Array(Buffer.concat(chunks));
+        const transport = yield* smtpTransport(settings, pass);
+        yield* Effect.tryPromise({
+          try: () =>
+            transport.sendMail({
+              envelope: { from: account.email, to: recipients },
+              raw: stripBcc(raw),
+            }),
+          catch: (error) => failure(account.id, settings.smtpHost, error),
         });
-        if (bytes) return bytes;
-      }
-      const raw = yield* fetchRaw(account, providerId);
-      const fromRaw = yield* attachmentFromRaw(raw, ref);
-      if (!fromRaw) return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
-      return fromRaw;
-    }).pipe(Effect.scoped);
 
-  return { connect, pull, push, send, saveDraft, deleteDraft, fetchRaw, fetchAttachment };
-});
+        // The mail is out; a failed Sent copy must not make the caller send it again.
+        const serverSaves = IMAP_PRESETS[settings.preset]?.serverSavesSent ?? false;
+        yield* saveSent(s, raw, serverSaves).pipe(
+          Effect.catch((error) =>
+            Effect.logWarning(`Could not file the sent message: ${error.message}`),
+          ),
+        );
+      }).pipe(Effect.scoped);
+
+    const saveDraft: ProviderAdapter["saveDraft"] = (account, draft: DraftPush) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const threading = Option.isSome(draft.original)
+          ? yield* threadingOf(s, draft.original.value.providerId)
+          : {};
+        const raw = yield* buildMime(
+          { name: "", address: account.email },
+          draft.message,
+          threading,
+        ).pipe(
+          Effect.mapError(
+            (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),
+          ),
+        );
+        return yield* appendDraft(s, raw, draft.remote?.messageId ?? null);
+      }).pipe(Effect.scoped);
+
+    const deleteDraft: ProviderAdapter["deleteDraft"] = (account, remote) =>
+      Effect.gen(function* () {
+        const id = remote.messageId ?? remote.draftId;
+        if (!id) return;
+        const { s } = yield* session(account);
+        yield* deleteMessage(s, id);
+      }).pipe(Effect.scoped);
+
+    const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId) =>
+      Effect.gen(function* () {
+        const ref = decodeProviderId(providerId);
+        if (Option.isNone(ref)) {
+          return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
+        }
+        const { s } = yield* session(account);
+        const same = yield* openFolderOf(s, ref.value, true);
+        const m = same
+          ? yield* call(s, (c) =>
+              c.fetchOne(String(ref.value.uid), { uid: true, source: true }, { uid: true }),
+            )
+          : false;
+        if (!m || !m.source) {
+          return yield* new PermanentError({ message: `Message ${providerId} is gone` });
+        }
+        return new Uint8Array(m.source);
+      }).pipe(Effect.scoped);
+
+    /**
+     * Downloads the part through BODY[part], decoded by imapflow. Falls back to
+     * parsing the whole source when the structure names the part differently
+     * than the parser that listed it.
+     */
+    const fetchAttachment: ProviderAdapter["fetchAttachment"] = (account, providerId, ref) =>
+      Effect.gen(function* () {
+        const id = decodeProviderId(providerId);
+        if (Option.isNone(id)) {
+          return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
+        }
+        const { s } = yield* session(account);
+        const same = yield* openFolderOf(s, id.value, true);
+        const uid = String(id.value.uid);
+        const m = same
+          ? yield* call(s, (c) =>
+              c.fetchOne(uid, { uid: true, bodyStructure: true }, { uid: true }),
+            )
+          : false;
+        if (!m) return yield* new PermanentError({ message: `Message ${providerId} is gone` });
+        const nodes = attachmentNodes(m.bodyStructure);
+        const named = nodes.filter((n) => n.attachment.filename === ref.filename);
+        const node = named[ref.occurrence];
+        if (node) {
+          const bytes = yield* call(s, async (c) => {
+            const download = await c.download(uid, node.part, { uid: true });
+            if (!download.content) return null;
+            const chunks: Buffer[] = [];
+            for await (const chunk of download.content) {
+              chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+            }
+            return new Uint8Array(Buffer.concat(chunks));
+          });
+          if (bytes) return bytes;
+        }
+        const raw = yield* fetchRaw(account, providerId);
+        const fromRaw = yield* attachmentFromRaw(raw, ref);
+        if (!fromRaw)
+          return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
+        return fromRaw;
+      }).pipe(Effect.scoped);
+
+    const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const folders = yield* call(s, (c) => c.list());
+        if (change.kind === "create") {
+          const parent = folders.find((f) => f.path === change.parentId);
+          const path = parent
+            ? `${parent.path}${parent.delimiter || "/"}${change.name}`
+            : change.name;
+          yield* call(s, (c) => c.mailboxCreate(path));
+        } else if (change.kind === "rename") {
+          const delimiter = folders.find((f) => f.path === change.id)?.delimiter || "/";
+          yield* call(s, (c) => c.mailboxRename(change.id, change.name.split("/").join(delimiter)));
+        } else if (change.kind === "delete") yield* call(s, (c) => c.mailboxDelete(change.id));
+        return mapFolders(yield* call(s, (c) => c.list()))
+          .filter((f) => f.userName !== undefined)
+          .map((f) => ({ id: f.path, name: f.userName ?? f.path, color: null }));
+      }).pipe(Effect.scoped);
+    const search: ProviderAdapter["search"] = (account, query) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const folders = mapFolders(yield* call(s, (c) => c.list()));
+        const labels = folders.map((f) => ({ id: f.label, name: f.userName ?? f.path }));
+        const scope = searchMailboxLabel(query);
+        const required = parseSearchQuery(query).criteria?.labels ?? [];
+        const selected = folders.filter(
+          (f) =>
+            (!scope || f.label === scope) &&
+            required.every((l) => f.label === l || f.userName === l),
+        );
+        const messages: IncomingMessage[] = [];
+        const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
+        let truncated = false;
+        let scanned = 0;
+        for (const folder of selected) {
+          const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
+          const found = yield* call(s, (c) => c.search(imapSearch(query), { uid: true }));
+          const uids = (found || []).toSorted((a, b) => b - a);
+          for (let start = 0; start < uids.length; start += FETCH_BATCH) {
+            const batch = yield* fetchMessages(
+              s,
+              folder,
+              String(opened.uidValidity),
+              uids.slice(start, start + FETCH_BATCH),
+            );
+            scanned += Math.min(FETCH_BATCH, uids.length - start);
+            for (const item of batch)
+              if (matchesSearch(item.message, query, labels)) messages.push(item.message);
+            if (messages.length >= limit || scanned >= 1000) {
+              truncated = true;
+              break;
+            }
+          }
+          if (messages.length >= limit || scanned >= 1000) break;
+        }
+        return { messages: messages.slice(0, limit), truncated };
+      }).pipe(Effect.scoped);
+    const unsupported = Effect.fail(
+      new PermanentError({ message: "IMAP does not support server filters or automatic replies" }),
+    );
+    return {
+      connect,
+      pull,
+      push,
+      send,
+      saveDraft,
+      deleteDraft,
+      fetchRaw,
+      fetchAttachment,
+      changeLabel,
+      search,
+      filters: () => unsupported,
+      createFilter: () => unsupported,
+      deleteFilter: () => unsupported,
+      vacation: () => unsupported,
+      setVacation: () => unsupported,
+      sendAs: () => Effect.succeed([]),
+    };
+  });
+
+/** Live adapter; tests inject a session without opening a socket. */
+export const makeImap = makeImapWith(openImap);

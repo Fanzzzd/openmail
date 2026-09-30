@@ -187,6 +187,7 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
       labels: [
         { id: "id-c1", name: "Clients", color: null },
         { id: "id-c2", name: "Clients/Acme", color: null },
+        { id: "id-empty", name: "Empty", color: null },
       ],
     });
     const upsert = changes[2];
@@ -788,3 +789,178 @@ it.effect("a dropped connection is retried, not reported", () =>
     assert.strictEqual(calls, 3);
   }),
 );
+
+it.effect("Graph search uses $search, immutable IDs and the selected folder", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/mailFolders": { json: { value: [] } },
+      "GET /me/mailFolders/inbox": { json: { id: "inbox-id" } },
+      "GET /me/mailFolders/inbox/messages": (url) => {
+        assert.ok(url.searchParams.get("$search")?.includes("from:"));
+        assert.strictEqual(url.searchParams.has("$filter"), false);
+        return { json: { value: [{ ...raw, parentFolderId: "inbox-id", hasAttachments: false }] } };
+      },
+    });
+    const page = yield* run(http, (a) =>
+      a.search(account, { search: "from:wang is:unread", searchScope: "folder", mailbox: "inbox" }),
+    );
+    assert.strictEqual(page.messages.length, 1);
+    assert.ok(page.messages[0]?.labels.includes("INBOX"));
+    assert.strictEqual(http.calls.at(-1)?.prefer, 'IdType="ImmutableId"');
+  }),
+);
+
+it.effect("Graph creates child folders, renames and deletes without losing empty folders", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/mailFolders": {
+        json: {
+          value: [{ id: "child", displayName: "Child", childFolderCount: 0, totalItemCount: 0 }],
+        },
+      },
+      "POST /me/mailFolders/parent/childFolders": { json: { id: "child" } },
+      "PATCH /me/mailFolders/child": { json: { id: "child" } },
+      "DELETE /me/mailFolders/child": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const labels = yield* a.changeLabel(account, {
+          kind: "create",
+          name: "Child",
+          parentId: "parent",
+        });
+        assert.strictEqual(labels[0]?.name, "Child");
+        yield* a.changeLabel(account, { kind: "rename", id: "child", name: "Renamed" });
+        yield* a.changeLabel(account, { kind: "delete", id: "child" });
+      }),
+    );
+    assert.deepStrictEqual(http.calls.find((c) => c.method === "POST")?.body, {
+      displayName: "Child",
+    });
+    assert.deepStrictEqual(http.calls.find((c) => c.method === "PATCH")?.body, {
+      displayName: "Renamed",
+    });
+  }),
+);
+
+it.effect("Graph inbox rules map conditions and actions, allocate sequence, and delete", () =>
+  Effect.gen(function* () {
+    const rule = {
+      id: "r1",
+      displayName: "Reports",
+      sequence: 5,
+      conditions: { senderContains: ["alice"], subjectContains: ["Report"], hasAttachments: true },
+      actions: { markAsRead: true, moveToFolder: "archive-id" },
+    };
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules": { json: { value: [rule] } },
+      "POST /me/mailFolders/inbox/messageRules": { json: rule },
+      "GET /me/mailFolders/archive": { json: { id: "archive-id" } },
+      "DELETE /me/mailFolders/inbox/messageRules/r1": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        assert.strictEqual((yield* a.filters(account))[0]?.name, "Reports");
+        yield* a.createFilter(account, {
+          name: "Reports",
+          criteria: { from: "alice", to: "", subject: "Report", query: "", hasAttachment: true },
+          action: { archive: true, markRead: true, star: false, trash: false, label: null },
+        });
+        yield* a.deleteFilter(account, "r1");
+      }),
+    );
+    assert.deepStrictEqual(http.calls.find((c) => c.method === "POST")?.body, {
+      displayName: "Reports",
+      sequence: 6,
+      isEnabled: true,
+      conditions: rule.conditions,
+      actions: rule.actions,
+    });
+  }),
+);
+
+it.effect("Graph scheduled automatic replies use UTC dates and contacts-only", () =>
+  Effect.gen(function* () {
+    const settings = {
+      status: "scheduled",
+      scheduledStartDateTime: { dateTime: "2026-09-30T09:00:00.000", timeZone: "UTC" },
+      scheduledEndDateTime: { dateTime: "2026-10-01T09:00:00.000", timeZone: "UTC" },
+      externalAudience: "contactsOnly",
+      internalReplyMessage: "<p>Back tomorrow</p>",
+      externalReplyMessage: "<p>Back tomorrow</p>",
+    };
+    const http = fakeHttp({
+      "GET /me/mailboxSettings/automaticRepliesSetting": { json: settings },
+      "PATCH /me/mailboxSettings": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const v = yield* a.vacation(account);
+        assert.strictEqual(v.start, Date.parse("2026-09-30T09:00:00Z"));
+        assert.strictEqual(v.body, "Back tomorrow");
+        yield* a.setVacation(account, v);
+      }),
+    );
+    const body = Schema.decodeUnknownSync(
+      Schema.Struct({
+        automaticRepliesSetting: Schema.Struct({
+          externalAudience: Schema.String,
+          status: Schema.String,
+          scheduledStartDateTime: Schema.Struct({
+            dateTime: Schema.String,
+            timeZone: Schema.String,
+          }),
+        }),
+      }),
+    )(http.calls.at(-1)?.body);
+    assert.strictEqual(body.automaticRepliesSetting.externalAudience, "contactsOnly");
+    assert.strictEqual(body.automaticRepliesSetting.status, "scheduled");
+    assert.deepStrictEqual(
+      body.automaticRepliesSetting.scheduledStartDateTime,
+      settings.scheduledStartDateTime,
+    );
+  }),
+);
+
+it.effect("missing Graph settings scope does not block reading mail", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules": { status: 403, json: { error: "AccessDenied" } },
+      "GET /me/messages/m1/$value": { text: "mail still works" },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        assert.strictEqual(
+          (yield* a.filters(account).pipe(Effect.flip))._tag,
+          "SettingsScopeMissing",
+        );
+        assert.strictEqual(
+          Buffer.from(yield* a.fetchRaw(account, "m1")).toString(),
+          "mail still works",
+        );
+      }),
+    );
+  }),
+);
+
+it.effect("personal Outlook consent adds MailboxSettings.ReadWrite and stays on consumers", () => {
+  const http = fakeHttp({
+    "GET /me": { json: { mail: account.email, userPrincipalName: account.email } },
+  });
+  return run(http, (a) => a.connect({ provider: "outlook" }), {
+    config: { microsoft: { clientId: "client" } },
+    oauth: {
+      authorize: (req) =>
+        Effect.sync(() => {
+          assert.ok(req.scopes.includes("MailboxSettings.ReadWrite"));
+          assert.ok(req.scopes.includes("Mail.ReadWrite"));
+          assert.ok(req.authUrl.includes("/consumers/"));
+          return {
+            accessToken: "access-token",
+            refreshToken: Option.some("refresh-token"),
+            expiresIn: 3600,
+          };
+        }),
+    },
+  });
+});

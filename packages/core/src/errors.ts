@@ -48,6 +48,15 @@ export class InvalidInput extends Schema.TaggedError<InvalidInput>()("InvalidInp
   message: Schema.String,
 }) {}
 
+/** Missing optional settings permission. Normal mail sync remains available. */
+export class SettingsScopeMissing extends Schema.TaggedError<SettingsScopeMissing>()(
+  "SettingsScopeMissing",
+  {
+    accountId: Schema.String,
+    message: Schema.String,
+  },
+) {}
+
 /** What a provider call can fail with. */
 export type ProviderFailure = AuthError | PermanentError | ProviderError;
 
@@ -59,5 +68,6 @@ export const MailError = Schema.Union([
   ClientNotConfigured,
   NotFound,
   InvalidInput,
+  SettingsScopeMissing,
 ]);
 export type MailError = typeof MailError.Type;

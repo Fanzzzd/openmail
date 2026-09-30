@@ -3,8 +3,10 @@ import { Effect, Option, Stream } from "effect";
 import { attachmentFromRaw } from "./attachments.js";
 import { buildMime } from "./compose.js";
 import type { DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
-import { PermanentError, type ProviderFailure } from "./errors.js";
+import { PermanentError, SettingsScopeMissing, type ProviderFailure } from "./errors.js";
 import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "./services.js";
+import { EMPTY_VACATION, type ServerFilter, type Vacation, type SendAs } from "./organization.js";
+import { matchesSearch } from "./search.js";
 import { applyOpToLabels } from "./store.js";
 
 /** Ids handed out by fake servers; unique across servers so tests never mix them up. */
@@ -16,6 +18,11 @@ export interface FakeServer {
   messages: Map<string, IncomingMessage>;
   /** Every sign-in, as the adapter received it. */
   connects: ConnectInput[];
+  labels: { id: string; name: string; color: string | null }[];
+  filters: ServerFilter[];
+  vacation: Vacation;
+  aliases: SendAs[];
+  searched: import("./domain.js").ThreadQuery[];
   pushed: { providerId: string; op: MailOp }[];
   sent: {
     message: OutgoingMessage;
@@ -29,6 +36,7 @@ export interface FakeServer {
   draftLog: ({ kind: "save"; push: DraftPush } | { kind: "delete"; remote: DraftRemote })[];
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
+  settingsFailure?: SettingsScopeMissing;
 }
 
 export function fakeServer(email: string, messages: IncomingMessage[] = []): FakeServer {
@@ -36,6 +44,11 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     email,
     messages: new Map(messages.map((m) => [m.providerId, m])),
     connects: [],
+    labels: [],
+    filters: [],
+    vacation: EMPTY_VACATION,
+    aliases: [],
+    searched: [],
     pushed: [],
     sent: [],
     drafts: new Map(),
@@ -55,7 +68,88 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
     server.failNext = undefined;
     return failure ? Effect.fail(failure) : Effect.void;
   });
+  const settingsReady = Effect.suspend(
+    (): Effect.Effect<void, ProviderFailure | SettingsScopeMissing> =>
+      server.settingsFailure ? Effect.fail(server.settingsFailure) : failOnce,
+  );
   return {
+    search: (_account, query) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          server.searched.push(query);
+          const matches = [...server.messages.values()].filter((m) =>
+            matchesSearch(m, query, server.labels),
+          );
+          return {
+            messages: matches.slice(0, query.limit ?? 200),
+            truncated: matches.length > (query.limit ?? 200),
+          };
+        }),
+      ),
+    changeLabel: (_account, change) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          if (change.kind === "create")
+            server.labels.push({
+              id: `label${++counter}`,
+              name: change.parentId
+                ? `${server.labels.find((l) => l.id === change.parentId)?.name}/${change.name}`
+                : change.name,
+              color: null,
+            });
+          else if (change.kind === "delete")
+            server.labels = server.labels.filter((l) => l.id !== change.id);
+          else
+            server.labels = server.labels.map((l) =>
+              l.id !== change.id
+                ? l
+                : change.kind === "rename"
+                  ? { ...l, name: change.name }
+                  : { ...l, color: change.color },
+            );
+          return server.labels;
+        }),
+      ),
+    filters: () =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => server.filters),
+      ),
+    createFilter: (_account, input) =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => {
+          const filter = { ...input, id: `filter${++counter}` };
+          server.filters.push(filter);
+          return filter;
+        }),
+      ),
+    deleteFilter: (_account, id) =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => {
+          server.filters = server.filters.filter((f) => f.id !== id);
+        }),
+      ),
+    vacation: () =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => server.vacation),
+      ),
+    setVacation: (_account, input) =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => {
+          server.vacation = input;
+        }),
+      ),
+    sendAs: () =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => server.aliases),
+      ),
     connect: (input) =>
       Effect.sync(() => {
         server.connects.push(input);
@@ -69,7 +163,7 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
           const gone = [...pulled].filter((id) => !server.messages.has(id));
           pulled = new Set(server.messages.keys());
           const changes: Change[] = [
-            { _tag: "Labels", labels: [] },
+            { _tag: "Labels", labels: server.labels },
             ...[...server.messages.values()].map((message): Change => ({
               _tag: "Upsert",
               message,

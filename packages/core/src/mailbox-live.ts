@@ -49,6 +49,7 @@ import {
   Store,
   type StoredDraft,
 } from "./services.js";
+import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { folderTarget } from "./store.js";
 
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
@@ -145,6 +146,7 @@ export const MailboxLive = (
           ...(out.html === undefined ? {} : { html: out.html }),
           attachments: [...out.attachments, originalAttachment(source.subject, raw)],
           mode: "new",
+          ...(out.from ? { from: out.from } : {}),
         };
         return { message: forwarded, original: Option.none() };
       });
@@ -194,7 +196,10 @@ export const MailboxLive = (
 
       const flush = Effect.fn("Mailbox.flush")(function* () {
         const result = { done: 0, failed: 0, reauth: [] as string[] };
+        const blocked = new Set<string>();
         for (const pending of yield* store.listPendingOps) {
+          const key = `${pending.accountId}/${pending.providerId}`;
+          if (blocked.has(key)) continue;
           if (result.reauth.includes(pending.accountId)) continue;
           const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
           if (Option.isNone(account)) {
@@ -205,7 +210,10 @@ export const MailboxLive = (
             result.reauth.push(account.value.id);
             continue;
           }
-          if (!(yield* store.claimPendingOp(pending.id))) continue;
+          if (!(yield* store.claimPendingOp(pending.id))) {
+            blocked.add(key);
+            continue;
+          }
           yield* pushOp(account.value, pending).pipe(
             Effect.andThen(store.removePendingOp(pending.id)),
             Effect.andThen(Effect.sync(() => result.done++)),
@@ -221,10 +229,13 @@ export const MailboxLive = (
                   .removePendingOp(pending.id)
                   .pipe(Effect.andThen(Effect.sync(() => result.failed++))),
               ProviderError: (e) =>
-                (pending.attempts + 1 >= MAX_ATTEMPTS
-                  ? store.removePendingOp(pending.id)
-                  : store.failPendingOp(pending.id, e.message)
-                ).pipe(Effect.andThen(Effect.sync(() => result.failed++))),
+                Effect.gen(function* () {
+                  blocked.add(key);
+                  yield* pending.attempts + 1 >= MAX_ATTEMPTS
+                    ? store.removePendingOp(pending.id)
+                    : store.failPendingOp(pending.id, e.message);
+                  result.failed++;
+                }),
             }),
           );
         }
@@ -240,6 +251,8 @@ export const MailboxLive = (
         options.backgroundFlush === false
           ? flushNow
           : FiberSet.run(background, flushNow).pipe(Effect.asVoid);
+
+      const organization = makeOrganizationMailbox(store, providers, changed, flushLater);
 
       // Running commands
 
@@ -322,6 +335,20 @@ export const MailboxLive = (
           yield* new InvalidInput({ message: "A message needs at least one recipient." });
         }
         const account = yield* store.getAccount(accountId);
+        if (message.from && message.from.address.toLowerCase() !== account.email.toLowerCase()) {
+          const aliases = yield* store.sendAs;
+          if (
+            account.provider !== "gmail" ||
+            !aliases.some(
+              (a) =>
+                a.accountId === accountId &&
+                a.address.toLowerCase() === message.from?.address.toLowerCase(),
+            )
+          )
+            return yield* new InvalidInput({
+              message: "Choose a verified send-as address for this account",
+            });
+        }
         if (account.needsReauth) {
           yield* new AuthError({ accountId, message: "Sign in again before sending." });
         }
@@ -775,6 +802,20 @@ export const MailboxLive = (
         return yield* pull.pipe(
           Effect.retry(PULL_RETRY),
           Effect.andThen(store.setSyncError(account.id, null)),
+          Effect.andThen(
+            account.provider === "gmail"
+              ? providers
+                  .get("gmail")
+                  .sendAs(account)
+                  .pipe(
+                    Effect.flatMap((aliases) =>
+                      store.transaction(store.replaceSendAs(account.id, aliases)),
+                    ),
+                    // Settings permission is optional for existing mail accounts.
+                    Effect.catch(() => Effect.void),
+                  )
+              : Effect.void,
+          ),
           // `counts` is filled while the stream runs, so read it afterwards.
           Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
           Effect.catch((error) => failed(error.message, error._tag === "AuthError")),
@@ -790,6 +831,7 @@ export const MailboxLive = (
       const runSync = Effect.fn("Mailbox.runSync")(function* (accountId?: string) {
         yield* Ref.update(state, (s) => ({ ...s, running: true }));
         yield* emit({ _tag: "SyncState", state: yield* Ref.get(state) });
+        yield* organization.wakeSnoozed();
         // Queued local changes go out first so the pull does not undo them.
         yield* flush();
         const accounts = accountId
@@ -871,6 +913,9 @@ export const MailboxLive = (
       });
 
       if (options.autoSync !== undefined) {
+        yield* organization
+          .wakeSnoozed()
+          .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
         yield* sync().pipe(
           Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
           Effect.repeat(Schedule.spaced(options.autoSync)),
@@ -881,6 +926,19 @@ export const MailboxLive = (
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
       return Mailbox.of({
+        ...organization,
+        changeLabel: (accountId, change) =>
+          organization
+            .changeLabel(accountId, change)
+            .pipe(
+              Effect.tap(() =>
+                change.kind === "color"
+                  ? Effect.void
+                  : options.backgroundFlush === false
+                    ? sync(accountId).pipe(Effect.asVoid)
+                    : FiberSet.run(background, sync(accountId)).pipe(Effect.asVoid),
+              ),
+            ),
         accounts: store.listAccounts,
         connect: (input) => connect(input),
         reauth,
@@ -890,7 +948,7 @@ export const MailboxLive = (
         })),
         setClient: (patch) => mutate(config.write(patch)),
 
-        threads: (q) => store.listThreads(q),
+        threads: (q) => organization.wakeSnoozed().pipe(Effect.andThen(store.listThreads(q))),
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),

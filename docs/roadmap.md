@@ -6,7 +6,7 @@ Mimestream 功能清单来自 mimestream.com 的用户指南、FAQ、Trust Cente
 
 ## 前提：scope 升级
 
-现在只申请只读 scope。对齐 Mimestream 需要写权限，分阶段加，每次加 scope 用户要重新授权一次。
+scope 按切片添加。已有账户继续收发邮件，缺少新增设置权限时，只在对应设置页提示重新登录。
 
 | 能力                   | Gmail                                     | Outlook (Graph)                |
 | ---------------------- | ----------------------------------------- | ------------------------------ |
@@ -27,13 +27,13 @@ Mimestream 功能清单来自 mimestream.com 的用户指南、FAQ、Trust Cente
 
 1. 撰写（已完成，待真实账户验证）：草稿双向同步和自动保存、发送并归档、撤销发送时长、作为附件转发、忘带附件提醒、Markdown、模板、本地签名、按往来邮件补全联系人。
 2. 阅读（已完成，待真实账户验证）：标为已读的时机、原始邮件、打印和 PDF、单独窗口、单封背景和字号、追踪器拦截、附件保存和打开、按发件人允许远程图片、会话归组和顺序。
-3. 搜索与整理：服务器端搜索和本地结果合并、搜索 token、标签和文件夹管理、前往文件夹、稍后提醒、过滤器、自动回复、Gmail 发件别名和签名同步。要加 `gmail.settings.basic`、`MailboxSettings.ReadWrite`。
+3. 搜索与整理（已完成，待真实账户验证）：服务器端搜索和本地结果合并、搜索 token、标签和文件夹管理、前往文件夹、稍后提醒、过滤器、自动回复、Gmail 发件别名和签名同步、按账户显示 Gmail 分类。已加 `gmail.settings.basic`、`MailboxSettings.ReadWrite`。
 4. 系统集成：通知、菜单栏、Dock 未读数、`mailto:`、多窗口、深链接、三套快捷键、设置页。
 5. 日历邀请和联系人：邀请横幅、接受拒绝、服务器联系人补全。要加日历和联系人 scope。
 6. 发布：打包、签名公证、自动更新、更早邮件回填、按标签的缓存窗口。签名需要 Apple Developer 账号。
 7. 端侧媒体理解与语义搜索：图片、PDF、音视频附件的内容可搜索，全部在本机算，不上传。设计与实测见下面「切片 7」。
 
-新 scope 集中在第 3、5 步之后一次加，减少重新授权的次数。
+第 3 步已加入设置 scope。第 5 步再加入日历和联系人 scope。重新登录只在使用新增能力时需要。
 
 ### 切片 1 撰写：做了什么，留了什么
 
@@ -54,7 +54,7 @@ Mimestream 功能清单来自 mimestream.com 的用户指南、FAQ、Trust Cente
 
 留到后面：
 
-- Gmail 签名同步，要 `gmail.settings.basic`，放在第 3 步。`signatures` 表的 `source` 列是接口。
+- Gmail 签名同步已在第 3 步接上 `signatures.source`。
 - 服务器联系人补全（Google、Outlook、目录），放在第 5 步。接在 `Mailbox.suggestContacts` 后面。
 - Markdown 预览。现在只有开关，发出去才看到效果。
 - `@` 提及加收件人。
@@ -249,3 +249,29 @@ core 里能直接在手机上跑的：`mime.ts`、`types.ts`、`store.ts`（纯 
 ### 界面
 
 手机端单栏：账户和邮箱列表、邮件列表、会话三层导航。左右滑动做归档、删除、标为未读，方向可设置。视觉规格沿用 `docs/design/index.html`。
+
+### 切片 3 搜索与整理：做了什么，留了什么
+
+做了：
+
+- 搜索：本地 FTS 先显示，服务器请求延迟 350 毫秒启动。Gmail 用 `q`，Graph 用 `$search`，IMAP 用 SEARCH 后取 MIME。结果经 `upsertMessage` 落库，按账户和会话去重；关闭会话归组时按消息去重。可搜全部邮件或当前文件夹，界面显示服务器搜索进度、失败和结果截断。一个账户失败时仍保留其他账户和本地结果。
+- 搜索 token：Base UI Combobox chips。支持 `from:`、`to:`、`label:` / `folder:`、`is:unread` / `starred` / `important`、`has:attachment`、`filename:`、`before:`、`after:`，带空格的值可加双引号。core 解析同一套条件，分别编译到 SQLite、Gmail、Graph 和 IMAP。日期按 UTC 零点解释，Gmail 转成 epoch 秒，避免 Gmail 日期默认时区造成差异。
+- 标签和文件夹：在「设置 > 整理」创建、重命名、删除、选颜色、显示或隐藏、收藏。Gmail 改 labels API；Graph 支持 childFolders，空文件夹也显示；IMAP 使用 CREATE / RENAME / DELETE 并保留服务器分隔符。Graph 和 IMAP 的颜色只存在本机。删除服务器文件夹需确认，Gmail 删除标签不会删除邮件。
+- 前往文件夹：⇧⌘G 打开，支持模糊匹配、上下键和 Enter，可访问隐藏的文件夹。
+- 稍后提醒：3 小时后、明天 9 点、下周 9 点或自选时间。按账户和会话持久化，本地移出收件箱，不向 Gmail 请求 snooze。同步和新回复不会把它提前放回。到期回到收件箱顶部并标未读，未读和移回收件箱操作经队列推送，失败保留本地唤醒状态。桌面运行时每 30 秒检查，启动同步和读取列表也检查；关闭 app 后到期的提醒在下次打开时处理。
+- 过滤器：Gmail settings.filters 和 Outlook inbox messageRules 的列表、创建和删除。会话工具栏和右键菜单可按发件人预填，在表单内实时预览最多 200 封本地匹配邮件。创建后只处理服务器上的新邮件。支持发件人、收件人、主题、附件条件，Gmail 还支持查询；可归档、标已读、加标签或移到文件夹、删除，Gmail 可加星。
+- 自动回复：读取现有设置，修改开关、起止时间、正文和仅回复联系人。Gmail 可改主题；Graph 由服务器决定主题，定时必须同时填开始和结束。Graph 的 Windows / IANA 时区用 CLDR 映射和 Intl 转换，写回 UTC。
+- Gmail 别名与签名：正常同步时尝试读取 sendAs，也可在「设置 > 服务器」手动刷新。只缓存已验证别名，撰写的 From 菜单可选，回复仍留在原账户。发信前 core 校验地址归属，Gmail MIME 使用所选地址。签名转换为纯文本，写进 `signatures` 的 `source='gmail'`；同一地址有本地签名时，本地优先。换地址时更新签名，草稿保存所选地址。
+- Gmail 分类：每账户单独开关，存在 `account_organization`，组合分类视图只列开启分类的 Gmail 账户。
+- 迁移 7：新增 `label_preferences`、`account_organization`、`thread_reminders`、`send_as` 和到期时间索引。已有迁移未修改，消息仍只用 `upsertMessage` 写入，FTS rowid 不变。
+- 权限：OAuth 新增 `gmail.settings.basic` 和 `MailboxSettings.ReadWrite`。设置 API 的权限不足返回 `SettingsScopeMissing`，不改整个账户的 `needsReauth`。MCP 没有新增写工具。
+
+范围与待验证：
+
+- 每次搜索每账户最多取 200 个匹配消息；core 调用最多 1000。Graph `$search` 本身最多 1000 条，IMAP 的 MIME 后筛选最多检查 1000 封。截断时提示缩小条件，继续翻页和后台搜索回填留后续。
+- Gmail 的其他高级 `q` 运算符交给服务器，本地 FTS 和过滤器预览只理解上述公共 token。Graph 和 IMAP 的附件、未读、星标等部分条件需要取回后筛选，各家分词和匹配范围可能不同。
+- 过滤器不编辑现有规则，不做转发、例外、大小条件或批量应用到历史邮件。IMAP 没有通用的过滤器或自动回复 API，这些屏幕仅列 Gmail 和 Outlook。
+- Gmail 签名同步到本机的纯文本版本，不修改服务器签名或别名，也不保留签名 HTML。
+- 真实账户验证：旧授权仍能同步和收发；设置页重新登录后可用；搜索冷缓存邮件及文件夹范围；三家空文件夹和嵌套文件夹创建、重命名和删除；Gmail 标签颜色；关闭 app 后到期提醒、新回复和离线重试；过滤器新邮件命中；自动回复的时区和联系人限制；已验证别名发信、草稿恢复、签名切换；分类开关和组合视图。
+
+协议依据：[Gmail filters](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters)、[Graph search](https://learn.microsoft.com/en-us/graph/search-query-parameter)、[Graph automatic replies](https://learn.microsoft.com/en-us/graph/api/resources/automaticrepliessetting?view=graph-rest-1.0)。

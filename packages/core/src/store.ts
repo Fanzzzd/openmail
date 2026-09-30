@@ -34,6 +34,8 @@ import {
 import { NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
+import { parseSearchQuery, searchWords } from "./search.js";
+import { makeOrganizationStore } from "./store-organization.js";
 import { makeComposeStore } from "./store-compose.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
@@ -196,6 +198,7 @@ export function accountId(provider: Provider, email: string): string {
 /** Gmail system label behind each mailbox. Outlook and IMAP folders are mapped onto the same names. */
 const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
   inbox: "INBOX",
+  snoozed: "SNOOZED",
   important: "IMPORTANT",
   starred: "STARRED",
   sent: "SENT",
@@ -204,8 +207,11 @@ const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
   trash: "TRASH",
 };
 
+const EFFECTIVE_DATE = `MAX(m.date, COALESCE((SELECT woken_at FROM thread_reminders r
+    WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id), 0))`;
 const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
-  m.date, m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
+  ${EFFECTIVE_DATE} AS date,
+  m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
 
 /** Labels that are flags on every provider; the rest name a folder on Outlook and IMAP. */
 const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
@@ -221,6 +227,11 @@ export function applyOpToLabels(
   provider: Provider,
 ): string[] {
   const out = new Set(labels);
+  if (
+    ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
+    (op.kind === "label" && op.value && provider !== "gmail")
+  )
+    out.delete("SNOOZED");
   const flag = (label: string, value: boolean) => (value ? out.add(label) : out.delete(label));
   if (op.kind === "read") flag("UNREAD", !op.value);
   else if (op.kind === "star") flag("STARRED", op.value);
@@ -275,11 +286,15 @@ export function folderTarget(op: MailOp, labels: readonly string[]): string | nu
   }
 }
 
+const literalLike = (value: string) =>
+  `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+
 export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.effect(
   Store,
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
     const compose = makeComposeStore(sql);
+    const organization = makeOrganizationStore(sql);
 
     const hasLabel = (label: string) =>
       sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
@@ -361,10 +376,52 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     // Messages
 
-    const upsertMessage = Effect.fn("Store.upsertMessage")((account: string, m: IncomingMessage) =>
-      // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
-      // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
-      run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
+    const Reminder = Schema.Struct({
+      due_at: Schema.NullOr(Schema.Number),
+      woken_at: Schema.NullOr(Schema.Number),
+      wake_pending: Schema.BooleanFromBit,
+    });
+    const upsertMessage = Effect.fn("Store.upsertMessage")(function* (
+      account: string,
+      incoming: IncomingMessage,
+    ) {
+      const reminder = yield* first(Reminder)(
+        sql`SELECT due_at, woken_at, wake_pending FROM thread_reminders WHERE account_id=${account} AND thread_id=${incoming.threadId}`,
+      );
+      let m = incoming;
+      if (Option.isSome(reminder) && reminder.value.due_at !== null) {
+        const owner = yield* getAccount(account).pipe(Effect.orDie);
+        m = {
+          ...m,
+          labels: [...applyOpToLabels(m.labels, { kind: "archive" }, owner.provider), "SNOOZED"],
+        };
+      }
+      if (
+        Option.isSome(reminder) &&
+        reminder.value.wake_pending &&
+        reminder.value.due_at === null
+      ) {
+        if (m.labels.includes("INBOX") && m.isUnread)
+          yield* run(
+            sql`UPDATE thread_reminders SET wake_pending=0 WHERE account_id=${account} AND thread_id=${m.threadId}`,
+          );
+        else {
+          const owner = yield* getAccount(account).pipe(Effect.orDie);
+          m = {
+            ...m,
+            labels: applyOpToLabels(
+              applyOpToLabels(m.labels, { kind: "inbox" }, owner.provider),
+              { kind: "read", value: false },
+              owner.provider,
+            ),
+            isUnread: true,
+          };
+        }
+      }
+      yield* (
+        // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
+        // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
+        run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, date, snippet, body_text, body_html, labels_json,
             attachments_json, is_unread, is_starred)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
@@ -379,8 +436,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             snippet = excluded.snippet, body_text = excluded.body_text,
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
-            is_starred = excluded.is_starred`),
-    );
+            is_starred = excluded.is_starred`)
+      );
+    });
 
     const deleteMessage = Effect.fn("Store.deleteMessage")((account: string, providerId: string) =>
       run(sql`DELETE FROM messages WHERE id = ${`${account}/${providerId}`}`),
@@ -399,14 +457,55 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
     const listFilter = (q: ThreadQuery) => {
       const where: Fragment[] = [];
-      const mailbox = q.mailbox ?? "inbox";
-      if (mailbox === "all")
-        where.push(sql`NOT ${hasLabel("SPAM")}`, sql`NOT ${hasLabel("TRASH")}`);
-      else where.push(hasLabel(MAILBOX_LABEL[mailbox]));
-      if (q.label !== undefined) where.push(hasLabel(q.label));
+      const mailbox =
+        q.search !== undefined && q.searchScope !== "folder" ? "all" : (q.mailbox ?? "inbox");
+      if (mailbox === "all") {
+        if (q.messageIds === undefined)
+          where.push(sql`NOT ${hasLabel("SPAM")}`, sql`NOT ${hasLabel("TRASH")}`);
+      } else where.push(hasLabel(MAILBOX_LABEL[mailbox]));
+      if (q.label !== undefined && (q.search === undefined || q.searchScope === "folder"))
+        where.push(hasLabel(q.label));
       if (q.accountIds) where.push(inAccounts(q.accountIds));
+      if (q.messageIds)
+        where.push(q.messageIds.length ? sql`m.id IN ${sql.in(q.messageIds)}` : sql.literal("0"));
       if (q.unreadOnly) where.push(sql`m.is_unread = 1`);
       if (q.starredOnly) where.push(sql`m.is_starred = 1`);
+      const c = q.criteria;
+      if (c?.from)
+        where.push(
+          sql`(m.from_addr LIKE ${literalLike(c.from)} ESCAPE '\\' OR m.from_name LIKE ${literalLike(c.from)} ESCAPE '\\')`,
+        );
+      if (c?.to)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
+        );
+      if (c?.subject) where.push(sql`m.subject LIKE ${literalLike(c.subject)} ESCAPE '\\'`);
+      if (c?.important) where.push(hasLabel("IMPORTANT"));
+      if (c?.attachment) where.push(sql`json_array_length(m.attachments_json)>0`);
+      if (c?.filename)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
+        );
+      if (c?.dateBefore !== undefined) where.push(sql`m.date < ${c.dateBefore}`);
+      if (c?.dateAfter !== undefined) where.push(sql`m.date >= ${c.dateAfter}`);
+      for (const label of c?.labels ?? [])
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value=${label} OR j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label}))`,
+        );
+      const terms = searchWords(q.search ?? "").map((word) => word.replace(/^"(.*)"$/, "$1"));
+      const fts = terms.filter((t) => Array.from(t).length >= 3);
+      if (fts.length) {
+        const match = fts.map((t) => `"${t.replaceAll('"', '""')}"`).join(" AND ");
+        where.push(
+          sql`m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ${match})`,
+        );
+      }
+      for (const term of terms.filter((t) => Array.from(t).length < 3)) {
+        const like = literalLike(term);
+        where.push(
+          sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`,
+        );
+      }
       return sql.and(where);
     };
 
@@ -449,49 +548,11 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         ),
       );
 
-    /**
-     * Substring search over subject, sender and plain-text body, newest first.
-     * Each whitespace-separated term must match. Terms of three or more
-     * characters use the trigram index; shorter ones (common in Chinese) fall
-     * back to LIKE. Mailbox, label and flag filters do not apply: search looks
-     * through all mail of the given accounts. Each hit is its own row.
-     */
-    const search = (q: ThreadQuery, text: string, limit: number) => {
-      const terms = text.trim().split(/\s+/).filter(Boolean);
-      if (terms.length === 0) return Effect.succeed([]);
-      const where: Fragment[] = [];
-      const ftsTerms = terms.filter((t) => Array.from(t).length >= 3);
-      if (ftsTerms.length > 0) {
-        const match = ftsTerms.map((t) => `"${t.replaceAll('"', '""')}"`).join(" AND ");
-        where.push(
-          sql`m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ${match})`,
-        );
-      }
-      for (const t of terms.filter((term) => Array.from(term).length < 3)) {
-        const like = `%${t}%`;
-        where.push(
-          sql`(m.subject LIKE ${like} OR m.from_name LIKE ${like} OR m.from_addr LIKE ${like}
-            OR m.body_text LIKE ${like})`,
-        );
-      }
-      if (q.accountIds) where.push(inAccounts(q.accountIds));
-      if (q.before !== undefined) where.push(sql`m.date < ${q.before}`);
-      return all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m
-        WHERE ${sql.and(where)} ORDER BY m.date DESC LIMIT ${limit}`).pipe(
-        Effect.map((rows) =>
-          rows.map((r): ThreadSummary => {
-            const summary = toSummary(r);
-            return { ...summary, threadCount: 1, participants: [summary.from] };
-          }),
-        ),
-      );
-    };
-
     /** Conversation grouping off: each message in the view is its own row, newest first. */
     const messageList = (q: ThreadQuery, limit: number) =>
       all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m
-        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
-        ORDER BY m.date DESC LIMIT ${limit}`).pipe(
+        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND ${sql.literal(EFFECTIVE_DATE)} < ${q.before}`}
+        ORDER BY date DESC LIMIT ${limit}`).pipe(
         Effect.map((rows) =>
           rows.map((r): ThreadSummary => {
             const summary = toSummary(r);
@@ -500,9 +561,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         ),
       );
 
-    const listThreads = Effect.fn("Store.listThreads")(function* (q: ThreadQuery) {
+    const listThreads = Effect.fn("Store.listThreads")(function* (raw: ThreadQuery) {
+      if (raw.search !== undefined && !raw.search.trim()) return [];
+      const q = raw.search === undefined ? raw : parseSearchQuery(raw);
       const limit = q.limit ?? 50;
-      if (q.search !== undefined) return yield* search(q, q.search, limit);
       const threads = yield* (q.flat ? messageList : threadList)(q, limit);
       // The Drafts list also shows drafts the provider has no copy of yet.
       const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
@@ -568,12 +630,16 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       flags: { isUnread: boolean; isStarred: boolean },
     ) {
       const labels = new Set(yield* messageLabels(account, providerId));
-      if (flags.isUnread) labels.add("UNREAD");
+      const wake = yield* first(Reminder)(
+        sql`SELECT due_at, woken_at, wake_pending FROM thread_reminders WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${`${account}/${providerId}`})`,
+      );
+      const isUnread = flags.isUnread || (Option.isSome(wake) && wake.value.wake_pending);
+      if (isUnread) labels.add("UNREAD");
       else labels.delete("UNREAD");
       if (flags.isStarred) labels.add("STARRED");
       else labels.delete("STARRED");
       yield* run(sql`UPDATE messages SET labels_json = ${JSON.stringify([...labels])},
-          is_unread = ${flags.isUnread ? 1 : 0}, is_starred = ${flags.isStarred ? 1 : 0}
+          is_unread = ${isUnread ? 1 : 0}, is_starred = ${flags.isStarred ? 1 : 0}
         WHERE id = ${`${account}/${providerId}`}`);
     });
 
@@ -585,6 +651,17 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const row = yield* first(LabelsAndProvider)(sql`SELECT m.labels_json, a.provider
         FROM messages m JOIN accounts a ON a.id = m.account_id WHERE m.id = ${id}`);
       if (Option.isNone(row)) return;
+      if (op.kind === "read" && op.value)
+        yield* run(
+          sql`UPDATE thread_reminders SET wake_pending=0 WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
+        );
+      if (
+        ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
+        (op.kind === "label" && op.value && row.value.provider !== "gmail")
+      )
+        yield* run(
+          sql`UPDATE thread_reminders SET due_at=NULL, wake_pending=CASE WHEN ${op.kind} = 'inbox' THEN wake_pending ELSE 0 END WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
+        );
       const labels = applyOpToLabels(row.value.labels_json, op, row.value.provider);
       yield* run(sql`UPDATE messages SET labels_json = ${JSON.stringify(labels)},
         is_unread = ${labels.includes("UNREAD") ? 1 : 0},
@@ -804,7 +881,30 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         WHERE id = ${id} AND status = 'pending'`);
     });
 
+    const snooze = Effect.fn("Store.snooze")(function* (id: string, due: number) {
+      const message = yield* getMessage(id);
+      yield* run(sql`INSERT INTO thread_reminders (account_id, thread_id, due_at, woken_at)
+        VALUES (${message.accountId}, ${message.threadId}, ${due}, NULL)
+        ON CONFLICT(account_id, thread_id) DO UPDATE SET due_at=excluded.due_at, woken_at=NULL, wake_pending=0`);
+      const owner = yield* getAccount(message.accountId);
+      for (const member of yield* getThread(id)) {
+        const labels = [
+          ...applyOpToLabels(
+            member.labels.filter((l) => l !== "SNOOZED"),
+            { kind: "archive" },
+            owner.provider,
+          ),
+          "SNOOZED",
+        ];
+        yield* run(
+          sql`UPDATE messages SET labels_json=${JSON.stringify(labels)} WHERE id=${member.id}`,
+        );
+      }
+    });
+
     return Store.of({
+      ...organization,
+      snooze,
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
       listAccounts,

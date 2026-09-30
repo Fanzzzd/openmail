@@ -4,6 +4,15 @@
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  AccountOrganization,
+  FilterCriteria,
+  FilterInput,
+  LabelChange,
+  LabelPreference,
+  SearchResult,
+  SendAs,
+  ServerFilter,
+  Vacation,
   Account,
   Address,
   AgentWriteMode,
@@ -136,6 +145,37 @@ export class MailRpcs extends RpcGroup.make(
     payload: { accountIds: AccountIds, within: Schema.optionalKey(Schema.String) },
     success: Counts,
   }),
+
+  Rpc.make("SearchServer", { payload: { query: ThreadQuery }, success: SearchResult }),
+  Rpc.make("ChangeLabel", { payload: { accountId: Schema.String, change: LabelChange }, error }),
+  Rpc.make("LabelPreferences", { success: Schema.Array(LabelPreference) }),
+  Rpc.make("SetLabelPreference", { payload: { input: LabelPreference }, error }),
+  Rpc.make("Organization", { success: Schema.Array(AccountOrganization) }),
+  Rpc.make("SetOrganization", { payload: { input: AccountOrganization }, error }),
+  Rpc.make("Snooze", {
+    payload: { threads: Schema.Array(Schema.String), due: Schema.Number },
+    error,
+  }),
+  Rpc.make("Filters", {
+    payload: { accountId: Schema.String },
+    success: Schema.Array(ServerFilter),
+    error,
+  }),
+  Rpc.make("PreviewFilter", {
+    payload: { accountId: Schema.String, criteria: FilterCriteria },
+    success: Schema.Array(ThreadSummary),
+    error,
+  }),
+  Rpc.make("CreateFilter", {
+    payload: { accountId: Schema.String, input: FilterInput },
+    success: ServerFilter,
+    error,
+  }),
+  Rpc.make("DeleteFilter", { payload: { accountId: Schema.String, id: Schema.String }, error }),
+  Rpc.make("Vacation", { payload: { accountId: Schema.String }, success: Vacation, error }),
+  Rpc.make("SetVacation", { payload: { accountId: Schema.String, input: Vacation }, error }),
+  Rpc.make("SendAs", { success: Schema.Array(SendAs) }),
+  Rpc.make("SyncSendAs", { payload: { accountId: Schema.String }, error }),
 
   // Spaces
   Rpc.make("Profiles", { success: Schema.Array(Profile) }),

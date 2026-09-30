@@ -33,6 +33,9 @@ import {
   Secrets,
 } from "./services.js";
 
+import { graphSearch, matchesSearch, parseSearchQuery, searchMailboxLabel } from "./search.js";
+import { makeOutlookSettings } from "./outlook-settings.js";
+
 // `consumers` scopes sign-in to personal Microsoft accounts (outlook.com,
 // hotmail, live). Work/school accounts need a tenant admin to consent to the
 // app first, which openmail deliberately does not work around.
@@ -43,7 +46,13 @@ const GRAPH = "https://graph.microsoft.com/v1.0";
 // offline_access is what makes Graph return a refresh token. Accounts added
 // under the old Mail.Read scope get a 403 on their first write and are asked
 // to sign in again.
-const SCOPES = ["offline_access", "User.Read", "Mail.ReadWrite", "Mail.Send"];
+const SCOPES = [
+  "offline_access",
+  "User.Read",
+  "Mail.ReadWrite",
+  "Mail.Send",
+  "MailboxSettings.ReadWrite",
+];
 // Immutable ids survive moves between folders, so a message archived here
 // keeps its local row and any queued op still finds it.
 const PREFER = { prefer: 'IdType="ImmutableId"' };
@@ -75,7 +84,7 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -110,6 +119,8 @@ const GraphMessage = Schema.Struct({
   isRead: Schema.optionalKey(Schema.Boolean),
   isDraft: Schema.optionalKey(Schema.Boolean),
   hasAttachments: Schema.optionalKey(Schema.Boolean),
+  parentFolderId: Schema.optionalKey(Schema.String),
+  importance: Schema.optionalKey(Schema.String),
   flag: Schema.optionalKey(Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) })),
 });
 export type GraphMessage = typeof GraphMessage.Type;
@@ -443,7 +454,7 @@ export const makeOutlook: Effect.Effect<
           for (const f of page.value) {
             if (skipped.has(f.id)) continue;
             const name = prefix ? `${prefix}/${f.displayName}` : f.displayName;
-            if (!system.has(f.id) && f.totalItemCount > 0) out.push({ id: f.id, name });
+            if (!system.has(f.id)) out.push({ id: f.id, name });
             if (f.childFolderCount > 0) yield* walk(`/me/mailFolders/${f.id}/childFolders`, name);
           }
           url = page["@odata.nextLink"];
@@ -784,7 +795,90 @@ export const makeOutlook: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
+  const settings = makeOutlookSettings(get, write);
+  const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
+    Effect.gen(function* () {
+      if (change.kind === "create")
+        yield* write(
+          account.id,
+          "POST",
+          change.parentId
+            ? `/me/mailFolders/${encodeURIComponent(change.parentId)}/childFolders`
+            : "/me/mailFolders",
+          { displayName: change.name },
+        );
+      else if (change.kind === "rename")
+        yield* write(account.id, "PATCH", `/me/mailFolders/${encodeURIComponent(change.id)}`, {
+          displayName: change.name,
+        });
+      else if (change.kind === "delete")
+        yield* write(account.id, "DELETE", `/me/mailFolders/${encodeURIComponent(change.id)}`);
+      return (yield* listCustomFolders(account.id)).map((f) => ({ ...f, color: null }));
+    }).pipe(Effect.mapError(writeFailure(account.id)));
+  const search: ProviderAdapter["search"] = (account, query) =>
+    Effect.gen(function* () {
+      const folders = yield* listCustomFolders(account.id);
+      const system = yield* Effect.forEach(WELL_KNOWN, (f) =>
+        get(account.id, WithId, `/me/mailFolders/${f.name}?$select=id`).pipe(
+          Effect.map((r) => ({ id: r.id, label: f.label })),
+          Effect.catchIf(is404, () => Effect.succeed({ id: f.name, label: f.label })),
+        ),
+      );
+      const folderNames = folders.map((f) => ({ ...f, color: null }));
+      const scope = searchMailboxLabel(query) ?? parseSearchQuery(query).criteria?.labels?.[0];
+      const known = WELL_KNOWN.find((f) => f.label === scope)?.name;
+      const folder =
+        known ?? (scope && folders.find((f) => f.id === scope || f.name === scope)?.id);
+      const base = folder
+        ? `/me/mailFolders/${encodeURIComponent(folder)}/messages`
+        : "/me/messages";
+      const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
+      const kql = graphSearch(query);
+      const params = new URLSearchParams({
+        $select: `${SELECT},parentFolderId`,
+        $top: "100",
+      });
+      if (kql) params.set("$search", `"${kql.replaceAll('"', '\\"')}"`);
+      const messages: IncomingMessage[] = [];
+      let url: string | undefined = `${base}?${params.toString()}`;
+      let scanned = 0;
+      while (url && scanned < 1000 && messages.length < limit) {
+        const page: {
+          readonly value: readonly GraphMessage[];
+          readonly "@odata.nextLink"?: string;
+        } = yield* get(
+          account.id,
+          Schema.Struct({
+            value: Schema.Array(GraphMessage),
+            "@odata.nextLink": Schema.optionalKey(Schema.String),
+          }),
+          url,
+        );
+        let consumed = 0;
+        for (const raw of page.value) {
+          scanned++;
+          consumed++;
+          const label =
+            system.find((f) => f.id === raw.parentFolderId)?.label ??
+            raw.parentFolderId ??
+            scope ??
+            "ARCHIVE";
+          const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : [];
+          const message = parseGraphMessage(raw, label, attachments);
+          if (matchesSearch(message, query, folderNames)) messages.push(message);
+          if (messages.length >= limit) break;
+        }
+        url = page["@odata.nextLink"];
+        if (messages.length >= limit && consumed < page.value.length)
+          return { messages, truncated: true };
+      }
+      return { messages, truncated: url !== undefined || scanned >= 1000 };
+    }).pipe(Effect.mapError(writeFailure(account.id)));
+
   return {
+    ...settings,
+    search,
+    changeLabel,
     connect,
     pull,
     push,
@@ -876,6 +970,7 @@ export function parseGraphMessage(
   const isStarred = raw.flag?.flagStatus === "flagged";
 
   const labels = [folderLabel];
+  if (raw.importance === "high") labels.push("IMPORTANT");
   if (isUnread) labels.push("UNREAD");
   if (isStarred) labels.push("STARRED");
 

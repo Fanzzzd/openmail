@@ -11,3 +11,6 @@ export * from "./print.js";
 export * from "./reader-html.js";
 export * from "./reading.js";
 export * from "./trackers.js";
+
+export * from "./organization.js";
+export * from "./search.js";

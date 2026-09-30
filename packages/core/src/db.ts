@@ -203,6 +203,28 @@ export const MIGRATIONS: readonly string[] = [
     created_at INTEGER NOT NULL
   );
   `,
+  `
+  CREATE TABLE label_preferences (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id TEXT NOT NULL, visible INTEGER NOT NULL, favorite INTEGER NOT NULL, color TEXT,
+    PRIMARY KEY(account_id, id)
+  );
+  CREATE TABLE account_organization (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    categories INTEGER NOT NULL DEFAULT 1
+  );
+  CREATE TABLE thread_reminders (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    thread_id TEXT NOT NULL, due_at INTEGER, woken_at INTEGER, wake_pending INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(account_id, thread_id)
+  );
+  CREATE INDEX thread_reminders_due ON thread_reminders(due_at);
+  CREATE TABLE send_as (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, name TEXT NOT NULL, is_default INTEGER NOT NULL, signature TEXT NOT NULL,
+    PRIMARY KEY(account_id, address)
+  );
+  `,
 ];
 
 /**

@@ -91,6 +91,12 @@ msgstr "163 Mail"
 msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
 msgstr "A domain covers its subdomains. Known trackers stay blocked for these senders too."
 
+#: src/renderer/src/errors.ts
+msgid "A label or folder needs a valid name"
+msgstr "A label or folder needs a valid name"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Account"
 msgstr "Account"
@@ -109,6 +115,10 @@ msgstr "Action"
 msgid "Action failed: {reason}"
 msgstr "Action failed: {reason}"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Actions"
+msgstr "Actions"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Activity"
 msgstr "Activity"
@@ -125,6 +135,14 @@ msgstr "Add"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Add {provider}"
 msgstr "Add {provider}"
+
+#: src/renderer/src/errors.ts
+msgid "Add an automatic reply message"
+msgstr "Add an automatic reply message"
+
+#: src/renderer/src/errors.ts
+msgid "Add at least one filter condition"
+msgstr "Add at least one filter condition"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Add at least one recipient"
@@ -222,6 +240,7 @@ msgstr "All accounts"
 msgid "All accounts in this space"
 msgstr "All accounts in this space"
 
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/view.ts
 msgid "All Mail"
 msgstr "All Mail"
@@ -255,6 +274,7 @@ msgid "Approve suggestion"
 msgstr "Approve suggestion"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Archive"
@@ -279,6 +299,10 @@ msgstr "Attachments of the original message are not forwarded"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Authorization code"
 msgstr "Authorization code"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic replies"
+msgstr "Automatic replies"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
@@ -338,7 +362,9 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "Can't reach the mail server right now: {0}"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Cancel"
 msgstr "Cancel"
@@ -355,6 +381,38 @@ msgstr "Cc: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Cc/Bcc"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a conversation"
+msgstr "Choose a conversation"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a future reminder time"
+msgstr "Choose a future reminder time"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a label or folder from this account"
+msgstr "Choose a label or folder from this account"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a parent folder from this account"
+msgstr "Choose a parent folder from this account"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a user label or folder"
+msgstr "Choose a user label or folder"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a verified send-as address for this account"
+msgstr "Choose a verified send-as address for this account"
+
+#: src/renderer/src/errors.ts
+msgid "Choose at least one filter action"
+msgstr "Choose at least one filter action"
+
+#: src/renderer/src/errors.ts
+msgid "Choose one destination for the filter"
+msgstr "Choose one destination for the filter"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
@@ -375,6 +433,7 @@ msgstr "Close. The draft is saved."
 msgid "Collapse categories"
 msgstr "Collapse categories"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Color"
@@ -447,9 +506,26 @@ msgstr "Create an app password under Settings > Privacy & Security, with IMAP an
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Create an app-specific password under Sign-In and Security in your Apple Account."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Create filter"
+msgstr "Create filter"
+
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Create filter from these messages"
+msgstr "Create filter from these messages"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Current folder"
+msgstr "Current folder"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
 msgstr "Custom icon"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Custom time"
+msgstr "Custom time"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
@@ -459,12 +535,26 @@ msgstr "Dark background"
 msgid "Date"
 msgstr "Date"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Default"
+msgstr "Default"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Delete"
 msgstr "Delete"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Delete filter?"
+msgstr "Delete filter?"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Delete label or folder?"
+msgstr "Delete label or folder?"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -473,6 +563,10 @@ msgstr "Delete Space"
 #: src/renderer/src/App.tsx
 msgid "Deleted"
 msgstr "Deleted"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Deleting a folder also deletes its messages on the server."
+msgstr "Deleting a folder also deletes its messages on the server."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Denied"
@@ -499,6 +593,10 @@ msgstr "Draft discarded"
 msgid "Drafts"
 msgstr "Drafts"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Edit automatic reply"
+msgstr "Edit automatic reply"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -509,6 +607,14 @@ msgstr "Edit space"
 msgid "Email address"
 msgstr "Email address"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Enabled"
+msgstr "Enabled"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "End"
+msgstr "End"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Enter the IMAP and SMTP servers your email provider gives you."
@@ -516,6 +622,14 @@ msgstr "Enter the IMAP and SMTP servers your email provider gives you."
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Expand categories"
 msgstr "Expand categories"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Favorite"
+msgstr "Favorite"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Favorites"
+msgstr "Favorites"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -545,6 +659,7 @@ msgstr "Forward as attachment"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "From"
 msgstr "From"
 
@@ -564,6 +679,14 @@ msgstr "Generate app-specific password"
 msgid "Generate authorization code"
 msgstr "Generate authorization code"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Gmail aliases and signatures"
+msgstr "Gmail aliases and signatures"
+
+#: src/renderer/src/components/GoToFolder.tsx
+msgid "Go to folder"
+msgstr "Go to folder"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
 msgstr "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
@@ -571,6 +694,10 @@ msgstr "Group accounts into spaces, like “Work” and “Personal”. Each spa
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Group messages into conversations"
 msgstr "Group messages into conversations"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Has attachment"
+msgstr "Has attachment"
 
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
@@ -601,6 +728,10 @@ msgstr "Important"
 msgid "In “{elsewhere}”"
 msgstr "In “{elsewhere}”"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "In 3 hours"
+msgstr "In 3 hours"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -617,6 +748,11 @@ msgstr "Label"
 #: src/renderer/src/App.tsx
 msgid "Label added"
 msgstr "Label added"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Label or folder"
+msgstr "Label or folder"
 
 #: src/renderer/src/App.tsx
 msgid "Label removed"
@@ -655,6 +791,14 @@ msgstr "Loading settings…"
 msgid "Loading the original from the server…"
 msgstr "Loading the original from the server…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Local preview: {count} messages"
+msgstr "Local preview: {count} messages"
+
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
@@ -683,6 +827,7 @@ msgstr "Mark as not important"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as read"
 msgstr "Mark as read"
@@ -720,6 +865,10 @@ msgstr "Marked as unread"
 msgid "Match appearance"
 msgstr "Match appearance"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message"
+msgstr "Message"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
 msgstr "Message actions"
@@ -732,9 +881,17 @@ msgstr "Message background"
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Messages keep their other labels."
+msgstr "Messages keep their other labels."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
 msgstr "More actions"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "More matches exist. Narrow your search."
+msgstr "More matches exist. Narrow your search."
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
@@ -758,6 +915,11 @@ msgstr "Moved to Inbox"
 msgid "Moves from “{elsewhere}”"
 msgstr "Moves from “{elsewhere}”"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Name"
+msgstr "Name"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Name the template, then press Return"
 msgstr "Name the template, then press Return"
@@ -774,6 +936,10 @@ msgstr "Needs sign-in"
 #: src/renderer/src/components/Settings.tsx
 msgid "New draft"
 msgstr "New draft"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "New label or folder"
+msgstr "New label or folder"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "New message"
@@ -801,6 +967,10 @@ msgstr "Newest first"
 msgid "news@shop.com or shop.com"
 msgstr "news@shop.com or shop.com"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Next week"
+msgstr "Next week"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No accounts yet"
 msgstr "No accounts yet"
@@ -808,6 +978,10 @@ msgstr "No accounts yet"
 #: src/renderer/src/components/Settings.tsx
 msgid "No activity yet."
 msgstr "No activity yet."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No label or folder"
+msgstr "No label or folder"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No matching messages"
@@ -820,6 +994,10 @@ msgstr "No messages here"
 #: src/renderer/src/components/MessageList.tsx
 msgid "No messages match the filters"
 msgstr "No messages match the filters"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "No parent"
+msgstr "No parent"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "No suggestions waiting for review."
@@ -883,6 +1061,10 @@ msgid "Order"
 msgstr "Order"
 
 #: src/renderer/src/components/Settings.tsx
+msgid "Organize"
+msgstr "Organize"
+
+#: src/renderer/src/components/Settings.tsx
 msgid "Organize directly"
 msgstr "Organize directly"
 
@@ -902,10 +1084,26 @@ msgstr "Other"
 msgid "Other IMAP"
 msgstr "Other IMAP"
 
+#: src/renderer/src/errors.ts
+msgid "Outlook automatic replies do not support a custom subject"
+msgstr "Outlook automatic replies do not support a custom subject"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Outlook chooses the reply subject."
+msgstr "Outlook chooses the reply subject."
+
+#: src/renderer/src/errors.ts
+msgid "Outlook scheduled replies need both dates"
+msgstr "Outlook scheduled replies need both dates"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Overview"
 msgstr "Overview"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Parent folder"
+msgstr "Parent folder"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
@@ -952,6 +1150,10 @@ msgstr "Reject"
 msgid "Reject suggestion"
 msgstr "Reject suggestion"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Remind me"
+msgstr "Remind me"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Remote images are blocked so the sender can't tell if you read this."
@@ -974,6 +1176,10 @@ msgstr "Remove {email}?"
 msgid "Remove {text}"
 msgstr "Remove {text}"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove {token}"
+msgstr "Remove {token}"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "Remove account"
@@ -994,6 +1200,10 @@ msgstr "Remove this account and its local mail from openmail. Mail on the server
 msgid "Removed star"
 msgstr "Removed star"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Rename"
+msgstr "Rename"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Replies and forwards"
 msgstr "Replies and forwards"
@@ -1010,6 +1220,10 @@ msgstr "Reply all"
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
 msgstr "Reply All"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Reply only to contacts"
+msgstr "Reply only to contacts"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -1039,7 +1253,9 @@ msgstr "Run"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Save"
 msgstr "Save"
 
@@ -1090,17 +1306,33 @@ msgctxt "in progress"
 msgid "Saving…"
 msgstr "Saving…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search  /"
 msgstr "Search  /"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search mail"
+msgstr "Search mail"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Search query"
+msgstr "Search query"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Search results"
 msgstr "Search results"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search scope"
+msgstr "Search scope"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Search templates"
 msgstr "Search templates"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Searching server…"
+msgstr "Searching server…"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
@@ -1141,9 +1373,33 @@ msgid "Sent and archived"
 msgstr "Sent and archived"
 
 #: src/renderer/src/components/Settings.tsx
+msgid "Server"
+msgstr "Server"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server filters"
+msgstr "Server filters"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server filters and automatic replies are available for Gmail and Outlook."
+msgstr "Server filters and automatic replies are available for Gmail and Outlook."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Server search failed. Local results are available."
+msgstr "Server search failed. Local results are available."
+
+#: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Settings"
 msgstr "Settings"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show"
+msgstr "Show"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Gmail categories"
+msgstr "Show Gmail categories"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
@@ -1157,10 +1413,19 @@ msgstr "Show only unread"
 msgid "Show original"
 msgstr "Show original"
 
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Sign in again"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sign in again to enable filters"
+msgstr "Sign in again to enable filters"
+
+#: src/renderer/src/errors.ts
+msgid "Sign in again to enable filters and automatic replies."
+msgstr "Sign in again to enable filters and automatic replies."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Sign In with Browser"
@@ -1186,6 +1451,15 @@ msgstr "SMTP encryption"
 msgid "SMTP server"
 msgstr "SMTP server"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Snooze"
+msgstr "Snooze"
+
+#: src/renderer/src/view.ts
+msgid "Snoozed"
+msgstr "Snoozed"
+
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Social"
@@ -1206,6 +1480,7 @@ msgstr "Spam"
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (usually 465)"
 
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
@@ -1215,6 +1490,10 @@ msgstr "Star"
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "Starred"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Start"
+msgstr "Start"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "STARTTLS (usually 587)"
@@ -1234,12 +1513,21 @@ msgid "Stop suggesting {0}"
 msgstr "Stop suggesting {0}"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Subject"
 msgstr "Subject"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Subject contains"
+msgstr "Subject contains"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Suggested"
 msgstr "Suggested"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sync aliases and signatures"
+msgstr "Sync aliases and signatures"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "Sync All"
@@ -1302,6 +1590,14 @@ msgstr "The account's sign-in has expired. Changes will sync after you sign in a
 msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
 msgstr "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
 
+#: src/renderer/src/errors.ts
+msgid "The end must be after the start"
+msgstr "The end must be after the start"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "The filter applies to future mail on the server."
+msgstr "The filter applies to future mail on the server."
+
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "The message mentions an attachment, but none is added."
@@ -1328,6 +1624,10 @@ msgstr "The server rejected the sign-in. Check the email address, and make sure 
 msgid "These are not email addresses: {list}"
 msgstr "These are not email addresses: {list}"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This removes the filter from the server."
+msgstr "This removes the filter from the server."
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
 msgstr "This space has no accounts yet."
@@ -1342,6 +1642,7 @@ msgstr "Time"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "To"
 msgstr "To"
 
@@ -1352,6 +1653,10 @@ msgstr "To: {to}"
 #: src/renderer/src/format.ts
 msgid "Today {time}"
 msgstr "Today {time}"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Tomorrow morning"
+msgstr "Tomorrow morning"
 
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -1376,6 +1681,10 @@ msgstr "Ungrouped"
 #: src/renderer/src/components/Settings.tsx
 msgid "unknown"
 msgstr "unknown"
+
+#: src/renderer/src/errors.ts
+msgid "Unknown label or folder"
+msgstr "Unknown label or folder"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Unread"

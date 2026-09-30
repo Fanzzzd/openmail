@@ -636,3 +636,62 @@ it.effect("local drafts join the Drafts list only for unfiltered views", () =>
     }),
   ),
 );
+
+it.effect(
+  "reminders, sidebar preferences and Gmail signatures persist after closing and reopening SQLite",
+  () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const dir = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-slice3-test-" });
+      const disk = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer);
+      const db = () => databaseLayer(path.join(dir, "mail.db")).pipe(Layer.provide(disk));
+      yield* withStore(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount("gmail", "me@example.com");
+          yield* store.upsertMessage(account.id, message({}));
+          yield* store.snooze(`${account.id}/m1`, 10_000);
+          yield* store.setOrganization({ accountId: account.id, categories: false });
+          yield* store.setLabelPreference({
+            accountId: account.id,
+            id: "Work",
+            visible: false,
+            favorite: true,
+            color: "#4986e7",
+          });
+          yield* store.transaction(
+            store.replaceSendAs(account.id, [
+              {
+                accountId: account.id,
+                address: "alias@example.com",
+                name: "Alias",
+                isDefault: true,
+                signature: "Hello",
+              },
+            ]),
+          );
+        }),
+        db(),
+      );
+      yield* withStore(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          assert.strictEqual((yield* store.listThreads({ mailbox: "inbox" })).length, 0);
+          assert.strictEqual((yield* store.listThreads({ mailbox: "snoozed" })).length, 1);
+          assert.strictEqual((yield* store.organization)[0]?.categories, false);
+          assert.strictEqual((yield* store.labelPreferences)[0]?.favorite, true);
+          yield* store.moveLabelPreference("gmail:me@example.com", "Work", "Work/Renamed");
+          assert.strictEqual((yield* store.labelPreferences)[0]?.id, "Work/Renamed");
+          assert.strictEqual((yield* store.labelPreferences)[0]?.visible, false);
+          yield* store.moveLabelPreference("gmail:me@example.com", "Work/Renamed", null);
+          assert.deepStrictEqual(yield* store.labelPreferences, []);
+          assert.strictEqual((yield* store.sendAs)[0]?.address, "alias@example.com");
+          assert.strictEqual((yield* store.signatures).length, 2);
+          assert.deepStrictEqual(yield* store.wakeSnoozed(10_000), ["gmail:me@example.com/m1"]);
+          assert.deepStrictEqual(yield* store.wakeSnoozed(10_000), []);
+        }),
+        db(),
+      );
+    }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);

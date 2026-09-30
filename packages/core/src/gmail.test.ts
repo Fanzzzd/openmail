@@ -459,3 +459,244 @@ it.effect("a dropped connection is retried, not reported", () =>
     assert.strictEqual(calls, 3);
   }),
 );
+
+it.effect("server search sends q and folder scope, fetches uncached messages across pages", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": { json: labels },
+      "GET /messages": (url) => {
+        assert.strictEqual(url.searchParams.get("q"), 'from:ann filename:pdf label:"Clients"');
+        return {
+          json: url.searchParams.get("pageToken")
+            ? { messages: [{ id: "m2" }] }
+            : { messages: [{ id: "m1" }], nextPageToken: "next" },
+        };
+      },
+      "GET /messages/m1": { json: message("m1", ["Label_1"]) },
+      "GET /messages/m2": { json: message("m2", ["Label_1"]) },
+    });
+    const page = yield* run(http, (a) =>
+      a.search(account, {
+        search: "from:ann filename:pdf",
+        searchScope: "folder",
+        label: "Label_1",
+      }),
+    );
+    assert.strictEqual(page.messages.length, 2);
+    assert.strictEqual(page.truncated, false);
+  }),
+);
+
+it.effect("Gmail manages label names and palette colors with the labels API", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": { json: labels },
+      "POST /labels": { json: {} },
+      "PATCH /labels/Label_1": { json: {} },
+      "DELETE /labels/Label_1": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        yield* a.changeLabel(account, { kind: "create", parentId: "Label_1", name: "New" });
+        yield* a.changeLabel(account, { kind: "rename", id: "Label_1", name: "Renamed" });
+        yield* a.changeLabel(account, { kind: "color", id: "Label_1", color: "#4986e7" });
+        yield* a.changeLabel(account, { kind: "delete", id: "Label_1" });
+      }),
+    );
+    assert.deepStrictEqual(http.calls.filter((c) => c.method === "POST")[0]?.body, {
+      name: "Clients/New",
+      labelListVisibility: "labelShow",
+      messageListVisibility: "show",
+    });
+    assert.deepStrictEqual(
+      http.calls.filter((c) => c.method === "PATCH").map((c) => c.body),
+      [{ name: "Renamed" }, { color: { backgroundColor: "#4986e7", textColor: "#000000" } }],
+    );
+  }),
+);
+
+it.effect("Gmail filter actions map to labels; list/create/delete use settings filters", () =>
+  Effect.gen(function* () {
+    const criteria = {
+      from: "ann@example.com",
+      to: "",
+      subject: "Report",
+      query: "has:attachment",
+      hasAttachment: true,
+    };
+    const filter = {
+      id: "f1",
+      criteria,
+      action: { addLabelIds: ["STARRED", "Label_1"], removeLabelIds: ["UNREAD"] },
+    };
+    const http = fakeHttp({
+      "GET /settings/filters": { json: { filter: [filter] } },
+      "POST /settings/filters": { json: filter },
+      "DELETE /settings/filters/f1": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const [existing] = yield* a.filters(account);
+        assert.ok(existing);
+        assert.strictEqual(existing.action.label, "Label_1");
+        yield* a.createFilter(account, {
+          name: "Reports",
+          criteria,
+          action: { archive: false, markRead: true, star: true, trash: false, label: "Label_1" },
+        });
+        yield* a.deleteFilter(account, "f1");
+      }),
+    );
+    assert.deepStrictEqual(http.calls.find((c) => c.method === "POST")?.body, {
+      criteria,
+      action: filter.action,
+    });
+  }),
+);
+
+it.effect(
+  "Gmail vacation roundtrips and send-as skips unverified aliases and decodes signatures",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /settings/vacation": {
+          json: {
+            enableAutoReply: true,
+            startTime: "1000",
+            endTime: "2000",
+            responseSubject: "Away",
+            responseBodyPlainText: "Back tomorrow",
+            restrictToContacts: true,
+          },
+        },
+        "PUT /settings/vacation": { json: {} },
+        "GET /settings/sendAs": {
+          json: {
+            sendAs: [
+              {
+                sendAsEmail: "alias@example.com",
+                displayName: "Me",
+                isDefault: true,
+                signature: "<p>Hello &amp; bye</p>",
+                verificationStatus: "accepted",
+              },
+              { sendAsEmail: "pending@example.com", verificationStatus: "pending" },
+            ],
+          },
+        },
+      });
+      yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const v = yield* a.vacation(account);
+          assert.strictEqual(v.contactsOnly, true);
+          yield* a.setVacation(account, v);
+          const aliases = yield* a.sendAs(account);
+          assert.strictEqual(aliases.length, 1);
+          assert.strictEqual(aliases[0]?.signature, "Hello & bye");
+        }),
+      );
+      assert.deepStrictEqual(http.calls.find((c) => c.method === "PUT")?.body, {
+        enableAutoReply: true,
+        startTime: "1000",
+        endTime: "2000",
+        responseSubject: "Away",
+        responseBodyPlainText: "Back tomorrow",
+        restrictToContacts: true,
+      });
+    }),
+);
+
+it.effect("missing Gmail settings scope is separate from mail authentication", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /settings/filters": {
+        status: 403,
+        json: { error: "insufficient authentication scopes" },
+      },
+      "GET /messages/m1": { json: { raw: b64("mail still works") } },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const error = yield* a.filters(account).pipe(Effect.flip);
+        assert.strictEqual(error._tag, "SettingsScopeMissing");
+        assert.strictEqual(
+          Buffer.from(yield* a.fetchRaw(account, "m1")).toString(),
+          "mail still works",
+        );
+      }),
+    );
+  }),
+);
+
+it.effect("Gmail alias selection becomes the MIME From header", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /messages/send": { json: {} } });
+    yield* run(http, (a) =>
+      a.send(
+        account,
+        {
+          from: { name: "Alias", address: "alias@example.com" },
+          to: [{ name: "", address: "to@example.com" }],
+          cc: [],
+          bcc: [],
+          subject: "Hi",
+          text: "Hello",
+          attachments: [],
+        },
+        Option.none(),
+      ),
+    );
+    const body = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
+      http.calls[0]?.body,
+    );
+    assert.match(Buffer.from(body.raw, "base64url").toString(), /From: Alias <alias@example.com>/);
+  }),
+);
+
+it.effect("Gmail consent requests settings.basic alongside existing mail scopes", () => {
+  const http = fakeHttp({
+    "GET /profile": { json: { emailAddress: account.email, historyId: "1" } },
+  });
+  return makeGmail.pipe(
+    Effect.flatMap((a) => a.connect({ provider: "gmail" })),
+    Effect.provide(
+      Layer.mergeAll(
+        http.layer,
+        MemoryPlatform({
+          config: { google: { clientId: "client", clientSecret: "secret" } },
+          oauth: {
+            authorize: (req) =>
+              Effect.sync(() => {
+                assert.ok(
+                  req.scopes.includes("https://www.googleapis.com/auth/gmail.settings.basic"),
+                );
+                assert.ok(req.scopes.includes("https://www.googleapis.com/auth/gmail.modify"));
+                return {
+                  accessToken: "access-token",
+                  refreshToken: Option.some("refresh-token"),
+                  expiresIn: 3600,
+                };
+              }),
+          },
+        }),
+      ),
+    ),
+  );
+});
+
+it.effect("Gmail explicit spam search includes messages normally excluded from all mail", () => {
+  const http = fakeHttp({
+    "GET /labels": { json: labels },
+    "GET /messages": (url) => {
+      assert.strictEqual(url.searchParams.get("q"), "in:spam from:ann");
+      assert.strictEqual(url.searchParams.get("includeSpamTrash"), "true");
+      return { json: { messages: [{ id: "spam" }] } };
+    },
+    "GET /messages/spam": { json: message("spam", ["SPAM"]) },
+  });
+  return run(http, (a) => a.search(account, { search: "in:spam from:ann" })).pipe(
+    Effect.tap((page) =>
+      Effect.sync(() => assert.strictEqual(page.messages[0]?.labels[0], "SPAM")),
+    ),
+  );
+});

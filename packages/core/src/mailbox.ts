@@ -36,8 +36,21 @@ import type {
   NotFound,
   PermanentError,
   ProviderError,
+  SettingsScopeMissing,
 } from "./errors.js";
 import type { ClientConfig, ConnectInput } from "./services.js";
+
+import type {
+  AccountOrganization,
+  FilterCriteria,
+  FilterInput,
+  LabelChange,
+  LabelPreference,
+  SearchResult,
+  SendAs,
+  ServerFilter,
+  Vacation,
+} from "./organization.js";
 
 export const SyncState = Schema.Struct({
   running: Schema.Boolean,
@@ -85,7 +98,13 @@ export interface AttachmentContent {
 
 export type SignInError = AuthError | ProviderError | ClientNotConfigured | InvalidInput;
 /** What performing a command can fail with. Policy denials are an Outcome, not an error. */
-export type PerformError = NotFound | InvalidInput | AuthError | PermanentError | ProviderError;
+export type PerformError =
+  | NotFound
+  | InvalidInput
+  | AuthError
+  | PermanentError
+  | ProviderError
+  | SettingsScopeMissing;
 
 export class Mailbox extends Context.Service<
   Mailbox,
@@ -123,6 +142,26 @@ export class Mailbox extends Context.Service<
       within?: string,
     ): Effect.Effect<Record<string, number>>;
 
+    searchServer(query: ThreadQuery): Effect.Effect<SearchResult>;
+    changeLabel(accountId: string, change: LabelChange): Effect.Effect<void, PerformError>;
+    readonly labelPreferences: Effect.Effect<LabelPreference[]>;
+    setLabelPreference(input: LabelPreference): Effect.Effect<void, PerformError>;
+    readonly organization: Effect.Effect<AccountOrganization[]>;
+    setOrganization(input: AccountOrganization): Effect.Effect<void, NotFound>;
+    snooze(threads: readonly string[], due: number): Effect.Effect<void, PerformError>;
+    wakeSnoozed(): Effect.Effect<void>;
+    filters(accountId: string): Effect.Effect<ServerFilter[], PerformError>;
+    previewFilter(
+      accountId: string,
+      criteria: FilterCriteria,
+    ): Effect.Effect<ThreadSummary[], NotFound>;
+    createFilter(accountId: string, input: FilterInput): Effect.Effect<ServerFilter, PerformError>;
+    deleteFilter(accountId: string, id: string): Effect.Effect<void, PerformError>;
+    vacation(accountId: string): Effect.Effect<Vacation, PerformError>;
+    setVacation(accountId: string, input: Vacation): Effect.Effect<void, PerformError>;
+    readonly sendAs: Effect.Effect<SendAs[]>;
+    syncSendAs(accountId: string): Effect.Effect<void, PerformError>;
+
     // Profiles (spaces)
     readonly profiles: Effect.Effect<Profile[]>;
     createProfile(input: ProfileInput): Effect.Effect<Profile>;
@@ -159,7 +198,7 @@ export class Mailbox extends Context.Service<
     // Compose settings
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
-    /** Local signatures. Provider signatures (Gmail sendAs) are a later source behind this. */
+    /** Local signatures take precedence over synced Gmail send-as signatures. */
     readonly signatures: Effect.Effect<Signature[]>;
     setSignature(signature: Signature): Effect.Effect<void>;
     readonly templates: Effect.Effect<Template[]>;

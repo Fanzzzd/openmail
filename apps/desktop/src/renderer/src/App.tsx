@@ -81,6 +81,10 @@ import {
   type View,
 } from "./view";
 
+import { GoToFolder } from "./components/GoToFolder";
+import { SnoozeDialog } from "./components/SnoozeDialog";
+import { FilterEditor } from "./components/ServerSettings";
+
 type Dialog = "add" | "settings" | "proposals" | null;
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
@@ -159,6 +163,9 @@ export function App() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [compose, setCompose] = useState<Draft | null>(null);
   const [labelPicker, setLabelPicker] = useState(false);
+  const [goToFolder, setGoToFolder] = useState(false);
+  const [snoozeIds, setSnoozeIds] = useState<readonly string[] | null>(null);
+  const [filterSeed, setFilterSeed] = useState<{ accountId: string; from: string } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const undoRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -170,6 +177,9 @@ export function App() {
   const profileList = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const counts = AsyncResult.getOrElse(useAtomValue(unreadCountsAtom), () => ({}));
   const scope = scopeAccountIds(view, accountList);
+  const filterAccount = filterSeed
+    ? accountList.find((a) => a.id === filterSeed.accountId)
+    : undefined;
 
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
   const labelMap = new Map(labels.map((l) => [`${l.accountId}/${l.id}`, l]));
@@ -188,8 +198,8 @@ export function App() {
   const print = useThreadPrint((next) => say(next));
 
   /** The local signature for an account: one for new messages, one for replies and forwards. */
-  const signatureFor = (accountId: string, mode: ComposeMode) => {
-    const address = accountList.find((a) => a.id === accountId)?.email.toLowerCase();
+  const signatureFor = (accountId: string, mode: ComposeMode, from?: string) => {
+    const address = (from ?? accountList.find((a) => a.id === accountId)?.email)?.toLowerCase();
     const kind = mode === "new" ? "new" : "reply";
     return signatures.find((s) => s.address === address && s.kind === kind)?.text;
   };
@@ -470,7 +480,8 @@ export function App() {
   const onKey = useEffectEvent((e: KeyboardEvent) => {
     // Dialogs and the compose window handle their own keys, and so do open
     // menus and pickers (typeahead must not archive the selected thread).
-    if (dialog || compose || editing || e.defaultPrevented) return;
+    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed || e.defaultPrevented)
+      return;
     if (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]')) return;
     const typing =
       e.target instanceof HTMLInputElement ||
@@ -509,6 +520,11 @@ export function App() {
       if (selectedId && threadState) {
         print(selectedId, false, prefs.threadGrouping ? undefined : selectedId);
       }
+      return;
+    }
+    if (cmd && e.shiftKey && e.key.toLowerCase() === "g") {
+      e.preventDefault();
+      setGoToFolder(true);
       return;
     }
     if (cmd && e.shiftKey && e.key.toLowerCase() === "i") {
@@ -690,6 +706,9 @@ export function App() {
                 loading={threads.loading}
                 showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
                 searching={search !== ""}
+                searchingServer={threads.searchingServer}
+                searchTruncated={threads.searchTruncated}
+                searchErrors={threads.searchErrors}
                 filters={filters}
                 onFilters={setFilters}
                 labels={labelMap}
@@ -701,6 +720,9 @@ export function App() {
                   stateOf: rowState,
                   onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
                   onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
+                  onSnooze: (thread) => setSnoozeIds([thread.id]),
+                  onFilter: (thread) =>
+                    setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
                   onOpenWindow: (m) =>
                     view.mailbox === "drafts" ? openSavedDraft(m.id) : openWindow(m.id),
                 }}
@@ -735,6 +757,20 @@ export function App() {
                       labels={threadLabels}
                       onOp={(op) => act(op)}
                       onCompose={startCompose}
+                      onSnooze={() => {
+                        if (selectedId) setSnoozeIds([selectedId]);
+                      }}
+                      onFilter={
+                        selectedAccount?.provider === "imap"
+                          ? undefined
+                          : () => {
+                              if (selectedAccount && selected)
+                                setFilterSeed({
+                                  accountId: selectedAccount.id,
+                                  from: selected.from.address,
+                                });
+                            }
+                      }
                       onOpenWindow={() => {
                         if (selectedId) openWindow(selectedId);
                       }}
@@ -770,6 +806,32 @@ export function App() {
             const email = a.email;
             say({ text: t`Added ${email}. Syncing…` });
           }}
+        />
+      )}
+      {goToFolder && (
+        <GoToFolder
+          labels={labels}
+          accounts={accountList}
+          view={view}
+          onView={changeView}
+          onClose={() => setGoToFolder(false)}
+        />
+      )}
+      {snoozeIds && (
+        <SnoozeDialog
+          threads={snoozeIds}
+          onClose={() => setSnoozeIds(null)}
+          onSnoozed={() => {
+            setSnoozeIds(null);
+            setSelectedId(null);
+          }}
+        />
+      )}
+      {filterSeed && filterAccount && (
+        <FilterEditor
+          account={filterAccount}
+          from={filterSeed.from}
+          onClose={() => setFilterSeed(null)}
         />
       )}
       {dialog === "settings" && (

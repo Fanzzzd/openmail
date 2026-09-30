@@ -26,6 +26,7 @@ export interface Filters {
 /** Mailbox names; render with `i18n._(MAILBOX_NAMES[mailbox])`. */
 export const MAILBOX_NAMES: Record<Mailbox, MessageDescriptor> = {
   inbox: msg`Inbox`,
+  snoozed: msg`Snoozed`,
   important: msg`Important`,
   starred: msg`Starred`,
   sent: msg`Sent`,

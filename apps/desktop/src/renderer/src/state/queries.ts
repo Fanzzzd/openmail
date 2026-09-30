@@ -134,3 +134,20 @@ export const suggestionsAtom = (query: string, from: string | undefined) =>
     reactivityKeys: [Keys.contacts],
     timeToLive: Duration.seconds(30),
   });
+
+export const labelPreferencesAtom = MailClient.query("LabelPreferences", undefined, {
+  reactivityKeys: [Keys.organization],
+  ...always,
+});
+export const organizationAtom = MailClient.query("Organization", undefined, {
+  reactivityKeys: [Keys.organization],
+  ...always,
+});
+export const sendAsAtom = MailClient.query("SendAs", undefined, {
+  reactivityKeys: [Keys.sendAs],
+  ...always,
+});
+export const filtersListAtom = (accountId: string) =>
+  MailClient.query("Filters", { accountId }, { reactivityKeys: [Keys.serverSettings], ...cached });
+export const vacationAtom = (accountId: string) =>
+  MailClient.query("Vacation", { accountId }, { reactivityKeys: [Keys.serverSettings], ...cached });

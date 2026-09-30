@@ -9,6 +9,9 @@
  */
 export const Keys = {
   accounts: "accounts",
+  organization: "organization",
+  sendAs: "send-as",
+  serverSettings: "server-settings",
   /** Thread lists: mailboxes, filters, search, the overview. */
   threads: "threads",
   /** Every open thread. */
@@ -44,6 +47,9 @@ export const threadChangeKeys = (ids: readonly string[]) => [
 /** Everything the main process can change behind the app's back. */
 export const MAIL_KEYS = [
   Keys.accounts,
+  Keys.organization,
+  Keys.sendAs,
+  Keys.serverSettings,
   Keys.threads,
   Keys.thread,
   Keys.labels,

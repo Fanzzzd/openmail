@@ -9,6 +9,7 @@ import {
   ChevronRight,
   File,
   Inbox,
+  Clock,
   Info,
   Layers,
   LayoutGrid,
@@ -40,7 +41,12 @@ import type {
 } from "../../../shared/api";
 import { avatarColor, PROFILE_BG } from "../format";
 import { syncNow, useRunMail } from "../state/mail";
-import { labelsAtom, unreadByLabelAtom } from "../state/queries";
+import {
+  labelsAtom,
+  labelPreferencesAtom,
+  organizationAtom,
+  unreadByLabelAtom,
+} from "../state/queries";
 import { ProviderIcon } from "./ProviderIcon";
 import {
   ContextMenuContent,
@@ -65,6 +71,7 @@ type Icon = ComponentType<{ className?: string }>;
 
 // Each mailbox gets its own icon color, as in Mimestream's sidebar.
 const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [
+  { id: "snoozed", icon: Clock, color: "text-violet-500" },
   { id: "inbox", icon: Inbox, color: "text-blue-500" },
   { id: "important", icon: Bookmark, color: "text-orange-500" },
   { id: "starred", icon: Star, color: "text-amber-500" },
@@ -131,9 +138,31 @@ export function Sidebar({
     useAtomValue(unreadByLabelAtom(scope, "INBOX")),
     () => NO_COUNTS,
   );
-  const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom(scope)), () => []);
+  const labelPrefs = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
+  const organization = AsyncResult.getOrElse(useAtomValue(organizationAtom), () => []);
+  const allLabels = AsyncResult.getOrElse(useAtomValue(labelsAtom(scope)), () => []);
+  const labels = allLabels
+    .filter(
+      (l) =>
+        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.visible !== false,
+    )
+    .map((l) => ({
+      ...l,
+      color: labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ?? l.color,
+    }));
+  const favorites = allLabels
+    .filter((l) => labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.favorite)
+    .map((l) => ({
+      ...l,
+      color: labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ?? l.color,
+    }));
   const profile = profiles.find((p) => p.id === view.space);
-  const hasGmail = accounts.some((a) => a.provider === "gmail" && (!scope || scope.includes(a.id)));
+  const hasGmail = accounts.some(
+    (a) =>
+      a.provider === "gmail" &&
+      (!scope || scope.includes(a.id)) &&
+      organization.find((o) => o.accountId === a.id)?.categories !== false,
+  );
   const spaceUnread = members.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
   /** The footer line: progress while syncing, then failures or the last sync time. */
@@ -330,6 +359,22 @@ export function Sidebar({
           ))}
         </Section>
 
+        {favorites.length > 0 && (
+          <Section title={t`Favorites`}>
+            {favorites.map((l) => (
+              <Item
+                key={`${l.accountId}/${l.id}`}
+                active={view.label?.id === l.id && view.label.accountId === l.accountId}
+                onClick={() =>
+                  onView({ ...view, mailbox: "all", label: { id: l.id, accountId: l.accountId } })
+                }
+                icon={<Star className="size-4 text-amber-500" />}
+                label={l.name}
+                badge={0}
+              />
+            ))}
+          </Section>
+        )}
         <LabelSections
           labels={labels}
           accounts={accounts}

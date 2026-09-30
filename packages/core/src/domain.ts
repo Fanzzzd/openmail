@@ -34,7 +34,7 @@ export const Account = Schema.Struct({
   /** Error from the most recent sync, cleared by the next successful one. */
   lastSyncError: Schema.NullOr(Schema.String),
   profileId: Schema.NullOr(Schema.String),
-  /** The provider rejected the stored credentials or a needed scope; sign in again. */
+  /** The provider rejected credentials or a mail scope. Optional settings scope errors stay in their screens. */
   needsReauth: Schema.Boolean,
   /** For imap accounts: which preset or server. Never contains the password. */
   imap: Schema.optionalKey(ImapSettings),
@@ -167,6 +167,7 @@ export type IncomingMessage = typeof IncomingMessage.Type;
  */
 export const MAILBOXES = [
   "inbox",
+  "snoozed",
   "important",
   "starred",
   "sent",
@@ -189,6 +190,20 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** Parsed search operators, shared by local queries and provider adapters. */
+export const SearchCriteria = Schema.Struct({
+  from: Schema.optionalKey(Schema.String),
+  to: Schema.optionalKey(Schema.String),
+  subject: Schema.optionalKey(Schema.String),
+  labels: Schema.optionalKey(Schema.Array(Schema.String)),
+  important: Schema.optionalKey(Schema.Boolean),
+  attachment: Schema.optionalKey(Schema.Boolean),
+  filename: Schema.optionalKey(Schema.String),
+  dateBefore: Schema.optionalKey(Schema.Number),
+  dateAfter: Schema.optionalKey(Schema.Number),
+});
+export type SearchCriteria = typeof SearchCriteria.Type;
+
 /** A list or search over threads. `search` set means full-text search, newest first. */
 export const ThreadQuery = Schema.Struct({
   mailbox: Schema.optionalKey(MailboxView),
@@ -199,6 +214,10 @@ export const ThreadQuery = Schema.Struct({
   unreadOnly: Schema.optionalKey(Schema.Boolean),
   starredOnly: Schema.optionalKey(Schema.Boolean),
   search: Schema.optionalKey(Schema.String),
+  searchScope: Schema.optionalKey(Schema.Literals(["all", "folder"])),
+  criteria: Schema.optionalKey(SearchCriteria),
+  /** Cached provider hits, used by Mailbox to read authoritative search results. */
+  messageIds: Schema.optionalKey(Schema.Array(Schema.String)),
   /** One row per message instead of per conversation (conversation grouping off). */
   flat: Schema.optionalKey(Schema.Boolean),
   /** Page cursor: the `date` of the oldest thread already shown. */
@@ -240,6 +259,8 @@ export const ComposeMode = Schema.Literals(["new", "reply", "replyAll", "forward
 export type ComposeMode = typeof ComposeMode.Type;
 
 export const OutgoingMessage = Schema.Struct({
+  /** Verified Gmail send-as address; omitted uses the account address. */
+  from: Schema.optionalKey(Address),
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
   bcc: Schema.Array(Address),

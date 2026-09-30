@@ -50,3 +50,5 @@ export const messageBackgroundAtom = Atom.family((_messageId: string) =>
 export const imagesLoadedAtom = Atom.family((_messageId: string) =>
   Atom.make(false).pipe(Atom.keepAlive),
 );
+
+export const searchScopeAtom = Atom.make<"all" | "folder">("all").pipe(Atom.keepAlive);

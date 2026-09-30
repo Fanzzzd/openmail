@@ -23,8 +23,7 @@ import {
 import { formatBytes } from "../format";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
-import { templatesAtom } from "../state/queries";
-import { ProviderIcon } from "./ProviderIcon";
+import { templatesAtom, sendAsAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
@@ -45,7 +44,7 @@ interface Props {
   draft: Draft;
   accounts: readonly Account[];
   /** The local signature for an account and compose mode, if the person set one. */
-  signatureFor: (accountId: string, mode: ComposeMode) => string | undefined;
+  signatureFor: (accountId: string, mode: ComposeMode, from?: string) => string | undefined;
   /** `changed` is false when the person closed without touching the draft. */
   onClose: (draft: Draft, changed: boolean) => void;
   onDiscard: (draft: Draft) => void;
@@ -73,6 +72,18 @@ export function Composer({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const toRef = useRef<HTMLInputElement>(null);
   const account = accounts.find((a) => a.id === draft.accountId);
+  const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
+  const senders = accounts.flatMap((a) => [
+    { accountId: a.id, address: a.email, name: "" },
+    ...aliases
+      .filter(
+        (alias) =>
+          alias.accountId === a.id && alias.address.toLowerCase() !== a.email.toLowerCase(),
+      )
+      .map((alias) => ({ accountId: a.id, address: alias.address, name: alias.name })),
+  ]);
+  const availableSenders =
+    draft.mode === "new" ? senders : senders.filter((s) => s.accountId === draft.accountId);
   const replying = draft.mode === "reply" || draft.mode === "replyAll";
   const set = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -150,15 +161,19 @@ export function Composer({
     set({ attachments: [...draft.attachments, ...added] });
   };
 
-  const changeAccount = (accountId: string) =>
+  const changeSender = (key: string) => {
+    const sender = senders.find((s) => `${s.accountId}/${s.address}` === key);
+    if (!sender) return;
     set({
-      accountId,
+      accountId: sender.accountId,
+      from: { name: sender.name, address: sender.address },
       body: applySignature(
         draft.body,
-        signatureFor(draft.accountId, draft.mode),
-        signatureFor(accountId, draft.mode),
+        signatureFor(draft.accountId, draft.mode, draft.from?.address),
+        signatureFor(sender.accountId, draft.mode, sender.address),
       ),
     });
+  };
 
   const insertTemplate = (template: Template) => {
     const to = merge(draft.to, template.to);
@@ -246,19 +261,11 @@ export function Composer({
               </span>
               <Select
                 aria-label={t`From`}
-                value={draft.accountId}
-                // Replies stay on the account that received the message.
-                disabled={draft.mode !== "new"}
-                onValueChange={changeAccount}
-                options={accounts.map((a) => ({
-                  value: a.id,
-                  label: a.email,
-                  icon: (
-                    <ProviderIcon
-                      provider={a.imap?.preset ?? a.provider}
-                      className="size-4 shrink-0"
-                    />
-                  ),
+                value={`${draft.accountId}/${draft.from?.address ?? account?.email ?? ""}`}
+                onValueChange={changeSender}
+                options={availableSenders.map((sender) => ({
+                  value: `${sender.accountId}/${sender.address}`,
+                  label: sender.address,
                 }))}
                 className="max-w-full"
               />
@@ -272,7 +279,7 @@ export function Composer({
                 inputRef={toRef}
                 value={draft.to}
                 onChange={(to) => set({ to })}
-                from={account?.email}
+                from={draft.from?.address ?? account?.email}
               />
               {!showBcc && (
                 <button
@@ -294,7 +301,7 @@ export function Composer({
                     label={t`Cc`}
                     value={draft.cc}
                     onChange={(cc) => set({ cc })}
-                    from={account?.email}
+                    from={draft.from?.address ?? account?.email}
                   />
                 </div>
                 <div className={row}>
@@ -305,7 +312,7 @@ export function Composer({
                     label={t`Bcc`}
                     value={draft.bcc}
                     onChange={(bcc) => set({ bcc })}
-                    from={account?.email}
+                    from={draft.from?.address ?? account?.email}
                   />
                 </div>
               </>

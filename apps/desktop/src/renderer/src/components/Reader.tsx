@@ -1,3 +1,4 @@
+import { SearchField } from "./ui/SearchField";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -25,7 +26,6 @@ import {
   Moon,
   Plus,
   Printer,
-  Search,
   ShieldCheck,
   Star,
   Sun,
@@ -79,7 +79,6 @@ export function Reader({
   onEditDraft,
   notify,
 }: Props) {
-  const { t } = useLingui();
   const thread = AsyncResult.value(useAtomValue(threadAtom(messageId)));
   const messages = thread._tag === "Some" ? thread.value : undefined;
   const grouping = AsyncResult.getOrElse(
@@ -91,16 +90,7 @@ export function Reader({
     <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
       <header className="drag flex h-13 shrink-0 items-center gap-3 px-4">
         <div className="min-w-0 flex-1">{messageId && messages ? toolbar : null}</div>
-        <label className="flex h-7 w-60 items-center gap-1.5 rounded-md border border-black/10 px-2 dark:border-white/10">
-          <Search className="size-3.5 shrink-0 text-neutral-400" />
-          <input
-            ref={searchRef}
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={t`Search  /`}
-            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-neutral-400"
-          />
-        </label>
+        <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
       </header>
       {!messageId || !messages ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-neutral-300 dark:text-neutral-600">

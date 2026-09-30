@@ -1,0 +1,296 @@
+import { assert, it } from "@effect/vitest";
+import { Effect, Layer } from "effect";
+import { TestClock } from "effect/testing";
+import type { IncomingMessage } from "./domain.js";
+import { ProviderError, SettingsScopeMissing } from "./errors.js";
+import { makeFakeProvider } from "./fake-provider.js";
+import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox.js";
+import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes } from "./organization.js";
+import { MemoryPlatform } from "./platform-memory.js";
+import { Providers, Store } from "./services.js";
+import { StoreLive } from "./store.js";
+import { fakeServer, TestMailbox } from "./testing.js";
+
+const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
+  providerId: id,
+  threadId: `t-${id}`,
+  subject: "Sales report",
+  from: { name: "Alice", address: "alice@example.com" },
+  to: [],
+  cc: [],
+  date: 1000,
+  snippet: "",
+  bodyText: "report",
+  bodyHtml: "",
+  labels: ["INBOX"],
+  attachments: [],
+  isUnread: false,
+  isStarred: false,
+  ...overrides,
+});
+const withMailbox = <A, E>(
+  body: (m: Mailbox["Service"], server: ReturnType<typeof fakeServer>) => Effect.Effect<A, E>,
+) => {
+  const server = fakeServer("me@gmail.com", [incoming("m1"), incoming("newer", { date: 2000 })]);
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    yield* m.connect({ provider: "gmail" });
+    yield* m.sync();
+    return yield* body(m, server);
+  }).pipe(Effect.provide(TestMailbox({ gmail: server })));
+};
+
+it.effect("search fetches uncached mail, merges/dedups it, and contains server failures", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      server.messages.set("remote", incoming("remote", { date: 3000 }));
+      server.messages.set("same", incoming("same", { threadId: "t-m1", date: 4000 }));
+      assert.strictEqual((yield* m.threads({ search: "report" })).length, 2);
+      const found = yield* m.searchServer({ search: "report", accountIds: ["gmail:me@gmail.com"] });
+      assert.strictEqual(found.threads.length, 3);
+      assert.strictEqual(found.threads[0]?.id, "gmail:me@gmail.com/same");
+      assert.strictEqual((yield* m.thread("gmail:me@gmail.com/remote")).length, 1);
+      server.failNext = new ProviderError({ message: "offline" });
+      const offline = yield* m.searchServer({ search: "report" });
+      assert.strictEqual(offline.threads.length, 3);
+      assert.strictEqual(offline.errors.length, 1);
+      assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
+      assert.strictEqual(
+        (yield* m.searchServer({ search: "report", accountIds: [] })).threads.length,
+        0,
+      );
+    }),
+  ),
+);
+
+it.effect(
+  "snooze survives sync and new thread members; waking promotes and marks unread once",
+  () =>
+    withMailbox((m, server) =>
+      Effect.gen(function* () {
+        yield* m.snooze(["gmail:me@gmail.com/m1"], 10_000);
+        assert.strictEqual(server.pushed.length, 0); // Hiding is local; Gmail has no snooze API.
+        yield* m.sync();
+        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+        assert.strictEqual((yield* m.threads({ mailbox: "snoozed" })).length, 1);
+        server.messages.set("reply", incoming("reply", { threadId: "t-m1", date: 1500 }));
+        yield* m.sync();
+        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+        yield* TestClock.adjust("10 seconds");
+        yield* m.wakeSnoozed();
+        const inbox = yield* m.threads({ mailbox: "inbox" });
+        assert.strictEqual(inbox[0]?.threadId, "t-m1");
+        assert.strictEqual(inbox[0]?.isUnread, true);
+        assert.deepStrictEqual(yield* m.threads({ mailbox: "snoozed" }), []);
+        assert.strictEqual(server.pushed.length, 4);
+        yield* m.wakeSnoozed();
+        assert.strictEqual(server.pushed.length, 4);
+        yield* m.sync();
+        assert.strictEqual((yield* m.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
+      }),
+    ),
+);
+
+it.effect("a rebuilt Mailbox resumes persisted reminders, including overdue ones", () => {
+  const server = fakeServer("me@gmail.com", [incoming("m1")]);
+  const adapter = makeFakeProvider(server);
+  const providers = Layer.succeed(Providers, { get: () => adapter });
+  const dependencies = Layer.mergeAll(StoreLive, providers).pipe(
+    Layer.provideMerge(MemoryPlatform()),
+  );
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", server.email);
+    yield* store.upsertMessage(account.id, incoming("m1"));
+    yield* Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.snooze([`${account.id}/m1`], 1000);
+    }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
+    yield* TestClock.adjust("2 seconds");
+    yield* Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.wakeSnoozed();
+      const inbox = yield* m.threads({ mailbox: "inbox" });
+      assert.strictEqual(inbox.length, 1);
+      assert.strictEqual(inbox[0]?.isUnread, true);
+    }).pipe(Effect.provide(MailboxLive({ backgroundFlush: false })));
+  }).pipe(Effect.provide(dependencies));
+});
+
+it.effect("offline wake does not lose unread or inbox state on stale sync", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      yield* m.snooze(["gmail:me@gmail.com/m1"], 1000);
+      yield* TestClock.adjust("2 seconds");
+      server.failNext = new ProviderError({ message: "offline" });
+      yield* m.wakeSnoozed();
+      assert.strictEqual(server.pushed.length, 0); // The dependent move waits for the failed unread op.
+      assert.strictEqual((yield* m.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
+      yield* m.sync();
+      assert.strictEqual(server.pushed.length, 2);
+      assert.strictEqual((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);
+    }),
+  ),
+);
+
+it.effect("labels, favorites, visibility and categories survive provider label refresh", () =>
+  withMailbox((m) =>
+    Effect.gen(function* () {
+      const id = "gmail:me@gmail.com";
+      yield* m.changeLabel(id, { kind: "create", name: "Customers" });
+      const [label] = yield* m.labels([id]);
+      assert.ok(label);
+      yield* m.changeLabel(id, { kind: "rename", id: label.id, name: "Clients" });
+      yield* m.changeLabel(id, { kind: "color", id: label.id, color: "#4986e7" });
+      yield* m.setLabelPreference({
+        accountId: id,
+        id: label.id,
+        visible: false,
+        favorite: true,
+        color: null,
+      });
+      yield* m.setOrganization({ accountId: id, categories: false });
+      yield* m.sync();
+      assert.strictEqual((yield* m.labels([id]))[0]?.name, "Clients");
+      assert.strictEqual((yield* m.labels([id]))[0]?.color, "#4986e7");
+      assert.strictEqual((yield* m.labelPreferences)[0]?.favorite, true);
+      assert.strictEqual((yield* m.organization)[0]?.categories, false);
+      yield* m.changeLabel(id, { kind: "delete", id: label.id });
+      assert.deepStrictEqual(yield* m.labels([id]), []);
+      const exit = yield* Effect.exit(m.changeLabel(id, { kind: "delete", id: "INBOX" }));
+      assert.strictEqual(exit._tag, "Failure");
+    }),
+  ),
+);
+
+it.effect(
+  "filter preview stays local; create/delete and vacation roundtrip through the provider",
+  () =>
+    withMailbox((m, server) =>
+      Effect.gen(function* () {
+        const id = "gmail:me@gmail.com";
+        const input = {
+          ...EMPTY_FILTER,
+          name: "Sales",
+          criteria: { ...EMPTY_FILTER.criteria, from: "alice@example.com" },
+          action: { ...EMPTY_FILTER.action, markRead: true },
+        };
+        assert.strictEqual((yield* m.previewFilter(id, input.criteria)).length, 2);
+        assert.strictEqual(server.searched.length, 0);
+        const filter = yield* m.createFilter(id, input);
+        assert.strictEqual((yield* m.filters(id))[0]?.id, filter.id);
+        yield* m.deleteFilter(id, filter.id);
+        assert.deepStrictEqual(yield* m.filters(id), []);
+        const vacation = {
+          ...EMPTY_VACATION,
+          enabled: true,
+          start: 1000,
+          end: 2000,
+          subject: "Away",
+          body: "Back tomorrow",
+          contactsOnly: true,
+        };
+        yield* m.setVacation(id, vacation);
+        assert.deepStrictEqual(yield* m.vacation(id), vacation);
+        assert.strictEqual((yield* Effect.exit(m.createFilter(id, EMPTY_FILTER)))._tag, "Failure");
+        assert.strictEqual(
+          (yield* Effect.exit(m.setVacation(id, { ...vacation, end: 500 })))._tag,
+          "Failure",
+        );
+      }),
+    ),
+);
+
+it.effect(
+  "Gmail signatures sync without replacing local signatures; verified aliases can send",
+  () =>
+    withMailbox((m, server) =>
+      Effect.gen(function* () {
+        const id = "gmail:me@gmail.com";
+        server.aliases = [
+          {
+            accountId: id,
+            address: "alias@example.com",
+            name: "Me",
+            isDefault: true,
+            signature: "Gmail signature",
+          },
+        ];
+        yield* m.syncSendAs(id);
+        assert.strictEqual((yield* m.signatures).length, 2);
+        yield* m.setSignature({
+          address: "alias@example.com",
+          kind: "new",
+          text: "Local signature",
+        });
+        server.aliases = server.aliases.map((a) => ({ ...a, signature: "Updated" }));
+        yield* m.sync();
+        const signatures = yield* m.signatures;
+        assert.strictEqual(signatures.find((s) => s.kind === "new")?.text, "Local signature");
+        assert.strictEqual(signatures.find((s) => s.kind === "reply")?.text, "Updated");
+        const message = {
+          from: { name: "Me", address: "alias@example.com" },
+          to: [{ name: "", address: "alice@example.com" }],
+          cc: [],
+          bcc: [],
+          subject: "Hi",
+          text: "Hello",
+          attachments: [],
+        };
+        yield* m.perform(
+          { kind: "send", accountId: id, message },
+          { kind: "user", surface: "app" },
+        );
+        assert.strictEqual(server.sent[0]?.message.from?.address, "alias@example.com");
+        assert.strictEqual(
+          (yield* Effect.exit(
+            m.perform(
+              {
+                kind: "send",
+                accountId: id,
+                message: { ...message, from: { name: "", address: "unverified@example.com" } },
+              },
+              { kind: "user", surface: "app" },
+            ),
+          ))._tag,
+          "Failure",
+        );
+        server.aliases = [];
+        yield* m.syncSendAs(id);
+        assert.strictEqual((yield* m.signatures).length, 1);
+      }),
+    ),
+);
+
+it("reminder presets use future local morning times", () => {
+  const now = new Date(2026, 8, 30, 18, 30).getTime();
+  const times = snoozeTimes(now);
+  assert.strictEqual(times.later - now, 3 * 60 * 60_000);
+  assert.strictEqual(new Date(times.tomorrow).getHours(), 9);
+  assert.strictEqual(new Date(times.nextWeek).getDate(), 7);
+  assert.ok(times.tomorrow > now);
+});
+
+it.effect("existing accounts keep syncing when optional settings scope is missing", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      server.settingsFailure = new SettingsScopeMissing({
+        accountId: "gmail:me@gmail.com",
+        message: "Missing settings scope",
+      });
+      assert.strictEqual(
+        (yield* m.filters("gmail:me@gmail.com").pipe(Effect.flip))._tag,
+        "SettingsScopeMissing",
+      );
+      assert.strictEqual(
+        (yield* m.vacation("gmail:me@gmail.com").pipe(Effect.flip))._tag,
+        "SettingsScopeMissing",
+      );
+      const sync = yield* m.sync();
+      assert.strictEqual(sync[0]?.error, undefined);
+      assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
+      assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+    }),
+  ),
+);

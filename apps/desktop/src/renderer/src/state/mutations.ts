@@ -101,3 +101,12 @@ export const saveProfileAtom = MailClient.runtime.fn(
       return saved;
     }).pipe(Reactivity.mutation([Keys.profiles, Keys.accounts])),
 );
+
+export const changeLabelAtom = MailClient.mutation("ChangeLabel");
+export const setLabelPreferenceAtom = MailClient.mutation("SetLabelPreference");
+export const setOrganizationAtom = MailClient.mutation("SetOrganization");
+export const snoozeAtom = MailClient.mutation("Snooze");
+export const createFilterAtom = MailClient.mutation("CreateFilter");
+export const deleteFilterAtom = MailClient.mutation("DeleteFilter");
+export const setVacationAtom = MailClient.mutation("SetVacation");
+export const syncSendAsAtom = MailClient.mutation("SyncSendAs");

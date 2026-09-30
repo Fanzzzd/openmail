@@ -19,6 +19,9 @@ interface Props {
   loading: boolean;
   showAccount: boolean;
   searching: boolean;
+  searchingServer: boolean;
+  searchTruncated: boolean;
+  searchErrors: readonly string[];
   filters: Filters;
   onFilters: (f: Filters) => void;
   /** User labels by `${accountId}/${labelId}`, for the chips on each row. */
@@ -44,6 +47,8 @@ export interface RowActions {
   ) => void;
   /** Opens the thread in a window of its own; also on double-click. */
   onOpenWindow: (thread: ThreadSummary) => void;
+  onSnooze: (thread: ThreadSummary) => void;
+  onFilter: (thread: ThreadSummary) => void;
 }
 
 export function MessageList({
@@ -52,6 +57,9 @@ export function MessageList({
   loading,
   showAccount,
   searching,
+  searchingServer,
+  searchTruncated,
+  searchErrors,
   filters,
   onFilters,
   labels,
@@ -102,6 +110,21 @@ export function MessageList({
         )}
       </header>
 
+      {searchingServer && (
+        <output className="px-5 pb-2 text-[12px] text-neutral-500">
+          <Trans>Searching server…</Trans>
+        </output>
+      )}
+      {searchTruncated && (
+        <output className="px-5 pb-2 text-[12px] text-neutral-500">
+          <Trans>More matches exist. Narrow your search.</Trans>
+        </output>
+      )}
+      {searchErrors.length > 0 && (
+        <output title={searchErrors.join("\n")} className="px-5 pb-2 text-[12px] text-orange-500">
+          <Trans>Server search failed. Local results are available.</Trans>
+        </output>
+      )}
       <ContextMenuRoot
         onOpenChange={(open, details) => {
           // Only rows have a menu; a right-click on empty space does nothing.
@@ -175,6 +198,8 @@ function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActio
         labels={actions.labels.filter((l) => l.accountId === thread.accountId)}
         onOp={(op) => actions.onOp(thread, state, op)}
         onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
+        onSnooze={() => actions.onSnooze(thread)}
+        onFilter={state.provider === "imap" ? undefined : () => actions.onFilter(thread)}
         onOpenWindow={() => actions.onOpenWindow(thread)}
       />
     </ContextMenuContent>
