@@ -44,6 +44,7 @@ export default defineConfig({
         "@base-ui/react/radio-group",
         "@base-ui/react/select",
         "@base-ui/react/tabs",
+        "@base-ui/react/switch",
         "@base-ui/react/toggle",
         "@base-ui/react/toolbar",
         "@base-ui/react/tooltip",

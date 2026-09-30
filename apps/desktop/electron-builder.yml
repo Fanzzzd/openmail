@@ -18,12 +18,18 @@ files:
 # node:sqlite ships inside Electron, and @napi-rs/keyring is N-API with a
 # prebuilt per-platform package, so nothing needs rebuilding against
 # Electron's ABI.
+extraResources:
+  - from: out/native
+    to: native
+    filter: ["vision"]
+
 npmRebuild: false
 asar: true
 # dlopen cannot read from inside app.asar; the keychain binding's .node file
 # must sit on disk in app.asar.unpacked.
 asarUnpack:
   - "**/*.node"
+  - "**/node_modules/sqlite-vec-*/**"
   - "**/node_modules/@napi-rs/keyring-*/**"
 
 # No `electronFuses:` block: flipping fuses rewrites the binary and breaks the

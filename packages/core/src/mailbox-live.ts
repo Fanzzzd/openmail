@@ -1,3 +1,5 @@
+import { makeIndexer } from "./indexer.js";
+import { MediaError, type DerivedChunk, type Vision, unavailableVision } from "./media.js";
 import {
   Cause,
   Deferred,
@@ -13,7 +15,7 @@ import {
   Stream,
 } from "effect";
 
-import { attachmentRef, inlineImagesFromRaw } from "./attachments.js";
+import { attachmentRef, inlineImagesFromRaw, inlineMediaFromRaw } from "./attachments.js";
 import type {
   Account,
   Actor,
@@ -78,6 +80,8 @@ const newDraftId = () => `draft:${crypto.randomUUID()}`;
 export interface MailboxOptions {
   /** Sync every account on this interval, starting right away. The desktop app sets it; CLI and MCP don't. */
   autoSync?: Duration.Input;
+  /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */
+  media?: { vision: Vision; onBattery: () => boolean; idle: () => boolean };
   /**
    * Push draft saves in the background (default) so saving never waits for
    * the network. Short-lived processes and tests set false: the save then
@@ -699,6 +703,52 @@ export const MailboxLive = (
           .pipe(Effect.flatMap(inlineImagesFromRaw));
       });
 
+      const localInline = Effect.fnUntraced(function* (id: string) {
+        const { account, adapter, providerId } = yield* source(id);
+        return yield* adapter
+          .fetchRaw(account, providerId)
+          .pipe(Effect.flatMap(inlineMediaFromRaw));
+      });
+      const indexer = yield* makeIndexer({
+        store: store.media,
+        vision: options.media?.vision ?? unavailableVision,
+        onBattery: options.media?.onBattery ?? (() => false),
+        busy: Effect.map(
+          Ref.get(state),
+          (current) => current.running || !(options.media?.idle() ?? true),
+        ),
+        message: (id) => store.getMessage(id).pipe(Effect.orDie),
+        attachment: (id, index) =>
+          attachment(id, index).pipe(
+            Effect.map((part) => part.data),
+            Effect.mapError(() => new MediaError({ message: "Cannot read media attachment" })),
+          ),
+        inline: (id) =>
+          localInline(id).pipe(
+            Effect.mapError(() => new MediaError({ message: "Cannot read inline media" })),
+          ),
+        changed,
+      });
+      if (options.media)
+        yield* indexer.batch().pipe(
+          Effect.catchCause(() => Effect.logWarning("Media indexing batch failed")),
+          Effect.repeat(Schedule.spaced("15 seconds")),
+          Effect.forkScoped,
+        );
+      const mediaImage = Effect.fnUntraced(function* (chunk: DerivedChunk) {
+        if (chunk.region === null || !chunk.source.mimeType.toLowerCase().startsWith("image/"))
+          return yield* new NotFound({ what: "attachment", id: chunk.messageId });
+        if (chunk.source.kind === "attachment") {
+          const part = yield* attachment(chunk.messageId, chunk.source.index);
+          return `data:${part.mimeType};base64,${Buffer.from(part.data).toString("base64")}`;
+        }
+        const images = yield* inlineImages(chunk.messageId);
+        const data = images[chunk.source.cid];
+        if (data === undefined)
+          return yield* new NotFound({ what: "attachment", id: chunk.source.cid });
+        return data;
+      });
+
       // Pulling
 
       const apply = (account: Account, counts: { changed: number; deleted: number }) =>
@@ -979,6 +1029,10 @@ export const MailboxLive = (
         saveDraft,
         discardDraft,
 
+        indexingProgress: indexer.progress,
+        setIndexingPaused: (value) => mutate(indexer.setPaused(value)),
+        derivedChunks: store.media.chunks,
+        mediaImage,
         prefs: store.prefs,
         setPrefs: (patch) => mutate(store.setPrefs(patch)),
         signatures: store.signatures,

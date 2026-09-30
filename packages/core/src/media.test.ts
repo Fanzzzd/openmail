@@ -1,0 +1,480 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { vi } from "vitest";
+import { TestClock } from "effect/testing";
+import { databaseLayer } from "./db.js";
+import { NodeSystem } from "./platform-node.js";
+import { assert, it } from "@effect/vitest";
+import { Deferred, Effect, Fiber, Layer, Option, Schema } from "effect";
+import { SqlClient } from "effect/sql";
+import { makeIndexer } from "./indexer.js";
+import { type IncomingMessage, type ThreadSummary } from "./domain.js";
+import { MediaError, type Vision, unavailableVision } from "./media.js";
+import { MemoryPlatform } from "./platform-memory.js";
+import { Store } from "./services.js";
+import { StoreLive } from "./store.js";
+import { pdfText } from "./pdf-text.js";
+import { inlineMediaFromRaw } from "./attachments.js";
+import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "./search.js";
+
+const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
+  body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
+const message = (override: Partial<IncomingMessage> = {}): IncomingMessage => ({
+  providerId: "m",
+  threadId: "t",
+  subject: "Mail",
+  from: { name: "Alice", address: "alice@example.com" },
+  to: [],
+  cc: [],
+  date: 1000,
+  snippet: "",
+  bodyText: "",
+  bodyHtml: "",
+  labels: ["INBOX"],
+  attachments: [{ filename: "ticket.png", mimeType: "image/png", size: 20 }],
+  isUnread: true,
+  isStarred: false,
+  ...override,
+});
+const fakeVision: Vision = {
+  available: true,
+  version: "test-revision3",
+  recognize: () =>
+    Effect.succeed({
+      revision: 3,
+      lines: [
+        {
+          text: "登机牌 boarding gate code",
+          confidence: 0.9,
+          region: {
+            box: { x: 10, y: 1200, width: 80, height: 20 },
+            tile: { x: 0, y: 896, width: 900, height: 1024 },
+            imageWidth: 900,
+            imageHeight: 5200,
+          },
+        },
+      ],
+    }),
+};
+const setup = Effect.gen(function* () {
+  const store = yield* Store;
+  const account = yield* store.upsertAccount("gmail", "test@example.com");
+  yield* store.upsertMessage(account.id, message());
+  return { store, account, id: `${account.id}/m` };
+});
+const indexerFor = (
+  store: Store["Service"],
+  options: { vision?: Vision; battery?: () => boolean; inline?: boolean } = {},
+) =>
+  makeIndexer({
+    store: store.media,
+    vision: options.vision ?? fakeVision,
+    onBattery: options.battery ?? (() => false),
+    busy: Effect.succeed(false),
+    message: (id) => store.getMessage(id).pipe(Effect.orDie),
+    attachment: () => Effect.succeed(new Uint8Array([1, 2, 3])),
+    inline: () =>
+      Effect.succeed(
+        options.inline
+          ? [
+              {
+                cid: "ticket",
+                name: "inline.png",
+                mimeType: "image/png",
+                data: new Uint8Array([1]),
+              },
+            ]
+          : [],
+      ),
+    changed: Effect.void,
+  });
+
+it.effect(
+  "queues, indexes idempotently, searches derived FTS and short Chinese with provenance",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        const indexer = yield* indexerFor(store);
+        assert.strictEqual((yield* indexer.progress).queued, 1);
+        assert.strictEqual(yield* indexer.batch(), 1);
+        assert.strictEqual(yield* indexer.batch(), 0);
+        const chunks = yield* store.media.chunks(id);
+        assert.strictEqual(chunks.length, 1);
+        assert.strictEqual(chunks[0]?.visionRevision, 3);
+        assert.strictEqual(chunks[0]?.region?.box.y, 1200);
+        const [hit] = yield* store.listThreads({ search: "in:attachment has:image 登机牌" });
+        assert.strictEqual(hit?.derivedMatches?.[0]?.source.name, "ticket.png");
+        assert.strictEqual((yield* store.listThreads({ search: "登机" })).length, 1);
+        assert.strictEqual(
+          (yield* store.listThreads({ search: "boarding from:nobody" })).length,
+          0,
+        );
+        assert.strictEqual(
+          (yield* store.listThreads({ search: "boarding", accountIds: [] })).length,
+          0,
+        );
+        assert.strictEqual(
+          (yield* store.listThreads({ search: "boarding", before: 500 })).length,
+          0,
+        );
+        // Flag-only changes preserve derivations and external-content message FTS rowids.
+        yield* store.upsertMessage(account.id, message({ isUnread: false }));
+        assert.strictEqual((yield* indexer.progress).done, 1);
+        yield* store.upsertMessage(account.id, message({ attachments: [] }));
+        assert.strictEqual((yield* indexer.progress).queued, 1);
+        assert.strictEqual((yield* store.listThreads({ search: "boarding" })).length, 0);
+        yield* indexer.batch();
+        assert.strictEqual((yield* store.media.chunks(id)).length, 0);
+      }),
+    ),
+);
+
+it.effect(
+  "pause, battery and unavailable Vision do not download images; inline CID media is indexed",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        const battery = yield* indexerFor(store, { battery: () => true });
+        assert.strictEqual(yield* battery.batch(), 0);
+        const unavailable = yield* indexerFor(store, { vision: unavailableVision });
+        assert.strictEqual(yield* unavailable.batch(), 0);
+        const indexer = yield* indexerFor(store, { inline: true });
+        yield* indexer.setPaused(true);
+        const restarted = yield* indexerFor(store);
+        assert.strictEqual((yield* restarted.progress).paused, true);
+        assert.strictEqual(yield* restarted.batch(), 0);
+        yield* indexer.setPaused(false);
+        yield* store.upsertMessage(
+          account.id,
+          message({
+            attachments: [],
+            bodyHtml: '<img src="cid:ticket"><img src="https://invalid.invalid/pixel">',
+          }),
+        );
+        assert.strictEqual(yield* indexer.batch(), 1);
+        assert.strictEqual((yield* store.media.chunks(id))[0]?.source.kind, "inline");
+      }),
+    ),
+);
+
+it.effect(
+  "claims survive restart, reject stale generations and retry failures without logging content",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        const first = yield* store.media.claim("v1", 1000, true);
+        assert.ok(Option.isSome(first));
+        assert.ok(Option.isNone(yield* store.media.claim("v1", 2000, true)));
+        const recovered = yield* store.media.claim("v1", 301001, true);
+        assert.ok(Option.isSome(recovered));
+        assert.strictEqual(yield* store.media.complete(first.value, [], null), false);
+        yield* store.upsertMessage(account.id, message({ bodyHtml: '<img src="cid:new">' }));
+        assert.strictEqual(yield* store.media.complete(recovered.value, [], null), false);
+        const indexer = yield* indexerFor(store, {
+          vision: {
+            ...fakeVision,
+            recognize: () => Effect.fail(new MediaError({ message: "private fixture text" })),
+          },
+        });
+        yield* indexer.batch();
+        const sql = yield* SqlClient.SqlClient;
+        const [row] = yield* sql`SELECT attempts,note FROM derived_jobs WHERE message_id=${id}`;
+        assert.deepStrictEqual({ ...row }, { attempts: 1, note: "Media extraction failed" });
+        yield* sql`UPDATE derived_jobs SET retry_at=0`;
+        const working = yield* indexerFor(store);
+        assert.strictEqual(yield* working.batch(), 1);
+        const upgraded = yield* indexerFor(store, {
+          vision: { ...fakeVision, version: "revision4" },
+        });
+        assert.strictEqual(yield* upgraded.batch(), 1);
+        assert.strictEqual((yield* store.media.chunks(id)).length, 1);
+        yield* store.deleteMessage(account.id, "m");
+        assert.strictEqual((yield* store.media.chunks(id)).length, 0);
+        assert.strictEqual((yield* working.progress).done, 0);
+      }),
+    ),
+);
+
+it.effect(
+  "vector extension is 0.1.9 with separate 384/512-dimensional tables and cascade cleanup",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const sql = yield* SqlClient.SqlClient;
+        const rows = yield* sql`SELECT vec_version() AS version`;
+        assert.strictEqual(rows[0]?.version, "v0.1.9");
+        const { store, account, id } = yield* setup;
+        const indexer = yield* indexerFor(store);
+        yield* indexer.batch();
+        const ids = yield* Schema.decodeUnknownEffect(
+          Schema.Array(Schema.Struct({ id: Schema.Number })),
+        )(yield* sql`SELECT id FROM derived_chunks WHERE message_id=${id}`);
+        const chunkId = ids[0]?.id;
+        assert.ok(chunkId);
+        yield* sql`INSERT INTO derived_text_vectors(rowid,embedding) VALUES(${BigInt(chunkId)},${new Uint8Array(new Float32Array(384).buffer)})`;
+        yield* sql`INSERT INTO derived_image_vectors(rowid,embedding) VALUES(${BigInt(chunkId)},${new Uint8Array(new Float32Array(512).buffer)})`;
+        yield* store.removeAccount(account.id);
+        assert.strictEqual((yield* sql`SELECT rowid FROM derived_text_vectors`).length, 0);
+        assert.strictEqual((yield* sql`SELECT rowid FROM derived_image_vectors`).length, 0);
+      }),
+    ),
+);
+
+/** A synthetic two-page PDF: a text page and a scanned-page placeholder. */
+export function syntheticPdf(): Uint8Array {
+  const stream = "BT /F1 18 Tf 20 100 Td (Synthetic boarding document) Tj ET";
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << >> >>",
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  for (const [index, obj] of objects.entries()) {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${obj}\nendobj\n`;
+  }
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new TextEncoder().encode(pdf);
+}
+
+it.effect(
+  "extracts PDF text offline by page and records scanned-page deferral; battery throttles PDFs",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const pdf = syntheticPdf();
+        const pages = yield* pdfText(pdf);
+        assert.strictEqual(pages[0]?.text, "Synthetic boarding document");
+        assert.strictEqual(pages[1]?.text, "");
+        const { store, account, id } = yield* setup;
+        yield* store.upsertMessage(
+          account.id,
+          message({
+            attachments: [
+              { filename: "document.pdf", mimeType: "application/pdf", size: pdf.length },
+            ],
+          }),
+        );
+        const indexer = yield* makeIndexer({
+          store: store.media,
+          vision: fakeVision,
+          onBattery: () => true,
+          busy: Effect.succeed(false),
+          message: (id) => store.getMessage(id).pipe(Effect.orDie),
+          attachment: () => Effect.succeed(pdf),
+          inline: () => Effect.succeed([]),
+          changed: Effect.void,
+        });
+        assert.strictEqual(yield* indexer.batch(), 1);
+        const [hit] = yield* store.listThreads({ search: "in:attachment boarding" });
+        assert.strictEqual(hit?.derivedMatches?.[0]?.page, 1);
+        assert.strictEqual(hit?.derivedMatches?.[0]?.region, null);
+        const sql = yield* SqlClient.SqlClient;
+        const notes = yield* sql`SELECT note FROM derived_jobs WHERE message_id=${id}`;
+        assert.strictEqual(
+          notes[0]?.note,
+          "Scanned PDF pages or oversized attachments require phase 2",
+        );
+      }),
+    ),
+);
+
+it.effect("reads only MIME CID images, never a remote HTML URL", () =>
+  Effect.gen(function* () {
+    const raw = new TextEncoder().encode(
+      'MIME-Version: 1.0\r\nContent-Type: multipart/related; boundary="x"\r\n\r\n--x\r\nContent-Type: text/html\r\n\r\n<img src="cid:one"><img src="https://invalid.invalid/pixel">\r\n--x\r\nContent-Type: image/png\r\nContent-ID: <one>\r\nContent-Transfer-Encoding: base64\r\n\r\nAQID\r\n--x--\r\n',
+    );
+    const parts = yield* inlineMediaFromRaw(raw);
+    assert.strictEqual(parts.length, 1);
+    assert.strictEqual(parts[0]?.cid, "one");
+    assert.deepStrictEqual(parts[0]?.data, new Uint8Array([1, 2, 3]));
+  }),
+);
+
+it("parses media tokens and fuses distinct sources by thread rather than representative message", () => {
+  assert.deepStrictEqual(parseSearchQuery({ search: "has:image in:attachment 登机" }).criteria, {
+    image: true,
+    attachmentText: true,
+  });
+  const row: ThreadSummary = {
+    id: "a/1",
+    accountId: "a",
+    threadId: "t",
+    subject: "",
+    from: { name: "", address: "" },
+    date: 1,
+    snippet: "",
+    labels: [],
+    isUnread: false,
+    isStarred: false,
+    hasAttachments: true,
+    threadCount: 2,
+    participants: [],
+  };
+  assert.strictEqual(reciprocalRankFusion([row], [{ ...row, id: "a/2", date: 2 }]).length, 1);
+  assert.strictEqual(reciprocalRankFusion([row], [{ ...row, id: "a/2", date: 2 }], true).length, 2);
+});
+
+it.effect("interrupts OCR when AC power is lost and leaves a resumable job", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      let battery = false;
+      let cancelled = false;
+      const started = yield* Deferred.make<void>();
+      const vision: Vision = {
+        ...fakeVision,
+        recognize: () =>
+          Deferred.succeed(started, undefined).pipe(
+            Effect.andThen(Effect.never),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                cancelled = true;
+              }),
+            ),
+          ),
+      };
+      const indexer = yield* indexerFor(store, { vision, battery: () => battery });
+      const work = yield* Effect.forkChild(indexer.batch());
+      yield* Deferred.await(started);
+      battery = true;
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual(yield* Fiber.join(work), 0);
+      assert.strictEqual(cancelled, true);
+      assert.strictEqual((yield* indexer.progress).queued, 1);
+      assert.strictEqual((yield* indexer.progress).running, 0);
+      const working = yield* indexerFor(store);
+      assert.strictEqual(yield* working.batch(), 1);
+    }),
+  ),
+);
+
+it("resumes a persisted lease after the database is closed and reopened", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "openmail-media-restart-"));
+  const filename = join(dir, "mail.db");
+  const layer = () =>
+    StoreLive.pipe(Layer.provideMerge(databaseLayer(filename).pipe(Layer.provide(NodeSystem))));
+  try {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const { store } = yield* setup;
+        const job = yield* store.media.claim("old-version", Date.now() - 6 * 60_000, true);
+        assert.ok(Option.isSome(job));
+      }).pipe(Effect.provide(layer())),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const indexer = yield* indexerFor(store);
+        assert.strictEqual(yield* indexer.batch(), 1);
+        assert.strictEqual((yield* store.listThreads({ search: "boarding" })).length, 1);
+        yield* indexer.setPaused(true);
+      }).pipe(Effect.provide(layer())),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const indexer = yield* indexerFor(store);
+        assert.strictEqual((yield* indexer.progress).paused, true);
+        assert.strictEqual((yield* indexer.progress).done, 1);
+      }).pipe(Effect.provide(layer())),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it("PDF parsing reads bundled resources without a network request", async () => {
+  const fetch = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network forbidden"));
+  try {
+    const pages = await Effect.runPromise(pdfText(syntheticPdf()));
+    assert.strictEqual(pages.length, 2);
+    assert.strictEqual(fetch.mock.calls.length, 0);
+  } finally {
+    fetch.mockRestore();
+  }
+});
+
+it.effect("queues only eligible media and preserves scoped hits from older messages", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "new", date: 2000, attachments: [], bodyText: "boarding" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "plain", threadId: "plain", date: 3000, attachments: [] }),
+      );
+      const indexer = yield* indexerFor(store);
+      assert.strictEqual((yield* indexer.progress).queued, 1);
+      yield* indexer.batch();
+      const hits = yield* store.listThreads({ search: "boarding" });
+      assert.strictEqual(hits.length, 1);
+      assert.strictEqual(hits[0]?.derivedMatches?.[0]?.messageId, `${account.id}/m`);
+      assert.strictEqual(
+        (yield* store.listThreads({ search: "boarding", label: "SENT", searchScope: "folder" }))
+          .length,
+        0,
+      );
+      assert.strictEqual((yield* store.listThreads({ search: "boarding is:unread" })).length, 1);
+      const sql = yield* SqlClient.SqlClient;
+      // Spam exclusions remain enforced even when a derived message id narrows the second query.
+      yield* store.upsertMessage(account.id, message({ labels: ["SPAM"] }));
+      assert.strictEqual(
+        (yield* store.listThreads({ search: "in:attachment boarding" })).length,
+        0,
+      );
+      assert.strictEqual(
+        (yield* sql`SELECT rowid FROM messages_fts WHERE messages_fts MATCH 'boarding'`).length,
+        1,
+      );
+    }),
+  ),
+);
+
+it("retains RRF ordering and provenance when server results arrive", () => {
+  const row: ThreadSummary = {
+    id: "a/1",
+    accountId: "a",
+    threadId: "t",
+    subject: "",
+    from: { name: "", address: "" },
+    date: 1,
+    snippet: "",
+    labels: [],
+    isUnread: false,
+    isStarred: false,
+    hasAttachments: true,
+    threadCount: 1,
+    participants: [],
+    derivedMatches: [
+      {
+        messageId: "a/1",
+        text: "boarding",
+        source: { kind: "attachment", index: 0, name: "ticket.pdf", mimeType: "application/pdf" },
+        page: 1,
+        region: null,
+        pipelineVersion: "v1",
+        visionRevision: null,
+      },
+    ],
+  };
+  const newer = { ...row, id: "a/2", threadId: "other", date: 2, derivedMatches: [] };
+  const { derivedMatches: _matches, ...server } = row;
+  const merged = mergeSearchResults([row, newer], [server]);
+  assert.strictEqual(merged[0]?.id, "a/1");
+  assert.strictEqual(merged[0]?.derivedMatches?.[0]?.page, 1);
+});

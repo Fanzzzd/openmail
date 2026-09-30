@@ -4,6 +4,8 @@
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  DerivedChunk,
+  IndexingProgress,
   AccountOrganization,
   FilterCriteria,
   FilterInput,
@@ -89,6 +91,14 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("Reauth", { payload: { accountId: Schema.String }, success: Account, error }),
   Rpc.make("ImapPresets", { success: Schema.Record(Schema.String, ImapPreset) }),
   Rpc.make("RemoveAccount", { payload: { accountId: Schema.String }, success: Outcome, error }),
+
+  Rpc.make("IndexingProgress", { success: IndexingProgress }),
+  Rpc.make("SetIndexingPaused", { payload: { paused: Schema.Boolean } }),
+  Rpc.make("DerivedChunks", {
+    payload: { id: Schema.String },
+    success: Schema.Array(DerivedChunk),
+  }),
+  Rpc.make("MediaImage", { payload: { chunk: DerivedChunk }, success: Schema.String, error }),
 
   // Reading
   Rpc.make("Threads", { payload: { query: ThreadQuery }, success: Schema.Array(ThreadSummary) }),

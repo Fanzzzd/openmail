@@ -60,6 +60,10 @@ msgstr "{count} 未读"
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, other {# 秒}}"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
+msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {failed}"
+
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} 已重新登录"
@@ -298,6 +302,10 @@ msgstr "先问我"
 msgid "Attach files"
 msgstr "添加附件"
 
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Attachment matches"
+msgstr "附件命中"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments of the original message are not forwarded"
 msgstr "原邮件的附件不会一起转发"
@@ -426,6 +434,7 @@ msgstr "选择邮箱服务商。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Close"
@@ -746,6 +755,19 @@ msgstr "会话打开多久后标为已读。选手动时，只有按 U 或点工
 msgid "Icon"
 msgstr "图标"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Image recognition is unavailable on this platform."
+msgstr "此平台暂不支持图片识别。"
+
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Image region"
+msgstr "图片区域"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
+msgstr "图片和 PDF 文字只在本机处理，不发送给云端模型。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAP 账户"
@@ -821,6 +843,10 @@ msgstr "浅色背景"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "加载图片"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Loading image…"
+msgstr "正在加载图片…"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
@@ -903,6 +929,10 @@ msgstr "已标为未读"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Match appearance"
 msgstr "跟随外观"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Matched image region"
+msgstr "命中的图片区域"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
@@ -1070,6 +1100,10 @@ msgstr "关闭"
 msgid "Oldest first"
 msgstr "最早的在前"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
+msgstr "电池供电时暂停图片识别，PDF 文字索引降速。"
+
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
@@ -1077,6 +1111,10 @@ msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示�
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On-device indexing"
+msgstr "本机索引"
 
 #: src/renderer/src/errors.ts
 msgid "Only inbox messages can be snoozed"
@@ -1148,6 +1186,13 @@ msgstr "Outlook 定时回复须填起止时间"
 msgid "Overview"
 msgstr "总览"
 
+#. placeholder {0}: chunk.page
+#. placeholder {0}: hit.page
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Page {0}"
+msgstr "第 {0} 页"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Parent folder"
 msgstr "上级文件夹"
@@ -1155,6 +1200,10 @@ msgstr "上级文件夹"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "密码"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Pause indexing"
+msgstr "暂停索引"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Port"
@@ -1297,6 +1346,10 @@ msgstr "立即"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "执行"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
+msgstr "空闲时运行。扫描版 PDF、音频和视频暂未索引。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx

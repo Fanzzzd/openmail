@@ -126,6 +126,35 @@ scope 按切片添加。已有账户继续收发邮件，缺少新增设置权�
 
 **验证范围。** 本机组件可运行，没有运行阻塞。样本只含合成截图、票据和系统语音，尚未验证真实附件、PDF、后台队列或手机。先接 Vision OCR、sqlite-vec 和 FTS，再接图文与文本向量。模型加载和推理都放后台，MCP 仍只返回命中文字及出处。
 
+### 切片 7 第一阶段：做了什么，留了什么
+
+已接入本机 OCR 和 PDF 文字搜索。向量表已建好，尚未生成语义向量。
+
+- core 的独立 `Indexer` 消费第 8 条迁移新增的 `derived_jobs`。含图片、CID 内嵌图或 PDF 的邮件落库时排队；内容变化使旧结果失效。任务有租约、续约、失败重试和流水线版本，重启后继续，重复处理不会叠加结果。
+- macOS 构建会编译 Swift Vision CLI。accurate OCR 识别简繁中文及英文；长图按 1024px 高、128px 重叠切片，去重并保留原图坐标、切片框和 Vision revision。JPEG 先按 EXIF 方向转正，使坐标与阅读器显示一致。临时图片只保存在私有目录，处理完删除。Vision 不可用时任务不运行。
+- 图片附件与 CID 图复用 core 的附件、原始 MIME 接口。PDF.js 只抽文字层，字体、CMap 和 WASM 从随包文件读取。扫描页和超过 32MiB 的附件记录为后续处理范围。
+- `derived_chunks` 与 `derived_fts` 保存文字及邮件、附件名/序号、页码、图片区域出处。原 `messages_fts` 语义不变。sqlite-vec 固定为 0.1.9，384 维文本和 512 维图像分表；扩展加载后关闭加载权限，打包时从 ASAR 外读取扩展文件。
+- 本地搜索通过 RRF 合并邮件和派生文字，支持 `has:image`、`in:attachment`。列表显示出处，阅读器打开原图并框出命中区域。MCP `search` 返回命中文字和出处，不返回图片字节。
+- 设置的「通用」页显示索引进度和持久化暂停开关。同步期间或用户操作时让出执行；接电源且空闲时跑 OCR，断电或暂停会中止任务并重新排队。电池模式每批只处理一条 PDF 文字任务。
+
+已验证：`pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .`，205 项 core 测试和 Lingui 检查通过，lint 只保留两条既有 IPC 类型断言警告。测试使用临时数据库和合成 MIME、PDF；未打开真实 OpenMail 数据。生产 Vision 适配器在合成长图上得到 113 行，无重复，框均在原图范围内。独立 Electron 44.4.5 main 验证了迁移、sqlite-vec 0.1.9、两种维度和 KNN。
+
+补充检查从仓库根目录运行，Vision 脚本使用 Node 24：
+
+```sh
+node apps/desktop/build/check-vision.mjs
+env -u ELECTRON_RUN_AS_NODE apps/desktop/node_modules/.bin/electron apps/desktop/build/check-media-electron.mjs
+```
+
+仍需人工验证：真实附件的识别质量、JPEG 方向与图片高亮；设置暂停/恢复、拔插电源与阅读器交互；签名安装包中的 Swift、sqlite-vec 和 PDF 资源加载。请用隔离测试账户及数据目录，先不接入真实邮件库。扫描 PDF 渲染/OCR、feature print、音视频、手机端和语义向量留待后续阶段。
+
+### 切片 7 第二阶段：计划
+
+1. 增加本地模型包下载、哈希校验及版本记录。采用 spike 选定的 MobileCLIP S0 图像 fp32、文本 q8，以及 multilingual-e5-small q8，限制见上面的设计与 [实测](../spikes/media/RESULTS.md)。邮件和附件仍只在本机推理。
+2. 接入独立后台推理适配器。MobileCLIP 保存整图和切片的 512 维向量，文本固定补齐至 77 tokens；E5 将正文、OCR 和 PDF 文字按约 300 字切块，保留句子重叠，使用 `query:`/`passage:` 前缀、平均池化和归一化，写入 384 维表。缓存记录模型与预处理版本，复用第一阶段队列及电源控制。
+3. 查询同时取 FTS、E5 和 MobileCLIP 候选，通过 RRF 合并并保留出处。短中文跨语言查询不能只靠向量；扩大中英文票据、代码、长图样本，测准确率、内存和后台响应。MCP 继续只返回文字块及出处。
+4. 单独验证扫描 PDF 的本地渲染与逐页 OCR，再扩展页内区域定位。完成签名包和断网验证后再考虑手机、音视频；本阶段不实现这些能力。
+
 ## 已完成（阶段 0）
 
 - Gmail、个人 Outlook 只读同步，history / delta 增量。

@@ -54,6 +54,10 @@ msgstr "{count} unread"
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, one {# second} other {# seconds}}"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
+msgstr "{done} completed · {queued} queued · {running} running · {failed} failed"
+
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} is signed in again"
@@ -292,6 +296,10 @@ msgstr "Ask me first"
 msgid "Attach files"
 msgstr "Attach files"
 
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Attachment matches"
+msgstr "Attachment matches"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments of the original message are not forwarded"
 msgstr "Attachments of the original message are not forwarded"
@@ -420,6 +428,7 @@ msgstr "Choose your email provider."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Close"
@@ -740,6 +749,19 @@ msgstr "How long a conversation stays open before it is marked as read. Manually
 msgid "Icon"
 msgstr "Icon"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Image recognition is unavailable on this platform."
+msgstr "Image recognition is unavailable on this platform."
+
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Image region"
+msgstr "Image region"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
+msgstr "Images and PDF text are processed on this device. No content is sent to a cloud model."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAP account"
@@ -815,6 +837,10 @@ msgstr "Light background"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "Load images"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Loading image…"
+msgstr "Loading image…"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
@@ -897,6 +923,10 @@ msgstr "Marked as unread"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Match appearance"
 msgstr "Match appearance"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Matched image region"
+msgstr "Matched image region"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
@@ -1064,6 +1094,10 @@ msgstr "Off"
 msgid "Oldest first"
 msgstr "Oldest first"
 
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
+msgstr "On battery: image recognition waits for AC power. PDF text indexing is throttled."
+
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
@@ -1071,6 +1105,10 @@ msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow th
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On-device indexing"
+msgstr "On-device indexing"
 
 #: src/renderer/src/errors.ts
 msgid "Only inbox messages can be snoozed"
@@ -1142,6 +1180,13 @@ msgstr "Outlook scheduled replies need both dates"
 msgid "Overview"
 msgstr "Overview"
 
+#. placeholder {0}: chunk.page
+#. placeholder {0}: hit.page
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Page {0}"
+msgstr "Page {0}"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Parent folder"
 msgstr "Parent folder"
@@ -1149,6 +1194,10 @@ msgstr "Parent folder"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Password"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Pause indexing"
+msgstr "Pause indexing"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Port"
@@ -1291,6 +1340,10 @@ msgstr "Right away"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "Run"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
+msgstr "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx

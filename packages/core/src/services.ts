@@ -1,3 +1,4 @@
+import type { makeMediaStore } from "./store-media.js";
 /**
  * Service interfaces inside core. Only `Mailbox` (mailbox.ts) is meant for
  * callers outside core; these are the seams its implementation is built from,
@@ -156,6 +157,8 @@ export class Store extends Context.Service<
   {
     /** Runs `effect` in one SQLite transaction. */
     transaction<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
+
+    readonly media: ReturnType<typeof makeMediaStore>;
 
     // Accounts
     readonly listAccounts: Effect.Effect<Account[]>;

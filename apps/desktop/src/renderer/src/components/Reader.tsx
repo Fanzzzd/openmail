@@ -41,7 +41,7 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import type { Message } from "../../../shared/api";
+import type { Message, DerivedChunk } from "../../../shared/api";
 import { causeText } from "../errors";
 import { avatarColor, displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
@@ -49,6 +49,7 @@ import { openThreadWindow, printThread, useRunMail } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, inlineImagesAtom, prefsAtom, threadAtom } from "../state/queries";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
+import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { RawMessageDialog } from "./RawMessage";
@@ -60,6 +61,7 @@ export type Notify = (toast: { text: string; tone?: "error" }) => void;
 
 interface Props {
   messageId: string | null;
+  derivedMatches?: readonly DerivedChunk[] | undefined;
   query: string;
   onQuery: (q: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
@@ -72,6 +74,7 @@ interface Props {
 
 export function Reader({
   messageId,
+  derivedMatches,
   query,
   onQuery,
   searchRef,
@@ -105,6 +108,7 @@ export function Reader({
           key={messageId}
           messages={messages}
           selectedId={messageId}
+          derivedMatches={derivedMatches}
           // Grouping off lists messages on their own; the reader shows just that one.
           single={!grouping}
           onEditDraft={onEditDraft}
@@ -182,6 +186,7 @@ export function useThreadPrint(notify: Notify) {
  */
 export function ThreadView({
   messages: stored,
+  derivedMatches = [],
   selectedId,
   single,
   onEditDraft,
@@ -189,6 +194,7 @@ export function ThreadView({
   canOpenWindow,
 }: {
   messages: readonly Message[];
+  derivedMatches?: readonly DerivedChunk[] | undefined;
   selectedId: string;
   /** Show only the selected message (conversation grouping off). */
   single: boolean;
@@ -295,6 +301,7 @@ export function ThreadView({
           </MenuItem>
         </DropdownMenu>
       </div>
+      <MediaMatches chunks={derivedMatches} />
       <div className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
         {messages.map((m) =>
           open.has(m.id) ? (

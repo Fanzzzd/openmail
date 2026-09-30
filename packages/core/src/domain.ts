@@ -98,6 +98,9 @@ export const Attachment = Schema.Struct({
 });
 export type Attachment = typeof Attachment.Type;
 
+export { DerivedChunk, IndexingProgress } from "./media.js";
+import { DerivedChunk } from "./media.js";
+
 const summaryFields = {
   id: Schema.String,
   accountId: Schema.String,
@@ -122,6 +125,7 @@ export const ThreadSummary = Schema.Struct({
   threadCount: Schema.Number,
   /** Distinct senders in the thread, oldest first. */
   participants: Schema.Array(Address),
+  derivedMatches: Schema.optionalKey(Schema.Array(DerivedChunk)),
 });
 export type ThreadSummary = typeof ThreadSummary.Type;
 
@@ -198,6 +202,8 @@ export const SearchCriteria = Schema.Struct({
   labels: Schema.optionalKey(Schema.Array(Schema.String)),
   important: Schema.optionalKey(Schema.Boolean),
   attachment: Schema.optionalKey(Schema.Boolean),
+  image: Schema.optionalKey(Schema.Boolean),
+  attachmentText: Schema.optionalKey(Schema.Boolean),
   filename: Schema.optionalKey(Schema.String),
   dateBefore: Schema.optionalKey(Schema.Number),
   dateAfter: Schema.optionalKey(Schema.Number),

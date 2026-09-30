@@ -1,3 +1,4 @@
+import type { DerivedChunk, IndexingProgress } from "./media.js";
 /**
  * Mailbox: the one interface desktop, CLI, MCP and the assistant use. Reading,
  * changing and syncing mail all go through here, so policy, audit and the
@@ -196,6 +197,12 @@ export class Mailbox extends Context.Service<
     discardDraft(id: string): Effect.Effect<void>;
 
     // Compose settings
+    readonly indexingProgress: Effect.Effect<IndexingProgress>;
+    setIndexingPaused(value: boolean): Effect.Effect<void>;
+    derivedChunks(id: string): Effect.Effect<readonly DerivedChunk[]>;
+    mediaImage(
+      chunk: DerivedChunk,
+    ): Effect.Effect<string, NotFound | ProviderError | AuthError | PermanentError>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
     /** Local signatures take precedence over synced Gmail send-as signatures. */

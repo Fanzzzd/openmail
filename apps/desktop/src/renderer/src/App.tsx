@@ -744,6 +744,7 @@ export function App() {
             <Panel id="reader" minSize={360}>
               <Reader
                 messageId={selectedId}
+                derivedMatches={selected?.derivedMatches}
                 query={query}
                 onQuery={setQuery}
                 searchRef={searchRef}

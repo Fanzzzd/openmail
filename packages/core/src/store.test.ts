@@ -1,3 +1,4 @@
+import { load } from "sqlite-vec";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { DatabaseSync } from "node:sqlite";
 
@@ -485,7 +486,12 @@ it.effect("split migrations build the same schema as running each script whole",
     );
 
     const reference = yield* Effect.acquireRelease(
-      Effect.sync(() => new DatabaseSync(":memory:")),
+      Effect.sync(() => {
+        const db = new DatabaseSync(":memory:", { allowExtension: true });
+        load(db);
+        db.enableLoadExtension(false);
+        return db;
+      }),
       (db) => Effect.sync(() => db.close()),
     );
     for (const migration of MIGRATIONS) reference.exec(migration);

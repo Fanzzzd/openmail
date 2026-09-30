@@ -1,3 +1,5 @@
+import { makeMediaStore } from "./store-media.js";
+import { DerivedChunk } from "./media.js";
 /**
  * The Store service over SQLite. The only module that runs SQL. Rows are
  * decoded with schemas built from the domain types (this is the IO boundary);
@@ -34,7 +36,7 @@ import {
 import { InvalidInput, NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
-import { parseSearchQuery, searchWords } from "./search.js";
+import { parseSearchQuery, searchWords, reciprocalRankFusion } from "./search.js";
 import { makeOrganizationStore } from "./store-organization.js";
 import { makeComposeStore } from "./store-compose.js";
 
@@ -295,6 +297,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
     const compose = makeComposeStore(sql);
+    const media = makeMediaStore(sql);
     const organization = makeOrganizationStore(sql);
 
     const hasLabel = (label: string) =>
@@ -490,6 +493,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         );
       if (c?.subject) where.push(sql`m.subject LIKE ${literalLike(c.subject)} ESCAPE '\\'`);
       if (c?.important) where.push(hasLabel("IMPORTANT"));
+      if (c?.image)
+        where.push(sql`(EXISTS(SELECT 1 FROM json_each(m.attachments_json)
+        WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%') OR m.body_html LIKE '%cid:%')`);
       if (c?.attachment) where.push(sql`json_array_length(m.attachments_json)>0`);
       if (c?.filename)
         where.push(
@@ -574,7 +580,56 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       if (raw.search !== undefined && !raw.search.trim()) return [];
       const q = raw.search === undefined ? raw : parseSearchQuery(raw);
       const limit = q.limit ?? 50;
-      const threads = yield* (q.flat ? messageList : threadList)(q, limit);
+      const listing = q.flat ? messageList : threadList;
+      let threads = q.criteria?.attachmentText ? [] : yield* listing(q, limit);
+      if (q.search !== undefined) {
+        const terms = searchWords(q.search).map((word) => word.replace(/^"(.*)"$/, "$1"));
+        const predicates: Fragment[] = [];
+        const long = terms.filter((term) => Array.from(term).length >= 3);
+        if (long.length)
+          predicates.push(
+            sql`d.id IN (SELECT rowid FROM derived_fts WHERE derived_fts MATCH ${long.map((term) => `"${term.replaceAll('"', '""')}"`).join(" AND ")})`,
+          );
+        for (const term of terms.filter((word) => Array.from(word).length < 3))
+          predicates.push(sql`d.text LIKE ${literalLike(term)} ESCAPE '\\'`);
+        const { attachmentText: _scope, ...criteria } = q.criteria ?? {};
+        const matches = yield* all(
+          Schema.Struct({
+            account_id: Schema.String,
+            thread_id: Schema.String,
+            provenance_json: Schema.fromJsonString(DerivedChunk),
+          }),
+        )(
+          sql`SELECT m.account_id,m.thread_id,d.provenance_json FROM derived_chunks d JOIN messages m ON m.id=d.message_id
+          WHERE ${listFilter({ ...q, search: "", criteria })} AND ${sql.and(predicates)}
+          ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
+          ORDER BY ${long.length ? sql`(SELECT rank FROM derived_fts WHERE rowid=d.id AND derived_fts MATCH ${long.map((term) => `"${term.replaceAll('"', '""')}"`).join(" AND ")})` : sql.literal("m.date DESC")},d.id`,
+        );
+        const chunks = matches.map((row) => row.provenance_json);
+        const ids = [...new Set(chunks.map((chunk) => chunk.messageId))];
+        const candidates = ids.length
+          ? yield* listing({ ...q, search: "", criteria, messageIds: ids }, ids.length)
+          : [];
+        const grouped = new Map<string, DerivedChunk[]>();
+        const ranks = new Map<string, number>();
+        for (const [rank, match] of matches.entries()) {
+          const key = q.flat
+            ? match.provenance_json.messageId
+            : `${match.account_id}/${match.thread_id}`;
+          const group = grouped.get(key) ?? [];
+          if (group.length < 20) group.push(match.provenance_json);
+          grouped.set(key, group);
+          if (!ranks.has(key)) ranks.set(key, rank);
+        }
+        const keyOf = (thread: ThreadSummary) =>
+          q.flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+        const derived = candidates
+          .map((thread) => ({ ...thread, derivedMatches: grouped.get(keyOf(thread)) ?? [] }))
+          .toSorted(
+            (a, b) => (ranks.get(keyOf(a)) ?? Infinity) - (ranks.get(keyOf(b)) ?? Infinity),
+          );
+        threads = reciprocalRankFusion(threads, derived, q.flat).slice(0, limit);
+      }
       // The Drafts list also shows drafts the provider has no copy of yet.
       const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
       if (q.mailbox !== "drafts" || !plain) return threads;
@@ -952,6 +1007,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       setSyncError,
       getSyncCursor,
       saveSyncCursor,
+      media,
       upsertMessage,
       setFlags,
       deleteMessage,

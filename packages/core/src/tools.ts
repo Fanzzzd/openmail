@@ -175,7 +175,7 @@ const ListThreads = readOnly(
 const Search = readOnly(
   Tool.make("search", {
     description:
-      "Full-text search over subject, sender and plain-text body of local mail, newest first. Space-separated terms must all match. Works for Chinese. This is not Gmail query syntax: from:, is:unread and similar operators are not supported.",
+      "Search local mail and on-device OCR/PDF text, merged by reciprocal rank. Supports from:, is:unread, has:image and in:attachment. derivedMatches contains matched text with attachment name/index, PDF page or original image region and pipeline provenance. Never returns image bytes.",
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1)).annotate({ description: "Words to find." }),
       account_id: Schema.optionalKey(AccountId),

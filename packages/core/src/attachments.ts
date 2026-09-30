@@ -75,3 +75,24 @@ export const attachmentFromRaw = (raw: Uint8Array, ref: AttachmentRef) =>
     const found = pickAttachment(listed, (a) => a.filename ?? "attachment", ref);
     return found ? new Uint8Array(found.content) : undefined;
   });
+
+/** Local MIME parts for the indexer; only attached CID images, never remote URLs. */
+export const inlineMediaFromRaw = (raw: Uint8Array) =>
+  Effect.map(parse(raw), (parsed) => {
+    let total = 0;
+    return parsed.attachments.flatMap((a) => {
+      const cid = a.cid ?? a.contentId?.replace(/^<|>$/g, "");
+      if (!cid || !a.contentType.toLowerCase().startsWith("image/")) return [];
+      total += a.size;
+      return total > MAX_INLINE_BYTES
+        ? []
+        : [
+            {
+              cid,
+              name: a.filename ?? cid,
+              mimeType: a.contentType,
+              data: new Uint8Array(a.content),
+            },
+          ];
+    });
+  });

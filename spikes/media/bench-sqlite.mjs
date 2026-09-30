@@ -72,7 +72,7 @@ export function benchmark(runtime = "node") {
     runtime,
     versions: {
       node: process.versions.node,
-      electron: process.versions.electron ?? null,
+      electron: Object.entries(process.versions).find(([name]) => name === "electron")?.[1] ?? null,
       ...versions,
     },
     arch: process.arch,

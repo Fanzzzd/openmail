@@ -151,3 +151,10 @@ export const filtersListAtom = (accountId: string) =>
   MailClient.query("Filters", { accountId }, { reactivityKeys: [Keys.serverSettings], ...cached });
 export const vacationAtom = (accountId: string) =>
   MailClient.query("Vacation", { accountId }, { reactivityKeys: [Keys.serverSettings], ...cached });
+
+export const indexingProgressAtom = MailClient.query("IndexingProgress", undefined, {
+  reactivityKeys: ["indexing"],
+  ...always,
+}).pipe(Atom.makeRefreshOnSignal(every10s));
+export const mediaImageAtom = (chunk: import("../../../shared/api").DerivedChunk) =>
+  MailClient.query("MediaImage", { chunk }, { timeToLive: Duration.minutes(2) });

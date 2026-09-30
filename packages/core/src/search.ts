@@ -16,6 +16,8 @@ export const SEARCH_OPERATORS = [
   "is:starred",
   "is:important",
   "has:attachment",
+  "has:image",
+  "in:attachment",
   "filename:",
   "before:",
   "after:",
@@ -88,6 +90,11 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         break;
       case "has":
         if (value === "attachment") criteria.attachment = true;
+        else if (value === "image") criteria.image = true;
+        else words.push(word);
+        break;
+      case "in":
+        if (value === "attachment") criteria.attachmentText = true;
         else words.push(word);
         break;
       case "is":
@@ -254,11 +261,36 @@ export function mergeSearchResults(
   remote: readonly ThreadSummary[],
   flat = false,
 ): ThreadSummary[] {
+  if (local.some((row) => (row.derivedMatches?.length ?? 0) > 0))
+    return reciprocalRankFusion(local, remote, flat);
   const found = new Map<string, ThreadSummary>();
   for (const row of [...local, ...remote]) {
     const key = flat ? row.id : `${row.accountId}/${row.threadId}`;
     const previous = found.get(key);
-    if (!previous || previous.date < row.date) found.set(key, row);
+    const next = !previous || previous.date < row.date ? row : previous;
+    const derivedMatches = previous?.derivedMatches ?? row.derivedMatches;
+    found.set(key, { ...next, ...(derivedMatches ? { derivedMatches } : {}) });
   }
   return [...found.values()].toSorted((a, b) => b.date - a.date);
+}
+
+/** RRF keeps exact mail and attachment candidates useful without comparing score scales. */
+export function reciprocalRankFusion(
+  body: readonly ThreadSummary[],
+  derived: readonly ThreadSummary[],
+  flat = false,
+): ThreadSummary[] {
+  const scores = new Map<string, { thread: ThreadSummary; score: number }>();
+  for (const list of [body, derived])
+    for (const [rank, thread] of list.entries()) {
+      const key = flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+      const old = scores.get(key);
+      scores.set(key, {
+        thread: { ...old?.thread, ...thread },
+        score: (old?.score ?? 0) + 1 / (60 + rank + 1),
+      });
+    }
+  return [...scores.values()]
+    .toSorted((a, b) => b.score - a.score || b.thread.date - a.thread.date)
+    .map((entry) => entry.thread);
 }

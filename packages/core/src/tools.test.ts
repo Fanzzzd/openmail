@@ -60,6 +60,10 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     openDraft: () => notUsed("openDraft"),
     saveDraft: () => notUsed("saveDraft"),
     discardDraft: () => notUsed("discardDraft"),
+    indexingProgress: notUsed("indexingProgress"),
+    setIndexingPaused: () => notUsed("setIndexingPaused"),
+    derivedChunks: () => notUsed("derivedChunks"),
+    mediaImage: () => notUsed("mediaImage"),
     prefs: notUsed("prefs"),
     setPrefs: () => notUsed("setPrefs"),
     signatures: notUsed("signatures"),
@@ -305,3 +309,48 @@ it.effect("list_threads narrows to a profile and pages with next_before", () =>
     assert.match(JSON.stringify(result.encodedResult), /"next_before":10/);
   }),
 );
+
+it.effect("search returns local matched chunks and provenance without image bytes", () => {
+  const row = {
+    id: "a/m",
+    accountId: "a",
+    threadId: "t",
+    subject: "Mail",
+    from: { name: "", address: "a@example.com" },
+    date: 1,
+    snippet: "",
+    labels: [],
+    isUnread: false,
+    isStarred: false,
+    hasAttachments: true,
+    threadCount: 1,
+    participants: [],
+    derivedMatches: [
+      {
+        messageId: "a/m",
+        text: "boarding gate",
+        source: { kind: "attachment", index: 0, name: "ticket.pdf", mimeType: "application/pdf" },
+        page: 2,
+        region: null,
+        pipelineVersion: "media-1",
+        visionRevision: null,
+      },
+    ],
+  } satisfies import("./domain.js").ThreadSummary;
+  return Effect.gen(function* () {
+    const result = yield* run(
+      call("search", { query: "in:attachment boarding" }),
+      stubMailbox({
+        threads: (query) => {
+          assert.strictEqual(query.search, "in:attachment boarding");
+          return Effect.succeed([row]);
+        },
+      }),
+    );
+    assert.strictEqual(result.isFailure, false);
+    assert.deepStrictEqual(result.result, { threads: [row] });
+    const encoded = JSON.stringify(result.result);
+    assert.ok(!encoded.includes("base64"));
+    assert.ok(!encoded.includes('"data"'));
+  });
+});

@@ -38,3 +38,6 @@ export { AgentIdentity, MailToolkit, MailToolkitLayer } from "./tools.js";
 
 export * from "./organization.js";
 export * from "./search.js";
+
+export * from "./media.js";
+export { Indexer, makeIndexer } from "./indexer.js";

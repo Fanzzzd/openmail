@@ -4,6 +4,8 @@
  * group in `rpc.ts`.
  */
 export type {
+  DerivedChunk,
+  IndexingProgress,
   Account,
   Address,
   AgentWriteMode,

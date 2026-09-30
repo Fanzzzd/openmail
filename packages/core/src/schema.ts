@@ -16,3 +16,5 @@ export * from "./organization.js";
 export * from "./search.js";
 
 export { htmlToText } from "./mime.js";
+
+export * from "./media.js";

@@ -320,6 +320,24 @@ function Row({
           />
         )}
       </span>
+      {m.derivedMatches?.slice(0, 2).map((hit, index) => (
+        <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+          {hit.source.name}
+          {hit.page !== null && (
+            <>
+              {" "}
+              · <Trans>Page {hit.page}</Trans>
+            </>
+          )}
+          {hit.region !== null && (
+            <>
+              {" "}
+              · <Trans>Image region</Trans>
+            </>
+          )}
+          : {hit.text}
+        </span>
+      ))}
       {rule && (
         <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
       )}

@@ -1,6 +1,7 @@
 import { SqliteClient } from "@effect/sql-sqlite-node";
 import { Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
+import { getLoadablePath } from "sqlite-vec";
 
 /**
  * node:sqlite instead of better-sqlite3: it ships inside both Node and
@@ -234,6 +235,62 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX snoozed_messages_thread ON snoozed_messages(account_id, thread_id);
   `,
+  `
+  CREATE TABLE derived_jobs (
+    message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    generation INTEGER NOT NULL DEFAULT 1,
+    pipeline_version TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','done','failed')),
+    claimed_at INTEGER, claim TEXT, attempts INTEGER NOT NULL DEFAULT 0,
+    retry_at INTEGER NOT NULL DEFAULT 0, note TEXT
+  );
+  CREATE INDEX derived_jobs_pending ON derived_jobs(status, retry_at);
+  CREATE TABLE derived_chunks (
+    id INTEGER PRIMARY KEY,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    text TEXT NOT NULL, provenance_json TEXT NOT NULL
+  );
+  CREATE INDEX derived_chunks_message ON derived_chunks(message_id);
+  CREATE VIRTUAL TABLE derived_fts USING fts5(text,
+    content='derived_chunks', content_rowid='id', tokenize='trigram');
+  CREATE TRIGGER derived_ai AFTER INSERT ON derived_chunks BEGIN
+    INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
+  END;
+  CREATE TRIGGER derived_ad AFTER DELETE ON derived_chunks BEGIN
+    INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
+  END;
+  CREATE TRIGGER derived_au AFTER UPDATE ON derived_chunks BEGIN
+    INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
+    INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
+  END;
+  CREATE VIRTUAL TABLE derived_text_vectors USING vec0(embedding float[384]);
+  CREATE VIRTUAL TABLE derived_image_vectors USING vec0(embedding float[512]);
+  CREATE TRIGGER derived_vector_delete AFTER DELETE ON derived_chunks BEGIN
+    DELETE FROM derived_text_vectors WHERE rowid=old.id;
+    DELETE FROM derived_image_vectors WHERE rowid=old.id;
+  END;
+  CREATE TRIGGER media_message_insert AFTER INSERT ON messages
+    WHEN new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+      WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+        OR lower(json_extract(value,'$.mimeType'))='application/pdf') BEGIN
+    INSERT INTO derived_jobs(message_id) VALUES(new.id);
+  END;
+  CREATE TRIGGER media_message_update AFTER UPDATE OF attachments_json,body_html ON messages
+    WHEN old.attachments_json != new.attachments_json OR old.body_html != new.body_html BEGIN
+    DELETE FROM derived_chunks WHERE message_id=new.id;
+    INSERT INTO derived_jobs(message_id) SELECT new.id
+      WHERE new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+        WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+          OR lower(json_extract(value,'$.mimeType'))='application/pdf')
+        OR EXISTS(SELECT 1 FROM derived_jobs WHERE message_id=new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1, status='queued',
+      claim=NULL, claimed_at=NULL, attempts=0, retry_at=0, note=NULL;
+  END;
+  INSERT INTO derived_jobs(message_id) SELECT id FROM messages m
+    WHERE m.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(m.attachments_json)
+      WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+        OR lower(json_extract(value,'$.mimeType'))='application/pdf');
+  `,
 ];
 
 /**
@@ -288,6 +345,14 @@ const UserVersion = Schema.Struct({ user_version: Schema.Number });
  */
 const migrate = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
+  const sqlite = yield* SqliteClient.SqliteClient;
+  // SQLite's dlopen bypasses Electron's ASAR filesystem wrapper. The build
+  // unpacks the platform extension, so point directly at its physical file.
+  const extensionPath = getLoadablePath().replace(
+    /([/\\])app\.asar([/\\])/u,
+    "$1app.asar.unpacked$2",
+  );
+  yield* Effect.orDie(sqlite.loadExtension(extensionPath));
   // Per connection, and a no-op inside a transaction, so it goes first.
   yield* sql`PRAGMA foreign_keys = ON`;
   const step = sql.withTransaction(
@@ -315,7 +380,11 @@ const migrate = Effect.gen(function* () {
  */
 export function databaseLayer(
   filename: string,
-): Layer.Layer<SqlClient.SqlClient, never, FileSystem.FileSystem | Path.Path> {
+): Layer.Layer<
+  SqlClient.SqlClient | SqliteClient.SqliteClient,
+  never,
+  FileSystem.FileSystem | Path.Path
+> {
   const ensureDir = Effect.gen(function* () {
     if (filename === ":memory:") return;
     const fs = yield* FileSystem.FileSystem;

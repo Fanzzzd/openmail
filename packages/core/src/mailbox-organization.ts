@@ -9,7 +9,7 @@ import {
   type SearchResult,
   type Vacation,
 } from "./organization.js";
-import { filterQuery, mergeSearchResults } from "./search.js";
+import { filterQuery, mergeSearchResults, parseSearchQuery } from "./search.js";
 import type { Providers, Store } from "./services.js";
 
 const validateFilter = (input: FilterInput) => {
@@ -41,7 +41,12 @@ export function makeOrganizationMailbox(
     store.audit({ actor: { kind: "user", surface: "app" }, accountId, action, detail });
   const mutation = <A, E>(effect: Effect.Effect<A, E>) => effect.pipe(Effect.tap(() => changed));
   const searchServer = Effect.fn("Mailbox.searchServer")(function* (query: ThreadQuery) {
-    if (query.searchScope === "folder" && query.mailbox === "snoozed")
+    const criteria = parseSearchQuery(query).criteria;
+    if (
+      criteria?.attachmentText ||
+      criteria?.image ||
+      (query.searchScope === "folder" && query.mailbox === "snoozed")
+    )
       return { threads: yield* store.listThreads(query), truncated: false, errors: [] };
     const accounts = (yield* store.listAccounts).filter(
       (a) => query.accountIds === undefined || query.accountIds.includes(a.id),

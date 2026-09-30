@@ -1,6 +1,9 @@
 import { NodeMailbox } from "@openmail/core";
 import { Effect, Fiber, Layer } from "effect";
-import { app, BrowserWindow, shell } from "electron";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { desktopVision } from "./vision";
+import { app, BrowserWindow, powerMonitor, shell } from "electron";
 
 import { RpcServerLive } from "./rpc-server";
 import { createMainWindow, DEV_ICON } from "./windows";
@@ -52,7 +55,26 @@ const WindowLive = Layer.effectDiscard(
 );
 
 const MainLive = Layer.mergeAll(WindowLive, RpcServerLive).pipe(
-  Layer.provide(NodeMailbox({ openUrl: (url) => shell.openExternal(url), autoSync: "2 minutes" })),
+  Layer.provide(
+    Layer.unwrap(
+      Effect.gen(function* () {
+        yield* ready;
+        const binary = app.isPackaged
+          ? join(process.resourcesPath, "native/vision")
+          : fileURLToPath(new URL("../native/vision", import.meta.url));
+        const vision = yield* Effect.promise(() => desktopVision(binary));
+        return NodeMailbox({
+          openUrl: (url) => shell.openExternal(url),
+          autoSync: "2 minutes",
+          media: {
+            vision,
+            onBattery: () => powerMonitor.isOnBatteryPower(),
+            idle: () => powerMonitor.getSystemIdleTime() >= 5,
+          },
+        });
+      }),
+    ),
+  ),
 );
 
 const main = Effect.runFork(Layer.launch(MainLive));

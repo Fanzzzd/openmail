@@ -4,7 +4,7 @@
  * what it has loaded; asking for one more page fetches only that page, and a
  * refresh (a change invalidated "threads") reloads every page on screen.
  */
-import { DEFAULT_PREFS, mergeSearchResults } from "@openmail/core/schema";
+import { DEFAULT_PREFS, mergeSearchResults, parseSearchQuery } from "@openmail/core/schema";
 import { Effect, Option } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
@@ -147,7 +147,11 @@ export const threadListAtom = Atom.writable(
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
     const result = get(pagedList(query).loaded);
-    const server = query.search === undefined ? null : get(serverList(query));
+    const mediaCriteria = parseSearchQuery(query).criteria;
+    const server =
+      query.search === undefined || mediaCriteria?.image || mediaCriteria?.attachmentText
+        ? null
+        : get(serverList(query));
     const remote = server ? AsyncResult.getOrElse(server, () => null) : null;
     const serverState = {
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),

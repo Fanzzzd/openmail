@@ -13,6 +13,7 @@ import { resultError } from "../errors";
 import { Keys } from "../state/keys";
 import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from "../state/mutations";
 import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
+import { IndexingSettings } from "./IndexingSettings";
 import { ComposeSettings } from "./ComposeSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
@@ -84,6 +85,7 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
         </Tabs.Panel>
         <Tabs.Panel value="general" className={panel}>
           <General />
+          <IndexingSettings />
         </Tabs.Panel>
         <Tabs.Panel value="reading" className={panel}>
           <ReadingSettings />
