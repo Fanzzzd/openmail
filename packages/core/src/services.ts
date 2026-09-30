@@ -321,6 +321,8 @@ export class Store extends Context.Service<
     saveInboxCursor(accountId: string, cursor: string): Effect.Effect<void>;
     /** Atomically remembers an id, including read/suppressed mail. True only once. */
     observeIncoming(accountId: string, identity: string): Effect.Effect<boolean>;
+    enqueueNotification(id: string, digest: boolean): Effect.Effect<void>;
+    takeNotifications(now: number): Effect.Effect<import("./domain.js").NotificationBatch[]>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
     readonly signatures: Effect.Effect<Signature[]>;

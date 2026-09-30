@@ -150,6 +150,10 @@ msgstr "域名包括它的子域名。对这些发件人，已知的追踪器照
 msgid "A label or folder needs a valid name"
 msgstr "请填写有效名称"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
+msgstr "原每日静音时段仍生效。修改此日程后替换。"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Accept"
 msgstr "接受"
@@ -185,6 +189,22 @@ msgstr "操作失败：{reason}"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Actions"
 msgstr "操作"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours by space"
+msgstr "空间活跃时段"
+
+#. placeholder {0}: profile.name
+#. placeholder {1}: index + 1
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours end for {0} on {dayName}, period {1}"
+msgstr "{0}在{dayName}的第{1}段结束时间"
+
+#. placeholder {0}: profile.name
+#. placeholder {1}: index + 1
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours start for {0} on {dayName}, period {1}"
+msgstr "{0}在{dayName}的第{1}段开始时间"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Activity"
@@ -229,6 +249,10 @@ msgstr "添加邮箱"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Add label"
 msgstr "加标签"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Add period"
+msgstr "添加时段"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Add star"
@@ -917,6 +941,10 @@ msgstr "转发"
 msgid "Forward as attachment"
 msgstr "作为附件转发"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Friday"
+msgstr "星期五"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1194,8 +1222,8 @@ msgid "Matched image region"
 msgstr "命中的图片区域"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Matching start and end times mute the space all day."
-msgstr "起止时间相同时，全天静音。"
+msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
+msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting cancelled"
@@ -1249,6 +1277,10 @@ msgstr "模型下载进度"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Models verified and ready. Search stays on this device."
 msgstr "模型已校验，可在本机搜索。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Monday"
+msgstr "星期一"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1656,20 +1688,6 @@ msgstr "推广"
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
 
-#: src/renderer/src/components/SystemSettings.tsx
-msgid "Quiet hours by space"
-msgstr "空间静音时段"
-
-#. placeholder {0}: profile.name
-#: src/renderer/src/components/SystemSettings.tsx
-msgid "Quiet hours end for {0}"
-msgstr "{0} 的静音结束时间"
-
-#. placeholder {0}: profile.name
-#: src/renderer/src/components/SystemSettings.tsx
-msgid "Quiet hours start for {0}"
-msgstr "{0} 的静音开始时间"
-
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "只读"
@@ -1731,6 +1749,10 @@ msgstr "移除账户"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Remove label"
 msgstr "去掉标签"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Remove period"
+msgstr "移除时段"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Remove star"
@@ -1825,6 +1847,10 @@ msgstr "执行"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "空闲时运行。扫描版 PDF、音频和视频暂未索引。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Saturday"
+msgstr "星期六"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -2063,6 +2089,10 @@ msgstr "只看未读"
 msgid "Show original"
 msgstr "显示原始邮件"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show unread count in the menu bar"
+msgstr "在菜单栏显示未读数"
+
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -2197,6 +2227,10 @@ msgid "Suggested"
 msgstr "提出建议"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Sunday"
+msgstr "星期日"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Switch spaces"
 msgstr "切换空间"
 
@@ -2283,6 +2317,10 @@ msgstr "结束时间须晚于开始时间"
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "The menu lists up to 50 unread messages in the current space."
+msgstr "菜单最多显示当前空间的 50 封未读邮件。"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
@@ -2349,6 +2387,10 @@ msgstr "这个空间还没有账户。"
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "这个空间还没有账户。<0>添加账户</0>"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Thursday"
+msgstr "星期四"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Time"
 msgstr "时间"
@@ -2375,6 +2417,10 @@ msgstr "明天上午"
 #: src/renderer/src/view.ts
 msgid "Trash"
 msgstr "已删除"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Tuesday"
+msgstr "星期二"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2437,8 +2483,8 @@ msgid "Use default"
 msgstr "使用默认值"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Use this Mac's local time. Notifications received during quiet hours stay silent."
-msgstr "使用本机时区。静音时段收到的邮件不补发通知。"
+msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
+msgstr "按本机时间。非活跃时段暂停通知，Dock 不计该空间；恢复时汇总仍未读的新邮件。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
@@ -2451,6 +2497,10 @@ msgstr "正在验证…"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "等待授权…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Wednesday"
+msgstr "星期三"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."

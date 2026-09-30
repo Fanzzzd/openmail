@@ -11,6 +11,7 @@ import {
 } from "./media.js";
 
 import { createHash } from "node:crypto";
+import { notificationEligible, profileNotificationsActive } from "./system.js";
 
 import {
   Cause,
@@ -975,6 +976,8 @@ export const MailboxLive = (
         scope?: "inbox",
       ) =>
         Effect.fnUntraced(function* (batch: readonly Change[]) {
+          const prefs = yield* store.prefs;
+          const now = new Date(yield* Clock.currentTimeMillis);
           const writes: Effect.Effect<void>[] = [];
           const newIds: string[] = [];
           for (const change of batch) {
@@ -1012,8 +1015,20 @@ export const MailboxLive = (
                       change.message.date >= (account.lastSyncedAt ?? 0) &&
                       change.message.isUnread &&
                       change.message.labels.includes("INBOX")
-                    )
+                    ) {
+                      const message = {
+                        ...change.message,
+                        id,
+                        accountId: account.id,
+                        hasAttachments: change.message.attachments.length > 0,
+                      };
+                      if (notificationEligible(account, message, prefs))
+                        yield* store.enqueueNotification(
+                          id,
+                          !profileNotificationsActive(account, prefs, now),
+                        );
                       newIds.push(id);
+                    }
                   }),
                 );
                 // Gmail keeps the message id when a draft is sent elsewhere; it only loses DRAFT.
@@ -1380,6 +1395,9 @@ export const MailboxLive = (
               ),
             ),
         accounts: store.listAccounts,
+        takeNotifications: Clock.currentTimeMillis.pipe(
+          Effect.flatMap((now) => store.takeNotifications(now)),
+        ),
         connect: (input) => connect(input),
         reauth,
         clientSetup: Effect.map(config.read, (c) => ({

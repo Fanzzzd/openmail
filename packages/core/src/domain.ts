@@ -385,6 +385,54 @@ export const QuietHours = Schema.Struct({
 });
 export type QuietHours = typeof QuietHours.Type;
 
+export const WEEKDAYS = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
+/** Local wall-clock minutes; equal endpoints mean the entire starting weekday. */
+export const ActiveWindow = Schema.Struct({
+  start: QuietHours.fields.start,
+  end: QuietHours.fields.end,
+});
+export type ActiveWindow = typeof ActiveWindow.Type;
+export const ActiveHours = Schema.Struct({
+  enabled: Schema.Boolean,
+  days: Schema.Struct({
+    sunday: Schema.Array(ActiveWindow),
+    monday: Schema.Array(ActiveWindow),
+    tuesday: Schema.Array(ActiveWindow),
+    wednesday: Schema.Array(ActiveWindow),
+    thursday: Schema.Array(ActiveWindow),
+    friday: Schema.Array(ActiveWindow),
+    saturday: Schema.Array(ActiveWindow),
+  }),
+});
+export type ActiveHours = typeof ActiveHours.Type;
+export const DEFAULT_ACTIVE_HOURS: ActiveHours = {
+  enabled: false,
+  days: {
+    sunday: [],
+    monday: [{ start: 540, end: 1020 }],
+    tuesday: [{ start: 540, end: 1020 }],
+    wednesday: [{ start: 540, end: 1020 }],
+    thursday: [{ start: 540, end: 1020 }],
+    friday: [{ start: 540, end: 1020 }],
+    saturday: [],
+  },
+};
+
+export type NotificationBatch = {
+  readonly kind: "immediate" | "digest";
+  readonly profileId: string | null;
+  readonly messages: readonly MessageSummary[];
+};
+
 /** App preferences, stored in core so the CLI and a mobile app see the same values. */
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
@@ -406,6 +454,9 @@ export const Prefs = Schema.Struct({
   notifications: Schema.Record(Schema.String, NotificationMode),
   /** Profile id to quiet hours; "all" covers accounts outside a profile. */
   quietHours: Schema.Record(Schema.String, QuietHours),
+  /** A configured weekly schedule supersedes legacy daily quiet hours. */
+  activeHours: Schema.Record(Schema.String, ActiveHours),
+  menuBarUnreadCount: Schema.Boolean,
 });
 export type Prefs = typeof Prefs.Type;
 
@@ -422,6 +473,8 @@ export const DEFAULT_PREFS: Prefs = {
   shortcutSet: "mimestream",
   notifications: {},
   quietHours: {},
+  activeHours: {},
+  menuBarUnreadCount: false,
 };
 
 /** Signatures differ for new messages and for replies and forwards. */

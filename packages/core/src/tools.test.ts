@@ -63,6 +63,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     unreadCounts: notUsed("unreadCounts"),
     unreadByLabel: () => notUsed("unreadByLabel"),
     profiles: notUsed("profiles"),
+    takeNotifications: notUsed("takeNotifications"),
     createProfile: () => notUsed("createProfile"),
     updateProfile: () => notUsed("updateProfile"),
     deleteProfile: () => notUsed("deleteProfile"),

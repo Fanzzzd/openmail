@@ -2,15 +2,17 @@ import {
   Mailbox,
   messageLink,
   parseAppLink,
-  shouldNotify,
+  dockUnreadCount,
+  MENU_BAR_MAIL_LIMIT,
+  menuBarCountTitle,
   spaceAccountIds,
   type AppLink,
 } from "@openmail/core";
-import { Context, Effect, FiberSet, Layer, Queue, Semaphore, Stream } from "effect";
+import { Context, Effect, FiberSet, Layer, Queue, Schedule, Semaphore, Stream } from "effect";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, Menu, nativeImage, Notification, Tray } from "electron";
+import { app, BrowserWindow, Menu, nativeImage, Notification, powerMonitor, Tray } from "electron";
 
 import type { DesktopEvent } from "../shared/desktop";
 import type { DesktopLabels } from "../shared/desktop-labels";
@@ -57,6 +59,7 @@ export const DesktopLive = Layer.effect(
     const listeners = new Map<number, (event: DesktopEvent) => void>();
     const spaces = new Map<number, string>();
     let activeSpace = "all";
+    let labelsReady = false;
     let labels: DesktopLabels = {
       settings: "Settings…",
       newWindow: "New Window",
@@ -120,17 +123,20 @@ export const DesktopLive = Layer.effect(
         )
           activeSpace = "all";
         const accountIds = spaceAccountIds(activeSpace, accounts);
+        const prefs = yield* mailbox.prefs;
         const counts = yield* mailbox.unreadCounts;
         const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
         const recent = yield* mailbox.threads({
           mailbox: "inbox",
           unreadOnly: true,
           accountIds,
-          limit: 10,
+          limit: MENU_BAR_MAIL_LIMIT,
+          flat: true,
         });
-        const prefs = yield* mailbox.prefs;
         const title = profiles.find((p) => p.id === activeSpace)?.name ?? labels.allAccounts;
-        app.setBadgeCount(unread);
+        app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
+        if (process.platform === "darwin")
+          tray.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
         tray.setToolTip(`OpenMail · ${title} (${unread})`);
         tray.setContextMenu(
           Menu.buildFromTemplate([
@@ -234,6 +240,7 @@ export const DesktopLive = Layer.effect(
             ]),
           );
         }
+        yield* notify;
       }),
     );
 
@@ -262,40 +269,40 @@ export const DesktopLive = Layer.effect(
       notification.on("close", () => notifications.delete(notification));
       notification.on("failed", () => notifications.delete(notification));
     };
-    const notify = (ids: readonly string[], accountId: string) =>
-      Effect.gen(function* () {
-        if (!Notification.isSupported()) return;
-        const accounts = yield* mailbox.accounts;
-        const account = accounts.find((a) => a.id === accountId);
-        if (!account) return;
-        const prefs = yield* mailbox.prefs;
-        const messages = [];
-        for (const id of ids) {
-          const thread = yield* mailbox.thread(id).pipe(Effect.orElseSucceed(() => []));
-          const message = thread.find((m) => m.id === id);
-          if (message && shouldNotify(account, message, prefs, new Date())) messages.push(message);
-        }
-        if (messages.length > 5) {
-          const first = messages[0];
-          if (!first) return;
+    const notify = Effect.gen(function* () {
+      // Startup refresh and arrivals must wait for the renderer's Lingui labels.
+      if (!labelsReady || !Notification.isSupported()) return;
+      const batches = yield* mailbox.takeNotifications;
+      const accounts = yield* mailbox.accounts;
+      const profiles = yield* mailbox.profiles;
+      for (const batch of batches) {
+        const first = batch.messages[0];
+        if (!first) continue;
+        const account = accounts.find((a) => a.id === first.accountId);
+        if (batch.kind === "digest" || batch.messages.length > 5) {
+          const singleAccount = batch.messages.every(
+            (message) => message.accountId === first.accountId,
+          );
           const notification = new Notification({
             id: messageLink(first.id),
-            groupId: account.profileId ?? account.id,
-            title: `${messages.length} ${labels.newMessages}`,
-            body: account.email,
+            groupId: batch.profileId ?? first.accountId,
+            title: `${batch.messages.length} ${labels.newMessages}`,
+            body:
+              profiles.find((p) => p.id === batch.profileId)?.name ??
+              (singleAccount ? (account?.email ?? labels.allAccounts) : labels.allAccounts),
           });
           notifications.add(notification);
           notification.on("click", () => openThread(first.id));
           notification.on("close", () => notifications.delete(notification));
           notification.on("failed", () => notifications.delete(notification));
           notification.show();
-          return;
+          continue;
         }
-        for (const message of messages) {
+        for (const message of batch.messages) {
           const id = message.id;
           const notification = new Notification({
             id: messageLink(id),
-            groupId: account.profileId ?? account.id,
+            groupId: batch.profileId ?? message.accountId,
             title: message.from.name || message.from.address,
             subtitle: message.subject,
             body: message.snippet,
@@ -307,18 +314,25 @@ export const DesktopLive = Layer.effect(
           wireNotification(notification, id);
           notification.show();
         }
-      });
+      }
+    });
 
     yield* mailbox.events.pipe(
       Stream.runForEach((event) =>
-        event._tag === "NewMail"
-          ? notify(event.ids, event.accountId)
-          : event._tag === "Changed"
-            ? refresh
-            : Effect.void,
+        (event._tag === "NewMail" ? notify : event._tag === "Changed" ? refresh : Effect.void).pipe(
+          Effect.catchCause((cause) => Effect.logError("system event refresh failed", cause)),
+        ),
       ),
       Effect.forkScoped,
     );
+    // Re-evaluate wall time without mail traffic, also immediately after sleep.
+    yield* refresh.pipe(
+      Effect.catchCause((cause) => Effect.logError("periodic system refresh failed", cause)),
+      Effect.repeat(Schedule.spaced("15 seconds")),
+      Effect.forkScoped,
+    );
+    const onResume = () => run(refresh);
+    powerMonitor.on("resume", onResume);
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
       if (!isMainWindow(win)) return;
       activeSpace = spaces.get(win.webContents.id) ?? "all";
@@ -341,6 +355,7 @@ export const DesktopLive = Layer.effect(
         linkHandler = undefined;
         app.off("browser-window-focus", onFocus);
         app.off("browser-window-created", onCreated);
+        powerMonitor.off("resume", onResume);
         app.off("activate", activate);
         app.off("window-all-closed", allClosed);
         for (const notification of notifications) {
@@ -395,6 +410,7 @@ export const DesktopLive = Layer.effect(
       setLabels: (next) =>
         Effect.sync(() => {
           labels = next;
+          labelsReady = true;
         }).pipe(Effect.andThen(refresh)),
     });
   }),

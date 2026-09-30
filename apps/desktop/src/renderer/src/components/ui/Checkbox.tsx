@@ -2,6 +2,7 @@ import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { Check } from "lucide-react";
 
 interface Props {
+  id?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   /** Leave out when a wrapping <label> names the checkbox. */
@@ -9,9 +10,10 @@ interface Props {
 }
 
 /** macOS-style checkbox: a small rounded square, accent-filled when checked. */
-export function Checkbox({ checked, onCheckedChange, "aria-label": label }: Props) {
+export function Checkbox({ id, checked, onCheckedChange, "aria-label": label }: Props) {
   return (
     <BaseCheckbox.Root
+      id={id}
       checked={checked}
       onCheckedChange={(next) => onCheckedChange(next)}
       aria-label={label}

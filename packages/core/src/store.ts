@@ -29,6 +29,7 @@ import {
   type MailboxView,
   type Message,
   type MessageSummary,
+  type NotificationBatch,
   Profile,
   type ProfileInput,
   type Proposal,
@@ -45,6 +46,7 @@ import { makeOrganizationStore } from "./store-organization.js";
 import { makeContactStore } from "./store-contacts.js";
 import { makeCacheStore } from "./store-cache.js";
 import { makeComposeStore } from "./store-compose.js";
+import { notificationEligible, profileNotificationsActive } from "./system.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
 // so the mapping functions below only rename fields.
@@ -150,6 +152,11 @@ const Next = Schema.Struct({ next: Schema.Number });
 
 /** A claim on a queued op older than this belongs to a process that died mid-push. */
 const CLAIM_TTL = 2 * 60_000;
+
+/** CLI sync also discovers arrivals; bound storage without requiring a desktop consumer. */
+const NOTIFICATION_RETENTION = 7 * 86_400_000;
+const MAX_PENDING_NOTIFICATIONS = 1000;
+const IMMEDIATE_NOTIFICATION_AGE = 5 * 60_000;
 
 function toAccount(r: typeof AccountRow.Type): Account {
   return {
@@ -1087,6 +1094,81 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         }
       });
 
+    const pruneNotifications = (now: number) =>
+      Effect.gen(function* () {
+        yield* run(
+          sql`DELETE FROM pending_notifications WHERE enqueued_at < ${now - NOTIFICATION_RETENTION}`,
+        );
+        yield* run(sql`DELETE FROM pending_notifications WHERE message_id IN (
+        SELECT message_id FROM pending_notifications ORDER BY enqueued_at DESC,rowid DESC
+        LIMIT -1 OFFSET ${MAX_PENDING_NOTIFICATIONS})`);
+      });
+    const enqueueNotification = (id: string, digest: boolean) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            const now = yield* Clock.currentTimeMillis;
+            yield* run(sql`INSERT INTO pending_notifications (message_id,digest,enqueued_at)
+          VALUES (${id},${digest ? 1 : 0},${now}) ON CONFLICT(message_id) DO NOTHING`);
+            yield* pruneNotifications(now);
+          }),
+        )
+        .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
+    const takeNotifications = (now: number) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            yield* pruneNotifications(now);
+            const pending = yield* all(
+              Schema.Struct({
+                ...summaryRowFields,
+                digest: Schema.BooleanFromBit,
+                enqueued_at: Schema.Number,
+              }),
+            )(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)},n.digest,n.enqueued_at FROM pending_notifications n
+              JOIN messages m ON m.id=n.message_id ORDER BY n.rowid`);
+            const accounts = yield* listAccounts;
+            const prefs = yield* compose.prefs;
+            const batches = new Map<
+              string,
+              {
+                kind: NotificationBatch["kind"];
+                profileId: string | null;
+                messages: MessageSummary[];
+              }
+            >();
+            for (const entry of pending) {
+              const message = toSummary(entry);
+              const account = accounts.find((a) => a.id === message.accountId);
+              if (account && notificationEligible(account, message, prefs)) {
+                if (!profileNotificationsActive(account, prefs, new Date(now))) {
+                  if (!entry.digest)
+                    yield* run(
+                      sql`UPDATE pending_notifications SET digest=1 WHERE message_id=${message.id} AND digest=0`,
+                    );
+                  continue;
+                }
+                const digest =
+                  entry.digest || now - entry.enqueued_at >= IMMEDIATE_NOTIFICATION_AGE;
+                const kind = digest ? "digest" : "immediate";
+                // A digest spans the Profile, including its multiple accounts.
+                const key = JSON.stringify([kind, digest ? account.profileId : account.id]);
+                const batch = batches.get(key) ?? {
+                  kind,
+                  profileId: account.profileId,
+                  messages: [],
+                };
+                batch.messages.push(message);
+                batches.set(key, batch);
+              }
+              // Read, archived, disabled or delivered arrivals must never notify later.
+              yield* run(sql`DELETE FROM pending_notifications WHERE message_id=${message.id}`);
+            }
+            return [...batches.values()];
+          }),
+        )
+        .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
+
     return Store.of({
       ...cache,
       ...organization,
@@ -1113,6 +1195,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       hasMessage,
       saveInboxCursor,
       observeIncoming,
+      enqueueNotification,
+      takeNotifications,
       saveSyncCursor,
       media,
       semantics,

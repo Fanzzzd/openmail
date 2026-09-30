@@ -198,6 +198,8 @@ export class Mailbox extends Context.Service<
 
     // Profiles (spaces)
     readonly profiles: Effect.Effect<Profile[]>;
+    /** Atomically consumes eligible arrivals; muted arrivals wait for a Profile digest. */
+    readonly takeNotifications: Effect.Effect<import("./domain.js").NotificationBatch[]>;
     createProfile(input: ProfileInput): Effect.Effect<Profile>;
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;

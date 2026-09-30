@@ -5,7 +5,13 @@ import { Input } from "@base-ui/react/input";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS } from "@openmail/core/schema";
+import {
+  DEFAULT_ACTIVE_HOURS,
+  DEFAULT_PREFS,
+  WEEKDAYS,
+  type ActiveWindow,
+  type Weekday,
+} from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useEffect, useState } from "react";
@@ -99,6 +105,17 @@ const timeText = (minute: number) =>
 const timeMinute = (value: string) =>
   /^\d{2}:\d{2}$/.test(value) ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : null;
 
+const timeInput = "rounded border border-black/10 bg-transparent px-2 py-1 dark:border-white/15";
+const WEEKDAY_NAMES: Record<Weekday, MessageDescriptor> = {
+  sunday: msg`Sunday`,
+  monday: msg`Monday`,
+  tuesday: msg`Tuesday`,
+  wednesday: msg`Wednesday`,
+  thursday: msg`Thursday`,
+  friday: msg`Friday`,
+  saturday: msg`Saturday`,
+};
+
 export function NotificationsSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
@@ -139,72 +156,147 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         </p>
       </section>
       <section>
+        <label htmlFor="menu-bar-unread-count" className="flex items-center gap-2">
+          <Checkbox
+            id="menu-bar-unread-count"
+            checked={prefs.menuBarUnreadCount}
+            onCheckedChange={(menuBarUnreadCount) => save({ menuBarUnreadCount })}
+          />
+          <Trans>Show unread count in the menu bar</Trans>
+        </label>
+        <p className="mt-2 text-neutral-500">
+          <Trans>The menu lists up to 50 unread messages in the current space.</Trans>
+        </p>
+      </section>
+      <section>
         <h3 className="mb-3 font-semibold">
-          <Trans>Quiet hours by space</Trans>
+          <Trans>Active hours by space</Trans>
         </h3>
         <p className="mb-3 text-neutral-500">
           <Trans>
-            Use this Mac's local time. Notifications received during quiet hours stay silent.
+            Use this Mac's local time. Outside active hours, notifications wait and the Dock badge
+            excludes the space. When active hours resume, unread arrivals appear in one summary.
           </Trans>
         </p>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {[{ id: "all", name: t`Ungrouped accounts` }, ...profiles].map((profile) => {
-            const hours = prefs.quietHours[profile.id] ?? {
-              enabled: false,
-              start: 22 * 60,
-              end: 8 * 60,
-            };
+            const hours = prefs.activeHours[profile.id] ?? DEFAULT_ACTIVE_HOURS;
             const update = (patch: Partial<typeof hours>) =>
-              save({ quietHours: { ...prefs.quietHours, [profile.id]: { ...hours, ...patch } } });
+              save({ activeHours: { ...prefs.activeHours, [profile.id]: { ...hours, ...patch } } });
+            const updateDay = (day: Weekday, windows: readonly ActiveWindow[]) =>
+              update({ days: { ...hours.days, [day]: windows } });
+            const legacy = !prefs.activeHours[profile.id] && prefs.quietHours[profile.id]?.enabled;
             return (
-              <div key={profile.id} className="flex items-center gap-3">
-                <label className="flex min-w-0 flex-1 items-center gap-2">
+              <div key={profile.id}>
+                <label className="mb-2 flex items-center gap-2 font-medium">
                   <Checkbox
                     checked={hours.enabled}
                     onCheckedChange={(enabled) => update({ enabled })}
                   />
-                  <span className="truncate">{profile.name}</span>
+                  {profile.name}
                 </label>
-                <label htmlFor={`quiet-start-${profile.id}`} className="flex items-center gap-2">
-                  <span className="text-neutral-500">
-                    <Trans>Start</Trans>
-                  </span>
-                  <Input
-                    id={`quiet-start-${profile.id}`}
-                    aria-label={t`Quiet hours start for ${profile.name}`}
-                    type="time"
-                    value={timeText(hours.start)}
-                    disabled={!hours.enabled}
-                    className="rounded border border-black/10 bg-transparent px-2 py-1 disabled:opacity-40 dark:border-white/15"
-                    onChange={(e) => {
-                      const start = timeMinute(e.target.value);
-                      if (start !== null) update({ start });
-                    }}
-                  />
-                </label>
-                <label htmlFor={`quiet-end-${profile.id}`} className="flex items-center gap-2">
-                  <span className="text-neutral-500">
-                    <Trans>Until</Trans>
-                  </span>
-                  <Input
-                    id={`quiet-end-${profile.id}`}
-                    aria-label={t`Quiet hours end for ${profile.name}`}
-                    type="time"
-                    value={timeText(hours.end)}
-                    disabled={!hours.enabled}
-                    className="rounded border border-black/10 bg-transparent px-2 py-1 disabled:opacity-40 dark:border-white/15"
-                    onChange={(e) => {
-                      const end = timeMinute(e.target.value);
-                      if (end !== null) update({ end });
-                    }}
-                  />
-                </label>
+                {legacy && (
+                  <p className="mb-2 text-neutral-500">
+                    <Trans>
+                      A previous daily quiet-hours setting is still active. Change this schedule to
+                      replace it.
+                    </Trans>
+                  </p>
+                )}
+                {hours.enabled &&
+                  WEEKDAYS.map((day) => {
+                    const windows = hours.days[day];
+                    const dayName = t(WEEKDAY_NAMES[day]);
+                    return (
+                      <div key={day} className="mb-3 space-y-2">
+                        <label className="flex items-center gap-2">
+                          <Checkbox
+                            checked={windows.length > 0}
+                            onCheckedChange={(enabled) =>
+                              updateDay(day, enabled ? [{ start: 540, end: 1020 }] : [])
+                            }
+                          />
+                          {dayName}
+                        </label>
+                        {windows.map((window, index) => {
+                          const change = (patch: Partial<ActiveWindow>) =>
+                            updateDay(
+                              day,
+                              windows.map((current, i) =>
+                                i === index ? { ...current, ...patch } : current,
+                              ),
+                            );
+                          return (
+                            <div key={index} className="ml-6 flex flex-wrap items-center gap-3">
+                              <label
+                                htmlFor={`active-start-${profile.id}-${day}-${index}`}
+                                className="flex items-center gap-2"
+                              >
+                                <Trans>Start</Trans>
+                                <Input
+                                  id={`active-start-${profile.id}-${day}-${index}`}
+                                  aria-label={t`Active hours start for ${profile.name} on ${dayName}, period ${index + 1}`}
+                                  type="time"
+                                  value={timeText(window.start)}
+                                  className={timeInput}
+                                  onChange={(e) => {
+                                    const start = timeMinute(e.target.value);
+                                    if (start !== null) change({ start });
+                                  }}
+                                />
+                              </label>
+                              <label
+                                htmlFor={`active-end-${profile.id}-${day}-${index}`}
+                                className="flex items-center gap-2"
+                              >
+                                <Trans>Until</Trans>
+                                <Input
+                                  id={`active-end-${profile.id}-${day}-${index}`}
+                                  aria-label={t`Active hours end for ${profile.name} on ${dayName}, period ${index + 1}`}
+                                  type="time"
+                                  value={timeText(window.end)}
+                                  className={timeInput}
+                                  onChange={(e) => {
+                                    const end = timeMinute(e.target.value);
+                                    if (end !== null) change({ end });
+                                  }}
+                                />
+                              </label>
+                              <Button
+                                onClick={() =>
+                                  updateDay(
+                                    day,
+                                    windows.filter((_, i) => i !== index),
+                                  )
+                                }
+                                className="text-neutral-500"
+                              >
+                                <Trans>Remove period</Trans>
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        {windows.length > 0 && (
+                          <Button
+                            onClick={() => updateDay(day, [...windows, { start: 540, end: 1020 }])}
+                            className="ml-6 text-neutral-500"
+                          >
+                            <Trans>Add period</Trans>
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             );
           })}
         </div>
         <p className="mt-3 text-neutral-500">
-          <Trans>Matching start and end times mute the space all day.</Trans>
+          <Trans>
+            Matching times keep that weekday active all day. Overnight periods continue into the
+            next day. Unchecked days stay muted except for overnight periods from the previous day.
+            Repeated daylight-saving times use the same schedule; skipped times are passed over.
+          </Trans>
         </p>
       </section>
     </div>

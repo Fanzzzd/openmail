@@ -1,7 +1,14 @@
 /** Protocol and notification decisions shared by desktop and tests. No platform APIs. */
 import { Schema } from "effect";
 
-import type { Account, Message, Prefs, QuietHours } from "./domain.js";
+import {
+  WEEKDAYS,
+  type Account,
+  type ActiveHours,
+  type Message,
+  type Prefs,
+  type QuietHours,
+} from "./domain.js";
 
 export const MailtoDraft = Schema.Struct({
   to: Schema.String,
@@ -68,17 +75,66 @@ const SECONDARY = new Set([
   "CATEGORY_UPDATES",
   "CATEGORY_FORUMS",
 ]);
-export function shouldNotify(account: Account, message: Message, prefs: Prefs, now: Date): boolean {
+/** Overnight ranges belong to their starting weekday. DST follows local wall time:
+ * repeated minutes match twice, and skipped minutes never occur. */
+export function inActiveHours(hours: ActiveHours, now: Date): boolean {
+  if (!hours.enabled) return true;
+  const day = WEEKDAYS[now.getDay()];
+  const previous = WEEKDAYS[(now.getDay() + 6) % 7];
+  if (!day || !previous) return false;
+  const minute = now.getHours() * 60 + now.getMinutes();
+  return (
+    hours.days[day].some(
+      ({ start, end }) =>
+        start === end || (start < end ? minute >= start && minute < end : minute >= start),
+    ) || hours.days[previous].some(({ start, end }) => start > end && minute < end)
+  );
+}
+
+/** Shared by notifications, catch-up and the Dock, including ungrouped accounts. */
+export function profileNotificationsActive(account: Account, prefs: Prefs, now: Date): boolean {
+  const id = account.profileId ?? "all";
+  const hours = prefs.activeHours[id];
+  return hours ? inActiveHours(hours, now) : !inQuietHours(prefs.quietHours[id], now);
+}
+
+export function notificationEligible(
+  account: Account,
+  message: Pick<Message, "isUnread" | "labels">,
+  prefs: Prefs,
+): boolean {
   const mode = prefs.notifications[account.id] ?? "primary";
   if (mode === "off" || !message.isUnread || !message.labels.includes("INBOX")) return false;
   if (message.labels.some((l) => ["DRAFT", "SENT", "SPAM", "TRASH", "SNOOZED"].includes(l)))
     return false;
-  if (inQuietHours(prefs.quietHours[account.profileId ?? "all"], now)) return false;
   return (
     mode !== "primary" ||
     account.provider !== "gmail" ||
     !message.labels.some((l) => SECONDARY.has(l))
   );
+}
+
+export function shouldNotify(account: Account, message: Message, prefs: Prefs, now: Date): boolean {
+  return (
+    notificationEligible(account, message, prefs) && profileNotificationsActive(account, prefs, now)
+  );
+}
+
+export const MENU_BAR_MAIL_LIMIT = 50;
+export const menuBarCountTitle = (enabled: boolean, unread: number) =>
+  enabled ? String(unread) : "";
+
+export function dockUnreadCount(
+  space: string,
+  accounts: readonly Account[],
+  counts: Readonly<Record<string, number>>,
+  prefs: Prefs,
+  now: Date,
+): number {
+  const scoped = new Set(spaceAccountIds(space, accounts));
+  return accounts
+    .filter((account) => scoped.has(account.id) && profileNotificationsActive(account, prefs, now))
+    .reduce((total, account) => total + (counts[account.id] ?? 0), 0);
 }
 
 /** The active space scopes system surfaces; an empty profile must count nothing. */

@@ -52,7 +52,7 @@ const withMailbox = <A, E>(
 it("cache migration and flags/snooze dates leave existing FTS segments untouched", () => {
   const db = new DatabaseSync(":memory:");
   try {
-    for (const migration of MIGRATIONS.slice(0, MIGRATIONS.length - 1))
+    for (const migration of MIGRATIONS.slice(0, 12))
       for (const statement of splitStatements(migration)) db.exec(statement);
     db.exec(
       "INSERT INTO accounts(id,provider,email,created_at) VALUES ('a','gmail','a@example.com',0)",
@@ -65,7 +65,7 @@ it("cache migration and flags/snooze dates leave existing FTS segments untouched
     db.exec("COMMIT");
     const segments = () => db.prepare("SELECT id,block FROM messages_fts_data ORDER BY id").all();
     const before = segments();
-    const migration = MIGRATIONS.at(-1);
+    const migration = MIGRATIONS[12];
     assert.ok(migration);
     for (const statement of splitStatements(migration)) db.exec(statement);
     assert.deepStrictEqual(segments(), before);

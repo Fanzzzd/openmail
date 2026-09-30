@@ -260,6 +260,12 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         shortcutSet: pref(f.shortcutSet, stored.get("shortcutSet"), d.shortcutSet),
         notifications: pref(f.notifications, stored.get("notifications"), d.notifications),
         quietHours: pref(f.quietHours, stored.get("quietHours"), d.quietHours),
+        activeHours: pref(f.activeHours, stored.get("activeHours"), d.activeHours),
+        menuBarUnreadCount: pref(
+          f.menuBarUnreadCount,
+          stored.get("menuBarUnreadCount"),
+          d.menuBarUnreadCount,
+        ),
       };
     }),
     Effect.withSpan("Store.prefs"),

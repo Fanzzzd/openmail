@@ -471,6 +471,13 @@ export const MIGRATIONS: readonly string[] = [
     SELECT m.account_id, lower(trim(json_extract(recipient.value,'$.address')))
     FROM messages m, json_each(m.cc_json) recipient
     WHERE EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value='SENT');`,
+  // Migration 16: arrivals survive muted hours and desktop restarts.
+  `CREATE TABLE pending_notifications (
+    message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    digest INTEGER NOT NULL CHECK(digest IN (0,1)),
+    enqueued_at INTEGER NOT NULL
+  );
+  CREATE INDEX pending_notifications_enqueued ON pending_notifications(enqueued_at);`,
 ];
 
 /**
