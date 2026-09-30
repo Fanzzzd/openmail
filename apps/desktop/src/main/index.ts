@@ -1,5 +1,5 @@
 import { NodeMailbox } from "@openmail/core";
-import { Effect, Fiber, Layer } from "effect";
+import { Cause, Effect, Fiber, Layer } from "effect";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { desktopVision } from "./vision";
@@ -77,7 +77,20 @@ const MainLive = Layer.mergeAll(WindowLive, RpcServerLive).pipe(
   ),
 );
 
-const main = Effect.runFork(Layer.launch(MainLive));
+// A failed start (the database locked by a process still quitting, say) would
+// otherwise leave a process with no window and nothing logged.
+const main = Effect.runFork(
+  Layer.launch(MainLive).pipe(
+    Effect.tapCause((cause) =>
+      // Quitting interrupts the program; that is not a failure.
+      Effect.sync(() => {
+        if (Cause.hasInterruptsOnly(cause)) return;
+        console.error(`OpenMail failed to start:\n${Cause.pretty(cause)}`);
+        app.exit(1);
+      }),
+    ),
+  ),
+);
 
 // Quitting interrupts the program first, so the sync loop stops and the
 // database closes. Electron ignores a second app.quit() after will-quit was

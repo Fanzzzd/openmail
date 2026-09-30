@@ -359,7 +359,10 @@ const UserVersion = Schema.Struct({ user_version: Schema.Number });
  */
 const migrate = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
-  // Per connection, and a no-op inside a transaction, so it goes first.
+  // Per connection, and a no-op inside a transaction, so they go first. The
+  // app, the CLI and a restarting app can share the file; wait for a lock
+  // instead of failing at once.
+  yield* sql`PRAGMA busy_timeout = 5000`;
   yield* sql`PRAGMA foreign_keys = ON`;
   const step = sql.withTransaction(
     Effect.gen(function* () {
