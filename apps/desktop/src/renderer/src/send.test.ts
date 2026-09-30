@@ -1,11 +1,56 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { holdSend } from "@openmail/core/schema";
+import { holdSend, richComposeBody, type ComposeBody } from "@openmail/core/schema";
 
 import { emptyDraft } from "./draft";
 import { submitDraft } from "./send";
 
-const draft = { ...emptyDraft("gmail:me@example.com"), to: "other@example.com", body: "Hello" };
+const draft = {
+  ...emptyDraft("gmail:me@example.com"),
+  to: "other@example.com",
+  body: richComposeBody("Hello"),
+};
 afterEach(() => vi.useRealTimers());
+
+it("all body modes require separate subject and attachment confirmations before sending", () => {
+  const bodies = [
+    { kind: "plain", text: "Please see the attached file." },
+    { kind: "markdown", text: "Please see the **attached** file." },
+    richComposeBody("<strong>Please see the attached file.</strong>"),
+  ] satisfies ComposeBody[];
+  for (const body of bodies) {
+    const send = vi.fn();
+    const current = { ...draft, mode: "replyAll" as const, body };
+    expect(submitDraft(current, true, [], send)).toEqual({ kind: "confirm", warning: "subject" });
+    expect(submitDraft(current, true, ["subject"], send)).toEqual({
+      kind: "confirm",
+      warning: "attachment",
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(submitDraft(current, true, ["subject", "attachment"], send)).toEqual({ kind: "sent" });
+    expect(send).toHaveBeenCalledExactlyOnceWith(
+      current,
+      expect.objectContaining({ text: body.text }),
+      { archive: true },
+    );
+  }
+});
+
+it("confirmed rich drafts keep their HTML and link alternative in the send queue", () => {
+  const body = richComposeBody(
+    '<strong>Hello</strong> <a href="https://example.com/attachments">details</a>',
+  );
+  const current = { ...draft, body };
+  const send = vi.fn();
+  expect(submitDraft(current, false, [], send)).toEqual({ kind: "confirm", warning: "subject" });
+  expect(send).not.toHaveBeenCalled();
+  // A URL target mentioning attachments is not the person's visible attachment reminder.
+  expect(submitDraft(current, false, ["subject"], send)).toEqual({ kind: "sent" });
+  expect(send).toHaveBeenCalledExactlyOnceWith(
+    current,
+    expect.objectContaining({ text: body.text, html: body.html }),
+    { archive: false },
+  );
+});
 
 it("canceling an empty-subject prompt creates no undo timer or queued send", () => {
   vi.useFakeTimers();
@@ -49,7 +94,10 @@ it("empty subject and missing attachment each need their own confirmation", () =
   const send = vi.fn(() => {
     holdSend(5000, queue);
   });
-  const withAttachmentMention = { ...draft, body: "Please see the attached file." };
+  const withAttachmentMention = {
+    ...draft,
+    body: richComposeBody("Please see the attached file."),
+  };
   expect(submitDraft(withAttachmentMention, false, [], send)).toEqual({
     kind: "confirm",
     warning: "subject",

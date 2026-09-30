@@ -5,6 +5,7 @@ import { buildMime } from "./compose.js";
 import type { OutgoingMessage } from "./domain.js";
 import { originalAttachment, parseRawDraft } from "./drafts.js";
 import { renderMarkdown } from "./markdown.js";
+import { preservedComposeHtml } from "./compose-body.js";
 import { simpleParser } from "mailparser";
 
 const message: OutgoingMessage = {
@@ -127,6 +128,39 @@ describe("Chinese text survives the MIME round trip", () => {
 });
 
 describe("parseRawDraft", () => {
+  it.effect(
+    "retains inline image parts and Content-ID while rebuilding an untouched remote body",
+    () =>
+      Effect.gen(function* () {
+        const html = '<p style="color:red">image <img src="cid:logo@example.com"></p>';
+        const original = yield* buildMime(from, {
+          ...message,
+          html,
+          attachments: [
+            {
+              filename: "logo.png",
+              mimeType: "image/png",
+              content: "aGk=",
+              contentId: "logo@example.com",
+            },
+          ],
+        });
+        const imported = yield* parseRawDraft(original);
+        assert.strictEqual(imported.attachments[0]?.contentId, "logo@example.com");
+        assert.include(imported.originalHtml ?? "", "cid:logo@example.com");
+        const rebuilt = yield* buildMime(from, {
+          ...message,
+          text: imported.text,
+          html: preservedComposeHtml(imported.originalHtml ?? ""),
+          attachments: imported.attachments,
+        });
+        const parsed = yield* Effect.promise(() => simpleParser(rebuilt, { skipImageLinks: true }));
+        assert.strictEqual(parsed.attachments[0]?.contentId, "<logo@example.com>");
+        assert.strictEqual(parsed.attachments[0]?.contentDisposition, "inline");
+        assert.include(parsed.html || "", '<img src="cid:logo@example.com">');
+        assert.strictEqual(parsed.attachments[0]?.content.toString(), "hi");
+      }),
+  );
   it.effect("reads recipients, Bcc, the body and attachment content back", () =>
     Effect.gen(function* () {
       const raw = yield* buildMime(from, { ...message, mode: "reply" }, threading);

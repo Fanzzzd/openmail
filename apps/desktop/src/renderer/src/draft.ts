@@ -4,6 +4,11 @@ import {
   replyRecipients,
   splitAddresses,
   type SendAs,
+  type ComposeBody,
+  outgoingComposeBody,
+  normalizeComposeMessage,
+  richComposeBody,
+  textComposeHtml,
 } from "@openmail/core/schema";
 import type {
   Account,
@@ -31,12 +36,10 @@ export interface Draft {
   cc: string;
   bcc: string;
   subject: string;
-  body: string;
+  body: ComposeBody;
   attachments: readonly OutgoingAttachment[];
   /** Local id of the message replied to or forwarded. */
   inReplyTo?: string;
-  /** The body is Markdown; core sends it with an HTML part. */
-  markdown: boolean;
   /** Forward `inReplyTo` as an attached .eml instead of quoting it. */
   forwardAsAttachment: boolean;
   /** The agent proposal this draft came from. */
@@ -54,9 +57,8 @@ export function emptyDraft(accountId: string): Draft {
     cc: "",
     bcc: "",
     subject: "",
-    body: "",
+    body: { kind: "rich", text: "", html: "" },
     attachments: [],
-    markdown: false,
     forwardAsAttachment: false,
   };
 }
@@ -169,10 +171,9 @@ export function draftFor(
     cc: cc.map(formatAddress).join(", "),
     bcc: "",
     subject: prefixed(mode === "forward" ? "Fwd" : "Re", m.subject),
-    body,
+    body: richComposeBody(textComposeHtml(body)),
     attachments: [],
     inReplyTo: m.id,
-    markdown: false,
     forwardAsAttachment,
   };
 }
@@ -189,10 +190,9 @@ export function fromStored(d: StoredDraft): Draft {
     cc: m.cc.map(formatAddress).join(", "),
     bcc: m.bcc.map(formatAddress).join(", "),
     subject: m.subject,
-    body: m.text,
+    body: outgoingComposeBody(m),
     attachments: m.attachments,
     ...(m.inReplyTo ? { inReplyTo: m.inReplyTo } : {}),
-    markdown: m.markdown ?? false,
     forwardAsAttachment: m.forwardAsAttachment ?? false,
     ...(d.proposalId === null ? {} : { proposalId: d.proposalId }),
   };
@@ -203,20 +203,29 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
   const to = parseAddresses(d.to);
   const cc = parseAddresses(d.cc);
   const bcc = parseAddresses(d.bcc);
+  const body = d.body;
   return {
-    message: {
+    message: normalizeComposeMessage({
       ...(d.from ? { from: d.from } : {}),
       to: to.addresses,
       cc: cc.addresses,
       bcc: bcc.addresses,
       subject: d.subject,
-      text: d.body,
+      text: body.text,
+      ...(body.kind === "rich"
+        ? {
+            html: body.html,
+            ...(d.body.kind === "rich" && d.body.originalHtml !== undefined
+              ? { originalHtml: d.body.originalHtml }
+              : {}),
+          }
+        : {}),
       attachments: d.attachments,
       mode: d.mode,
       ...(d.inReplyTo ? { inReplyTo: d.inReplyTo } : {}),
-      ...(d.markdown ? { markdown: true } : {}),
+      ...(body.kind === "markdown" ? { markdown: true } : {}),
       ...(d.forwardAsAttachment ? { forwardAsAttachment: true } : {}),
-    },
+    }),
     invalid: [...to.invalid, ...cc.invalid, ...bcc.invalid],
   };
 }
@@ -232,7 +241,9 @@ export function isEmpty(d: Draft): boolean {
     !d.cc &&
     !d.bcc &&
     !d.subject &&
-    !d.body.trim() &&
+    !d.body.text.trim() &&
+    // An untouched image-only remote body has no editable text, but closing must keep it.
+    (d.body.kind !== "rich" || d.body.originalHtml === undefined) &&
     d.attachments.length === 0 &&
     !d.forwardAsAttachment
   );

@@ -7,7 +7,10 @@ import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 
 import type { Account } from "./domain.js";
-import { makeOutlook, parseGraphMessage } from "./outlook.js";
+import { makeOutlook, parseGraphMessage, MARKDOWN_DRAFT_PROPERTY } from "./outlook.js";
+import { importedMessage, parseRawDraft, withDraftMarkdownSource } from "./drafts.js";
+import { markdownDraftSource } from "./markdown-draft.js";
+import { renderMarkdown } from "./markdown.js";
 import { replyRecipients } from "./recipients.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
 import { type Change, type ProviderAdapter, Secrets } from "./services.js";
@@ -668,6 +671,182 @@ it.effect("reply drafts start from createReply so Outlook threads them", () =>
       "PATCH /me/messages/d2",
       "POST /me/messages/d2/attachments",
     ]);
+  }),
+);
+
+it.effect(
+  "Graph reuses Content-ID inline images without duplicating managed parts on replacement",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "PATCH /me/messages/d1": { json: {} },
+        "GET /me/messages/d1/attachments": {
+          json: {
+            value: [
+              { id: "copied-logo", isInline: true, contentId: "logo@example.com" },
+              { id: "server-only", isInline: true, contentId: "unknown@example.com" },
+            ],
+          },
+        },
+        "DELETE /me/messages/d1/attachments/copied-logo": { status: 204 },
+        "POST /me/messages/d1/attachments": { status: 201, json: {} },
+      });
+      yield* run(http, (adapter) =>
+        adapter.saveDraft(account, {
+          remote: { draftId: "d1", messageId: "d1" },
+          message: {
+            ...draftMessage,
+            html: '<img src="cid:logo@example.com">',
+            attachments: [
+              {
+                filename: "logo.png",
+                mimeType: "image/png",
+                content: "aGk=",
+                contentId: "logo@example.com",
+              },
+            ],
+          },
+          original: Option.none(),
+          replaceAttachments: true,
+        }),
+      );
+      assert.deepStrictEqual(paths(http.calls), [
+        "PATCH /me/messages/d1",
+        "GET /me/messages/d1/attachments",
+        "DELETE /me/messages/d1/attachments/copied-logo",
+        "POST /me/messages/d1/attachments",
+      ]);
+      const uploaded = Schema.decodeUnknownSync(
+        Schema.Struct({
+          contentId: Schema.String,
+          isInline: Schema.Boolean,
+          contentBytes: Schema.String,
+        }),
+      )(http.calls.at(-1)?.body);
+      assert.deepStrictEqual(uploaded, {
+        contentId: "logo@example.com",
+        isInline: true,
+        contentBytes: "aGk=",
+      });
+    }),
+);
+
+it.effect("Graph draft source properties survive create, update, import and removal", () =>
+  Effect.gen(function* () {
+    const source = "**bold**\n\n- first\n- second\n";
+    const propertySchema = Schema.Struct({
+      singleValueExtendedProperties: Schema.Array(
+        Schema.Struct({ id: Schema.String, value: Schema.String }),
+      ),
+    });
+    let externalBody: string | undefined;
+    const writtenBody = () => {
+      const write = http.calls
+        .filter((call) => call.method === "POST" || call.method === "PATCH")
+        .at(-1);
+      return Schema.decodeUnknownSync(
+        Schema.Struct({ body: Schema.Struct({ content: Schema.String }) }),
+      )(write?.body).body.content;
+    };
+    const http = fakeHttp({
+      "POST /me/messages": { status: 201, json: { id: "markdown-draft" } },
+      "PATCH /me/messages/markdown-draft": { json: {} },
+      "GET /me/messages/markdown-draft": (url) => {
+        assert.include(url.searchParams.get("$expand") ?? "", MARKDOWN_DRAFT_PROPERTY);
+        const lastWrite = http.calls
+          .filter((call) => call.method === "POST" || call.method === "PATCH")
+          .at(-1);
+        const fields = Schema.decodeUnknownSync(propertySchema)(lastWrite?.body);
+        assert.strictEqual(fields.singleValueExtendedProperties[0]?.id, MARKDOWN_DRAFT_PROPERTY);
+        return { json: fields };
+      },
+      "GET /me/messages/markdown-draft/$value": () => ({
+        text: `To: bob@example.com\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${externalBody ?? writtenBody()}`,
+      }),
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        if (!adapter.draftMarkdownSource) throw new Error("Graph draft source API is missing");
+        const remote = yield* adapter.saveDraft(account, {
+          remote: null,
+          message: {
+            ...draftMessage,
+            attachments: [],
+            text: source,
+            html: renderMarkdown(source),
+            markdown: true,
+          },
+          original: Option.none(),
+          replaceAttachments: false,
+        });
+        assert.deepStrictEqual(
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+          markdownDraftSource(source),
+        );
+        const raw = yield* adapter.fetchRaw(account, "markdown-draft");
+        const parsed = withDraftMarkdownSource(
+          yield* parseRawDraft(raw),
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+        );
+        const imported = importedMessage(parsed, []);
+        assert.strictEqual(imported.markdown, true);
+        assert.strictEqual(imported.text, source);
+        assert.strictEqual(imported.html, undefined);
+        assert.strictEqual(imported.originalHtml, undefined);
+        externalBody = '<p style="color:red">Edited in another client</p>';
+        const external = withDraftMarkdownSource(
+          yield* parseRawDraft(yield* adapter.fetchRaw(account, "markdown-draft")),
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+        );
+        assert.strictEqual(external.markdown, undefined);
+        assert.strictEqual(external.text, "Edited in another client");
+        assert.strictEqual(external.originalHtml, externalBody);
+        externalBody = undefined;
+        const edited = "_edited_\n";
+        yield* adapter.saveDraft(account, {
+          remote,
+          message: { ...imported, text: edited, html: renderMarkdown(edited) },
+          original: Option.none(),
+          replaceAttachments: false,
+        });
+        assert.deepStrictEqual(
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+          markdownDraftSource(edited),
+        );
+        yield* adapter.saveDraft(account, {
+          remote,
+          message: { ...imported, text: "", html: renderMarkdown(""), markdown: true },
+          original: Option.none(),
+          replaceAttachments: false,
+        });
+        assert.deepStrictEqual(
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+          markdownDraftSource(""),
+        );
+        yield* adapter.saveDraft(account, {
+          remote,
+          message: { ...imported, text: "plain", markdown: false },
+          original: Option.none(),
+          replaceAttachments: false,
+        });
+        assert.strictEqual(
+          yield* adapter.draftMarkdownSource(account, "markdown-draft"),
+          undefined,
+        );
+      }),
+    );
+    // internetMessageHeaders cannot be patched; only the updateable property is sent.
+    assert.ok(
+      http.calls
+        .filter((call) => call.method === "PATCH")
+        .every(
+          (call) =>
+            !Object.hasOwn(
+              Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown))(call.body),
+              "internetMessageHeaders",
+            ),
+        ),
+    );
   }),
 );
 

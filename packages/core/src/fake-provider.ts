@@ -375,12 +375,22 @@ export function makeFakeProvider(
           if (raw) return Effect.succeed(raw);
           const m = server.messages.get(providerId);
           if (!m) return Effect.fail(new PermanentError({ message: `No message ${providerId}` }));
+          const draft = [...server.drafts.values()].find((entry) => entry.messageId === providerId);
+          if (draft) {
+            return buildMime(
+              { name: "", address: account.email },
+              draft.push.message,
+              {},
+              { draft: true },
+            ).pipe(Effect.map((bytes) => new Uint8Array(bytes)));
+          }
           return buildMime(m.from.address ? m.from : { name: "", address: account.email }, {
             to: m.to,
             cc: m.cc,
             bcc: [],
             subject: m.subject,
             text: m.bodyText,
+            ...(m.bodyHtml ? { html: m.bodyHtml } : {}),
             attachments: [],
           }).pipe(Effect.map((b) => new Uint8Array(b)));
         }),

@@ -1,4 +1,4 @@
-import { mentionsAttachment } from "@openmail/core/schema";
+import { composeEditorText, mentionsAttachment } from "@openmail/core/schema";
 
 import type { OutgoingMessage } from "../../shared/api";
 import { type Draft, toMessage } from "./draft";
@@ -27,7 +27,7 @@ export function submitDraft(
     !confirmed.includes("attachment") &&
     !message.attachments.length &&
     !draft.forwardAsAttachment &&
-    mentionsAttachment(draft.body)
+    mentionsAttachment(composeEditorText(draft.body))
   )
     return { kind: "confirm", warning: "attachment" };
   send(draft, message, {

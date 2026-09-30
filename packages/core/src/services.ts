@@ -48,6 +48,7 @@ import type { CalendarInvite, InviteResponse } from "./calendar.js";
 import type { ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
+import type { MarkdownDraftSource } from "./markdown-draft.js";
 
 import type {
   AccountOrganization,
@@ -504,6 +505,11 @@ export interface ProviderAdapter {
   saveDraft(account: Account, draft: DraftPush): Effect.Effect<DraftRemote, ProviderFailure>;
   /** Deletes the provider's copy. One that is already gone counts as deleted. */
   deleteDraft(account: Account, remote: DraftRemote): Effect.Effect<void, ProviderFailure>;
+  /** Graph preserves editable Markdown source as a draft extended property. */
+  draftMarkdownSource?(
+    account: Account,
+    providerId: string,
+  ): Effect.Effect<MarkdownDraftSource | undefined, ProviderFailure>;
   /** The message as raw RFC 5322 bytes: for forwarding as an attachment, opening drafts and View Original. */
   fetchRaw(
     account: Account,

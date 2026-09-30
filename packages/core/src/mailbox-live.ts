@@ -54,11 +54,17 @@ import {
   originalAttachment,
   type ParsedDraft,
   parseRawDraft,
+  withDraftMarkdownSource,
   toDraft,
 } from "./drafts.js";
 import { AuthError, InvalidInput, NotFound, PermanentError } from "./errors.js";
 import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
+import {
+  normalizeComposeMessage,
+  remoteComposeBody,
+  preservedComposeHtml,
+} from "./compose-body.js";
 import { toModelThread } from "./model-view.js";
 import { decide } from "./policy.js";
 import {
@@ -167,9 +173,15 @@ export const MailboxLive = (
        * into a new one. `original` is what replies and forwards thread on.
        */
       const prepare = Effect.fnUntraced(function* (message: OutgoingMessage) {
-        const out: OutgoingMessage = message.markdown
-          ? { ...message, html: renderMarkdown(message.text) }
-          : message;
+        const normalized = normalizeComposeMessage(message);
+        const prepared: OutgoingMessage = normalized.markdown
+          ? { ...normalized, html: renderMarkdown(normalized.text) }
+          : normalized;
+        // Source stays in local metadata; transport uses its own wider safe allow-list.
+        const out: OutgoingMessage =
+          prepared.originalHtml === undefined
+            ? prepared
+            : { ...prepared, html: preservedComposeHtml(prepared.originalHtml) };
         if (!message.inReplyTo) return { message: out, original: Option.none() };
         const ref = yield* store.messageRef(message.inReplyTo);
         const source = yield* store.getMessage(message.inReplyTo);
@@ -189,6 +201,7 @@ export const MailboxLive = (
           subject: out.subject,
           text: out.text,
           ...(out.html === undefined ? {} : { html: out.html }),
+          ...(out.markdown ? { markdown: true } : {}),
           attachments: [...out.attachments, originalAttachment(source.subject, raw)],
           mode: "new",
           ...(out.from ? { from: out.from } : {}),
@@ -689,7 +702,7 @@ export const MailboxLive = (
             const draft = yield* store.putDraft({
               id: input.id,
               accountId: input.accountId,
-              message: input.message,
+              message: normalizeComposeMessage(input.message),
             });
             yield* store.enqueueDraftSave(input.accountId, input.id);
             return draft;
@@ -728,20 +741,28 @@ export const MailboxLive = (
           cc: [...message.cc],
           bcc: [],
           subject: message.subject,
-          text: message.bodyText,
+          ...(message.bodyHtml ? remoteComposeBody(message.bodyHtml) : { text: message.bodyText }),
           attachments: [],
           isReply: false,
         };
-        const parsed = yield* providers
-          .get(account.provider)
-          .fetchRaw(account, providerId)
-          .pipe(
-            Effect.flatMap(parseRawDraft),
-            // Offline: without attachments the stored copy has everything.
-            Effect.catch((error) =>
-              message.attachments.length > 0 ? Effect.fail(error) : Effect.succeed(fallback),
-            ),
-          );
+        const adapter = providers.get(account.provider);
+        const decoded = yield* adapter.fetchRaw(account, providerId).pipe(
+          Effect.flatMap(parseRawDraft),
+          Effect.map((parsed) => ({ parsed, fetched: true })),
+          // Offline: without attachments the stored copy has everything.
+          Effect.catch((error) =>
+            message.attachments.length > 0
+              ? Effect.fail(error)
+              : Effect.succeed({ parsed: fallback, fetched: false }),
+          ),
+        );
+        const markdownSource =
+          decoded.fetched && adapter.draftMarkdownSource
+            ? yield* adapter
+                .draftMarkdownSource(account, providerId)
+                .pipe(Effect.catch(() => Effect.succeed(undefined)))
+            : undefined;
+        const parsed = withDraftMarkdownSource(decoded.parsed, markdownSource);
         const thread = yield* store.getThread(message.id);
         return yield* store.transaction(
           Effect.gen(function* () {

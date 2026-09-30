@@ -369,6 +369,10 @@ msgstr "App-specific password"
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Apply link"
+msgstr "Apply link"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
 msgstr "Approve suggestion"
@@ -440,9 +444,13 @@ msgstr "Bigger text"
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
-#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Body"
 msgstr "Body"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Bold"
+msgstr "Bold"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
@@ -498,6 +506,7 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "Can't reach the mail server right now: {0}"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -522,6 +531,14 @@ msgstr "Cc: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Cc/Bcc"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change mode"
+msgstr "Change mode"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change writing mode?"
+msgstr "Change writing mode?"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
@@ -550,6 +567,10 @@ msgstr "Choose a verified send-as address for this account"
 #: src/renderer/src/errors.ts
 msgid "Choose at least one filter action"
 msgstr "Choose at least one filter action"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Choose Edit body before inserting a template."
+msgstr "Choose Edit body before inserting a template."
 
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
@@ -829,11 +850,27 @@ msgstr "Edit"
 msgid "Edit automatic reply"
 msgstr "Edit automatic reply"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit body"
+msgstr "Edit body"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit link"
+msgstr "Edit link"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Edit space"
 msgstr "Edit space"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit this draft body?"
+msgstr "Edit this draft body?"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
+msgstr "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Email address"
@@ -1055,6 +1092,10 @@ msgstr "Install the packaged app to make it the default. Development builds cann
 msgid "Internal reply"
 msgstr "Internal reply"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Italic"
+msgstr "Italic"
+
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
@@ -1109,6 +1150,10 @@ msgstr "Last sync failed"
 #: src/renderer/src/components/Reader.tsx
 msgid "Light background"
 msgstr "Light background"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Link URL"
+msgstr "Link URL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
@@ -1187,7 +1232,11 @@ msgstr "Mark as unread"
 msgid "Mark read/unread"
 msgstr "Mark read/unread"
 
-#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown"
+msgstr "Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "Markdown works: **bold**, `code`, ```code block```"
 
@@ -1640,6 +1689,10 @@ msgstr "Pause"
 msgid "Pause indexing"
 msgstr "Pause indexing"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Plain text"
+msgstr "Plain text"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Port"
 msgstr "Port"
@@ -1744,6 +1797,10 @@ msgstr "Remove account"
 msgid "Remove label"
 msgstr "Remove label"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Remove link"
+msgstr "Remove link"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Remove period"
 msgstr "Remove period"
@@ -1829,6 +1886,10 @@ msgstr "Resume"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "Review and Send"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Rich text"
+msgstr "Rich text"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Right away"
@@ -2155,6 +2216,10 @@ msgstr "Snoozed"
 msgid "Social"
 msgstr "Social"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
+msgstr "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
+
 #: src/renderer/src/errors.ts
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
@@ -2353,6 +2418,10 @@ msgstr "These are not email addresses: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "These loaded conversations will be moved to Trash. You can undo this batch."
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
+msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
@@ -2416,11 +2485,19 @@ msgstr "Trash"
 msgid "Tuesday"
 msgstr "Tuesday"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Underline"
+msgstr "Underline"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
 msgstr "Undo"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo mode change"
+msgstr "Undo mode change"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Undo Send"
@@ -2472,6 +2549,10 @@ msgstr "Until"
 msgid "Updates"
 msgstr "Updates"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Use an http, https or mailto link"
+msgstr "Use an http, https or mailto link"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Use default"
@@ -2512,9 +2593,9 @@ msgstr "Who"
 msgid "Window"
 msgstr "Window"
 
-#: src/renderer/src/components/Composer.tsx
-msgid "Write in Markdown"
-msgstr "Write in Markdown"
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Writing mode"
+msgstr "Writing mode"
 
 #: src/renderer/src/format.ts
 msgid "Yesterday"

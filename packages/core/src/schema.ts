@@ -2,6 +2,7 @@
 // browser (the desktop renderer, later the mobile app). `@openmail/core`
 // itself pulls in node:sqlite, the keychain and IMAP.
 export * from "./compose-text.js";
+export * from "./compose-body.js";
 export * from "./domain.js";
 export * from "./errors.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";

@@ -1,7 +1,22 @@
-import { expect, it } from "vitest";
-
+import { describe, expect, it } from "vitest";
+import {
+  changeComposeBodyKind,
+  richComposeBody,
+  remoteComposeBody,
+  editedComposeBody,
+  composeConversion,
+} from "@openmail/core/schema";
 import type { Account, Message } from "../../shared/api";
-import { draftFor, formatAddress, parseAddresses, toMessage } from "./draft";
+import {
+  draftFor,
+  formatAddress,
+  parseAddresses,
+  toMessage,
+  emptyDraft,
+  fromStored,
+  isEmpty,
+  toDraftInput,
+} from "./draft";
 
 const account: Account = {
   id: "gmail:me@example.com",
@@ -148,5 +163,114 @@ it("pasted RFC groups become sendable recipients without empty-group placeholder
       { name: "Bob", address: "b@x.com" },
     ],
     invalid: [],
+  });
+});
+
+const stored = (draft: ReturnType<typeof emptyDraft>) => ({
+  ...toDraftInput(draft),
+  updatedAt: 1,
+  proposalId: null,
+  synced: true,
+});
+
+describe("compose draft model", () => {
+  it("editing remote HTML drops inline image files before the UI saves or sends, but keeps ordinary files", () => {
+    const body = remoteComposeBody('<img src="cid:logo@example.com">before');
+    const normal = { filename: "normal.png", mimeType: "image/png", content: "aGk=" };
+    const inline = { ...normal, filename: "logo.png", contentId: "logo@example.com" };
+    const draft = { ...emptyDraft("gmail:a"), body, attachments: [normal, inline] };
+    expect(toMessage(draft).message.attachments).toEqual([normal, inline]);
+    const edited = { ...draft, body: editedComposeBody(body, "after") };
+    expect(toMessage(edited).message.attachments).toEqual([normal]);
+    expect(toDraftInput(edited).message.attachments).toEqual([normal]);
+    expect(toMessage(edited).message.originalHtml).toBeUndefined();
+  });
+  it("closing an image-only remote draft does not classify it as empty and discard its source", () => {
+    const source = '<img src="https://example.com/logo.png">';
+    const draft = { ...emptyDraft("gmail:a"), body: remoteComposeBody(source) };
+    expect(draft.body.text).toBe("");
+    expect(isEmpty(draft)).toBe(false);
+    expect(toDraftInput(draft).message.originalHtml).toBe(source);
+  });
+  it("keeps remote source over recipient edits and drops it only after editing the body", () => {
+    const source =
+      '<p style="color:red">Hello <a href="https://example.com">details</a></p><img src="https://example.com/logo.png">';
+    const body = remoteComposeBody(source);
+    const draft = { ...emptyDraft("gmail:a"), body };
+    const reopened = fromStored(stored(draft));
+    const changedRecipients = { ...reopened, to: "bob@example.com" };
+    expect(toMessage(changedRecipients).message.originalHtml).toBe(source);
+    expect(
+      toMessage({
+        ...changedRecipients,
+        body: editedComposeBody(body, body.html.replace("Hello", "Edited")),
+      }).message.originalHtml,
+    ).toBeUndefined();
+  });
+  it("a mode-change undo snapshot restores full HTML and its untouched remote source", () => {
+    const original = {
+      ...emptyDraft("gmail:a"),
+      body: remoteComposeBody(
+        '<p style="color:red"><b>Hello</b> <a href="https://example.com">details</a></p>',
+      ),
+    };
+    const snapshot = original.body;
+    const conversion = composeConversion(snapshot, "plain");
+    expect(conversion.losesFormatting).toBe(true);
+    const converted = { ...original, body: conversion.body };
+    expect(toMessage(converted).message.text).toContain("details <https://example.com>");
+    expect(toMessage(converted).message.originalHtml).toBeUndefined();
+    expect(toMessage({ ...converted, body: snapshot }).message).toEqual(
+      toMessage(original).message,
+    );
+  });
+  it("saves and reopens rich formatting, including an HTML-only remote draft", () => {
+    const draft = {
+      ...emptyDraft("gmail:a"),
+      to: "Bob <bob@example.com>",
+      body: richComposeBody(
+        '<b>你好</b> <i>italic</i> <u>under</u> <a href="https://example.com">link</a>',
+      ),
+    };
+    const saved = stored(draft);
+    expect(saved.message.text).toBe("你好 italic under link <https://example.com>");
+    expect(fromStored(saved).body).toEqual(draft.body);
+    expect(toMessage(fromStored(saved)).message).toEqual(saved.message);
+    expect(
+      fromStored({
+        ...saved,
+        message: { ...saved.message, text: "", html: "<b>remote</b><script>bad()</script>" },
+      }).body,
+    ).toEqual({ kind: "rich", text: "remote", html: "<strong>remote</strong>" });
+  });
+
+  it("preserves explicit plain/Markdown mode across save, reopen and send", () => {
+    for (const kind of ["plain", "markdown"] as const) {
+      const draft = { ...emptyDraft("gmail:a"), body: { kind, text: "**literal source**" } };
+      const saved = stored(draft);
+      expect(saved.message.html).toBeUndefined();
+      expect(fromStored(saved).body).toEqual(draft.body);
+      expect(saved.message.markdown ?? false).toBe(kind === "markdown");
+    }
+  });
+
+  it("switching to plain text strips formatting; switching back escapes markup", () => {
+    const rich = richComposeBody("<strong>one</strong><br>&lt;img&gt;");
+    const plain = changeComposeBodyKind(rich, "plain");
+    expect(plain).toEqual({ kind: "plain", text: "one\n<img>" });
+    expect(changeComposeBodyKind(plain, "rich")).toEqual({
+      kind: "rich",
+      text: "one\n<img>",
+      html: "one<br>&lt;img&gt;",
+    });
+  });
+
+  it("default new drafts use rich text; empty formatting and scripts carry no body", () => {
+    const draft = emptyDraft("gmail:a");
+    expect(draft.body.kind).toBe("rich");
+    expect(isEmpty({ ...draft, body: richComposeBody("<b></b><script>bad()</script>") })).toBe(
+      true,
+    );
+    expect(isEmpty({ ...draft, body: richComposeBody("<u>text</u>") })).toBe(false);
   });
 });

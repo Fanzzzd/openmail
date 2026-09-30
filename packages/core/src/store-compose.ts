@@ -22,6 +22,7 @@ import {
 } from "./domain.js";
 import { NotFound } from "./errors.js";
 import { imageSenderKey } from "./reading.js";
+import { normalizeComposeMessage } from "./compose-body.js";
 import type { StoredDraft } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 
@@ -69,7 +70,7 @@ function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
   return {
     id: r.id,
     accountId: r.account_id,
-    message: r.message_json,
+    message: normalizeComposeMessage(r.message_json),
     updatedAt: r.updated_at,
     proposalId: r.proposal_id,
     remote,

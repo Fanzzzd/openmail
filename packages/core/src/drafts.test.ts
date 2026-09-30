@@ -1,5 +1,6 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
+import { simpleParser } from "mailparser";
 
 import { buildMime } from "./compose.js";
 import { type Actor, DEFAULT_PREFS, type IncomingMessage, type OutgoingMessage } from "./domain.js";
@@ -408,6 +409,39 @@ it.effect("Markdown bodies go out with a rendered HTML part", () =>
       assert.match(html, /<pre style=/);
       assert.strictEqual(server.sent[0]?.message.text, "**粗体**\n\n```\ncode\n```");
     }),
+  ),
+);
+
+it.effect("Markdown forwards as attachments keep generated lists and code through MIME", () =>
+  withMail(
+    (m, server) =>
+      Effect.gen(function* () {
+        const source = "**bold**\n\n- list\n\n```\ncode\n```";
+        yield* m.perform(
+          {
+            kind: "send",
+            accountId: GMAIL,
+            message: draftMessage({
+              text: source,
+              markdown: true,
+              mode: "forward",
+              inReplyTo: `${GMAIL}/m1`,
+              forwardAsAttachment: true,
+            }),
+          },
+          user,
+        );
+        const sent = server.sent[0];
+        assert.ok(sent);
+        assert.strictEqual(sent.message.text, source);
+        const raw = yield* buildMime({ name: "", address: "me@gmail.com" }, sent.message);
+        const parsed = yield* Effect.promise(() => simpleParser(raw));
+        assert.include(parsed.html || "", "<strong>bold</strong>");
+        assert.include(parsed.html || "", "<li>list</li>");
+        assert.include(parsed.html || "", "<pre style=");
+        assert.strictEqual(parsed.attachments[0]?.contentType, "message/rfc822");
+      }),
+    [incoming("m1")],
   ),
 );
 

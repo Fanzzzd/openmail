@@ -4,6 +4,13 @@
  */
 import { Effect } from "effect";
 import { simpleParser } from "mailparser";
+import { remoteComposeBody } from "./compose-body.js";
+import {
+  draftBodyFingerprint,
+  draftTextFingerprint,
+  matchesMarkdownDraft,
+  type MarkdownDraftSource,
+} from "./markdown-draft.js";
 
 import type {
   Address,
@@ -15,7 +22,6 @@ import type {
 } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { addresses } from "./imap.js";
-import { htmlToText } from "./mime.js";
 import type { StoredDraft } from "./services.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */
@@ -25,6 +31,11 @@ export interface ParsedDraft {
   bcc: Address[];
   subject: string;
   text: string;
+  html?: string;
+  originalHtml?: string;
+  markdown?: boolean;
+  /** Actual received HTML, computed before sanitization so external edits invalidate the source. */
+  bodyFingerprint?: string;
   attachments: OutgoingAttachment[];
   /** The draft answers another message (In-Reply-To header present). */
   isReply: boolean;
@@ -32,28 +43,58 @@ export interface ParsedDraft {
 
 export const parseRawDraft = (raw: Uint8Array) =>
   Effect.tryPromise({
-    try: () => simpleParser(Buffer.from(raw), { skipImageLinks: true }),
+    try: () =>
+      simpleParser(Buffer.from(raw), {
+        skipImageLinks: true,
+        skipTextToHtml: true,
+        skipHtmlToText: true,
+      }),
     catch: (error) =>
       new ProviderError({
         message: `Cannot read the draft: ${error instanceof Error ? error.message : String(error)}`,
       }),
   }).pipe(
-    Effect.map((parsed): ParsedDraft => ({
-      to: addresses(parsed.to),
-      cc: addresses(parsed.cc),
-      bcc: addresses(parsed.bcc),
-      subject: parsed.subject ?? "",
-      text: parsed.text ?? htmlToText(parsed.html || ""),
-      attachments: parsed.attachments
-        .filter((a) => !a.related)
-        .map((a) => ({
+    Effect.map((parsed): ParsedDraft => {
+      const html = parsed.html || undefined;
+      const text = parsed.text ?? "";
+      const bodyFingerprint = html === undefined ? undefined : draftBodyFingerprint(html);
+      const declaredFingerprint = parsed.headers.get("x-openmail-markdown-body-sha256");
+      const metadata = {
+        version: 1,
+        text,
+        bodyFingerprint: typeof declaredFingerprint === "string" ? declaredFingerprint : "",
+      } satisfies MarkdownDraftSource;
+      const markdown =
+        parsed.headers.get("x-openmail-markdown") === "1" &&
+        parsed.headers.get("x-openmail-markdown-source-sha256") === draftTextFingerprint(text) &&
+        matchesMarkdownDraft(metadata, bodyFingerprint);
+      return {
+        to: addresses(parsed.to),
+        cc: addresses(parsed.cc),
+        bcc: addresses(parsed.bcc),
+        subject: parsed.subject ?? "",
+        ...(markdown ? { text, markdown: true } : html ? remoteComposeBody(html) : { text }),
+        ...(bodyFingerprint === undefined ? {} : { bodyFingerprint }),
+        attachments: parsed.attachments.map((a) => ({
           filename: a.filename ?? "attachment",
           mimeType: a.contentType,
           content: a.content.toString("base64"),
+          ...(a.contentId ? { contentId: a.contentId.replace(/^<|>$/g, "") } : {}),
         })),
-      isReply: Boolean(parsed.inReplyTo),
-    })),
+        isReply: Boolean(parsed.inReplyTo),
+      };
+    }),
   );
+
+/** Graph has an editable source property instead of an updateable MIME header. */
+export function withDraftMarkdownSource(
+  parsed: ParsedDraft,
+  source: MarkdownDraftSource | undefined,
+): ParsedDraft {
+  if (source === undefined || !matchesMarkdownDraft(source, parsed.bodyFingerprint)) return parsed;
+  const { html: _html, originalHtml: _originalHtml, ...rest } = parsed;
+  return { ...rest, text: source.text, markdown: true };
+}
 
 /** The original message as an .eml attachment, named after its subject. */
 export function originalAttachment(subject: string, raw: Uint8Array): OutgoingAttachment {
@@ -73,7 +114,7 @@ export function originalAttachment(subject: string, raw: Uint8Array): OutgoingAt
 /** Identifies an attachment list well enough to tell whether it changed since the last push. */
 export function attachmentsKey(list: readonly OutgoingAttachment[]): string {
   return JSON.stringify(
-    list.map((a) => [a.filename, a.mimeType, a.content.length, a.content.slice(-16)]),
+    list.map((a) => [a.filename, a.mimeType, a.contentId, a.content.length, a.content.slice(-16)]),
   );
 }
 
@@ -107,6 +148,9 @@ export function importedMessage(parsed: ParsedDraft, thread: readonly Message[])
     bcc: parsed.bcc,
     subject: parsed.subject,
     text: parsed.text,
+    ...(parsed.html === undefined ? {} : { html: parsed.html }),
+    ...(parsed.originalHtml === undefined ? {} : { originalHtml: parsed.originalHtml }),
+    ...(parsed.markdown ? { markdown: true } : {}),
     attachments: parsed.attachments,
     mode,
     ...(original && mode !== "new" ? { inReplyTo: original.id } : {}),

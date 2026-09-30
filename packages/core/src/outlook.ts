@@ -21,6 +21,7 @@ import {
   type ProviderFailure,
 } from "./errors.js";
 import { buildMime } from "./compose.js";
+import { MarkdownDraftSource, markdownDraftSource } from "./markdown-draft.js";
 import { htmlDocument, htmlToText } from "./mime.js";
 import {
   AppConfig,
@@ -182,7 +183,11 @@ const AttachmentNames = Schema.Struct({
 
 const AttachmentIds = Schema.Struct({
   value: Schema.Array(
-    Schema.Struct({ id: Schema.String, isInline: Schema.optionalKey(Schema.Boolean) }),
+    Schema.Struct({
+      id: Schema.String,
+      isInline: Schema.optionalKey(Schema.Boolean),
+      contentId: Schema.optionalKey(Schema.NullOr(Schema.String)),
+    }),
   ),
 });
 
@@ -781,7 +786,15 @@ export const makeOutlook: Effect.Effect<
     function* (account: Account, draft: DraftPush) {
       const { message, original } = draft;
       yield* checkAttachmentSize(message);
-      const fields = graphFields(message);
+      const fields = {
+        ...graphFields(message),
+        singleValueExtendedProperties: [
+          {
+            id: MARKDOWN_DRAFT_PROPERTY,
+            value: message.markdown ? JSON.stringify(markdownDraftSource(message.text)) : "",
+          },
+        ],
+      };
       const attachments = message.attachments.map(fileAttachment);
       const addAttachments = (id: string) =>
         Effect.forEach(
@@ -817,9 +830,18 @@ export const makeOutlook: Effect.Effect<
           const current = yield* get(
             account.id,
             AttachmentIds,
-            `/me/messages/${id}/attachments?$select=id,isInline`,
+            `/me/messages/${id}/attachments?$select=id,isInline,contentId`,
           );
-          for (const a of current.value.filter((x) => !x.isInline)) {
+          const managedInline = new Set(
+            message.attachments.flatMap((attachment) =>
+              attachment.contentId ? [attachment.contentId] : [],
+            ),
+          );
+          for (const a of current.value.filter(
+            (x) =>
+              !x.isInline ||
+              (x.contentId !== null && x.contentId !== undefined && managedInline.has(x.contentId)),
+          )) {
             yield* write(account.id, "DELETE", `/me/messages/${id}/attachments/${a.id}`);
           }
           yield* addAttachments(id);
@@ -843,6 +865,29 @@ export const makeOutlook: Effect.Effect<
       yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
         Effect.catchIf(is404, () => Effect.void),
       );
+    },
+    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+  );
+
+  const draftMarkdownSource = Effect.fn("Outlook.draftMarkdownSource")(
+    function* (account: Account, providerId: string) {
+      const metadata = yield* get(
+        account.id,
+        Schema.Struct({
+          singleValueExtendedProperties: Schema.optionalKey(
+            Schema.Array(Schema.Struct({ id: Schema.String, value: Schema.String })),
+          ),
+        }),
+        `/me/messages/${providerId}?$select=id&$expand=${encodeURIComponent(`singleValueExtendedProperties($filter=id eq '${MARKDOWN_DRAFT_PROPERTY}')`)}`,
+      );
+      const value = metadata.singleValueExtendedProperties?.find(
+        (property) => property.id === MARKDOWN_DRAFT_PROPERTY,
+      )?.value;
+      return value
+        ? Option.getOrUndefined(
+            Schema.decodeUnknownOption(Schema.fromJsonString(MarkdownDraftSource))(value),
+          )
+        : undefined;
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -1074,6 +1119,7 @@ export const makeOutlook: Effect.Effect<
     saveDraft,
     deleteDraft,
     fetchRaw,
+    draftMarkdownSource,
     fetchAttachment,
   } satisfies ProviderAdapter;
 });
@@ -1084,6 +1130,7 @@ function fileAttachment(a: OutgoingMessage["attachments"][number]) {
     name: a.filename,
     contentType: a.mimeType,
     contentBytes: a.content,
+    ...(a.contentId ? { contentId: a.contentId, isInline: true } : {}),
   };
 }
 
@@ -1107,6 +1154,10 @@ export function destination(op: MailOp): string | null {
 
 const recipients = (list: readonly Address[]) =>
   list.map((a) => ({ emailAddress: { address: a.address, ...(a.name ? { name: a.name } : {}) } }));
+
+/** Custom internet headers are create-only; this property also supports draft updates. */
+export const MARKDOWN_DRAFT_PROPERTY =
+  "String {57d14d35-4d11-4f8f-ae63-961883378d87} Name OpenmailMarkdownSource";
 
 function graphFields(message: OutgoingMessage) {
   return {

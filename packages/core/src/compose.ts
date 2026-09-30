@@ -4,6 +4,7 @@ import MailComposer from "nodemailer/lib/mail-composer";
 import type { Address, OutgoingMessage } from "./domain.js";
 import { PermanentError } from "./errors.js";
 import { htmlDocument } from "./mime.js";
+import { draftTextFingerprint, markdownDraftSource } from "./markdown-draft.js";
 
 const format = (a: Address) => (a.name ? { name: a.name, address: a.address } : a.address);
 
@@ -25,6 +26,7 @@ export const buildMime = Effect.fnUntraced(function* (
   from: Address,
   message: OutgoingMessage,
   threading: Threading = {},
+  options: { draft?: boolean } = {},
 ): Effect.fn.Return<Buffer, PermanentError> {
   const replying = message.mode === "reply" || message.mode === "replyAll";
   const references = [threading.references, threading.messageId].filter(Boolean).join(" ");
@@ -34,6 +36,15 @@ export const buildMime = Effect.fnUntraced(function* (
     cc: message.cc.map(format),
     bcc: message.bcc.map(format),
     subject: message.subject,
+    ...(options.draft && message.markdown
+      ? {
+          headers: {
+            "X-Openmail-Markdown": "1",
+            "X-Openmail-Markdown-Body-SHA256": markdownDraftSource(message.text).bodyFingerprint,
+            "X-Openmail-Markdown-Source-SHA256": draftTextFingerprint(message.text),
+          },
+        }
+      : {}),
     text: message.text,
     ...(message.html ? { html: htmlDocument(message.html) } : {}),
     ...(message.calendar ? { icalEvent: message.calendar } : {}),
@@ -45,9 +56,10 @@ export const buildMime = Effect.fnUntraced(function* (
       contentType: a.mimeType,
       content: a.content,
       encoding: "base64",
+      ...(a.contentId ? { cid: a.contentId } : {}),
       // Without this nodemailer marks message/rfc822 parts inline, and a
       // forwarded .eml shows up in the body instead of as a file.
-      contentDisposition: "attachment" as const,
+      contentDisposition: a.contentId ? ("inline" as const) : ("attachment" as const),
     })),
   });
   const mail = composer.compile();

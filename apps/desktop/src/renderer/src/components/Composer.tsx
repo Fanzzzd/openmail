@@ -2,12 +2,17 @@ import { matchesShortcut } from "../../../shared/shortcuts";
 import { useShortcutText } from "./SystemSettings";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
-import { Toggle } from "@base-ui/react/toggle";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, applySignature, fillTemplate, ownText } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  applySignature,
+  composeEditorText,
+  fillTemplate,
+  ownText,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
 import { type ReactElement, type RefObject, useEffect, useRef, useState } from "react";
@@ -27,6 +32,13 @@ import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
 import { templatesAtom, sendAsAtom, prefsAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
+import { ComposeEditor } from "./ComposeEditor";
+import {
+  editorBody,
+  insertEditorText,
+  replaceEditorText,
+  type ComposeElement,
+} from "../compose-editor-dom";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { Select } from "./ui/Select";
@@ -76,7 +88,8 @@ export function Composer({
   const [picker, setPicker] = useState(false);
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
   const fileRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const bodyRef = useRef<ComposeElement>(null);
+  const selectionRef = useRef<Range>(null);
   const toRef = useRef<HTMLInputElement>(null);
   const account = accounts.find((a) => a.id === draft.accountId);
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
@@ -100,7 +113,15 @@ export function Composer({
   /** New messages and forwards start in To; replies start typing above the quote. */
   const initialFocus = () => {
     if (initial.mode === "new" || initial.mode === "forward") return toRef.current;
-    bodyRef.current?.setSelectionRange(0, 0);
+    if (bodyRef.current instanceof HTMLTextAreaElement) bodyRef.current.setSelectionRange(0, 0);
+    else if (bodyRef.current) {
+      const range = document.createRange();
+      range.selectNodeContents(bodyRef.current);
+      range.collapse(true);
+      selectionRef.current = range;
+      window.getSelection()?.removeAllRanges();
+      window.getSelection()?.addRange(range);
+    }
     return bodyRef.current;
   };
 
@@ -187,35 +208,43 @@ export function Composer({
   const changeSender = (key: string) => {
     const sender = senders.find((s) => `${s.accountId}/${s.address}` === key);
     if (!sender) return;
+    const text = applySignature(
+      composeEditorText(draft.body),
+      signatureFor(draft.accountId, draft.mode, draft.from?.address),
+      signatureFor(sender.accountId, draft.mode, sender.address),
+    );
+    if (
+      bodyRef.current &&
+      text !== composeEditorText(draft.body) &&
+      (bodyRef.current instanceof HTMLTextAreaElement || bodyRef.current.isContentEditable)
+    )
+      replaceEditorText(bodyRef.current, composeEditorText(draft.body), text);
     set({
       accountId: sender.accountId,
       from: { name: sender.name, address: sender.address },
-      body: applySignature(
-        draft.body,
-        signatureFor(draft.accountId, draft.mode, draft.from?.address),
-        signatureFor(sender.accountId, draft.mode, sender.address),
-      ),
+      body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
   };
 
   const insertTemplate = (template: Template) => {
+    if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
+      setError(t`Choose Edit body before inserting a template.`);
+      return;
+    }
     const to = merge(draft.to, template.to);
     const cc = merge(draft.cc, template.cc);
     const first = parseAddresses(to).addresses[0];
-    const at = bodyRef.current?.selectionStart ?? 0;
     const text = fillTemplate(template.body, first);
+    if (bodyRef.current) insertEditorText(bodyRef.current, text, selectionRef.current);
     set({
       to,
       cc,
       subject: template.subject ? fillTemplate(template.subject, first) : draft.subject,
-      body: draft.body.slice(0, at) + text + draft.body.slice(at),
+      body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
     if (cc) setShowBcc(true);
     setPicker(false);
-    requestAnimationFrame(() => {
-      bodyRef.current?.focus();
-      bodyRef.current?.setSelectionRange(at + text.length, at + text.length);
-    });
+    requestAnimationFrame(() => bodyRef.current?.focus());
   };
 
   const status = saveState.waiting
@@ -355,19 +384,11 @@ export function Composer({
               />
             </div>
 
-            <textarea
-              ref={bodyRef}
-              value={draft.body}
-              onChange={(e) => set({ body: e.target.value })}
-              aria-label={t`Body`}
-              placeholder={
-                draft.markdown
-                  ? t`Markdown works: **bold**, \`code\`, \`\`\`code block\`\`\``
-                  : undefined
-              }
-              className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-[14px] leading-relaxed outline-none placeholder:text-neutral-400 ${
-                draft.markdown ? "font-mono text-[13px]" : ""
-              }`}
+            <ComposeEditor
+              body={draft.body}
+              onChange={(body) => set({ body })}
+              bodyRef={bodyRef}
+              selectionRef={selectionRef}
             />
 
             {(draft.attachments.length > 0 || draft.forwardAsAttachment) && (
@@ -454,16 +475,6 @@ export function Composer({
                   </button>
                 }
               />
-              <Tip label={t`Write in Markdown`} side="top">
-                <Toggle
-                  aria-label={t`Write in Markdown`}
-                  pressed={draft.markdown}
-                  onPressedChange={(markdown) => set({ markdown })}
-                  className="h-6 rounded px-1.5 text-[11px] font-semibold text-neutral-500 outline-offset-0 outline-blue-500/60 hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:text-neutral-400 dark:hover:bg-white/10 dark:data-pressed:text-white"
-                >
-                  M↓
-                </Toggle>
-              </Tip>
               <span className="min-w-0 flex-1 truncate text-[12px] text-red-500">{error}</span>
               {!error &&
                 draft.mode === "forward" &&
@@ -563,7 +574,7 @@ function TemplatePicker({
   tip: { label: string; shortcut: string };
   draft: Draft;
   onInsert: (t: Template) => void;
-  bodyRef: RefObject<HTMLTextAreaElement | null>;
+  bodyRef: RefObject<ComposeElement | null>;
 }) {
   const { t } = useLingui();
   const templates = AsyncResult.getOrElse(useAtomValue(templatesAtom), () => []);
@@ -588,7 +599,7 @@ function TemplatePicker({
           subject: draft.subject,
           to: parseAddresses(draft.to).addresses,
           cc: parseAddresses(draft.cc).addresses,
-          body: ownText(draft.body),
+          body: ownText(draft.body.text),
         },
       },
       reactivityKeys: [Keys.templates],

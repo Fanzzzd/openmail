@@ -2,7 +2,14 @@ import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { applySignature, DEFAULT_PREFS, holdSend, markReadAfter } from "@openmail/core/schema";
+import {
+  applySignature,
+  DEFAULT_PREFS,
+  holdSend,
+  markReadAfter,
+  richComposeBody,
+  textComposeHtml,
+} from "@openmail/core/schema";
 import { Effect, Fiber } from "effect";
 import { constVoid } from "effect/Function";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -261,7 +268,9 @@ export function App() {
   };
   const signed = (d: Draft): Draft => ({
     ...d,
-    body: applySignature(d.body, undefined, signatureFor(d.accountId, d.mode)),
+    body: richComposeBody(
+      textComposeHtml(applySignature(d.body.text, undefined, signatureFor(d.accountId, d.mode))),
+    ),
   });
 
   const selectedAccount = accountList.find(
@@ -692,7 +701,11 @@ export function App() {
       case "Compose": {
         const account = defaultAccount();
         if (account) {
-          const draft = signed({ ...emptyDraft(account.id), ...event.draft });
+          const draft = signed({
+            ...emptyDraft(account.id),
+            ...event.draft,
+            body: richComposeBody(textComposeHtml(event.draft.body)),
+          });
           setCompose(draft);
           run(saveDraft(toDraftInput(draft)));
         }

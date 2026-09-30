@@ -1122,6 +1122,7 @@ export const makeImapWith = (
           { name: "", address: account.email },
           draft.message,
           threading,
+          { draft: true },
         ).pipe(
           Effect.mapError(
             (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),

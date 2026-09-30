@@ -375,6 +375,10 @@ msgstr "应用专用密码"
 msgid "Apple Mail"
 msgstr "Apple 邮件"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Apply link"
+msgstr "应用链接"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
 msgstr "确认建议"
@@ -446,9 +450,13 @@ msgstr "放大文字"
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
-#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Body"
 msgstr "正文"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Bold"
+msgstr "粗体"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
@@ -504,6 +512,7 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "暂时连不上邮件服务器：{0}"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -528,6 +537,14 @@ msgstr "抄送：{cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "抄送/密送"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change mode"
+msgstr "切换模式"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change writing mode?"
+msgstr "切换撰写模式？"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
@@ -556,6 +573,10 @@ msgstr "请选择此账户已验证的发件地址"
 #: src/renderer/src/errors.ts
 msgid "Choose at least one filter action"
 msgstr "请选择至少一项操作"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Choose Edit body before inserting a template."
+msgstr "请先选择“编辑正文”，再插入模板。"
 
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
@@ -835,11 +856,27 @@ msgstr "编辑"
 msgid "Edit automatic reply"
 msgstr "编辑自动回复"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit body"
+msgstr "编辑正文"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit link"
+msgstr "编辑链接"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Edit space"
 msgstr "编辑空间"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit this draft body?"
+msgstr "编辑这封草稿的正文？"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
+msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Email address"
@@ -1061,6 +1098,10 @@ msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮�
 msgid "Internal reply"
 msgstr "内部回复"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Italic"
+msgstr "斜体"
+
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
@@ -1115,6 +1156,10 @@ msgstr "上次同步失败"
 #: src/renderer/src/components/Reader.tsx
 msgid "Light background"
 msgstr "浅色背景"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Link URL"
+msgstr "链接地址"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
@@ -1193,7 +1238,11 @@ msgstr "标为未读"
 msgid "Mark read/unread"
 msgstr "标记已读/未读"
 
-#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown"
+msgstr "Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
 
@@ -1646,6 +1695,10 @@ msgstr "暂停"
 msgid "Pause indexing"
 msgstr "暂停索引"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Plain text"
+msgstr "纯文本"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Port"
 msgstr "端口"
@@ -1750,6 +1803,10 @@ msgstr "移除账户"
 msgid "Remove label"
 msgstr "去掉标签"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Remove link"
+msgstr "移除链接"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Remove period"
 msgstr "移除时段"
@@ -1835,6 +1892,10 @@ msgstr "继续"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "检查并发送"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Rich text"
+msgstr "富文本"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Right away"
@@ -2161,6 +2222,10 @@ msgstr "稍后提醒"
 msgid "Social"
 msgstr "社交"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
+msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
+
 #: src/renderer/src/errors.ts
 msgid "Something went wrong. Please try again."
 msgstr "出了点问题，请再试一次。"
@@ -2359,6 +2424,10 @@ msgstr "这些不是邮件地址：{list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
+msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "此过滤器会删除符合服务器查询的新邮件，预览最多显示 200 封。"
@@ -2422,11 +2491,19 @@ msgstr "已删除"
 msgid "Tuesday"
 msgstr "星期二"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Underline"
+msgstr "下划线"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Undo"
 msgstr "撤销"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo mode change"
+msgstr "撤销模式切换"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Undo Send"
@@ -2478,6 +2555,10 @@ msgstr "至"
 msgid "Updates"
 msgstr "动态"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Use an http, https or mailto link"
+msgstr "请输入 http、https 或 mailto 链接"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "使用默认值"
@@ -2518,9 +2599,9 @@ msgstr "谁"
 msgid "Window"
 msgstr "窗口"
 
-#: src/renderer/src/components/Composer.tsx
-msgid "Write in Markdown"
-msgstr "用 Markdown 写正文"
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Writing mode"
+msgstr "撰写模式"
 
 #: src/renderer/src/format.ts
 msgid "Yesterday"

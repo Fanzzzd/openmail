@@ -271,6 +271,8 @@ export const OutgoingAttachment = Schema.Struct({
   mimeType: Schema.String,
   /** Base64 content. */
   content: Schema.String,
+  /** Inline image referenced by cid: in an untouched remote draft. */
+  contentId: Schema.optionalKey(Schema.String),
 });
 export type OutgoingAttachment = typeof OutgoingAttachment.Type;
 
@@ -286,7 +288,10 @@ export const OutgoingMessage = Schema.Struct({
   subject: Schema.String,
   /** Plain text; always present so every client can read it. */
   text: Schema.String,
+  /** Rich compose HTML; normalized with its text alternative at draft/send boundaries. */
   html: Schema.optionalKey(Schema.String),
+  /** Remote draft source, never rendered. Retained only while the body is unchanged. */
+  originalHtml: Schema.optionalKey(Schema.String),
   attachments: Schema.Array(OutgoingAttachment),
   /** An iTIP reply, rendered as a calendar alternative by the MIME send pipeline. */
   calendar: Schema.optionalKey(

@@ -25,6 +25,7 @@
     "@huggingface/transformers": "4.3.0",
     "@napi-rs/keyring": "^2.1.0",
     "effect": "4.0.0-rc.118",
+    "htmlparser2": "^10.1.0",
     "ical.js": "^2.2.1",
     "imapflow": "^2.1.0",
     "mailparser": "^3.9.29",

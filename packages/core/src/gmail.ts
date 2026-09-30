@@ -571,6 +571,7 @@ export const makeGmail: Effect.Effect<
         message.from ?? { name: "", address: account.email },
         message,
         threading,
+        { draft: true },
       );
       const body = {
         message: { raw: raw.toString("base64url"), ...(threadId ? { threadId } : {}) },
