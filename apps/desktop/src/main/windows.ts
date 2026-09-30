@@ -63,6 +63,18 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   });
   lockNavigation(win);
 
+  // A renderer killed for memory or by a crash leaves a blank window. Log why
+  // and reload, unless it died again within a minute, which would loop.
+  let lastGone = 0;
+  win.webContents.on("render-process-gone", (_event, details) => {
+    console.error(`[renderer gone] ${details.reason} (exit code ${details.exitCode})`);
+    const now = Date.now();
+    if (details.reason !== "clean-exit" && now - lastGone > 60_000 && !win.isDestroyed()) {
+      win.webContents.reload();
+    }
+    lastGone = now;
+  });
+
   // The renderer picks its UI language from the OS language unless the person
   // chose one in Settings.
   const query = {
