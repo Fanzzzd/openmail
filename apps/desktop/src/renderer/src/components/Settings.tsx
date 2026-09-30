@@ -14,7 +14,8 @@ import { Keys } from "../state/keys";
 import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from "../state/mutations";
 import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
 import { IndexingSettings } from "./IndexingSettings";
-import { ComposeSettings } from "./ComposeSettings";
+import { DefaultMailClient, NotificationsSettings, ShortcutsSettings } from "./SystemSettings";
+import { ComposeSettings, Signatures } from "./ComposeSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
@@ -23,15 +24,29 @@ import { SegmentedControl } from "./ui/SegmentedControl";
 import { OrganizationSettings } from "./OrganizationSettings";
 import { ServerSettings } from "./ServerSettings";
 
-type Tab = "organize" | "server" | "accounts" | "general" | "reading" | "compose" | "ai" | "log";
+type Tab =
+  | "notifications"
+  | "shortcuts"
+  | "signatures"
+  | "organize"
+  | "server"
+  | "accounts"
+  | "general"
+  | "reading"
+  | "compose"
+  | "ai"
+  | "log";
 
 const TABS: { id: Tab; label: MessageDescriptor }[] = [
-  { id: "accounts", label: msg`Accounts` },
-  { id: "organize", label: msg`Organize` },
-  { id: "server", label: msg`Server` },
   { id: "general", label: msg`General` },
+  { id: "accounts", label: msg`Accounts` },
+  { id: "notifications", label: msg`Notifications` },
+  { id: "shortcuts", label: msg`Shortcuts` },
+  { id: "signatures", label: msg`Signatures` },
   { id: "reading", label: msg`Reading` },
   { id: "compose", label: msg`Compose` },
+  { id: "organize", label: msg`Organize` },
+  { id: "server", label: msg`Server` },
   { id: "ai", label: msg`AI Access` },
   { id: "log", label: msg`Activity` },
 ];
@@ -45,7 +60,7 @@ interface Props {
   onAddAccount: () => void;
 }
 
-export function Settings({ accounts, initialTab = "accounts", onClose, onAddAccount }: Props) {
+export function Settings({ accounts, initialTab = "general", onClose, onAddAccount }: Props) {
   const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
 
@@ -53,22 +68,26 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
     <Dialog
       aria-label={t`Settings`}
       onClose={onClose}
-      className="flex h-[520px] w-[760px] flex-col overflow-hidden"
+      className="flex h-[560px] max-h-[90vh] w-[880px] max-w-[95vw] flex-col overflow-hidden"
     >
+      <h2 className="border-b border-black/[0.07] px-5 py-3 text-[15px] font-semibold dark:border-white/[0.08]">
+        <Trans>Settings</Trans>
+      </h2>
       <Tabs.Root
+        orientation="vertical"
         value={tab}
         onValueChange={(value) => {
           const next = TABS.find((item) => item.id === value);
           if (next) setTab(next.id);
         }}
-        className="flex min-h-0 flex-1 flex-col"
+        className="flex min-h-0 flex-1"
       >
-        <Tabs.List className="flex shrink-0 justify-center gap-1 border-b border-black/[0.07] py-2 dark:border-white/[0.08]">
+        <Tabs.List className="flex w-40 shrink-0 flex-col gap-1 border-r border-black/[0.07] p-3 dark:border-white/[0.08]">
           {TABS.map((item) => (
             <Tabs.Tab
               key={item.id}
               value={item.id}
-              className="h-7 rounded-md px-3 font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
+              className="h-8 rounded-md px-3 text-left font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
             >
               {i18n._(item.label)}
             </Tabs.Tab>
@@ -83,6 +102,15 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
         <Tabs.Panel value="server" className={panel}>
           <ServerSettings accounts={accounts} />
         </Tabs.Panel>
+        <Tabs.Panel value="notifications" className={panel}>
+          <NotificationsSettings accounts={accounts} />
+        </Tabs.Panel>
+        <Tabs.Panel value="shortcuts" className={panel}>
+          <ShortcutsSettings />
+        </Tabs.Panel>
+        <Tabs.Panel value="signatures" className={panel}>
+          <Signatures accounts={accounts} />
+        </Tabs.Panel>
         <Tabs.Panel value="general" className={panel}>
           <General />
           <IndexingSettings />
@@ -91,7 +119,7 @@ export function Settings({ accounts, initialTab = "accounts", onClose, onAddAcco
           <ReadingSettings />
         </Tabs.Panel>
         <Tabs.Panel value="compose" className={panel}>
-          <ComposeSettings accounts={accounts} />
+          <ComposeSettings />
         </Tabs.Panel>
         <Tabs.Panel value="ai" className={panel}>
           <AgentPolicy />
@@ -242,6 +270,7 @@ function General() {
           })
         }
       />
+      <DefaultMailClient />
     </section>
   );
 }

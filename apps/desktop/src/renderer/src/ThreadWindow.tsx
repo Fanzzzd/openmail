@@ -1,3 +1,7 @@
+import { shortcutAction } from "../../shared/shortcuts";
+import { Settings } from "./components/Settings";
+import { ShortcutHelp } from "./components/SystemSettings";
+import { AddAccountDialog } from "./components/AddAccountDialog";
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";
@@ -14,7 +18,7 @@ import { Toast, type ToastState } from "./components/Toast";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom } from "./state/events";
-import { modifyThreads, useRunMail } from "./state/mail";
+import { modifyThreads, useRunMail, withMail } from "./state/mail";
 import { accountsAtom, labelsAtom, prefsAtom, threadAtom } from "./state/queries";
 
 /** Ops after which the thread has left where it was; the window closes, as in Mail. */
@@ -44,6 +48,7 @@ export function ThreadWindow({ id }: { id: string }) {
     (l) => l.accountId === account?.id,
   );
   const [labelPicker, setLabelPicker] = useState(false);
+  const [dialog, setDialog] = useState<"settings" | "help" | "add" | null>(null);
   const subject = messages?.at(-1)?.subject;
 
   useEffect(() => {
@@ -94,10 +99,63 @@ export function ThreadWindow({ id }: { id: string }) {
     );
 
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    if (e.defaultPrevented) return;
-    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "p") {
-      e.preventDefault();
-      print(id, false, prefs.threadGrouping ? undefined : id);
+    if (
+      dialog ||
+      e.defaultPrevented ||
+      (e.target instanceof Element &&
+        e.target.closest('[role="menu"],[role="dialog"],input,textarea,[contenteditable="true"]'))
+    )
+      return;
+    const action = shortcutAction(prefs.shortcutSet, e);
+    if (!action) return;
+    switch (action) {
+      case "print":
+        e.preventDefault();
+        print(id, false, prefs.threadGrouping ? undefined : id);
+        break;
+      case "newWindow":
+        e.preventDefault();
+        run(withMail((call) => call("NewWindow", undefined)));
+        break;
+      case "settings":
+        e.preventDefault();
+        setDialog("settings");
+        break;
+      case "help":
+        e.preventDefault();
+        setDialog("help");
+        break;
+      case "archive":
+        e.preventDefault();
+        act({ kind: "archive" });
+        break;
+      case "trash":
+        e.preventDefault();
+        act({ kind: "trash" });
+        break;
+      case "spam":
+        e.preventDefault();
+        act({ kind: "spam" });
+        break;
+      case "read":
+        if (state) {
+          e.preventDefault();
+          act({ kind: "read", value: state.isUnread });
+        }
+        break;
+      case "star":
+        if (state) {
+          e.preventDefault();
+          act({ kind: "star", value: !state.isStarred });
+        }
+        break;
+      case "label":
+      case "move":
+        if (state && labels.length) {
+          e.preventDefault();
+          setLabelPicker(true);
+        }
+        break;
     }
   });
   useEffect(() => {
@@ -135,6 +193,17 @@ export function ThreadWindow({ id }: { id: string }) {
             <p className="text-neutral-400">{causeText(i18n, thread.cause)}</p>
           )}
         </div>
+      )}
+      {dialog === "settings" && (
+        <Settings
+          accounts={accounts}
+          onClose={() => setDialog(null)}
+          onAddAccount={() => setDialog("add")}
+        />
+      )}
+      {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
+      {dialog === "add" && (
+        <AddAccountDialog onClose={() => setDialog(null)} onAdded={() => setDialog("settings")} />
       )}
       <Toast toast={toast} onDone={hideToast} />
     </div>

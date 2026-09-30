@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Keys } from "../state/keys";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, prefsAtom } from "../state/queries";
+import { useShortcutText } from "./SystemSettings";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
@@ -18,6 +19,7 @@ const box = "rounded-lg border border-black/10 dark:border-white/10";
 /** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
 export function ReadingSettings() {
   const { t } = useLingui();
+  const readShortcut = useShortcutText()("read");
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefsMutation = useAtomSet(setPrefsAtom);
   const setPrefs = (patch: Partial<Prefs>) =>
@@ -45,8 +47,8 @@ export function ReadingSettings() {
         />
         <p className={note}>
           <Trans>
-            How long a conversation stays open before it is marked as read. Manually: only U or the
-            toolbar marks it.
+            How long a conversation stays open before it is marked as read. Manually: use{" "}
+            {readShortcut} or the toolbar.
           </Trans>
         </p>
       </section>

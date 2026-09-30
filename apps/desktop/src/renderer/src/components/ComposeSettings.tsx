@@ -20,11 +20,10 @@ const heading = "mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutr
 const box = "rounded-lg border border-black/10 dark:border-white/10";
 
 /** Settings > Compose: undo send, signatures, templates, hidden recipients. */
-export function ComposeSettings({ accounts }: { accounts: readonly Account[] }) {
+export function ComposeSettings() {
   return (
     <div className="space-y-6">
       <UndoSend />
-      <Signatures accounts={accounts} />
       <Templates />
       <HiddenContacts />
     </div>
@@ -63,7 +62,7 @@ function UndoSend() {
   );
 }
 
-function Signatures({ accounts }: { accounts: readonly Account[] }) {
+export function Signatures({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
   return (
     <section>

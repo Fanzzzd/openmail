@@ -95,8 +95,27 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   return win;
 }
 
+const mainWindows = new Set<BrowserWindow>();
+
 export function createMainWindow(): BrowserWindow {
-  return createAppWindow({ width: 1320, height: 860, minWidth: 960, minHeight: 600 });
+  const win = createAppWindow({ width: 1320, height: 860, minWidth: 960, minHeight: 600 });
+  mainWindows.add(win);
+  win.once("closed", () => mainWindows.delete(win));
+  return win;
+}
+
+export function isMainWindow(win: BrowserWindow): boolean {
+  return mainWindows.has(win);
+}
+
+export function focusMainWindow(): BrowserWindow {
+  const focused = BrowserWindow.getFocusedWindow();
+  const win =
+    focused && mainWindows.has(focused) ? focused : ([...mainWindows].at(-1) ?? createMainWindow());
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+  return win;
 }
 
 /** A window showing one thread, by any message id in it. */

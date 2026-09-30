@@ -361,7 +361,7 @@ export const makeGmail: Effect.Effect<
 
   /** None when the cursor is too old (Gmail keeps about a week), forcing a full sync. */
   const readHistory = Effect.fnUntraced(
-    function* (accountId: string, cursor: string) {
+    function* (accountId: string, cursor: string, scope?: "inbox") {
       const changed = new Set<string>();
       const deleted = new Set<string>();
       let pageToken: string | undefined;
@@ -369,6 +369,7 @@ export const makeGmail: Effect.Effect<
       do {
         const page = yield* get(accountId, HistoryPage, "/history", {
           startHistoryId: cursor,
+          ...(scope ? { labelId: "INBOX" } : {}),
           maxResults: "500",
           ...(pageToken ? { pageToken } : {}),
         });
@@ -394,7 +395,7 @@ export const makeGmail: Effect.Effect<
     ),
   );
 
-  const fullSyncPlan = Effect.fnUntraced(function* (accountId: string) {
+  const fullSyncPlan = Effect.fnUntraced(function* (accountId: string, scope?: "inbox") {
     // Take the cursor before listing so nothing that arrives mid-sync is lost;
     // the next incremental run re-fetches any overlap idempotently.
     const { historyId } = yield* get(accountId, Profile, "/profile");
@@ -402,7 +403,7 @@ export const makeGmail: Effect.Effect<
     let pageToken: string | undefined;
     do {
       const page = yield* get(accountId, MessageList, "/messages", {
-        q: INITIAL_QUERY,
+        q: scope ? `in:inbox ${INITIAL_QUERY}` : INITIAL_QUERY,
         includeSpamTrash: "true",
         maxResults: "500",
         ...(pageToken ? { pageToken } : {}),
@@ -430,16 +431,17 @@ export const makeGmail: Effect.Effect<
   const pull = (
     account: Account,
     cursor: Option.Option<string>,
+    scope?: "inbox",
   ): Stream.Stream<Change, ProviderFailure> =>
     Stream.unwrap(
       Effect.gen(function* () {
-        const labels = yield* fetchUserLabels(account.id);
+        const labels = scope ? [] : yield* fetchUserLabels(account.id);
         const incremental = Option.isSome(cursor)
-          ? yield* readHistory(account.id, cursor.value)
+          ? yield* readHistory(account.id, cursor.value, scope)
           : Option.none();
         const plan = Option.isSome(incremental)
           ? incremental.value
-          : yield* fullSyncPlan(account.id);
+          : yield* fullSyncPlan(account.id, scope);
         const total = plan.changedIds.length;
 
         const fetched = Stream.fromIterable(plan.changedIds).pipe(
@@ -464,7 +466,7 @@ export const makeGmail: Effect.Effect<
         // The history cursor only covers the whole batch, so it goes last.
         const head: Change = { _tag: "Labels", labels };
         const tail: Change = { _tag: "Cursor", cursor: plan.cursor };
-        return Stream.succeed(head).pipe(
+        return Stream.fromIterable(scope ? [] : [head]).pipe(
           Stream.concat(fetched),
           Stream.concat(Stream.fromIterable(deletes)),
           Stream.concat(Stream.succeed(tail)),

@@ -591,6 +591,7 @@ export const makeOutlook: Effect.Effect<
   const pull = (
     account: Account,
     cursor: Option.Option<string>,
+    scope?: "inbox",
   ): Stream.Stream<Change, ProviderFailure> =>
     Stream.unwrap(
       Effect.gen(function* () {
@@ -603,14 +604,18 @@ export const makeOutlook: Effect.Effect<
         const reset = stored[ID_TYPE_KEY] !== "immutable";
         const previous = reset ? {} : stored;
 
-        const custom = yield* listCustomFolders(account.id);
+        const custom = scope ? [] : yield* listCustomFolders(account.id);
         const labels: Omit<Label, "accountId">[] = custom.map((f) => ({
           id: f.id,
           name: f.name,
           color: null,
         }));
         const folders: SyncFolder[] = [
-          ...WELL_KNOWN.map((f) => ({ key: f.name, path: f.name, label: f.label })),
+          ...WELL_KNOWN.filter((f) => !scope || f.name === "inbox").map((f) => ({
+            key: f.name,
+            path: f.name,
+            label: f.label,
+          })),
           ...custom.map((f) => ({ key: f.id, path: f.id, label: f.id })),
         ];
 
@@ -677,7 +682,7 @@ export const makeOutlook: Effect.Effect<
 
         const head: Change[] = [
           ...(reset ? [{ _tag: "Reset" } as const] : []),
-          { _tag: "Labels", labels },
+          ...(!scope ? [{ _tag: "Labels", labels } as const] : []),
           ...restarted.map((label): Change => ({ _tag: "DeleteLabel", label })),
         ];
         // Delta links only cover the whole batch, so the cursor goes last.

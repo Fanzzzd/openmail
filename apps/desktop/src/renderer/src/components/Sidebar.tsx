@@ -47,6 +47,7 @@ import {
   organizationAtom,
   unreadByLabelAtom,
 } from "../state/queries";
+import { useShortcutText } from "./SystemSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import {
   ContextMenuContent,
@@ -130,6 +131,7 @@ export function Sidebar({
   const [categoriesOpen, setCategoriesOpen] = useState(true);
   const run = useRunMail();
   const { t, i18n } = useLingui();
+  const shortcut = useShortcutText();
 
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
@@ -197,7 +199,7 @@ export function Sidebar({
             <Plus className="size-4.5" />
           </button>
         </Tip>
-        <Tip label={t`New message`} shortcut="⌘N">
+        <Tip label={t`New message`} shortcut={shortcut("compose")}>
           <button
             type="button"
             aria-label={t`New message`}
@@ -388,7 +390,7 @@ export function Sidebar({
         <span className="min-w-0 flex-1 truncate" title={syncState.errors.join("\n")}>
           {syncStatus()}
         </span>
-        <Tip label={t`Settings`} shortcut="⌘," side="top">
+        <Tip label={t`Settings`} shortcut={shortcut("settings")} side="top">
           <button
             type="button"
             aria-label={t`Settings`}
@@ -398,7 +400,7 @@ export function Sidebar({
             <SettingsIcon className="size-3.5" />
           </button>
         </Tip>
-        <Tip label={t`Sync now`} shortcut="⌘R" side="top">
+        <Tip label={t`Sync now`} shortcut={shortcut("sync")} side="top">
           <button
             type="button"
             aria-label={t`Sync now`}
@@ -493,7 +495,7 @@ function SpaceSwitcher({
           }
         >
           {profiles.map((p, i) => (
-            <Tip key={p.id} label={p.name} shortcut={i < 7 ? `⌃${i + 3}` : undefined} side="top">
+            <Tip key={p.id} label={p.name} shortcut={i < 9 ? `⌃⌘${i + 1}` : undefined} side="top">
               <Toolbar.Button
                 aria-label={p.name}
                 aria-current={space === p.id || undefined}

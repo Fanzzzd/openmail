@@ -365,6 +365,17 @@ export const MESSAGE_BACKGROUNDS = ["light", "theme"] as const;
 
 export const THREAD_ORDERS = ["oldest", "newest"] as const;
 
+export const SHORTCUT_SETS = ["mimestream", "gmail", "apple"] as const;
+export const NotificationMode = Schema.Literals(["primary", "inbox", "off"]);
+export type NotificationMode = typeof NotificationMode.Type;
+/** Minutes after midnight in the computer's local time. Equal endpoints mean all day. */
+export const QuietHours = Schema.Struct({
+  enabled: Schema.Boolean,
+  start: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 1439 })),
+  end: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 1439 })),
+});
+export type QuietHours = typeof QuietHours.Type;
+
 /** App preferences, stored in core so the CLI and a mobile app see the same values. */
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
@@ -378,6 +389,11 @@ export const Prefs = Schema.Struct({
   threadGrouping: Schema.Boolean,
   /** Message order inside an open conversation. */
   threadOrder: Schema.Literals(THREAD_ORDERS),
+  shortcutSet: Schema.Literals(SHORTCUT_SETS),
+  /** Missing accounts default to Primary. Other providers treat Primary as Inbox. */
+  notifications: Schema.Record(Schema.String, NotificationMode),
+  /** Profile id to quiet hours; "all" covers accounts outside a profile. */
+  quietHours: Schema.Record(Schema.String, QuietHours),
 });
 export type Prefs = typeof Prefs.Type;
 
@@ -389,6 +405,9 @@ export const DEFAULT_PREFS: Prefs = {
   messageBackground: "light",
   threadGrouping: true,
   threadOrder: "oldest",
+  shortcutSet: "mimestream",
+  notifications: {},
+  quietHours: {},
 };
 
 /** Signatures differ for new messages and for replies and forwards. */

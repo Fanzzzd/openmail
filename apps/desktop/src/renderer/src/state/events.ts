@@ -40,6 +40,7 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) =>
             }),
           SyncProgress: ({ progress }) => Effect.sync(() => get.set(syncProgressAtom, progress)),
           Changed: () => reactivity.invalidate(MAIL_KEYS),
+          NewMail: () => Effect.void,
         }),
       ),
     );

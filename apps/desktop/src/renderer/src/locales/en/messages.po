@@ -148,6 +148,7 @@ msgid "Activity"
 msgstr "Activity"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Actual size"
 msgstr "Actual size"
 
@@ -257,6 +258,7 @@ msgstr "All"
 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "All accounts"
 
@@ -297,6 +299,10 @@ msgstr "Always load remote images from"
 msgid "App-specific password"
 msgstr "App-specific password"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Apple Mail"
+msgstr "Apple Mail"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
 msgstr "Approve suggestion"
@@ -304,7 +310,9 @@ msgstr "Approve suggestion"
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Archive"
 msgstr "Archive"
 
@@ -317,6 +325,7 @@ msgid "Ask me first"
 msgstr "Ask me first"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Attach files"
 msgstr "Attach files"
 
@@ -404,6 +413,10 @@ msgstr "Can't find this template."
 msgid "Can't open the draft: {reason}"
 msgstr "Can't open the draft: {reason}"
 
+#: src/renderer/src/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "Can't open the message: {reason}"
+
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
 msgid "Can't reach the mail server right now: {0}"
@@ -478,6 +491,10 @@ msgstr "Choose your email provider."
 msgid "Close"
 msgstr "Close"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Close compose window"
+msgstr "Close compose window"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Close. The draft is saved."
 msgstr "Close. The draft is saved."
@@ -535,9 +552,17 @@ msgstr "Copied"
 msgid "Copy"
 msgstr "Copy"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to message"
+msgstr "Copy link to message"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "Could not load the calendar invitation."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not register OpenMail. Try again from the installed app."
+msgstr "Could not register OpenMail. Try again from the installed app."
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -624,12 +649,18 @@ msgstr "Declined"
 msgid "Default"
 msgstr "Default"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Default email app"
+msgstr "Default email app"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "Delete"
 
@@ -666,6 +697,10 @@ msgstr "Discard draft"
 msgid "Don't attach the original message"
 msgstr "Don't attach the original message"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Done"
+msgstr "Done"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
 msgstr "Draft"
@@ -677,6 +712,10 @@ msgstr "Draft discarded"
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "Drafts"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Edit"
+msgstr "Edit"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Edit automatic reply"
@@ -740,6 +779,10 @@ msgstr "Favorite"
 msgid "Favorites"
 msgstr "Favorites"
 
+#: src/renderer/src/state/desktop.ts
+msgid "File"
+msgstr "File"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -762,10 +805,12 @@ msgid "Forums"
 msgstr "Forums"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "Forward"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward as attachment"
 msgstr "Forward as attachment"
@@ -792,11 +837,16 @@ msgstr "Generate app-specific password"
 msgid "Generate authorization code"
 msgstr "Generate authorization code"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Gmail"
+msgstr "Gmail"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Gmail aliases and signatures"
 msgstr "Gmail aliases and signatures"
 
 #: src/renderer/src/components/GoToFolder.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
 msgstr "Go to folder"
 
@@ -817,8 +867,8 @@ msgid "Headers"
 msgstr "Headers"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
-msgstr "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
+msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
+msgstr "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Icon"
@@ -846,6 +896,7 @@ msgid "IMAP server"
 msgstr "IMAP server"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Important"
 msgstr "Important"
@@ -862,13 +913,23 @@ msgstr "In 3 hours"
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
 msgstr "Inbox"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Install the packaged app to make it the default. Development builds cannot register email links."
+msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "Internal reply"
+
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Keyboard shortcuts"
+msgstr "Keyboard shortcuts"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -889,6 +950,7 @@ msgid "Label removed"
 msgstr "Label removed"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels"
 msgstr "Labels"
@@ -900,6 +962,10 @@ msgstr "Labels…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
 msgstr "Language"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Larger text"
+msgstr "Larger text"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
@@ -945,6 +1011,10 @@ msgstr "Lost the connection to the background process."
 msgid "Mailboxes"
 msgstr "Mailboxes"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Make OpenMail default"
+msgstr "Make OpenMail default"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Manually"
 msgstr "Manually"
@@ -976,6 +1046,7 @@ msgid "Mark as unread"
 msgstr "Mark as unread"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
 msgstr "Mark read/unread"
 
@@ -1007,6 +1078,10 @@ msgstr "Match appearance"
 msgid "Matched image region"
 msgstr "Matched image region"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Matching start and end times mute the space all day."
+msgstr "Matching start and end times mute the space all day."
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting cancelled"
 msgstr "Meeting cancelled"
@@ -1027,6 +1102,10 @@ msgstr "Message actions"
 msgid "Message background"
 msgstr "Message background"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Message link copied"
+msgstr "Message link copied"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
@@ -1034,6 +1113,10 @@ msgstr "Message order in a conversation"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "Messages keep their other labels."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Mimestream"
+msgstr "Mimestream"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1043,6 +1126,7 @@ msgstr "More actions"
 msgid "More matches exist. Narrow your search."
 msgstr "More matches exist. Narrow your search."
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
 msgstr "Move to folder"
@@ -1053,6 +1137,7 @@ msgstr "Move to folder…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "Move to Inbox"
@@ -1091,13 +1176,23 @@ msgstr "New draft"
 msgid "New label or folder"
 msgstr "New label or folder"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "New mail notifications"
+msgstr "New mail notifications"
+
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "New message"
 msgstr "New message"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "New Message"
 msgstr "New Message"
+
+#: src/renderer/src/state/desktop.ts
+msgid "new messages"
+msgstr "new messages"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "New messages"
@@ -1109,6 +1204,11 @@ msgstr "New messages"
 msgid "New space"
 msgstr "New space"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "New Window"
+msgstr "New Window"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Newest first"
 msgstr "Newest first"
@@ -1116,6 +1216,10 @@ msgstr "Newest first"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "news@shop.com or shop.com"
 msgstr "news@shop.com or shop.com"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next thread"
+msgstr "Next thread"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Next week"
@@ -1173,6 +1277,10 @@ msgstr "No templates yet. While writing, press ⌘/ and choose “Save this mess
 msgid "No time zone supplied; shown in your local time."
 msgstr "No time zone supplied; shown in your local time."
 
+#: src/renderer/src/state/desktop.ts
+msgid "No unread mail"
+msgstr "No unread mail"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "No unread mail in the inbox"
@@ -1181,7 +1289,17 @@ msgstr "No unread mail in the inbox"
 msgid "Not synced"
 msgstr "Not synced"
 
+#: src/renderer/src/components/Settings.tsx
+msgid "Notifications"
+msgstr "Notifications"
+
+#. placeholder {0}: account.email
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notifications for {0}"
+msgstr "Notifications for {0}"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "Off"
 
@@ -1217,7 +1335,12 @@ msgstr "Only inbox messages can be snoozed"
 msgid "Open"
 msgstr "Open"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open email links in a new OpenMail draft."
+msgstr "Open email links in a new OpenMail draft."
+
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Open in New Window"
 msgstr "Open in New Window"
@@ -1229,6 +1352,10 @@ msgstr "Open space"
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Open this invitation in your calendar to add it before responding"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "OpenMail is the default email app"
+msgstr "OpenMail is the default email app"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1310,9 +1437,26 @@ msgstr "Pause indexing"
 msgid "Port"
 msgstr "Port"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Press ? outside a text field to show this list."
+msgstr "Press ? outside a text field to show this list."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous thread"
+msgstr "Previous thread"
+
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "Primary"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Print"
+msgstr "Print"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Print message…"
@@ -1330,6 +1474,20 @@ msgstr "Promotions"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours by space"
+msgstr "Quiet hours by space"
+
+#. placeholder {0}: profile.name
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours end for {0}"
+msgstr "Quiet hours end for {0}"
+
+#. placeholder {0}: profile.name
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours start for {0}"
+msgstr "Quiet hours start for {0}"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -1430,10 +1588,12 @@ msgid "Replies and forwards"
 msgstr "Replies and forwards"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "Reply"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply all"
 msgstr "Reply all"
@@ -1448,6 +1608,7 @@ msgstr "Reply only to contacts"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Report spam"
 msgstr "Report spam"
@@ -1497,6 +1658,10 @@ msgstr "Save all…"
 msgid "Save as PDF…"
 msgstr "Save as PDF…"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save draft"
+msgstr "Save draft"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "Save message as PDF…"
@@ -1530,6 +1695,10 @@ msgstr "Saving…"
 msgctxt "in progress"
 msgid "Saving…"
 msgstr "Saving…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search"
+msgstr "Search"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search  /"
@@ -1565,10 +1734,12 @@ msgstr "Select a message"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Send"
 msgstr "Send"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Send and archive"
 msgstr "Send and archive"
 
@@ -1627,8 +1798,18 @@ msgstr "Server search failed. Local results are available."
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "Settings"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Shortcut set"
+msgstr "Shortcut set"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Shortcuts"
+msgstr "Shortcuts"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
@@ -1637,6 +1818,10 @@ msgstr "Show"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"
 msgstr "Show Gmail categories"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Show Inbox"
+msgstr "Show Inbox"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
@@ -1684,10 +1869,12 @@ msgid "Sign-in failed: {reason}"
 msgstr "Sign-in failed: {reason}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Settings.tsx
 msgid "Signatures"
 msgstr "Signatures"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
 msgstr "Smaller text"
 
@@ -1730,6 +1917,7 @@ msgstr "SSL/TLS (usually 465)"
 
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "Star"
@@ -1740,6 +1928,7 @@ msgid "Starred"
 msgstr "Starred"
 
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
 msgstr "Start"
 
@@ -1773,6 +1962,10 @@ msgstr "Subject contains"
 msgid "Suggested"
 msgstr "Suggested"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Switch spaces"
+msgstr "Switch spaces"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sync aliases and signatures"
 msgstr "Sync aliases and signatures"
@@ -1790,6 +1983,7 @@ msgid "Sync failed ({count})"
 msgstr "Sync failed ({count})"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Sync now"
 msgstr "Sync now"
 
@@ -1815,6 +2009,7 @@ msgstr "Template name"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Templates"
 msgstr "Templates"
 
@@ -1943,6 +2138,7 @@ msgid "Trash"
 msgstr "Trash"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Undo"
 msgstr "Undo"
 
@@ -1957,6 +2153,10 @@ msgstr "Undo send delay"
 #: src/renderer/src/components/Overview.tsx
 msgid "Ungrouped"
 msgstr "Ungrouped"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Ungrouped accounts"
+msgstr "Ungrouped accounts"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "unknown"
@@ -1974,13 +2174,25 @@ msgstr "Unknown organizer time zone; showing the original time."
 msgid "Unread"
 msgstr "Unread"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Unread filter"
+msgstr "Unread filter"
+
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "Unstar"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Until"
+msgstr "Until"
+
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Updates"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use this Mac's local time. Notifications received during quiet hours stay silent."
+msgstr "Use this Mac's local time. Notifications received during quiet hours stay silent."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
@@ -2005,6 +2217,10 @@ msgstr "When AI wants to archive, label, or mark as read, it goes into AI sugges
 #: src/renderer/src/components/Settings.tsx
 msgid "Who"
 msgstr "Who"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Window"
+msgstr "Window"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Write in Markdown"

@@ -154,6 +154,7 @@ msgid "Activity"
 msgstr "操作记录"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Actual size"
 msgstr "实际大小"
 
@@ -263,6 +264,7 @@ msgstr "全部"
 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "全部账户"
 
@@ -303,6 +305,10 @@ msgstr "总是加载以下发件人的远程图片"
 msgid "App-specific password"
 msgstr "应用专用密码"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Apple Mail"
+msgstr "Apple 邮件"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
 msgstr "确认建议"
@@ -310,7 +316,9 @@ msgstr "确认建议"
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Archive"
 msgstr "归档"
 
@@ -323,6 +331,7 @@ msgid "Ask me first"
 msgstr "先问我"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Attach files"
 msgstr "添加附件"
 
@@ -410,6 +419,10 @@ msgstr "找不到这个模板。"
 msgid "Can't open the draft: {reason}"
 msgstr "打不开草稿：{reason}"
 
+#: src/renderer/src/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "无法打开邮件：{reason}"
+
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
 msgid "Can't reach the mail server right now: {0}"
@@ -484,6 +497,10 @@ msgstr "选择邮箱服务商。"
 msgid "Close"
 msgstr "关闭"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Close compose window"
+msgstr "关闭写信窗口"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Close. The draft is saved."
 msgstr "关闭，草稿会保存"
@@ -541,9 +558,17 @@ msgstr "已复制"
 msgid "Copy"
 msgstr "复制"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to message"
+msgstr "复制邮件链接"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "无法加载日历邀请。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not register OpenMail. Try again from the installed app."
+msgstr "注册失败，请从安装后的 app 重试。"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -630,12 +655,18 @@ msgstr "已拒绝"
 msgid "Default"
 msgstr "默认"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Default email app"
+msgstr "默认邮件客户端"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "删除"
 
@@ -672,6 +703,10 @@ msgstr "丢弃草稿"
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Done"
+msgstr "完成"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
 msgstr "草稿"
@@ -683,6 +718,10 @@ msgstr "草稿已丢弃"
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "草稿"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Edit"
+msgstr "编辑"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Edit automatic reply"
@@ -746,6 +785,10 @@ msgstr "收藏"
 msgid "Favorites"
 msgstr "收藏夹"
 
+#: src/renderer/src/state/desktop.ts
+msgid "File"
+msgstr "文件"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -768,10 +811,12 @@ msgid "Forums"
 msgstr "论坛"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "转发"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward as attachment"
 msgstr "作为附件转发"
@@ -798,11 +843,16 @@ msgstr "生成应用专用密码"
 msgid "Generate authorization code"
 msgstr "生成授权码"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Gmail"
+msgstr "Gmail"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Gmail aliases and signatures"
 msgstr "Gmail 别名和签名"
 
 #: src/renderer/src/components/GoToFolder.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
 msgstr "前往文件夹"
 
@@ -823,8 +873,8 @@ msgid "Headers"
 msgstr "邮件头"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "How long a conversation stays open before it is marked as read. Manually: only U or the toolbar marks it."
-msgstr "会话打开多久后标为已读。选手动时，只有按 U 或点工具栏才会标记。"
+msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
+msgstr "打开会话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Icon"
@@ -852,6 +902,7 @@ msgid "IMAP server"
 msgstr "IMAP 服务器"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Important"
 msgstr "重要"
@@ -868,13 +919,23 @@ msgstr "3 小时后"
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
 msgstr "收件箱"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Install the packaged app to make it the default. Development builds cannot register email links."
+msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "内部回复"
+
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Keyboard shortcuts"
+msgstr "快捷键帮助"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -895,6 +956,7 @@ msgid "Label removed"
 msgstr "已去掉标签"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels"
 msgstr "标签"
@@ -906,6 +968,10 @@ msgstr "标签…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
 msgstr "语言"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Larger text"
+msgstr "放大文字"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
@@ -951,6 +1017,10 @@ msgstr "和后台的连接出错了。"
 msgid "Mailboxes"
 msgstr "邮箱"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Make OpenMail default"
+msgstr "设为默认邮件客户端"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Manually"
 msgstr "手动"
@@ -982,6 +1052,7 @@ msgid "Mark as unread"
 msgstr "标为未读"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
 msgstr "标记已读/未读"
 
@@ -1013,6 +1084,10 @@ msgstr "跟随外观"
 msgid "Matched image region"
 msgstr "命中的图片区域"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Matching start and end times mute the space all day."
+msgstr "起止时间相同时，全天静音。"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting cancelled"
 msgstr "会议已取消"
@@ -1033,6 +1108,10 @@ msgstr "邮件操作"
 msgid "Message background"
 msgstr "邮件背景"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Message link copied"
+msgstr "已复制邮件链接"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
@@ -1040,6 +1119,10 @@ msgstr "会话内的邮件顺序"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "邮件保留其他标签。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Mimestream"
+msgstr "Mimestream"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1049,6 +1132,7 @@ msgstr "更多操作"
 msgid "More matches exist. Narrow your search."
 msgstr "还有更多结果，请缩小搜索范围。"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
 msgstr "移到文件夹"
@@ -1059,6 +1143,7 @@ msgstr "移到文件夹…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "移回收件箱"
@@ -1097,13 +1182,23 @@ msgstr "新草稿"
 msgid "New label or folder"
 msgstr "新建标签或文件夹"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "New mail notifications"
+msgstr "新邮件通知"
+
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "New message"
 msgstr "写邮件"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "New Message"
 msgstr "新邮件"
+
+#: src/renderer/src/state/desktop.ts
+msgid "new messages"
+msgstr "封新邮件"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "New messages"
@@ -1115,6 +1210,11 @@ msgstr "新邮件"
 msgid "New space"
 msgstr "新建空间"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "New Window"
+msgstr "新建窗口"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Newest first"
 msgstr "最新的在前"
@@ -1122,6 +1222,10 @@ msgstr "最新的在前"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "news@shop.com or shop.com"
 msgstr "news@shop.com 或 shop.com"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next thread"
+msgstr "下一个会话"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Next week"
@@ -1179,6 +1283,10 @@ msgstr "还没有模板。写信时按 ⌘/，选「把这封邮件存为模板�
 msgid "No time zone supplied; shown in your local time."
 msgstr "邀请未指定时区，按本地时间显示。"
 
+#: src/renderer/src/state/desktop.ts
+msgid "No unread mail"
+msgstr "没有未读邮件"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "收件箱没有未读"
@@ -1187,7 +1295,17 @@ msgstr "收件箱没有未读"
 msgid "Not synced"
 msgstr "未同步"
 
+#: src/renderer/src/components/Settings.tsx
+msgid "Notifications"
+msgstr "通知"
+
+#. placeholder {0}: account.email
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notifications for {0}"
+msgstr "{0} 的通知"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "关闭"
 
@@ -1223,7 +1341,12 @@ msgstr "只能为收件箱邮件设置提醒"
 msgid "Open"
 msgstr "打开"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open email links in a new OpenMail draft."
+msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
+
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Open in New Window"
 msgstr "在新窗口中打开"
@@ -1235,6 +1358,10 @@ msgstr "打开空间"
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "请先在日历中添加此邀请，再响应"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "OpenMail is the default email app"
+msgstr "OpenMail 已是默认邮件客户端"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1316,9 +1443,26 @@ msgstr "暂停索引"
 msgid "Port"
 msgstr "端口"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Press ? outside a text field to show this list."
+msgstr "在输入框外按 ? 查看快捷键。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous thread"
+msgstr "上一个会话"
+
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "主要"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "「主要」排除 Gmail 的其他分类；Outlook 和 IMAP 则包含整个收件箱。已读邮件和首次同步不通知。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Print"
+msgstr "打印"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Print message…"
@@ -1336,6 +1480,20 @@ msgstr "推广"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours by space"
+msgstr "空间静音时段"
+
+#. placeholder {0}: profile.name
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours end for {0}"
+msgstr "{0} 的静音结束时间"
+
+#. placeholder {0}: profile.name
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Quiet hours start for {0}"
+msgstr "{0} 的静音开始时间"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -1436,10 +1594,12 @@ msgid "Replies and forwards"
 msgstr "回复和转发"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "回复"
 
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply all"
 msgstr "回复全部"
@@ -1454,6 +1614,7 @@ msgstr "仅回复联系人"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Report spam"
 msgstr "报告垃圾邮件"
@@ -1503,6 +1664,10 @@ msgstr "全部保存…"
 msgid "Save as PDF…"
 msgstr "保存为 PDF…"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save draft"
+msgstr "保存草稿"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
@@ -1536,6 +1701,10 @@ msgstr "正在保存…"
 msgctxt "in progress"
 msgid "Saving…"
 msgstr "保存中…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search"
+msgstr "搜索"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search  /"
@@ -1571,10 +1740,12 @@ msgstr "选择一封邮件"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Send"
 msgstr "发送"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Send and archive"
 msgstr "发送并归档"
 
@@ -1633,8 +1804,18 @@ msgstr "服务器搜索失败，仍可查看本地结果。"
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "设置"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Shortcut set"
+msgstr "快捷键方案"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Shortcuts"
+msgstr "快捷键"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
@@ -1643,6 +1824,10 @@ msgstr "显示"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"
 msgstr "显示 Gmail 分类"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Show Inbox"
+msgstr "显示收件箱"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
@@ -1690,10 +1875,12 @@ msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Settings.tsx
 msgid "Signatures"
 msgstr "签名"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
 msgstr "缩小文字"
 
@@ -1736,6 +1923,7 @@ msgstr "SSL/TLS（通常是 465）"
 
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "星标"
@@ -1746,6 +1934,7 @@ msgid "Starred"
 msgstr "星标"
 
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Start"
 msgstr "开始"
 
@@ -1779,6 +1968,10 @@ msgstr "主题包含"
 msgid "Suggested"
 msgstr "提出建议"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Switch spaces"
+msgstr "切换空间"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sync aliases and signatures"
 msgstr "同步别名和签名"
@@ -1796,6 +1989,7 @@ msgid "Sync failed ({count})"
 msgstr "同步失败（{count}）"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Sync now"
 msgstr "立即同步"
 
@@ -1821,6 +2015,7 @@ msgstr "模板名称"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Templates"
 msgstr "模板"
 
@@ -1949,6 +2144,7 @@ msgid "Trash"
 msgstr "已删除"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Undo"
 msgstr "撤销"
 
@@ -1963,6 +2159,10 @@ msgstr "撤销发送的时长"
 #: src/renderer/src/components/Overview.tsx
 msgid "Ungrouped"
 msgstr "未分组"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Ungrouped accounts"
+msgstr "未分组账户"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "unknown"
@@ -1980,13 +2180,25 @@ msgstr "无法识别组织者时区，显示原始时间。"
 msgid "Unread"
 msgstr "未读"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Unread filter"
+msgstr "只显示未读"
+
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "去掉星标"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Until"
+msgstr "至"
+
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "动态"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use this Mac's local time. Notifications received during quiet hours stay silent."
+msgstr "使用本机时区。静音时段收到的邮件不补发通知。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
@@ -2011,6 +2223,10 @@ msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你
 #: src/renderer/src/components/Settings.tsx
 msgid "Who"
 msgstr "谁"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Window"
+msgstr "窗口"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Write in Markdown"

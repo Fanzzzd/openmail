@@ -7,7 +7,7 @@
  */
 import { type Context, Effect, type Scope } from "effect";
 import { AtomRegistry, Reactivity } from "effect/reactivity";
-import { useContext } from "react";
+import { useCallback, useContext } from "react";
 import { RegistryContext } from "@effect/atom-react";
 
 import type { DraftInput, MailOp, OutgoingMessage } from "../../../shared/api";
@@ -100,6 +100,9 @@ export const syncNow = withMail((call) => call("Sync", undefined));
  */
 export function useRunMail() {
   const registry = useContext(RegistryContext);
-  return <A, E>(effect: Effect.Effect<A, E, MailEnv>) =>
-    Effect.runFork(AtomRegistry.getResult(registry, MailClient.runtime.atom(effect)));
+  return useCallback(
+    <A, E>(effect: Effect.Effect<A, E, MailEnv>) =>
+      Effect.runFork(AtomRegistry.getResult(registry, MailClient.runtime.atom(effect))),
+    [registry],
+  );
 }

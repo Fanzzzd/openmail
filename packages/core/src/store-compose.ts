@@ -248,6 +248,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         ),
         threadGrouping: pref(f.threadGrouping, stored.get("threadGrouping"), d.threadGrouping),
         threadOrder: pref(f.threadOrder, stored.get("threadOrder"), d.threadOrder),
+        shortcutSet: pref(f.shortcutSet, stored.get("shortcutSet"), d.shortcutSet),
+        notifications: pref(f.notifications, stored.get("notifications"), d.notifications),
+        quietHours: pref(f.quietHours, stored.get("quietHours"), d.quietHours),
       };
     }),
     Effect.withSpan("Store.prefs"),

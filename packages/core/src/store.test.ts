@@ -704,3 +704,140 @@ it.effect(
       );
     }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
+
+it.effect("initial sync stays silent after a partial checkpoint until the full pull succeeds", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "new@example.com");
+      assert.isFalse(yield* store.notificationsReady(account.id));
+      yield* store.beginInitialSync(account.id);
+      yield* store.saveSyncCursor(account.id, "partial-checkpoint");
+      assert.isNotNull((yield* store.getAccount(account.id)).lastSyncedAt);
+      assert.isFalse(yield* store.notificationsReady(account.id));
+      yield* store.finishInitialSync(account.id);
+      assert.isTrue(yield* store.notificationsReady(account.id));
+      // Existing accounts upgrade without suppressing future arrivals.
+      const existing = yield* store.upsertAccount("outlook", "existing@example.com");
+      yield* store.saveSyncCursor(existing.id, "completed-before-upgrade");
+      assert.isTrue(yield* store.notificationsReady(existing.id));
+    }),
+  ),
+);
+
+it.effect("incoming bookkeeping does not grow prefs", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("gmail", "bookkeeping@example.com");
+      yield* store.beginInitialSync(account.id);
+      yield* store.saveInboxCursor(account.id, "cursor");
+      assert.isTrue(yield* store.observeIncoming(account.id, "one"));
+      assert.isFalse(yield* store.observeIncoming(account.id, "one"));
+      const rows = yield* sql`SELECT COUNT(*) AS n FROM prefs WHERE key LIKE 'system:%'`;
+      assert.strictEqual(
+        Schema.decodeUnknownSync(Schema.Struct({ n: Schema.Number }))(rows[0]).n,
+        0,
+      );
+    }),
+  ),
+);
+it.effect("removing and re-adding an account drops its incoming cursor and seen identities", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "readd@example.com");
+      yield* store.finishInitialSync(account.id);
+      yield* store.saveInboxCursor(account.id, "stale");
+      yield* store.observeIncoming(account.id, "one");
+      yield* store.removeAccount(account.id);
+      yield* store.upsertAccount("gmail", "readd@example.com");
+      assert.isTrue(Option.isNone(yield* store.getInboxCursor(account.id)));
+      assert.isFalse(yield* store.notificationsReady(account.id));
+      assert.isTrue(yield* store.observeIncoming(account.id, "one"));
+    }),
+  ),
+);
+
+it.effect("message existence checks do not decode mail payloads", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("gmail", "existence@example.com");
+      yield* store.upsertMessage(account.id, message({}));
+      const id = `${account.id}/m1`;
+      yield* sql`UPDATE messages SET to_json='invalid legacy JSON' WHERE id=${id}`;
+      assert.isTrue(yield* store.hasMessage(id));
+      assert.isFalse(yield* store.hasMessage("missing"));
+      yield* store.upsertMessage(account.id, message({}));
+      assert.deepStrictEqual((yield* store.getMessage(id)).to, []);
+    }),
+  ),
+);
+
+it.effect(
+  "migration 10 moves legacy bookkeeping, drops orphan rows, and preserves mail rowids",
+  () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const dir = yield* fs.makeTempDirectoryScoped();
+      const file = path.join(dir, "migration.db");
+      const db = new DatabaseSync(file);
+      try {
+        for (const migration of MIGRATIONS.slice(0, 9)) db.exec(migration);
+        db.exec("PRAGMA user_version=9");
+        const id = "gmail:migration@example.com";
+        db.prepare(
+          "INSERT INTO accounts(id,provider,email,created_at,last_synced_at) VALUES(?,?,?,?,?)",
+        ).run(id, "gmail", "migration@example.com", 0, 1000);
+        db.prepare(`INSERT INTO messages(rowid,id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
+        VALUES(42,?,?, 'one','thread','Legacy','Sender','sender@example.com','[]','[]',1,'','legacyneedle','','["INBOX"]','[]',1,0)`).run(
+          `${id}/one`,
+          id,
+        );
+        const insert = db.prepare("INSERT INTO prefs(key,value_json) VALUES(?,?)");
+        insert.run(`system:seen:${JSON.stringify([id, 'identity with "quotes"'])}`, "true");
+        insert.run(`system:seen:${JSON.stringify(["gone", "orphan"])}`, "true");
+        insert.run("system:seen:malformed", "true");
+        insert.run(`system:inbox:${id}`, "opaque-cursor");
+        insert.run(`system:initial:${id}`, "false");
+        insert.run("language", '"en"');
+      } finally {
+        db.close();
+      }
+      yield* withStore(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const sql = yield* SqlClient.SqlClient;
+          const id = "gmail:migration@example.com";
+          assert.strictEqual(Option.getOrNull(yield* store.getInboxCursor(id)), "opaque-cursor");
+          assert.isFalse(yield* store.notificationsReady(id));
+          assert.isFalse(yield* store.observeIncoming(id, 'identity with "quotes"'));
+          assert.strictEqual((yield* store.prefs).language, "en");
+          const rows = yield* sql`SELECT COUNT(*) AS n FROM seen_incoming`;
+          assert.strictEqual(
+            Schema.decodeUnknownSync(Schema.Struct({ n: Schema.Number }))(rows[0]).n,
+            1,
+          );
+          const mailRows = yield* sql`SELECT rowid FROM messages WHERE id=${`${id}/one`}`;
+          assert.strictEqual(
+            Schema.decodeUnknownSync(Schema.Struct({ rowid: Schema.Number }))(mailRows[0]).rowid,
+            42,
+          );
+          assert.strictEqual((yield* store.listThreads({ search: "legacyneedle" })).length, 1);
+          const old = yield* sql`SELECT COUNT(*) AS n FROM prefs WHERE key LIKE 'system:%'`;
+          assert.strictEqual(
+            Schema.decodeUnknownSync(Schema.Struct({ n: Schema.Number }))(old[0]).n,
+            0,
+          );
+        }),
+        databaseLayer(file).pipe(
+          Layer.provide(NodeFileSystem.layer),
+          Layer.provide(NodePath.layer),
+        ),
+      );
+    }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);

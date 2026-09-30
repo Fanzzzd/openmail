@@ -1,0 +1,52 @@
+import { useLingui } from "@lingui/react/macro";
+import { Effect, Fiber, Stream } from "effect";
+import { useEffect, useEffectEvent } from "react";
+
+import type { DesktopEvent } from "../../../shared/desktop";
+import { useRunMail, withMail } from "./mail";
+
+/** The stream buffers launch URLs in main until this window subscribes. */
+export function useDesktopEvents(receive: (event: DesktopEvent) => void) {
+  const run = useRunMail();
+  const onEvent = useEffectEvent(receive);
+  useEffect(() => {
+    const fiber = run(
+      withMail((call) =>
+        call("DesktopEvents", undefined).pipe(
+          Stream.runForEach((event) => Effect.sync(() => onEvent(event))),
+        ),
+      ),
+    );
+    return () => {
+      Effect.runFork(Fiber.interrupt(fiber));
+    };
+  }, [run]);
+}
+
+export function useDesktopLabels() {
+  const { t } = useLingui();
+  const run = useRunMail();
+  useEffect(() => {
+    run(
+      withMail((call) =>
+        call("SetDesktopLabels", {
+          labels: {
+            settings: t`Settings`,
+            newWindow: t`New Window`,
+            compose: t`New message`,
+            help: t`Keyboard shortcuts`,
+            archive: t`Archive`,
+            trash: t`Delete`,
+            noUnread: t`No unread mail`,
+            showInbox: t`Show Inbox`,
+            allAccounts: t`All accounts`,
+            file: t`File`,
+            edit: t`Edit`,
+            window: t`Window`,
+            newMessages: t`new messages`,
+          },
+        }),
+      ),
+    );
+  }, [run, t]);
+}

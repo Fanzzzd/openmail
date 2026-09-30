@@ -187,19 +187,21 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
         server.connects.push(input);
         return { email: server.email, secret: "fake-token" };
       }),
-    pull: (_account, cursor) =>
+    pull: (_account, cursor, scope) =>
       Stream.unwrap(
         Effect.map(failOnce, () => {
           const next = String(Number(Option.getOrElse(cursor, () => "0")) + 1);
           // Messages gone since the last pull are reported deleted, as Gmail history does.
-          const gone = [...pulled].filter((id) => !server.messages.has(id));
-          pulled = new Set(server.messages.keys());
+          const gone = scope ? [] : [...pulled].filter((id) => !server.messages.has(id));
+          if (!scope) pulled = new Set(server.messages.keys());
           const changes: Change[] = [
-            { _tag: "Labels", labels: server.labels },
-            ...[...server.messages.values()].map((message): Change => ({
-              _tag: "Upsert",
-              message,
-            })),
+            ...(!scope ? [{ _tag: "Labels", labels: server.labels } as const] : []),
+            ...[...server.messages.values()]
+              .filter((m) => !scope || m.labels.includes("INBOX"))
+              .map((message): Change => ({
+                _tag: "Upsert",
+                message,
+              })),
             ...gone.map((providerId): Change => ({ _tag: "Delete", providerId })),
             { _tag: "Progress", fetched: server.messages.size, total: server.messages.size },
             { _tag: "Cursor", cursor: next },

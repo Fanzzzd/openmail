@@ -9,6 +9,10 @@ import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
+import { desktopEventRoute, type DesktopEvent } from "../../shared/desktop";
+import { shortcutAction, spaceShortcut } from "../../shared/shortcuts";
+import { ShortcutHelp } from "./components/SystemSettings";
+import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import type {
   Account,
   MailOp,
@@ -51,6 +55,7 @@ import {
   sendMessage,
   syncNow,
   useRunMail,
+  withMail,
 } from "./state/mail";
 import {
   accountsAtom,
@@ -85,7 +90,7 @@ import { GoToFolder } from "./components/GoToFolder";
 import { SnoozeDialog } from "./components/SnoozeDialog";
 import { FilterEditor } from "./components/ServerSettings";
 
-type Dialog = "add" | "settings" | "proposals" | null;
+type Dialog = "add" | "settings" | "proposals" | "help" | null;
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   read: (op) => (op.kind === "read" && op.value ? msg`Marked as read` : msg`Marked as unread`),
@@ -148,6 +153,9 @@ export function App() {
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
+  useDesktopLabels();
+  const [desktopEvents, setDesktopEvents] = useState<readonly DesktopEvent[]>([]);
+
   const { t, i18n } = useLingui();
 
   const [view, setView] = useAtom(viewAtom);
@@ -477,59 +485,121 @@ export function App() {
     }
   };
 
+  const openExternal = (id: string) => {
+    run(
+      withMail((call) =>
+        Effect.gen(function* () {
+          const linkedMessages = yield* call("Thread", { id });
+          const linkedAccounts = yield* call("Accounts", undefined);
+          const owner = linkedAccounts.find(
+            (account) => account.id === linkedMessages[0]?.accountId,
+          );
+          const space = owner?.profileId ?? ALL;
+          setView({ space, mailbox: "all", ...(owner ? { accountId: owner.id } : {}) });
+          setQuery("");
+          setFilters(NO_FILTERS);
+          setSelectedId(id);
+          setSelectionSource("mouse");
+          setReadTarget(linkedMessages.some((m) => m.isUnread) ? id : null);
+        }),
+      ).pipe(
+        Effect.catchCause((cause) =>
+          Effect.sync(() => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Can't open the message: ${reason}`, tone: "error" });
+          }),
+        ),
+      ),
+    );
+  };
+  const receiveDesktop = (event: DesktopEvent) => {
+    setDesktopEvents((events) => events.filter((item) => item !== event));
+    switch (event._tag) {
+      case "OpenThread":
+        openExternal(event.id);
+        break;
+      case "Compose": {
+        const account = defaultAccount();
+        if (account) {
+          const draft = signed({ ...emptyDraft(account.id), ...event.draft });
+          setCompose(draft);
+          run(saveDraft(toDraftInput(draft)));
+        }
+        break;
+      }
+      case "Command":
+        if (event.command === "compose") startCompose("new");
+        else if (event.command === "inbox") {
+          changeView({ space: view.space === OVERVIEW ? ALL : view.space, mailbox: "inbox" });
+          setQuery("");
+          setFilters(NO_FILTERS);
+        } else setDialog(event.command === "help" ? "help" : "settings");
+        break;
+    }
+  };
+  useDesktopEvents((event) => {
+    const route = desktopEventRoute(
+      event,
+      Boolean(
+        dialog ||
+        compose ||
+        editing ||
+        goToFolder ||
+        snoozeIds ||
+        filterSeed ||
+        document.querySelector('[role="dialog"],[role="alertdialog"]'),
+      ),
+    );
+    if (route === "dispatch") receiveDesktop(event);
+    else if (route === "defer") setDesktopEvents((events) => [...events, event]);
+  });
+  const receiveLink = useEffectEvent(receiveDesktop);
+  useEffect(() => {
+    // An incoming link waits while another draft/dialog is being edited.
+    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed) return constVoid;
+    const event = desktopEvents.find(
+      (item) => accountList.length || (item._tag === "Command" && item.command !== "compose"),
+    );
+    if (!event) return constVoid;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) receiveLink(event);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    desktopEvents,
+    accountList.length,
+    dialog,
+    compose,
+    editing,
+    goToFolder,
+    snoozeIds,
+    filterSeed,
+  ]);
+
+  useEffect(() => {
+    run(withMail((call) => call("SetActiveSpace", { space: view.space })));
+  }, [view.space, run]);
+
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    // Dialogs and the compose window handle their own keys, and so do open
-    // menus and pickers (typeahead must not archive the selected thread).
     if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed || e.defaultPrevented)
       return;
     if (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]')) return;
     const typing =
-      e.target instanceof HTMLInputElement ||
-      e.target instanceof HTMLTextAreaElement ||
-      e.target instanceof HTMLSelectElement;
-    const cmd = e.metaKey || e.ctrlKey;
-    if (cmd && e.key === "n") {
+      e.target instanceof Element &&
+      Boolean(e.target.closest('input,textarea,select,[contenteditable="true"]'));
+    const spaceKey = !typing ? spaceShortcut(e) : null;
+    if (spaceKey) {
       e.preventDefault();
-      startCompose("new");
-      return;
-    }
-    if (cmd && e.key === ",") {
-      e.preventDefault();
-      setDialog("settings");
-      return;
-    }
-    if (cmd && !e.shiftKey && e.key === "z" && !typing) {
-      e.preventDefault();
-      undoRef.current?.();
-      undoRef.current = null;
-      setToast(null);
-      return;
-    }
-    if (cmd && e.shiftKey && e.key.toLowerCase() === "u") {
-      e.preventDefault();
-      if (threadState) act({ kind: "read", value: threadState.isUnread });
-      return;
-    }
-    if (cmd && e.shiftKey && e.key.toLowerCase() === "o") {
-      e.preventDefault();
-      if (selectedId && view.mailbox !== "drafts") openWindow(selectedId);
-      return;
-    }
-    if (cmd && !e.shiftKey && e.key === "p") {
-      e.preventDefault();
-      if (selectedId && threadState) {
-        print(selectedId, false, prefs.threadGrouping ? undefined : selectedId);
-      }
-      return;
-    }
-    if (cmd && e.shiftKey && e.key.toLowerCase() === "g") {
-      e.preventDefault();
-      setGoToFolder(true);
-      return;
-    }
-    if (cmd && e.shiftKey && e.key.toLowerCase() === "i") {
-      e.preventDefault();
-      act({ kind: "inbox" });
+      const space =
+        spaceKey.kind === "overview"
+          ? OVERVIEW
+          : spaceKey.kind === "all"
+            ? ALL
+            : profileList[spaceKey.index]?.id;
+      if (space) switchSpace(space);
       return;
     }
     if (e.key === "Escape") {
@@ -537,77 +607,108 @@ export function App() {
       searchRef.current?.blur();
       return;
     }
-    if ((e.metaKey || e.ctrlKey) && e.key === "f") {
-      e.preventDefault();
-      searchRef.current?.focus();
+    const action = shortcutAction(prefs.shortcutSet, e, typing);
+    if (!action) return;
+    if (
+      view.space === OVERVIEW &&
+      !["compose", "newWindow", "settings", "help", "search", "sync"].includes(action)
+    )
       return;
-    }
-    if ((e.metaKey || e.ctrlKey) && e.key === "r") {
-      e.preventDefault();
-      run(syncNow);
-      return;
-    }
-    // ⌃1 overview, ⌃2 all accounts, ⌃3… profiles in switcher order.
-    if (e.ctrlKey && !e.metaKey && /^[1-9]$/.test(e.key)) {
-      e.preventDefault();
-      const n = Number(e.key);
-      const space = n === 1 ? OVERVIEW : n === 2 ? ALL : profileList[n - 3]?.id;
-      if (space) switchSpace(space);
-      return;
-    }
-    if (e.metaKey && e.altKey && e.code === "KeyL") {
-      e.preventDefault();
-      setFilters((f) => ({ ...f, unread: !f.unread }));
-      return;
-    }
-    if (typing || view.space === OVERVIEW) return;
-    if (e.key === "/") {
-      e.preventDefault();
-      searchRef.current?.focus();
-      return;
-    }
-    if (e.key === "c" && !cmd) {
-      e.preventDefault();
-      startCompose("new");
-      return;
-    }
-    if (threadState && !cmd && !e.altKey) {
-      const single: Record<string, () => void> = {
-        e: () => act({ kind: "archive" }),
-        "#": () => act({ kind: "trash" }),
-        Backspace: () => act({ kind: "trash" }),
-        "!": () => act({ kind: "spam" }),
-        s: () => act({ kind: "star", value: !threadState.isStarred }),
-        u: () => act({ kind: "read", value: threadState.isUnread }),
-        "=": () => {
-          if (threadState.provider === "gmail") {
-            act({ kind: "important", value: !threadState.isImportant });
-          }
-        },
-        r: () => startCompose("reply"),
-        a: () => startCompose("replyAll"),
-        f: () => startCompose("forward"),
-        F: () => startCompose("forward", true),
-        // L labels on Gmail, V moves to a folder elsewhere.
-        [threadState.provider === "gmail" ? "l" : "v"]: () => {
-          if (threadLabels.length) setLabelPicker(true);
-        },
-      };
-      const handler = single[e.key];
-      if (handler) {
-        e.preventDefault();
-        handler();
-        return;
+    e.preventDefault();
+    switch (action) {
+      case "compose":
+        startCompose("new");
+        break;
+      case "newWindow":
+        run(withMail((call) => call("NewWindow", undefined)));
+        break;
+      case "settings":
+        setDialog("settings");
+        break;
+      case "help":
+        setDialog("help");
+        break;
+      case "search":
+        searchRef.current?.focus();
+        break;
+      case "sync":
+        run(syncNow);
+        break;
+      case "undo":
+        undoRef.current?.();
+        undoRef.current = null;
+        setToast(null);
+        break;
+      case "goToFolder":
+        setGoToFolder(true);
+        break;
+      case "filterUnread":
+        setFilters((f) => ({ ...f, unread: !f.unread }));
+        break;
+      case "openThread":
+        if (selectedId && view.mailbox !== "drafts") openWindow(selectedId);
+        break;
+      case "print":
+        if (selectedId && threadState)
+          print(selectedId, false, prefs.threadGrouping ? undefined : selectedId);
+        break;
+      case "archive":
+        act({ kind: "archive" });
+        break;
+      case "trash":
+        act({ kind: "trash" });
+        break;
+      case "spam":
+        act({ kind: "spam" });
+        break;
+      case "inbox":
+        act({ kind: "inbox" });
+        break;
+      case "read":
+        if (threadState) act({ kind: "read", value: threadState.isUnread });
+        break;
+      case "star":
+        if (threadState) act({ kind: "star", value: !threadState.isStarred });
+        break;
+      case "important":
+        if (threadState?.provider === "gmail")
+          act({ kind: "important", value: !threadState.isImportant });
+        break;
+      case "reply":
+        startCompose("reply");
+        break;
+      case "replyAll":
+        startCompose("replyAll");
+        break;
+      case "forward":
+        startCompose("forward");
+        break;
+      case "forwardAttachment":
+        startCompose("forward", true);
+        break;
+      case "label":
+      case "move":
+        if (threadState && threadLabels.length) setLabelPicker(true);
+        break;
+      case "next":
+      case "previous": {
+        const index = list.findIndex((m) => m.id === selectedId);
+        const next =
+          list[Math.max(0, Math.min(list.length - 1, index + (action === "next" ? 1 : -1)))];
+        if (next) select(next.id, "keyboard");
+        break;
       }
-    }
-    if (e.key === "j" || e.key === "ArrowDown" || e.key === "k" || e.key === "ArrowUp") {
-      e.preventDefault();
-      const step = e.key === "j" || e.key === "ArrowDown" ? 1 : -1;
-      const index = list.findIndex((m) => m.id === selectedId);
-      const next = list[Math.max(0, Math.min(list.length - 1, index + step))];
-      if (next) {
-        select(next.id, "keyboard");
-      }
+      // Composer and Reader own these actions.
+      case "templates":
+      case "sendArchive":
+      case "attach":
+      case "saveDraft":
+      case "closeCompose":
+      case "zoomIn":
+      case "zoomOut":
+      case "zoomReset":
+      case "send":
+        break;
     }
   });
 
@@ -750,9 +851,10 @@ export function App() {
                 searchRef={searchRef}
                 onEditDraft={openSavedDraft}
                 notify={(next) => say(next)}
-                toolbar={
+                renderToolbar={(compact) =>
                   threadState && (
                     <ThreadActions
+                      compact={compact}
                       state={threadState}
                       mailbox={view.mailbox}
                       labels={threadLabels}
@@ -835,6 +937,7 @@ export function App() {
           onClose={() => setFilterSeed(null)}
         />
       )}
+      {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
       {dialog === "settings" && (
         <Settings
           accounts={accountList}

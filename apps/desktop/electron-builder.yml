@@ -1,6 +1,14 @@
 appId: app.openmail.desktop
 productName: OpenMail
 
+protocols:
+  - name: OpenMail message links
+    schemes: [openmail]
+    role: Viewer
+  - name: Email
+    schemes: [mailto]
+    role: Editor
+
 directories:
   # Icon masters and rendered icons live here (see build/render-icons.sh).
   buildResources: build
@@ -11,6 +19,15 @@ directories:
 # also copies the production dependency tree: @openmail/core and its runtime
 # deps (@napi-rs/keyring, imapflow, mailparser, nodemailer). electron-builder 26
 # walks pnpm's symlinked store for this itself.
+extraResources:
+  - from: build/trayTemplate.png
+    to: trayTemplate.png
+  - from: build/trayTemplate@2x.png
+    to: trayTemplate@2x.png
+  - from: out/native
+    to: native
+    filter: ["vision"]
+
 files:
   - out/**
   - package.json
@@ -18,11 +35,6 @@ files:
 # node:sqlite ships inside Electron, and @napi-rs/keyring is N-API with a
 # prebuilt per-platform package, so nothing needs rebuilding against
 # Electron's ABI.
-extraResources:
-  - from: out/native
-    to: native
-    filter: ["vision"]
-
 npmRebuild: false
 asar: true
 # dlopen cannot read from inside app.asar; the keychain binding's .node file
@@ -39,6 +51,8 @@ asarUnpack:
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 mac:
+  extendInfo:
+    NSUserNotificationAlertStyle: alert
   category: public.app-category.productivity
   icon: build/icon.icns
   # Ad-hoc signature, no Apple Developer account needed. electron-builder breaks

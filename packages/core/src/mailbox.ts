@@ -66,6 +66,8 @@ export type SyncState = typeof SyncState.Type;
 export const MailboxEvent = Schema.Union([
   Schema.TaggedStruct("SyncState", { state: SyncState }),
   Schema.TaggedStruct("SyncProgress", { progress: SyncProgressSchema }),
+  /** Newly observed unread inbox mail, after it is committed. First sync is silent. */
+  Schema.TaggedStruct("NewMail", { accountId: Schema.String, ids: Schema.Array(Schema.String) }),
   /** Local mail, accounts, proposals or settings changed; views should refetch. */
   Schema.TaggedStruct("Changed", {}),
 ]);
@@ -247,6 +249,8 @@ export class Mailbox extends Context.Service<
     // Sync
     /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */
     sync(accountId?: string): Effect.Effect<SyncResult[]>;
+    /** Desktop's lightweight inbox poll; CLI/MCP do not start a timer. */
+    pollInbox(): Effect.Effect<SyncResult[]>;
     readonly syncState: Effect.Effect<SyncState>;
     readonly events: Stream.Stream<MailboxEvent>;
   }

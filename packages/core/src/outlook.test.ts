@@ -1311,3 +1311,26 @@ it.effect("Graph folder creation does not depend on a follow-up listing to retai
     assert.strictEqual(http.calls.at(-1)?.method, "POST");
   }),
 );
+
+it.effect("inbox polling follows only its delta and skips folder discovery", () =>
+  Effect.gen(function* () {
+    const inbox = `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=before`;
+    const next = `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=after`;
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messages/delta": {
+        json: { value: [{ ...raw, hasAttachments: false }], "@odata.deltaLink": next },
+      },
+    });
+    const cursor = JSON.stringify({ __idType: "immutable", inbox, sentitems: "unrelated" });
+    const changes = yield* run(http, (adapter) =>
+      Stream.runCollect(adapter.pull(account, Option.some(cursor), "inbox")),
+    );
+    assert.deepStrictEqual(tags(changes), ["Upsert", "Progress", "Cursor"]);
+    assert.strictEqual(http.calls.length, 1);
+    assert.strictEqual(http.calls[0]?.url.toString(), inbox);
+    assert.deepStrictEqual(changes.at(-1), {
+      _tag: "Cursor",
+      cursor: JSON.stringify({ __idType: "immutable", inbox: next }),
+    });
+  }),
+);

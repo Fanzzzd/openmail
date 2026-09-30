@@ -4,6 +4,7 @@ import { Toolbar } from "@base-ui/react/toolbar";
 import { useLingui } from "@lingui/react/macro";
 import {
   Clock,
+  MoreHorizontal,
   ListFilter,
   AppWindow,
   Archive,
@@ -23,8 +24,9 @@ import {
 import type { ComponentType, ReactElement } from "react";
 
 import type { Label, MailOp, Mailbox, Provider } from "../../../shared/api";
-import { ContextSubmenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
+import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker";
+import { useShortcutText } from "./SystemSettings";
 import { Tip } from "./ui/Tip";
 
 type Icon = ComponentType<{ className?: string }>;
@@ -39,6 +41,8 @@ export interface ThreadState {
 }
 
 interface Props {
+  /** The reader collapses actions before there is too little room for search. */
+  compact?: boolean;
   state: ThreadState;
   mailbox: Mailbox;
   /** User labels or folders of the thread's account. */
@@ -79,6 +83,7 @@ const button =
  * buttons; tooltips carry the keyboard shortcut.
  */
 export function ThreadActions({
+  compact = false,
   state,
   mailbox,
   labels,
@@ -91,7 +96,59 @@ export function ThreadActions({
   onLabelPicker,
 }: Props) {
   const { t } = useLingui();
+  const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";
+
+  const labelControl =
+    labels.length > 0 ? (
+      <LabelPicker
+        open={labelPicker}
+        onOpenChange={onLabelPicker}
+        labels={labels}
+        current={state.labels}
+        folders={folders}
+        onPick={(label, value) => {
+          onLabelPicker(false);
+          onOp({ kind: "label", labelId: label.id, value });
+        }}
+        tip={{
+          label: folders ? t`Move to folder` : t`Labels`,
+          shortcut: shortcut(folders ? "move" : "label"),
+        }}
+        trigger={
+          <Toolbar.Button aria-label={folders ? t`Move to folder` : t`Labels`} className={button}>
+            <Tag className="size-4" />
+          </Toolbar.Button>
+        }
+      />
+    ) : null;
+  if (compact)
+    return (
+      <Toolbar.Root
+        aria-label={t`Conversation actions`}
+        className="flex shrink-0 items-center gap-0.5"
+      >
+        {labelControl}
+        <DropdownMenu
+          trigger={
+            <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
+              <MoreHorizontal className="size-4" />
+            </Toolbar.Button>
+          }
+        >
+          <ThreadMenuItems
+            state={state}
+            mailbox={mailbox}
+            labels={labels}
+            onOp={onOp}
+            onCompose={onCompose}
+            onOpenWindow={onOpenWindow}
+            onSnooze={onSnooze}
+            onFilter={onFilter}
+          />
+        </DropdownMenu>
+      </Toolbar.Root>
+    );
 
   return (
     <Toolbar.Root aria-label={t`Conversation actions`} className="flex items-center gap-0.5">
@@ -99,28 +156,28 @@ export function ThreadActions({
         <Action
           icon={Inbox}
           label={t`Move to Inbox`}
-          shortcut="⇧⌘I"
+          shortcut={shortcut("inbox")}
           onClick={() => onOp({ kind: "inbox" })}
         />
       ) : (
         <Action
           icon={Archive}
           label={t`Archive`}
-          shortcut="E"
+          shortcut={shortcut("archive")}
           onClick={() => onOp({ kind: "archive" })}
         />
       )}
       <Action
         icon={Trash2}
         label={t`Delete`}
-        shortcut="#"
+        shortcut={shortcut("trash")}
         onClick={() => onOp({ kind: "trash" })}
       />
       {mailbox !== "spam" && (
         <Action
           icon={ShieldAlert}
           label={t`Report spam`}
-          shortcut="!"
+          shortcut={shortcut("spam")}
           onClick={() => onOp({ kind: "spam" })}
         />
       )}
@@ -132,7 +189,7 @@ export function ThreadActions({
       <Action
         icon={state.isUnread ? MailOpen : Mail}
         label={state.isUnread ? t`Mark as read` : t`Mark as unread`}
-        shortcut="U"
+        shortcut={shortcut("read")}
         onClick={() => onOp({ kind: "read", value: state.isUnread })}
       />
       <Switch
@@ -140,7 +197,7 @@ export function ThreadActions({
         pressed={state.isStarred}
         pressedClass="fill-amber-400 text-amber-400"
         label={state.isStarred ? t`Unstar` : t`Star`}
-        shortcut="S"
+        shortcut={shortcut("star")}
         onPressedChange={(value) => onOp({ kind: "star", value })}
       />
       {state.provider === "gmail" && (
@@ -149,49 +206,36 @@ export function ThreadActions({
           pressed={state.isImportant}
           pressedClass="fill-orange-400 text-orange-400"
           label={state.isImportant ? t`Mark as not important` : t`Mark as important`}
-          shortcut="="
+          shortcut={shortcut("important")}
           onPressedChange={(value) => onOp({ kind: "important", value })}
         />
       )}
-      {labels.length > 0 && (
-        <LabelPicker
-          open={labelPicker}
-          onOpenChange={onLabelPicker}
-          labels={labels}
-          current={state.labels}
-          folders={folders}
-          onPick={(label, value) => {
-            onLabelPicker(false);
-            onOp({ kind: "label", labelId: label.id, value });
-          }}
-          tip={{ label: folders ? t`Move to folder` : t`Labels`, shortcut: folders ? "V" : "L" }}
-          trigger={
-            <Toolbar.Button aria-label={folders ? t`Move to folder` : t`Labels`} className={button}>
-              <Tag className="size-4" />
-            </Toolbar.Button>
-          }
-        />
-      )}
+      {labelControl}
       {onCompose && (
         <>
           <Divider />
-          <Action icon={Reply} label={t`Reply`} shortcut="R" onClick={() => onCompose("reply")} />
+          <Action
+            icon={Reply}
+            label={t`Reply`}
+            shortcut={shortcut("reply")}
+            onClick={() => onCompose("reply")}
+          />
           <Action
             icon={ReplyAll}
             label={t`Reply all`}
-            shortcut="A"
+            shortcut={shortcut("replyAll")}
             onClick={() => onCompose("replyAll")}
           />
           <Action
             icon={Forward}
             label={t`Forward`}
-            shortcut="F"
+            shortcut={shortcut("forward")}
             onClick={() => onCompose("forward")}
           />
           <Action
             icon={MailPlus}
             label={t`Forward as attachment`}
-            shortcut="⇧F"
+            shortcut={shortcut("forwardAttachment")}
             onClick={() => onCompose("forward", true)}
           />
         </>
@@ -202,7 +246,7 @@ export function ThreadActions({
           <Action
             icon={AppWindow}
             label={t`Open in New Window`}
-            shortcut="⇧⌘O"
+            shortcut={shortcut("openThread")}
             onClick={onOpenWindow}
           />
         </>
@@ -224,14 +268,15 @@ export function ThreadMenuItems({
   onOpenWindow,
   onSnooze,
   onFilter,
-}: Omit<Props, "labelPicker" | "onLabelPicker">) {
+}: Omit<Props, "labelPicker" | "onLabelPicker" | "compact">) {
   const { t } = useLingui();
+  const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";
   return (
     <>
       {onOpenWindow && (
         <>
-          <MenuItem icon={AppWindow} shortcut="⇧⌘O" onClick={onOpenWindow}>
+          <MenuItem icon={AppWindow} shortcut={shortcut("openThread")} onClick={onOpenWindow}>
             {t`Open in New Window`}
           </MenuItem>
           <MenuSeparator />
@@ -246,45 +291,78 @@ export function ThreadMenuItems({
       )}
       {onCompose && (
         <>
-          <MenuItem icon={Reply} shortcut="R" onClick={() => onCompose("reply")}>
+          <MenuItem icon={Reply} shortcut={shortcut("reply")} onClick={() => onCompose("reply")}>
             {t`Reply`}
           </MenuItem>
-          <MenuItem icon={ReplyAll} shortcut="A" onClick={() => onCompose("replyAll")}>
+          <MenuItem
+            icon={ReplyAll}
+            shortcut={shortcut("replyAll")}
+            onClick={() => onCompose("replyAll")}
+          >
             {t`Reply all`}
           </MenuItem>
-          <MenuItem icon={Forward} shortcut="F" onClick={() => onCompose("forward")}>
+          <MenuItem
+            icon={Forward}
+            shortcut={shortcut("forward")}
+            onClick={() => onCompose("forward")}
+          >
             {t`Forward`}
           </MenuItem>
+          <MenuItem
+            icon={MailPlus}
+            shortcut={shortcut("forwardAttachment")}
+            onClick={() => onCompose("forward", true)}
+          >{t`Forward as attachment`}</MenuItem>
           <MenuSeparator />
         </>
       )}
       {moveBack(state, mailbox) ? (
-        <MenuItem icon={Inbox} shortcut="⇧⌘I" onClick={() => onOp({ kind: "inbox" })}>
+        <MenuItem icon={Inbox} shortcut={shortcut("inbox")} onClick={() => onOp({ kind: "inbox" })}>
           {t`Move to Inbox`}
         </MenuItem>
       ) : (
-        <MenuItem icon={Archive} shortcut="E" onClick={() => onOp({ kind: "archive" })}>
+        <MenuItem
+          icon={Archive}
+          shortcut={shortcut("archive")}
+          onClick={() => onOp({ kind: "archive" })}
+        >
           {t`Archive`}
         </MenuItem>
       )}
-      <MenuItem icon={Trash2} shortcut="#" onClick={() => onOp({ kind: "trash" })}>
+      <MenuItem icon={Trash2} shortcut={shortcut("trash")} onClick={() => onOp({ kind: "trash" })}>
         {t`Delete`}
       </MenuItem>
+      {mailbox !== "spam" && (
+        <MenuItem
+          icon={ShieldAlert}
+          shortcut={shortcut("spam")}
+          onClick={() => onOp({ kind: "spam" })}
+        >{t`Report spam`}</MenuItem>
+      )}
       <MenuSeparator />
       <MenuItem
         icon={state.isUnread ? MailOpen : Mail}
-        shortcut="U"
+        shortcut={shortcut("read")}
         onClick={() => onOp({ kind: "read", value: state.isUnread })}
       >
         {state.isUnread ? t`Mark as read` : t`Mark as unread`}
       </MenuItem>
       <MenuItem
         icon={Star}
-        shortcut="S"
+        shortcut={shortcut("star")}
         onClick={() => onOp({ kind: "star", value: !state.isStarred })}
       >
         {state.isStarred ? t`Unstar` : t`Star`}
       </MenuItem>
+      {state.provider === "gmail" && (
+        <MenuItem
+          icon={Bookmark}
+          shortcut={shortcut("important")}
+          onClick={() => onOp({ kind: "important", value: !state.isImportant })}
+        >
+          {state.isImportant ? t`Mark as not important` : t`Mark as important`}
+        </MenuItem>
+      )}
       {labels.length > 0 && (
         <ContextSubmenu icon={Tag} label={folders ? t`Move to folder` : t`Labels`}>
           {labels.map((l) => (

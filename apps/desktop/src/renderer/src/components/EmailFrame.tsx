@@ -12,9 +12,9 @@ const ALLOWED =
 
 const BASE_CSS = `
   html, body { margin: 0; padding: 0; }
-  html { background: #fff; }
+  html { background: #fff; overflow-x: auto !important; }
   body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
-         color: #1f1f1f; word-wrap: break-word; overflow-wrap: anywhere; }
+         overflow: visible !important; color: #1f1f1f; word-wrap: break-word; overflow-wrap: anywhere; }
   img { max-width: 100%; height: auto; }
   table { max-width: 100%; }
   pre { white-space: pre-wrap; }
@@ -64,6 +64,9 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
     const frameDoc = e.currentTarget.contentDocument;
     const root = frameDoc?.documentElement;
     if (!frameDoc || !root) return;
+    // Mail styles cannot hide the viewport's horizontal overflow.
+    root.style.setProperty("overflow-x", "auto", "important");
+    frameDoc.body.style.setProperty("overflow", "visible", "important");
     setHeight(root.scrollHeight);
     observer.current?.disconnect();
     observer.current = new ResizeObserver(() => setHeight(root.scrollHeight));

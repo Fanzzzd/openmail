@@ -272,6 +272,17 @@ export class Store extends Context.Service<
     dropSyncedDrafts(accountId: string, messageId?: string): Effect.Effect<void>;
 
     // Compose settings
+    /** Indexed incoming-message bookkeeping, cascaded with the account. */
+    hasMessage(id: string): Effect.Effect<boolean>;
+    getInboxError(accountId: string): Effect.Effect<string | null>;
+    setInboxError(accountId: string, error: string | null): Effect.Effect<void>;
+    beginInitialSync(accountId: string): Effect.Effect<void>;
+    finishInitialSync(accountId: string): Effect.Effect<void>;
+    notificationsReady(accountId: string): Effect.Effect<boolean>;
+    getInboxCursor(accountId: string): Effect.Effect<Option.Option<string>>;
+    saveInboxCursor(accountId: string, cursor: string): Effect.Effect<void>;
+    /** Atomically remembers an id, including read/suppressed mail. True only once. */
+    observeIncoming(accountId: string, identity: string): Effect.Effect<boolean>;
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
     readonly signatures: Effect.Effect<Signature[]>;
@@ -410,7 +421,12 @@ export interface ProviderAdapter {
   connect(
     input: ConnectInput,
   ): Effect.Effect<Connected, AuthError | ProviderError | ClientNotConfigured | InvalidInput>;
-  pull(account: Account, cursor: Option.Option<string>): Stream.Stream<Change, ProviderFailure>;
+  /** Inbox polls have their own cursor and skip folder discovery and settings. */
+  pull(
+    account: Account,
+    cursor: Option.Option<string>,
+    scope?: "inbox",
+  ): Stream.Stream<Change, ProviderFailure>;
   push(account: Account, providerId: string, op: MailOp): Effect.Effect<void, ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The

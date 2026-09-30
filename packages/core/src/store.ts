@@ -317,7 +317,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const accountRows = all(AccountRow);
     const ACCOUNT_COLUMNS = sql.literal(`id, provider, email, created_at, last_synced_at,
-      last_sync_error, profile_id, settings_json, needs_reauth`);
+      COALESCE(last_sync_error,(SELECT poll_error FROM incoming_state WHERE account_id=accounts.id)) AS last_sync_error, profile_id, settings_json, needs_reauth`);
 
     const listAccounts = accountRows(
       sql`SELECT ${ACCOUNT_COLUMNS} FROM accounts ORDER BY created_at`,
@@ -383,6 +383,42 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         sql`UPDATE accounts SET sync_cursor = ${cursor}, last_synced_at = ${now} WHERE id = ${id}`,
       );
     });
+
+    const initialSyncState = (id: string, complete: boolean) =>
+      run(sql`INSERT INTO incoming_state(account_id,initial_sync_complete) VALUES (${id}, ${complete ? 1 : 0})
+        ON CONFLICT(account_id) DO UPDATE SET initial_sync_complete=excluded.initial_sync_complete`);
+    const notificationsReady = Effect.fn("Store.notificationsReady")(function* (id: string) {
+      const row = yield* first(Schema.Struct({ complete: Schema.BooleanFromBit }))(
+        sql`SELECT initial_sync_complete AS complete FROM incoming_state WHERE account_id=${id}`,
+      );
+      if (Option.isSome(row)) return row.value.complete;
+      return (yield* getAccount(id).pipe(Effect.orDie)).lastSyncedAt !== null;
+    });
+    const getInboxCursor = (id: string) =>
+      first(Schema.Struct({ cursor: Schema.NullOr(Schema.String) }))(
+        sql`SELECT inbox_cursor AS cursor FROM incoming_state WHERE account_id=${id}`,
+      ).pipe(Effect.map((row) => Option.flatMap(row, (r) => Option.fromNullishOr(r.cursor))));
+    const saveInboxCursor = (id: string, cursor: string) =>
+      run(sql`INSERT INTO incoming_state(account_id,inbox_cursor) VALUES (${id},${cursor})
+        ON CONFLICT(account_id) DO UPDATE SET inbox_cursor=excluded.inbox_cursor`);
+    const getInboxError = (id: string) =>
+      first(Schema.Struct({ error: Schema.NullOr(Schema.String) }))(
+        sql`SELECT poll_error AS error FROM incoming_state WHERE account_id=${id}`,
+      ).pipe(
+        Effect.map((row) => Option.match(row, { onNone: () => null, onSome: (r) => r.error })),
+      );
+    const setInboxError = (id: string, error: string | null) =>
+      run(sql`INSERT INTO incoming_state(account_id,poll_error) VALUES (${id},${error})
+        ON CONFLICT(account_id) DO UPDATE SET poll_error=excluded.poll_error`);
+    const observeIncoming = (id: string, identity: string) =>
+      first(Schema.Struct({ present: Schema.Number }))(
+        sql`INSERT INTO seen_incoming(account_id,identity) VALUES (${id},${identity})
+        ON CONFLICT(account_id,identity) DO NOTHING RETURNING 1 AS present`,
+      ).pipe(Effect.map(Option.isSome));
+    const hasMessage = (id: string) =>
+      first(Schema.Struct({ present: Schema.Number }))(
+        sql`SELECT 1 AS present FROM messages WHERE id=${id}`,
+      ).pipe(Effect.map(Option.isSome));
 
     // Messages
 
@@ -1021,6 +1057,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       setNeedsReauth,
       setSyncError,
       getSyncCursor,
+      beginInitialSync: (id) => initialSyncState(id, false),
+      finishInitialSync: (id) => initialSyncState(id, true),
+      notificationsReady,
+      getInboxCursor,
+      getInboxError,
+      setInboxError,
+      hasMessage,
+      saveInboxCursor,
+      observeIncoming,
       saveSyncCursor,
       media,
       upsertMessage,

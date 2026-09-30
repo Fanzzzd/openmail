@@ -36,6 +36,7 @@ export default defineConfig({
         "@base-ui/react/autocomplete",
         "@base-ui/react/button",
         "@base-ui/react/checkbox",
+        "@base-ui/react/input",
         "@base-ui/react/combobox",
         "@base-ui/react/context-menu",
         "@base-ui/react/dialog",

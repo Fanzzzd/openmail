@@ -1,3 +1,5 @@
+import { matchesShortcut } from "../../../shared/shortcuts";
+import { useShortcutText } from "./SystemSettings";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
 import { Toggle } from "@base-ui/react/toggle";
@@ -5,7 +7,13 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { applySignature, fillTemplate, mentionsAttachment, ownText } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  applySignature,
+  fillTemplate,
+  mentionsAttachment,
+  ownText,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
 import { type ReactElement, type RefObject, useEffect, useRef, useState } from "react";
@@ -23,7 +31,7 @@ import {
 import { formatBytes } from "../format";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
-import { templatesAtom, sendAsAtom } from "../state/queries";
+import { templatesAtom, sendAsAtom, prefsAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
@@ -61,6 +69,8 @@ export function Composer({
   onSend,
 }: Props) {
   const { t, i18n } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const shortcut = useShortcutText();
   const [draft, setDraft] = useState(initial);
   const [showBcc, setShowBcc] = useState(Boolean(initial.bcc || initial.cc));
   const [error, setError] = useState<string | null>(null);
@@ -136,11 +146,23 @@ export function Composer({
     // Escape belongs to the dialog: it closes the innermost popup, then the window.
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
-      const cmd = e.metaKey || e.ctrlKey;
-      if (e.key === "Enter" && cmd) {
+      if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
         e.preventDefault();
-        submit(e.shiftKey);
-      } else if (e.key === "/" && cmd) {
+        submit(true);
+      } else if (matchesShortcut(prefs.shortcutSet, "send", e)) {
+        e.preventDefault();
+        submit(false);
+      } else if (matchesShortcut(prefs.shortcutSet, "attach", e)) {
+        e.preventDefault();
+        fileRef.current?.click();
+      } else if (matchesShortcut(prefs.shortcutSet, "saveDraft", e)) {
+        e.preventDefault();
+        saved.current = draft;
+        save(toDraftInput(draft));
+      } else if (matchesShortcut(prefs.shortcutSet, "closeCompose", e) && e.key !== "Escape") {
+        e.preventDefault();
+        close();
+      } else if (matchesShortcut(prefs.shortcutSet, "templates", e)) {
         e.preventDefault();
         setPicker((v) => !v);
       }
@@ -248,7 +270,7 @@ export function Composer({
                 </span>
               )}
               <span className="flex-1 truncate text-[12px] text-neutral-400">{status}</span>
-              <Tip label={t`Close. The draft is saved.`} shortcut="Esc">
+              <Tip label={t`Close. The draft is saved.`} shortcut={shortcut("closeCompose")}>
                 <button type="button" aria-label={t`Close`} onClick={close} className={quiet}>
                   <X className="size-4" />
                 </button>
@@ -386,7 +408,7 @@ export function Composer({
             )}
 
             <footer className="flex shrink-0 items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
-              <Tip label={t`Send`} shortcut="⌘↩" side="top">
+              <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
                   className="h-7 rounded-md bg-blue-600 px-3.5 font-medium text-white hover:bg-blue-700"
@@ -395,7 +417,7 @@ export function Composer({
                 </button>
               </Tip>
               {replying && (
-                <Tip label={t`Send and archive`} shortcut="⇧⌘↩" side="top">
+                <Tip label={t`Send and archive`} shortcut={shortcut("sendArchive")} side="top">
                   <button
                     type="button"
                     onClick={() => submit(true)}
@@ -421,7 +443,7 @@ export function Composer({
                 draft={draft}
                 onInsert={insertTemplate}
                 bodyRef={bodyRef}
-                tip={{ label: t`Templates`, shortcut: "⌘/" }}
+                tip={{ label: t`Templates`, shortcut: shortcut("templates") }}
                 trigger={
                   <button type="button" aria-label={t`Templates`} className={quiet}>
                     <FileText className="size-4" />

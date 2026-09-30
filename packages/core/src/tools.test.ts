@@ -79,6 +79,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     hiddenContacts: notUsed("hiddenContacts"),
     setContactHidden: () => notUsed("setContactHidden"),
     sync: () => notUsed("sync"),
+    pollInbox: () => notUsed("pollInbox"),
     syncState: notUsed("syncState"),
     events: Stream.empty,
   };

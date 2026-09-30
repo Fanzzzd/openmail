@@ -1,7 +1,11 @@
 import { makeIndexer } from "./indexer.js";
 import { MediaError, type DerivedChunk, type Vision, unavailableVision } from "./media.js";
+
+import { createHash } from "node:crypto";
+
 import {
   Cause,
+  Clock,
   Deferred,
   Duration,
   Effect,
@@ -89,6 +93,10 @@ export interface MailboxOptions {
   autoSync?: Duration.Input;
   /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */
   media?: { vision: Vision; onBattery: () => boolean; idle: () => boolean };
+
+  /** Desktop only. Independent inbox cursors leave full sync checkpoints untouched. */
+  inboxPoll?: Duration.Input;
+  pollOnBattery?: () => boolean;
   /**
    * Push draft saves in the background (default) so saving never waits for
    * the network. Short-lived processes and tests set false: the save then
@@ -119,6 +127,9 @@ export const MailboxLive = (
         errors: [],
       });
       const inflight = yield* Ref.make(Option.none<Deferred.Deferred<SyncResult[]>>());
+
+      const syncLock = yield* Semaphore.make(1);
+      const polling = new Map<string, { failures: number; due: number }>();
 
       // Pushing the queue
 
@@ -768,14 +779,54 @@ export const MailboxLive = (
 
       // Pulling
 
-      const apply = (account: Account, counts: { changed: number; deleted: number }) =>
+      const apply = (
+        account: Account,
+        counts: { changed: number; deleted: number },
+        notificationsReady: boolean,
+        scope?: "inbox",
+      ) =>
         Effect.fnUntraced(function* (batch: readonly Change[]) {
           const writes: Effect.Effect<void>[] = [];
+          const newIds: string[] = [];
           for (const change of batch) {
+            // Polling only discovers arrivals/flags; full sync reconciles moves and resets.
+            if (scope && ["Delete", "DeleteLabel", "Reset", "Labels"].includes(change._tag))
+              continue;
             switch (change._tag) {
               case "Upsert":
                 counts.changed++;
-                writes.push(store.upsertMessage(account.id, change.message));
+                writes.push(
+                  Effect.gen(function* () {
+                    const id = `${account.id}/${change.message.providerId}`;
+                    const known = yield* store.hasMessage(id);
+                    // IMAP moves assign a new folder/UID while preserving the mail itself.
+                    const identity =
+                      account.provider === "imap"
+                        ? createHash("sha256")
+                            .update(
+                              JSON.stringify([
+                                change.message.threadId,
+                                change.message.date,
+                                change.message.from.address,
+                                change.message.subject,
+                                change.message.bodyText,
+                              ]),
+                            )
+                            .digest("hex")
+                        : change.message.providerId;
+                    const first = yield* store.observeIncoming(account.id, identity);
+                    yield* store.upsertMessage(account.id, change.message);
+                    if (
+                      first &&
+                      !known &&
+                      notificationsReady &&
+                      change.message.date >= (account.lastSyncedAt ?? 0) &&
+                      change.message.isUnread &&
+                      change.message.labels.includes("INBOX")
+                    )
+                      newIds.push(id);
+                  }),
+                );
                 // Gmail keeps the message id when a draft is sent elsewhere; it only loses DRAFT.
                 if (!change.message.labels.includes("DRAFT")) {
                   writes.push(store.dropSyncedDrafts(account.id, change.message.providerId));
@@ -812,9 +863,14 @@ export const MailboxLive = (
                 writes.push(store.replaceLabels(account.id, change.labels));
                 break;
               case "Cursor":
-                writes.push(store.saveSyncCursor(account.id, change.cursor));
+                writes.push(
+                  scope
+                    ? store.saveInboxCursor(account.id, change.cursor)
+                    : store.saveSyncCursor(account.id, change.cursor),
+                );
                 break;
               case "Progress":
+                if (scope) break;
                 writes.push(
                   emit({
                     _tag: "SyncProgress",
@@ -831,9 +887,13 @@ export const MailboxLive = (
           // Changes apply in order, so a Cursor inside the batch is saved only
           // together with everything before it.
           yield* store.transaction(Effect.all(writes, { discard: true }));
+          if (newIds.length) yield* emit({ _tag: "NewMail", accountId: account.id, ids: newIds });
         });
 
-      const pullAccount = Effect.fn("Mailbox.pullAccount")(function* (account: Account) {
+      const pullAccount = Effect.fn("Mailbox.pullAccount")(function* (
+        account: Account,
+        scope?: "inbox",
+      ) {
         const counts = { changed: 0, deleted: 0 };
         if (account.needsReauth) {
           return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
@@ -841,7 +901,9 @@ export const MailboxLive = (
         const failed = (text: string, auth: boolean) =>
           Effect.gen(function* () {
             if (auth) yield* store.setNeedsReauth(account.id, true);
-            yield* store.setSyncError(account.id, text);
+            yield* scope
+              ? store.setInboxError(account.id, text)
+              : store.setSyncError(account.id, text);
             return {
               accountId: account.id,
               ...counts,
@@ -849,28 +911,49 @@ export const MailboxLive = (
               ...(auth ? { needsReauth: true } : {}),
             } satisfies SyncResult;
           });
+        if (!scope && account.lastSyncedAt === null) yield* store.beginInitialSync(account.id);
+        const notificationsReady = yield* store.notificationsReady(account.id);
         // A retry starts from the cursor the failed attempt left: batches it
         // wrote stay, and the cursor only moves once a whole pull is in.
         const pull = Effect.sync(() => {
           counts.changed = 0;
           counts.deleted = 0;
         }).pipe(
-          Effect.andThen(store.getSyncCursor(account.id)),
+          Effect.andThen(
+            scope
+              ? store
+                  .getInboxCursor(account.id)
+                  .pipe(
+                    Effect.flatMap((cursor) =>
+                      Option.isSome(cursor)
+                        ? Effect.succeed(cursor)
+                        : store.getSyncCursor(account.id),
+                    ),
+                  )
+              : store.getSyncCursor(account.id),
+          ),
           Effect.flatMap((cursor) =>
             providers
               .get(account.provider)
-              .pull(account, cursor)
+              .pull(account, cursor, scope)
               .pipe(
                 Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
-                Stream.runForEach(apply(account, counts)),
+                Stream.runForEach(apply(account, counts, notificationsReady, scope)),
               ),
           ),
         );
         return yield* pull.pipe(
-          Effect.retry(PULL_RETRY),
-          Effect.andThen(store.setSyncError(account.id, null)),
+          Effect.retry(scope ? { ...PULL_RETRY, times: 0 } : PULL_RETRY),
           Effect.andThen(
-            account.provider === "gmail"
+            scope
+              ? store.setInboxError(account.id, null)
+              : store
+                  .setSyncError(account.id, null)
+                  .pipe(Effect.andThen(store.setInboxError(account.id, null))),
+          ),
+          Effect.andThen(scope ? Effect.void : store.finishInitialSync(account.id)),
+          Effect.andThen(
+            !scope && account.provider === "gmail"
               ? providers
                   .get("gmail")
                   .sendAs(account)
@@ -907,7 +990,9 @@ export const MailboxLive = (
         const results: SyncResult[] = [];
         // One failing account does not stop the rest.
         for (const account of accounts) {
-          results.push(yield* pullAccount(account));
+          const result: SyncResult = yield* pullAccount(account);
+          results.push(result);
+          if (!result.error) polling.delete(account.id);
           if (!account.needsReauth)
             yield* features
               .refreshContacts(account.id, false)
@@ -931,6 +1016,7 @@ export const MailboxLive = (
         const done = yield* Deferred.make<SyncResult[]>();
         yield* Ref.set(inflight, Option.some(done));
         return yield* runSync(accountId).pipe(
+          syncLock.withPermits(1),
           Effect.onExit((exit) =>
             Ref.set(inflight, Option.none()).pipe(
               Effect.andThen(Deferred.done(done, exit)),
@@ -942,6 +1028,43 @@ export const MailboxLive = (
             ),
           ),
         );
+      });
+
+      const pollInterval = Duration.toMillis(
+        Duration.fromInputUnsafe(options.inboxPoll ?? "45 seconds"),
+      );
+      const onBattery = () => options.pollOnBattery?.() ?? options.media?.onBattery() ?? false;
+      const pollInbox = Effect.fn("Mailbox.pollInbox")(function* () {
+        const result = yield* syncLock.withPermitsIfAvailable(1)(
+          Effect.gen(function* () {
+            yield* flush();
+            const accounts = yield* store.listAccounts;
+            const now = yield* Clock.currentTimeMillis;
+            const results: SyncResult[] = [];
+            let anyChange = false;
+            for (const account of accounts) {
+              if (account.lastSyncedAt === null || (polling.get(account.id)?.due ?? 0) > now)
+                continue;
+              const before = yield* store.getInboxError(account.id);
+              const pulled: SyncResult = yield* pullAccount(account, "inbox");
+              results.push(pulled);
+              const error = yield* store.getInboxError(account.id);
+              anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;
+              if (pulled.error) {
+                const failures = (polling.get(account.id)?.failures ?? 0) + 1;
+                polling.set(account.id, {
+                  failures,
+                  due: now + Math.min(900_000, pollInterval * 2 ** Math.min(failures, 5)),
+                });
+              } else polling.delete(account.id);
+            }
+            const live = new Set(accounts.map((account) => account.id));
+            for (const id of polling.keys()) if (!live.has(id)) polling.delete(id);
+            if (anyChange) yield* changed;
+            return results;
+          }),
+        );
+        return Option.getOrElse(result, () => []);
       });
 
       // Accounts
@@ -997,6 +1120,15 @@ export const MailboxLive = (
         yield* sync().pipe(
           Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
           Effect.repeat(Schedule.spaced(options.autoSync)),
+          Effect.forkScoped,
+        );
+      }
+
+      if (options.inboxPoll !== undefined) {
+        yield* Effect.suspend(() => Effect.sleep(pollInterval * (onBattery() ? 2 : 1))).pipe(
+          Effect.andThen(pollInbox()),
+          Effect.catchCause((cause) => Effect.logWarning("inbox poll failed", cause)),
+          Effect.forever,
           Effect.forkScoped,
         );
       }
@@ -1076,6 +1208,7 @@ export const MailboxLive = (
         setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
 
         sync: (accountId) => sync(accountId),
+        pollInbox,
         syncState: Ref.get(state),
         events: Stream.fromPubSub(pubsub),
       });

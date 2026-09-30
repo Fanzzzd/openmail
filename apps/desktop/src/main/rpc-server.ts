@@ -1,12 +1,14 @@
-import { IMAP_PRESETS, Mailbox } from "@openmail/core";
+import { becomeDefaultClient, defaultClientStatus } from "./default-client";
+import { IMAP_PRESETS, Mailbox, messageLink } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
 import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
-import { BrowserWindow, ipcMain, type IpcMainEvent, webContents } from "electron";
+import { BrowserWindow, clipboard, ipcMain, type IpcMainEvent, webContents } from "electron";
 
 import { RPC_CHANNEL } from "../shared/channel";
 import { MailRpcs } from "../shared/rpc";
 import { openAttachment, printThread, saveAllAttachments, saveAttachment } from "./files";
-import { openThreadWindow, windowOf } from "./windows";
+import { Desktop } from "./system";
+import { createMainWindow, openThreadWindow, windowOf } from "./windows";
 
 /** Brings the app back to the front after a sign-in in the system browser. */
 const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
@@ -76,6 +78,7 @@ const ElectronProtocol = Layer.effect(
 const Handlers = MailRpcs.toLayer(
   Effect.gen(function* () {
     const m = yield* Mailbox;
+    const desktop = yield* Desktop;
     return MailRpcs.of({
       ClientSetup: () => m.clientSetup,
       SetGoogleClient: ({ clientId, clientSecret }) =>
@@ -173,6 +176,17 @@ const Handlers = MailRpcs.toLayer(
       DecideProposal: ({ id, approve }) => m.decideProposal(id, approve, "app"),
       AgentWriteMode: () => m.agentWriteMode,
       SetAgentWriteMode: ({ mode }) => m.setAgentWriteMode(mode),
+
+      NewWindow: () =>
+        Effect.sync(() => {
+          createMainWindow();
+        }),
+      CopyMessageLink: ({ id }) => Effect.promise(() => clipboard.writeText(messageLink(id))),
+      DefaultMailClient: () => Effect.sync(defaultClientStatus),
+      BecomeDefaultMailClient: () => Effect.sync(becomeDefaultClient),
+      SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),
+      SetDesktopLabels: ({ labels }) => desktop.setLabels(labels),
+      DesktopEvents: (_, { client }) => desktop.events(client.id),
 
       Sync: () => m.sync(),
       SyncState: () => m.syncState,

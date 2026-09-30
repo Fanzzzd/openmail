@@ -1,3 +1,4 @@
+import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
 import { SearchField } from "./ui/SearchField";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
@@ -46,7 +47,7 @@ import type { Message, DerivedChunk } from "../../../shared/api";
 import { causeText } from "../errors";
 import { avatarColor, displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
-import { openThreadWindow, printThread, useRunMail } from "../state/mail";
+import { openThreadWindow, printThread, useRunMail, withMail } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, inlineImagesAtom, prefsAtom, threadAtom } from "../state/queries";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
@@ -54,6 +55,8 @@ import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { InviteBanner } from "./InviteBanner";
+
+import { useShortcutText } from "./SystemSettings";
 import { RawMessageDialog } from "./RawMessage";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
@@ -68,7 +71,7 @@ interface Props {
   onQuery: (q: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   /** Actions for the open thread, left of the search field. */
-  toolbar?: ReactNode;
+  renderToolbar?: (compact: boolean) => ReactNode;
   /** Opens a draft of the thread in the compose window, by local draft id or message id. */
   onEditDraft: (messageId: string) => void;
   notify: Notify;
@@ -80,10 +83,21 @@ export function Reader({
   query,
   onQuery,
   searchRef,
-  toolbar,
+  renderToolbar,
   onEditDraft,
   notify,
 }: Props) {
+  const headerRef = useRef<HTMLElement>(null);
+  const width = useSyncExternalStore(
+    (onChange) => {
+      const header = headerRef.current;
+      if (!header) return constVoid;
+      const observer = new ResizeObserver(onChange);
+      observer.observe(header);
+      return () => observer.disconnect();
+    },
+    () => headerRef.current?.clientWidth ?? 0,
+  );
   const thread = AsyncResult.value(useAtomValue(threadAtom(messageId)));
   const messages = thread._tag === "Some" ? thread.value : undefined;
   const grouping = AsyncResult.getOrElse(
@@ -93,8 +107,14 @@ export function Reader({
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
-      <header className="drag flex h-13 shrink-0 items-center gap-3 px-4">
-        <div className="min-w-0 flex-1">{messageId && messages ? toolbar : null}</div>
+      <header
+        ref={headerRef}
+        data-reader-toolbar
+        className="drag flex min-h-13 shrink-0 items-center gap-3 px-4 py-3"
+      >
+        <div className="no-drag shrink-0">
+          {messageId && messages ? renderToolbar?.(width < 900) : null}
+        </div>
         <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
       </header>
       {!messageId || !messages ? (
@@ -144,11 +164,10 @@ function stepZoom(zoom: ReaderZoom, step: -1 | 0 | 1): ReaderZoom {
 }
 
 /** ⌘+ / ⌘= bigger, ⌘- smaller, ⌘0 normal. */
-function zoomStep(e: KeyboardEvent): -1 | 0 | 1 | null {
-  if (!(e.metaKey || e.ctrlKey) || e.altKey) return null;
-  if (e.key === "=" || e.key === "+") return 1;
-  if (e.key === "-") return -1;
-  if (e.key === "0") return 0;
+function zoomStep(e: KeyboardEvent, set: ShortcutSet): -1 | 0 | 1 | null {
+  if (matchesShortcut(set, "zoomIn", e)) return 1;
+  if (matchesShortcut(set, "zoomOut", e)) return -1;
+  if (matchesShortcut(set, "zoomReset", e)) return 0;
   return null;
 }
 
@@ -205,8 +224,9 @@ export function ThreadView({
   /** Offer Open in New Window (not inside a thread window). */
   canOpenWindow?: boolean;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const run = useRunMail();
+  const shortcut = useShortcutText();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const setPrefs = useAtomSet(setPrefsAtom);
   const print = useThreadPrint(notify);
@@ -234,7 +254,7 @@ export function ThreadView({
     }
   };
   const onZoomKey = (e: KeyboardEvent) => {
-    const step = zoomStep(e);
+    const step = zoomStep(e, prefs.shortcutSet);
     if (step === null) return;
     e.preventDefault();
     setZoom(stepZoom(zoom, step));
@@ -282,8 +302,20 @@ export function ThreadView({
             </MenuItem>
           )}
           <MenuItem
+            onClick={() =>
+              run(
+                withMail((call) => call("CopyMessageLink", { id: selectedId })).pipe(
+                  Effect.matchCause({
+                    onSuccess: () => notify({ text: t`Message link copied` }),
+                    onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
+                  }),
+                ),
+              )
+            }
+          >{t`Copy link to message`}</MenuItem>
+          <MenuItem
             icon={Printer}
-            shortcut="⌘P"
+            shortcut={shortcut("print")}
             onClick={() => print(selectedId, false, printOnly)}
           >
             {t`Print…`}
@@ -292,13 +324,26 @@ export function ThreadView({
             {t`Save as PDF…`}
           </MenuItem>
           <MenuSeparator />
-          <MenuItem icon={Plus} shortcut="⌘+" onClick={() => setZoom(stepZoom(zoom, 1))}>
+          <MenuItem
+            icon={Plus}
+            shortcut={shortcut("zoomIn")}
+            onClick={() => setZoom(stepZoom(zoom, 1))}
+          >
             {t`Bigger text`}
           </MenuItem>
-          <MenuItem icon={Minus} shortcut="⌘−" onClick={() => setZoom(stepZoom(zoom, -1))}>
+          <MenuItem
+            icon={Minus}
+            shortcut={shortcut("zoomOut")}
+            onClick={() => setZoom(stepZoom(zoom, -1))}
+          >
             {t`Smaller text`}
           </MenuItem>
-          <MenuItem icon={Type} shortcut="⌘0" onClick={() => setZoom(100)} disabled={zoom === 100}>
+          <MenuItem
+            icon={Type}
+            shortcut={shortcut("zoomReset")}
+            onClick={() => setZoom(100)}
+            disabled={zoom === 100}
+          >
             {t`Actual size`}
           </MenuItem>
         </DropdownMenu>
@@ -435,7 +480,7 @@ function Expanded({
   const to = m.to.map(displayName).join(separator) || "—";
   const cc = m.cc.map(displayName).join(separator);
   return (
-    <article className="py-3">
+    <article className="@container/message py-3">
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-md bg-red-500/[0.06] px-3 py-1.5 text-[13px]">
           <span className="flex-1 text-red-600 dark:text-red-400">
@@ -522,32 +567,39 @@ function Expanded({
       {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
 
       {((needsImages && !allowed) || trackerCount > 0) && (
-        <div className="mt-3 flex items-center gap-3 rounded-md bg-neutral-100 px-3 py-2 text-[12px] text-neutral-600 dark:bg-white/5 dark:text-neutral-400">
-          {needsImages && !allowed ? (
+        <div
+          data-images-notice
+          className="mt-3 flex flex-col items-start gap-3 rounded-md bg-neutral-100 px-3 py-2 text-[12px] text-neutral-600 @min-[600px]/message:flex-row @min-[600px]/message:items-center dark:bg-white/5 dark:text-neutral-400"
+        >
+          {needsImages && !allowed && (
             <>
-              <ImageOff className="size-3.5 shrink-0" />
-              <span className="flex-1">
-                <Trans>Remote images are blocked so the sender can't tell if you read this.</Trans>
-              </span>
-              <button
-                type="button"
-                onClick={() => setLoadedOnce(true)}
-                className="shrink-0 font-medium text-blue-600 hover:underline dark:text-blue-400"
-              >
-                <Trans>Load images</Trans>
-              </button>
-              {address && (
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <ImageOff className="mt-0.5 size-3.5 shrink-0" />
+                <span>
+                  <Trans>
+                    Remote images are blocked so the sender can't tell if you read this.
+                  </Trans>
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => allow(address, true)}
-                  className="shrink-0 font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  onClick={() => setLoadedOnce(true)}
+                  className="font-medium text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  <Trans>Always from this sender</Trans>
+                  <Trans>Load images</Trans>
                 </button>
-              )}
+                {address && (
+                  <button
+                    type="button"
+                    onClick={() => allow(address, true)}
+                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    <Trans>Always from this sender</Trans>
+                  </button>
+                )}
+              </div>
             </>
-          ) : (
-            <span className="flex-1" />
           )}
           {trackerCount > 0 && (
             <TrackerBadge trackers={prepared.trackers} pixels={prepared.pixels} />

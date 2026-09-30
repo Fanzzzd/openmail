@@ -46,6 +46,8 @@ import {
   ThreadSummary,
 } from "@openmail/core/schema";
 import { Schema } from "effect";
+import { DefaultClientStatus, DesktopEvent } from "./desktop";
+import { DesktopLabels } from "./desktop-labels";
 import { Rpc, RpcGroup } from "effect/rpc";
 
 export const ConnectInput = Schema.Union([
@@ -64,6 +66,9 @@ const PrefsPatch = Schema.Struct({
   messageBackground: Schema.optionalKey(Prefs.fields.messageBackground),
   threadGrouping: Schema.optionalKey(Prefs.fields.threadGrouping),
   threadOrder: Schema.optionalKey(Prefs.fields.threadOrder),
+  shortcutSet: Schema.optionalKey(Prefs.fields.shortcutSet),
+  notifications: Schema.optionalKey(Prefs.fields.notifications),
+  quietHours: Schema.optionalKey(Prefs.fields.quietHours),
 });
 
 /** Header labels for printing, in the UI language. */
@@ -264,6 +269,15 @@ export class MailRpcs extends RpcGroup.make(
   }),
   Rpc.make("AgentWriteMode", { success: AgentWriteMode }),
   Rpc.make("SetAgentWriteMode", { payload: { mode: AgentWriteMode } }),
+
+  // Desktop system integration. No provider or database access in these handlers.
+  Rpc.make("NewWindow"),
+  Rpc.make("SetDesktopLabels", { payload: { labels: DesktopLabels } }),
+  Rpc.make("CopyMessageLink", { payload: { id: Schema.String } }),
+  Rpc.make("DefaultMailClient", { success: DefaultClientStatus }),
+  Rpc.make("BecomeDefaultMailClient", { success: Schema.Boolean }),
+  Rpc.make("SetActiveSpace", { payload: { space: Schema.String } }),
+  Rpc.make("DesktopEvents", { success: DesktopEvent, stream: true }),
 
   // Sync
   Rpc.make("Sync", { success: Schema.Array(SyncResult) }),

@@ -305,6 +305,32 @@ export const MIGRATIONS: readonly string[] = [
     error TEXT, scope_missing INTEGER NOT NULL DEFAULT 0
   );
   `,
+  `
+  CREATE TABLE seen_incoming (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    identity TEXT NOT NULL,
+    PRIMARY KEY(account_id, identity)
+  ) WITHOUT ROWID;
+  CREATE TABLE incoming_state (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    inbox_cursor TEXT,
+    initial_sync_complete INTEGER NOT NULL DEFAULT 0 CHECK(initial_sync_complete IN (0,1)),
+    poll_error TEXT
+  );
+  -- Preserve live accounts' bookmarks and deduplication, then remove legacy prefs.
+  INSERT INTO incoming_state(account_id,inbox_cursor,initial_sync_complete)
+    SELECT a.id, c.value_json,
+      CASE WHEN i.key IS NOT NULL THEN i.value_json='true' ELSE a.last_synced_at IS NOT NULL END
+    FROM accounts a LEFT JOIN prefs c ON c.key='system:inbox:'||a.id
+      LEFT JOIN prefs i ON i.key='system:initial:'||a.id;
+  INSERT OR IGNORE INTO seen_incoming(account_id,identity)
+    SELECT a.id, json_extract(substr(p.key,13),'$[1]')
+    FROM prefs p JOIN accounts a ON a.id=CASE WHEN json_valid(substr(p.key,13))
+      THEN json_extract(substr(p.key,13),'$[0]') END
+    WHERE p.key LIKE 'system:seen:%' AND json_valid(substr(p.key,13))
+      AND typeof(json_extract(substr(p.key,13),'$[1]'))='text';
+  DELETE FROM prefs WHERE key LIKE 'system:seen:%' OR key LIKE 'system:inbox:%' OR key LIKE 'system:initial:%';
+  `,
 ];
 
 /**

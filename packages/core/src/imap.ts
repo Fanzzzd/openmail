@@ -659,14 +659,18 @@ const runPull = Effect.fnUntraced(function* (
   s: Session,
   prev: ImapCursor,
   emit: (change: Change) => Effect.Effect<unknown>,
+  scope?: "inbox",
 ) {
-  const folders = mapFolders(yield* call(s, (c) => c.list()));
-  yield* emit({
-    _tag: "Labels",
-    labels: folders.flatMap((f) =>
-      f.userName ? [{ id: f.label, name: f.userName, color: null }] : [],
-    ),
-  });
+  const folders = scope
+    ? [{ path: "INBOX", label: "INBOX" }]
+    : mapFolders(yield* call(s, (c) => c.list()));
+  if (!scope)
+    yield* emit({
+      _tag: "Labels",
+      labels: folders.flatMap((f) =>
+        f.userName ? [{ id: f.label, name: f.userName, color: null }] : [],
+      ),
+    });
   const condstore = s.client.enabled.has("CONDSTORE");
   const now = yield* Clock.currentTimeMillis;
 
@@ -774,7 +778,7 @@ const runPull = Effect.fnUntraced(function* (
   // Folders gone from the server since the last sync. A listed folder that
   // failed to open keeps its mail and its state.
   for (const [path, state] of Object.entries(prev.folders)) {
-    if (path in next.folders) continue;
+    if (scope || path in next.folders) continue;
     if (folders.some((f) => f.path === path)) {
       next.folders[path] = state;
       continue;
@@ -1021,12 +1025,12 @@ export const makeImapWith = (
         return { s, settings, pass };
       });
 
-    const pull: ProviderAdapter["pull"] = (account, cursor) =>
+    const pull: ProviderAdapter["pull"] = (account, cursor, scope) =>
       Stream.callback<Change, ProviderFailure>(
         (queue) =>
           Effect.gen(function* () {
             const { s } = yield* session(account);
-            yield* runPull(s, readCursor(cursor), (change) => Queue.offer(queue, change));
+            yield* runPull(s, readCursor(cursor), (change) => Queue.offer(queue, change), scope);
             yield* Queue.end(queue);
           }).pipe(
             // A failure of this effect does not end the stream by itself; hand it to the queue.

@@ -1233,3 +1233,24 @@ it.effect(
       }
     }),
 );
+
+it.effect("inbox polling reads only inbox history and does not replace cached labels", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /history": (url) => {
+        assert.strictEqual(url.searchParams.get("labelId"), "INBOX");
+        assert.strictEqual(url.searchParams.get("startHistoryId"), "100");
+        return {
+          json: { historyId: "101", history: [{ messagesAdded: [{ message: { id: "new" } }] }] },
+        };
+      },
+      "GET /messages/new": { json: message("new", ["INBOX", "UNREAD"]) },
+    });
+    const changes = yield* run(http, (adapter) =>
+      Stream.runCollect(adapter.pull(account, Option.some("100"), "inbox")),
+    );
+    assert.deepStrictEqual(tags(changes), ["Upsert", "Progress", "Cursor"]);
+    assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/labels")));
+    assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "101" });
+  }),
+);

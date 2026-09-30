@@ -500,3 +500,41 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     ),
   ),
 );
+
+it.effect("inbox polling opens only INBOX and skips folder discovery", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({
+      host: "example.com",
+      port: 993,
+      auth: { user: "me", pass: "fake" },
+      logger: false,
+    });
+    const list = vi.spyOn(client, "list");
+    const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+      path: "INBOX",
+      delimiter: "/",
+      flags: new Set(),
+      uidValidity: 7n,
+      uidNext: 1,
+      exists: 0,
+    });
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const changes = yield* Stream.runCollect(adapter.pull(account, Option.none(), "inbox"));
+    assert.strictEqual(list.mock.calls.length, 0);
+    assert.isTrue(open.mock.calls.every(([path]) => path === "INBOX"));
+    assert.isFalse(changes.some((change) => change._tag === "Labels"));
+    assert.strictEqual(changes.at(-1)?._tag, "Cursor");
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("fake")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
