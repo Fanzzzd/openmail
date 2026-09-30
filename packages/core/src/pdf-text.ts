@@ -5,7 +5,13 @@ import { MediaError } from "./media.js";
 const Result = Schema.Union([
   Schema.Struct({
     ok: Schema.Literal(true),
-    pages: Schema.Array(Schema.Struct({ page: Schema.Int, text: Schema.String })),
+    pages: Schema.Array(
+      Schema.Struct({
+        page: Schema.Int,
+        text: Schema.String,
+        png: Schema.optionalKey(Schema.String),
+      }),
+    ),
   }),
   Schema.Struct({ ok: Schema.Literal(false) }),
 ]);
@@ -13,6 +19,7 @@ export const PDF_LIMITS = { timeoutMs: 30_000, maxPages: 100, maxBytes: 32 * 102
 interface PdfOptions {
   readonly timeoutMs?: number;
   readonly maxPages?: number;
+  readonly renderPage?: number;
   /** Allows a different local worker entry, including deterministic watchdog fixtures. */
   readonly workerUrl?: URL;
 }
@@ -20,7 +27,7 @@ interface PdfOptions {
 export const pdfText = (data: Uint8Array, options: PdfOptions = {}) =>
   Effect.tryPromise({
     try: (signal) =>
-      new Promise<readonly { page: number; text: string }[]>((resolve, reject) => {
+      new Promise<readonly { page: number; text: string; png?: string }[]>((resolve, reject) => {
         if (data.length > PDF_LIMITS.maxBytes) {
           reject(new Error("PDF size limit exceeded"));
           return;
@@ -29,14 +36,20 @@ export const pdfText = (data: Uint8Array, options: PdfOptions = {}) =>
         const worker = new Worker(
           options.workerUrl ?? new URL("./pdf-worker.mjs", import.meta.url),
           {
-            workerData: { data: copy.buffer, maxPages: options.maxPages ?? PDF_LIMITS.maxPages },
+            workerData: {
+              data: copy.buffer,
+              maxPages: options.maxPages ?? PDF_LIMITS.maxPages,
+              renderPage: options.renderPage ?? 0,
+            },
             transferList: [copy.buffer],
             execArgv: [],
             resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16 },
           },
         );
         let settled = false;
-        const finish = (pages: readonly { page: number; text: string }[] | undefined) => {
+        const finish = (
+          pages: readonly { page: number; text: string; png?: string }[] | undefined,
+        ) => {
           if (settled) return;
           settled = true;
           clearTimeout(timer);

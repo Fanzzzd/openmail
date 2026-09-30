@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, powerMonitor, shell } from "electron";
 import { desktopVision } from "./vision";
+import { desktopInferenceProcess } from "./inference";
 
 import { RpcServerLive } from "./rpc-server";
 import { DesktopLive, receiveAppUrl, ready } from "./system";
@@ -53,6 +54,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
               return NodeMailbox({
                 openUrl: (url) => shell.openExternal(url),
                 autoSync: "2 minutes",
+                inferenceProcess: desktopInferenceProcess,
                 inboxPoll: "45 seconds",
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 media: {

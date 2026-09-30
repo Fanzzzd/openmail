@@ -5,7 +5,7 @@
  * refresh (a change invalidated "threads") reloads every page on screen.
  */
 import { DEFAULT_PREFS, mergeSearchResults, parseSearchQuery } from "@openmail/core/schema";
-import { Effect, Option } from "effect";
+import { Effect, Option, Stream, Schedule } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
@@ -16,6 +16,7 @@ import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchAtom, searchScopeAtom, viewAtom } from "./ui";
 
+const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
 const PAGE = 100;
 /** Search results come as one page. */
 const SEARCH_LIMIT = 200;
@@ -60,7 +61,10 @@ const pagedList = Atom.family((query: ListQuery) => {
       return loadPages(query, want, previous?.pages === want - 1 ? previous : undefined);
     })
     .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
-  return { wanted, loaded };
+  return {
+    wanted,
+    loaded: query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded,
+  };
 });
 
 /** The query behind the list on screen; null on the overview, which has no list. */

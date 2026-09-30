@@ -222,6 +222,7 @@ it.effect(
         )(yield* sql`SELECT id FROM derived_chunks WHERE message_id=${id}`);
         const chunkId = ids[0]?.id;
         assert.ok(chunkId);
+        yield* sql`INSERT INTO vector_items(id,message_id,kind,version,provenance_json) VALUES(${chunkId},${id},'text','fixture',${JSON.stringify((yield* store.media.chunks(id))[0])})`;
         yield* sql`INSERT INTO derived_text_vectors(rowid,embedding) VALUES(${BigInt(chunkId)},${new Uint8Array(new Float32Array(384).buffer)})`;
         yield* sql`INSERT INTO derived_image_vectors(rowid,embedding) VALUES(${BigInt(chunkId)},${new Uint8Array(new Float32Array(512).buffer)})`;
         yield* store.removeAccount(account.id);

@@ -1,12 +1,15 @@
+import { desktopInferenceProcess } from "../src/main/inference.ts";
+import { modelFiles } from "../../../packages/core/dist/model-downloads.js";
 /** Isolated Electron main check. Never starts the mail app or opens its database. */
 import { app } from "electron";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import { NodeSystem } from "@openmail/core";
+import { fileURLToPath } from "node:url";
+import { NodeSystem, makeNodeModels } from "@openmail/core";
 import { pdfText } from "../../../packages/core/dist/pdf-text.js";
 import { databaseLayer } from "../../../packages/core/dist/db.js";
 
@@ -56,8 +59,32 @@ app.once("ready", async () => {
     pdf += `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
     const pages = await Effect.runPromise(pdfText(new TextEncoder().encode(pdf)));
     assert.equal(pages.length, 1);
+    const modelsRoot = fileURLToPath(new URL("../../../spikes/media/models/", import.meta.url));
+    if (
+      process.env.OPENMAIL_TEST_MODELS === "1" &&
+      existsSync(join(modelsRoot, "Xenova/mobileclip_s0/onnx/vision_model.onnx"))
+    ) {
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const models = yield* makeNodeModels(profile, modelsRoot, {
+            launch: desktopInferenceProcess,
+            prepare: (path, _download, progress, options) =>
+              modelFiles(path, false, progress, options),
+          });
+          yield* models.ensure(true);
+          assert.equal(
+            (yield* models.embedder.text("Synthetic airport boarding pass", "passage")).length,
+            384,
+          );
+          assert.equal((yield* models.images.query("airline ticket")).length, 512);
+          process.stdout.write(
+            "Electron: real offline ONNX utilityProcess E5 384 and MobileCLIP 512 passed\n",
+          );
+        }).pipe(Effect.scoped),
+      );
+    }
     process.stdout.write(
-      `Electron ${process.versions.electron}: sqlite-vec 0.1.9, migration 8, 384/512 tables, KNN and bounded PDF worker passed\n`,
+      `Electron ${process.versions.electron}: sqlite-vec 0.1.9, migrations 8/9, 384/512 tables, KNN and bounded PDF worker passed\n`,
     );
   } catch (error) {
     process.stderr.write(`${String(error)}\n`);

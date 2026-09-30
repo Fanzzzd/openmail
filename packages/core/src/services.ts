@@ -1,3 +1,5 @@
+import type { DerivedChunk } from "./media.js";
+import type { makeSemanticStore } from "./store-semantic.js";
 import type { makeMediaStore } from "./store-media.js";
 /**
  * Service interfaces inside core. Only `Mailbox` (mailbox.ts) is meant for
@@ -161,6 +163,7 @@ export class Store extends Context.Service<
     /** Runs `effect` in one SQLite transaction. */
     transaction<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
 
+    readonly semantics: ReturnType<typeof makeSemanticStore>;
     readonly media: ReturnType<typeof makeMediaStore>;
 
     // Accounts
@@ -190,6 +193,7 @@ export class Store extends Context.Service<
     deleteAccountMessages(accountId: string): Effect.Effect<void>;
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
     listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
+    vectorThreads(q: ThreadQuery, hits: readonly DerivedChunk[]): Effect.Effect<ThreadSummary[]>;
     getMessage(id: string): Effect.Effect<Message, NotFound>;
     /** Every message of the thread `id` belongs to, oldest first. */
     getThread(id: string): Effect.Effect<Message[], NotFound>;

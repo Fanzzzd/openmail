@@ -294,3 +294,37 @@ export function reciprocalRankFusion(
     .toSorted((a, b) => b.score - a.score || b.thread.date - a.thread.date)
     .map((entry) => entry.thread);
 }
+
+/** FTS remains an independent, stronger signal than either semantic route. */
+export function semanticRankFusion(
+  fts: readonly ThreadSummary[],
+  text: readonly ThreadSummary[],
+  images: readonly ThreadSummary[],
+  flat = false,
+): ThreadSummary[] {
+  const found = new Map<string, { thread: ThreadSummary; score: number }>();
+  for (const [index, list] of [fts, text, images].entries())
+    for (const [rank, thread] of list.entries()) {
+      const key = flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+      const previous = found.get(key);
+      const matches = [
+        ...(previous?.thread.derivedMatches ?? []),
+        ...(thread.derivedMatches ?? []),
+      ];
+      const unique = [...new Map(matches.map((hit) => [JSON.stringify(hit), hit])).values()].slice(
+        0,
+        20,
+      );
+      found.set(key, {
+        thread: {
+          ...previous?.thread,
+          ...thread,
+          ...(unique.length ? { derivedMatches: unique } : {}),
+        },
+        score: (previous?.score ?? 0) + (index === 0 ? 2 : 1) / (60 + rank + 1),
+      });
+    }
+  return [...found.values()]
+    .toSorted((a, b) => b.score - a.score || b.thread.date - a.thread.date)
+    .map((item) => item.thread);
+}

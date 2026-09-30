@@ -101,6 +101,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("RemoveAccount", { payload: { accountId: Schema.String }, success: Outcome, error }),
 
   Rpc.make("IndexingProgress", { success: IndexingProgress }),
+  Rpc.make("SetModelsEnabled", { payload: { enabled: Schema.Boolean } }),
   Rpc.make("SetIndexingPaused", { payload: { paused: Schema.Boolean } }),
   Rpc.make("DerivedChunks", {
     payload: { id: Schema.String },

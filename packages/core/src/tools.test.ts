@@ -65,6 +65,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     saveDraft: () => notUsed("saveDraft"),
     discardDraft: () => notUsed("discardDraft"),
     indexingProgress: notUsed("indexingProgress"),
+    setModelsEnabled: () => notUsed("setModelsEnabled"),
     setIndexingPaused: () => notUsed("setIndexingPaused"),
     derivedChunks: () => notUsed("derivedChunks"),
     mediaImage: () => notUsed("mediaImage"),

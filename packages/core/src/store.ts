@@ -1,3 +1,4 @@
+import { makeSemanticStore } from "./store-semantic.js";
 import { DatabaseCapabilities } from "./db.js";
 import { makeMediaStore } from "./store-media.js";
 import { DerivedChunk } from "./media.js";
@@ -302,7 +303,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const sql = yield* SqlClient.SqlClient;
     const compose = makeComposeStore(sql);
     const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
-    const media = makeMediaStore(sql, Option.isSome(capabilities) && capabilities.value.vectors);
+    const vectors = Option.isSome(capabilities) && capabilities.value.vectors;
+    const media = makeMediaStore(sql, vectors);
+    const semantics = makeSemanticStore(sql, vectors, (q) => {
+      const { attachmentText: _scope, ...criteria } = q.criteria ?? {};
+      return listFilter({ ...q, search: "", criteria });
+    });
     const contacts = makeContactStore(sql);
     const organization = makeOrganizationStore(sql);
 
@@ -348,7 +354,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     });
 
     const removeAccount = Effect.fn("Store.removeAccount")((id: string) =>
-      run(sql`DELETE FROM accounts WHERE id = ${id}`).pipe(Effect.tap(() => media.cleanupVectors)),
+      media
+        .deleteVectorsForMessages(sql`m.account_id=${id}`)
+        .pipe(Effect.andThen(run(sql`DELETE FROM accounts WHERE id=${id}`))),
     );
 
     const setAccountProfile = Effect.fn("Store.setAccountProfile")(
@@ -468,6 +476,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           };
         }
       }
+      yield* media.deleteVectorsForMessages(sql`m.id=${`${account}/${m.providerId}`} AND
+        (m.body_text!=${m.bodyText} OR m.body_html!=${m.bodyHtml} OR m.attachments_json!=${JSON.stringify(m.attachments)})`);
       yield* (
         // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
@@ -488,27 +498,31 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
             is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint`)
       );
-      yield* media.cleanupVectors;
     });
 
     const deleteMessage = Effect.fn("Store.deleteMessage")((account: string, providerId: string) =>
-      run(sql`DELETE FROM messages WHERE id = ${`${account}/${providerId}`}`).pipe(
-        Effect.tap(() => media.cleanupVectors),
-      ),
+      media
+        .deleteVectorsForMessages(sql`m.id=${`${account}/${providerId}`}`)
+        .pipe(
+          Effect.andThen(run(sql`DELETE FROM messages WHERE id=${`${account}/${providerId}`}`)),
+        ),
     );
-
     const deleteMessagesWithLabel = Effect.fn("Store.deleteMessagesWithLabel")(
       (account: string, label: string) =>
-        run(
-          sql`DELETE FROM messages AS m WHERE m.account_id = ${account} AND ${hasLabel(label)}`,
-        ).pipe(Effect.tap(() => media.cleanupVectors)),
+        media
+          .deleteVectorsForMessages(sql`m.account_id=${account} AND ${hasLabel(label)}`)
+          .pipe(
+            Effect.andThen(
+              run(
+                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${hasLabel(label)}`,
+              ),
+            ),
+          ),
     );
-
-    /** Drops an account's local mail, for a provider whose ids changed meaning. */
     const deleteAccountMessages = Effect.fn("Store.deleteAccountMessages")((account: string) =>
-      run(sql`DELETE FROM messages WHERE account_id = ${account}`).pipe(
-        Effect.tap(() => media.cleanupVectors),
-      ),
+      media
+        .deleteVectorsForMessages(sql`m.account_id=${account}`)
+        .pipe(Effect.andThen(run(sql`DELETE FROM messages WHERE account_id=${account}`))),
     );
 
     /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
@@ -686,6 +700,45 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       if (q.mailbox !== "drafts" || !plain) return threads;
       const local = yield* compose.localDrafts(q, limit);
       return [...threads, ...local].toSorted((a, b) => b.date - a.date).slice(0, limit);
+    });
+
+    const vectorThreads = Effect.fn("Store.vectorThreads")(function* (
+      raw: ThreadQuery,
+      hits: readonly DerivedChunk[],
+    ) {
+      const parsed = parseSearchQuery(raw);
+      const { attachmentText: _scope, ...criteria } = parsed.criteria ?? {};
+      const q = { ...parsed, criteria };
+      const sourceHits = hits.filter(
+        (hit) => !parsed.criteria?.attachmentText || hit.source.kind !== "body",
+      );
+      const ids = [...new Set(sourceHits.map((hit) => hit.messageId))].slice(0, 200);
+      if (!ids.length) return [];
+      const candidates = yield* (q.flat ? messageList : threadList)(
+        { ...q, search: "", messageIds: ids },
+        ids.length,
+      );
+      const keys = yield* all(
+        Schema.Struct({ id: Schema.String, account_id: Schema.String, thread_id: Schema.String }),
+      )(
+        sql`SELECT id,account_id,thread_id FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(ids)}))`,
+      );
+      const matched = new Map<string, DerivedChunk[]>();
+      const ranks = new Map<string, number>();
+      for (const [rank, hit] of sourceHits.entries()) {
+        const message = keys.find((key) => key.id === hit.messageId);
+        if (!message) continue;
+        const key = q.flat ? hit.messageId : `${message.account_id}/${message.thread_id}`;
+        const group = matched.get(key) ?? [];
+        if (group.length < 20) group.push(hit);
+        matched.set(key, group);
+        if (!ranks.has(key)) ranks.set(key, rank);
+      }
+      const keyOf = (thread: ThreadSummary) =>
+        q.flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+      return candidates
+        .map((thread) => ({ ...thread, derivedMatches: matched.get(keyOf(thread)) ?? [] }))
+        .toSorted((a, b) => (ranks.get(keyOf(a)) ?? Infinity) - (ranks.get(keyOf(b)) ?? Infinity));
     });
 
     const getMessage = Effect.fn("Store.getMessage")(function* (
@@ -1068,12 +1121,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       observeIncoming,
       saveSyncCursor,
       media,
+      semantics,
       upsertMessage,
       setFlags,
       deleteMessage,
       deleteMessagesWithLabel,
       deleteAccountMessages,
       listThreads,
+      vectorThreads,
       getMessage,
       getThread,
       messageRef,

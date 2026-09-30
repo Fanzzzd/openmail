@@ -1,5 +1,6 @@
+import { makeDownloadBudget } from "./download-budget.js";
 import type { AuthError, ProviderError, PermanentError, NotFound } from "./errors.js";
-import { Clock, Context, Effect, Option, Semaphore } from "effect";
+import { Context, Effect, Option, Semaphore } from "effect";
 import type { Message } from "./domain.js";
 import {
   DerivedChunk,
@@ -40,6 +41,7 @@ export interface IndexerInput {
     readonly { cid: string; name: string; mimeType: string; data: Uint8Array }[],
     MediaError | AuthError | ProviderError | PermanentError | NotFound
   >;
+  readonly reserveBytes?: (bytes: number) => Effect.Effect<void>;
   readonly changed: Effect.Effect<unknown>;
 }
 export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInput) {
@@ -49,24 +51,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
   const allowed = Effect.gen(function* () {
     return vision.available && !(yield* store.paused) && !(yield* input.busy);
   });
-  // A per-process byte budget limits historical backfill to 32 MiB/minute.
-  let windowStart = yield* Clock.currentTimeMillis;
-  let downloaded = 0;
-  const reserve = Effect.fnUntraced(function* (bytes: number) {
-    const charge = Math.min(Math.max(bytes, 1), 32 * 1024 * 1024);
-    for (;;) {
-      const now = yield* Clock.currentTimeMillis;
-      if (now - windowStart >= 60_000) {
-        windowStart = now;
-        downloaded = 0;
-      }
-      if (downloaded + charge <= 32 * 1024 * 1024) {
-        downloaded += charge;
-        return;
-      }
-      yield* Effect.sleep("1 second");
-    }
-  });
+  const reserve = input.reserveBytes ?? (yield* makeDownloadBudget);
   const beforeCpu = Effect.gen(function* () {
     // Keep downloaded bytes in the current job while user activity or sync
     // prevents the next CPU stage; neither event aborts the whole job.

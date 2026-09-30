@@ -25,14 +25,31 @@ try {
     const pages = [];
     let total = 0;
     for (let page = 1; page <= document.numPages; page++) {
-      const content = await (await document.getPage(page)).getTextContent();
+      const pdfPage = await document.getPage(page);
+      const content = await pdfPage.getTextContent();
       const text = content.items
         .map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : " ") : ""))
         .join("")
         .trim();
       total += text.length;
       if (total > 1_000_000) throw new Error("PDF text limit exceeded");
-      pages.push({ page, text });
+      let png;
+      if (workerData.renderPage === page) {
+        const base = pdfPage.getViewport({ scale: 1 });
+        const scale = Math.min(2, Math.sqrt(4_000_000 / (base.width * base.height)));
+        const viewport = pdfPage.getViewport({ scale });
+        const surface = document.canvasFactory.create(
+          Math.ceil(viewport.width),
+          Math.ceil(viewport.height),
+        );
+        try {
+          await pdfPage.render({ canvas: surface.canvas, viewport }).promise;
+          png = surface.canvas.toBuffer("image/png").toString("base64");
+        } finally {
+          document.canvasFactory.destroy(surface);
+        }
+      }
+      pages.push({ page, text, ...(png ? { png } : {}) });
     }
     parentPort.postMessage({ ok: true, pages }, []);
   } finally {

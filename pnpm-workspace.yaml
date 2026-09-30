@@ -7,6 +7,9 @@ allowBuilds:
   # Squirrel.Windows helper from electron-builder; its postinstall downloads unused binaries.
   electron-winstaller: false
   esbuild: true
+  # CPU N-API binaries ship in the package; skip optional CUDA downloads.
+  onnxruntime-node: false
+  protobufjs: false
 catalog:
   typescript: ^5.9.3
   zod: ^4.6.5

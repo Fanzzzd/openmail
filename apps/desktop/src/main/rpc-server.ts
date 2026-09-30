@@ -101,6 +101,7 @@ const Handlers = MailRpcs.toLayer(
       Thread: ({ id }) => m.thread(id),
       RawMessage: ({ id }) => m.rawMessage(id),
       IndexingProgress: () => m.indexingProgress,
+      SetModelsEnabled: ({ enabled }) => m.setModelsEnabled(enabled),
       SetIndexingPaused: ({ paused }) => m.setIndexingPaused(paused),
       DerivedChunks: ({ id }) => m.derivedChunks(id),
       MediaImage: ({ chunk }) => m.mediaImage(chunk),

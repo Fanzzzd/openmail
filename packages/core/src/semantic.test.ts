@@ -1,0 +1,622 @@
+import { TestClock } from "effect/testing";
+import { Mailbox } from "./mailbox.js";
+import { TestMailbox, fakeServer } from "./testing.js";
+import { assert, it } from "@effect/vitest";
+import { Deferred, Effect, Fiber, Layer, Option } from "effect";
+import { SqlClient } from "effect/sql";
+import { Store } from "./services.js";
+import { StoreLive } from "./store.js";
+import { MemoryPlatform } from "./platform-memory.js";
+import { makeSemanticIndexer } from "./semantic-indexer.js";
+import {
+  type ModelRuntime,
+  type DerivedChunk,
+  MediaError,
+  InferenceRuntimeError,
+  unavailableVision,
+} from "./media.js";
+import { textChunks } from "./text-chunks.js";
+import type { IncomingMessage } from "./domain.js";
+import { semanticRankFusion } from "./search.js";
+
+const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
+  body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
+const vector = (dim: number, index = 0) =>
+  Array.from({ length: dim }, (_, i) => (i === index ? 1 : 0));
+const message = (overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
+  providerId: "m",
+  threadId: "t",
+  subject: "Mail",
+  from: { name: "Alice", address: "alice@example.com" },
+  to: [],
+  cc: [],
+  date: 1000,
+  snippet: "",
+  bodyText: "Airport passport boarding pass.",
+  bodyHtml: "",
+  attachments: [],
+  labels: ["INBOX"],
+  isUnread: true,
+  isStarred: false,
+  ...overrides,
+});
+const fakeModels = (calls: string[], version = "test-v1"): ModelRuntime => ({
+  version,
+  status: Effect.succeed({ kind: "ready", total: 1, version }),
+  ensure: (download) =>
+    Effect.sync(() => {
+      calls.push(`ensure:${download}`);
+    }),
+  stop: () => Effect.void,
+  embedder: {
+    version,
+    text: (text, mode) =>
+      Effect.sync(() => {
+        calls.push(`${mode}:${text}`);
+        return vector(384);
+      }),
+  },
+  images: {
+    version,
+    query: () => Effect.succeed(vector(512)),
+    image: () =>
+      Effect.succeed([
+        {
+          vector: vector(512),
+          region: {
+            imageWidth: 800,
+            imageHeight: 5200,
+            box: { x: 0, y: 0, width: 800, height: 5200 },
+            tile: { x: 0, y: 0, width: 800, height: 5200 },
+          },
+        },
+        {
+          vector: vector(512),
+          region: {
+            imageWidth: 800,
+            imageHeight: 5200,
+            box: { x: 0, y: 896, width: 800, height: 1024 },
+            tile: { x: 0, y: 896, width: 800, height: 1024 },
+          },
+        },
+      ]),
+  },
+});
+const indexer = (store: Store["Service"], models: ModelRuntime, battery = false, busy = false) =>
+  makeSemanticIndexer(
+    {
+      store: store.media,
+      vision: unavailableVision,
+      onBattery: () => battery,
+      busy: Effect.succeed(busy),
+      changed: Effect.void,
+      message: (id) => store.getMessage(id).pipe(Effect.orDie),
+      attachment: () => Effect.succeed(new Uint8Array([1])),
+      inline: () => Effect.succeed([]),
+    },
+    store,
+    models,
+  );
+const setup = Effect.gen(function* () {
+  const store = yield* Store;
+  const account = yield* store.upsertAccount("gmail", "test@example.com");
+  yield* store.upsertMessage(account.id, message());
+  return { store, account, id: `${account.id}/m` };
+});
+
+it("body chunks cover the original and overlap the preceding sentence", () => {
+  const text =
+    "First sentence about a flight. Second sentence about a passport. Third sentence about boarding. ".repeat(
+      20,
+    );
+  const chunks = textChunks(text);
+  assert.ok(chunks.length > 1);
+  assert.strictEqual(chunks[0]?.start, 0);
+  assert.strictEqual(chunks.at(-1)?.end, text.length);
+  for (const [index, chunk] of chunks.entries()) {
+    assert.strictEqual(chunk.text, text.slice(chunk.start, chunk.end));
+    assert.ok(chunk.text.length <= 300);
+    const previous = chunks[index - 1];
+    if (previous) {
+      assert.ok(chunk.start < previous.end);
+      assert.ok(chunk.end > previous.end);
+    }
+  }
+});
+
+it.effect("opt-in, power, idle and pause gate every download and embedding", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      const calls: string[] = [];
+      const models = fakeModels(calls);
+      const run = yield* indexer(store, models);
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.deepStrictEqual(calls, []);
+      yield* store.semantics.setEnabled(true);
+      assert.strictEqual(yield* (yield* indexer(store, models, true)).batch(), 0);
+      assert.strictEqual(yield* (yield* indexer(store, models, false, true)).batch(), 0);
+      yield* store.media.setPaused(true);
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.deepStrictEqual(calls, []);
+      yield* store.media.setPaused(false);
+      assert.strictEqual(yield* run.batch(), 1);
+      assert.ok(calls.includes("passage:Airport passport boarding pass."));
+      assert.strictEqual(yield* run.batch(), 0);
+    }),
+  ),
+);
+
+it.effect("body, OCR/PDF text and whole/tile image vectors retain provenance and versions", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account, id } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ attachments: [{ filename: "long.png", mimeType: "image/png", size: 20 }] }),
+      );
+      const job = yield* store.media.claim("ocr", Date.now(), true);
+      assert.ok(Option.isSome(job));
+      const derived: DerivedChunk = {
+        messageId: id,
+        text: "Invoice total 35 dollars.",
+        source: { kind: "attachment", index: 0, name: "long.png", mimeType: "image/png" },
+        page: null,
+        region: {
+          imageWidth: 800,
+          imageHeight: 5200,
+          box: { x: 0, y: 900, width: 100, height: 20 },
+          tile: { x: 0, y: 896, width: 800, height: 1024 },
+        },
+        pipelineVersion: "ocr",
+        visionRevision: 3,
+      };
+      yield* store.media.complete(
+        job.value,
+        [
+          derived,
+          {
+            ...derived,
+            page: 2,
+            region: null,
+            source: {
+              kind: "attachment",
+              index: 1,
+              name: "paper.pdf",
+              mimeType: "application/pdf",
+            },
+          },
+        ],
+        null,
+      );
+      yield* store.semantics.setEnabled(true);
+      const calls: string[] = [];
+      const models = fakeModels(calls);
+      const run = yield* indexer(store, models);
+      assert.strictEqual(yield* run.batch(), 1);
+      const text = yield* store.semantics.neighbors("text", vector(384), models.version);
+      assert.ok(text.some((hit) => hit.source.kind === "body" && hit.source.start === 0));
+      assert.ok(text.some((hit) => hit.visionRevision === 3 && hit.region?.box.y === 900));
+      assert.ok(text.some((hit) => hit.page === 2));
+      const images = yield* store.semantics.neighbors("image", vector(512), models.version);
+      assert.strictEqual(images.length, 2);
+      assert.ok(images.some((hit) => hit.region?.box.height === 5200));
+      assert.ok(images.some((hit) => hit.region?.tile.y === 896));
+      const upgraded = fakeModels(calls, "test-v2");
+      assert.strictEqual(yield* (yield* indexer(store, upgraded)).batch(), 1);
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("text", vector(384), "test-v1")).length,
+        0,
+      );
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("image", vector(512), "test-v2")).length,
+        2,
+      );
+    }),
+  ),
+);
+
+it.effect(
+  "semantic candidates respect account, sender, folder and attachment scope before KNN",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        yield* store.semantics.setEnabled(true);
+        const models = fakeModels([]);
+        yield* (yield* indexer(store, models)).batch();
+        const hits = yield* store.semantics.neighbors("text", vector(384), models.version);
+        assert.strictEqual((yield* store.listThreads({ search: "travel" })).length, 0);
+        const matched = yield* store.vectorThreads({ search: "travel" }, hits);
+        assert.strictEqual(matched[0]?.derivedMatches?.[0]?.messageId, id);
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version, {
+            accountIds: [],
+          })).length,
+          0,
+        );
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version, {
+            criteria: { from: "nobody" },
+          })).length,
+          0,
+        );
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version, {
+            criteria: { attachmentText: true },
+          })).length,
+          0,
+        );
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version, {
+            searchScope: "folder",
+            mailbox: "sent",
+          })).length,
+          0,
+        );
+        yield* store.upsertMessage(account.id, message({ bodyText: "changed" }));
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+          0,
+        );
+        yield* (yield* indexer(store, models)).batch();
+        yield* store.removeAccount(account.id);
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+          0,
+        );
+      }),
+    ),
+);
+
+it.effect("model failures leave resumable jobs and never upload content", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      yield* store.semantics.setEnabled(true);
+      const models = fakeModels([]);
+      const failing = {
+        ...models,
+        embedder: {
+          ...models.embedder,
+          text: () => Effect.fail(new MediaError({ message: "local failure" })),
+        },
+      };
+      yield* (yield* indexer(store, failing)).batch();
+      assert.strictEqual((yield* store.semantics.counts).queued, 1);
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE semantic_jobs SET retry_at=0`;
+      assert.strictEqual(yield* (yield* indexer(store, models)).batch(), 1);
+    }),
+  ),
+);
+
+it.effect("three-way RRF keeps an exact hit above a lone vector candidate", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "other", threadId: "other", bodyText: "receipt" }),
+      );
+      const fts = yield* store.listThreads({ search: "receipt" });
+      const others = yield* store.listThreads({ messageIds: [`${account.id}/m`] });
+      const merged = semanticRankFusion(fts, others, []);
+      assert.strictEqual(merged[0]?.id, `${account.id}/other`);
+    }),
+  ),
+);
+
+it.effect("Mailbox and MCP share semantic hits after persisted opt-in", () =>
+  Effect.gen(function* () {
+    const mail = yield* Mailbox;
+    yield* mail.connect({ provider: "gmail" });
+    yield* mail.sync();
+    assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 0);
+    yield* mail.setModelsEnabled(true);
+    yield* TestClock.adjust("15 seconds");
+    const rows = yield* mail.threads({ search: "travel" });
+    assert.strictEqual(rows.length, 1);
+    assert.strictEqual(rows[0]?.derivedMatches?.[0]?.source.kind, "body");
+    assert.ok(!JSON.stringify(rows).includes('"vector"'));
+    yield* mail.setModelsEnabled(false);
+    assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 0);
+  }).pipe(
+    Effect.provide(
+      TestMailbox(
+        { gmail: fakeServer("test@example.com", [message()]) },
+        {
+          media: { vision: unavailableVision, onBattery: () => false, idle: () => true },
+          models: fakeModels([]),
+        },
+      ),
+    ),
+  ),
+);
+
+it.effect("unplugging interrupts model preparation before any job is claimed", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      yield* store.semantics.setEnabled(true);
+      const started = yield* Deferred.make<void>();
+      let cancelled = false;
+      let battery = false;
+      const models = {
+        ...fakeModels([]),
+        ensure: () =>
+          Deferred.succeed(started, undefined).pipe(
+            Effect.andThen(Effect.never),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                cancelled = true;
+              }),
+            ),
+          ),
+      };
+      const run = yield* makeSemanticIndexer(
+        {
+          store: store.media,
+          vision: unavailableVision,
+          onBattery: () => battery,
+          busy: Effect.succeed(false),
+          changed: Effect.void,
+          message: (id) => store.getMessage(id).pipe(Effect.orDie),
+          attachment: () => Effect.succeed(new Uint8Array()),
+          inline: () => Effect.succeed([]),
+        },
+        store,
+        models,
+      );
+      const task = yield* Effect.forkChild(run.batch().pipe(Effect.result));
+      yield* Deferred.await(started);
+      battery = true;
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual((yield* Fiber.join(task))._tag, "Success");
+      assert.strictEqual(cancelled, true);
+      assert.strictEqual((yield* store.semantics.counts).queued, 1);
+    }),
+  ),
+);
+
+it.effect(
+  "typing, syncing, battery and indexing pause do not disable verified-model search",
+  () => {
+    let idle = true;
+    let battery = false;
+    return Effect.gen(function* () {
+      const mail = yield* Mailbox;
+      yield* mail.connect({ provider: "gmail" });
+      yield* mail.sync();
+      yield* mail.setModelsEnabled(true);
+      yield* TestClock.adjust("15 seconds");
+      idle = false;
+      battery = true;
+      assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 1);
+      yield* mail.setIndexingPaused(true);
+      assert.strictEqual((yield* mail.threads({ search: "travel" })).length, 1);
+    }).pipe(
+      Effect.provide(
+        TestMailbox(
+          { gmail: fakeServer("test@example.com", [message()]) },
+          {
+            models: fakeModels([]),
+            media: { vision: unavailableVision, onBattery: () => battery, idle: () => idle },
+          },
+        ),
+      ),
+    );
+  },
+);
+
+it.effect("a newly busy desktop does not discard completed vector work", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      yield* store.semantics.setEnabled(true);
+      let busy = false;
+      const base = fakeModels([]);
+      const models = {
+        ...base,
+        embedder: {
+          ...base.embedder,
+          text: () =>
+            Effect.sync(() => {
+              busy = true;
+              return vector(384);
+            }),
+        },
+      };
+      const run = yield* makeSemanticIndexer(
+        {
+          store: store.media,
+          vision: unavailableVision,
+          onBattery: () => false,
+          busy: Effect.sync(() => busy),
+          changed: Effect.void,
+          message: (id) => store.getMessage(id).pipe(Effect.orDie),
+          attachment: () => Effect.succeed(new Uint8Array()),
+          inline: () => Effect.succeed([]),
+        },
+        store,
+        models,
+      );
+      assert.strictEqual(yield* run.batch(), 1);
+      assert.strictEqual((yield* store.semantics.counts).done, 1);
+    }),
+  ),
+);
+
+it.effect("unrelated vectors are excluded independently on text and image routes", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      const sql = yield* SqlClient.SqlClient;
+      yield* store.semantics.setEnabled(true);
+      yield* (yield* indexer(store, fakeModels([]))).batch();
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("text", vector(384, 1), "test-v1")).length,
+        0,
+      );
+      const job = yield* store.semantics.claim("test-v1", Date.now(), true);
+      // Completed rows can be explicitly requeued for the image fixture.
+      if (Option.isNone(job))
+        yield* sql`UPDATE semantic_jobs SET status='queued' WHERE message_id=${id}`;
+      const claim = Option.isSome(job)
+        ? job
+        : yield* store.semantics.claim("test-v1", Date.now(), true);
+      assert.ok(Option.isSome(claim));
+      const chunk = {
+        messageId: id,
+        text: "fixture",
+        source: { kind: "body", name: "", start: 0, end: 7 },
+        page: null,
+        region: null,
+        visionRevision: null,
+        pipelineVersion: "test-v1",
+      } satisfies DerivedChunk;
+      yield* store.semantics.complete(
+        claim.value,
+        [{ kind: "image", vector: vector(512), provenance: chunk }],
+        "test-v1",
+      );
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("image", vector(512, 1), "test-v1")).length,
+        0,
+      );
+    }),
+  ),
+);
+
+it.effect("completing one message never sweeps unrelated orphan vectors", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`INSERT INTO derived_text_vectors(rowid,embedding) VALUES(${999999n},${new Uint8Array(new Float32Array(vector(384)).buffer)})`;
+      yield* store.semantics.setEnabled(true);
+      yield* (yield* indexer(store, fakeModels([]))).batch();
+      assert.strictEqual(
+        (yield* sql`SELECT rowid FROM derived_text_vectors WHERE rowid=${999999n}`).length,
+        1,
+      );
+    }),
+  ),
+);
+
+it.effect("input activity does not abort an ongoing download; failures back off", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      yield* store.semantics.setEnabled(true);
+      const started = yield* Deferred.make<void>();
+      const finish = yield* Deferred.make<void>();
+      let busy = false;
+      let attempts = 0;
+      let cancelled = false;
+      const models = {
+        ...fakeModels([]),
+        ensure: () =>
+          Deferred.succeed(started, undefined).pipe(
+            Effect.andThen(Deferred.await(finish)),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                cancelled = true;
+              }),
+            ),
+          ),
+      };
+      const input = {
+        store: store.media,
+        vision: unavailableVision,
+        onBattery: () => false,
+        busy: Effect.sync(() => busy),
+        changed: Effect.void,
+        message: (id: string) => store.getMessage(id).pipe(Effect.orDie),
+        attachment: () => Effect.succeed(new Uint8Array()),
+        inline: () => Effect.succeed([]),
+      };
+      const run = yield* makeSemanticIndexer(input, store, models);
+      const task = yield* Effect.forkChild(run.batch());
+      yield* Deferred.await(started);
+      busy = true;
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual(cancelled, false);
+      yield* Deferred.succeed(finish, undefined);
+      assert.strictEqual(yield* Fiber.join(task), 0);
+      busy = false;
+      const failing = yield* makeSemanticIndexer(input, store, {
+        ...fakeModels([]),
+        ensure: () =>
+          Effect.sync(() => {
+            attempts++;
+          }).pipe(Effect.andThen(Effect.fail(new MediaError({ message: "offline models" })))),
+      });
+      assert.strictEqual(yield* failing.batch(), 0);
+      assert.strictEqual(yield* failing.batch(), 0);
+      assert.strictEqual(attempts, 1);
+      yield* TestClock.adjust("60 seconds");
+      yield* failing.batch();
+      assert.strictEqual(attempts, 2);
+    }),
+  ),
+);
+
+it.effect("one process load failure never spends attempts across the backlog", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      for (let i = 0; i < 8; i++)
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: `m-${i}`, threadId: `t-${i}`, date: i + 2000 }),
+        );
+      yield* store.semantics.setEnabled(true);
+      let loads = 0;
+      const base = fakeModels([]);
+      const run = yield* indexer(store, {
+        ...base,
+        embedder: {
+          ...base.embedder,
+          text: () => {
+            loads++;
+            return Effect.fail(
+              new InferenceRuntimeError({ reason: "load", message: "missing native binary" }),
+            );
+          },
+        },
+      });
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.strictEqual(loads, 1);
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.strictEqual(loads, 1);
+      const sql = yield* SqlClient.SqlClient;
+      const jobs = yield* sql`SELECT attempts,status FROM semantic_jobs`;
+      assert.ok(jobs.every((job) => job.attempts === 0 && job.status === "queued"));
+      yield* TestClock.adjust("60 seconds");
+      yield* sql`UPDATE semantic_jobs SET retry_at=0`;
+      assert.strictEqual(yield* (yield* indexer(store, base)).batch(), 2);
+    }),
+  ),
+);
+
+it.effect("body chunk cap and indexed queue ordering bound backfill work", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      const sql = yield* SqlClient.SqlClient;
+      yield* store.upsertMessage(
+        account.id,
+        message({ bodyText: "body sentence. ".repeat(10000) }),
+      );
+      yield* store.semantics.setEnabled(true);
+      const calls: string[] = [];
+      yield* (yield* indexer(store, fakeModels(calls))).batch();
+      assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 256);
+      const plan =
+        yield* sql`EXPLAIN QUERY PLAN SELECT j.message_id FROM semantic_jobs j INDEXED BY semantic_jobs_priority CROSS JOIN messages m ON m.id=j.message_id CROSS JOIN accounts a ON a.id=m.account_id
+    WHERE j.status='queued' AND j.retry_at<=0 AND j.attempts<5 AND a.needs_reauth=0 ORDER BY j.priority_at DESC,j.message_id LIMIT 1`;
+      assert.ok(!plan.some((row) => String(row.detail).includes("TEMP B-TREE")));
+    }),
+  ),
+);

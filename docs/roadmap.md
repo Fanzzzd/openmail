@@ -148,12 +148,27 @@ env -u ELECTRON_RUN_AS_NODE apps/desktop/node_modules/.bin/electron apps/desktop
 
 仍需人工验证：真实附件的识别质量、JPEG 方向与图片高亮；设置暂停/恢复、拔插电源与阅读器交互；签名安装包中的 Swift、sqlite-vec 和 PDF 资源加载。请用隔离测试账户及数据目录，先不接入真实邮件库。扫描 PDF 渲染/OCR、feature print、音视频、手机端和语义向量留待后续阶段。
 
-### 切片 7 第二阶段：计划
+### 切片 7 第二阶段：做了什么，留了什么
 
-1. 增加本地模型包下载、哈希校验及版本记录。采用 spike 选定的 MobileCLIP S0 图像 fp32、文本 q8，以及 multilingual-e5-small q8，限制见上面的设计与 [实测](../spikes/media/RESULTS.md)。邮件和附件仍只在本机推理。
-2. 接入独立后台推理适配器。MobileCLIP 保存整图和切片的 512 维向量，文本固定补齐至 77 tokens；E5 将正文、OCR 和 PDF 文字按约 300 字切块，保留句子重叠，使用 `query:`/`passage:` 前缀、平均池化和归一化，写入 384 维表。缓存记录模型与预处理版本，复用第一阶段队列及电源控制。
-3. 查询同时取 FTS、E5 和 MobileCLIP 候选，通过 RRF 合并并保留出处。短中文跨语言查询不能只靠向量；扩大中英文票据、代码、长图样本，测准确率、内存和后台响应。MCP 继续只返回文字块及出处。
-4. 单独验证扫描 PDF 的本地渲染与逐页 OCR，再扩展页内区域定位。完成签名包和断网验证后再考虑手机、音视频；本阶段不实现这些能力。
+已接入本机语义搜索。原全文搜索保留，模型功能默认关闭。
+
+- core 增加 `Embedder` 和图像向量端口。Node/Electron 的 ONNX Runtime 1.30.0 在独立子进程中运行，桌面使用 Electron utilityProcess，CLI/MCP 使用 Node fork；CPU 单线程、V8 堆预算 192MiB。按路线释放不再使用的 session，闲置 30 秒退出子进程。E5 small q8 使用 query/passage 前缀、按 mask 平均池化及 L2 归一化；MobileCLIP S0 使用 fp32 图像编码器和 q8 文本编码器，固定补齐至 77 tokens。推理进程禁用网络，不会补下载文件；图片先读头部尺寸，限 16MP，再解码。
+- 模型开关位于「通用 → 本机索引」：首次启用后，在接电源、空闲且未暂停时下载约 226MB。仅下载 spike 选定的 Xenova ONNX 导出仓库中固定提交的文件，逐文件校验 SHA-256；这些仓库分别对应 Apple MobileCLIP 与 intfloat E5，版本、大小、许可和哈希见 `model-manifest.ts`。下载使用 Range 续传、原子改名和进程间租约；关闭开关或暂停会停止后台工作，已下载文件保留供复用。输入活动不再中断下载；单文件校验按 inode/大小/修改时间缓存，失败后退避 60 秒。邮件与查询不会进入下载请求。
+- 第 10 条迁移新增独立向量任务及出处表，第 11 条新增队列优先级与租约索引。正文按约 300 字切块、重叠上一句并保留起止，每封最多生成 256 块，完整正文仍进全文索引；OCR/PDF 文字也生成 384 维向量。图片保留整图及 1024px 高、128px 重叠切片的 512 维向量。任务可恢复，版本变化重新生成，替换与删除只按本封邮件的 ID 清理旧向量，全库遗留向量清扫仅在打开数据库时执行；无 sqlite-vec 时继续使用全文搜索。
+- 搜索对全文、E5、MobileCLIP 候选作三路 RRF，全文权重 2，向量各 1。账户、发件人、文件夹及附件范围在 KNN 前过滤。结果和 MCP 都保留文字、正文起止、附件、PDF 页码或图片框，不返回向量和图片字节。按 spike 的归一化向量分数校准，E5 最大 L2 距离 0.65，MobileCLIP 为 1.23；弱中文图像信号回退到文本/全文，阈值不能修正短中文语言偏差。搜索仅要求向量可用、开关开启且模型已校验，输入、同步、电池或暂停索引不阻断搜索；只读 ensure 不等待下载锁。后台仍遵守电源、暂停、空闲和共享下载预算，完成计算后只检查暂停与开关，不因新的活动丢弃结果。模型加载、进程退出和超时属于运行时故障，释放任务并退避，不消耗整批邮件的处理次数。
+- 合成扫描 PDF 已单独验证：受限 worker 本地渲染，再交给 Vision OCR，文字及像素框正确。正式扫描页入队、PDF 页内浏览、手机和音视频继续留待后续；签名安装包仍需人工验证。
+
+验证使用临时数据库、合成邮件及本机已有模型。普通检查默认跳过真实模型测试；明确设置环境变量且本地文件齐全时才运行，测试不会下载模型：
+
+```sh
+pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
+OPENMAIL_TEST_MODELS=1 pnpm --filter @openmail/core exec vitest run src/models.integration.test.ts
+OPENMAIL_TEST_MODELS=1 env -u ELECTRON_RUN_AS_NODE apps/desktop/node_modules/.bin/electron apps/desktop/build/check-media-electron.mjs
+node apps/desktop/build/check-scanned-pdf.mjs
+env -u ELECTRON_RUN_AS_NODE apps/desktop/node_modules/.bin/electron apps/desktop/build/check-inference-process.mjs
+```
+
+真实模型检查已通过 E5 384 维归一化和长中文跨语言排序、MobileCLIP 512 维及长图切片。此前已验证真实离线 ONNX 推理；本次内存压力下未重跑重模型。轻量检查已验证 utilityProcess 的独立 PID 与子进程崩溃隔离。短中文跨语言排序仍沿用 spike 的限制，全文搜索仍为主要信号。本次完整检查通过 278 项测试，重模型 opt-in 测试默认跳过；类型与 Lingui 检查通过，lint 仅两条原有警告。macOS arm64 包已排除其他 ONNX Runtime 平台/架构二进制。尚需人工检查实际附件质量、首次下载与暂停/恢复界面，以及签名包中的运行库和 utilityProcess 加载。
 
 ## 已完成（阶段 0）
 

@@ -25,6 +25,14 @@ msgstr "(no recipients)"
 msgid "(No subject)"
 msgstr "(No subject)"
 
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{0} embedded · {1} queued · {2} running · {3} failed"
+msgstr "{0} embedded · {1} queued · {2} running · {3} failed"
+
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
@@ -329,10 +337,6 @@ msgstr "Ask me first"
 msgid "Attach files"
 msgstr "Attach files"
 
-#: src/renderer/src/components/MediaMatches.tsx
-msgid "Attachment matches"
-msgstr "Attachment matches"
-
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments of the original message are not forwarded"
 msgstr "Attachments of the original message are not forwarded"
@@ -532,6 +536,10 @@ msgstr "Contact refresh failed. Cached suggestions remain available."
 msgid "Contacts only"
 msgstr "Contacts only"
 
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Content matches"
+msgstr "Content matches"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "Continue editing"
@@ -700,6 +708,15 @@ msgstr "Don't attach the original message"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "Done"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Download on-device models, ~226 MB"
+msgstr "Download on-device models, ~226 MB"
+
+#. placeholder {0}: Math.floor((progress.models.bytes / progress.models.total) * 100)
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Downloading models: {0}%"
+msgstr "Downloading models: {0}%"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
@@ -1102,6 +1119,11 @@ msgstr "Message actions"
 msgid "Message background"
 msgstr "Message background"
 
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Message body"
+msgstr "Message body"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message link copied"
 msgstr "Message link copied"
@@ -1117,6 +1139,18 @@ msgstr "Messages keep their other labels."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download failed. Retrying while idle."
+msgstr "Model download failed. Retrying while idle."
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download progress"
+msgstr "Model download progress"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Models verified and ready. Search stays on this device."
+msgstr "Models verified and ready. Search stays on this device."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1731,6 +1765,10 @@ msgstr "Searching server…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
 msgstr "Select a message"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Semantic search is unavailable. Full-text search remains available."
+msgstr "Semantic search is unavailable. Full-text search remains available."
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx

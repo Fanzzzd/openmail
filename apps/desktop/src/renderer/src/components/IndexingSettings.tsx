@@ -5,11 +5,13 @@ import { MailClient } from "../rpc";
 import { indexingProgressAtom } from "../state/queries";
 import { Switch } from "@base-ui/react/switch";
 
+const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
 export function IndexingSettings() {
   const { t } = useLingui();
   const progress = AsyncResult.getOrElse(useAtomValue(indexingProgressAtom), () => null);
   const pause = useAtomSet(pauseAtom);
+  const models = useAtomSet(modelsAtom);
   if (!progress) return null;
   const { done, queued, running, failed } = progress;
   return (
@@ -22,6 +24,60 @@ export function IndexingSettings() {
           Images and PDF text are processed on this device. No content is sent to a cloud model.
         </Trans>
       </p>
+      <div className="flex items-center gap-2">
+        <Switch.Root
+          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500 data-checked:bg-blue-500"
+          checked={progress.modelsEnabled ?? false}
+          aria-label={t`Download on-device models, ~226 MB`}
+          onCheckedChange={(enabled) =>
+            models({ payload: { enabled }, reactivityKeys: ["indexing"] })
+          }
+        >
+          <Switch.Thumb className="size-4 rounded-full bg-white transition-transform data-checked:translate-x-4" />
+        </Switch.Root>
+        <Trans>Download on-device models, ~226 MB</Trans>
+      </div>
+      {progress.modelsEnabled && !progress.semanticAvailable && (
+        <p>
+          <Trans>Semantic search is unavailable. Full-text search remains available.</Trans>
+        </p>
+      )}
+      {progress.modelsEnabled && (
+        <>
+          {progress.models?.kind === "downloading" && (
+            <div>
+              <progress
+                value={progress.models.bytes}
+                max={progress.models.total}
+                aria-label={t`Model download progress`}
+                className="w-full"
+              />
+              <p>
+                <Trans>
+                  Downloading models:{" "}
+                  {Math.floor((progress.models.bytes / progress.models.total) * 100)}%
+                </Trans>
+              </p>
+            </div>
+          )}
+          {progress.models?.kind === "ready" && (
+            <p>
+              <Trans>Models verified and ready. Search stays on this device.</Trans>
+            </p>
+          )}
+          {progress.models?.kind === "error" && (
+            <p role="alert">
+              <Trans>Model download failed. Retrying while idle.</Trans>
+            </p>
+          )}
+          <output>
+            <Trans>
+              {progress.embeddingDone ?? 0} embedded · {progress.embeddingQueued ?? 0} queued ·{" "}
+              {progress.embeddingRunning ?? 0} running · {progress.embeddingFailed ?? 0} failed
+            </Trans>
+          </output>
+        </>
+      )}
       {!progress.available && (
         <p>
           <Trans>Image recognition is unavailable on this platform.</Trans>

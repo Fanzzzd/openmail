@@ -1,5 +1,14 @@
+import { makeDownloadBudget } from "./download-budget.js";
+import { makeSemanticIndexer } from "./semantic-indexer.js";
+import { parseSearchQuery, semanticRankFusion } from "./search.js";
 import { makeIndexer } from "./indexer.js";
-import { MediaError, type DerivedChunk, type Vision, unavailableVision } from "./media.js";
+import {
+  MediaError,
+  type DerivedChunk,
+  type Vision,
+  type ModelRuntime,
+  unavailableVision,
+} from "./media.js";
 
 import { createHash } from "node:crypto";
 
@@ -97,6 +106,7 @@ export interface MailboxOptions {
   /** Desktop only. Independent inbox cursors leave full sync checkpoints untouched. */
   inboxPoll?: Duration.Input;
   pollOnBattery?: () => boolean;
+  models?: ModelRuntime;
   /**
    * Push draft saves in the background (default) so saving never waits for
    * the network. Short-lived processes and tests set false: the save then
@@ -744,7 +754,9 @@ export const MailboxLive = (
           ),
         );
       });
-      const indexer = yield* makeIndexer({
+      const reserveBytes = yield* makeDownloadBudget;
+      const indexInput = {
+        reserveBytes,
         store: store.media,
         vision: options.media?.vision ?? unavailableVision,
         onBattery: options.media?.onBattery ?? (() => false),
@@ -756,15 +768,68 @@ export const MailboxLive = (
         attachment: (id, index) => attachment(id, index).pipe(Effect.map((part) => part.data)),
         inline: (id) => localInline(id),
         changed,
-      });
+      } satisfies import("./indexer.js").IndexerInput;
+      const indexer = yield* makeIndexer(indexInput);
+      const semantic = options.models
+        ? yield* makeSemanticIndexer(indexInput, store, options.models)
+        : undefined;
       if (options.media)
         yield* indexer.batch().pipe(
           Effect.catchCause(() => Effect.logWarning("Media indexing batch failed")),
           Effect.repeat(Schedule.spaced("15 seconds")),
           Effect.forkScoped,
         );
+      if (options.media && semantic)
+        yield* semantic.batch().pipe(
+          Effect.catchCause(() => Effect.void),
+          Effect.repeat(Schedule.spaced("15 seconds")),
+          Effect.forkScoped,
+        );
+      if (!options.media && options.models?.verifyLocal && (yield* store.semantics.enabled))
+        yield* options.models.verifyLocal().pipe(Effect.catch(() => Effect.void));
+      const semanticThreads = Effect.fn("Mailbox.semanticThreads")(function* (
+        q: import("./domain.js").ThreadQuery,
+      ) {
+        const local = yield* store.listThreads(q);
+        const parsed = parseSearchQuery(q);
+        const query = parsed.search?.trim();
+        if (
+          !query ||
+          !options.models ||
+          !store.semantics.vectors ||
+          !(yield* store.semantics.enabled) ||
+          (yield* options.models.status).kind !== "ready"
+        )
+          return local;
+        const models = options.models;
+        const routes = yield* Effect.gen(function* () {
+          // CLI/MCP may use already-present files after the app's persisted
+          // opt-in. A search never starts a model download.
+          yield* models.ensure(false);
+          const text = yield* models.embedder.text(query, "query");
+          const image = yield* models.images.query(query);
+          return [
+            yield* store.vectorThreads(
+              q,
+              yield* store.semantics.neighbors("text", text, models.version, parsed),
+            ),
+            yield* store.vectorThreads(
+              q,
+              yield* store.semantics.neighbors("image", image, models.version, parsed),
+            ),
+          ];
+        }).pipe(Effect.catch(() => Effect.succeed([])));
+        return semanticRankFusion(local, routes[0] ?? [], routes[1] ?? [], q.flat).slice(
+          0,
+          q.limit ?? 50,
+        );
+      });
       const mediaImage = Effect.fnUntraced(function* (chunk: DerivedChunk) {
-        if (chunk.region === null || !chunk.source.mimeType.toLowerCase().startsWith("image/"))
+        if (
+          chunk.source.kind === "body" ||
+          chunk.region === null ||
+          !chunk.source.mimeType.toLowerCase().startsWith("image/")
+        )
           return yield* new NotFound({ what: "attachment", id: chunk.messageId });
         if (chunk.source.kind === "attachment") {
           const part = yield* attachment(chunk.messageId, chunk.source.index);
@@ -1159,7 +1224,7 @@ export const MailboxLive = (
         })),
         setClient: (patch) => mutate(config.write(patch)),
 
-        threads: (q) => store.listThreads(q),
+        threads: semanticThreads,
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),
@@ -1190,7 +1255,33 @@ export const MailboxLive = (
         saveDraft,
         discardDraft,
 
-        indexingProgress: indexer.progress,
+        indexingProgress: Effect.gen(function* () {
+          const enabled = yield* store.semantics.enabled;
+          const counts = yield* store.semantics.counts;
+          return {
+            ...(yield* indexer.progress),
+            modelsEnabled: enabled,
+            models:
+              enabled && options.models
+                ? yield* options.models.status
+                : { kind: "disabled" as const },
+            semanticAvailable: store.semantics.vectors,
+            embeddingRunning: counts.running,
+            embeddingQueued: counts.queued,
+            embeddingDone: counts.done,
+            embeddingFailed: counts.failed,
+          };
+        }),
+        setModelsEnabled: (enabled) =>
+          mutate(
+            store.semantics
+              .setEnabled(enabled)
+              .pipe(
+                Effect.tap(() =>
+                  !enabled && options.models ? options.models.stop() : Effect.void,
+                ),
+              ),
+          ),
         setIndexingPaused: (value) => mutate(indexer.setPaused(value)),
         derivedChunks: store.media.chunks,
         mediaImage,

@@ -31,6 +31,10 @@ extraResources:
 files:
   - out/**
   - package.json
+  # This build targets macOS arm64; omit the other ORT platform/architecture binaries.
+  - "!**/node_modules/onnxruntime-node/bin/napi-v6/linux/**"
+  - "!**/node_modules/onnxruntime-node/bin/napi-v6/win32/**"
+  - "!**/node_modules/onnxruntime-node/bin/napi-v6/darwin/x64/**"
 
 # node:sqlite ships inside Electron, and @napi-rs/keyring is N-API with a
 # prebuilt per-platform package, so nothing needs rebuilding against
@@ -41,6 +45,8 @@ asar: true
 # must sit on disk in app.asar.unpacked.
 asarUnpack:
   - "**/*.node"
+  - "**/node_modules/onnxruntime-node/**"
+  - "**/node_modules/@img/**"
   - "**/node_modules/sqlite-vec-*/**"
   - "**/node_modules/@napi-rs/keyring-*/**"
 

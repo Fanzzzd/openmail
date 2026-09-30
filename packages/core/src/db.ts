@@ -331,6 +331,59 @@ export const MIGRATIONS: readonly string[] = [
       AND typeof(json_extract(substr(p.key,13),'$[1]'))='text';
   DELETE FROM prefs WHERE key LIKE 'system:seen:%' OR key LIKE 'system:inbox:%' OR key LIKE 'system:initial:%';
   `,
+  `
+  CREATE TABLE semantic_jobs (
+    message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+    generation INTEGER NOT NULL DEFAULT 1, pipeline_version TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','done','failed')),
+    claimed_at INTEGER, claim TEXT, attempts INTEGER NOT NULL DEFAULT 0,
+    retry_at INTEGER NOT NULL DEFAULT 0, note TEXT
+  );
+  CREATE INDEX semantic_jobs_pending ON semantic_jobs(status,retry_at);
+  CREATE TABLE vector_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK(kind IN ('text','image')),
+    version TEXT NOT NULL, provenance_json TEXT NOT NULL
+  );
+  CREATE INDEX vector_items_message ON vector_items(message_id);
+  CREATE TRIGGER semantic_message_insert AFTER INSERT ON messages BEGIN
+    INSERT INTO semantic_jobs(message_id) VALUES(new.id);
+  END;
+  CREATE TRIGGER semantic_message_update AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+    WHEN old.body_text != new.body_text OR old.body_html != new.body_html OR old.attachments_json != new.attachments_json BEGIN
+    DELETE FROM vector_items WHERE message_id=new.id;
+    INSERT INTO semantic_jobs(message_id) VALUES(new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+      claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+  CREATE TRIGGER semantic_media_insert AFTER INSERT ON derived_chunks BEGIN
+    INSERT INTO semantic_jobs(message_id) VALUES(new.message_id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+      claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+  INSERT INTO semantic_jobs(message_id) SELECT id FROM messages;
+  `,
+  `
+  ALTER TABLE derived_jobs ADD COLUMN priority_at INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE semantic_jobs ADD COLUMN priority_at INTEGER NOT NULL DEFAULT 0;
+  UPDATE derived_jobs SET priority_at=(SELECT date FROM messages WHERE id=message_id);
+  UPDATE semantic_jobs SET priority_at=(SELECT date FROM messages WHERE id=message_id);
+  CREATE INDEX derived_jobs_priority ON derived_jobs(status,priority_at DESC,message_id);
+  CREATE INDEX semantic_jobs_priority ON semantic_jobs(status,priority_at DESC,message_id);
+  CREATE INDEX derived_jobs_lease ON derived_jobs(status,claimed_at);
+  CREATE INDEX semantic_jobs_lease ON semantic_jobs(status,claimed_at);
+  CREATE TRIGGER derived_priority_insert AFTER INSERT ON derived_jobs BEGIN
+    UPDATE derived_jobs SET priority_at=(SELECT date FROM messages WHERE id=new.message_id) WHERE message_id=new.message_id;
+  END;
+  CREATE TRIGGER semantic_priority_insert AFTER INSERT ON semantic_jobs BEGIN
+    UPDATE semantic_jobs SET priority_at=(SELECT date FROM messages WHERE id=new.message_id) WHERE message_id=new.message_id;
+  END;
+  CREATE TRIGGER message_priority_update AFTER UPDATE OF date ON messages WHEN old.date!=new.date BEGIN
+    UPDATE derived_jobs SET priority_at=new.date WHERE message_id=new.id;
+    UPDATE semantic_jobs SET priority_at=new.date WHERE message_id=new.id;
+  END;
+  `,
 ];
 
 /**
@@ -454,8 +507,8 @@ export function databaseLayer(
       yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_image_vectors USING vec0(embedding float[512])`;
       // A connection without vec0 can delete messages. Clean orphaned vectors
       // when a capable connection next opens the database.
-      yield* sql`DELETE FROM derived_text_vectors WHERE rowid NOT IN (SELECT id FROM derived_chunks)`;
-      yield* sql`DELETE FROM derived_image_vectors WHERE rowid NOT IN (SELECT id FROM derived_chunks)`;
+      yield* sql`DELETE FROM derived_text_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
+      yield* sql`DELETE FROM derived_image_vectors WHERE rowid NOT IN (SELECT id FROM vector_items)`;
       return true;
     }).pipe(
       Effect.catch(() =>

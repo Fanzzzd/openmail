@@ -31,6 +31,14 @@ msgstr "（未填收件人）"
 msgid "(No subject)"
 msgstr "（无主题）"
 
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{0} embedded · {1} queued · {2} running · {3} failed"
+msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
+
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
@@ -335,10 +343,6 @@ msgstr "先问我"
 msgid "Attach files"
 msgstr "添加附件"
 
-#: src/renderer/src/components/MediaMatches.tsx
-msgid "Attachment matches"
-msgstr "附件命中"
-
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments of the original message are not forwarded"
 msgstr "原邮件的附件不会一起转发"
@@ -538,6 +542,10 @@ msgstr "联系人刷新失败，仍可使用缓存补全。"
 msgid "Contacts only"
 msgstr "仅联系人"
 
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Content matches"
+msgstr "内容命中"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "继续编辑"
@@ -706,6 +714,15 @@ msgstr "不附上原邮件"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Done"
 msgstr "完成"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Download on-device models, ~226 MB"
+msgstr "下载本机模型，约 226 MB"
+
+#. placeholder {0}: Math.floor((progress.models.bytes / progress.models.total) * 100)
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Downloading models: {0}%"
+msgstr "正在下载模型：{0}%"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
@@ -1108,6 +1125,11 @@ msgstr "邮件操作"
 msgid "Message background"
 msgstr "邮件背景"
 
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Message body"
+msgstr "邮件正文"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message link copied"
 msgstr "已复制邮件链接"
@@ -1123,6 +1145,18 @@ msgstr "邮件保留其他标签。"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download failed. Retrying while idle."
+msgstr "模型下载失败，空闲时重试。"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download progress"
+msgstr "模型下载进度"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Models verified and ready. Search stays on this device."
+msgstr "模型已校验，可在本机搜索。"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1737,6 +1771,10 @@ msgstr "搜索服务器中…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
 msgstr "选择一封邮件"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Semantic search is unavailable. Full-text search remains available."
+msgstr "语义搜索暂不可用，仍可全文搜索。"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx

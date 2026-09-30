@@ -322,7 +322,7 @@ function Row({
       </span>
       {m.derivedMatches?.slice(0, 2).map((hit, index) => (
         <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-          {hit.source.name}
+          {hit.source.kind === "body" ? <Trans>Message body</Trans> : hit.source.name}
           {hit.page !== null && (
             <>
               {" "}

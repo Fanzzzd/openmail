@@ -66,13 +66,13 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
   return (
     <section className="mx-4 mb-3 rounded-lg bg-amber-500/5 p-3 text-[13px]">
       <h3 className="mb-2 font-medium">
-        <Trans>Attachment matches</Trans>
+        <Trans>Content matches</Trans>
       </h3>
       <ul className="space-y-2">
         {chunks.slice(0, 20).map((chunk, index) => (
           <li key={index}>
             <p className="text-neutral-500">
-              {chunk.source.name}
+              {chunk.source.kind === "body" ? <Trans>Message body</Trans> : chunk.source.name}
               {chunk.page !== null && (
                 <>
                   {" "}

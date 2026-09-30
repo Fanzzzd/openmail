@@ -215,6 +215,7 @@ export class Mailbox extends Context.Service<
 
     // Compose settings
     readonly indexingProgress: Effect.Effect<IndexingProgress>;
+    setModelsEnabled(value: boolean): Effect.Effect<void>;
     setIndexingPaused(value: boolean): Effect.Effect<void>;
     derivedChunks(id: string): Effect.Effect<readonly DerivedChunk[]>;
     mediaImage(
