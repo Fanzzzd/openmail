@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { NodeSystem } from "@openmail/core";
+import { pdfText } from "../../../packages/core/dist/pdf-text.js";
 import { databaseLayer } from "../../../packages/core/dist/db.js";
 
 const profile = mkdtempSync(join(tmpdir(), "openmail-media-electron-"));
@@ -38,8 +39,25 @@ app.once("ready", async () => {
         Effect.provide(databaseLayer(join(profile, "mail.db")).pipe(Layer.provide(NodeSystem))),
       ),
     );
+    const objects = [
+      "<< /Type /Catalog /Pages 2 0 R >>",
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> >>",
+    ];
+    let pdf = "%PDF-1.4\n";
+    const offsets = [];
+    for (const [index, object] of objects.entries()) {
+      offsets.push(pdf.length);
+      pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+    }
+    const xref = pdf.length;
+    pdf += "xref\n0 4\n0000000000 65535 f \n";
+    for (const offset of offsets) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+    pdf += `trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    const pages = await Effect.runPromise(pdfText(new TextEncoder().encode(pdf)));
+    assert.equal(pages.length, 1);
     process.stdout.write(
-      `Electron ${process.versions.electron}: sqlite-vec 0.1.9, migration 8, 384/512 tables and KNN passed\n`,
+      `Electron ${process.versions.electron}: sqlite-vec 0.1.9, migration 8, 384/512 tables, KNN and bounded PDF worker passed\n`,
     );
   } catch (error) {
     process.stderr.write(`${String(error)}\n`);

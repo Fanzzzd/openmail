@@ -405,7 +405,11 @@ export interface ProviderAdapter {
   /** Deletes the provider's copy. One that is already gone counts as deleted. */
   deleteDraft(account: Account, remote: DraftRemote): Effect.Effect<void, ProviderFailure>;
   /** The message as raw RFC 5322 bytes: for forwarding as an attachment, opening drafts and View Original. */
-  fetchRaw(account: Account, providerId: string): Effect.Effect<Uint8Array, ProviderFailure>;
+  fetchRaw(
+    account: Account,
+    providerId: string,
+    maxBytes?: number,
+  ): Effect.Effect<Uint8Array, ProviderFailure>;
   /** One attachment's content, decoded, through the provider's per-part API. */
   fetchAttachment(
     account: Account,

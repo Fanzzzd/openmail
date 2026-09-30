@@ -1,4 +1,5 @@
-import { Context, Effect, Option, Semaphore } from "effect";
+import type { AuthError, ProviderError, PermanentError, NotFound } from "./errors.js";
+import { Clock, Context, Effect, Option, Semaphore } from "effect";
 import type { Message } from "./domain.js";
 import {
   DerivedChunk,
@@ -26,12 +27,18 @@ export interface IndexerInput {
   readonly onBattery: () => boolean;
   readonly busy: Effect.Effect<boolean>;
   readonly message: (id: string) => Effect.Effect<Message>;
-  readonly attachment: (id: string, index: number) => Effect.Effect<Uint8Array, MediaError>;
+  readonly attachment: (
+    id: string,
+    index: number,
+  ) => Effect.Effect<
+    Uint8Array,
+    MediaError | AuthError | ProviderError | PermanentError | NotFound
+  >;
   readonly inline: (
     id: string,
   ) => Effect.Effect<
     readonly { cid: string; name: string; mimeType: string; data: Uint8Array }[],
-    MediaError
+    MediaError | AuthError | ProviderError | PermanentError | NotFound
   >;
   readonly changed: Effect.Effect<unknown>;
 }
@@ -42,12 +49,38 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
   const allowed = Effect.gen(function* () {
     return vision.available && !(yield* store.paused) && !(yield* input.busy);
   });
+  // A per-process byte budget limits historical backfill to 32 MiB/minute.
+  let windowStart = yield* Clock.currentTimeMillis;
+  let downloaded = 0;
+  const reserve = Effect.fnUntraced(function* (bytes: number) {
+    const charge = Math.min(Math.max(bytes, 1), 32 * 1024 * 1024);
+    for (;;) {
+      const now = yield* Clock.currentTimeMillis;
+      if (now - windowStart >= 60_000) {
+        windowStart = now;
+        downloaded = 0;
+      }
+      if (downloaded + charge <= 32 * 1024 * 1024) {
+        downloaded += charge;
+        return;
+      }
+      yield* Effect.sleep("1 second");
+    }
+  });
+  const beforeCpu = Effect.gen(function* () {
+    // Keep downloaded bytes in the current job while user activity or sync
+    // prevents the next CPU stage; neither event aborts the whole job.
+    while (yield* input.busy) yield* Effect.sleep("1 second");
+    if (!(yield* allowed)) return yield* new MediaError({ message: "Indexing suspended" });
+    return yield* Effect.void;
+  });
   const extract = Effect.fnUntraced(function* (message: Message) {
     const chunks: DerivedChunk[] = [];
     let scanned = false;
     const image = Effect.fnUntraced(function* (source: DerivedChunk["source"], data: Uint8Array) {
-      if (input.onBattery() || !(yield* allowed))
+      if (input.onBattery() || (yield* store.paused))
         return yield* new MediaError({ message: "Indexing suspended" });
+      yield* beforeCpu;
       const result = yield* vision.recognize(data);
       for (const line of result.lines)
         if (line.text.trim())
@@ -69,7 +102,8 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
         scanned = true;
         continue;
       }
-      if (!(yield* allowed)) return yield* new MediaError({ message: "Indexing suspended" });
+      yield* beforeCpu;
+      yield* reserve(attachment.size > 0 ? attachment.size : 32 * 1024 * 1024);
       const data = yield* input.attachment(message.id, index);
       if (data.length > 32 * 1024 * 1024) {
         scanned = true;
@@ -77,7 +111,8 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
       }
       const source = { kind: "attachment", index, name: attachment.filename, mimeType } as const;
       if (mimeType.startsWith("image/")) yield* image(source, data);
-      else
+      else {
+        yield* beforeCpu;
         for (const page of yield* pdfText(data)) {
           if (!page.text) {
             scanned = true;
@@ -94,14 +129,17 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
               visionRevision: null,
             });
         }
+      }
     }
-    if (/cid:/i.test(message.bodyHtml))
+    if (/cid:/i.test(message.bodyHtml)) {
+      yield* reserve(8 * 1024 * 1024);
       for (const inline of yield* input.inline(message.id)) {
         yield* image(
           { kind: "inline", cid: inline.cid, name: inline.name, mimeType: inline.mimeType },
           inline.data,
         );
       }
+    }
     return {
       chunks,
       note: scanned ? "Scanned PDF pages or oversized attachments require phase 2" : null,
@@ -137,14 +175,14 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
                 let ticks = 0;
                 for (;;) {
                   yield* Effect.sleep("1 second");
-                  if (!(yield* allowed) || (imageWork && input.onBattery()))
+                  if ((yield* store.paused) || (imageWork && input.onBattery()))
                     return yield* new MediaError({ message: "Indexing suspended" });
                   if (++ticks % 30 === 0) yield* store.renew(job.value, Date.now());
                 }
               });
               const result = yield* Effect.raceFirst(extract(message), monitor);
               if (
-                !(yield* allowed) ||
+                (yield* store.paused) ||
                 (input.onBattery() && result.chunks.some((chunk) => chunk.region !== null))
               ) {
                 yield* store.release(job.value);
@@ -156,9 +194,13 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
               }
             }).pipe(
               Effect.catch((error) =>
-                error.message === "Indexing suspended"
-                  ? store.release(job.value)
-                  : store.retry(job.value, Date.now()),
+                error._tag === "AuthError" || error._tag === "ProviderError"
+                  ? store
+                      .deferFetch(job.value, Date.now(), error._tag === "AuthError")
+                      .pipe(Effect.tap(() => input.changed))
+                  : error.message === "Indexing suspended"
+                    ? store.release(job.value)
+                    : store.retry(job.value, Date.now()),
               ),
               Effect.onInterrupt(() => store.release(job.value)),
             );

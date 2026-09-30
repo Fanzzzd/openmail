@@ -1,7 +1,7 @@
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
-import { type AttachmentRef, pickAttachment } from "./attachments.js";
+import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { buildMime, type Threading } from "./compose.js";
 import type {
   Account,
@@ -590,10 +590,22 @@ export const makeGmail: Effect.Effect<
   );
 
   const fetchRaw = Effect.fn("Gmail.fetchRaw")(
-    function* (account: Account, providerId: string) {
+    function* (account: Account, providerId: string, maxBytes?: number) {
+      if (maxBytes !== undefined) {
+        const metadata = yield* get(
+          account.id,
+          Schema.Struct({ sizeEstimate: Schema.Number }),
+          `/messages/${providerId}`,
+          { format: "minimal", fields: "sizeEstimate" },
+        );
+        if (metadata.sizeEstimate > maxBytes || metadata.sizeEstimate <= 0)
+          return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+      }
       const { raw } = yield* get(account.id, RawMessage, `/messages/${providerId}`, {
         format: "raw",
       });
+      if (maxBytes !== undefined && (raw.length * 3) / 4 > maxBytes + 3)
+        return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
       return new Uint8Array(Buffer.from(raw, "base64url"));
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),

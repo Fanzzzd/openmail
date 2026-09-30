@@ -1076,3 +1076,24 @@ it.effect(
     );
   },
 );
+
+it.effect(
+  "media raw size uses body and inline attachment metadata before Graph MIME download",
+  () =>
+    Effect.gen(function* () {
+      let rawCalls = 0;
+      const http = fakeHttp({
+        "GET /me/messages/m1": { json: { body: { content: '<img src="cid:large">' } } },
+        "GET /me/messages/m1/attachments": { json: { value: [{ size: 10_000_000 }] } },
+        "GET /me/messages/m1/$value": () => {
+          rawCalls++;
+          return { text: "body" };
+        },
+      });
+      const result = yield* run(http, (adapter) =>
+        adapter.fetchRaw(account, "m1", 8 * 1024 * 1024),
+      ).pipe(Effect.result);
+      assert.strictEqual(result._tag, "Failure");
+      assert.strictEqual(rawCalls, 0);
+    }),
+);

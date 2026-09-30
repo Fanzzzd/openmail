@@ -1,7 +1,7 @@
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
-import { type AttachmentRef, pickAttachment } from "./attachments.js";
+import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import type {
   Account,
   Address,
@@ -358,7 +358,7 @@ export const makeOutlook: Effect.Effect<
   };
 
   /** A GET whose body is not JSON (a message's MIME source). */
-  const getBytes = (accountId: string, path: string) =>
+  const getBytes = (accountId: string, path: string, maxBytes?: number) =>
     accessToken(accountId).pipe(
       Effect.flatMap((token) =>
         Effect.gen(function* () {
@@ -371,12 +371,31 @@ export const makeOutlook: Effect.Effect<
           if (res.status < 200 || res.status >= 300) {
             return yield* new ApiError({ status: res.status, body: yield* res.text });
           }
-          return new Uint8Array(yield* res.arrayBuffer);
+          if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
+          if (Number(res.headers["content-length"]) > maxBytes)
+            return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+          const parts: Uint8Array[] = [];
+          let total = 0;
+          yield* res.stream.pipe(
+            Stream.runForEach((part) =>
+              Effect.gen(function* () {
+                total += part.length;
+                if (total > maxBytes)
+                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+                parts.push(part);
+                return yield* Effect.void;
+              }),
+            ),
+          );
+          return new Uint8Array(Buffer.concat(parts));
         }).pipe(
           Effect.catchTag("HttpClientError", (e) =>
             Effect.fail(new ApiError({ status: 0, body: e.message })),
           ),
-          Effect.retry(RETRY),
+          Effect.retry({
+            ...RETRY,
+            while: (error) => error._tag === "ApiError" && RETRY.while(error),
+          }),
         ),
       ),
     );
@@ -765,8 +784,32 @@ export const makeOutlook: Effect.Effect<
   );
 
   const fetchRaw = Effect.fn("Outlook.fetchRaw")(
-    (account: Account, providerId: string) =>
-      getBytes(account.id, `/me/messages/${providerId}/$value`),
+    function* (account: Account, providerId: string, maxBytes?: number) {
+      if (maxBytes !== undefined) {
+        // Graph has no message byte-size property. Estimate from body and all
+        // attachment sizes (including inline), then bound the MIME stream too.
+        const metadata = yield* get(
+          account.id,
+          Schema.Struct({ body: Schema.Struct({ content: Schema.String }) }),
+          `/me/messages/${providerId}?$select=body`,
+        );
+        const parts = yield* get(
+          account.id,
+          Schema.Struct({
+            value: Schema.Array(Schema.Struct({ size: Schema.Number })),
+            "@odata.nextLink": Schema.optionalKey(Schema.String),
+          }),
+          `/me/messages/${providerId}/attachments?$select=size`,
+        );
+        const estimate =
+          128 * 1024 +
+          Buffer.byteLength(metadata.body.content) * 3 +
+          parts.value.reduce((total, part) => total + part.size * 2, 0);
+        if (parts["@odata.nextLink"] || estimate > maxBytes)
+          return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+      }
+      return yield* getBytes(account.id, `/me/messages/${providerId}/$value`, maxBytes);
+    },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 

@@ -1,46 +1,68 @@
-import { fileURLToPath } from "node:url";
-import { Effect } from "effect";
+import { Worker } from "node:worker_threads";
+import { Effect, Schema } from "effect";
 import { MediaError } from "./media.js";
 
-/** Text only. No remote resources, JavaScript evaluation, or embedded actions. */
-export const pdfText = (data: Uint8Array) =>
+const Result = Schema.Union([
+  Schema.Struct({
+    ok: Schema.Literal(true),
+    pages: Schema.Array(Schema.Struct({ page: Schema.Int, text: Schema.String })),
+  }),
+  Schema.Struct({ ok: Schema.Literal(false) }),
+]);
+export const PDF_LIMITS = { timeoutMs: 30_000, maxPages: 100, maxBytes: 32 * 1024 * 1024 } as const;
+interface PdfOptions {
+  readonly timeoutMs?: number;
+  readonly maxPages?: number;
+  /** Allows a different local worker entry, including deterministic watchdog fixtures. */
+  readonly workerUrl?: URL;
+}
+/** Every PDF runs in a disposable worker. Terminate on timeout, abort, error or success. */
+export const pdfText = (data: Uint8Array, options: PdfOptions = {}) =>
   Effect.tryPromise({
-    try: async (signal) => {
-      const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
-      const resources = import.meta.resolve("pdfjs-dist/package.json");
-      const task = getDocument({
-        standardFontDataUrl: fileURLToPath(new URL("standard_fonts/", resources)),
-        cMapUrl: fileURLToPath(new URL("cmaps/", resources)),
-        cMapPacked: true,
-        wasmUrl: fileURLToPath(new URL("wasm/", resources)),
-        data: new Uint8Array(data),
-        useSystemFonts: false,
-        disableFontFace: true,
-        useWorkerFetch: false,
-        enableXfa: false,
-      });
-      const cancel = () => {
-        void task.destroy();
-      };
-      signal.addEventListener("abort", cancel, { once: true });
-      try {
-        const document = await task.promise;
-        const pages: { page: number; text: string }[] = [];
-        for (let page = 1; page <= document.numPages; page++) {
-          const content = await (await document.getPage(page)).getTextContent();
-          pages.push({
-            page,
-            text: content.items
-              .map((item) => ("str" in item ? item.str + (item.hasEOL ? "\n" : " ") : ""))
-              .join("")
-              .trim(),
-          });
+    try: (signal) =>
+      new Promise<readonly { page: number; text: string }[]>((resolve, reject) => {
+        if (data.length > PDF_LIMITS.maxBytes) {
+          reject(new Error("PDF size limit exceeded"));
+          return;
         }
-        return pages;
-      } finally {
-        signal.removeEventListener("abort", cancel);
-        await task.destroy();
-      }
-    },
-    catch: () => new MediaError({ message: "Cannot extract PDF text" }),
+        const copy = new Uint8Array(data);
+        const worker = new Worker(
+          options.workerUrl ?? new URL("./pdf-worker.mjs", import.meta.url),
+          {
+            workerData: { data: copy.buffer, maxPages: options.maxPages ?? PDF_LIMITS.maxPages },
+            transferList: [copy.buffer],
+            execArgv: [],
+            resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16 },
+          },
+        );
+        let settled = false;
+        const finish = (pages: readonly { page: number; text: string }[] | undefined) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          signal.removeEventListener("abort", abort);
+          void worker.terminate().then(() => {
+            return pages
+              ? resolve(pages)
+              : reject(new Error("PDF worker failed or exceeded limits"));
+          }, reject);
+        };
+        const abort = () => finish(undefined);
+        const timer = setTimeout(abort, options.timeoutMs ?? PDF_LIMITS.timeoutMs);
+        signal.addEventListener("abort", abort, { once: true });
+        worker.once("message", (message: unknown) => {
+          try {
+            const result = Schema.decodeUnknownSync(Result)(message);
+            finish(result.ok ? result.pages : undefined);
+          } catch {
+            finish(undefined);
+          }
+        });
+        worker.once("error", abort);
+        worker.once("exit", () => {
+          if (!settled) abort();
+        });
+        if (signal.aborted) abort();
+      }),
+    catch: () => new MediaError({ message: "Cannot extract PDF text within resource limits" }),
   });

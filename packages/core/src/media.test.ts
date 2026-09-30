@@ -1,14 +1,15 @@
+import { AuthError, ProviderError } from "./errors.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import { TestClock } from "effect/testing";
-import { databaseLayer } from "./db.js";
+import { databaseLayer, DatabaseCapabilities } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { makeIndexer } from "./indexer.js";
+import { type IndexerInput, makeIndexer } from "./indexer.js";
 import { type IncomingMessage, type ThreadSummary } from "./domain.js";
 import { MediaError, type Vision, unavailableVision } from "./media.js";
 import { MemoryPlatform } from "./platform-memory.js";
@@ -65,15 +66,21 @@ const setup = Effect.gen(function* () {
 });
 const indexerFor = (
   store: Store["Service"],
-  options: { vision?: Vision; battery?: () => boolean; inline?: boolean } = {},
+  options: {
+    vision?: Vision;
+    battery?: () => boolean;
+    inline?: boolean;
+    attachment?: IndexerInput["attachment"];
+    busy?: Effect.Effect<boolean>;
+  } = {},
 ) =>
   makeIndexer({
     store: store.media,
     vision: options.vision ?? fakeVision,
     onBattery: options.battery ?? (() => false),
-    busy: Effect.succeed(false),
+    busy: options.busy ?? Effect.succeed(false),
     message: (id) => store.getMessage(id).pipe(Effect.orDie),
-    attachment: () => Effect.succeed(new Uint8Array([1, 2, 3])),
+    attachment: options.attachment ?? (() => Effect.succeed(new Uint8Array([1, 2, 3]))),
     inline: () =>
       Effect.succeed(
         options.inline
@@ -478,3 +485,316 @@ it("retains RRF ordering and provenance when server results arrive", () => {
   assert.strictEqual(merged[0]?.id, "a/1");
   assert.strictEqual(merged[0]?.derivedMatches?.[0]?.page, 1);
 });
+
+it.effect("stale claims exhaust the processing retry budget", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        assert.ok(Option.isSome(yield* store.media.claim("crash-test", attempt * 360_000, true)));
+      }
+      assert.ok(Option.isNone(yield* store.media.claim("crash-test", 5 * 360_000, true)));
+      const sql = yield* SqlClient.SqlClient;
+      const [job] = yield* sql`SELECT status,attempts FROM derived_jobs WHERE message_id=${id}`;
+      assert.deepStrictEqual({ ...job }, { status: "failed", attempts: 5 });
+    }),
+  ),
+);
+
+it.effect("pure filters preserve chronological order and never attach unrelated OCR hits", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "newer", threadId: "newer", date: 2000 }),
+      );
+      const indexer = yield* indexerFor(store);
+      yield* indexer.batch();
+      for (const search of ["from:alice", "has:image", "in:attachment"]) {
+        const rows = yield* store.listThreads({ search });
+        assert.deepStrictEqual(
+          rows.map((row) => row.date),
+          [2000, 1000],
+        );
+        assert.ok(rows.every((row) => row.derivedMatches === undefined));
+      }
+    }),
+  ),
+);
+
+it("mail read/write/search/delete works when vector resolution or dlopen fails", async () => {
+  for (const vectorExtension of [
+    () => {
+      throw new Error("Unsupported platform");
+    },
+    () => "/missing/vec0.dylib",
+  ]) {
+    const platform = databaseLayer(":memory:", { vectorExtension }).pipe(Layer.provide(NodeSystem));
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const capabilities = yield* DatabaseCapabilities;
+        assert.strictEqual(capabilities.vectors, false);
+        const { store, account, id } = yield* setup;
+        const indexer = yield* indexerFor(store);
+        yield* indexer.batch();
+        assert.strictEqual((yield* store.listThreads({ search: "boarding" })).length, 1);
+        yield* store.upsertMessage(account.id, message({ bodyHtml: "changed" }));
+        yield* indexer.batch();
+        yield* store.deleteMessage(account.id, "m");
+        assert.strictEqual((yield* store.media.chunks(id)).length, 0);
+        yield* store.upsertMessage(account.id, message());
+        yield* indexer.batch();
+        yield* store.removeAccount(account.id);
+        const sql = yield* SqlClient.SqlClient;
+        assert.strictEqual(
+          (yield* sql`SELECT name FROM sqlite_master WHERE name='derived_text_vectors'`).length,
+          0,
+        );
+        assert.strictEqual((yield* store.listThreads({})).length, 0);
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(platform)))),
+    );
+  }
+});
+
+it("a vector-free connection can delete persisted indexed mail and later vector cleanup removes orphans", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "openmail-optional-vec-"));
+  const filename = join(dir, "mail.db");
+  const layer = (vectors: boolean) =>
+    StoreLive.pipe(
+      Layer.provideMerge(
+        databaseLayer(filename, vectors ? {} : { vectorExtension: null }).pipe(
+          Layer.provide(NodeSystem),
+        ),
+      ),
+    );
+  try {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const { store } = yield* setup;
+        yield* (yield* indexerFor(store)).batch();
+        const sql = yield* SqlClient.SqlClient;
+        yield* sql`INSERT INTO derived_text_vectors(rowid,embedding) SELECT id,${new Uint8Array(new Float32Array(384).buffer)} FROM derived_chunks`;
+      }).pipe(Effect.provide(layer(true))),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        yield* store.removeAccount("gmail:test@example.com");
+        assert.strictEqual((yield* store.listThreads({})).length, 0);
+      }).pipe(Effect.provide(layer(false))),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const sql = yield* SqlClient.SqlClient;
+        assert.strictEqual((yield* sql`SELECT rowid FROM derived_text_vectors`).length, 0);
+      }).pipe(Effect.provide(layer(true))),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+it.effect("an hour offline does not consume attempts and indexing resumes after recovery", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      let offline = true;
+      const indexer = yield* indexerFor(store, {
+        attachment: () =>
+          offline
+            ? Effect.fail(new ProviderError({ message: "offline" }))
+            : Effect.succeed(new Uint8Array([1])),
+      });
+      const sql = yield* SqlClient.SqlClient;
+      for (let tries = 0; tries < 8; tries++) {
+        assert.strictEqual(yield* indexer.batch(), 0);
+        const [job] =
+          yield* sql`SELECT status,attempts,retry_at FROM derived_jobs WHERE message_id=${id}`;
+        assert.strictEqual(job?.status, "queued");
+        assert.strictEqual(job?.attempts, 0);
+        assert.ok(Number(job?.retry_at) > Date.now());
+        yield* sql`UPDATE derived_jobs SET retry_at=0`;
+      }
+      offline = false;
+      assert.strictEqual(yield* indexer.batch(), 1);
+    }),
+  ),
+);
+
+it.effect("authentication failures suspend the account until sign-in without exhausting jobs", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account, id } = yield* setup;
+      let authorized = false;
+      let fetches = 0;
+      const indexer = yield* indexerFor(store, {
+        attachment: () => {
+          fetches++;
+          return authorized
+            ? Effect.succeed(new Uint8Array([1]))
+            : Effect.fail(new AuthError({ message: "sign in" }));
+        },
+      });
+      yield* indexer.batch();
+      assert.strictEqual((yield* store.getAccount(account.id)).needsReauth, true);
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE derived_jobs SET retry_at=0`;
+      for (let tries = 0; tries < 6; tries++) assert.strictEqual(yield* indexer.batch(), 0);
+      assert.strictEqual(fetches, 1);
+      const [job] = yield* sql`SELECT status,attempts FROM derived_jobs WHERE message_id=${id}`;
+      assert.deepStrictEqual({ ...job }, { status: "queued", attempts: 0 });
+      authorized = true;
+      yield* store.setNeedsReauth(account.id, false);
+      assert.strictEqual(yield* indexer.batch(), 1);
+    }),
+  ),
+);
+
+it("PDF page limits and a hung worker fail within a bounded time", async () => {
+  const capped = await Effect.runPromise(Effect.result(pdfText(syntheticPdf(), { maxPages: 1 })));
+  assert.strictEqual(capped._tag, "Failure");
+  const start = performance.now();
+  const timed = await Effect.runPromise(
+    Effect.result(
+      pdfText(syntheticPdf(), {
+        timeoutMs: 100,
+        workerUrl: new URL("data:text/javascript,for(;;){}"),
+      }),
+    ),
+  );
+  assert.strictEqual(timed._tag, "Failure");
+  assert.ok(performance.now() - start < 3000);
+});
+
+it.effect("activity during download keeps bytes and waits before OCR without redownloading", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store } = yield* setup;
+      let busy = false;
+      let fetches = 0;
+      let recognized = 0;
+      const downloaded = yield* Deferred.make<void>();
+      const indexer = yield* indexerFor(store, {
+        busy: Effect.sync(() => busy),
+        attachment: () =>
+          Effect.sync(() => {
+            fetches++;
+            busy = true;
+            return new Uint8Array([1]);
+          }).pipe(Effect.tap(() => Deferred.succeed(downloaded, undefined))),
+        vision: {
+          ...fakeVision,
+          recognize: (data) => {
+            recognized++;
+            return fakeVision.recognize(data);
+          },
+        },
+      });
+      const work = yield* Effect.forkChild(indexer.batch());
+      yield* Deferred.await(downloaded);
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual(recognized, 0);
+      busy = false;
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual(yield* Fiber.join(work), 1);
+      assert.strictEqual(fetches, 1);
+      assert.strictEqual(recognized, 1);
+    }),
+  ),
+);
+
+it.effect("large message-id filters and broad derived queries stay within SQLite bind limits", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      yield* (yield* indexerFor(store)).batch();
+      const ids = Array.from({ length: 40_000 }, (_, index) => `absent-${index}`);
+      ids.push(id);
+      assert.strictEqual(
+        (yield* store.listThreads({ messageIds: ids, search: "boarding" })).length,
+        1,
+      );
+      const rows = yield* store.listThreads({ search: "boarding", limit: 50 });
+      assert.ok(rows.length <= 50);
+      assert.strictEqual(rows[0]?.derivedMatches?.[0]?.text, "登机牌 boarding gate code");
+    }),
+  ),
+);
+
+it.effect("derived candidates are bounded before expanding message ids", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      const sql = yield* SqlClient.SqlClient;
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let index = 0; index < 1100; index++) {
+            const providerId = `bulk-${index}`;
+            yield* store.upsertMessage(
+              account.id,
+              message({ providerId, threadId: providerId, date: index + 2000 }),
+            );
+            const id = `${account.id}/${providerId}`;
+            const chunk = {
+              messageId: id,
+              text: "bulkneedle",
+              source: { kind: "attachment", index: 0, name: "file.png", mimeType: "image/png" },
+              page: null,
+              region: null,
+              pipelineVersion: "test",
+              visionRevision: null,
+            };
+            yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${id},${chunk.text},${JSON.stringify(chunk)})`;
+          }
+        }),
+      );
+      assert.strictEqual(
+        (yield* store.listThreads({ search: "bulkneedle", limit: 5000 })).length,
+        1024,
+      );
+    }),
+  ),
+);
+
+it.effect("backfill chooses newest eligible mail and limits download reservations per minute", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "new", threadId: "new", date: 3000 }),
+      );
+      const newest = yield* store.media.claim("priority", 1000, true);
+      assert.ok(Option.isSome(newest));
+      assert.strictEqual(newest.value.message_id, `${account.id}/new`);
+      yield* store.media.release(newest.value);
+      yield* store.deleteMessage(account.id, "new");
+      yield* store.upsertMessage(
+        account.id,
+        message({
+          attachments: [
+            { filename: "one.png", mimeType: "image/png", size: 20 * 1024 * 1024 },
+            { filename: "two.png", mimeType: "image/png", size: 20 * 1024 * 1024 },
+          ],
+        }),
+      );
+      const first = yield* Deferred.make<void>();
+      let fetches = 0;
+      const indexer = yield* indexerFor(store, {
+        attachment: () =>
+          Effect.sync(() => {
+            fetches++;
+            return new Uint8Array([1]);
+          }).pipe(Effect.tap(() => Deferred.succeed(first, undefined))),
+      });
+      const work = yield* Effect.forkChild(indexer.batch());
+      yield* Deferred.await(first);
+      yield* TestClock.adjust("59 seconds");
+      assert.strictEqual(fetches, 1);
+      yield* TestClock.adjust("2 seconds");
+      assert.strictEqual(yield* Fiber.join(work), 1);
+      assert.strictEqual(fetches, 2);
+    }),
+  ),
+);

@@ -42,7 +42,8 @@ export function pickAttachment<T>(
 }
 
 /** Inline images bigger than this stay out of the reader; the message shows them as broken. */
-const MAX_INLINE_BYTES = 8 * 1024 * 1024;
+export const MAX_INLINE_BYTES = 8 * 1024 * 1024;
+export const MEDIA_RAW_TOO_LARGE = "Raw message exceeds media size limit";
 
 const parse = (raw: Uint8Array) =>
   Effect.tryPromise({

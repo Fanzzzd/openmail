@@ -3,7 +3,7 @@ import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapfl
 import { type AddressObject, type ParsedMail, simpleParser } from "mailparser";
 import { createTransport } from "nodemailer";
 
-import { attachmentFromRaw } from "./attachments.js";
+import { attachmentFromRaw, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { buildMime } from "./compose.js";
 import type {
   Account,
@@ -1105,7 +1105,7 @@ export const makeImapWith = (
         yield* deleteMessage(s, id);
       }).pipe(Effect.scoped);
 
-    const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId) =>
+    const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId, maxBytes) =>
       Effect.gen(function* () {
         const ref = decodeProviderId(providerId);
         if (Option.isNone(ref)) {
@@ -1113,6 +1113,13 @@ export const makeImapWith = (
         }
         const { s } = yield* session(account);
         const same = yield* openFolderOf(s, ref.value, true);
+        if (same && maxBytes !== undefined) {
+          const metadata = yield* call(s, (c) =>
+            c.fetchOne(String(ref.value.uid), { uid: true, size: true }, { uid: true }),
+          );
+          if (!metadata || metadata.size === undefined || metadata.size > maxBytes)
+            return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+        }
         const m = same
           ? yield* call(s, (c) =>
               c.fetchOne(String(ref.value.uid), { uid: true, source: true }, { uid: true }),

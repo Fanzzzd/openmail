@@ -822,3 +822,22 @@ it.effect(
     );
   },
 );
+
+it.effect("media raw size is checked before downloading Gmail MIME", () =>
+  Effect.gen(function* () {
+    let rawCalls = 0;
+    const http = fakeHttp({
+      "GET /messages/m1": (url) => {
+        if (url.searchParams.get("format") === "minimal")
+          return { json: { sizeEstimate: 20_000_000 } };
+        rawCalls++;
+        return { json: { raw: b64("body") } };
+      },
+    });
+    const result = yield* run(http, (adapter) =>
+      adapter.fetchRaw(account, "m1", 8 * 1024 * 1024),
+    ).pipe(Effect.result);
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(rawCalls, 0);
+  }),
+);

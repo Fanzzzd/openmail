@@ -495,6 +495,9 @@ it.effect("split migrations build the same schema as running each script whole",
       (db) => Effect.sync(() => db.close()),
     );
     for (const migration of MIGRATIONS) reference.exec(migration);
+    reference.exec(
+      "CREATE VIRTUAL TABLE derived_text_vectors USING vec0(embedding float[384]); CREATE VIRTUAL TABLE derived_image_vectors USING vec0(embedding float[512]);",
+    );
     const expected = yield* Schema.decodeUnknownEffect(Master)(
       reference.prepare("SELECT type, name, sql FROM sqlite_master ORDER BY name").all(),
     );

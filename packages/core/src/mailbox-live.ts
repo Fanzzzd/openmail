@@ -15,7 +15,13 @@ import {
   Stream,
 } from "effect";
 
-import { attachmentRef, inlineImagesFromRaw, inlineMediaFromRaw } from "./attachments.js";
+import {
+  attachmentRef,
+  inlineImagesFromRaw,
+  inlineMediaFromRaw,
+  MAX_INLINE_BYTES,
+  MEDIA_RAW_TOO_LARGE,
+} from "./attachments.js";
 import type {
   Account,
   Actor,
@@ -704,10 +710,25 @@ export const MailboxLive = (
       });
 
       const localInline = Effect.fnUntraced(function* (id: string) {
+        const message = yield* store.getMessage(id);
+        if (
+          Buffer.byteLength(message.bodyHtml) +
+            message.attachments.reduce((total, part) => total + part.size, 0) >
+          MAX_INLINE_BYTES
+        )
+          return [];
         const { account, adapter, providerId } = yield* source(id);
-        return yield* adapter
-          .fetchRaw(account, providerId)
-          .pipe(Effect.flatMap(inlineMediaFromRaw));
+        return yield* adapter.fetchRaw(account, providerId, MAX_INLINE_BYTES).pipe(
+          Effect.flatMap((raw) =>
+            inlineMediaFromRaw(raw).pipe(
+              Effect.mapError(() => new MediaError({ message: "Cannot parse inline media" })),
+            ),
+          ),
+          Effect.catchIf(
+            (error) => error._tag === "PermanentError" && error.message === MEDIA_RAW_TOO_LARGE,
+            () => Effect.succeed([]),
+          ),
+        );
       });
       const indexer = yield* makeIndexer({
         store: store.media,
@@ -718,15 +739,8 @@ export const MailboxLive = (
           (current) => current.running || !(options.media?.idle() ?? true),
         ),
         message: (id) => store.getMessage(id).pipe(Effect.orDie),
-        attachment: (id, index) =>
-          attachment(id, index).pipe(
-            Effect.map((part) => part.data),
-            Effect.mapError(() => new MediaError({ message: "Cannot read media attachment" })),
-          ),
-        inline: (id) =>
-          localInline(id).pipe(
-            Effect.mapError(() => new MediaError({ message: "Cannot read inline media" })),
-          ),
+        attachment: (id, index) => attachment(id, index).pipe(Effect.map((part) => part.data)),
+        inline: (id) => localInline(id),
         changed,
       });
       if (options.media)

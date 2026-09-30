@@ -1,3 +1,4 @@
+import { DatabaseCapabilities } from "./db.js";
 import { makeMediaStore } from "./store-media.js";
 import { DerivedChunk } from "./media.js";
 /**
@@ -297,7 +298,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
     const compose = makeComposeStore(sql);
-    const media = makeMediaStore(sql);
+    const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
+    const media = makeMediaStore(sql, Option.isSome(capabilities) && capabilities.value.vectors);
     const organization = makeOrganizationStore(sql);
 
     const hasLabel = (label: string) =>
@@ -342,7 +344,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     });
 
     const removeAccount = Effect.fn("Store.removeAccount")((id: string) =>
-      run(sql`DELETE FROM accounts WHERE id = ${id}`),
+      run(sql`DELETE FROM accounts WHERE id = ${id}`).pipe(Effect.tap(() => media.cleanupVectors)),
     );
 
     const setAccountProfile = Effect.fn("Store.setAccountProfile")(
@@ -446,20 +448,27 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
             is_starred = excluded.is_starred`)
       );
+      yield* media.cleanupVectors;
     });
 
     const deleteMessage = Effect.fn("Store.deleteMessage")((account: string, providerId: string) =>
-      run(sql`DELETE FROM messages WHERE id = ${`${account}/${providerId}`}`),
+      run(sql`DELETE FROM messages WHERE id = ${`${account}/${providerId}`}`).pipe(
+        Effect.tap(() => media.cleanupVectors),
+      ),
     );
 
     const deleteMessagesWithLabel = Effect.fn("Store.deleteMessagesWithLabel")(
       (account: string, label: string) =>
-        run(sql`DELETE FROM messages AS m WHERE m.account_id = ${account} AND ${hasLabel(label)}`),
+        run(
+          sql`DELETE FROM messages AS m WHERE m.account_id = ${account} AND ${hasLabel(label)}`,
+        ).pipe(Effect.tap(() => media.cleanupVectors)),
     );
 
     /** Drops an account's local mail, for a provider whose ids changed meaning. */
     const deleteAccountMessages = Effect.fn("Store.deleteAccountMessages")((account: string) =>
-      run(sql`DELETE FROM messages WHERE account_id = ${account}`),
+      run(sql`DELETE FROM messages WHERE account_id = ${account}`).pipe(
+        Effect.tap(() => media.cleanupVectors),
+      ),
     );
 
     /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
@@ -479,7 +488,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         where.push(hasLabel(q.label));
       if (q.accountIds) where.push(inAccounts(q.accountIds));
       if (q.messageIds)
-        where.push(q.messageIds.length ? sql`m.id IN ${sql.in(q.messageIds)}` : sql.literal("0"));
+        where.push(sql`m.id IN (SELECT value FROM json_each(${JSON.stringify(q.messageIds)}))`);
       if (q.unreadOnly) where.push(sql`m.is_unread = 1`);
       if (q.starredOnly) where.push(sql`m.is_starred = 1`);
       const c = q.criteria;
@@ -493,6 +502,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         );
       if (c?.subject) where.push(sql`m.subject LIKE ${literalLike(c.subject)} ESCAPE '\\'`);
       if (c?.important) where.push(hasLabel("IMPORTANT"));
+      if (c?.attachmentText)
+        where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
       if (c?.image)
         where.push(sql`(EXISTS(SELECT 1 FROM json_each(m.attachments_json)
         WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%') OR m.body_html LIKE '%cid:%')`);
@@ -581,9 +592,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const q = raw.search === undefined ? raw : parseSearchQuery(raw);
       const limit = q.limit ?? 50;
       const listing = q.flat ? messageList : threadList;
-      let threads = q.criteria?.attachmentText ? [] : yield* listing(q, limit);
-      if (q.search !== undefined) {
-        const terms = searchWords(q.search).map((word) => word.replace(/^"(.*)"$/, "$1"));
+      const terms = searchWords(q.search ?? "").map((word) => word.replace(/^"(.*)"$/, "$1"));
+      let threads = q.criteria?.attachmentText && terms.length ? [] : yield* listing(q, limit);
+      if (terms.length) {
         const predicates: Fragment[] = [];
         const long = terms.filter((term) => Array.from(term).length >= 3);
         if (long.length)
@@ -603,10 +614,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           sql`SELECT m.account_id,m.thread_id,d.provenance_json FROM derived_chunks d JOIN messages m ON m.id=d.message_id
           WHERE ${listFilter({ ...q, search: "", criteria })} AND ${sql.and(predicates)}
           ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
-          ORDER BY ${long.length ? sql`(SELECT rank FROM derived_fts WHERE rowid=d.id AND derived_fts MATCH ${long.map((term) => `"${term.replaceAll('"', '""')}"`).join(" AND ")})` : sql.literal("m.date DESC")},d.id`,
+          ORDER BY ${long.length ? sql`(SELECT rank FROM derived_fts WHERE rowid=d.id AND derived_fts MATCH ${long.map((term) => `"${term.replaceAll('"', '""')}"`).join(" AND ")})` : sql.literal("m.date DESC")},d.id LIMIT ${Math.min(Math.max(limit * 20, 200), 4096)}`,
         );
         const chunks = matches.map((row) => row.provenance_json);
-        const ids = [...new Set(chunks.map((chunk) => chunk.messageId))];
+        const ids = [...new Set(chunks.map((chunk) => chunk.messageId))].slice(0, 1024);
         const candidates = ids.length
           ? yield* listing({ ...q, search: "", criteria, messageIds: ids }, ids.length)
           : [];

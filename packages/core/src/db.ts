@@ -1,7 +1,6 @@
 import { SqliteClient } from "@effect/sql-sqlite-node";
-import { Effect, FileSystem, Layer, Path, Schema } from "effect";
+import { Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { getLoadablePath } from "sqlite-vec";
 
 /**
  * node:sqlite instead of better-sqlite3: it ships inside both Node and
@@ -246,7 +245,7 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX derived_jobs_pending ON derived_jobs(status, retry_at);
   CREATE TABLE derived_chunks (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
     text TEXT NOT NULL, provenance_json TEXT NOT NULL
   );
@@ -262,12 +261,6 @@ export const MIGRATIONS: readonly string[] = [
   CREATE TRIGGER derived_au AFTER UPDATE ON derived_chunks BEGIN
     INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
     INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
-  END;
-  CREATE VIRTUAL TABLE derived_text_vectors USING vec0(embedding float[384]);
-  CREATE VIRTUAL TABLE derived_image_vectors USING vec0(embedding float[512]);
-  CREATE TRIGGER derived_vector_delete AFTER DELETE ON derived_chunks BEGIN
-    DELETE FROM derived_text_vectors WHERE rowid=old.id;
-    DELETE FROM derived_image_vectors WHERE rowid=old.id;
   END;
   CREATE TRIGGER media_message_insert AFTER INSERT ON messages
     WHEN new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
@@ -345,14 +338,6 @@ const UserVersion = Schema.Struct({ user_version: Schema.Number });
  */
 const migrate = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
-  const sqlite = yield* SqliteClient.SqliteClient;
-  // SQLite's dlopen bypasses Electron's ASAR filesystem wrapper. The build
-  // unpacks the platform extension, so point directly at its physical file.
-  const extensionPath = getLoadablePath().replace(
-    /([/\\])app\.asar([/\\])/u,
-    "$1app.asar.unpacked$2",
-  );
-  yield* Effect.orDie(sqlite.loadExtension(extensionPath));
   // Per connection, and a no-op inside a transaction, so it goes first.
   yield* sql`PRAGMA foreign_keys = ON`;
   const step = sql.withTransaction(
@@ -378,10 +363,21 @@ const migrate = Effect.gen(function* () {
  * SQLITE_BUSY. `":memory:"` gives a fresh database for tests; any other name
  * gets its parent directory created first.
  */
+export class DatabaseCapabilities extends Context.Service<
+  DatabaseCapabilities,
+  { readonly vectors: boolean }
+>()("openmail/DatabaseCapabilities") {}
+
+export interface DatabaseOptions {
+  /** Resolve the local extension. Passing null intentionally disables vectors. */
+  readonly vectorExtension?: (() => string) | null;
+}
+
 export function databaseLayer(
   filename: string,
+  options: DatabaseOptions = {},
 ): Layer.Layer<
-  SqlClient.SqlClient | SqliteClient.SqliteClient,
+  SqlClient.SqlClient | SqliteClient.SqliteClient | DatabaseCapabilities,
   never,
   FileSystem.FileSystem | Path.Path
 > {
@@ -391,7 +387,36 @@ export function databaseLayer(
     const path = yield* Path.Path;
     yield* Effect.orDie(fs.makeDirectory(path.dirname(filename), { recursive: true }));
   });
-  return Layer.effectDiscard(Effect.orDie(migrate)).pipe(
+  const initialize = Effect.gen(function* () {
+    yield* Effect.orDie(migrate);
+    const sqlite = yield* SqliteClient.SqliteClient;
+    const sql = yield* SqlClient.SqlClient;
+    const vectors = yield* Effect.gen(function* () {
+      if (options.vectorExtension === null) return false;
+      const path = options.vectorExtension
+        ? yield* Effect.try(options.vectorExtension)
+        : yield* Effect.tryPromise(async () => (await import("sqlite-vec")).getLoadablePath());
+      // SQLite dlopen bypasses Electron's ASAR filesystem wrapper.
+      yield* sqlite.loadExtension(
+        path.replace(/([/\\])app\.asar([/\\])/u, "$1app.asar.unpacked$2"),
+      );
+      yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_text_vectors USING vec0(embedding float[384])`;
+      yield* sql`CREATE VIRTUAL TABLE IF NOT EXISTS derived_image_vectors USING vec0(embedding float[512])`;
+      // A connection without vec0 can delete messages. Clean orphaned vectors
+      // when a capable connection next opens the database.
+      yield* sql`DELETE FROM derived_text_vectors WHERE rowid NOT IN (SELECT id FROM derived_chunks)`;
+      yield* sql`DELETE FROM derived_image_vectors WHERE rowid NOT IN (SELECT id FROM derived_chunks)`;
+      return true;
+    }).pipe(
+      Effect.catch(() =>
+        Effect.logWarning("sqlite-vec unavailable; mail and media text search remain enabled").pipe(
+          Effect.as(false),
+        ),
+      ),
+    );
+    return DatabaseCapabilities.of({ vectors });
+  });
+  return Layer.effect(DatabaseCapabilities, initialize).pipe(
     Layer.provideMerge(SqliteClient.layer({ filename, busyTimeout: 5000 })),
     Layer.provide(Layer.effectDiscard(ensureDir)),
   );

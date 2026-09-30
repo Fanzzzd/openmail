@@ -71,4 +71,4 @@ export const unavailableVision: Vision = {
   version: "unavailable",
   recognize: () => Effect.succeed({ revision: 0, lines: [] }),
 };
-export const MEDIA_PIPELINE_VERSION = "media-1:tile1024-overlap128:pdf-text1";
+export const MEDIA_PIPELINE_VERSION = "media-1:tile1024-overlap128:pdf-text2-worker";
