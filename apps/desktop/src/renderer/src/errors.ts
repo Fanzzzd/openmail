@@ -52,6 +52,7 @@ export function errorText(i18n: I18n, error: AppError): string {
       return i18n._(msg`The ${client} OAuth client is not set up yet.`);
     },
     NotFound: (e) => i18n._(NOT_FOUND[e.what]),
+    DeviceError: (e) => i18n._(msg`Couldn't finish this on this computer: ${e.message}`),
     PermanentError: (e) => i18n._(msg`The server refused this action: ${e.message}`),
     ProviderError: (e) => i18n._(msg`Can't reach the mail server right now: ${e.message}`),
     InvalidInput: (e) => {

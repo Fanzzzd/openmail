@@ -57,6 +57,14 @@ export class SettingsScopeMissing extends Schema.TaggedError<SettingsScopeMissin
   },
 ) {}
 
+/**
+ * Something failed on this computer, not at the mail server: printing,
+ * writing a file, opening an attachment.
+ */
+export class DeviceError extends Schema.TaggedError<DeviceError>()("DeviceError", {
+  message: Schema.String,
+}) {}
+
 /** What a provider call can fail with. */
 export type ProviderFailure = AuthError | PermanentError | ProviderError;
 
@@ -69,5 +77,6 @@ export const MailError = Schema.Union([
   NotFound,
   InvalidInput,
   SettingsScopeMissing,
+  DeviceError,
 ]);
 export type MailError = typeof MailError.Type;

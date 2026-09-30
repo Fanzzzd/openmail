@@ -488,6 +488,11 @@ msgstr "复制"
 msgid "Couldn't discard: {reason}"
 msgstr "丢弃失败：{reason}"
 
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "Couldn't finish this on this computer: {0}"
+msgstr "在这台电脑上没能完成：{0}"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"

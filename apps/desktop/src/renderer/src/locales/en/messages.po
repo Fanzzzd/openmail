@@ -482,6 +482,11 @@ msgstr "Copy"
 msgid "Couldn't discard: {reason}"
 msgstr "Couldn't discard: {reason}"
 
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "Couldn't finish this on this computer: {0}"
+msgstr "Couldn't finish this on this computer: {0}"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Couldn't get the attachment: {reason}"

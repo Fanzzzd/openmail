@@ -8,7 +8,10 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import { type Mailbox, type PerformError, PermanentError, printableThread } from "@openmail/core";
+import { type Mailbox, type PerformError, DeviceError, printableThread } from "@openmail/core";
+
+/** A mailbox failure, or one on this computer. */
+type FileError = PerformError | DeviceError;
 import { Effect } from "effect";
 import { app, BrowserWindow, dialog, session, shell } from "electron";
 
@@ -32,7 +35,7 @@ export function safeFilename(name: string): string {
 }
 
 const failed = (what: string) => (error: unknown) =>
-  new PermanentError({
+  new DeviceError({
     message: `${what}: ${error instanceof Error ? error.message : String(error)}`,
   });
 
@@ -78,12 +81,12 @@ export const saveAttachment: (
   parent: BrowserWindow | null,
   messageId: string,
   index: number,
-) => Effect.Effect<boolean, PerformError> = Effect.fnUntraced(function* (
+) => Effect.Effect<boolean, FileError> = Effect.fnUntraced(function* (
   m: MailboxService,
   parent: BrowserWindow | null,
   messageId: string,
   index: number,
-): Effect.fn.Return<boolean, PerformError> {
+): Effect.fn.Return<boolean, FileError> {
   const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
   const listed = message?.attachments[index];
   const name = safeFilename(listed?.filename ?? "attachment");
@@ -101,11 +104,11 @@ export const saveAllAttachments: (
   m: MailboxService,
   parent: BrowserWindow | null,
   messageId: string,
-) => Effect.Effect<number, PerformError> = Effect.fnUntraced(function* (
+) => Effect.Effect<number, FileError> = Effect.fnUntraced(function* (
   m: MailboxService,
   parent: BrowserWindow | null,
   messageId: string,
-): Effect.fn.Return<number, PerformError> {
+): Effect.fn.Return<number, FileError> {
   const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
   const count = message?.attachments.length ?? 0;
   if (count === 0) return 0;
@@ -130,16 +133,16 @@ export const openAttachment: (
   m: MailboxService,
   messageId: string,
   index: number,
-) => Effect.Effect<void, PerformError> = Effect.fnUntraced(function* (
+) => Effect.Effect<void, FileError> = Effect.fnUntraced(function* (
   m: MailboxService,
   messageId: string,
   index: number,
-): Effect.fn.Return<void, PerformError> {
+): Effect.fn.Return<void, FileError> {
   const content = yield* m.attachment(messageId, index);
   const name = safeFilename(content.filename);
   if (EXECUTABLE.test(name)) {
     // Fails here; nothing below runs.
-    yield* new PermanentError({
+    yield* new DeviceError({
       message: `${name} can run code. Save it and open it yourself if you trust it.`,
     });
   }
@@ -151,7 +154,7 @@ export const openAttachment: (
   const file = path.join(folder, name);
   yield* write(file, content.data);
   const error = yield* Effect.promise(() => shell.openPath(file));
-  if (error) yield* new PermanentError({ message: error });
+  if (error) yield* new DeviceError({ message: error });
 });
 
 /**
@@ -180,11 +183,11 @@ export const printThread: (
   m: MailboxService,
   parent: BrowserWindow | null,
   request: PrintRequest,
-) => Effect.Effect<boolean, PerformError> = Effect.fnUntraced(function* (
+) => Effect.Effect<boolean, FileError> = Effect.fnUntraced(function* (
   m: MailboxService,
   parent: BrowserWindow | null,
   request: PrintRequest,
-): Effect.fn.Return<boolean, PerformError> {
+): Effect.fn.Return<boolean, FileError> {
   const thread = yield* m.thread(request.id);
   const messages = request.only ? thread.filter((x) => x.id === request.only) : thread;
   const subject = messages.at(-1)?.subject || thread.at(-1)?.subject || "";
@@ -260,11 +263,11 @@ export const printThread: (
       yield* write(pdfPath, data);
       return true;
     }
-    return yield* Effect.callback<boolean, PermanentError>((resume) => {
+    return yield* Effect.callback<boolean, DeviceError>((resume) => {
       win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
         // A cancelled print dialog reports "Print job canceled" or "cancelled".
         if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
-        else resume(Effect.fail(new PermanentError({ message: `Printing failed: ${reason}` })));
+        else resume(Effect.fail(new DeviceError({ message: `Printing failed: ${reason}` })));
       });
     });
   }).pipe(
