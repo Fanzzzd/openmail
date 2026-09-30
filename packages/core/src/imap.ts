@@ -396,6 +396,7 @@ export function toIncoming(
     from: addresses(parsed.from)[0] ?? { name: "", address: "" },
     to: addresses(parsed.to),
     cc: addresses(parsed.cc),
+    replyTo: addresses(parsed.replyTo),
     date: Number.isFinite(received) ? received : (parsed.date?.getTime() ?? 0),
     snippet: text.replace(/\s+/g, " ").trim().slice(0, 200),
     bodyText: text,

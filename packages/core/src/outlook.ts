@@ -87,7 +87,7 @@ const SKIPPED = [
 ];
 
 const SELECT =
-  "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients," +
+  "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
   "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
@@ -119,6 +119,7 @@ const GraphMessage = Schema.Struct({
   from: Schema.optionalKey(Schema.NullOr(GraphAddress)),
   toRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
   ccRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
+  replyTo: Schema.optionalKey(Schema.Array(GraphAddress)),
   receivedDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
   sentDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
   isRead: Schema.optionalKey(Schema.Boolean),
@@ -1167,6 +1168,7 @@ export function parseGraphMessage(
     from: address(raw.from),
     to: (raw.toRecipients ?? []).map(address),
     cc: (raw.ccRecipients ?? []).map(address),
+    replyTo: (raw.replyTo ?? []).map(address).filter((a) => a.address.trim()),
     date: Date.parse(raw.receivedDateTime || raw.sentDateTime || ""),
     snippet: raw.bodyPreview ?? "",
     bodyText: text,

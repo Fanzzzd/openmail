@@ -1,6 +1,7 @@
 import { Result } from "effect";
 
 import type { Address } from "./domain.js";
+import { isEmailAddress, splitAddresses } from "./recipients.js";
 
 /** Decodes RFC 2047 encoded-words (`=?GBK?B?...?=`) that providers leave in headers. */
 export function decodeHeader(value: string): string {
@@ -44,30 +45,23 @@ export function decodeBytes(bytes: Uint8Array, charset = "utf-8"): string {
 /** Splits an address-list header on commas outside quotes and angle brackets. */
 export function parseAddressList(value: string | undefined): Address[] {
   if (!value) return [];
-  const parts: string[] = [];
-  let current = "";
-  let quoted = false;
-  let angled = false;
-  for (const ch of decodeHeader(value)) {
-    if (ch === '"') quoted = !quoted;
-    else if (ch === "<" && !quoted) angled = true;
-    else if (ch === ">" && !quoted) angled = false;
-    if (ch === "," && !quoted && !angled) {
-      parts.push(current);
-      current = "";
-    } else current += ch;
-  }
-  parts.push(current);
-  return parts
+  return splitAddresses(value.replace(/\r?\n[ \t]+/g, " "))
     .map((p) => p.trim())
     .filter(Boolean)
-    .map(parseAddress);
+    .map((part) => parseAddress(decodeHeader(part)))
+    .filter((address) => isEmailAddress(address.address));
 }
 
 function parseAddress(raw: string): Address {
   const match = /^(.*?)\s*<([^>]+)>$/.exec(raw);
   if (!match) return { name: "", address: raw.replace(/^"|"$/g, "") };
-  return { name: match[1]!.trim().replace(/^"|"$/g, ""), address: match[2]!.trim() };
+  return {
+    name: match[1]!
+      .trim()
+      .replace(/^"|"$/g, "")
+      .replace(/\\(["\\])/g, "$1"),
+    address: match[2]!.trim(),
+  };
 }
 
 export function charsetOf(contentType: string | undefined): string | undefined {

@@ -1,6 +1,6 @@
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-import type { Address } from "@openmail/core/schema";
+export { displayName } from "@openmail/core/schema";
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
@@ -18,10 +18,6 @@ export function shortDate(ms: number, i18n: I18n): string {
   if (d.getFullYear() === now.getFullYear())
     return d.toLocaleDateString(locale, { month: "numeric", day: "numeric" });
   return d.toLocaleDateString(locale);
-}
-
-export function displayName(a: Address): string {
-  return a.name || a.address.split("@")[0] || a.address;
 }
 
 const AVATAR_COLORS = [

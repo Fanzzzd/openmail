@@ -8,6 +8,7 @@ import { simpleParser } from "mailparser";
 
 import type { Account } from "./domain.js";
 import { makeOutlook, parseGraphMessage } from "./outlook.js";
+import { replyRecipients } from "./recipients.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
 import { type Change, type ProviderAdapter, Secrets } from "./services.js";
 
@@ -1406,4 +1407,96 @@ it.effect(
         !http.calls.some((c) => /messages\/(cached|pending)|\/attachments/.test(c.url.pathname)),
       );
     }),
+);
+
+it.effect("Graph fetch selects and decodes the full Reply-To recipient collection", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/reply": {
+        json: {
+          ...raw,
+          id: "reply",
+          hasAttachments: false,
+          parentFolderId: "inbox",
+          replyTo: [
+            { emailAddress: { name: "Reply, Team", address: "reply@example.com" } },
+            { emailAddress: { address: "other@example.com" } },
+          ],
+        },
+      },
+    });
+    const parsed = yield* run(http, (adapter) => adapter.fetchMessage(account, "reply"));
+    assert.deepStrictEqual(parsed.replyTo, [
+      { name: "Reply, Team", address: "reply@example.com" },
+      { name: "", address: "other@example.com" },
+    ]);
+    const request = http.calls.find((call) => call.url.pathname.endsWith("/messages/reply"));
+    assert.ok(request);
+    assert.ok(request.url.searchParams.get("$select")?.split(",").includes("replyTo"));
+    assert.deepStrictEqual(parseGraphMessage(raw, "INBOX", []).replyTo, []);
+    assert.deepStrictEqual(parseGraphMessage({ ...raw, replyTo: [] }, "INBOX", []).replyTo, []);
+  }),
+);
+
+it.effect("Graph reply drafts replace server defaults with the selected Reply-To targets", () =>
+  Effect.gen(function* () {
+    const incoming = parseGraphMessage(
+      {
+        ...raw,
+        replyTo: [
+          { emailAddress: { name: "Reply", address: "reply@example.com" } },
+          { emailAddress: { address: "ALIAS@outlook.com" } },
+        ],
+        toRecipients: [
+          ...raw.toRecipients,
+          { emailAddress: { name: "Other", address: "other@example.com" } },
+        ],
+        ccRecipients: [{ emailAddress: { name: "Duplicate", address: "OTHER@example.com" } }],
+      },
+      "INBOX",
+      [],
+    );
+    const graphRecipient = Schema.Struct({
+      emailAddress: Schema.Struct({ name: Schema.String, address: Schema.String }),
+    });
+    const decodeTargets = Schema.decodeUnknownSync(
+      Schema.Struct({
+        toRecipients: Schema.Array(graphRecipient),
+        ccRecipients: Schema.Array(graphRecipient),
+        bccRecipients: Schema.Array(graphRecipient),
+      }),
+    );
+    for (const mode of ["reply", "replyAll"] as const) {
+      const action = mode === "reply" ? "createReply" : "createReplyAll";
+      const http = fakeHttp({
+        [`POST /me/messages/orig/${action}`]: { json: { id: "draft" } },
+        "PATCH /me/messages/draft": { json: {} },
+        "POST /me/messages/draft/send": { status: 202 },
+      });
+      yield* run(http, (adapter) =>
+        adapter.send(
+          account,
+          {
+            ...replyRecipients(incoming, [account.email, "alias@outlook.com"], mode === "replyAll"),
+            bcc: [],
+            subject: "Re: Question",
+            text: "Answer",
+            attachments: [],
+            mode,
+          },
+          Option.some({ providerId: "orig", threadId: "conv-1" }),
+        ),
+      );
+      const patch = http.calls.find((call) => call.method === "PATCH");
+      assert.ok(patch);
+      assert.deepStrictEqual(decodeTargets(patch.body), {
+        toRecipients: [{ emailAddress: { name: "Reply", address: "reply@example.com" } }],
+        ccRecipients:
+          mode === "replyAll"
+            ? [{ emailAddress: { name: "Other", address: "other@example.com" } }]
+            : [],
+        bccRecipients: [],
+      });
+    }
+  }),
 );

@@ -109,8 +109,8 @@ export function makeCacheMailbox(
     const now = yield* Clock.currentTimeMillis;
     for (const message of messages) {
       yield* store.touchBody(message.id, now);
-      if (message.bodyCached !== false) continue;
-      yield* Effect.gen(function* () {
+      if (message.bodyCached !== false && message.replyTo !== undefined) continue;
+      const hydrate = Effect.gen(function* () {
         const ref = yield* store.messageRef(message.id);
         const account = yield* store.getAccount(ref.accountId);
         const full = yield* providers.get(account.provider).fetchMessage(account, ref.providerId);
@@ -120,13 +120,22 @@ export function makeCacheMailbox(
             yield* store.upsertMessage(account.id, {
               ...current,
               providerId: ref.providerId,
+              from: full.from,
+              to: full.to,
+              cc: full.cc,
+              replyTo: full.replyTo ?? [],
               bodyText: full.bodyText,
               bodyHtml: full.bodyHtml,
               bodyCached: true,
             });
           }),
         );
-      }).pipe(Effect.catch(() => Effect.void));
+      });
+      // A reply cannot choose targets while its headers remain unknown.
+      // Known headers still allow offline reading if an evicted body fails to load.
+      yield* message.replyTo === undefined
+        ? hydrate
+        : hydrate.pipe(Effect.catch(() => Effect.void));
     }
     return yield* store.getThread(id);
   });

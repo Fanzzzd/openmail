@@ -14,6 +14,7 @@ import {
   setSignatureAtom,
 } from "../state/mutations";
 import { hiddenContactsAtom, prefsAtom, signaturesAtom, templatesAtom } from "../state/queries";
+import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
 const heading = "mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400";
@@ -23,10 +24,33 @@ const box = "rounded-lg border border-black/10 dark:border-white/10";
 export function ComposeSettings() {
   return (
     <div className="space-y-6">
+      <RecipientAddresses />
       <UndoSend />
       <Templates />
       <HiddenContacts />
     </div>
+  );
+}
+
+function RecipientAddresses() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  return (
+    <section>
+      <label className="flex items-center gap-2">
+        <Checkbox
+          checked={prefs?.showFullRecipientAddresses ?? false}
+          onCheckedChange={(showFullRecipientAddresses) =>
+            setPrefs({
+              payload: { patch: { showFullRecipientAddresses } },
+              reactivityKeys: [Keys.prefs],
+            })
+          }
+        />
+        <span>{t`Show full email addresses in recipient fields`}</span>
+      </label>
+    </section>
   );
 }
 

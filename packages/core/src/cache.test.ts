@@ -1,6 +1,6 @@
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
+import { Deferred, Effect, Fiber, FileSystem, Layer, Option, Path, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
@@ -16,6 +16,7 @@ import { listWindow } from "./list-window.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { MemoryPlatform } from "./platform-memory.js";
+import { replyRecipients } from "./recipients.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { startAutoUpdates, type UpdateClient } from "./updates.js";
@@ -39,6 +40,85 @@ const message = (id: string, overrides: Partial<IncomingMessage> = {}): Incoming
 });
 const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
+
+for (const provider of ["gmail", "outlook", "imap"] as const) {
+  it.effect(
+    `${provider} refills unknown Reply-To on cached mail before selecting reply targets`,
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const paths = yield* Path.Path;
+        const dir = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-reply-refill-" });
+        const remote = message("legacy", {
+          to: [{ name: "Me", address: "me@example.com" }],
+          replyTo: [{ name: "Forms", address: "forms@example.com" }],
+        });
+        const server = fakeServer("me@example.com", [remote, message("empty", { replyTo: [] })]);
+        const dependencies = Layer.mergeAll(
+          StoreLive,
+          Layer.succeed(Providers, { get: () => makeFakeProvider(server) }),
+        ).pipe(
+          Layer.provideMerge(
+            Layer.merge(
+              MemoryPlatform(),
+              databaseLayer(paths.join(dir, "mail.db")).pipe(
+                Layer.provide(NodeFileSystem.layer),
+                Layer.provide(NodePath.layer),
+              ),
+            ),
+          ),
+        );
+        yield* Effect.gen(function* () {
+          const store = yield* Store;
+          const sql = yield* SqlClient.SqlClient;
+          const account = yield* store.upsertAccount(provider, server.email);
+          const mailbox = yield* Mailbox;
+          for (const original of server.messages.values()) {
+            const id = `${account.id}/${original.providerId}`;
+            yield* store.upsertMessage(account.id, {
+              ...original,
+              cc: [{ name: "", address: "undisclosed-recipients:" }],
+              isStarred: true,
+            });
+            yield* sql`UPDATE messages SET reply_to_json=NULL WHERE id=${id}`;
+            const before = yield* sql`SELECT rowid FROM messages WHERE id=${id}`;
+            assert.strictEqual((yield* store.getMessage(id)).bodyCached, true);
+            assert.isUndefined((yield* store.getMessage(id)).replyTo);
+            server.failNext = new ProviderError({ message: "Offline", status: 503 });
+            assert.strictEqual(
+              (yield* Effect.flip(mailbox.readerThread(id)))._tag,
+              "ProviderError",
+            );
+            assert.isUndefined((yield* store.getMessage(id)).replyTo);
+            const [ready] = yield* mailbox.readerThread(id);
+            assert.ok(ready);
+            assert.deepStrictEqual(ready.replyTo, original.replyTo);
+            assert.deepStrictEqual(ready.to, original.to);
+            assert.deepStrictEqual(ready.cc, original.cc);
+            assert.isTrue(ready.isStarred);
+            assert.deepStrictEqual(
+              replyRecipients(ready, [account.email], false).to,
+              original.replyTo?.length ? original.replyTo : [original.from],
+            );
+            assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${id}`, before);
+            yield* mailbox.readerThread(id);
+          }
+          assert.deepStrictEqual(server.bodyFetched, ["legacy", "empty"]);
+          // Known headers continue to support offline reading of an evicted body.
+          const knownId = `${account.id}/empty`;
+          yield* sql`UPDATE messages SET body_cached=0 WHERE id=${knownId}`;
+          server.failNext = new ProviderError({ message: "Offline", status: 503 });
+          assert.deepStrictEqual((yield* mailbox.readerThread(knownId))[0]?.replyTo, []);
+          yield* sql`INSERT INTO messages_fts(messages_fts,rank) VALUES ('integrity-check',1)`;
+          assert.strictEqual((yield* store.listThreads({ search: "unique-body-term" })).length, 2);
+        }).pipe(
+          Effect.provide(
+            MailboxLive({ backgroundFlush: false }).pipe(Layer.provideMerge(dependencies)),
+          ),
+        );
+      }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+  );
+}
 
 it.effect("date/id pagination visits ties once in grouped, flat, search and draft views", () =>
   withStore(
@@ -180,7 +260,13 @@ it.effect(
         const [head] = yield* m.threads({ mailbox: "all" });
         assert.ok(head);
         assert.strictEqual((yield* store.getMessage(head.id)).bodyCached, false);
+        const ref = yield* store.messageRef(head.id);
+        const remote = server.messages.get(ref.providerId);
+        assert.ok(remote);
+        const replyTo = [{ name: "Reply", address: "reply@example.com" }];
+        server.messages.set(ref.providerId, { ...remote, replyTo });
         const full = (yield* m.readerThread(head.id))[0];
+        assert.deepStrictEqual(full?.replyTo, replyTo);
         assert.strictEqual(full?.bodyText, "unique-body-term");
         assert.strictEqual(full?.bodyCached, true);
         yield* TestClock.adjust("10 seconds");

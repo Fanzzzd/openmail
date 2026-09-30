@@ -841,3 +841,100 @@ it.effect(
       );
     }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
+
+it.effect("Reply-To updates retain rowids and FTS, and absent headers clear cached targets", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("gmail", "me@example.com");
+      const id = `${account.id}/m1`;
+      yield* store.upsertMessage(account.id, message({}));
+      const before = yield* sql`SELECT rowid FROM messages WHERE id=${id}`;
+      assert.deepStrictEqual((yield* store.getMessage(id)).replyTo, []);
+      const replyTo = [{ name: "Reply, Team", address: "reply@example.com" }];
+      yield* store.upsertMessage(account.id, message({ replyTo }));
+      assert.deepStrictEqual((yield* store.getMessage(id)).replyTo, replyTo);
+      assert.deepStrictEqual((yield* store.getThread(id))[0]?.replyTo, replyTo);
+      assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${id}`, before);
+      assert.strictEqual((yield* store.listThreads({ search: "产能数据" })).length, 1);
+      yield* sql`INSERT INTO messages_fts(messages_fts) VALUES ('integrity-check')`;
+      yield* store.upsertMessage(account.id, message({}));
+      assert.deepStrictEqual((yield* store.getMessage(id)).replyTo, []);
+    }),
+  ),
+);
+
+it.effect("full recipient display preference defaults off and survives unrelated writes", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      assert.isFalse((yield* store.prefs).showFullRecipientAddresses);
+      yield* store.setPrefs({ showFullRecipientAddresses: true });
+      yield* store.setPrefs({ undoSendSeconds: 20 });
+      assert.isTrue((yield* store.prefs).showFullRecipientAddresses);
+      yield* store.setPrefs({ showFullRecipientAddresses: false });
+      assert.isFalse((yield* store.prefs).showFullRecipientAddresses);
+      yield* sql`UPDATE prefs SET value_json='"invalid"' WHERE key='showFullRecipientAddresses'`;
+      assert.isFalse((yield* store.prefs).showFullRecipientAddresses);
+    }),
+  ),
+);
+
+it.effect(
+  "migration 14 preserves v13 mail and rowids, then persists Reply-To and display preference",
+  () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const dir = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-reply-to-" });
+      const file = path.join(dir, "mail.db");
+      const accountId = "gmail:me@example.com";
+      const messageId = `${accountId}/m1`;
+      const replyTo = [{ name: "Reply", address: "reply@example.com" }];
+      yield* Effect.sync(() => {
+        const old = new DatabaseSync(file);
+        try {
+          for (const migration of MIGRATIONS.slice(0, 13)) old.exec(migration);
+          old.exec("PRAGMA user_version=13");
+          old
+            .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)")
+            .run(accountId, "gmail", "me@example.com", 0);
+          old
+            .prepare(`INSERT INTO messages(rowid,id,account_id,provider_id,thread_id,subject,
+          from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,
+          attachments_json,is_unread,is_starred) VALUES(42,?,?, 'm1','t1','Legacy','Sender',
+          'sender@example.com','[]','[]',1,'','legacyneedle','','["INBOX"]','[]',1,0)`)
+            .run(messageId, accountId);
+        } finally {
+          old.close();
+        }
+      });
+      for (const reopening of [false, true]) {
+        yield* withStore(
+          Effect.gen(function* () {
+            const store = yield* Store;
+            const sql = yield* SqlClient.SqlClient;
+            assert.deepStrictEqual(
+              (yield* store.getMessage(messageId)).replyTo,
+              reopening ? replyTo : undefined,
+            );
+            assert.strictEqual((yield* store.prefs).showFullRecipientAddresses, reopening);
+            const [row] = yield* sql`SELECT rowid FROM messages WHERE id=${messageId}`;
+            assert.strictEqual(Schema.decodeUnknownSync(Row)(row).rowid, 42);
+            assert.strictEqual((yield* store.listThreads({ search: "legacyneedle" })).length, 1);
+            if (!reopening) {
+              yield* store.upsertMessage(accountId, message({ replyTo, bodyText: "legacyneedle" }));
+              yield* store.setPrefs({ showFullRecipientAddresses: true });
+            }
+            yield* sql`INSERT INTO messages_fts(messages_fts) VALUES ('integrity-check')`;
+          }),
+          databaseLayer(file).pipe(
+            Layer.provide(NodeFileSystem.layer),
+            Layer.provide(NodePath.layer),
+          ),
+        );
+      }
+    }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);

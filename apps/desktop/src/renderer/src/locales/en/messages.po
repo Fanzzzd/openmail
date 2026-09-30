@@ -1918,6 +1918,10 @@ msgstr "Send anyway"
 msgid "Send failed"
 msgstr "Send failed"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Send this message without a subject?"
+msgstr "Send this message without a subject?"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
 msgstr "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
@@ -1981,6 +1985,10 @@ msgstr "Shortcuts"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
 msgstr "Show"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show full email addresses in recipient fields"
+msgstr "Show full email addresses in recipient fields"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"

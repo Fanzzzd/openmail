@@ -454,6 +454,8 @@ export const MIGRATIONS: readonly string[] = [
     last_error TEXT, next_run_at INTEGER NOT NULL DEFAULT 0
   );
   `,
+  // Migration 14 (unreleased): NULL is unknown; [] means fetched with no Reply-To.
+  `ALTER TABLE messages ADD COLUMN reply_to_json TEXT;`,
 ];
 
 /**

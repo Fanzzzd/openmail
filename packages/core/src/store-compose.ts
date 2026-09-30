@@ -241,6 +241,11 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const d = DEFAULT_PREFS;
       return {
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
+        showFullRecipientAddresses: pref(
+          f.showFullRecipientAddresses,
+          stored.get("showFullRecipientAddresses"),
+          d.showFullRecipientAddresses,
+        ),
         language: pref(f.language, stored.get("language"), d.language),
         markReadDelay: pref(f.markReadDelay, stored.get("markReadDelay"), d.markReadDelay),
         nextSelection: pref(f.nextSelection, stored.get("nextSelection"), d.nextSelection),

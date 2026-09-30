@@ -81,6 +81,7 @@ const MessageRow = Schema.Struct({
   ...summaryRowFields,
   to_json: Schema.fromJsonString(Schema.Array(Address)),
   cc_json: Schema.fromJsonString(Schema.Array(Address)),
+  reply_to_json: Schema.NullOr(Schema.fromJsonString(Schema.Array(Address))),
   body_text: Schema.String,
   body_html: Schema.String,
   draft_id: Schema.NullOr(Schema.String),
@@ -184,6 +185,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     ...toSummary(r),
     to: r.to_json,
     cc: r.cc_json,
+    ...(r.reply_to_json === null ? {} : { replyTo: r.reply_to_json }),
     bodyText: r.body_text,
     bodyHtml: r.body_html,
     bodyCached: r.body_cached,
@@ -415,17 +417,17 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
-            from_addr, to_json, cc_json, date, snippet, body_text, body_html, labels_json,
+            from_addr, to_json, cc_json, reply_to_json, date, snippet, body_text, body_html, labels_json,
             attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
-            ${JSON.stringify(m.cc)}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
+            ${JSON.stringify(m.cc)}, ${JSON.stringify(m.replyTo ?? [])}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
             ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)})
           ON CONFLICT(id) DO UPDATE SET
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
-            to_json = excluded.to_json, cc_json = excluded.cc_json, date = excluded.date,
+            to_json = excluded.to_json, cc_json = excluded.cc_json, reply_to_json = excluded.reply_to_json, date = excluded.date,
             snippet = excluded.snippet, body_text = excluded.body_text,
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,

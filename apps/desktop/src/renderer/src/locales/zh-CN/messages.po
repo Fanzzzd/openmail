@@ -1924,6 +1924,10 @@ msgstr "仍然发送"
 msgid "Send failed"
 msgstr "发送失败"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Send this message without a subject?"
+msgstr "确认发送无主题邮件？"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
 msgstr "发信不受这个设置影响。AI 写的邮件都会进「AI 建议」，由你在写信窗口里检查后发出。"
@@ -1987,6 +1991,10 @@ msgstr "快捷键"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
 msgstr "显示"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show full email addresses in recipient fields"
+msgstr "收件人显示完整邮箱地址"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"

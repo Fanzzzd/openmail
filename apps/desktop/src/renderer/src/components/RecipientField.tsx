@@ -1,3 +1,4 @@
+import { recipientLabel, splitAddresses } from "@openmail/core/schema";
 import { Combobox } from "@base-ui/react/combobox";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
@@ -24,12 +25,12 @@ interface Props {
   inputRef?: Ref<HTMLInputElement>;
   /** The address the message is sent from; the only own address not suggested. */
   from: string | undefined;
+  showFullAddresses: boolean;
 }
 
 /** The addresses in the field, trimmed, in order. */
 const tokenize = (text: string) =>
-  text
-    .split(ADDRESS_SEPARATOR)
+  splitAddresses(text)
     .map((part) => part.trim())
     .filter(Boolean);
 
@@ -46,7 +47,14 @@ const serialize = (chips: readonly string[], typed: string) => {
  * and Backspace in an empty field removes the last chip. The × on a
  * suggestion hides that address from suggestions.
  */
-export function RecipientField({ label, value, onChange, inputRef, from }: Props) {
+export function RecipientField({
+  label,
+  value,
+  onChange,
+  inputRef,
+  from,
+  showFullAddresses,
+}: Props) {
   const { t } = useLingui();
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
@@ -76,7 +84,7 @@ export function RecipientField({ label, value, onChange, inputRef, from }: Props
   };
 
   const type = (text: string) => {
-    const parts = text.split(ADDRESS_SEPARATOR);
+    const parts = splitAddresses(text);
     const rest = parts.pop() ?? "";
     const done = parts.map((part) => part.trim()).filter(Boolean);
     setTyped(rest);
@@ -137,7 +145,9 @@ export function RecipientField({ label, value, onChange, inputRef, from }: Props
                   : "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300"
               }`}
             >
-              <span className="truncate">{address ? address.name || address.address : text}</span>
+              <span className="truncate">
+                {address ? recipientLabel(address, showFullAddresses) : text}
+              </span>
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}

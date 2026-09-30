@@ -25,6 +25,27 @@ describe("mime", () => {
     );
   });
 
+  it("parses RFC groups and drops empty groups and invalid members", () => {
+    assert.deepStrictEqual(
+      parseAddressList("Team: a@x.com, Bob <b@x.com>;, undisclosed-recipients:;, invalid"),
+      [
+        { name: "", address: "a@x.com" },
+        { name: "Bob", address: "b@x.com" },
+      ],
+    );
+    assert.deepStrictEqual(parseAddressList("undisclosed-recipients:;"), []);
+    assert.deepStrictEqual(
+      parseAddressList('"Support: East" <support@x.com>, "Team: Blue": blue@x.com;'),
+      [
+        { name: "Support: East", address: "support@x.com" },
+        { name: "", address: "blue@x.com" },
+      ],
+    );
+    assert.deepStrictEqual(parseAddressList("=?UTF-8?Q?Support:_East,_Team?= <support@x.com>"), [
+      { name: "Support: East, Team", address: "support@x.com" },
+    ]);
+  });
+
   it("flattens html", () => {
     assert.strictEqual(
       htmlToText("<style>x{}</style><p>Hi&nbsp;there</p><p>b &amp; c</p>"),

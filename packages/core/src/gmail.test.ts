@@ -1340,3 +1340,27 @@ it.effect("backfill filters listed Gmail ids before any body download", () =>
     );
   }),
 );
+
+it.effect("Gmail fetch parses a folded, encoded, multi-address Reply-To header", () =>
+  Effect.gen(function* () {
+    const raw = message("reply", ["INBOX"]);
+    raw.payload.headers.push({
+      name: "rEpLy-To",
+      value: '=?UTF-8?B?UmVwbHksIFRlYW0=?= <reply@example.com>,\r\n "Doe, Jane" <jane@example.com>',
+    });
+    const http = fakeHttp({ "GET /messages/reply": { json: raw } });
+    const parsed = yield* run(http, (adapter) => adapter.fetchMessage(account, "reply"));
+    assert.deepStrictEqual(parsed.replyTo, [
+      { name: "Reply, Team", address: "reply@example.com" },
+      { name: "Doe, Jane", address: "jane@example.com" },
+    ]);
+    assert.deepStrictEqual(parseGmailMessage(message("no-reply-to", [])).replyTo, []);
+    assert.deepStrictEqual(
+      parseGmailMessage({
+        ...raw,
+        payload: { ...raw.payload, headers: [{ name: "Reply-To", value: "" }] },
+      }).replyTo,
+      [],
+    );
+  }),
+);

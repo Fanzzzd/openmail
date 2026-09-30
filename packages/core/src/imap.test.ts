@@ -713,3 +713,29 @@ it.effect("IMAP excludes cached and pending UIDs before fetching MIME", () =>
     ),
   ),
 );
+
+it.effect("IMAP MIME preserves folded and encoded Reply-To names and multiple addresses", () =>
+  Effect.gen(function* () {
+    for (const header of [
+      'Reply-To: =?UTF-8?B?UmVwbHksIFRlYW0=?= <reply@example.com>,\r\n "Doe, Jane" <jane@example.com>\r\n',
+      "Reply-To:\r\n",
+      "",
+    ]) {
+      const parsed = yield* Effect.promise(() =>
+        simpleParser(
+          `From: sender@example.com\r\nTo: me@example.com\r\n${header}Subject: Reply\r\n\r\nHello`,
+        ),
+      );
+      const incoming = toIncoming(parsed, { providerId: "one", label: "INBOX", flags: new Set() });
+      assert.deepStrictEqual(
+        incoming.replyTo,
+        header.includes("reply@example.com")
+          ? [
+              { name: "Reply, Team", address: "reply@example.com" },
+              { name: "Doe, Jane", address: "jane@example.com" },
+            ]
+          : [],
+      );
+    }
+  }),
+);

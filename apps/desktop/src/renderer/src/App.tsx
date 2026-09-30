@@ -65,6 +65,7 @@ import {
   profilesAtom,
   proposalsAtom,
   signaturesAtom,
+  sendAsAtom,
   threadAtom,
   unreadCountsAtom,
 } from "./state/queries";
@@ -454,15 +455,14 @@ export function App() {
     if (!id) return;
     // The reader usually has the thread loaded already; this waits for it if not.
     run(
-      Atom.getResult(threadAtom(id)).pipe(
-        Effect.tap((thread) =>
-          Effect.sync(() => {
-            const last = thread.at(-1);
-            const account = accountList.find((a) => a.id === last?.accountId);
-            if (last && account) setCompose(signed(draftFor(mode, last, account, asAttachment)));
-          }),
-        ),
-      ),
+      Effect.gen(function* () {
+        const thread = yield* Atom.getResult(threadAtom(id));
+        const aliases = mode === "forward" ? [] : yield* Atom.getResult(sendAsAtom);
+        const last = thread.at(-1);
+        const account = accountList.find((a) => a.id === last?.accountId);
+        if (last && account)
+          setCompose(signed(draftFor(mode, last, account, asAttachment, aliases)));
+      }),
     );
   };
 

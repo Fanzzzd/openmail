@@ -64,6 +64,7 @@ const Counts = Schema.Record(Schema.String, Schema.Number);
 /** Only the preferences being changed. */
 const PrefsPatch = Schema.Struct({
   undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
+  showFullRecipientAddresses: Schema.optionalKey(Prefs.fields.showFullRecipientAddresses),
   language: Schema.optionalKey(Prefs.fields.language),
   markReadDelay: Schema.optionalKey(Prefs.fields.markReadDelay),
   nextSelection: Schema.optionalKey(Prefs.fields.nextSelection),

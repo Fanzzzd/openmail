@@ -7,13 +7,7 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  DEFAULT_PREFS,
-  applySignature,
-  fillTemplate,
-  mentionsAttachment,
-  ownText,
-} from "@openmail/core/schema";
+import { DEFAULT_PREFS, applySignature, fillTemplate, ownText } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
 import { type ReactElement, type RefObject, useEffect, useRef, useState } from "react";
@@ -26,8 +20,8 @@ import {
   isEmpty,
   parseAddresses,
   toDraftInput,
-  toMessage,
 } from "../draft";
+import { submitDraft, type SendWarning } from "../send";
 import { formatBytes } from "../format";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
@@ -74,8 +68,11 @@ export function Composer({
   const [draft, setDraft] = useState(initial);
   const [showBcc, setShowBcc] = useState(Boolean(initial.bcc || initial.cc));
   const [error, setError] = useState<string | null>(null);
-  /** Sending waits for a yes: the body talks about an attachment and there is none. */
-  const [asking, setAsking] = useState<{ archive: boolean } | null>(null);
+  const [asking, setAsking] = useState<{
+    warning: SendWarning;
+    archive: boolean;
+    confirmed: readonly SendWarning[];
+  } | null>(null);
   const [picker, setPicker] = useState(false);
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
   const fileRef = useRef<HTMLInputElement>(null);
@@ -120,23 +117,27 @@ export function Composer({
     return () => clearTimeout(timer);
   }, [draft, save]);
 
-  const submit = (archive: boolean, confirmed = false) => {
-    const { message, invalid } = toMessage(draft);
-    if (invalid.length) {
-      const list = invalid.join(t({ message: ", ", comment: "Separator between list items" }));
-      setError(t`These are not email addresses: ${list}`);
-      return;
+  const submit = (archive: boolean, confirmed: readonly SendWarning[] = []) => {
+    const result = submitDraft(draft, archive, confirmed, onSend);
+    switch (result.kind) {
+      case "invalid": {
+        const list = result.addresses.join(
+          t({ message: ", ", comment: "Separator between list items" }),
+        );
+        setError(t`These are not email addresses: ${list}`);
+        break;
+      }
+      case "noRecipients":
+        setError(t`Add at least one recipient`);
+        break;
+      case "confirm":
+        setError(null);
+        setAsking({ warning: result.warning, archive, confirmed });
+        break;
+      case "sent":
+        setAsking(null);
+        break;
     }
-    if (message.to.length + message.cc.length + message.bcc.length === 0) {
-      setError(t`Add at least one recipient`);
-      return;
-    }
-    const noFiles = message.attachments.length === 0 && !draft.forwardAsAttachment;
-    if (!confirmed && noFiles && mentionsAttachment(draft.body)) {
-      setAsking({ archive });
-      return;
-    }
-    onSend(draft, message, { archive: archive && replying });
   };
 
   const close = () => onClose(draft, draft !== initial);
@@ -145,7 +146,7 @@ export function Composer({
     // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
     // Escape belongs to the dialog: it closes the innermost popup, then the window.
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || asking) return;
       if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
         e.preventDefault();
         submit(true);
@@ -301,6 +302,7 @@ export function Composer({
                 inputRef={toRef}
                 value={draft.to}
                 onChange={(to) => set({ to })}
+                showFullAddresses={prefs.showFullRecipientAddresses}
                 from={draft.from?.address ?? account?.email}
               />
               {!showBcc && (
@@ -323,6 +325,7 @@ export function Composer({
                     label={t`Cc`}
                     value={draft.cc}
                     onChange={(cc) => set({ cc })}
+                    showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
                 </div>
@@ -334,6 +337,7 @@ export function Composer({
                     label={t`Bcc`}
                     value={draft.bcc}
                     onChange={(bcc) => set({ bcc })}
+                    showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
                 </div>
@@ -497,27 +501,33 @@ export function Composer({
             onOpenChange={(open) => {
               if (!open) setAsking(null);
             }}
-            title={t`The message mentions an attachment, but none is added.`}
+            title={
+              asking?.warning === "subject"
+                ? t`Send this message without a subject?`
+                : t`The message mentions an attachment, but none is added.`
+            }
           >
             <AlertCancel>
               <Trans>Cancel</Trans>
             </AlertCancel>
+            {asking?.warning === "attachment" && (
+              <button
+                type="button"
+                autoFocus
+                // Nothing is sent: the prompt closes and the file picker opens.
+                onClick={() => {
+                  setAsking(null);
+                  fileRef.current?.click();
+                }}
+                className={alertButton}
+              >
+                <Trans>Add attachment</Trans>
+              </button>
+            )}
             <button
               type="button"
-              autoFocus
-              // Nothing is sent: the prompt closes and the file picker opens.
               onClick={() => {
-                setAsking(null);
-                fileRef.current?.click();
-              }}
-              className={alertButton}
-            >
-              <Trans>Add attachment</Trans>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (asking) submit(asking.archive, true);
+                if (asking) submit(asking.archive, [...asking.confirmed, asking.warning]);
               }}
               className={alertPrimary}
             >

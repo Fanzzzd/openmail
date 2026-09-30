@@ -1,3 +1,10 @@
+import {
+  displayName,
+  isEmailAddress,
+  replyRecipients,
+  splitAddresses,
+  type SendAs,
+} from "@openmail/core/schema";
 import type {
   Account,
   Address,
@@ -7,7 +14,6 @@ import type {
   OutgoingMessage,
   StoredDraft,
 } from "../../shared/api";
-import { displayName } from "./format";
 
 export type ComposeMode = "new" | "reply" | "replyAll" | "forward";
 
@@ -56,10 +62,12 @@ export function emptyDraft(accountId: string): Draft {
 }
 
 export function formatAddress(a: Address): string {
-  return a.name ? `${a.name} <${a.address}>` : a.address;
+  if (!a.name) return a.address;
+  const name = /[",;:，；\\]/.test(a.name)
+    ? `"${a.name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`
+    : a.name;
+  return `${name} <${a.address}>`;
 }
-
-const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
 /** Separators between addresses in a recipient field. */
 export const ADDRESS_SEPARATOR = /[,;，；\n]/;
@@ -71,13 +79,18 @@ export const ADDRESS_SEPARATOR = /[,;，；\n]/;
 export function parseAddresses(input: string): { addresses: Address[]; invalid: string[] } {
   const addresses: Address[] = [];
   const invalid: string[] = [];
-  for (const raw of input.split(ADDRESS_SEPARATOR)) {
+  for (const raw of splitAddresses(input)) {
     const part = raw.trim();
     if (!part) continue;
     const angle = /^(.*)<([^>]+)>$/.exec(part);
-    const name = angle ? angle[1]!.trim().replace(/^"|"$/g, "") : "";
+    const name = angle
+      ? angle[1]!
+          .trim()
+          .replace(/^"|"$/g, "")
+          .replace(/\\(["\\])/g, "$1")
+      : "";
     const address = (angle ? angle[2]! : part).trim();
-    if (EMAIL.test(address)) addresses.push({ name, address });
+    if (isEmailAddress(address)) addresses.push({ name, address });
     else invalid.push(part);
   }
   return { addresses, invalid };
@@ -124,23 +137,22 @@ export function draftFor(
   m: Message,
   account: Account,
   asAttachment = false,
+  aliases: readonly Pick<SendAs, "accountId" | "address">[] = [],
 ): Draft {
-  const me = account.email.toLowerCase();
-  const notMe = (a: Address) => a.address.toLowerCase() !== me;
-  const sentByMe = !notMe(m.from);
-  // Replying to your own message goes to its original recipients.
-  const replyTo = sentByMe ? m.to : [m.from];
-  const others = mode === "replyAll" ? [...m.to, ...m.cc].filter(notMe) : [];
-  const seen = new Set<string>();
-  const unique = (list: readonly Address[]) =>
-    list.filter((a) => {
-      const key = a.address.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  const to = mode === "forward" ? [] : unique(replyTo);
-  const cc = mode === "replyAll" ? unique(others) : [];
+  const { to, cc } =
+    mode === "forward"
+      ? { to: [], cc: [] }
+      : replyRecipients(
+          m,
+          [
+            account.email,
+            ...(account.imap ? [account.imap.username] : []),
+            ...aliases
+              .filter((alias) => alias.accountId === account.id)
+              .map((alias) => alias.address),
+          ],
+          mode === "replyAll",
+        );
   const forwardAsAttachment = mode === "forward" && asAttachment;
 
   const body = forwardAsAttachment

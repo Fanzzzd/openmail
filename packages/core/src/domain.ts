@@ -133,6 +133,8 @@ export const Message = Schema.Struct({
   ...summaryFields,
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
+  /** RFC Reply-To targets; absent means unknown cached headers, [] means no Reply-To. */
+  replyTo: Schema.optionalKey(Schema.Array(Address)),
   bodyText: Schema.String,
   bodyHtml: Schema.String,
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
@@ -156,6 +158,7 @@ export const IncomingMessage = Schema.Struct({
   from: Address,
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
+  replyTo: Schema.optionalKey(Schema.Array(Address)),
   date: Schema.Number,
   snippet: Schema.String,
   bodyText: Schema.String,
@@ -384,6 +387,8 @@ export type QuietHours = typeof QuietHours.Type;
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
+  /** Show names and full email addresses in recipient chips. */
+  showFullRecipientAddresses: Schema.Boolean,
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
   markReadDelay: Schema.Literals(MARK_READ_DELAYS),
@@ -404,6 +409,7 @@ export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
   undoSendSeconds: 5,
+  showFullRecipientAddresses: false,
   language: "system",
   markReadDelay: 0,
   nextSelection: "below",

@@ -840,6 +840,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     from,
     to: parseAddressList(headers.get("to")),
     cc: parseAddressList(headers.get("cc")),
+    replyTo: parseAddressList(headers.get("reply-to")),
     date: Number(raw.internalDate),
     snippet: decodeEntities(raw.snippet ?? ""),
     bodyText: text || htmlToText(html),
