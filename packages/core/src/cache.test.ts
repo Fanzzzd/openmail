@@ -1,5 +1,6 @@
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
+import { lowMemoryTests } from "../vitest.low-memory.js";
 import { Deferred, Effect, Fiber, FileSystem, Layer, Option, Path, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
@@ -424,7 +425,8 @@ it.effect(
         }
       }),
     ),
-  { timeout: 30_000 },
+  // The disk fixture can swap on shared Macs; the two-second paging assertion stays strict.
+  { timeout: lowMemoryTests.testTimeout === undefined ? 30_000 : 300_000 },
 );
 
 it("unsigned, unpackaged and unauthenticated builds never configure or check updates", () => {
