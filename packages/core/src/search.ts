@@ -23,7 +23,18 @@ export const SEARCH_OPERATORS = [
   "after:",
 ];
 export const searchWords = (text: string): string[] =>
-  text.match(/(?:[^\s"]|"[^"]*(?:"|$))+/g) ?? [];
+  text.match(/(?:[^\s"]|"(?:\\.|[^"\\])*(?:"|$))+/g) ?? [];
+
+function completeQuotes(text: string): boolean {
+  let quoted = false;
+  let escaped = false;
+  for (const character of text) {
+    if (escaped) escaped = false;
+    else if (character === "\\" && quoted) escaped = true;
+    else if (character === '"') quoted = !quoted;
+  }
+  return !quoted;
+}
 /** The final term stays editable until whitespace/Enter finishes it outside quotes. */
 export function searchFieldParts(value: string): {
   chips: string[];
@@ -31,7 +42,7 @@ export function searchFieldParts(value: string): {
   pending: string;
 } {
   const words = searchWords(value);
-  const complete = /\s$/.test(value) && (value.match(/"/g)?.length ?? 0) % 2 === 0;
+  const complete = /\s$/.test(value) && completeQuotes(value);
   const pending = complete ? "" : (words.at(-1) ?? "");
   const finished = pending ? words.slice(0, -1) : words;
   return {
@@ -52,8 +63,12 @@ export function selectSearchOperator(value: string, operator: string): string {
   return serializeSearchField(chips, operator.endsWith(":") ? next : `${next} `);
 }
 
-const unquote = (text: string) => text.replace(/^"(.*)"$/, "$1");
+const unquote = (text: string) =>
+  text.startsWith('"') && text.endsWith('"') ? text.slice(1, -1).replace(/\\(["\\])/g, "$1") : text;
 const quote = (text: string) => `"${text.replaceAll('"', "").replaceAll("\\", "")}"`;
+
+/** A single quoted operator prevents provider-controlled addresses injecting search terms. */
+export const senderSearchQuery = (address: string): string => `from:${JSON.stringify(address)} `;
 
 /** Invalid/incomplete operators stay searchable text while the person is typing. */
 export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
@@ -67,7 +82,7 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
     const colon = word.indexOf(":");
     const key = word.slice(0, colon).toLowerCase();
     const value = unquote(word.slice(colon + 1));
-    if (colon < 1 || !value || (word.match(/"/g)?.length ?? 0) % 2 !== 0) {
+    if (colon < 1 || !value || !completeQuotes(word)) {
       words.push(word);
       continue;
     }

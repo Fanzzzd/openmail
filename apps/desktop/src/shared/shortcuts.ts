@@ -35,6 +35,11 @@ const common = {
   zoomIn: [cmd("+"), cmd("=")],
   zoomOut: [cmd("-")],
   zoomReset: [cmd("0")],
+  expandAll: [cmd("e", { alt: true })],
+  collapseAll: [cmd("c", { alt: true })],
+  saveMessage: [cmd("s", { alt: true })],
+  searchSender: [shiftCmd("k")],
+  openMessageWeb: [shiftCmd("g")],
 };
 const native = {
   ...common,
@@ -91,6 +96,7 @@ export interface KeyEvent {
   ctrlKey: boolean;
   altKey: boolean;
   shiftKey: boolean;
+  repeat?: boolean;
 }
 
 /** Selection gestures shared by all keymaps; extra modifiers keep their original actions. */
@@ -134,6 +140,9 @@ export function shortcutAction(
 ): ShortcutAction | null {
   for (const action of Object.keys(native)) {
     if (!isShortcutAction(action)) continue;
+    // A held reader key must not queue dialogs, browser tabs or searches.
+    if (event.repeat && ["saveMessage", "openMessageWeb", "searchSender"].includes(action))
+      continue;
     if (typing && !["compose", "newWindow", "settings", "search"].includes(action)) continue;
     if (KEYMAP[set][action].some((stroke) => (!typing || stroke.cmd) && matches(stroke, event)))
       return action;

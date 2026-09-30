@@ -128,6 +128,13 @@ export const inlineImagesAtom = (id: string) =>
 export const rawMessageAtom = (id: string) =>
   MailClient.query("RawMessage", { id }, { timeToLive: Duration.minutes(2) });
 
+export const knownSendersAtom = (accountId: string, addresses: readonly string[]) =>
+  MailClient.query(
+    "KnownSenders",
+    { accountId, addresses },
+    { reactivityKeys: [Keys.contacts], ...cached },
+  );
+
 /** Recipient suggestions for what is typed in a To, Cc or Bcc field, sending from `from`. */
 export const suggestionsAtom = (query: string, from: string | undefined) =>
   MailClient.query("SuggestContacts", from === undefined ? { query } : { query, exclude: from }, {

@@ -76,6 +76,7 @@ import { startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
+import { gmailThreadUrl, officialMessageUrl } from "./reading.js";
 
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
 const MAX_ATTEMPTS = 5;
@@ -509,6 +510,10 @@ export const MailboxLive = (
             ),
           );
         yield* store.audit({ actor, accountId, action: "send", detail });
+        yield* store.rememberMailedAddresses(
+          accountId,
+          [...message.to, ...message.cc, ...message.bcc].map((recipient) => recipient.address),
+        );
 
         // The mail is out. What follows only tidies up and must not fail the send.
         const draft = command.draftId
@@ -800,11 +805,34 @@ export const MailboxLive = (
         return { account, adapter: providers.get(account.provider), providerId: ref.providerId };
       });
 
-      const rawMessage = Effect.fn("Mailbox.rawMessage")(function* (id: string) {
+      const rawMessageBytes = Effect.fn("Mailbox.rawMessageBytes")(function* (id: string) {
         const { account, adapter, providerId } = yield* source(id);
-        const raw = yield* adapter.fetchRaw(account, providerId);
+        return yield* adapter.fetchRaw(account, providerId);
+      });
+      const rawMessage = Effect.fn("Mailbox.rawMessage")(function* (id: string) {
+        const raw = yield* rawMessageBytes(id);
         // Headers are ASCII; 8-bit bodies in other charsets show replacement characters.
         return new TextDecoder("utf-8").decode(raw);
+      });
+
+      const messageWebUrl = Effect.fn("Mailbox.messageWebUrl")(function* (id: string) {
+        const { account, adapter, providerId } = yield* source(id);
+        if (account.provider === "imap")
+          return yield* new InvalidInput({
+            message: "This account has no supported web mail link.",
+          });
+        const message = yield* store.getMessage(id);
+        if (account.provider === "gmail") return gmailThreadUrl(account.email, message.threadId);
+        const cached = message.webLink && officialMessageUrl("outlook", message.webLink);
+        if (cached) return cached;
+        const fetched = yield* adapter.fetchMessage(account, providerId);
+        const url = fetched.webLink && officialMessageUrl("outlook", fetched.webLink);
+        if (!url)
+          return yield* new InvalidInput({
+            message: "The provider did not return an official Outlook web link.",
+          });
+        yield* store.setMessageWebLink(id, url);
+        return url;
       });
 
       const attachment = Effect.fn("Mailbox.attachment")(function* (
@@ -1366,6 +1394,9 @@ export const MailboxLive = (
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),
         rawMessage,
+        rawMessageBytes,
+        messageWebUrl,
+        knownSenders: (accountId, addresses) => store.knownSenders(accountId, addresses),
         attachment,
         inlineImages,
         imageSenders: store.imageSenders,

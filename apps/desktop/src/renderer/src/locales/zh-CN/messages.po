@@ -557,9 +557,21 @@ msgstr "关闭写信窗口"
 msgid "Close. The draft is saved."
 msgstr "关闭，草稿会保存"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse all"
+msgstr "全部收起"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Collapse all messages"
+msgstr "收起所有邮件"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Collapse categories"
 msgstr "收起分类"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse message"
+msgstr "收起邮件"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -844,6 +856,14 @@ msgstr "每 {interval} 年"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "所有人"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Expand all"
+msgstr "全部展开"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Expand all messages"
+msgstr "展开所有邮件"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Expand categories"
@@ -1485,10 +1505,22 @@ msgid "Open email links in a new OpenMail draft."
 msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
 
 #: src/renderer/src/components/Reader.tsx
+msgid "Open in Gmail"
+msgstr "在 Gmail 中打开"
+
+#: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Open in New Window"
 msgstr "在新窗口中打开"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Open in Outlook"
+msgstr "在 Outlook 中打开"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open in web mail"
+msgstr "在网页版邮箱中打开"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
@@ -1819,6 +1851,12 @@ msgstr "保存为 PDF…"
 msgid "Save draft"
 msgstr "保存草稿"
 
+#: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save message as EML…"
+msgstr "将邮件保存为 EML…"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
@@ -1839,6 +1877,10 @@ msgstr "保存…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "已保存"
+
+#: src/renderer/src/components/reader-actions.ts
+msgid "Saved as EML"
+msgstr "已保存为 EML"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Saved as PDF"
@@ -1868,6 +1910,11 @@ msgstr "搜索  /"
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "搜索邮件"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search messages from this sender"
+msgstr "搜索此发件人的邮件"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Search query"

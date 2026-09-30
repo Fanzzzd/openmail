@@ -23,6 +23,11 @@ export function lockNavigation(win: BrowserWindow) {
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (event) => event.preventDefault());
+  // Allow the local reader document to initialize, never remote content in any frame.
+  win.webContents.on("will-frame-navigate", (event) => {
+    if (!event.isMainFrame && (event.url === "about:srcdoc" || event.url === "about:blank")) return;
+    event.preventDefault();
+  });
 }
 
 interface WindowOptions {

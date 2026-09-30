@@ -90,6 +90,7 @@ function run<A, E>(
 const raw = {
   id: "AAMk123",
   conversationId: "conv-1",
+  webLink: "https://outlook.live.com/mail/0/id/AAMk123",
   subject: "报价确认",
   bodyPreview: "已确认报价",
   body: { contentType: "html", content: "<p>已确认<b>报价</b></p>" },
@@ -144,6 +145,21 @@ function mailbox(deltas: Record<string, Reply | ((url: URL) => Reply)>) {
 }
 
 const tags = (changes: readonly Change[]) => changes.map((c) => c._tag);
+
+it.effect("fetching a message explicitly selects and retains the provider webLink", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      ...mailbox({}),
+      [`GET /me/messages/${raw.id}`]: {
+        json: { ...raw, parentFolderId: "id-inbox", hasAttachments: false },
+      },
+    });
+    const message = yield* run(http, (adapter) => adapter.fetchMessage(account, raw.id));
+    assert.strictEqual(message.webLink, raw.webLink);
+    const request = http.calls.find((call) => call.url.pathname.endsWith(`/messages/${raw.id}`));
+    assert.ok(request?.url.searchParams.get("$select")?.split(",").includes("webLink"));
+  }),
+);
 
 it.effect("a cursor without the immutable-id marker resets, then syncs every folder", () =>
   Effect.gen(function* () {
@@ -530,6 +546,7 @@ it("maps a Graph message onto the store shape", () => {
   ]);
   assert.strictEqual(m.providerId, "AAMk123");
   assert.strictEqual(m.threadId, "conv-1");
+  assert.strictEqual(m.webLink, raw.webLink);
   assert.strictEqual(m.from.address, "wang@contoso.com");
   assert.deepStrictEqual(m.labels.toSorted(), ["INBOX", "STARRED", "UNREAD"]);
   assert.strictEqual(m.isUnread, true);

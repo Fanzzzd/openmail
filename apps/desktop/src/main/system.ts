@@ -38,6 +38,7 @@ export class Desktop extends Context.Service<
     events(clientId: number): Stream.Stream<DesktopEvent>;
     setSpace(clientId: number, space: string): Effect.Effect<void>;
     setLabels(labels: DesktopLabels): Effect.Effect<void>;
+    search(query: string): Effect.Effect<void>;
   }
 >()("openmail/Desktop") {}
 
@@ -364,6 +365,7 @@ export const DesktopLive = Layer.effect(
     for (const link of startupLinks.splice(0)) linkHandler(link);
     yield* refresh;
     return Desktop.of({
+      search: (query) => Effect.sync(() => deliver({ _tag: "Search", query })),
       events: (id) =>
         Stream.callback((queue) => {
           const listener = (event: DesktopEvent) => {

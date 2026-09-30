@@ -194,6 +194,9 @@ export class Store extends Context.Service<
 
     // Messages. Writes keep rowids stable for the FTS index (ON CONFLICT DO UPDATE).
     upsertMessage(accountId: string, m: IncomingMessage): Effect.Effect<void>;
+    setMessageWebLink(id: string, url: string): Effect.Effect<void>;
+    knownSenders(accountId: string, addresses: readonly string[]): Effect.Effect<string[]>;
+    rememberMailedAddresses(accountId: string, addresses: readonly string[]): Effect.Effect<void>;
     deleteMessage(accountId: string, providerId: string): Effect.Effect<void>;
     /** Read and starred state only; the rest of the message stays as stored. */
     setFlags(

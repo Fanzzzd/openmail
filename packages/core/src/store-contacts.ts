@@ -15,6 +15,20 @@ const SyncRow = Schema.Struct({
 });
 export function makeContactStore(sql: SqlClient.SqlClient) {
   return {
+    knownSenders: (accountId: string, addresses: readonly string[]) =>
+      all(Schema.Struct({ address: Schema.String }))(
+        sql`SELECT candidate.value AS address
+          FROM json_each(${JSON.stringify([...new Set(addresses.map((address) => address.trim().toLowerCase()))])}) candidate
+          WHERE EXISTS(SELECT 1 FROM server_contacts c WHERE c.account_id=${accountId} AND c.address=candidate.value)
+            OR EXISTS(SELECT 1 FROM mailed_addresses a WHERE a.account_id=${accountId} AND a.address=candidate.value)
+            OR EXISTS(SELECT 1 FROM accounts a WHERE a.id=${accountId} AND lower(a.email)=candidate.value)`,
+      ).pipe(Effect.map((rows) => rows.map((r) => r.address))),
+    rememberMailedAddresses: (accountId: string, addresses: readonly string[]) =>
+      run(
+        sql`INSERT OR IGNORE INTO mailed_addresses(account_id,address)
+        SELECT ${accountId}, lower(trim(value)) FROM json_each(${JSON.stringify(addresses)})
+        WHERE trim(value)!=''`,
+      ),
     replaceServerContacts: Effect.fn("Store.replaceServerContacts")(function* (
       accountId: string,
       contacts: readonly Address[],

@@ -551,9 +551,21 @@ msgstr "Close compose window"
 msgid "Close. The draft is saved."
 msgstr "Close. The draft is saved."
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse all"
+msgstr "Collapse all"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Collapse all messages"
+msgstr "Collapse all messages"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Collapse categories"
 msgstr "Collapse categories"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse message"
+msgstr "Collapse message"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -838,6 +850,14 @@ msgstr "Every {interval} years"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Everyone"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Expand all"
+msgstr "Expand all"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Expand all messages"
+msgstr "Expand all messages"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Expand categories"
@@ -1479,10 +1499,22 @@ msgid "Open email links in a new OpenMail draft."
 msgstr "Open email links in a new OpenMail draft."
 
 #: src/renderer/src/components/Reader.tsx
+msgid "Open in Gmail"
+msgstr "Open in Gmail"
+
+#: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Open in New Window"
 msgstr "Open in New Window"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Open in Outlook"
+msgstr "Open in Outlook"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open in web mail"
+msgstr "Open in web mail"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
@@ -1813,6 +1845,12 @@ msgstr "Save as PDF…"
 msgid "Save draft"
 msgstr "Save draft"
 
+#: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save message as EML…"
+msgstr "Save message as EML…"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "Save message as PDF…"
@@ -1833,6 +1871,10 @@ msgstr "Save…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "Saved"
+
+#: src/renderer/src/components/reader-actions.ts
+msgid "Saved as EML"
+msgstr "Saved as EML"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Saved as PDF"
@@ -1862,6 +1904,11 @@ msgstr "Search  /"
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "Search mail"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search messages from this sender"
+msgstr "Search messages from this sender"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Search query"

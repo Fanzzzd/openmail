@@ -40,6 +40,25 @@ export function safeFilename(name: string): string {
   return base || "attachment";
 }
 
+/** A subject is text, not a path. Reserve space for the extension and preserve code points. */
+export function subjectFilename(subject: string): string {
+  const clean = subject
+    .normalize("NFC")
+    .replace(/[\\/:]/g, "_")
+    .replaceAll(/./gsu, (c) => (c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127 ? "_" : c))
+    .trim()
+    .replace(/^\.+/, "")
+    .trim();
+  let name = "";
+  let bytes = 0;
+  for (const character of clean) {
+    bytes += Buffer.byteLength(character, "utf8");
+    if (bytes > 200) break;
+    name += character;
+  }
+  return name || "message";
+}
+
 const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
 
 /**
@@ -77,6 +96,32 @@ const freePath = Effect.fnUntraced(function* (folder: string, name: string) {
     candidate = path.join(folder, `${stem} (${n})${ext}`);
   }
   return candidate;
+});
+
+/** Cancellation happens before fetching MIME or creating any file. */
+export const saveMessage: (
+  m: MailboxService,
+  parent: BrowserWindow | null,
+  messageId: string,
+) => Effect.Effect<boolean, FileError> = Effect.fnUntraced(function* (
+  m: MailboxService,
+  parent: BrowserWindow | null,
+  messageId: string,
+): Effect.fn.Return<boolean, FileError> {
+  const message = (yield* m.thread(messageId)).find((item) => item.id === messageId);
+  const options = {
+    defaultPath: path.join(
+      app.getPath("downloads"),
+      `${subjectFilename(message?.subject ?? "")}.eml`,
+    ),
+    filters: [{ name: "Email", extensions: ["eml"] }],
+  };
+  const choice = yield* Effect.promise(() =>
+    parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
+  );
+  if (choice.canceled || !choice.filePath) return false;
+  yield* write(choice.filePath, yield* m.rawMessageBytes(messageId));
+  return true;
 });
 
 export const saveAttachment: (

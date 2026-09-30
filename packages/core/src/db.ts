@@ -456,6 +456,21 @@ export const MIGRATIONS: readonly string[] = [
   `,
   // Migration 14 (unreleased): NULL is unknown; [] means fetched with no Reply-To.
   `ALTER TABLE messages ADD COLUMN reply_to_json TEXT;`,
+  // Migration 15: reading metadata. Backfill recipients once, never scan mail on hover/read.
+  `ALTER TABLE messages ADD COLUMN web_link TEXT;
+  CREATE TABLE mailed_addresses (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL,
+    PRIMARY KEY(account_id, address)
+  ) WITHOUT ROWID;
+  INSERT OR IGNORE INTO mailed_addresses(account_id,address)
+    SELECT m.account_id, lower(trim(json_extract(recipient.value,'$.address')))
+    FROM messages m, json_each(m.to_json) recipient
+    WHERE EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value='SENT')
+    UNION
+    SELECT m.account_id, lower(trim(json_extract(recipient.value,'$.address')))
+    FROM messages m, json_each(m.cc_json) recipient
+    WHERE EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value='SENT');`,
 ];
 
 /**

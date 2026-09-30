@@ -156,6 +156,11 @@ export class Mailbox extends Context.Service<
     threadForModel(id: string, maxChars?: number): Effect.Effect<ModelThread, NotFound>;
     /** The message's original source (RFC 5322) from the provider, as text. */
     rawMessage(id: string): Effect.Effect<string, PerformError>;
+    /** Original bytes for lossless EML export. */
+    rawMessageBytes(id: string): Effect.Effect<Uint8Array, PerformError>;
+    /** A validated official web URL; hydrates old Outlook caches on explicit request. */
+    messageWebUrl(id: string): Effect.Effect<string, PerformError>;
+    knownSenders(accountId: string, addresses: readonly string[]): Effect.Effect<string[]>;
     /** One attachment of a message, by its position in `Message.attachments`. */
     attachment(messageId: string, index: number): Effect.Effect<AttachmentContent, PerformError>;
     /** The message's inline images (cid: parts) as data: URLs keyed by Content-ID. */

@@ -93,6 +93,7 @@ import {
   rememberedViewsAtom,
   searchAtom,
   searchTextAtom,
+  searchScopeAtom,
   viewAtom,
 } from "./state/ui";
 import {
@@ -137,6 +138,7 @@ export function App() {
   const [view, setView] = useAtom(viewAtom);
   const remembered = useAtomValue(rememberedViewsAtom);
   const [query, setQuery] = useAtom(searchTextAtom);
+  const [, setSearchScope] = useAtom(searchScopeAtom);
   const search = useAtomValue(searchAtom);
   const [filters, setFilters] = useAtom(filtersAtom);
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
@@ -680,6 +682,13 @@ export function App() {
       case "OpenThread":
         openExternal(event.id);
         break;
+      case "Search":
+        changeView({ space: ALL, mailbox: "all" });
+        setFilters(NO_FILTERS);
+        setSearchScope("all");
+        setQuery(event.query);
+        searchRef.current?.focus();
+        break;
       case "Compose": {
         const account = defaultAccount();
         if (account) {
@@ -914,6 +923,11 @@ export function App() {
       case "zoomIn":
       case "zoomOut":
       case "zoomReset":
+      case "expandAll":
+      case "collapseAll":
+      case "saveMessage":
+      case "searchSender":
+      case "openMessageWeb":
       case "send":
         break;
     }

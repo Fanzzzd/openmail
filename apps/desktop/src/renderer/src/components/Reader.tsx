@@ -1,4 +1,4 @@
-import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
+import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
 import { SearchField } from "./ui/SearchField";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
@@ -11,6 +11,8 @@ import {
   prepareMessageHtml,
   shouldLoadInvitation,
   READER_ZOOMS,
+  senderLabel,
+  threadExpansion,
   type ReaderZoom,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
@@ -19,6 +21,7 @@ import { AsyncResult, Atom } from "effect/reactivity";
 import {
   AppWindow,
   Code,
+  ChevronDown,
   FileDown,
   ImageOff,
   Images,
@@ -49,7 +52,14 @@ import { avatarColor, displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
 import { openThreadWindow, printThread, useRunMail, withMail } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
-import { imageSendersAtom, inlineImagesAtom, prefsAtom, threadAtom } from "../state/queries";
+import {
+  accountsAtom,
+  knownSendersAtom,
+  imageSendersAtom,
+  inlineImagesAtom,
+  prefsAtom,
+  threadAtom,
+} from "../state/queries";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
@@ -58,6 +68,7 @@ import { InviteBanner } from "./InviteBanner";
 
 import { useShortcutText } from "./SystemSettings";
 import { RawMessageDialog } from "./RawMessage";
+import { useSaveMessage } from "./reader-actions";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
 
@@ -229,14 +240,44 @@ export function ThreadView({
   const setPrefs = useAtomSet(setPrefsAtom);
   const print = useThreadPrint(notify);
   const [raw, setRaw] = useState<string | null>(null);
-
+  const save = useSaveMessage(notify);
+  const [activeId, setActiveId] = useState(selectedId);
   const shown = single ? stored.filter((m) => m.id === selectedId) : stored;
   const messages = orderThread(shown.length ? shown : stored, prefs.threadOrder);
+  const addresses = [
+    ...new Set(messages.map((m) => m.from.address.trim().toLowerCase())),
+  ].toSorted();
+  const known = AsyncResult.getOrElse(
+    useAtomValue(knownSendersAtom(stored[0]?.accountId ?? "", addresses)),
+    (): readonly string[] => [],
+  );
+  const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
+  const provider = accounts.find((account) => account.id === stored[0]?.accountId)?.provider;
+  const webLabel = provider === "gmail" ? t`Open in Gmail` : t`Open in Outlook`;
+  const canOpenWeb = provider === "gmail" || provider === "outlook";
+  const searchSender = (m: Message) =>
+    run(withMail((call) => call("SearchSender", { address: m.from.address })));
+  const openWeb = (id: string) =>
+    run(
+      withMail((call) => call("OpenMessageWeb", { id })).pipe(
+        Effect.catchCause((cause) =>
+          Effect.sync(() => notify({ text: causeText(i18n, cause), tone: "error" })),
+        ),
+      ),
+    );
+
   const newest = messages.reduce<Message | undefined>(
     (a, m) => (!a || m.date >= a.date ? m : a),
     undefined,
   );
   const [open, setOpen] = useState(() => new Set([selectedId, newest?.id ?? selectedId]));
+  const expand = (expanded: boolean) =>
+    setOpen(
+      threadExpansion(
+        messages.map((m) => m.id),
+        expanded,
+      ),
+    );
   const toggle = (id: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -262,6 +303,54 @@ export function ThreadView({
   // ⌘+ and ⌘- apply while focus is in the thread; a click anywhere in it focuses it.
   const scroller = useRef<HTMLDivElement>(null);
   const zoomKeys = useEffectEvent((e: KeyboardEvent) => onZoomKey(e));
+  const onReaderKey = (e: KeyboardEvent, messageId = activeId) => {
+    if (
+      e.defaultPrevented ||
+      document.querySelector('[role="dialog"],[role="alertdialog"]') ||
+      (e.target instanceof Element &&
+        e.target.closest('input,textarea,select,[contenteditable],[role="menu"]'))
+    )
+      return;
+    const action = shortcutAction(prefs.shortcutSet, e);
+    const active = messages.find((m) => m.id === messageId) ?? newest;
+    if (!active) return;
+    switch (action) {
+      case "expandAll":
+        e.preventDefault();
+        expand(true);
+        break;
+      case "collapseAll":
+        e.preventDefault();
+        expand(false);
+        break;
+      case "saveMessage":
+        e.preventDefault();
+        save(active.id);
+        break;
+      case "searchSender":
+        e.preventDefault();
+        searchSender(active);
+        break;
+      case "openMessageWeb":
+        if (canOpenWeb) {
+          e.preventDefault();
+          openWeb(active.id);
+        }
+        break;
+    }
+  };
+  const readerKeys = useEffectEvent((e: KeyboardEvent) => onReaderKey(e));
+  const frameKeys = (id: string, e: KeyboardEvent) => {
+    // A key in a frame targets that message even before React processes focus.
+    setActiveId(id);
+    onZoomKey(e);
+    onReaderKey(e, id);
+  };
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => readerKeys(e);
+    window.addEventListener("keydown", listener, true);
+    return () => window.removeEventListener("keydown", listener, true);
+  }, []);
   useEffect(() => {
     const el = scroller.current;
     if (!el) return constVoid;
@@ -291,6 +380,22 @@ export function ThreadView({
         <h2 className="min-w-0 flex-1 text-[24px] leading-tight font-bold">
           {newest?.subject || t`(No subject)`}
         </h2>
+        {messages.length > 1 && (
+          <div className="flex shrink-0 gap-2 pt-1 text-[12px] text-blue-600 dark:text-blue-400">
+            <button
+              type="button"
+              onClick={() => expand(true)}
+              title={shortcut("expandAll")}
+              disabled={messages.every((m) => open.has(m.id))}
+            >{t`Expand all`}</button>
+            <button
+              type="button"
+              onClick={() => expand(false)}
+              title={shortcut("collapseAll")}
+              disabled={open.size === 0}
+            >{t`Collapse all`}</button>
+          </div>
+        )}
         <DropdownMenu
           trigger={
             <button
@@ -361,9 +466,15 @@ export function ThreadView({
             <Expanded
               key={m.id}
               message={m}
+              known={known.includes(m.from.address.trim().toLowerCase())}
+              onActivate={() => setActiveId(m.id)}
+              onSave={() => save(m.id)}
+              onSearchSender={() => searchSender(m)}
+              onOpenWeb={canOpenWeb ? () => openWeb(m.id) : undefined}
+              webLabel={webLabel}
               zoom={zoom}
               defaultBackground={prefs.messageBackground}
-              onZoomKey={onZoomKey}
+              onZoomKey={(e) => frameKeys(m.id, e)}
               notify={notify}
               onShowOriginal={() => setRaw(m.id)}
               onPrint={(pdf) => print(m.id, pdf, m.id)}
@@ -379,12 +490,19 @@ export function ThreadView({
             <button
               key={m.id}
               type="button"
-              onClick={() => toggle(m.id)}
+              onClick={() => {
+                setActiveId(m.id);
+                toggle(m.id);
+              }}
+              onFocus={() => setActiveId(m.id)}
               className="flex w-full gap-3 py-3 text-left"
             >
               <Avatar message={m} />
               <span className="min-w-0 flex-1">
-                <MessageHead message={m} />
+                <MessageHead
+                  message={m}
+                  known={known.includes(m.from.address.trim().toLowerCase())}
+                />
                 <span className="mt-0.5 block truncate text-[13px] text-neutral-500 dark:text-neutral-400">
                   {m.snippet}
                 </span>
@@ -393,7 +511,7 @@ export function ThreadView({
           ),
         )}
       </div>
-      {raw && <RawMessageDialog messageId={raw} onClose={() => setRaw(null)} />}
+      {raw && <RawMessageDialog messageId={raw} notify={notify} onClose={() => setRaw(null)} />}
     </div>
   );
 }
@@ -408,12 +526,36 @@ function Avatar({ message: m }: { message: Message }) {
   );
 }
 
-function MessageHead({ message: m }: { message: Message }) {
-  const { i18n } = useLingui();
+function MessageHead({
+  message: m,
+  known,
+  onSearchSender,
+}: {
+  message: Message;
+  known: boolean;
+  onSearchSender?: (() => void) | undefined;
+}) {
+  const { t, i18n } = useLingui();
+  const shortcut = useShortcutText();
   return (
     <span className="flex items-baseline gap-2">
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
-        {displayName(m.from)}
+      <span className="min-w-0 flex-1 break-all text-[14px] font-semibold">
+        {onSearchSender ? (
+          <DropdownMenu
+            trigger={
+              <button type="button" className="text-left hover:text-blue-600">
+                {senderLabel(m.from, known)}
+              </button>
+            }
+          >
+            <MenuItem
+              onClick={onSearchSender}
+              shortcut={shortcut("searchSender")}
+            >{t`Search messages from this sender`}</MenuItem>
+          </DropdownMenu>
+        ) : (
+          senderLabel(m.from, known)
+        )}
       </span>
       {m.isStarred && (
         <Star className="size-3.5 shrink-0 self-center fill-amber-400 text-amber-400" />
@@ -437,6 +579,12 @@ function Expanded({
   onPrint,
   onCollapse,
   onEditDraft,
+  known,
+  onActivate,
+  onSave,
+  onSearchSender,
+  onOpenWeb,
+  webLabel,
 }: {
   message: Message;
   zoom: ReaderZoom;
@@ -447,8 +595,15 @@ function Expanded({
   onPrint: (pdf: boolean) => void;
   onCollapse?: (() => void) | undefined;
   onEditDraft?: (() => void) | undefined;
+  known: boolean;
+  onActivate: () => void;
+  onSave: () => void;
+  onSearchSender: () => void;
+  onOpenWeb: (() => void) | undefined;
+  webLabel: string;
 }) {
   const { t } = useLingui();
+  const shortcut = useShortcutText();
   const dark = useDarkMode();
   const [override, setOverride] = useAtom(messageBackgroundAtom(m.id));
   const [loadedOnce, setLoadedOnce] = useAtom(imagesLoadedAtom(m.id));
@@ -486,7 +641,11 @@ function Expanded({
   const to = m.to.map(displayName).join(separator) || "—";
   const cc = m.cc.map(displayName).join(separator);
   return (
-    <article className="@container/message py-3">
+    <article
+      onMouseDownCapture={onActivate}
+      onFocusCapture={onActivate}
+      className="@container/message py-3"
+    >
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-md bg-red-500/[0.06] px-3 py-1.5 text-[13px]">
           <span className="flex-1 text-red-600 dark:text-red-400">
@@ -502,15 +661,10 @@ function Expanded({
         </div>
       )}
       <div className="flex gap-1">
-        <button
-          type="button"
-          disabled={!onCollapse}
-          onClick={onCollapse}
-          className="flex min-w-0 flex-1 gap-3 text-left select-text"
-        >
+        <div className="flex min-w-0 flex-1 gap-3 text-left select-text">
           <Avatar message={m} />
           <span className="min-w-0 flex-1">
-            <MessageHead message={m} />
+            <MessageHead message={m} known={known} onSearchSender={onSearchSender} />
             <span
               className="mt-0.5 block truncate text-[13px] text-neutral-500 dark:text-neutral-400"
               title={m.from.address}
@@ -524,7 +678,17 @@ function Expanded({
               )}
             </span>
           </span>
-        </button>
+        </div>
+        {onCollapse && (
+          <button
+            type="button"
+            onClick={onCollapse}
+            aria-label={t`Collapse message`}
+            className="size-7 shrink-0 p-1.5 text-neutral-400"
+          >
+            <ChevronDown className="size-4" />
+          </button>
+        )}
         <DropdownMenu
           trigger={
             <button
@@ -542,6 +706,20 @@ function Expanded({
           <MenuItem icon={Code} onClick={onShowOriginal}>
             {t`Show original`}
           </MenuItem>
+          <MenuItem
+            icon={FileDown}
+            onClick={onSave}
+            shortcut={shortcut("saveMessage")}
+          >{t`Save message as EML…`}</MenuItem>
+          <MenuItem
+            onClick={onSearchSender}
+            shortcut={shortcut("searchSender")}
+          >{t`Search messages from this sender`}</MenuItem>
+          {onOpenWeb && (
+            <MenuItem onClick={onOpenWeb} shortcut={shortcut("openMessageWeb")}>
+              {webLabel}
+            </MenuItem>
+          )}
           <MenuItem icon={Printer} onClick={() => onPrint(false)}>
             {t`Print message…`}
           </MenuItem>

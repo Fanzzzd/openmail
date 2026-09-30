@@ -139,6 +139,13 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("Thread", { payload: { id: Schema.String }, success: Schema.Array(Message), error }),
   /** The message's original source from the provider (View Original). */
   Rpc.make("RawMessage", { payload: { id: Schema.String }, success: Schema.String, error }),
+  Rpc.make("SaveMessage", { payload: { id: Schema.String }, success: Schema.Boolean, error }),
+  Rpc.make("OpenMessageWeb", { payload: { id: Schema.String }, error }),
+  Rpc.make("KnownSenders", {
+    payload: { accountId: Schema.String, addresses: Schema.Array(Schema.String) },
+    success: Schema.Array(Schema.String),
+  }),
+  Rpc.make("SearchSender", { payload: { address: Schema.String } }),
   /** Inline (cid:) images of a message as data: URLs by Content-ID. */
   Rpc.make("InlineImages", {
     payload: { id: Schema.String },

@@ -1,12 +1,18 @@
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
-import { IMAP_PRESETS, Mailbox, messageLink } from "@openmail/core";
+import { IMAP_PRESETS, Mailbox, messageLink, senderSearchQuery } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
 import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
-import { BrowserWindow, clipboard, ipcMain, type IpcMainEvent, webContents } from "electron";
+import { BrowserWindow, clipboard, ipcMain, type IpcMainEvent, webContents, shell } from "electron";
 
 import { RPC_CHANNEL } from "../shared/channel";
 import { MailRpcs } from "../shared/rpc";
-import { openAttachment, printThread, saveAllAttachments, saveAttachment } from "./files";
+import {
+  openAttachment,
+  printThread,
+  saveAllAttachments,
+  saveAttachment,
+  saveMessage,
+} from "./files";
 import { Desktop } from "./system";
 import { createMainWindow, openThreadWindow, windowOf } from "./windows";
 
@@ -101,6 +107,13 @@ const Handlers = MailRpcs.toLayer(
       ThreadCount: ({ query }) => m.threadCount(query),
       Thread: ({ id }) => m.readerThread(id),
       RawMessage: ({ id }) => m.rawMessage(id),
+      SaveMessage: ({ id }, { client }) => saveMessage(m, windowOf(client.id), id),
+      OpenMessageWeb: ({ id }) =>
+        m
+          .messageWebUrl(id)
+          .pipe(Effect.flatMap((url) => Effect.promise(() => shell.openExternal(url)))),
+      KnownSenders: ({ accountId, addresses }) => m.knownSenders(accountId, addresses),
+      SearchSender: ({ address }) => desktop.search(senderSearchQuery(address)),
       IndexingProgress: () => m.indexingProgress,
       SetModelsEnabled: ({ enabled }) => m.setModelsEnabled(enabled),
       SetIndexingPaused: ({ paused }) => m.setIndexingPaused(paused),

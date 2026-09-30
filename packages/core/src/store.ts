@@ -84,6 +84,7 @@ const MessageRow = Schema.Struct({
   reply_to_json: Schema.NullOr(Schema.fromJsonString(Schema.Array(Address))),
   body_text: Schema.String,
   body_html: Schema.String,
+  web_link: Schema.NullOr(Schema.String),
   draft_id: Schema.NullOr(Schema.String),
   calendar_hint: Schema.NullOr(Schema.BooleanFromBit),
   body_cached: Schema.BooleanFromBit,
@@ -188,6 +189,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     ...(r.reply_to_json === null ? {} : { replyTo: r.reply_to_json }),
     bodyText: r.body_text,
     bodyHtml: r.body_html,
+    ...(r.web_link === null ? {} : { webLink: r.web_link }),
     bodyCached: r.body_cached,
     attachments: r.attachments_json,
     ...(r.calendar_hint === null ? {} : { hasCalendar: r.calendar_hint }),
@@ -418,12 +420,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, reply_to_json, date, snippet, body_text, body_html, labels_json,
-            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date)
+            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${JSON.stringify(m.replyTo ?? [])}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
-            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)})
+            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)}, ${m.webLink ?? null})
           ON CONFLICT(id) DO UPDATE SET
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
@@ -431,8 +433,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             snippet = excluded.snippet, body_text = excluded.body_text,
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
-            is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint, body_cached = excluded.body_cached, list_date = excluded.list_date`)
+            is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint, body_cached = excluded.body_cached, list_date = excluded.list_date,
+            web_link = COALESCE(excluded.web_link, messages.web_link)`)
       );
+      if (m.labels.includes("SENT"))
+        yield* contacts.rememberMailedAddresses(
+          account,
+          [...m.to, ...m.cc].map((recipient) => recipient.address),
+        );
     });
 
     const deleteMessage = Effect.fn("Store.deleteMessage")((account: string, providerId: string) =>
@@ -1154,6 +1162,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       saveTemplate: compose.saveTemplate,
       deleteTemplate: compose.deleteTemplate,
       ...contacts,
+      setMessageWebLink: (id, url) => run(sql`UPDATE messages SET web_link=${url} WHERE id=${id}`),
       suggestContacts: compose.suggestContacts,
       hiddenContacts: compose.hiddenContacts,
       setContactHidden: compose.setContactHidden,

@@ -5,6 +5,7 @@ export const DesktopEvent = Schema.Union([
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
   Schema.TaggedStruct("OpenThread", { id: Schema.String }),
   Schema.TaggedStruct("Compose", { draft: MailtoDraft }),
+  Schema.TaggedStruct("Search", { query: Schema.String }),
   Schema.TaggedStruct("Command", {
     command: Schema.Literals(["settings", "help", "compose", "inbox"]),
   }),

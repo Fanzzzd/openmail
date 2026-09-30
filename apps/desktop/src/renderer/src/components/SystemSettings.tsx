@@ -251,6 +251,11 @@ const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   zoomIn: msg`Larger text`,
   zoomOut: msg`Smaller text`,
   zoomReset: msg`Actual size`,
+  expandAll: msg`Expand all messages`,
+  collapseAll: msg`Collapse all messages`,
+  saveMessage: msg`Save message as EML…`,
+  searchSender: msg`Search messages from this sender`,
+  openMessageWeb: msg`Open in web mail`,
   send: msg`Send`,
 };
 const ACTIONS = Object.entries(ACTION_NAMES);

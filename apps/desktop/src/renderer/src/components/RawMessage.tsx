@@ -8,6 +8,8 @@ import { useState } from "react";
 import { resultError } from "../errors";
 import { rawMessageAtom } from "../state/queries";
 import { Dialog } from "./ui/Dialog";
+import { useSaveMessage } from "./reader-actions";
+import type { Notify } from "./Reader";
 
 /** Longer sources (big attachments in base64) show only this much; Copy still copies all of it. */
 const SHOWN_CHARS = 400_000;
@@ -19,11 +21,14 @@ const button =
 export function RawMessageDialog({
   messageId,
   onClose,
+  notify,
 }: {
   messageId: string;
   onClose: () => void;
+  notify: Notify;
 }) {
   const { t, i18n } = useLingui();
+  const save = useSaveMessage(notify);
   const result = useAtomValue(rawMessageAtom(messageId));
   const raw = AsyncResult.isSuccess(result) ? result.value : null;
   const [headersOpen, setHeadersOpen] = useState(true);
@@ -52,6 +57,9 @@ export function RawMessageDialog({
         </button>
         <button type="button" onClick={onClose} className={button}>
           <Trans>Close</Trans>
+        </button>
+        <button type="button" onClick={() => save(messageId)} className={button}>
+          <Trans>Save message as EML…</Trans>
         </button>
       </header>
       <div className="selectable min-h-0 flex-1 overflow-auto px-4 py-3 font-mono text-[12px] leading-relaxed">

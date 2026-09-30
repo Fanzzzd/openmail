@@ -6,7 +6,43 @@
  */
 import { constVoid } from "effect/Function";
 
-import type { MarkReadDelay } from "./domain.js";
+import type { Address, MarkReadDelay, Provider } from "./domain.js";
+
+/** Only contacts, the account itself, and people previously mailed count as known. */
+export function senderLabel(sender: Address, known: boolean): string {
+  return sender.name && !known && sender.name !== sender.address
+    ? `${sender.name} <${sender.address}>`
+    : sender.name || sender.address;
+}
+
+export function threadExpansion(ids: readonly string[], expanded: boolean): Set<string> {
+  return new Set(expanded ? ids : []);
+}
+
+/** Provider JSON is untrusted, even when the URL comes from Graph. */
+export function officialMessageUrl(provider: Provider, value: string): string | null {
+  try {
+    const url = new URL(value);
+    const origins =
+      provider === "gmail"
+        ? ["https://mail.google.com"]
+        : provider === "outlook"
+          ? [
+              "https://outlook.live.com",
+              "https://outlook.office.com",
+              "https://outlook.office365.com",
+            ]
+          : [];
+    return !url.username && !url.password && origins.includes(url.origin) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Legacy Gmail web routes identify the conversation, not a later message in it. */
+export function gmailThreadUrl(email: string, threadId: string): string {
+  return `https://mail.google.com/mail/u/?authuser=${encodeURIComponent(email)}#all/${encodeURIComponent(threadId)}`;
+}
 
 /**
  * Marks a thread read after the delay from preferences, unless cancelled

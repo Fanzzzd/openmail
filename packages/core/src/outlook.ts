@@ -88,7 +88,7 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -113,6 +113,7 @@ const GraphMessage = Schema.Struct({
   "@odata.type": Schema.optionalKey(Schema.String),
   id: Schema.String,
   conversationId: Schema.String,
+  webLink: Schema.optionalKey(Schema.NullOr(Schema.String)),
   subject: Schema.optionalKey(Schema.NullOr(Schema.String)),
   bodyPreview: Schema.optionalKey(Schema.String),
   body: Schema.optionalKey(Schema.Struct({ contentType: Schema.String, content: Schema.String })),
@@ -1164,6 +1165,7 @@ export function parseGraphMessage(
   return {
     providerId: raw.id,
     threadId: raw.conversationId,
+    ...(raw.webLink ? { webLink: raw.webLink } : {}),
     subject: raw.subject ?? "",
     from: address(raw.from),
     to: (raw.toRecipients ?? []).map(address),

@@ -137,6 +137,7 @@ export const Message = Schema.Struct({
   replyTo: Schema.optionalKey(Schema.Array(Address)),
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  webLink: Schema.optionalKey(Schema.String),
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
   bodyCached: Schema.optionalKey(Schema.Boolean),
@@ -163,6 +164,7 @@ export const IncomingMessage = Schema.Struct({
   snippet: Schema.String,
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  webLink: Schema.optionalKey(Schema.String),
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
   bodyCached: Schema.optionalKey(Schema.Boolean),

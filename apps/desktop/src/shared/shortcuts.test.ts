@@ -19,6 +19,43 @@ const event = (key: string, patch: Partial<KeyEvent> = {}): KeyEvent => ({
   ...patch,
 });
 describe("central shortcut sets", () => {
+  it("holding reader shortcuts never queues additional dialogs, tabs or sender searches", () => {
+    const strokes = [
+      event("s", { metaKey: true, altKey: true }),
+      event("g", { metaKey: true, shiftKey: true }),
+      event("k", { metaKey: true, shiftKey: true }),
+    ];
+    for (const set of ["mimestream", "apple", "gmail"] as const) {
+      for (const stroke of strokes) {
+        const action = shortcutAction(set, stroke);
+        expect(action).not.toBeNull();
+        for (let repeat = 0; repeat < 20; repeat++) {
+          expect(shortcutAction(set, { ...stroke, repeat: true })).toBeNull();
+        }
+        expect(shortcutAction(set, { ...stroke, repeat: false })).toBe(action);
+      }
+      expect(shortcutAction(set, event("ArrowDown", { repeat: true }))).toBe("next");
+    }
+  });
+  it("offers reading actions in every set without stealing typing shortcuts", () => {
+    for (const set of ["mimestream", "apple", "gmail"] as const) {
+      for (const [key, action] of [
+        ["e", "expandAll"],
+        ["c", "collapseAll"],
+        ["s", "saveMessage"],
+      ] as const) {
+        const stroke = event(key, { metaKey: true, altKey: true });
+        expect(shortcutAction(set, stroke)).toBe(action);
+        expect(shortcutAction(set, stroke, true)).toBeNull();
+      }
+      expect(shortcutAction(set, event("k", { metaKey: true, shiftKey: true }))).toBe(
+        "searchSender",
+      );
+      expect(shortcutAction(set, event("g", { metaKey: true, shiftKey: true }))).toBe(
+        "openMessageWeb",
+      );
+    }
+  });
   it("switches reply/archive bindings and Apple Mail's send without modifier collisions", () => {
     expect(shortcutAction("mimestream", event("r", { metaKey: true }))).toBe("reply");
     expect(shortcutAction("gmail", event("r", { metaKey: true }))).toBe("sync");

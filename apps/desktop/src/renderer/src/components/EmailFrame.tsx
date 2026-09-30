@@ -1,4 +1,5 @@
 import { type SyntheticEvent, useEffect, useRef, useState } from "react";
+import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
@@ -45,6 +46,8 @@ interface Props {
 
 export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props) {
   const [height, setHeight] = useState(120);
+  const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
+  const dispose = useRef<(() => void) | undefined>(undefined);
   const observer = useRef<ResizeObserver | null>(null);
   const keys = useRef(onKeyDown);
   useEffect(() => {
@@ -56,26 +59,50 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}">
 <base target="_blank"><style>${css}</style></head><body>${html}</body></html>`;
 
-  useEffect(() => () => observer.current?.disconnect(), []);
+  useEffect(
+    () => () => {
+      observer.current?.disconnect();
+      dispose.current?.();
+    },
+    [],
+  );
+
+  const link = hint?.document === doc ? hint.url : null;
 
   // Size the frame to its content so the thread scrolls as one page. Late
   // images and web fonts change the height after load, hence the observer.
   const onLoad = (e: SyntheticEvent<HTMLIFrameElement>) => {
+    dispose.current?.();
+    observer.current?.disconnect();
     const frameDoc = e.currentTarget.contentDocument;
     const root = frameDoc?.documentElement;
-    if (!frameDoc || !root) return;
+    if (!frameDoc || !root || frameDoc.URL !== "about:srcdoc") return;
+    externalLinkTargets(frameDoc);
     // Mail styles cannot hide the viewport's horizontal overflow.
     root.style.setProperty("overflow-x", "auto", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
     setHeight(root.scrollHeight);
-    observer.current?.disconnect();
     observer.current = new ResizeObserver(() => setHeight(root.scrollHeight));
     observer.current.observe(root);
-    frameDoc.addEventListener("keydown", (event) => keys.current?.(event));
+    const keydown = (event: KeyboardEvent) => {
+      if (!frameDoc.activeElement?.closest("input,textarea,select,[contenteditable]"))
+        keys.current?.(event);
+    };
+    frameDoc.addEventListener("keydown", keydown);
+    const stopHints = listenForLinkHints(
+      frameDoc,
+      (event) => frameLinkTarget(frameDoc, event),
+      (url) => setHint({ document: doc, url }),
+    );
+    dispose.current = () => {
+      stopHints();
+      frameDoc.removeEventListener("keydown", keydown);
+    };
   };
 
   return (
     <div
+      onMouseLeave={() => setHint(null)}
       className={`overflow-hidden rounded-lg p-4 ${
         background === "dark"
           ? "bg-black ring-1 ring-white/10"
@@ -90,6 +117,11 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
         style={{ height }}
         className="block w-full border-0"
       />
+      {link && (
+        <output className="pointer-events-none fixed right-3 bottom-3 left-3 z-50 w-fit max-w-[calc(100%-1.5rem)] rounded border border-black/10 bg-neutral-100 px-2 py-1 font-mono text-[12px] break-all text-neutral-800 shadow dark:border-white/15 dark:bg-neutral-800 dark:text-neutral-100">
+          {link}
+        </output>
+      )}
     </div>
   );
 }
