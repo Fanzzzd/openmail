@@ -1,0 +1,5 @@
+{
+  "version": "v1.9.4",
+  "source_archive_root": "ggml-org-whisper.cpp-7d75b14",
+  "source": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.4"
+}

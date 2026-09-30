@@ -1,0 +1,11 @@
+{"box":[38.00000148333331,40.000000200000024,238,23.99999999999994],"confidence":0.5,"text":"media-indexer.ts"}
+{"box":[36.66667766666626,109.7560970997136,660,32.243902206420955],"confidence":0.5,"text":"import ｛ readFile ｝from 'node:fs\/promises '；"}
+{"box":[40.000008899999784,163.999999875,712.0000000000001,26.00000000000005],"confidence":0.5,"text":"export async function indexImage （path: string）｛"}
+{"box":[69.99999677500006,214.0000001125,516,26.00000000000005],"confidence":0.5,"text":"const image = await readFile（path） ："}
+{"box":[64.16665589583374,260.67073222153823,646.2499999999999,27.439023971557592],"confidence":0.5,"text":"const text = await vision.recognize（image）；"}
+{"box":[69.89715587484784,310.0261363407598,636.2307128906249,30.06364440917969],"confidence":0.5,"text":"const vector = await embedder.encode（text）："}
+{"box":[70.00000252857141,363.9999999428571,354,28.00000000000008],"confidence":0.3,"text":"return t text, vector ｝i"}
+{"box":[42.00000008,416.00000018,12.000000000000002,18.000000000000014],"confidence":0.5,"text":"｝"}
+{"box":[39.99999897500004,491.99999965,562.0000000000001,28.00000000000008],"confidence":0.5,"text":"\/\/ Local processing. No image uploads."}
+{"box":[39.70628186768508,540.0033857972146,338.7312316894532,32.17992401123046],"confidence":0.5,"text":"const dimensions = 384；"}
+{"box":[40.000003179999936,591.99999972,398,27.999999999999996],"confidence":0.3,"text":"console.log（'Index ready'） ；"}

@@ -1,0 +1,128 @@
+{
+  "model": "base multilingual F16",
+  "model_bytes": 147951465,
+  "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+  "whisper": {
+    "version": "v1.9.4",
+    "source_archive_root": "ggml-org-whisper.cpp-7d75b14",
+    "source": "https://github.com/ggml-org/whisper.cpp/releases/tag/v1.9.4"
+  },
+  "threads": 4,
+  "beam_size": 5,
+  "best_of": 5,
+  "metal": true,
+  "results": [
+    {
+      "language": "en",
+      "voice": "Samantha",
+      "source_text": "Welcome to the local media search test. Your flight from Singapore to Shanghai is confirmed for Thursday morning. Please bring your passport and boarding pass to the airport. The shopping receipt includes coffee, milk, and bread. The total amount is thirty five dollars. We will index email attachments on this computer. Images and recordings stay on this Mac. Our next project meeting is on Tuesday afternoon. Please review the search results before the meeting.",
+      "original_speech_seconds": 28.815828,
+      "atempo": 0.9605276,
+      "audio_seconds": 30,
+      "sample_rate": 16000,
+      "wall_median_ms": 640.8127500908449,
+      "real_time_factor": 0.021360425003028163,
+      "speed_x": 46.815547904980114,
+      "runs": [
+        {
+          "wall_ms": 25191.25941710081,
+          "timing_ms": {
+            "load": 191.11,
+            "mel": 14.03,
+            "sample": 148.76,
+            "encode": 262.96,
+            "decode": 0.0,
+            "batchd": 354.39,
+            "prompt": 0.0,
+            "total": 1038.74
+          },
+          "transcript": " Welcome to the local media search test.  Your flight from Singapore to Shanghai is confirmed for Thursday morning.  Please bring your passport and boarding pass to the airport.  The shopping receipt includes coffee, milk, and bread.  The total amount is $35.  We will index email attachments on this computer.  Images and recordings stay on this Mac.  Our next project meeting is on Tuesday afternoon.  Please review the search results before the meeting."
+        },
+        {
+          "wall_ms": 640.8127500908449,
+          "timing_ms": {
+            "load": 73.46,
+            "mel": 12.64,
+            "sample": 155.14,
+            "encode": 48.79,
+            "decode": 0.0,
+            "batchd": 249.25,
+            "prompt": 0.0,
+            "total": 554.38
+          },
+          "transcript": " Welcome to the local media search test.  Your flight from Singapore to Shanghai is confirmed for Thursday morning.  Please bring your passport and boarding pass to the airport.  The shopping receipt includes coffee, milk, and bread.  The total amount is $35.  We will index email attachments on this computer.  Images and recordings stay on this Mac.  Our next project meeting is on Tuesday afternoon.  Please review the search results before the meeting."
+        },
+        {
+          "wall_ms": 632.2675420669839,
+          "timing_ms": {
+            "load": 77.58,
+            "mel": 12.87,
+            "sample": 156.85,
+            "encode": 52.64,
+            "decode": 0.0,
+            "batchd": 239.1,
+            "prompt": 0.0,
+            "total": 555.43
+          },
+          "transcript": " Welcome to the local media search test.  Your flight from Singapore to Shanghai is confirmed for Thursday morning.  Please bring your passport and boarding pass to the airport.  The shopping receipt includes coffee, milk, and bread.  The total amount is $35.  We will index email attachments on this computer.  Images and recordings stay on this Mac.  Our next project meeting is on Tuesday afternoon.  Please review the search results before the meeting."
+        }
+      ]
+    },
+    {
+      "language": "zh",
+      "voice": "Tingting",
+      "source_text": "欢迎参加本地媒体搜索测试。您从新加坡飞往上海的航班已经确认，将于星期四上午出发。请带好护照和登机牌，提前到机场办理手续。购物小票包括咖啡、牛奶和面包，总金额为三十五元。我们将在这台电脑上索引邮件附件。图片和录音都保留在本机。下次项目会议安排在星期二下午。请在会议之前查看搜索结果，并确认机票时间和购物金额。所有语音转写都在本地完成。",
+      "original_speech_seconds": 42.905533,
+      "atempo": 1.4301844333333333,
+      "audio_seconds": 30,
+      "sample_rate": 16000,
+      "wall_median_ms": 1121.7369579244405,
+      "real_time_factor": 0.037391231930814686,
+      "speed_x": 26.744237842987054,
+      "runs": [
+        {
+          "wall_ms": 1232.4998750118539,
+          "timing_ms": {
+            "load": 75.48,
+            "mel": 17.85,
+            "sample": 334.99,
+            "encode": 45.28,
+            "decode": 4.57,
+            "batchd": 554.53,
+            "prompt": 96.65,
+            "total": 1147.98
+          },
+          "transcript": "欢迎参加本地媒体搜索测试,您从新加坡飞往上海的航班已经确认,将于星期四上午出发,请带好护照核灯鸡排,提前到鸡场办理手序,购物小票包括咖啡、牛奶和面包,从金额为35元。 我们将在这台电脑上所引邮件附件,图片和露音都保留在本鸡,下次项目会议安排在星期二下午,请再会议之前查看搜索结果,并确认鸡票时间核购物金额,所有余音转写都在本地完成。"
+        },
+        {
+          "wall_ms": 1121.7369579244405,
+          "timing_ms": {
+            "load": 83.0,
+            "mel": 14.68,
+            "sample": 307.67,
+            "encode": 46.11,
+            "decode": 5.14,
+            "batchd": 548.45,
+            "prompt": 6.32,
+            "total": 1032.41
+          },
+          "transcript": "欢迎参加本地媒体搜索测试,您从新加坡飞往上海的航班已经确认,将于星期四上午出发,请带好护照核灯鸡排,提前到鸡场办理手序,购物小票包括咖啡、牛奶和面包,从金额为35元。 我们将在这台电脑上所引邮件附件,图片和露音都保留在本鸡,下次项目会议安排在星期二下午,请再会议之前查看搜索结果,并确认鸡票时间核购物金额,所有余音转写都在本地完成。"
+        },
+        {
+          "wall_ms": 1097.9417499620467,
+          "timing_ms": {
+            "load": 84.95,
+            "mel": 11.25,
+            "sample": 332.03,
+            "encode": 43.22,
+            "decode": 4.0,
+            "batchd": 508.31,
+            "prompt": 7.14,
+            "total": 1011.79
+          },
+          "transcript": "欢迎参加本地媒体搜索测试,您从新加坡飞往上海的航班已经确认,将于星期四上午出发,请带好护照核灯鸡排,提前到鸡场办理手序,购物小票包括咖啡、牛奶和面包,从金额为35元。 我们将在这台电脑上所引邮件附件,图片和露音都保留在本鸡,下次项目会议安排在星期二下午,请再会议之前查看搜索结果,并确认鸡票时间核购物金额,所有余音转写都在本地完成。"
+        }
+      ]
+    }
+  ]
+}

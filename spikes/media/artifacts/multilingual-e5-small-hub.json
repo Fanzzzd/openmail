@@ -1,0 +1,196 @@
+{
+  "_id": "64a04c4d7b57fab3a5d1e5eb",
+  "id": "Xenova/multilingual-e5-small",
+  "private": false,
+  "pipeline_tag": "feature-extraction",
+  "library_name": "transformers.js",
+  "tags": [
+    "transformers.js",
+    "onnx",
+    "bert",
+    "feature-extraction",
+    "base_model:intfloat/multilingual-e5-small",
+    "base_model:quantized:intfloat/multilingual-e5-small",
+    "region:us"
+  ],
+  "downloads": 276511,
+  "likes": 21,
+  "modelId": "Xenova/multilingual-e5-small",
+  "author": "Xenova",
+  "sha": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "lastModified": "2025-07-22T00:03:05.000Z",
+  "gated": false,
+  "disabled": false,
+  "mask_token": "<mask>",
+  "model-index": null,
+  "config": {
+    "architectures": ["BertModel"],
+    "model_type": "bert",
+    "tokenizer_config": {
+      "bos_token": "<s>",
+      "cls_token": "<s>",
+      "eos_token": "</s>",
+      "mask_token": {
+        "__type": "AddedToken",
+        "content": "<mask>",
+        "lstrip": true,
+        "normalized": true,
+        "rstrip": false,
+        "single_word": false
+      },
+      "pad_token": "<pad>",
+      "sep_token": "</s>",
+      "unk_token": "<unk>"
+    }
+  },
+  "cardData": { "base_model": "intfloat/multilingual-e5-small", "library_name": "transformers.js" },
+  "transformersInfo": {
+    "auto_model": "AutoModel",
+    "pipeline_tag": "feature-extraction",
+    "processor": "AutoTokenizer"
+  },
+  "siblings": [
+    {
+      "rfilename": ".gitattributes",
+      "blobId": "52373fe24473b1aa44333d318f578ae6bf04b49b",
+      "size": 1570
+    },
+    {
+      "rfilename": "README.md",
+      "blobId": "53e76ac0e07cb45ebbf3870244998e0f08632d4f",
+      "size": 1077
+    },
+    {
+      "rfilename": "config.json",
+      "blobId": "4104f38273cc595fd9500fd243124e9f6cf383dc",
+      "size": 658
+    },
+    {
+      "rfilename": "onnx/model.onnx",
+      "blobId": "8683a318639173170c8b1f744e4fdf980ea860e0",
+      "size": 470268533,
+      "lfs": {
+        "sha256": "4aa845c27760e06e9a686b9d8b5d440eae4b6612cd09e5b522b716d3941f77ff",
+        "size": 470268533,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_bnb4.onnx",
+      "blobId": "b6be5163f91ab390365a25e69cb1d5782b0b2114",
+      "size": 397322585,
+      "lfs": {
+        "sha256": "fdb98424bf7e59d7fbd010ea41ba24d343875600ac849d6be22c7cc043101117",
+        "size": 397322585,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_fp16.onnx",
+      "blobId": "a8f7d83a6724daaee03ef1bd14f0ee2769e11e84",
+      "size": 235336732,
+      "lfs": {
+        "sha256": "0e0fe349c99ea21c6f3aa273af21f7fb753c1e1174ef1647032029c2be3251c3",
+        "size": 235336732,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_int8.onnx",
+      "blobId": "55752c03727b5cb58e84a50240e6ecac779f79b4",
+      "size": 118054593,
+      "lfs": {
+        "sha256": "4d24e2bc01a447951524466ef533e52944bf48509e6552810bcee1a2711cb02c",
+        "size": 118054593,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_q4.onnx",
+      "blobId": "681ce0ffc14e4703c6c15c3bccdf22bc15c54b6d",
+      "size": 398649233,
+      "lfs": {
+        "sha256": "c5cee25d555ba3ff45b47d50cffd6d9d7842e3b1d21a91f417bc677845469969",
+        "size": 398649233,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_q4f16.onnx",
+      "blobId": "2a5b38f71aed8327ad6fcc21e004f8695c02615d",
+      "size": 204777691,
+      "lfs": {
+        "sha256": "cafab9d10773b6d976e102923b1d98385ac9c7959879d5cff032de3d8adb3b86",
+        "size": 204777691,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_quantized.onnx",
+      "blobId": "313b94a513ded056e6b6f13f156cbbe1b1205391",
+      "size": 118308185,
+      "lfs": {
+        "sha256": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
+        "size": 118308185,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "onnx/model_uint8.onnx",
+      "blobId": "65deee570fcb458970bff1cca2100cfb774cad53",
+      "size": 118054630,
+      "lfs": {
+        "sha256": "ee13574a23e4384619a172d4c0c8c6b825528fde30258c56130d5e3efcc9c8f1",
+        "size": 118054630,
+        "pointerSize": 134
+      }
+    },
+    {
+      "rfilename": "quant_config.json",
+      "blobId": "b6b0aac404ca79583bf09b91acfd362144f38b89",
+      "size": 674
+    },
+    {
+      "rfilename": "sentencepiece.bpe.model",
+      "blobId": "7a3f40a75f870bc1f21700cd414dc2acc431583c",
+      "size": 5069051,
+      "lfs": {
+        "sha256": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+        "size": 5069051,
+        "pointerSize": 132
+      }
+    },
+    {
+      "rfilename": "special_tokens_map.json",
+      "blobId": "e0b1d18ecd0ae4ff1d47bd297d910c0cf83e504b",
+      "size": 167
+    },
+    {
+      "rfilename": "tokenizer.json",
+      "blobId": "c9b2fea3119ca8886380e5f47bffc5ea7a6e0ffa",
+      "size": 17082730,
+      "lfs": {
+        "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+        "size": 17082730,
+        "pointerSize": 133
+      }
+    },
+    {
+      "rfilename": "tokenizer_config.json",
+      "blobId": "059214673d9d6d2ee319411e2ffec8c024b816d5",
+      "size": 443
+    }
+  ],
+  "spaces": [
+    "lamhieu/lightweight-embeddings",
+    "kairavaclfe/lightweight-embeddings",
+    "kairavaclfe/myownembedding",
+    "alanjoffre/rodoia-rag",
+    "unique2101/MyContexto",
+    "Leexmario-oss/multilingual-e5-small-demo",
+    "Hutej/hh-goa-rag",
+    "AnnLior/Find_text"
+  ],
+  "createdAt": "2023-07-01T15:54:53.000Z",
+  "usedStorage": 2082923963
+}

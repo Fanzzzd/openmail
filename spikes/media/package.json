@@ -1,0 +1,18 @@
+{
+  "name": "openmail-media-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "samples": "swiftc -O GenerateSamples.swift -o bin/generate-samples && bin/generate-samples samples",
+    "vision": "swiftc -O VisionCLI.swift -o bin/vision && python3 bench-vision.py",
+    "download": "python3 download-models.py",
+    "embeddings": "node bench-embeddings.mjs",
+    "sqlite": "node bench-sqlite.mjs",
+    "report": "python3 report.py",
+    "check-report": "python3 report.py --check"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.3.0",
+    "sqlite-vec": "0.1.9"
+  }
+}
