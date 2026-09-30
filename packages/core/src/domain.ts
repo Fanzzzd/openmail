@@ -387,6 +387,7 @@ export const Prefs = Schema.Struct({
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
   markReadDelay: Schema.Literals(MARK_READ_DELAYS),
+  nextSelection: Schema.Literals(["below", "above", "none"]),
   readerZoom: Schema.Literals(READER_ZOOMS),
   messageBackground: Schema.Literals(MESSAGE_BACKGROUNDS),
   /** Group messages into conversations. Off lists every message on its own. */
@@ -405,6 +406,7 @@ export const DEFAULT_PREFS: Prefs = {
   undoSendSeconds: 5,
   language: "system",
   markReadDelay: 0,
+  nextSelection: "below",
   readerZoom: 100,
   messageBackground: "light",
   threadGrouping: true,
@@ -498,6 +500,10 @@ export const FlushResult = Schema.Struct({
   reauth: Schema.Array(Schema.String),
 });
 export type FlushResult = typeof FlushResult.Type;
+
+/** An app operation's one-use, process-local undo handle. */
+export const BatchResult = Schema.Struct({ undoId: Schema.String });
+export type BatchResult = typeof BatchResult.Type;
 
 /** What `perform` did with a command. */
 export const Outcome = Schema.Union([

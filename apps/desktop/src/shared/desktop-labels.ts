@@ -13,6 +13,8 @@ export const DesktopLabels = Schema.Struct({
   allAccounts: Schema.String,
   file: Schema.String,
   edit: Schema.String,
+  undo: Schema.String,
+  selectAll: Schema.String,
   window: Schema.String,
   newMessages: Schema.String,
 });

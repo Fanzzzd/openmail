@@ -22,6 +22,7 @@ import {
   ServerFilter,
   Vacation,
   Account,
+  BatchResult,
   Address,
   AgentWriteMode,
   AuditEntry,
@@ -65,6 +66,7 @@ const PrefsPatch = Schema.Struct({
   undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
   language: Schema.optionalKey(Prefs.fields.language),
   markReadDelay: Schema.optionalKey(Prefs.fields.markReadDelay),
+  nextSelection: Schema.optionalKey(Prefs.fields.nextSelection),
   readerZoom: Schema.optionalKey(Prefs.fields.readerZoom),
   messageBackground: Schema.optionalKey(Prefs.fields.messageBackground),
   threadGrouping: Schema.optionalKey(Prefs.fields.threadGrouping),
@@ -228,6 +230,13 @@ export class MailRpcs extends RpcGroup.make(
   }),
 
   // Changes, all performed as the person at the app
+  Rpc.make("ThreadCount", { payload: { query: ThreadQuery }, success: Schema.Number }),
+  Rpc.make("ModifyWithUndo", {
+    payload: { threads: Schema.Array(Schema.String), op: MailOp, flat: Schema.Boolean },
+    success: BatchResult,
+    error,
+  }),
+  Rpc.make("UndoBatch", { payload: { undoId: Schema.String }, error }),
   Rpc.make("Modify", {
     payload: { threads: Schema.Array(Schema.String), op: MailOp },
     success: Outcome,
@@ -282,6 +291,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("SetAgentWriteMode", { payload: { mode: AgentWriteMode } }),
 
   // Desktop system integration. No provider or database access in these handlers.
+  Rpc.make("NativeEdit", { payload: { action: Schema.Literals(["undo", "selectAll"]) } }),
   Rpc.make("NewWindow"),
   Rpc.make("SetDesktopLabels", { payload: { labels: DesktopLabels } }),
   Rpc.make("CopyMessageLink", { payload: { id: Schema.String } }),

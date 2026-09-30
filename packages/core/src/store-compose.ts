@@ -243,6 +243,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         language: pref(f.language, stored.get("language"), d.language),
         markReadDelay: pref(f.markReadDelay, stored.get("markReadDelay"), d.markReadDelay),
+        nextSelection: pref(f.nextSelection, stored.get("nextSelection"), d.nextSelection),
         readerZoom: pref(f.readerZoom, stored.get("readerZoom"), d.readerZoom),
         messageBackground: pref(
           f.messageBackground,

@@ -75,6 +75,7 @@ import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
+import { makeBatchMailbox } from "./mailbox-batch.js";
 
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
 const MAX_ATTEMPTS = 5;
@@ -237,12 +238,56 @@ export const MailboxLive = (
       };
 
       const flush = Effect.fn("Mailbox.flush")(function* () {
-        const result = { done: 0, failed: 0, reauth: [] as string[] };
+        const result = { done: 0, failed: 0, reauth: new Array<string>() };
         const blocked = new Set<string>();
-        for (const pending of yield* store.listPendingOps) {
+        const queued = yield* store.listPendingOps;
+        const settle = (
+          account: Account,
+          items: readonly PendingOp[],
+          push: Effect.Effect<void, import("./errors.js").ProviderFailure>,
+        ) =>
+          push.pipe(
+            Effect.andThen(
+              Effect.forEach(items, (item) => store.removePendingOp(item.id), { discard: true }),
+            ),
+            Effect.andThen(
+              Effect.sync(() => {
+                result.done += items.length;
+              }),
+            ),
+            Effect.catchTags({
+              AuthError: () =>
+                Effect.gen(function* () {
+                  yield* store.setNeedsReauth(account.id, true);
+                  yield* Effect.forEach(items, (item) => store.releasePendingOp(item.id), {
+                    discard: true,
+                  });
+                  result.reauth.push(account.id);
+                }),
+              PermanentError: () =>
+                Effect.gen(function* () {
+                  yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
+                    discard: true,
+                  });
+                  result.failed += items.length;
+                }),
+              ProviderError: (error) =>
+                Effect.gen(function* () {
+                  for (const item of items) {
+                    blocked.add(`${item.accountId}/${item.providerId}`);
+                    yield* item.attempts + 1 >= MAX_ATTEMPTS
+                      ? store.removePendingOp(item.id)
+                      : store.failPendingOp(item.id, error.message);
+                    result.failed++;
+                  }
+                }),
+            }),
+          );
+        for (let index = 0; index < queued.length; index++) {
+          const pending = queued[index];
+          if (!pending) continue;
           const key = `${pending.accountId}/${pending.providerId}`;
-          if (blocked.has(key)) continue;
-          if (result.reauth.includes(pending.accountId)) continue;
+          if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
           const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
           if (Option.isNone(account)) {
             yield* store.removePendingOp(pending.id);
@@ -256,32 +301,68 @@ export const MailboxLive = (
             blocked.add(key);
             continue;
           }
-          yield* pushOp(account.value, pending).pipe(
-            Effect.andThen(store.removePendingOp(pending.id)),
-            Effect.andThen(Effect.sync(() => result.done++)),
-            Effect.catchTags({
-              AuthError: () =>
-                Effect.all([
-                  store.setNeedsReauth(account.value.id, true),
-                  store.releasePendingOp(pending.id),
-                  Effect.sync(() => result.reauth.push(account.value.id)),
-                ]),
-              PermanentError: () =>
-                store
-                  .removePendingOp(pending.id)
-                  .pipe(Effect.andThen(Effect.sync(() => result.failed++))),
-              ProviderError: (e) =>
-                Effect.gen(function* () {
-                  blocked.add(key);
-                  yield* pending.attempts + 1 >= MAX_ATTEMPTS
-                    ? store.removePendingOp(pending.id)
-                    : store.failPendingOp(pending.id, e.message);
-                  result.failed++;
-                }),
-            }),
-          );
+          const adapter = providers.get(account.value.provider);
+          const op = pending.op;
+          const batch: PendingOp[] = [pending];
+          if (
+            adapter.pushBatch &&
+            op.kind !== "saveDraft" &&
+            op.kind !== "deleteDraft" &&
+            op.kind !== "trash" &&
+            op.kind !== "inbox"
+          ) {
+            const signature = JSON.stringify(op);
+            for (const next of queued.slice(index + 1, index + 1000)) {
+              if (
+                next.accountId !== pending.accountId ||
+                JSON.stringify(next.op) !== signature ||
+                blocked.has(`${next.accountId}/${next.providerId}`)
+              )
+                break;
+              if (!(yield* store.claimPendingOp(next.id))) {
+                blocked.add(`${next.accountId}/${next.providerId}`);
+                break;
+              }
+              batch.push(next);
+            }
+            index += batch.length - 1;
+            if (batch.length > 1) {
+              // A stale provider ID must not cause other messages to be dropped.
+              const bulk = adapter
+                .pushBatch(
+                  account.value,
+                  batch.map((item) => item.providerId),
+                  op,
+                )
+                .pipe(
+                  Effect.catchTag("PermanentError", () =>
+                    Effect.gen(function* () {
+                      for (const item of batch) {
+                        if (
+                          result.reauth.includes(item.accountId) ||
+                          blocked.has(`${item.accountId}/${item.providerId}`)
+                        ) {
+                          yield* store.releasePendingOp(item.id);
+                          continue;
+                        }
+                        yield* settle(account.value, [item], pushOp(account.value, item));
+                      }
+                    }).pipe(Effect.as("fallback" as const)),
+                  ),
+                );
+              const sent = yield* bulk.pipe(Effect.result);
+              if (sent._tag === "Success" && sent.success === "fallback") continue;
+              yield* settle(
+                account.value,
+                batch,
+                sent._tag === "Failure" ? Effect.fail(sent.failure) : Effect.void,
+              );
+              continue;
+            }
+          }
+          yield* settle(account.value, [pending], pushOp(account.value, pending));
         }
-        return result satisfies FlushResult;
+        return result;
       }, flushLock.withPermits(1));
 
       /** Flushes without making the caller wait for the network. */
@@ -295,6 +376,11 @@ export const MailboxLive = (
           : FiberSet.run(background, flushNow).pipe(Effect.asVoid);
 
       const organization = makeOrganizationMailbox(store, providers, changed, flushLater);
+      const batchMailbox = yield* makeBatchMailbox(
+        store,
+        changed,
+        FiberSet.run(background, flushNow).pipe(Effect.asVoid),
+      );
 
       // Running commands
 
@@ -1246,6 +1332,7 @@ export const MailboxLive = (
         startUpdates: (client, updateOptions) =>
           startStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
         ...organization,
+        ...batchMailbox,
         ...features,
         ...cache,
         searchServer: (query) =>
@@ -1274,6 +1361,7 @@ export const MailboxLive = (
         setClient: (patch) => mutate(config.write(patch)),
 
         threads: semanticThreads,
+        threadCount: (query) => store.countThreads(query),
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),

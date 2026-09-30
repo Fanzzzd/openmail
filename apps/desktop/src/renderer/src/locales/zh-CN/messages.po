@@ -39,6 +39,11 @@ msgstr "（无主题）"
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
 
+#. placeholder {0}: props.moreNotLoaded
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{0} more not loaded"
+msgstr "另有 {0} 项未加载"
+
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
@@ -67,6 +72,10 @@ msgstr "已缓存 {count} 个联系人"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{count} occurrences"
 msgstr "重复 {count} 次"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{count} selected (loaded)"
+msgstr "已选 {count} 项（已加载）"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
@@ -346,6 +355,7 @@ msgstr "Apple 邮件"
 msgid "Approve suggestion"
 msgstr "确认建议"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -395,6 +405,10 @@ msgstr "回填已暂停"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill runs between syncs"
 msgstr "同步间隙回填"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "Batch actions"
+msgstr "批量操作"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
@@ -465,6 +479,7 @@ msgstr "无法打开邮件：{reason}"
 msgid "Can't reach the mail server right now: {0}"
 msgstr "暂时连不上邮件服务器：{0}"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -700,6 +715,8 @@ msgstr "默认"
 msgid "Default email app"
 msgstr "默认邮件客户端"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -710,6 +727,11 @@ msgstr "默认邮件客户端"
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "删除"
+
+#. placeholder {0}: deleteRequest?.ids.size ?? 0
+#: src/renderer/src/App.tsx
+msgid "Delete {0} conversations?"
+msgstr "删除 {0} 个会话？"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
@@ -1019,6 +1041,7 @@ msgstr "标签或文件夹"
 msgid "Label removed"
 msgstr "已去掉标签"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1103,6 +1126,7 @@ msgstr "标为重要"
 msgid "Mark as not important"
 msgstr "取消重要"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1110,6 +1134,7 @@ msgstr "取消重要"
 msgid "Mark as read"
 msgstr "标为已读"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as unread"
@@ -1213,6 +1238,11 @@ msgstr "更多操作"
 msgid "More matches exist. Narrow your search."
 msgstr "还有更多结果，请缩小搜索范围。"
 
+#: src/renderer/src/components/BatchActions.tsx
+msgid "More messages not loaded"
+msgstr "还有未加载的邮件"
+
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
@@ -1304,6 +1334,14 @@ msgstr "最新的在前"
 msgid "news@shop.com or shop.com"
 msgstr "news@shop.com 或 shop.com"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next above"
+msgstr "上一项"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next below"
+msgstr "下一项"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "下一个会话"
@@ -1375,6 +1413,10 @@ msgstr "没有未读邮件"
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "收件箱没有未读"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "None"
+msgstr "不选"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
@@ -1851,6 +1893,14 @@ msgstr "搜索服务器中…"
 msgid "Select a message"
 msgstr "选择一封邮件"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Select all"
+msgstr "全选"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Selection after moving messages"
+msgstr "移除邮件后的选择"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "语义搜索暂不可用，仍可全文搜索。"
@@ -2043,6 +2093,7 @@ msgstr "垃圾邮件"
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS（通常是 465）"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2157,10 +2208,6 @@ msgstr "文字大小"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "还没有填写 {client} 的 OAuth 客户端。"
 
-#: src/renderer/src/App.tsx
-msgid "The account's sign-in has expired. Changes will sync after you sign in again."
-msgstr "账户登录已失效，改动会在重新登录后同步"
-
 #: src/renderer/src/components/Reader.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"
@@ -2214,6 +2261,10 @@ msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
 msgstr "这些不是邮件地址：{list}"
+
+#: src/renderer/src/App.tsx
+msgid "These loaded conversations will be moved to Trash. You can undo this batch."
+msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
@@ -2272,6 +2323,7 @@ msgstr "已删除"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Undo"
 msgstr "撤销"
 
@@ -2311,6 +2363,7 @@ msgstr "未读"
 msgid "Unread filter"
 msgstr "只显示未读"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "去掉星标"

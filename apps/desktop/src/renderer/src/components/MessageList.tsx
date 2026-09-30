@@ -1,8 +1,16 @@
 import { listWindow, MESSAGE_ROW_HEIGHT } from "@openmail/core/schema";
 import { Toggle } from "@base-ui/react/toggle";
+import { constVoid } from "effect/Function";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Paperclip, Star } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import type { Label, MailOp, Mailbox, ThreadSummary } from "../../../shared/api";
 import { avatarColor, displayName, shortDate } from "../format";
@@ -28,8 +36,10 @@ interface Props {
   /** User labels by `${accountId}/${labelId}`, for the chips on each row. */
   labels: Map<string, Label>;
   selectedId: string | null;
+  selectedIds: ReadonlySet<string>;
+  listRef: RefObject<HTMLDivElement | null>;
   selectionSource: SelectionSource;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, modifiers: { toggle: boolean; range: boolean }) => void;
   onEndReached: () => void;
   /** What a row's context menu needs; the same handlers as the reader toolbar. */
   rowActions: RowActions;
@@ -50,6 +60,7 @@ export interface RowActions {
   onOpenWindow: (thread: ThreadSummary) => void;
   onSnooze: (thread: ThreadSummary) => void;
   onFilter: (thread: ThreadSummary) => void;
+  batchMenu?: ReactNode;
 }
 
 export function MessageList({
@@ -65,13 +76,14 @@ export function MessageList({
   onFilters,
   labels,
   selectedId,
+  selectedIds,
+  listRef,
   selectionSource,
   onSelect,
   onEndReached,
   rowActions,
 }: Props) {
   const { t } = useLingui();
-  const listRef = useRef<HTMLDivElement>(null);
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -95,18 +107,26 @@ export function MessageList({
     });
     if (listRef.current) observer.observe(listRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [listRef]);
 
   // Unmounted rows still have coordinates, so keyboard navigation can reach them.
   useEffect(() => {
     const el = listRef.current;
-    if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return;
+    if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return constVoid;
     const top = selectedIndex * rowHeight;
     if (top < el.scrollTop) el.scrollTop = top;
     else if (top + rowHeight > el.scrollTop + el.clientHeight)
       el.scrollTop = top + rowHeight - el.clientHeight;
     setViewport({ top: el.scrollTop, height: el.clientHeight });
-  }, [selectedIndex, selectionSource, rowHeight]);
+    const frame = requestAnimationFrame(() => {
+      for (const row of el.querySelectorAll<HTMLButtonElement>("[data-id]"))
+        if (row.dataset.id === selectedId) {
+          row.focus({ preventScroll: true });
+          break;
+        }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedIndex, selectedId, selectionSource, rowHeight, listRef]);
 
   // Short first pages have no scrollbar. Ask for older mail once per list growth.
   useEffect(() => {
@@ -174,6 +194,8 @@ export function MessageList({
               // A native select cannot host these windowed conversation previews.
               // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
               role="listbox"
+              tabIndex={-1}
+              aria-multiselectable="true"
               aria-label={searching ? t`Search results` : title}
               onScroll={(e) => {
                 const el = e.currentTarget;
@@ -210,13 +232,22 @@ export function MessageList({
                     position={i + 1}
                     total={threads.length}
                     labels={labels}
-                    selected={i === selectedIndex}
-                    accent={i === selectedIndex && selectionSource === "keyboard"}
+                    selected={selectedIds.has(m.id)}
+                    accent={selectedIds.has(m.id) && selectionSource === "keyboard"}
                     menuOpen={m.id === menuFor}
                     // Mimestream drops the rule under the selected row and under the row above it.
-                    rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
+                    rule={
+                      i < threads.length - 1 &&
+                      !selectedIds.has(m.id) &&
+                      !selectedIds.has(threads[i + 1]?.id ?? "")
+                    }
                     showAccount={showAccount}
-                    onSelect={() => onSelect(m.id)}
+                    onSelect={(event) =>
+                      onSelect(m.id, {
+                        toggle: event.metaKey || event.ctrlKey,
+                        range: event.shiftKey,
+                      })
+                    }
                     onOpen={() => rowActions.onOpenWindow(m)}
                   />
                 );
@@ -224,7 +255,12 @@ export function MessageList({
             </div>
           </div>
         </ContextMenuTrigger>
-        {menuThread && <RowMenu thread={menuThread} actions={rowActions} />}
+        {menuThread &&
+          (selectedIds.has(menuThread.id) && selectedIds.size > 1 && rowActions.batchMenu ? (
+            <ContextMenuContent>{rowActions.batchMenu}</ContextMenuContent>
+          ) : (
+            <RowMenu thread={menuThread} actions={rowActions} />
+          ))}
       </ContextMenuRoot>
     </section>
   );
@@ -301,7 +337,7 @@ function Row({
   menuOpen: boolean;
   rule: boolean;
   showAccount: boolean;
-  onSelect: () => void;
+  onSelect: (event: MouseEvent<HTMLButtonElement>) => void;
   /** Double-click: open in a window of its own. */
   onOpen: () => void;
 }) {

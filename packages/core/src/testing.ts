@@ -18,11 +18,12 @@ import { StoreLive } from "./store.js";
 export function TestMailbox(
   servers: Partial<Record<Provider, FakeServer>> = {},
   options: MailboxOptions = { backgroundFlush: false },
+  fakeOptions: Parameters<typeof makeFakeProvider>[1] = {},
 ): Layer.Layer<Mailbox> {
   const adapters = {
-    gmail: makeFakeProvider(servers.gmail ?? fakeServer("me@gmail.com")),
-    outlook: makeFakeProvider(servers.outlook ?? fakeServer("me@outlook.com")),
-    imap: makeFakeProvider(servers.imap ?? fakeServer("me@example.com")),
+    gmail: makeFakeProvider(servers.gmail ?? fakeServer("me@gmail.com"), fakeOptions),
+    outlook: makeFakeProvider(servers.outlook ?? fakeServer("me@outlook.com"), fakeOptions),
+    imap: makeFakeProvider(servers.imap ?? fakeServer("me@example.com"), fakeOptions),
   };
   const providers = Layer.succeed(Providers, Providers.of({ get: (p) => adapters[p] }));
   return MailboxLive(options).pipe(

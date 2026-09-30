@@ -55,6 +55,22 @@ export function ReadingSettings() {
 
       <section>
         <h3 className={heading}>
+          <Trans>Selection after moving messages</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Selection after moving messages`}
+          value={prefs?.nextSelection ?? "below"}
+          options={[
+            { value: "below" as const, label: t`Next below` },
+            { value: "above" as const, label: t`Next above` },
+            { value: "none" as const, label: t`None` },
+          ]}
+          onValueChange={(nextSelection) => setPrefs({ nextSelection })}
+        />
+      </section>
+
+      <section>
+        <h3 className={heading}>
           <Trans>Conversations</Trans>
         </h3>
         <label className="flex items-center gap-2">

@@ -42,6 +42,8 @@ export function useDesktopLabels() {
             allAccounts: t`All accounts`,
             file: t`File`,
             edit: t`Edit`,
+            undo: t`Undo`,
+            selectAll: t`Select all`,
             window: t`Window`,
             newMessages: t`new messages`,
           },

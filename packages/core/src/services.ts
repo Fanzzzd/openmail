@@ -159,6 +159,16 @@ export interface StoredDraft {
  * SQL and decode failures are defects: they mean a bug or a corrupt file,
  * not something a caller can handle.
  */
+/** Local reminder state changed as a side effect of read/move operations. */
+export interface ReminderSnapshot {
+  accountId: string;
+  threadId: string;
+  dueAt: number | null;
+  wokenAt: number | null;
+  wakePending: boolean;
+  members: readonly { providerId: string; wakePending: boolean }[];
+}
+
 export class Store extends Context.Service<
   Store,
   {
@@ -195,6 +205,8 @@ export class Store extends Context.Service<
     deleteAccountMessages(accountId: string): Effect.Effect<void>;
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
     listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
+    /** Cached matches without page cursors; counts rows, not conversation members. */
+    countThreads(q: ThreadQuery): Effect.Effect<number>;
     vectorThreads(q: ThreadQuery, hits: readonly DerivedChunk[]): Effect.Effect<ThreadSummary[]>;
     getMessage(id: string): Effect.Effect<Message, NotFound>;
     /** Every message of the thread `id` belongs to, oldest first. */
@@ -240,6 +252,8 @@ export class Store extends Context.Service<
     replaceSendAs(accountId: string, aliases: readonly SendAs[]): Effect.Effect<void>;
     readonly sendAs: Effect.Effect<SendAs[]>;
     snooze(id: string, due: number): Effect.Effect<void, NotFound | InvalidInput>;
+    reminderSnapshot(id: string): Effect.Effect<Option.Option<ReminderSnapshot>, NotFound>;
+    restoreReminder(snapshot: ReminderSnapshot): Effect.Effect<void>;
     wakeSnoozed(now: number): Effect.Effect<string[]>;
 
     // Profiles
@@ -461,6 +475,13 @@ export interface ProviderAdapter {
     scope?: "inbox",
   ): Stream.Stream<Change, ProviderFailure>;
   push(account: Account, providerId: string, op: MailOp): Effect.Effect<void, ProviderFailure>;
+  /** Gmail label operations; callers cap each request at 1000 IDs. */
+  pushBatch?(
+    this: void,
+    account: Account,
+    providerIds: readonly string[],
+    op: MailOp,
+  ): Effect.Effect<void, ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The
    * adapter fetches its threading headers from the provider.

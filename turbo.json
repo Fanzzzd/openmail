@@ -10,7 +10,8 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "env": ["OPENMAIL_LOW_MEMORY_TESTS", "VITEST_MAX_WORKERS"]
     },
     "dev": {
       "dependsOn": ["^build"],

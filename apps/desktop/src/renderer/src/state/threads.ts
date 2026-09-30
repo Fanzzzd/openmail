@@ -126,6 +126,7 @@ export interface ThreadList {
   loading: boolean;
   /** Older threads exist and no page is in flight. */
   canLoadMore: boolean;
+  moreNotLoaded: number | null;
   searchingServer: boolean;
   searchTruncated: boolean;
   searchErrors: readonly string[];
@@ -135,6 +136,7 @@ const EMPTY: ThreadList = {
   threads: [],
   loading: false,
   canLoadMore: false,
+  moreNotLoaded: null,
   searchingServer: false,
   searchTruncated: false,
   searchErrors: [],
@@ -162,6 +164,10 @@ export const threadListAtom = Atom.writable(
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
     const result = get(pagedList(query).loaded);
+    const total = AsyncResult.getOrElse(
+      get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
+      () => null,
+    );
     const mediaCriteria = parseSearchQuery(query).criteria;
     const server =
       query.search === undefined || mediaCriteria?.image || mediaCriteria?.attachmentText
@@ -199,6 +205,7 @@ export const threadListAtom = Atom.writable(
       return {
         ...shown,
         ...serverState,
+        moreNotLoaded: null,
         threads: remote ? remoteRows : shown.threads,
         loading: result._tag === "Initial",
         canLoadMore: false,
@@ -210,7 +217,20 @@ export const threadListAtom = Atom.writable(
         ? mergeSearchResults(loaded.value.threads, remoteRows, query.flat)
         : loaded.value.threads,
       loading: false,
-      canLoadMore: !loaded.value.done && !result.waiting,
+      moreNotLoaded:
+        total === null ||
+        query.search !== undefined ||
+        query.mailbox === "drafts" ||
+        remote?.truncated
+          ? null
+          : Math.max(0, total - loaded.value.threads.length),
+      canLoadMore:
+        !loaded.value.done &&
+        !result.waiting &&
+        (total === null ||
+          query.search !== undefined ||
+          query.mailbox === "drafts" ||
+          total > loaded.value.threads.length),
     };
   },
   (ctx, _next: void) => {

@@ -9,8 +9,8 @@ import { AsyncResult, Atom } from "effect/reactivity";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
-import { desktopEventRoute, type DesktopEvent } from "../../shared/desktop";
-import { shortcutAction, spaceShortcut } from "../../shared/shortcuts";
+import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../shared/desktop";
+import { selectionShortcut, shortcutAction, spaceShortcut } from "../../shared/shortcuts";
 import { ShortcutHelp } from "./components/SystemSettings";
 import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import type {
@@ -47,7 +47,8 @@ import { MailClient } from "./rpc";
 import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "./state/events";
 import {
   discardDraft,
-  modifyThreads,
+  modifyWithUndo,
+  undoBatch,
   openDraft,
   openThreadWindow,
   reauthAccount,
@@ -67,7 +68,24 @@ import {
   threadAtom,
   unreadCountsAtom,
 } from "./state/queries";
-import { threadListAtom } from "./state/threads";
+import {
+  EMPTY_SELECTION,
+  singleSelection,
+  selectRow,
+  selectAll,
+  moveSelection,
+  selectionAfterRemoval,
+  reconcileSelection,
+  trimSelection,
+  selectionForQuery,
+  batchScope,
+  requiresBatchDeleteConfirmation,
+  type Selection,
+} from "./state/selection";
+import { Alert, AlertCancel, alertDanger } from "./components/ui/Dialog";
+import { BatchActions, BatchMenuItems } from "./components/BatchActions";
+import { leavesList } from "./state/batch";
+import { listQueryAtom, threadListAtom } from "./state/threads";
 import {
   filtersAtom,
   NO_FILTERS,
@@ -104,49 +122,6 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };
 
-/** Ops that take the thread out of the list it is in. */
-const MOVES = new Set<MailOp["kind"]>(["archive", "inbox", "trash", "spam"]);
-
-/** The op that puts a thread back, given its state before `op`. */
-function inverse(op: MailOp, before: ThreadState): MailOp | null {
-  switch (op.kind) {
-    case "read":
-    case "star":
-    case "important":
-      return { ...op, value: !op.value };
-    case "label":
-      if (before.provider === "gmail" || !op.value) return { ...op, value: !op.value };
-      break;
-  }
-  if (before.provider === "gmail") {
-    if (op.kind === "archive" || op.kind === "trash" || op.kind === "spam") {
-      return before.labels.includes("INBOX") ? { kind: "inbox" } : null;
-    }
-    if (op.kind === "inbox") {
-      if (before.labels.includes("TRASH")) return { kind: "trash" };
-      if (before.labels.includes("SPAM")) return { kind: "spam" };
-      return { kind: "archive" };
-    }
-    return null;
-  }
-  // Folder providers: move back to the folder the thread was in.
-  const folder = before.labels.find((l) => !["UNREAD", "STARRED", "IMPORTANT"].includes(l));
-  switch (folder) {
-    case "INBOX":
-      return { kind: "inbox" };
-    case "ARCHIVE":
-      return { kind: "archive" };
-    case "TRASH":
-      return { kind: "trash" };
-    case "SPAM":
-      return { kind: "spam" };
-    case undefined:
-      return null;
-    default:
-      return { kind: "label", labelId: folder, value: true };
-  }
-}
-
 export function App() {
   // The one subscription to the main process's events, and the RPC runtime,
   // live as long as the window.
@@ -163,7 +138,20 @@ export function App() {
   const [query, setQuery] = useAtom(searchTextAtom);
   const search = useAtomValue(searchAtom);
   const [filters, setFilters] = useAtom(filtersAtom);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
+  const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
+  const setSelectedId = (id: string | null) => setSelection(singleSelection(id));
+  const [restoration, setRestoration] = useState<{
+    selection: Selection;
+    scopeKey: string;
+    fromList: readonly ThreadSummary[];
+    expected: Selection;
+  } | null>(null);
+  const [deleteRequest, setDeleteRequest] = useState<{
+    ids: ReadonlySet<string>;
+    scopeKey: string;
+  } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [selectionSource, setSelectionSource] = useState<SelectionSource>("mouse");
   const [editing, setEditing] = useState<Profile | "new" | null>(null);
   const syncState = useAtomValue(syncStateAtom);
@@ -194,15 +182,72 @@ export function App() {
 
   const [threads, loadMore] = useAtom(threadListAtom);
   const list = threads.threads;
-  const selected = list.find((thread) => thread.id === selectedId);
+  const listQuery = useAtomValue(listQueryAtom);
+  const scopeKey = JSON.stringify([listQuery, search, filters]);
+  const currentSelection = useRef({ selection, scopeKey, list });
+  useEffect(() => {
+    currentSelection.current = { selection, scopeKey, list };
+  }, [selection, scopeKey, list]);
+  const rowMap = new Map(list.map((row) => [row.id, row]));
+  const visibleIds = new Set(rowMap.keys());
+  if (restoration && (restoration.scopeKey !== scopeKey || restoration.expected !== selection))
+    setRestoration(null);
+  if (
+    restoration?.scopeKey === scopeKey &&
+    restoration.expected === selection &&
+    restoration.fromList !== list &&
+    !threads.loading
+  ) {
+    setRestoration(null);
+    setSelection(trimSelection(restoration.selection, visibleIds));
+  }
+  const [rowCache, setRowCache] = useState({
+    list,
+    selection,
+    rows: new Map<string, ThreadSummary>(),
+    scopeKey,
+  });
+  if (
+    rowCache.list !== list ||
+    rowCache.selection !== selection ||
+    rowCache.scopeKey !== scopeKey
+  ) {
+    const sameScope = rowCache.scopeKey === scopeKey;
+    const remapped = reconcileSelection(
+      selectionForQuery(selection, rowCache.scopeKey, scopeKey),
+      sameScope ? rowCache.rows : new Map(),
+      list,
+      listQuery?.flat ?? false,
+    );
+    const reconciled = threads.loading ? remapped : trimSelection(remapped, visibleIds);
+    if (reconciled !== selection) setSelection(reconciled);
+    if (!sameScope) {
+      setLabelPicker(false);
+      setDeleteRequest(null);
+    }
+    const rows = new Map(
+      list.filter((row) => reconciled.ids.has(row.id)).map((row) => [row.id, row]),
+    );
+    setRowCache({ list, selection: reconciled, rows, scopeKey });
+  }
+  const batchRows = batchScope(selection, rowMap).rows;
+  const selected = selectedId ? rowMap.get(selectedId) : undefined;
   const openThread = AsyncResult.value(useAtomValue(threadAtom(selectedId)));
   const messages = openThread._tag === "Some" ? openThread.value : undefined;
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const [readTarget, setReadTarget] = useState<string | null>(null);
+  const groupingRef = useRef(prefs.threadGrouping);
+  useEffect(() => {
+    if (groupingRef.current !== prefs.threadGrouping) {
+      groupingRef.current = prefs.threadGrouping;
+      setSelection(EMPTY_SELECTION);
+      setReadTarget(null);
+    }
+  }, [prefs.threadGrouping]);
   const undoSeconds = prefs.undoSendSeconds;
   /** The unread thread just opened with select(); it is marked read after the delay in preferences. */
-  const [readTarget, setReadTarget] = useState<string | null>(null);
   const print = useThreadPrint((next) => say(next));
 
   /** The local signature for an account: one for new messages, one for replies and forwards. */
@@ -219,14 +264,17 @@ export function App() {
   const selectedAccount = accountList.find(
     (a) => a.id === (selected?.accountId ?? messages?.[0]?.accountId),
   );
+  const stateMessages = prefs.threadGrouping
+    ? messages
+    : messages?.filter((message) => message.id === selectedId);
   const threadState: ThreadState | null =
-    selectedAccount && messages
+    selectedAccount && stateMessages
       ? {
           provider: selectedAccount.provider,
-          isUnread: messages.some((m) => m.isUnread),
-          isStarred: messages.some((m) => m.isStarred),
-          isImportant: messages.some((m) => m.labels.includes("IMPORTANT")),
-          labels: [...new Set(messages.flatMap((m) => m.labels))],
+          isUnread: stateMessages.some((m) => m.isUnread),
+          isStarred: stateMessages.some((m) => m.isStarred),
+          isImportant: stateMessages.some((m) => m.labels.includes("IMPORTANT")),
+          labels: [...new Set(stateMessages.flatMap((m) => m.labels))],
         }
       : null;
   const threadLabels = labels.filter((l) => l.accountId === selectedAccount?.id);
@@ -244,61 +292,129 @@ export function App() {
     };
   };
 
-  /**
-   * Runs an op on the selected thread, or on `target` (a row's context menu).
-   * Moving the selected thread selects the next one, the way Mimestream does;
-   * every visible op can be undone with ⌘Z.
-   */
+  /** The selected IDs are captured once; core records exact per-message undo. */
   const act = (
     op: MailOp,
-    opts: { quiet?: boolean } = {},
+    opts: { quiet?: boolean; accountId?: string; confirmedIds?: ReadonlySet<string> } = {},
     target?: { id: string; state: ThreadState },
   ) => {
-    const id = target?.id ?? selectedId;
-    const state = target?.state ?? threadState;
-    if (!id || !state) return;
-    const back = inverse(op, state);
-    const leaves = MOVES.has(op.kind) || (op.kind === "label" && state.provider !== "gmail");
-    const wasSelected = id === selectedId;
-    if (leaves && wasSelected) {
-      const index = list.findIndex((thread) => thread.id === id);
-      const next = list[index + 1] ?? list[index - 1];
-      select(next?.id ?? null, selectionSource);
+    const selectionScope = opts.confirmedIds ? { ...selection, ids: opts.confirmedIds } : selection;
+    const {
+      rows,
+      ids: targets,
+      count,
+    } = batchScope(selectionScope, rowMap, target?.id, opts.accountId);
+    if (!targets.length || threads.loading) return;
+    if (op.kind === "trash" && requiresBatchDeleteConfirmation(count) && !opts.confirmedIds) {
+      setDeleteRequest({ ids: new Set(targets), scopeKey });
+      return;
     }
+    const before = selection;
+    const actionScopeKey = scopeKey;
+    const targetSet = new Set(targets);
+    const removed = new Set(
+      rows
+        .filter((row) => {
+          if (!targetSet.has(row.id)) return false;
+          const state = rowState(row);
+          if (!state) return false;
+          return listQuery ? leavesList(row, op, state.provider, listQuery, labels) : false;
+        })
+        .map((row) => row.id),
+    );
+    const next = removed.size
+      ? selectionAfterRemoval(
+          before,
+          list.map((row) => row.id),
+          removed,
+          prefs.nextSelection,
+        )
+      : before;
+    setReadTarget(null);
     run(
-      modifyThreads([id], op).pipe(
+      modifyWithUndo(targets, op, !prefs.threadGrouping).pipe(
         Effect.matchCause({
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: t`Action failed: ${reason}`, tone: "error" });
           },
-          onSuccess: (outcome) => {
-            // The change applied locally even when the push waits for a new
-            // sign-in, so it can still be undone.
-            const needsReauth = outcome.status === "applied" && outcome.flush?.reauth.length;
-            if (opts.quiet && !needsReauth) return;
-            const undo =
-              back && !opts.quiet
-                ? () => {
-                    run(modifyThreads([id], back));
-                    if (leaves && wasSelected) setSelectedId(id);
-                  }
-                : null;
+          onSuccess: (result) => {
+            applyActionSelection(before, next, actionScopeKey);
+            if (opts.quiet) return;
+            let used = false;
+            const undo = () => {
+              if (used) return;
+              used = true;
+              run(
+                undoBatch(result.undoId, targets).pipe(
+                  Effect.matchCause({
+                    onFailure: (cause) => {
+                      used = false;
+                      const reason = causeText(i18n, cause);
+                      say({
+                        text: t`Action failed: ${reason}`,
+                        tone: "error",
+                        action: { label: t`Undo`, run: undo },
+                      });
+                    },
+                    onSuccess: () => {
+                      restoreActionSelection(before, actionScopeKey, rows);
+                      if (undoRef.current === undo) undoRef.current = null;
+                      setToast(null);
+                    },
+                  }),
+                ),
+              );
+            };
             undoRef.current = undo;
-            const action = undo ? { action: { label: t`Undo`, run: undo } } : {};
-            say(
-              needsReauth
-                ? {
-                    text: t`The account's sign-in has expired. Changes will sync after you sign in again.`,
-                    tone: "error",
-                    ...action,
-                  }
-                : { text: i18n._(OP_DONE[op.kind](op)), ...action },
-            );
+            say({ text: i18n._(OP_DONE[op.kind](op)), action: { label: t`Undo`, run: undo } });
           },
         }),
       ),
     );
+  };
+
+  const focusList = (focus: string | null) => {
+    requestAnimationFrame(() => {
+      const element = listRef.current;
+      const row = focus
+        ? [...(element?.querySelectorAll<HTMLButtonElement>("[data-id]") ?? [])].find(
+            (candidate) => candidate.dataset.id === focus,
+          )
+        : undefined;
+      (row ?? element)?.focus({ preventScroll: true });
+    });
+  };
+  const applyActionSelection = (before: Selection, next: Selection, actionScope: string) => {
+    const current = currentSelection.current;
+    if (current.scopeKey !== actionScope || current.selection !== before) return;
+    setSelection(next);
+    setSelectionSource("keyboard");
+    focusList(next.focus);
+  };
+  const restoreActionSelection = (
+    before: Selection,
+    actionScope: string,
+    rows: readonly ThreadSummary[],
+  ) => {
+    if (currentSelection.current.scopeKey !== actionScope) return;
+    const current = currentSelection.current;
+    const remapped = reconcileSelection(
+      before,
+      new Map(rows.map((row) => [row.id, row])),
+      current.list,
+      !prefs.threadGrouping,
+    );
+    const expected = trimSelection(remapped, new Set(current.list.map((row) => row.id)));
+    setSelection(expected);
+    setRestoration(
+      expected.ids.size === remapped.ids.size
+        ? null
+        : { selection: remapped, scopeKey: actionScope, fromList: current.list, expected },
+    );
+    setReadTarget(null);
+    setSelectionSource("keyboard");
+    focusList(before.focus);
   };
 
   /**
@@ -313,15 +429,15 @@ export function App() {
   };
 
   const markRead = useEffectEvent((id: string) => {
-    run(modifyThreads([id], { kind: "read", value: true }));
+    run(modifyWithUndo([id], { kind: "read", value: true }, !prefs.threadGrouping));
   });
   // Moving to another thread before the delay passes leaves this one unread.
   useEffect(
     () =>
-      readTarget && readTarget === selectedId
+      selection.ids.size === 1 && readTarget && readTarget === selectedId
         ? markReadAfter(prefs.markReadDelay, () => markRead(readTarget))
         : constVoid,
-    [readTarget, selectedId, prefs.markReadDelay],
+    [readTarget, selectedId, selection.ids.size, prefs.markReadDelay],
   );
 
   const openWindow = (id: string) => run(openThreadWindow(id));
@@ -415,9 +531,14 @@ export function App() {
               say({ text: options.archive ? t`Sent and archived` : t`Sent` });
               // The archived thread leaves the list; move on as E does.
               if (options.archive && selectedId === draft.inReplyTo) {
-                const index = list.findIndex((thread) => thread.id === selectedId);
-                const next = list[index + 1] ?? list[index - 1];
-                setSelectedId(next?.id ?? null);
+                setSelection(
+                  selectionAfterRemoval(
+                    selection,
+                    list.map((row) => row.id),
+                    new Set([selectedId]),
+                    prefs.nextSelection,
+                  ),
+                );
               }
             },
             onFailure: (cause) => {
@@ -439,7 +560,11 @@ export function App() {
       deliver();
     });
     const undo = () => {
-      if (held.undo()) reopen();
+      if (held.undo()) {
+        if (undoRef.current === undo) undoRef.current = null;
+        setToast(null);
+        reopen();
+      }
     };
     undoRef.current = undo;
     say({ text: t`Sending…`, duration: delay, action: { label: t`Undo`, run: undo } });
@@ -515,6 +640,43 @@ export function App() {
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));
     switch (event._tag) {
+      case "Edit": {
+        const busy = Boolean(
+          dialog ||
+          compose ||
+          editing ||
+          goToFolder ||
+          snoozeIds ||
+          filterSeed ||
+          view.space === OVERVIEW ||
+          threads.loading ||
+          document.querySelector('[role="dialog"],[role="alertdialog"]'),
+        );
+        const typing = Boolean(
+          document.activeElement?.closest('input,textarea,select,[contenteditable="true"]'),
+        );
+        if (
+          editCommandRoute(
+            busy,
+            typing,
+            event.action === "selectAll" &&
+              Boolean(document.activeElement?.closest("iframe,[data-reader-text]")),
+          ) === "text"
+        )
+          run(withMail((call) => call("NativeEdit", { action: event.action })));
+        else if (event.action === "undo") undoRef.current?.();
+        else {
+          const next = selectAll(
+            selection,
+            list.map((row) => row.id),
+          );
+          setSelection(next);
+          setReadTarget(null);
+          setSelectionSource("keyboard");
+          focusList(next.focus);
+        }
+        break;
+      }
       case "OpenThread":
         openExternal(event.id);
         break;
@@ -584,7 +746,16 @@ export function App() {
   }, [view.space, run]);
 
   const onKey = useEffectEvent((e: KeyboardEvent) => {
-    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed || e.defaultPrevented)
+    if (
+      dialog ||
+      compose ||
+      editing ||
+      goToFolder ||
+      snoozeIds ||
+      filterSeed ||
+      deleteRequest ||
+      e.defaultPrevented
+    )
       return;
     if (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]')) return;
     const typing =
@@ -606,6 +777,38 @@ export function App() {
       setQuery("");
       searchRef.current?.blur();
       return;
+    }
+    if (!typing && view.space !== OVERVIEW && !threads.loading) {
+      const gesture = selectionShortcut(e);
+      if (gesture === "all") {
+        if (document.activeElement?.closest("iframe,[data-reader-text]")) return;
+        e.preventDefault();
+        setSelection(
+          selectAll(
+            selection,
+            list.map((row) => row.id),
+          ),
+        );
+        setReadTarget(null);
+        setSelectionSource("keyboard");
+        focusList(selection.focus ?? list[0]?.id ?? null);
+        return;
+      }
+      if (gesture === "extendNext" || gesture === "extendPrevious") {
+        e.preventDefault();
+        const next = moveSelection(
+          selection,
+          list.map((row) => row.id),
+          gesture === "extendNext" ? 1 : -1,
+          true,
+        );
+        setSelection(next);
+        setReadTarget(null);
+        setSelectionSource("keyboard");
+        focusList(next.focus);
+        if (next.focus === list.at(-1)?.id) loadMore();
+        return;
+      }
     }
     const action = shortcutAction(prefs.shortcutSet, e, typing);
     if (!action) return;
@@ -636,8 +839,6 @@ export function App() {
         break;
       case "undo":
         undoRef.current?.();
-        undoRef.current = null;
-        setToast(null);
         break;
       case "goToFolder":
         setGoToFolder(true);
@@ -665,10 +866,11 @@ export function App() {
         act({ kind: "inbox" });
         break;
       case "read":
-        if (threadState) act({ kind: "read", value: threadState.isUnread });
+        if (batchRows.length) act({ kind: "read", value: batchRows.some((row) => row.isUnread) });
         break;
       case "star":
-        if (threadState) act({ kind: "star", value: !threadState.isStarred });
+        if (batchRows.length)
+          act({ kind: "star", value: !batchRows.every((row) => row.isStarred) });
         break;
       case "important":
         if (threadState?.provider === "gmail")
@@ -688,14 +890,19 @@ export function App() {
         break;
       case "label":
       case "move":
-        if (threadState && threadLabels.length) setLabelPicker(true);
+        if (batchRows.length && labels.length) setLabelPicker(true);
         break;
       case "next":
       case "previous": {
-        const index = list.findIndex((m) => m.id === selectedId);
-        const next =
-          list[Math.max(0, Math.min(list.length - 1, index + (action === "next" ? 1 : -1)))];
-        if (next) select(next.id, "keyboard");
+        const next = moveSelection(
+          selection,
+          list.map((row) => row.id),
+          action === "next" ? 1 : -1,
+          false,
+        );
+        select(next.focus, "keyboard");
+        focusList(next.focus);
+        if (next.focus === list.at(-1)?.id) loadMore();
         break;
       }
       // Composer and Reader own these actions.
@@ -814,9 +1021,19 @@ export function App() {
                 filters={filters}
                 onFilters={setFilters}
                 labels={labelMap}
-                selectedId={selectedId}
+                selectedId={selection.focus}
+                selectedIds={selection.ids}
+                listRef={listRef}
                 selectionSource={selectionSource}
                 rowActions={{
+                  batchMenu: (
+                    <BatchMenuItems
+                      rows={batchRows}
+                      accounts={accountList}
+                      labels={labels}
+                      onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
+                    />
+                  ),
                   mailbox: view.mailbox,
                   labels,
                   stateOf: rowState,
@@ -828,9 +1045,26 @@ export function App() {
                   onOpenWindow: (m) =>
                     view.mailbox === "drafts" ? openSavedDraft(m.id) : openWindow(m.id),
                 }}
-                onSelect={(id) => {
+                onSelect={(id, modifiers) => {
+                  if (threads.loading) return;
                   if (view.mailbox !== "drafts") {
-                    select(id, "mouse");
+                    const next = selectRow(
+                      selection,
+                      list.map((row) => row.id),
+                      id,
+                      modifiers,
+                    );
+                    setSelection(next);
+                    if (modifiers.toggle && !next.ids.has(id)) focusList(next.focus);
+                    setSelectionSource("mouse");
+                    setLabelPicker(false);
+                    setReadTarget(
+                      next.ids.size === 1 &&
+                        next.ids.has(id) &&
+                        list.find((row) => row.id === id)?.isUnread
+                        ? id
+                        : null,
+                    );
                     return;
                   }
                   // Drafts open in the compose window.
@@ -853,34 +1087,47 @@ export function App() {
                 onEditDraft={openSavedDraft}
                 notify={(next) => say(next)}
                 renderToolbar={(compact) =>
-                  threadState && (
-                    <ThreadActions
-                      compact={compact}
-                      state={threadState}
-                      mailbox={view.mailbox}
-                      labels={threadLabels}
-                      onOp={(op) => act(op)}
-                      onCompose={startCompose}
-                      onSnooze={() => {
-                        if (selectedId) setSnoozeIds([selectedId]);
-                      }}
-                      onFilter={
-                        selectedAccount?.provider === "imap"
-                          ? undefined
-                          : () => {
-                              if (selectedAccount && selected)
-                                setFilterSeed({
-                                  accountId: selectedAccount.id,
-                                  from: selected.from.address,
-                                });
-                            }
-                      }
-                      onOpenWindow={() => {
-                        if (selectedId) openWindow(selectedId);
-                      }}
+                  selection.ids.size > 1 ? (
+                    <BatchActions
+                      rows={batchRows}
+                      canLoadMore={threads.canLoadMore}
+                      moreNotLoaded={threads.moreNotLoaded}
+                      accounts={accountList}
+                      labels={labels}
+                      onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
                       labelPicker={labelPicker}
                       onLabelPicker={setLabelPicker}
                     />
+                  ) : (
+                    threadState && (
+                      <ThreadActions
+                        compact={compact}
+                        state={threadState}
+                        mailbox={view.mailbox}
+                        labels={threadLabels}
+                        onOp={(op) => act(op)}
+                        onCompose={startCompose}
+                        onSnooze={() => {
+                          if (selectedId) setSnoozeIds([selectedId]);
+                        }}
+                        onFilter={
+                          selectedAccount?.provider === "imap"
+                            ? undefined
+                            : () => {
+                                if (selectedAccount && selected)
+                                  setFilterSeed({
+                                    accountId: selectedAccount.id,
+                                    from: selected.from.address,
+                                  });
+                              }
+                        }
+                        onOpenWindow={() => {
+                          if (selectedId) openWindow(selectedId);
+                        }}
+                        labelPicker={labelPicker}
+                        onLabelPicker={setLabelPicker}
+                      />
+                    )
                   )
                 }
               />
@@ -888,6 +1135,26 @@ export function App() {
           </>
         )}
       </Group>
+      <Alert
+        open={deleteRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteRequest(null);
+        }}
+        title={t`Delete ${deleteRequest?.ids.size ?? 0} conversations?`}
+        description={t`These loaded conversations will be moved to Trash. You can undo this batch.`}
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        <button
+          type="button"
+          className={alertDanger}
+          onClick={() => {
+            const request = deleteRequest;
+            setDeleteRequest(null);
+            if (request && request.scopeKey === scopeKey)
+              act({ kind: "trash" }, { confirmedIds: request.ids });
+          }}
+        >{t`Delete`}</button>
+      </Alert>
       {editing && (
         <ProfileEditor
           profile={editing === "new" ? undefined : editing}

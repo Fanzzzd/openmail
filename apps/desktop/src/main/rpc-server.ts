@@ -98,6 +98,7 @@ const Handlers = MailRpcs.toLayer(
       RefreshContacts: ({ accountId }) => m.refreshContacts(accountId),
 
       Threads: ({ query }) => m.threads(query),
+      ThreadCount: ({ query }) => m.threadCount(query),
       Thread: ({ id }) => m.readerThread(id),
       RawMessage: ({ id }) => m.rawMessage(id),
       IndexingProgress: () => m.indexingProgress,
@@ -152,6 +153,8 @@ const Handlers = MailRpcs.toLayer(
       AssignProfile: ({ accountId, profileId }) => m.assignProfile(accountId, profileId),
 
       Modify: ({ threads, op }) => m.perform({ kind: "modify", threads, op }, USER),
+      ModifyWithUndo: ({ threads, op, flat }) => m.modifyWithUndo(threads, op, flat),
+      UndoBatch: ({ undoId }) => m.undoBatch(undoId),
       Send: ({ accountId, message, draftId, archive }) =>
         m.perform(
           {
@@ -193,6 +196,12 @@ const Handlers = MailRpcs.toLayer(
       DefaultMailClient: () => Effect.sync(defaultClientStatus),
       BecomeDefaultMailClient: () => Effect.sync(becomeDefaultClient),
       SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),
+      NativeEdit: ({ action }, { client }) =>
+        Effect.sync(() => {
+          const target = webContents.fromId(client.id);
+          if (action === "undo") target?.undo();
+          else target?.selectAll();
+        }),
       SetDesktopLabels: ({ labels }) => desktop.setLabels(labels),
       DesktopEvents: (_, { client }) => desktop.events(client.id),
 

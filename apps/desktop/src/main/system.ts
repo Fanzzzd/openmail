@@ -68,6 +68,8 @@ export const DesktopLive = Layer.effect(
       allAccounts: "All accounts",
       file: "File",
       edit: "Edit",
+      undo: "Undo",
+      selectAll: "Select all",
       window: "Window",
       newMessages: "new messages",
     };
@@ -75,11 +77,19 @@ export const DesktopLive = Layer.effect(
       const id = target.webContents.id;
       const listener = listeners.get(id);
       if (listener) listener(event);
-      else if (event._tag !== "Command") pending.set(id, [...(pending.get(id) ?? []), event]);
+      else if (event._tag !== "Command" && event._tag !== "Edit")
+        pending.set(id, [...(pending.get(id) ?? []), event]);
     };
     const command = (name: "settings" | "help" | "compose" | "inbox") =>
       deliver({ _tag: "Command", command: name });
     const openThread = (id: string) => deliver({ _tag: "OpenThread", id });
+    const edit = (action: "undo" | "selectAll") => {
+      const focused = BrowserWindow.getFocusedWindow();
+      if (!focused) return;
+      if (isMainWindow(focused)) deliver({ _tag: "Edit", action }, focused);
+      else if (action === "undo") focused.webContents.undo();
+      else focused.webContents.selectAll();
+    };
     linkHandler = (link) =>
       link.kind === "message"
         ? openThread(link.id)
@@ -195,13 +205,21 @@ export const DesktopLive = Layer.effect(
               {
                 label: labels.edit,
                 submenu: [
-                  { role: "undo" },
+                  {
+                    label: labels.undo,
+                    accelerator: "CommandOrControl+Z",
+                    click: () => edit("undo"),
+                  },
                   { role: "redo" },
                   { type: "separator" },
                   { role: "cut" },
                   { role: "copy" },
                   { role: "paste" },
-                  { role: "selectAll" },
+                  {
+                    label: labels.selectAll,
+                    accelerator: "CommandOrControl+A",
+                    click: () => edit("selectAll"),
+                  },
                 ],
               },
               {

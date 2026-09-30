@@ -750,6 +750,16 @@ export const makeGmail: Effect.Effect<
     connect,
     pull,
     push,
+    pushBatch: (account, ids, op) => {
+      if (op.kind === "trash" || op.kind === "inbox")
+        return Effect.forEach(ids, (id) => push(account, id, op), { discard: true });
+      const { add, remove } = gmailDelta(op);
+      return post(account.id, "/messages/batchModify", {
+        ids,
+        addLabelIds: add,
+        removeLabelIds: remove,
+      }).pipe(Effect.asVoid, Effect.mapError(writeFailure(account.id)));
+    },
     send,
     saveDraft,
     deleteDraft,

@@ -32,6 +32,16 @@ export const modifyThreads = (threads: readonly string[], op: MailOp) =>
     Reactivity.mutation(threadChangeKeys(threads)),
   );
 
+export const modifyWithUndo = (threads: readonly string[], op: MailOp, flat: boolean) =>
+  withMail((call) => call("ModifyWithUndo", { threads, op, flat })).pipe(
+    Reactivity.mutation(threadChangeKeys(threads)),
+  );
+
+export const undoBatch = (undoId: string, threads: readonly string[]) =>
+  withMail((call) => call("UndoBatch", { undoId })).pipe(
+    Reactivity.mutation(threadChangeKeys(threads)),
+  );
+
 /**
  * Sends as the person at the app. Only after the undo window has passed.
  * `draftId` names the saved draft this sends; `archive` archives the thread

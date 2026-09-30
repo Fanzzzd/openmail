@@ -194,6 +194,25 @@ it.effect("ops map onto trash, untrash and label modifications", () =>
   }),
 );
 
+it.effect("Gmail batch label changes use one batchModify request", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /messages/batchModify": { json: {} } });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const batch = adapter.pushBatch;
+        assert.ok(batch);
+        yield* batch(account, ["p", "q"], { kind: "read", value: true });
+      }),
+    );
+    assert.strictEqual(http.calls.length, 1);
+    assert.deepStrictEqual(http.calls[0]?.body, {
+      ids: ["p", "q"],
+      addLabelIds: [],
+      removeLabelIds: ["UNREAD"],
+    });
+  }),
+);
+
 it.effect("write failures map to AuthError and PermanentError", () =>
   Effect.gen(function* () {
     const http = fakeHttp({

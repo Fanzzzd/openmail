@@ -33,6 +33,11 @@ msgstr "(No subject)"
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "{0} embedded · {1} queued · {2} running · {3} failed"
 
+#. placeholder {0}: props.moreNotLoaded
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{0} more not loaded"
+msgstr "{0} more not loaded"
+
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
@@ -61,6 +66,10 @@ msgstr "{count} cached contacts"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{count} occurrences"
 msgstr "{count} occurrences"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{count} selected (loaded)"
+msgstr "{count} selected (loaded)"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "{count} unread"
@@ -340,6 +349,7 @@ msgstr "Apple Mail"
 msgid "Approve suggestion"
 msgstr "Approve suggestion"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -389,6 +399,10 @@ msgstr "Backfill paused"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill runs between syncs"
 msgstr "Backfill runs between syncs"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "Batch actions"
+msgstr "Batch actions"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
@@ -459,6 +473,7 @@ msgstr "Can't open the message: {reason}"
 msgid "Can't reach the mail server right now: {0}"
 msgstr "Can't reach the mail server right now: {0}"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -694,6 +709,8 @@ msgstr "Default"
 msgid "Default email app"
 msgstr "Default email app"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -704,6 +721,11 @@ msgstr "Default email app"
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "Delete"
+
+#. placeholder {0}: deleteRequest?.ids.size ?? 0
+#: src/renderer/src/App.tsx
+msgid "Delete {0} conversations?"
+msgstr "Delete {0} conversations?"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
@@ -1013,6 +1035,7 @@ msgstr "Label or folder"
 msgid "Label removed"
 msgstr "Label removed"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1097,6 +1120,7 @@ msgstr "Mark as important"
 msgid "Mark as not important"
 msgstr "Mark as not important"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1104,6 +1128,7 @@ msgstr "Mark as not important"
 msgid "Mark as read"
 msgstr "Mark as read"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as unread"
@@ -1207,6 +1232,11 @@ msgstr "More actions"
 msgid "More matches exist. Narrow your search."
 msgstr "More matches exist. Narrow your search."
 
+#: src/renderer/src/components/BatchActions.tsx
+msgid "More messages not loaded"
+msgstr "More messages not loaded"
+
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to folder"
@@ -1298,6 +1328,14 @@ msgstr "Newest first"
 msgid "news@shop.com or shop.com"
 msgstr "news@shop.com or shop.com"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next above"
+msgstr "Next above"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next below"
+msgstr "Next below"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "Next thread"
@@ -1369,6 +1407,10 @@ msgstr "No unread mail"
 #: src/renderer/src/components/Overview.tsx
 msgid "No unread mail in the inbox"
 msgstr "No unread mail in the inbox"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "None"
+msgstr "None"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
@@ -1845,6 +1887,14 @@ msgstr "Searching server…"
 msgid "Select a message"
 msgstr "Select a message"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Select all"
+msgstr "Select all"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Selection after moving messages"
+msgstr "Selection after moving messages"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "Semantic search is unavailable. Full-text search remains available."
@@ -2037,6 +2087,7 @@ msgstr "Spam"
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (usually 465)"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2151,10 +2202,6 @@ msgstr "Text size"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "The {client} OAuth client is not set up yet."
 
-#: src/renderer/src/App.tsx
-msgid "The account's sign-in has expired. Changes will sync after you sign in again."
-msgstr "The account's sign-in has expired. Changes will sync after you sign in again."
-
 #: src/renderer/src/components/Reader.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "The body is not cached. Try opening this message again when connected."
@@ -2208,6 +2255,10 @@ msgstr "The server rejected the sign-in. Check the email address, and make sure 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
 msgstr "These are not email addresses: {list}"
+
+#: src/renderer/src/App.tsx
+msgid "These loaded conversations will be moved to Trash. You can undo this batch."
+msgstr "These loaded conversations will be moved to Trash. You can undo this batch."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
@@ -2266,6 +2317,7 @@ msgstr "Trash"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Undo"
 msgstr "Undo"
 
@@ -2305,6 +2357,7 @@ msgstr "Unread"
 msgid "Unread filter"
 msgstr "Unread filter"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "Unstar"

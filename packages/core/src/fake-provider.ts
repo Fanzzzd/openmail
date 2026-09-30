@@ -34,6 +34,7 @@ export interface FakeServer {
   searched: import("./domain.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
+  batches: { providerIds: readonly string[]; op: MailOp }[];
   sent: {
     message: OutgoingMessage;
     original: Option.Option<{ providerId: string; threadId: string }>;
@@ -48,6 +49,8 @@ export interface FakeServer {
   draftLog: ({ kind: "save"; push: DraftPush } | { kind: "delete"; remote: DraftRemote })[];
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
+  /** A test-controlled network stall; local batch commits must not wait for it. */
+  beforePush?: Effect.Effect<void>;
   settingsFailure?: SettingsScopeMissing;
 }
 
@@ -64,6 +67,7 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     aliases: [],
     searched: [],
     pushed: [],
+    batches: [],
     sent: [],
     drafts: new Map(),
     raw: new Map(),
@@ -74,10 +78,13 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
 }
 
 /**
- * A provider with Gmail's label model over a FakeServer. Every pull is a full
+ * A provider using the account's label or folder model over a FakeServer. Every pull is a full
  * pull; the cursor counts pulls so tests can see checkpoints land.
  */
-export function makeFakeProvider(server: FakeServer): ProviderAdapter {
+export function makeFakeProvider(
+  server: FakeServer,
+  options: { strictFolders?: boolean; batches?: boolean } = {},
+): ProviderAdapter {
   let pulled = new Set<string>();
   const failOnce = Effect.suspend(() => {
     const failure = server.failNext;
@@ -88,6 +95,36 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
     (): Effect.Effect<void, ProviderFailure | SettingsScopeMissing> =>
       server.settingsFailure ? Effect.fail(server.settingsFailure) : failOnce,
   );
+  const pushMessage: ProviderAdapter["push"] = (account, providerId, op) =>
+    Effect.andThen(
+      Effect.suspend(() => server.beforePush ?? Effect.void),
+      Effect.andThen(
+        Effect.andThen(
+          failOnce,
+          Effect.suspend(() =>
+            options.strictFolders &&
+            account.provider !== "gmail" &&
+            op.kind === "label" &&
+            op.value &&
+            !server.labels.some((label) => label.id === op.labelId)
+              ? Effect.fail(new PermanentError({ message: `Unknown folder: ${op.labelId}` }))
+              : Effect.void,
+          ),
+        ),
+        Effect.sync(() => {
+          server.pushed.push({ providerId, op });
+          const m = server.messages.get(providerId);
+          if (!m) return;
+          const labels = applyOpToLabels([...m.labels], op, account.provider);
+          server.messages.set(providerId, {
+            ...m,
+            labels,
+            isUnread: labels.includes("UNREAD"),
+            isStarred: labels.includes("STARRED"),
+          });
+        }),
+      ),
+    );
   return {
     backfill: (_account, state, select) =>
       Effect.gen(function* () {
@@ -242,22 +279,22 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
           return Stream.fromIterable(changes);
         }),
       ),
-    push: (_account, providerId, op) =>
-      Effect.andThen(
-        failOnce,
-        Effect.sync(() => {
-          server.pushed.push({ providerId, op });
-          const m = server.messages.get(providerId);
-          if (!m) return;
-          const labels = applyOpToLabels([...m.labels], op, "gmail");
-          server.messages.set(providerId, {
-            ...m,
-            labels,
-            isUnread: labels.includes("UNREAD"),
-            isStarred: labels.includes("STARRED"),
-          });
-        }),
-      ),
+    push: pushMessage,
+    ...(options.batches
+      ? {
+          pushBatch: (
+            account: import("./domain.js").Account,
+            providerIds: readonly string[],
+            op: MailOp,
+          ) =>
+            Effect.gen(function* () {
+              server.batches.push({ providerIds, op });
+              yield* Effect.forEach(providerIds, (id) => pushMessage(account, id, op), {
+                discard: true,
+              });
+            }),
+        }
+      : {}),
     send: (_account, message, original) =>
       Effect.andThen(
         failOnce,

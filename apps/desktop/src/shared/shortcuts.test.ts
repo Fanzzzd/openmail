@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   KEYMAP,
   matchesShortcut,
+  selectionShortcut,
   shortcutAction,
   shortcutText,
   spaceShortcut,
@@ -72,4 +73,16 @@ describe("central shortcut sets", () => {
       }
     }
   });
+});
+
+it("selection keys preserve archive, profile and typing modifier combinations", () => {
+  expect(selectionShortcut(event("a", { metaKey: true }))).toBe("all");
+  expect(selectionShortcut(event("a", { ctrlKey: true }))).toBe("all");
+  expect(selectionShortcut(event("a", { metaKey: true, ctrlKey: true }))).toBeNull();
+  expect(shortcutAction("mimestream", event("a", { metaKey: true, ctrlKey: true }))).toBe(
+    "archive",
+  );
+  expect(selectionShortcut(event("ArrowDown", { shiftKey: true }))).toBe("extendNext");
+  expect(selectionShortcut(event("ArrowUp", { shiftKey: true }))).toBe("extendPrevious");
+  expect(selectionShortcut(event("ArrowUp", { shiftKey: true, altKey: true }))).toBeNull();
 });

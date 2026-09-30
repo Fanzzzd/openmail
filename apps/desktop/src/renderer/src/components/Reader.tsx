@@ -112,9 +112,7 @@ export function Reader({
         data-reader-toolbar
         className="drag flex min-h-13 shrink-0 items-center gap-3 px-4 py-3"
       >
-        <div className="no-drag shrink-0">
-          {messageId && messages ? renderToolbar?.(width < 900) : null}
-        </div>
+        <div className="no-drag shrink-0">{renderToolbar?.(width < 900)}</div>
         <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
       </header>
       {!messageId || !messages ? (
@@ -276,9 +274,17 @@ export function ThreadView({
     // Focusable so ⌘+ and ⌘- reach it after a click anywhere in the thread.
     <div
       ref={scroller}
+      data-reader-text
       role="document"
       aria-label={newest?.subject || t`(No subject)`}
       tabIndex={-1}
+      onMouseDownCapture={(event) => {
+        if (
+          event.target instanceof Element &&
+          !event.target.closest("button,a,input,textarea,select,iframe,[contenteditable]")
+        )
+          event.currentTarget.focus({ preventScroll: true });
+      }}
       className="selectable flex-1 overflow-y-auto px-7 pb-10 outline-none"
     >
       <div className="flex items-start gap-2 pt-2 pb-4">

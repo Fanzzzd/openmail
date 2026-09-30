@@ -93,6 +93,18 @@ export interface KeyEvent {
   shiftKey: boolean;
 }
 
+/** Selection gestures shared by all keymaps; extra modifiers keep their original actions. */
+export function selectionShortcut(event: KeyEvent): "all" | "extendNext" | "extendPrevious" | null {
+  if (event.altKey) return null;
+  if (!event.shiftKey && event.metaKey !== event.ctrlKey && event.key.toLowerCase() === "a")
+    return "all";
+  if (event.shiftKey && !event.metaKey && !event.ctrlKey) {
+    if (event.key === "ArrowDown") return "extendNext";
+    if (event.key === "ArrowUp") return "extendPrevious";
+  }
+  return null;
+}
+
 function matches(stroke: KeyStroke, event: KeyEvent): boolean {
   if (!stroke.cmd && event.metaKey) return false;
   const primary = stroke.cmd ? event.metaKey || (event.ctrlKey && !stroke.control) : false;

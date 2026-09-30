@@ -31,13 +31,17 @@ export function DropdownMenu({
   trigger,
   align = "end",
   children,
+  open,
+  onOpenChange,
 }: {
   trigger: ReactElement;
   align?: "start" | "center" | "end";
   children: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Menu.Root>
+    <Menu.Root open={open} onOpenChange={onOpenChange}>
       <Menu.Trigger render={trigger} />
       <Menu.Portal>
         <Menu.Positioner className="z-[60] outline-none" align={align} sideOffset={4}>

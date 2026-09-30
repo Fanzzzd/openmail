@@ -1,3 +1,5 @@
+import { applyOpToLabels } from "./mail-ops.js";
+export { applyOpToLabels, folderTarget } from "./mail-ops.js";
 import { makeSemanticStore } from "./store-semantic.js";
 import { DatabaseCapabilities } from "./db.js";
 import { makeMediaStore } from "./store-media.js";
@@ -223,78 +225,6 @@ const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
 
 /** Labels that are flags on every provider; the rest name a folder on Outlook and IMAP. */
-const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
-
-/**
- * The labels a message carries after `op`. Gmail labels stack; on Outlook and
- * IMAP a message sits in exactly one folder, so moving ops swap the folder
- * label and `important` does nothing.
- */
-export function applyOpToLabels(
-  labels: readonly string[],
-  op: MailOp,
-  provider: Provider,
-): string[] {
-  const out = new Set(labels);
-  if (
-    ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
-    (op.kind === "label" && op.value && provider !== "gmail")
-  )
-    out.delete("SNOOZED");
-  const flag = (label: string, value: boolean) => (value ? out.add(label) : out.delete(label));
-  if (op.kind === "read") flag("UNREAD", !op.value);
-  else if (op.kind === "star") flag("STARRED", op.value);
-  else if (provider === "gmail") {
-    switch (op.kind) {
-      case "important":
-        flag("IMPORTANT", op.value);
-        break;
-      case "archive":
-        out.delete("INBOX");
-        break;
-      case "inbox":
-        out.delete("TRASH");
-        out.delete("SPAM");
-        out.add("INBOX");
-        break;
-      case "trash":
-      case "spam":
-        out.delete("INBOX");
-        out.add(op.kind === "trash" ? "TRASH" : "SPAM");
-        break;
-      case "label":
-        flag(op.labelId, op.value);
-        break;
-    }
-  } else {
-    const target = folderTarget(op, labels);
-    if (target) {
-      for (const l of labels) if (!FLAG_LABELS.has(l)) out.delete(l);
-      out.add(target);
-    }
-  }
-  return [...out];
-}
-
-/** The folder label a moving op sends a folder-model message to, or null for no move. */
-export function folderTarget(op: MailOp, labels: readonly string[]): string | null {
-  switch (op.kind) {
-    case "archive":
-      return "ARCHIVE";
-    case "inbox":
-      return "INBOX";
-    case "trash":
-      return "TRASH";
-    case "spam":
-      return "SPAM";
-    case "label":
-      if (op.value) return op.labelId;
-      return labels.includes(op.labelId) ? "INBOX" : null;
-    default:
-      return null;
-  }
-}
-
 const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 
@@ -590,6 +520,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         );
       }
       return sql.and(where);
+    };
+
+    const countThreads = (raw: ThreadQuery) => {
+      const query = raw.search === undefined ? raw : parseSearchQuery(raw);
+      return all(Schema.Struct({ n: Schema.Number }))(
+        query.flat
+          ? sql`SELECT COUNT(*) AS n FROM messages m WHERE ${listFilter(query)}`
+          : sql`SELECT COUNT(*) AS n FROM (SELECT m.account_id,m.thread_id FROM messages m WHERE ${listFilter(query)} GROUP BY m.account_id,m.thread_id)`,
+      ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
     };
 
     // Stream the date/id index and resolve only selected conversations. The
@@ -1091,10 +1030,59 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       }
     });
 
+    const reminderSnapshot: Store["Service"]["reminderSnapshot"] = (id) =>
+      Effect.gen(function* () {
+        const message = yield* getMessage(id);
+        const reminder = yield* first(
+          Schema.Struct({
+            due_at: Schema.NullOr(Schema.Number),
+            woken_at: Schema.NullOr(Schema.Number),
+            wake_pending: Schema.BooleanFromBit,
+          }),
+        )(
+          sql`SELECT due_at,woken_at,wake_pending FROM thread_reminders WHERE account_id=${message.accountId} AND thread_id=${message.threadId}`,
+        );
+        if (Option.isNone(reminder)) return Option.none();
+        const members = yield* all(
+          Schema.Struct({ provider_id: Schema.String, wake_pending: Schema.BooleanFromBit }),
+        )(
+          sql`SELECT provider_id,wake_pending FROM snoozed_messages WHERE account_id=${message.accountId} AND thread_id=${message.threadId}`,
+        );
+        return Option.some({
+          accountId: message.accountId,
+          threadId: message.threadId,
+          dueAt: reminder.value.due_at,
+          wokenAt: reminder.value.woken_at,
+          wakePending: reminder.value.wake_pending,
+          members: members.map((member) => ({
+            providerId: member.provider_id,
+            wakePending: member.wake_pending,
+          })),
+        });
+      });
+    const restoreReminder: Store["Service"]["restoreReminder"] = (snapshot) =>
+      Effect.gen(function* () {
+        yield* run(sql`INSERT INTO thread_reminders (account_id,thread_id,due_at,woken_at,wake_pending)
+        VALUES (${snapshot.accountId},${snapshot.threadId},${snapshot.dueAt},${snapshot.wokenAt},${snapshot.wakePending ? 1 : 0})
+        ON CONFLICT(account_id,thread_id) DO UPDATE SET due_at=excluded.due_at,woken_at=excluded.woken_at,wake_pending=excluded.wake_pending`);
+        yield* run(
+          sql`DELETE FROM snoozed_messages WHERE account_id=${snapshot.accountId} AND thread_id=${snapshot.threadId}`,
+        );
+        for (const member of snapshot.members) {
+          yield* run(sql`INSERT INTO snoozed_messages (account_id,thread_id,provider_id,wake_pending)
+          VALUES (${snapshot.accountId},${snapshot.threadId},${member.providerId},${member.wakePending ? 1 : 0})`);
+          if (snapshot.dueAt !== null)
+            yield* run(sql`UPDATE messages AS m SET labels_json=json_insert(labels_json,'$[#]','SNOOZED')
+          WHERE account_id=${snapshot.accountId} AND provider_id=${member.providerId} AND NOT ${hasLabel("SNOOZED")}`);
+        }
+      });
+
     return Store.of({
       ...cache,
       ...organization,
       snooze,
+      reminderSnapshot,
+      restoreReminder,
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
       listAccounts,
@@ -1124,6 +1112,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       deleteMessagesWithLabel,
       deleteAccountMessages,
       listThreads,
+      countThreads,
       vectorThreads,
       getMessage,
       getThread,

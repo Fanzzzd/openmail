@@ -9,6 +9,8 @@ import { Context, type Effect, Schema, type Stream } from "effect";
 import { SyncProgress as SyncProgressSchema } from "./domain.js";
 import type {
   Account,
+  BatchResult,
+  MailOp,
   Actor,
   Address,
   AgentWriteMode,
@@ -197,7 +199,15 @@ export class Mailbox extends Context.Service<
     assignProfile(accountId: string, profileId: string | null): Effect.Effect<void>;
 
     // Changes. Every one is checked against policy and audited.
+    threadCount(query: ThreadQuery): Effect.Effect<number>;
     perform(command: Command, actor: Actor): Effect.Effect<Outcome, PerformError>;
+    /** App-only batch operations with exact per-message undo. */
+    modifyWithUndo(
+      threads: readonly string[],
+      op: MailOp,
+      flat?: boolean,
+    ): Effect.Effect<BatchResult, PerformError>;
+    undoBatch(undoId: string): Effect.Effect<void, PerformError>;
     /** A person approves or rejects an agent's proposal. Approved modify commands run as that person. */
     decideProposal(
       id: number,
