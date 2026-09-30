@@ -1254,3 +1254,70 @@ it.effect("inbox polling reads only inbox history and does not replace cached la
     assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "101" });
   }),
 );
+
+it.effect("historical pages resume with a fixed snapshot without touching history", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /messages": (url) => ({
+        json: url.searchParams.has("pageToken")
+          ? { messages: [{ id: "older" }] }
+          : { messages: [{ id: "old" }], nextPageToken: "next" },
+      }),
+      "GET /messages/old": { json: message("old", ["INBOX"]) },
+      "GET /messages/older": { json: message("older", ["SPAM"]) },
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const first = yield* adapter.backfill(account, { cursor: null, before: 1_700_000_000_000 });
+        assert.strictEqual(first.cursor, "next");
+        assert.strictEqual(first.messages[0]?.providerId, "old");
+        const second = yield* adapter.backfill(account, {
+          cursor: first.cursor,
+          before: 1_700_000_000_000,
+        });
+        assert.strictEqual(second.cursor, null);
+        assert.strictEqual(second.messages[0]?.providerId, "older");
+      }),
+    );
+    const lists = http.calls.filter((c) => c.url.pathname.endsWith("/messages"));
+    assert.deepStrictEqual(
+      lists.map((c) => c.url.searchParams.get("q")),
+      ["before:1700000000", "before:1700000000"],
+    );
+    assert.strictEqual(lists[1]?.url.searchParams.get("pageToken"), "next");
+    assert.strictEqual(
+      http.calls.some((c) => c.url.pathname.endsWith("/history")),
+      false,
+    );
+  }),
+);
+
+it.effect("backfill filters listed Gmail ids before any body download", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /messages": {
+        json: {
+          messages: [{ id: "cached" }, { id: "pending" }, { id: "missing" }],
+          nextPageToken: "later",
+        },
+      },
+      "GET /messages/missing": { json: message("missing", ["INBOX"]) },
+    });
+    const page = yield* run(http, (a) =>
+      a.backfill(account, { cursor: null, before: 1_700_000_000_000 }, (ids) => {
+        assert.deepStrictEqual(ids, ["cached", "pending", "missing"]);
+        return Effect.succeed(["missing"]);
+      }),
+    );
+    assert.strictEqual(page.scanned, 3);
+    assert.strictEqual(page.cursor, "later");
+    assert.deepStrictEqual(
+      page.messages.map((m) => m.providerId),
+      ["missing"],
+    );
+    assert.deepStrictEqual(
+      http.calls.filter((c) => c.url.pathname.includes("/messages/")).map((c) => c.url.pathname),
+      ["/gmail/v1/users/me/messages/missing"],
+    );
+  }),
+);

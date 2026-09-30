@@ -13,6 +13,14 @@ const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in thi
 
 function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
   const base: Service = {
+    updateTokenConfigured: Effect.die("unused"),
+    setUpdateToken: () => Effect.die("unused"),
+    startUpdates: () => Effect.die("unused"),
+    cacheWindows: Effect.die("unused"),
+    setCacheWindow: () => Effect.die("unused"),
+    backfillState: Effect.die("unused"),
+    pauseBackfill: () => Effect.die("unused"),
+    fetchOlder: () => Effect.die("unused"),
     accounts: notUsed("accounts"),
     invitations: () => notUsed("invitations"),
     respondInvite: () => notUsed("respondInvite"),
@@ -40,6 +48,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     clientSetup: notUsed("clientSetup"),
     setClient: () => notUsed("setClient"),
     threads: () => notUsed("threads"),
+    readerThread: () => Effect.die("unused"),
     thread: () => notUsed("thread"),
     threadForModel: () => notUsed("threadForModel"),
     rawMessage: () => notUsed("rawMessage"),

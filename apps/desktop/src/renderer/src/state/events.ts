@@ -7,7 +7,7 @@ import { Atom, Reactivity } from "effect/reactivity";
 
 import type { MailboxEvent, SyncProgress, SyncState } from "../../../shared/api";
 import { MailClient } from "../rpc";
-import { MAIL_KEYS } from "./keys";
+import { Keys, MAIL_KEYS } from "./keys";
 
 export const syncStateAtom = Atom.make<SyncState>({
   running: false,
@@ -39,6 +39,8 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) =>
               return reactivity.invalidate(MAIL_KEYS);
             }),
           SyncProgress: ({ progress }) => Effect.sync(() => get.set(syncProgressAtom, progress)),
+          UpdateSettingsChanged: () => reactivity.invalidate([Keys.cache]),
+          BackfillProgress: () => reactivity.invalidate([Keys.cache, Keys.counts]),
           Changed: () => reactivity.invalidate(MAIL_KEYS),
           NewMail: () => Effect.void,
         }),

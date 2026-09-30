@@ -1,3 +1,4 @@
+import { listWindow, MESSAGE_ROW_HEIGHT } from "@openmail/core/schema";
 import { Toggle } from "@base-ui/react/toggle";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Paperclip, Star } from "lucide-react";
@@ -76,14 +77,42 @@ export function MessageList({
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const menuThread = threads.find((m) => m.id === menuFor);
 
-  // Keep the keyboard selection in view.
-  useEffect(() => {
-    listRef.current
-      ?.querySelector(`[data-id="${CSS.escape(selectedId ?? "")}"]`)
-      ?.scrollIntoView({ block: "nearest" });
-  }, [selectedId]);
-
+  const [viewport, setViewport] = useState({ top: 0, height: 600 });
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
+  const rowHeight = threads.some((m) => m.derivedMatches?.length)
+    ? MESSAGE_ROW_HEIGHT + 48
+    : MESSAGE_ROW_HEIGHT;
+  const window = listWindow(threads.length, viewport.top, viewport.height, rowHeight);
+  const endReached = useRef(onEndReached);
+  useEffect(() => {
+    endReached.current = onEndReached;
+  }, [onEndReached]);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => {
+      const el = listRef.current;
+      if (el) setViewport({ top: el.scrollTop, height: el.clientHeight });
+    });
+    if (listRef.current) observer.observe(listRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Unmounted rows still have coordinates, so keyboard navigation can reach them.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return;
+    const top = selectedIndex * rowHeight;
+    if (top < el.scrollTop) el.scrollTop = top;
+    else if (top + rowHeight > el.scrollTop + el.clientHeight)
+      el.scrollTop = top + rowHeight - el.clientHeight;
+    setViewport({ top: el.scrollTop, height: el.clientHeight });
+  }, [selectedIndex, selectionSource, rowHeight]);
+
+  // Short first pages have no scrollbar. Ask for older mail once per list growth.
+  useEffect(() => {
+    if (!loading && threads.length * rowHeight - viewport.top - viewport.height < 400)
+      endReached.current();
+  }, [threads.length, loading, viewport.top, viewport.height, rowHeight]);
 
   return (
     <section className="flex h-full w-full flex-col bg-white dark:bg-neutral-900">
@@ -142,9 +171,13 @@ export function MessageList({
           render={
             <div
               ref={listRef}
+              // A native select cannot host these windowed conversation previews.
+              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+              role="listbox"
+              aria-label={searching ? t`Search results` : title}
               onScroll={(e) => {
                 const el = e.currentTarget;
-                if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) onEndReached();
+                setViewport({ top: el.scrollTop, height: el.clientHeight });
               }}
               onContextMenuCapture={(e) => {
                 const row = e.target instanceof Element ? e.target.closest("[data-id]") : null;
@@ -165,21 +198,31 @@ export function MessageList({
               )}
             </p>
           )}
-          {threads.map((m, i) => (
-            <Row
-              key={m.id}
-              thread={m}
-              labels={labels}
-              selected={i === selectedIndex}
-              accent={i === selectedIndex && selectionSource === "keyboard"}
-              menuOpen={m.id === menuFor}
-              // Mimestream drops the rule under the selected row and under the row above it.
-              rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
-              showAccount={showAccount}
-              onSelect={() => onSelect(m.id)}
-              onOpen={() => rowActions.onOpenWindow(m)}
-            />
-          ))}
+          <div style={{ height: window.total, position: "relative" }}>
+            <div style={{ transform: `translateY(${window.offset}px)` }}>
+              {threads.slice(window.first, window.end).map((m, localIndex) => {
+                const i = window.first + localIndex;
+                return (
+                  <Row
+                    key={m.id}
+                    thread={m}
+                    rowHeight={rowHeight}
+                    position={i + 1}
+                    total={threads.length}
+                    labels={labels}
+                    selected={i === selectedIndex}
+                    accent={i === selectedIndex && selectionSource === "keyboard"}
+                    menuOpen={m.id === menuFor}
+                    // Mimestream drops the rule under the selected row and under the row above it.
+                    rule={i < threads.length - 1 && i !== selectedIndex && i !== selectedIndex - 1}
+                    showAccount={showAccount}
+                    onSelect={() => onSelect(m.id)}
+                    onOpen={() => rowActions.onOpenWindow(m)}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </ContextMenuTrigger>
         {menuThread && <RowMenu thread={menuThread} actions={rowActions} />}
       </ContextMenuRoot>
@@ -235,6 +278,9 @@ function senders(t: ThreadSummary): string {
 
 function Row({
   thread: m,
+  position,
+  total,
+  rowHeight,
   labels,
   selected,
   accent,
@@ -245,6 +291,9 @@ function Row({
   onOpen,
 }: {
   thread: ThreadSummary;
+  rowHeight: number;
+  position: number;
+  total: number;
   labels: Map<string, Label>;
   selected: boolean;
   accent: boolean;
@@ -263,9 +312,16 @@ function Row({
     <button
       type="button"
       data-id={m.id}
+      // Keep the virtual conversation row clickable and expose its listbox position.
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+      role="option"
+      style={{ height: rowHeight }}
+      aria-selected={selected}
+      aria-setsize={total}
+      aria-posinset={position}
       onClick={onSelect}
       onDoubleClick={onOpen}
-      className={`relative block w-full rounded-lg py-2.5 pr-3 pl-7 text-left ${
+      className={`relative block w-full overflow-hidden rounded-lg py-2.5 pr-3 pl-7 text-left ${
         menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
       } ${
         accent

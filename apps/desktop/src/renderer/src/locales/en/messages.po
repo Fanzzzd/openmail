@@ -78,6 +78,10 @@ msgstr "{done} completed · {queued} queued · {running} running · {failed} fai
 msgid "{email} is signed in again"
 msgstr "{email} is signed in again"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{fetched} messages checked"
+msgstr "{fetched} messages checked"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "{label} suggestions"
 msgstr "{label} suggestions"
@@ -106,10 +110,22 @@ msgstr "{seconds, plural, one {# second} other {# seconds}}"
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "1 year"
+msgstr "1 year"
+
 #: src/renderer/src/components/imapPresetText.ts
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "30 days"
+msgstr "30 days"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "90 days"
+msgstr "90 days"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
@@ -126,6 +142,10 @@ msgstr "Accept"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Accepted"
 msgstr "Accepted"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Access token saved"
+msgstr "Access token saved"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -278,6 +298,11 @@ msgstr "All accounts in this space"
 msgid "All day"
 msgstr "All day"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "All mail"
+msgstr "All mail"
+
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/view.ts
 msgid "All Mail"
@@ -356,6 +381,14 @@ msgstr "Automatic replies"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
 msgstr "Back"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill paused"
+msgstr "Backfill paused"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill runs between syncs"
+msgstr "Backfill runs between syncs"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
@@ -756,6 +789,10 @@ msgstr "Enabled"
 msgid "End"
 msgstr "End"
 
+#: src/renderer/src/errors.ts
+msgid "Enter a single access token"
+msgstr "Enter a single access token"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Enter the IMAP and SMTP servers your email provider gives you."
@@ -854,6 +891,10 @@ msgstr "Generate app-specific password"
 msgid "Generate authorization code"
 msgstr "Generate authorization code"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "GitHub access token"
+msgstr "GitHub access token"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Gmail"
 msgstr "Gmail"
@@ -930,6 +971,7 @@ msgstr "In 3 hours"
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -942,6 +984,11 @@ msgstr "Install the packaged app to make it the default. Development builds cann
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "Internal reply"
+
+#. placeholder {0}: label.name
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep bodies in {0}"
+msgstr "Keep bodies in {0}"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1259,6 +1306,10 @@ msgstr "Next thread"
 msgid "Next week"
 msgstr "Next week"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "No access token saved"
+msgstr "No access token saved"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No accounts yet"
 msgstr "No accounts yet"
@@ -1336,6 +1387,18 @@ msgstr "Notifications for {0}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "Off"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail and cache"
+msgstr "Older mail and cache"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
+msgstr "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail is up to date"
+msgstr "Older mail is up to date"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
@@ -1462,6 +1525,10 @@ msgstr "Parent folder"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Password"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Pause"
+msgstr "Pause"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Pause indexing"
@@ -1593,6 +1660,10 @@ msgstr "Remove star"
 msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
 msgstr "Remove this account and its local mail from openmail. Mail on the server is not affected."
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Remove token"
+msgstr "Remove token"
+
 #: src/renderer/src/App.tsx
 msgid "Removed star"
 msgstr "Removed star"
@@ -1655,6 +1726,10 @@ msgstr "Reported as spam"
 msgid "Restore"
 msgstr "Restore"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Resume"
+msgstr "Resume"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "Review and Send"
@@ -1703,6 +1778,10 @@ msgstr "Save message as PDF…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
 msgstr "Save this message as a template…"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Save token"
+msgstr "Save token"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save…"
@@ -1911,6 +1990,10 @@ msgstr "Sign-in failed: {reason}"
 msgid "Signatures"
 msgstr "Signatures"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
+msgstr "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
+
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
@@ -1945,6 +2028,7 @@ msgstr "Something went wrong. Please try again."
 msgid "Spaces"
 msgstr "Spaces"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Spam"
@@ -2071,6 +2155,10 @@ msgstr "The {client} OAuth client is not set up yet."
 msgid "The account's sign-in has expired. Changes will sync after you sign in again."
 msgstr "The account's sign-in has expired. Changes will sync after you sign in again."
 
+#: src/renderer/src/components/Reader.tsx
+msgid "The body is not cached. Try opening this message again when connected."
+msgstr "The body is not cached. Try opening this message again when connected."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
 msgstr "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
@@ -2171,6 +2259,7 @@ msgstr "Today {time}"
 msgid "Tomorrow morning"
 msgstr "Tomorrow morning"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
 msgstr "Trash"
@@ -2224,9 +2313,14 @@ msgstr "Unstar"
 msgid "Until"
 msgstr "Until"
 
+#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Updates"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Use default"
+msgstr "Use default"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Notifications received during quiet hours stay silent."

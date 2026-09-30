@@ -98,7 +98,7 @@ const Handlers = MailRpcs.toLayer(
       RefreshContacts: ({ accountId }) => m.refreshContacts(accountId),
 
       Threads: ({ query }) => m.threads(query),
-      Thread: ({ id }) => m.thread(id),
+      Thread: ({ id }) => m.readerThread(id),
       RawMessage: ({ id }) => m.rawMessage(id),
       IndexingProgress: () => m.indexingProgress,
       SetModelsEnabled: ({ enabled }) => m.setModelsEnabled(enabled),
@@ -122,6 +122,13 @@ const Handlers = MailRpcs.toLayer(
       UnreadCounts: () => m.unreadCounts,
       UnreadByLabel: ({ accountIds, within }) => m.unreadByLabel(accountIds, within),
 
+      UpdateTokenConfigured: () => m.updateTokenConfigured,
+      SetUpdateToken: ({ token }) => m.setUpdateToken(token),
+      BackfillState: () => m.backfillState,
+      PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
+      FetchOlder: ({ query }) => m.fetchOlder(query),
+      CacheWindows: () => m.cacheWindows,
+      SetCacheWindow: ({ input }) => m.setCacheWindow(input),
       SearchServer: ({ query }) => m.searchServer(query),
       ChangeLabel: ({ accountId, change }) => m.changeLabel(accountId, change),
       LabelPreferences: () => m.labelPreferences,

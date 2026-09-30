@@ -802,6 +802,7 @@ export function App() {
               groupResizeBehavior="preserve-pixel-size"
             >
               <MessageList
+                key={JSON.stringify([view, search, filters])}
                 title={title}
                 threads={list}
                 loading={threads.loading}
@@ -837,7 +838,7 @@ export function App() {
                   openSavedDraft(id);
                 }}
                 onEndReached={() => {
-                  if (threads.canLoadMore) loadMore();
+                  loadMore();
                 }}
               />
             </Panel>

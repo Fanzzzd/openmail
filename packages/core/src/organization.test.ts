@@ -126,7 +126,11 @@ it.effect("offline wake does not lose unread or inbox state on stale sync", () =
       server.failNext = new ProviderError({ message: "offline" });
       yield* m.wakeSnoozed();
       assert.strictEqual(server.pushed.length, 0); // The dependent move waits for the failed unread op.
-      assert.strictEqual((yield* m.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
+      assert.strictEqual(
+        (yield* m.threads({ mailbox: "inbox" })).find((row) => row.id === "gmail:me@gmail.com/m1")
+          ?.isUnread,
+        true,
+      );
       yield* m.sync();
       assert.strictEqual(server.pushed.length, 2);
       assert.strictEqual((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);

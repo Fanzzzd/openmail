@@ -191,7 +191,7 @@ export const printThread: (
   parent: BrowserWindow | null,
   request: PrintRequest,
 ): Effect.fn.Return<boolean, FileError> {
-  const thread = yield* m.thread(request.id);
+  const thread = yield* m.readerThread(request.id);
   const messages = request.only ? thread.filter((x) => x.id === request.only) : thread;
   const subject = messages.at(-1)?.subject || thread.at(-1)?.subject || "";
 

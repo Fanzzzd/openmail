@@ -2,7 +2,7 @@
  * The thread list, paged. A page is 100 threads older than the oldest one
  * already shown (`before`). Each list query keeps how many pages it wants and
  * what it has loaded; asking for one more page fetches only that page, and a
- * refresh (a change invalidated "threads") reloads every page on screen.
+ * refresh reloads the loaded extent in one query.
  */
 import { DEFAULT_PREFS, mergeSearchResults, parseSearchQuery } from "@openmail/core/schema";
 import { Effect, Option, Stream, Schedule } from "effect";
@@ -12,24 +12,18 @@ import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 import type { AppError } from "../errors";
 import { MailClient } from "../rpc";
 import { OVERVIEW, scopeAccountIds } from "../view";
+import { type Loaded, refreshPages } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchAtom, searchScopeAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
 const PAGE = 100;
-/** Search results come as one page. */
+/** Initial server search stays bounded; local hits use the same cursor as folder lists. */
 const SEARCH_LIMIT = 200;
 
 /** A thread query without its page cursor and size. */
-export type ListQuery = Omit<ThreadQuery, "before" | "limit">;
-
-interface Loaded {
-  threads: readonly ThreadSummary[];
-  pages: number;
-  /** The last page came back short: there is nothing older. */
-  done: boolean;
-}
+export type ListQuery = Omit<ThreadQuery, "before" | "beforeId" | "limit">;
 
 /** Fetches pages until `wanted` are loaded, continuing from `from` when given. */
 const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =>
@@ -40,13 +34,13 @@ const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =
     while (pages < wanted && !done) {
       const oldest = threads.at(-1);
       const page = yield* call("Threads", {
-        query: { ...query, ...(oldest ? { before: oldest.date } : {}), limit },
+        query: { ...query, ...(oldest ? { before: oldest.date, beforeId: oldest.id } : {}), limit },
       });
       threads = [...threads, ...page];
       pages += 1;
-      done = query.search !== undefined || page.length < limit;
+      done = page.length < limit;
     }
-    return { threads, pages, done } satisfies Loaded;
+    return { threads, pages, done, requested: wanted } satisfies Loaded;
   });
 
 const pagedList = Atom.family((query: ListQuery) => {
@@ -58,7 +52,24 @@ const pagedList = Atom.family((query: ListQuery) => {
         .self<AsyncResult.AsyncResult<Loaded, AppError>>()
         .pipe(Option.flatMap(AsyncResult.value), Option.getOrUndefined);
       // One more page than last time keeps what is loaded; anything else is a refresh.
-      return loadPages(query, want, previous?.pages === want - 1 ? previous : undefined);
+      const continuing = previous?.requested === want - 1 ? previous : undefined;
+      // Refresh every loaded row so scroll coordinates and selection remain valid.
+      return Effect.gen(function* () {
+        if (!continuing && previous) {
+          const call = yield* MailClient;
+          return yield* refreshPages(query, previous, (q) => call("Threads", { query: q }));
+        }
+        if (continuing?.done) {
+          const call = yield* MailClient;
+          yield* call("FetchOlder", { query });
+        }
+        const next = yield* loadPages(
+          query,
+          continuing ? continuing.pages + 1 : 1,
+          continuing ? { ...continuing, done: false } : undefined,
+        );
+        return { ...next, requested: want };
+      });
     })
     .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
   return {
@@ -207,8 +218,7 @@ export const threadListAtom = Atom.writable(
     if (!query) return;
     const { wanted, loaded } = pagedList(query);
     const result = ctx.get(loaded);
-    if (result._tag === "Success" && !result.waiting && !result.value.done) {
-      ctx.set(wanted, ctx.get(wanted) + 1);
-    }
+    if (result._tag !== "Success" || result.waiting) return;
+    ctx.set(wanted, ctx.get(wanted) + 1);
   },
 );

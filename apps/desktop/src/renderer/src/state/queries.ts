@@ -164,3 +164,14 @@ export const contactSyncAtom = MailClient.query("ContactSync", undefined, {
   reactivityKeys: [Keys.contacts],
   ...always,
 });
+
+export const cacheWindowsAtom = MailClient.query("CacheWindows", undefined, {
+  reactivityKeys: [Keys.cache],
+});
+export const backfillStateAtom = MailClient.query("BackfillState", undefined, {
+  reactivityKeys: [Keys.cache],
+});
+
+export const updateTokenConfiguredAtom = MailClient.query("UpdateTokenConfigured", undefined, {
+  reactivityKeys: [Keys.cache],
+});

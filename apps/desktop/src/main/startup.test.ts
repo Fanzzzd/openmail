@@ -13,6 +13,8 @@ const native = vi.hoisted(() => ({
 }));
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
+    commandLine: { getSwitchValue: () => "" },
+    setPath: vi.fn(),
     requestSingleInstanceLock: () => native.primary,
     exit: native.exit,
     isReady: () => true,
@@ -28,6 +30,7 @@ vi.mock("@openmail/core", () => ({
     return Layer.empty;
   },
 }));
+vi.mock("./updates", () => ({ UpdatesLive: Layer.empty }));
 vi.mock("./vision", () => ({ desktopVision: native.vision }));
 vi.mock("./rpc-server", () => ({ RpcServerLive: Layer.empty }));
 vi.mock("./system", () => ({

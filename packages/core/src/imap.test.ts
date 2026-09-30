@@ -22,6 +22,7 @@ import {
   stripBcc,
   threadIdOf,
   toIncoming,
+  trackImapBackfill,
   uidSet,
 } from "./imap.js";
 import { Secrets } from "./services.js";
@@ -532,6 +533,180 @@ it.effect("inbox polling opens only INBOX and skips folder discovery", () =>
     Effect.provide(
       Layer.succeed(Secrets, {
         get: () => Effect.succeed(Option.some("fake")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
+
+it.effect("IMAP historical UID ranges resume and reset on UIDVALIDITY changes", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "INBOX",
+        pathAsListed: "INBOX",
+        name: "INBOX",
+        delimiter: "/",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+    ]);
+    let validity = 7n;
+    vi.spyOn(client, "mailboxOpen").mockImplementation(() =>
+      Promise.resolve({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set(),
+        uidValidity: validity,
+        uidNext: 12001,
+        exists: 12000,
+      }),
+    );
+    const search = vi.spyOn(client, "search").mockResolvedValue([]);
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const first = yield* adapter.backfill(account, { cursor: null, before: 1_700_000_000_000 });
+    const second = yield* adapter.backfill(account, {
+      cursor: first.cursor,
+      before: 1_700_000_000_000,
+    });
+    assert.strictEqual(search.mock.calls[0]?.[0].uid, "7001:12000");
+    assert.strictEqual(search.mock.calls[1]?.[0].uid, "2001:7000");
+    validity = 8n;
+    yield* adapter.backfill(account, { cursor: second.cursor, before: 1_700_000_000_000 });
+    assert.strictEqual(search.mock.calls[2]?.[0].uid, "7001:12000");
+    search.mockClear();
+    const last = yield* adapter.backfill(account, {
+      cursor: JSON.stringify({ path: "INBOX", validity: "8", upper: 0 }),
+      before: 1_700_000_000_000,
+    });
+    assert.strictEqual(last.cursor, null);
+    assert.strictEqual(search.mock.calls.length, 0);
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
+
+it("historical IMAP tracking preserves checkpoints and detects subsequent flags/deletes", async () => {
+  const cursor = Option.some(
+    JSON.stringify({
+      folders: {
+        INBOX: {
+          uidValidity: "7",
+          lastUid: 120,
+          modseq: "100",
+          uids: "120",
+          unread: "",
+          starred: "",
+        },
+      },
+    }),
+  );
+  const parsed = await simpleParser(Buffer.from("From: a@example.com\r\nSubject: Old\r\n\r\nold"));
+  const message = toIncoming(parsed, {
+    providerId: encodeProviderId("INBOX", "7", 1),
+    label: "INBOX",
+    flags: new Set(),
+    internalDate: new Date(0),
+  });
+  const tracked = readCursor(trackImapBackfill(cursor, [message]));
+  const folder = tracked.folders["INBOX"];
+  assert.ok(folder);
+  assert.strictEqual(folder.lastUid, 120);
+  assert.strictEqual(folder.modseq, "100");
+  assert.strictEqual(folder.uids, "1,120");
+  const state = FolderState.from(folder);
+  assert.deepStrictEqual(
+    state.reconcile("INBOX", new Set([1, 120]), new Map([[1, { unread: false, starred: true }]])),
+    [
+      {
+        _tag: "Flags",
+        providerId: encodeProviderId("INBOX", "7", 1),
+        isUnread: false,
+        isStarred: true,
+      },
+    ],
+  );
+  assert.deepStrictEqual(state.reconcile("INBOX", new Set([120]), new Map()), [
+    { _tag: "Delete", providerId: encodeProviderId("INBOX", "7", 1) },
+  ]);
+});
+
+it.effect("IMAP excludes cached and pending UIDs before fetching MIME", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "INBOX",
+        pathAsListed: "INBOX",
+        name: "INBOX",
+        delimiter: "/",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+    ]);
+    vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+      path: "INBOX",
+      delimiter: "/",
+      flags: new Set(),
+      uidValidity: 7n,
+      uidNext: 4,
+      exists: 3,
+    });
+    vi.spyOn(client, "search").mockResolvedValue([1, 2, 3]);
+    const mime = Buffer.from(
+      "From: a@example.com\r\nSubject: Old\r\nContent-Type: text/plain\r\n\r\nhello",
+    );
+    const fetch = vi.spyOn(client, "fetchAll").mockResolvedValue([
+      {
+        seq: 2,
+        uid: 2,
+        flags: new Set(),
+        internalDate: new Date(0),
+        size: mime.length,
+        source: mime,
+      },
+    ]);
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const page = yield* adapter.backfill(
+      account,
+      { cursor: null, before: 1_700_000_000_000 },
+      (ids) => {
+        assert.deepStrictEqual(
+          ids,
+          [3, 2, 1].map((uid) => encodeProviderId("INBOX", "7", uid)),
+        );
+        return Effect.succeed([encodeProviderId("INBOX", "7", 2)]);
+      },
+    );
+    assert.strictEqual(page.scanned, 3);
+    assert.strictEqual(page.messages.length, 1);
+    assert.ok(fetch.mock.calls.every((call) => call[0] === "2"));
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
         set: () => Effect.void,
         remove: () => Effect.void,
       }),

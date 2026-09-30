@@ -1334,3 +1334,76 @@ it.effect("inbox polling follows only its delta and skips folder discovery", () 
     });
   }),
 );
+
+it.effect("Graph backfill follows nextLink, maps folders, and refuses foreign continuations", () =>
+  Effect.gen(function* () {
+    const next = `${GRAPH}/me/messages?$skiptoken=older`;
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages/AAMk123": {
+        json: { ...raw, hasAttachments: false, parentFolderId: "id-inbox" },
+      },
+      "GET /me/messages": (url) => ({
+        json: {
+          value: [{ ...raw, hasAttachments: false, parentFolderId: "id-inbox" }],
+          ...(url.searchParams.has("$skiptoken") ? {} : { "@odata.nextLink": next }),
+        },
+      }),
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const first = yield* adapter.backfill(account, { cursor: null, before: 1_700_000_000_000 });
+        assert.strictEqual(first.cursor, next);
+        assert.ok(first.messages[0]?.labels.includes("INBOX"));
+        const second = yield* adapter.backfill(account, {
+          cursor: first.cursor,
+          before: 1_700_000_000_000,
+        });
+        assert.strictEqual(second.cursor, null);
+        const foreign = yield* Effect.result(
+          adapter.backfill(account, { cursor: "https://fake.invalid/steal", before: 0 }),
+        );
+        assert.strictEqual(foreign._tag, "Failure");
+      }),
+    );
+    const lists = http.calls.filter((c) => c.url.pathname.endsWith("/me/messages"));
+    assert.strictEqual(lists[0]?.url.searchParams.get("$orderby"), "receivedDateTime desc");
+    assert.strictEqual(
+      lists[0]?.url.searchParams.get("$filter"),
+      "receivedDateTime lt 2023-11-14T22:13:20.000Z",
+    );
+    assert.strictEqual(lists[1]?.url.searchParams.get("$skiptoken"), "older");
+    assert.ok(http.calls.every((c) => c.url.origin === "https://graph.microsoft.com"));
+  }),
+);
+
+it.effect(
+  "Graph backfill lists headers first and never fetches cached/pending bodies or attachments",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        ...mailbox({}),
+        "GET /me/messages": (url) => {
+          assert.strictEqual(url.searchParams.get("$select"), "id,receivedDateTime");
+          return { json: { value: [{ id: "cached" }, { id: "pending" }, { id: "missing" }] } };
+        },
+        "GET /me/messages/missing": {
+          json: { ...raw, id: "missing", parentFolderId: "id-inbox", hasAttachments: false },
+        },
+      });
+      const page = yield* run(http, (a) =>
+        a.backfill(account, { cursor: null, before: 1_700_000_000_000 }, (ids) => {
+          assert.deepStrictEqual(ids, ["cached", "pending", "missing"]);
+          return Effect.succeed(["missing"]);
+        }),
+      );
+      assert.strictEqual(page.scanned, 3);
+      assert.deepStrictEqual(
+        page.messages.map((m) => m.providerId),
+        ["missing"],
+      );
+      assert.ok(
+        !http.calls.some((c) => /messages\/(cached|pending)|\/attachments/.test(c.url.pathname)),
+      );
+    }),
+);

@@ -1,9 +1,8 @@
-import {
-  NodeChildProcessSpawner,
-  NodeCrypto,
-  NodeFileSystem,
-  NodePath,
-} from "@effect/platform-node";
+// Subpaths avoid loading unused Redis peers from the platform barrel in packaged apps.
+import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcessSpawner";
+import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
+import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
+import * as NodePath from "@effect/platform-node/NodePath";
 import { Effect, Layer, Path } from "effect";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";

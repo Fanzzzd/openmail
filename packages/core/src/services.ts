@@ -59,6 +59,8 @@ import type {
   Vacation,
 } from "./organization.js";
 
+import type { BackfillPage, BackfillState, CacheWindow, CacheWindowInput } from "./cache.js";
+
 // Platform
 
 /**
@@ -178,7 +180,7 @@ export class Store extends Context.Service<
     setSyncError(id: string, error: string | null): Effect.Effect<void>;
     getSyncCursor(id: string): Effect.Effect<Option.Option<string>>;
     /** Also stamps last_synced_at. */
-    saveSyncCursor(id: string, cursor: string): Effect.Effect<void>;
+    saveSyncCursor(id: string, cursor: string, stamp?: boolean): Effect.Effect<void>;
 
     // Messages. Writes keep rowids stable for the FTS index (ON CONFLICT DO UPDATE).
     upsertMessage(accountId: string, m: IncomingMessage): Effect.Effect<void>;
@@ -207,6 +209,21 @@ export class Store extends Context.Service<
       accountIds?: readonly string[],
       within?: string,
     ): Effect.Effect<Record<string, number>>;
+
+    readonly cacheWindows: Effect.Effect<CacheWindow[]>;
+    setCacheWindow(input: CacheWindowInput): Effect.Effect<void>;
+    /** Evicts bodies through UPDATE triggers, preserving rowids and header FTS. */
+    evictBodies(accountId: string, now: number, force?: boolean): Effect.Effect<number>;
+    touchBody(id: string, now: number): Effect.Effect<void>;
+    backfillCandidates(
+      accountId: string,
+      providerIds: readonly string[],
+    ): Effect.Effect<readonly string[]>;
+    readonly backfillStates: Effect.Effect<BackfillState[]>;
+    getBackfillState(accountId: string): Effect.Effect<BackfillState>;
+    saveBackfillState(state: BackfillState): Effect.Effect<void>;
+    resetBackfill(accountId: string): Effect.Effect<void>;
+    setBackfillPaused(accountId: string, paused: boolean): Effect.Effect<void>;
 
     // Labels
     replaceLabels(
@@ -363,6 +380,7 @@ export type Change =
   | { readonly _tag: "DeleteLabel"; readonly label: string }
   /** Drop every local message of the account (the provider's ids changed meaning). */
   | { readonly _tag: "Reset" }
+  | { readonly _tag: "BackfillReset" }
   | { readonly _tag: "Labels"; readonly labels: readonly Omit<Label, "accountId">[] }
   | { readonly _tag: "Progress"; readonly fetched: number; readonly total: number }
   | { readonly _tag: "Cursor"; readonly cursor: string };
@@ -401,6 +419,17 @@ export interface ProviderAdapter {
     response: InviteResponse,
   ): Effect.Effect<void, ProviderFailure | FeatureScopeMissing | InvalidInput>;
 
+  /** One bounded historical page. Independent of the normal sync cursor. */
+  backfill(
+    account: Account,
+    state: Pick<BackfillState, "cursor" | "before">,
+    select?: (ids: readonly string[]) => Effect.Effect<readonly string[]>,
+  ): Effect.Effect<BackfillPage, ProviderFailure>;
+  /** Fetch one complete body on opening an evicted message. */
+  fetchMessage(
+    account: Account,
+    providerId: string,
+  ): Effect.Effect<IncomingMessage, ProviderFailure>;
   search(account: Account, query: ThreadQuery): Effect.Effect<ProviderSearchPage, ProviderFailure>;
   changeLabel(
     account: Account,

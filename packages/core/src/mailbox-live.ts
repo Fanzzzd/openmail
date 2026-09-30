@@ -72,6 +72,8 @@ import {
 } from "./services.js";
 import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeOrganizationMailbox } from "./mailbox-organization.js";
+import { startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
+import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
 
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
@@ -140,6 +142,14 @@ export const MailboxLive = (
 
       const syncLock = yield* Semaphore.make(1);
       const polling = new Map<string, { failures: number; due: number }>();
+      const cache = makeCacheMailbox(
+        store,
+        providers,
+        syncLock,
+        () => Ref.get(inflight).pipe(Effect.map(Option.isSome)),
+        changed,
+        emit({ _tag: "BackfillProgress" }),
+      );
 
       // Pushing the queue
 
@@ -917,9 +927,13 @@ export const MailboxLive = (
               case "DeleteLabel":
                 writes.push(store.deleteMessagesWithLabel(account.id, change.label));
                 break;
+              case "BackfillReset":
+                writes.push(store.resetBackfill(account.id));
+                break;
               case "Reset":
                 writes.push(
                   store.deleteAccountMessages(account.id),
+                  store.resetBackfill(account.id),
                   // Their copies come back under new ids and open as drafts again.
                   store.dropSyncedDrafts(account.id),
                 );
@@ -1062,6 +1076,8 @@ export const MailboxLive = (
             yield* features
               .refreshContacts(account.id, false)
               .pipe(Effect.catch(() => Effect.void));
+          yield* store.getBackfillState(account.id);
+          yield* store.evictBodies(account.id, yield* Clock.currentTimeMillis);
         }
         const next: SyncState = {
           running: false,
@@ -1179,6 +1195,21 @@ export const MailboxLive = (
       });
 
       if (options.autoSync !== undefined) {
+        // Start after the first normal sync. A single account/page per tick
+        // prevents large accounts from starving smaller ones.
+        let nextAccount = 0;
+        yield* Effect.gen(function* () {
+          yield* Effect.sleep("10 seconds");
+          const accounts = yield* store.listAccounts;
+          const account = accounts[nextAccount % Math.max(1, accounts.length)];
+          nextAccount++;
+          if (account) yield* cache.fetchOlder({ accountIds: [account.id] });
+        }).pipe(
+          Effect.catchCause((cause) => Effect.logWarning("backfill failed", cause)),
+          Effect.repeat(Schedule.spaced("10 seconds")),
+          Effect.forkScoped,
+        );
+
         yield* organization
           .wakeSnoozed()
           .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
@@ -1201,8 +1232,26 @@ export const MailboxLive = (
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
       return Mailbox.of({
+        updateTokenConfigured: secrets.get(UPDATE_TOKEN_KEY).pipe(Effect.map(Option.isSome)),
+        setUpdateToken: (token) =>
+          Effect.gen(function* () {
+            const trimmed = token.trim();
+            if (trimmed.length > 4096 || /[\r\n]/.test(trimmed))
+              yield* new InvalidInput({ message: "Enter a single access token" });
+            yield* trimmed
+              ? secrets.set(UPDATE_TOKEN_KEY, trimmed)
+              : secrets.remove(UPDATE_TOKEN_KEY);
+            yield* emit({ _tag: "UpdateSettingsChanged" });
+          }),
+        startUpdates: (client, updateOptions) =>
+          startStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
         ...organization,
         ...features,
+        ...cache,
+        searchServer: (query) =>
+          organization
+            .searchServer(query)
+            .pipe(Effect.tap(() => FiberSet.run(background, cache.fetchOlder(query)))),
         changeLabel: (accountId, change) =>
           organization
             .changeLabel(accountId, change)

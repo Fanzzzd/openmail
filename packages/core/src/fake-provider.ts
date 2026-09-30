@@ -43,6 +43,8 @@ export interface FakeServer {
   /** Raw MIME the adapter hands out by message id; others are built from `messages`. */
   raw: Map<string, Uint8Array>;
   /** Every draft save and delete, in order. */
+  backfillFetched: string[];
+  bodyFetched: string[];
   draftLog: ({ kind: "save"; push: DraftPush } | { kind: "delete"; remote: DraftRemote })[];
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
@@ -66,6 +68,8 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     drafts: new Map(),
     raw: new Map(),
     draftLog: [],
+    backfillFetched: [],
+    bodyFetched: [],
   };
 }
 
@@ -85,6 +89,35 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
       server.settingsFailure ? Effect.fail(server.settingsFailure) : failOnce,
   );
   return {
+    backfill: (_account, state, select) =>
+      Effect.gen(function* () {
+        yield* failOnce;
+        const all = [...server.messages.values()]
+          .filter((m) => m.date < state.before)
+          .toSorted((a, b) => b.date - a.date || (a.providerId < b.providerId ? 1 : -1));
+        const start = state.cursor === null ? 0 : Number(state.cursor);
+        const page = all.slice(start, start + 50);
+        const ids = page.map((m) => m.providerId);
+        const selected = new Set(select ? yield* select(ids) : ids);
+        const messages = page.filter((m) => selected.has(m.providerId));
+        server.backfillFetched.push(...messages.map((m) => m.providerId));
+        return {
+          messages,
+          scanned: page.length,
+          cursor: start + 50 < all.length ? String(start + 50) : null,
+        };
+      }),
+    fetchMessage: (_account, id) =>
+      Effect.andThen(
+        failOnce,
+        Effect.suspend(() => {
+          server.bodyFetched.push(id);
+          const message = server.messages.get(id);
+          return message
+            ? Effect.succeed(message)
+            : Effect.fail(new PermanentError({ message: `Message ${id} is gone` }));
+        }),
+      ),
     contacts: () =>
       Effect.suspend((): ReturnType<ProviderAdapter["contacts"]> =>
         server.featureFailure

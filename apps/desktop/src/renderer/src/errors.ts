@@ -19,6 +19,8 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Enter a single access token": msg`Enter a single access token`,
+
   "This invitation cannot be answered by this account": msg`This invitation cannot be answered by this account`,
   "This meeting has been cancelled": msg`This meeting has been cancelled`,
   "Open this invitation in your calendar to add it before responding": msg`Open this invitation in your calendar to add it before responding`,

@@ -708,7 +708,37 @@ export const makeGmail: Effect.Effect<
       return yield* fetchUserLabels(account.id);
     }).pipe(Effect.mapError(writeFailure(account.id)));
 
+  const backfill: ProviderAdapter["backfill"] = (account, state, select) =>
+    Effect.gen(function* () {
+      const page = yield* get(account.id, MessageList, "/messages", {
+        q: `before:${Math.ceil(state.before / 1000)}`,
+        includeSpamTrash: "true",
+        maxResults: "50",
+        ...(state.cursor ? { pageToken: state.cursor } : {}),
+      });
+      const listed = (page.messages ?? []).map((m) => m.id);
+      const ids = select ? yield* select(listed) : listed;
+      const messages = yield* Effect.forEach(ids, (id) => fetchMessage(account.id, id), {
+        concurrency: 2,
+      });
+      return {
+        messages: messages.flatMap((m) => (Option.isSome(m) ? [m.value] : [])),
+        cursor: page.nextPageToken ?? null,
+        scanned: (page.messages ?? []).length,
+      };
+    }).pipe(Effect.mapError(readFailure(account.id)));
+
   return {
+    backfill,
+    fetchMessage: (account, id) =>
+      fetchMessage(account.id, id).pipe(
+        Effect.mapError(readFailure(account.id)),
+        Effect.flatMap((m) =>
+          Option.isSome(m)
+            ? Effect.succeed(m.value)
+            : Effect.fail(new PermanentError({ message: `Message ${id} is gone` })),
+        ),
+      ),
     ...settings,
     ...makeGmailFeatures(
       (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),

@@ -9,6 +9,9 @@ import {
   CalendarInvite,
   InviteResponse,
   ContactSync,
+  BackfillState,
+  CacheWindow,
+  CacheWindowInput,
   AccountOrganization,
   FilterCriteria,
   FilterInput,
@@ -82,6 +85,13 @@ const AccountIds = Schema.optionalKey(Schema.Array(Schema.String));
 const error = MailError;
 
 export class MailRpcs extends RpcGroup.make(
+  Rpc.make("UpdateTokenConfigured", { success: Schema.Boolean }),
+  Rpc.make("SetUpdateToken", { payload: { token: Schema.String }, error }),
+  Rpc.make("BackfillState", { success: Schema.Array(BackfillState) }),
+  Rpc.make("PauseBackfill", { payload: { accountId: Schema.String, paused: Schema.Boolean } }),
+  Rpc.make("FetchOlder", { payload: { query: ThreadQuery } }),
+  Rpc.make("CacheWindows", { success: Schema.Array(CacheWindow) }),
+  Rpc.make("SetCacheWindow", { payload: { input: CacheWindowInput }, error }),
   // Accounts and sign-in
   Rpc.make("ClientSetup", {
     success: Schema.Struct({

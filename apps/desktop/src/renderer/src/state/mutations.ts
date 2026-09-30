@@ -113,3 +113,7 @@ export const syncSendAsAtom = MailClient.mutation("SyncSendAs");
 
 export const respondInviteAtom = MailClient.mutation("RespondInvite");
 export const refreshContactsAtom = MailClient.mutation("RefreshContacts");
+export const setCacheWindowAtom = MailClient.mutation("SetCacheWindow");
+export const pauseBackfillAtom = MailClient.mutation("PauseBackfill");
+
+export const setUpdateTokenAtom = MailClient.mutation("SetUpdateToken");

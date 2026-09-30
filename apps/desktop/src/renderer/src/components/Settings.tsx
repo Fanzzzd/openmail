@@ -16,6 +16,8 @@ import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
 import { IndexingSettings } from "./IndexingSettings";
 import { DefaultMailClient, NotificationsSettings, ShortcutsSettings } from "./SystemSettings";
 import { ComposeSettings, Signatures } from "./ComposeSettings";
+import { UpdateSettings } from "./UpdateSettings";
+import { CacheSettings } from "./CacheSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
@@ -114,9 +116,11 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
         <Tabs.Panel value="general" className={panel}>
           <General />
           <IndexingSettings />
+          <UpdateSettings />
         </Tabs.Panel>
         <Tabs.Panel value="reading" className={panel}>
           <ReadingSettings />
+          <CacheSettings accounts={accounts} />
         </Tabs.Panel>
         <Tabs.Panel value="compose" className={panel}>
           <ComposeSettings />

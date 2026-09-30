@@ -41,6 +41,7 @@ import { all, first, run } from "./sql-rows.js";
 import { parseSearchQuery, searchWords, reciprocalRankFusion } from "./search.js";
 import { makeOrganizationStore } from "./store-organization.js";
 import { makeContactStore } from "./store-contacts.js";
+import { makeCacheStore } from "./store-cache.js";
 import { makeComposeStore } from "./store-compose.js";
 
 // Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
@@ -82,6 +83,7 @@ const MessageRow = Schema.Struct({
   body_html: Schema.String,
   draft_id: Schema.NullOr(Schema.String),
   calendar_hint: Schema.NullOr(Schema.BooleanFromBit),
+  body_cached: Schema.BooleanFromBit,
 });
 
 /** Messages with the local draft each one is a copy of, for MessageRow. */
@@ -182,6 +184,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     cc: r.cc_json,
     bodyText: r.body_text,
     bodyHtml: r.body_html,
+    bodyCached: r.body_cached,
     attachments: r.attachments_json,
     ...(r.calendar_hint === null ? {} : { hasCalendar: r.calendar_hint }),
     ...(r.draft_id === null ? {} : { draftId: r.draft_id }),
@@ -214,9 +217,7 @@ const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
   trash: "TRASH",
 };
 
-const EFFECTIVE_DATE = `MAX(m.date, COALESCE((SELECT woken_at FROM thread_reminders r
-    WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id
-      AND EXISTS (SELECT 1 FROM snoozed_messages s WHERE s.account_id=m.account_id AND s.provider_id=m.provider_id)), 0))`;
+const EFFECTIVE_DATE = "m.list_date";
 const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
   ${EFFECTIVE_DATE} AS date,
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
@@ -301,6 +302,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
   Store,
   Effect.gen(function* () {
     const sql = yield* SqlClient.SqlClient;
+    const cache = makeCacheStore(sql);
     const compose = makeComposeStore(sql);
     const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
     const vectors = Option.isSome(capabilities) && capabilities.value.vectors;
@@ -385,10 +387,11 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const saveSyncCursor = Effect.fn("Store.saveSyncCursor")(function* (
       id: string,
       cursor: string,
+      stamp = true,
     ) {
       const now = yield* Clock.currentTimeMillis;
       yield* run(
-        sql`UPDATE accounts SET sync_cursor = ${cursor}, last_synced_at = ${now} WHERE id = ${id}`,
+        sql`UPDATE accounts SET sync_cursor = ${cursor}, last_synced_at = CASE WHEN ${stamp ? 1 : 0} THEN ${now} ELSE last_synced_at END WHERE id = ${id}`,
       );
     });
 
@@ -483,12 +486,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, date, snippet, body_text, body_html, labels_json,
-            attachments_json, is_unread, is_starred, calendar_hint)
+            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
-            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0})
+            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)})
           ON CONFLICT(id) DO UPDATE SET
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
@@ -496,7 +499,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             snippet = excluded.snippet, body_text = excluded.body_text,
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
-            is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint`)
+            is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint, body_cached = excluded.body_cached, list_date = excluded.list_date`)
       );
     });
 
@@ -589,50 +592,40 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       return sql.and(where);
     };
 
-    /**
-     * Conversation list: one row per thread that has a message in the view,
-     * represented by its newest such message. Unread and starred roll up across
-     * the thread's messages in the view. `before` pages by the thread's newest
-     * date, so a thread never shows up on two pages.
-     */
-    const threadList = (q: ThreadQuery, limit: number) =>
-      all(ThreadRow)(sql`
-        WITH ranked AS (
-          SELECT ${sql.literal(SUMMARY_COLUMNS)},
-            ROW_NUMBER() OVER thread AS rn,
-            MAX(m.is_unread) OVER thread AS any_unread,
-            MAX(m.is_starred) OVER thread AS any_starred
-          FROM messages m
-          WHERE ${listFilter(q)}
-          WINDOW thread AS (PARTITION BY m.account_id, m.thread_id ORDER BY ${sql.literal(EFFECTIVE_DATE)} DESC
-            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+    // Stream the date/id index and resolve only selected conversations. The
+    // CTE is inlined, so a 100k-thread inbox does not rank 100k rows per page.
+    const threadList = Effect.fn("Store.threadList")(function* (q: ThreadQuery, limit: number) {
+      const rows = yield* all(ThreadRow)(sql`
+        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter(q)}),
+        page AS (
+          SELECT c.* FROM candidates c
+          WHERE ${q.before === undefined ? sql.literal("1") : sql`(c.date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (c.date = ${q.before} AND c.id < ${q.beforeId})`})`}
+            AND NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=c.account_id AND n.thread_id=c.thread_id
+              AND (n.date > c.date OR (n.date=c.date AND n.id>c.id)))
+          ORDER BY c.date DESC,c.id DESC LIMIT ${limit}
         )
-        SELECT r.*,
-          (SELECT COUNT(*) FROM messages t
-            WHERE t.account_id = r.account_id AND t.thread_id = r.thread_id) AS thread_count,
-          (SELECT json_group_array(json_object('name', p.from_name, 'address', p.from_addr))
-            FROM (SELECT from_name, from_addr, MIN(date) AS first FROM messages t
-              WHERE t.account_id = r.account_id AND t.thread_id = r.thread_id
-              GROUP BY from_addr ORDER BY first) p) AS participants_json
-        FROM ranked r
-        WHERE r.rn = 1 ${q.before === undefined ? sql.literal("") : sql`AND r.date < ${q.before}`}
-        ORDER BY r.date DESC LIMIT ${limit}`).pipe(
-        Effect.map((rows) =>
-          rows.map((r): ThreadSummary => ({
-            ...toSummary(r),
-            isUnread: r.any_unread,
-            isStarred: r.any_starred,
-            threadCount: r.thread_count,
-            participants: r.participants_json,
-          })),
-        ),
-      );
+        SELECT c.*,
+          (SELECT MAX(v.is_unread) FROM candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id) AS any_unread,
+          (SELECT MAX(v.is_starred) FROM candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id) AS any_starred,
+          (SELECT COUNT(*) FROM messages t WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id) AS thread_count,
+          (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
+            FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
+              WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
+        FROM page c ORDER BY c.date DESC,c.id DESC`);
+      return rows.map((r): ThreadSummary => ({
+        ...toSummary(r),
+        isUnread: r.any_unread,
+        isStarred: r.any_starred,
+        threadCount: r.thread_count,
+        participants: r.participants_json,
+      }));
+    });
 
     /** Conversation grouping off: each message in the view is its own row, newest first. */
     const messageList = (q: ThreadQuery, limit: number) =>
       all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m
-        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND ${sql.literal(EFFECTIVE_DATE)} < ${q.before}`}
-        ORDER BY date DESC LIMIT ${limit}`).pipe(
+        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
+        ORDER BY date DESC, m.id DESC LIMIT ${limit}`).pipe(
         Effect.map((rows) =>
           rows.map((r): ThreadSummary => {
             const summary = toSummary(r);
@@ -699,7 +692,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
       if (q.mailbox !== "drafts" || !plain) return threads;
       const local = yield* compose.localDrafts(q, limit);
-      return [...threads, ...local].toSorted((a, b) => b.date - a.date).slice(0, limit);
+      return [...threads, ...local]
+        .toSorted((a, b) => b.date - a.date || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0))
+        .slice(0, limit);
     });
 
     const vectorThreads = Effect.fn("Store.vectorThreads")(function* (
@@ -1097,6 +1092,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     });
 
     return Store.of({
+      ...cache,
       ...organization,
       snooze,
       transaction: (effect) =>

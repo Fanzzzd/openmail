@@ -84,6 +84,10 @@ msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {faile
 msgid "{email} is signed in again"
 msgstr "{email} 已重新登录"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{fetched} messages checked"
+msgstr "已检查 {fetched} 封"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "{label} suggestions"
 msgstr "{label}建议"
@@ -112,10 +116,22 @@ msgstr "{seconds, plural, other {# 秒}}"
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "1 year"
+msgstr "1 年"
+
 #: src/renderer/src/components/imapPresetText.ts
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 邮箱"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "30 days"
+msgstr "30 天"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "90 days"
+msgstr "90 天"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
@@ -132,6 +148,10 @@ msgstr "接受"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Accepted"
 msgstr "已接受"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Access token saved"
+msgstr "已保存访问令牌"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -284,6 +304,11 @@ msgstr "这个空间的所有账户"
 msgid "All day"
 msgstr "全天"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "All mail"
+msgstr "全部保留"
+
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/view.ts
 msgid "All Mail"
@@ -362,6 +387,14 @@ msgstr "自动回复"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
 msgstr "返回"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill paused"
+msgstr "回填已暂停"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill runs between syncs"
+msgstr "同步间隙回填"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
@@ -762,6 +795,10 @@ msgstr "开启"
 msgid "End"
 msgstr "结束"
 
+#: src/renderer/src/errors.ts
+msgid "Enter a single access token"
+msgstr "请输入一个访问令牌"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
@@ -860,6 +897,10 @@ msgstr "生成应用专用密码"
 msgid "Generate authorization code"
 msgstr "生成授权码"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "GitHub access token"
+msgstr "GitHub 访问令牌"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Gmail"
 msgstr "Gmail"
@@ -936,6 +977,7 @@ msgstr "3 小时后"
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -948,6 +990,11 @@ msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮�
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "内部回复"
+
+#. placeholder {0}: label.name
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep bodies in {0}"
+msgstr "{0} 正文保留期限"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1265,6 +1312,10 @@ msgstr "下一个会话"
 msgid "Next week"
 msgstr "下周"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "No access token saved"
+msgstr "未保存访问令牌"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "No accounts yet"
 msgstr "还没有账户"
@@ -1342,6 +1393,18 @@ msgstr "{0} 的通知"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "关闭"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail and cache"
+msgstr "旧邮件与缓存"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
+msgstr "旧邮件在后台下载。正文过期后仍可搜索邮件头，打开时重新下载正文。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail is up to date"
+msgstr "旧邮件已回填"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
@@ -1468,6 +1531,10 @@ msgstr "上级文件夹"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "密码"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Pause"
+msgstr "暂停"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Pause indexing"
@@ -1599,6 +1666,10 @@ msgstr "去掉星标"
 msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
 msgstr "从 openmail 移除这个账户和它的本地邮件。服务器上的邮件不受影响。"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Remove token"
+msgstr "移除令牌"
+
 #: src/renderer/src/App.tsx
 msgid "Removed star"
 msgstr "已去掉星标"
@@ -1661,6 +1732,10 @@ msgstr "已报告为垃圾邮件"
 msgid "Restore"
 msgstr "恢复"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Resume"
+msgstr "继续"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "检查并发送"
@@ -1709,6 +1784,10 @@ msgstr "将这封邮件保存为 PDF…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
 msgstr "把这封邮件存为模板…"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Save token"
+msgstr "保存令牌"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save…"
@@ -1917,6 +1996,10 @@ msgstr "登录失败：{reason}"
 msgid "Signatures"
 msgstr "签名"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
+msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令牌保存在系统钥匙串。"
+
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
@@ -1951,6 +2034,7 @@ msgstr "出了点问题，请再试一次。"
 msgid "Spaces"
 msgstr "空间"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "垃圾邮件"
@@ -2077,6 +2161,10 @@ msgstr "还没有填写 {client} 的 OAuth 客户端。"
 msgid "The account's sign-in has expired. Changes will sync after you sign in again."
 msgstr "账户登录已失效，改动会在重新登录后同步"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "The body is not cached. Try opening this message again when connected."
+msgstr "正文未缓存。联网后请重新打开这封邮件。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
 msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮件，令牌存在系统钥匙串里。"
@@ -2177,6 +2265,7 @@ msgstr "今天 {time}"
 msgid "Tomorrow morning"
 msgstr "明天上午"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
 msgstr "已删除"
@@ -2230,9 +2319,14 @@ msgstr "去掉星标"
 msgid "Until"
 msgstr "至"
 
+#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "动态"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Use default"
+msgstr "使用默认值"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Notifications received during quiet hours stay silent."

@@ -608,7 +608,11 @@ function Expanded({
       )}
 
       <div className="pt-4">
-        {m.bodyHtml ? (
+        {m.bodyCached === false ? (
+          <output className="block px-4 text-neutral-500">
+            <Trans>The body is not cached. Try opening this message again when connected.</Trans>
+          </output>
+        ) : m.bodyHtml ? (
           <EmailFrame
             html={prepared.html}
             remote={allowed}

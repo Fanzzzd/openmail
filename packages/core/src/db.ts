@@ -384,6 +384,76 @@ export const MIGRATIONS: readonly string[] = [
     UPDATE semantic_jobs SET priority_at=new.date WHERE message_id=new.id;
   END;
   `,
+  // Migration 13: release cache and pagination.
+  `
+  DROP TRIGGER messages_au;
+  CREATE TRIGGER messages_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages BEGIN
+    INSERT INTO messages_fts(messages_fts,rowid,subject,from_name,from_addr,body_text)
+    VALUES ('delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text);
+    INSERT INTO messages_fts(rowid,subject,from_name,from_addr,body_text)
+    VALUES (new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+  END;
+  ALTER TABLE messages ADD COLUMN body_cached INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE messages ADD COLUMN list_date INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE messages ADD COLUMN body_opened_at INTEGER;
+  CREATE INDEX messages_cache_date ON messages(account_id,body_cached,date);
+  CREATE TABLE cache_maintenance (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    evicted_at INTEGER NOT NULL
+  );
+  DROP TRIGGER media_message_update;
+  CREATE TRIGGER media_message_update AFTER UPDATE OF attachments_json,body_html ON messages
+    WHEN (old.attachments_json != new.attachments_json OR old.body_html != new.body_html)
+      AND old.body_cached = new.body_cached BEGIN
+    DELETE FROM derived_chunks WHERE message_id=new.id;
+    INSERT INTO derived_jobs(message_id) SELECT new.id
+      WHERE new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+        WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+          OR lower(json_extract(value,'$.mimeType'))='application/pdf')
+        OR EXISTS(SELECT 1 FROM derived_jobs WHERE message_id=new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',
+        claim=NULL,claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+  DROP TRIGGER semantic_message_update;
+  CREATE TRIGGER semantic_message_update AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+    WHEN (old.body_text != new.body_text OR old.body_html != new.body_html OR old.attachments_json != new.attachments_json)
+      AND old.body_cached = new.body_cached BEGIN
+    DELETE FROM vector_items WHERE message_id=new.id;
+    INSERT INTO semantic_jobs(message_id) VALUES(new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+      claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+  UPDATE messages AS m SET list_date=MAX(m.date,COALESCE((SELECT r.woken_at FROM thread_reminders r
+    JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id
+    WHERE s.account_id=m.account_id AND s.provider_id=m.provider_id),0));
+  CREATE INDEX messages_list_date_id ON messages(list_date DESC, id DESC);
+  CREATE INDEX messages_account_list_date_id ON messages(account_id, list_date DESC, id DESC);
+  CREATE INDEX messages_thread_list_date_id ON messages(account_id, thread_id, list_date DESC, id DESC);
+  CREATE TRIGGER reminders_list_date AFTER UPDATE OF woken_at ON thread_reminders BEGIN
+    UPDATE messages SET list_date=MAX(date,COALESCE(new.woken_at,0))
+    WHERE account_id=new.account_id AND thread_id=new.thread_id
+      AND EXISTS (SELECT 1 FROM snoozed_messages s WHERE s.account_id=messages.account_id AND s.provider_id=messages.provider_id);
+  END;
+  CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
+    UPDATE messages SET list_date=MAX(date,COALESCE((SELECT woken_at FROM thread_reminders
+      WHERE account_id=new.account_id AND thread_id=new.thread_id),0))
+    WHERE account_id=new.account_id AND provider_id=new.provider_id;
+  END;
+  CREATE TRIGGER snoozed_list_date_delete AFTER DELETE ON snoozed_messages BEGIN
+    UPDATE messages SET list_date=date WHERE account_id=old.account_id AND provider_id=old.provider_id;
+  END;
+  CREATE TABLE cache_windows (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    label TEXT NOT NULL, days INTEGER CHECK(days IS NULL OR days > 0),
+    PRIMARY KEY(account_id, label)
+  );
+  CREATE TABLE backfill (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    cursor TEXT, before_date INTEGER NOT NULL, fetched INTEGER NOT NULL DEFAULT 0,
+    paused INTEGER NOT NULL DEFAULT 0, done INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT, next_run_at INTEGER NOT NULL DEFAULT 0
+  );
+  `,
 ];
 
 /**
@@ -430,7 +500,6 @@ export function splitStatements(script: string): string[] {
 const isTrigger = (code: string) => /^\s*CREATE\s+(TEMP\s+|TEMPORARY\s+)?TRIGGER\b/i.test(code);
 
 const UserVersion = Schema.Struct({ user_version: Schema.Number });
-
 /**
  * Runs pending migrations, one transaction each. The version is read inside
  * the transaction (BEGIN IMMEDIATE holds the write lock), so the app and the

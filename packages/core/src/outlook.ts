@@ -1001,7 +1001,66 @@ export const makeOutlook: Effect.Effect<
       return { messages, truncated: url !== undefined || scanned >= 1000 };
     }).pipe(Effect.mapError(writeFailure(account.id)));
 
+  const pageSchema = Schema.Struct({
+    value: Schema.Array(WithId),
+    "@odata.nextLink": Schema.optionalKey(Schema.String),
+  });
+  const messageLabel = Effect.fnUntraced(function* (account: Account, raw: GraphMessage) {
+    const system = yield* Effect.forEach(WELL_KNOWN, (f) =>
+      get(account.id, WithId, `/me/mailFolders/${f.name}?$select=id`).pipe(
+        Effect.map((r) => ({ id: r.id, label: f.label })),
+        Effect.catchIf(is404, () => Effect.succeed({ id: f.name, label: f.label })),
+      ),
+    );
+    return (
+      system.find((f) => f.id === raw.parentFolderId)?.label ?? raw.parentFolderId ?? "ARCHIVE"
+    );
+  });
+  const backfill: ProviderAdapter["backfill"] = (account, state, select) =>
+    Effect.gen(function* () {
+      const params = new URLSearchParams({
+        $select: "id,receivedDateTime",
+        $top: "50",
+        $orderby: "receivedDateTime desc",
+        $filter: `receivedDateTime lt ${new Date(state.before).toISOString()}`,
+      });
+      const url = state.cursor ?? `/me/messages?${params.toString()}`;
+      if (state.cursor && !state.cursor.startsWith(`${GRAPH}/`))
+        return yield* new ProviderError({ message: "Invalid Graph backfill continuation" });
+      const page = yield* get(account.id, pageSchema, url);
+      const listed = page.value.map((m) => m.id);
+      const ids = select ? yield* select(listed) : listed;
+      const messages = yield* Effect.forEach(
+        ids,
+        (id) =>
+          fetchMessage(account, id).pipe(
+            Effect.catchTag("PermanentError", () => Effect.succeed(null)),
+          ),
+        {
+          concurrency: 2,
+        },
+      );
+      return {
+        messages: messages.filter((m) => m !== null),
+        cursor: page["@odata.nextLink"] ?? null,
+        scanned: page.value.length,
+      };
+    }).pipe(Effect.mapError(readFailure(account.id)));
+  const fetchMessage: ProviderAdapter["fetchMessage"] = (account, id) =>
+    Effect.gen(function* () {
+      const raw = yield* get(
+        account.id,
+        GraphMessage,
+        `/me/messages/${id}?$select=${SELECT},parentFolderId`,
+      );
+      const label = yield* messageLabel(account, raw);
+      const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, id) : [];
+      return parseGraphMessage(raw, label, attachments);
+    }).pipe(Effect.mapError(writeFailure(account.id)));
+
   return {
+    backfill,
+    fetchMessage,
     ...settings,
     ...makeOutlookFeatures(get, write),
     search,

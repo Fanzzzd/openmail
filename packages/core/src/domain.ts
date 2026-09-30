@@ -137,6 +137,7 @@ export const Message = Schema.Struct({
   bodyHtml: Schema.String,
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
+  bodyCached: Schema.optionalKey(Schema.Boolean),
   attachments: Schema.Array(Attachment),
   /**
    * The local draft this message is the provider's copy of. It outlives the
@@ -161,6 +162,7 @@ export const IncomingMessage = Schema.Struct({
   bodyHtml: Schema.String,
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
+  bodyCached: Schema.optionalKey(Schema.Boolean),
   labels: Schema.Array(Schema.String),
   attachments: Schema.Array(Attachment),
   isUnread: Schema.Boolean,
@@ -232,6 +234,8 @@ export const ThreadQuery = Schema.Struct({
   flat: Schema.optionalKey(Schema.Boolean),
   /** Page cursor: the `date` of the oldest thread already shown. */
   before: Schema.optionalKey(Schema.Number),
+  /** Tie-breaker at `before`, the id of the last row shown. */
+  beforeId: Schema.optionalKey(Schema.String),
   limit: Schema.optionalKey(Schema.Int),
 });
 export type ThreadQuery = typeof ThreadQuery.Type;

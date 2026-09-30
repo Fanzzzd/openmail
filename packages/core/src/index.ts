@@ -49,3 +49,8 @@ export * from "./system.js";
 export { makeNodeModels } from "./embeddings-node.js";
 
 export type { InferenceProcess, InferenceProcessLauncher } from "./inference-process.js";
+export * from "./cache.js";
+
+export * from "./list-window.js";
+
+export * from "./updates.js";

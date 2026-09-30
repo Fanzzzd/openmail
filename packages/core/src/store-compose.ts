@@ -201,10 +201,13 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         q.accountIds.length ? sql`d.account_id IN ${sql.in(q.accountIds)}` : sql.literal("0"),
       );
     }
-    if (q.before !== undefined) where.push(sql`d.updated_at < ${q.before}`);
+    if (q.before !== undefined)
+      where.push(
+        sql`(d.updated_at < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (d.updated_at = ${q.before} AND d.id < ${q.beforeId})`})`,
+      );
     return all(LocalDraftRow)(sql`SELECT ${DRAFT_COLUMNS}, a.email FROM drafts d
       JOIN accounts a ON a.id = d.account_id
-      WHERE ${sql.and(where)} ORDER BY d.updated_at DESC LIMIT ${limit}`).pipe(
+      WHERE ${sql.and(where)} ORDER BY d.updated_at DESC, d.id DESC LIMIT ${limit}`).pipe(
       Effect.map((rows) =>
         rows.map((r): ThreadSummary => {
           const me = { name: "", address: r.email };

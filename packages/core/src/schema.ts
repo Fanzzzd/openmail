@@ -23,3 +23,6 @@ export * from "./contacts.js";
 
 export { deviceErrorReason } from "./device-errors.js";
 export * from "./system.js";
+export * from "./cache.js";
+
+export * from "./list-window.js";

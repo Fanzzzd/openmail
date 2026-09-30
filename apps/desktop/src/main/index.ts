@@ -1,14 +1,18 @@
 import { NodeMailbox } from "@openmail/core";
 import { Cause, Effect, Fiber, Layer } from "effect";
-import { join } from "node:path";
+import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, powerMonitor, shell } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
 
+import { UpdatesLive } from "./updates";
 import { RpcServerLive } from "./rpc-server";
 import { DesktopLive, receiveAppUrl, ready } from "./system";
 import { DEV_ICON, focusMainWindow } from "./windows";
+
+const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
+if (isolatedData) app.setPath("userData", resolve(isolatedData));
 
 // Register before ready: macOS delivers a launch URL during startup.
 app.on("open-url", (event, url) => {
@@ -41,7 +45,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
   );
   const main = Effect.runFork(
     Layer.launch(
-      RpcServerLive.pipe(
+      Layer.merge(RpcServerLive, UpdatesLive).pipe(
         Layer.provideMerge(DesktopLive),
         Layer.provide(
           Layer.unwrap(
@@ -55,6 +59,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 openUrl: (url) => shell.openExternal(url),
                 autoSync: "2 minutes",
                 inferenceProcess: desktopInferenceProcess,
+                ...(isolatedData ? { dataDir: resolve(isolatedData) } : {}),
                 inboxPoll: "45 seconds",
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 media: {

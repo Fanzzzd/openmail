@@ -564,6 +564,28 @@ interface FetchedHead {
 }
 
 /** Fetches, parses and returns messages by UID from the selected folder. */
+/** Adds historical UIDs to normal flag/deletion tracking without advancing new-mail or MODSEQ checkpoints. */
+export function trackImapBackfill(
+  cursor: Option.Option<string>,
+  messages: readonly IncomingMessage[],
+): Option.Option<string> {
+  const previous = readCursor(cursor);
+  const states = new Map<string, FolderState>();
+  for (const message of messages) {
+    const ref = decodeProviderId(message.providerId);
+    if (Option.isNone(ref)) continue;
+    const old = previous.folders[ref.value.path];
+    if (!old || old.uidValidity !== ref.value.uidValidity) continue;
+    const state = states.get(ref.value.path) ?? FolderState.from(old);
+    if (!state.flags.has(ref.value.uid))
+      state.flags.set(ref.value.uid, { unread: message.isUnread, starred: message.isStarred });
+    states.set(ref.value.path, state);
+  }
+  if (!states.size) return Option.none();
+  for (const [folder, state] of states) previous.folders[folder] = state.toCursor();
+  return Option.some(JSON.stringify(previous));
+}
+
 const fetchMessages = Effect.fnUntraced(function* (
   s: Session,
   folder: SyncFolder,
@@ -722,6 +744,7 @@ const runPull = Effect.fnUntraced(function* (
     const uidValidity = String(mailbox.uidValidity);
     const highest = mailbox.highestModseq;
     let old = prev.folders[folder.path];
+    if (!old || old.uidValidity !== uidValidity) yield* emit({ _tag: "BackfillReset" });
     if (old && old.uidValidity !== uidValidity) {
       yield* dropFolder(folder.path, old);
       old = undefined;
@@ -1240,10 +1263,85 @@ export const makeImapWith = (
         }
         return { messages: messages.slice(0, limit), truncated };
       }).pipe(Effect.scoped);
+    const HistoricalCursor = Schema.fromJsonString(
+      Schema.Struct({
+        path: Schema.String,
+        validity: Schema.String,
+        upper: Schema.Int,
+      }),
+    );
+    const backfill: ProviderAdapter["backfill"] = (account, state, select) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const folders = mapFolders(yield* call(s, (c) => c.list())).toSorted((a, b) =>
+          a.path < b.path ? -1 : a.path > b.path ? 1 : 0,
+        );
+        const saved =
+          state.cursor === null
+            ? null
+            : yield* Schema.decodeUnknownEffect(HistoricalCursor)(state.cursor).pipe(
+                Effect.mapError(
+                  () => new ProviderError({ message: "Invalid IMAP backfill cursor" }),
+                ),
+              );
+        const remaining = folders.filter((f) => saved === null || f.path >= saved.path);
+        for (const folder of remaining) {
+          const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
+          const validity = String(opened.uidValidity);
+          const upper =
+            saved?.path === folder.path && saved.validity === validity
+              ? saved.upper
+              : opened.uidNext - 1;
+          if (upper < 1) continue;
+          // Scan a bounded range even when UIDs have large gaps. No full-folder UID list.
+          const lower = Math.max(1, upper - 4999);
+          const found = yield* call(s, (c) =>
+            c.search({ uid: `${lower}:${upper}`, before: new Date(state.before) }, { uid: true }),
+          );
+          const uids = (found || [])
+            .filter((uid) => uid >= lower && uid <= upper)
+            .toSorted((a, b) => b - a)
+            .slice(0, 50);
+          const listed = uids.map((uid) => encodeProviderId(folder.path, validity, uid));
+          const selected = new Set(select ? yield* select(listed) : listed);
+          const missing = uids.filter((uid) =>
+            selected.has(encodeProviderId(folder.path, validity, uid)),
+          );
+          const fetched = missing.length ? yield* fetchMessages(s, folder, validity, missing) : [];
+          return {
+            messages: fetched.map((m) => m.message),
+            scanned: uids.length,
+            cursor: JSON.stringify({
+              path: folder.path,
+              validity,
+              upper: (uids.at(-1) ?? lower) - 1,
+            }),
+          };
+        }
+        return { messages: [], scanned: 0, cursor: null };
+      }).pipe(Effect.scoped);
+    const fetchMessage: ProviderAdapter["fetchMessage"] = (account, providerId) =>
+      Effect.gen(function* () {
+        const ref = decodeProviderId(providerId);
+        if (Option.isNone(ref))
+          return yield* new PermanentError({ message: `Not an IMAP message id: ${providerId}` });
+        const { s } = yield* session(account);
+        if (!(yield* openFolderOf(s, ref.value, true)))
+          return yield* new PermanentError({ message: "IMAP UIDVALIDITY changed" });
+        const folders = mapFolders(yield* call(s, (c) => c.list()));
+        const folder = folders.find((f) => f.path === ref.value.path);
+        const fetched = folder
+          ? yield* fetchMessages(s, folder, ref.value.uidValidity, [ref.value.uid])
+          : [];
+        const message = fetched[0]?.message;
+        return message ?? (yield* new PermanentError({ message: `Message ${providerId} is gone` }));
+      }).pipe(Effect.scoped);
     const unsupported = Effect.fail(
       new PermanentError({ message: "IMAP does not support server filters or automatic replies" }),
     );
     return {
+      backfill,
+      fetchMessage,
       connect,
       pull,
       push,

@@ -56,6 +56,10 @@ import type {
   Vacation,
 } from "./organization.js";
 
+import type { BackfillState, CacheWindow, CacheWindowInput } from "./cache.js";
+
+import type { UpdateClient } from "./updates.js";
+
 export const SyncState = Schema.Struct({
   running: Schema.Boolean,
   lastFinishedAt: Schema.NullOr(Schema.Number),
@@ -68,6 +72,8 @@ export const MailboxEvent = Schema.Union([
   Schema.TaggedStruct("SyncProgress", { progress: SyncProgressSchema }),
   /** Newly observed unread inbox mail, after it is committed. First sync is silent. */
   Schema.TaggedStruct("NewMail", { accountId: Schema.String, ids: Schema.Array(Schema.String) }),
+  Schema.TaggedStruct("BackfillProgress", {}),
+  Schema.TaggedStruct("UpdateSettingsChanged", {}),
   /** Local mail, accounts, proposals or settings changed; views should refetch. */
   Schema.TaggedStruct("Changed", {}),
 ]);
@@ -141,7 +147,10 @@ export class Mailbox extends Context.Service<
 
     // Reading
     threads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
+    /** Local read: no writes or provider requests (CLI/MCP default). */
     thread(id: string): Effect.Effect<Message[], NotFound>;
+    /** Explicit reader hydration. Failed bodies retain their headers. */
+    readerThread(id: string): Effect.Effect<Message[], PerformError>;
     threadForModel(id: string, maxChars?: number): Effect.Effect<ModelThread, NotFound>;
     /** The message's original source (RFC 5322) from the provider, as text. */
     rawMessage(id: string): Effect.Effect<string, PerformError>;
@@ -246,6 +255,20 @@ export class Mailbox extends Context.Service<
     readonly hiddenContacts: Effect.Effect<string[]>;
     /** Hides an address from suggestions, or shows it again. */
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
+
+    /** Only presence crosses IPC. The token stays in the system keychain. */
+    readonly updateTokenConfigured: Effect.Effect<boolean>;
+    setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
+    startUpdates(
+      client: UpdateClient,
+      options: { packaged: boolean; bundle: string },
+    ): Effect.Effect<() => void>;
+    readonly cacheWindows: Effect.Effect<CacheWindow[]>;
+    setCacheWindow(input: CacheWindowInput): Effect.Effect<void, NotFound>;
+    readonly backfillState: Effect.Effect<BackfillState[]>;
+    pauseBackfill(accountId: string, paused: boolean): Effect.Effect<void>;
+    /** Requests one throttled page per scoped account, respecting pause. */
+    fetchOlder(query: ThreadQuery): Effect.Effect<void>;
 
     // Sync
     /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */

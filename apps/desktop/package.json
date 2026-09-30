@@ -9,9 +9,11 @@
     "dev": "node build/build-vision.mjs && electron-vite dev",
     "build": "node build/build-vision.mjs && electron-vite build",
     "check-types": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "package": "pnpm build && electron-builder",
+    "package": "pnpm dist",
     "test": "vitest run && lingui check sync --clean && lingui check missing",
-    "i18n:extract": "lingui extract --clean"
+    "i18n:extract": "lingui extract --clean",
+    "dist": "pnpm --filter @openmail/core build && pnpm build && electron-builder --config electron-builder.config.cjs --mac --publish never",
+    "dist:signed": "OPENMAIL_SIGNED_BUILD=1 pnpm dist"
   },
   "dependencies": {
     "@effect/atom-react": "4.0.0-rc.118",
@@ -19,6 +21,7 @@
     "@lingui/react": "^6.8.0",
     "@openmail/core": "workspace:*",
     "effect": "4.0.0-rc.118",
+    "electron-updater": "^6.8.9",
     "react-resizable-panels": "^4.14.1",
     "scheduler": "^0.27.0"
   },
