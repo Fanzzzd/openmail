@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <!-- Menu-bar template icon: black on transparent, macOS tints it. Edges sit on
-       half pixels so the 16 px render stays crisp. Rendered to trayTemplate.png (16)
-       and trayTemplate@2x.png (32) by render-icons.sh. -->
-  <g fill="none" stroke="#000" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/>
-    <path d="M2.5 4.5 L8 8.5 L13.5 4.5"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+  <!-- Menu-bar template icon: the Flap o mark, black on transparent; macOS tints it.
+       22 pt canvas (menu bar height), glyph 18 x 15 pt, edges on whole points so the
+       1x render stays crisp. The frame is 3 pt and the V is deepened compared with
+       the app icon so the fold still reads at this size. Rendered to trayTemplate.png
+       (22 px) and trayTemplate@2x.png (44 px) by render-icons.sh. -->
+  <path fill="#000" fill-rule="evenodd"
+        d="M2 4 H20 V19 H2 Z M5 7 L11 11.5 L17 7 V16 H5 Z"/>
 </svg>

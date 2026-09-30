@@ -60,7 +60,7 @@ mac:
   extendInfo:
     NSUserNotificationAlertStyle: alert
   category: public.app-category.productivity
-  icon: build/icon.icns
+  icon: build/icon.icon
   # Ad-hoc signature, no Apple Developer account needed. electron-builder breaks
   # Electron's own ad-hoc seal when it writes app.asar; signing again repairs it,
   # which turns "OpenMail is damaged" into the "Open Anyway" Gatekeeper prompt.

@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>openmail 图标 v2</title>
+    <style>
+      :root {
+        font:
+          14px/1.5 -apple-system,
+          BlinkMacSystemFont,
+          "SF Pro Text",
+          "PingFang SC",
+          sans-serif;
+        color: #1d1d1f;
+      }
+      body {
+        margin: 0;
+        background: #f5f5f7;
+      }
+      header,
+      section,
+      footer {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 24px;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 6px;
+      }
+      h2 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      p {
+        margin: 0 0 8px;
+        color: #515154;
+      }
+      .pick {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-top: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .pick strong {
+        color: #1d1d1f;
+      }
+      .dock {
+        display: flex;
+        flex-wrap: wrap;
+        max-width: 100%;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        border-radius: 26px;
+        width: fit-content;
+        margin: 12px 0;
+      }
+      .dock.light {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(240, 240, 245, 0.6));
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+          0 10px 30px rgba(0, 0, 0, 0.12);
+      }
+      .dock.dark {
+        background: linear-gradient(180deg, rgba(60, 60, 66, 0.8), rgba(35, 35, 40, 0.8));
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+          0 10px 30px rgba(0, 0, 0, 0.4);
+      }
+      .wall {
+        border-radius: 20px;
+        padding: 22px;
+        margin: 14px 0;
+      }
+      .wall.light {
+        background: radial-gradient(circle at 20% 10%, #d9e4ff, #eef0f7 55%, #f6e7ee);
+      }
+      .wall.dark {
+        background: radial-gradient(circle at 20% 10%, #2a3050, #15161c 60%, #2a1b2c);
+      }
+      .row {
+        display: flex;
+        align-items: flex-end;
+        gap: 28px;
+        flex-wrap: wrap;
+      }
+      .big {
+        width: 256px;
+        height: 256px;
+      }
+      .sizes {
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
+      }
+      .sizes figure {
+        margin: 0;
+        text-align: center;
+      }
+      figcaption {
+        font-size: 11px;
+        color: #86868b;
+        margin-top: 4px;
+      }
+      .dark figcaption {
+        color: #a1a1a6;
+      }
+      .dock img {
+        display: block;
+      }
+      .ref {
+        opacity: 1;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 99px;
+        background: #1d1d1f;
+        color: #fff;
+        margin-left: 8px;
+        vertical-align: 3px;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid #e3e3e8;
+        margin: 0;
+      }
+      .note {
+        font-size: 12px;
+        color: #86868b;
+      }
+      .grid6 {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .card6 {
+        background: #fff;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .card6 .pair {
+        display: flex;
+        gap: 8px;
+      }
+      .card6 .pair div {
+        flex: 1;
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .card6 .pair .l {
+        background: radial-gradient(circle at 20% 10%, #d9e4ff, #eef0f7 60%, #f6e7ee);
+      }
+      .card6 .pair .d {
+        background: radial-gradient(circle at 20% 10%, #2a3050, #15161c 60%, #2a1b2c);
+      }
+      .card6 h3 {
+        font-size: 14px;
+        margin: 10px 0 2px;
+      }
+      .card6 p {
+        font-size: 12px;
+        margin: 0;
+      }
+      .card6.pick6 {
+        outline: 2px solid #ff5a3c;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>openmail 图标 v2</h1>
+      <p>
+        第六轮只做 R5-01 Flap o 的变体。核心不变：opencode 式的方形 o，内洞是一只信封，V
+        折线挂在内洞顶边。按五个维度出变体：颜色与材质、几何、尺寸、像素与矢量、小细节。
+      </p>
+      <p>
+        第六轮一共做了 21 个，删掉两个。Cursor 的光标在 32px 下看不见；Pixel coarse
+        的粗台阶像城墙垛口。留下 19 个。
+      </p>
+      <div class="pick">
+        <p>
+          <strong>第一 R6-17 Size 80%。</strong>形状和 Base 一样，只把标记放大到 body 的 80%。Dock
+          里分量和 Notion 的立方体相当，32px 下信封最清楚。
+        </p>
+        <p>
+          <strong>第二 R6-05 Coral fold。</strong>白底黑框，只有 V
+          折线是珊瑚色。黑白克制，一点珊瑚色负责品牌，32px 下那一点红还在。
+        </p>
+        <p>
+          <strong>第三 R6-10 Light。</strong>笔画减到
+          17%，内洞更大，信封的意思最明确，同时还是一个方形 o。
+        </p>
+      </div>
+    </header>
+    <hr />
+    <main>
+      <section>
+        <h2 style="font-size: 24px">第六轮：Flap o 变体</h2>
+        <p>
+          下面两排是 Dock 对比，左边四个是 opencode、Plany、Notion、Apple Mail，右边是第六轮的 19
+          个变体。第一排 128，第二排 32。
+        </p>
+        <div class="wall light"><div id="r6dock-light"></div></div>
+        <div class="wall dark"><div id="r6dock-dark"></div></div>
+      </section>
+      <div id="r6"></div>
+      <hr />
+      <section>
+        <h2 style="font-size: 24px">第五轮：邮件加 o</h2>
+        <p>
+          下面两排是 Dock 对比，左边四个是 opencode、Plany、Notion、Apple
+          Mail，右边是第五轮的方案。第一排 128，第二排 32。
+        </p>
+        <div class="wall light"><div id="r5dock-light"></div></div>
+        <div class="wall dark"><div id="r5dock-dark"></div></div>
+      </section>
+      <div id="r5"></div>
+      <section>
+        <h2 style="font-size: 24px">第四轮：品牌标记</h2>
+        <p>
+          下面两排是 Dock 对比，左边五个是 Plany、Notion、Tailscale、Apple
+          Mail、Mimestream，右边是第四轮的五个方案。第一排 128，第二排 32。
+        </p>
+        <div class="wall light"><div id="r4dock-light"></div></div>
+        <div class="wall dark"><div id="r4dock-dark"></div></div>
+      </section>
+      <div id="r4"></div>
+      <section><h2 style="font-size: 24px">第三轮：Apple 渲染器出图</h2></section>
+      <div id="r3"></div>
+      <section><h2 style="font-size: 24px">第二轮：对标参考</h2></section>
+      <div id="r2"></div>
+      <section>
+        <h2 style="font-size: 24px">第一轮</h2>
+        <p>第一轮的主体偏小，投影偏重，背景饱和度不够，和系统图标放在一起会显旧。</p>
+      </section>
+      <div id="options"></div>
+    </main>
+    <footer>
+      <p class="note">
+        参考图标只在本地 <code>refs/</code> 里，用于对比，不进 git。参考笔记见
+        <code>notes.md</code>。重新生成：第一轮
+        <code>python3 docs/design/icon-options-v2/build.py</code>，第二轮
+        <code>python3 docs/design/icon-options-v2/build2.py</code>，第三轮
+        <code>python3 docs/design/icon-options-v2/build3.py</code>（需要 Xcode 26）。第三轮的
+        <code>r3-*.icon</code> 可以直接用 Icon Composer 打开继续调。
+      </p>
+    </footer>
+    <script>
+      const r2 = [
+        [
+          "r2-01-o-seal",
+          "R2-01 o seal",
+          "apple-messages",
+          "Messages",
+          "对标 Messages：鲜紫背景，一只大的乳白玻璃信封，折线在折角处收成一个圆环，就是 openmail 的 o。",
+        ],
+        [
+          "r2-02-glass-flap",
+          "R2-02 Glass flap",
+          "apple-shortcuts",
+          "Shortcuts",
+          "对标 Shortcuts：蓝色信身和粉色封口是两层彩色玻璃，重叠处透出紫色。",
+        ],
+        [
+          "r2-03-lens",
+          "R2-03 Lens",
+          "apple-image-playground",
+          "Image Playground",
+          "对标 Image Playground：黑底上一块玻璃透镜，边缘有彩色折射，透镜里放大一封信，对应本机 AI 读信。",
+        ],
+        [
+          "r2-04-bleed",
+          "R2-04 Bleed",
+          "bear",
+          "Bear",
+          "对标 Bear：一只超大的乳白信封从底边出血，没有边框，橙红背景。",
+        ],
+        [
+          "r2-05-spark-fold",
+          "R2-05 Spark fold",
+          "apple-reminders",
+          "Reminders",
+          "对标 Reminders 的白底和 Apple Intelligence 的渐变色：渐变描边信封，折角换成一颗四角星。32px 下星星会糊进折线。",
+        ],
+        [
+          "r2-06-obsidian",
+          "R2-06 Obsidian glass",
+          "apple-passwords",
+          "Passwords",
+          "对标 Passwords 和 Linear：深色底，暗色玻璃信身加一片发亮的白色封口。",
+        ],
+      ];
+      const r5Refs = [
+        ["opencode-prod", "opencode"],
+        ["plany-app", "Plany"],
+        ["notion", "Notion"],
+        ["apple-mail", "Apple Mail"],
+      ];
+      const r6 = [
+        {
+          slug: "r6-01-base",
+          axis: "颜色与材质",
+          name: "Base",
+          line: "R5-01 原样：白色标记，近黑底，Liquid Glass。",
+        },
+        {
+          slug: "r6-02-ink",
+          axis: "颜色与材质",
+          name: "Ink",
+          line: "白底黑标，Plany 和 Notion 的调子。",
+        },
+        {
+          slug: "r6-03-coral",
+          axis: "颜色与材质",
+          name: "Coral",
+          line: "白标反白在珊瑚色底上，珊瑚色作品牌色。",
+        },
+        { slug: "r6-04-indigo", axis: "颜色与材质", name: "Indigo", line: "白标在深靛蓝底上。" },
+        {
+          slug: "r6-05-coral-fold",
+          axis: "颜色与材质",
+          name: "Coral fold",
+          line: "白底黑框，只有 V 折线是珊瑚色。",
+        },
+        {
+          slug: "r6-06-coral-fold-night",
+          axis: "颜色与材质",
+          name: "Coral fold, night",
+          line: "近黑底白框，V 折线是珊瑚色。",
+        },
+        {
+          slug: "r6-07-flat",
+          axis: "颜色与材质",
+          name: "Flat",
+          line: "和 Base 同形，不加玻璃，纯平面。",
+        },
+        {
+          slug: "r6-08-flat-ink",
+          axis: "颜色与材质",
+          name: "Flat ink",
+          line: "白底黑标，纯平面，最接近 opencode 和 Notion。",
+        },
+        {
+          slug: "r6-09-heavy",
+          axis: "几何",
+          name: "Heavy",
+          line: "笔画加粗到 28%，内洞变小，折线更短更有力。",
+        },
+        {
+          slug: "r6-10-light",
+          axis: "几何",
+          name: "Light",
+          line: "笔画减到 17%，内洞更大，更像一只信封。",
+        },
+        { slug: "r6-11-soft", axis: "几何", name: "Soft", line: "外角 8% 圆角，内洞跟着圆。" },
+        {
+          slug: "r6-12-round",
+          axis: "几何",
+          name: "Round",
+          line: "外角 18% 圆角，接近 macOS 自己的圆角语言。",
+        },
+        { slug: "r6-13-deep-v", axis: "几何", name: "Deep V", line: "V 深到内洞的 58%。" },
+        {
+          slug: "r6-14-wide",
+          axis: "几何",
+          name: "Wide",
+          line: "横向加宽 12%，内洞更像信封的比例。",
+        },
+        { slug: "r6-15-size-65", axis: "尺寸", name: "Size 65%", line: "标记宽度占 body 的 65%。" },
+        { slug: "r6-16-size-72", axis: "尺寸", name: "Size 72%", line: "标记宽度占 body 的 72%。" },
+        { slug: "r6-17-size-80", axis: "尺寸", name: "Size 80%", line: "标记宽度占 body 的 80%。" },
+        {
+          slug: "r6-18-pixel",
+          axis: "像素与矢量",
+          name: "Pixel",
+          line: "V 折线做成像素台阶，opencode 的像素语言。",
+        },
+        {
+          slug: "r6-19-unread",
+          axis: "小细节",
+          name: "Unread",
+          line: "外框右上角一块珊瑚色方块，读作未读标记。",
+        },
+      ];
+      const r5 = [
+        [
+          "r5-01-flap-o",
+          "R5-01 Flap o",
+          "opencode 式的方形 o，内洞顶边折成 V。o 的内洞就是一只信封。",
+        ],
+        [
+          "r5-04-talk-mail",
+          "R5-04 Talk mail",
+          "信封形状的对话气泡，左下角带一个尾巴。邮件加 AI 对话。",
+        ],
+        [
+          "r5-06-seal-line",
+          "R5-06 Seal line",
+          "实心信封，折线的尖端收成一个圆环。折线加 o，封口处就是品牌。",
+        ],
+        [
+          "r5-08-pixel-mail",
+          "R5-08 Pixel mail",
+          "8-bit 像素信封，折线是台阶。opencode 的像素语言直接用在信封上。",
+        ],
+        [
+          "r5-10-postmark",
+          "R5-10 Postmark",
+          "邮戳：一个圆环加三道波浪线。圆环是 o，邮戳是只有邮件才有的记号。",
+        ],
+        ["r5-11-stamp", "R5-11 Stamp", "邮票：珊瑚色齿孔方块，中间镂空一个 Flap o 标记。"],
+        [
+          "r5-14-draft-cursor",
+          "R5-14 Draft cursor",
+          "像素信封，右下角一个珊瑚色光标方块：AI 在帮你起草。",
+        ],
+        [
+          "r5-15-airmail-o",
+          "R5-15 Airmail o",
+          "方形 o 的边框画成航空信封的红蓝斜条纹。条纹是邮件，形状是 o。",
+        ],
+        [
+          "r5-18-flap-o-coral",
+          "R5-18 Flap o, coral",
+          "Flap o 反白在珊瑚色底上，珊瑚色作为品牌色。",
+        ],
+        [
+          "r5-19-pixel-at",
+          "R5-19 Pixel @",
+          "opencode 的像素字体写一个 @。@ 是邮件本身的符号，像素让它有 open 家族的气质。",
+        ],
+        [
+          "r5-20-pixel-talk",
+          "R5-20 Pixel talk",
+          "像素对话气泡，里面一道像素折线。邮件加 AI 对话，像素语言。",
+        ],
+        ["r5-21-stamp-night", "R5-21 Stamp, night", "白色齿孔邮票在近黑底上，中间镂空 Flap o。"],
+      ];
+      const r4 = [
+        [
+          "r4-01-badge-o",
+          "R4-01 Badge o",
+          "plany-app",
+          "Plany",
+          "白底黑色粗 o，右上角缺一口，缺口里放一个珊瑚色圆点。o 加一个未读标记，和 Plany 的斜线加点是同一种克制。",
+        ],
+        [
+          "r4-02-badge-o-coral",
+          "R4-02 Badge o, coral",
+          "notion",
+          "Notion",
+          "同一个标记反白在珊瑚色底上。珊瑚色作为 openmail 的品牌色，Dock 里没有邮件 app 用这个颜色。",
+        ],
+        [
+          "r4-03-badge-o-night",
+          "R4-03 Badge o, night",
+          "tailscale",
+          "Tailscale",
+          "近黑底，白色 o，珊瑚色圆点，和 Tailscale 同一个调子。",
+        ],
+        [
+          "r4-04-at-o",
+          "R4-04 At o",
+          "mimestream",
+          "Mimestream",
+          "最简化的 @：开口的粗圆环加一个实心圆。靛蓝底、白环、珊瑚色圆心。",
+        ],
+        [
+          "r4-05-at-o-light",
+          "R4-05 At o, light",
+          "plany-app",
+          "Plany",
+          "同一个 @ 标记，白底黑环，珊瑚色圆心。",
+        ],
+      ];
+      const r3 = [
+        [
+          "r3-01-violet",
+          "R3-01 Violet",
+          "apple-mail",
+          "Apple Mail",
+          "照 Apple Mail 的构造画：紫色渐变底，淡紫玻璃信身，白色封口片压在上面，封口比 Apple Mail 更深。",
+        ],
+        [
+          "r3-02-seal",
+          "R3-02 Seal",
+          "apple-messages",
+          "Messages",
+          "深靛蓝底，白色玻璃信封，折角压一枚珊瑚色玻璃圆封印，圆就是 openmail 的 o。",
+        ],
+        [
+          "r3-03-spark-letter",
+          "R3-03 Spark letter",
+          "apple-reminders",
+          "Reminders",
+          "白底，紫色玻璃信封，右上角一颗橙粉渐变的玻璃四角星，表达 AI-first。",
+        ],
+        [
+          "r3-04-pocket",
+          "R3-04 Pocket",
+          "bear",
+          "Bear",
+          "橙色渐变底，一封写了字的信从透明玻璃信封里抽出来，隔着玻璃能看到信纸下半截。",
+        ],
+        [
+          "r3-05-stack",
+          "R3-05 Stack",
+          "apple-shortcuts",
+          "Shortcuts",
+          "蓝色渐变底，三层玻璃信封前后叠放，对应多账户，最前面那封是正在读的。",
+        ],
+        [
+          "r3-06-aurora",
+          "R3-06 Aurora",
+          "apple-passwords",
+          "Passwords",
+          "黑底，信身是橙到紫的渐变玻璃，白色封口片压在上面。深色高级版。",
+        ],
+      ];
+      const r1 = [
+        [
+          "01-sunrise-glass",
+          "01 Sunrise glass",
+          "暖橙到玫红的渐变上放一只两层磨砂玻璃信封，封口那层更亮，叠在信身上。",
+        ],
+        ["02-spark-letter", "02 Spark letter", "珍珠白底，紫色玻璃信封，右上角压一颗橙色四角星。"],
+        [
+          "03-glass-stack",
+          "03 Glass stack",
+          "深蓝底上两张半透明信封错开叠放，青色和粉紫在重叠处混色，对应多账户统一收件箱。",
+        ],
+        [
+          "04-home-tray",
+          "04 Home tray",
+          "绿松石渐变，一封信落进透明玻璃托盘，表达信存在你自己的机器上。",
+        ],
+        [
+          "05-fold-planes",
+          "05 Fold planes",
+          "整个 squircle 就是信封背面，上半是亮的封口面，下半是深色信身，折角下方一颗白色四角星。",
+        ],
+        ["06-graphite", "06 Graphite", "石墨黑底，银色金属信封线框，折角处一点紫光。"],
+      ];
+      const dockRefs = [
+        ["apple-mail", "Apple Mail"],
+        ["spark", "Spark"],
+        ["mimestream", "Mimestream"],
+      ];
+
+      function img(src, size, title) {
+        return `<img src="${src}" width="${size}" height="${size}" alt="${title}" title="${title}">`;
+      }
+
+      function v(slug, mode) {
+        return /^r[3-6]-/.test(slug) && mode === "dark" ? slug + "-dark" : slug;
+      }
+      function dock(slug, cls, bench) {
+        const extra = bench && !dockRefs.some((r) => r[0] === bench[0]) ? [bench] : [];
+        const items = [dockRefs[0], null, ...extra, dockRefs[1], dockRefs[2]];
+        const html = items
+          .map((r) =>
+            r ? img(`refs/${r[0]}.png`, 64, r[1]) : img(`png/${v(slug, cls)}-128.png`, 64, slug),
+          )
+          .join("");
+        return `<div class="dock ${cls}">${html}</div>`;
+      }
+
+      function sizes(slug, bench, mode) {
+        const own = [128, 64, 32]
+          .map(
+            (s) =>
+              `<figure><img src="png/${v(slug, mode)}-${s}.png" width="${s}" height="${s}" alt=""><figcaption>${s}</figcaption></figure>`,
+          )
+          .join("");
+        const ref = bench
+          ? `<figure style="margin-left:28px">${img(`refs/${bench[0]}.png`, 128, bench[1])}<figcaption>参考：${bench[1]}</figcaption></figure>`
+          : "";
+        return `<div class="sizes">${own}${ref}</div>`;
+      }
+
+      function render(list, pick) {
+        return list
+          .map((o) => {
+            const [slug, name] = o;
+            const bench = o.length === 5 ? [o[2], o[3]] : null;
+            const why = o[o.length - 1];
+            const order =
+              bench && bench[0] !== "apple-mail"
+                ? `Apple Mail，本方案，${bench[1]}，Spark，Mimestream`
+                : "Apple Mail，本方案，Spark，Mimestream";
+            return `
+  <section>
+    <h2>${name}${slug === pick ? '<span class="tag">推荐</span>' : ""}</h2>
+    <p>${why}</p>
+    ${["light", "dark"]
+      .map(
+        (mode) => `
+      <div class="wall ${mode}">
+        <div class="row">
+          <figure style="margin:0"><img class="big" src="png/${v(slug, mode)}-1024.png" alt="${name}"><figcaption>1024</figcaption></figure>
+          <div>
+            ${sizes(slug, bench, mode)}
+            ${dock(slug, mode, bench)}
+            <p class="note" style="color:${mode === "dark" ? "#a1a1a6" : "#86868b"}">Dock 顺序：${order}</p>
+          </div>
+        </div>
+      </div>`,
+      )
+      .join("")}
+  </section><hr>`;
+          })
+          .join("");
+      }
+
+      const picks6 = ["r6-17-size-80", "r6-05-coral-fold", "r6-10-light"];
+      const axes6 = [...new Set(r6.map((o) => o.axis))];
+      document.getElementById("r6").innerHTML = axes6
+        .map(
+          (axis) =>
+            `
+  <section><h2>${axis}</h2><div class="grid6">` +
+            r6
+              .filter((o) => o.axis === axis)
+              .map(
+                (o) => `
+    <div class="card6${picks6.includes(o.slug) ? " pick6" : ""}">
+      <div class="pair">
+        <div class="l">${img(`png/${o.slug}-512.png`, 104, o.name)}<span>${img(`png/${o.slug}-32.png`, 32, o.name)}</span></div>
+        <div class="d">${img(`png/${o.slug}-dark-512.png`, 104, o.name)}<span>${img(`png/${o.slug}-dark-32.png`, 32, o.name)}</span></div>
+      </div>
+      <h3>${o.slug.slice(0, 5).toUpperCase()} ${o.name}${picks6.includes(o.slug) ? '<span class="tag">推荐</span>' : ""}</h3>
+      <p>${o.line}</p>
+    </div>`,
+              )
+              .join("") +
+            `</div></section>`,
+        )
+        .join("");
+      for (const mode of ["light", "dark"]) {
+        const row = (size) =>
+          `<div class="dock ${mode}">` +
+          r5Refs.map(([r, n]) => img(`refs/${r}.png`, size, n)).join("") +
+          r6
+            .map((o) => img(`png/${v(o.slug, mode)}-${size === 32 ? 32 : 128}.png`, size, o.name))
+            .join("") +
+          `</div>`;
+        document.getElementById(`r6dock-${mode}`).innerHTML = row(128) + row(32);
+      }
+      document.getElementById("r5").innerHTML = render(r5, null);
+      document.getElementById("r4").innerHTML = render(r4, null);
+      for (const mode of ["light", "dark"]) {
+        const row = (size) =>
+          `<div class="dock ${mode}">` +
+          r5Refs.map(([r, n]) => img(`refs/${r}.png`, size, n)).join("") +
+          r5
+            .map(([slug, name]) =>
+              img(`png/${v(slug, mode)}-${size === 32 ? 32 : 128}.png`, size, name),
+            )
+            .join("") +
+          `</div>`;
+        document.getElementById(`r5dock-${mode}`).innerHTML = row(128) + row(32);
+      }
+      document.getElementById("r3").innerHTML = render(r3, null);
+      const benchRefs = [
+        ["plany-app", "Plany"],
+        ["notion", "Notion"],
+        ["tailscale", "Tailscale"],
+        ["apple-mail", "Apple Mail"],
+        ["mimestream", "Mimestream"],
+      ];
+      for (const mode of ["light", "dark"]) {
+        const row = (size) =>
+          `<div class="dock ${mode}">` +
+          benchRefs.map(([r, n]) => img(`refs/${r}.png`, size, n)).join("") +
+          r4
+            .map(([slug, name]) =>
+              img(`png/${v(slug, mode)}-${size === 32 ? 32 : 128}.png`, size, name),
+            )
+            .join("") +
+          `</div>`;
+        document.getElementById(`r4dock-${mode}`).innerHTML = row(128) + row(32);
+      }
+      document.getElementById("r2").innerHTML = render(r2, null);
+      document.getElementById("options").innerHTML = render(r1, null);
+    </script>
+  </body>
+</html>
