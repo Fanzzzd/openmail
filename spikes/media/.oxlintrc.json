@@ -1,5 +1,8 @@
 {
-  "extends": ["../../.oxlintrc.json"],
-  "options": { "typeAware": false },
-  "rules": { "eslint/no-console": "off" }
+  "extends": [
+    "../../.oxlintrc.json"
+  ],
+  "rules": {
+    "eslint/no-console": "off"
+  }
 }
