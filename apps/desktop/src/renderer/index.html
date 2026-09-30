@@ -2,11 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- img-src allows https so a message can opt in to remote images; each
-         message iframe adds a stricter policy of its own until then. -->
+    <!-- img-src allows https and http so a message can opt in to remote
+         images: the message iframe inherits this policy, and plenty of mail
+         still links images over http. Each iframe adds a stricter policy of
+         its own until images are allowed. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: cid:; font-src 'self' data:; frame-src 'self' about:"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http: cid:; font-src 'self' data:; frame-src 'self' about:"
     />
     <title>OpenMail</title>
   </head>

@@ -53,7 +53,7 @@ import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { RawMessageDialog } from "./RawMessage";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
-import { Tip } from "./ui/Tip";
+import { PickerPopover } from "./ui/Picker";
 
 /** Shows a one-line notice, the app's toast. */
 export type Notify = (toast: { text: string; tone?: "error" }) => void;
@@ -580,32 +580,36 @@ function Expanded({
   );
 }
 
-/** "Blocked 2 trackers", with the services in a tooltip. */
+/** "Blocked 2 trackers". Clicking it lists the services. */
 function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixels: number }) {
   const { t } = useLingui();
+  const [open, setOpen] = useState(false);
   const count = trackers.length + pixels;
   const unknown = plural(pixels, { one: "# tracking pixel", other: "# tracking pixels" });
   const list = [...trackers, ...(pixels > 0 ? [unknown] : [])];
   return (
-    <Tip
-      label={
-        <span className="block">
-          <span className="block font-medium">{t`Blocked before loading:`}</span>
-          {list.map((name) => (
-            <span key={name} className="block">
-              {name}
-            </span>
-          ))}
-        </span>
+    <PickerPopover
+      open={open}
+      onOpenChange={setOpen}
+      className="w-56"
+      trigger={
+        <button
+          type="button"
+          className="flex shrink-0 cursor-default items-center gap-1 rounded text-emerald-700 outline-offset-1 outline-blue-500/60 focus-visible:outline-[3px] dark:text-emerald-400"
+        >
+          <ShieldCheck className="size-3.5" />
+          {plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
+        </button>
       }
     >
-      <button
-        type="button"
-        className="flex shrink-0 cursor-default items-center gap-1 rounded text-emerald-700 outline-offset-1 outline-blue-500/60 focus-visible:outline-[3px] dark:text-emerald-400"
-      >
-        <ShieldCheck className="size-3.5" />
-        {plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
-      </button>
-    </Tip>
+      <div className="px-3 py-2 text-[12px]">
+        <span className="mb-1 block font-medium">{t`Blocked before loading:`}</span>
+        {list.map((name) => (
+          <span key={name} className="block text-neutral-600 dark:text-neutral-300">
+            {name}
+          </span>
+        ))}
+      </div>
+    </PickerPopover>
   );
 }
