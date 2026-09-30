@@ -700,3 +700,125 @@ it.effect("Gmail explicit spam search includes messages normally excluded from a
     ),
   );
 });
+
+it.effect(
+  "Gmail vacation updates preserve the original rich HTML when body text is unchanged",
+  () =>
+    Effect.gen(function* () {
+      const html = '<p style="color:blue">Rich <b>reply</b></p>';
+      const http = fakeHttp({
+        "GET /settings/vacation": {
+          json: {
+            enableAutoReply: true,
+            responseBodyPlainText: "Alternative plain text",
+            responseBodyHtml: html,
+          },
+        },
+        "PUT /settings/vacation": { json: {} },
+      });
+      yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const v = yield* a.vacation(account);
+          yield* a.setVacation(account, { ...v, enabled: false });
+        }),
+      );
+      const body = Schema.decodeUnknownSync(
+        Schema.Struct({ responseBodyHtml: Schema.String, responseBodyPlainText: Schema.String }),
+      )(http.calls.at(-1)?.body);
+      assert.strictEqual(body.responseBodyHtml, html);
+      assert.strictEqual(body.responseBodyPlainText, "Alternative plain text");
+    }),
+);
+
+it.effect(
+  "send-as scope failure is cached without refreshing mail tokens, until that account reauthenticates",
+  () => {
+    let authorized = false;
+    let refreshes = 0;
+    const http = fakeHttp({
+      "GET /settings/sendAs": () =>
+        authorized
+          ? { json: { sendAs: [] } }
+          : { status: 403, json: { error: "insufficient authentication scopes" } },
+      "GET /messages/m1": { json: { raw: b64("still reads") } },
+      "GET /profile": { json: { emailAddress: account.email, historyId: "1" } },
+    });
+    const platform = MemoryPlatform({
+      secrets: { [account.id]: "refresh-token" },
+      config: { google: { clientId: "client", clientSecret: "secret" } },
+      oauth: {
+        refresh: () =>
+          Effect.sync(() => {
+            refreshes++;
+            return {
+              accessToken: "access-token",
+              refreshToken: Option.some("refresh-token"),
+              expiresIn: 3600,
+            };
+          }),
+      },
+    });
+    return makeGmail.pipe(
+      Effect.flatMap((a) =>
+        Effect.gen(function* () {
+          assert.strictEqual(
+            (yield* a.sendAs(account).pipe(Effect.flip))._tag,
+            "SettingsScopeMissing",
+          );
+          yield* a.fetchRaw(account, "m1");
+          assert.strictEqual(
+            (yield* a.sendAs(account).pipe(Effect.flip))._tag,
+            "SettingsScopeMissing",
+          );
+          assert.strictEqual(
+            http.calls.filter((c) => c.url.pathname.endsWith("/settings/sendAs")).length,
+            1,
+          );
+          assert.strictEqual(refreshes, 1);
+          authorized = true;
+          yield* a.connect({ provider: "gmail" });
+          assert.deepStrictEqual(yield* a.sendAs(account), []);
+          assert.strictEqual(
+            http.calls.filter((c) => c.url.pathname.endsWith("/settings/sendAs")).length,
+            2,
+          );
+        }),
+      ),
+      Effect.provide(Layer.mergeAll(http.layer, platform)),
+    );
+  },
+);
+
+it.effect(
+  "Gmail legacy vacation callers preserve existing HTML without sending a preservation field",
+  () => {
+    const html = "<p>Rich <b>reply</b></p>";
+    const http = fakeHttp({
+      "GET /settings/vacation": {
+        json: { responseBodyPlainText: "Plain", responseBodyHtml: html },
+      },
+      "PUT /settings/vacation": { json: {} },
+    });
+    return run(http, (a) =>
+      a.setVacation(account, {
+        enabled: false,
+        start: null,
+        end: null,
+        subject: "",
+        body: "Plain",
+        contactsOnly: false,
+      }),
+    ).pipe(
+      Effect.tap(() =>
+        Effect.sync(() => {
+          assert.strictEqual(
+            Schema.decodeUnknownSync(Schema.Struct({ responseBodyHtml: Schema.String }))(
+              http.calls.at(-1)?.body,
+            ).responseBodyHtml,
+            html,
+          );
+        }),
+      ),
+    );
+  },
+);

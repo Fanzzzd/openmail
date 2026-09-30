@@ -52,6 +52,7 @@ export const FilterInput = Schema.Struct({
   name: Schema.String,
   criteria: FilterCriteria,
   action: FilterAction,
+  queryDeletionConfirmed: Schema.optionalKey(Schema.Literal(true)),
 });
 export type FilterInput = typeof FilterInput.Type;
 export const ServerFilter = Schema.Struct({ id: Schema.String, ...FilterInput.fields });
@@ -63,6 +64,16 @@ export const Vacation = Schema.Struct({
   subject: Schema.String,
   body: Schema.String,
   contactsOnly: Schema.Boolean,
+  outlook: Schema.optionalKey(
+    Schema.Struct({
+      externalAudience: Schema.Literals(["none", "contactsOnly", "all"]),
+      internalReplyMessage: Schema.String,
+      externalReplyMessage: Schema.String,
+    }),
+  ),
+  gmail: Schema.optionalKey(
+    Schema.Struct({ responseBodyHtml: Schema.String, originalBody: Schema.String }),
+  ),
 });
 export type Vacation = typeof Vacation.Type;
 export const SendAs = Schema.Struct({
@@ -132,4 +143,8 @@ export function snoozeTimes(now: number): { later: number; tomorrow: number; nex
     return d.getTime();
   };
   return { later: now + 3 * 60 * 60_000, tomorrow: morning(1), nextWeek: morning(7) };
+}
+
+export function requiresFilterDeleteConfirmation(input: FilterInput): boolean {
+  return input.action.trash && input.criteria.query.trim().length > 0;
 }

@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import type { Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
+import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
   EMPTY_FILTER,
@@ -85,6 +86,7 @@ export function makeGmailSettings<
     body?: unknown,
   ) => Effect.Effect<unknown, E>,
 ) {
+  const missingSendAsScopes = new Map<string, SettingsScopeMissing>();
   const wrap = <A>(account: Account, effect: Effect.Effect<A, E>) =>
     effect.pipe(
       Effect.mapError((e) => {
@@ -102,6 +104,7 @@ export function makeGmailSettings<
       }),
     );
   return {
+    clearMissingScopes: (accountId: string) => missingSendAsScopes.delete(accountId),
     filters: (account: Account) =>
       wrap(
         account,
@@ -147,41 +150,83 @@ export function makeGmailSettings<
             subject: v.responseSubject ?? "",
             body: v.responseBodyPlainText ?? htmlToText(v.responseBodyHtml ?? ""),
             contactsOnly: v.restrictToContacts ?? false,
+            ...(v.responseBodyHtml === undefined
+              ? {}
+              : {
+                  gmail: {
+                    responseBodyHtml: v.responseBodyHtml,
+                    originalBody: v.responseBodyPlainText ?? htmlToText(v.responseBodyHtml),
+                  },
+                }),
           })),
         ),
       ),
     setVacation: (account: Account, v: Vacation) =>
       wrap(
         account,
-        write(account.id, "PUT", "/settings/vacation", {
-          enableAutoReply: v.enabled,
-          responseSubject: v.subject,
-          responseBodyPlainText: v.body,
-          restrictToContacts: v.contactsOnly,
-          ...(v.start === null ? {} : { startTime: String(v.start) }),
-          ...(v.end === null ? {} : { endTime: String(v.end) }),
-        }).pipe(Effect.asVoid),
+        Effect.gen(function* () {
+          const current = v.gmail
+            ? null
+            : yield* get(account.id, GmailVacation, "/settings/vacation");
+          const rich =
+            v.gmail ??
+            (current?.responseBodyHtml === undefined
+              ? undefined
+              : {
+                  responseBodyHtml: current.responseBodyHtml,
+                  originalBody:
+                    current.responseBodyPlainText ?? htmlToText(current.responseBodyHtml),
+                });
+          yield* write(account.id, "PUT", "/settings/vacation", {
+            enableAutoReply: v.enabled,
+            responseSubject: v.subject,
+            responseBodyPlainText: v.body,
+            restrictToContacts: v.contactsOnly,
+            ...(rich
+              ? {
+                  responseBodyHtml:
+                    rich.originalBody === v.body
+                      ? rich.responseBodyHtml
+                      : `<p>${escapeHtml(v.body).replaceAll("\n", "<br>")}</p>`,
+                }
+              : {}),
+            ...(v.start === null ? {} : { startTime: String(v.start) }),
+            ...(v.end === null ? {} : { endTime: String(v.end) }),
+          });
+        }),
       ),
     sendAs: (account: Account) =>
-      wrap(
-        account,
-        get(account.id, Aliases, "/settings/sendAs").pipe(
-          Effect.map((r): SendAs[] =>
-            (r.sendAs ?? [])
-              .filter(
-                (a) =>
-                  a.verificationStatus === "accepted" ||
-                  a.sendAsEmail.toLowerCase() === account.email.toLowerCase(),
-              )
-              .map((a) => ({
-                accountId: account.id,
-                address: a.sendAsEmail,
-                name: a.displayName ?? "",
-                isDefault: a.isDefault ?? false,
-                signature: htmlToText(a.signature ?? ""),
-              })),
+      Effect.suspend(() => {
+        const missing = missingSendAsScopes.get(account.id);
+        if (missing) return Effect.fail(missing);
+        return wrap(
+          account,
+          get(account.id, Aliases, "/settings/sendAs").pipe(
+            Effect.map((r): SendAs[] =>
+              (r.sendAs ?? [])
+                .filter(
+                  (a) =>
+                    a.verificationStatus === "accepted" ||
+                    a.sendAsEmail.toLowerCase() === account.email.toLowerCase(),
+                )
+                .map((a) => ({
+                  accountId: account.id,
+                  address: a.sendAsEmail,
+                  name: a.displayName ?? "",
+                  isDefault: a.isDefault ?? false,
+                  signature: htmlToText(a.signature ?? ""),
+                })),
+            ),
           ),
-        ),
-      ),
+        ).pipe(
+          Effect.tapError((error) =>
+            error._tag === "SettingsScopeMissing"
+              ? Effect.sync(() => {
+                  missingSendAsScopes.set(account.id, error);
+                })
+              : Effect.void,
+          ),
+        );
+      }),
   };
 }

@@ -948,7 +948,7 @@ export const MailboxLive = (
         })),
         setClient: (patch) => mutate(config.write(patch)),
 
-        threads: (q) => organization.wakeSnoozed().pipe(Effect.andThen(store.listThreads(q))),
+        threads: (q) => store.listThreads(q),
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),

@@ -271,7 +271,7 @@ export const makeGmail: Effect.Effect<
           ),
       ),
       Effect.tapError((e) =>
-        e._tag === "ApiError" && (e.status === 401 || e.status === 403)
+        e._tag === "ApiError" && e.status === 401
           ? Effect.sync(() => tokens.delete(accountId))
           : Effect.void,
       ),
@@ -337,6 +337,7 @@ export const makeGmail: Effect.Effect<
     // A new sign-in may carry new scopes; cached tokens from the old grant
     // would keep failing until they expire.
     tokens.clear();
+    settings.clearMissingScopes(`gmail:${profile.emailAddress.toLowerCase()}`);
     return { email: profile.emailAddress, secret: res.refreshToken.value };
   });
 

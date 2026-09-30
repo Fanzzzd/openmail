@@ -83,9 +83,9 @@ it.effect(
         assert.strictEqual(inbox[0]?.threadId, "t-m1");
         assert.strictEqual(inbox[0]?.isUnread, true);
         assert.deepStrictEqual(yield* m.threads({ mailbox: "snoozed" }), []);
-        assert.strictEqual(server.pushed.length, 4);
+        assert.strictEqual(server.pushed.length, 2);
         yield* m.wakeSnoozed();
-        assert.strictEqual(server.pushed.length, 4);
+        assert.strictEqual(server.pushed.length, 2);
         yield* m.sync();
         assert.strictEqual((yield* m.threads({ mailbox: "inbox" }))[0]?.isUnread, true);
       }),
@@ -165,7 +165,7 @@ it.effect("labels, favorites, visibility and categories survive provider label r
 );
 
 it.effect(
-  "filter preview stays local; create/delete and vacation roundtrip through the provider",
+  "filter preview searches Gmail; create/delete and vacation roundtrip through the provider",
   () =>
     withMailbox((m, server) =>
       Effect.gen(function* () {
@@ -177,7 +177,7 @@ it.effect(
           action: { ...EMPTY_FILTER.action, markRead: true },
         };
         assert.strictEqual((yield* m.previewFilter(id, input.criteria)).length, 2);
-        assert.strictEqual(server.searched.length, 0);
+        assert.strictEqual(server.searched.length, 1);
         const filter = yield* m.createFilter(id, input);
         assert.strictEqual((yield* m.filters(id))[0]?.id, filter.id);
         yield* m.deleteFilter(id, filter.id);
@@ -291,6 +291,125 @@ it.effect("existing accounts keep syncing when optional settings scope is missin
       assert.strictEqual(sync[0]?.error, undefined);
       assert.strictEqual((yield* m.accounts)[0]?.needsReauth, false);
       assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 2);
+    }),
+  ),
+);
+
+for (const provider of ["gmail", "outlook", "imap"] as const) {
+  it.effect(`snooze changes only the original inbox members on ${provider}`, () => {
+    const members = [
+      incoming("inbox", { threadId: "mixed" }),
+      ...["SENT", "DRAFT", "TRASH", "SPAM"].map((label) =>
+        incoming(label, { threadId: "mixed", labels: [label] }),
+      ),
+    ];
+    const server = fakeServer("me@example.com", members);
+    const adapter = makeFakeProvider(server);
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const m = yield* Mailbox;
+      const account = yield* store.upsertAccount(provider, server.email);
+      for (const message of members) yield* store.upsertMessage(account.id, message);
+      yield* m.snooze([`${account.id}/inbox`], 1000);
+      for (const message of members.slice(1)) {
+        assert.deepStrictEqual(
+          (yield* store.getMessage(`${account.id}/${message.providerId}`)).labels,
+          message.labels,
+        );
+        yield* store.upsertMessage(account.id, message);
+        assert.deepStrictEqual(
+          (yield* store.getMessage(`${account.id}/${message.providerId}`)).labels,
+          message.labels,
+        );
+      }
+      yield* TestClock.adjust("2 seconds");
+      yield* m.wakeSnoozed();
+      assert.deepStrictEqual(
+        server.pushed.map((p) => p.providerId),
+        ["inbox", "inbox"],
+      );
+      for (const message of members.slice(1)) {
+        yield* store.upsertMessage(account.id, message);
+        yield* store.setFlags(account.id, message.providerId, {
+          isUnread: false,
+          isStarred: false,
+        });
+        const local = yield* store.getMessage(`${account.id}/${message.providerId}`);
+        assert.deepStrictEqual(local.labels, message.labels);
+        assert.strictEqual(local.isUnread, false);
+      }
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false }).pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
+              Layer.provideMerge(MemoryPlatform()),
+            ),
+          ),
+        ),
+      ),
+    );
+  });
+}
+
+it.effect("read-only listing never wakes or pushes an overdue reminder", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      yield* m.snooze(["gmail:me@gmail.com/m1"], 1000);
+      yield* TestClock.adjust("2 seconds");
+      yield* m.threads({ mailbox: "inbox" });
+      assert.strictEqual(server.pushed.length, 0);
+      assert.ok((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("SNOOZED"));
+      yield* m.sync();
+      assert.strictEqual(server.pushed.length, 2);
+    }),
+  ),
+);
+
+it.effect("Gmail filter preview uses authoritative server matches for native operators", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      server.searchResults = [incoming("m1"), incoming("remote")];
+      const query = "-from:spam@example.com OR {from:alice to:me} in:anywhere larger:1";
+      const preview = yield* m.previewFilter("gmail:me@gmail.com", {
+        ...EMPTY_FILTER.criteria,
+        query,
+      });
+      assert.strictEqual(preview.length, 2);
+      assert.strictEqual(server.searched.at(-1)?.search, query);
+    }),
+  ),
+);
+
+it.effect("deleting filters with a free-form query require explicit confirmation", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      const filter = {
+        ...EMPTY_FILTER,
+        criteria: { ...EMPTY_FILTER.criteria, query: "-from:spam OR from:alice" },
+        action: { ...EMPTY_FILTER.action, trash: true },
+      };
+      const exit = yield* Effect.exit(m.createFilter("gmail:me@gmail.com", filter));
+      assert.strictEqual(exit._tag, "Failure");
+      assert.strictEqual(server.filters.length, 0);
+      yield* m.createFilter("gmail:me@gmail.com", { ...filter, queryDeletionConfirmed: true });
+      assert.strictEqual(server.filters.length, 1);
+    }),
+  ),
+);
+
+it.effect("server search cannot overwrite an optimistic change waiting for push", () =>
+  withMailbox((m, server) =>
+    Effect.gen(function* () {
+      server.failNext = new ProviderError({ message: "offline" });
+      yield* m.perform(
+        { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
+        { kind: "user", surface: "app" },
+      );
+      assert.ok(!(yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
+      yield* m.searchServer({ search: "report" });
+      assert.ok(!(yield* m.thread("gmail:me@gmail.com/m1"))[0]?.labels.includes("INBOX"));
+      assert.strictEqual(server.pushed.length, 0);
     }),
   ),
 );

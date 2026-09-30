@@ -964,3 +964,115 @@ it.effect("personal Outlook consent adds MailboxSettings.ReadWrite and stays on 
     },
   });
 });
+
+it.effect(
+  "Outlook vacation saves preserve all three audiences and the distinct internal HTML",
+  () =>
+    Effect.gen(function* () {
+      for (const audience of ["none", "contactsOnly", "all"]) {
+        const internal = "<p>Internal <b>reply</b></p>";
+        const external = "<p>External reply</p>";
+        const http = fakeHttp({
+          "GET /me/mailboxSettings/automaticRepliesSetting": {
+            json: {
+              status: "alwaysEnabled",
+              externalAudience: audience,
+              internalReplyMessage: internal,
+              externalReplyMessage: external,
+            },
+          },
+          "PATCH /me/mailboxSettings": { status: 204 },
+        });
+        yield* run(http, (a) =>
+          Effect.gen(function* () {
+            const value = yield* a.vacation(account);
+            yield* a.setVacation(account, { ...value, enabled: false });
+          }),
+        );
+        const body = Schema.decodeUnknownSync(
+          Schema.Struct({
+            automaticRepliesSetting: Schema.Struct({
+              externalAudience: Schema.String,
+              internalReplyMessage: Schema.String,
+              externalReplyMessage: Schema.String,
+            }),
+          }),
+        )(http.calls.at(-1)?.body);
+        assert.strictEqual(body.automaticRepliesSetting.externalAudience, audience);
+        assert.strictEqual(body.automaticRepliesSetting.internalReplyMessage, internal);
+        assert.strictEqual(body.automaticRepliesSetting.externalReplyMessage, external);
+      }
+    }),
+);
+
+it.effect(
+  "Outlook server search ignores skipped or unmapped folders before fetching attachments",
+  () => {
+    const http = fakeHttp({
+      "GET /me/mailFolders": { json: { value: [] } },
+      "GET /me/mailFolders/inbox": { json: { id: "inbox-id" } },
+      "GET /me/messages": {
+        json: {
+          value: [
+            { ...raw, id: "outbox-copy", parentFolderId: "outbox-id" },
+            { ...raw, id: "inbox-copy", parentFolderId: "inbox-id", hasAttachments: false },
+          ],
+        },
+      },
+    });
+    return run(http, (a) => a.search(account, { search: "from:wang" })).pipe(
+      Effect.tap((page) =>
+        Effect.sync(() => {
+          assert.deepStrictEqual(
+            page.messages.map((m) => m.providerId),
+            ["inbox-copy"],
+          );
+          assert.ok(!http.calls.some((c) => c.url.pathname.includes("/attachments")));
+        }),
+      ),
+    );
+  },
+);
+
+it.effect(
+  "Outlook legacy vacation callers cannot widen external audience or replace internal replies",
+  () => {
+    const internal = "<p>Internal only</p>";
+    const http = fakeHttp({
+      "GET /me/mailboxSettings/automaticRepliesSetting": {
+        json: {
+          status: "alwaysEnabled",
+          externalAudience: "none",
+          internalReplyMessage: internal,
+          externalReplyMessage: "<p>External</p>",
+        },
+      },
+      "PATCH /me/mailboxSettings": { status: 204 },
+    });
+    return run(http, (a) =>
+      a.setVacation(account, {
+        enabled: false,
+        start: null,
+        end: null,
+        subject: "",
+        body: "External",
+        contactsOnly: false,
+      }),
+    ).pipe(
+      Effect.tap(() =>
+        Effect.sync(() => {
+          const body = Schema.decodeUnknownSync(
+            Schema.Struct({
+              automaticRepliesSetting: Schema.Struct({
+                externalAudience: Schema.String,
+                internalReplyMessage: Schema.String,
+              }),
+            }),
+          )(http.calls.at(-1)?.body);
+          assert.strictEqual(body.automaticRepliesSetting.externalAudience, "none");
+          assert.strictEqual(body.automaticRepliesSetting.internalReplyMessage, internal);
+        }),
+      ),
+    );
+  },
+);

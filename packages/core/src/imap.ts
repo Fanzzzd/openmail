@@ -1200,7 +1200,7 @@ export const makeImapWith = (
         const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
         let truncated = false;
         let scanned = 0;
-        for (const folder of selected) {
+        foldersLoop: for (const folder of selected) {
           const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
           const found = yield* call(s, (c) => c.search(imapSearch(query), { uid: true }));
           const uids = (found || []).toSorted((a, b) => b - a);
@@ -1212,14 +1212,15 @@ export const makeImapWith = (
               uids.slice(start, start + FETCH_BATCH),
             );
             scanned += Math.min(FETCH_BATCH, uids.length - start);
-            for (const item of batch)
+            for (const item of batch) {
               if (matchesSearch(item.message, query, labels)) messages.push(item.message);
+              if (messages.length >= limit) break;
+            }
             if (messages.length >= limit || scanned >= 1000) {
               truncated = true;
-              break;
+              break foldersLoop;
             }
           }
-          if (messages.length >= limit || scanned >= 1000) break;
         }
         return { messages: messages.slice(0, limit), truncated };
       }).pipe(Effect.scoped);

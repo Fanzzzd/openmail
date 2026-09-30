@@ -212,7 +212,7 @@ export class Store extends Context.Service<
     setOrganization(input: AccountOrganization): Effect.Effect<void>;
     replaceSendAs(accountId: string, aliases: readonly SendAs[]): Effect.Effect<void>;
     readonly sendAs: Effect.Effect<SendAs[]>;
-    snooze(id: string, due: number): Effect.Effect<void, NotFound>;
+    snooze(id: string, due: number): Effect.Effect<void, NotFound | InvalidInput>;
     wakeSnoozed(now: number): Effect.Effect<string[]>;
 
     // Profiles

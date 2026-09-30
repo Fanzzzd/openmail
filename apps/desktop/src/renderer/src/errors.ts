@@ -19,6 +19,8 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Only inbox messages can be snoozed": msg`Only inbox messages can be snoozed`,
+  "Confirm deletion for a filter with a search query": msg`Confirm deletion for a filter with a search query`,
   "Choose a user label or folder": msg`Choose a user label or folder`,
   "A label or folder needs a valid name": msg`A label or folder needs a valid name`,
   "Choose a parent folder from this account": msg`Choose a parent folder from this account`,

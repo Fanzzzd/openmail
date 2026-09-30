@@ -224,6 +224,15 @@ export const MIGRATIONS: readonly string[] = [
     address TEXT NOT NULL, name TEXT NOT NULL, is_default INTEGER NOT NULL, signature TEXT NOT NULL,
     PRIMARY KEY(account_id, address)
   );
+  CREATE TABLE snoozed_messages (
+    account_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    wake_pending INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(account_id, provider_id),
+    FOREIGN KEY(account_id, thread_id) REFERENCES thread_reminders(account_id, thread_id) ON DELETE CASCADE
+  );
+  CREATE INDEX snoozed_messages_thread ON snoozed_messages(account_id, thread_id);
   `,
 ];
 

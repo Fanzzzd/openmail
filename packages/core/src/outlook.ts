@@ -860,9 +860,8 @@ export const makeOutlook: Effect.Effect<
           consumed++;
           const label =
             system.find((f) => f.id === raw.parentFolderId)?.label ??
-            raw.parentFolderId ??
-            scope ??
-            "ARCHIVE";
+            folders.find((f) => f.id === raw.parentFolderId)?.id;
+          if (!label) continue;
           const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : [];
           const message = parseGraphMessage(raw, label, attachments);
           if (matchesSearch(message, query, folderNames)) messages.push(message);

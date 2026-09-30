@@ -442,9 +442,21 @@ msgstr "Color"
 msgid "Compose"
 msgstr "Compose"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm deleting filter"
+msgstr "Confirm deleting filter"
+
+#: src/renderer/src/errors.ts
+msgid "Confirm deletion for a filter with a search query"
+msgstr "Confirm deletion for a filter with a search query"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
 msgstr "Confirm Remove"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Contacts only"
+msgstr "Contacts only"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
@@ -493,6 +505,10 @@ msgstr "Couldn't send: {reason}"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "Create"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Create a deleting filter?"
+msgstr "Create a deleting filter?"
 
 #: src/renderer/src/components/imapPresetText.ts
 msgid "Create an app password under Account Security in your Yahoo account."
@@ -619,9 +635,17 @@ msgstr "End"
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Enter the IMAP and SMTP servers your email provider gives you."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Everyone"
+msgstr "Everyone"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Expand categories"
 msgstr "Expand categories"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "External replies"
+msgstr "External replies"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Favorite"
@@ -739,6 +763,10 @@ msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 #: src/renderer/src/view.ts
 msgid "Inbox"
 msgstr "Inbox"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Internal reply"
+msgstr "Internal reply"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -980,6 +1008,10 @@ msgid "No activity yet."
 msgstr "No activity yet."
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "No external replies"
+msgstr "No external replies"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "No label or folder"
 
@@ -1034,6 +1066,10 @@ msgstr "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow th
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+
+#: src/renderer/src/errors.ts
+msgid "Only inbox messages can be snoozed"
+msgstr "Only inbox messages can be snoozed"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -1384,6 +1420,10 @@ msgstr "Server filters"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Server filters and automatic replies are available for Gmail and Outlook."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server preview: {count} messages"
+msgstr "Server preview: {count} messages"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Server search failed. Local results are available."
 msgstr "Server search failed. Local results are available."
@@ -1623,6 +1663,10 @@ msgstr "The server rejected the sign-in. Check the email address, and make sure 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
 msgstr "These are not email addresses: {list}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
+msgstr "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."

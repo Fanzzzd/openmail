@@ -23,6 +23,7 @@ export interface FakeServer {
   vacation: Vacation;
   aliases: SendAs[];
   searched: import("./domain.js").ThreadQuery[];
+  searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
   sent: {
     message: OutgoingMessage;
@@ -78,9 +79,9 @@ export function makeFakeProvider(server: FakeServer): ProviderAdapter {
         failOnce,
         Effect.sync(() => {
           server.searched.push(query);
-          const matches = [...server.messages.values()].filter((m) =>
-            matchesSearch(m, query, server.labels),
-          );
+          const matches =
+            server.searchResults ??
+            [...server.messages.values()].filter((m) => matchesSearch(m, query, server.labels));
           return {
             messages: matches.slice(0, query.limit ?? 200),
             truncated: matches.length > (query.limit ?? 200),

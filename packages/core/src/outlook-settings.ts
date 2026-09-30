@@ -49,7 +49,7 @@ const Replies = Schema.Struct({
   status: Schema.String,
   scheduledStartDateTime: Schema.optionalKey(DateTime),
   scheduledEndDateTime: Schema.optionalKey(DateTime),
-  externalAudience: Schema.optionalKey(Schema.String),
+  externalAudience: Schema.optionalKey(Schema.Literals(["none", "contactsOnly", "all"])),
   internalReplyMessage: Schema.optionalKey(Schema.String),
   externalReplyMessage: Schema.optionalKey(Schema.String),
 });
@@ -196,8 +196,13 @@ export function makeOutlookSettings<
                       : null
                     : null,
                 subject: "",
-                body: htmlToText(v.externalReplyMessage ?? v.internalReplyMessage ?? ""),
+                body: htmlToText(v.externalReplyMessage ?? ""),
                 contactsOnly: v.externalAudience === "contactsOnly",
+                outlook: {
+                  externalAudience: v.externalAudience ?? "none",
+                  internalReplyMessage: v.internalReplyMessage ?? "",
+                  externalReplyMessage: v.externalReplyMessage ?? "",
+                },
               }),
               catch: (error) =>
                 new PermanentError({
@@ -210,34 +215,42 @@ export function makeOutlookSettings<
     setVacation: (account: Account, v: Vacation) =>
       wrap(
         account,
-        write(account.id, "PATCH", "/me/mailboxSettings", {
-          automaticRepliesSetting: {
-            status: !v.enabled
-              ? "disabled"
-              : v.start !== null && v.end !== null
-                ? "scheduled"
-                : "alwaysEnabled",
-            externalAudience: v.contactsOnly ? "contactsOnly" : "all",
-            internalReplyMessage: `<p>${escapeHtml(v.body).replaceAll("\n", "<br>")}</p>`,
-            externalReplyMessage: `<p>${escapeHtml(v.body).replaceAll("\n", "<br>")}</p>`,
-            ...(v.start === null
-              ? {}
-              : {
-                  scheduledStartDateTime: {
-                    dateTime: new Date(v.start).toISOString().replace(/Z$/, ""),
-                    timeZone: "UTC",
-                  },
-                }),
-            ...(v.end === null
-              ? {}
-              : {
-                  scheduledEndDateTime: {
-                    dateTime: new Date(v.end).toISOString().replace(/Z$/, ""),
-                    timeZone: "UTC",
-                  },
-                }),
-          },
-        }).pipe(Effect.asVoid),
+        Effect.gen(function* () {
+          const replies =
+            v.outlook ??
+            (yield* get(account.id, Replies, "/me/mailboxSettings/automaticRepliesSetting"));
+          yield* write(account.id, "PATCH", "/me/mailboxSettings", {
+            automaticRepliesSetting: {
+              status: !v.enabled
+                ? "disabled"
+                : v.start !== null && v.end !== null
+                  ? "scheduled"
+                  : "alwaysEnabled",
+              externalAudience: replies.externalAudience ?? "none",
+              internalReplyMessage: replies.internalReplyMessage ?? "",
+              externalReplyMessage:
+                htmlToText(replies.externalReplyMessage ?? "") === v.body
+                  ? (replies.externalReplyMessage ?? "")
+                  : `<p>${escapeHtml(v.body).replaceAll("\n", "<br>")}</p>`,
+              ...(v.start === null
+                ? {}
+                : {
+                    scheduledStartDateTime: {
+                      dateTime: new Date(v.start).toISOString().replace(/Z$/, ""),
+                      timeZone: "UTC",
+                    },
+                  }),
+              ...(v.end === null
+                ? {}
+                : {
+                    scheduledEndDateTime: {
+                      dateTime: new Date(v.end).toISOString().replace(/Z$/, ""),
+                      timeZone: "UTC",
+                    },
+                  }),
+            },
+          });
+        }),
       ),
     sendAs: (_account: Account) => Effect.succeed([]),
   };

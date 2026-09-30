@@ -258,12 +258,12 @@ core 里能直接在手机上跑的：`mime.ts`、`types.ts`、`store.ts`（纯 
 - 搜索 token：Base UI Combobox chips。支持 `from:`、`to:`、`label:` / `folder:`、`is:unread` / `starred` / `important`、`has:attachment`、`filename:`、`before:`、`after:`，带空格的值可加双引号。core 解析同一套条件，分别编译到 SQLite、Gmail、Graph 和 IMAP。日期按 UTC 零点解释，Gmail 转成 epoch 秒，避免 Gmail 日期默认时区造成差异。
 - 标签和文件夹：在「设置 > 整理」创建、重命名、删除、选颜色、显示或隐藏、收藏。Gmail 改 labels API；Graph 支持 childFolders，空文件夹也显示；IMAP 使用 CREATE / RENAME / DELETE 并保留服务器分隔符。Graph 和 IMAP 的颜色只存在本机。删除服务器文件夹需确认，Gmail 删除标签不会删除邮件。
 - 前往文件夹：⇧⌘G 打开，支持模糊匹配、上下键和 Enter，可访问隐藏的文件夹。
-- 稍后提醒：3 小时后、明天 9 点、下周 9 点或自选时间。按账户和会话持久化，本地移出收件箱，不向 Gmail 请求 snooze。同步和新回复不会把它提前放回。到期回到收件箱顶部并标未读，未读和移回收件箱操作经队列推送，失败保留本地唤醒状态。桌面运行时每 30 秒检查，启动同步和读取列表也检查；关闭 app 后到期的提醒在下次打开时处理。
-- 过滤器：Gmail settings.filters 和 Outlook inbox messageRules 的列表、创建和删除。会话工具栏和右键菜单可按发件人预填，在表单内实时预览最多 200 封本地匹配邮件。创建后只处理服务器上的新邮件。支持发件人、收件人、主题、附件条件，Gmail 还支持查询；可归档、标已读、加标签或移到文件夹、删除，Gmail 可加星。
-- 自动回复：读取现有设置，修改开关、起止时间、正文和仅回复联系人。Gmail 可改主题；Graph 由服务器决定主题，定时必须同时填开始和结束。Graph 的 Windows / IANA 时区用 CLDR 映射和 Intl 转换，写回 UTC。
+- 稍后提醒：3 小时后、明天 9 点、下周 9 点或自选时间。按账户和会话持久化，本地移出收件箱，不向 Gmail 请求 snooze。同步和新回复不会把它提前放回。到期回到收件箱顶部并标未读，未读和移回收件箱操作经队列推送，失败保留本地唤醒状态。只记录当时在收件箱中的邮件，不操作 Sent、Drafts、Trash 或 Spam。桌面运行时每 30 秒检查，启动同步也检查；读取列表不唤醒或推送；关闭 app 后到期的提醒在下次打开时处理。
+- 过滤器：Gmail settings.filters 和 Outlook inbox messageRules 的列表、创建和删除。会话工具栏和右键菜单可按发件人预填，在表单内实时预览最多 200 封匹配邮件，Gmail 查询交给服务器，Outlook 用本地预览；带自由查询的删除过滤器需确认。创建后只处理服务器上的新邮件。支持发件人、收件人、主题、附件条件，Gmail 还支持查询；可归档、标已读、加标签或移到文件夹、删除，Gmail 可加星。
+- 自动回复：读取现有设置，修改开关、起止时间、正文和仅回复联系人。Gmail 可改主题并保留已有 HTML 正文；Graph 保留独立内部正文和外部回复的关闭、仅联系人、所有人三种状态，由服务器决定主题，定时必须同时填开始和结束。Graph 的 Windows / IANA 时区用 CLDR 映射和 Intl 转换，写回 UTC。
 - Gmail 别名与签名：正常同步时尝试读取 sendAs，也可在「设置 > 服务器」手动刷新。只缓存已验证别名，撰写的 From 菜单可选，回复仍留在原账户。发信前 core 校验地址归属，Gmail MIME 使用所选地址。签名转换为纯文本，写进 `signatures` 的 `source='gmail'`；同一地址有本地签名时，本地优先。换地址时更新签名，草稿保存所选地址。
 - Gmail 分类：每账户单独开关，存在 `account_organization`，组合分类视图只列开启分类的 Gmail 账户。
-- 迁移 7：新增 `label_preferences`、`account_organization`、`thread_reminders`、`send_as` 和到期时间索引。已有迁移未修改，消息仍只用 `upsertMessage` 写入，FTS rowid 不变。
+- 迁移 7：新增 `label_preferences`、`account_organization`、`thread_reminders`、`send_as`、`snoozed_messages` 和到期时间索引。`snoozed_messages` 记下提醒时在收件箱里的消息，唤醒只恢复这些消息，不动已发送、草稿、垃圾箱和垃圾邮件。已有迁移未修改，消息仍只用 `upsertMessage` 写入，FTS rowid 不变。
 - 权限：OAuth 新增 `gmail.settings.basic` 和 `MailboxSettings.ReadWrite`。设置 API 的权限不足返回 `SettingsScopeMissing`，不改整个账户的 `needsReauth`。MCP 没有新增写工具。
 
 范围与待验证：

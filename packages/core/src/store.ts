@@ -31,7 +31,7 @@ import {
   type ThreadQuery,
   type ThreadSummary,
 } from "./domain.js";
-import { NotFound } from "./errors.js";
+import { InvalidInput, NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import { parseSearchQuery, searchWords } from "./search.js";
@@ -208,7 +208,8 @@ const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
 };
 
 const EFFECTIVE_DATE = `MAX(m.date, COALESCE((SELECT woken_at FROM thread_reminders r
-    WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id), 0))`;
+    WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id
+      AND EXISTS (SELECT 1 FROM snoozed_messages s WHERE s.account_id=m.account_id AND s.provider_id=m.provider_id)), 0))`;
 const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
   ${EFFECTIVE_DATE} AS date,
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
@@ -385,8 +386,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       account: string,
       incoming: IncomingMessage,
     ) {
+      if (incoming.labels.some((l) => ["SENT", "DRAFT", "TRASH", "SPAM"].includes(l)))
+        yield* run(
+          sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${incoming.providerId}`,
+        );
       const reminder = yield* first(Reminder)(
-        sql`SELECT due_at, woken_at, wake_pending FROM thread_reminders WHERE account_id=${account} AND thread_id=${incoming.threadId}`,
+        sql`SELECT r.due_at, r.woken_at, s.wake_pending FROM thread_reminders r JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id WHERE s.account_id=${account} AND s.provider_id=${incoming.providerId}`,
       );
       let m = incoming;
       if (Option.isSome(reminder) && reminder.value.due_at !== null) {
@@ -403,7 +408,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ) {
         if (m.labels.includes("INBOX") && m.isUnread)
           yield* run(
-            sql`UPDATE thread_reminders SET wake_pending=0 WHERE account_id=${account} AND thread_id=${m.threadId}`,
+            sql`UPDATE snoozed_messages SET wake_pending=0 WHERE account_id=${account} AND provider_id=${m.providerId}`,
           );
         else {
           const owner = yield* getAccount(account).pipe(Effect.orDie);
@@ -463,6 +468,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         if (q.messageIds === undefined)
           where.push(sql`NOT ${hasLabel("SPAM")}`, sql`NOT ${hasLabel("TRASH")}`);
       } else where.push(hasLabel(MAILBOX_LABEL[mailbox]));
+      if (mailbox === "inbox")
+        where.push(
+          sql`NOT EXISTS (SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL)`,
+        );
       if (q.label !== undefined && (q.search === undefined || q.searchScope === "folder"))
         where.push(hasLabel(q.label));
       if (q.accountIds) where.push(inAccounts(q.accountIds));
@@ -524,7 +533,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             MAX(m.is_starred) OVER thread AS any_starred
           FROM messages m
           WHERE ${listFilter(q)}
-          WINDOW thread AS (PARTITION BY m.account_id, m.thread_id ORDER BY m.date DESC
+          WINDOW thread AS (PARTITION BY m.account_id, m.thread_id ORDER BY ${sql.literal(EFFECTIVE_DATE)} DESC
             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
         )
         SELECT r.*,
@@ -631,7 +640,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     ) {
       const labels = new Set(yield* messageLabels(account, providerId));
       const wake = yield* first(Reminder)(
-        sql`SELECT due_at, woken_at, wake_pending FROM thread_reminders WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${`${account}/${providerId}`})`,
+        sql`SELECT r.due_at, r.woken_at, s.wake_pending FROM thread_reminders r JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id WHERE s.account_id=${account} AND s.provider_id=${providerId}`,
       );
       const isUnread = flags.isUnread || (Option.isSome(wake) && wake.value.wake_pending);
       if (isUnread) labels.add("UNREAD");
@@ -653,7 +662,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       if (Option.isNone(row)) return;
       if (op.kind === "read" && op.value)
         yield* run(
-          sql`UPDATE thread_reminders SET wake_pending=0 WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
+          sql`UPDATE snoozed_messages SET wake_pending=0 WHERE (account_id, provider_id) IN (SELECT account_id, provider_id FROM messages WHERE id=${id})`,
         );
       if (
         ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
@@ -661,6 +670,13 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       )
         yield* run(
           sql`UPDATE thread_reminders SET due_at=NULL, wake_pending=CASE WHEN ${op.kind} = 'inbox' THEN wake_pending ELSE 0 END WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
+        );
+      if (
+        ["archive", "trash", "spam"].includes(op.kind) ||
+        (op.kind === "label" && op.value && row.value.provider !== "gmail")
+      )
+        yield* run(
+          sql`DELETE FROM snoozed_messages WHERE (account_id, provider_id) IN (SELECT account_id, provider_id FROM messages WHERE id=${id})`,
         );
       const labels = applyOpToLabels(row.value.labels_json, op, row.value.provider);
       yield* run(sql`UPDATE messages SET labels_json = ${JSON.stringify(labels)},
@@ -674,7 +690,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     /** Unread inbox messages per account, for the sidebar badges. */
     const unreadCounts = all(Count)(sql`SELECT account_id AS key, COUNT(*) AS n FROM messages m
-      WHERE is_unread = 1 AND ${hasLabel("INBOX")} GROUP BY account_id`).pipe(
+      WHERE is_unread = 1 AND ${hasLabel("INBOX")} AND NOT EXISTS (SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL) GROUP BY account_id`).pipe(
       Effect.map(counts),
       Effect.withSpan("Store.unreadCounts"),
     );
@@ -883,11 +899,30 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const snooze = Effect.fn("Store.snooze")(function* (id: string, due: number) {
       const message = yield* getMessage(id);
+      const previous = yield* all(Schema.Struct({ provider_id: Schema.String }))(
+        sql`SELECT provider_id FROM snoozed_messages WHERE account_id=${message.accountId} AND thread_id=${message.threadId}`,
+      );
+      const targets = (yield* getThread(id)).filter(
+        (member) =>
+          !member.labels.some((l) => ["SENT", "DRAFT", "TRASH", "SPAM"].includes(l)) &&
+          (member.labels.includes("INBOX") ||
+            (member.labels.includes("SNOOZED") &&
+              previous.some((p) => member.id === `${message.accountId}/${p.provider_id}`))),
+      );
+      if (!targets.length)
+        yield* new InvalidInput({ message: "Only inbox messages can be snoozed" });
       yield* run(sql`INSERT INTO thread_reminders (account_id, thread_id, due_at, woken_at)
         VALUES (${message.accountId}, ${message.threadId}, ${due}, NULL)
         ON CONFLICT(account_id, thread_id) DO UPDATE SET due_at=excluded.due_at, woken_at=NULL, wake_pending=0`);
+      yield* run(
+        sql`DELETE FROM snoozed_messages WHERE account_id=${message.accountId} AND thread_id=${message.threadId}`,
+      );
       const owner = yield* getAccount(message.accountId);
-      for (const member of yield* getThread(id)) {
+      for (const member of targets) {
+        const { providerId } = yield* messageRef(member.id);
+        yield* run(
+          sql`INSERT INTO snoozed_messages (account_id, thread_id, provider_id) VALUES (${message.accountId}, ${message.threadId}, ${providerId})`,
+        );
         const labels = [
           ...applyOpToLabels(
             member.labels.filter((l) => l !== "SNOOZED"),

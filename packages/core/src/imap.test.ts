@@ -484,6 +484,12 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     assert.strictEqual(page.messages[0]?.attachments[0]?.filename, "report.pdf");
     assert.deepStrictEqual(search.mock.calls, [[{ from: "alice", seen: false }, { uid: true }]]);
     assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
+    open.mockClear();
+    search.mockClear();
+    const limited = yield* adapter.search(account, { search: "from:alice filename:pdf", limit: 1 });
+    assert.strictEqual(limited.messages.length, 1);
+    assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
+    assert.strictEqual(search.mock.calls.length, 1);
   }).pipe(
     Effect.provide(
       Layer.succeed(Secrets, {

@@ -154,7 +154,7 @@ export class Mailbox extends Context.Service<
     previewFilter(
       accountId: string,
       criteria: FilterCriteria,
-    ): Effect.Effect<ThreadSummary[], NotFound>;
+    ): Effect.Effect<ThreadSummary[], PerformError>;
     createFilter(accountId: string, input: FilterInput): Effect.Effect<ServerFilter, PerformError>;
     deleteFilter(accountId: string, id: string): Effect.Effect<void, PerformError>;
     vacation(accountId: string): Effect.Effect<Vacation, PerformError>;

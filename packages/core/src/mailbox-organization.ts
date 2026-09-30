@@ -2,11 +2,19 @@ import { Clock, Effect } from "effect";
 import type { ThreadQuery } from "./domain.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
-import type { FilterInput, LabelChange, SearchResult, Vacation } from "./organization.js";
+import {
+  requiresFilterDeleteConfirmation,
+  type FilterInput,
+  type LabelChange,
+  type SearchResult,
+  type Vacation,
+} from "./organization.js";
 import { filterQuery, mergeSearchResults } from "./search.js";
 import type { Providers, Store } from "./services.js";
 
 const validateFilter = (input: FilterInput) => {
+  if (requiresFilterDeleteConfirmation(input) && !input.queryDeletionConfirmed)
+    return new InvalidInput({ message: "Confirm deletion for a filter with a search query" });
   const c = input.criteria;
   const a = input.action;
   if (!c.from.trim() && !c.to.trim() && !c.subject.trim() && !c.query.trim() && !c.hasAttachment)
@@ -38,6 +46,7 @@ export function makeOrganizationMailbox(
     const accounts = (yield* store.listAccounts).filter(
       (a) => query.accountIds === undefined || query.accountIds.includes(a.id),
     );
+    const pendingBefore = yield* store.listPendingOps;
     const ids: string[] = [];
     const errors: SearchResult["errors"][number][] = [];
     let truncated = false;
@@ -53,8 +62,15 @@ export function makeOrganizationMailbox(
       const page = result.success;
       truncated ||= page.truncated;
       yield* store.transaction(
-        Effect.forEach(page.messages, (message) => store.upsertMessage(account.id, message), {
-          discard: true,
+        Effect.gen(function* () {
+          const pending = [...pendingBefore, ...(yield* store.listPendingOps)];
+          for (const message of page.messages) {
+            if (
+              pending.some((p) => p.accountId === account.id && p.providerId === message.providerId)
+            )
+              continue;
+            yield* store.upsertMessage(account.id, message);
+          }
         }),
       );
       ids.push(...page.messages.map((m) => `${account.id}/${m.providerId}`));
@@ -193,11 +209,28 @@ export function makeOrganizationMailbox(
       }),
     previewFilter: (accountId, criteria) =>
       Effect.gen(function* () {
-        yield* store.getAccount(accountId);
+        const { account, adapter } = yield* owner(accountId);
+        const query = { ...filterQuery(criteria), accountIds: [accountId], flat: true, limit: 200 };
+        if (account.provider !== "gmail") return yield* store.listThreads(query);
+        const pendingBefore = yield* store.listPendingOps;
+        const page = yield* adapter.search(account, query);
+        yield* store.transaction(
+          Effect.gen(function* () {
+            const pending = [...pendingBefore, ...(yield* store.listPendingOps)];
+            for (const message of page.messages) {
+              if (
+                !pending.some(
+                  (p) => p.accountId === accountId && p.providerId === message.providerId,
+                )
+              )
+                yield* store.upsertMessage(accountId, message);
+            }
+          }),
+        );
         return yield* store.listThreads({
-          ...filterQuery(criteria),
-          accountIds: [accountId],
+          mailbox: "all",
           flat: true,
+          messageIds: page.messages.map((m) => `${accountId}/${m.providerId}`),
           limit: 200,
         });
       }),
@@ -235,7 +268,7 @@ export function makeOrganizationMailbox(
     setVacation: (accountId, input: Vacation) =>
       mutation(
         Effect.gen(function* () {
-          if (input.enabled && !input.body.trim())
+          if (input.enabled && !input.body.trim() && !input.outlook?.internalReplyMessage.trim())
             yield* new InvalidInput({ message: "Add an automatic reply message" });
           if (
             (input.start !== null && !Number.isFinite(input.start)) ||

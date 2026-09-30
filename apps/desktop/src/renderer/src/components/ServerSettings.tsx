@@ -3,11 +3,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   EMPTY_FILTER,
   EMPTY_VACATION,
+  requiresFilterDeleteConfirmation,
+  htmlToText,
+  escapeHtml,
   type FilterInput,
   type Vacation,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { resultError, settingsScopeMissing } from "../errors";
 import { Keys } from "../state/keys";
@@ -176,18 +179,33 @@ export function FilterEditor({
     ...EMPTY_FILTER,
     criteria: { ...EMPTY_FILTER.criteria, from },
   });
+  const [confirming, setConfirming] = useState<FilterInput | null>(null);
+  const [previewCriteria, setPreviewCriteria] = useState(input.criteria);
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviewCriteria(input.criteria), 350);
+    return () => clearTimeout(timer);
+  }, [input.criteria]);
   const [result, create] = useAtom(createFilterAtom, { mode: "promiseExit" });
   const [signedIn, reauth] = useAtom(reauthAtom(account.id));
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom([account.id])), () => []);
   const preview = useAtomValue(
     MailClient.query(
       "PreviewFilter",
-      { accountId: account.id, criteria: input.criteria },
+      { accountId: account.id, criteria: previewCriteria },
       { reactivityKeys: [Keys.threads] },
     ),
   );
   const matches = AsyncResult.getOrElse(preview, () => []);
   const count = matches.length;
+  const previewBusy =
+    previewCriteria !== input.criteria || preview._tag === "Initial" || preview.waiting;
+  const submit = async (value: FilterInput) => {
+    const exit = await create({
+      payload: { accountId: account.id, input: value },
+      reactivityKeys: [Keys.serverSettings, Keys.audit],
+    });
+    if (exit._tag === "Success") onClose();
+  };
   const criteria = (patch: Partial<FilterInput["criteria"]>) =>
     setInput((old) => ({ ...old, criteria: { ...old.criteria, ...patch } }));
   const action = (patch: Partial<FilterInput["action"]>) =>
@@ -200,13 +218,10 @@ export function FilterEditor({
     >
       <form
         className="space-y-3"
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          const exit = await create({
-            payload: { accountId: account.id, input },
-            reactivityKeys: [Keys.serverSettings, Keys.audit],
-          });
-          if (exit._tag === "Success") onClose();
+          if (requiresFilterDeleteConfirmation(input)) setConfirming(input);
+          else void submit(input);
         }}
       >
         <h2 className="font-semibold">
@@ -311,9 +326,20 @@ export function FilterEditor({
         </fieldset>
         <div className="space-y-1">
           <p aria-live="polite">
-            <Trans>Local preview: {count} messages</Trans>
+            {previewBusy ? (
+              <Trans>Loading…</Trans>
+            ) : account.provider === "gmail" ? (
+              <Trans>Server preview: {count} messages</Trans>
+            ) : (
+              <Trans>Local preview: {count} messages</Trans>
+            )}
             {count === 200 && " +"}
           </p>
+          {resultError(i18n, preview) && (
+            <p role="alert" className="text-red-500">
+              {resultError(i18n, preview)}
+            </p>
+          )}
           <ul className="max-h-28 overflow-y-auto text-[12px] text-neutral-500">
             {matches.slice(0, 20).map((m) => (
               <li key={m.id} className="truncate">
@@ -335,10 +361,39 @@ export function FilterEditor({
             )}
           </div>
         )}
-        <button type="submit" className={formButton} disabled={result.waiting}>
+        <button
+          type="submit"
+          className={formButton}
+          disabled={
+            result.waiting ||
+            (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
+          }
+        >
           <Trans>Create filter</Trans>
         </button>
       </form>
+      <Alert
+        open={confirming !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirming(null);
+        }}
+        title={t`Create a deleting filter?`}
+        description={t`This filter will delete future messages matching the server query. The preview shows at most 200 messages.`}
+      >
+        <AlertCancel>
+          <Trans>Cancel</Trans>
+        </AlertCancel>
+        <button
+          type="button"
+          disabled={result.waiting}
+          className={alertDanger}
+          onClick={() => {
+            if (confirming) void submit({ ...confirming, queryDeletionConfirmed: true });
+          }}
+        >
+          <Trans>Confirm deleting filter</Trans>
+        </button>
+      </Alert>
     </Dialog>
   );
 }
@@ -359,7 +414,15 @@ function VacationEditor({
 }) {
   const { t, i18n } = useLingui();
   const [input, setInput] = useState(initial);
+  const [internalBody, setInternalBody] = useState(() =>
+    htmlToText(initial.outlook?.internalReplyMessage ?? ""),
+  );
   const [result, save] = useAtom(setVacationAtom, { mode: "promiseExit" });
+  const replies = input.outlook ?? {
+    externalAudience: "none",
+    internalReplyMessage: "",
+    externalReplyMessage: "",
+  };
   return (
     <Dialog aria-label={t`Automatic replies`} onClose={onClose} className="w-[480px] p-5">
       <form
@@ -436,13 +499,52 @@ function VacationEditor({
             onChange={(e) => setInput({ ...input, body: e.target.value })}
           />
         </label>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={input.contactsOnly}
-            onCheckedChange={(contactsOnly) => setInput({ ...input, contactsOnly })}
-          />
-          <span>{t`Reply only to contacts`}</span>
-        </label>
+        {account.provider === "gmail" ? (
+          <label className="flex items-center gap-2">
+            <Checkbox
+              checked={input.contactsOnly}
+              onCheckedChange={(contactsOnly) => setInput({ ...input, contactsOnly })}
+            />
+            <span>{t`Reply only to contacts`}</span>
+          </label>
+        ) : (
+          <>
+            <Select
+              aria-label={t`External replies`}
+              value={replies.externalAudience}
+              onValueChange={(externalAudience) =>
+                setInput({
+                  ...input,
+                  contactsOnly: externalAudience === "contactsOnly",
+                  outlook: { ...replies, externalAudience },
+                })
+              }
+              options={[
+                { value: "none", label: t`No external replies` },
+                { value: "contactsOnly", label: t`Contacts only` },
+                { value: "all", label: t`Everyone` },
+              ]}
+            />
+            <label className="block space-y-1">
+              <span>{t`Internal reply`}</span>
+              <textarea
+                rows={4}
+                className={formInput}
+                value={internalBody}
+                onChange={(e) => {
+                  setInternalBody(e.target.value);
+                  setInput({
+                    ...input,
+                    outlook: {
+                      ...replies,
+                      internalReplyMessage: `<p>${escapeHtml(e.target.value).replaceAll("\n", "<br>")}</p>`,
+                    },
+                  });
+                }}
+              />
+            </label>
+          </>
+        )}
         {resultError(i18n, result) && (
           <p role="alert" className="text-red-500">
             {resultError(i18n, result)}

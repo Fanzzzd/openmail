@@ -92,12 +92,17 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
     Effect.gen(function* () {
       const due = yield* all(
         WakeRow,
-      )(sql`UPDATE thread_reminders SET due_at=NULL, woken_at=${now}, wake_pending=1
+      )(sql`UPDATE thread_reminders SET due_at=NULL, woken_at=${now}, wake_pending=0
       WHERE due_at<=${now} RETURNING account_id, thread_id`);
       const ids: string[] = [];
       for (const r of due) {
         const messages = yield* all(IdRow)(
-          sql`SELECT id FROM messages WHERE account_id=${r.account_id} AND thread_id=${r.thread_id}`,
+          sql`SELECT m.id FROM messages m JOIN snoozed_messages s ON s.account_id=m.account_id AND s.provider_id=m.provider_id
+            WHERE s.account_id=${r.account_id} AND s.thread_id=${r.thread_id}
+            AND NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value IN ('SENT','DRAFT','TRASH','SPAM'))`,
+        );
+        yield* run(
+          sql`UPDATE snoozed_messages SET wake_pending=1 WHERE account_id=${r.account_id} AND thread_id=${r.thread_id}`,
         );
         ids.push(...messages.map((m) => m.id));
       }

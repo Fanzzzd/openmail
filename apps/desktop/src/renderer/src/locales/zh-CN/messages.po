@@ -448,9 +448,21 @@ msgstr "颜色"
 msgid "Compose"
 msgstr "撰写"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm deleting filter"
+msgstr "确认创建删除过滤器"
+
+#: src/renderer/src/errors.ts
+msgid "Confirm deletion for a filter with a search query"
+msgstr "请确认带查询条件的删除过滤器"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
 msgstr "确认移除"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Contacts only"
+msgstr "仅联系人"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
@@ -499,6 +511,10 @@ msgstr "发送失败：{reason}"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "创建"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Create a deleting filter?"
+msgstr "创建删除过滤器？"
 
 #: src/renderer/src/components/imapPresetText.ts
 msgid "Create an app password under Account Security in your Yahoo account."
@@ -625,9 +641,17 @@ msgstr "结束"
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Everyone"
+msgstr "所有人"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Expand categories"
 msgstr "展开分类"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "External replies"
+msgstr "外部回复"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Favorite"
@@ -745,6 +769,10 @@ msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 #: src/renderer/src/view.ts
 msgid "Inbox"
 msgstr "收件箱"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Internal reply"
+msgstr "内部回复"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -986,6 +1014,10 @@ msgid "No activity yet."
 msgstr "还没有操作记录。"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "No external replies"
+msgstr "关闭外部回复"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
 
@@ -1040,6 +1072,10 @@ msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示�
 #: src/renderer/src/components/imapPresetText.ts
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
+
+#: src/renderer/src/errors.ts
+msgid "Only inbox messages can be snoozed"
+msgstr "只能为收件箱邮件设置提醒"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -1390,6 +1426,10 @@ msgstr "服务器过滤器"
 msgid "Server filters and automatic replies are available for Gmail and Outlook."
 msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server preview: {count} messages"
+msgstr "服务器预览：{count} 封邮件"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Server search failed. Local results are available."
 msgstr "服务器搜索失败，仍可查看本地结果。"
@@ -1629,6 +1669,10 @@ msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
 msgstr "这些不是邮件地址：{list}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
+msgstr "此过滤器会删除符合服务器查询的新邮件，预览最多显示 200 封。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
