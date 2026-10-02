@@ -365,10 +365,6 @@ msgid "AI action"
 msgstr "Akce AI"
 
 #: src/renderer/src/components/Settings.tsx
-msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-msgstr "AI může přímo archivovat, přidávat štítky a označovat zprávy jako přečtené. Každá změna se zaznamená v Aktivitě a lze ji vrátit zpět."
-
-#: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI umí číst a prohledávat poštu, ale nemůže nic měnit."
 
@@ -599,6 +595,10 @@ msgstr "Pokaždé se ptejte"
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "Nejdřív se mě zeptej"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Assistant"
+msgstr "Asistent"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2580,6 +2580,11 @@ msgstr "Oblast shodného obrázku"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Shodné časy udrží tento pracovní den aktivní po celý den. Přenocování pokračuje do dalšího dne. Nezaškrtnuté dny zůstanou bez zvuku s výjimkou období přes noc z předchozího dne. Opakovaný letní čas používá stejný plán; přeskočené časy jsou překročeny."
 
+#. readOnly is the translated Read only write-mode label above.
+#: src/renderer/src/components/Settings.tsx
+msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+msgstr "MCP může navrhovat koncepty pouze tehdy, když režim zápisu není „{readOnly}“. Koncepty zkontrolujete a odeslání potvrdíte v aplikaci."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Medium"
 msgstr "Střední"
@@ -3785,6 +3790,14 @@ msgstr "Krátký pohyb doprava"
 msgid "Right to left"
 msgstr "Zprava doleva"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Rule"
+msgstr "Pravidlo"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+msgstr "Pravidla mohou přímo archivovat, přidávat štítky a označovat poštu jako přečtenou. MCP vždy navrhuje změny, které schválíte v aplikaci."
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "Běží při nečinnosti. Naskenované stránky PDF, zvuk a video ještě nejsou indexovány."
@@ -4016,10 +4029,6 @@ msgstr "Příjmení odesílatele"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Jméno odesílatele"
-
-#: src/renderer/src/components/Settings.tsx
-msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
-msgstr "Odesílání není tímto nastavením ovlivněno. Každá zpráva, kterou AI napíše, jde do návrhů AI a vy ji zkontrolujete a odešlete z okna pro psaní."
 
 #: src/renderer/src/App.tsx
 msgid "Sending…"
@@ -4263,6 +4272,7 @@ msgid "SMTP server"
 msgstr "SMTP server"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
@@ -4833,6 +4843,7 @@ msgstr "Odebrat hvězdičku ze zprávy"
 msgid "Unsupported on this platform"
 msgstr "Na této platformě není podporováno"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "Do"

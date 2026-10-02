@@ -35,7 +35,13 @@ export {
   Store,
 } from "./services.js";
 export { StoreLive } from "./store.js";
-export { AgentIdentity, MailToolkit, MailToolkitLayer } from "./tools.js";
+export {
+  AgentIdentity,
+  MailToolkit,
+  MailToolkitLayer,
+  ReadMailToolkit,
+  ProposalMailToolkit,
+} from "./tools.js";
 
 export * from "./organization.js";
 export * from "./search.js";

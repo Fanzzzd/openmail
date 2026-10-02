@@ -93,11 +93,25 @@ function Item({
   const [decide, runDecide] = useAtom(decideAtom(p.id));
   const error = resultError(i18n, decide);
   const { command } = p;
-  const threadIds = command.kind === "modify" ? command.threads.slice(0, 5) : [];
+  const threadIds = command.kind === "modify" || command.kind === "snooze" ? command.threads : [];
   const agent = p.actor.kind === "agent" ? p.actor : null;
+  const surface = agent
+    ? agent.surface === "mcp"
+      ? "MCP"
+      : agent.surface === "rule"
+        ? t`Rule`
+        : t`Assistant`
+    : p.actor.surface === "cli"
+      ? "CLI"
+      : "APP";
   const email = (id: string) => accounts.find((a) => a.id === id)?.email ?? id;
-  const count = command.kind === "modify" ? command.threads.length : 0;
-  const op = command.kind === "modify" ? i18n._(OP_NAMES[command.op.kind](command.op)) : "";
+  const count = command.kind === "modify" || command.kind === "snooze" ? command.threads.length : 0;
+  const op =
+    command.kind === "modify"
+      ? i18n._(OP_NAMES[command.op.kind](command.op))
+      : command.kind === "snooze"
+        ? t`Snooze`
+        : "";
   const more = count - threadIds.length;
   const outgoing = command.kind === "send" || command.kind === "draft" ? command : null;
   const from = outgoing
@@ -112,7 +126,7 @@ function Item({
   return (
     <li className="px-5 py-4">
       <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
-        {agent?.name ?? "AI"} ·{" "}
+        {surface} · {agent?.name ?? "AI"} ·{" "}
         {new Date(p.createdAt).toLocaleString(i18n.locale, {
           month: "numeric",
           day: "numeric",
@@ -120,7 +134,7 @@ function Item({
           minute: "2-digit",
         })}
       </p>
-      {command.kind === "modify" && (
+      {(command.kind === "modify" || command.kind === "snooze") && (
         <>
           <p className="mt-1 font-medium">
             {t`${op} ${plural(count, { one: "# conversation", other: "# conversations" })}`}
@@ -130,7 +144,11 @@ function Item({
               <ThreadSubject
                 key={id}
                 id={id}
-                labelId={command.op.kind === "label" ? command.op.labelId : undefined}
+                labelId={
+                  command.kind === "modify" && command.op.kind === "label"
+                    ? command.op.labelId
+                    : undefined
+                }
               />
             ))}
             {more > 0 && (
@@ -140,6 +158,11 @@ function Item({
             )}
           </ul>
         </>
+      )}
+      {command.kind === "snooze" && (
+        <p>
+          <Trans>Until</Trans>: {new Date(command.due).toLocaleString(i18n.locale)} [{command.due}]
+        </p>
       )}
       {outgoing && (
         <>
@@ -171,7 +194,7 @@ function Item({
         </p>
       )}
       <div className="mt-3 flex gap-2">
-        {command.kind === "modify" ? (
+        {command.kind === "modify" || command.kind === "snooze" ? (
           <button
             type="button"
             disabled={decide.waiting}

@@ -370,7 +370,7 @@ const MODES: { id: AgentWriteMode; label: MessageDescriptor; detail: MessageDesc
   {
     id: "allow",
     label: msg`Organize directly`,
-    detail: msg`AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone.`,
+    detail: msg`Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app.`,
   },
 ];
 
@@ -419,6 +419,7 @@ function General() {
 
 function AgentPolicy() {
   const { t, i18n } = useLingui();
+  const readOnly = t`Read only`;
   const mode = AsyncResult.getOrElse(useAtomValue(agentModeAtom), () => null);
   const setMode = useAtomSet(setAgentModeAtom);
 
@@ -459,9 +460,9 @@ function AgentPolicy() {
         ))}
       </RadioGroup>
       <p className="mt-4 text-neutral-500 dark:text-neutral-400">
-        <Trans>
-          Sending is not affected by this setting. Every message AI writes goes into AI suggestions,
-          and you review and send it from the compose window.
+        <Trans comment="readOnly is the translated Read only write-mode label above.">
+          MCP can propose drafts only when the write mode is not "{readOnly}". You review drafts and
+          confirm sending in the app.
         </Trans>
       </p>
     </div>

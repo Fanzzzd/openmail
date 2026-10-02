@@ -76,6 +76,8 @@ export function commandSummary(c: MailCommand): string {
             : op.kind;
       return `${what}: ${c.threads.length} thread(s)`;
     }
+    case "snooze":
+      return `snooze until ${stamp(c.due)}: ${c.threads.length} thread(s)`;
     case "send":
     case "draft": {
       const to = c.message.to.map((a) => a.address).join(", ");

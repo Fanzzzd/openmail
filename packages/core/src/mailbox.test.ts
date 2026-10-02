@@ -98,13 +98,13 @@ it.effect("agents are read-only until allowed; proposals run only when a person 
         { kind: "modify", threads: [thread!.id], op: { kind: "star", value: true } },
         agent,
       );
-      assert.strictEqual(applied.status, "applied");
+      assert.strictEqual(applied.status, "proposed");
       assert.strictEqual((yield* m.audit(1))[0]?.actor, "agent:mcp:claude");
     }),
   ),
 );
 
-it.effect("an agent's message waits for a person; a person's reply carries the original", () =>
+it.effect("MCP cannot propose a send; a person's reply carries the original", () =>
   withGmail([incoming("m1")], (m, server) =>
     Effect.gen(function* () {
       const [thread] = yield* m.threads({});
@@ -122,8 +122,8 @@ it.effect("an agent's message waits for a person; a person's reply carries the o
 
       // Even with writes allowed, an agent never sends.
       yield* m.setAgentWriteMode("allow");
-      const proposed = yield* m.perform({ kind: "send", accountId, message }, agent);
-      assert.strictEqual(proposed.status, "proposed");
+      const denied = yield* m.perform({ kind: "send", accountId, message }, agent);
+      assert.strictEqual(denied.status, "denied");
       assert.strictEqual(server.sent.length, 0);
 
       yield* m.perform({ kind: "send", accountId, message }, user);

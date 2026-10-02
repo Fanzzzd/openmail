@@ -11,13 +11,35 @@ export type Decision =
  * modify mail only as their write mode allows. An agent never sends directly
  * and never removes an account; no setting changes that.
  *
- * `mode` is the agent's write mode; it only matters for agent modify commands.
+ * `mode` gates every MCP proposal. Other agents retain their existing write policy.
  */
 export function decide(command: Command, actor: Actor, mode: AgentWriteMode): Decision {
   if (actor.kind === "user") {
     return command.kind === "draft"
       ? { status: "denied", reason: "Drafts open in the compose window; send them from there." }
       : { status: "applied" };
+  }
+  if (actor.surface === "mcp") {
+    switch (command.kind) {
+      case "modify":
+        if (!["archive", "read", "star", "label"].includes(command.op.kind))
+          return { status: "denied", reason: "This operation is not available to MCP agents." };
+        break;
+      case "snooze":
+      case "draft":
+        break;
+      default:
+        return {
+          status: "denied",
+          reason: "MCP can only propose supported changes and local drafts.",
+        };
+    }
+    if (mode === "off")
+      return {
+        status: "denied",
+        reason: "Enable agent writes in openmail under Settings > AI 权限 to create proposals.",
+      };
+    return { status: "proposed" };
   }
   if (actor.surface === "rule" && actor.name === "openmail-assistant") {
     return command.kind === "removeAccount"

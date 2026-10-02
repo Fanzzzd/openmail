@@ -369,10 +369,6 @@ msgid "AI action"
 msgstr "AI action"
 
 #: src/renderer/src/components/Settings.tsx
-msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-msgstr "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-
-#: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI can read and search mail, but can't change anything."
 
@@ -603,6 +599,10 @@ msgstr "Ask each time"
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "Ask me first"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Assistant"
+msgstr "Assistant"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2584,6 +2584,11 @@ msgstr "Matched image region"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 
+#. readOnly is the translated Read only write-mode label above.
+#: src/renderer/src/components/Settings.tsx
+msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+msgstr "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Medium"
 msgstr "Medium"
@@ -3789,6 +3794,14 @@ msgstr "Right short swipe"
 msgid "Right to left"
 msgstr "Right to left"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Rule"
+msgstr "Rule"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+msgstr "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
@@ -4020,10 +4033,6 @@ msgstr "Sender last name"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Sender name"
-
-#: src/renderer/src/components/Settings.tsx
-msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
-msgstr "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
 
 #: src/renderer/src/App.tsx
 msgid "Sending…"
@@ -4267,6 +4276,7 @@ msgid "SMTP server"
 msgstr "SMTP server"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
@@ -4837,6 +4847,7 @@ msgstr "Unstar message"
 msgid "Unsupported on this platform"
 msgstr "Unsupported on this platform"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "Until"

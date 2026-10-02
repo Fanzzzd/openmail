@@ -360,7 +360,7 @@ it.effect(
           Effect.gen(function* () {
             assert.ok(request.toolkit);
             const found = yield* Stream.runLast(
-              yield* request.toolkit.handle("semantic_search", { query: "meaning", limit: 100 }),
+              yield* request.toolkit.handle("semantic_search", { query: "meaning", limit: 5 }),
             );
             assert.ok(Option.isSome(found));
             const encoded = JSON.stringify(found.value.encodedResult);

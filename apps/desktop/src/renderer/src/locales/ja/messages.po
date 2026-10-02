@@ -365,10 +365,6 @@ msgid "AI action"
 msgstr "AI 操作"
 
 #: src/renderer/src/components/Settings.tsx
-msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-msgstr "AIはメッセージを直接アーカイブし、ラベルを付け、開封済みにできます。すべての変更は操作履歴に記録され、取り消せます。"
-
-#: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI はメールを読んだり検索したりすることはできますが、何も変更することはできません。"
 
@@ -599,6 +595,10 @@ msgstr "毎回尋ねる"
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "まずは聞いてください"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Assistant"
+msgstr "アシスタント"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2580,6 +2580,11 @@ msgstr "一致した画像領域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "時間を一致させると、その平日は一日中アクティブになります。夜間の期間は翌日まで続きます。チェックされていない日は、前日からの一晩の期間を除き、ミュートされたままになります。夏時間が繰り返される場合は、同じスケジュールが使用されます。スキップされた時間は引き継がれます。"
 
+#. readOnly is the translated Read only write-mode label above.
+#: src/renderer/src/components/Settings.tsx
+msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+msgstr "書き込みモードが「{readOnly}」以外の場合のみ、MCP は下書きを提案できます。下書きの確認と送信の承認はアプリ内で行います。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Medium"
 msgstr "中"
@@ -3785,6 +3790,14 @@ msgstr "右に短くスワイプ"
 msgid "Right to left"
 msgstr "右から左へ"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Rule"
+msgstr "ルール"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+msgstr "ルールはメールを直接アーカイブし、ラベルを付け、既読にできます。MCP は常に変更を提案し、ユーザーがアプリ内で承認します。"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "アイドル状態でも実行されます。スキャンされた PDF ページ、オーディオ、ビデオはまだインデックス付けされていません。"
@@ -4016,10 +4029,6 @@ msgstr "差出人の姓"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "差出人の名前"
-
-#: src/renderer/src/components/Settings.tsx
-msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
-msgstr "送信はこの設定の影響を受けません。 AI が書き込むすべてのメッセージは AI の提案に反映され、作成ウィンドウから確認して送信します。"
 
 #: src/renderer/src/App.tsx
 msgid "Sending…"
@@ -4263,6 +4272,7 @@ msgid "SMTP server"
 msgstr "SMTPサーバー"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
@@ -4833,6 +4843,7 @@ msgstr "メッセージのスターを外す"
 msgid "Unsupported on this platform"
 msgstr "このプラットフォームではサポートされていません"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "終了日時"

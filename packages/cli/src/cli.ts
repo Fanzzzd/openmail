@@ -10,6 +10,11 @@ import {
   IMAP_PRESETS,
   MAILBOXES,
   Mailbox,
+  AgentIdentity,
+  MailToolkit,
+  MailToolkitLayer,
+  ReadMailToolkit,
+  ProposalMailToolkit,
   NodeMailbox,
   PROFILE_COLORS,
 } from "@openmail/core";
@@ -25,9 +30,11 @@ import {
   Redacted,
   Ref,
   Runtime,
+  Schema,
   Stdio,
   Stream,
 } from "effect";
+import { Tool } from "effect/ai";
 import { Argument, CliError, Command, Flag, Prompt } from "effect/cli";
 
 import {
@@ -38,7 +45,6 @@ import {
   outcomeText,
   proposalTable,
   syncTable,
-  threadTable,
 } from "./format.js";
 import { runMcp } from "./mcp-server.js";
 import { CliBrowser } from "./open-url.js";
@@ -327,12 +333,29 @@ const sync = Command.make(
       Argument.optional,
     ),
     json: jsonFlag,
+    budget: Flag.Int("token-budget").pipe(
+      Flag.withDescription("UTF-8 JSON budget, 2000 to 24000 bytes"),
+      Flag.withDefault(12000),
+    ),
   },
-  Effect.fn(function* ({ account, json }) {
-    const mailbox = yield* Mailbox;
-    const results = yield* withProgress(mailbox.sync(Option.getOrUndefined(account)), !json);
-    yield* print(results, json, syncTable);
-    return yield* results.some((r) => r.error) ? fail("Some accounts did not sync.") : Effect.void;
+  Effect.fn(function* ({ account, json, budget }) {
+    const encoded = yield* withProgress(
+      invokeTool("sync", {
+        ...(Option.isSome(account) ? { account_id: account.value } : {}),
+        token_budget: budget,
+      }),
+      !json,
+    );
+    const result = yield* Schema.decodeUnknownEffect(MailToolkit.tools.sync.successSchema)(encoded);
+    yield* print(
+      result,
+      json,
+      (value) =>
+        `${syncTable(value.results)}${value.omitted ? `\n${value.omitted} account results omitted; sync an account id to inspect.` : ""}`,
+    );
+    return yield* result.results.some((r) => r.error)
+      ? fail("Some accounts did not sync.")
+      : Effect.void;
   }),
 ).pipe(Command.withDescription("Push queued changes, then fetch changes into the local database"));
 
@@ -340,8 +363,8 @@ const limitFlag = Flag.Int("limit").pipe(
   Flag.withDescription("Max threads"),
   Flag.withDefault(20),
   Flag.filter(
-    (n) => n > 0,
-    () => "must be a positive integer",
+    (n) => n > 0 && n <= 100,
+    () => "must be between 1 and 100",
   ),
 );
 
@@ -357,31 +380,24 @@ const list = Command.make(
       Flag.withDefault(false),
     ),
     limit: limitFlag,
-    before: optionalInt("before", "Page: only threads older than this epoch-ms date"),
+    before: optionalInt("before", "Legacy page boundary; use --cursor to preserve same-date rows"),
+    cursor: optionalString("cursor", "next_cursor from the preceding page"),
+    budget: Flag.Int("token-budget").pipe(Flag.withDefault(12000)),
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const mailbox = yield* Mailbox;
-    let accountIds = Option.toArray(o.account);
-    if (Option.isSome(o.profile)) {
-      const profileId = o.profile.value;
-      const inProfile = (yield* mailbox.accounts)
-        .filter((a) => a.profileId === profileId)
-        .map((a) => a.id);
-      accountIds = accountIds.length
-        ? accountIds.filter((id) => inProfile.includes(id))
-        : inProfile;
-      if (accountIds.length === 0) return yield* print([], o.json, threadTable);
-    }
-    const rows = yield* mailbox.threads({
+    const result = yield* invokeTool("list_threads", {
       mailbox: o.mailbox,
-      ...(accountIds.length ? { accountIds } : {}),
+      ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
+      ...(Option.isSome(o.profile) ? { profile_id: o.profile.value } : {}),
       ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
-      ...(o.unread ? { unreadOnly: true } : {}),
+      unread_only: o.unread,
       ...(Option.isSome(o.before) ? { before: o.before.value } : {}),
+      ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
       limit: o.limit,
+      token_budget: o.budget,
     });
-    return yield* print(rows, o.json, threadTable);
+    return yield* print(result, o.json, (value) => JSON.stringify(value, null, 2));
   }),
 ).pipe(Command.withDescription("List conversations in a mailbox, newest first"));
 
@@ -391,20 +407,26 @@ const search = Command.make(
     query: Argument.String("query").pipe(Argument.variadic({ min: 1 })),
     account: optionalString("account", "Only this account"),
     limit: limitFlag,
+    cursor: optionalString("cursor", "next_cursor from the preceding page"),
+    budget: Flag.Int("token-budget").pipe(Flag.withDefault(12000)),
+    server: Flag.Boolean("server").pipe(
+      Flag.withDefault(false),
+      Flag.withDescription("Fetch provider search hits; report unsupported operators and failures"),
+    ),
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
-    const mailbox = yield* Mailbox;
-    const rows = yield* mailbox.threads({
-      search: o.query.join(" "),
-      ...(Option.isSome(o.account) ? { accountIds: [o.account.value] } : {}),
+    const result = yield* invokeTool("search", {
+      query: o.query.join(" "),
+      ...(Option.isSome(o.account) ? { account_id: o.account.value } : {}),
       limit: o.limit,
+      ...(Option.isSome(o.cursor) ? { cursor: o.cursor.value } : {}),
+      token_budget: o.budget,
+      server: o.server,
     });
-    yield* print(rows, o.json, threadTable);
+    yield* print(result, o.json, (value) => JSON.stringify(value, null, 2));
   }),
-).pipe(
-  Command.withDescription("Full-text search over subject, sender and body (all terms must match)"),
-);
+).pipe(Command.withDescription(MailToolkit.tools.search.description ?? "Search mail"));
 
 const show = Command.make(
   "show",
@@ -480,7 +502,7 @@ const writeMode = Command.make(
   {
     mode: Argument.Literals("mode", ["off", "propose", "allow"]).pipe(
       Argument.withDescription(
-        "off: agents cannot change mail. propose: changes wait for approval. allow: changes run",
+        "off: MCP cannot propose changes or drafts. propose: changes wait for approval. allow: rules can organize directly; MCP always proposes for approval in the app",
       ),
       Argument.optional,
     ),
@@ -493,7 +515,9 @@ const writeMode = Command.make(
     } else {
       yield* Console.log(`Agent write mode: ${yield* mailbox.agentWriteMode}.`);
     }
-    yield* Console.log("Agents never send mail directly; drafts always wait for you in the app.");
+    yield* Console.log(
+      "MCP always proposes changes for approval in the app. MCP drafts require a mode other than Read only. Sending requires confirmation in the app.",
+    );
   }),
 ).pipe(Command.withDescription("Show or set whether agents may change mail (Settings > AI 权限)"));
 
@@ -514,9 +538,115 @@ const audit = Command.make(
   }),
 ).pipe(Command.withDescription("Show recent changes and who made them"));
 
-const mcp = Command.make("mcp", {}, () => runMcp).pipe(
-  Command.withDescription("Run the MCP server on stdio (same as `openmail-mcp`)"),
+const mcp = Command.make(
+  "mcp",
+  {
+    allowWrites: Flag.Boolean("allow-writes").pipe(
+      Flag.withDescription(
+        "Expose proposal tools; app AI permission still required. All approvals happen in the app.",
+      ),
+      Flag.withDefault(false),
+    ),
+  },
+  ({ allowWrites }) => runMcp(allowWrites),
+).pipe(Command.withDescription("Run the MCP server on stdio (same as `openmail-mcp`)"));
+
+type ToolName = keyof typeof MailToolkit.tools;
+const toolNames = Object.keys(MailToolkit.tools).filter(
+  (name): name is ToolName => name in MailToolkit.tools,
 );
+const isWriteTool = (name: ToolName) => name in ProposalMailToolkit.tools;
+const toolHandlers = MailToolkitLayer.pipe(
+  Layer.provide(AgentIdentity.fixed("mcp", "openmail-cli")),
+);
+function invokeTool(name: ToolName, input: unknown) {
+  return Effect.gen(function* () {
+    const parameters = yield* Schema.decodeUnknownEffect(
+      Schema.toEncoded(MailToolkit.tools[name].parametersSchema),
+    )(input);
+    const toolkit = yield* MailToolkit;
+    const stream = yield* toolkit.handle(name, parameters);
+    const last = yield* Stream.runLast(stream);
+    if (Option.isNone(last)) return yield* fail("The tool returned no result.");
+    if (last.value.isFailure) return yield* fail(JSON.stringify(last.value.encodedResult));
+    return last.value.encodedResult;
+  }).pipe(Effect.provide(toolHandlers));
+}
+const toolInput = Flag.String("input-json").pipe(
+  Flag.withDescription("Tool parameters as a JSON object. Use tools --json for schemas."),
+  Flag.withDefault("{}"),
+);
+const allowWritesFlag = Flag.Boolean("allow-writes").pipe(
+  Flag.withDescription(
+    "Permit creating proposals only; app AI write permission required. No approval or send.",
+  ),
+  Flag.withDefault(false),
+);
+const tools = Command.make(
+  "tools",
+  { json: jsonFlag, allowWrites: allowWritesFlag },
+  Effect.fn(function* ({ json, allowWrites }) {
+    const rows = Object.values(allowWrites ? MailToolkit.tools : ReadMailToolkit.tools).map(
+      (tool) => ({
+        name: tool.name,
+        description: tool.description,
+        inputSchema: Tool.getJsonSchema(tool),
+      }),
+    );
+    yield* print(rows, json, (all) =>
+      all.map((row) => `${row.name}: ${row.description}`).join("\n"),
+    );
+  }),
+).pipe(
+  Command.withDescription("List agent tools and their exact input schemas. Read-only by default."),
+);
+const tool = Command.make(
+  "tool",
+  {
+    name: Argument.Literals("name", toolNames),
+    input: toolInput,
+    json: jsonFlag,
+    allowWrites: allowWritesFlag,
+  },
+  Effect.fn(function* ({ name, input, json, allowWrites }) {
+    if (isWriteTool(name) && !allowWrites)
+      return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
+    const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
+    const result = yield* invokeTool(name, parsed);
+    return yield* print(result, json, (value) => JSON.stringify(value, null, 2));
+  }),
+).pipe(
+  Command.withDescription(
+    "Call any agent tool through the shared core Toolkit. Parameters are validated against tools --json; results honor cursors and byte budgets.",
+  ),
+  Command.withExamples([
+    { command: "openmail tool list_templates --json", description: "List template ids" },
+    {
+      command: `openmail tool read_thread --input-json '{"id":"gmail:me@example.com/m1"}' --json`,
+      description: "Read bounded plain-text model context",
+    },
+  ]),
+);
+
+// A named command for each tool keeps --help and the CLI aligned with core descriptions.
+const agentCommands = toolNames
+  .filter((name) => name !== "sync" && name !== "search")
+  .map((name) =>
+    Command.make(
+      name.replaceAll("_", "-"),
+      { input: toolInput, json: jsonFlag, allowWrites: allowWritesFlag },
+      Effect.fn(function* ({ input, json, allowWrites }) {
+        if (isWriteTool(name) && !allowWrites)
+          return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
+        const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(
+          input,
+        );
+        return yield* print(yield* invokeTool(name, parsed), json, (value) =>
+          JSON.stringify(value, null, 2),
+        );
+      }),
+    ).pipe(Command.withDescription(MailToolkit.tools[name].description ?? name)),
+  );
 
 const openmail = Command.make("openmail").pipe(
   Command.withDescription(
@@ -534,6 +664,9 @@ const openmail = Command.make("openmail").pipe(
     agents,
     audit,
     mcp,
+    tools,
+    tool,
+    ...agentCommands,
   ]),
 );
 

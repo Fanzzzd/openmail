@@ -375,10 +375,6 @@ msgid "AI action"
 msgstr "AI 操作"
 
 #: src/renderer/src/components/Settings.tsx
-msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-msgstr "AI 可以直接归档、打标签、标已读。每次改动都记在操作记录里，可以撤销。"
-
-#: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI 能读邮件、搜索，不能改动任何东西。"
 
@@ -609,6 +605,10 @@ msgstr "每次询问"
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "先问我"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Assistant"
+msgstr "助手"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2590,6 +2590,11 @@ msgstr "命中的图片区域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
+#. readOnly is the translated Read only write-mode label above.
+#: src/renderer/src/components/Settings.tsx
+msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+msgstr "写入模式不是“{readOnly}”时，MCP 才能提议草稿。你在 app 中审阅草稿并确认发送。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Medium"
 msgstr "中"
@@ -3795,6 +3800,14 @@ msgstr "向右短滑"
 msgid "Right to left"
 msgstr "从右到左"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Rule"
+msgstr "规则"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+msgstr "规则可以直接归档、加标签、标为已读。MCP 始终只提议改动，由你在 app 中批准。"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "空闲时运行。扫描版 PDF、音频和视频暂未索引。"
@@ -4026,10 +4039,6 @@ msgstr "发件人姓氏"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "发件人姓名"
-
-#: src/renderer/src/components/Settings.tsx
-msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
-msgstr "发信不受这个设置影响。AI 写的邮件都会进「AI 建议」，由你在写信窗口里检查后发出。"
 
 #: src/renderer/src/App.tsx
 msgid "Sending…"
@@ -4273,6 +4282,7 @@ msgid "SMTP server"
 msgstr "SMTP 服务器"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
@@ -4843,6 +4853,7 @@ msgstr "取消此邮件星标"
 msgid "Unsupported on this platform"
 msgstr "此平台不支持"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "至"

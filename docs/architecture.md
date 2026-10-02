@@ -79,7 +79,7 @@ agent 开启写    ✓    ✓/propose  ✓    propose     ✗
 ```
 
 - 模型发信永远是 `propose`，配置改不掉。这是 AGENTS.md「发送必须经过 app 内人工确认」的落点，写在 Policy 里，调用方拿不到绕过它的入口。
-- 分拣写权限按 agent 名字开关，可以选「直接执行」或「先建议」。
+- 分拣写权限按 agent 名字开关。规则保留「直接执行」或「先建议」；MCP 的额外限制见[代理使用指南](agents.md)。
 - 策略数据存在库里，不存在 MCP 进程参数里。app 里改开关，CLI 和 MCP 下次调用就生效。
 
 待确认的建议进 `proposals` 表。app 里有一个「AI 建议」视图，逐条或批量确认。确认后以 user 身份执行，审计里同时记下提议的 agent 和确认的人。
@@ -145,7 +145,7 @@ saveDraft(draft)
 
 队列现在由 app、CLI、MCP 三个进程共用。`pending_ops.claimed_at` 记录谁在推送哪一条，两分钟内的认领算有效，所以同一条草稿不会被两个进程各建一份。
 
-模型写的草稿走 `perform({ kind: "draft" })`。策略照旧给出 `proposed`，core 同时建一条带 `proposal_id` 的本地草稿，由 app 的下一次同步推到服务器。人在写信窗口里打开它，发出去就批准提议，丢弃就拒绝提议。模型的进程不推送，也没有任何入口能发信。
+模型写的草稿走 `perform({ kind: "draft" })`。策略给出 `proposed` 后，core 建一条带 `proposal_id` 的本地草稿。MCP 草稿的权限与上传时机见[代理使用指南](agents.md)。人在写信窗口里打开它，发出去就批准提议，丢弃就拒绝提议。模型的进程不推送，也没有任何入口能发信。
 
 撰写相关的偏好、签名、模板、联系人黑名单都在 core 的表里（`prefs`、`signatures`、`templates`、`hidden_contacts`），CLI 和以后的手机端读同一份。签名按发件地址和「新邮件 / 回复」区分，`source` 列留给以后同步的 Gmail 签名。收件人补全目前只查本地往来邮件，`Mailbox.suggestContacts` 是以后接入服务器联系人的地方。
 

@@ -780,6 +780,11 @@ export const Command = Schema.Union([
     op: MailOp,
   }),
   Schema.Struct({
+    kind: Schema.Literal("snooze"),
+    threads: Schema.Array(Schema.String),
+    due: Schema.Finite,
+  }),
+  Schema.Struct({
     kind: Schema.Literal("send"),
     accountId: Schema.String,
     message: OutgoingMessage,

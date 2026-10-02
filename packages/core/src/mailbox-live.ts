@@ -115,6 +115,21 @@ import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "./reading.js";
 
+const isSpecialAgentLabel = (value: string) => {
+  const name = value
+    .trim()
+    .replace(/[\s_\-\\]/g, "")
+    .toUpperCase();
+  return (
+    /^(INBOX|TRASH|SPAM|DRAFTS?|SENT|JUNK(EMAIL)?|DELETED(ITEMS|MESSAGES)?|ARCHIVE|OUTBOX|ALLMAIL|IMPORTANT|STARRED|UNREAD)$/.test(
+      name,
+    ) ||
+    /^CATEGORY(PERSONAL|SOCIAL|PROMOTIONS|UPDATES|FORUMS)$/.test(name) ||
+    value.startsWith("category:") ||
+    value.startsWith("mailbox:")
+  );
+};
+
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
 const MAX_ATTEMPTS = 5;
 /** Upserts from a pull land in transactions of this many, or every quarter second. */
@@ -727,6 +742,9 @@ export const MailboxLive = (
         switch (command.kind) {
           case "modify":
             return { status: "applied", flush: yield* modify(command, actor) } satisfies Outcome;
+          case "snooze":
+            yield* organization.snooze(command.threads, command.due);
+            return { status: "applied" } satisfies Outcome;
           case "send": {
             const flushed = yield* Effect.sync(() => {
               pendingSends++;
@@ -765,19 +783,80 @@ export const MailboxLive = (
         }
       });
 
+      const validateMcpProposal = Effect.fnUntraced(function* (command: Command) {
+        if (command.kind === "modify" && command.op.kind === "label") {
+          const labelId = command.op.labelId;
+          for (const thread of command.threads) {
+            const messages = yield* store.getThread(thread);
+            const accountId = messages[0]?.accountId;
+            if (!accountId)
+              return yield* new InvalidInput({ message: "No account for the conversation." });
+            const account = yield* store.getAccount(accountId);
+            const label = (yield* store.listLabels([accountId])).find((l) => l.id === labelId);
+            if (
+              account.provider !== "gmail" ||
+              !label ||
+              isSpecialAgentLabel(label.id) ||
+              isSpecialAgentLabel(label.name)
+            )
+              return yield* new InvalidInput({
+                message: "MCP can only propose existing Gmail user labels for the same account.",
+              });
+          }
+        }
+        if (command.kind === "draft") {
+          const draft = command.message;
+          const composeMode = draft.mode ?? (draft.inReplyTo ? "reply" : "new");
+          if (
+            composeMode === "forward" ||
+            draft.attachments.length ||
+            draft.html ||
+            (composeMode === "new") === Boolean(draft.inReplyTo)
+          )
+            return yield* new InvalidInput({
+              message: "MCP drafts support plain-text new messages and replies only.",
+            });
+          if (
+            draft.inReplyTo &&
+            (yield* store.getMessage(draft.inReplyTo)).accountId !== command.accountId
+          )
+            return yield* new InvalidInput({
+              message: "Reply message belongs to another account.",
+            });
+        }
+        if (command.kind === "snooze" && command.due <= (yield* Clock.currentTimeMillis))
+          return yield* new InvalidInput({ message: "Choose a future reminder time." });
+        return yield* Effect.void;
+      });
+
       const perform = Effect.fn("Mailbox.perform")(function* (command: Command, actor: Actor) {
-        const mode =
-          actor.kind === "agent" && command.kind === "modify"
-            ? yield* store.agentWriteMode(actor.name)
-            : "off";
+        const mode = actor.kind === "agent" ? yield* store.agentWriteMode(actor.name) : "off";
         // Refuse unknown threads before anything is proposed or audited.
-        if (command.kind === "modify") {
+        if (command.kind === "snooze") {
+          const now = yield* Clock.currentTimeMillis;
+          if (
+            !Number.isFinite(command.due) ||
+            command.due <= now ||
+            command.due > now + 365 * 86_400_000
+          )
+            return yield* new InvalidInput({
+              message: "Reminder time must be within the next year.",
+            });
+        }
+        if (command.kind === "modify" || command.kind === "snooze") {
+          if (
+            actor.kind === "agent" &&
+            actor.surface === "mcp" &&
+            (command.threads.length === 0 || command.threads.length > 20)
+          )
+            return yield* new InvalidInput({ message: "Proposals need 1 to 20 conversations." });
           for (const thread of command.threads) {
             if ((yield* store.threadMessageIds(thread)).length === 0) {
               return yield* new InvalidInput({ message: `No thread with id ${thread}.` });
             }
           }
         }
+        if (actor.kind === "agent" && actor.surface === "mcp") yield* validateMcpProposal(command);
         const decision = decide(command, actor, mode);
         if (decision.status === "denied") {
           yield* store.audit({
@@ -809,6 +888,7 @@ export const MailboxLive = (
                 // Otherwise the app's next flush pushes it, not the agent's process.
                 const push =
                   actor.kind === "agent" &&
+                  actor.surface !== "mcp" &&
                   !(actor.surface === "rule" && actor.name === "openmail-assistant") &&
                   (yield* store.agentWriteMode(actor.name)) !== "off";
                 if (push) yield* store.enqueueDraftSave(draft.accountId, draft.id);
@@ -837,15 +917,17 @@ export const MailboxLive = (
           approve &&
           surface !== "app" &&
           proposal.actor.kind === "agent" &&
-          proposal.actor.surface === "rule" &&
-          proposal.actor.name === "openmail-assistant"
+          (proposal.actor.surface === "mcp" ||
+            (proposal.actor.surface === "rule" && proposal.actor.name === "openmail-assistant"))
         )
-          return yield* new InvalidInput({ message: "Approve assistant suggestions in the app." });
+          return yield* new InvalidInput({ message: "Approve agent suggestions in the app." });
         if (proposal.status !== "pending") {
           return yield* new InvalidInput({
             message: `Proposal ${id} is already ${proposal.status}.`,
           });
         }
+        if (approve && proposal.actor.kind === "agent" && proposal.actor.surface === "mcp")
+          yield* validateMcpProposal(proposal.command);
         const person: Actor = { kind: "user", surface };
         yield* store.setProposalStatus(id, approve ? "approved" : "rejected");
         yield* store.audit({
@@ -855,7 +937,7 @@ export const MailboxLive = (
         });
         // Messages an agent proposed are sent from the compose window, as a
         // draft; sending approves the proposal. Rejecting one discards its draft.
-        if (proposal.command.kind !== "modify") {
+        if (proposal.command.kind !== "modify" && proposal.command.kind !== "snooze") {
           const draft = yield* store.draftByProposal(id);
           if (!approve && Option.isSome(draft)) {
             yield* store.transaction(removeDraft(draft.value));

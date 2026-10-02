@@ -289,22 +289,22 @@ it.effect(
     }),
 );
 
-it.effect("a read-only agent's draft stays local until the person saves it", () =>
+it.effect("a read-only MCP agent cannot create a draft", () =>
   withMail((m, server) =>
     Effect.gen(function* () {
       const outcome = yield* m.perform(
         { kind: "draft", accountId: GMAIL, message: draftMessage() },
         agent,
       );
-      assert.strictEqual(outcome.status, "proposed");
-      assert.strictEqual((yield* draftIds(m)).length, 1);
+      assert.strictEqual(outcome.status, "denied");
+      assert.strictEqual((yield* draftIds(m)).length, 0);
       yield* m.sync();
       assert.strictEqual(server.drafts.size, 0);
     }),
   ),
 );
 
-it.effect("an agent's draft is a synced draft that only the person sends", () =>
+it.effect("an MCP draft stays local until a person saves or sends it", () =>
   withMail((m, server) =>
     Effect.gen(function* () {
       yield* m.setAgentWriteMode("propose");
@@ -315,10 +315,10 @@ it.effect("an agent's draft is a synced draft that only the person sends", () =>
       assert.strictEqual(outcome.status, "proposed");
       const proposalId = outcome.status === "proposed" ? outcome.proposalId : -1;
       assert.strictEqual((yield* draftIds(m)).length, 1);
-      // The agent's process does not push; the app's next sync does.
+      // MCP does not queue a provider save, including at the next app sync.
       assert.strictEqual(server.drafts.size, 0);
       yield* m.sync();
-      assert.strictEqual(server.drafts.size, 1);
+      assert.strictEqual(server.drafts.size, 0);
       assert.strictEqual(server.sent.length, 0);
 
       const draft = yield* m.openDraft(`proposal:${proposalId}`);
@@ -338,7 +338,7 @@ it.effect("an agent's draft is a synced draft that only the person sends", () =>
         agent,
       );
       yield* m.sync();
-      assert.strictEqual(server.drafts.size, 1);
+      assert.strictEqual(server.drafts.size, 0);
       yield* m.decideProposal(second.status === "proposed" ? second.proposalId : -1, false, "app");
       assert.strictEqual(server.drafts.size, 0);
       assert.deepStrictEqual(yield* draftIds(m), []);
@@ -349,6 +349,7 @@ it.effect("an agent's draft is a synced draft that only the person sends", () =>
 it.effect("an agent cannot draft from an account that does not exist", () =>
   withMail((m) =>
     Effect.gen(function* () {
+      yield* m.setAgentWriteMode("propose");
       const error = yield* Effect.flip(
         m.perform(
           { kind: "draft", accountId: "gmail:nobody@x.com", message: draftMessage() },

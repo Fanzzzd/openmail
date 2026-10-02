@@ -137,3 +137,29 @@ it("label approval names the actual account label", () => {
     dom.dispose();
   }
 });
+
+for (const surface of ["mcp", "rule"] as const) {
+  it(`${surface} proposals show the trusted surface beside the self-reported assistant name`, () => {
+    const dom = render({
+      ...base,
+      actor: { kind: "agent", surface, name: "openmail-assistant" },
+      command: {
+        kind: "draft",
+        accountId: account.id,
+        message: { to: [], cc: [], bcc: [], subject: "s", text: "t", attachments: [] },
+      },
+    });
+    try {
+      expect(dom.element.textContent).toContain(
+        `${surface === "mcp" ? "MCP" : "Rule"} · openmail-assistant`,
+      );
+      const actions = Array.from(dom.element.querySelectorAll("button")).map(
+        (button) => button.textContent,
+      );
+      expect(actions).toContain(surface === "mcp" ? "Review and Send" : "Approve and edit");
+      expect(actions).not.toContain(surface === "mcp" ? "Approve and edit" : "Review and Send");
+    } finally {
+      dom.dispose();
+    }
+  });
+}

@@ -365,10 +365,6 @@ msgid "AI action"
 msgstr "Action IA"
 
 #: src/renderer/src/components/Settings.tsx
-msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
-msgstr "L’IA peut archiver, ajouter des libellés et marquer directement les messages comme lus. Chaque modification est enregistrée dans Activité et peut être annulée."
-
-#: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "L’IA peut lire et rechercher le courrier, mais ne peut rien changer."
 
@@ -599,6 +595,10 @@ msgstr "Demander à chaque fois"
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "Demandez-moi d’abord"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Assistant"
+msgstr "Assistant"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2580,6 +2580,11 @@ msgstr "Région d’image correspondante"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Les heures correspondantes maintiennent ce jour de la semaine actif toute la journée. Les périodes de nuit se poursuivent le lendemain. Les jours non cochés restent muets, sauf pour les périodes de nuit de la veille. Les heures d’été répétées utilisent le même horaire ; les temps sautés sont ignorés."
 
+#. readOnly is the translated Read only write-mode label above.
+#: src/renderer/src/components/Settings.tsx
+msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
+msgstr "MCP peut proposer des brouillons uniquement si le mode d’écriture n’est pas « {readOnly} ». Vous relisez les brouillons et confirmez leur envoi dans l’application."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Medium"
 msgstr "Moyen"
@@ -3785,6 +3790,14 @@ msgstr "Balayage court vers la droite"
 msgid "Right to left"
 msgstr "De droite à gauche"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Rule"
+msgstr "Règle"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Rules can archive, label, and mark as read directly. MCP always proposes changes for you to approve in the app."
+msgstr "Les règles peuvent directement archiver les e-mails, ajouter des libellés et les marquer comme lus. MCP propose toujours des modifications que vous approuvez dans l’application."
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
 msgstr "Fonctionne au repos. Les pages PDF numérisées, audio et vidéo ne sont pas encore indexées."
@@ -4016,10 +4029,6 @@ msgstr "Nom de famille de l’expéditeur"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender name"
 msgstr "Nom de l’expéditeur"
-
-#: src/renderer/src/components/Settings.tsx
-msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
-msgstr "L’envoi n’est pas affecté par ce paramètre. Chaque message écrit par l’IA est intégré aux suggestions de l’IA, et vous le révisez et l’envoyez à partir de la fenêtre de rédaction."
 
 #: src/renderer/src/App.tsx
 msgid "Sending…"
@@ -4263,6 +4272,7 @@ msgid "SMTP server"
 msgstr "Serveur SMTP"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
@@ -4833,6 +4843,7 @@ msgstr "Retirer l’étoile du message"
 msgid "Unsupported on this platform"
 msgstr "Non pris en charge sur cette plateforme"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "Jusqu’à"

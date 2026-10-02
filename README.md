@@ -62,38 +62,17 @@ openmail agents write-mode propose
 openmail audit --limit 20
 ```
 
-CLI 的操作记在审计里，身份是 `user:cli`。CLI 不发信，没有 send 命令。发信要在 app 的审阅窗口里完成。
+传统 CLI 操作记在审计里，身份是 `user:cli`；模型工具调用的身份见[代理使用指南](docs/agents.md)。CLI 不发信，没有 send 命令。发信要在 app 的审阅窗口里完成。
 
 IMAP 密码按顺序取 `--password`、环境变量 `OPENMAIL_IMAP_PASSWORD`、交互提示。`--preset` 可选 `icloud`、`yahoo`、`qq`、`163`、`fastmail`、`custom`。`custom` 需要 `--imap-host` 和 `--smtp-host`。
 
-`proposals approve` 以你的身份执行模型提议的分拣改动。发信和草稿提议在 CLI 里不能批准，要到 app 里审阅后发送。
+`proposals approve` 可批准普通规则的分拣提议。MCP 和内置助手提议须在 app 中批准；发信须在 app 中审阅。
 
 本地调用：`node packages/cli/dist/cli.js …`，或在 `packages/cli` 里 `pnpm link --global`。
 
 ## MCP
 
-```sh
-claude mcp add openmail -- node /abs/path/openmail/packages/cli/dist/mcp.js
-```
-
-`openmail mcp` 和 `openmail-mcp` 一样，都在 stdio 上跑。
-
-读取工具：
-
-- `list_accounts`、`list_profiles`、`list_labels`
-- `list_threads`：按邮箱、账户、profile、标签、未读筛选会话，用 `before` 翻页
-- `search`：全文检索，支持中文
-- `read_thread`：整段会话的纯文本，去掉 HTML、引用和签名，按 `max_chars` 截断（默认 12000）
-- `sync`：拉取新邮件，推送已批准的改动
-
-写入工具：
-
-- `modify_threads`：归档、移到收件箱、删除、标垃圾、已读/未读、星标、重要、加减标签。每次调用要带 `rationale`，审阅时人能看到。
-- `draft_message`：写一封信。它存成一封本地草稿，同时生成一条提议。AI 权限是「只读」时，草稿只在本机，你在写信窗口里保存后才推到邮件服务器；其他模式下 app 下次同步时推送。信不会发出。人在 app 里审阅、修改，再决定发送或丢弃。
-
-写入工具受 app 里「设置 > AI 权限」控制，默认「只读」。只读时调用被拒绝，模型会告诉你去哪里打开。设成「先问我」时改动进入「AI 建议」等你确认。设成「直接整理」时立即生效。CLI 里对应 `openmail agents write-mode off|propose|allow`。无论怎么设，模型都不能直接发信。
-
-审计和提议里记下的身份是 `agent:mcp:<客户端名>`，客户端名取自 MCP 握手里的 `clientInfo`。
+`openmail mcp` 默认只暴露读取工具。开启 `--allow-writes` 后，改动仍须 app 内审批。CLI 的模型工具命令共用同一 Toolkit，支持游标、输出预算和 `--json`。接入配置及工具说明见 [代理使用指南](docs/agents.md)。
 
 ## 路线
 
