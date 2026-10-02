@@ -164,7 +164,7 @@ export function EmailFrame({
       {hasQuotes && (
         <button
           type="button"
-          className="mt-2 text-blue-600"
+          className="mt-2 text-a11y-accent"
           onClick={() => setShowQuotes(!showQuotes)}
         >
           {showQuotes ? t`Hide quoted text` : t`Show quoted text`}

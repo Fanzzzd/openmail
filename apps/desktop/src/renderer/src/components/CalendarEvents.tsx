@@ -122,7 +122,7 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
             {!!event.recurrence.length && <p>{event.recurrence.join("; ")}</p>}
           </div>
           {resultError(i18n, result) && (
-            <p role="alert" className="text-red-500">
+            <p role="alert" className="text-a11y-danger">
               {resultError(i18n, result)}
             </p>
           )}

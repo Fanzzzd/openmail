@@ -848,19 +848,19 @@ export function Composer({
                   : "";
 
   const field =
-    "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-neutral-400";
-  const row = "flex items-start gap-2 border-b border-black/[0.07] px-4 dark:border-white/[0.08]";
-  const label = "flex h-9 w-14 shrink-0 items-center text-neutral-500 dark:text-neutral-400";
+    "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted";
+  const row =
+    "flex items-start gap-2 focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus border-b border-black/[0.07] px-4 dark:border-white/[0.08]";
+  const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
   const quiet =
-    "rounded p-1 text-neutral-500 outline-offset-0 outline-blue-500/60 hover:bg-black/5 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10 dark:data-popup-open:bg-white/10";
+    "rounded p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:data-popup-open:bg-white/10";
   const title = i18n._(TITLES[draft.mode]);
 
   return (
-    // Non-modal: nothing is trapped or locked, but the backdrop keeps the mail
-    // behind it out of reach, and only Escape or the buttons close it.
+    // Trap keyboard focus while the composer is open; Escape follows the draft-close flow.
     <Dialog.Root
       open
-      modal={false}
+      modal="trap-focus"
       disablePointerDismissal
       onOpenChange={(open) => {
         if (!open) close();
@@ -872,6 +872,7 @@ export function Composer({
             whose drag region would swallow clicks on the close button. */}
         <Dialog.Popup
           data-compose
+          data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
           className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
@@ -879,7 +880,7 @@ export function Composer({
           {standalone && <div className="drag h-8 shrink-0" />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
-            className="flex min-h-0 flex-1 flex-col"
+            className="flex min-h-[360px] flex-1 flex-col overflow-y-auto"
             onDragOver={(event) => {
               if (event.dataTransfer.types.includes("Files")) {
                 event.preventDefault();
@@ -936,7 +937,7 @@ export function Composer({
               submit(false);
             }}
           >
-            <header className="flex h-11 shrink-0 items-center gap-2 border-b border-black/[0.07] px-4 dark:border-white/[0.08]">
+            <header className="flex min-h-11 shrink-0 items-center gap-2 border-b border-black/[0.07] px-4 dark:border-white/[0.08]">
               <Dialog.Title className="text-[14px] font-semibold">{title}</Dialog.Title>
               {original && account && (
                 <Select
@@ -961,7 +962,7 @@ export function Composer({
                   <Trans>AI draft</Trans>
                 </span>
               )}
-              <span className="flex-1 truncate text-[12px] text-neutral-400">{status}</span>
+              <span className="flex-1 truncate text-[12px] text-a11y-muted">{status}</span>
               {onPopOut && (
                 <button
                   type="button"
@@ -1004,11 +1005,11 @@ export function Composer({
                 className="max-w-full"
               />
               {senderUndo && (
-                <output className="flex items-center gap-2 text-[12px] text-neutral-500">
+                <output className="flex items-center gap-2 text-[12px] text-a11y-muted">
                   {t`From updated`}
                   <button
                     type="button"
-                    className="text-blue-600"
+                    className="text-a11y-accent"
                     onClick={() => {
                       manualSender.current = true;
                       changeSender(`${senderUndo.accountId}/${senderUndo.address}`);
@@ -1041,7 +1042,7 @@ export function Composer({
                 <button
                   type="button"
                   onClick={() => setShowBcc(true)}
-                  className="h-9 shrink-0 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  className="h-9 shrink-0 text-a11y-muted hover:text-neutral-800 dark:hover:text-neutral-200"
                 >
                   <Trans>Cc/Bcc</Trans>
                 </button>
@@ -1174,7 +1175,7 @@ export function Composer({
               </div>
             )}
             <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2">
-              <span className="text-neutral-500">{t`Signature`}</span>
+              <span className="text-a11y-muted">{t`Signature`}</span>
               <Select
                 aria-label={t`Signature`}
                 value={draft.signatureId === undefined ? "default" : (draft.signatureId ?? "none")}
@@ -1194,7 +1195,11 @@ export function Composer({
               busy={recovering}
               onRecover={recover}
             />
-            {recoveryError && <output className="px-4 text-red-600">{recoveryError}</output>}
+            {recoveryError && (
+              <output role="alert" className="px-4 text-a11y-danger">
+                {recoveryError}
+              </output>
+            )}
             <ComposerAi
               accountId={draft.accountId}
               replyTo={draft.inReplyTo}
@@ -1240,13 +1245,13 @@ export function Composer({
               <div className="flex flex-wrap gap-2 px-4 pb-2">
                 {draft.forwardAsAttachment && (
                   <span className="flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 dark:border-white/10">
-                    <Paperclip className="size-3.5 text-neutral-400" />
+                    <Paperclip className="size-3.5 text-a11y-muted" />
                     <Trans>Original message (.eml)</Trans>
                     <button
                       type="button"
                       aria-label={t`Don't attach the original message`}
                       onClick={() => set({ forwardAsAttachment: false })}
-                      className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                      className="text-a11y-muted hover:text-neutral-700 dark:hover:text-neutral-200"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -1286,7 +1291,7 @@ export function Composer({
                     }}
                     className="flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 dark:border-white/10"
                   >
-                    <Paperclip className="size-3.5 text-neutral-400" />
+                    <Paperclip className="size-3.5 text-a11y-muted" />
                     {a.filename}
                     <button
                       type="button"
@@ -1310,7 +1315,7 @@ export function Composer({
                     >
                       ↓
                     </button>
-                    <span className="text-neutral-400">
+                    <span className="text-a11y-muted">
                       {formatBytes((a.content.length * 3) / 4, i18n.locale)}
                     </span>
                     <button
@@ -1319,7 +1324,7 @@ export function Composer({
                       onClick={() =>
                         set({ attachments: draft.attachments.filter((_, j) => j !== i) })
                       }
-                      className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                      className="text-a11y-muted hover:text-neutral-700 dark:hover:text-neutral-200"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -1400,7 +1405,7 @@ export function Composer({
                   </button>
                 }
               />
-              <span className="min-w-0 flex-1 truncate text-[12px] text-red-500">{error}</span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-a11y-danger">{error}</span>
               <Tip label={t`Discard draft`} side="top">
                 <button
                   type="button"
@@ -1599,7 +1604,7 @@ function TemplatePicker({
             className={pickerInput}
           />
           {templates.length === 0 && (
-            <p className="px-3 py-2 text-neutral-400">
+            <p className="px-3 py-2 text-a11y-muted">
               <Trans>No templates yet. Use {token} for the first recipient's name.</Trans>
             </p>
           )}
@@ -1616,7 +1621,7 @@ function TemplatePicker({
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{tpl.name}</span>
-                  <span className="block truncate text-[12px] text-neutral-500 group-data-highlighted:text-white/80">
+                  <span className="block truncate text-[12px] text-a11y-muted group-data-highlighted:text-white">
                     {tpl.subject || tpl.body.replace(/\s+/g, " ").slice(0, 60)}
                   </span>
                 </span>

@@ -22,7 +22,7 @@ export function ContactSettings({ account }: { account: Account }) {
       <h3 className="font-semibold">
         <Trans>Server contacts</Trans>
       </h3>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Server contacts refresh every six hours while the app runs. Cached contacts and local
           correspondents appear in recipient suggestions.
@@ -42,7 +42,7 @@ export function ContactSettings({ account }: { account: Account }) {
         )}
       </p>
       {status?.error && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           {status.scopeMissing
             ? t`Sign in again to sync server contacts.`
             : t`Contact refresh failed. Cached suggestions remain available.`}
@@ -69,12 +69,12 @@ export function ContactSettings({ account }: { account: Account }) {
         )}
       </div>
       {resultError(i18n, result) && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           {resultError(i18n, result)}
         </p>
       )}
       {resultError(i18n, signIn) && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           {resultError(i18n, signIn)}
         </p>
       )}

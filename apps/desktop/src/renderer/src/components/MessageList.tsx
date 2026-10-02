@@ -1,3 +1,4 @@
+import { labelChipColors } from "../label-colors";
 import { useMessageSwipe } from "../message-swipe-hook";
 import { TriageChip } from "./TriageChip";
 import { swipeMailOp } from "../message-swipe";
@@ -130,9 +131,17 @@ export function MessageList({
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const density = LIST_DENSITIES[prefs.messageListDensity];
-  const rowHeight = threads.some((m) => m.derivedMatches?.length)
-    ? density.height + 48
-    : density.height;
+  const [textScale, setTextScale] = useState(1);
+  useEffect(() => {
+    const measure = () =>
+      setTextScale(parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1);
+    measure();
+    globalThis.addEventListener("resize", measure);
+    return () => globalThis.removeEventListener("resize", measure);
+  }, []);
+  const rowHeight =
+    (threads.some((m) => m.derivedMatches?.length) ? density.height + 48 : density.height) *
+    textScale;
   const window = listWindow(threads.length, viewport.top, viewport.height, rowHeight);
   const endReached = useRef(onEndReached);
   useEffect(() => {
@@ -174,7 +183,10 @@ export function MessageList({
   }, [threads.length, loading, viewport.top, viewport.height, rowHeight]);
 
   return (
-    <section className="flex h-full w-full flex-col bg-white dark:bg-neutral-900">
+    <section
+      aria-label={searching ? t`Search results` : title}
+      className="flex h-full w-full flex-col bg-white dark:bg-neutral-900"
+    >
       {searchBar}
       <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
@@ -223,17 +235,17 @@ export function MessageList({
       </div>
 
       {searchingServer && (
-        <output className="px-5 pb-2 text-[12px] text-neutral-500">
+        <output className="px-5 pb-2 text-[12px] text-a11y-muted">
           <Trans>Searching server…</Trans>
         </output>
       )}
       {searchTruncated && (
-        <output className="px-5 pb-2 text-[12px] text-neutral-500">
+        <output className="px-5 pb-2 text-[12px] text-a11y-muted">
           <Trans>More matches exist. Narrow your search.</Trans>
         </output>
       )}
       {searchIgnored.length > 0 && (
-        <output className="px-5 pb-2 text-[12px] text-orange-500">
+        <output className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
           <Trans>
             Some server predicates were omitted to preserve matches; local filters still apply:
           </Trans>{" "}
@@ -241,12 +253,16 @@ export function MessageList({
         </output>
       )}
       {searchQuery && searchUsesSize(searchQuery) && (
-        <output className="px-5 pb-2 text-[12px] text-orange-500">
+        <output className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
           <Trans>Unknown message sizes are left unfiltered.</Trans>
         </output>
       )}
       {searchErrors.length > 0 && (
-        <output title={searchErrors.join("\n")} className="px-5 pb-2 text-[12px] text-orange-500">
+        <output
+          role="alert"
+          title={searchErrors.join("\n")}
+          className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400"
+        >
           <Trans>Search could not finish:</Trans> {searchErrors.join("; ")}
         </output>
       )}
@@ -270,13 +286,29 @@ export function MessageList({
               // A native select cannot host these windowed conversation previews.
               // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
               role="listbox"
-              tabIndex={-1}
+              tabIndex={threads.length === 0 ? 0 : -1}
+              aria-busy={loading}
               aria-multiselectable="true"
               aria-label={searching ? t`Search results` : title}
               onScroll={(e) => {
                 const el = e.currentTarget;
                 setViewport({ top: el.scrollTop, height: el.clientHeight });
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight - 160) endReached.current();
+              }}
+              onKeyDownCapture={(e) => {
+                if (e.key !== "ContextMenu" && !(e.shiftKey && e.key === "F10")) return;
+                const row = e.target instanceof Element ? e.target.closest("[data-id]") : null;
+                if (!row) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const rect = row.getBoundingClientRect();
+                row.dispatchEvent(
+                  new MouseEvent("contextmenu", {
+                    bubbles: true,
+                    clientX: rect.left,
+                    clientY: rect.bottom,
+                  }),
+                );
               }}
               onContextMenuCapture={(e) => {
                 const row = e.target instanceof Element ? e.target.closest("[data-id]") : null;
@@ -287,7 +319,7 @@ export function MessageList({
           }
         >
           {threads.length === 0 && !loading && (
-            <p className="p-8 text-center text-neutral-400">
+            <p className="p-8 text-center text-a11y-muted">
               {searching ? (
                 <Trans>No matching messages</Trans>
               ) : filters.enabled &&
@@ -309,7 +341,12 @@ export function MessageList({
                     rowHeight={rowHeight}
                     density={density}
                     position={i + 1}
-                    total={threads.length}
+                    total={exhausted ? threads.length : -1}
+                    tabbable={
+                      m.id === selectedId ||
+                      ((selectedIndex < window.first || selectedIndex >= window.end) &&
+                        i === window.first)
+                    }
                     labels={labels}
                     selected={selectedIds.has(m.id)}
                     accent={selectedIds.has(m.id) && selectionSource === "keyboard"}
@@ -350,26 +387,26 @@ export function MessageList({
               })}
             </div>
           </div>
-          <output className="block p-3 text-center text-neutral-500">
-            {loadError && (
-              <p className="text-red-500">
-                <Trans>Could not load older messages. Try again.</Trans>
-              </p>
-            )}
-            {loadingMore ? (
-              <>
-                <span className="mr-2 inline-block size-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                <Trans>Loading older messages…</Trans>
-              </>
-            ) : exhausted ? (
-              <Trans>No more messages</Trans>
-            ) : (
-              <button type="button" onClick={onEndReached}>
-                <Trans>Load older messages</Trans>
-              </button>
-            )}
-          </output>
         </ContextMenuTrigger>
+        <output className="block shrink-0 p-3 text-center text-a11y-muted">
+          {loadError && (
+            <p role="alert" className="text-a11y-danger">
+              <Trans>Could not load older messages. Try again.</Trans>
+            </p>
+          )}
+          {loadingMore ? (
+            <>
+              <span className="mr-2 inline-block size-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
+              <Trans>Loading older messages…</Trans>
+            </>
+          ) : exhausted ? (
+            <Trans>No more messages</Trans>
+          ) : (
+            <button type="button" onClick={onEndReached}>
+              <Trans>Load older messages</Trans>
+            </button>
+          )}
+        </output>
         {menuThread &&
           (selectedIds.has(menuThread.id) && selectedIds.size > 1 && rowActions.batchMenu ? (
             <ContextMenuContent>{rowActions.batchMenu}</ContextMenuContent>
@@ -417,7 +454,7 @@ function FilterChip(props: {
       <Toggle
         pressed={props.active}
         onPressedChange={props.onChange}
-        className="h-6 shrink-0 rounded-full px-2.5 text-[12px] font-medium text-neutral-500 outline-offset-1 outline-blue-500/60 hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:text-neutral-400 dark:hover:bg-white/10 dark:data-pressed:text-white"
+        className="h-6 shrink-0 rounded-full px-2.5 text-[12px] font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:hover:bg-white/10 dark:data-pressed:text-white"
       >
         {props.label}
       </Toggle>
@@ -436,6 +473,7 @@ function Row({
   thread: m,
   position,
   total,
+  tabbable,
   rowHeight,
   density,
   labels,
@@ -455,6 +493,7 @@ function Row({
   density: (typeof LIST_DENSITIES)[keyof typeof LIST_DENSITIES];
   position: number;
   total: number;
+  tabbable: boolean;
   labels: Map<string, Label>;
   selected: boolean;
   accent: boolean;
@@ -472,7 +511,7 @@ function Row({
   const { i18n } = useLingui();
   const row = useRef<HTMLButtonElement>(null);
   const swipe = useMessageSwipe(row, swipeActions, onSwipe);
-  const muted = accent ? "text-white/75" : "text-neutral-500 dark:text-neutral-400";
+  const muted = accent ? "text-white" : "text-a11y-muted";
   const chips = m.labels
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
     .filter((l) => l.messageListVisibility !== "hide")
@@ -483,11 +522,13 @@ function Row({
         <span
           key={l.id}
           className={`max-w-24 shrink-0 truncate rounded px-1.5 text-[12px] leading-[18px] ${
-            accent ? "bg-white/20 text-white" : l.color ? "" : "bg-black/[0.06] dark:bg-white/10"
+            accent
+              ? "bg-black/20 text-white"
+              : l.color
+                ? "colored-label"
+                : "bg-black/[0.06] dark:bg-white/10"
           }`}
-          style={
-            !accent && l.color ? { backgroundColor: `${l.color}33`, color: l.color } : undefined
-          }
+          style={!accent && l.color ? labelChipColors(l.color) : undefined}
         >
           {l.name}
         </span>
@@ -498,7 +539,7 @@ function Row({
     <>
       {m.isStarred && (
         <Star
-          className={`size-3.5 shrink-0 ${accent ? "fill-white text-white" : "fill-amber-400 text-amber-400"}`}
+          className={`size-3.5 shrink-0 ${accent ? "fill-white text-white" : "fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"}`}
         />
       )}
     </>
@@ -531,6 +572,7 @@ function Row({
             ? `translateX(${Math.max(-100, Math.min(100, swipe.distance))}px)`
             : undefined,
         }}
+        tabIndex={tabbable ? 0 : -1}
         aria-selected={selected}
         aria-setsize={total}
         aria-posinset={position}
@@ -546,6 +588,9 @@ function Row({
               : "hover:bg-black/[0.025] dark:hover:bg-white/[0.03]"
         }`}
       >
+        <span className="sr-only">
+          {m.isUnread && <Trans>Unread</Trans>} {m.isStarred && <Trans>Starred</Trans>}
+        </span>
         {m.isUnread && (
           <span
             className={`absolute top-[16px] left-2.5 size-2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
@@ -557,7 +602,7 @@ function Row({
             <span className={`shrink-0 text-[13px] tabular-nums ${muted}`}>{m.threadCount}</span>
           )}
           <span className="flex-1" />
-          {showAccount && <AccountBadge accountId={m.accountId} />}
+          {showAccount && <AccountBadge accountId={m.accountId} accent={accent} />}
           <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
             {shortDate(m.date, i18n)}
           </span>

@@ -41,7 +41,7 @@ export function UpdateSettings() {
       <h2 className="font-semibold">
         <Trans>Software updates</Trans>
       </h2>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Signed builds use a GitHub access token to download private releases. The token is stored
           in your system keychain.
@@ -71,7 +71,7 @@ export function UpdateSettings() {
         />
         <Trans>Automatically download updates</Trans>
       </label>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Downloaded updates install when you quit, after pending drafts are checked.</Trans>
       </p>
       <output>
@@ -135,7 +135,9 @@ export function UpdateSettings() {
         </Button>
       </div>
       {resultError(i18n, result) && (
-        <output className="text-red-500">{resultError(i18n, result)}</output>
+        <output role="alert" className="text-a11y-danger">
+          {resultError(i18n, result)}
+        </output>
       )}
     </section>
   );

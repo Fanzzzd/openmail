@@ -16,9 +16,9 @@ export function MailPanels({
     storage: localStorage,
   });
   return (
-    <Panel id="mail" minSize={560}>
+    <Panel id="mail" minSize={position === "bottom" ? 360 : 640}>
       <Group
-        key={`${position}:${readerVisible}`}
+        key={String(readerVisible)}
         orientation={position === "bottom" ? "vertical" : "horizontal"}
         defaultLayout={panes.defaultLayout}
         onLayoutChanged={panes.onLayoutChanged}

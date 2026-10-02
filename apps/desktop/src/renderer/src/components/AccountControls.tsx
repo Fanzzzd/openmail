@@ -79,7 +79,7 @@ export function AccountControls({
         onClick={() =>
           saveSettings({ kind: "appearance", description, color: customColor ? color : null })
         }
-        className="rounded px-2 py-1 text-blue-600 disabled:opacity-40"
+        className="rounded px-2 py-1 text-a11y-accent disabled:opacity-40"
       >
         <Trans>Save</Trans>
       </button>
@@ -110,7 +110,9 @@ export function AccountControls({
         <Trans>Move down</Trans>
       </button>
       {resultError(i18n, result) && (
-        <output className="text-red-500">{resultError(i18n, result)}</output>
+        <output role="alert" className="text-a11y-danger">
+          {resultError(i18n, result)}
+        </output>
       )}
     </div>
   );

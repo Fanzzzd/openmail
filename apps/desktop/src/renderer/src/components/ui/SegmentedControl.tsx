@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string | number>({
         if (next !== null) onValueChange(next);
       }}
       disabled={disabled}
-      className={`relative inline-grid grid-flow-col auto-cols-fr rounded-[7px] bg-black/[0.06] p-0.5 outline-offset-1 outline-blue-500/60 has-focus-visible:outline-[3px] data-disabled:opacity-50 dark:bg-white/[0.07] dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.06)] ${className}`}
+      className={`relative inline-grid grid-flow-col auto-cols-fr rounded-[7px] bg-black/[0.06] p-0.5 outline-offset-1 outline-a11y-focus has-focus-visible:outline-[3px] data-disabled:opacity-50 dark:bg-white/[0.07] dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.06)] ${className}`}
     >
       <span
         aria-hidden

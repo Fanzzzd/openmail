@@ -6,6 +6,13 @@
     "Microsoft YaHei", system-ui, sans-serif;
 }
 
+@theme inline {
+  --color-a11y-muted: var(--a11y-muted);
+  --color-a11y-accent: var(--a11y-accent);
+  --color-a11y-danger: var(--a11y-danger);
+  --color-a11y-focus: var(--a11y-focus);
+}
+
 html,
 body,
 #root {
@@ -35,4 +42,87 @@ body {
 .selectable {
   user-select: text;
   cursor: auto;
+}
+
+@layer base {
+  /* Shared, opaque tokens keep keyboard focus visible on every popup and theme. */
+  :root {
+    --a11y-surface: #ffffff;
+    --a11y-surface-muted: #f5f5f5;
+    --a11y-text: #171717;
+    --a11y-muted: #525252;
+    --a11y-accent: #1d4ed8;
+    --a11y-danger: #b91c1c;
+    --a11y-border: #737373;
+    --a11y-focus: #1d4ed8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --a11y-surface: #171717;
+      --a11y-surface-muted: #262626;
+      --a11y-text: #f5f5f5;
+      --a11y-muted: #a3a3a3;
+      --a11y-accent: #93c5fd;
+      --a11y-danger: #fca5a5;
+      --a11y-border: #a3a3a3;
+      --a11y-focus: #93c5fd;
+    }
+  }
+
+  :where(button, a, select, iframe, [tabindex]):not(input):not(textarea):not(
+      [contenteditable]
+    ):focus-visible {
+    outline: 2px solid var(--a11y-focus);
+    outline-offset: 2px;
+    /* A separating surface keeps the ring readable even on an accent button. */
+    box-shadow: 0 0 0 2px var(--a11y-surface);
+  }
+
+  :where(input:not([type="hidden"]), textarea, [role="checkbox"], [role="radio"]) {
+    border-color: var(--a11y-border);
+  }
+
+  /* Dialogs share a viewport bound; their contents scroll instead of clipping at zoom. */
+  :where([role="dialog"], [role="alertdialog"]):not([data-full-window]) {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :where([role="checkbox"], [role="radio"]) {
+    box-shadow: 0 0 0 1px var(--a11y-border);
+  }
+
+  ::placeholder {
+    color: var(--a11y-muted);
+    opacity: 1;
+  }
+
+  /* Virtual rows clip swipe content. Draw the focus indicator inside that boundary. */
+  [role="option"][data-id]:focus-visible {
+    outline-offset: -4px;
+    box-shadow: inset 0 0 0 2px var(--a11y-surface);
+  }
+}
+
+@layer components {
+  .colored-label {
+    color: var(--label-text-light);
+  }
+  @media (prefers-color-scheme: dark) {
+    .colored-label {
+      color: var(--label-text-dark);
+    }
+  }
 }

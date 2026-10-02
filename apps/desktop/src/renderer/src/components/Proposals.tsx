@@ -47,7 +47,7 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
       className="flex max-h-[min(600px,calc(100vh-40px))] w-[600px] flex-col overflow-hidden"
     >
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-black/[0.07] px-5 dark:border-white/[0.08]">
-        <Sparkles className="size-4 text-violet-500" />
+        <Sparkles className="size-4 text-violet-700 dark:text-violet-400" />
         <h2 className="flex-1 text-[15px] font-semibold">
           <Trans>AI suggestions</Trans>
         </h2>
@@ -55,14 +55,14 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
           type="button"
           aria-label={t`Close`}
           onClick={onClose}
-          className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+          className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
         >
           <X className="size-4" />
         </button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {proposals.length === 0 ? (
-          <p className="p-8 text-center text-neutral-400">
+          <p className="p-8 text-center text-a11y-muted">
             <Trans>No suggestions waiting for review.</Trans>
           </p>
         ) : (
@@ -125,7 +125,7 @@ function Item({
 
   return (
     <li className="px-5 py-4">
-      <p className="text-[12px] text-neutral-500 dark:text-neutral-400">
+      <p className="text-[12px] text-a11y-muted">
         {surface} · {agent?.name ?? "AI"} ·{" "}
         {new Date(p.createdAt).toLocaleString(i18n.locale, {
           month: "numeric",
@@ -152,7 +152,7 @@ function Item({
               />
             ))}
             {more > 0 && (
-              <li className="text-neutral-400">
+              <li className="text-a11y-muted">
                 <Trans>{more} more</Trans>
               </li>
             )}
@@ -184,7 +184,7 @@ function Item({
             readOnly
             rows={8}
             value={outgoing.message.text}
-            className="mt-1 block max-h-64 w-full resize-y overflow-y-auto rounded border border-black/10 bg-transparent p-2 whitespace-pre-wrap break-words text-neutral-500 dark:border-white/10 dark:text-neutral-400"
+            className="mt-1 block max-h-64 w-full resize-y overflow-y-auto rounded border border-black/10 bg-transparent p-2 whitespace-pre-wrap break-words text-a11y-muted dark:border-white/10"
           />
         </>
       )}
@@ -229,7 +229,11 @@ function Item({
         >
           <Trans>Reject</Trans>
         </button>
-        {error && <span className="self-center text-red-500">{error}</span>}
+        {error && (
+          <span role="alert" className="self-center text-a11y-danger">
+            {error}
+          </span>
+        )}
       </div>
     </li>
   );
@@ -246,7 +250,7 @@ function ThreadSubject({ id, labelId }: { id: string; labelId?: string }) {
   return (
     <li className="break-words">
       {thread.at(-1)?.subject || t`(No subject)`}
-      {labelId && <span className="ml-2 text-neutral-500">{t`Label: ${name}`}</span>}
+      {labelId && <span className="ml-2 text-a11y-muted">{t`Label: ${name}`}</span>}
     </li>
   );
 }

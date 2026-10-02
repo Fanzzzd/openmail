@@ -47,7 +47,7 @@ export function PickerPopover({
         <Popover.Positioner side={side} align="start" sideOffset={6} className="z-[60]">
           <Popover.Popup
             finalFocus={finalFocus}
-            className={`flex flex-col overflow-hidden ${popupSurface} ${popupMotion} ${className}`}
+            className={`focus-within:ring-2 focus-within:ring-a11y-focus flex flex-col overflow-hidden ${popupSurface} ${popupMotion} ${className}`}
           >
             {children}
           </Popover.Popup>
@@ -59,11 +59,11 @@ export function PickerPopover({
 
 /** Search field at the top of a picker. */
 export const pickerInput =
-  "h-8 w-full shrink-0 border-b border-black/[0.07] bg-transparent px-3 text-[13px] outline-none placeholder:text-neutral-400 dark:border-white/[0.08]";
+  "h-8 w-full shrink-0 border-b border-black/[0.07] bg-transparent px-3 text-[13px] outline-none placeholder:text-a11y-muted dark:border-white/[0.08]";
 
 /** Footer button of a picker. */
 export const pickerFooter =
-  "block h-8 w-full shrink-0 border-t border-black/[0.07] px-3 text-left text-blue-600 outline-none hover:bg-black/[0.03] focus-visible:bg-black/[0.05] dark:border-white/[0.08] dark:text-blue-400 dark:hover:bg-white/5";
+  "block h-8 w-full shrink-0 border-t border-black/[0.07] px-3 text-left text-a11y-accent outline-none hover:bg-black/[0.03] focus-visible:bg-black/[0.05] dark:border-white/[0.08] dark:text-blue-400 dark:hover:bg-white/5";
 
 /** The list of a picker. */
 export const pickerList = "max-h-64 overflow-y-auto p-[5px] empty:hidden";

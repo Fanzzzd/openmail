@@ -31,7 +31,7 @@ export function SpellcheckSettings() {
         <Trans>Check spelling while typing</Trans>
       </label>
       {languages?.automatic ? (
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>macOS uses the system spellchecker and detects languages automatically.</Trans>
         </p>
       ) : (
@@ -60,7 +60,9 @@ export function SpellcheckSettings() {
         </fieldset>
       )}
       {resultError(i18n, result) && (
-        <output className="text-red-500">{resultError(i18n, result)}</output>
+        <output role="alert" className="text-a11y-danger">
+          {resultError(i18n, result)}
+        </output>
       )}
     </section>
   );

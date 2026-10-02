@@ -292,7 +292,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-neutral-300 dark:text-neutral-600">
           <Mail className="size-10 stroke-1" />
           {AsyncResult.isFailure(thread) && (
-            <p className="text-neutral-400">{causeText(i18n, thread.cause)}</p>
+            <p className="text-a11y-muted">{causeText(i18n, thread.cause)}</p>
           )}
         </div>
       )}

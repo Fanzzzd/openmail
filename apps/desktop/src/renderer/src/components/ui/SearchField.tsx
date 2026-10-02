@@ -131,8 +131,8 @@ export function SearchField({
         autoHighlight={false}
         onItemHighlighted={(item) => setHighlighted(item)}
       >
-        <Combobox.Chips className="flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border border-black/10 px-2 dark:border-white/10">
-          <Search className="size-3.5 text-neutral-400" />
+        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border border-black/10 px-2 dark:border-white/10">
+          <Search className="size-3.5 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}

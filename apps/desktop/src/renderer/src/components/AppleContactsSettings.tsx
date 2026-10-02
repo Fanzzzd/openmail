@@ -30,7 +30,7 @@ export function AppleContactsSettings() {
         />
         <span>{t`Use Apple Contacts`}</span>
       </label>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Apple Contacts stay on this device and are never sent to AI models.</Trans>
       </p>
       {prefs.useAppleContacts && (

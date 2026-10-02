@@ -78,7 +78,7 @@ function AccountServerSettings({ account }: { account: Account }) {
   return (
     <>
       {(resultError(i18n, filters) || resultError(i18n, vacation)) && (
-        <div role="alert" className="space-y-2 text-orange-600">
+        <div role="alert" className="space-y-2 text-orange-700 dark:text-orange-400">
           <p>{resultError(i18n, filters) ?? resultError(i18n, vacation)}</p>
           {(settingsScopeMissing(filters) || settingsScopeMissing(vacation)) && (
             <button
@@ -108,7 +108,7 @@ function AccountServerSettings({ account }: { account: Account }) {
               <span className="truncate">
                 {f.name}
                 {f.editable === false && (
-                  <span className="block text-xs text-neutral-500">{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
+                  <span className="block text-xs text-a11y-muted">{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
                 )}
               </span>
               <button
@@ -121,7 +121,7 @@ function AccountServerSettings({ account }: { account: Account }) {
                 disabled={f.editable === false}
                 onClick={() => setApplying(f)}
               >{t`Apply to existing mail`}</button>
-              <button type="button" className="text-red-500" onClick={() => setDeleting(f)}>
+              <button type="button" className="text-a11y-danger" onClick={() => setDeleting(f)}>
                 <Trans>Delete</Trans>
               </button>
             </li>
@@ -136,7 +136,7 @@ function AccountServerSettings({ account }: { account: Account }) {
           <Trans>Create filter</Trans>
         </button>
         {resultError(i18n, deleted) && (
-          <p role="alert" className="text-red-500">
+          <p role="alert" className="text-a11y-danger">
             {resultError(i18n, deleted)}
           </p>
         )}
@@ -665,11 +665,11 @@ export function FilterEditor({
             {count === 200 && " +"}
           </p>
           {resultError(i18n, preview) && (
-            <p role="alert" className="text-red-500">
+            <p role="alert" className="text-a11y-danger">
               {resultError(i18n, preview)}
             </p>
           )}
-          <ul className="max-h-28 overflow-y-auto text-[12px] text-neutral-500">
+          <ul className="max-h-28 overflow-y-auto text-[12px] text-a11y-muted">
             {matches.slice(0, 20).map((m) => (
               <li key={m.id} className="truncate">
                 {m.from.address}: {m.subject}
@@ -677,7 +677,7 @@ export function FilterEditor({
             ))}
           </ul>
           {mode !== "apply" && (
-            <p className="text-[12px] text-neutral-500">
+            <p className="text-[12px] text-a11y-muted">
               <Trans>The filter applies to future mail on the server.</Trans>
             </p>
           )}
@@ -686,7 +686,7 @@ export function FilterEditor({
           resultError(i18n, updated) ||
           resultError(i18n, applied) ||
           resultError(i18n, prepared)) && (
-          <div role="alert" className="text-red-500">
+          <div role="alert" className="text-a11y-danger">
             <p>
               {resultError(i18n, result) ??
                 resultError(i18n, updated) ??
@@ -834,7 +834,7 @@ function VacationEditor({
             />
           </label>
         ) : (
-          <p className="text-[12px] text-neutral-500">
+          <p className="text-[12px] text-a11y-muted">
             <Trans>Outlook chooses the reply subject.</Trans>
           </p>
         )}
@@ -894,7 +894,7 @@ function VacationEditor({
           </>
         )}
         {resultError(i18n, result) && (
-          <p role="alert" className="text-red-500">
+          <p role="alert" className="text-a11y-danger">
             {resultError(i18n, result)}
           </p>
         )}
@@ -938,7 +938,7 @@ function Aliases({ account }: { account: Account }) {
         <Trans>Sync aliases and signatures</Trans>
       </button>
       {resultError(i18n, result) && (
-        <p role="alert" className="text-red-500">
+        <p role="alert" className="text-a11y-danger">
           {resultError(i18n, result)}
         </p>
       )}

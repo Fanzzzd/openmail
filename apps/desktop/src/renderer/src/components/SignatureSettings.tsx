@@ -74,7 +74,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
     });
   return (
     <section className="space-y-4">
-      <h3 className="text-[12px] font-semibold text-neutral-500">
+      <h3 className="text-[12px] font-semibold text-a11y-muted">
         <Trans>Signatures</Trans>
       </h3>
       {addresses.map((address) => {
@@ -174,7 +174,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
                 {signature.source === "local" && (
                   <button
                     type="button"
-                    className="text-red-600"
+                    className="text-a11y-danger"
                     aria-label={t`Delete ${signature.name}`}
                     onClick={() =>
                       remove({ payload: { id: signature.id }, reactivityKeys: [Keys.signatures] })
@@ -185,7 +185,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
             ))}
             <button
               type="button"
-              className="text-blue-600"
+              className="text-a11y-accent"
               onClick={() => setForm({ address, name: "", body: richComposeBody("") })}
             >{t`New signature`}</button>
           </div>
@@ -217,7 +217,7 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
         />
         {t`Include signature separator`}
       </label>
-      <p className="text-neutral-500">{t`Local signatures stay on this Mac. Gmail default signatures are read from Gmail.`}</p>
+      <p className="text-a11y-muted">{t`Local signatures stay on this Mac. Gmail default signatures are read from Gmail.`}</p>
       {form && (
         <SignatureEditor
           key={`${form.address}/${form.id ?? "new"}`}
@@ -263,8 +263,16 @@ function SignatureEditor({ initial, onClose }: { initial: SignatureForm; onClose
           onChange={(body) => setForm((previous) => ({ ...previous, body }))}
         />
       </div>
-      {error && <p className="text-red-600">{error}</p>}
-      {state._tag === "Failure" && <p className="text-red-600">{causeText(i18n, state.cause)}</p>}
+      {error && (
+        <p role="alert" className="text-a11y-danger">
+          {error}
+        </p>
+      )}
+      {state._tag === "Failure" && (
+        <p role="alert" className="text-a11y-danger">
+          {causeText(i18n, state.cause)}
+        </p>
+      )}
       {state._tag === "Success" && !state.waiting && <output>{t`Saved`}</output>}
       <div className="flex gap-3">
         <button

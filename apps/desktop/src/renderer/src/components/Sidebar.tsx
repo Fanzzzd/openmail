@@ -1,3 +1,4 @@
+import { SyncStatusAnnouncement } from "./SyncStatusAnnouncement";
 import { numberedFavorites, favoriteView } from "../favorite-navigation";
 import { systemFolderId, specialFolderBadge, DEFAULT_PREFS } from "@openmail/core/schema";
 import { Effect } from "effect";
@@ -98,15 +99,15 @@ type Icon = ComponentType<{ className?: string }>;
 
 // Each mailbox gets its own icon color, as in Mimestream's sidebar.
 const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [
-  { id: "snoozed", icon: Clock, color: "text-violet-500" },
-  { id: "inbox", icon: Inbox, color: "text-blue-500" },
-  { id: "important", icon: Bookmark, color: "text-orange-500" },
-  { id: "starred", icon: Star, color: "text-amber-500" },
-  { id: "sent", icon: Send, color: "text-emerald-500" },
-  { id: "drafts", icon: File, color: "text-sky-500" },
-  { id: "spam", icon: ShieldAlert, color: "text-orange-600" },
-  { id: "trash", icon: Trash2, color: "text-red-500" },
-  { id: "all", icon: Mails, color: "text-violet-500" },
+  { id: "snoozed", icon: Clock, color: "text-violet-600 dark:text-violet-400" },
+  { id: "inbox", icon: Inbox, color: "text-blue-600 dark:text-blue-400" },
+  { id: "important", icon: Bookmark, color: "text-orange-600 dark:text-orange-400" },
+  { id: "starred", icon: Star, color: "text-amber-600 dark:text-amber-400" },
+  { id: "sent", icon: Send, color: "text-emerald-600 dark:text-emerald-400" },
+  { id: "drafts", icon: File, color: "text-sky-600 dark:text-sky-400" },
+  { id: "spam", icon: ShieldAlert, color: "text-orange-600 dark:text-orange-400" },
+  { id: "trash", icon: Trash2, color: "text-red-600 dark:text-red-400" },
+  { id: "all", icon: Mails, color: "text-violet-600 dark:text-violet-400" },
 ];
 
 const CATEGORY_ICONS: Record<string, Icon> = {
@@ -346,7 +347,7 @@ export function Sidebar({
             type="button"
             aria-label={t`Add email account`}
             onClick={onAddAccount}
-            className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
+            className="rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
           >
             <Plus className="size-4.5" />
           </button>
@@ -356,7 +357,7 @@ export function Sidebar({
             type="button"
             aria-label={t`New message`}
             onClick={onCompose}
-            className="rounded-md p-1 text-neutral-500 hover:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10"
+            className="rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
           >
             <SquarePen className="size-4.5" />
           </button>
@@ -373,7 +374,7 @@ export function Sidebar({
               type="button"
               aria-label={t`Edit space`}
               onClick={() => onEditProfile(profile)}
-              className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+              className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
             >
               <Pencil className="size-3.5" />
             </button>
@@ -381,7 +382,7 @@ export function Sidebar({
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2.5 pb-3">
+      <nav aria-label={t`Mailboxes`} className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3">
         {members.length > 1 && (
           <div className="mb-4 grid grid-cols-2 gap-1.5">
             <Tile
@@ -412,14 +413,14 @@ export function Sidebar({
           </div>
         )}
         {members.length === 0 && (
-          <p className="px-2 pb-4 text-[12px] leading-relaxed text-neutral-500">
+          <p className="px-2 pb-4 text-[12px] leading-relaxed text-a11y-muted">
             {profile ? (
               <Trans>
                 This space has no accounts yet.{" "}
                 <button
                   type="button"
                   onClick={() => onEditProfile(profile)}
-                  className="text-blue-600 dark:text-blue-400"
+                  className="text-a11y-accent dark:text-blue-400"
                 >
                   Add account
                 </button>
@@ -454,7 +455,7 @@ export function Sidebar({
             <Item
               active={false}
               onClick={onProposals}
-              icon={<Sparkles className="size-4.5 text-violet-500" />}
+              icon={<Sparkles className="size-4.5 text-violet-600 dark:text-violet-400" />}
               label={t`AI suggestions`}
               badge={proposals}
             />
@@ -512,7 +513,7 @@ export function Sidebar({
                               const accountId = view.accountId ?? members[0]?.id;
                               if (accountId) toggleFavorite(accountId, systemFolderId(id));
                             }}
-                            className="px-1 text-amber-500"
+                            className="px-1 text-amber-600 dark:text-amber-400"
                           >
                             {labelPrefs.some(
                               (p) =>
@@ -534,7 +535,7 @@ export function Sidebar({
                               e.stopPropagation();
                               setCategoriesOpen((v) => !v);
                             }}
-                            className="-ml-1 rounded p-0.5 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+                            className="-ml-1 rounded p-0.5 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
                           >
                             {categoriesOpen ? (
                               <ChevronDown className="size-3.5" />
@@ -575,7 +576,7 @@ export function Sidebar({
                             onClick={() =>
                               onView({ ...view, mailbox: "inbox", label: { id: cat } })
                             }
-                            icon={<CatIcon className="size-4 text-blue-400" />}
+                            icon={<CatIcon className="size-4 text-blue-600 dark:text-blue-400" />}
                             label={i18n._(name)}
                             badge={inInbox[cat] ?? 0}
                           />
@@ -641,7 +642,7 @@ export function Sidebar({
                         : view.label?.id === l.id && view.label.accountId === l.accountId
                     }
                     onClick={() => onView(favoriteView(view, l))}
-                    icon={<Star className="size-4 text-amber-500" />}
+                    icon={<Star className="size-4 text-amber-600 dark:text-amber-400" />}
                     label={index < 9 ? `${l.name}  ⌥⌘${index + 1}` : l.name}
                     badge={0}
                   />
@@ -667,7 +668,11 @@ export function Sidebar({
             >{t`Reset Favorites`}</MenuItem>
           </ContextMenuContent>
         </ContextMenuRoot>
-        {favoriteError && <output className="px-3 text-xs text-red-600">{favoriteError}</output>}
+        {favoriteError && (
+          <output role="alert" className="px-3 text-xs text-a11y-danger">
+            {favoriteError}
+          </output>
+        )}
         <LabelSections
           labels={labels}
           accounts={accounts}
@@ -734,16 +739,17 @@ export function Sidebar({
                   ),
                 );
             }}
-            className="block px-2 py-1 text-xs text-neutral-500"
+            className="block px-2 py-1 text-xs text-a11y-muted"
           >
             {t`No parent`} · {accountName(a)}
           </button>
         ))}
       </nav>
 
-      <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-neutral-500">
+      <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-a11y-muted">
         <span className="min-w-0 flex-1 truncate" title={syncState.errors.join("\n")}>
-          {syncStatus()}
+          <span aria-hidden="true">{syncStatus()}</span>
+          <SyncStatusAnnouncement failed={syncState.errors.length > 0} />
         </span>
         <Tip label={t`Settings`} shortcut={shortcut("settings")} side="top">
           <button
@@ -783,7 +789,7 @@ const ring = (active: boolean) =>
     : "hover:bg-black/5 dark:hover:bg-white/10";
 
 const cell = (active: boolean) =>
-  `flex size-8 shrink-0 items-center justify-center rounded-lg outline-offset-0 outline-blue-500/60 focus-visible:outline-[3px] ${ring(active)}`;
+  `flex size-8 shrink-0 items-center justify-center rounded-lg outline-offset-0 outline-a11y-focus focus-visible:outline-[3px] ${ring(active)}`;
 
 /** Arc-style row of spaces at the bottom of the sidebar. ⌃1 is the overview. */
 function SpaceSwitcher({
@@ -896,7 +902,7 @@ function SpaceSwitcher({
         <Toolbar.Button
           aria-label={t`New space`}
           onClick={() => onEditProfile("new")}
-          className={`${cell(false)} text-neutral-400`}
+          className={`${cell(false)} text-a11y-muted`}
         >
           <Plus className="size-4" />
         </Toolbar.Button>
@@ -944,7 +950,7 @@ function LabelSections({
                 <button
                   type="button"
                   aria-label={t`Favorite`}
-                  className="text-amber-500"
+                  className="text-amber-600 dark:text-amber-400"
                   onClick={() => favorite(l)}
                 >
                   ☆
@@ -957,7 +963,7 @@ function LabelSections({
               l.color ? (
                 <span className="size-2.5 rounded-full" style={{ backgroundColor: l.color }} />
               ) : (
-                <Tag className="size-4 text-neutral-400" />
+                <Tag className="size-4 text-a11y-muted" />
               )
             }
             label={l.name}
@@ -972,9 +978,7 @@ function LabelSections({
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mb-4">
-      <h2 className="truncate px-2 pb-1 text-[12px] font-semibold text-neutral-400 dark:text-neutral-500">
-        {title}
-      </h2>
+      <h2 className="truncate px-2 pb-1 text-[12px] font-semibold text-a11y-muted">{title}</h2>
       <div className="space-y-px">{children}</div>
     </div>
   );
@@ -1022,7 +1026,7 @@ function Tile(props: {
         <span className="flex items-center justify-between">
           {props.icon}
           {props.badge > 0 && (
-            <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
+            <span className="text-[12px] text-a11y-muted tabular-nums">
               {i18n.number(props.badge)}
             </span>
           )}
@@ -1031,7 +1035,7 @@ function Tile(props: {
           <span className="block truncate text-[13px] font-medium">{props.label}</span>
           {props.sublabel && (
             <span
-              className={`block truncate text-[11px] ${props.warn ? "text-red-500" : "text-neutral-500 dark:text-neutral-400"}`}
+              className={`block truncate text-[11px] ${props.warn ? "text-a11y-danger" : "text-a11y-muted"}`}
             >
               {props.sublabel}
             </span>
@@ -1073,7 +1077,7 @@ function Item(props: {
         <span className="flex size-5 items-center justify-center">{props.icon}</span>
         <span className="min-w-0 flex-1 truncate">{props.label}</span>
         {props.badge > 0 && (
-          <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
+          <span className="text-[12px] text-a11y-muted tabular-nums">
             {i18n.number(props.badge)}
           </span>
         )}

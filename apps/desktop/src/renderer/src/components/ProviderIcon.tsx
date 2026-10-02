@@ -68,7 +68,7 @@ export function ProviderIcon({
   const { i18n } = useLingui();
   if (provider === "163") return <NetEase className={className} />;
   const entry = ICONS.get(provider);
-  if (!entry) return <Mail className={`${className} text-neutral-500`} aria-label="IMAP" />;
+  if (!entry) return <Mail className={`${className} text-a11y-muted`} aria-label="IMAP" />;
   const Icon = entry.icon;
   const label = typeof entry.label === "string" ? entry.label : i18n._(entry.label);
   return <Icon className={className} aria-label={label} />;

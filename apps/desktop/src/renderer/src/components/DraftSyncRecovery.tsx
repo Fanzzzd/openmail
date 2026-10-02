@@ -35,8 +35,8 @@ export function DraftSyncRecovery({
   if (state !== "failed") return null;
   return (
     <div className="shrink-0 border-b px-4 py-2">
-      <output>{t`Couldn't sync`}</output>
-      <p className="text-neutral-500">{t`Your changes are saved on this Mac. Try again or keep a local copy.`}</p>
+      <output role="alert">{t`Couldn't sync`}</output>
+      <p className="text-a11y-muted">{t`Your changes are saved on this Mac. Try again or keep a local copy.`}</p>
       <div className="mt-1 flex gap-3">
         <button type="button" disabled={busy} onClick={() => onRecover("retry")}>{t`Retry`}</button>
         <button

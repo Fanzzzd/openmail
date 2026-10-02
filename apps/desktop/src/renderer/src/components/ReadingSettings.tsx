@@ -12,8 +12,8 @@ import { useShortcutText } from "./SystemSettings";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-const heading = "mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400";
-const note = "mt-2 text-neutral-500 dark:text-neutral-400";
+const heading = "mb-2 text-[12px] font-semibold text-a11y-muted";
+const note = "mt-2 text-a11y-muted";
 const box = "rounded-lg border border-black/10 dark:border-white/10";
 
 /** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
@@ -344,7 +344,7 @@ function ImageSenders() {
               <button
                 type="button"
                 onClick={() => set(sender, false)}
-                className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
               >
                 <Trans>Remove</Trans>
               </button>

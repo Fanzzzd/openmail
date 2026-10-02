@@ -104,12 +104,12 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
         }}
         className="flex min-h-0 flex-1"
       >
-        <Tabs.List className="flex w-40 shrink-0 flex-col gap-1 border-r border-black/[0.07] p-3 dark:border-white/[0.08]">
+        <Tabs.List className="flex w-40 shrink-0 flex-col overflow-y-auto gap-1 border-r border-black/[0.07] p-3 dark:border-white/[0.08]">
           {TABS.map((item) => (
             <Tabs.Tab
               key={item.id}
               value={item.id}
-              className="h-8 rounded-md px-3 text-left font-medium text-neutral-500 outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-blue-500/60 data-active:bg-black/[0.07] data-active:text-inherit dark:text-neutral-400 dark:hover:bg-white/5 dark:data-active:bg-white/10"
+              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium text-a11y-muted outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
             >
               {i18n._(item.label)}
             </Tabs.Tab>
@@ -190,7 +190,7 @@ function Accounts({
     );
   return (
     <div className="space-y-4">
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Drag accounts to reorder or move between spaces. You can also use the space picker and
           Move up / Move down buttons.
@@ -246,7 +246,9 @@ function Accounts({
         </section>
       ))}
       {resultError(i18n, result) && (
-        <output className="text-red-500">{resultError(i18n, result)}</output>
+        <output role="alert" className="text-a11y-danger">
+          {resultError(i18n, result)}
+        </output>
       )}
       <button
         type="button"
@@ -284,12 +286,12 @@ function AccountRow({
 
   const status =
     a.enabled === false
-      ? { text: t`Disabled`, className: "text-neutral-400" }
+      ? { text: t`Disabled`, className: "text-a11y-muted" }
       : a.needsReauth
-        ? { text: t`Needs sign-in`, className: "text-red-500" }
+        ? { text: t`Needs sign-in`, className: "text-a11y-danger" }
         : a.lastSyncError
-          ? { text: t`Last sync failed`, className: "text-orange-500" }
-          : { text: t`Syncing normally`, className: "text-neutral-400" };
+          ? { text: t`Last sync failed`, className: "text-orange-700 dark:text-orange-400" }
+          : { text: t`Syncing normally`, className: "text-a11y-muted" };
 
   return (
     <li
@@ -316,14 +318,14 @@ function AccountRow({
         disabled={reauth.waiting}
         // IMAP signs in again by adding the same address with a new password.
         onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth())}
-        className="h-7 shrink-0 rounded-md px-2.5 text-blue-600 hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
+        className="h-7 shrink-0 rounded-md px-2.5 text-a11y-accent hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
       >
         <Trans>Sign in again</Trans>
       </button>
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+        className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
       >
         <Trans>Remove</Trans>
       </button>
@@ -395,7 +397,7 @@ function General() {
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
     <section>
-      <h3 className="mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400">
+      <h3 className="mb-2 text-[12px] font-semibold text-a11y-muted">
         <Trans>Language</Trans>
       </h3>
       <Select
@@ -425,7 +427,7 @@ function AgentPolicy() {
 
   return (
     <div>
-      <p className="text-neutral-500 dark:text-neutral-400">
+      <p className="text-a11y-muted">
         <Trans>
           AI connects to openmail over MCP, for example Claude Code. This decides whether it can
           change your mail.
@@ -445,21 +447,19 @@ function AgentPolicy() {
             key={m.id}
             value={m.id}
             aria-label={i18n._(m.label)}
-            className="group flex cursor-pointer gap-3 rounded-lg border border-black/10 p-3 outline-offset-1 outline-blue-500/60 focus-visible:outline-[3px] data-checked:border-blue-500 data-checked:bg-blue-500/5 dark:border-white/10 dark:data-checked:border-blue-500"
+            className="group flex cursor-pointer gap-3 rounded-lg border border-black/10 p-3 outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] data-checked:border-blue-500 data-checked:bg-blue-600/5 dark:border-white/10 dark:data-checked:border-blue-500"
           >
-            <span className="mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0.5px_1px_rgb(0_0_0/0.15)] ring-1 ring-black/20 group-data-checked:bg-blue-500 group-data-checked:ring-blue-600 dark:bg-white/10 dark:ring-white/20 dark:group-data-checked:bg-blue-500 dark:group-data-checked:ring-blue-500">
+            <span className="mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_0.5px_1px_rgb(0_0_0/0.15)] ring-1 ring-black/20 group-data-checked:bg-blue-600 group-data-checked:ring-blue-600 dark:bg-white/10 dark:ring-white/20 dark:group-data-checked:bg-blue-600 dark:group-data-checked:ring-blue-500">
               <Radio.Indicator className="size-1.5 rounded-full bg-white" />
             </span>
             <span>
               <span className="block font-medium">{i18n._(m.label)}</span>
-              <span className="block text-neutral-500 dark:text-neutral-400">
-                {i18n._(m.detail)}
-              </span>
+              <span className="block text-a11y-muted">{i18n._(m.detail)}</span>
             </span>
           </Radio.Root>
         ))}
       </RadioGroup>
-      <p className="mt-4 text-neutral-500 dark:text-neutral-400">
+      <p className="mt-4 text-a11y-muted">
         <Trans comment="readOnly is the translated Read only write-mode label above.">
           MCP can propose drafts only when the write mode is not "{readOnly}". You review drafts and
           confirm sending in the app.
@@ -502,13 +502,13 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
   const email = (id: string | null) => accounts.find((a) => a.id === id)?.email ?? "";
   if (!log.length)
     return (
-      <p className="text-neutral-400">
+      <p className="text-a11y-muted">
         <Trans>No activity yet.</Trans>
       </p>
     );
   return (
     <table className="w-full text-left">
-      <thead className="text-[12px] text-neutral-400">
+      <thead className="text-[12px] text-a11y-muted">
         <tr>
           <th className="pb-2 font-medium">
             <Trans>Time</Trans>
@@ -527,7 +527,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
       <tbody>
         {log.map((e, i) => (
           <tr key={i} className="border-t border-black/[0.06] dark:border-white/[0.06]">
-            <td className="py-1.5 pr-3 whitespace-nowrap text-neutral-500 tabular-nums">
+            <td className="py-1.5 pr-3 whitespace-nowrap text-a11y-muted tabular-nums">
               {new Date(e.at).toLocaleString(i18n.locale, {
                 month: "numeric",
                 day: "numeric",
@@ -539,7 +539,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
             <td className="py-1.5 pr-3">
               {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
             </td>
-            <td className="max-w-40 truncate py-1.5 text-neutral-500">{email(e.accountId)}</td>
+            <td className="max-w-40 truncate py-1.5 text-a11y-muted">{email(e.accountId)}</td>
           </tr>
         ))}
       </tbody>

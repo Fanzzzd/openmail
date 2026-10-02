@@ -79,7 +79,7 @@ export function DefaultProfilesPrompt({
       <h2 className="font-semibold">
         <Trans>Create Personal and Work profiles?</Trans>
       </h2>
-      <p className="mt-3 text-neutral-500">
+      <p className="mt-3 text-a11y-muted">
         <Trans>
           Profiles group accounts. You can assign accounts and edit profiles in Settings.
         </Trans>
@@ -109,7 +109,7 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
       <h2 className="font-semibold">
         <Trans>Profiles</Trans>
       </h2>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Group accounts and choose a profile in the window toolbar.</Trans>
       </p>
       {profiles.map((profile) => (
@@ -117,7 +117,7 @@ export function ProfileSettings({ accounts }: { accounts: readonly Account[] }) 
           <span className="flex-1">
             {profile.icon} {profile.name}
           </span>
-          <span className="text-neutral-500">
+          <span className="text-a11y-muted">
             {accounts
               .filter((a) => a.profileId === profile.id)
               .map((a) => a.description || a.email)

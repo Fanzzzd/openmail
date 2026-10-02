@@ -44,7 +44,7 @@ export function LabsSettings() {
   const { t } = useLingui();
   return (
     <div className="space-y-4">
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Experimental features can be enabled separately.</Trans>
       </p>
       {(
@@ -75,7 +75,7 @@ export function InteractionSettings() {
         <h3 className="font-semibold">
           <Trans>Swipe actions</Trans>
         </h3>
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>
             Swipe horizontally with two fingers. Release after a short or long swipe to apply the
             action.
@@ -106,7 +106,7 @@ export function InteractionSettings() {
         <h3 className="font-semibold">
           <Trans>Toolbar actions</Trans>
         </h3>
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>Choose actions and use the buttons to change their order.</Trans>
         </p>
         <ol className="space-y-2">

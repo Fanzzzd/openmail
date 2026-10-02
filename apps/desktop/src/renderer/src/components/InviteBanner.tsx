@@ -38,7 +38,10 @@ function LoadedInvites({ message }: { message: Message }) {
   const account = accounts.find((a) => a.id === message.accountId);
   if (invitations._tag === "Failure")
     return (
-      <div role="alert" className="mt-3 rounded-md border border-orange-300 p-3 text-orange-600">
+      <div
+        role="alert"
+        className="mt-3 rounded-md border border-orange-300 p-3 text-orange-700 dark:text-orange-400"
+      >
         <Trans>Could not load the calendar invitation.</Trans> {resultError(i18n, invitations)}
       </div>
     );
@@ -206,12 +209,12 @@ function Invitation({
         </details>
       )}
       {invite.start?.kind === "floating" && (
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>No time zone supplied; shown in your local time.</Trans>
         </p>
       )}
       {invite.start?.kind === "zoned" && invite.start.timestamp === null && (
-        <p className="text-orange-600">
+        <p className="text-orange-700 dark:text-orange-400">
           <Trans>Unknown organizer time zone; showing the original time.</Trans>
         </p>
       )}
@@ -245,7 +248,7 @@ function Invitation({
         )}
       </dl>
       {provider === "imap" && invite.organizerMismatch && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           <Trans>
             The organizer differs from the message sender. Check the response recipient before
             replying.
@@ -291,7 +294,7 @@ function Invitation({
         </div>
       )}
       {resultError(i18n, result) && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           {resultError(i18n, result)}
         </p>
       )}
@@ -307,7 +310,7 @@ function Invitation({
         </Button>
       )}
       {resultError(i18n, signIn) && (
-        <p role="alert" className="text-orange-600">
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
           {resultError(i18n, signIn)}
         </p>
       )}

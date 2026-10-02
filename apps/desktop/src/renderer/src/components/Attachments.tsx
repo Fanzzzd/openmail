@@ -91,7 +91,7 @@ export function Attachments({ message, notify }: { message: Message; notify: Not
 }
 
 const buttonClass =
-  "h-8 rounded-md px-2 text-[13px] font-medium text-blue-600 hover:bg-blue-500/10 disabled:opacity-40 dark:text-blue-400";
+  "h-8 rounded-md px-2 text-[13px] font-medium text-a11y-accent hover:bg-blue-500/10 disabled:opacity-40 dark:text-blue-400";
 const pathKey = (path: readonly number[]) => path.join(".");
 
 /** File selections are scoped to one message/container, including duplicate names. */
@@ -281,9 +281,9 @@ export function AttachmentList({
                 }}
                 className="flex h-full min-w-0 items-center gap-1.5 px-2 hover:bg-black/[0.04] dark:hover:bg-white/5"
               >
-                <Icon className="size-4 shrink-0 text-neutral-400" />
+                <Icon className="size-4 shrink-0 text-a11y-muted" />
                 <span className="min-w-0 truncate">{file.filename}</span>
-                <span className="shrink-0 text-neutral-400">
+                <span className="shrink-0 text-a11y-muted">
                   {formatBytes(file.size, i18n.locale)}
                 </span>
               </button>
@@ -292,7 +292,7 @@ export function AttachmentList({
                   type="button"
                   aria-label={t`Preview ${file.filename}`}
                   onClick={() => action("preview", [file])}
-                  className="px-1.5 text-neutral-400"
+                  className="px-1.5 text-a11y-muted"
                 >
                   <Eye className="size-3.5" />
                 </button>
@@ -302,7 +302,7 @@ export function AttachmentList({
                   type="button"
                   aria-label={t`Save ${file.filename}`}
                   onClick={() => action("save", [file])}
-                  className="px-1.5 text-neutral-400"
+                  className="px-1.5 text-a11y-muted"
                 >
                   <Download className="size-3.5" />
                 </button>
@@ -312,7 +312,7 @@ export function AttachmentList({
                   <button
                     type="button"
                     aria-label={t`Actions for ${file.filename}`}
-                    className="px-1.5 text-neutral-400"
+                    className="px-1.5 text-a11y-muted"
                   >
                     <MoreHorizontal className="size-3.5" />
                   </button>
@@ -348,7 +348,7 @@ export function AttachmentList({
         )}
       </div>
       {files.some((file) => file.decodeError) && (
-        <p className="mt-2 text-[12px] text-neutral-500">
+        <p className="mt-2 text-[12px] text-a11y-muted">
           <Trans>Could not decode winmail.dat. You can save the original file.</Trans>
         </p>
       )}
@@ -435,7 +435,7 @@ export function EmbeddedReader({
   }, [messageId, file.path, run, i18n, t, notify]);
   if (!message)
     return (
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-a11y-muted">
         {failed ? t`Could not read attached message.` : t`Loading attached message…`}
       </p>
     );

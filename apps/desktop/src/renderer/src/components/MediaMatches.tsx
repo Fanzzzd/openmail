@@ -71,7 +71,7 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
       <ul className="space-y-2">
         {chunks.slice(0, 20).map((chunk, index) => (
           <li key={index}>
-            <p className="text-neutral-500">
+            <p className="text-a11y-muted">
               {chunk.source.kind === "body" ? (
                 <Trans
                   context="message text"
@@ -98,7 +98,7 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
             {chunk.region ? (
               <button
                 type="button"
-                className="text-left text-blue-600 hover:underline"
+                className="text-left text-a11y-accent hover:underline"
                 onClick={() => setSelected(chunk)}
               >
                 {chunk.text}

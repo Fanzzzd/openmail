@@ -13,11 +13,11 @@ export const popupMotion =
 
 /** One row in a menu or list. The highlight is the macOS accent with white text. */
 export const itemClass =
-  "flex min-h-[22px] cursor-default items-center gap-2 rounded-[4px] px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-500 data-highlighted:text-white";
+  "flex min-h-[22px] cursor-default items-center gap-2 rounded-[4px] px-2 outline-none select-none data-disabled:opacity-40 data-highlighted:bg-blue-600 data-highlighted:text-white";
 
 /** Menu separator. */
 export const separatorClass = "mx-2 my-1 h-px bg-black/10 dark:bg-white/10";
 
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
-  "font-sans text-[11px] tracking-wide text-neutral-400 tabular-nums group-data-highlighted:text-white/80 dark:text-neutral-500";
+  "font-sans text-[11px] tracking-wide text-neutral-600 tabular-nums group-data-highlighted:text-white dark:text-neutral-400";

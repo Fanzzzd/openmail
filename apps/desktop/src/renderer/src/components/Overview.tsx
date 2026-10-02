@@ -65,7 +65,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
         <h1 className="text-[17px] font-bold">
           <Trans>Overview</Trans>
         </h1>
-        <span className="text-[13px] text-neutral-500">
+        <span className="text-[13px] text-a11y-muted">
           {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${total} unread`}
         </span>
         <span className="flex-1" />
@@ -153,7 +153,7 @@ function GroupCard({
           {group.title}
         </button>
         {unreadCount > 0 && (
-          <span className="text-[13px] text-neutral-500 tabular-nums">
+          <span className="text-[13px] text-a11y-muted tabular-nums">
             <Trans>{count} unread</Trans>
           </span>
         )}
@@ -163,7 +163,7 @@ function GroupCard({
               type="button"
               aria-label={t`Edit space`}
               onClick={onEdit}
-              className="rounded p-1 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+              className="rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
             >
               <Pencil className="size-3.5" />
             </button>
@@ -173,7 +173,7 @@ function GroupCard({
 
       <ul className="px-4 pb-2">
         {group.accounts.length === 0 && (
-          <li className="py-1 text-[13px] text-neutral-400">
+          <li className="py-1 text-[13px] text-a11y-muted">
             <Trans>No accounts yet</Trans>
           </li>
         )}
@@ -186,18 +186,18 @@ function GroupCard({
             <span className="min-w-0 flex-1 truncate">{accountName(a)}</span>
             {a.lastSyncError ? (
               <span
-                className="flex shrink-0 items-center gap-1 text-red-500"
+                className="flex shrink-0 items-center gap-1 text-a11y-danger"
                 title={a.lastSyncError}
               >
                 <CircleAlert className="size-3.5" />
                 <Trans>Sync failed</Trans>
               </span>
             ) : (
-              <span className="shrink-0 text-[12px] text-neutral-400">
+              <span className="shrink-0 text-[12px] text-a11y-muted">
                 {a.lastSyncedAt ? shortDate(a.lastSyncedAt, i18n) : t`Not synced`}
               </span>
             )}
-            <span className="w-6 shrink-0 text-right text-neutral-500 tabular-nums">
+            <span className="w-6 shrink-0 text-right text-a11y-muted tabular-nums">
               {unread[a.id] ? i18n.number(unread[a.id] ?? 0) : ""}
             </span>
           </li>
@@ -206,7 +206,7 @@ function GroupCard({
 
       <div className="mt-auto border-t border-black/[0.06] px-2 py-1.5 dark:border-white/[0.08]">
         {threads?.length === 0 && (
-          <p className="px-2 py-2 text-[13px] text-neutral-400">
+          <p className="px-2 py-2 text-[13px] text-a11y-muted">
             <Trans>No unread mail in the inbox</Trans>
           </p>
         )}
@@ -219,7 +219,7 @@ function GroupCard({
           >
             <span className="w-24 shrink-0 truncate font-semibold">{displayName(thread.from)}</span>
             <span className="min-w-0 flex-1 truncate">{thread.subject || t`(No subject)`}</span>
-            <span className="shrink-0 text-[12px] text-neutral-400 tabular-nums">
+            <span className="shrink-0 text-[12px] text-a11y-muted tabular-nums">
               {shortDate(thread.date, i18n)}
             </span>
           </button>

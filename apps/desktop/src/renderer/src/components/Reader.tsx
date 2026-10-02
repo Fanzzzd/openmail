@@ -174,9 +174,9 @@ export function Reader({
         <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
       </header>
       {!messageId || !messages ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-neutral-300 dark:text-neutral-600">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-a11y-muted dark:text-neutral-600">
           <Mail className="size-10 stroke-1" />
-          <p className="text-neutral-400">
+          <p className="text-a11y-muted">
             <Trans>Select a message</Trans>
           </p>
         </div>
@@ -658,7 +658,7 @@ export function ThreadView({
           {newest?.subject || t`(No subject)`}
         </h2>
         {messages.length > 1 && (
-          <div className="flex shrink-0 gap-2 pt-1 text-[12px] text-blue-600 dark:text-blue-400">
+          <div className="flex shrink-0 gap-2 pt-1 text-[12px] text-a11y-accent dark:text-blue-400">
             <button
               type="button"
               onClick={() => expand(true)}
@@ -678,7 +678,7 @@ export function ThreadView({
             <button
               type="button"
               aria-label={t`More actions`}
-              className="mt-1 rounded-md p-1.5 text-neutral-500 outline-offset-0 outline-blue-500/60 hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
+              className="mt-1 rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -845,7 +845,7 @@ export function ThreadView({
                   message={m}
                   known={known.includes(m.from.address.trim().toLowerCase())}
                 />
-                <span className="mt-0.5 block truncate text-[13px] text-neutral-500 dark:text-neutral-400">
+                <span className="mt-0.5 block truncate text-[13px] text-a11y-muted">
                   {m.snippet}
                 </span>
               </span>
@@ -891,11 +891,9 @@ function MessageHead({
         )}
       </span>
       {m.isStarred && (
-        <Star className="size-3.5 shrink-0 self-center fill-amber-400 text-amber-400" />
+        <Star className="size-3.5 shrink-0 self-center fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />
       )}
-      <span className="shrink-0 text-[12px] text-neutral-500 dark:text-neutral-400">
-        {threadDate(m.date, i18n)}
-      </span>
+      <span className="shrink-0 text-[12px] text-a11y-muted">{threadDate(m.date, i18n)}</span>
     </span>
   );
 }
@@ -999,15 +997,16 @@ function Expanded({
       aria-label={active ? t`Selected message` : t`Message`}
       className={`@container/message py-3 ${active ? "border-l-2 border-blue-400 pl-2" : ""}`}
     >
+      <h3 className="sr-only">{m.subject || t`(No subject)`}</h3>
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-md bg-red-500/[0.06] px-3 py-1.5 text-[13px]">
-          <span className="flex-1 text-red-600 dark:text-red-400">
+          <span className="flex-1 text-a11y-danger dark:text-red-400">
             <Trans>Draft</Trans>
           </span>
           <button
             type="button"
             onClick={onEditDraft}
-            className="h-6 rounded px-2 font-medium text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+            className="h-6 rounded px-2 font-medium text-a11y-accent hover:bg-blue-500/10 dark:text-blue-400"
           >
             <Trans>Continue editing</Trans>
           </button>
@@ -1019,7 +1018,7 @@ function Expanded({
           <span className="min-w-0 flex-1">
             <MessageHead message={m} known={known} onSearchSender={onSearchSender} />
             <span
-              className="mt-0.5 block truncate text-[13px] text-neutral-500 dark:text-neutral-400"
+              className="mt-0.5 block truncate text-[13px] text-a11y-muted"
               title={m.from.address}
             >
               <Trans>To: {to}</Trans>
@@ -1037,7 +1036,7 @@ function Expanded({
             type="button"
             onClick={onCollapse}
             aria-label={t`Collapse message`}
-            className="size-7 shrink-0 p-1.5 text-neutral-400"
+            className="size-7 shrink-0 p-1.5 text-a11y-muted"
           >
             <ChevronDown className="size-4" />
           </button>
@@ -1047,7 +1046,7 @@ function Expanded({
             <button
               type="button"
               aria-label={t`Message actions`}
-              className="size-7 shrink-0 self-start rounded-md p-1.5 text-neutral-400 outline-offset-0 outline-blue-500/60 hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
+              className="size-7 shrink-0 self-start rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10"
             >
               <MoreHorizontal className="size-4" />
             </button>
@@ -1143,7 +1142,7 @@ function Expanded({
                 <button
                   type="button"
                   onClick={() => setLoadedOnce(true)}
-                  className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  className="font-medium text-a11y-accent hover:underline dark:text-blue-400"
                 >
                   <Trans>Load images</Trans>
                 </button>
@@ -1151,7 +1150,7 @@ function Expanded({
                   <button
                     type="button"
                     onClick={() => allow(address, true)}
-                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    className="font-medium text-a11y-accent hover:underline dark:text-blue-400"
                   >
                     <Trans>Always from this sender</Trans>
                   </button>
@@ -1167,7 +1166,7 @@ function Expanded({
 
       <div className="pt-4">
         {m.bodyCached === false ? (
-          <output className="block px-4 text-neutral-500">
+          <output className="block px-4 text-a11y-muted">
             <Trans>The body is not cached. Try opening this message again when connected.</Trans>
           </output>
         ) : m.bodyHtml ? (
@@ -1214,7 +1213,7 @@ function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixel
       trigger={
         <button
           type="button"
-          className="flex shrink-0 cursor-default items-center gap-1 rounded text-emerald-700 outline-offset-1 outline-blue-500/60 focus-visible:outline-[3px] dark:text-emerald-400"
+          className="flex shrink-0 cursor-default items-center gap-1 rounded text-emerald-700 outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] dark:text-emerald-400"
         >
           <ShieldCheck className="size-3.5" />
           {plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
@@ -1273,7 +1272,7 @@ function PlainBody({
       {parts.quote && (
         <button
           type="button"
-          className="px-4 text-blue-600"
+          className="px-4 text-a11y-accent"
           onClick={() => setShowQuotes(!showQuotes)}
         >
           {showQuotes ? t`Hide quoted text` : t`Show quoted text`}

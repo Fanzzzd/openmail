@@ -66,7 +66,7 @@ export function TemplateSettings() {
     });
   return (
     <section className="space-y-3">
-      <h3 className="text-[12px] font-semibold text-neutral-500">{t`Templates`}</h3>
+      <h3 className="text-[12px] font-semibold text-a11y-muted">{t`Templates`}</h3>
       <button
         type="button"
         className="rounded border px-3 py-1"
@@ -76,7 +76,7 @@ export function TemplateSettings() {
         <div key={template.id} className="flex items-center gap-3">
           <button
             type="button"
-            className="min-w-0 flex-1 truncate text-left text-blue-600"
+            className="min-w-0 flex-1 truncate text-left text-a11y-accent"
             onClick={() => open(template)}
           >
             {template.name}
@@ -89,7 +89,7 @@ export function TemplateSettings() {
           <button
             type="button"
             aria-label={t`Delete ${template.name}`}
-            className="text-red-600"
+            className="text-a11y-danger"
             onClick={() =>
               remove({ payload: { id: template.id }, reactivityKeys: [Keys.templates] })
             }
@@ -245,9 +245,17 @@ function TemplateForm({ initial, onClose }: { initial: Form; onClose: () => void
           }}
         />
       </label>
-      <p className="text-neutral-500">{t`Use ${token} for a custom variable. You will be asked for its value when inserting the template.`}</p>
-      {error && <p className="text-red-600">{error}</p>}
-      {state._tag === "Failure" && <p className="text-red-600">{causeText(i18n, state.cause)}</p>}
+      <p className="text-a11y-muted">{t`Use ${token} for a custom variable. You will be asked for its value when inserting the template.`}</p>
+      {error && (
+        <p role="alert" className="text-a11y-danger">
+          {error}
+        </p>
+      )}
+      {state._tag === "Failure" && (
+        <p role="alert" className="text-a11y-danger">
+          {causeText(i18n, state.cause)}
+        </p>
+      )}
       {state._tag === "Success" && !state.waiting && <output>{t`Saved`}</output>}
       <div className="flex gap-3">
         <button

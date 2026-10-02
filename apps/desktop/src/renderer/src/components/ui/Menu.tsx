@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { Check, ChevronRight } from "lucide-react";
@@ -14,9 +15,13 @@ const popup = `min-w-48 p-[5px] ${popupSurface} ${popupMotion}`;
  * Positioner are the Menu parts, so the items below work in both.
  */
 export function ContextMenuContent({ children }: { children: ReactNode }) {
+  const { t } = useLingui();
   return (
     <ContextMenu.Portal>
-      <ContextMenu.Positioner className="z-[60] outline-none">
+      <ContextMenu.Positioner
+        render={<section aria-label={t`More actions`} />}
+        className="z-[60] outline-none"
+      >
         <Menu.Popup className={popup}>{children}</Menu.Popup>
       </ContextMenu.Positioner>
     </ContextMenu.Portal>
@@ -40,11 +45,17 @@ export function DropdownMenu({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const { t } = useLingui();
   return (
     <Menu.Root open={open} onOpenChange={onOpenChange}>
       <Menu.Trigger render={trigger} />
       <Menu.Portal>
-        <Menu.Positioner className="z-[60] outline-none" align={align} sideOffset={4}>
+        <Menu.Positioner
+          render={<section aria-label={t`More actions`} />}
+          className="z-[60] outline-none"
+          align={align}
+          sideOffset={4}
+        >
           <Menu.Popup className={popup}>{children}</Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>
@@ -113,6 +124,7 @@ export function ContextSubmenu({
   label: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useLingui();
   return (
     <ContextMenu.SubmenuRoot>
       <ContextMenu.SubmenuTrigger
@@ -125,7 +137,12 @@ export function ContextSubmenu({
         <ChevronRight className="ml-4 size-3.5 opacity-60" />
       </ContextMenu.SubmenuTrigger>
       <ContextMenu.Portal>
-        <ContextMenu.Positioner className="z-[60] outline-none" alignOffset={-5} sideOffset={-2}>
+        <ContextMenu.Positioner
+          render={<section aria-label={t`More actions`} />}
+          className="z-[60] outline-none"
+          alignOffset={-5}
+          sideOffset={-2}
+        >
           <Menu.Popup
             className={`max-h-[min(var(--available-height),320px)] overflow-y-auto ${popup}`}
           >

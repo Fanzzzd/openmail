@@ -46,7 +46,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
       <h2 className="font-semibold">
         <Trans>Older mail and cache</Trans>
       </h2>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Older mail downloads in the background. Headers stay searchable when bodies expire.
           Opening a message downloads its body again.
@@ -93,7 +93,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           <Trans>Clear all caches</Trans>
         </button>
       </div>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
           uncached content requires a connection.
@@ -140,7 +140,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <output className="flex-1 text-neutral-500">
+              <output className="flex-1 text-a11y-muted">
                 {state?.done ? (
                   <Trans>Older mail is up to date</Trans>
                 ) : state?.paused ? (
@@ -166,7 +166,11 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                 </button>
               )}
             </div>
-            {state?.lastError && <output className="text-orange-500">{state.lastError}</output>}
+            {state?.lastError && (
+              <output role="alert" className="text-orange-700 dark:text-orange-400">
+                {state.lastError}
+              </output>
+            )}
             {rows.map((label) => {
               const custom = windows.find(
                 (w) => w.accountId === account.id && w.label === label.id,
@@ -205,12 +209,12 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         );
       })}
       {(resultError(i18n, clearResult) || resultError(i18n, limitResult)) && (
-        <output className="text-red-500">
+        <output role="alert" className="text-a11y-danger">
           {resultError(i18n, clearResult) || resultError(i18n, limitResult)}
         </output>
       )}
       {(resultError(i18n, saveResult) || resultError(i18n, pauseResult)) && (
-        <output className="text-red-500">
+        <output role="alert" className="text-a11y-danger">
           {resultError(i18n, saveResult) || resultError(i18n, pauseResult)}
         </output>
       )}

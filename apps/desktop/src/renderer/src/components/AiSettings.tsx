@@ -44,7 +44,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
       <h3 className="font-semibold">
         <Trans>Built-in AI</Trans>
       </h3>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           When you allow an account, questions and selected mail text, subjects, sender and
           recipient addresses are sent to Anthropic using your API key. Images, attachments and
@@ -162,7 +162,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           </fieldset>
         );
       })}
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Triage runs while the app is in the foreground or on AC power. Suggestions require your
           approval. Reply needed adds a star when accepted.

@@ -73,7 +73,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
             type="button"
             aria-label={t`Back`}
             onClick={() => setChoice(null)}
-            className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
+            className="-ml-1.5 flex size-7 items-center justify-center rounded-md text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
           >
             <ChevronLeft className="size-4" />
           </button>
@@ -85,7 +85,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
             type="button"
             aria-label={t`Close`}
             onClick={onClose}
-            className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-neutral-500 hover:bg-black/5 dark:hover:bg-white/10"
+            className="-mr-1.5 flex size-7 items-center justify-center rounded-md text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
           >
             <X className="size-4" />
           </button>
@@ -94,7 +94,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
 
       {choice === null && (
         <>
-          <p className="mt-1.5 text-neutral-500">
+          <p className="mt-1.5 text-a11y-muted">
             {onClose ? (
               <Trans>Choose your email provider.</Trans>
             ) : (
@@ -179,7 +179,7 @@ function OAuthStep({
 
   if (!setup)
     return (
-      <p className="mt-5 text-neutral-500">
+      <p className="mt-5 text-a11y-muted">
         <Trans>Loading settings…</Trans>
       </p>
     );
@@ -202,7 +202,7 @@ function OAuthStep({
           );
         }}
       >
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           {provider === "gmail" ? (
             <Trans>
               openmail signs in with an OAuth client you register yourself. First enter the OAuth
@@ -244,7 +244,7 @@ function OAuthStep({
   const { name } = copy;
   return (
     <div className="mt-4">
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         {signIn.waiting ? (
           <Trans>Finish signing in in your browser, then come back here.</Trans>
         ) : (
@@ -333,9 +333,9 @@ function ImapStep({
         if (ready && !add.waiting) void submit();
       }}
     >
-      {info && note && <p className="text-neutral-500">{note}</p>}
+      {info && note && <p className="text-a11y-muted">{note}</p>}
       {custom && (
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>Enter the IMAP and SMTP servers your email provider gives you.</Trans>
         </p>
       )}
@@ -347,7 +347,7 @@ function ImapStep({
           href={info.appPasswordUrl}
           target="_blank"
           rel="noreferrer"
-          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-blue-600 hover:underline dark:text-blue-400"
+          className="mt-1.5 inline-flex items-center gap-1 text-[12px] text-a11y-accent hover:underline dark:text-blue-400"
         >
           {authCode ? (
             <Trans>Generate authorization code</Trans>
@@ -391,7 +391,7 @@ function ImapStep({
             </div>
           </div>
           <div className="mt-3">
-            <span className="block text-[12px] font-medium text-neutral-500">
+            <span className="block text-[12px] font-medium text-a11y-muted">
               <Trans>SMTP encryption</Trans>
             </span>
             <SegmentedControl
@@ -438,7 +438,7 @@ function Field({
   inputMode?: "numeric";
 }) {
   return (
-    <label className="mt-3 block text-[12px] font-medium text-neutral-500">
+    <label className="mt-3 block text-[12px] font-medium text-a11y-muted">
       {label}
       <input
         type={password ? "password" : (type ?? "text")}
@@ -455,7 +455,11 @@ function Field({
 }
 
 function ErrorLine({ text }: { text: string }) {
-  return <p className="mt-3 text-[12px] text-red-500">{text}</p>;
+  return (
+    <p role="alert" className="mt-3 text-[12px] text-a11y-danger">
+      {text}
+    </p>
+  );
 }
 
 function Actions({ children }: { children: ReactNode }) {

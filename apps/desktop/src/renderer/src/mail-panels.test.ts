@@ -1,4 +1,4 @@
-import { createElement, type ReactNode } from "react";
+import { act, createElement, useEffect, useState, type ReactNode } from "react";
 import { afterAll, expect, it, vi } from "vitest";
 import { testDom } from "./test-dom";
 
@@ -45,6 +45,34 @@ it("hidden reading panes use a full-width list layout, separate from both saved 
       ["openmail:mail-panes:right:list", ["list"]],
       ["openmail:mail-panes:bottom", ["list", "reader"]],
     ]);
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("preserves reader/editor state when the zoom breakpoint changes pane orientation", () => {
+  const dom = testDom();
+  vi.stubGlobal("localStorage", {});
+  let mounts = 0;
+  function ReaderState() {
+    const [text, setText] = useState("Original");
+    useEffect(() => {
+      mounts++;
+    }, []);
+    return createElement("button", { onClick: () => setText("Unsaved text and selection") }, text);
+  }
+  const layout = (position: "right" | "bottom") =>
+    createElement(MailPanels, { position, readerVisible: true }, createElement(ReaderState));
+  try {
+    dom.render(layout("right"));
+    const reader = dom.element.querySelector("button");
+    if (!reader) throw new Error("Missing reader fixture");
+    act(() => reader.click());
+    dom.render(layout("bottom"));
+    expect(dom.element.querySelector("button")).toBe(reader);
+    expect(reader.textContent).toBe("Unsaved text and selection");
+    dom.render(layout("right"));
+    expect(mounts).toBe(1);
   } finally {
     dom.dispose();
   }

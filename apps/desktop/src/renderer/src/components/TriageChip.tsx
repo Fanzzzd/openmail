@@ -88,7 +88,7 @@ function Suggestion({
         >
           <h2 className="font-semibold">{title}</h2>
           <p className="whitespace-pre-wrap break-words">{row.reason}</p>
-          <p className="text-xs text-neutral-500">{row.model}</p>
+          <p className="text-xs text-a11y-muted">{row.model}</p>
           {row.status === "pending" && (
             <div className="flex gap-3">
               <button

@@ -85,7 +85,7 @@ export function Alert({ open, onOpenChange, title, description, children }: Aler
         >
           <AlertDialog.Title className="text-[14px] font-semibold">{title}</AlertDialog.Title>
           {description && (
-            <AlertDialog.Description className="mt-1.5 text-neutral-500 dark:text-neutral-400">
+            <AlertDialog.Description className="mt-1.5 text-a11y-muted">
               {description}
             </AlertDialog.Description>
           )}
@@ -97,9 +97,9 @@ export function Alert({ open, onOpenChange, title, description, children }: Aler
 }
 
 export const alertButton =
-  "h-7 whitespace-nowrap rounded-md border border-black/10 px-3 font-medium outline-offset-1 outline-blue-500/60 hover:bg-black/[0.04] focus-visible:outline-[3px] dark:border-white/15 dark:hover:bg-white/5";
+  "h-7 whitespace-nowrap rounded-md border border-black/10 px-3 font-medium outline-offset-1 outline-a11y-focus hover:bg-black/[0.04] focus-visible:outline-[3px] dark:border-white/15 dark:hover:bg-white/5";
 export const alertPrimary =
-  "h-7 whitespace-nowrap rounded-md bg-blue-600 px-3 font-medium text-white outline-offset-1 outline-blue-500/60 hover:bg-blue-700 focus-visible:outline-[3px] disabled:opacity-50";
+  "h-7 whitespace-nowrap rounded-md bg-blue-600 px-3 font-medium text-white outline-offset-1 outline-a11y-focus hover:bg-blue-700 focus-visible:outline-[3px] disabled:opacity-50";
 export const alertDanger =
   "h-7 whitespace-nowrap rounded-md bg-red-600 px-3 font-medium text-white outline-offset-1 outline-red-500/60 hover:bg-red-700 focus-visible:outline-[3px] disabled:opacity-50";
 

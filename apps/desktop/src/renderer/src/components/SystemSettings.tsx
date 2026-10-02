@@ -54,14 +54,14 @@ export function DefaultMailClient() {
   }, [run]);
   return (
     <section className="mt-6 space-y-2">
-      <h3 className="text-[12px] font-semibold text-neutral-500">
+      <h3 className="text-[12px] font-semibold text-a11y-muted">
         <Trans>Default email app</Trans>
       </h3>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Open email links in a new OpenMail draft.</Trans>
       </p>
       {status && !status.available && (
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>
             Install the packaged app to make it the default. Development builds cannot register
             email links.
@@ -94,7 +94,7 @@ export function DefaultMailClient() {
         )}
       </Button>
       {failed && (
-        <output className="text-orange-600">
+        <output role="alert" className="text-orange-700 dark:text-orange-400">
           <Trans>Could not register OpenMail. Try again from the installed app.</Trans>
         </output>
       )}
@@ -200,7 +200,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
           </Button>
         </div>
         {settingsFailed && (
-          <output className="text-orange-600">
+          <output role="alert" className="text-orange-700 dark:text-orange-400">
             <Trans>Could not open notification settings.</Trans>
           </output>
         )}
@@ -233,7 +233,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
               {value === "menu" && !capabilities.selection ? <Trans>All actions</Trans> : t(label)}
             </label>
           ))}
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           {capabilities.buttons ? (
             capabilities.selection ? (
               <Trans>
@@ -274,7 +274,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
             </div>
           ))}
         </div>
-        <p className="mt-3 text-neutral-500">
+        <p className="mt-3 text-a11y-muted">
           <Trans>
             Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox
             mail. Read mail and the first sync stay silent.
@@ -290,7 +290,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
           />
           <Trans>Show unread count in the menu bar</Trans>
         </label>
-        <p className="mt-2 text-neutral-500">
+        <p className="mt-2 text-a11y-muted">
           <Trans>The menu lists up to 50 unread messages in the current space.</Trans>
         </p>
       </section>
@@ -298,7 +298,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         <h3 className="mb-3 font-semibold">
           <Trans>Active hours by space</Trans>
         </h3>
-        <p className="mb-3 text-neutral-500">
+        <p className="mb-3 text-a11y-muted">
           <Trans>
             Use this Mac's local time. Outside active hours, notifications wait and the Dock badge
             excludes the space. When active hours resume, unread arrivals appear in one summary.
@@ -322,7 +322,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                   {profile.name}
                 </label>
                 {legacy && (
-                  <p className="mb-2 text-neutral-500">
+                  <p className="mb-2 text-a11y-muted">
                     <Trans>
                       A previous daily quiet-hours setting is still active. Change this schedule to
                       replace it.
@@ -395,7 +395,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                                     windows.filter((_, i) => i !== index),
                                   )
                                 }
-                                className="text-neutral-500"
+                                className="text-a11y-muted"
                               >
                                 <Trans>Remove period</Trans>
                               </Button>
@@ -405,7 +405,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                         {windows.length > 0 && (
                           <Button
                             onClick={() => updateDay(day, [...windows, { start: 540, end: 1020 }])}
-                            className="ml-6 text-neutral-500"
+                            className="ml-6 text-a11y-muted"
                           >
                             <Trans>Add period</Trans>
                           </Button>
@@ -417,7 +417,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
             );
           })}
         </div>
-        <p className="mt-3 text-neutral-500">
+        <p className="mt-3 text-a11y-muted">
           <Trans>
             Matching times keep that weekday active all day. Overnight periods continue into the
             next day. Unchecked days stay muted except for overnight periods from the previous day.
@@ -539,7 +539,7 @@ export function ShortcutTable({ set }: { set: ShortcutSet }) {
             <tr key={action} className="border-b border-black/5 dark:border-white/5">
               <td className="py-1.5">{i18n._(label)}</td>
               <td className="py-1.5 text-right">
-                <kbd className="font-mono text-[12px] text-neutral-500">
+                <kbd className="font-mono text-[12px] text-a11y-muted">
                   {shortcutText(set, action)}
                 </kbd>
               </td>
@@ -599,7 +599,7 @@ export function ShortcutsSettings() {
           setPrefs({ payload: { patch: { shortcutSet } }, reactivityKeys: [Keys.prefs] })
         }
       />
-      <p className="my-3 text-neutral-500">
+      <p className="my-3 text-a11y-muted">
         <Trans>Press ? outside a text field to show this list.</Trans>
       </p>
       <ShortcutTable set={prefs.shortcutSet} />

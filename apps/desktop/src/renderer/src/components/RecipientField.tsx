@@ -175,7 +175,7 @@ export function RecipientField({
             onDropRecipient(chip);
           }
         }}
-        className="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5"
+        className="rounded focus-within:ring-2 focus-within:ring-a11y-focus flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5"
       >
         {chips.map((text, i) => {
           const address = parseAddresses(text).addresses[0];
@@ -183,6 +183,10 @@ export function RecipientField({
             <Combobox.Chip
               key={`${i}:${text}`}
               aria-label={text}
+              onKeyDown={(event) => {
+                // Nested buttons own their keys; the chip must not redirect their focus.
+                if (event.target !== event.currentTarget) event.preventBaseUIHandler();
+              }}
               draggable={Boolean(address && fieldName)}
               onDragStart={(event) => {
                 if (!address || !fieldName) return;
@@ -193,7 +197,7 @@ export function RecipientField({
                 event.dataTransfer.effectAllowed = "move";
                 onDragChip?.();
               }}
-              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 outline-none focus:bg-blue-500 focus:text-white ${
+              className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 outline-none focus:bg-blue-600 focus:text-white ${
                 address
                   ? "bg-blue-500/10 text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
                   : "bg-red-500/10 text-red-700 dark:bg-red-400/15 dark:text-red-300"
@@ -229,7 +233,7 @@ export function RecipientField({
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
-                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus:opacity-100 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/15"
+                className="flex size-4 shrink-0 items-center justify-center rounded-[3px] opacity-0 group-hover:opacity-70 group-focus-within:opacity-100 hover:bg-black/10 hover:opacity-100 dark:hover:bg-white/15"
               >
                 <X className="size-3" />
               </Combobox.ChipRemove>
@@ -254,10 +258,10 @@ export function RecipientField({
           onBlur={() => {
             commit();
           }}
-          className="h-[22px] min-w-24 flex-1 bg-transparent text-[13px] outline-none placeholder:text-neutral-400"
+          className="h-[22px] min-w-24 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted"
         />
       </Combobox.Chips>
-      {copyError && <output>{t`Couldn't copy address`}</output>}
+      {copyError && <output role="alert">{t`Couldn't copy address`}</output>}
       <Combobox.Portal>
         <Combobox.Positioner
           side="bottom"
@@ -281,7 +285,7 @@ export function RecipientField({
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate">{group.name}</span>
-                        <span className="block text-[12px] text-neutral-500">
+                        <span className="block text-[12px] text-a11y-muted">
                           {t`Contact group`} · {group.members.length}
                         </span>
                       </span>
@@ -293,14 +297,13 @@ export function RecipientField({
                   <Combobox.Item key={text} value={text} className={`group py-1 pr-1 ${itemClass}`}>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{displayName(a)}</span>
-                      <span className="block truncate text-[12px] text-neutral-500 group-data-highlighted:text-white/80">
+                      <span className="block truncate text-[12px] text-a11y-muted group-data-highlighted:text-white">
                         {a.address}
                       </span>
                     </span>
                     <button
                       type="button"
                       aria-label={t`Stop suggesting ${a.address}`}
-                      tabIndex={-1}
                       // Keep focus in the field and don't pick the row.
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
@@ -310,7 +313,7 @@ export function RecipientField({
                           reactivityKeys: [Keys.contacts],
                         });
                       }}
-                      className="rounded p-0.5 opacity-0 group-hover:opacity-80 hover:bg-white/20 hover:opacity-100"
+                      className="rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -354,6 +357,16 @@ function ChipActions({
         <button
           type="button"
           aria-label={t`Actions for ${address.address}`}
+          onKeyDown={(event) => {
+            if (
+              !event.altKey &&
+              !event.ctrlKey &&
+              !event.metaKey &&
+              !event.shiftKey &&
+              ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(event.key)
+            )
+              event.stopPropagation();
+          }}
           className="rounded p-0.5 hover:bg-black/10"
         >
           <MoreHorizontal className="size-3" />

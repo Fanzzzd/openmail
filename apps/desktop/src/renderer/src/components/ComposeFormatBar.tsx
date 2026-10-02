@@ -1,3 +1,4 @@
+import { KeyboardToolbar } from "./ui/KeyboardToolbar";
 import { useLingui } from "@lingui/react/macro";
 import {
   COMPOSE_FONT_FAMILIES,
@@ -49,8 +50,7 @@ export function ComposeFormatBar({ disabled, onFormat, onStyle }: Props) {
     { action: "clearFormatting", label: t`Clear formatting` },
   ];
   return (
-    <div
-      role="toolbar"
+    <KeyboardToolbar
       aria-label={t`Formatting`}
       className="flex shrink-0 flex-wrap items-center gap-1 border-b px-4 py-1"
     >
@@ -137,6 +137,6 @@ export function ComposeFormatBar({ disabled, onFormat, onStyle }: Props) {
           {label}
         </button>
       ))}
-    </div>
+    </KeyboardToolbar>
   );
 }

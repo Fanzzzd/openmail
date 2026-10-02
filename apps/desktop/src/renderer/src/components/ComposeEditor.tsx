@@ -1,3 +1,4 @@
+import { KeyboardToolbar } from "./ui/KeyboardToolbar";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
@@ -584,11 +585,14 @@ export function ComposeEditor({
     }
   };
   const button =
-    "rounded p-1.5 text-neutral-500 hover:bg-black/5 focus-visible:outline-blue-500 dark:text-neutral-400 dark:hover:bg-white/10";
+    "rounded p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]">
+    <div className="flex min-h-0 flex-1 flex-col focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus">
+      <KeyboardToolbar
+        aria-label={t`Compose`}
+        className="flex shrink-0 flex-wrap items-center gap-1 border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]"
+      >
         <Select
           aria-label={t`Writing mode`}
           value={body.kind}
@@ -737,7 +741,7 @@ export function ComposeEditor({
             }}
           />
         )}
-      </div>
+      </KeyboardToolbar>
       {body.kind === "rich" && formatBar && (
         <ComposeFormatBar disabled={locked} onFormat={format} onStyle={style} />
       )}
@@ -899,7 +903,7 @@ export function ComposeEditor({
           {linkError && (
             <span
               role="alert"
-              className="w-full text-red-500"
+              className="w-full text-a11y-danger"
             >{t`Use an http, https or mailto link`}</span>
           )}
         </div>
@@ -1001,7 +1005,7 @@ export function ComposeEditor({
               ? t`Markdown works: **bold**, \`code\`, \`\`\`code block\`\`\``
               : undefined
           }
-          className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-[14px] leading-relaxed outline-none placeholder:text-neutral-400 ${body.kind === "markdown" ? "font-mono text-[13px]" : ""}`}
+          className={`min-h-0 flex-1 resize-none bg-transparent px-4 py-3 text-[14px] leading-relaxed outline-none placeholder:text-a11y-muted ${body.kind === "markdown" ? "font-mono text-[13px]" : ""}`}
         />
       )}
     </div>

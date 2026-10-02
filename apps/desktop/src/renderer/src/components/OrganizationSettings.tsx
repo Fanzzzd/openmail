@@ -121,11 +121,11 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         <Trans>New label or folder</Trans>
       </button>
       {account && account.provider !== "gmail" && (
-        <p className="text-[12px] text-neutral-500">
+        <p className="text-[12px] text-a11y-muted">
           <Trans>Folder colors are stored on this computer only.</Trans>
         </p>
       )}
-      <p role="alert" className="text-red-500">
+      <p role="alert" className="text-a11y-danger">
         {resultError(i18n, changed)}
       </p>
       <ul className="space-y-3">
@@ -226,10 +226,10 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                   });
                 }}
               />
-              <button type="button" className="text-blue-500" onClick={() => setEditing(label)}>
+              <button type="button" className="text-a11y-accent" onClick={() => setEditing(label)}>
                 <Trans>Rename</Trans>
               </button>
-              <button type="button" className="text-red-500" onClick={() => setDeleting(label)}>
+              <button type="button" className="text-a11y-danger" onClick={() => setDeleting(label)}>
                 <Trans>Delete</Trans>
               </button>
             </li>
@@ -332,7 +332,7 @@ export function LabelEditor({
           />
         )}
         {error && (
-          <p role="alert" className="text-red-500">
+          <p role="alert" className="text-a11y-danger">
             {error}
           </p>
         )}

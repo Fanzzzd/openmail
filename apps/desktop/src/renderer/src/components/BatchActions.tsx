@@ -58,7 +58,7 @@ export function BatchMenuItems({
           return (
             <div key={account.id}>
               <MenuSeparator />
-              <div className="px-2 py-1 text-xs text-neutral-500">
+              <div className="px-2 py-1 text-xs text-a11y-muted">
                 {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
               </div>
               <ContextSubmenu icon={Tag} label={t`Move To`}>
@@ -164,10 +164,10 @@ export function BatchActions(
     { icon: Star, label: starred ? t`Unstar` : t`Star`, op: { kind: "star", value: !starred } },
   ] satisfies { icon: typeof Archive; label: string; op: MailOp }[];
   const button =
-    "rounded-md p-1.5 text-neutral-500 hover:bg-black/5 focus-visible:outline-blue-500 dark:text-neutral-400 dark:hover:bg-white/10";
+    "rounded-md p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
   return (
     <div className="flex items-center gap-0.5">
-      <span className="mr-2 text-sm text-neutral-500">
+      <span className="mr-2 text-sm text-a11y-muted">
         <Trans>{count} selected (loaded)</Trans>
         {props.canLoadMore && (
           <span className="ml-2">

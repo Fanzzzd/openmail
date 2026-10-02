@@ -20,7 +20,7 @@ import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-const heading = "mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400";
+const heading = "mb-2 text-[12px] font-semibold text-a11y-muted";
 const box = "rounded-lg border border-black/10 dark:border-white/10";
 
 /** Settings > Compose: undo send, signatures, templates, hidden recipients. */
@@ -85,7 +85,7 @@ function UndoSend() {
           })
         }
       />
-      <p className="mt-2 text-neutral-500 dark:text-neutral-400">
+      <p className="mt-2 text-a11y-muted">
         <Trans>
           After you click Send, the message waits this long. You can undo it until then.
         </Trans>
@@ -122,7 +122,7 @@ function HiddenContacts() {
                   reactivityKeys: [Keys.contacts],
                 })
               }
-              className="h-7 shrink-0 rounded-md px-2.5 text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+              className="h-7 shrink-0 rounded-md px-2.5 text-a11y-accent hover:bg-blue-500/10 dark:text-blue-400"
             >
               <Trans>Restore</Trans>
             </button>

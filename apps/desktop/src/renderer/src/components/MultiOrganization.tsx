@@ -46,7 +46,7 @@ export function MultiOrganization({
       </button>
       {open && (
         <fieldset className="space-y-2 py-2">
-          <legend className="text-xs text-neutral-500">
+          <legend className="text-xs text-a11y-muted">
             {categories
               ? t`Choose multiple categories`
               : t`Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone.`}
@@ -82,7 +82,7 @@ export function MultiOrganization({
           )}
           <button
             type="button"
-            className="text-blue-600"
+            className="text-a11y-accent"
             disabled={!categories && !selected.length}
             onClick={() => {
               if (categories) {

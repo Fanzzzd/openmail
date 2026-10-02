@@ -108,7 +108,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </div>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">
+          <legend className="mb-1.5 text-[12px] text-a11y-muted">
             <Trans>Icon</Trans>
           </legend>
           <div className="flex items-center gap-1">
@@ -122,7 +122,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 <Radio.Root
                   key={i}
                   value={i}
-                  className="flex size-8 items-center justify-center rounded-md text-[17px] outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-blue-500/60 data-checked:bg-black/10 dark:hover:bg-white/5 dark:data-checked:bg-white/15"
+                  className="flex size-8 items-center justify-center rounded-md text-[17px] outline-none hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:bg-black/10 dark:hover:bg-white/5 dark:data-checked:bg-white/15"
                 >
                   {i}
                 </Radio.Root>
@@ -141,7 +141,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">
+          <legend className="mb-1.5 text-[12px] text-a11y-muted">
             <Trans>Color</Trans>
           </legend>
           <RadioGroup<ProfileColor>
@@ -155,14 +155,14 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 key={c}
                 value={c}
                 aria-label={c}
-                className={`size-6 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-blue-500/60 data-checked:ring-2 data-checked:ring-neutral-400 dark:ring-offset-neutral-800 ${PROFILE_BG[c]}`}
+                className={`size-6 rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-a11y-focus data-checked:ring-2 data-checked:ring-neutral-400 dark:ring-offset-neutral-800 ${PROFILE_BG[c]}`}
               />
             ))}
           </RadioGroup>
         </fieldset>
 
         <fieldset className="mt-4">
-          <legend className="mb-1.5 text-[12px] text-neutral-500">
+          <legend className="mb-1.5 text-[12px] text-a11y-muted">
             <Trans>Accounts</Trans>
           </legend>
           <div className="max-h-48 space-y-px overflow-y-auto">
@@ -191,7 +191,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                   />
                   <span className="min-w-0 flex-1 truncate">{accountName(a)}</span>
                   {elsewhere && (
-                    <span className="shrink-0 text-[12px] text-neutral-400">
+                    <span className="shrink-0 text-[12px] text-a11y-muted">
                       {members.has(a.id) ? (
                         <Trans>Moves from “{elsewhere}”</Trans>
                       ) : (
@@ -205,14 +205,18 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
           </div>
         </fieldset>
 
-        {error && <p className="mt-3 text-[12px] text-red-500">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-3 text-[12px] text-a11y-danger">
+            {error}
+          </p>
+        )}
 
         <div className="mt-5 flex items-center gap-2">
           {profile && (
             <button
               type="button"
               onClick={() => void deleteProfile(profile.id)}
-              className="h-8 rounded-md px-3 text-red-600 hover:bg-red-500/10"
+              className="h-8 rounded-md px-3 text-a11y-danger hover:bg-red-500/10"
             >
               <Trans>Delete Space</Trans>
             </button>

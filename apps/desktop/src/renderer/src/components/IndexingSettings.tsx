@@ -19,17 +19,17 @@ export function IndexingSettings() {
     failed = i18n.number(progress.failed);
   return (
     <section className="mt-6 space-y-2">
-      <h3 className="text-[12px] font-semibold text-neutral-500">
+      <h3 className="text-[12px] font-semibold text-a11y-muted">
         <Trans>On-device indexing</Trans>
       </h3>
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>
           Images and PDF text are processed on this device. No content is sent to a cloud model.
         </Trans>
       </p>
       <div className="flex items-center gap-2">
         <Switch.Root
-          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500 data-checked:bg-blue-500"
+          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-a11y-focus data-checked:bg-blue-600"
           checked={progress.modelsEnabled ?? false}
           aria-label={t`Download on-device models, ~226 MB`}
           onCheckedChange={(enabled) =>
@@ -73,7 +73,7 @@ export function IndexingSettings() {
               <Trans>Model download failed. Retrying while idle.</Trans>
             </p>
           )}
-          <output>
+          <output aria-live="off">
             <Trans>
               {i18n.number(progress.embeddingDone ?? 0)} embedded ·{" "}
               {i18n.number(progress.embeddingQueued ?? 0)} queued ·{" "}
@@ -88,14 +88,14 @@ export function IndexingSettings() {
           <Trans>Image recognition is unavailable on this platform.</Trans>
         </p>
       )}
-      <output>
+      <output aria-live="off">
         <Trans>
           {done} completed · {queued} queued · {running} running · {failed} failed
         </Trans>
       </output>
       <div className="flex items-center gap-2">
         <Switch.Root
-          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500 data-checked:bg-blue-500"
+          className="flex h-5 w-9 rounded-full bg-neutral-300 p-0.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-a11y-focus data-checked:bg-blue-600"
           checked={progress.paused}
           aria-label={t`Pause indexing`}
           onCheckedChange={(paused) => pause({ payload: { paused }, reactivityKeys: ["indexing"] })}
@@ -105,13 +105,13 @@ export function IndexingSettings() {
         <Trans>Pause indexing</Trans>
       </div>
       {progress.onBattery && (
-        <p className="text-neutral-500">
+        <p className="text-a11y-muted">
           <Trans>
             On battery: image recognition waits for AC power. PDF text indexing is throttled.
           </Trans>
         </p>
       )}
-      <p className="text-neutral-500">
+      <p className="text-a11y-muted">
         <Trans>Runs while idle. Scanned PDF pages, audio and video are not indexed yet.</Trans>
       </p>
     </section>

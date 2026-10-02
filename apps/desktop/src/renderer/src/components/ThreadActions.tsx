@@ -93,7 +93,7 @@ const moveBack = (state: ThreadState, mailbox: Mailbox) => {
 };
 
 const button =
-  "rounded-md p-1.5 text-neutral-500 outline-offset-0 outline-blue-500/60 hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10";
+  "rounded-md p-1.5 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:hover:text-neutral-100 dark:data-popup-open:bg-white/10";
 
 /**
  * Mimestream-style toolbar above the reader. Arrow keys move between the
@@ -227,7 +227,7 @@ export function ThreadActions({
       <Switch
         icon={Star}
         pressed={state.isStarred}
-        pressedClass="fill-amber-400 text-amber-400"
+        pressedClass="fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
         label={state.isStarred ? t`Unstar` : t`Star`}
         shortcut={shortcut("star")}
         onPressedChange={(value) => onOp({ kind: "star", value })}
@@ -237,7 +237,7 @@ export function ThreadActions({
       <Switch
         icon={Bookmark}
         pressed={state.isImportant}
-        pressedClass="fill-orange-400 text-orange-400"
+        pressedClass="fill-orange-600 text-orange-600 dark:fill-orange-400 dark:text-orange-400"
         label={state.isImportant ? t`Mark as not important` : t`Mark as important`}
         shortcut={shortcut("important")}
         onPressedChange={(value) => onOp({ kind: "important", value })}
@@ -602,7 +602,7 @@ function LabelPicker({
                   <LabelDot label={l} />
                   <span className="min-w-0 flex-1 truncate">{l.name}</span>
                   {on && (
-                    <span className="text-blue-600 group-data-highlighted:text-white dark:text-blue-400">
+                    <span className="text-a11y-accent group-data-highlighted:text-white dark:text-blue-400">
                       ✓
                     </span>
                   )}
@@ -614,7 +614,7 @@ function LabelPicker({
         {target && (
           <button
             type="button"
-            className="w-full p-2 text-left text-blue-500"
+            className="w-full p-2 text-left text-a11y-accent"
             onClick={() => {
               setCreating(true);
               onOpenChange(false);

@@ -44,11 +44,11 @@ export function Select<T extends string>({
     >
       <BaseSelect.Trigger
         aria-label={label}
-        className={`group flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 -mx-1.5 text-left outline-offset-0 outline-blue-500/60 not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10 ${className}`}
+        className={`group flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 -mx-1.5 text-left outline-offset-0 outline-a11y-focus not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10 ${className}`}
       >
         {current?.icon}
         <BaseSelect.Value className="min-w-0 truncate" />
-        <BaseSelect.Icon className="shrink-0 text-neutral-400 group-data-disabled:hidden">
+        <BaseSelect.Icon className="shrink-0 text-a11y-muted group-data-disabled:hidden">
           <ChevronsUpDown className="size-3.5" />
         </BaseSelect.Icon>
       </BaseSelect.Trigger>

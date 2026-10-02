@@ -56,7 +56,7 @@ export function Feedback({
       title={crash ? t`OpenMail stopped unexpectedly` : t`Send Feedback…`}
     >
       <div className="w-full">
-        <p className="mb-3 text-sm text-neutral-500">
+        <p className="mb-3 text-sm text-a11y-muted">
           <Trans>
             Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft
             that you review and send from your own account.
