@@ -172,6 +172,7 @@ scope 按切片添加。已有账户继续收发邮件，缺少新增设置权�
 
 ```sh
 node apps/desktop/build/check-vision.mjs
+# 下列 Electron 检查按需运行。
 env -u ELECTRON_RUN_AS_NODE apps/desktop/node_modules/.bin/electron apps/desktop/build/check-media-electron.mjs
 ```
 
@@ -288,23 +289,21 @@ Electron 做不到、需要原生模块的：macOS Focus 过滤器、分享扩�
 
 `apps/mobile` 用 Expo（React Native）。理由：core 是 TypeScript，手机端直接复用，界面层用 React，和桌面的写法一致。
 
-### core 要拆出平台接口
+### core 平台接口（slice 39 已完成）
 
-core 里能直接在手机上跑的：`mime.ts`、`types.ts`、`store.ts`（纯 SQL），`gmail.ts`、`outlook.ts` 里调 API 的部分。
+Node 实现已集中到 `packages/core/src/platform/node/`，媒体检查脚本也从对应的 `dist/platform/node/` 入口加载适配器。`@openmail/core/portable` 的本地依赖不加载 Node 适配器；桌面、CLI、MCP 保留原 API，并可显式使用 `@openmail/core/node` 与 `NodeLayer`。导入守卫和 oxlint 防止平台依赖回流。迁移、OAuth scope、队列与策略未改。
 
-绑定 Node 的，要抽成接口，桌面和手机各实现一份：
+手机端仍需实现：
 
-| 接口       | 桌面（现状）                 | 手机                                               |
-| ---------- | ---------------------------- | -------------------------------------------------- |
-| 数据库     | `node:sqlite`                | op-sqlite（自带 SQLite，含 FTS5）                  |
-| 密钥存储   | `@napi-rs/keyring`           | expo-secure-store（iOS 钥匙串 / Android Keystore） |
-| OAuth 授权 | 本机 HTTP 回调（`oauth.ts`） | expo-auth-session，系统浏览器加自定义 scheme 回调  |
-| 配置       | `config.json`（`config.ts`） | expo-secure-store 或 app 沙箱文件                  |
-| 数据目录   | `paths.ts`                   | app 沙箱                                           |
+- **数据库**：op-sqlite 的 Effect `SqlClient` adapter，运行现有迁移，验证 FTS5/trigram、事务、WAL 和并发行为；sqlite-vec 可用性通过 `DatabaseCapabilities` 报告。
+- **密钥**：expo-secure-store 的 `Secrets` Layer。refresh token 和 AI 密钥继续只进安全存储。
+- **授权**：expo-auth-session 的 `OAuth` 与 `Browser` Layer，系统浏览器加 app scheme 回调，使用用户注册的手机客户端，保留现有 scope 和个人 Outlook consumers 租户约束。
+- **沙箱文件与随机数**：Expo `FileSystem`、`Path`、`AppPaths`、配置和 `AttachmentFiles` adapter，以及安全 UUID、Effect `Crypto` 的实现。
+- **邮件编解码与 provider**：手机可用的 `MailCodec`，替换 mailparser / nodemailer；IMAP/SMTP 另写 `ProviderAdapter`。Gmail 和 Outlook 的 HTTP 逻辑可直接复用。
+- **可选能力**：保留 SSRF 防护的 DNS/TCP 图片传输、PDF 提取、端侧推理、模型文件下载及数据库文件恢复。不能用普通 fetch 替代固定地址的 `ImageNetwork`。手机的应用更新由平台分发处理。
+- **系统状态**：把电源、空闲与前台状态接到 Mailbox 已有回调，时钟使用 Effect `Clock`。
 
-`store.ts` 现在直接用 `DatabaseSync` 的类型。拆的时候定义一个只含 `prepare().all/get/run` 和 `exec` 的最小 `Db` 接口，op-sqlite 的同步 API 能满足。trigram 分词器要求 SQLite 3.34 以上，op-sqlite 自带的版本要确认。
-
-这一步等桌面阶段 1 做完再动：写操作队列会改 core 的结构，一起拆省一次返工。拆完之后，core 里除了平台实现文件，其他文件不能 import `node:` 模块。这条到时写进 AGENTS.md。
+接口和逐文件依赖见[架构的 Platform 端口](architecture.md#platform-端口给手机留的接缝)及[平台依赖清单](platform-inventory.md)。源码导入边界规则只定义在 AGENTS.md。
 
 ### OAuth 客户端
 

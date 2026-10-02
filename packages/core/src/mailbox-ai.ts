@@ -1,4 +1,5 @@
-import { createHash } from "node:crypto";
+import { Buffer } from "./platform/bytes.js";
+import { sha256Hex } from "./platform/crypto.js";
 import { Clock, Deferred, Effect, Layer, Option, Schema, Stream } from "effect";
 import {
   mailData,
@@ -67,23 +68,21 @@ export function makeAiMailbox(
       const threadId = `${accountId}/${view.threadId}`;
       const fullContext = modelContext(messages, Number.MAX_SAFE_INTEGER);
       const labels = [...new Set(messages.flatMap((message) => message.labels))];
-      const inputHash = createHash("sha256")
-        .update(
-          mailData(
-            kind === "triage"
-              ? {
-                  thread: fullContext,
-                  labels: messages
-                    .map((message) => ({
-                      id: message.id,
-                      labels: [...new Set(message.labels)].toSorted(),
-                    }))
-                    .toSorted((a, b) => a.id.localeCompare(b.id)),
-                }
-              : fullContext,
-          ),
-        )
-        .digest("hex");
+      const inputHash = sha256Hex(
+        mailData(
+          kind === "triage"
+            ? {
+                thread: fullContext,
+                labels: messages
+                  .map((message) => ({
+                    id: message.id,
+                    labels: [...new Set(message.labels)].toSorted(),
+                  }))
+                  .toSorted((a, b) => a.id.localeCompare(b.id)),
+              }
+            : fullContext,
+        ),
+      );
       const selectedModel = yield* store.ai.model;
       return {
         view,

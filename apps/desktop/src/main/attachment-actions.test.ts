@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { Effect, Fiber } from "effect";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
-import { buildMime } from "../../../../packages/core/src/compose.js";
-import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
+import { buildMime } from "../../../../packages/core/src/platform/node/compose.js";
+import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 
 const native = vi.hoisted(() => ({

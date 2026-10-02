@@ -3,8 +3,8 @@ import http from "node:http";
 import { Crypto, Deferred, Effect, Layer, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 
-import { AuthError, ProviderError } from "./errors.js";
-import { type AuthorizeRequest, Browser, OAuth, type TokenResponse } from "./services.js";
+import { AuthError, ProviderError } from "../../errors.js";
+import { type AuthorizeRequest, Browser, OAuth, type TokenResponse } from "../../services.js";
 
 /**
  * Authorization-code flow with PKCE and a loopback redirect (RFC 8252). The

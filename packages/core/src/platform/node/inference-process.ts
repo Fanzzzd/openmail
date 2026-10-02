@@ -1,17 +1,7 @@
 import { fork } from "node:child_process";
 
-/** Platform process port: no network, DB or model implementation in the adapter. */
-export type InferenceRequest =
-  | { kind: "text"; text: string; mode: "query" | "passage" }
-  | { kind: "query"; text: string }
-  | { kind: "image"; data: Uint8Array };
-export interface InferenceProcess {
-  send(message: InferenceRequest): void;
-  onMessage(listener: (message: unknown) => void): () => void;
-  onFailure(listener: () => void): () => void;
-  kill(): Promise<void>;
-}
-export type InferenceProcessLauncher = (entry: string, root: string) => InferenceProcess;
+import type { InferenceProcessLauncher } from "../runtime.js";
+export type { InferenceRequest, InferenceProcess, InferenceProcessLauncher } from "../runtime.js";
 export const nodeInferenceProcess: InferenceProcessLauncher = (entry, root) => {
   const child = fork(entry, [root], {
     serialization: "advanced",

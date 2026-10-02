@@ -1,10 +1,12 @@
+import { MailCodec } from "./platform/mail-codec.js";
+import { Buffer } from "./platform/bytes.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { featureRequest } from "./provider-features.js";
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
-import { buildMime, type Threading } from "./compose.js";
+import { buildMime as unboundBuildMime, type Threading } from "./compose.js";
 import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
 import { Label } from "./domain.js";
 import type {
@@ -208,8 +210,11 @@ const decode =
 export const makeGmail: Effect.Effect<
   ProviderAdapter,
   never,
-  HttpClient.HttpClient | OAuth | AppConfig | Secrets
+  HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
 > = Effect.gen(function* () {
+  const codec = yield* MailCodec;
+  const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
+    unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
   const http = yield* HttpClient.HttpClient;
   const oauth = yield* OAuth;
   const config = yield* AppConfig;
@@ -561,7 +566,7 @@ export const makeGmail: Effect.Effect<
             "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
         });
       yield* post(account.id, "/messages/send", {
-        raw: raw.toString("base64url"),
+        raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
         ...(threadId ? { threadId } : {}),
       });
     },
@@ -615,7 +620,10 @@ export const makeGmail: Effect.Effect<
             "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
         });
       const body = {
-        message: { raw: raw.toString("base64url"), ...(threadId ? { threadId } : {}) },
+        message: {
+          raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
+          ...(threadId ? { threadId } : {}),
+        },
       };
       const create = post(account.id, "/drafts", body);
       const existing = yield* draftIdOf(account.id, draft.remote);
@@ -665,7 +673,7 @@ export const makeGmail: Effect.Effect<
       );
       if (maxBytes !== undefined && (raw.length * 3) / 4 > maxBytes + 3)
         return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-      return new Uint8Array(Buffer.from(raw, "base64url"));
+      return new Uint8Array(Buffer.from(raw, "base64"));
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -694,7 +702,7 @@ export const makeGmail: Effect.Effect<
               `/messages/${encodeURIComponent(providerId)}/attachments/${encodeURIComponent(part.body.attachmentId)}`,
             )).data
           : "";
-      return new Uint8Array(Buffer.from(data, "base64url"));
+      return new Uint8Array(Buffer.from(data, "base64"));
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -1034,7 +1042,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
       // the part header keeps the sender's charset (gb2312 from Outlook,
       // for example). Decoding by the header would garble them.
       const decoded = decodeUtf8First(
-        Buffer.from(part.body.data, "base64url"),
+        Buffer.from(part.body.data, "base64"),
         charsetOf(partHeaders.get("content-type")),
       );
       if (part.mimeType === "text/plain" && !text) text = decoded;

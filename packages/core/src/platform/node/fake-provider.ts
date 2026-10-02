@@ -3,10 +3,12 @@ import {
   type CalendarEvent,
   type CalendarInvite,
   type InviteResponse,
-} from "./calendar.js";
+} from "../../calendar.js";
 import { Effect, Option, Stream } from "effect";
 
-import { attachmentFromRaw } from "./attachments.js";
+import { attachmentFromRaw } from "../../attachments.js";
+import { MailCodec, type MailCodecPort } from "../mail-codec.js";
+import { nodeMailCodec } from "./mail-codec.js";
 import { buildMime } from "./compose.js";
 import type {
   Address,
@@ -15,18 +17,23 @@ import type {
   Label,
   MailOp,
   OutgoingMessage,
-} from "./domain.js";
+} from "../../domain.js";
 import {
   FeatureScopeMissing,
   PermanentError,
   SettingsScopeMissing,
   type ProviderFailure,
-} from "./errors.js";
-import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "./services.js";
-import { EMPTY_VACATION, type ServerFilter, type Vacation, type SendAs } from "./organization.js";
-import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
-import { matchesSearch } from "./search.js";
-import { applyOpToLabels } from "./store.js";
+} from "../../errors.js";
+import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "../../services.js";
+import {
+  EMPTY_VACATION,
+  type ServerFilter,
+  type Vacation,
+  type SendAs,
+} from "../../organization.js";
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "../../folder-actions.js";
+import { matchesSearch } from "../../search.js";
+import { applyOpToLabels } from "../../store.js";
 
 /** Ids handed out by fake servers; unique across servers so tests never mix them up. */
 let counter = 0;
@@ -34,11 +41,11 @@ let counter = 0;
 /** A provider's server side, in memory. Tests read and change it directly. */
 export interface FakeServer {
   supportsPermanentDelete: boolean;
-  deleteFolderLabels: Record<import("./folder-actions.js").DeleteFolder, readonly string[]>;
+  deleteFolderLabels: Record<import("../../folder-actions.js").DeleteFolder, readonly string[]>;
   grantedScopes: string[];
   contacts: Address[];
-  contactGroups: import("./contacts.js").ContactGroup[];
-  contactPhotos: import("./contacts.js").ContactPhoto[];
+  contactGroups: import("../../contacts.js").ContactGroup[];
+  contactPhotos: import("../../contacts.js").ContactPhoto[];
   calendarEvents: CalendarEvent[];
   createdEvents: CalendarEvent[];
   responses: { invite: CalendarInvite; response: InviteResponse }[];
@@ -53,7 +60,7 @@ export interface FakeServer {
   aliases: SendAs[];
   deleted: (readonly string[])[];
   folderPages: (string | null)[];
-  searched: import("./domain.js").ThreadQuery[];
+  searched: import("../../domain.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
   batches: { providerIds: readonly string[]; op: MailOp }[];
@@ -116,8 +123,9 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
  */
 export function makeFakeProvider(
   server: FakeServer,
-  options: { strictFolders?: boolean; batches?: boolean } = {},
+  options: { strictFolders?: boolean; batches?: boolean; codec?: MailCodecPort } = {},
 ): ProviderAdapter {
+  const codec = options.codec ?? nodeMailCodec;
   let pulled = new Set<string>();
   const failOnce = Effect.suspend(() => {
     const failure = server.failNext;
@@ -500,7 +508,7 @@ export function makeFakeProvider(
     ...(options.batches
       ? {
           pushBatch: (
-            account: import("./domain.js").Account,
+            account: import("../../domain.js").Account,
             providerIds: readonly string[],
             op: MailOp,
           ) =>
@@ -595,6 +603,7 @@ export function makeFakeProvider(
           const raw = server.raw.get(providerId);
           if (!raw) return Effect.fail(new PermanentError({ message: `No source ${providerId}` }));
           return attachmentFromRaw(raw, ref).pipe(
+            Effect.provideService(MailCodec, codec),
             Effect.flatMap((bytes) =>
               bytes
                 ? Effect.succeed(bytes)

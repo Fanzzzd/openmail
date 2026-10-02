@@ -5,9 +5,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
-import { databaseLayer, MIGRATIONS } from "./db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { StoreLive } from "./store.js";
-import { NodeSystem } from "./platform-node.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Store } from "./services.js";
 
 it.effect(

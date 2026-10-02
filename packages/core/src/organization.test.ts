@@ -3,14 +3,14 @@ import { Effect, Layer } from "effect";
 import { TestClock } from "effect/testing";
 import type { IncomingMessage } from "./domain.js";
 import { ProviderError, SettingsScopeMissing } from "./errors.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes } from "./organization.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
   providerId: id,

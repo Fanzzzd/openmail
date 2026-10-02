@@ -3,8 +3,8 @@ import { createReadStream } from "node:fs";
 import { mkdir, open, rename, rm, stat, utimes } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
-import { MediaError, type ModelsStatus } from "./media.js";
-import { MODEL_FILES, MODEL_BYTES } from "./model-manifest.js";
+import { MediaError, type ModelsStatus } from "../../media.js";
+import { MODEL_FILES, MODEL_BYTES } from "../../model-manifest.js";
 
 export type ModelFile = {
   readonly model: string;

@@ -1,9 +1,9 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import type { OutgoingMessage } from "./domain.js";
-import { originalAttachment, parseRawDraft } from "./drafts.js";
+import { originalAttachment, parseRawDraft } from "./platform/node/portable-helpers.js";
 import { renderMarkdown } from "./markdown.js";
 import { preservedComposeHtml } from "./compose-body.js";
 import { simpleParser } from "mailparser";

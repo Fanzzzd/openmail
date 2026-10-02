@@ -2,15 +2,15 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path } from "effect";
 import { SqlClient } from "effect/sql";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import type { IncomingMessage } from "./domain.js";
 import { inviteHistory } from "./calendar.js";
 import { parseCalendar, inviteReply } from "./invites.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { NodeSystem } from "./platform-node.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { parseAppLink, parseStableReference, privateMailLink } from "./system.js";
 import { EMPTY_FILTER } from "./organization.js";
 import {
@@ -24,7 +24,7 @@ import {
   searchFieldParts,
   serializeSearchField,
 } from "./search.js";
-import { imapSearch } from "./imap-search.js";
+import { imapSearch } from "./platform/node/imap-search.js";
 
 const fixture = (
   providerId: string,

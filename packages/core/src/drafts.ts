@@ -1,9 +1,10 @@
+import { Buffer } from "./platform/bytes.js";
 /**
  * Turning drafts into what providers take and back: the attached original of
  * a forward-as-attachment, and a provider's raw draft parsed for editing.
  */
 import { Effect } from "effect";
-import { simpleParser } from "mailparser";
+import { parseMime, mimeAddresses as addresses } from "./platform/mail-codec.js";
 import { remoteComposeBody } from "./compose-body.js";
 import {
   draftBodyFingerprint,
@@ -22,7 +23,6 @@ import type {
   OutgoingMessage,
 } from "./domain.js";
 import { ProviderError } from "./errors.js";
-import { addresses } from "./imap.js";
 import type { StoredDraft } from "./services.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */
@@ -44,18 +44,10 @@ export interface ParsedDraft {
 }
 
 export const parseRawDraft = (raw: Uint8Array) =>
-  Effect.tryPromise({
-    try: () =>
-      simpleParser(Buffer.from(raw), {
-        skipImageLinks: true,
-        skipTextToHtml: true,
-        skipHtmlToText: true,
-      }),
-    catch: (error) =>
-      new ProviderError({
-        message: `Cannot read the draft: ${error instanceof Error ? error.message : String(error)}`,
-      }),
-  }).pipe(
+  parseMime(raw, { skipImageLinks: true, skipTextToHtml: true, skipHtmlToText: true }).pipe(
+    Effect.mapError(
+      (error) => new ProviderError({ message: `Cannot read the draft: ${error.message}` }),
+    ),
     Effect.map((parsed): ParsedDraft => {
       const html = parsed.html || undefined;
       const text = parsed.text ?? "";
@@ -80,7 +72,7 @@ export const parseRawDraft = (raw: Uint8Array) =>
         attachments: parsed.attachments.map((a) => ({
           filename: a.filename ?? "attachment",
           mimeType: a.contentType,
-          content: a.content.toString("base64"),
+          content: Buffer.from(a.content).toString("base64"),
           ...(a.contentId ? { contentId: a.contentId.replace(/^<|>$/g, "") } : {}),
         })),
         isReply: Boolean(parsed.inReplyTo),

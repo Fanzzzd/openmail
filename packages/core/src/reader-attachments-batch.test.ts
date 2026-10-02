@@ -1,9 +1,16 @@
 import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { expect, it, vi } from "vitest";
-import { makeReaderAttachments } from "./reader-attachments.js";
+import { makeReaderAttachments as unboundReader } from "./reader-attachments.js";
+import { MailCodec } from "./platform/mail-codec.js";
+import { NodeRuntime } from "./platform/node/runtime.js";
+const codec = await Effect.runPromise(MailCodec.pipe(Effect.provide(NodeRuntime)));
+const makeReaderAttachments = (
+  attachment: Parameters<typeof unboundReader>[0],
+  thread: Parameters<typeof unboundReader>[1],
+) => unboundReader(attachment, thread, codec);
 import { AttachmentCache } from "./attachment-cache.js";
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import type { Message } from "./domain.js";
 
 const message = (data: Uint8Array): Message => ({

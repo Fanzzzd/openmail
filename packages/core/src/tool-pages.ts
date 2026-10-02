@@ -1,4 +1,5 @@
-import { createHash } from "node:crypto";
+import { Buffer } from "./platform/bytes.js";
+import { sha256Hex } from "./platform/crypto.js";
 import { Effect, Schema } from "effect";
 
 export const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
@@ -31,15 +32,17 @@ const Cursor = Schema.Struct({
 });
 export type PageCursor = typeof Cursor.Type;
 export const cursorScope = (name: string, filters: unknown) =>
-  createHash("sha256")
-    .update(JSON.stringify([name, filters]))
-    .digest("hex");
+  sha256Hex(JSON.stringify([name, filters]));
 export const encodeCursor = (cursor: PageCursor) =>
-  Buffer.from(JSON.stringify(cursor)).toString("base64url");
+  Buffer.from(JSON.stringify(cursor))
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 export function decodeCursor(raw: string | undefined, scope: string): PageCursor {
   if (!raw) return { scope, offset: 0 };
   const cursor = Schema.decodeUnknownSync(Schema.fromJsonString(Cursor))(
-    Buffer.from(raw, "base64url").toString("utf8"),
+    Buffer.from(raw, "base64").toString("utf8"),
   );
   if (cursor.scope !== scope) throw new Error("Cursor belongs to another tool or filters.");
   return cursor;

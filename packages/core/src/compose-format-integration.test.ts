@@ -4,12 +4,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { makeFakeProvider, fakeServer } from "./fake-provider.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { StoreLive } from "./store.js";
 import { Providers } from "./services.js";
 import {
@@ -17,7 +17,7 @@ import {
   composeHtmlHasUnsupported,
   composeTransportHtml,
 } from "./compose-body.js";
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import type { Provider } from "./domain.js";
 
 const source =

@@ -1,5 +1,6 @@
+import { PlatformCrypto } from "./platform/crypto.js";
 import type { Fragment } from "effect/sql/Statement";
-import { Effect, Option, Schema } from "effect";
+import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { DerivedChunk } from "./media.js";
 import { all, first, run } from "./sql-rows.js";
@@ -19,6 +20,7 @@ export function makeMediaStore(
   sql: SqlClient.SqlClient,
   vectors = false,
   table: "derived_jobs" | "semantic_jobs" = "derived_jobs",
+  crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
 ) {
   const jobs = sql.literal(table);
   const priorityIndex = sql.literal(`${table}_priority`);

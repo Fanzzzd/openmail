@@ -3,7 +3,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./db.js";
+import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 

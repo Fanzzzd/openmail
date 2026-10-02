@@ -6,11 +6,11 @@ import { vi } from "vitest";
 import type { IncomingMessage } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
 import { FakeModelLayer, ModelAnthropic, type ModelOutput, type ModelRequest } from "./model.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { AI_INPUT_BUDGET, mailData } from "./ai.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 

@@ -5,7 +5,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Ref } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 
-import { OAuthLoopback } from "./oauth.js";
+import { OAuthLoopback } from "./platform/node/oauth.js";
 import { Browser, OAuth } from "./services.js";
 
 /**

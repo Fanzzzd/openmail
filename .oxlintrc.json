@@ -123,6 +123,54 @@
           }
         ]
       }
+    },
+    {
+      "files": ["packages/core/src/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "node:*",
+                  "@effect/platform-node",
+                  "@effect/platform-node/*",
+                  "@effect/platform-node-shared",
+                  "@effect/platform-node-shared/*",
+                  "@effect/sql-sqlite-node",
+                  "@effect/sql-sqlite-node/*",
+                  "@napi-rs/keyring",
+                  "@napi-rs/keyring/*",
+                  "sqlite-vec",
+                  "sqlite-vec/*",
+                  "onnxruntime-node",
+                  "onnxruntime-node/*",
+                  "imapflow",
+                  "imapflow/*",
+                  "nodemailer",
+                  "nodemailer/*",
+                  "mailparser",
+                  "mailparser/*",
+                  "pdfjs-dist",
+                  "pdfjs-dist/*",
+                  "@huggingface/transformers",
+                  "@huggingface/transformers/*",
+                  "better-sqlite3",
+                  "better-sqlite3/*"
+                ],
+                "message": "Keep native imports in packages/core/src/platform/node; portable core uses Effect platform services."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/core/src/platform/node/**", "packages/core/src/**/*.test.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
     }
   ],
   "env": {

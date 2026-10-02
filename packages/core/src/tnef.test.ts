@@ -73,3 +73,40 @@ describe("bounded MS-OXTNEF parser", () => {
     }
   });
 });
+
+it("preserves native UTF-16LE filenames including BOMs, lone surrogates and odd tails", () => {
+  const u32 = (value: number) => {
+    const bytes = Buffer.alloc(4);
+    bytes.writeUInt32LE(value);
+    return bytes;
+  };
+  const attribute = (tag: number, data: Buffer) => {
+    const checksum = Buffer.alloc(2);
+    checksum.writeUInt16LE(data.reduce((sum, byte) => (sum + byte) & 0xffff, 0));
+    return Buffer.concat([Buffer.from([2]), u32(tag), u32(data.length), data, checksum]);
+  };
+  for (const bytes of [
+    Buffer.from([0xff, 0xfe, 0x61, 0]),
+    Buffer.from([0, 0xd8, 0x61, 0]),
+    Buffer.from([0, 0xdc]),
+    Buffer.from([0x61, 0, 0xff]),
+    Buffer.from([0x61, 0, 0, 0, 0x62, 0]),
+  ]) {
+    const property = Buffer.concat([
+      u32(1),
+      Buffer.from([0x1f, 0, 7, 0x37]),
+      u32(1),
+      u32(bytes.length),
+      bytes,
+      Buffer.alloc((4 - (bytes.length % 4)) % 4),
+    ]);
+    const raw = Buffer.concat([
+      u32(0x223e9f78),
+      Buffer.alloc(2),
+      attribute(0x9002, Buffer.alloc(0)),
+      attribute(0x800f, Buffer.from([1])),
+      attribute(0x9005, property),
+    ]);
+    expect(decodeTnef(raw)[0]?.filename).toBe(bytes.toString("utf16le").replace(/\0.*$/s, ""));
+  }
+});

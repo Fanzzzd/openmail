@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "./platform/crypto.js";
 import { Schema } from "effect";
 import { ElementType, parseDocument } from "htmlparser2";
 
@@ -44,13 +44,11 @@ export function draftBodyFingerprint(html: string): string {
       return [[node.name, attrs, children]];
     });
   };
-  return createHash("sha256")
-    .update(JSON.stringify(canonical(parseDocument(html.trim()).children)))
-    .digest("hex");
+  return sha256Hex(JSON.stringify(canonical(parseDocument(html.trim()).children)));
 }
 
 export function draftTextFingerprint(text: string): string {
-  return createHash("sha256").update(text.replace(/\r\n?/g, "\n")).digest("hex");
+  return sha256Hex(text.replace(/\r\n?/g, "\n"));
 }
 
 export function markdownDraftSource(text: string): MarkdownDraftSource {

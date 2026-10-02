@@ -7,7 +7,7 @@ import { graphTimestamp } from "./graph-time.js";
 import { parseCalendar } from "./invites.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
 import { Mailbox } from "./mailbox.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const event: CalendarEvent = {
   key: "personal",

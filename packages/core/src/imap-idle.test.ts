@@ -1,7 +1,12 @@
 import { createServer, type Socket } from "node:net";
 import { ImapFlow } from "imapflow";
 import { expect, it, vi } from "vitest";
-import { ImapIdle, keepInboxIdle, IDLE_RENEW_MS, idleRetryDelay } from "./imap-idle.js";
+import {
+  ImapIdle,
+  keepInboxIdle,
+  IDLE_RENEW_MS,
+  idleRetryDelay,
+} from "./platform/node/imap-idle.js";
 import type { Account } from "./domain.js";
 
 const account: Account = {

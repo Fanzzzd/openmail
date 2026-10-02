@@ -1,0 +1,198 @@
+import { Option, Predicate, Schema } from "effect";
+import type { IncomingMessage } from "./domain.js";
+import type { Change } from "./services.js";
+type Flags = { unread: boolean; starred: boolean };
+export function encodeProviderId(path: string, uidValidity: bigint | string, uid: number): string {
+  return `${uidValidity}:${uid}:${path}`;
+}
+
+export function decodeProviderId(
+  id: string,
+): Option.Option<{ path: string; uidValidity: string; uid: number }> {
+  const match = /^(\d+):(\d+):([\s\S]+)$/.exec(id);
+  if (!match) return Option.none();
+  return Option.some({ uidValidity: match[1]!, uid: Number(match[2]), path: match[3]! });
+}
+
+/** Compacts UIDs into an IMAP sequence set, e.g. "1:3,7,9:10". */
+export function uidSet(uids: Iterable<number>): string {
+  const sorted = [...new Set(uids)].toSorted((a, b) => a - b);
+  const parts: string[] = [];
+  for (let i = 0; i < sorted.length;) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j]! + 1) j++;
+    parts.push(i === j ? `${sorted[i]}` : `${sorted[i]}:${sorted[j]}`);
+    i = j + 1;
+  }
+  return parts.join(",");
+}
+
+/** Inverse of `uidSet`. */
+export function parseUidSet(set: string): number[] {
+  const out: number[] = [];
+  for (const part of set.split(",")) {
+    if (!part) continue;
+    const [a, b] = part.split(":").map(Number);
+    if (a === undefined || !Number.isFinite(a)) continue;
+    const end = b !== undefined && Number.isFinite(b) ? b : a;
+    for (let n = a; n <= end; n++) out.push(n);
+  }
+  return out;
+}
+
+// Sync cursor
+
+/**
+ * Per-folder sync state. Flags are kept here because the adapter never reads
+ * the store: a flag change is found by comparing the server's flags with the
+ * ones last reported.
+ */
+export interface FolderCursor {
+  uidValidity: string;
+  /** Highest UID seen; new mail has a bigger one. */
+  lastUid: number;
+  /** HIGHESTMODSEQ at the last sync, when the server has CONDSTORE. */
+  modseq?: string;
+  /** UIDs reported to the store, as an IMAP sequence set. */
+  uids: string;
+  /** The subset of `uids` without \Seen. */
+  unread: string;
+  /** The subset of `uids` with \Flagged. */
+  starred: string;
+}
+
+export interface ImapCursor {
+  folders: Record<string, FolderCursor>;
+}
+
+const decodeJson = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown));
+
+export function readCursor(raw: Option.Option<string>): ImapCursor {
+  // A cursor from an older build or a corrupt one: start over.
+  const parsed = Option.getOrUndefined(Option.flatMap(raw, decodeJson));
+  if (
+    !Predicate.isObject(parsed) ||
+    !("folders" in parsed) ||
+    !Predicate.isObject(parsed.folders)
+  ) {
+    return { folders: {} };
+  }
+  const folders: Record<string, FolderCursor> = {};
+  for (const [path, f] of Object.entries(parsed.folders)) {
+    if (
+      Predicate.isObject(f) &&
+      "uidValidity" in f &&
+      Predicate.isString(f.uidValidity) &&
+      "lastUid" in f &&
+      Predicate.isNumber(f.lastUid) &&
+      "uids" in f &&
+      Predicate.isString(f.uids)
+    ) {
+      const text = (key: string) => {
+        const v: unknown = key in f ? f[key as keyof typeof f] : undefined;
+        return Predicate.isString(v) ? v : undefined;
+      };
+      const modseq = text("modseq");
+      folders[path] = {
+        uidValidity: f.uidValidity,
+        lastUid: f.lastUid,
+        uids: f.uids,
+        unread: text("unread") ?? "",
+        starred: text("starred") ?? "",
+        ...(modseq ? { modseq } : {}),
+      };
+    }
+  }
+  return { folders };
+}
+
+/**
+ * Mutable form of FolderCursor while a folder syncs. It keeps the read and
+ * starred state per UID so a sync reports only what changed: without
+ * CONDSTORE the server answers with every message's flags.
+ */
+export class FolderState {
+  readonly flags = new Map<number, Flags>();
+  constructor(
+    readonly uidValidity: string,
+    public lastUid: number,
+    public modseq: string | undefined,
+  ) {}
+
+  static from(c: FolderCursor): FolderState {
+    const state = new FolderState(c.uidValidity, c.lastUid, c.modseq);
+    const unread = new Set(parseUidSet(c.unread));
+    const starred = new Set(parseUidSet(c.starred));
+    for (const uid of parseUidSet(c.uids)) {
+      state.flags.set(uid, { unread: unread.has(uid), starred: starred.has(uid) });
+    }
+    return state;
+  }
+
+  /**
+   * Folds a flag fetch into the state. Known UIDs not in `present` are gone
+   * (Delete); a UID whose read or starred state in `current` differs from the
+   * known one gets a Flags change. Deletes come first.
+   */
+  reconcile(
+    path: string,
+    present: ReadonlySet<number>,
+    current: ReadonlyMap<number, Flags>,
+  ): Change[] {
+    const changes: Change[] = [];
+    const id = (uid: number) => encodeProviderId(path, this.uidValidity, uid);
+    // Deleting the current entry does not disturb a Map iterator.
+    for (const uid of this.flags.keys()) {
+      if (present.has(uid)) continue;
+      this.flags.delete(uid);
+      changes.push({ _tag: "Delete", providerId: id(uid) });
+    }
+    for (const [uid, flags] of current) {
+      const before = this.flags.get(uid);
+      if (!before || (before.unread === flags.unread && before.starred === flags.starred)) {
+        continue;
+      }
+      this.flags.set(uid, flags);
+      changes.push({
+        _tag: "Flags",
+        providerId: id(uid),
+        isUnread: flags.unread,
+        isStarred: flags.starred,
+      });
+    }
+    return changes;
+  }
+
+  toCursor(): FolderCursor {
+    const uids = [...this.flags.keys()];
+    return {
+      uidValidity: this.uidValidity,
+      lastUid: this.lastUid,
+      ...(this.modseq ? { modseq: this.modseq } : {}),
+      uids: uidSet(uids),
+      unread: uidSet(uids.filter((u) => this.flags.get(u)!.unread)),
+      starred: uidSet(uids.filter((u) => this.flags.get(u)!.starred)),
+    };
+  }
+}
+
+export function trackImapBackfill(
+  cursor: Option.Option<string>,
+  messages: readonly IncomingMessage[],
+): Option.Option<string> {
+  const previous = readCursor(cursor);
+  const states = new Map<string, FolderState>();
+  for (const message of messages) {
+    const ref = decodeProviderId(message.providerId);
+    if (Option.isNone(ref)) continue;
+    const old = previous.folders[ref.value.path];
+    if (!old || old.uidValidity !== ref.value.uidValidity) continue;
+    const state = states.get(ref.value.path) ?? FolderState.from(old);
+    if (!state.flags.has(ref.value.uid))
+      state.flags.set(ref.value.uid, { unread: message.isUnread, starred: message.isStarred });
+    states.set(ref.value.path, state);
+  }
+  if (!states.size) return Option.none();
+  for (const [folder, state] of states) previous.folders[folder] = state.toCursor();
+  return Option.some(JSON.stringify(previous));
+}

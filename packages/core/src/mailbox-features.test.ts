@@ -2,14 +2,14 @@ import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer } from "effect";
 import { MailboxLive } from "./mailbox-live.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { TestClock } from "effect/testing";
 import type { IncomingMessage } from "./domain.js";
 import { FeatureScopeMissing } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { parseCalendar } from "./invites.js";
 
 const incoming: IncomingMessage = {

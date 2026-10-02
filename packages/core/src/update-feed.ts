@@ -1,3 +1,4 @@
+import { Buffer } from "./platform/bytes.js";
 import { Schema } from "effect";
 import { compare, parse } from "semver";
 

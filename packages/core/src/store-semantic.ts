@@ -1,7 +1,8 @@
+import { PlatformCrypto } from "./platform/crypto.js";
 import { SEMANTIC_MAX_DISTANCE } from "./semantic-distance.js";
 import type { ThreadQuery } from "./domain.js";
 import type { Fragment } from "effect/sql/Statement";
-import { Effect, Option, Schema } from "effect";
+import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { DerivedChunk, type VectorItem } from "./media.js";
 import { makeMediaStore, type DerivedJob } from "./store-media.js";
@@ -12,8 +13,9 @@ export function makeSemanticStore(
   sql: SqlClient.SqlClient,
   vectors: boolean,
   filter: (query: ThreadQuery) => Fragment,
+  crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
 ) {
-  const queue = makeMediaStore(sql, vectors, "semantic_jobs");
+  const queue = makeMediaStore(sql, vectors, "semantic_jobs", crypto);
   const enabled = first(Flag)(sql`SELECT value_json FROM prefs WHERE key='onDeviceModels'`).pipe(
     Effect.map((row) => Option.isSome(row) && row.value.value_json),
   );

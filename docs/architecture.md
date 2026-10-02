@@ -157,17 +157,27 @@ saveDraft(draft)
 
 ### Platform 端口：给手机留的接缝
 
-core 里直接依赖运行时的只有三处：`node:sqlite`、`@napi-rs/keyring`、本地回环 OAuth 回调。收成一个端口：
+slice 39 把 Node 驱动、钥匙串、回环 OAuth、文件缓存、网络传输、PDF 和推理 worker 集中到 `packages/core/src/platform/node/`。`@openmail/core` 保留桌面、CLI、MCP 的原有 API，`@openmail/core/node` 显式导出同一套适配器。手机端从 `@openmail/core/portable` 加载领域、Store、Mailbox、Gmail 和 Outlook，提供自己的 Layers。
 
-```ts
-interface Platform {
-  db: SqlDriver; // node:sqlite / expo-sqlite / 内存
-  secrets: SecretStore; // 系统钥匙串 / expo-secure-store / 内存
-  authorize(req): Promise<TokenResponse>; // 回环端口 / 系统浏览器 + app scheme
-}
-```
+| 能力             | 端口                                                          | Node 实现                                             |
+| ---------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| 文件与路径       | Effect `FileSystem`、`Path`，core `AppPaths`                  | `NodeFileSystem`、`NodePath`、共享数据目录            |
+| 加密             | Effect `Crypto`，core `PlatformCrypto` 的 UUID、SHA-256、HMAC | `NodeCrypto`、`node:crypto`                           |
+| SQL 与恢复       | Effect `SqlClient`、`DatabaseCapabilities`、`DatabaseFiles`   | `node:sqlite`、sqlite-vec、WAL 和进程锁恢复           |
+| 密钥、授权、配置 | `Secrets`、`OAuth`、`Browser`、`AppConfig`                    | 系统钥匙串、回环回调、系统浏览器、config.json         |
+| MIME             | `MailCodec`                                                   | mailparser、nodemailer 的 MIME composer               |
+| 附件文件         | `AttachmentFiles`                                             | 私有目录、原子写入、符号链接防护、容量淘汰            |
+| 图片网络         | `ImageNetwork`                                                | DNS 校验，固定 TCP/TLS 目标，逐跳校验重定向和流式限额 |
+| 进程与本地媒体   | Effect `ChildProcessSpawner`、`InferenceWorker`、`PdfWorker`  | fork / Electron utility process 接口、限额 PDF worker |
+| 应用签名         | `AppVerifier`                                                 | macOS codesign                                        |
 
-SQL、迁移、同步逻辑、策略全部复用。手机端只写这三个适配器。现在只有 node 一个真实适配器加测试用的内存版，够格做接缝。
+`NodeSystem` 提供 OS 能力，`NodeLayer(options)` 合成 SQL、密钥、授权、配置和其余 Node 服务。`NodeMailbox` 继续为调用方一次性组装。平台服务在 Store、provider 和 Mailbox 构建时捕获，返回的方法无需调用方再次提供 Layer。MIME、附件文件、图片传输和 PDF 都是必需的 Effect services，缺少 Layer 会在类型检查中报错。暂不支持的媒体能力须提供显式返回失败的 adapter；应用签名默认返回 false。
+
+迁移与 SQL 留在可移植 core，`db.ts` 的 `MIGRATIONS` 没有改动。手机驱动须提供 `SqlClient`，并先运行同一 `migrate`；无法加载向量扩展时设置 `DatabaseCapabilities.vectors=false`，全文检索仍可用。纯函数指纹使用可移植 SHA-256，字节编解码经过平台 bytes 模块，Node 使用原生 Buffer，其余环境回退到浏览器实现。只有该模块可以探测 native Buffer，全局依赖由导入守卫检查。
+
+IMAP/SMTP 的真实适配器仍在 Node 目录，经现有 `ProviderAdapter` 使用。手机需要提供替代适配器；Gmail 和个人 Outlook 的 HTTP API、同步和策略可复用。时钟沿用 Effect `Clock`；电源、空闲和前台状态由 `MailboxOptions` 的现有回调提供，手机应用负责接线。
+
+导入守卫同时检查所有非 Node 源码的静态、动态、类型导入和 require，并遍历 portable 入口的本地依赖，防止间接加载 Node 适配器。oxlint 禁止 Node 专用导入。逐文件清单及移动端待办见[平台依赖清单](platform-inventory.md)。
 
 ### Query 和 Context：给界面的视图和给模型的视图
 
@@ -225,11 +235,11 @@ core、CLI、MCP 全部用 Effect v4（`effect@4.0.0-rc.118`，版本锁死，�
 | Mailbox       | `mailbox.ts`，唯一对外的 service                                                                                                         |
 | Store         | `services.ts` 的 `Store`，唯一跑 SQL 的地方，底层 `effect/sql` + `@effect/sql-sqlite-node`（内部是 `node:sqlite`）                       |
 | Provider 端口 | `ProviderAdapter`：`pull` 返回 `Stream<Change>`，不写库                                                                                  |
-| Platform 端口 | `Secrets`、`AppConfig`、`OAuth`、`Browser` 四个 service；node 一套 Layer，内存一套 Layer                                                 |
+| Platform 端口 | Effect OS 服务与 core 平台服务，见上文 Platform 端口；Node 一套 Layer，测试内存存储一套 Layer                                            |
 | 模型工具      | `tools.ts` 的 `Toolkit`（`effect/ai`）。MCP server 用 `McpServer.toolkit` 暴露它，app 内置助手用 `LanguageModel` 调它，工具只定义一次    |
 | CLI           | `effect/cli`                                                                                                                             |
 
-手机端用 `@effect/sql-sqlite-react-native` 和 expo 的钥匙串实现同一组 service，Mailbox 以上的代码不变。
+手机端用 op-sqlite 实现 `SqlClient`，用 Expo secure-store 和 auth-session 实现密钥与授权服务。其余平台适配器按上文清单替换，Mailbox 的策略和同步逻辑复用。
 
 错误跨 RPC 时保留 tag，渲染层按类型给出中文提示，不再拼字符串。
 

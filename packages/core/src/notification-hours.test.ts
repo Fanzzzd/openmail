@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { databaseLayer, MIGRATIONS } from "./db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import {
   DEFAULT_ACTIVE_HOURS,
   DEFAULT_PREFS,
@@ -17,11 +17,11 @@ import {
   type IncomingMessage,
   type Provider,
 } from "./domain.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import {
@@ -32,7 +32,7 @@ import {
   profileNotificationsActive,
   shouldNotify,
 } from "./system.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const workHours = { ...DEFAULT_ACTIVE_HOURS, enabled: true };
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hour, minute);

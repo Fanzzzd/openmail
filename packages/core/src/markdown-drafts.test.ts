@@ -2,16 +2,16 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import type { Provider, OutgoingMessage } from "./domain.js";
-import { importedMessage, parseRawDraft } from "./drafts.js";
+import { importedMessage, parseRawDraft } from "./platform/node/portable-helpers.js";
 import { Mailbox } from "./mailbox.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { renderMarkdown } from "./markdown.js";
 import { ProviderError } from "./errors.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 

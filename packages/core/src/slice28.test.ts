@@ -5,14 +5,14 @@ import { mkdtemp, rm, readdir, stat, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { expect } from "vitest";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { Store, Providers } from "./services.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, makeFakeProvider } from "./fake-provider.js";
-import { PersistentAttachments } from "./persistent-attachments.js";
+import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
+import { PersistentAttachments } from "./platform/node/persistent-attachments.js";
 import type { IncomingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
 

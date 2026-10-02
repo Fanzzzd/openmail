@@ -1,19 +1,29 @@
+import { MailCodec } from "../mail-codec.js";
 // Subpaths avoid loading unused Redis peers from the platform barrel in packaged apps.
 import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcessSpawner";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as NodePath from "@effect/platform-node/NodePath";
-import { Effect, Layer, Path } from "effect";
+import { Crypto, Effect, FileSystem, Layer, Path } from "effect";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import type { SqlClient } from "effect/sql";
 
-import { appConfigFile } from "./config.js";
+import {
+  AttachmentFiles,
+  ImageNetwork,
+  PdfWorker,
+  DatabaseFiles,
+  InferenceWorker,
+} from "../runtime.js";
+import { AppPaths } from "../paths.js";
+import { NodeRuntime, NodePaths } from "./runtime.js";
+import { appConfigFile } from "../../config.js";
 import { databaseLayer } from "./db.js";
 import { OAuthLoopback } from "./oauth.js";
 import { dataDir } from "./paths.js";
 import { SecretsKeyring } from "./secrets.js";
-import { type AppConfig, Browser, type OAuth, type Secrets } from "./services.js";
+import { type AppConfig, Browser, type OAuth, type Secrets } from "../../services.js";
 
 /** Everything below the Store and the providers: what a platform has to supply. */
 export type PlatformServices =
@@ -22,7 +32,18 @@ export type PlatformServices =
   | AppConfig
   | OAuth
   | Browser
-  | HttpClient.HttpClient;
+  | MailCodec
+  | PdfWorker
+  | AttachmentFiles
+  | ImageNetwork
+  | HttpClient.HttpClient
+  | AppPaths
+  | DatabaseFiles
+  | InferenceWorker
+  | FileSystem.FileSystem
+  | Path.Path
+  | Crypto.Crypto
+  | ChildProcessSpawner.ChildProcessSpawner;
 
 export interface NodePlatformOptions {
   /** Electron passes `shell.openExternal`. Defaults to SystemBrowser. */
@@ -89,9 +110,16 @@ const callbackBrowser = (openUrl: (url: string) => Promise<void> | void) =>
   );
 
 /** Node's FileSystem, Path, Crypto and process spawner. */
-export const NodeSystem = NodeChildProcessSpawner.layer.pipe(
+const NodeBase = NodeChildProcessSpawner.layer.pipe(
   Layer.provideMerge(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer, NodeCrypto.layer)),
 );
+
+export const NodeSystem = Layer.mergeAll(
+  NodeBase,
+  NodeRuntime,
+  NodePaths.pipe(Layer.provide(NodeBase)),
+);
+export const NodeLayer = NodePlatform;
 
 /** Desktop and CLI: node:sqlite, the OS keychain, config.json, loopback OAuth, fetch. */
 export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<PlatformServices> {
@@ -101,7 +129,11 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
     Effect.gen(function* () {
       const dir = opts.dataDir ?? (yield* dataDir);
       const path = yield* Path.Path;
-      return Layer.mergeAll(databaseLayer(path.join(dir, "mail.db")), appConfigFile(dir));
+      return Layer.mergeAll(
+        databaseLayer(path.join(dir, "mail.db")),
+        appConfigFile(dir),
+        Layer.succeed(AppPaths, { dataDirectory: Effect.succeed(dir) }),
+      );
     }),
   );
   return Layer.mergeAll(
@@ -110,5 +142,5 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
     OAuthLoopback.pipe(Layer.provide([browser, http])),
     browser,
     http,
-  ).pipe(Layer.provide(NodeSystem));
+  ).pipe(Layer.provideMerge(NodeSystem));
 }

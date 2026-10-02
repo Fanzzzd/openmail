@@ -3,19 +3,19 @@ import { Deferred, Effect, Fiber, Layer, Semaphore } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { DEFAULT_LIST_FILTERS, type IncomingMessage, type Provider } from "./domain.js";
 import { FOLDER_MESSAGE_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { AuthError, PermanentError } from "./errors.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { makeFolderMailbox } from "./mailbox-folders.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer } from "./testing.js";
+import { fakeServer } from "./platform/node/testing.js";
 
 const message = (id: string, labels = ["INBOX", "UNREAD"], threadId = id): IncomingMessage => ({
   providerId: id,

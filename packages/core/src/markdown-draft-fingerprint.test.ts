@@ -2,8 +2,12 @@ import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./compose.js";
-import { importedMessage, parseRawDraft, withDraftMarkdownSource } from "./drafts.js";
+import { buildMime } from "./platform/node/compose.js";
+import {
+  importedMessage,
+  parseRawDraft,
+  withDraftMarkdownSource,
+} from "./platform/node/portable-helpers.js";
 import {
   draftBodyFingerprint,
   draftTextFingerprint,

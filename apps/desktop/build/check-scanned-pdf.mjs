@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
 import { Effect } from "effect";
-import { pdfText } from "../../../packages/core/dist/pdf-text.js";
+import { pdfText } from "../../../packages/core/dist/platform/node/pdf-text.js";
 import { desktopVision } from "../src/main/vision.ts";
 
 if (process.platform === "darwin") {

@@ -3,7 +3,7 @@ import { RpcClient, RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "ef
 import { expect, it } from "vitest";
 import { DEFAULT_ACTIVE_HOURS, DEFAULT_PREFS, Prefs, Proposal } from "@openmail/core/schema";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
-import { TestMailbox } from "../../../../packages/core/src/testing.js";
+import { TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import { MailRpcs } from "./rpc";
 
 it("every Prefs field survives the real RPC client/server JSON codecs and is stored", async () => {

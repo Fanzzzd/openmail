@@ -9,7 +9,7 @@ import {
   MediaError,
   type Vision,
 } from "./media.js";
-import { pdfText } from "./pdf-text.js";
+import { PdfWorker } from "./platform/runtime.js";
 import type { makeMediaStore } from "./store-media.js";
 
 export class Indexer extends Context.Service<
@@ -46,6 +46,7 @@ export interface IndexerInput {
 }
 export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInput) {
   const { store, vision } = input;
+  const { extract: pdfText } = yield* PdfWorker;
   const version = () => `${MEDIA_PIPELINE_VERSION}:${vision.version}`;
   const lock = yield* Semaphore.make(1);
   const allowed = Effect.gen(function* () {

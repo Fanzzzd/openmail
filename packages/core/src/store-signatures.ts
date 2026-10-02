@@ -1,4 +1,5 @@
-import { Effect, Schema } from "effect";
+import { PlatformCrypto } from "./platform/crypto.js";
+import { Context, Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import {
   NamedSignature,
@@ -10,7 +11,10 @@ import { richComposeBody, textComposeHtml } from "./compose-body.js";
 import { all, first, run } from "./sql-rows.js";
 import { InvalidInput, NotFound } from "./errors.js";
 
-export function makeSignatureStore(sql: SqlClient.SqlClient) {
+export function makeSignatureStore(
+  sql: SqlClient.SqlClient,
+  crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
+) {
   const namedSignatures = Effect.gen(function* () {
     const local = yield* all(NamedSignature)(
       sql`SELECT id,address,name,text,html,'local' AS source FROM named_signatures

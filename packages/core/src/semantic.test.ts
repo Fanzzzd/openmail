@@ -1,12 +1,12 @@
 import { TestClock } from "effect/testing";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
 import {
   type ModelRuntime,

@@ -1,3 +1,4 @@
+import { PlatformCrypto } from "./platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { signatureDefault } from "./signatures.js";
 import { attachmentFilename } from "./attachment-filename.js";
@@ -6,7 +7,7 @@ import { attachmentFilename } from "./attachment-filename.js";
  * signatures, templates, recipient suggestions and the remote image allowlist. Part of the Store service (store.ts
  * spreads these into it); split out to keep each file readable.
  */
-import { Clock, Effect, Option, Schema } from "effect";
+import { Clock, Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import type { Fragment } from "effect/sql/Statement";
 
@@ -131,7 +132,10 @@ export function contactMatch(sql: SqlClient.SqlClient, match: string): Fragment 
   )`;
 }
 
-export function makeComposeStore(sql: SqlClient.SqlClient) {
+export function makeComposeStore(
+  sql: SqlClient.SqlClient,
+  crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
+) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
     d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only`);
 
@@ -530,7 +534,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
 
   const signatures = Effect.gen(function* () {
     const legacy = yield* legacySignatures;
-    const library = makeSignatureStore(sql);
+    const library = makeSignatureStore(sql, crypto);
     const named = yield* library.namedSignatures;
     const defaults = yield* library.signatureDefaults;
     const addresses = new Set([

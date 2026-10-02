@@ -1,7 +1,8 @@
+import { PlatformCrypto } from "./platform/crypto.js";
+import { MailCodec, type MailCodecPort } from "./platform/mail-codec.js";
 import { bestComposeSender } from "./compose-sender.js";
 import {
-  downloadRemoteImage,
-  imageAttachment,
+  imageAttachment as unboundImageAttachment,
   CONTACT_PHOTO_LIMIT,
   COMPOSE_IMAGE_LIMIT,
   type ImageDownloader,
@@ -19,7 +20,11 @@ import {
   type InviteResponse,
 } from "./calendar.js";
 import { InvalidInput } from "./errors.js";
-import { inviteCanRespond, inviteReply, invitesFromRaw } from "./invites.js";
+import {
+  inviteCanRespond,
+  inviteReply,
+  invitesFromRaw as unboundInvitesFromRaw,
+} from "./invites.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
 
@@ -56,8 +61,14 @@ export function makeFeatureMailbox(
   providers: Providers["Service"],
   changed: Effect.Effect<unknown>,
   perform: Mailbox["Service"]["perform"],
-  downloadImage: ImageDownloader = downloadRemoteImage,
+  downloadImage: ImageDownloader,
+  codec: MailCodecPort,
+  crypto: PlatformCrypto,
 ) {
+  const imageAttachment = (...args: Parameters<typeof unboundImageAttachment>) =>
+    unboundImageAttachment(...args).pipe(Effect.provideService(PlatformCrypto, crypto));
+  const invitesFromRaw = (...args: Parameters<typeof unboundInvitesFromRaw>) =>
+    unboundInvitesFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
   const contactsLock = Semaphore.makeUnsafe(1);
   const responseLock = Semaphore.makeUnsafe(1);
   const refreshContacts = (accountId: string, force = true) =>

@@ -17,7 +17,7 @@ import {
 } from "node:fs";
 import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS } from "./db.js";
+import { MIGRATIONS } from "../../db.js";
 
 /** User state from every migration. Cache/FTS/vector tables are intentionally rebuilt. */
 export const RECOVERY_TABLES = [

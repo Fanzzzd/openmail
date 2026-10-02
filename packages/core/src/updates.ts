@@ -1,24 +1,12 @@
 import type { UpdateState } from "./update-state.js";
 import { parse } from "semver";
 import { Effect, Option, Schema } from "effect";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-const execute = promisify(execFile);
 const ignoreError = (_error: Error) => null;
-
-/** Verifies the installed app, not build-time environment or an ad-hoc seal. */
-export async function isSignedMacApp(bundle: string): Promise<boolean> {
-  try {
-    await execute("/usr/bin/codesign", ["--verify", "--deep", "--strict", bundle]);
-    const result = await execute("/usr/bin/codesign", ["--display", "--verbose=4", bundle]);
-    return (
-      /Authority=Developer ID Application:/.test(result.stderr) &&
-      /TeamIdentifier=[A-Z0-9]+/.test(result.stderr)
-    );
-  } catch {
-    return false;
-  }
-}
+import { AppVerifier } from "./platform/runtime.js";
+export const isSignedMacApp = (bundle: string) =>
+  Effect.runPromise(
+    Effect.flatMap(AppVerifier, (verifier) => Effect.promise(() => verifier.verify(bundle))),
+  );
 
 /** Platform adapter; core owns update checks and their network policy. */
 export interface UpdateClient {
@@ -149,7 +137,7 @@ export function startAutoUpdates(
   };
   check();
   const interval = setInterval(check, 6 * 60 * 60_000);
-  interval.unref();
+  if (typeof interval === "object" && "unref" in interval) interval.unref();
   return () => {
     active = false;
     clearInterval(interval);
@@ -165,7 +153,7 @@ export function startStoredUpdates(
   client: UpdateClient,
   options: UpdateOptions,
   token: Effect.Effect<Option.Option<string>>,
-  verify: (bundle: string) => Promise<boolean> = isSignedMacApp,
+  verify?: (bundle: string) => Promise<boolean>,
 ): Effect.Effect<() => void> {
   return Effect.gen(function* () {
     client.autoInstallOnAppQuit = false;
@@ -177,7 +165,8 @@ export function startStoredUpdates(
     if (!options.packaged) return disabled();
     const saved = yield* token;
     if (Option.isNone(saved) || !saved.value) return disabled();
-    const signed = yield* Effect.promise(() => verify(options.bundle));
+    const verifier = verify ?? (yield* AppVerifier).verify;
+    const signed = yield* Effect.promise(() => verifier(options.bundle));
     return startAutoUpdates(client, {
       packaged: true,
       signed,
@@ -200,7 +189,7 @@ export function checkStoredUpdates(
   client: UpdateClient,
   options: UpdateOptions,
   token: Effect.Effect<Option.Option<string>>,
-  verify: (bundle: string) => Promise<boolean> = isSignedMacApp,
+  verify?: (bundle: string) => Promise<boolean>,
 ): Effect.Effect<ManualUpdateResult> {
   const report = options.onState ?? discardState;
   return Effect.gen(function* () {
@@ -218,7 +207,8 @@ export function checkStoredUpdates(
         report(disabled);
         return disabled;
       }
-      if (!(yield* Effect.promise(() => verify(options.bundle)))) {
+      const verifier = verify ?? (yield* AppVerifier).verify;
+      if (!(yield* Effect.promise(() => verifier(options.bundle)))) {
         report(disabled);
         return disabled;
       }

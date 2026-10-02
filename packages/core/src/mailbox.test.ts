@@ -6,7 +6,7 @@ import type { Actor, IncomingMessage } from "./domain.js";
 import { AuthError, ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
 import { toModelThread } from "./model-view.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 function incoming(providerId: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage {
   return {

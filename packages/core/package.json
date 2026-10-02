@@ -11,6 +11,14 @@
     "./schema": {
       "types": "./dist/schema.d.ts",
       "default": "./dist/schema.js"
+    },
+    "./portable": {
+      "types": "./dist/portable.d.ts",
+      "default": "./dist/portable.js"
+    },
+    "./node": {
+      "types": "./dist/platform/node/index.d.ts",
+      "default": "./dist/platform/node/index.js"
     }
   },
   "scripts": {
@@ -24,6 +32,8 @@
     "@effect/sql-sqlite-node": "4.0.0-rc.118",
     "@huggingface/transformers": "4.3.0",
     "@napi-rs/keyring": "^2.1.0",
+    "@noble/hashes": "^2.4.0",
+    "buffer": "^6.0.3",
     "effect": "4.0.0-rc.118",
     "htmlparser2": "^10.1.0",
     "ical.js": "^2.2.1",

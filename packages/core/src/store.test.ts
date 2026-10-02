@@ -7,9 +7,9 @@ import { Effect, Exit, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 
-import { databaseLayer, MIGRATIONS, splitStatements } from "./db.js";
+import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import { DEFAULT_LIST_FILTERS, type Actor, type Command, type IncomingMessage } from "./domain.js";
-import { MemoryFileSystem, MemoryPlatform } from "./platform-memory.js";
+import { MemoryFileSystem, MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
 

@@ -1,5 +1,5 @@
 import type { SearchObject } from "imapflow";
-import type { ThreadQuery } from "./domain.js";
+import type { ThreadQuery } from "../../domain.js";
 import {
   parseSearchQuery,
   searchWords,
@@ -9,7 +9,7 @@ import {
   projectServerSearch,
   serverSearchIgnored,
   hasSearchExpression,
-} from "./search.js";
+} from "../../search.js";
 
 /** IMAP has no filename/attachment key; those are checked on fetched MIME. */
 export function imapSearch(query: ThreadQuery): SearchObject {

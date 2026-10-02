@@ -8,11 +8,15 @@ import { simpleParser } from "mailparser";
 
 import type { Account, OutgoingMessage } from "./domain.js";
 import { makeOutlook, parseGraphMessage, MARKDOWN_DRAFT_PROPERTY } from "./outlook.js";
-import { importedMessage, parseRawDraft, withDraftMarkdownSource } from "./drafts.js";
+import {
+  importedMessage,
+  parseRawDraft,
+  withDraftMarkdownSource,
+} from "./platform/node/portable-helpers.js";
 import { markdownDraftSource } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
 import { replyRecipients } from "./recipients.js";
-import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
+import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
 import { type Change, type ProviderAdapter, Providers, Secrets, Store } from "./services.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";

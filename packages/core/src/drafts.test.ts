@@ -2,11 +2,11 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import { type Actor, DEFAULT_PREFS, type IncomingMessage, type OutgoingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
-import { type FakeServer, fakeServer, TestMailbox } from "./testing.js";
+import { type FakeServer, fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const GMAIL = "gmail:me@gmail.com";
 const OUTLOOK = "outlook:me@outlook.com";

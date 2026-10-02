@@ -1,6 +1,6 @@
 import { Clock, Effect, Option, Semaphore } from "effect";
 import { DEFAULT_CACHE_WINDOWS, keepBody, type BackfillState } from "./cache.js";
-import { trackImapBackfill } from "./imap.js";
+import { trackImapBackfill } from "./imap-cursor.js";
 import type { ThreadQuery } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import type { PerformError } from "./mailbox.js";

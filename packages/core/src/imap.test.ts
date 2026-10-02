@@ -1,3 +1,5 @@
+import { MailCodec } from "./platform/mail-codec.js";
+import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it, layer } from "@effect/vitest";
 
 import { Effect, Exit, Layer, Option, Stream } from "effect";
@@ -14,8 +16,8 @@ import {
   decodeProviderId,
   FolderState,
   encodeProviderId,
-  makeImap,
-  makeImapWith,
+  makeImap as unboundMakeImap,
+  makeImapWith as unboundMakeImapWith,
   mapFolders,
   parseHeaders,
   parseUidSet,
@@ -27,8 +29,12 @@ import {
   trackImapBackfill,
   fetchMessages,
   uidSet,
-} from "./imap.js";
+} from "./platform/node/imap.js";
 import { Secrets } from "./services.js";
+
+const makeImap = unboundMakeImap.pipe(Effect.provideService(MailCodec, nodeMailCodec));
+const makeImapWith = (...args: Parameters<typeof unboundMakeImapWith>) =>
+  unboundMakeImapWith(...args).pipe(Effect.provideService(MailCodec, nodeMailCodec));
 
 const folder = (path: string, specialUse?: string, flags: string[] = [], delimiter = "/") => ({
   path,

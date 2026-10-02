@@ -151,7 +151,7 @@ vi.mock("electron", async () => {
 });
 
 import { Mailbox, messageLink } from "@openmail/core";
-import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
+import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 import { Desktop, DesktopLive, receiveAppUrl } from "./system";
 import { createMainWindow, openComposeWindow, openThreadWindow } from "./windows";

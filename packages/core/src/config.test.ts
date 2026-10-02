@@ -2,8 +2,8 @@ import { assert, it, layer } from "@effect/vitest";
 import { ConfigProvider, Effect, Layer, Path, Ref } from "effect";
 
 import { appConfigFile } from "./config.js";
-import { dataDirFor } from "./paths.js";
-import { MemoryFiles, MemoryFileSystem } from "./platform-memory.js";
+import { dataDirFor } from "./platform/node/paths.js";
+import { MemoryFiles, MemoryFileSystem } from "./platform/node/platform-memory.js";
 import { AppConfig } from "./services.js";
 
 const withEnv = (env: Record<string, string>) =>

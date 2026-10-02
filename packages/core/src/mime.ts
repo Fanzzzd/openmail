@@ -1,3 +1,4 @@
+import { Buffer } from "./platform/bytes.js";
 import { Result } from "effect";
 
 import type { Address } from "./domain.js";

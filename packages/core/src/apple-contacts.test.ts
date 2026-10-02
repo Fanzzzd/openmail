@@ -6,7 +6,7 @@ import {
   type AppleContactsSnapshot,
 } from "./apple-contacts.js";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox } from "./testing.js";
+import { TestMailbox } from "./platform/node/testing.js";
 
 const snapshot: AppleContactsSnapshot = {
   status: "authorized",

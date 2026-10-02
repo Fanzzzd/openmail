@@ -10,7 +10,7 @@ import { makeGmail, parseGmailMessage } from "./gmail.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { ProviderError } from "./errors.js";
 import { type GmailRuleDefinition, EMPTY_FILTER } from "./organization.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import type { Change, ProviderAdapter } from "./services.js";
 
 interface Call {

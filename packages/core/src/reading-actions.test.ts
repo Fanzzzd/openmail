@@ -4,15 +4,15 @@ import { Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { CurrentTransformer, type Transformer } from "effect/sql/Statement";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./db.js";
+import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import type { IncomingMessage } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { gmailThreadUrl, officialMessageUrl, senderLabel, threadExpansion } from "./reading.js";
 import { parseSearchQuery, senderSearchQuery } from "./search.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 
 const incoming: IncomingMessage = {
   providerId: "first",

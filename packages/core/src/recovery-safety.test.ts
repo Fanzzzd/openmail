@@ -17,15 +17,15 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it } from "vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import { acquireDatabaseAccess, DatabaseInUseError } from "./database-access.js";
-import { databaseLayer, MIGRATIONS } from "./db.js";
-import { NodeSystem } from "./platform-node.js";
-import { rebuildCorruptDatabase } from "./database-recovery.js";
+import { acquireDatabaseAccess, DatabaseInUseError } from "./platform/node/database-access.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
+import { rebuildCorruptDatabase } from "./platform/node/database-recovery.js";
 import {
   InterruptedRecoveryError,
   openDatabaseAccess,
   prepareDatabaseStartup,
-} from "./recovery-files.js";
+} from "./platform/node/recovery-files.js";
 const dirs: string[] = [];
 function temp() {
   const dir = mkdtempSync(join(tmpdir(), "openmail-recovery-safety-"));
@@ -128,7 +128,7 @@ for (const step of ["sidecar", "linked", "installed"] as const)
   it(`process death after ${step} keeps a live path and cannot replay an old WAL into the replacement`, () => {
     const dir = fixture(temp(), true);
     const file = join(dir, "mail.db");
-    const moduleUrl = new URL("../dist/database-recovery.js", import.meta.url).href;
+    const moduleUrl = new URL("../dist/platform/node/database-recovery.js", import.meta.url).href;
     const code = `
     import fs from 'node:fs'; import { syncBuiltinESMExports } from 'node:module';
     const file=${JSON.stringify(file)}, step=${JSON.stringify(step)};
@@ -225,7 +225,7 @@ it("four simultaneous first openers hold shared leases quickly without initializ
   const dir = temp();
   const file = join(dir, "mail.db");
   const start = join(dir, "start");
-  const url = new URL("../dist/database-access.js", import.meta.url).href;
+  const url = new URL("../dist/platform/node/database-access.js", import.meta.url).href;
   const results = await Promise.all(
     [0, 1, 2, 3].map(async (id) => {
       const ready = join(dir, `ready-${id}`);

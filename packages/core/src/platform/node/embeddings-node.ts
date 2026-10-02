@@ -1,6 +1,7 @@
+import { InferenceWorker } from "../runtime.js";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Effect, Semaphore, Schema } from "effect";
+import { Effect, Option, Semaphore, Schema } from "effect";
 import {
   EmbeddedImage,
   MediaError,
@@ -8,9 +9,9 @@ import {
   type InferenceError,
   type ModelRuntime,
   type ModelsStatus,
-} from "./media.js";
+} from "../../media.js";
 import { modelFiles } from "./model-downloads.js";
-import { MODEL_BYTES, MODEL_VERSION } from "./model-manifest.js";
+import { MODEL_BYTES, MODEL_VERSION } from "../../model-manifest.js";
 import {
   nodeInferenceProcess,
   type InferenceProcess,
@@ -36,6 +37,9 @@ export const makeNodeModels = Effect.fn("makeNodeModels")(function* (
   localRoot?: string,
   options: NodeModelsOptions = {},
 ) {
+  const worker = yield* Effect.serviceOption(InferenceWorker);
+  const launch =
+    options.launch ?? Option.getOrElse(worker, () => ({ launch: nodeInferenceProcess })).launch;
   const root = localRoot ?? join(dataDirectory, "models", "v1-761b726d-757d59c9");
   let status: ModelsStatus = { kind: "disabled" };
   let verified = false;
@@ -131,7 +135,7 @@ export const makeNodeModels = Effect.fn("makeNodeModels")(function* (
             }
             if (idle) clearTimeout(idle);
             idle = undefined;
-            child ??= (options.launch ?? nodeInferenceProcess)(
+            child ??= launch(
               fileURLToPath(new URL("./embedding-worker.mjs", import.meta.url)),
               root,
             );

@@ -1,14 +1,14 @@
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path } from "effect";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { DEFAULT_PREFS, type IncomingMessage } from "./domain.js";
 import { StoreLive } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import {
   calendarTimestamp,
   calendarWindow,

@@ -5,7 +5,7 @@ import { Clock, Context, Effect, Layer, Stream, Schema } from "effect";
 import { Tool } from "effect/ai";
 
 import type { Actor, Command, Outcome, ThreadQuery } from "./domain.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { Mailbox } from "./mailbox.js";
 import {
   AgentIdentity,

@@ -1,3 +1,4 @@
+import { Buffer } from "./platform/bytes.js";
 import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
 import { Cause, Context, Effect, Layer, Option, Redacted, Stream } from "effect";
 import { Chat, type Toolkit } from "effect/ai";

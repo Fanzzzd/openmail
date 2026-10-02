@@ -5,13 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
-import { MIGRATIONS } from "./db.js";
+import { MIGRATIONS } from "./platform/node/db.js";
 
 function opener(file: string, hold: boolean) {
   const child = spawn(
     process.execPath,
     [
-      fileURLToPath(new URL("./fixtures/migration-open.mjs", import.meta.url)),
+      fileURLToPath(new URL("./platform/node/fixtures/migration-open.mjs", import.meta.url)),
       file,
       hold ? "hold" : "open",
     ],

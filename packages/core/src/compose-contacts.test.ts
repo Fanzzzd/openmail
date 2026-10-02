@@ -4,13 +4,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { DEFAULT_PREFS, Prefs as importedPrefs, type IncomingMessage } from "./domain.js";
-import { makeFakeProvider, fakeServer } from "./fake-provider.js";
+import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import {
@@ -19,7 +19,7 @@ import {
   publicImageAddress,
   CONTACT_PHOTO_LIMIT,
   COMPOSE_IMAGE_LIMIT,
-} from "./compose-images.js";
+} from "./platform/node/portable-helpers.js";
 import {
   inlineImageHtml,
   mentionHtml,
@@ -34,7 +34,7 @@ import {
   normalizeComposeMessage,
 } from "./compose-body.js";
 import { bestComposeSender } from "./compose-sender.js";
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import { FeatureScopeMissing } from "./errors.js";
 
 const png =

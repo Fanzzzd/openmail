@@ -2,14 +2,14 @@ import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { Mailbox } from "./mailbox.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { buildMime } from "./compose.js";
-import { parseRawDraft } from "./drafts.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { buildMime } from "./platform/node/compose.js";
+import { parseRawDraft } from "./platform/node/portable-helpers.js";
 import {
   composeHtmlHasUnsupported,
   composeTransportHtml,

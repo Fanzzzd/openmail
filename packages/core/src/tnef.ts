@@ -13,11 +13,11 @@ export interface ContainerFile {
 
 class Cursor {
   private offset = 0;
-  constructor(private readonly bytes: Buffer) {}
+  constructor(private readonly bytes: Uint8Array) {}
   get remaining() {
     return this.bytes.length - this.offset;
   }
-  take(length: number): Buffer {
+  take(length: number): Uint8Array {
     if (!Number.isSafeInteger(length) || length < 0 || length > this.remaining)
       throw new Error("Truncated TNEF data");
     const value = this.bytes.subarray(this.offset, this.offset + length);
@@ -25,13 +25,15 @@ class Cursor {
     return value;
   }
   u8() {
-    return this.take(1).readUInt8();
+    return this.take(1)[0]!;
   }
   u16() {
-    return this.take(2).readUInt16LE();
+    const value = this.take(2);
+    return new DataView(value.buffer, value.byteOffset, 2).getUint16(0, true);
   }
   u32() {
-    return this.take(4).readUInt32LE();
+    const value = this.take(4);
+    return new DataView(value.buffer, value.byteOffset, 4).getUint32(0, true);
   }
   variable() {
     const size = this.u32();
@@ -46,13 +48,20 @@ class Cursor {
   }
 }
 
-const text = (bytes: Buffer, unicode = false) => {
+const text = (bytes: Uint8Array, unicode = false) => {
   if (bytes.length > 8192) throw new Error("TNEF filename or MIME type is too long");
-  return bytes.toString(unicode ? "utf16le" : "latin1").replace(/\0.*$/s, "");
+  let decoded = "";
+  // Preserve raw UTF-16 code units, including BOM/lone surrogates; ignore an odd trailing byte.
+  const stride = unicode ? 2 : 1;
+  for (let index = 0; index + stride <= bytes.length; index += stride) {
+    const low = bytes[index]!;
+    decoded += String.fromCharCode(unicode ? low | (bytes[index + 1]! << 8) : low);
+  }
+  return decoded.replace(/\0.*$/s, "");
 };
 
 type Pending = { filename: string; mimeType: string; data: Uint8Array | null; longName: boolean };
-function properties(bytes: Buffer, file: Pending) {
+function properties(bytes: Uint8Array, file: Pending) {
   const cursor = new Cursor(bytes);
   const count = cursor.count();
   let remainingValues = MAX_FIELDS;
@@ -116,7 +125,7 @@ function properties(bytes: Buffer, file: Pending) {
 
 export function decodeTnef(raw: Uint8Array): ContainerFile[] {
   if (raw.byteLength > MAX_ATTACHMENT_CONTAINER_BYTES) throw new Error("TNEF exceeds 32 MB");
-  const cursor = new Cursor(Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength));
+  const cursor = new Cursor(raw);
   if (cursor.u32() !== 0x223e9f78) throw new Error("Invalid TNEF signature");
   cursor.u16(); // legacy key
   const files: ContainerFile[] = [];

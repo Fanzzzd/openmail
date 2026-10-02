@@ -5,6 +5,7 @@
 ## 架构约束
 
 - `packages/core` 是唯一碰网络和数据库的地方。desktop 主进程、CLI、MCP 都只调用 core 导出的函数，不自己写 SQL 或调 provider API。
+- core 的 Node 实现只放在 `packages/core/src/platform/node/`。其他源码不得导入 `node:`、Node 内置模块或 Node 专用包；运行时能力通过 Effect 平台服务提供，不得读取隐式 Node 全局；仅 `platform/bytes.ts` 可在初始化时探测一次 `globalThis.Buffer`。手机端使用 `@openmail/core/portable`，桌面兼容入口和 `@openmail/core/node` 使用 Node Layer。修改平台代码时读取 `docs/platform-inventory.md`。
 - 数据库用 `node:sqlite`，不要换成 better-sqlite3。它随 Node 和 Electron 一起发行，app 和 CLI 不需要为不同 ABI 重编原生模块。
 - 迁移在 `packages/core/src/db.ts` 的 `MIGRATIONS` 数组里，只追加，不改已有条目。
 - `messages_fts` 是外部内容 FTS 表，按 rowid 对齐。写消息只能用 `upsertMessage`（`ON CONFLICT DO UPDATE`），不要用 `INSERT OR REPLACE`，否则 rowid 变化会让索引失配。

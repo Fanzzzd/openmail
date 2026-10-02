@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "./platform/crypto.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 import { Effect, Schema, Result, Semaphore } from "effect";
 import type { Account } from "./domain.js";
@@ -223,11 +223,8 @@ export function makeProviderCalendar<
               catch: () => new InvalidInput({ message: "Invalid calendar event time" }),
             });
             const uid =
-              event.uid ??
-              `openmail-${createHash("sha256").update(`${account.id}:${event.key}`).digest("hex")}@openmail.local`;
-            const identity = createHash("sha256")
-              .update(JSON.stringify([account.id, uid]))
-              .digest("hex");
+              event.uid ?? `openmail-${sha256Hex(`${account.id}:${event.key}`)}@openmail.local`;
+            const identity = sha256Hex(JSON.stringify([account.id, uid]));
             const body = yield* Effect.try({
               try: () =>
                 provider === "gmail"

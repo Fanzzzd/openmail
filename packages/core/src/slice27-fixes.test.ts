@@ -2,9 +2,9 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import type { IncomingMessage } from "./domain.js";
 import {
   graphSearch,
@@ -12,7 +12,7 @@ import {
   parseSearchExpression,
   serverSearchIgnored,
 } from "./search.js";
-import { imapSearch } from "./imap-search.js";
+import { imapSearch } from "./platform/node/imap-search.js";
 import { parseAppLink, privateMailLink, messageLink } from "./system.js";
 
 const message: IncomingMessage = {

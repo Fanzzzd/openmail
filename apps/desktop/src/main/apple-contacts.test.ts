@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
-import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
+import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import {
   FakeModelLayer,
   type ModelRequest,

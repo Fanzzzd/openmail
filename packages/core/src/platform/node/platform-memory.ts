@@ -1,3 +1,5 @@
+import { AttachmentFiles, ImageNetwork, PdfWorker } from "../runtime.js";
+import { MailCodec } from "../mail-codec.js";
 /**
  * An in-memory platform for tests: a fresh SQLite database per build (same
  * migrations as on disk), secrets in a Ref, config.json on an in-memory file
@@ -17,7 +19,8 @@ import {
 } from "effect";
 import type { SqlClient } from "effect/sql";
 
-import { appConfigFile } from "./config.js";
+import { NodeRuntime } from "./runtime.js";
+import { appConfigFile } from "../../config.js";
 import { databaseLayer } from "./db.js";
 import {
   type AppConfig,
@@ -26,7 +29,7 @@ import {
   OAuth,
   Secrets,
   type TokenResponse,
-} from "./services.js";
+} from "../../services.js";
 
 /** URLs the memory Browser was asked to open, oldest first. */
 export class OpenedUrls extends Context.Service<OpenedUrls, Ref.Ref<string[]>>()(
@@ -118,6 +121,10 @@ export interface MemoryPlatformOptions {
 }
 
 export type MemoryPlatformServices =
+  | MailCodec
+  | PdfWorker
+  | AttachmentFiles
+  | ImageNetwork
   | SqlClient.SqlClient
   | Secrets
   | AppConfig
@@ -191,6 +198,7 @@ export function MemoryPlatform(
   const browserWithUrls = browser.pipe(Layer.provideMerge(opened));
   return Layer.mergeAll(
     databaseLayer(":memory:"),
+    NodeRuntime,
     secrets,
     config,
     oauth.pipe(Layer.provideMerge(browserWithUrls)),

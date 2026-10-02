@@ -1,11 +1,11 @@
-import type { CacheResetResult } from "../../../../packages/core/src/database-recovery.js";
+import type { CacheResetResult } from "../../../../packages/core/src/platform/node/database-recovery.js";
 import { Effect, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { createLocalDiagnostics } from "../../../../packages/core/src/diagnostics.js";
+import { createLocalDiagnostics } from "../../../../packages/core/src/platform/node/diagnostics.js";
 const native = vi.hoisted(() => ({
   response: 0,
   integrity: "ok",
@@ -20,9 +20,9 @@ const native = vi.hoisted(() => ({
   dialogs: vi.fn(),
 }));
 vi.mock("@openmail/core", async () => ({
-  ...(await import("../../../../packages/core/src/diagnostics.js")),
-  ...(await import("../../../../packages/core/src/database-access.js")),
-  ...(await import("../../../../packages/core/src/recovery-files.js")),
+  ...(await import("../../../../packages/core/src/platform/node/diagnostics.js")),
+  ...(await import("../../../../packages/core/src/platform/node/database-access.js")),
+  ...(await import("../../../../packages/core/src/platform/node/recovery-files.js")),
   prepareDatabaseStartup: native.startup,
   checkLocalDatabase: () => {
     native.check();

@@ -1,8 +1,8 @@
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber } from "effect";
-import { makeNodeModels } from "./embeddings-node.js";
-import { type InferenceProcessLauncher } from "./inference-process.js";
-import { resettableLoader } from "./resettable-loader.mjs";
+import { makeNodeModels } from "./platform/node/embeddings-node.js";
+import { type InferenceProcessLauncher } from "./platform/node/inference-process.js";
+import { resettableLoader } from "./platform/node/resettable-loader.mjs";
 
 it.effect("ensure(false) immediately rejects while download holds its own lock", () =>
   Effect.gen(function* () {

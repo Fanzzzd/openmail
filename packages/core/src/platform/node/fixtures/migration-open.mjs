@@ -3,8 +3,8 @@ import { writeSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { databaseLayer } from "../../dist/db.js";
-import { NodeSystem } from "../../dist/platform-node.js";
+import { databaseLayer } from "../../../../dist/platform/node/db.js";
+import { NodeSystem } from "../../../../dist/platform/node/platform-node.js";
 
 if (process.argv[3] === "hold") {
   // The saved method always receives its owning connection through .call.

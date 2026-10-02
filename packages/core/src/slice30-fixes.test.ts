@@ -5,13 +5,13 @@ import type { CalendarEvent } from "./calendar.js";
 import type { IncomingMessage } from "./domain.js";
 import { graphRecurrence } from "./graph-recurrence.js";
 import { Mailbox } from "./mailbox.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { Store, Providers } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { invitesFromRaw } from "./invites.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { invitesFromRaw } from "./platform/node/portable-helpers.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 
 const event: CalendarEvent = {

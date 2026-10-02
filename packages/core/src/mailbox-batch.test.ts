@@ -5,17 +5,17 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import type { IncomingMessage, MailOp, Provider } from "./domain.js";
 import { AuthError } from "./errors.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const message = (id: string, labels = ["INBOX", "UNREAD"], threadId = id): IncomingMessage => ({
   providerId: id,

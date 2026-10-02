@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import type { IncomingMessage } from "./domain.js";
-import { imapSearch } from "./imap-search.js";
+import { imapSearch } from "./platform/node/imap-search.js";
 import {
   gmailSearch,
   graphSearch,
@@ -13,7 +13,7 @@ import {
   selectSearchOperator,
 } from "./search.js";
 import { fuzzyFolders } from "./organization.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 

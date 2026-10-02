@@ -5,19 +5,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
 
-import { buildMime } from "./compose.js";
+import { buildMime } from "./platform/node/compose.js";
 import { richComposeBody, preservedComposeHtml, remoteComposeBody } from "./compose-body.js";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import type { Actor, IncomingMessage, Provider } from "./domain.js";
 import { ProviderError } from "./errors.js";
-import { makeFakeProvider } from "./fake-provider.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { NodeSystem } from "./platform-node.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const user: Actor = { kind: "user", surface: "app" };
 const html =

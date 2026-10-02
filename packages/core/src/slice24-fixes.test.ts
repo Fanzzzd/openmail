@@ -3,11 +3,11 @@ import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { StoreLive } from "./store.js";
 import { Store } from "./services.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { DEFAULT_PREFS, type IncomingMessage } from "./domain.js";
-import { invitesFromRaw, parseCalendar } from "./invites.js";
+import { invitesFromRaw, parseCalendar } from "./platform/node/portable-helpers.js";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 
 const calendar = (fields = "") =>
   `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:travel\r\nDTSTART:20261010T090000Z\r\nDTEND:20261010T100000Z\r\n${fields}END:VEVENT\r\nEND:VCALENDAR`;

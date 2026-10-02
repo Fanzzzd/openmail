@@ -3,7 +3,7 @@ import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import type { IncomingMessage } from "./domain.js";
 
 const tables = ["messages_fts", "messages_words", "derived_fts", "derived_words"] as const;

@@ -1,17 +1,17 @@
-import { ModelAnthropic } from "./model.js";
+import { ModelAnthropic } from "../../model.js";
 import type { NodeModelsOptions } from "./embeddings-node.js";
 import { makeNodeModels } from "./embeddings-node.js";
 import { dataDir } from "./paths.js";
 import { Effect, Layer } from "effect";
 
-import { makeGmail } from "./gmail.js";
+import { makeGmail } from "../../gmail.js";
 import { makeImap } from "./imap.js";
-import { MailboxLive, type MailboxOptions } from "./mailbox-live.js";
-import type { Mailbox } from "./mailbox.js";
-import { makeOutlook } from "./outlook.js";
+import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
+import type { Mailbox } from "../../mailbox.js";
+import { makeOutlook } from "../../outlook.js";
 import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-node.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
+import { Providers } from "../../services.js";
+import { StoreLive } from "../../store.js";
 
 export const ProvidersLive = Layer.effect(
   Providers,

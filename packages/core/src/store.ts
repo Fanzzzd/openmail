@@ -1,3 +1,4 @@
+import { PlatformCrypto } from "./platform/crypto.js";
 import { categoryKey } from "./categories.js";
 import { makeAiStore } from "./store-ai.js";
 import { makeWordIndexStore } from "./store-word-index.js";
@@ -293,17 +294,23 @@ const literalLike = (value: string) =>
 export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.effect(
   Store,
   Effect.gen(function* () {
+    const crypto = yield* PlatformCrypto;
     const sql = yield* SqlClient.SqlClient;
     const cache = makeCacheStore(sql);
-    const compose = makeComposeStore(sql);
-    const signatureLibrary = makeSignatureStore(sql);
+    const compose = makeComposeStore(sql, crypto);
+    const signatureLibrary = makeSignatureStore(sql, crypto);
     const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
     const vectors = Option.isSome(capabilities) && capabilities.value.vectors;
-    const media = makeMediaStore(sql, vectors);
-    const semantics = makeSemanticStore(sql, vectors, (q) => {
-      const { attachmentText: _scope, ...criteria } = q.criteria ?? {};
-      return listFilter({ ...q, search: "", criteria });
-    });
+    const media = makeMediaStore(sql, vectors, "derived_jobs", crypto);
+    const semantics = makeSemanticStore(
+      sql,
+      vectors,
+      (q) => {
+        const { attachmentText: _scope, ...criteria } = q.criteria ?? {};
+        return listFilter({ ...q, search: "", criteria });
+      },
+      crypto,
+    );
     const contacts = makeContactStore(sql);
     const organization = makeOrganizationStore(sql);
 

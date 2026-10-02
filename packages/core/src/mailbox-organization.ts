@@ -1,4 +1,5 @@
-import { Clock, Effect, Semaphore } from "effect";
+import { PlatformCrypto } from "./platform/crypto.js";
+import { Clock, Context, Effect, Semaphore } from "effect";
 import type { MailOp, ThreadQuery, Provider } from "./domain.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
@@ -74,6 +75,7 @@ export function makeOrganizationMailbox(
   changed: Effect.Effect<unknown>,
   flushLater: Effect.Effect<void>,
   modifyWithUndo: Mailbox["Service"]["modifyWithUndo"],
+  crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
 ) {
   const labelLock = Semaphore.makeUnsafe(1);
   const ruleLock = Semaphore.makeUnsafe(1);

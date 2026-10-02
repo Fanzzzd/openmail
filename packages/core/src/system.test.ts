@@ -18,7 +18,7 @@ import {
   shouldNotify,
   spaceAccountIds,
 } from "./system.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 const account: Account = {
   id: "gmail:me@gmail.com",

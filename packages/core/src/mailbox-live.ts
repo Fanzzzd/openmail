@@ -1,10 +1,13 @@
+import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
+import { Buffer } from "./platform/bytes.js";
 import { destination as outlookDestination } from "./outlook.js";
 import { invalidCategoryFolderOp } from "./mail-ops.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, ModelUnavailable } from "./model.js";
 import { modelContext } from "./model-view.js";
 import { ImapIdle } from "./imap-idle.js";
-import { PersistentAttachments } from "./persistent-attachments.js";
+import { AppVerifier, AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtime.js";
+import { MailCodec } from "./platform/mail-codec.js";
 import { AttachmentCache } from "./attachment-cache.js";
 import { makeReaderAttachments } from "./reader-attachments.js";
 import { isLocalFeedbackDraft } from "./feedback.js";
@@ -28,7 +31,6 @@ import {
   unavailableVision,
 } from "./media.js";
 
-import { createHash } from "node:crypto";
 import {
   privateMailLink,
   parseStableReference,
@@ -55,8 +57,8 @@ import {
 
 import {
   attachmentRef,
-  inlineImagesFromRaw,
-  inlineMediaFromRaw,
+  inlineImagesFromRaw as unboundInlineImagesFromRaw,
+  inlineMediaFromRaw as unboundInlineMediaFromRaw,
   MAX_INLINE_BYTES,
   MEDIA_RAW_TOO_LARGE,
 } from "./attachments.js";
@@ -78,7 +80,7 @@ import {
   importedMessage,
   originalAttachment,
   type ParsedDraft,
-  parseRawDraft,
+  parseRawDraft as unboundParseRawDraft,
   withDraftMarkdownSource,
   toDraft,
 } from "./drafts.js";
@@ -151,8 +153,6 @@ const PULL_RETRY = {
   while: isTransientPull,
 };
 
-const newDraftId = () => `draft:${crypto.randomUUID()}`;
-
 const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
   Effect.tryPromise(work).pipe(
     Effect.catch((error) =>
@@ -187,10 +187,26 @@ export interface MailboxOptions {
 
 export const MailboxLive = (
   options: MailboxOptions = {},
-): Layer.Layer<Mailbox, never, Store | Providers | Secrets | AppConfig> =>
+): Layer.Layer<
+  Mailbox,
+  never,
+  Store | Providers | Secrets | AppConfig | MailCodec | PdfWorker | AttachmentFiles | ImageNetwork
+> =>
   Layer.effect(
     Mailbox,
     Effect.gen(function* () {
+      const crypto = yield* PlatformCrypto;
+      const newDraftId = () => `draft:${crypto.randomUUID()}`;
+      const codec = yield* MailCodec;
+      const files = yield* AttachmentFiles;
+      const network = yield* ImageNetwork;
+      const verifier = yield* AppVerifier;
+      const parseRawDraft = (...args: Parameters<typeof unboundParseRawDraft>) =>
+        unboundParseRawDraft(...args).pipe(Effect.provideService(MailCodec, codec));
+      const inlineImagesFromRaw = (...args: Parameters<typeof unboundInlineImagesFromRaw>) =>
+        unboundInlineImagesFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
+      const inlineMediaFromRaw = (...args: Parameters<typeof unboundInlineMediaFromRaw>) =>
+        unboundInlineMediaFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
       const store = yield* Store;
       const backgroundReady = options.backgroundReady ?? Effect.void;
       const providers = yield* Providers;
@@ -198,7 +214,7 @@ export const MailboxLive = (
       const config = yield* AppConfig;
       const model = Option.getOrElse(yield* Effect.serviceOption(Model), () => ModelUnavailable);
       const diskAttachments = options.attachmentCacheDirectory
-        ? new PersistentAttachments(options.attachmentCacheDirectory)
+        ? files.open(options.attachmentCacheDirectory)
         : undefined;
       const attachmentCache = new AttachmentCache();
       let idle: ImapIdle | undefined;
@@ -572,6 +588,7 @@ export const MailboxLive = (
         changed,
         flushLater,
         batchMailbox.modifyWithUndo,
+        crypto,
       );
 
       // Running commands
@@ -1242,7 +1259,9 @@ export const MailboxLive = (
         providers,
         changed,
         perform,
-        options.imageDownloader,
+        options.imageDownloader ?? network.download,
+        codec,
+        crypto,
       );
 
       // Reading from the provider
@@ -1506,17 +1525,15 @@ export const MailboxLive = (
                     // IMAP moves assign a new folder/UID while preserving the mail itself.
                     const identity =
                       account.provider === "imap"
-                        ? createHash("sha256")
-                            .update(
-                              JSON.stringify([
-                                change.message.threadId,
-                                change.message.date,
-                                change.message.from.address,
-                                change.message.subject,
-                                change.message.bodyText,
-                              ]),
-                            )
-                            .digest("hex")
+                        ? sha256Hex(
+                            JSON.stringify([
+                              change.message.threadId,
+                              change.message.date,
+                              change.message.from.address,
+                              change.message.subject,
+                              change.message.bodyText,
+                            ]),
+                          )
                         : change.message.providerId;
                     const first = yield* store.observeIncoming(account.id, identity);
                     yield* store.upsertMessage(account.id, change.message);
@@ -1995,6 +2012,7 @@ export const MailboxLive = (
                 autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
               },
               secrets.get(UPDATE_TOKEN_KEY),
+              verifier.verify,
             ),
           ),
         ...organization,
@@ -2066,6 +2084,7 @@ export const MailboxLive = (
                 autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
               },
               secrets.get(UPDATE_TOKEN_KEY),
+              verifier.verify,
             ).pipe(
               Effect.ensuring(
                 Effect.flatMap(store.prefs, (latestPrefs) =>
@@ -2178,7 +2197,7 @@ export const MailboxLive = (
         messageWebUrl,
         knownSenders: (accountId, addresses) => store.knownSenders(accountId, addresses),
         attachment,
-        ...makeReaderAttachments(attachment, (id) => store.getThread(id)),
+        ...makeReaderAttachments(attachment, (id) => store.getThread(id), codec),
         inlineImages,
         imageSenders: store.imageSenders,
         setImageSender: (entry, allowed) => mutate(store.setImageSender(entry, allowed)),

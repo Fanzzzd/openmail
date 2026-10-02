@@ -1,4 +1,4 @@
-import { buildMime } from "../../../../packages/core/src/compose.js";
+import { buildMime } from "../../../../packages/core/src/platform/node/compose.js";
 import { ProviderError } from "../../../../packages/core/src/errors.js";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,7 +6,7 @@ import path from "node:path";
 import { Effect } from "effect";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
-import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
+import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 
 vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));

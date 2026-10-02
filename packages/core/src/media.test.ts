@@ -1,25 +1,26 @@
+import { PdfWorker } from "./platform/runtime.js";
 import { AuthError, ProviderError } from "./errors.js";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import { TestClock } from "effect/testing";
-import { databaseLayer, DatabaseCapabilities } from "./db.js";
-import { NodeSystem } from "./platform-node.js";
+import { databaseLayer, DatabaseCapabilities } from "./platform/node/db.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { type IndexerInput, makeIndexer } from "./indexer.js";
 import { type IncomingMessage, type ThreadSummary } from "./domain.js";
 import { MediaError, type Vision, unavailableVision } from "./media.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { pdfText } from "./pdf-text.js";
-import { inlineMediaFromRaw } from "./attachments.js";
+import { pdfText } from "./platform/node/pdf-text.js";
+import { inlineMediaFromRaw } from "./platform/node/portable-helpers.js";
 import { parseSearchQuery, reciprocalRankFusion, mergeSearchResults } from "./search.js";
 
-const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
+const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient | PdfWorker>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
 const message = (override: Partial<IncomingMessage> = {}): IncomingMessage => ({
   providerId: "m",
@@ -232,29 +233,8 @@ it.effect(
     ),
 );
 
-/** A synthetic two-page PDF: a text page and a scanned-page placeholder. */
-export function syntheticPdf(): Uint8Array {
-  const stream = "BT /F1 18 Tf 20 100 Td (Synthetic boarding document) Tj ET";
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 200] /Resources << >> >>",
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  for (const [index, obj] of objects.entries()) {
-    offsets.push(pdf.length);
-    pdf += `${index + 1} 0 obj\n${obj}\nendobj\n`;
-  }
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new TextEncoder().encode(pdf);
-}
+export { syntheticPdf } from "./platform/node/fixtures/synthetic-pdf.js";
+import { syntheticPdf } from "./platform/node/fixtures/synthetic-pdf.js";
 
 it.effect(
   "extracts PDF text offline by page and records scanned-page deferral; battery throttles PDFs",
@@ -372,7 +352,9 @@ it("resumes a persisted lease after the database is closed and reopened", async 
   const dir = await mkdtemp(join(tmpdir(), "openmail-media-restart-"));
   const filename = join(dir, "mail.db");
   const layer = () =>
-    StoreLive.pipe(Layer.provideMerge(databaseLayer(filename).pipe(Layer.provide(NodeSystem))));
+    StoreLive.pipe(
+      Layer.provideMerge(databaseLayer(filename).pipe(Layer.provideMerge(NodeSystem))),
+    );
   try {
     await Effect.runPromise(
       Effect.gen(function* () {
@@ -531,7 +513,9 @@ it("mail read/write/search/delete works when vector resolution or dlopen fails",
     },
     () => "/missing/vec0.dylib",
   ]) {
-    const platform = databaseLayer(":memory:", { vectorExtension }).pipe(Layer.provide(NodeSystem));
+    const platform = databaseLayer(":memory:", { vectorExtension }).pipe(
+      Layer.provideMerge(NodeSystem),
+    );
     await Effect.runPromise(
       Effect.gen(function* () {
         const capabilities = yield* DatabaseCapabilities;
@@ -565,7 +549,7 @@ it("a vector-free connection can delete persisted indexed mail and later vector 
     StoreLive.pipe(
       Layer.provideMerge(
         databaseLayer(filename, vectors ? {} : { vectorExtension: null }).pipe(
-          Layer.provide(NodeSystem),
+          Layer.provideMerge(NodeSystem),
         ),
       ),
     );

@@ -1,5 +1,6 @@
+import { Buffer } from "./platform/bytes.js";
 import { Effect, Result } from "effect";
-import { simpleParser } from "mailparser";
+import type { MailCodecPort } from "./platform/mail-codec.js";
 import { InvalidInput, NotFound, ProviderError } from "./errors.js";
 import type { AttachmentContent, AttachmentPartResult, Mailbox, PerformError } from "./mailbox.js";
 import type { EmbeddedMessage, ReaderAttachment } from "./attachment-view.js";
@@ -26,21 +27,18 @@ const descriptor = (
   embedded: isEmbeddedMessage(part),
   decodeError,
 });
-const parseMessage = (part: AttachmentContent) =>
+const parseMessage = (part: AttachmentContent, codec: MailCodecPort) =>
   Effect.tryPromise({
     try: async () => {
       if (!isEmbeddedMessage(part)) throw new Error("This attachment is not an RFC822 message");
       if (part.data.byteLength > MAX_ATTACHMENT_CONTAINER_BYTES)
         throw new Error("Embedded message exceeds 32 MB");
-      const parsed = await simpleParser(
-        Buffer.from(part.data.buffer, part.data.byteOffset, part.data.byteLength),
-        {
-          skipImageLinks: true,
-          skipHtmlToText: true,
-          skipTextToHtml: true,
-          maxHtmlLengthToParse: MAX_ATTACHMENT_CONTAINER_BYTES,
-        },
-      );
+      const parsed = await codec.parse(part.data, {
+        skipImageLinks: true,
+        skipHtmlToText: true,
+        skipTextToHtml: true,
+        maxHtmlLengthToParse: MAX_ATTACHMENT_CONTAINER_BYTES,
+      });
       if (parsed.attachments.length > MAX_CONTAINER_PARTS)
         throw new Error("Too many embedded attachments");
       return parsed;
@@ -54,6 +52,7 @@ const parseMessage = (part: AttachmentContent) =>
 export function makeReaderAttachments(
   attachment: Mailbox["Service"]["attachment"],
   thread: (id: string) => Effect.Effect<import("./domain.js").Message[], NotFound>,
+  codec: MailCodecPort,
 ) {
   const openTree = Effect.fnUntraced(function* (messageId: string) {
     const message = (yield* thread(messageId)).find((m) => m.id === messageId);
@@ -83,7 +82,7 @@ export function makeReaderAttachments(
       const key = path.join(".");
       const cached = messages.get(key);
       if (cached) return yield* Effect.fromResult(cached);
-      const parsed = yield* parseMessage(content).pipe(
+      const parsed = yield* parseMessage(content, codec).pipe(
         Effect.flatMap((value) =>
           charge(
             value.attachments.reduce((n, a) => n + a.size, 0) +
@@ -268,7 +267,7 @@ export function makeReaderAttachments(
       if (!cid || !a.contentType.startsWith("image/")) continue;
       inlineBytes += a.size;
       if (inlineBytes > 8 * 1024 * 1024) break;
-      inline[cid] = `data:${a.contentType};base64,${a.content.toString("base64")}`;
+      inline[cid] = `data:${a.contentType};base64,${Buffer.from(a.content).toString("base64")}`;
     }
     const attachments = parsed.attachments
       .filter((a) => !a.related)

@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it, expect } from "vitest";
 import { Effect, Layer } from "effect";
-import { databaseLayer, MIGRATIONS } from "./db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { StoreLive } from "./store.js";
 import { Store } from "./services.js";
-import { NodeSystem } from "./platform-node.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import type { IncomingMessage } from "./domain.js";
 
 const accountId = "gmail:me@example.com";

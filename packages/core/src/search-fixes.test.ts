@@ -11,12 +11,12 @@ import {
   modifySearchToken,
   ATTACHMENT_TYPES,
 } from "./search.js";
-import { imapSearch } from "./imap-search.js";
+import { imapSearch } from "./platform/node/imap-search.js";
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox, fakeServer } from "./testing.js";
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import type { IncomingMessage } from "./domain.js";
 
 const incoming = (providerId: string, date: number): IncomingMessage => ({

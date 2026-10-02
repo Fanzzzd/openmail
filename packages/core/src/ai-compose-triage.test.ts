@@ -9,11 +9,11 @@ import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, FakeModelLayer, type ModelOutput, type ModelRequest } from "./model.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Secrets, Store } from "./services.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, makeFakeProvider } from "./fake-provider.js";
-import { TestMailbox } from "./testing.js";
+import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
+import { TestMailbox } from "./platform/node/testing.js";
 import type { ModelRuntime, DerivedChunk } from "./media.js";
 
 const accountId = "gmail:me@gmail.com";

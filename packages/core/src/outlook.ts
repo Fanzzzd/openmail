@@ -1,3 +1,5 @@
+import { MailCodec } from "./platform/mail-codec.js";
+import { Buffer } from "./platform/bytes.js";
 import { categoryKey, mergeCategoryNames } from "./categories.js";
 import { composeTransportHtml } from "./compose-body.js";
 import {
@@ -27,7 +29,7 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "./errors.js";
-import { buildMime } from "./compose.js";
+import { buildMime as unboundBuildMime } from "./compose.js";
 import { MarkdownDraftSource, markdownDraftSource } from "./markdown-draft.js";
 import { htmlDocument, htmlToText } from "./mime.js";
 import {
@@ -269,8 +271,11 @@ const decode =
 export const makeOutlook: Effect.Effect<
   ProviderAdapter,
   never,
-  HttpClient.HttpClient | OAuth | AppConfig | Secrets
+  HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
 > = Effect.gen(function* () {
+  const codec = yield* MailCodec;
+  const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
+    unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
   const http = yield* HttpClient.HttpClient;
   const oauth = yield* OAuth;
   const config = yield* AppConfig;

@@ -1,9 +1,10 @@
+import { Buffer } from "./platform/bytes.js";
 /**
  * Attachment lookup shared by the provider adapters, and parts read from raw
  * MIME: inline images for the reader and a fallback for attachment content.
  */
 import { Effect } from "effect";
-import { simpleParser } from "mailparser";
+import { parseMime } from "./platform/mail-codec.js";
 
 import { ProviderError } from "./errors.js";
 
@@ -46,13 +47,11 @@ export const MAX_INLINE_BYTES = 8 * 1024 * 1024;
 export const MEDIA_RAW_TOO_LARGE = "Raw message exceeds media size limit";
 
 const parse = (raw: Uint8Array) =>
-  Effect.tryPromise({
-    try: () => simpleParser(Buffer.from(raw), { skipImageLinks: true }),
-    catch: (error) =>
-      new ProviderError({
-        message: `Cannot read the message: ${error instanceof Error ? error.message : String(error)}`,
-      }),
-  });
+  parseMime(raw, { skipImageLinks: true }).pipe(
+    Effect.mapError(
+      (error) => new ProviderError({ message: `Cannot read the message: ${error.message}` }),
+    ),
+  );
 
 /** Inline images (parts with a Content-ID) as data: URLs keyed by Content-ID without brackets. */
 export const inlineImagesFromRaw = (raw: Uint8Array) =>
@@ -64,7 +63,7 @@ export const inlineImagesFromRaw = (raw: Uint8Array) =>
       if (!cid || !a.contentType.toLowerCase().startsWith("image/")) continue;
       total += a.size;
       if (total > MAX_INLINE_BYTES) break;
-      out[cid] = `data:${a.contentType};base64,${a.content.toString("base64")}`;
+      out[cid] = `data:${a.contentType};base64,${Buffer.from(a.content).toString("base64")}`;
     }
     return out;
   });

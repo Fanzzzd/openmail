@@ -1,6 +1,7 @@
+import { Buffer } from "./platform/bytes.js";
 import { Effect, Result, Schema } from "effect";
 import ICAL from "ical.js";
-import { simpleParser } from "mailparser";
+import { parseMime } from "./platform/mail-codec.js";
 import {
   inviteCanRespond,
   type CalendarInvite,
@@ -180,10 +181,8 @@ export function parseCalendar(
 
 /** mailparser exposes inline text/calendar as an attachment too, including base64/QP. */
 export const invitesFromRaw = (raw: Uint8Array, includePublished = false) =>
-  Effect.tryPromise({
-    try: () => simpleParser(Buffer.from(raw), { skipImageLinks: true }),
-    catch: () => new ProviderError({ message: "Cannot read calendar invitation" }),
-  }).pipe(
+  parseMime(raw, { skipImageLinks: true }).pipe(
+    Effect.mapError(() => new ProviderError({ message: "Cannot read calendar invitation" })),
     Effect.map((mail): ParsedInvite[] => {
       const sender = Schema.decodeUnknownOption(SenderHeader)(mail.headers.get("sender"));
       const sourceAddresses = new Set(

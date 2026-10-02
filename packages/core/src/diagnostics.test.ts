@@ -1,4 +1,4 @@
-import { RECOVERY_TABLES } from "./database-recovery.js";
+import { RECOVERY_TABLES } from "./platform/node/database-recovery.js";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it } from "vitest";
 import { Effect, Layer, Stream, Fiber, Schema } from "effect";
@@ -19,14 +19,14 @@ import {
   createLocalDiagnostics,
   CRASH_WINDOW_MS,
   resetLocalCache,
-} from "./diagnostics.js";
+} from "./platform/node/diagnostics.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
-import { fakeServer } from "./testing.js";
-import { makeFakeProvider } from "./fake-provider.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { databaseLayer, MIGRATIONS } from "./db.js";
-import { NodeSystem } from "./platform-node.js";
+import { fakeServer } from "./platform/node/testing.js";
+import { makeFakeProvider } from "./platform/node/fake-provider.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 

@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, writeFile, readFile, mkdir, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { modelFiles, type ModelFile } from "./model-downloads.js";
+import { modelFiles, type ModelFile } from "./platform/node/model-downloads.js";
 import { MODEL_BYTES, MODEL_FILES } from "./model-manifest.js";
 
 // Low-memory runs share modules; reload this graph so the fs mock reaches modelFiles.

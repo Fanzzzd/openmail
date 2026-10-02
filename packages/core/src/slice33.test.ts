@@ -1,12 +1,12 @@
 import { Mailbox } from "./mailbox.js";
-import { TestMailbox } from "./testing.js";
+import { TestMailbox } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream, Fiber } from "effect";
 import { SqlClient } from "effect/sql";
 import { Store } from "./services.js";
 import { contactMatch } from "./store-compose.js";
 import { StoreLive } from "./store.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import type { Account, IncomingMessage } from "./domain.js";
 import { makeGmailFeatures } from "./gmail-features.js";
 import { makeOutlookFeatures } from "./outlook-features.js";

@@ -1,3 +1,4 @@
+import { PlatformCrypto } from "./platform/crypto.js";
 import { categoryKey } from "./categories.js";
 import { invalidCategoryFolderOp } from "./mail-ops.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
@@ -131,6 +132,7 @@ export const makeBatchMailbox = (
   ) => Effect.Effect<void, import("./mailbox.js").PerformError>,
 ) =>
   Effect.gen(function* () {
+    const crypto = yield* PlatformCrypto;
     const lock = yield* Semaphore.make(1);
     const history = new Map<string, UndoBatch>();
     const modifyWithUndo: Mailbox["Service"]["modifyWithUndo"] = (threads, op, flat = false) =>

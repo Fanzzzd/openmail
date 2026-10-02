@@ -2,10 +2,10 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema, Stream } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { Model, ModelAnthropic } from "./model.js";
-import { MemoryPlatform } from "./platform-memory.js";
-import { MODEL_KEY } from "./secrets.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
+import { MODEL_KEY } from "./platform/node/secrets.js";
 import { Mailbox } from "./mailbox.js";
-import { fakeServer, TestMailbox } from "./testing.js";
+import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 
 function sse(block: unknown, delta: unknown, reason = "end_turn") {
   const events = [

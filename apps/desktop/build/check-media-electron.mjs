@@ -1,5 +1,5 @@
 import { desktopInferenceProcess } from "../src/main/inference.ts";
-import { modelFiles } from "../../../packages/core/dist/model-downloads.js";
+import { modelFiles } from "../../../packages/core/dist/platform/node/model-downloads.js";
 /** Isolated Electron main check. Never starts the mail app or opens its database. */
 import { app } from "electron";
 import assert from "node:assert/strict";
@@ -10,8 +10,8 @@ import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { fileURLToPath } from "node:url";
 import { NodeSystem, makeNodeModels } from "@openmail/core";
-import { pdfText } from "../../../packages/core/dist/pdf-text.js";
-import { databaseLayer } from "../../../packages/core/dist/db.js";
+import { pdfText } from "../../../packages/core/dist/platform/node/pdf-text.js";
+import { databaseLayer } from "../../../packages/core/dist/platform/node/db.js";
 
 const profile = mkdtempSync(join(tmpdir(), "openmail-media-electron-"));
 app.setName("OpenMailMediaCheck");
@@ -80,7 +80,7 @@ app.once("ready", async () => {
           process.stdout.write(
             "Electron: real offline ONNX utilityProcess E5 384 and MobileCLIP 512 passed\n",
           );
-        }).pipe(Effect.scoped),
+        }).pipe(Effect.provide(NodeSystem), Effect.scoped),
       );
     }
     process.stdout.write(

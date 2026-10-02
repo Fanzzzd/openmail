@@ -1,6 +1,6 @@
 import { Config, Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 
-import { dataDir } from "./paths.js";
+import { AppPaths, dataDir } from "./platform/paths.js";
 import { AppConfig, type ClientConfig } from "./services.js";
 
 /**
@@ -83,5 +83,8 @@ export function appConfigFile(
 }
 
 /** config.json in the shared data directory. */
-export const AppConfigFile: Layer.Layer<AppConfig, never, FileSystem.FileSystem | Path.Path> =
-  Layer.unwrap(Effect.map(dataDir, appConfigFile));
+export const AppConfigFile: Layer.Layer<
+  AppConfig,
+  never,
+  FileSystem.FileSystem | Path.Path | AppPaths
+> = Layer.unwrap(Effect.map(dataDir, appConfigFile));

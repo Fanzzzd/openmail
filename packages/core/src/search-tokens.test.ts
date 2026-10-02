@@ -2,13 +2,13 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { NodeSystem } from "./platform-node.js";
-import { databaseLayer } from "./db.js";
+import { NodeSystem } from "./platform/node/platform-node.js";
+import { databaseLayer } from "./platform/node/db.js";
 import type { AttachmentType, IncomingMessage } from "./domain.js";
-import { makeFakeProvider, fakeServer } from "./fake-provider.js";
+import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import {
@@ -28,7 +28,7 @@ import {
   searchValueSuggestions,
   selectSearchOperator,
 } from "./search.js";
-import { imapSearch } from "./imap-search.js";
+import { imapSearch } from "./platform/node/imap-search.js";
 
 const incoming = (
   id: string,

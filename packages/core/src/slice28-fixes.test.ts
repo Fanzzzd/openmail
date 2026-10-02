@@ -4,15 +4,15 @@ import { Effect, Layer, Option, Stream } from "effect";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { databaseLayer } from "./db.js";
+import { databaseLayer } from "./platform/node/db.js";
 import { vi } from "vitest";
 import { TestClock } from "effect/testing";
 import { MailboxLive, type MailboxOptions } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { Store, Providers, Secrets, type ProviderAdapter } from "./services.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { StoreLive } from "./store.js";
-import { fakeServer, makeFakeProvider } from "./fake-provider.js";
+import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { ProviderError } from "./errors.js";
 
 function withMailbox<A, E>(
