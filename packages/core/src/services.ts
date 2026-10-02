@@ -1,3 +1,10 @@
+import type {
+  DeleteFolder,
+  FolderScope,
+  FolderPage,
+  FolderListOptions,
+  PermanentDeleteBatch,
+} from "./folder-actions.js";
 import type { DerivedChunk } from "./media.js";
 import type { makeSemanticStore } from "./store-semantic.js";
 import type { makeMediaStore } from "./store-media.js";
@@ -110,6 +117,8 @@ export interface AuthorizeRequest {
 }
 
 export interface TokenResponse {
+  /** Actual grants reported by the authorization server, never inferred from requested scopes. */
+  scopes?: readonly string[];
   accessToken: string;
   refreshToken: Option.Option<string>;
   /** Seconds. */
@@ -199,6 +208,8 @@ export class Store extends Context.Service<
     setAccountProfile(id: string, profileId: string | null): Effect.Effect<void>;
     setImapSettings(id: string, settings: ImapSettings): Effect.Effect<void>;
     setNeedsReauth(id: string, value: boolean): Effect.Effect<void>;
+    grantedScopes(id: string): Effect.Effect<readonly string[]>;
+    setGrantedScopes(id: string, scopes: readonly string[]): Effect.Effect<void>;
     setSyncError(id: string, error: string | null): Effect.Effect<void>;
     getSyncCursor(id: string): Effect.Effect<Option.Option<string>>;
     /** Also stamps last_synced_at. */
@@ -423,12 +434,17 @@ export type Change =
 
 /** `loginHint` names the account to sign in as, so the consent page does not pick another one. */
 export type ConnectInput =
-  | { readonly provider: "gmail"; readonly loginHint?: string }
+  | {
+      readonly provider: "gmail";
+      readonly loginHint?: string;
+      readonly feature?: "permanentDelete";
+    }
   | { readonly provider: "outlook"; readonly loginHint?: string }
   | { readonly provider: "imap"; readonly input: ImapConnectInput };
 
 /** What a successful sign-in hands back. The secret goes to the keychain, the rest to the store. */
 export interface Connected {
+  scopes?: readonly string[];
   email: string;
   secret: string;
   imap?: ImapSettings;
@@ -445,6 +461,25 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  listFolderMessages(
+    account: Account,
+    folder: FolderScope,
+    cursor: string | null,
+    options?: FolderListOptions,
+  ): Effect.Effect<FolderPage, ProviderFailure>;
+  /** Bounded unread-only action. IMAP groups UIDs; Outlook bounds request concurrency. */
+  markReadBatch(account: Account, ids: readonly string[]): Effect.Effect<void, ProviderFailure>;
+  /** Verify the current connection can safely delete before any account is mutated. */
+  checkPermanentDelete(
+    account: Account,
+    folder: DeleteFolder,
+  ): Effect.Effect<readonly string[], ProviderFailure>;
+  /** App-only permanent removal. At most FOLDER_BATCH_LIMIT ids. */
+  permanentlyDelete(
+    account: Account,
+    ids: readonly string[],
+    folder: DeleteFolder,
+  ): Effect.Effect<PermanentDeleteBatch, ProviderFailure | FeatureScopeMissing | InvalidInput>;
   contacts(
     account: Account,
   ): Effect.Effect<Address[], ProviderFailure | FeatureScopeMissing | InvalidInput>;

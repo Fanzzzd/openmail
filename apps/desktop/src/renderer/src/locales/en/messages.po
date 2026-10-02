@@ -366,9 +366,17 @@ msgstr "All mail"
 msgid "All Mail"
 msgstr "All Mail"
 
+#: src/renderer/src/components/FolderActions.tsx
+msgid "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
+msgstr "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "Allow notifications"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Allow permanent deletion for {email}?"
+msgstr "Allow permanent deletion for {email}?"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Allowed"
@@ -456,6 +464,14 @@ msgstr "Attendees"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Authorization code"
 msgstr "Authorization code"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Authorize permanent deletion"
+msgstr "Authorize permanent deletion"
+
+#: src/renderer/src/errors.ts
+msgid "Authorize permission to permanently delete mail in this Gmail account."
+msgstr "Authorize permission to permanently delete mail in this Gmail account."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
@@ -561,7 +577,9 @@ msgstr "Can't reach the mail server right now: {0}"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -746,6 +764,10 @@ msgstr "Could not read system permission"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Could not register OpenMail. Try again from the installed app."
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't delete: {reason}"
+msgstr "Couldn't delete: {reason}"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -976,6 +998,26 @@ msgstr "Editing removes unsupported formatting and images from this draft. Lists
 msgid "Email address"
 msgstr "Email address"
 
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam"
+msgstr "Empty Spam"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam?"
+msgstr "Empty Spam?"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash"
+msgstr "Empty Trash"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash?"
+msgstr "Empty Trash?"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Enable filters"
+msgstr "Enable filters"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Enabled"
 msgstr "Enabled"
@@ -1044,6 +1086,10 @@ msgstr "Favorites"
 msgid "File"
 msgstr "File"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Filter"
+msgstr "Filter"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Find in message"
 msgstr "Find in message"
@@ -1056,6 +1102,14 @@ msgstr "Finish signing in in your browser"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Finish signing in in your browser, then come back here."
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder action failed: {reason}"
+msgstr "Folder action failed: {reason}"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder actions"
+msgstr "Folder actions"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Folder colors are stored on this computer only."
@@ -1173,6 +1227,7 @@ msgstr "IMAP account"
 msgid "IMAP server"
 msgstr "IMAP server"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
@@ -1186,6 +1241,10 @@ msgstr "In “{elsewhere}”"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "In 3 hours"
 msgstr "In 3 hours"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "In Inbox"
+msgstr "In Inbox"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -1312,10 +1371,6 @@ msgstr "Location"
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
 
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Mailboxes"
-msgstr "Mailboxes"
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Make OpenMail default"
@@ -1327,6 +1382,10 @@ msgstr "Manually"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Many HTML emails are designed for white. Each message's menu can switch its background."
 msgstr "Many HTML emails are designed for white. Each message's menu can switch its background."
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Mark all as read"
+msgstr "Mark all as read"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1377,6 +1436,10 @@ msgstr "Markdown"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "Markdown works: **bold**, `code`, ```code block```"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Marked {count} messages as read"
+msgstr "Marked {count} messages as read"
 
 #: src/renderer/src/App.tsx
 msgid "Marked as important"
@@ -1475,6 +1538,10 @@ msgstr "Modify {token}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Monday"
 msgstr "Monday"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "More"
+msgstr "More"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1762,6 +1829,14 @@ msgstr "One occurrence of a recurring meeting"
 msgid "Only inbox messages can be snoozed"
 msgstr "Only inbox messages can be snoozed"
 
+#: src/renderer/src/App.tsx
+msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
+msgstr "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
+
+#: src/renderer/src/App.tsx
+msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
+msgstr "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
 msgstr "Open"
@@ -1891,6 +1966,22 @@ msgstr "Pause"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Pause indexing"
 msgstr "Pause indexing"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Permanently delete"
+msgstr "Permanently delete"
+
+#: src/renderer/src/App.tsx
+msgid "Permanently delete selected mail?"
+msgstr "Permanently delete selected mail?"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Permanently deleted {count} messages"
+msgstr "Permanently deleted {count} messages"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -2093,6 +2184,10 @@ msgstr "Report spam"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "Reported as spam"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Reset Favorites"
+msgstr "Reset Favorites"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
@@ -2368,9 +2463,21 @@ msgstr "Show full email addresses in recipient fields"
 msgid "Show Gmail categories"
 msgstr "Show Gmail categories"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show important messages"
+msgstr "Show important messages"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
 msgstr "Show Inbox"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show messages also in Inbox"
+msgstr "Show messages also in Inbox"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show More in sidebar"
+msgstr "Show More in sidebar"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
@@ -2703,6 +2810,10 @@ msgstr "This meeting has been cancelled"
 msgid "This meeting link is not supported."
 msgstr "This meeting link is not supported."
 
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
 msgstr "This removes the filter from the server."
@@ -2740,6 +2851,10 @@ msgstr "Today"
 #: src/renderer/src/format.ts
 msgid "Today {time}"
 msgstr "Today {time}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle list filters"
+msgstr "Toggle list filters"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
@@ -2804,10 +2919,6 @@ msgstr "Unknown organizer time zone; showing the original time."
 #: src/renderer/src/components/MessageList.tsx
 msgid "Unread"
 msgstr "Unread"
-
-#: src/renderer/src/components/SystemSettings.tsx
-msgid "Unread filter"
-msgstr "Unread filter"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx

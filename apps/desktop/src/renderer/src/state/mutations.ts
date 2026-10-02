@@ -59,6 +59,9 @@ export const saveClientAtom = MailClient.runtime.fn((c: ClientInput) =>
 export const reauthAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn(() => reauthAccount(accountId)),
 );
+export const authorizePermanentDeleteAtom = Atom.family((accountId: string) =>
+  MailClient.runtime.fn(() => reauthAccount(accountId, "permanentDelete")),
+);
 
 export const removeAccountAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn(() =>

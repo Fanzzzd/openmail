@@ -11,7 +11,7 @@ export function featureRequest<
     readonly body?: string | undefined;
     readonly message?: string | undefined;
   },
->(account: Account, feature: "contacts" | "calendar", effect: Effect.Effect<A, E>) {
+>(account: Account, feature: FeatureScopeMissing["feature"], effect: Effect.Effect<A, E>) {
   return effect.pipe(
     Effect.mapError((error) => {
       if (error._tag === "InvalidInput")

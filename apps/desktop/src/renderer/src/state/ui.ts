@@ -4,7 +4,9 @@
  */
 import { Atom } from "effect/reactivity";
 
-import { ALL, type Filters, type SpaceId, type View } from "../view";
+import { ALL, type SpaceId, type View } from "../view";
+import { makeFolderFiltersAtom } from "./folder-filters";
+export { NO_FILTERS } from "./folder-filters";
 
 interface Nav {
   view: View;
@@ -28,9 +30,10 @@ export const viewAtom = Atom.writable(
 /** Where each space was left. */
 export const rememberedViewsAtom = Atom.make((get) => get(nav).remembered);
 
-export const NO_FILTERS: Filters = { unread: false, starred: false };
-
-export const filtersAtom = Atom.make<Filters>(NO_FILTERS).pipe(Atom.keepAlive);
+export const filtersAtom = makeFolderFiltersAtom(
+  viewAtom,
+  typeof localStorage === "undefined" ? undefined : localStorage,
+);
 
 /** The search field as typed. */
 export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);

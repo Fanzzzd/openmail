@@ -612,6 +612,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         where.push(sql`m.id IN (SELECT value FROM json_each(${JSON.stringify(q.messageIds)}))`);
       if (q.unreadOnly) where.push(sql`m.is_unread = 1`);
       if (q.starredOnly) where.push(sql`m.is_starred = 1`);
+      const filters = q.listFilters;
+      if (filters?.enabled) {
+        const flags: Fragment[] = [];
+        if (filters.unread) flags.push(sql`m.is_unread = 1`);
+        if (filters.starred) flags.push(sql`m.is_starred = 1`);
+        if (filters.important) flags.push(hasLabel("IMPORTANT"));
+        if (flags.length) where.push(sql`(${sql.or(flags)})`);
+        if (filters.inInbox) where.push(hasLabel("INBOX"));
+      }
       where.push(searchConditionFilter(q.criteria ?? {}));
       for (const condition of q.criteria?.excluded ?? [])
         where.push(sql`NOT (${searchConditionFilter(condition)})`);
@@ -738,7 +747,11 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         threads = reciprocalRankFusion(threads, derived, q.flat).slice(0, limit);
       }
       // The Drafts list also shows drafts the provider has no copy of yet.
-      const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly;
+      const filters = q.listFilters;
+      const filtered =
+        filters?.enabled &&
+        (filters.unread || filters.starred || filters.important || filters.inInbox);
+      const plain = q.label === undefined && !q.unreadOnly && !q.starredOnly && !filtered;
       if (q.mailbox !== "drafts" || !plain) return threads;
       const local = yield* compose.localDrafts(q, limit);
       return [...threads, ...local]
@@ -1294,6 +1307,13 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       moveAccount,
       setImapSettings,
       setNeedsReauth,
+      grantedScopes: (id) =>
+        first(Schema.Struct({ scopes_json: Schema.fromJsonString(Schema.Array(Schema.String)) }))(
+          sql`SELECT scopes_json FROM account_oauth_scopes WHERE account_id=${id}`,
+        ).pipe(Effect.map((row) => (Option.isSome(row) ? row.value.scopes_json : []))),
+      setGrantedScopes: (id, scopes) =>
+        run(sql`INSERT INTO account_oauth_scopes (account_id, scopes_json)
+        VALUES (${id}, ${JSON.stringify([...new Set(scopes)])}) ON CONFLICT(account_id) DO UPDATE SET scopes_json=excluded.scopes_json`),
       setSyncError,
       getSyncCursor,
       beginInitialSync: (id) => initialSyncState(id, false),

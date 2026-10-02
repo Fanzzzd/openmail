@@ -64,12 +64,12 @@ export class SettingsScopeMissing extends Schema.TaggedError<SettingsScopeMissin
 export class DeviceError extends Schema.TaggedError<DeviceError>()("DeviceError", {
   message: Schema.String,
 }) {}
-/** Calendar and contacts are optional; missing grants never pause mail sync. */
+/** Optional feature permissions never pause mail sync. */
 export class FeatureScopeMissing extends Schema.TaggedError<FeatureScopeMissing>()(
   "FeatureScopeMissing",
   {
     accountId: Schema.String,
-    feature: Schema.Literals(["calendar", "contacts"]),
+    feature: Schema.Literals(["calendar", "contacts", "permanentDelete"]),
     message: Schema.String,
   },
 ) {}

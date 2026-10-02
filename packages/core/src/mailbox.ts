@@ -1,3 +1,4 @@
+import type { FolderScope, DeleteFolder } from "./folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "./media.js";
 /**
  * Mailbox: the one interface desktop, CLI, MCP and the assistant use. Reading,
@@ -141,7 +142,10 @@ export class Mailbox extends Context.Service<
     /** Signs in (OAuth consent page or IMAP password) and starts a sync. Re-adding an account signs it in again. */
     connect(input: ConnectInput): Effect.Effect<Account, SignInError>;
     /** Signs an OAuth account in again with its provider. */
-    reauth(accountId: string): Effect.Effect<Account, SignInError | NotFound>;
+    reauth(
+      accountId: string,
+      feature?: "permanentDelete",
+    ): Effect.Effect<Account, SignInError | NotFound | FeatureScopeMissing>;
     readonly clientSetup: Effect.Effect<{
       googleConfigured: boolean;
       microsoftConfigured: boolean;
@@ -216,6 +220,17 @@ export class Mailbox extends Context.Service<
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;
     assignProfile(accountId: string, profileId: string | null): Effect.Effect<void>;
+
+    /** App-only destructive operations. Confirmation is mandatory, outside MailOp/MCP. */
+    permanentlyDelete(
+      threads: readonly string[],
+      flat: boolean,
+      folder: DeleteFolder,
+      confirmed: boolean,
+    ): Effect.Effect<number, PerformError>;
+    emptyFolder(folder: FolderScope, confirmed: boolean): Effect.Effect<number, PerformError>;
+    markFolderRead(folder: FolderScope): Effect.Effect<number, PerformError>;
+    resetFavorites(accountIds: readonly string[]): Effect.Effect<void, PerformError>;
 
     // Changes. Every one is checked against policy and audited.
     threadCount(query: ThreadQuery): Effect.Effect<number>;

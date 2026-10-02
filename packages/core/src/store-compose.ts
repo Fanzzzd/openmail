@@ -243,6 +243,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
       return {
+        showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         defaultFrom: pref(f.defaultFrom, stored.get("defaultFrom"), d.defaultFrom),
         showFullRecipientAddresses: pref(

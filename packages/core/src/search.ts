@@ -314,6 +314,19 @@ export function matchesSearch(
   const q = parseSearchQuery(raw);
   const c = q.criteria ?? {};
   if ((q.unreadOnly && !message.isUnread) || (q.starredOnly && !message.isStarred)) return false;
+  const filters = q.listFilters;
+  if (filters?.enabled) {
+    if (filters.inInbox && !message.labels.includes("INBOX")) return false;
+    if (
+      (filters.unread || filters.starred || filters.important) &&
+      !(
+        (filters.unread && message.isUnread) ||
+        (filters.starred && message.isStarred) ||
+        (filters.important && message.labels.includes("IMPORTANT"))
+      )
+    )
+      return false;
+  }
   const scope = searchMailboxLabel(q);
   if (scope && !message.labels.includes(scope)) return false;
   if (!matchesSearchCondition(message, c, labels)) return false;

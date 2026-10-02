@@ -36,6 +36,15 @@ export function ReadingSettings() {
         <Trans>Show account names in unified folders</Trans>
       </label>
       <section>
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={prefs?.showMore ?? true}
+            onCheckedChange={(showMore) => setPrefs({ showMore })}
+          />
+          <span>{t`Show More in sidebar`}</span>
+        </label>
+      </section>
+      <section>
         <h3 className={heading}>
           <Trans>Mark as read</Trans>
         </h3>

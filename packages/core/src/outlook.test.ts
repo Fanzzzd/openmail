@@ -979,11 +979,15 @@ it.effect("a dropped connection is retried, not reported", () =>
       ),
     );
     const http = { layer: Layer.succeed(HttpClient.HttpClient)(client), calls: [] };
-    const fiber = yield* Effect.forkChild(
-      run(http, (a) => a.push(account, "m1", { kind: "read", value: true })),
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const fiber = yield* adapter
+          .push(account, "m1", { kind: "read", value: true })
+          .pipe(Effect.forkChild);
+        yield* TestClock.adjust("2 seconds");
+        yield* Fiber.join(fiber);
+      }),
     );
-    yield* TestClock.adjust("2 seconds");
-    yield* Fiber.join(fiber);
     assert.strictEqual(calls, 3);
   }),
 );
@@ -1722,3 +1726,193 @@ it.effect(
       assert.ok(http.calls.some((call) => call.url.pathname.endsWith("/me/messages")));
     }),
 );
+
+it.effect("folder actions follow Graph pages and POST permanentDelete with immutable ids", () => {
+  const http = fakeHttp({
+    "POST /consumers/oauth2/v2.0/token": { json: { access_token: "token", expires_in: 3600 } },
+    "GET /me/mailFolders/deleteditems/messages": (url) => ({
+      json: url.searchParams.has("$skip")
+        ? { value: [{ id: "b" }] }
+        : {
+            value: [{ id: "a" }],
+            "@odata.nextLink": `${GRAPH}/me/mailFolders/deleteditems/messages?$skip=1`,
+          },
+    }),
+    "POST /me/messages/a/permanentDelete": { status: 204 },
+    "POST /me/messages/b/permanentDelete": { status: 404 },
+    "GET /me/mailFolders/deleteditems": { json: { id: "trash-root" } },
+    "GET /me/mailFolders/trash-root/childFolders": { json: { value: [] } },
+    "GET /me/messages/a": { json: { parentFolderId: "trash-root" } },
+    "GET /me/messages/b": { json: { parentFolderId: "trash-root" } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const folder = { mailbox: "trash" } as const;
+      const first = yield* adapter.listFolderMessages(account, folder, null);
+      assert.deepStrictEqual(first.ids, ["a"]);
+      assert.deepStrictEqual(yield* adapter.listFolderMessages(account, folder, first.next), {
+        ids: ["b"],
+        next: null,
+      });
+      yield* adapter.permanentlyDelete(account, ["a", "b"], "trash");
+      assert.strictEqual(
+        http.calls.filter((c) => c.url.pathname.endsWith("permanentDelete")).length,
+        2,
+      );
+      assert.ok(
+        http.calls
+          .filter((c) => c.url.pathname.endsWith("permanentDelete"))
+          .every((c) => c.method === "POST" && c.prefer === 'IdType="ImmutableId"'),
+      );
+      for (const cursor of [
+        "https://evil.example/v1.0/me/mailFolders/deleteditems/messages",
+        `${GRAPH}/me/messages?$skip=2`,
+      ])
+        assert.isTrue(
+          (yield* adapter.listFolderMessages(account, folder, cursor).pipe(Effect.result))._tag ===
+            "Failure",
+        );
+      assert.isFalse(http.calls.some((c) => c.url.hostname === "evil.example"));
+      assert.isTrue(
+        (yield* adapter
+          .permanentlyDelete(
+            account,
+            Array.from({ length: 101 }, () => "a"),
+            "trash",
+          )
+          .pipe(Effect.result))._tag === "Failure",
+      );
+    }),
+  );
+});
+
+it.effect(
+  "Outlook unread enumeration filters server-side and empty Trash includes nested and hidden child folders",
+  () => {
+    const http = fakeHttp({
+      "POST /consumers/oauth2/v2.0/token": { json: { access_token: "token", expires_in: 3600 } },
+      "GET /me/mailFolders/inbox/messages": (url) => {
+        assert.strictEqual(url.searchParams.get("$filter"), "isRead eq false");
+        return { json: { value: [{ id: "unread" }] } };
+      },
+      "GET /me/mailFolders/deleteditems/messages": { json: { value: [] } },
+      "GET /me/mailFolders/deleteditems/childFolders": (url) => {
+        if (url.searchParams.has("$skip")) return { json: { value: [] } };
+        assert.strictEqual(url.searchParams.get("includeHiddenFolders"), "true");
+        return {
+          json: {
+            value: [{ id: "child" }],
+            "@odata.nextLink": `${GRAPH}/me/mailFolders/deleteditems/childFolders?$skip=1`,
+          },
+        };
+      },
+      "GET /me/mailFolders/child/messages": { json: { value: [] } },
+      "GET /me/mailFolders/child/childFolders": { json: { value: [{ id: "nested" }] } },
+      "GET /me/mailFolders/nested/messages": { json: { value: [{ id: "nested-mail" }] } },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        yield* adapter.listFolderMessages(account, { mailbox: "inbox" }, null, {
+          unreadOnly: true,
+        });
+        assert.deepStrictEqual(
+          yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null, {
+            includeChildren: true,
+          }),
+          { ids: ["nested-mail"], next: null },
+        );
+      }),
+    );
+  },
+);
+
+it.effect("Outlook marks read with bounded concurrency and immutable IDs", () => {
+  let active = 0;
+  let maximum = 0;
+  let count = 0;
+  const client = HttpClient.make((request) =>
+    Effect.gen(function* () {
+      if (request.method === "PATCH") {
+        active++;
+        maximum = Math.max(maximum, active);
+        assert.strictEqual(request.headers.prefer, 'IdType="ImmutableId"');
+        yield* Effect.yieldNow;
+        active--;
+        count++;
+        return HttpClientResponse.fromWeb(request, new Response(null, { status: 204 }));
+      }
+      return HttpClientResponse.fromWeb(
+        request,
+        Response.json({ access_token: "token", expires_in: 3600 }),
+      );
+    }),
+  );
+  return makeOutlook.pipe(
+    Effect.flatMap((adapter) =>
+      adapter.markReadBatch(
+        account,
+        Array.from({ length: 20 }, (_, i) => String(i)),
+      ),
+    ),
+    Effect.tap(() =>
+      Effect.sync(() => {
+        assert.strictEqual(count, 20);
+        assert.isTrue(maximum > 1 && maximum <= 5);
+      }),
+    ),
+    Effect.provide(
+      Layer.mergeAll(Layer.succeed(HttpClient.HttpClient)(client), MemoryPlatform(platformOptions)),
+    ),
+  );
+});
+
+it.effect(
+  "Graph verifies current parent folders, retains restored mail and returns only successful deletions",
+  () => {
+    const http = fakeHttp({
+      "POST /consumers/oauth2/v2.0/token": { json: { access_token: "token", expires_in: 3600 } },
+      "GET /me/mailFolders/deleteditems": { json: { id: "trash-root" } },
+      "GET /me/mailFolders/trash-root/childFolders": { json: { value: [{ id: "child" }] } },
+      "GET /me/mailFolders/child/childFolders": { json: { value: [] } },
+      "GET /me/messages/root": { json: { parentFolderId: "trash-root" } },
+      "GET /me/messages/child": (url) => {
+        assert.strictEqual(url.searchParams.get("$select"), "parentFolderId");
+        return { json: { parentFolderId: "child" } };
+      },
+      "GET /me/messages/restored": { json: { parentFolderId: "inbox" } },
+      "GET /me/messages/gone": { status: 404 },
+      "POST /me/messages/root/permanentDelete": { status: 204 },
+      "POST /me/messages/child/permanentDelete": { status: 204 },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        assert.deepStrictEqual(
+          yield* adapter.permanentlyDelete(account, ["root", "child", "restored", "gone"], "trash"),
+          { kind: "complete", ids: ["root", "child"] },
+        );
+        assert.deepStrictEqual(
+          http.calls
+            .filter(
+              (call) => call.method === "POST" && call.url.pathname.endsWith("permanentDelete"),
+            )
+            .map((call) => call.url.pathname),
+          ["/v1.0/me/messages/root/permanentDelete", "/v1.0/me/messages/child/permanentDelete"],
+        );
+      }),
+    );
+  },
+);
+
+it.effect("Outlook mark-all-read continues after a snapshotted message disappears with 404", () => {
+  const http = fakeHttp({
+    "POST /consumers/oauth2/v2.0/token": { json: { access_token: "token", expires_in: 3600 } },
+    "PATCH /me/messages/gone": { status: 404 },
+    "PATCH /me/messages/live": { status: 204 },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      yield* adapter.markReadBatch(account, ["gone", "live"]);
+      assert.strictEqual(http.calls.filter((call) => call.method === "PATCH").length, 2);
+    }),
+  );
+});

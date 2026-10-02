@@ -4,6 +4,8 @@ import {
   replyTarget,
   type ReaderSelection,
 } from "./reader-selection";
+import { permanentDeleteFolder, supportsInInboxFilter } from "./folder-actions";
+import { FolderActions } from "./components/FolderActions";
 import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -15,10 +17,13 @@ import {
   markReadAfter,
   richComposeBody,
   textComposeHtml,
+  type DeleteFolder,
 } from "@openmail/core/schema";
-import { Effect, Fiber } from "effect";
+import { Cause, Effect, Fiber, Option } from "effect";
+import { PermanentDeletePermission } from "./components/PermanentDeletePermission";
 import { constVoid } from "effect/Function";
-import { AsyncResult, Atom } from "effect/reactivity";
+import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
+import { MAIL_KEYS } from "./state/keys";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
@@ -108,7 +113,6 @@ import { leavesList } from "./state/batch";
 import { listQueryAtom, threadListAtom } from "./state/threads";
 import {
   filtersAtom,
-  NO_FILTERS,
   rememberedViewsAtom,
   searchAtom,
   searchTextAtom,
@@ -174,6 +178,16 @@ export function App() {
     ids: ReadonlySet<string>;
     scopeKey: string;
   } | null>(null);
+  const [permanentRequest, setPermanentRequest] = useState<{
+    ids: readonly string[];
+    flat: boolean;
+    folder: DeleteFolder;
+  } | null>(null);
+  const requestPermanentDelete = (ids: readonly string[]) => {
+    if (deleteFolder)
+      setPermanentRequest({ ids: [...ids], flat: !prefs.threadGrouping, folder: deleteFolder });
+  };
+  const [permissionAccount, setPermissionAccount] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [selectionSource, setSelectionSource] = useState<SelectionSource>("mouse");
   const [editing, setEditing] = useState<Profile | "new" | null>(null);
@@ -226,6 +240,8 @@ export function App() {
   const [threads, loadMore] = useAtom(threadListAtom);
   const list = threads.threads;
   const listQuery = useAtomValue(listQueryAtom);
+  const deleteFolder = permanentDeleteFolder(view, listQuery);
+  const folderAccountIds = listQuery?.accountIds ?? scope;
   const scopeKey = JSON.stringify([listQuery, search, filters]);
   const currentSelection = useRef({ selection, scopeKey, list });
   useEffect(() => {
@@ -709,7 +725,7 @@ export function App() {
     changeView(next);
     setQuery("");
     if (messageId) {
-      setFilters(NO_FILTERS);
+      setFilters((chosen) => ({ ...chosen, enabled: false }));
       setSelectedId(messageId);
       setSelectionSource("mouse");
     }
@@ -727,7 +743,7 @@ export function App() {
           const space = owner?.profileId ?? ALL;
           setView({ space, mailbox: "all", ...(owner ? { accountId: owner.id } : {}) });
           setQuery("");
-          setFilters(NO_FILTERS);
+          setFilters((chosen) => ({ ...chosen, enabled: false }));
           setSelectedId(id);
           setSelectionSource("mouse");
           setReadTarget(linkedMessages.some((m) => m.isUnread) ? id : null);
@@ -793,7 +809,6 @@ export function App() {
         break;
       case "Search":
         changeView({ space: ALL, mailbox: "all" });
-        setFilters(NO_FILTERS);
         setSearchScope("all");
         setQuery(event.query);
         searchRef.current?.focus();
@@ -806,7 +821,6 @@ export function App() {
         else if (event.command === "inbox") {
           changeView({ space: view.space === OVERVIEW ? ALL : view.space, mailbox: "inbox" });
           setQuery("");
-          setFilters(NO_FILTERS);
         } else setDialog(event.command === "help" ? "help" : "settings");
         break;
     }
@@ -977,7 +991,7 @@ export function App() {
         setGoToFolder(true);
         break;
       case "filterUnread":
-        setFilters((f) => ({ ...f, unread: !f.unread }));
+        setFilters((f) => ({ ...f, enabled: !f.enabled }));
         break;
       case "openThread":
         if (selectedId && view.mailbox !== "drafts") openWindow(selectedId);
@@ -1160,7 +1174,20 @@ export function App() {
                 searchTruncated={threads.searchTruncated}
                 searchErrors={threads.searchErrors}
                 filters={filters}
+                inLabel={supportsInInboxFilter(view, accountList)}
                 onFilters={setFilters}
+                folderActions={
+                  <FolderActions
+                    folder={{
+                      mailbox: view.mailbox,
+                      ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
+                      ...(view.label ? { label: view.label.id } : {}),
+                    }}
+                    notify={(text, error) =>
+                      say({ text, ...(error ? { tone: "error" as const } : {}) })
+                    }
+                  />
+                }
                 labels={labelMap}
                 selectedId={selection.focus}
                 selectedIds={selection.ids}
@@ -1169,6 +1196,11 @@ export function App() {
                 rowActions={{
                   batchMenu: (
                     <BatchMenuItems
+                      onPermanentDelete={
+                        deleteFolder
+                          ? () => requestPermanentDelete(batchRows.map((row) => row.id))
+                          : undefined
+                      }
                       rows={batchRows}
                       accounts={accountList}
                       labels={labels}
@@ -1180,6 +1212,9 @@ export function App() {
                   stateOf: rowState,
                   onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
                   onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
+                  onPermanentDelete: deleteFolder
+                    ? (thread) => requestPermanentDelete([thread.id])
+                    : undefined,
                   onSnooze: (thread) => setSnoozeIds([thread.id]),
                   onFilter: (thread) =>
                     setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
@@ -1240,6 +1275,11 @@ export function App() {
                 renderToolbar={(compact) =>
                   selection.ids.size > 1 ? (
                     <BatchActions
+                      onPermanentDelete={
+                        deleteFolder
+                          ? () => requestPermanentDelete(batchRows.map((row) => row.id))
+                          : undefined
+                      }
                       rows={batchRows}
                       canLoadMore={threads.canLoadMore}
                       moreNotLoaded={threads.moreNotLoaded}
@@ -1257,6 +1297,13 @@ export function App() {
                         mailbox={view.mailbox}
                         labels={threadLabels}
                         onOp={(op) => act(op)}
+                        onPermanentDelete={
+                          deleteFolder
+                            ? () => {
+                                if (selectedId) requestPermanentDelete([selectedId]);
+                              }
+                            : undefined
+                        }
                         onCompose={startCompose}
                         onSendAgain={
                           stateMessages?.some((m) => m.labels.includes("SENT"))
@@ -1314,6 +1361,67 @@ export function App() {
           }}
         >{t`Delete`}</button>
       </Alert>
+      <Alert
+        open={permanentRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setPermanentRequest(null);
+        }}
+        title={t`Permanently delete selected mail?`}
+        description={
+          permanentRequest?.flat
+            ? t`Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone.`
+            : t`Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone.`
+        }
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        <button
+          type="button"
+          className={alertDanger}
+          onClick={() => {
+            const request = permanentRequest;
+            if (!request) return;
+            setPermanentRequest(null);
+            run(
+              withMail((call) =>
+                call("PermanentlyDelete", {
+                  threads: request.ids,
+                  flat: request.flat,
+                  folder: request.folder,
+                  confirmed: true,
+                }),
+              ).pipe(
+                Reactivity.mutation(MAIL_KEYS),
+                Effect.matchCause({
+                  onSuccess: (count) => {
+                    say({ text: t`Permanently deleted ${count} messages` });
+                    setSelectedId(null);
+                  },
+                  onFailure: (cause) => {
+                    const error = Cause.findErrorOption(cause);
+                    if (
+                      Option.isSome(error) &&
+                      error.value._tag === "FeatureScopeMissing" &&
+                      error.value.feature === "permanentDelete"
+                    ) {
+                      setPermissionAccount(error.value.accountId);
+                      return;
+                    }
+                    const reason = causeText(i18n, cause);
+                    say({ text: t`Couldn't delete: ${reason}`, tone: "error" });
+                  },
+                }),
+              ),
+            );
+          }}
+        >{t`Permanently delete`}</button>
+      </Alert>
+      {permissionAccount && (
+        <PermanentDeletePermission
+          key={permissionAccount}
+          accountId={permissionAccount}
+          onClose={() => setPermissionAccount(null)}
+        />
+      )}
       {editing && (
         <ProfileEditor
           profile={editing === "new" ? undefined : editing}

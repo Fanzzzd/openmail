@@ -54,6 +54,7 @@ interface Props {
   /** Opens the thread in a window of its own. Unset hides the button. */
   onOpenWindow?: (() => void) | undefined;
   onSnooze?: (() => void) | undefined;
+  onPermanentDelete?: (() => void) | undefined;
   onFilter?: (() => void) | undefined;
   /** The label or folder picker; L or V opens it from the keyboard. */
   labelPicker: boolean;
@@ -93,6 +94,7 @@ export function ThreadActions({
   onSendAgain,
   onOpenWindow,
   onSnooze,
+  onPermanentDelete,
   onFilter,
   labelPicker,
   onLabelPicker,
@@ -147,6 +149,7 @@ export function ThreadActions({
             onSendAgain={onSendAgain}
             onOpenWindow={onOpenWindow}
             onSnooze={onSnooze}
+            onPermanentDelete={onPermanentDelete}
             onFilter={onFilter}
           />
         </DropdownMenu>
@@ -272,6 +275,7 @@ export function ThreadMenuItems({
   onSendAgain,
   onOpenWindow,
   onSnooze,
+  onPermanentDelete,
   onFilter,
 }: Omit<Props, "labelPicker" | "onLabelPicker" | "compact">) {
   const { t } = useLingui();
@@ -338,6 +342,9 @@ export function ThreadMenuItems({
       <MenuItem icon={Trash2} shortcut={shortcut("trash")} onClick={() => onOp({ kind: "trash" })}>
         {t`Delete`}
       </MenuItem>
+      {onPermanentDelete && (
+        <MenuItem icon={Trash2} onClick={onPermanentDelete}>{t`Permanently delete`}</MenuItem>
+      )}
       {mailbox !== "spam" && (
         <MenuItem
           icon={ShieldAlert}

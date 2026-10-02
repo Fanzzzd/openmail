@@ -372,9 +372,17 @@ msgstr "全部保留"
 msgid "All Mail"
 msgstr "所有邮件"
 
+#: src/renderer/src/components/FolderActions.tsx
+msgid "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
+msgstr "将永久删除当前文件夹中的邮件，包括尚未加载的邮件和 Outlook 子文件夹中的邮件。操作期间恢复的邮件不会进入后续删除批次。此操作无法撤销。"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Allow notifications"
 msgstr "允许通知"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Allow permanent deletion for {email}?"
+msgstr "允许永久删除 {email} 的邮件？"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Allowed"
@@ -462,6 +470,14 @@ msgstr "参与者"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Authorization code"
 msgstr "授权码"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Authorize permanent deletion"
+msgstr "授权永久删除"
+
+#: src/renderer/src/errors.ts
+msgid "Authorize permission to permanently delete mail in this Gmail account."
+msgstr "请授权永久删除此 Gmail 账户的邮件。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
@@ -567,7 +583,9 @@ msgstr "暂时连不上邮件服务器：{0}"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -752,6 +770,10 @@ msgstr "无法读取系统权限"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "注册失败，请从安装后的 app 重试。"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't delete: {reason}"
+msgstr "删除失败：{reason}"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't discard: {reason}"
@@ -982,6 +1004,26 @@ msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜
 msgid "Email address"
 msgstr "邮箱地址"
 
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam"
+msgstr "清空垃圾邮件"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam?"
+msgstr "清空垃圾邮件？"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash"
+msgstr "清空废纸篓"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash?"
+msgstr "清空废纸篓？"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Enable filters"
+msgstr "启用筛选"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Enabled"
 msgstr "开启"
@@ -1050,6 +1092,10 @@ msgstr "收藏夹"
 msgid "File"
 msgstr "文件"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Filter"
+msgstr "筛选"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Find in message"
 msgstr "在正文中查找"
@@ -1062,6 +1108,14 @@ msgstr "请在浏览器里完成授权"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder action failed: {reason}"
+msgstr "文件夹操作失败：{reason}"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder actions"
+msgstr "文件夹操作"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Folder colors are stored on this computer only."
@@ -1179,6 +1233,7 @@ msgstr "IMAP 账户"
 msgid "IMAP server"
 msgstr "IMAP 服务器"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
@@ -1192,6 +1247,10 @@ msgstr "在「{elsewhere}」"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "In 3 hours"
 msgstr "3 小时后"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "In Inbox"
+msgstr "在收件箱中"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -1318,10 +1377,6 @@ msgstr "地点"
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
 
-#: src/renderer/src/components/Sidebar.tsx
-msgid "Mailboxes"
-msgstr "邮箱"
-
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "设为默认邮件客户端"
@@ -1333,6 +1388,10 @@ msgstr "手动"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Many HTML emails are designed for white. Each message's menu can switch its background."
 msgstr "很多 HTML 邮件按白色背景设计。每封邮件的菜单里可以单独切换背景。"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Mark all as read"
+msgstr "全部标为已读"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1383,6 +1442,10 @@ msgstr "Markdown"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
 msgstr "支持 Markdown：**粗体**、`代码`、```代码块```"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Marked {count} messages as read"
+msgstr "已将 {count} 封邮件标为已读"
 
 #: src/renderer/src/App.tsx
 msgid "Marked as important"
@@ -1481,6 +1544,10 @@ msgstr "修改 {token}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Monday"
 msgstr "星期一"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "More"
+msgstr "更多"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "More actions"
@@ -1768,6 +1835,14 @@ msgstr "重复会议中的一次"
 msgid "Only inbox messages can be snoozed"
 msgstr "只能为收件箱邮件设置提醒"
 
+#: src/renderer/src/App.tsx
+msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
+msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
+
+#: src/renderer/src/App.tsx
+msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
+msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
 msgstr "打开"
@@ -1897,6 +1972,22 @@ msgstr "暂停"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Pause indexing"
 msgstr "暂停索引"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Permanently delete"
+msgstr "永久删除"
+
+#: src/renderer/src/App.tsx
+msgid "Permanently delete selected mail?"
+msgstr "永久删除所选邮件？"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Permanently deleted {count} messages"
+msgstr "已永久删除 {count} 封邮件"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -2099,6 +2190,10 @@ msgstr "报告垃圾邮件"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "已报告为垃圾邮件"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Reset Favorites"
+msgstr "重置收藏夹"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
@@ -2374,9 +2469,21 @@ msgstr "收件人显示完整邮箱地址"
 msgid "Show Gmail categories"
 msgstr "显示 Gmail 分类"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show important messages"
+msgstr "显示重要邮件"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
 msgstr "显示收件箱"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show messages also in Inbox"
+msgstr "仅显示也在收件箱中的邮件"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show More in sidebar"
+msgstr "在侧栏显示“更多”区"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show only starred"
@@ -2709,6 +2816,10 @@ msgstr "此会议已取消"
 msgid "This meeting link is not supported."
 msgstr "不支持此会议链接。"
 
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "此权限允许 openmail 永久删除此 Gmail 账户的邮件。Google 会征求你的同意。授权后，请再次确认删除。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
 msgstr "这会删除服务器上的过滤器。"
@@ -2746,6 +2857,10 @@ msgstr "今天"
 #: src/renderer/src/format.ts
 msgid "Today {time}"
 msgstr "今天 {time}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle list filters"
+msgstr "切换列表筛选"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
@@ -2810,10 +2925,6 @@ msgstr "无法识别组织者时区，显示原始时间。"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Unread"
 msgstr "未读"
-
-#: src/renderer/src/components/SystemSettings.tsx
-msgid "Unread filter"
-msgstr "只显示未读"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx

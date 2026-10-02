@@ -12,6 +12,7 @@ import {
 } from "./errors.js";
 import type { Change, ConnectInput, DraftPush, ProviderAdapter } from "./services.js";
 import { EMPTY_VACATION, type ServerFilter, type Vacation, type SendAs } from "./organization.js";
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { matchesSearch } from "./search.js";
 import { applyOpToLabels } from "./store.js";
 
@@ -20,6 +21,9 @@ let counter = 0;
 
 /** A provider's server side, in memory. Tests read and change it directly. */
 export interface FakeServer {
+  supportsPermanentDelete: boolean;
+  deleteFolderLabels: Record<import("./folder-actions.js").DeleteFolder, readonly string[]>;
+  grantedScopes: string[];
   contacts: Address[];
   responses: { invite: CalendarInvite; response: InviteResponse }[];
   featureFailure?: FeatureScopeMissing;
@@ -31,6 +35,8 @@ export interface FakeServer {
   filters: ServerFilter[];
   vacation: Vacation;
   aliases: SendAs[];
+  deleted: (readonly string[])[];
+  folderPages: (string | null)[];
   searched: import("./domain.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
@@ -56,6 +62,9 @@ export interface FakeServer {
 
 export function fakeServer(email: string, messages: IncomingMessage[] = []): FakeServer {
   return {
+    supportsPermanentDelete: true,
+    deleteFolderLabels: { trash: ["TRASH"], spam: ["SPAM"] },
+    grantedScopes: [],
     email,
     contacts: [],
     responses: [],
@@ -66,6 +75,8 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     vacation: EMPTY_VACATION,
     aliases: [],
     searched: [],
+    deleted: [],
+    folderPages: [],
     pushed: [],
     batches: [],
     sent: [],
@@ -126,6 +137,82 @@ export function makeFakeProvider(
       ),
     );
   return {
+    listFolderMessages: (_account, folder, cursor, listOptions) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          server.folderPages.push(cursor);
+          const ids = [...server.messages.values()]
+            .filter(
+              (m) =>
+                (!listOptions?.unreadOnly || m.isUnread) &&
+                (!folder.label || m.labels.includes(folder.label)) &&
+                (folder.mailbox !== "all" ||
+                  !m.labels.some((label) => label === "TRASH" || label === "SPAM")) &&
+                (listOptions?.includeChildren &&
+                !folder.label &&
+                (folder.mailbox === "trash" || folder.mailbox === "spam")
+                  ? m.labels.some((label) =>
+                      server.deleteFolderLabels[
+                        folder.mailbox === "trash" ? "trash" : "spam"
+                      ].includes(label),
+                    )
+                  : matchesSearch(
+                      m,
+                      { mailbox: folder.mailbox, searchScope: "folder" },
+                      server.labels,
+                    )),
+            )
+            .map((m) => m.providerId)
+            .toSorted();
+          const remaining = ids.filter((id) => cursor === null || id > cursor);
+          const page = remaining.slice(0, FOLDER_BATCH_LIMIT);
+          return { ids: page, next: remaining.length > page.length ? (page.at(-1) ?? null) : null };
+        }),
+      ),
+    checkPermanentDelete: (account, folder) =>
+      account.provider === "imap" && !server.supportsPermanentDelete
+        ? Effect.fail(
+            new PermanentError({
+              message:
+                "This IMAP server cannot safely expunge selected messages (UIDPLUS required).",
+            }),
+          )
+        : Effect.succeed(server.deleteFolderLabels[folder]),
+    permanentlyDelete: (_account, ids, folder) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          const verified = ids.filter((id) =>
+            server.messages
+              .get(id)
+              ?.labels.some((label) => server.deleteFolderLabels[folder].includes(label)),
+          );
+          if (verified.length) server.deleted.push(verified);
+          for (const id of verified) server.messages.delete(id);
+          return { kind: "complete", ids: verified } as const;
+        }),
+      ),
+    markReadBatch: (account, ids) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          server.batches.push({ providerIds: ids, op: { kind: "read", value: true } });
+          for (const id of ids) {
+            const incoming = server.messages.get(id);
+            if (incoming)
+              server.messages.set(id, {
+                ...incoming,
+                isUnread: false,
+                labels: applyOpToLabels(
+                  incoming.labels,
+                  { kind: "read", value: true },
+                  account.provider,
+                ),
+              });
+          }
+        }),
+      ),
     backfill: (_account, state, select) =>
       Effect.gen(function* () {
         yield* failOnce;
@@ -255,7 +342,11 @@ export function makeFakeProvider(
     connect: (input) =>
       Effect.sync(() => {
         server.connects.push(input);
-        return { email: server.email, secret: "fake-token" };
+        if (input.provider === "gmail" && input.feature === "permanentDelete")
+          server.grantedScopes = [
+            ...new Set([...server.grantedScopes, GMAIL_PERMANENT_DELETE_SCOPE]),
+          ];
+        return { email: server.email, secret: "fake-token", scopes: server.grantedScopes };
       }),
     pull: (_account, cursor, scope) =>
       Stream.unwrap(

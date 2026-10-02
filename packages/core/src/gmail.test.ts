@@ -473,9 +473,13 @@ it.effect("a dropped connection is retried, not reported", () =>
       ),
     );
     const http = { layer: Layer.succeed(HttpClient.HttpClient)(client), calls: [] };
-    const fiber = yield* Effect.forkChild(run(http, (a) => a.fetchRaw(account, "m1")));
-    yield* TestClock.adjust("2 seconds");
-    assert.strictEqual(Buffer.from(yield* Fiber.join(fiber)).toString(), "hi");
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const fiber = yield* adapter.fetchRaw(account, "m1").pipe(Effect.forkChild);
+        yield* TestClock.adjust("2 seconds");
+        assert.strictEqual(Buffer.from(yield* Fiber.join(fiber)).toString(), "hi");
+      }),
+    );
     assert.strictEqual(calls, 3);
   }),
 );
@@ -690,7 +694,16 @@ it.effect("Gmail consent requests settings.basic alongside existing mail scopes"
                 assert.ok(
                   req.scopes.includes("https://www.googleapis.com/auth/gmail.settings.basic"),
                 );
-                assert.ok(req.scopes.includes("https://www.googleapis.com/auth/gmail.modify"));
+                assert.strictEqual(req.scopes[0], "https://www.googleapis.com/auth/gmail.modify");
+                assert.isFalse(req.scopes.includes("https://mail.google.com/"));
+                assert.deepStrictEqual(req.scopes, [
+                  "https://www.googleapis.com/auth/gmail.modify",
+                  "https://www.googleapis.com/auth/gmail.send",
+                  "https://www.googleapis.com/auth/gmail.settings.basic",
+                  "https://www.googleapis.com/auth/calendar.events",
+                  "https://www.googleapis.com/auth/contacts.readonly",
+                  "https://www.googleapis.com/auth/contacts.other.readonly",
+                ]);
                 for (const scope of [
                   "calendar.events",
                   "contacts.readonly",
@@ -709,6 +722,64 @@ it.effect("Gmail consent requests settings.basic alongside existing mail scopes"
     ),
   );
 });
+
+it.effect(
+  "Gmail permanent deletion consent adds only full-mail scope with incremental authorization on the user's client",
+  () => {
+    const scopes = [
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/gmail.settings.basic",
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/contacts.readonly",
+      "https://www.googleapis.com/auth/contacts.other.readonly",
+      "https://mail.google.com/",
+    ];
+    const http = fakeHttp({
+      "GET /profile": { json: { emailAddress: account.email, historyId: "1" } },
+    });
+    return makeGmail.pipe(
+      Effect.flatMap((adapter) =>
+        adapter.connect({
+          provider: "gmail",
+          loginHint: account.email,
+          feature: "permanentDelete",
+        }),
+      ),
+      Effect.tap((connected) =>
+        Effect.sync(() => assert.deepStrictEqual(connected.scopes, scopes)),
+      ),
+      Effect.provide(
+        Layer.mergeAll(
+          http.layer,
+          MemoryPlatform({
+            config: { google: { clientId: "own-client", clientSecret: "own-secret" } },
+            oauth: {
+              authorize: (request) =>
+                Effect.sync(() => {
+                  assert.deepStrictEqual(request.scopes, scopes);
+                  assert.strictEqual(
+                    request.authUrl,
+                    "https://accounts.google.com/o/oauth2/v2/auth",
+                  );
+                  assert.strictEqual(request.clientId, "own-client");
+                  assert.strictEqual(request.clientSecret, "own-secret");
+                  assert.strictEqual(request.extraParams?.include_granted_scopes, "true");
+                  assert.strictEqual(request.extraParams?.login_hint, account.email);
+                  return {
+                    accessToken: "access-token",
+                    refreshToken: Option.some("refresh-token"),
+                    expiresIn: 3600,
+                    scopes,
+                  };
+                }),
+            },
+          }),
+        ),
+      ),
+    );
+  },
+);
 
 it.effect("Gmail explicit spam search includes messages normally excluded from all mail", () => {
   const http = fakeHttp({
@@ -1244,11 +1315,13 @@ it.effect(
         "rateLimitExceeded: Forbidden",
       ]) {
         const http = fakeHttp({ "GET /settings/filters": { status: 403, json: { error: body } } });
-        const request = yield* Effect.forkChild(
-          run(http, (a) => a.filters(account).pipe(Effect.flip)),
+        yield* run(http, (adapter) =>
+          Effect.gen(function* () {
+            const request = yield* adapter.filters(account).pipe(Effect.flip, Effect.forkChild);
+            yield* TestClock.adjust("1 minute");
+            assert.strictEqual((yield* Fiber.join(request))._tag, "ProviderError");
+          }),
         );
-        yield* TestClock.adjust("1 minute");
-        assert.strictEqual((yield* Fiber.join(request))._tag, "ProviderError");
       }
     }),
 );
@@ -1401,6 +1474,171 @@ it.effect(
           ["older-pdf"],
         ),
       ),
+    );
+  },
+);
+
+it.effect(
+  "folder actions enumerate ids with page tokens and use bounded permanent batch deletion",
+  () => {
+    const http = fakeHttp({
+      "POST /token": { json: { access_token: "token", expires_in: 3600 } },
+      "GET /messages": (url) => {
+        assert.strictEqual(url.searchParams.get("labelIds"), "TRASH");
+        assert.strictEqual(url.searchParams.get("includeSpamTrash"), "true");
+        assert.strictEqual(url.searchParams.get("maxResults"), "100");
+        return {
+          json: url.searchParams.has("pageToken")
+            ? { messages: [{ id: "b" }] }
+            : { messages: [{ id: "a" }], nextPageToken: "next" },
+        };
+      },
+      "POST /messages/batchDelete": { status: 204 },
+      "GET /messages/a": { json: { labelIds: ["TRASH"] } },
+      "GET /messages/b": { json: { labelIds: ["TRASH"] } },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        const folder = { mailbox: "trash" } as const;
+        const first = yield* adapter.listFolderMessages(account, folder, null);
+        assert.deepStrictEqual(first, { ids: ["a"], next: "next" });
+        assert.deepStrictEqual(yield* adapter.listFolderMessages(account, folder, first.next), {
+          ids: ["b"],
+          next: null,
+        });
+        yield* adapter.permanentlyDelete(account, ["a", "b"], "trash");
+        assert.deepStrictEqual(
+          http.calls.find((c) => c.url.pathname.endsWith("batchDelete"))?.body,
+          { ids: ["a", "b"] },
+        );
+        assert.isTrue(
+          (yield* adapter
+            .permanentlyDelete(
+              account,
+              Array.from({ length: 101 }, () => "a"),
+              "trash",
+            )
+            .pipe(Effect.result))._tag === "Failure",
+        );
+        assert.strictEqual(
+          http.calls.filter((c) => c.url.pathname.endsWith("batchDelete")).length,
+          1,
+        );
+      }),
+    );
+  },
+);
+
+it.effect(
+  "folder enumeration intersects Inbox categories and excludes Trash and Spam from All Mail labels",
+  () => {
+    const http = fakeHttp({
+      "POST /token": { json: { access_token: "token", expires_in: 3600 } },
+      "GET /messages": (url) => {
+        const labels = url.searchParams.getAll("labelIds");
+        if (labels.includes("CATEGORY_SOCIAL")) {
+          assert.deepStrictEqual(labels, ["INBOX", "CATEGORY_SOCIAL"]);
+        } else {
+          assert.deepStrictEqual(labels, ["custom"]);
+          assert.strictEqual(url.searchParams.get("q"), "-in:trash -in:spam");
+        }
+        return { json: {} };
+      },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        yield* adapter.listFolderMessages(
+          account,
+          { mailbox: "inbox", label: "CATEGORY_SOCIAL" },
+          null,
+        );
+        yield* adapter.listFolderMessages(account, { mailbox: "all", label: "custom" }, null);
+      }),
+    );
+  },
+);
+
+it.effect(
+  "permanent deletion reports missing full-mail scope without pausing mail authentication",
+  () => {
+    const http = fakeHttp({
+      "POST /token": { json: { access_token: "token", expires_in: 3600 } },
+      "POST /messages/batchDelete": {
+        status: 403,
+        json: { error: { message: "insufficient authentication scopes" } },
+      },
+      "GET /messages/a": { json: { labelIds: ["TRASH"] } },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        const result = yield* adapter
+          .permanentlyDelete(account, ["a"], "trash")
+          .pipe(Effect.result);
+        assert.strictEqual(result._tag, "Failure");
+        if (result._tag === "Failure")
+          assert.strictEqual(result.failure._tag, "FeatureScopeMissing");
+      }),
+    );
+  },
+);
+
+it.effect("Gmail folder reads query UNREAD before enumerating and mark an entire ID batch", () => {
+  const http = fakeHttp({
+    "POST /token": { json: { access_token: "token", expires_in: 3600 } },
+    "GET /messages": (url) => {
+      assert.deepStrictEqual(url.searchParams.getAll("labelIds"), ["UNREAD"]);
+      assert.strictEqual(url.searchParams.get("q"), "-in:trash -in:spam");
+      return { json: { messages: [{ id: "unread" }] } };
+    },
+    "POST /messages/batchModify": { status: 204 },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const page = yield* adapter.listFolderMessages(account, { mailbox: "all" }, null, {
+        unreadOnly: true,
+      });
+      yield* adapter.markReadBatch(account, page.ids);
+      assert.deepStrictEqual(
+        http.calls.find((call) => call.url.pathname.endsWith("batchModify"))?.body,
+        { ids: ["unread"], addLabelIds: [], removeLabelIds: ["UNREAD"] },
+      );
+    }),
+  );
+});
+
+it.effect(
+  "Gmail checks current minimal labels for every id and returns only confirmed Trash or Spam deletions",
+  () => {
+    const metadata = (labels: string[]) => (url: URL) => {
+      assert.strictEqual(url.searchParams.get("format"), "minimal");
+      assert.strictEqual(url.searchParams.get("fields"), "labelIds");
+      return { json: { labelIds: labels } };
+    };
+    const http = fakeHttp({
+      "POST /token": { json: { access_token: "token", expires_in: 3600 } },
+      "GET /messages/trash": metadata(["TRASH"]),
+      "GET /messages/restored": metadata(["INBOX"]),
+      "GET /messages/spam": metadata(["SPAM"]),
+      "GET /messages/gone": { status: 404 },
+      "POST /messages/batchDelete": { status: 204 },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        assert.deepStrictEqual(
+          yield* adapter.permanentlyDelete(account, ["trash", "restored", "gone"], "trash"),
+          { kind: "complete", ids: ["trash"] },
+        );
+        assert.deepStrictEqual(
+          yield* adapter.permanentlyDelete(account, ["spam", "restored"], "spam"),
+          { kind: "complete", ids: ["spam"] },
+        );
+        assert.deepStrictEqual(
+          http.calls
+            .filter((call) => call.url.pathname.endsWith("batchDelete"))
+            .map((call) => call.body),
+          [{ ids: ["trash"] }, { ids: ["spam"] }],
+        );
+      }),
     );
   },
 );

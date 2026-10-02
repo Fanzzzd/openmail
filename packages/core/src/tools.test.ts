@@ -18,6 +18,10 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     checkUpdates: () => Effect.die("unused"),
     rememberNotificationActions: () => Effect.die("unused"),
     notificationActions: () => Effect.die("unused"),
+    permanentlyDelete: () => notUsed("permanentlyDelete"),
+    emptyFolder: () => notUsed("emptyFolder"),
+    markFolderRead: () => notUsed("markFolderRead"),
+    resetFavorites: () => notUsed("resetFavorites"),
     updateTokenConfigured: Effect.die("unused"),
     setUpdateToken: () => Effect.die("unused"),
     startUpdates: () => Effect.die("unused"),
@@ -383,4 +387,8 @@ it.effect("search returns local matched chunks and provenance without image byte
     assert.ok(!encoded.includes("base64"));
     assert.ok(!encoded.includes('"data"'));
   });
+});
+
+it("MCP exposes no permanent deletion or whole-folder destruction", () => {
+  assert.isFalse(Object.keys(MailToolkit.tools).some((name) => /permanent|empty/i.test(name)));
 });

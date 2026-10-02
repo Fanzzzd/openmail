@@ -103,7 +103,7 @@ const Handlers = MailRpcs.toLayer(
       SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
       MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
       Connect: ({ input }) => Effect.tap(m.connect(input), () => focusApp),
-      Reauth: ({ accountId }) => Effect.tap(m.reauth(accountId), () => focusApp),
+      Reauth: ({ accountId, feature }) => Effect.tap(m.reauth(accountId, feature), () => focusApp),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       RemoveAccount: ({ accountId }) => m.perform({ kind: "removeAccount", accountId }, USER),
 
@@ -181,6 +181,11 @@ const Handlers = MailRpcs.toLayer(
       DeleteProfile: ({ id }) => m.deleteProfile(id),
       AssignProfile: ({ accountId, profileId }) => m.assignProfile(accountId, profileId),
 
+      PermanentlyDelete: ({ threads, flat, folder, confirmed }) =>
+        m.permanentlyDelete(threads, flat, folder, confirmed),
+      EmptyFolder: ({ folder, confirmed }) => m.emptyFolder(folder, confirmed),
+      MarkFolderRead: ({ folder }) => m.markFolderRead(folder),
+      ResetFavorites: ({ accountIds }) => m.resetFavorites(accountIds),
       Modify: ({ threads, op }) => m.perform({ kind: "modify", threads, op }, USER),
       ModifyWithUndo: ({ threads, op, flat }) => m.modifyWithUndo(threads, op, flat),
       UndoBatch: ({ undoId }) => m.undoBatch(undoId),

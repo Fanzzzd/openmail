@@ -1,3 +1,8 @@
+import {
+  FOLDER_BATCH_LIMIT,
+  type DeleteFolder,
+  type PermanentDeleteBatch,
+} from "./folder-actions.js";
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
@@ -368,6 +373,56 @@ export const makeOutlook: Effect.Effect<
       body === undefined ? request : HttpClientRequest.bodyJsonUnsafe(request, body),
     );
   };
+
+  const deleteFolderIds = (account: Account, folder: DeleteFolder) =>
+    Effect.gen(function* () {
+      const root = yield* get(
+        account.id,
+        WithId,
+        `/me/mailFolders/${folder === "trash" ? "deleteditems" : "junkemail"}?$select=id`,
+      );
+      const ids = new Set<string>();
+      const pending = [root.id];
+      const Page = Schema.Struct({
+        value: Schema.Array(WithId),
+        "@odata.nextLink": Schema.optionalKey(Schema.String),
+      });
+      while (pending.length) {
+        const id = pending.shift();
+        if (id === undefined) break;
+        if (ids.has(id) || ids.size >= 1000)
+          return yield* new PermanentError({
+            message: "Deleted folder hierarchy repeated or exceeds 1,000 folders.",
+          });
+        ids.add(id);
+        const base = `/me/mailFolders/${encodeURIComponent(id)}/childFolders`;
+        let path: string | null = `${base}?includeHiddenFolders=true&$select=id&$top=100`;
+        const links = new Set<string>();
+        while (path !== null) {
+          if (links.has(path))
+            return yield* new PermanentError({
+              message: "Deleted folder pagination repeated a page.",
+            });
+          links.add(path);
+          const children: typeof Page.Type = yield* get(account.id, Page, path);
+          pending.push(...children.value.map((child) => child.id));
+          const next = children["@odata.nextLink"];
+          if (next) {
+            const url = yield* Effect.try({
+              try: () => new URL(next),
+              catch: () =>
+                new PermanentError({ message: "Invalid deleted folder pagination link." }),
+            });
+            if (url.origin !== "https://graph.microsoft.com" || url.pathname !== `/v1.0${base}`)
+              return yield* new PermanentError({
+                message: "Invalid deleted folder pagination link.",
+              });
+            path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
+          } else path = null;
+        }
+      }
+      return ids;
+    });
 
   /** A GET whose body is not JSON (a message's MIME source). */
   const getBytes = (accountId: string, path: string, maxBytes?: number) =>
@@ -1114,7 +1169,171 @@ export const makeOutlook: Effect.Effect<
     changeLabel,
     connect,
     pull,
+    listFolderMessages: (account, folder, cursor, options) =>
+      Effect.gen(function* () {
+        if (
+          options?.includeChildren &&
+          cursor === null &&
+          !folder.label &&
+          (folder.mailbox === "trash" || folder.mailbox === "spam")
+        ) {
+          const pending = [folder.mailbox === "trash" ? "deleteditems" : "junkemail"];
+          const visited = new Set<string>();
+          const Page = Schema.Struct({
+            value: Schema.Array(WithId),
+            "@odata.nextLink": Schema.optionalKey(Schema.String),
+          });
+          while (pending.length) {
+            const id = pending.shift();
+            if (id === undefined) break;
+            if (visited.has(id) || visited.size >= 1000)
+              return yield* new PermanentError({
+                message: "Deleted folder hierarchy repeated or exceeds 1,000 folders.",
+              });
+            visited.add(id);
+            const base = `/me/mailFolders/${encodeURIComponent(id)}`;
+            const messages = yield* get(
+              account.id,
+              Page,
+              `${base}/messages?$select=id&$top=${FOLDER_BATCH_LIMIT}`,
+            );
+            if (messages.value.length) return { ids: messages.value.map((m) => m.id), next: null };
+            let path: string | null =
+              `${base}/childFolders?includeHiddenFolders=true&$select=id&$top=100`;
+            const links = new Set<string>();
+            while (path !== null) {
+              if (links.has(path))
+                return yield* new PermanentError({
+                  message: "Deleted folder pagination repeated a page.",
+                });
+              links.add(path);
+              const children: typeof Page.Type = yield* get(account.id, Page, path);
+              pending.push(...children.value.map((child) => child.id));
+              const next = children["@odata.nextLink"];
+              if (next) {
+                const url = yield* Effect.try({
+                  try: () => new URL(next),
+                  catch: () =>
+                    new PermanentError({ message: "Invalid deleted folder pagination link." }),
+                });
+                if (
+                  url.origin !== "https://graph.microsoft.com" ||
+                  url.pathname !== `/v1.0${base}/childFolders`
+                )
+                  return yield* new PermanentError({
+                    message: "Invalid deleted folder pagination link.",
+                  });
+                path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
+              } else path = null;
+            }
+          }
+          return { ids: [], next: null };
+        }
+        const labels: Record<string, string> = {
+          inbox: "INBOX",
+          sent: "SENT",
+          drafts: "DRAFT",
+          spam: "SPAM",
+          trash: "TRASH",
+        };
+        const known = WELL_KNOWN.find((f) => f.label === labels[folder.mailbox]);
+        const target = folder.label ?? known?.name;
+        const base = target
+          ? `/me/mailFolders/${encodeURIComponent(target)}/messages`
+          : "/me/messages";
+        const params = new URLSearchParams({ $select: "id", $top: String(FOLDER_BATCH_LIMIT) });
+        const filters: string[] = [];
+        if (options?.unreadOnly) filters.push("isRead eq false");
+        if (!target) {
+          for (const name of ["junkemail", "deleteditems"]) {
+            const ref = yield* get(account.id, WithId, `/me/mailFolders/${name}?$select=id`);
+            filters.push(`parentFolderId ne '${ref.id.replaceAll("'", "''")}'`);
+          }
+          if (folder.mailbox === "starred") filters.push("flag/flagStatus eq 'flagged'");
+          if (folder.mailbox === "important") filters.push("importance eq 'high'");
+        }
+        if (filters.length) params.set("$filter", filters.join(" and "));
+        let path = `${base}?${params.toString()}`;
+        if (cursor !== null) {
+          const url = yield* Effect.try({
+            try: () => new URL(cursor, `${GRAPH}/`),
+            catch: () => new PermanentError({ message: "Invalid folder pagination link." }),
+          });
+          if (url.origin !== "https://graph.microsoft.com" || url.pathname !== `/v1.0${base}`)
+            return yield* new PermanentError({ message: "Invalid folder pagination link." });
+          path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
+        }
+        const page = yield* get(
+          account.id,
+          Schema.Struct({
+            value: Schema.Array(WithId),
+            "@odata.nextLink": Schema.optionalKey(Schema.String),
+          }),
+          path,
+        );
+        return { ids: page.value.map((m) => m.id), next: page["@odata.nextLink"] ?? null };
+      }).pipe(Effect.mapError(writeFailure(account.id))),
+    checkPermanentDelete: (account, folder) =>
+      deleteFolderIds(account, folder).pipe(
+        Effect.map((ids) => [folder === "trash" ? "TRASH" : "SPAM", ...ids]),
+        Effect.mapError(writeFailure(account.id)),
+      ),
+    permanentlyDelete: (account, ids, folder) =>
+      Effect.gen(function* () {
+        if (ids.length > FOLDER_BATCH_LIMIT)
+          return yield* new PermanentError({
+            message: "Permanent delete batch exceeds 100 messages.",
+          });
+        const subtree = yield* deleteFolderIds(account, folder).pipe(
+          Effect.mapError(writeFailure(account.id)),
+        );
+        const deleted: string[] = [];
+        const Metadata = Schema.Struct({ parentFolderId: Schema.String });
+        for (const id of ids) {
+          const result = yield* Effect.gen(function* () {
+            const metadata = yield* get(
+              account.id,
+              Metadata,
+              `/me/messages/${encodeURIComponent(id)}?$select=parentFolderId`,
+            ).pipe(
+              Effect.map(Option.some),
+              Effect.catchIf(is404, () => Effect.succeed(Option.none())),
+            );
+            if (Option.isNone(metadata) || !subtree.has(metadata.value.parentFolderId))
+              return false;
+            return yield* write(
+              account.id,
+              "POST",
+              `/me/messages/${encodeURIComponent(id)}/permanentDelete`,
+            ).pipe(
+              Effect.as(true),
+              Effect.catchIf(is404, () => Effect.succeed(false)),
+            );
+          }).pipe(Effect.mapError(writeFailure(account.id)), Effect.result);
+          if (result._tag === "Failure")
+            return {
+              kind: "partial",
+              ids: deleted,
+              error: result.failure,
+            } satisfies PermanentDeleteBatch;
+          if (result.success) deleted.push(id);
+        }
+        return { kind: "complete", ids: deleted } satisfies PermanentDeleteBatch;
+      }),
     push,
+    markReadBatch: (account, ids) =>
+      Effect.forEach(
+        ids,
+        (id) =>
+          write(account.id, "PATCH", `/me/messages/${encodeURIComponent(id)}`, {
+            isRead: true,
+          }).pipe(
+            Effect.catchIf(is404, () => Effect.void),
+            Effect.asVoid,
+            Effect.mapError(writeFailure(account.id)),
+          ),
+        { discard: true, concurrency: 5 },
+      ),
     send,
     saveDraft,
     deleteDraft,

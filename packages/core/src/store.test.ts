@@ -8,7 +8,7 @@ import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 
 import { databaseLayer, MIGRATIONS, splitStatements } from "./db.js";
-import type { Actor, Command, IncomingMessage } from "./domain.js";
+import { DEFAULT_LIST_FILTERS, type Actor, type Command, type IncomingMessage } from "./domain.js";
 import { MemoryFileSystem, MemoryPlatform } from "./platform-memory.js";
 import { Store } from "./services.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
@@ -632,6 +632,33 @@ it.effect("local drafts join the Drafts list only for unfiltered views", () =>
         "draft:a",
       ]);
       assert.deepStrictEqual(
+        ids(
+          yield* store.listThreads({
+            mailbox: "drafts",
+            listFilters: { ...DEFAULT_LIST_FILTERS, enabled: true },
+          }),
+        ),
+        [`${id}/d1`, "draft:a"],
+      );
+      assert.deepStrictEqual(
+        ids(
+          yield* store.listThreads({
+            mailbox: "drafts",
+            listFilters: { ...DEFAULT_LIST_FILTERS, enabled: false, important: true },
+          }),
+        ),
+        [`${id}/d1`, "draft:a"],
+      );
+      assert.deepStrictEqual(
+        ids(
+          yield* store.listThreads({
+            mailbox: "drafts",
+            listFilters: { ...DEFAULT_LIST_FILTERS, enabled: true, important: true },
+          }),
+        ),
+        [],
+      );
+      assert.deepStrictEqual(
         ids(yield* store.listThreads({ mailbox: "drafts", unreadOnly: true })),
         [],
       );
@@ -662,6 +689,8 @@ it.effect(
           yield* store.upsertMessage(account.id, message({}));
           yield* store.snooze(`${account.id}/m1`, 10_000);
           yield* store.setOrganization({ accountId: account.id, categories: false });
+          yield* store.setPrefs({ showMore: false });
+          yield* store.setGrantedScopes(account.id, ["https://mail.google.com/"]);
           yield* store.setLabelPreference({
             accountId: account.id,
             id: "Work",
@@ -689,6 +718,10 @@ it.effect(
           assert.strictEqual((yield* store.listThreads({ mailbox: "inbox" })).length, 0);
           assert.strictEqual((yield* store.listThreads({ mailbox: "snoozed" })).length, 1);
           assert.strictEqual((yield* store.organization)[0]?.categories, false);
+          assert.isFalse((yield* store.prefs).showMore);
+          assert.deepStrictEqual(yield* store.grantedScopes("gmail:me@example.com"), [
+            "https://mail.google.com/",
+          ]);
           assert.strictEqual((yield* store.labelPreferences)[0]?.favorite, true);
           yield* store.moveLabelPreference("gmail:me@example.com", "Work", "Work/Renamed");
           assert.strictEqual((yield* store.labelPreferences)[0]?.id, "Work/Renamed");

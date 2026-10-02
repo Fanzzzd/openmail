@@ -62,9 +62,11 @@ const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 export function errorText(i18n: I18n, error: AppError): string {
   return Match.valueTags(error, {
     FeatureScopeMissing: (e) =>
-      e.feature === "calendar"
-        ? i18n._(msg`Sign in again to respond to calendar invitations.`)
-        : i18n._(msg`Sign in again to sync server contacts.`),
+      e.feature === "permanentDelete"
+        ? i18n._(msg`Authorize permission to permanently delete mail in this Gmail account.`)
+        : e.feature === "calendar"
+          ? i18n._(msg`Sign in again to respond to calendar invitations.`)
+          : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
     AuthError: (e) => i18n._(msg`The server rejected the sign-in. ${e.message}`),
     ClientNotConfigured: (e) => {

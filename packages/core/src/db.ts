@@ -488,6 +488,11 @@ export const MIGRATIONS: readonly string[] = [
    UPDATE accounts SET position = (SELECT COUNT(*) FROM accounts b
      WHERE b.created_at < accounts.created_at OR (b.created_at = accounts.created_at AND b.id < accounts.id));
    CREATE TABLE notification_buttons (message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE, actions_json TEXT NOT NULL);`,
+  // Migration 19: non-secret OAuth grant metadata. Refresh tokens remain in the keychain.
+  `CREATE TABLE account_oauth_scopes (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    scopes_json TEXT NOT NULL
+  );`,
 ];
 
 /**

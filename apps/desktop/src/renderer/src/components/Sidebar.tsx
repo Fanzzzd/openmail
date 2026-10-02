@@ -1,7 +1,8 @@
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { AsyncResult } from "effect/reactivity";
+import { Effect } from "effect";
+import { AsyncResult, Reactivity } from "effect/reactivity";
 import {
   ArrowRight,
   Bookmark,
@@ -46,12 +47,13 @@ import {
   accountColorValue,
   PROFILE_BG,
 } from "../format";
-import { syncNow, useRunMail } from "../state/mail";
+import { syncNow, useRunMail, withMail } from "../state/mail";
+import { Keys } from "../state/keys";
 import {
+  prefsAtom,
   labelsAtom,
   labelPreferencesAtom,
   organizationAtom,
-  prefsAtom,
   unreadByLabelAtom,
 } from "../state/queries";
 import { useShortcutText } from "./SystemSettings";
@@ -136,7 +138,10 @@ export function Sidebar({
   onSettings,
 }: Props) {
   const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(true);
   const run = useRunMail();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
 
@@ -325,81 +330,119 @@ export function Sidebar({
           </div>
         )}
 
-        <Section title={t`Mailboxes`}>
-          {MAILBOXES.map(({ id, icon: Icon, color }) => (
-            <div key={id}>
-              <Item
-                active={view.mailbox === id && !view.label}
-                onClick={() => onView({ ...view, mailbox: id, label: undefined })}
-                icon={<Icon className={`size-4.5 ${color}`} />}
-                label={i18n._(MAILBOX_NAMES[id])}
-                badge={
-                  id === "inbox" ? (byLabel.INBOX ?? 0) : id === "spam" ? (byLabel.SPAM ?? 0) : 0
-                }
-                disclosure={
-                  id === "inbox" && hasGmail ? (
-                    <button
-                      type="button"
-                      aria-label={categoriesOpen ? t`Collapse categories` : t`Expand categories`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCategoriesOpen((v) => !v);
-                      }}
-                      className="-ml-1 rounded p-0.5 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
-                    >
-                      {categoriesOpen ? (
-                        <ChevronDown className="size-3.5" />
-                      ) : (
-                        <ChevronRight className="size-3.5" />
-                      )}
-                    </button>
-                  ) : undefined
-                }
+        <ContextMenuRoot>
+          <ContextMenuTrigger render={<div />}>
+            <Section title={t`Favorites`}>
+              {MAILBOXES.map(({ id, icon: Icon, color }) => (
+                <div key={id}>
+                  <Item
+                    active={view.mailbox === id && !view.label}
+                    onClick={() => onView({ ...view, mailbox: id, label: undefined })}
+                    icon={<Icon className={`size-4.5 ${color}`} />}
+                    label={i18n._(MAILBOX_NAMES[id])}
+                    badge={
+                      id === "inbox"
+                        ? (byLabel.INBOX ?? 0)
+                        : id === "spam"
+                          ? (byLabel.SPAM ?? 0)
+                          : 0
+                    }
+                    disclosure={
+                      id === "inbox" && hasGmail ? (
+                        <button
+                          type="button"
+                          aria-label={
+                            categoriesOpen ? t`Collapse categories` : t`Expand categories`
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCategoriesOpen((v) => !v);
+                          }}
+                          className="-ml-1 rounded p-0.5 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+                        >
+                          {categoriesOpen ? (
+                            <ChevronDown className="size-3.5" />
+                          ) : (
+                            <ChevronRight className="size-3.5" />
+                          )}
+                        </button>
+                      ) : undefined
+                    }
+                  />
+                  {id === "inbox" &&
+                    hasGmail &&
+                    categoriesOpen &&
+                    Object.entries(CATEGORY_NAMES).map(([cat, name]) => {
+                      const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
+                      return (
+                        <Item
+                          key={cat}
+                          indent
+                          active={view.mailbox === "inbox" && view.label?.id === cat}
+                          onClick={() => onView({ ...view, mailbox: "inbox", label: { id: cat } })}
+                          icon={<CatIcon className="size-4 text-blue-400" />}
+                          label={i18n._(name)}
+                          badge={inInbox[cat] ?? 0}
+                        />
+                      );
+                    })}
+                </div>
+              ))}
+              {favorites.map((l) => (
+                <Item
+                  key={`${l.accountId}/${l.id}`}
+                  active={view.label?.id === l.id && view.label.accountId === l.accountId}
+                  onClick={() =>
+                    onView({ ...view, mailbox: "all", label: { id: l.id, accountId: l.accountId } })
+                  }
+                  icon={<Star className="size-4 text-amber-500" />}
+                  label={l.name}
+                  badge={0}
+                />
+              ))}
+            </Section>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <MenuItem
+              onClick={() =>
+                run(
+                  withMail((call) =>
+                    call("ResetFavorites", { accountIds: scope ?? members.map((a) => a.id) }),
+                  ).pipe(
+                    Reactivity.mutation([Keys.organization]),
+                    Effect.match({
+                      onSuccess: () => setFavoriteError(null),
+                      onFailure: (error) => setFavoriteError(error.message),
+                    }),
+                  ),
+                )
+              }
+            >{t`Reset Favorites`}</MenuItem>
+          </ContextMenuContent>
+        </ContextMenuRoot>
+        {favoriteError && <output className="px-3 text-xs text-red-600">{favoriteError}</output>}
+        {(prefs?.showMore ?? true) && (
+          <>
+            <button
+              type="button"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((open) => !open)}
+              className="flex w-full items-center gap-1 px-3 py-2 text-xs text-neutral-500"
+            >
+              {moreOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+              {t`More`}
+            </button>
+            {moreOpen && (
+              <LabelSections
+                labels={labels}
+                accounts={accounts}
+                view={view}
+                onView={onView}
+                unread={byLabel}
               />
-              {id === "inbox" &&
-                hasGmail &&
-                categoriesOpen &&
-                Object.entries(CATEGORY_NAMES).map(([cat, name]) => {
-                  const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
-                  return (
-                    <Item
-                      key={cat}
-                      indent
-                      active={view.mailbox === "inbox" && view.label?.id === cat}
-                      onClick={() => onView({ ...view, mailbox: "inbox", label: { id: cat } })}
-                      icon={<CatIcon className="size-4 text-blue-400" />}
-                      label={i18n._(name)}
-                      badge={inInbox[cat] ?? 0}
-                    />
-                  );
-                })}
-            </div>
-          ))}
-        </Section>
-
-        {favorites.length > 0 && (
-          <Section title={t`Favorites`}>
-            {favorites.map((l) => (
-              <Item
-                key={`${l.accountId}/${l.id}`}
-                active={view.label?.id === l.id && view.label.accountId === l.accountId}
-                onClick={() =>
-                  onView({ ...view, mailbox: "all", label: { id: l.id, accountId: l.accountId } })
-                }
-                icon={<Star className="size-4 text-amber-500" />}
-                label={l.name}
-                badge={0}
-              />
-            ))}
-          </Section>
+            )}
+          </>
         )}
-        <LabelSections
-          labels={labels}
-          accounts={accounts}
-          view={view}
-          onView={onView}
-          unread={byLabel}
-        />
       </nav>
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-neutral-500">

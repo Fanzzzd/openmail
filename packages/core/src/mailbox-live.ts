@@ -1,3 +1,5 @@
+import { makeFolderMailbox } from "./mailbox-folders.js";
+import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
 import { parseSearchQuery, semanticRankFusion } from "./search.js";
@@ -58,7 +60,13 @@ import {
   withDraftMarkdownSource,
   toDraft,
 } from "./drafts.js";
-import { AuthError, InvalidInput, NotFound, PermanentError } from "./errors.js";
+import {
+  AuthError,
+  FeatureScopeMissing,
+  InvalidInput,
+  NotFound,
+  PermanentError,
+} from "./errors.js";
 import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
 import {
@@ -392,6 +400,11 @@ export const MailboxLive = (
           ? flushNow
           : FiberSet.run(background, flushNow).pipe(Effect.asVoid);
 
+      const folderMailbox = makeFolderMailbox(store, providers, changed, (effect) =>
+        flushNow.pipe(
+          Effect.andThen(effect.pipe(flushLock.withPermits(1), syncLock.withPermits(1))),
+        ),
+      );
       const organization = makeOrganizationMailbox(store, providers, changed, flushLater);
       const batchMailbox = yield* makeBatchMailbox(
         store,
@@ -1389,6 +1402,7 @@ export const MailboxLive = (
         }
         const account = yield* store.upsertAccount(input.provider, connected.email);
         yield* secrets.set(account.id, connected.secret);
+        if (connected.scopes) yield* store.setGrantedScopes(account.id, connected.scopes);
         if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
         yield* store.setNeedsReauth(account.id, false);
         yield* store.setSyncError(account.id, null);
@@ -1408,17 +1422,36 @@ export const MailboxLive = (
         return yield* store.getAccount(account.id).pipe(Effect.orDie);
       });
 
-      const reauth = Effect.fn("Mailbox.reauth")(function* (accountId: string) {
+      const reauth = Effect.fn("Mailbox.reauth")(function* (
+        accountId: string,
+        feature?: "permanentDelete",
+      ) {
         const account = yield* store.getAccount(accountId);
+        if (feature && account.provider !== "gmail")
+          return yield* new InvalidInput({
+            message: "Only Gmail requires an extra permanent deletion permission.",
+          });
         if (account.provider === "imap") {
           return yield* new InvalidInput({
             message: "IMAP accounts sign in again by adding the address with a new password.",
           });
         }
-        return yield* connect(
-          { provider: account.provider, loginHint: account.email },
+        const result = yield* connect(
+          account.provider === "gmail"
+            ? { provider: "gmail", loginHint: account.email, ...(feature ? { feature } : {}) }
+            : { provider: "outlook", loginHint: account.email },
           account.email,
         );
+        if (
+          feature &&
+          !(yield* store.grantedScopes(accountId)).includes(GMAIL_PERMANENT_DELETE_SCOPE)
+        )
+          return yield* new FeatureScopeMissing({
+            accountId,
+            feature,
+            message: "Google did not grant permission to permanently delete mail.",
+          });
+        return result;
       });
 
       if (options.autoSync !== undefined) {
@@ -1474,6 +1507,7 @@ export const MailboxLive = (
           startStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
         ...organization,
         ...batchMailbox,
+        ...folderMailbox,
         ...features,
         ...cache,
         searchServer: (query) =>

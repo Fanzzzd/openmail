@@ -749,3 +749,171 @@ it.effect("IMAP MIME preserves folded and encoded Reply-To names and multiple ad
     }
   }),
 );
+
+it.effect("folder ids page across UIDs and permanent deletion requires targeted expunge", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "INBOX",
+        pathAsListed: "INBOX",
+        name: "INBOX",
+        parent: [],
+        delimiter: "/",
+        parentPath: "",
+        flags: new Set(),
+        specialUse: "\\Inbox",
+        listed: true,
+        subscribed: true,
+      },
+      {
+        path: "Trash",
+        pathAsListed: "Trash",
+        name: "Trash",
+        parent: [],
+        delimiter: "/",
+        parentPath: "",
+        flags: new Set(),
+        specialUse: "\\Trash",
+        listed: true,
+        subscribed: true,
+      },
+    ]);
+    const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+      path: "Trash",
+      delimiter: "/",
+      flags: new Set(),
+      uidValidity: 7n,
+      uidNext: 205,
+      exists: 204,
+    });
+    const search = vi
+      .spyOn(client, "search")
+      .mockResolvedValue(Array.from({ length: 204 }, (_, i) => i + 1));
+    const deletion = vi.spyOn(client, "messageDelete").mockResolvedValue(true);
+    const flags = vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const first = yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null);
+    assert.strictEqual(first.ids.length, 100);
+    const second = yield* adapter.listFolderMessages(account, { mailbox: "trash" }, first.next);
+    assert.strictEqual(second.ids.length, 100);
+    const third = yield* adapter.listFolderMessages(account, { mailbox: "trash" }, second.next);
+    assert.strictEqual(third.ids.length, 4);
+    assert.strictEqual(third.next, null);
+    assert.strictEqual(new Set([...first.ids, ...second.ids, ...third.ids]).size, 204);
+    assert.ok(open.mock.calls.every(([path]) => path === "Trash"));
+    yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null, { unreadOnly: true });
+    assert.ok(search.mock.calls.some(([query]) => query.seen === false));
+    yield* adapter.markReadBatch(account, first.ids);
+    assert.deepStrictEqual(flags.mock.calls, [
+      [Array.from({ length: 100 }, (_, i) => i + 1), ["\\Seen"], { uid: true }],
+    ]);
+    yield* adapter.markReadBatch(account, [
+      encodeProviderId("INBOX", "7", 5),
+      encodeProviderId("Trash", "7", 9),
+    ]);
+    assert.strictEqual(flags.mock.calls.length, 3);
+    assert.strictEqual(
+      (yield* adapter
+        .permanentlyDelete(account, first.ids.slice(0, 1), "trash")
+        .pipe(Effect.result))._tag,
+      "Failure",
+    );
+    assert.strictEqual(deletion.mock.calls.length, 0);
+    client.capabilities.set("UIDPLUS", true);
+    yield* adapter.permanentlyDelete(account, first.ids.slice(0, 2), "trash");
+    assert.deepStrictEqual(deletion.mock.calls, [[[1, 2], { uid: true }]]);
+    assert.strictEqual(
+      (yield* adapter
+        .permanentlyDelete(account, [...first.ids, ...second.ids], "trash")
+        .pipe(Effect.result))._tag,
+      "Failure",
+    );
+    open.mockResolvedValue({
+      path: "Trash",
+      delimiter: "/",
+      flags: new Set(),
+      uidValidity: 8n,
+      uidNext: 205,
+      exists: 204,
+    });
+    assert.strictEqual(
+      (yield* adapter
+        .listFolderMessages(account, { mailbox: "trash" }, first.next)
+        .pipe(Effect.result))._tag,
+      "Failure",
+    );
+    yield* adapter.permanentlyDelete(account, first.ids.slice(0, 1), "trash");
+    assert.strictEqual(deletion.mock.calls.length, 1);
+    search.mockResolvedValue(false);
+    assert.strictEqual(
+      (yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null).pipe(Effect.result))
+        ._tag,
+      "Failure",
+    );
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
+
+it.effect(
+  "IMAP capability precheck and a whole deletion page each use one session, returning successful IDs on partial failure",
+  () =>
+    Effect.gen(function* () {
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      client.capabilities.set("UIDPLUS", true);
+      vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "Trash",
+        delimiter: "/",
+        flags: new Set(),
+        uidValidity: 7n,
+        uidNext: 101,
+        exists: 100,
+      });
+      const deletion = vi.spyOn(client, "messageDelete").mockResolvedValue(true);
+      assert.ok(account.imap);
+      const settings = account.imap;
+      let sessions = 0;
+      const adapter = yield* makeImapWith(() =>
+        Effect.sync(() => {
+          sessions++;
+          return { accountId: account.id, settings, client };
+        }),
+      );
+      yield* adapter.checkPermanentDelete(account, "trash");
+      assert.strictEqual(sessions, 1);
+      const ids = Array.from({ length: 100 }, (_, i) => encodeProviderId("Trash", "7", i + 1));
+      assert.deepStrictEqual(yield* adapter.permanentlyDelete(account, ids, "trash"), {
+        kind: "complete",
+        ids,
+      });
+      assert.strictEqual(sessions, 2);
+      assert.strictEqual(deletion.mock.calls.length, 1);
+      deletion.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+      const first = encodeProviderId("Trash", "7", 1);
+      const second = encodeProviderId("TrashTwo", "7", 2);
+      const partial = yield* adapter.permanentlyDelete(account, [first, second], "trash");
+      assert.strictEqual(partial.kind, "partial");
+      assert.deepStrictEqual(partial.ids, [first]);
+      if (partial.kind === "partial") assert.strictEqual(partial.error._tag, "PermanentError");
+      assert.strictEqual(sessions, 3);
+    }).pipe(
+      Effect.provide(
+        Layer.succeed(Secrets, {
+          get: () => Effect.succeed(Option.some("password")),
+          set: () => Effect.void,
+          remove: () => Effect.void,
+        }),
+      ),
+    ),
+);

@@ -32,3 +32,4 @@ export * from "./mail-ops.js";
 export * from "./recipients.js";
 
 export * from "./compose-sender.js";
+export * from "./folder-actions.js";

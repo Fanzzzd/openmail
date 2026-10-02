@@ -13,6 +13,19 @@ export function leavesList(
   const parsed = parseSearchQuery(query);
   if (parsed.unreadOnly && !after.includes("UNREAD")) return true;
   if (parsed.starredOnly && !after.includes("STARRED")) return true;
+  const filters = parsed.listFilters;
+  if (filters?.enabled) {
+    if (filters.inInbox && !after.includes("INBOX")) return true;
+    if (
+      (filters.unread || filters.starred || filters.important) &&
+      !(
+        (filters.unread && after.includes("UNREAD")) ||
+        (filters.starred && after.includes("STARRED")) ||
+        (filters.important && after.includes("IMPORTANT"))
+      )
+    )
+      return true;
+  }
   if (parsed.criteria?.important && !after.includes("IMPORTANT")) return true;
   for (const criterion of parsed.criteria?.labels ?? []) {
     const label = labels.find(

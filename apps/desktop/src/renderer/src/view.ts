@@ -17,12 +17,7 @@ export interface View {
   label?: { id: string; accountId?: string };
 }
 
-/** List filters; they apply to every view until turned off. */
-export interface Filters {
-  unread: boolean;
-  starred: boolean;
-}
-
+export type Filters = import("@openmail/core/schema").ListFilters;
 /** Mailbox names; render with `i18n._(MAILBOX_NAMES[mailbox])`. */
 export const MAILBOX_NAMES: Record<Mailbox, MessageDescriptor> = {
   inbox: msg`Inbox`,

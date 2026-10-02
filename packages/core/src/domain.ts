@@ -258,6 +258,22 @@ export const SearchCriteria = Schema.Struct({
 export type SearchCriteria = typeof SearchCriteria.Type;
 
 /** A list or search over threads. `search` set means full-text search, newest first. */
+export const ListFilters = Schema.Struct({
+  enabled: Schema.Boolean,
+  unread: Schema.Boolean,
+  starred: Schema.Boolean,
+  important: Schema.Boolean,
+  inInbox: Schema.Boolean,
+});
+export type ListFilters = typeof ListFilters.Type;
+export const DEFAULT_LIST_FILTERS: ListFilters = {
+  enabled: false,
+  unread: false,
+  starred: false,
+  important: false,
+  inInbox: false,
+};
+
 export const ThreadQuery = Schema.Struct({
   mailbox: Schema.optionalKey(MailboxView),
   /** Limit to these accounts; unset means every account. */
@@ -266,6 +282,8 @@ export const ThreadQuery = Schema.Struct({
   label: Schema.optionalKey(Schema.String),
   unreadOnly: Schema.optionalKey(Schema.Boolean),
   starredOnly: Schema.optionalKey(Schema.Boolean),
+  /** List conditions use OR; In Inbox intersects the result. Search operators retain AND. */
+  listFilters: Schema.optionalKey(ListFilters),
   search: Schema.optionalKey(Schema.String),
   searchScope: Schema.optionalKey(Schema.Literals(["all", "folder"])),
   criteria: Schema.optionalKey(SearchCriteria),
@@ -479,6 +497,7 @@ export const NotificationActions = Schema.Array(
   Schema.Literals(["archive", "trash", "read", "menu"]),
 ).check(Schema.isMaxLength(3));
 export const Prefs = Schema.Struct({
+  showMore: Schema.Boolean,
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
   /** Null follows the current view; otherwise use this account or verified alias. */
@@ -509,6 +528,7 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
+  showMore: true,
   undoSendSeconds: 5,
   defaultFrom: null,
   showFullRecipientAddresses: false,

@@ -1,3 +1,5 @@
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import { featureRequest } from "./provider-features.js";
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
@@ -39,7 +41,7 @@ import { makeGmailSettings } from "./gmail-settings.js";
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
-// modify covers reading, labels, archive and trash, but not permanent delete.
+// Permanent deletion is an optional incremental grant, never requested at account add time.
 // Accounts added under the old read-only scope get a 403 on their first write
 // and are asked to sign in again.
 const SCOPES = [
@@ -285,7 +287,7 @@ export const makeGmail: Effect.Effect<
     accountId: string,
     schema: Schema.Decoder<A>,
     path: string,
-    urlParams?: Record<string, string>,
+    urlParams?: Record<string, string | readonly string[]>,
   ) =>
     api(accountId, HttpClientRequest.get(`${API}${path}`, urlParams ? { urlParams } : {})).pipe(
       Effect.flatMap((json) =>
@@ -324,11 +326,13 @@ export const makeGmail: Effect.Effect<
       tokenUrl: TOKEN_URL,
       clientId: google.clientId,
       clientSecret: google.clientSecret,
-      scopes: SCOPES,
+      scopes:
+        input.feature === "permanentDelete" ? [...SCOPES, GMAIL_PERMANENT_DELETE_SCOPE] : SCOPES,
       // offline + consent: Google only returns a refresh token on explicit consent.
       extraParams: {
         access_type: "offline",
         prompt: "consent",
+        ...(input.feature === "permanentDelete" ? { include_granted_scopes: "true" } : {}),
         ...(input.loginHint ? { login_hint: input.loginHint } : {}),
       },
     });
@@ -346,7 +350,11 @@ export const makeGmail: Effect.Effect<
     // would keep failing until they expire.
     tokens.clear();
     settings.clearMissingScopes(`gmail:${profile.emailAddress.toLowerCase()}`);
-    return { email: profile.emailAddress, secret: res.refreshToken.value };
+    return {
+      email: profile.emailAddress,
+      secret: res.refreshToken.value,
+      scopes: res.scopes ?? [],
+    };
   });
 
   /** User-created labels. System labels (INBOX, CATEGORY_*) map to fixed mailboxes instead. */
@@ -746,6 +754,79 @@ export const makeGmail: Effect.Effect<
       (id, url, body) =>
         api(id, HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.patch(url), body)),
     ),
+    listFolderMessages: (account, folder, cursor, options) =>
+      Effect.gen(function* () {
+        const labels: Record<string, string> = {
+          inbox: "INBOX",
+          important: "IMPORTANT",
+          starred: "STARRED",
+          sent: "SENT",
+          drafts: "DRAFT",
+          spam: "SPAM",
+          trash: "TRASH",
+        };
+        const labelIds = [
+          ...new Set(
+            [
+              labels[folder.mailbox],
+              folder.label,
+              ...(options?.unreadOnly ? ["UNREAD"] : []),
+            ].filter((label) => label !== undefined),
+          ),
+        ];
+        const page = yield* get(account.id, MessageList, "/messages", {
+          maxResults: String(FOLDER_BATCH_LIMIT),
+          includeSpamTrash: "true",
+          ...(labelIds.length ? { labelIds } : {}),
+          ...(folder.mailbox === "all" ? { q: "-in:trash -in:spam" } : {}),
+          ...(cursor ? { pageToken: cursor } : {}),
+        });
+        return { ids: (page.messages ?? []).map((m) => m.id), next: page.nextPageToken ?? null };
+      }).pipe(Effect.mapError(writeFailure(account.id))),
+    markReadBatch: (account, ids) =>
+      post(account.id, "/messages/batchModify", {
+        ids,
+        addLabelIds: [],
+        removeLabelIds: ["UNREAD"],
+      }).pipe(Effect.asVoid, Effect.mapError(writeFailure(account.id))),
+    checkPermanentDelete: (_account, folder) =>
+      Effect.succeed([folder === "trash" ? "TRASH" : "SPAM"]),
+    permanentlyDelete: (account, ids, folder) =>
+      ids.length > FOLDER_BATCH_LIMIT
+        ? Effect.fail(
+            new PermanentError({ message: "Permanent delete batch exceeds 100 messages." }),
+          )
+        : featureRequest(
+            account,
+            "permanentDelete",
+            Effect.gen(function* () {
+              const DeleteMetadata = Schema.Struct({
+                labelIds: Schema.optionalKey(Schema.Array(Schema.String)),
+              });
+              const checked = yield* Effect.forEach(
+                ids,
+                (id) =>
+                  get(account.id, DeleteMetadata, `/messages/${encodeURIComponent(id)}`, {
+                    format: "minimal",
+                    fields: "labelIds",
+                  }).pipe(
+                    Effect.catchIf(is404, () =>
+                      Effect.succeed<typeof DeleteMetadata.Type>({ labelIds: [] }),
+                    ),
+                    Effect.map((metadata) =>
+                      metadata.labelIds?.includes(folder === "trash" ? "TRASH" : "SPAM")
+                        ? id
+                        : null,
+                    ),
+                  ),
+                { concurrency: CONCURRENCY },
+              );
+              const verified = checked.filter((id) => id !== null);
+              if (verified.length)
+                yield* post(account.id, "/messages/batchDelete", { ids: verified });
+              return { kind: "complete", ids: verified } as const;
+            }),
+          ),
     search,
     changeLabel,
     connect,

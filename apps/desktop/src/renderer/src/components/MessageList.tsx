@@ -33,6 +33,8 @@ interface Props {
   searchTruncated: boolean;
   searchErrors: readonly string[];
   filters: Filters;
+  inLabel: boolean;
+  folderActions: ReactNode;
   onFilters: (f: Filters) => void;
   /** User labels by `${accountId}/${labelId}`, for the chips on each row. */
   labels: Map<string, Label>;
@@ -60,6 +62,7 @@ export interface RowActions {
   /** Opens the thread in a window of its own; also on double-click. */
   onOpenWindow: (thread: ThreadSummary) => void;
   onSnooze: (thread: ThreadSummary) => void;
+  onPermanentDelete?: ((thread: ThreadSummary) => void) | undefined;
   onFilter: (thread: ThreadSummary) => void;
   batchMenu?: ReactNode;
 }
@@ -74,6 +77,8 @@ export function MessageList({
   searchTruncated,
   searchErrors,
   filters,
+  inLabel,
+  folderActions,
   onFilters,
   labels,
   selectedId,
@@ -141,24 +146,47 @@ export function MessageList({
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
           {searching ? <Trans>Search results</Trans> : title}
         </h1>
+        {folderActions}
+      </header>
+      <div className="flex shrink-0 flex-wrap items-center gap-1 px-3 pb-2">
         {!searching && (
           <>
             <FilterChip
-              active={filters.unread}
-              onChange={(unread) => onFilters({ ...filters, unread })}
-              label={t`Unread`}
-              tip={t`Show only unread`}
+              active={filters.enabled}
+              onChange={(enabled) => onFilters({ ...filters, enabled })}
+              label={t`Filter`}
+              tip={t`Enable filters`}
               shortcut="⌥⌘L"
             />
             <FilterChip
+              active={filters.unread}
+              onChange={(unread) => onFilters({ ...filters, unread, enabled: true })}
+              label={t`Unread`}
+              tip={t`Show only unread`}
+            />
+            <FilterChip
               active={filters.starred}
-              onChange={(starred) => onFilters({ ...filters, starred })}
+              onChange={(starred) => onFilters({ ...filters, starred, enabled: true })}
               label={t`Starred`}
               tip={t`Show only starred`}
             />
+            <FilterChip
+              active={filters.important}
+              onChange={(important) => onFilters({ ...filters, important, enabled: true })}
+              label={t`Important`}
+              tip={t`Show important messages`}
+            />
+            {inLabel && (
+              <FilterChip
+                active={filters.inInbox}
+                onChange={(inInbox) => onFilters({ ...filters, inInbox, enabled: true })}
+                label={t`In Inbox`}
+                tip={t`Show messages also in Inbox`}
+              />
+            )}
           </>
         )}
-      </header>
+      </div>
 
       {searchingServer && (
         <output className="px-5 pb-2 text-[12px] text-neutral-500">
@@ -214,7 +242,8 @@ export function MessageList({
             <p className="p-8 text-center text-neutral-400">
               {searching ? (
                 <Trans>No matching messages</Trans>
-              ) : filters.unread || filters.starred ? (
+              ) : filters.enabled &&
+                (filters.unread || filters.starred || filters.important || filters.inInbox) ? (
                 <Trans>No messages match the filters</Trans>
               ) : (
                 <Trans>No messages here</Trans>
@@ -279,6 +308,9 @@ function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActio
         onOp={(op) => actions.onOp(thread, state, op)}
         onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
         onSnooze={() => actions.onSnooze(thread)}
+        onPermanentDelete={
+          actions.onPermanentDelete ? () => actions.onPermanentDelete?.(thread) : undefined
+        }
         onFilter={state.provider === "imap" ? undefined : () => actions.onFilter(thread)}
         onOpenWindow={() => actions.onOpenWindow(thread)}
       />

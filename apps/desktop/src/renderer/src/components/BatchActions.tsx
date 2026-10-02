@@ -8,16 +8,20 @@ interface Props {
   rows: readonly ThreadSummary[];
   accounts: readonly Account[];
   labels: readonly Label[];
+  onPermanentDelete?: (() => void) | undefined;
   onOp: (op: MailOp, accountId?: string) => void;
 }
 
 /** Labels belong to an account; a folder choice never reaches another account. */
-export function BatchMenuItems({ rows, accounts, labels, onOp }: Props) {
+export function BatchMenuItems({ rows, accounts, labels, onOp, onPermanentDelete }: Props) {
   const { t } = useLingui();
   return (
     <>
       <MenuItem icon={Archive} onClick={() => onOp({ kind: "archive" })}>{t`Archive`}</MenuItem>
       <MenuItem icon={Trash2} onClick={() => onOp({ kind: "trash" })}>{t`Delete`}</MenuItem>
+      {onPermanentDelete && (
+        <MenuItem icon={Trash2} onClick={onPermanentDelete}>{t`Permanently delete`}</MenuItem>
+      )}
       <MenuItem
         icon={MailOpen}
         onClick={() => onOp({ kind: "read", value: true })}

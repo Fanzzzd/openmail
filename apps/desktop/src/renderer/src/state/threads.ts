@@ -10,6 +10,7 @@ import { AsyncResult, Atom } from "effect/reactivity";
 
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 import type { AppError } from "../errors";
+import { supportsInInboxFilter } from "../folder-actions";
 import { MailClient } from "../rpc";
 import { OVERVIEW, scopeAccountIds } from "../view";
 import { type Loaded, refreshPages } from "./list-pages";
@@ -115,8 +116,14 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
     ...(grouping ? {} : { flat: true }),
     mailbox: view.mailbox,
     ...(view.label ? { label: view.label.id } : {}),
-    ...(filters.unread ? { unreadOnly: true } : {}),
-    ...(filters.starred ? { starredOnly: true } : {}),
+    ...(filters.enabled
+      ? {
+          listFilters: {
+            ...filters,
+            inInbox: supportsInInboxFilter(view, accounts) && filters.inInbox,
+          },
+        }
+      : {}),
   };
 });
 

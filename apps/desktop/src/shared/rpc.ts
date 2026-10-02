@@ -4,6 +4,8 @@
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  FolderScope,
+  DeleteFolder,
   DerivedChunk,
   IndexingProgress,
   CalendarInvite,
@@ -115,7 +117,14 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("Accounts", { success: Schema.Array(Account) }),
   /** Opens the consent page (OAuth) or checks the password (IMAP), then starts a sync. */
   Rpc.make("Connect", { payload: { input: ConnectInput }, success: Account, error }),
-  Rpc.make("Reauth", { payload: { accountId: Schema.String }, success: Account, error }),
+  Rpc.make("Reauth", {
+    payload: {
+      accountId: Schema.String,
+      feature: Schema.optionalKey(Schema.Literal("permanentDelete")),
+    },
+    success: Account,
+    error,
+  }),
   Rpc.make("ImapPresets", { success: Schema.Record(Schema.String, ImapPreset) }),
   Rpc.make("RemoveAccount", { payload: { accountId: Schema.String }, success: Outcome, error }),
 
@@ -245,6 +254,24 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("AssignProfile", {
     payload: { accountId: Schema.String, profileId: Schema.NullOr(Schema.String) },
   }),
+
+  Rpc.make("PermanentlyDelete", {
+    payload: {
+      threads: Schema.Array(Schema.String),
+      flat: Schema.Boolean,
+      confirmed: Schema.Boolean,
+      folder: DeleteFolder,
+    },
+    success: Schema.Number,
+    error,
+  }),
+  Rpc.make("EmptyFolder", {
+    payload: { folder: FolderScope, confirmed: Schema.Boolean },
+    success: Schema.Number,
+    error,
+  }),
+  Rpc.make("MarkFolderRead", { payload: { folder: FolderScope }, success: Schema.Number, error }),
+  Rpc.make("ResetFavorites", { payload: { accountIds: Schema.Array(Schema.String) }, error }),
 
   // Changes, all performed as the person at the app
   Rpc.make("ThreadCount", { payload: { query: ThreadQuery }, success: Schema.Number }),

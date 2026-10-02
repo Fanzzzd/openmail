@@ -104,6 +104,10 @@ export const alertDanger =
   "h-7 whitespace-nowrap rounded-md bg-red-600 px-3 font-medium text-white outline-offset-1 outline-red-500/60 hover:bg-red-700 focus-visible:outline-[3px] disabled:opacity-50";
 
 /** Closes the alert without doing anything. */
-export function AlertCancel({ children }: { children: ReactNode }) {
-  return <AlertDialog.Close className={alertButton}>{children}</AlertDialog.Close>;
+export function AlertCancel({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
+  return (
+    <AlertDialog.Close className={alertButton} disabled={disabled}>
+      {children}
+    </AlertDialog.Close>
+  );
 }

@@ -1,3 +1,4 @@
+import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "./folder-actions.js";
 import { Clock, Effect, Option, Predicate, Queue, Schema, Stream } from "effect";
 import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapflow";
 import { type AddressObject, type ParsedMail, simpleParser } from "mailparser";
@@ -1035,6 +1036,17 @@ const connect = Effect.fnUntraced(function* (input: ConnectInput) {
 
 // Adapter
 
+const requireTargetedExpunge = (client: ImapFlow) =>
+  client.capabilities.has("UIDPLUS") ||
+  client.enabled.has("IMAP4REV2") ||
+  (client.capabilities.has("IMAP4rev2") && !client.capabilities.has("IMAP4rev1"))
+    ? Effect.void
+    : Effect.fail(
+        new PermanentError({
+          message: "This IMAP server cannot safely expunge selected messages (UIDPLUS required).",
+        }),
+      );
+
 export const makeImapWith = (
   open: typeof openImap,
 ): Effect.Effect<ProviderAdapter, never, Secrets> =>
@@ -1338,10 +1350,162 @@ export const makeImapWith = (
         const message = fetched[0]?.message;
         return message ?? (yield* new PermanentError({ message: `Message ${providerId} is gone` }));
       }).pipe(Effect.scoped);
+    const FolderCursor = Schema.fromJsonString(
+      Schema.Struct({
+        path: Schema.String,
+        validity: Schema.String,
+        after: Schema.Int,
+      }),
+    );
+    const listFolderMessages: ProviderAdapter["listFolderMessages"] = (
+      account,
+      scope,
+      cursor,
+      options,
+    ) =>
+      Effect.gen(function* () {
+        const previous =
+          cursor === null
+            ? null
+            : yield* Schema.decodeUnknownEffect(FolderCursor)(cursor).pipe(
+                Effect.mapError(() => new PermanentError({ message: "Invalid folder cursor." })),
+              );
+        const { s } = yield* session(account);
+        const labels: Record<string, string> = {
+          inbox: "INBOX",
+          sent: "SENT",
+          drafts: "DRAFT",
+          spam: "SPAM",
+          trash: "TRASH",
+        };
+        const label = scope.label ?? labels[scope.mailbox];
+        const folders = mapFolders(yield* call(s, (c) => c.list()))
+          .filter((f) => (label ? f.label === label : !["SPAM", "TRASH"].includes(f.label)))
+          .toSorted((a, b) => a.path.localeCompare(b.path));
+        if (previous && !folders.some((f) => f.path === previous.path))
+          return yield* new PermanentError({ message: "Folder disappeared during pagination." });
+        const ids: string[] = [];
+        for (const folder of folders) {
+          if (previous && folder.path.localeCompare(previous.path) < 0) continue;
+          const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
+          const validity = String(opened.uidValidity);
+          const after = previous?.path === folder.path ? previous.after : 0;
+          if (previous?.path === folder.path && previous.validity !== validity)
+            return yield* new PermanentError({
+              message: "IMAP UIDVALIDITY changed during pagination.",
+            });
+          const query = imapSearch({
+            ...(options?.unreadOnly ? { unreadOnly: true } : {}),
+            ...(scope.mailbox === "starred" ? { starredOnly: true } : {}),
+            ...(scope.mailbox === "important" ? { criteria: { important: true } } : {}),
+          });
+          const found = yield* call(s, (c) =>
+            c.search({ ...query, uid: `${after + 1}:*` }, { uid: true }),
+          );
+          if (found === false || found === undefined)
+            return yield* new PermanentError({ message: "IMAP folder search failed." });
+          const uids = found.filter((uid) => uid > after).toSorted((a, b) => a - b);
+          const take = uids.slice(0, FOLDER_BATCH_LIMIT - ids.length);
+          ids.push(...take.map((uid) => encodeProviderId(folder.path, validity, uid)));
+          if (ids.length === FOLDER_BATCH_LIMIT) {
+            const last = take.at(-1);
+            if (last !== undefined)
+              return { ids, next: JSON.stringify({ path: folder.path, validity, after: last }) };
+          }
+        }
+        return { ids, next: null };
+      }).pipe(Effect.scoped);
+    const permanentlyDelete: ProviderAdapter["permanentlyDelete"] = (account, ids) =>
+      Effect.gen(function* () {
+        if (ids.length > FOLDER_BATCH_LIMIT)
+          return yield* new PermanentError({
+            message: "Permanent delete batch exceeds 100 messages.",
+          });
+        const groups = new Map<
+          string,
+          { path: string; uidValidity: string; ids: string[]; uids: number[] }
+        >();
+        for (const id of ids) {
+          const ref = decodeProviderId(id);
+          if (Option.isNone(ref))
+            return yield* new PermanentError({ message: "Invalid IMAP message id." });
+          const key = JSON.stringify([ref.value.path, ref.value.uidValidity]);
+          const group = groups.get(key) ?? {
+            path: ref.value.path,
+            uidValidity: ref.value.uidValidity,
+            ids: [],
+            uids: [],
+          };
+          group.ids.push(id);
+          group.uids.push(ref.value.uid);
+          groups.set(key, group);
+        }
+        const { s } = yield* session(account);
+        yield* requireTargetedExpunge(s.client);
+        const deleted: string[] = [];
+        for (const group of groups.values()) {
+          const result = yield* Effect.gen(function* () {
+            const same = yield* openFolderOf(s, group, false).pipe(
+              Effect.catchTag("PermanentError", () => Effect.succeed(false)),
+            );
+            if (!same) return false;
+            const removed = yield* call(s, (client) =>
+              client.messageDelete(group.uids, { uid: true }),
+            );
+            if (!removed)
+              return yield* new PermanentError({ message: "IMAP permanent deletion failed." });
+            return true;
+          }).pipe(Effect.result);
+          if (result._tag === "Failure")
+            return {
+              kind: "partial",
+              ids: deleted,
+              error: result.failure,
+            } satisfies PermanentDeleteBatch;
+          if (result.success) deleted.push(...group.ids);
+        }
+        return { kind: "complete", ids: deleted } satisfies PermanentDeleteBatch;
+      }).pipe(Effect.scoped);
     const unsupported = Effect.fail(
       new PermanentError({ message: "IMAP does not support server filters or automatic replies" }),
     );
     return {
+      listFolderMessages,
+      checkPermanentDelete: (account, folder) =>
+        Effect.gen(function* () {
+          const { s } = yield* session(account);
+          yield* requireTargetedExpunge(s.client);
+          return [folder === "trash" ? "TRASH" : "SPAM"];
+        }).pipe(Effect.scoped),
+      markReadBatch: (account, ids) =>
+        Effect.gen(function* () {
+          const groups = new Map<string, { path: string; uidValidity: string; uids: number[] }>();
+          for (const id of ids) {
+            const decoded = decodeProviderId(id);
+            if (Option.isNone(decoded))
+              return yield* new PermanentError({ message: "Invalid IMAP message id." });
+            const ref = decoded.value;
+            const key = JSON.stringify([ref.path, ref.uidValidity]);
+            const group = groups.get(key) ?? {
+              path: ref.path,
+              uidValidity: ref.uidValidity,
+              uids: [],
+            };
+            group.uids.push(ref.uid);
+            groups.set(key, group);
+          }
+          const { s } = yield* session(account);
+          for (const group of groups.values()) {
+            if (!(yield* openFolderOf(s, group, false))) continue;
+            const accepted = yield* call(s, (client) =>
+              client.messageFlagsAdd(group.uids, ["\\Seen"], { uid: true }),
+            );
+            if (!accepted)
+              return yield* new PermanentError({ message: "IMAP mark as read failed." });
+          }
+          return yield* Effect.void;
+        }).pipe(Effect.scoped),
+      permanentlyDelete,
       backfill,
       fetchMessage,
       connect,

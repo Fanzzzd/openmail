@@ -72,8 +72,10 @@ export const decideProposal = (id: number, approve: boolean) =>
   withMail((call) => call("DecideProposal", { id, approve })).pipe(Reactivity.mutation(MAIL_KEYS));
 
 /** Signs in again with the account's provider. OAuth only; IMAP goes through Connect. */
-export const reauthAccount = (accountId: string) =>
-  withMail((call) => call("Reauth", { accountId })).pipe(Reactivity.mutation(MAIL_KEYS));
+export const reauthAccount = (accountId: string, feature?: "permanentDelete") =>
+  withMail((call) => call("Reauth", { accountId, ...(feature ? { feature } : {}) })).pipe(
+    Reactivity.mutation(MAIL_KEYS),
+  );
 
 /** Asks where to save the attachment and writes it. Succeeds with false when cancelled. */
 export const saveAttachment = (messageId: string, index: number) =>

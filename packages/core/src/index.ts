@@ -52,6 +52,7 @@ export type { InferenceProcess, InferenceProcessLauncher } from "./inference-pro
 export * from "./cache.js";
 
 export * from "./list-window.js";
+export * from "./folder-actions.js";
 
 export * from "./updates.js";
 

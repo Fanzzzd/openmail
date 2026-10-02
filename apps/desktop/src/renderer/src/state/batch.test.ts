@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ThreadSummary } from "../../../shared/api";
+import { DEFAULT_LIST_FILTERS } from "@openmail/core/schema";
 import { leavesList } from "./batch";
 import { reconcileSelection, selectRow, singleSelection } from "./selection";
 
@@ -19,6 +20,52 @@ const row: ThreadSummary = {
   participants: [],
 };
 describe("batch selection after actions", () => {
+  it("list filters retain OR matches and intersect In Inbox after an action", () => {
+    const filters = { ...DEFAULT_LIST_FILTERS, enabled: true, unread: true, starred: true };
+    expect(
+      leavesList(row, { kind: "read", value: true }, "gmail", { listFilters: filters }, []),
+    ).toBe(false);
+    expect(
+      leavesList(
+        { ...row, labels: ["INBOX", "UNREAD"] },
+        { kind: "read", value: true },
+        "gmail",
+        { listFilters: filters },
+        [],
+      ),
+    ).toBe(true);
+    expect(
+      leavesList(
+        row,
+        { kind: "important", value: false },
+        "gmail",
+        { listFilters: { ...DEFAULT_LIST_FILTERS, enabled: true, important: true } },
+        [],
+      ),
+    ).toBe(true);
+    expect(
+      leavesList(
+        row,
+        { kind: "archive" },
+        "gmail",
+        { mailbox: "all", label: "custom", listFilters: { ...filters, inInbox: true } },
+        [],
+      ),
+    ).toBe(true);
+    expect(
+      leavesList(
+        row,
+        { kind: "archive" },
+        "gmail",
+        {
+          mailbox: "all",
+          label: "custom",
+          listFilters: { ...filters, inInbox: true, enabled: false },
+        },
+        [],
+      ),
+    ).toBe(false);
+  });
   it("archive keeps Gmail label, All Mail and search selections but leaves Inbox", () => {
     expect(leavesList(row, { kind: "archive" }, "gmail", { mailbox: "inbox" }, [])).toBe(true);
     expect(leavesList(row, { kind: "archive" }, "gmail", { mailbox: "all" }, [])).toBe(false);

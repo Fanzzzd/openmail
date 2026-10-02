@@ -23,6 +23,7 @@ const TokenJson = Schema.Struct({
   access_token: Schema.String,
   refresh_token: Schema.optionalKey(Schema.String),
   expires_in: Schema.Number,
+  scope: Schema.optionalKey(Schema.String),
 });
 
 // Sign-in failures before there is an account (consent denied, timeout) have
@@ -116,6 +117,7 @@ export const OAuthLoopback: Layer.Layer<
           accessToken: json.access_token,
           refreshToken: Option.fromNullishOr(json.refresh_token),
           expiresIn: json.expires_in,
+          ...(json.scope === undefined ? {} : { scopes: json.scope.split(/\s+/).filter(Boolean) }),
         } satisfies TokenResponse;
       });
 
