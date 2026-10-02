@@ -22,6 +22,7 @@ export function deleteFolderForMailbox(mailbox: typeof MailboxView.Type): Delete
   return mailbox === "trash" || mailbox === "spam" ? mailbox : null;
 }
 export interface FolderListOptions {
+  readonly newestFirst?: boolean;
   readonly unreadOnly?: boolean;
   readonly includeChildren?: boolean;
 }

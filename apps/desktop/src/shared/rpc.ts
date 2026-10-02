@@ -1,3 +1,4 @@
+import { NativeMenuState } from "./native-actions";
 import { ComposeRecipients, WindowSelection } from "./window-state";
 /**
  * The app's one IPC surface: Effect RPC between the renderer and the main
@@ -20,6 +21,8 @@ import {
   ContactSync,
   ContactGroup,
   SuggestedSender,
+  CacheSize,
+  OlderResult,
   BackfillState,
   CacheWindow,
   CacheWindowInput,
@@ -100,6 +103,18 @@ const AccountIds = Schema.optionalKey(Schema.Array(Schema.String));
 const error = MailError;
 
 export class MailRpcs extends RpcGroup.make(
+  Rpc.make("SetNativeMenuState", { payload: { state: NativeMenuState } }),
+  Rpc.make("SpellcheckLanguages", {
+    success: Schema.Struct({ languages: Schema.Array(Schema.String), automatic: Schema.Boolean }),
+  }),
+  Rpc.make("CacheSize", { success: Schema.Array(CacheSize) }),
+  Rpc.make("ClearCache", { payload: { accountId: Schema.optionalKey(Schema.String) } }),
+  Rpc.make("InitializeProfiles", {
+    payload: {
+      accept: Schema.Boolean,
+      names: Schema.Struct({ personal: Schema.String, work: Schema.String }),
+    },
+  }),
   Rpc.make("NotificationActionCapabilities", { success: NotificationActionCapabilities }),
   Rpc.make("NotificationPermission", { success: NotificationPermission }),
   Rpc.make("RequestNotificationPermission", { success: NotificationPermission }),
@@ -108,7 +123,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("SetUpdateToken", { payload: { token: Schema.String }, error }),
   Rpc.make("BackfillState", { success: Schema.Array(BackfillState) }),
   Rpc.make("PauseBackfill", { payload: { accountId: Schema.String, paused: Schema.Boolean } }),
-  Rpc.make("FetchOlder", { payload: { query: ThreadQuery } }),
+  Rpc.make("FetchOlder", { payload: { query: ThreadQuery }, success: OlderResult, error }),
   Rpc.make("CacheWindows", { success: Schema.Array(CacheWindow) }),
   Rpc.make("SetCacheWindow", { payload: { input: CacheWindowInput }, error }),
   // Accounts and sign-in
@@ -471,6 +486,13 @@ export class MailRpcs extends RpcGroup.make(
   // Drafts
   /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
   Rpc.make("ClipboardAttachments", { success: Schema.Array(OutgoingAttachment), error }),
+  Rpc.make("ComposeMessage", {
+    payload: {
+      id: Schema.String,
+      mode: Schema.Literals(["reply", "replyAll", "forward"]),
+      asAttachment: Schema.Boolean,
+    },
+  }),
   Rpc.make("ComposeAttachments", {
     payload: { id: Schema.String },
     success: Schema.Array(OutgoingAttachment),

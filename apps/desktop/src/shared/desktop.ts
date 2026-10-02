@@ -1,7 +1,21 @@
-import { MailtoDraft } from "@openmail/core/schema";
+import { DockFileReason } from "./dock-files";
+import { NativeAction } from "./native-actions";
+import { MailtoDraft, OutgoingAttachment } from "@openmail/core/schema";
 import { Schema } from "effect";
 
 export const DesktopEvent = Schema.Union([
+  Schema.TaggedStruct("ComposeMessage", {
+    id: Schema.String,
+    mode: Schema.Literals(["reply", "replyAll", "forward"]),
+    asAttachment: Schema.Boolean,
+  }),
+  Schema.TaggedStruct("NativeAction", {
+    action: NativeAction,
+    triggeredByAccelerator: Schema.Boolean,
+  }),
+  Schema.TaggedStruct("ComposeFiles", { attachments: Schema.Array(OutgoingAttachment) }),
+  Schema.TaggedStruct("FileError", { reason: DockFileReason }),
+  Schema.TaggedStruct("AccountInbox", { accountId: Schema.String }),
   Schema.TaggedStruct("UndoSend", {}),
   Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
@@ -34,7 +48,11 @@ export function desktopEventRoute(
     event._tag === "QuitCheck"
   )
     return "dispatch";
-  return event._tag === "Command" ? (busy ? "drop" : "dispatch") : "defer";
+  return event._tag === "Command" || event._tag === "NativeAction"
+    ? busy
+      ? "drop"
+      : "dispatch"
+    : "defer";
 }
 
 export const editCommandRoute = (busy: boolean, typing: boolean, readerText = false) =>
@@ -47,7 +65,12 @@ export type DefaultClientStatus = typeof DefaultClientStatus.Type;
 
 /** Only navigation survives a missing renderer; send/quit commands describe the current moment. */
 export function shouldBufferDesktopEvent(event: DesktopEvent): boolean {
-  return event._tag === "OpenThread" || event._tag === "Compose" || event._tag === "Search";
+  return (
+    ["ComposeFiles", "ComposeMessage", "FileError", "AccountInbox"].includes(event._tag) ||
+    event._tag === "OpenThread" ||
+    event._tag === "Compose" ||
+    event._tag === "Search"
+  );
 }
 
 export const NotificationPermission = Schema.Literals([

@@ -1,3 +1,5 @@
+import { NATIVE_MENUS } from "../../../shared/native-actions";
+import { ACTION_NAMES } from "../components/SystemSettings";
 import { useLingui } from "@lingui/react/macro";
 import { Effect, Fiber, Stream } from "effect";
 import { useEffect, useEffectEvent } from "react";
@@ -24,13 +26,28 @@ export function useDesktopEvents(receive: (event: DesktopEvent) => void) {
 }
 
 export function useDesktopLabels() {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const run = useRunMail();
   useEffect(() => {
     run(
       withMail((call) =>
         call("SetDesktopLabels", {
           labels: {
+            menuLabels: {
+              message: t`Message`,
+              mailbox: t`Mailbox`,
+              format: t`Format`,
+              ...Object.fromEntries(
+                NATIVE_MENUS.flatMap((group) =>
+                  group.actions.map((action) => [action, i18n._(ACTION_NAMES[action])]),
+                ),
+              ),
+            },
+            spelling: {
+              add: t`Add to Dictionary`,
+              check: t`Check spelling while typing`,
+              noSuggestions: t`No suggestions`,
+            },
             checkUpdates: t`Check for Updates…`,
             updatesDisabled: t`Update checks require a signed, installed macOS app and a saved GitHub access token.`,
             updatesCurrent: t`OpenMail is up to date.`,
@@ -43,6 +60,7 @@ export function useDesktopLabels() {
             newWindow: t`New Window`,
             compose: t`New message`,
             attachFiles: t`Attach Files…`,
+            helpMenu: t`Help`,
             help: t`Keyboard shortcuts`,
             archive: t`Archive`,
             trash: t`Delete`,
@@ -65,5 +83,5 @@ export function useDesktopLabels() {
         }),
       ),
     );
-  }, [run, t]);
+  }, [run, t, i18n]);
 }

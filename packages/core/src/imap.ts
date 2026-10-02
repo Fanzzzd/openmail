@@ -1,3 +1,4 @@
+import { watchImapInbox, IDLE_RENEW_MS } from "./imap-idle.js";
 import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "./folder-actions.js";
 import { Clock, Effect, Option, Predicate, Queue, Schema, Stream } from "effect";
 import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapflow";
@@ -179,6 +180,7 @@ export function openImap(accountId: string, settings: ImapSettings, password: st
         clientInfo: CLIENT_INFO,
         logger: false,
         disableAutoIdle: true,
+        maxIdleTime: IDLE_RENEW_MS,
       });
       // Socket errors after connect arrive as events; the pending command rejects too.
       c.on("error", ignore);
@@ -1457,7 +1459,12 @@ export const makeImapWith = (
           if (previous && folder.path.localeCompare(previous.path) < 0) continue;
           const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
           const validity = String(opened.uidValidity);
-          const after = previous?.path === folder.path ? previous.after : 0;
+          const after =
+            previous?.path === folder.path
+              ? previous.after
+              : options?.newestFirst
+                ? 0x100000000
+                : 0;
           if (previous?.path === folder.path && previous.validity !== validity)
             return yield* new PermanentError({
               message: "IMAP UIDVALIDITY changed during pagination.",
@@ -1468,11 +1475,19 @@ export const makeImapWith = (
             ...(scope.mailbox === "important" ? { criteria: { important: true } } : {}),
           });
           const found = yield* call(s, (c) =>
-            c.search({ ...query, uid: `${after + 1}:*` }, { uid: true }),
+            c.search(
+              {
+                ...query,
+                uid: options?.newestFirst ? `1:${Math.max(1, after - 1)}` : `${after + 1}:*`,
+              },
+              { uid: true },
+            ),
           );
           if (found === false || found === undefined)
             return yield* new PermanentError({ message: "IMAP folder search failed." });
-          const uids = found.filter((uid) => uid > after).toSorted((a, b) => a - b);
+          const uids = found
+            .filter((uid) => (options?.newestFirst ? uid < after : uid > after))
+            .toSorted((a, b) => (options?.newestFirst ? b - a : a - b));
           const take = uids.slice(0, FOLDER_BATCH_LIMIT - ids.length);
           ids.push(...take.map((uid) => encodeProviderId(folder.path, validity, uid)));
           if (ids.length === FOLDER_BATCH_LIMIT) {
@@ -1538,6 +1553,15 @@ export const makeImapWith = (
       new PermanentError({ message: "IMAP does not support server filters or automatic replies" }),
     );
     return {
+      watchInbox: (account, signal, changed, ready) =>
+        Effect.gen(function* () {
+          const settings = yield* settingsOf(account);
+          const pass = yield* password(secrets, account);
+          return yield* Effect.tryPromise({
+            try: () => watchImapInbox(settings, pass, signal, changed, ready),
+            catch: (error) => failure(account.id, settings.imapHost, error),
+          });
+        }).pipe(Effect.scoped),
       listFolderMessages,
       checkPermanentDelete: (account, folder) =>
         Effect.gen(function* () {

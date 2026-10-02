@@ -1,3 +1,4 @@
+import type { DesktopEvent } from "../../shared/desktop";
 import { act, createElement } from "react";
 import { afterAll, expect, it, vi } from "vitest";
 import { setupI18n } from "@lingui/core";
@@ -8,7 +9,8 @@ import { DEFAULT_PREFS } from "@openmail/core/schema";
 import { testDom } from "./test-dom";
 const calls = vi.hoisted(() => {
   vi.resetModules();
-  return { rpc: vi.fn(), modify: vi.fn(), deleteAction: "trash" };
+  const desktop: { receive?: (event: DesktopEvent) => void } = {};
+  return { rpc: vi.fn(), modify: vi.fn(), deleteAction: "trash", desktop };
 });
 vi.mock("@effect/atom-react", () => ({
   useAtomMount: vi.fn(),
@@ -22,6 +24,12 @@ vi.mock("./state/queries", () => ({
   accountsAtom: "accounts",
   labelsAtom: () => "labels",
   threadAtom: () => "thread",
+}));
+vi.mock("./state/desktop", () => ({
+  useDesktopLabels: vi.fn(),
+  useDesktopEvents: (receive: (event: DesktopEvent) => void) => {
+    calls.desktop.receive = receive;
+  },
 }));
 vi.mock("./state/events", () => ({ liveUpdatesAtom: "live" }));
 vi.mock("./rpc", () => ({ MailClient: { runtime: "runtime" } }));
@@ -57,6 +65,7 @@ afterAll(() => {
   for (const module of [
     "@effect/atom-react",
     "./state/queries",
+    "./state/desktop",
     "./state/events",
     "./rpc",
     "./state/undo",
@@ -158,6 +167,52 @@ it("removeLabel without a window label trashes but keeps its explanation visible
     );
   } finally {
     calls.deleteAction = "trash";
+    dom.dispose();
+  }
+});
+
+it("reader native accelerators do not reply or delete while an editable field is focused", () => {
+  const dom = testDom();
+  vi.stubGlobal("Element", dom.window.Element);
+  try {
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n: setupI18n({ locale: "en", messages: { en: {} } }) },
+        createElement(ThreadWindow, { id: "message" }),
+      ),
+    );
+    const input = dom.window.document.createElement("input");
+    dom.window.document.body.append(input);
+    Object.defineProperty(dom.window.document, "activeElement", {
+      configurable: true,
+      value: input,
+    });
+    calls.rpc.mockClear();
+    calls.modify.mockClear();
+    act(() => {
+      calls.desktop.receive?.({
+        _tag: "NativeAction",
+        action: "reply",
+        triggeredByAccelerator: true,
+      });
+      calls.desktop.receive?.({
+        _tag: "NativeAction",
+        action: "trash",
+        triggeredByAccelerator: true,
+      });
+    });
+    expect(calls.rpc).not.toHaveBeenCalled();
+    expect(calls.modify).not.toHaveBeenCalled();
+    act(() =>
+      calls.desktop.receive?.({
+        _tag: "NativeAction",
+        action: "reply",
+        triggeredByAccelerator: false,
+      }),
+    );
+    expect(calls.rpc).toHaveBeenCalledWith("ComposeMessage");
+  } finally {
     dom.dispose();
   }
 });

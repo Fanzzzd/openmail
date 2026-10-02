@@ -15,6 +15,15 @@ export const CacheWindowInput = Schema.Struct({
 });
 export type CacheWindowInput = typeof CacheWindowInput.Type;
 
+export const CacheSize = Schema.Struct({
+  accountId: Schema.String,
+  bodyBytes: Schema.Number,
+  attachmentBytes: Schema.Number,
+});
+export type CacheSize = typeof CacheSize.Type;
+export const OlderResult = Schema.Struct({ done: Schema.Boolean });
+export type OlderResult = typeof OlderResult.Type;
+
 export const BackfillState = Schema.Struct({
   accountId: Schema.String,
   cursor: Schema.NullOr(Schema.String),

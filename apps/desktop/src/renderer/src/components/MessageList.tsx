@@ -41,6 +41,9 @@ interface Props {
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
+  loadError?: boolean;
+  loadingMore?: boolean;
+  exhausted?: boolean;
   showAccount: boolean;
   searching: boolean;
   searchingServer: boolean;
@@ -91,6 +94,9 @@ export function MessageList({
   title,
   threads,
   loading,
+  loadingMore = false,
+  loadError = false,
+  exhausted = false,
   showAccount,
   searching,
   searchingServer,
@@ -266,6 +272,7 @@ export function MessageList({
               onScroll={(e) => {
                 const el = e.currentTarget;
                 setViewport({ top: el.scrollTop, height: el.clientHeight });
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 160) endReached.current();
               }}
               onContextMenuCapture={(e) => {
                 const row = e.target instanceof Element ? e.target.closest("[data-id]") : null;
@@ -339,6 +346,25 @@ export function MessageList({
               })}
             </div>
           </div>
+          <output className="block p-3 text-center text-neutral-500">
+            {loadError && (
+              <p className="text-red-500">
+                <Trans>Could not load older messages. Try again.</Trans>
+              </p>
+            )}
+            {loadingMore ? (
+              <>
+                <span className="mr-2 inline-block size-3 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                <Trans>Loading older messages…</Trans>
+              </>
+            ) : exhausted ? (
+              <Trans>No more messages</Trans>
+            ) : (
+              <button type="button" onClick={onEndReached}>
+                <Trans>Load older messages</Trans>
+              </button>
+            )}
+          </output>
         </ContextMenuTrigger>
         {menuThread &&
           (selectedIds.has(menuThread.id) && selectedIds.size > 1 && rowActions.batchMenu ? (

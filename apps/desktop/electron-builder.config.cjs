@@ -45,7 +45,17 @@ module.exports = {
   forceCodeSigning: signed,
   publish: [{ provider: "github", owner: "Fanzzzd", repo: "openmail", private: true }],
   mac: {
-    extendInfo: { NSUserNotificationAlertStyle: "alert" },
+    extendInfo: {
+      NSUserNotificationAlertStyle: "alert",
+      CFBundleDocumentTypes: [
+        {
+          CFBundleTypeName: "Attachment",
+          CFBundleTypeRole: "Viewer",
+          LSHandlerRank: "None",
+          LSItemContentTypes: ["public.data", "public.content"],
+        },
+      ],
+    },
     category: "public.app-category.productivity",
     // Existing artwork is a placeholder. User choices are in docs/design/icon-options.
     icon: "build/icon.icon",

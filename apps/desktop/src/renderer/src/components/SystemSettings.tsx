@@ -434,7 +434,7 @@ const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
   { value: "gmail", label: msg`Gmail` },
   { value: "apple", label: msg`Apple Mail` },
 ];
-const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
+export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   nextWindow: msg`Next window`,
   previousWindow: msg`Previous window`,
   focusMainWindow: msg`Focus main window`,

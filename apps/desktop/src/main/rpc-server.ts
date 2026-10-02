@@ -12,7 +12,15 @@ import { becomeDefaultClient, defaultClientStatus } from "./default-client";
 import { IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
 import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
-import { BrowserWindow, clipboard, ipcMain, type IpcMainEvent, webContents, shell } from "electron";
+import {
+  BrowserWindow,
+  clipboard,
+  ipcMain,
+  type IpcMainEvent,
+  webContents,
+  shell,
+  session,
+} from "electron";
 
 import { RPC_CHANNEL } from "../shared/channel";
 import { MailRpcs } from "../shared/rpc";
@@ -260,6 +268,18 @@ const Handlers = MailRpcs.toLayer(
       SaveDraft: ({ draft }) => m.saveDraft(draft),
       DiscardDraft: ({ id }) => m.discardDraft(id),
 
+      SetNativeMenuState: ({ state }, { client }) => desktop.setMenuState(client.id, state),
+      SpellcheckLanguages: () =>
+        Effect.sync(() => ({
+          languages:
+            process.platform === "darwin"
+              ? []
+              : session.defaultSession.availableSpellCheckerLanguages,
+          automatic: process.platform === "darwin",
+        })),
+      CacheSize: () => m.cacheSize,
+      ClearCache: ({ accountId }) => m.clearCache(accountId),
+      InitializeProfiles: ({ accept, names }) => m.initializeProfiles(accept, names),
       Prefs: () => m.prefs,
       SetPrefs: ({ patch }) => m.setPrefs(patch),
       NamedSignatures: () => m.namedSignatures,
@@ -289,6 +309,7 @@ const Handlers = MailRpcs.toLayer(
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
       ClipboardText: () => Effect.promise(() => clipboard.readText()),
       ComposeNew: () => desktop.compose(),
+      ComposeMessage: (input) => desktop.composeMessage({ _tag: "ComposeMessage", ...input }),
       OpenSettings: () => desktop.openSettings(),
       ClaimInlineDraft: ({ id }, { client }) =>
         Effect.sync(() => claimInlineDraft(windowOf(client.id), id)),

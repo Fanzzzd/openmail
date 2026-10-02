@@ -1,13 +1,19 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_CACHE_WINDOWS } from "@openmail/core/schema";
+import { DEFAULT_CACHE_WINDOWS, DEFAULT_PREFS } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import type { Account } from "../../../shared/api";
 import { resultError } from "../errors";
 import { Keys } from "../state/keys";
-import { pauseBackfillAtom, setCacheWindowAtom } from "../state/mutations";
-import { backfillStateAtom, cacheWindowsAtom, labelsAtom } from "../state/queries";
+import { MailClient } from "../rpc";
+import { pauseBackfillAtom, setCacheWindowAtom, setPrefsAtom } from "../state/mutations";
+import { backfillStateAtom, cacheWindowsAtom, labelsAtom, prefsAtom } from "../state/queries";
 import { Select } from "./ui/Select";
+
+const sizesAtom = MailClient.query("CacheSize", undefined, {
+  reactivityKeys: [Keys.cache, Keys.prefs],
+});
+const clearAtom = MailClient.mutation("ClearCache");
 
 /** Local subsection: does not change the Settings layout shared with slice 4. */
 export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
@@ -15,6 +21,10 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
   const states = AsyncResult.getOrElse(useAtomValue(backfillStateAtom), () => []);
   const windows = AsyncResult.getOrElse(useAtomValue(cacheWindowsAtom), () => []);
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
+  const sizes = AsyncResult.getOrElse(useAtomValue(sizesAtom), () => []);
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const [clearResult, clear] = useAtom(clearAtom);
+  const [limitResult, setLimit] = useAtom(setPrefsAtom);
   const [pauseResult, pause] = useAtom(pauseBackfillAtom);
   const [saveResult, save] = useAtom(setCacheWindowAtom);
   const options = [
@@ -41,9 +51,55 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           Opening a message downloads its body again.
         </Trans>
       </p>
+      <div className="flex items-center justify-between gap-3">
+        <span>
+          <Trans>Attachment cache limit</Trans>
+        </span>
+        <Select
+          aria-label={t`Attachment cache limit`}
+          value={String(prefs.attachmentCacheBytes)}
+          options={[
+            { value: "0", label: t`Disabled` },
+            ...[128, 512, 1024, 2048].map((mb) => ({
+              value: String(mb * 1024 ** 2),
+              label: `${mb} MB`,
+            })),
+          ]}
+          disabled={limitResult.waiting}
+          onValueChange={(value) =>
+            setLimit({
+              payload: { patch: { attachmentCacheBytes: Number(value) } },
+              reactivityKeys: [Keys.cache, Keys.prefs],
+            })
+          }
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <output>
+          <Trans>Total cache</Trans>:{" "}
+          {(sizes.reduce((n, s) => n + s.bodyBytes + s.attachmentBytes, 0) / 1024 ** 2).toFixed(1)}{" "}
+          MB
+        </output>
+        <button
+          type="button"
+          disabled={clearResult.waiting}
+          onClick={() =>
+            clear({ payload: {}, reactivityKeys: [Keys.cache, Keys.threads, Keys.thread] })
+          }
+        >
+          <Trans>Clear all caches</Trans>
+        </button>
+      </div>
+      <p className="text-neutral-500">
+        <Trans>
+          Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
+          uncached content requires a connection.
+        </Trans>
+      </p>
       {accounts.map((account) => {
         const state = states.find((s) => s.accountId === account.id);
         const fetched = state?.fetched ?? 0;
+        const size = sizes.find((s) => s.accountId === account.id);
         const rows = [
           ...DEFAULT_CACHE_WINDOWS.map((w) => ({
             id: w.label,
@@ -56,6 +112,25 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         return (
           <div key={account.id} className="space-y-2">
             <h3 className="font-medium">{account.email}</h3>
+            <div className="flex items-center justify-between">
+              <output>
+                <Trans>Bodies</Trans>: {((size?.bodyBytes ?? 0) / 1024 ** 2).toFixed(1)} MB ·{" "}
+                <Trans>Attachments</Trans>: {((size?.attachmentBytes ?? 0) / 1024 ** 2).toFixed(1)}{" "}
+                MB
+              </output>
+              <button
+                type="button"
+                disabled={clearResult.waiting}
+                onClick={() =>
+                  clear({
+                    payload: { accountId: account.id },
+                    reactivityKeys: [Keys.cache, Keys.threads, Keys.thread],
+                  })
+                }
+              >
+                <Trans>Clear account cache</Trans>
+              </button>
+            </div>
             <div className="flex items-center gap-3">
               <output className="flex-1 text-neutral-500">
                 {state?.done ? (
@@ -121,6 +196,11 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           </div>
         );
       })}
+      {(resultError(i18n, clearResult) || resultError(i18n, limitResult)) && (
+        <output className="text-red-500">
+          {resultError(i18n, clearResult) || resultError(i18n, limitResult)}
+        </output>
+      )}
       {(resultError(i18n, saveResult) || resultError(i18n, pauseResult)) && (
         <output className="text-red-500">
           {resultError(i18n, saveResult) || resultError(i18n, pauseResult)}

@@ -1379,8 +1379,14 @@ export const makeOutlook: Effect.Effect<
         const base = target
           ? `/me/mailFolders/${encodeURIComponent(target)}/messages`
           : "/me/messages";
-        const params = new URLSearchParams({ $select: "id", $top: String(FOLDER_BATCH_LIMIT) });
-        const filters: string[] = [];
+        const params = new URLSearchParams({
+          $select: "id",
+          $top: String(FOLDER_BATCH_LIMIT),
+          ...(options?.newestFirst ? { $orderby: "receivedDateTime desc" } : {}),
+        });
+        const filters: string[] = options?.newestFirst
+          ? ["receivedDateTime ge 1900-01-01T00:00:00Z"]
+          : [];
         if (options?.unreadOnly) filters.push("isRead eq false");
         if (!target) {
           for (const name of ["junkemail", "deleteditems"]) {

@@ -1,3 +1,5 @@
+import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
+import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { Alert, AlertCancel, alertButton } from "./components/ui/Dialog";
 import { shortcutAction } from "../../shared/shortcuts";
@@ -37,7 +39,9 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
+  useDesktopLabels();
   const { t, i18n } = useLingui();
+  const [selectedMessage, setSelectedMessage] = useState(id);
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), []);
   const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
@@ -214,6 +218,45 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     return () => window.removeEventListener("keydown", listener);
   }, []);
 
+  const composeFrom = (
+    messageId: string,
+    mode: "reply" | "replyAll" | "forward",
+    asAttachment = false,
+  ) => run(withMail((call) => call("ComposeMessage", { id: messageId, mode, asAttachment })));
+  useDesktopEvents((event) => {
+    if (
+      event._tag !== "NativeAction" ||
+      shouldDropNativeAction(event.action, event.triggeredByAccelerator)
+    )
+      return;
+    if (
+      event.action === "reply" ||
+      event.action === "replyAll" ||
+      event.action === "forward" ||
+      event.action === "forwardAttachment"
+    )
+      composeFrom(
+        selectedMessage,
+        event.action === "forwardAttachment" ? "forward" : event.action,
+        event.action === "forwardAttachment",
+      );
+    else dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
+  });
+  useEffect(() => {
+    run(
+      withMail((call) =>
+        call("SetNativeMenuState", {
+          state: {
+            selected: Boolean(messages?.length) && !dialog,
+            composing: false,
+            mailbox: false,
+            gmail: account?.provider === "gmail",
+          },
+        }),
+      ),
+    );
+  }, [run, messages?.length, dialog, account?.provider]);
+
   return (
     <div className="flex h-full flex-col bg-white text-[13px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
       {/* Room on the left for the traffic lights. */}
@@ -238,6 +281,8 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
           key={readerThreadKey(messages[0])}
           messages={AsyncResult.isSuccess(thread) ? thread.value : []}
           selectedId={id}
+          onSelectMessage={setSelectedMessage}
+          onComposeMessage={composeFrom}
           onMarkUnread={() => setMarked(true)}
           onActionDone={({ result, ids }) => showUndo(result, ids, t`Message updated`)}
           single={single || !prefs.threadGrouping}

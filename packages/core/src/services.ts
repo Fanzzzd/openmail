@@ -271,6 +271,8 @@ export class Store extends Context.Service<
       conversations?: boolean,
     ): Effect.Effect<Record<string, number>>;
 
+    readonly bodySizes: Effect.Effect<{ accountId: string; bytes: number }[]>;
+    clearBodies(accountId: string): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void>;
     /** Evicts bodies through UPDATE triggers, preserving rowids and header FTS. */
@@ -521,6 +523,13 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  watchInbox?(
+    this: void,
+    account: Account,
+    signal: AbortSignal,
+    changed: () => void,
+    ready: () => void,
+  ): Effect.Effect<"unsupported" | void, ProviderFailure>;
   calendarEvents?(
     account: Account,
     event: CalendarEvent,

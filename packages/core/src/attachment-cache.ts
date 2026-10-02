@@ -7,6 +7,10 @@ export class AttachmentCache {
     private readonly messageBytes = 8 * 1024 * 1024,
     private readonly maxMessages = 8,
   ) {}
+  clear() {
+    this.messages.clear();
+    this.bytes = 0;
+  }
   get(id: string, key: string) {
     const message = this.messages.get(id);
     const data = message?.get(key);

@@ -296,6 +296,22 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         {},
       );
       return {
+        spellcheck: pref(f.spellcheck, stored.get("spellcheck"), d.spellcheck),
+        spellcheckLanguages: pref(
+          f.spellcheckLanguages,
+          stored.get("spellcheckLanguages"),
+          d.spellcheckLanguages,
+        ),
+        defaultProfilesPrompted: pref(
+          f.defaultProfilesPrompted,
+          stored.get("defaultProfilesPrompted"),
+          d.defaultProfilesPrompted,
+        ),
+        attachmentCacheBytes: pref(
+          f.attachmentCacheBytes,
+          stored.get("attachmentCacheBytes"),
+          d.attachmentCacheBytes,
+        ),
         contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
         composeFormatBar: pref(
           f.composeFormatBar,

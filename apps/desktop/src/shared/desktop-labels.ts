@@ -2,6 +2,10 @@ import { Schema } from "effect";
 
 /** Localized by the renderer's Lingui catalog, reused by native menus and notifications. */
 export const DesktopLabels = Schema.Struct({
+  menuLabels: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
+  spelling: Schema.optionalKey(
+    Schema.Struct({ add: Schema.String, check: Schema.String, noSuggestions: Schema.String }),
+  ),
   checkUpdates: Schema.String,
   updatesDisabled: Schema.String,
   updatesCurrent: Schema.String,
@@ -14,6 +18,7 @@ export const DesktopLabels = Schema.Struct({
   newWindow: Schema.String,
   compose: Schema.String,
   attachFiles: Schema.String,
+  helpMenu: Schema.optionalKey(Schema.String),
   help: Schema.String,
   archive: Schema.String,
   trash: Schema.String,

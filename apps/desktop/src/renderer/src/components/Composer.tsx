@@ -836,6 +836,7 @@ export function Composer({
         {/* no-drag: on a short window the header sits over the titlebar strips,
             whose drag region would swallow clicks on the close button. */}
         <Dialog.Popup
+          data-compose
           aria-label={title}
           initialFocus={initialFocus}
           className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}

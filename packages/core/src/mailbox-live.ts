@@ -1,3 +1,5 @@
+import { ImapIdle } from "./imap-idle.js";
+import { PersistentAttachments } from "./persistent-attachments.js";
 import { AttachmentCache } from "./attachment-cache.js";
 import { makeReaderAttachments } from "./reader-attachments.js";
 import { isLocalFeedbackDraft } from "./feedback.js";
@@ -132,7 +134,16 @@ const PULL_RETRY = {
 
 const newDraftId = () => `draft:${crypto.randomUUID()}`;
 
+const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
+  Effect.tryPromise(work).pipe(
+    Effect.catch((error) =>
+      Effect.logWarning("Attachment cache unavailable", error).pipe(Effect.as(fallback)),
+    ),
+  );
+
 export interface MailboxOptions {
+  imapIdle?: boolean;
+  attachmentCacheDirectory?: string;
   imageDownloader?: import("./compose-images.js").ImageDownloader;
   /** Sync every account on this interval, starting right away. The desktop app sets it; CLI and MCP don't. */
   autoSync?: Duration.Input;
@@ -161,6 +172,13 @@ export const MailboxLive = (
       const providers = yield* Providers;
       const secrets = yield* Secrets;
       const config = yield* AppConfig;
+      const diskAttachments = options.attachmentCacheDirectory
+        ? new PersistentAttachments(options.attachmentCacheDirectory)
+        : undefined;
+      const attachmentCache = new AttachmentCache();
+      let idle: ImapIdle | undefined;
+      let syncPaused = false;
+      let attachmentEpoch = 0;
 
       const pubsub = yield* PubSub.unbounded<MailboxEvent>();
       yield* Effect.addFinalizer(() => PubSub.shutdown(pubsub));
@@ -688,6 +706,11 @@ export const MailboxLive = (
           }
           case "removeAccount":
             yield* store.getAccount(command.accountId);
+            attachmentEpoch++;
+            idle?.remove(command.accountId);
+            if (diskAttachments)
+              yield* cacheIO(() => diskAttachments.clear(command.accountId), undefined);
+            attachmentCache.clear();
             yield* store.removeAccount(command.accountId);
             yield* secrets.remove(command.accountId);
             yield* store.audit({
@@ -1144,7 +1167,6 @@ export const MailboxLive = (
         return url;
       });
 
-      const attachmentCache = new AttachmentCache();
       const attachment = Effect.fn("Mailbox.attachment")(function* (
         messageId: string,
         index: number,
@@ -1163,10 +1185,35 @@ export const MailboxLive = (
           listed.mimeType,
           listed.size,
         ]);
-        const cached = attachmentCache.get(messageId, key);
+        const epoch = attachmentEpoch;
+        const diskVersion = diskAttachments?.version();
+        const maxBytes = (yield* store.prefs).attachmentCacheBytes;
+        const cached =
+          (diskAttachments
+            ? yield* cacheIO(
+                () => diskAttachments.get(account.id, JSON.stringify([messageId, key]), maxBytes),
+                null,
+              )
+            : null) ?? attachmentCache.get(messageId, key);
         if (cached) return { filename: listed.filename, mimeType: listed.mimeType, data: cached };
         const data = yield* adapter.fetchAttachment(account, providerId, ref);
-        attachmentCache.set(messageId, key, data);
+        yield* store.getAccount(account.id);
+        if (epoch === attachmentEpoch) {
+          attachmentCache.set(messageId, key, data);
+          if (diskAttachments)
+            yield* cacheIO(
+              () =>
+                diskAttachments.set(
+                  account.id,
+                  JSON.stringify([messageId, key]),
+                  data,
+                  maxBytes,
+                  diskVersion,
+                ),
+              undefined,
+            );
+          yield* emit({ _tag: "BackfillProgress" });
+        }
         return { filename: listed.filename, mimeType: listed.mimeType, data };
       });
 
@@ -1519,9 +1566,11 @@ export const MailboxLive = (
           Effect.catch((error) => failed(error.message, error._tag === "AuthError")),
           // A bug in one provider must not stop the other accounts from syncing.
           Effect.catchCause((cause) =>
-            Effect.logError("sync crashed", cause).pipe(
-              Effect.andThen(failed(String(Cause.squash(cause)), false)),
-            ),
+            Cause.hasInterruptsOnly(cause)
+              ? Effect.failCause(cause)
+              : Effect.logError("sync crashed", cause).pipe(
+                  Effect.andThen(failed(String(Cause.squash(cause)), false)),
+                ),
           ),
         );
       });
@@ -1585,42 +1634,66 @@ export const MailboxLive = (
         Duration.fromInputUnsafe(options.inboxPoll ?? "45 seconds"),
       );
       const onBattery = () => options.pollOnBattery?.() ?? options.media?.onBattery() ?? false;
-      const pollInbox = Effect.fn("Mailbox.pollInbox")(function* () {
-        const result = yield* syncLock.withPermitsIfAvailable(1)(
-          Effect.gen(function* () {
-            yield* flush();
-            const accounts = yield* store.listAccounts;
-            const now = yield* Clock.currentTimeMillis;
-            const results: SyncResult[] = [];
-            let anyChange = false;
-            for (const account of accounts) {
-              if (
-                account.enabled === false ||
-                account.lastSyncedAt === null ||
-                (polling.get(account.id)?.due ?? 0) > now
-              )
-                continue;
-              const before = yield* store.getInboxError(account.id);
-              const pulled: SyncResult = yield* pullAccount(account, "inbox");
-              results.push(pulled);
-              const error = yield* store.getInboxError(account.id);
-              anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;
-              if (pulled.error) {
-                const failures = (polling.get(account.id)?.failures ?? 0) + 1;
-                polling.set(account.id, {
-                  failures,
-                  due: now + Math.min(900_000, pollInterval * 2 ** Math.min(failures, 5)),
-                });
-              } else polling.delete(account.id);
-            }
-            const live = new Set(accounts.map((account) => account.id));
-            for (const id of polling.keys()) if (!live.has(id)) polling.delete(id);
-            if (anyChange) yield* changed;
-            return results;
-          }),
-        );
+      const pollInbox = Effect.fn("Mailbox.pollInbox")(function* (accountIds?: readonly string[]) {
+        if (syncPaused) return [];
+        const task = Effect.gen(function* () {
+          if (accountIds === undefined) yield* flush();
+          const accounts = yield* store.listAccounts;
+          const now = yield* Clock.currentTimeMillis;
+          const results: SyncResult[] = [];
+          let anyChange = false;
+          for (const account of accounts) {
+            if (
+              account.enabled === false ||
+              (accountIds !== undefined && !accountIds.includes(account.id)) ||
+              (accountIds === undefined &&
+                (idle?.active(account.id) || idle?.reconnecting(account.id))) ||
+              account.lastSyncedAt === null ||
+              (accountIds === undefined && (polling.get(account.id)?.due ?? 0) > now)
+            )
+              continue;
+            const before = yield* store.getInboxError(account.id);
+            const pulled: SyncResult = yield* pullAccount(account, "inbox");
+            results.push(pulled);
+            const error = yield* store.getInboxError(account.id);
+            anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;
+            if (pulled.error) {
+              const failures = (polling.get(account.id)?.failures ?? 0) + 1;
+              polling.set(account.id, {
+                failures,
+                due: now + Math.min(900_000, pollInterval * 2 ** Math.min(failures, 5)),
+              });
+            } else polling.delete(account.id);
+          }
+          const live = new Set(accounts.map((account) => account.id));
+          for (const id of polling.keys()) if (!live.has(id)) polling.delete(id);
+          if (anyChange) yield* changed;
+          return results;
+        });
+        if (accountIds !== undefined) return yield* syncLock.withPermits(1)(task);
+        const result = yield* syncLock.withPermitsIfAvailable(1)(task);
         return Option.getOrElse(result, () => []);
       });
+
+      if (options.imapIdle) {
+        const runIdle = yield* FiberSet.makeRuntimePromise();
+        idle = new ImapIdle(
+          (account, signal, onChange, ready) => {
+            const watch = providers.get(account.provider).watchInbox;
+            return watch
+              ? runIdle(watch(account, signal, onChange, ready))
+              : Promise.resolve("unsupported");
+          },
+          (accountIds) => runIdle(pollInbox(accountIds)),
+        );
+        const watcher = idle;
+        yield* Effect.addFinalizer(() => Effect.sync(() => watcher.close()));
+        yield* store.listAccounts.pipe(
+          Effect.tap((accounts) => Effect.sync(() => watcher.reconcile(accounts))),
+          Effect.repeat(Schedule.spaced("5 seconds")),
+          Effect.forkScoped,
+        );
+      }
 
       // Accounts
 
@@ -1694,10 +1767,11 @@ export const MailboxLive = (
         let nextAccount = 0;
         yield* Effect.gen(function* () {
           yield* Effect.sleep("10 seconds");
+          if (syncPaused) return;
           const accounts = yield* store.listAccounts;
           const account = accounts[nextAccount % Math.max(1, accounts.length)];
           nextAccount++;
-          if (account) yield* cache.fetchOlder({ accountIds: [account.id] });
+          if (account) yield* cache.backfillOlder({ accountIds: [account.id] });
         }).pipe(
           Effect.catchCause((cause) => Effect.logWarning("backfill failed", cause)),
           Effect.repeat(Schedule.spaced("10 seconds")),
@@ -1707,7 +1781,7 @@ export const MailboxLive = (
         yield* organization
           .wakeSnoozed()
           .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
-        yield* sync().pipe(
+        yield* Effect.suspend(() => (syncPaused ? Effect.void : sync())).pipe(
           Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
           Effect.repeat(Schedule.spaced(options.autoSync)),
           Effect.forkScoped,
@@ -1726,6 +1800,11 @@ export const MailboxLive = (
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
       return Mailbox.of({
+        setSyncPaused: (paused) =>
+          Effect.sync(() => {
+            syncPaused = paused;
+            idle?.pause(paused);
+          }),
         updateTokenConfigured: secrets.get(UPDATE_TOKEN_KEY).pipe(Effect.map(Option.isSome)),
         setUpdateToken: (token) =>
           Effect.gen(function* () {
@@ -1750,6 +1829,44 @@ export const MailboxLive = (
         ...folderMailbox,
         ...features,
         ...cache,
+        cacheSize: Effect.gen(function* () {
+          const bodies = yield* store.bodySizes;
+          return yield* Effect.forEach(yield* store.listAccounts, (a) =>
+            Effect.gen(function* () {
+              const attachmentBytes = diskAttachments
+                ? yield* cacheIO(() => diskAttachments.size(a.id), 0)
+                : 0;
+              return {
+                accountId: a.id,
+                bodyBytes: bodies.find((b) => b.accountId === a.id)?.bytes ?? 0,
+                attachmentBytes,
+              };
+            }),
+          );
+        }),
+        clearCache: (accountId) =>
+          Effect.gen(function* () {
+            attachmentEpoch++;
+            attachmentCache.clear();
+            if (diskAttachments) yield* cacheIO(() => diskAttachments.clear(accountId), undefined);
+            for (const a of yield* store.listAccounts)
+              if (accountId === undefined || a.id === accountId) yield* store.clearBodies(a.id);
+            yield* changed;
+          }),
+        initializeProfiles: (accept, names) =>
+          store
+            .transaction(
+              Effect.gen(function* () {
+                const prefs = yield* store.prefs;
+                const accounts = yield* store.listAccounts;
+                if (prefs.defaultProfilesPrompted || accounts.length < 2) return;
+                yield* store.setPrefs({ defaultProfilesPrompted: true });
+                if (!accept || (yield* store.listProfiles).length) return;
+                yield* store.createProfile({ name: names.personal, icon: "🏠", color: "emerald" });
+                yield* store.createProfile({ name: names.work, icon: "💼", color: "blue" });
+              }),
+            )
+            .pipe(Effect.andThen(changed)),
         searchServer: (query) =>
           organization
             .searchServer(query)
@@ -1786,6 +1903,7 @@ export const MailboxLive = (
             const previous = yield* store.getAccount(id);
             // Local edits and the enabled flag never wait for provider work.
             yield* store.setAccountSettings(id, settings);
+            idle?.reconcile(yield* store.listAccounts);
             const resumed = previous.enabled === false && settings.enabled;
 
             yield* changed;
@@ -1911,6 +2029,11 @@ export const MailboxLive = (
         prefs: store.prefs,
         setPrefs: (patch) =>
           mutate(store.setPrefs(patch)).pipe(
+            Effect.tap(() =>
+              patch.attachmentCacheBytes !== undefined && diskAttachments
+                ? cacheIO(() => diskAttachments.trim(patch.attachmentCacheBytes ?? 0), undefined)
+                : Effect.void,
+            ),
             Effect.tap(() =>
               patch.updateChannel ? emit({ _tag: "UpdateSettingsChanged" }) : Effect.void,
             ),

@@ -143,7 +143,16 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
       sql`UPDATE backfill SET paused=${paused ? 1 : 0},next_run_at=0,last_error=NULL WHERE account_id=${accountId}`,
     );
   });
+  const bodySizes = all(Schema.Struct({ account_id: Schema.String, bytes: Schema.Number }))(
+    sql`SELECT account_id, COALESCE(SUM(length(CAST(body_text AS BLOB)) + length(CAST(body_html AS BLOB))),0) AS bytes FROM messages GROUP BY account_id`,
+  ).pipe(Effect.map((rows) => rows.map((r) => ({ accountId: r.account_id, bytes: r.bytes }))));
+  const clearBodies = (accountId: string) =>
+    run(
+      sql`UPDATE messages SET body_text='',body_html='',body_cached=0,body_opened_at=NULL WHERE account_id=${accountId} AND NOT EXISTS (SELECT 1 FROM json_each(messages.labels_json) WHERE value='DRAFT')`,
+    );
   return {
+    bodySizes,
+    clearBodies,
     cacheWindows,
     setCacheWindow,
     evictBodies,

@@ -49,32 +49,41 @@ const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =
     return { threads, pages, done, requested: wanted } satisfies Loaded;
   });
 
-const pagedList = Atom.family((query: ListQuery) => {
+export const pagedList = Atom.family((query: ListQuery) => {
   const wanted = Atom.make(1);
+  let requested = 0;
   const loaded = MailClient.runtime
     .atom((get) => {
       const want = get(wanted);
+      const increased = want > requested;
+      requested = want;
       const previous = get
         .self<AsyncResult.AsyncResult<Loaded, AppError>>()
         .pipe(Option.flatMap(AsyncResult.value), Option.getOrUndefined);
-      // One more page than last time keeps what is loaded; anything else is a refresh.
-      const continuing = previous?.requested === want - 1 ? previous : undefined;
+      // Only an increased request may fetch history; invalidation refreshes cached rows.
+      const continuing = increased ? previous : undefined;
       // Refresh every loaded row so scroll coordinates and selection remain valid.
       return Effect.gen(function* () {
         if (!continuing && previous) {
           const call = yield* MailClient;
-          return yield* refreshPages(query, previous, (q) => call("Threads", { query: q }));
+          return yield* refreshPages(query, previous, (q) => call("Threads", { query: q })).pipe(
+            Effect.map((next) => ({ ...next, requested: want })),
+          );
         }
-        if (continuing?.done) {
+        let remoteDone =
+          continuing?.remoteDone ??
+          previous?.remoteDone ??
+          (query.search !== undefined || query.mailbox === "drafts" || query.mailbox === "snoozed");
+        if (continuing?.done && !remoteDone) {
           const call = yield* MailClient;
-          yield* call("FetchOlder", { query });
+          remoteDone = (yield* call("FetchOlder", { query })).done;
         }
         const next = yield* loadPages(
           query,
           continuing ? continuing.pages + 1 : 1,
           continuing ? { ...continuing, done: false } : undefined,
         );
-        return { ...next, requested: want };
+        return { ...next, remoteDone, requested: want };
       });
     })
     .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
@@ -139,6 +148,8 @@ export interface ThreadList {
   loadingMore: boolean;
   /** Older threads exist and no page is in flight. */
   canLoadMore: boolean;
+  exhausted: boolean;
+  loadError: boolean;
   moreNotLoaded: number | null;
   searchingServer: boolean;
   searchTruncated: boolean;
@@ -151,6 +162,8 @@ const EMPTY: ThreadList = {
   loading: false,
   loadingMore: false,
   canLoadMore: false,
+  exhausted: false,
+  loadError: false,
   moreNotLoaded: null,
   searchingServer: false,
   searchTruncated: false,
@@ -195,6 +208,7 @@ export const threadListAtom = Atom.writable(
         : get(serverList(query));
     const remote = server ? AsyncResult.getOrElse(server, () => null) : null;
     const serverState = {
+      loadError: result._tag === "Failure",
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
       searchTruncated: remote?.truncated ?? false,
       searchIgnored: remote?.ignored?.map((e) => `${e.accountId}: ${e.operators.join(", ")}`) ?? [],
@@ -248,13 +262,16 @@ export const threadListAtom = Atom.writable(
         remote?.truncated
           ? null
           : Math.max(0, total - loaded.value.threads.length),
+      exhausted: loaded.value.done && (loaded.value.remoteDone ?? query.search !== undefined),
       canLoadMore:
-        !loaded.value.done &&
+        (!loaded.value.done ||
+          (!query.search && !loaded.value.remoteDone && query.mailbox !== "drafts")) &&
         !result.waiting &&
         (total === null ||
           query.search !== undefined ||
           query.mailbox === "drafts" ||
-          total > loaded.value.threads.length),
+          total > loaded.value.threads.length ||
+          !loaded.value.remoteDone),
     };
   },
   (ctx, _next: void) => {
@@ -262,7 +279,16 @@ export const threadListAtom = Atom.writable(
     if (!query) return;
     const { wanted, loaded } = pagedList(query);
     const result = ctx.get(loaded);
-    if (result._tag !== "Success" || result.waiting) return;
+    if (result._tag === "Failure" && !result.waiting) {
+      ctx.set(wanted, ctx.get(wanted) + 1);
+      return;
+    }
+    if (
+      result._tag !== "Success" ||
+      result.waiting ||
+      (result.value.done && result.value.remoteDone)
+    )
+      return;
     ctx.set(wanted, ctx.get(wanted) + 1);
   },
 );

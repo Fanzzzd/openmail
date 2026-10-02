@@ -11,7 +11,7 @@ import { desktopInferenceProcess } from "./inference";
 
 import { UpdatesLive } from "./updates";
 import { RpcServerLive } from "./rpc-server";
-import { DesktopLive, receiveAppUrl, ready } from "./system";
+import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system";
 import { DEV_ICON, focusMainWindow } from "./windows";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./reliability";
@@ -23,6 +23,11 @@ if (isolatedData) app.setPath("userData", resolve(isolatedData));
 app.on("open-url", (event, url) => {
   event.preventDefault();
   receiveAppUrl(url);
+});
+
+app.on("open-file", (event, file) => {
+  event.preventDefault();
+  receiveOpenFile(file);
 });
 
 // The second process exits before constructing core (and before opening the DB).
@@ -76,6 +81,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 inferenceProcess: desktopInferenceProcess,
                 dataDir: directory,
                 inboxPoll: "45 seconds",
+                imapIdle: true,
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 media: {
                   vision,

@@ -2,6 +2,7 @@ import { Clock, Effect, Option, Semaphore } from "effect";
 import { DEFAULT_CACHE_WINDOWS, keepBody, type BackfillState } from "./cache.js";
 import { trackImapBackfill } from "./imap.js";
 import type { ThreadQuery } from "./domain.js";
+import { ProviderError } from "./errors.js";
 import type { PerformError } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
 
@@ -96,12 +97,90 @@ export function makeCacheMailbox(
         yield* progress;
       }),
     );
-  const fetchOlder = Effect.fn("Mailbox.fetchOlder")(function* (query: ThreadQuery) {
+  const backfillOlder = Effect.fn("Mailbox.backfillOlder")(function* (query: ThreadQuery) {
     const accounts = yield* store.listAccounts;
     for (const account of accounts) {
       if (query.accountIds === undefined || query.accountIds.includes(account.id))
         yield* onePage(account.id).pipe(Effect.catchTag("NotFound", () => Effect.void));
     }
+  });
+  const folders = new Map<string, { cursor: string | null; done: boolean }>();
+  const fetchOlder = Effect.fn("Mailbox.fetchOlder")(function* (query: ThreadQuery) {
+    if (query.mailbox === undefined && query.label === undefined) {
+      yield* backfillOlder(query);
+      return { done: false };
+    }
+    if (query.search || query.mailbox === "drafts" || query.mailbox === "snoozed")
+      return { done: true };
+    return yield* network
+      .withPermit(
+        Effect.gen(function* () {
+          let done = true;
+          for (const account of yield* store.listAccounts) {
+            if (
+              account.enabled === false ||
+              account.needsReauth ||
+              (query.accountIds && !query.accountIds.includes(account.id))
+            )
+              continue;
+            const scope = {
+              mailbox: query.mailbox ?? "inbox",
+              ...(query.label ? { label: query.label } : {}),
+            };
+            const key = JSON.stringify([account.id, account.createdAt, scope]);
+            const state = folders.get(key) ?? { cursor: null, done: false };
+            if (state.done) continue;
+            const adapter = providers.get(account.provider);
+            yield* Effect.gen(function* () {
+              // Skip already cached pages without replacing local edits. One request stays bounded.
+              for (let attempt = 0; attempt < 10; attempt++) {
+                const page = yield* adapter.listFolderMessages(account, scope, state.cursor, {
+                  newestFirst: true,
+                });
+                const candidates = yield* store.backfillCandidates(account.id, page.ids);
+                const messages = yield* Effect.forEach(
+                  candidates,
+                  (id) => adapter.fetchMessage(account, id),
+                  { concurrency: 3 },
+                );
+                yield* store.transaction(
+                  Effect.gen(function* () {
+                    const current = yield* store.getAccount(account.id).pipe(Effect.option);
+                    if (Option.isNone(current) || current.value.enabled === false) return;
+                    const allowed = new Set(
+                      yield* store.backfillCandidates(account.id, candidates),
+                    );
+                    for (const message of messages)
+                      if (allowed.has(message.providerId))
+                        yield* store.upsertMessage(account.id, message);
+                  }),
+                );
+                state.cursor = page.next;
+                state.done = page.next === null;
+                folders.set(key, state);
+                if (messages.length || state.done) break;
+              }
+              done &&= state.done;
+            }).pipe(
+              Effect.onExit((exit) =>
+                exit._tag === "Failure"
+                  ? Effect.sync(() => {
+                      folders.delete(key);
+                    })
+                  : Effect.void,
+              ),
+            );
+          }
+          yield* progress;
+          return { done };
+        }),
+      )
+      .pipe(
+        Effect.timeout("90 seconds"),
+        Effect.catchTag("TimeoutError", () =>
+          Effect.fail(new ProviderError({ message: "Older mail download timed out" })),
+        ),
+      );
   });
   const readerThread = Effect.fn("Mailbox.readerThread")(function* (
     id: string,
@@ -146,6 +225,7 @@ export function makeCacheMailbox(
     return yield* store.backfillStates;
   });
   return {
+    backfillOlder,
     fetchOlder,
     readerThread,
     backfillState,

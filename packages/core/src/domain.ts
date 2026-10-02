@@ -588,6 +588,13 @@ export const AttachmentSaveFolder = Schema.Union([
 export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
 
 export const Prefs = Schema.Struct({
+  spellcheck: Schema.Boolean,
+  spellcheckLanguages: Schema.Array(Schema.String),
+  defaultProfilesPrompted: Schema.Boolean,
+  attachmentCacheBytes: Schema.Int.check(
+    Schema.isGreaterThanOrEqualTo(0),
+    Schema.isLessThanOrEqualTo(2 * 1024 ** 3),
+  ),
   contactPhotos: Schema.Boolean,
   emojiReplacement: Schema.Boolean,
   composeFormatBar: Schema.Boolean,
@@ -648,6 +655,10 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
+  spellcheck: true,
+  spellcheckLanguages: [],
+  defaultProfilesPrompted: false,
+  attachmentCacheBytes: 512 * 1024 ** 2,
   contactPhotos: true,
   emojiReplacement: true,
   composeFormatBar: true,

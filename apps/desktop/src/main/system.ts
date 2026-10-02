@@ -1,3 +1,11 @@
+import { readDockFiles, dockFileReason } from "./dock-files";
+import {
+  NATIVE_MENUS,
+  nativeActionEnabled,
+  NO_MENU_SELECTION,
+  type NativeMenuState,
+} from "../shared/native-actions";
+import { configureSpelling, installSpellingMenu } from "./spellcheck";
 import { approveUpdateQuit } from "./update-install";
 import { setRecoveryRelaunch } from "./recovery-actions";
 import {
@@ -52,6 +60,13 @@ const allClosed = () => {
   if (process.platform !== "darwin") app.quit();
 };
 
+const startupFiles: string[] = [];
+let fileHandler: ((file: string) => void) | undefined;
+export function receiveOpenFile(file: string) {
+  if (fileHandler) fileHandler(file);
+  else startupFiles.push(file);
+}
+
 const startupLinks: AppLink[] = [];
 let linkHandler: ((link: AppLink) => void) | undefined;
 /** Installed before ready so a cold-launch open-url is retained until the renderer subscribes. */
@@ -70,10 +85,12 @@ export class Desktop extends Context.Service<
       clientId: number,
       state: { pending: number; undoAvailable: boolean },
     ): Effect.Effect<void>;
+    setMenuState(clientId: number, state: NativeMenuState): Effect.Effect<void>;
     setSpace(clientId: number, space: string): Effect.Effect<void>;
     setLabels(labels: DesktopLabels): Effect.Effect<void>;
     search(query: string): Effect.Effect<void>;
     compose(): Effect.Effect<void>;
+    composeMessage(input: Extract<DesktopEvent, { _tag: "ComposeMessage" }>): Effect.Effect<void>;
     openSettings(): Effect.Effect<void>;
   }
 >()("openmail/Desktop") {}
@@ -92,6 +109,7 @@ export const DesktopLive = Layer.effect(
     const pending = new Map<number, DesktopEvent[]>();
     const listeners = new Map<number, (event: DesktopEvent) => void>();
     const spaces = new Map<number, string>();
+    const menuStates = new Map<number, NativeMenuState>();
     const sendStates = createSendState();
     let activeSpace = "all";
     let labelsReady = false;
@@ -136,6 +154,35 @@ export const DesktopLive = Layer.effect(
       else if (shouldBufferDesktopEvent(event))
         pending.set(id, [...(pending.get(id) ?? []), event]);
     };
+    let fileTimer: ReturnType<typeof setTimeout> | undefined;
+    const files: string[] = [];
+    fileHandler = (file) => {
+      files.push(file);
+      clearTimeout(fileTimer);
+      fileTimer = setTimeout(() => {
+        const batch = files.splice(0);
+        void readDockFiles(batch).then(
+          (attachments) => deliver({ _tag: "ComposeFiles", attachments }),
+          (error: unknown) =>
+            deliver({
+              _tag: "FileError",
+              reason: dockFileReason(error),
+            }),
+        );
+      }, 100);
+    };
+    for (const file of startupFiles.splice(0)) fileHandler(file);
+    const spellingCleanup = installSpellingMenu(
+      () => labels.spelling,
+      (patch) => run(mailbox.setPrefs(patch)),
+    );
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        fileHandler = undefined;
+        clearTimeout(fileTimer);
+        spellingCleanup();
+      }),
+    );
     setComposeCloseHandler((win) => {
       if (listeners.has(win.webContents.id) && !win.webContents.isCrashed())
         deliver({ _tag: "ComposeClose" }, win);
@@ -223,6 +270,7 @@ export const DesktopLive = Layer.effect(
           activeSpace = "all";
         const accountIds = spaceAccountIds(activeSpace, accounts);
         const prefs = yield* mailbox.prefs;
+        configureSpelling(prefs);
         const folderCounts = yield* mailbox.unreadCounts;
         const counts = prefs.threadGrouping
           ? Object.fromEntries(
@@ -241,6 +289,18 @@ export const DesktopLive = Layer.effect(
               ),
             )
           : folderCounts;
+        app.dock?.setMenu(
+          Menu.buildFromTemplate([
+            { label: labels.compose, click: () => command("compose") },
+            { type: "separator" },
+            ...accounts
+              .filter((a) => a.enabled !== false)
+              .map((a) => ({
+                label: `${a.description?.trim() || a.email} (${counts[a.id] ?? 0})`,
+                click: () => deliver({ _tag: "AccountInbox", accountId: a.id }),
+              })),
+          ]),
+        );
         const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
         const recent = yield* mailbox
           .threads({
@@ -278,7 +338,10 @@ export const DesktopLive = Layer.effect(
         const undoAvailable = focused
           ? (sendStates.get(focused.webContents.id)?.undoAvailable ?? false)
           : false;
-        const nextMenuKey = JSON.stringify([labels, prefs.shortcutSet, undoAvailable]);
+        const menuState = focused
+          ? (menuStates.get(focused.webContents.id) ?? NO_MENU_SELECTION)
+          : NO_MENU_SELECTION;
+        const nextMenuKey = JSON.stringify([labels, prefs.shortcutSet, undoAvailable, menuState]);
         if (menuKey !== nextMenuKey) {
           menuKey = nextMenuKey;
           Menu.setApplicationMenu(
@@ -375,12 +438,42 @@ export const DesktopLive = Layer.effect(
                   },
                 ],
               },
+              ...NATIVE_MENUS.map((group) => ({
+                label:
+                  labels.menuLabels?.[group.name] ??
+                  (group.name[0]?.toUpperCase() ?? "") + group.name.slice(1),
+                submenu: group.actions.map((action) => ({
+                  label:
+                    labels.menuLabels?.[action] ??
+                    (action[0]?.toUpperCase() ?? "") +
+                      action.slice(1).replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`),
+                  accelerator: shortcutAccelerator(prefs.shortcutSet, action),
+                  enabled: nativeActionEnabled(action, menuState),
+                  click: (
+                    _item: Electron.MenuItem,
+                    _window: Electron.BaseWindow | undefined,
+                    event: Electron.KeyboardEvent,
+                  ) => {
+                    const target = BrowserWindow.getFocusedWindow();
+                    if (target)
+                      deliver(
+                        {
+                          _tag: "NativeAction",
+                          action,
+                          triggeredByAccelerator: event.triggeredByAccelerator === true,
+                        },
+                        target,
+                      );
+                  },
+                })),
+              })),
               {
                 label: labels.window,
                 submenu: [{ role: "minimize" }, { role: "zoom" }, { role: "front" }],
               },
               {
-                label: labels.help,
+                role: "help",
+                label: labels.helpMenu ?? "Help",
                 submenu: [
                   { label: labels.help, click: () => command("help") },
                   {
@@ -522,10 +615,16 @@ export const DesktopLive = Layer.effect(
       Effect.repeat(Schedule.spaced("15 seconds")),
       Effect.forkScoped,
     );
-    const onResume = () => run(refresh);
+    const onSuspend = () => run(mailbox.setSyncPaused(true));
+    const onResume = () =>
+      run(
+        mailbox
+          .setSyncPaused(false)
+          .pipe(Effect.andThen(mailbox.pollInbox()), Effect.andThen(refresh)),
+      );
+    powerMonitor.on("suspend", onSuspend);
     powerMonitor.on("resume", onResume);
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
-      if (!isMainWindow(win) && !isComposeWindow(win)) return;
       if (isMainWindow(win)) activeSpace = spaces.get(win.webContents.id) ?? "all";
       run(refresh);
     };
@@ -576,6 +675,7 @@ export const DesktopLive = Layer.effect(
         pending.delete(id);
         listeners.delete(id);
         spaces.delete(id);
+        menuStates.delete(id);
         sendStates.remove(id);
       });
     };
@@ -640,6 +740,7 @@ export const DesktopLive = Layer.effect(
         app.off("browser-window-focus", onFocus);
         app.off("browser-window-created", onCreated);
         powerMonitor.off("resume", onResume);
+        powerMonitor.off("suspend", onSuspend);
         app.off("activate", activate);
         app.off("window-all-closed", allClosed);
         for (const notification of notifications) {
@@ -674,6 +775,7 @@ export const DesktopLive = Layer.effect(
     for (const link of startupLinks.splice(0)) linkHandler(link);
     yield* refresh;
     return Desktop.of({
+      composeMessage: (input) => Effect.sync(() => deliver(input)),
       compose: () =>
         Effect.sync(() =>
           deliver({ _tag: "Compose", draft: { to: "", cc: "", bcc: "", subject: "", body: "" } }),
@@ -697,6 +799,8 @@ export const DesktopLive = Layer.effect(
             yield* Effect.never;
           });
         }),
+      setMenuState: (id, state) =>
+        Effect.sync(() => menuStates.set(id, state)).pipe(Effect.andThen(refresh), Effect.asVoid),
       setSendState: (id, state) =>
         Effect.sync(() => sendStates.update(id, state)).pipe(Effect.andThen(refresh)),
       setSpace: (id, space) =>

@@ -883,6 +883,7 @@ export function ComposeEditor({
           }}
           dir="auto"
           contentEditable={!locked}
+          autoCorrect="on"
           suppressContentEditableWarning
           tabIndex={0}
           role="textbox"

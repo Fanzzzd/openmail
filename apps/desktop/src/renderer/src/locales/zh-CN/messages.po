@@ -303,6 +303,10 @@ msgstr "将此事件加入日历？"
 msgid "Add to calendar"
 msgstr "加入日历"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Add to Dictionary"
+msgstr "加入词典"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "添加第一个邮箱"
@@ -392,6 +396,7 @@ msgid "All"
 msgstr "全部"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
@@ -471,6 +476,10 @@ msgstr "总是引用全文"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always use selection"
 msgstr "总是引用选中文字"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "An attachment changed while reading. Try adding it again."
+msgstr "附件在读取时发生变化，请重新添加。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
@@ -552,15 +561,21 @@ msgstr "附上以下脱敏诊断"
 msgid "Attached message"
 msgstr "附加邮件"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Attachment cache limit"
+msgstr "附件缓存上限"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "附件保存目录"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
 msgid "Attachments"
 msgstr "附件"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "附件总大小超过 30 MB，请移除部分附件。"
 
@@ -633,6 +648,10 @@ msgstr "放大文字"
 #: src/renderer/src/components/Reader.tsx
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Bodies"
+msgstr "正文"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
@@ -781,6 +800,11 @@ msgstr "切换撰写模式？"
 msgid "Check for Updates…"
 msgstr "检查更新…"
 
+#: src/renderer/src/components/SpellcheckSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Check spelling while typing"
+msgstr "输入时检查拼写"
+
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "请选择会话"
@@ -834,6 +858,14 @@ msgstr "请选择一个目标位置"
 msgid "Choose your email provider."
 msgstr "选择邮箱服务商。"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear account cache"
+msgstr "清除账户缓存"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear all caches"
+msgstr "清除全部缓存"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Clear formatting"
@@ -842,6 +874,10 @@ msgstr "清除格式"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "清除选择"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
+msgstr "清除已下载的正文和附件，保留邮件头和草稿。打开未缓存内容需要联网。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -1008,6 +1044,10 @@ msgstr "无法检查更新，请稍后重试。"
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Could not load older messages. Try again."
+msgstr "无法加载更早的邮件，请重试。"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "无法加载日历邀请。"
@@ -1047,6 +1087,10 @@ msgstr "无法读取剪贴板"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
 msgstr "无法读取系统权限"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Could not read the attachments. Check the files and their permissions."
+msgstr "无法读取附件，请检查文件和访问权限。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
@@ -1146,6 +1190,18 @@ msgstr "创建过滤器"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
 msgstr "按这些邮件创建过滤器"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create Personal and Work profiles?"
+msgstr "创建个人和工作 Profile？"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles"
+msgstr "创建 Profile"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles?"
+msgstr "创建 Profile？"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
@@ -1306,6 +1362,7 @@ msgstr "检测邮件中的日程"
 msgid "Diagnostics preview"
 msgstr "诊断预览"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
 msgstr "已停用"
@@ -1385,6 +1442,7 @@ msgstr "拖动账号可排序或移入其他空间，也可用空间选择器和
 msgid "Drag selected to Finder"
 msgstr "将选中附件拖到访达"
 
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
@@ -1648,6 +1706,10 @@ msgstr "字体"
 msgid "Font size"
 msgstr "字号"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Format"
+msgstr "格式"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 msgid "Formatting"
 msgstr "格式"
@@ -1718,10 +1780,12 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Gmail 别名和签名"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Gmail 附件总大小超过 25 MB，请移除部分附件后发送。"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail 禁止发送 {filename}，请移除此附件。"
@@ -1739,6 +1803,10 @@ msgstr "Gmail 默认签名"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
 msgstr "前往文件夹"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Group accounts and choose a profile in the window toolbar."
+msgstr "将账户分组，在窗口工具栏切换 Profile。"
 
 #: src/renderer/src/components/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
@@ -1759,6 +1827,10 @@ msgstr "包含词语"
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "邮件头"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Help"
+msgstr "帮助"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Hide"
@@ -2060,6 +2132,10 @@ msgstr "链接地址"
 msgid "Load images"
 msgstr "加载图片"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Load older messages"
+msgstr "加载更早的邮件"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Load remote content"
 msgstr "加载远程内容"
@@ -2088,6 +2164,10 @@ msgstr "正在读取草稿…"
 msgid "Loading image…"
 msgstr "正在加载图片…"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Loading older messages…"
+msgstr "正在加载更早的邮件…"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
 msgstr "读取设置…"
@@ -2099,6 +2179,10 @@ msgstr "正在从服务器读取原始邮件…"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "加载中…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Local cache"
+msgstr "本机缓存"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
@@ -2120,6 +2204,14 @@ msgstr "地点变更："
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "macOS uses the system spellchecker and detects languages automatically."
+msgstr "macOS 使用系统拼写检查器，自动识别语言。"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Mailbox"
+msgstr "邮箱"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Mailboxes"
@@ -2256,6 +2348,7 @@ msgstr "提及建议"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "正文"
 
@@ -2490,6 +2583,10 @@ msgstr "封新邮件"
 msgid "New messages"
 msgstr "新邮件"
 
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "New profile"
+msgstr "新建 Profile"
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "新建签名"
@@ -2593,6 +2690,10 @@ msgstr "这里没有邮件"
 msgid "No messages match the filters"
 msgstr "没有符合筛选的邮件"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No more messages"
+msgstr "没有更多邮件"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "No overlapping events in your primary calendar."
 msgstr "主日历中没有重叠日程。"
@@ -2605,6 +2706,10 @@ msgstr "无上级文件夹"
 #: src/renderer/src/errors.ts
 msgid "no printers are available."
 msgstr "没有可用的打印机。"
+
+#: src/renderer/src/state/desktop.ts
+msgid "No suggestions"
+msgstr "没有建议"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "No suggestions waiting for review."
@@ -2717,6 +2822,10 @@ msgstr "只能为收件箱邮件设置提醒"
 #: src/renderer/src/App.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Only regular files can be attached. Folders cannot be attached."
+msgstr "只能添加普通文件，不能添加文件夹。"
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -2864,6 +2973,7 @@ msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook 定时回复须填起止时间"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Overview"
 msgstr "总览"
@@ -2921,6 +3031,10 @@ msgstr "永久删除所选邮件？"
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "已永久删除 {count} 封邮件"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Personal"
+msgstr "个人"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -2984,6 +3098,19 @@ msgstr "打印这封邮件…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Print…"
 msgstr "打印…"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profile"
+msgstr "Profile"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Profiles"
+msgstr "Profiles"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
+msgstr "Profile 用于账户分组。可在设置中分配账户、编辑 Profile。"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -3734,6 +3861,10 @@ msgstr "大小比较"
 msgid "Size in bytes"
 msgstr "大小（字节）"
 
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Skip"
+msgstr "跳过"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Small"
 msgstr "小"
@@ -3801,6 +3932,14 @@ msgstr "垃圾邮件"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Special folder badges"
 msgstr "特殊文件夹计数"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling"
+msgstr "拼写"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling languages"
+msgstr "拼写检查语言"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -4058,6 +4197,7 @@ msgstr "这些不是邮件地址：{list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
 msgstr "当前应用支持总计不超过 3 MB 的 Outlook 附件，尚不支持大附件上传，请移除部分附件后发送。"
@@ -4168,9 +4308,17 @@ msgstr "切换阅读面板位置"
 msgid "Tomorrow morning"
 msgstr "明天上午"
 
+#: src/renderer/src/dock-file-errors.ts
+msgid "Too many attachments. Attach up to 256 files."
+msgstr "附件过多，最多可添加 256 个文件。"
+
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Toolbar actions"
 msgstr "工具栏操作"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Total cache"
+msgstr "缓存总大小"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4368,6 +4516,10 @@ msgstr "全文"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "窗口"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Work"
+msgstr "工作"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"

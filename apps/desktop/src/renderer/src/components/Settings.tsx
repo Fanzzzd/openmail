@@ -26,6 +26,8 @@ import { InteractionSettings, LabsSettings } from "./InteractionSettings";
 import { DefaultMailClient, NotificationsSettings, ShortcutsSettings } from "./SystemSettings";
 import { ComposeSettings, Signatures } from "./ComposeSettings";
 import { UpdateSettings } from "./UpdateSettings";
+import { ProfileSettings } from "./ProfileSettings";
+import { SpellcheckSettings } from "./SpellcheckSettings";
 import { CacheSettings } from "./CacheSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
@@ -36,6 +38,8 @@ import { OrganizationSettings } from "./OrganizationSettings";
 import { ServerSettings } from "./ServerSettings";
 
 type Tab =
+  | "profiles"
+  | "cache"
   | "labs"
   | "interactions"
   | "notifications"
@@ -55,6 +59,8 @@ const TABS: { id: Tab; label: MessageDescriptor }[] = [
   { id: "labs", label: msg`Labs` },
   { id: "interactions", label: msg`Gestures and toolbar` },
   { id: "accounts", label: msg`Accounts` },
+  { id: "profiles", label: msg`Profiles` },
+  { id: "cache", label: msg`Local cache` },
   { id: "notifications", label: msg`Notifications` },
   { id: "shortcuts", label: msg`Shortcuts` },
   { id: "signatures", label: msg`Signatures` },
@@ -117,6 +123,12 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
         <Tabs.Panel value="server" className={panel}>
           <ServerSettings accounts={accounts} />
         </Tabs.Panel>
+        <Tabs.Panel value="profiles" className={panel}>
+          <ProfileSettings accounts={accounts} />
+        </Tabs.Panel>
+        <Tabs.Panel value="cache" className={panel}>
+          <CacheSettings accounts={accounts} />
+        </Tabs.Panel>
         <Tabs.Panel value="notifications" className={panel}>
           <NotificationsSettings accounts={accounts} />
         </Tabs.Panel>
@@ -139,10 +151,10 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
         </Tabs.Panel>
         <Tabs.Panel value="reading" className={panel}>
           <ReadingSettings />
-          <CacheSettings accounts={accounts} />
         </Tabs.Panel>
         <Tabs.Panel value="compose" className={panel}>
           <ComposeSettings />
+          <SpellcheckSettings />
         </Tabs.Panel>
         <Tabs.Panel value="ai" className={panel}>
           <AgentPolicy />

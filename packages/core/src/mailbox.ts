@@ -438,12 +438,19 @@ export class Mailbox extends Context.Service<
       client: UpdateClient,
       options: { packaged: boolean; bundle: string },
     ): Effect.Effect<() => void>;
+    readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
+    clearCache(accountId?: string): Effect.Effect<void>;
+    initializeProfiles(
+      accept: boolean,
+      names: { personal: string; work: string },
+    ): Effect.Effect<void>;
+    setSyncPaused(paused: boolean): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void, NotFound>;
     readonly backfillState: Effect.Effect<BackfillState[]>;
     pauseBackfill(accountId: string, paused: boolean): Effect.Effect<void>;
     /** Requests one throttled page per scoped account, respecting pause. */
-    fetchOlder(query: ThreadQuery): Effect.Effect<void>;
+    fetchOlder(query: ThreadQuery): Effect.Effect<import("./cache.js").OlderResult, PerformError>;
 
     // Sync
     /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */

@@ -183,9 +183,15 @@ export function makeFakeProvider(
                       server.labels,
                     )),
             )
-            .map((m) => m.providerId)
-            .toSorted();
-          const remaining = ids.filter((id) => cursor === null || id > cursor);
+            .toSorted((a, b) =>
+              listOptions?.newestFirst
+                ? b.date - a.date || b.providerId.localeCompare(a.providerId)
+                : a.providerId.localeCompare(b.providerId),
+            )
+            .map((m) => m.providerId);
+          const remaining = listOptions?.newestFirst
+            ? ids.slice(cursor === null ? 0 : ids.indexOf(cursor) + 1)
+            : ids.filter((id) => cursor === null || id > cursor);
           const page = remaining.slice(0, FOLDER_BATCH_LIMIT);
           return { ids: page, next: remaining.length > page.length ? (page.at(-1) ?? null) : null };
         }),

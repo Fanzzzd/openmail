@@ -116,18 +116,21 @@ vi.mock("electron", async () => {
       this.destroyed = true;
     }
   }
+  const setApplicationMenu =
+    vi.fn<(menu: readonly Electron.MenuItemConstructorOptions[]) => void>();
   return {
     app,
     dialog: { showMessageBox: vi.fn(async () => ({ response: 0 })) },
     BrowserWindow: FakeWindow,
     Notification: FakeNotification,
     Tray: FakeTray,
-    Menu: { buildFromTemplate: (template: unknown) => template, setApplicationMenu: vi.fn() },
+    Menu: { buildFromTemplate: (template: unknown) => template, setApplicationMenu },
     nativeImage: { createFromPath: () => ({ setTemplateImage: vi.fn() }) },
     nativeTheme: { shouldUseDarkColors: false },
     powerMonitor: new EventEmitter(),
     shell: { openExternal: vi.fn() },
     testState: {
+      menu: setApplicationMenu,
       badge: app.setBadgeCount,
       setPackaged: (value: boolean) => {
         app.isPackaged = value;
@@ -151,11 +154,12 @@ import { Mailbox, messageLink } from "@openmail/core";
 import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 import { Desktop, DesktopLive, receiveAppUrl } from "./system";
-import { createMainWindow, openComposeWindow } from "./windows";
+import { createMainWindow, openComposeWindow, openThreadWindow } from "./windows";
 
 // Expose test-only observations without narrowing Electron's production API with a cast.
 const observations = await vi.importMock<{
   testState: {
+    menu: Mock<(menu: readonly Electron.MenuItemConstructorOptions[]) => void>;
     badge: Mock<(count: number) => boolean>;
     setPackaged(value: boolean): void;
     restore(id: string): { emit(event: string, data?: unknown): void };
@@ -243,6 +247,7 @@ beforeEach(() => {
   });
   observations.testState.reset();
   observations.testState.badge.mockClear();
+  observations.testState.menu.mockClear();
 });
 
 it("buffers cold launch links, targets one main window, and keeps each window's space", async () => {
@@ -1155,5 +1160,142 @@ it("killed renderers drop stale listeners and keep cached pending sends protecte
         expect(win.isDestroyed()).toBe(true);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("thread window focus refreshes native menu capabilities and closed ids lose their state", async () => {
+  const latest = () =>
+    Schema.decodeUnknownSync(
+      Schema.Array(
+        Schema.Struct({
+          label: Schema.optionalKey(Schema.String),
+          submenu: Schema.optionalKey(
+            Schema.Array(
+              Schema.Struct({
+                label: Schema.optionalKey(Schema.String),
+                enabled: Schema.optionalKey(Schema.Boolean),
+              }),
+            ),
+          ),
+        }),
+      ),
+    )(observations.testState.menu.mock.calls.at(-1)?.[0]);
+  const enabled = () =>
+    latest()
+      .find((menu) => menu.label === "Message")
+      ?.submenu?.find((item) => item.label === "Reply")?.enabled;
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const main = observations.testState.windows[0];
+        if (!main) throw new Error("Missing main window");
+        openThreadWindow("message");
+        const reader = observations.testState.windows.at(-1);
+        if (!reader) throw new Error("Missing reader");
+        yield* desktop.setMenuState(main.webContents.id, {
+          selected: false,
+          composing: false,
+          gmail: false,
+        });
+        yield* desktop.setMenuState(reader.webContents.id, {
+          selected: true,
+          composing: false,
+          gmail: true,
+        });
+        main.focus();
+        yield* settle;
+        expect(enabled()).toBe(false);
+        reader.focus();
+        yield* settle;
+        expect(enabled()).toBe(true);
+        reader.close();
+        main.focus();
+        yield* settle;
+        // Simulate a late focus event with the closed client id to detect leaked capabilities.
+        observations.testState.windows.push(reader);
+        reader.focus();
+        yield* settle;
+        expect(enabled()).toBe(false);
+        observations.testState.windows.pop();
+      }).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+    ),
+  );
+});
+
+it("native menus relay accelerator origin to the focused renderer", async () => {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const main = observations.testState.windows[0];
+        if (!main) throw new Error("Missing main window");
+        main.focus();
+        yield* desktop.setMenuState(main.webContents.id, {
+          selected: true,
+          composing: false,
+          gmail: true,
+        });
+        const received: import("../shared/desktop").DesktopEvent[] = [];
+        yield* desktop.events(main.webContents.id).pipe(
+          Stream.runForEach((event) =>
+            Effect.sync(() => {
+              received.push(event);
+            }),
+          ),
+          Effect.forkScoped,
+        );
+        yield* settle;
+        const menu = observations.testState.menu.mock.calls.at(-1)?.[0];
+        const items = menu?.find((m) => m.label === "Message")?.submenu;
+        if (!Array.isArray(items)) throw new Error("Missing Message menu");
+        const click = items.find((item) => item.label === "Reply")?.click;
+        if (!click) throw new Error("Missing Reply callback");
+        Reflect.apply(click, undefined, [null, undefined, { triggeredByAccelerator: true }]);
+        Reflect.apply(click, undefined, [null, undefined, { triggeredByAccelerator: false }]);
+        yield* settle;
+        expect(received).toEqual([
+          { _tag: "NativeAction", action: "reply", triggeredByAccelerator: true },
+          { _tag: "NativeAction", action: "reply", triggeredByAccelerator: false },
+        ]);
+      }).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+    ),
+  );
+});
+
+it("resume uses fallback inbox polling while IDLE reconnect owns its catch-up", async () => {
+  const calls = { full: 0, inbox: 0, paused: true };
+  const mailbox = Layer.effect(
+    Mailbox,
+    Effect.gen(function* () {
+      const base = yield* Mailbox;
+      return Mailbox.of({
+        ...base,
+        setSyncPaused: (paused) =>
+          Effect.sync(() => {
+            calls.paused = paused;
+          }),
+        sync: () =>
+          Effect.sync(() => {
+            calls.full++;
+            return [];
+          }),
+        pollInbox: () =>
+          Effect.sync(() => {
+            calls.inbox++;
+            return [];
+          }),
+      });
+    }),
+  ).pipe(Layer.provide(TestMailbox()));
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const { powerMonitor } = yield* Effect.promise(() => import("electron"));
+        powerMonitor.emit("resume");
+        yield* settle;
+        expect(calls).toEqual({ full: 0, inbox: 1, paused: false });
+      }).pipe(Effect.provide(localizedDesktopLayer(mailbox))),
+    ),
   );
 });

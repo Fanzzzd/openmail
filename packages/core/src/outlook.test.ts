@@ -2415,3 +2415,30 @@ it.effect("Graph extended rules preserve native word exclusions, size and import
     assert.strictEqual(saved.action.important, true);
   }),
 );
+
+for (const mailbox of ["all", "starred", "important"] as const) {
+  it.effect(`Outlook ${mailbox} history paging avoids Graph InefficientFilter`, () => {
+    const http = fakeHttp({
+      "GET /me/mailFolders/junkemail": { json: { id: "junk" } },
+      "GET /me/mailFolders/deleteditems": { json: { id: "trash" } },
+      "GET /me/messages": (url) => {
+        if (
+          url.searchParams.has("$orderby") &&
+          !url.searchParams.get("$filter")?.startsWith("receivedDateTime ge ")
+        )
+          return {
+            status: 400,
+            json: {
+              error: { code: "InefficientFilter", message: "Order property must start filter" },
+            },
+          };
+        return { json: { value: [{ id: "older" }] } };
+      },
+    });
+    return run(http, (adapter) =>
+      adapter
+        .listFolderMessages(account, { mailbox }, null, { newestFirst: true })
+        .pipe(Effect.tap((page) => Effect.sync(() => assert.deepStrictEqual(page.ids, ["older"])))),
+    );
+  });
+}

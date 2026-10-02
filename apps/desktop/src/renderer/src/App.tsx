@@ -1,3 +1,4 @@
+import { DOCK_FILE_MESSAGES } from "./dock-file-errors";
 import { pageAfterRemoval } from "./state/list-pages";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { readerSelectedText, quoteChoice } from "./quote-selection";
@@ -16,6 +17,8 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import {
+  attachmentProblem,
+  type AttachmentProblem,
   applyComposeSignature,
   moveSourceLabel,
   DEFAULT_PREFS,
@@ -35,6 +38,8 @@ import { Keys, MAIL_KEYS } from "./state/keys";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
+import { dispatchNativeAction } from "./native-actions";
+import { ProfileSwitcher, DefaultProfilesPrompt } from "./components/ProfileSettings";
 import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../shared/desktop";
 import {
   selectionShortcut,
@@ -1055,9 +1060,76 @@ export function App({ composeId }: { composeId?: string }) {
       ),
     );
   };
+  useEffect(() => {
+    run(
+      withMail((call) =>
+        call("SetNativeMenuState", {
+          state: {
+            selected: Boolean(selectedId) && !dialog,
+            composing: Boolean(compose) && !dialog,
+            gmail: threadState?.provider === "gmail",
+          },
+        }),
+      ),
+    );
+  }, [run, selectedId, compose, dialog, threadState?.provider]);
+
+  const droppedAttachmentError = (problem: AttachmentProblem) => {
+    switch (problem.kind) {
+      case "gmailSize":
+        return t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`;
+      case "gmailBlocked": {
+        const filename = problem.filename;
+        return t`Gmail blocks ${filename}. Remove this attachment before sending.`;
+      }
+      case "outlookSize":
+        return t`This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`;
+      default: {
+        const exhaustive: never = problem;
+        return exhaustive;
+      }
+    }
+  };
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));
     switch (event._tag) {
+      case "NativeAction": {
+        dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
+        break;
+      }
+      case "AccountInbox":
+        changeView({ space: ALL, accountId: event.accountId, mailbox: "inbox" });
+        setQuery("");
+        break;
+      case "FileError":
+        say({ text: i18n._(DOCK_FILE_MESSAGES[event.reason]), tone: "error" });
+        break;
+      case "ComposeMessage":
+        startCompose(event.mode, event.asAttachment, event.id);
+        break;
+      case "ComposeFiles":
+        run(
+          newMessageDraft().pipe(
+            Effect.flatMap((base) => {
+              if (!base) return Effect.void;
+              const account = accountList.find((a) => a.id === base.accountId);
+              const problem = account
+                ? attachmentProblem(account.provider, event.attachments)
+                : undefined;
+              if (problem) {
+                say({ text: droppedAttachmentError(problem), tone: "error" });
+                return Effect.void;
+              }
+              const draft = { ...base, attachments: event.attachments };
+              return saveDraft(toDraftInput(draft)).pipe(
+                Effect.flatMap((saved) =>
+                  withMail((call) => call("OpenComposeWindow", { id: saved.id })),
+                ),
+              );
+            }),
+          ),
+        );
+        break;
       case "AttachFiles":
         window.dispatchEvent(new Event("openmail-attach-files"));
         break;
@@ -1139,6 +1211,23 @@ export function App({ composeId }: { composeId?: string }) {
     }
   };
   useDesktopEvents((event) => {
+    if (event._tag === "ComposeFiles" && accountList.length) {
+      receiveDesktop(event);
+      return;
+    }
+    if (event._tag === "NativeAction") {
+      if (
+        !dialog &&
+        !editing &&
+        !goToFolder &&
+        !snoozeIds &&
+        !filterSeed &&
+        !labelCreation &&
+        !document.querySelector('[role="dialog"]:not([data-compose]),[role="alertdialog"]')
+      )
+        receiveDesktop(event);
+      return;
+    }
     const route = desktopEventRoute(
       event,
       Boolean(
@@ -1511,11 +1600,17 @@ export function App({ composeId }: { composeId?: string }) {
       </div>
     );
   return (
-    <div className="h-full text-[13px] text-neutral-900 dark:text-neutral-100">
+    <div className="flex h-full flex-col text-[13px] text-neutral-900 dark:text-neutral-100">
+      <DefaultProfilesPrompt
+        accounts={accountList}
+        profiles={profileList}
+        busy={Boolean(dialog || compose)}
+      />
+      <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
       <Group
         key={`${paneMode}:${prefs.sidebarVisible}`}
         orientation="horizontal"
-        className="h-full"
+        className="min-h-0 flex-1"
         defaultLayout={panes.defaultLayout}
         onLayoutChanged={panes.onLayoutChanged}
         resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
@@ -1582,6 +1677,9 @@ export function App({ composeId }: { composeId?: string }) {
                 title={title}
                 threads={list}
                 loading={threads.loading}
+                loadingMore={threads.loadingMore}
+                loadError={threads.loadError}
+                exhausted={threads.exhausted}
                 showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
                 searching={search !== ""}
                 searchingServer={threads.searchingServer}

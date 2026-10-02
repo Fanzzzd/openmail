@@ -297,6 +297,10 @@ msgstr "Add this event to your calendar?"
 msgid "Add to calendar"
 msgstr "Add to calendar"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Add to Dictionary"
+msgstr "Add to Dictionary"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "Add Your First Account"
@@ -386,6 +390,7 @@ msgid "All"
 msgstr "All"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
@@ -465,6 +470,10 @@ msgstr "Always quote the whole message"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always use selection"
 msgstr "Always use selection"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "An attachment changed while reading. Try adding it again."
+msgstr "An attachment changed while reading. Try adding it again."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
@@ -546,15 +555,21 @@ msgstr "Attach the redacted diagnostics shown below"
 msgid "Attached message"
 msgstr "Attached message"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Attachment cache limit"
+msgstr "Attachment cache limit"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Attachment save folder"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
 msgid "Attachments"
 msgstr "Attachments"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Attachments exceed the 30 MB compose limit."
 
@@ -627,6 +642,10 @@ msgstr "Bigger text"
 #: src/renderer/src/components/Reader.tsx
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Bodies"
+msgstr "Bodies"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
@@ -775,6 +794,11 @@ msgstr "Change writing mode?"
 msgid "Check for Updates…"
 msgstr "Check for Updates…"
 
+#: src/renderer/src/components/SpellcheckSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Check spelling while typing"
+msgstr "Check spelling while typing"
+
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "Choose a conversation"
@@ -828,6 +852,14 @@ msgstr "Choose one destination for the filter"
 msgid "Choose your email provider."
 msgstr "Choose your email provider."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear account cache"
+msgstr "Clear account cache"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear all caches"
+msgstr "Clear all caches"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Clear formatting"
@@ -836,6 +868,10 @@ msgstr "Clear formatting"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Clear selection"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
+msgstr "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -1002,6 +1038,10 @@ msgstr "Could not check for updates. Try again later."
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Could not decode winmail.dat. You can save the original file."
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Could not load older messages. Try again."
+msgstr "Could not load older messages. Try again."
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "Could not load the calendar invitation."
@@ -1041,6 +1081,10 @@ msgstr "Could not read clipboard"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
 msgstr "Could not read system permission"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Could not read the attachments. Check the files and their permissions."
+msgstr "Could not read the attachments. Check the files and their permissions."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
@@ -1140,6 +1184,18 @@ msgstr "Create filter"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
 msgstr "Create filter from these messages"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create Personal and Work profiles?"
+msgstr "Create Personal and Work profiles?"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles"
+msgstr "Create profiles"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles?"
+msgstr "Create profiles?"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
@@ -1300,6 +1356,7 @@ msgstr "Detect calendar events in messages"
 msgid "Diagnostics preview"
 msgstr "Diagnostics preview"
 
+#: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
 msgstr "Disabled"
@@ -1379,6 +1436,7 @@ msgstr "Drag accounts to reorder or move between spaces. You can also use the sp
 msgid "Drag selected to Finder"
 msgstr "Drag selected to Finder"
 
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
@@ -1642,6 +1700,10 @@ msgstr "Font family"
 msgid "Font size"
 msgstr "Font size"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Format"
+msgstr "Format"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 msgid "Formatting"
 msgstr "Formatting"
@@ -1712,10 +1774,12 @@ msgstr "Gmail"
 msgid "Gmail aliases and signatures"
 msgstr "Gmail aliases and signatures"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 msgstr "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail blocks {filename}. Remove this attachment before sending."
@@ -1733,6 +1797,10 @@ msgstr "Gmail default"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
 msgstr "Go to folder"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Group accounts and choose a profile in the window toolbar."
+msgstr "Group accounts and choose a profile in the window toolbar."
 
 #: src/renderer/src/components/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
@@ -1753,6 +1821,10 @@ msgstr "Has words"
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "Headers"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Help"
+msgstr "Help"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Hide"
@@ -2054,6 +2126,10 @@ msgstr "Link URL"
 msgid "Load images"
 msgstr "Load images"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Load older messages"
+msgstr "Load older messages"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Load remote content"
 msgstr "Load remote content"
@@ -2082,6 +2158,10 @@ msgstr "Loading draft…"
 msgid "Loading image…"
 msgstr "Loading image…"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Loading older messages…"
+msgstr "Loading older messages…"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
 msgstr "Loading settings…"
@@ -2093,6 +2173,10 @@ msgstr "Loading the original from the server…"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Loading…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Local cache"
+msgstr "Local cache"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
@@ -2114,6 +2198,14 @@ msgstr "Location changed:"
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "macOS uses the system spellchecker and detects languages automatically."
+msgstr "macOS uses the system spellchecker and detects languages automatically."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Mailbox"
+msgstr "Mailbox"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Mailboxes"
@@ -2250,6 +2342,7 @@ msgstr "Mention suggestions"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Message"
 
@@ -2484,6 +2577,10 @@ msgstr "new messages"
 msgid "New messages"
 msgstr "New messages"
 
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "New profile"
+msgstr "New profile"
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "New signature"
@@ -2587,6 +2684,10 @@ msgstr "No messages here"
 msgid "No messages match the filters"
 msgstr "No messages match the filters"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No more messages"
+msgstr "No more messages"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "No overlapping events in your primary calendar."
 msgstr "No overlapping events in your primary calendar."
@@ -2599,6 +2700,10 @@ msgstr "No parent"
 #: src/renderer/src/errors.ts
 msgid "no printers are available."
 msgstr "no printers are available."
+
+#: src/renderer/src/state/desktop.ts
+msgid "No suggestions"
+msgstr "No suggestions"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "No suggestions waiting for review."
@@ -2711,6 +2816,10 @@ msgstr "Only inbox messages can be snoozed"
 #: src/renderer/src/App.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Only regular files can be attached. Folders cannot be attached."
+msgstr "Only regular files can be attached. Folders cannot be attached."
 
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
@@ -2858,6 +2967,7 @@ msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook scheduled replies need both dates"
 
 #: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Overview"
 msgstr "Overview"
@@ -2915,6 +3025,10 @@ msgstr "Permanently delete selected mail?"
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Permanently deleted {count} messages"
 msgstr "Permanently deleted {count} messages"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Personal"
+msgstr "Personal"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -2978,6 +3092,19 @@ msgstr "Print message…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Print…"
 msgstr "Print…"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profile"
+msgstr "Profile"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Profiles"
+msgstr "Profiles"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
+msgstr "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -3728,6 +3855,10 @@ msgstr "Size comparison"
 msgid "Size in bytes"
 msgstr "Size in bytes"
 
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Skip"
+msgstr "Skip"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Small"
 msgstr "Small"
@@ -3795,6 +3926,14 @@ msgstr "Spam"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Special folder badges"
 msgstr "Special folder badges"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling"
+msgstr "Spelling"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling languages"
+msgstr "Spelling languages"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -4052,6 +4191,7 @@ msgstr "These are not email addresses: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "These loaded conversations will be moved to Trash. You can undo this batch."
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
 msgstr "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
@@ -4162,9 +4302,17 @@ msgstr "Toggle reading pane position"
 msgid "Tomorrow morning"
 msgstr "Tomorrow morning"
 
+#: src/renderer/src/dock-file-errors.ts
+msgid "Too many attachments. Attach up to 256 files."
+msgstr "Too many attachments. Attach up to 256 files."
+
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Toolbar actions"
 msgstr "Toolbar actions"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Total cache"
+msgstr "Total cache"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4362,6 +4510,10 @@ msgstr "Whole message"
 #: src/renderer/src/state/desktop.ts
 msgid "Window"
 msgstr "Window"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Work"
+msgstr "Work"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Writing mode"

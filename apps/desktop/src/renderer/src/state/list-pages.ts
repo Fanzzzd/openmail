@@ -6,6 +6,7 @@ export interface Loaded {
   pages: number;
   requested: number;
   done: boolean;
+  remoteDone?: boolean;
 }
 /** Refresh the loaded extent in one query, keeping offscreen selections available. */
 export function refreshPages<E>(
