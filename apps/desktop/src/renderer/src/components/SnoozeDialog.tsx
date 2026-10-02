@@ -1,6 +1,6 @@
 import { useAtom } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { snoozeTimes } from "@openmail/core/schema";
+import { parseSnoozeTime, snoozeTimes } from "@openmail/core/schema";
 import { useState } from "react";
 import { resultError } from "../errors";
 import { MAIL_KEYS } from "../state/keys";
@@ -19,10 +19,13 @@ export function SnoozeDialog({
 }) {
   const { t, i18n } = useLingui();
   const [custom, setCustom] = useState("");
+  const [phrase, setPhrase] = useState("");
+  const [now] = useState(() => Date.now());
+  const due = parseSnoozeTime(phrase || custom, now);
   const [result, run] = useAtom(snoozeAtom, { mode: "promiseExit" });
   const [times] = useState(() => snoozeTimes(Date.now()));
-  const choose = async (due: number) => {
-    const exit = await run({ payload: { threads, due }, reactivityKeys: MAIL_KEYS });
+  const choose = async (reminderAt: number) => {
+    const exit = await run({ payload: { threads, due: reminderAt }, reactivityKeys: MAIL_KEYS });
     if (exit._tag === "Success") onSnoozed();
   };
   return (
@@ -51,20 +54,40 @@ export function SnoozeDialog({
         className="space-y-2"
         onSubmit={(e) => {
           e.preventDefault();
-          void choose(new Date(custom).getTime());
+          if (due !== null) void choose(due);
         }}
       >
         <label className="block space-y-1">
+          <span>{t`Reminder time`}</span>
+          <input
+            type="text"
+            className={formInput}
+            value={phrase}
+            onChange={(e) => {
+              setPhrase(e.target.value);
+              setCustom("");
+            }}
+            placeholder={t`1 week, tomorrow 9am, next monday`}
+          />
+        </label>
+        {phrase && (
+          <p aria-live="polite">
+            {due === null ? t`Enter a future reminder time` : new Date(due).toLocaleString()}
+          </p>
+        )}
+        <label className="block space-y-1">
           <span>{t`Custom time`}</span>
           <input
-            required
             type="datetime-local"
             className={formInput}
             value={custom}
-            onChange={(e) => setCustom(e.target.value)}
+            onChange={(e) => {
+              setCustom(e.target.value);
+              setPhrase("");
+            }}
           />
         </label>
-        <button type="submit" disabled={result.waiting || !custom} className={formButton}>
+        <button type="submit" disabled={result.waiting || due === null} className={formButton}>
           <Trans>Snooze</Trans>
         </button>
       </form>

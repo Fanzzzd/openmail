@@ -62,6 +62,8 @@ import type { MarkdownDraftSource } from "./markdown-draft.js";
 import type {
   AccountOrganization,
   FilterInput,
+  FilterRestoration,
+  GmailRuleDefinition,
   LabelChange,
   LabelPreference,
   SendAs,
@@ -271,6 +273,9 @@ export class Store extends Context.Service<
     listLabels(accountIds?: readonly string[]): Effect.Effect<Label[]>;
 
     readonly labelPreferences: Effect.Effect<LabelPreference[]>;
+    filterRestorations(accountId: string): Effect.Effect<FilterRestoration[]>;
+    saveFilterRestoration(backup: FilterRestoration): Effect.Effect<void>;
+    deleteFilterRestoration(accountId: string, id: string): Effect.Effect<void>;
     setLabelPreference(input: LabelPreference): Effect.Effect<void>;
     moveLabelPreference(accountId: string, from: string, to: string | null): Effect.Effect<void>;
     readonly organization: Effect.Effect<AccountOrganization[]>;
@@ -510,6 +515,16 @@ export interface ProviderAdapter {
   createFilter(
     account: Account,
     input: FilterInput,
+  ): Effect.Effect<ServerFilter, ProviderFailure | SettingsScopeMissing>;
+  updateFilter(
+    account: Account,
+    id: string,
+    input: FilterInput,
+    onRestoreFailure?: (definition: GmailRuleDefinition) => Effect.Effect<void>,
+  ): Effect.Effect<ServerFilter, ProviderFailure | SettingsScopeMissing>;
+  restoreFilter?(
+    account: Account,
+    definition: GmailRuleDefinition,
   ): Effect.Effect<ServerFilter, ProviderFailure | SettingsScopeMissing>;
   deleteFilter(
     account: Account,

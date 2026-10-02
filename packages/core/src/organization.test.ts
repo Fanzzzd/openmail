@@ -182,9 +182,10 @@ it.effect(
         };
         assert.strictEqual((yield* m.previewFilter(id, input.criteria)).length, 2);
         assert.strictEqual(server.searched.length, 1);
-        const filter = yield* m.createFilter(id, input);
+        const prepared = yield* m.prepareFilter(id, input);
+        const filter = yield* m.createFilter(id, input, prepared.token);
         assert.strictEqual((yield* m.filters(id))[0]?.id, filter.id);
-        yield* m.deleteFilter(id, filter.id);
+        yield* m.deleteFilter(id, filter.id, true);
         assert.deepStrictEqual(yield* m.filters(id), []);
         const vacation = {
           ...EMPTY_VACATION,
@@ -396,7 +397,12 @@ it.effect("deleting filters with a free-form query require explicit confirmation
       const exit = yield* Effect.exit(m.createFilter("gmail:me@gmail.com", filter));
       assert.strictEqual(exit._tag, "Failure");
       assert.strictEqual(server.filters.length, 0);
-      yield* m.createFilter("gmail:me@gmail.com", { ...filter, queryDeletionConfirmed: true });
+      const prepared = yield* m.prepareFilter("gmail:me@gmail.com", filter);
+      yield* m.createFilter(
+        "gmail:me@gmail.com",
+        { ...filter, queryDeletionConfirmed: true },
+        prepared.token,
+      );
       assert.strictEqual(server.filters.length, 1);
     }),
   ),

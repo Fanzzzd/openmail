@@ -693,6 +693,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             id: "custom",
             favorite: true,
             visible: false,
+            position: 9,
             color: "#112233",
           });
           yield* mailbox.resetFavorites([account.id]);
@@ -701,6 +702,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             id: "custom",
             favorite: false,
             visible: false,
+            position: 9,
             color: "#112233",
           });
           yield* mailbox.setPrefs({ showMore: false });

@@ -415,11 +415,18 @@ export const MailboxLive = (
           Effect.andThen(effect.pipe(flushLock.withPermits(1), syncLock.withPermits(1))),
         ),
       );
-      const organization = makeOrganizationMailbox(store, providers, changed, flushLater);
       const batchMailbox = yield* makeBatchMailbox(
         store,
         changed,
         FiberSet.run(background, flushNow).pipe(Effect.asVoid),
+      );
+
+      const organization = makeOrganizationMailbox(
+        store,
+        providers,
+        changed,
+        flushLater,
+        batchMailbox.modifyWithUndo,
       );
 
       // Running commands

@@ -118,6 +118,14 @@ export const makeBatchMailbox = (
                   const message = yield* store.getMessage(id);
                   const account = yield* store.getAccount(message.accountId);
                   if (
+                    op.kind === "move" &&
+                    !(yield* store.listLabels([account.id])).some((l) => l.id === op.labelId) &&
+                    !["INBOX", "ARCHIVE", "TRASH", "SPAM"].includes(op.labelId)
+                  )
+                    return yield* new InvalidInput({
+                      message: "Choose a destination from this account",
+                    });
+                  if (
                     account.provider !== "gmail" &&
                     op.kind !== "read" &&
                     op.kind !== "star" &&
@@ -131,6 +139,7 @@ export const makeBatchMailbox = (
                     op.kind === "inbox" ||
                     op.kind === "trash" ||
                     op.kind === "spam" ||
+                    op.kind === "move" ||
                     (op.kind === "label" && op.value && account.provider !== "gmail")
                   ) {
                     const reminder = yield* store.reminderSnapshot(id);

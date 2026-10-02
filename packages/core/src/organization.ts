@@ -1,11 +1,49 @@
 import { Schema } from "effect";
-import { ThreadSummary } from "./domain.js";
+import { ThreadSummary, type MailboxView, type Provider } from "./domain.js";
+
+export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
+  if (mailbox === "inbox") return "INBOX";
+  if (mailbox === "trash") return "TRASH";
+  if (mailbox === "spam") return "SPAM";
+  return currentLabel ?? null;
+}
+
+export const SYSTEM_FOLDERS = [
+  "inbox",
+  "snoozed",
+  "important",
+  "starred",
+  "sent",
+  "drafts",
+  "spam",
+  "trash",
+  "all",
+] as const;
+export const systemFolderId = (id: (typeof SYSTEM_FOLDERS)[number]) => `mailbox:${id}`;
+
+export const FilterPreview = Schema.Struct({
+  token: Schema.String,
+  matches: Schema.Array(ThreadSummary),
+  truncated: Schema.Boolean,
+});
+export type FilterPreview = typeof FilterPreview.Type;
 
 export const LabelChange = Schema.Union([
   Schema.Struct({
     kind: Schema.Literal("create"),
     name: Schema.String,
     parentId: Schema.optionalKey(Schema.String),
+  }),
+  Schema.Struct({
+    kind: Schema.Literal("parent"),
+    id: Schema.String,
+    parentId: Schema.NullOr(Schema.String),
+  }),
+  Schema.Struct({
+    kind: Schema.Literal("visibility"),
+    id: Schema.String,
+    labelListVisibility: Schema.Literals(["labelShow", "labelShowIfUnread", "labelHide"]),
+    messageListVisibility: Schema.Literals(["show", "hide"]),
   }),
   Schema.Struct({ kind: Schema.Literal("rename"), id: Schema.String, name: Schema.String }),
   Schema.Struct({ kind: Schema.Literal("delete"), id: Schema.String }),
@@ -22,6 +60,7 @@ export const LabelPreference = Schema.Struct({
   id: Schema.String,
   visible: Schema.Boolean,
   favorite: Schema.Boolean,
+  position: Schema.optionalKey(Schema.Number),
   color: Schema.NullOr(Schema.String),
 });
 export type LabelPreference = typeof LabelPreference.Type;
@@ -48,6 +87,12 @@ export const FilterAction = Schema.Struct({
   label: Schema.NullOr(Schema.String),
 });
 export type FilterAction = typeof FilterAction.Type;
+export function filterDestinationsSupported(action: FilterAction, provider: Provider): boolean {
+  return (
+    !(action.trash && (action.archive || action.label)) &&
+    !(action.archive && action.label && provider !== "gmail")
+  );
+}
 export const FilterInput = Schema.Struct({
   name: Schema.String,
   criteria: FilterCriteria,
@@ -55,8 +100,46 @@ export const FilterInput = Schema.Struct({
   queryDeletionConfirmed: Schema.optionalKey(Schema.Literal(true)),
 });
 export type FilterInput = typeof FilterInput.Type;
-export const ServerFilter = Schema.Struct({ id: Schema.String, ...FilterInput.fields });
+export const ServerFilter = Schema.Struct({
+  id: Schema.String,
+  ...FilterInput.fields,
+  editable: Schema.optionalKey(Schema.Boolean),
+});
 export type ServerFilter = typeof ServerFilter.Type;
+export const GmailRuleDefinition = Schema.Struct({
+  criteria: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+  action: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+});
+export type GmailRuleDefinition = typeof GmailRuleDefinition.Type;
+export const FilterRestoration = Schema.Struct({
+  id: Schema.String,
+  accountId: Schema.String,
+  originalId: Schema.String,
+  input: FilterInput,
+  definition: GmailRuleDefinition,
+});
+export type FilterRestoration = typeof FilterRestoration.Type;
+export const FilterRestorationPreview = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal("complete") }),
+  Schema.Struct({ kind: Schema.Literal("preview"), preview: FilterPreview }),
+]);
+export type FilterRestorationPreview = typeof FilterRestorationPreview.Type;
+
+export function sameFilterRule(left: FilterInput, right: FilterInput): boolean {
+  const values = (input: FilterInput) => [
+    input.criteria.from,
+    input.criteria.to,
+    input.criteria.subject,
+    input.criteria.query,
+    input.criteria.hasAttachment,
+    input.action.archive,
+    input.action.markRead,
+    input.action.star,
+    input.action.trash,
+    input.action.label,
+  ];
+  return JSON.stringify(values(left)) === JSON.stringify(values(right));
+}
 export const Vacation = Schema.Struct({
   enabled: Schema.Boolean,
   start: Schema.NullOr(Schema.Number),
@@ -147,4 +230,86 @@ export function snoozeTimes(now: number): { later: number; tomorrow: number; nex
 
 export function requiresFilterDeleteConfirmation(input: FilterInput): boolean {
   return input.action.trash && input.criteria.query.trim().length > 0;
+}
+
+/** Supported reminder phrases use local calendar dates, including across DST changes. */
+export function parseSnoozeTime(input: string, now: number): number | null {
+  const text = input
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/^一(?=周|天|小时|分钟)/, "1")
+    .replace(/^两(?=周|天|小时|分钟)/, "2");
+  const future = (date: Date) =>
+    Number.isFinite(date.getTime()) && date.getTime() > now ? date.getTime() : null;
+  const relative =
+    /^(?:in\s*)?(\d+)\s*(w(?:eeks?)?|d(?:ays?)?|h(?:ours?)?|m(?:in(?:ute)?s?)?)$/.exec(text) ??
+    /^(\d+)\s*(周|星期|天|日|小时|分钟)(?:后)?$/.exec(text);
+  if (relative) {
+    const amount = Number(relative[1]);
+    const unit = relative[2] ?? "";
+    const date = new Date(now);
+    if (/^(w|周|星期)/.test(unit)) date.setDate(date.getDate() + amount * 7);
+    else if (/^(d|天|日)/.test(unit)) date.setDate(date.getDate() + amount);
+    else date.setTime(now + amount * (/^(h|小时)/.test(unit) ? 60 * 60_000 : 60_000));
+    return future(date);
+  }
+  const overnightClock = /^(晚上|半夜)\s*12(?:(?::|点|时)(\d{1,2})?)?\s*分?$/.test(text);
+  const day = /^(tomorrow|today|明天|今天|后天)(.*)$/.exec(overnightClock ? `今天${text}` : text);
+  const week = /^(next\s+)(sunday|monday|tuesday|wednesday|thursday|friday|saturday)(.*)$/.exec(
+    text,
+  );
+  const chineseWeek = /^(下周|下星期)([一二三四五六日天])(.*)$/.exec(text);
+  if (day || week || chineseWeek) {
+    const date = new Date(now);
+    let rest = "";
+    if (day) {
+      date.setDate(
+        date.getDate() + (day[1] === "后天" ? 2 : /^(today|今天)$/.test(day[1] ?? "") ? 0 : 1),
+      );
+      rest = day[2] ?? "";
+    } else {
+      const weekdays = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ];
+      const target = week
+        ? weekdays.indexOf(week[2] ?? "")
+        : "日一二三四五六".indexOf((chineseWeek?.[2] ?? "日").replace("天", "日"));
+      // Next names a day in the following calendar week (Monday is its first day).
+      date.setDate(date.getDate() + 7 - ((date.getDay() + 6) % 7) + ((target + 6) % 7));
+      rest = week?.[3] ?? chineseWeek?.[3] ?? "";
+    }
+    const clock = rest.trim().replace(/^at\s+/, "");
+    let hour = 9;
+    let minute = 0;
+    if (clock && !/^(morning|上午|早上)$/.test(clock)) {
+      const match =
+        /^(?:(上午|早上|下午|晚上|半夜)\s*)?(\d{1,2})(?:(?::|点|时)(\d{1,2})?)?\s*(am|pm|分)?$/.exec(
+          clock,
+        );
+      if (!match) return null;
+      hour = Number(match[2]);
+      minute = Number(match[3] ?? 0);
+      const period = match[1] ?? match[4];
+      if (period && period !== "分") {
+        if (hour < 1 || hour > 12) return null;
+        const midnight = hour === 12 && /^(晚上|半夜)$/.test(period);
+        hour %= 12;
+        if (midnight) date.setDate(date.getDate() + 1);
+        else if (/^(pm|下午|晚上)$/.test(period)) hour += 12;
+      }
+      if (hour > 23 || minute > 59) return null;
+    }
+    date.setHours(hour, minute, 0, 0);
+    return future(date);
+  }
+  // Keep the native date/time picker as a precise alternative.
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/i.test(text)) return future(new Date(input));
+  return null;
 }

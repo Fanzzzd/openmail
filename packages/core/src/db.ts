@@ -493,6 +493,15 @@ export const MIGRATIONS: readonly string[] = [
     account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
     scopes_json TEXT NOT NULL
   );`,
+  // Migration 20: provider label visibility, ordered favorites and Gmail rule recovery.
+  `ALTER TABLE labels ADD COLUMN label_list_visibility TEXT;
+   ALTER TABLE labels ADD COLUMN message_list_visibility TEXT;
+   ALTER TABLE label_preferences ADD COLUMN position REAL NOT NULL DEFAULT 0;
+   CREATE TABLE filter_restorations (
+     id TEXT PRIMARY KEY,
+     account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+     backup_json TEXT NOT NULL
+   );`,
 ];
 
 /**

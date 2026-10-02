@@ -2035,3 +2035,170 @@ it.effect("Outlook mark-all-read continues after a snapshotted message disappear
     }),
   );
 });
+
+it.effect(
+  "Graph moves a folder under a new parent and retains nested display paths until sync catches up",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/mailFolders": {
+          json: {
+            value: [
+              { id: "parent", displayName: "Parent", childFolderCount: 0, totalItemCount: 0 },
+              { id: "child", displayName: "Child", childFolderCount: 1, totalItemCount: 0 },
+            ],
+          },
+        },
+        "GET /me/mailFolders/child/childFolders": {
+          json: {
+            value: [
+              { id: "nested", displayName: "Nested", childFolderCount: 0, totalItemCount: 0 },
+            ],
+          },
+        },
+        "POST /me/mailFolders/child/move": { json: { id: "moved-child" } },
+      });
+      const labels = yield* run(http, (a) =>
+        a.changeLabel(account, { kind: "parent", id: "child", parentId: "parent" }),
+      );
+      assert.strictEqual(labels.find((l) => l.id === "moved-child")?.name, "Parent/Child");
+      assert.strictEqual(
+        labels.some((l) => l.id === "child"),
+        false,
+      );
+      assert.strictEqual(labels.find((l) => l.id === "nested")?.name, "Parent/Child/Nested");
+      assert.deepStrictEqual(http.calls.find((c) => c.method === "POST")?.body, {
+        destinationId: "parent",
+      });
+    }),
+);
+it.effect("Graph edits a rule with PATCH without resetting its sequence or enabled state", () =>
+  Effect.gen(function* () {
+    const original = {
+      id: "r1",
+      displayName: "Old",
+      sequence: 7,
+      isEnabled: false,
+      conditions: { senderContains: ["alice"] },
+      actions: { markAsRead: true },
+    };
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules/r1": { json: original },
+      "PATCH /me/mailFolders/inbox/messageRules/r1": { json: { ...original, displayName: "New" } },
+    });
+    const result = yield* run(http, (a) =>
+      a.updateFilter(account, "r1", {
+        name: "New",
+        criteria: { from: "bob", to: "", subject: "", query: "", hasAttachment: false },
+        action: { archive: false, markRead: true, star: false, trash: false, label: null },
+      }),
+    );
+    assert.strictEqual(result.id, "r1");
+    assert.deepStrictEqual(
+      http.calls.filter((c) => c.method === "PATCH").map((c) => c.body),
+      [
+        {
+          displayName: "New",
+          conditions: { senderContains: ["bob"] },
+          actions: { markAsRead: true },
+        },
+      ],
+    );
+    assert.strictEqual(
+      http.calls.some((c) => c.method === "DELETE" || c.method === "POST"),
+      false,
+    );
+  }),
+);
+it.effect("Graph rejects replacing unsupported compound rule conditions before PATCH", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules/r1": {
+        json: {
+          id: "r1",
+          displayName: "Compound",
+          conditions: { senderContains: ["alice", "bob"], importance: "high" },
+          actions: { markAsRead: true },
+        },
+      },
+    });
+    const result = yield* run(http, (a) =>
+      a
+        .updateFilter(account, "r1", {
+          name: "Changed",
+          criteria: { from: "bob", to: "", subject: "", query: "", hasAttachment: false },
+          action: { archive: false, markRead: true, star: false, trash: false, label: null },
+        })
+        .pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(http.calls.length, 1);
+  }),
+);
+
+it.effect("Outlook archive-folder rules roundtrip as archive actions and remain deletable", () =>
+  Effect.gen(function* () {
+    const rule = {
+      id: "archive-rule",
+      displayName: "Archive",
+      conditions: { senderContains: ["alice"] },
+      actions: { moveToFolder: "archive-id" },
+    };
+    const http = fakeHttp({
+      "GET /me/mailFolders/archive": { json: { id: "archive-id" } },
+      "GET /me/mailFolders/inbox/messageRules": { json: { value: [rule] } },
+      "GET /me/mailFolders/inbox/messageRules/archive-rule": { json: rule },
+      "PATCH /me/mailFolders/inbox/messageRules/archive-rule": { json: rule },
+      "DELETE /me/mailFolders/inbox/messageRules/archive-rule": { status: 204 },
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const current = (yield* adapter.filters(account))[0];
+        assert.ok(current);
+        assert.strictEqual(current.action.archive, true);
+        assert.strictEqual(current.action.label, null);
+        const edited = yield* adapter.updateFilter(account, current.id, current);
+        assert.strictEqual(edited.action.archive, true);
+        assert.strictEqual(edited.action.label, null);
+        yield* adapter.deleteFilter(account, current.id);
+      }),
+    );
+    assert.deepStrictEqual(http.calls.find((call) => call.method === "PATCH")?.body, {
+      displayName: "Archive",
+      conditions: { senderContains: ["alice"] },
+      actions: { moveToFolder: "archive-id" },
+    });
+  }),
+);
+
+it.effect("Outlook rules with delete and another destination are not offered for editing", () => {
+  const actions = [
+    { delete: true, moveToFolder: "archive-id" },
+    { delete: true, moveToFolder: "custom-id" },
+    { delete: true },
+    { moveToFolder: "archive-id" },
+  ];
+  const http = fakeHttp({
+    "GET /me/mailFolders/archive": { json: { id: "archive-id" } },
+    "GET /me/mailFolders/inbox/messageRules": {
+      json: {
+        value: actions.map((action, index) => ({
+          id: String(index),
+          displayName: "Rule",
+          conditions: { senderContains: ["alice"] },
+          actions: action,
+        })),
+      },
+    },
+  });
+  return run(http, (adapter) => adapter.filters(account)).pipe(
+    Effect.tap((rules) =>
+      Effect.sync(() => {
+        assert.deepStrictEqual(
+          rules.map((rule) => rule.editable !== false),
+          [false, false, true, true],
+        );
+      }),
+    ),
+  );
+});

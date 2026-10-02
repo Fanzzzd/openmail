@@ -3,7 +3,14 @@ import { Effect, Option, Stream } from "effect";
 
 import { attachmentFromRaw } from "./attachments.js";
 import { buildMime } from "./compose.js";
-import type { Address, DraftRemote, IncomingMessage, MailOp, OutgoingMessage } from "./domain.js";
+import type {
+  Address,
+  DraftRemote,
+  IncomingMessage,
+  Label,
+  MailOp,
+  OutgoingMessage,
+} from "./domain.js";
 import {
   FeatureScopeMissing,
   PermanentError,
@@ -31,7 +38,7 @@ export interface FakeServer {
   messages: Map<string, IncomingMessage>;
   /** Every sign-in, as the adapter received it. */
   connects: ConnectInput[];
-  labels: { id: string; name: string; color: string | null }[];
+  labels: Omit<Label, "accountId">[];
   filters: ServerFilter[];
   vacation: Vacation;
   aliases: SendAs[];
@@ -296,7 +303,18 @@ export function makeFakeProvider(
                 ? l
                 : change.kind === "rename"
                   ? { ...l, name: change.name }
-                  : { ...l, color: change.color },
+                  : change.kind === "visibility"
+                    ? {
+                        ...l,
+                        labelListVisibility: change.labelListVisibility,
+                        messageListVisibility: change.messageListVisibility,
+                      }
+                    : change.kind === "parent"
+                      ? {
+                          ...l,
+                          name: `${change.parentId ? `${server.labels.find((p) => p.id === change.parentId)?.name}/` : ""}${l.name.split("/").at(-1)}`,
+                        }
+                      : { ...l, color: change.color },
             );
           return server.labels;
         }),
@@ -311,6 +329,16 @@ export function makeFakeProvider(
         settingsReady,
         Effect.sync(() => {
           const filter = { ...input, id: `filter${++counter}` };
+          server.filters.push(filter);
+          return filter;
+        }),
+      ),
+    updateFilter: (account, id, input) =>
+      Effect.andThen(
+        settingsReady,
+        Effect.sync(() => {
+          server.filters = server.filters.filter((f) => f.id !== id);
+          const filter = { ...input, id: account.provider === "gmail" ? `filter${++counter}` : id };
           server.filters.push(filter);
           return filter;
         }),

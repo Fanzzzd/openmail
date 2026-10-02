@@ -55,7 +55,7 @@ export function leavesList(
       return !after.includes("SPAM");
     case "snoozed":
       return (
-        ["archive", "inbox", "trash", "spam"].includes(op.kind) ||
+        ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
         (op.kind === "label" && op.value && provider !== "gmail")
       );
     case "all":

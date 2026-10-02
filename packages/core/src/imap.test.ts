@@ -1006,3 +1006,66 @@ it.effect(
       ),
     ),
 );
+
+it.effect("IMAP reparenting honors the server delimiter and supports moving back to root", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({
+      host: "imap.example.com",
+      port: 993,
+      secure: true,
+      auth: { user: "me", pass: "password" },
+      logger: false,
+    });
+    const folders: ListResponse[] = [
+      {
+        path: "Clients.Reports",
+        pathAsListed: "Clients.Reports",
+        name: "Reports",
+        delimiter: ".",
+        parent: ["Clients"],
+        parentPath: "Clients",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+      {
+        path: "Work",
+        pathAsListed: "Work",
+        name: "Work",
+        delimiter: ".",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+      },
+    ];
+    vi.spyOn(client, "list").mockResolvedValue(folders);
+    const rename = vi
+      .spyOn(client, "mailboxRename")
+      .mockResolvedValue({ path: "Clients.Reports", newPath: "Work.Reports" });
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    yield* adapter.changeLabel(account, {
+      kind: "parent",
+      id: "Clients.Reports",
+      parentId: "Work",
+    });
+    yield* adapter.changeLabel(account, { kind: "parent", id: "Clients.Reports", parentId: null });
+    assert.deepStrictEqual(rename.mock.calls, [
+      ["Clients.Reports", "Work.Reports"],
+      ["Clients.Reports", "Reports"],
+    ]);
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);

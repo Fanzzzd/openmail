@@ -124,6 +124,10 @@ const LabelRow = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   color: Schema.NullOr(Schema.String),
+  label_list_visibility: Schema.NullOr(
+    Schema.Literals(["labelShow", "labelShowIfUnread", "labelHide"]),
+  ),
+  message_list_visibility: Schema.NullOr(Schema.Literals(["show", "hide"])),
 });
 
 const PendingOpRow = Schema.Struct({
@@ -881,14 +885,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           sql`UPDATE snoozed_messages SET wake_pending=0 WHERE (account_id, provider_id) IN (SELECT account_id, provider_id FROM messages WHERE id=${id})`,
         );
       if (
-        ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
+        ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
         (op.kind === "label" && op.value && row.value.provider !== "gmail")
       )
         yield* run(
           sql`UPDATE thread_reminders SET due_at=NULL, wake_pending=CASE WHEN ${op.kind} = 'inbox' THEN wake_pending ELSE 0 END WHERE (account_id, thread_id) IN (SELECT account_id, thread_id FROM messages WHERE id=${id})`,
         );
       if (
-        ["archive", "trash", "spam"].includes(op.kind) ||
+        ["archive", "trash", "spam", "move"].includes(op.kind) ||
         (op.kind === "label" && op.value && row.value.provider !== "gmail")
       )
         yield* run(
@@ -943,8 +947,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             Effect.gen(function* () {
               yield* sql`DELETE FROM labels WHERE account_id = ${account}`;
               for (const l of labels) {
-                yield* sql`INSERT INTO labels (account_id, id, name, color)
-                  VALUES (${account}, ${l.id}, ${l.name}, ${l.color})`;
+                yield* sql`INSERT INTO labels (account_id, id, name, color, label_list_visibility, message_list_visibility)
+                  VALUES (${account}, ${l.id}, ${l.name}, ${l.color}, ${l.labelListVisibility ?? null}, ${l.messageListVisibility ?? null})`;
               }
             }),
           ),
@@ -952,10 +956,19 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     );
 
     const listLabels = Effect.fn("Store.listLabels")(function* (accountIds?: readonly string[]) {
-      const rows = yield* all(LabelRow)(sql`SELECT account_id, id, name, color FROM labels m
+      const rows = yield* all(
+        LabelRow,
+      )(sql`SELECT account_id, id, name, color, label_list_visibility, message_list_visibility FROM labels m
         WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND ${accountIds ? inAccounts(accountIds) : sql.literal("1")}
         ORDER BY account_id, name`);
-      return rows.map((r) => ({ accountId: r.account_id, id: r.id, name: r.name, color: r.color }));
+      return rows.map((r) => ({
+        accountId: r.account_id,
+        id: r.id,
+        name: r.name,
+        color: r.color,
+        ...(r.label_list_visibility ? { labelListVisibility: r.label_list_visibility } : {}),
+        ...(r.message_list_visibility ? { messageListVisibility: r.message_list_visibility } : {}),
+      }));
     });
 
     // Profiles

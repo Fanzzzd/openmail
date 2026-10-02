@@ -96,6 +96,10 @@ export const Label = Schema.Struct({
   /** The value that appears in `MessageSummary.labels`. */
   id: Schema.String,
   name: Schema.String,
+  labelListVisibility: Schema.optionalKey(
+    Schema.Literals(["labelShow", "labelShowIfUnread", "labelHide"]),
+  ),
+  messageListVisibility: Schema.optionalKey(Schema.Literals(["show", "hide"])),
   /** Background color from the provider, if it has one. */
   color: Schema.NullOr(Schema.String),
 });
@@ -315,6 +319,11 @@ export const MailOp = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("inbox") }),
   Schema.Struct({ kind: Schema.Literal("trash") }),
   Schema.Struct({ kind: Schema.Literal("spam") }),
+  Schema.Struct({
+    kind: Schema.Literal("move"),
+    labelId: Schema.String,
+    removeLabelId: Schema.NullOr(Schema.String),
+  }),
   /** Add or remove a user label. On Outlook and IMAP, adding moves to that folder. */
   Schema.Struct({ kind: Schema.Literal("label"), labelId: Schema.String, value: Schema.Boolean }),
 ]);

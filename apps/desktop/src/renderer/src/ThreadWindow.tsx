@@ -63,6 +63,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     (l) => l.accountId === account?.id,
   );
   const [labelPicker, setLabelPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [dialog, setDialog] = useState<"settings" | "help" | "add" | null>(null);
   const subject = messages?.at(-1)?.subject;
 
@@ -178,8 +179,9 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
         break;
       case "label":
       case "move":
-        if (state && labels.length) {
+        if (state) {
           e.preventDefault();
+          setPickerMode(action);
           setLabelPicker(true);
         }
         break;
@@ -197,6 +199,10 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       <header className="drag flex h-13 shrink-0 items-center pr-4 pl-20">
         {state && (
           <ThreadActions
+            pickerMode={pickerMode}
+            organizationTarget={
+              account ? { accountId: account.id, threads: [id], flat: single } : undefined
+            }
             state={state}
             mailbox="all"
             labels={labels}

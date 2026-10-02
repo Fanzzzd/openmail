@@ -3,8 +3,11 @@ import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   EMPTY_FILTER,
-  EMPTY_VACATION,
   requiresFilterDeleteConfirmation,
+  EMPTY_VACATION,
+  type FilterPreview,
+  type FilterRestoration,
+  type ServerFilter,
   htmlToText,
   escapeHtml,
   type FilterInput,
@@ -14,8 +17,14 @@ import { AsyncResult } from "effect/reactivity";
 import { useEffect, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { resultError, settingsScopeMissing } from "../errors";
-import { Keys } from "../state/keys";
+import { Keys, MAIL_KEYS } from "../state/keys";
 import {
+  updateFilterAtom,
+  restoreFilterAtom,
+  prepareFilterRestorationAtom,
+  discardFilterRestorationAtom,
+  applyFilterAtom,
+  prepareFilterAtom,
   createFilterAtom,
   deleteFilterAtom,
   reauthAtom,
@@ -59,9 +68,10 @@ function AccountServerSettings({ account }: { account: Account }) {
   const { t, i18n } = useLingui();
   const filters = useAtomValue(filtersListAtom(account.id));
   const vacation = useAtomValue(vacationAtom(account.id));
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<ServerFilter | "new" | null>(null);
+  const [applying, setApplying] = useState<ServerFilter | null>(null);
   const [reply, setReply] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<ServerFilter | null>(null);
   const [deleted, remove] = useAtom(deleteFilterAtom, { mode: "promiseExit" });
   const [signedIn, reauth] = useAtom(reauthAtom(account.id));
   return (
@@ -94,8 +104,23 @@ function AccountServerSettings({ account }: { account: Account }) {
         <ul className="divide-y divide-black/5 dark:divide-white/10">
           {AsyncResult.getOrElse(filters, () => []).map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3 py-2">
-              <span className="truncate">{f.name}</span>
-              <button type="button" className="text-red-500" onClick={() => setDeleting(f.id)}>
+              <span className="truncate">
+                {f.name}
+                {f.editable === false && (
+                  <span className="block text-xs text-neutral-500">{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
+                )}
+              </span>
+              <button
+                type="button"
+                disabled={f.editable === false}
+                onClick={() => setEditing(f)}
+              >{t`Edit`}</button>
+              <button
+                type="button"
+                disabled={f.editable === false}
+                onClick={() => setApplying(f)}
+              >{t`Apply to existing mail`}</button>
+              <button type="button" className="text-red-500" onClick={() => setDeleting(f)}>
                 <Trans>Delete</Trans>
               </button>
             </li>
@@ -105,7 +130,7 @@ function AccountServerSettings({ account }: { account: Account }) {
           type="button"
           className={formButton}
           disabled={filters._tag !== "Success"}
-          onClick={() => setEditing(true)}
+          onClick={() => setEditing("new")}
         >
           <Trans>Create filter</Trans>
         </button>
@@ -128,8 +153,27 @@ function AccountServerSettings({ account }: { account: Account }) {
           <Trans>Edit automatic reply</Trans>
         </button>
       </section>
-      {account.provider === "gmail" && <Aliases account={account} />}
-      {editing && <FilterEditor account={account} onClose={() => setEditing(false)} />}
+      {account.provider === "gmail" && (
+        <>
+          <PendingRuleRestorations account={account} />
+          <Aliases account={account} />
+        </>
+      )}
+      {editing && (
+        <FilterEditor
+          account={account}
+          initial={editing === "new" ? undefined : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {applying && (
+        <FilterEditor
+          account={account}
+          initial={applying}
+          mode="apply"
+          onClose={() => setApplying(null)}
+        />
+      )}
       {reply && (
         <VacationEditor
           account={account}
@@ -143,7 +187,7 @@ function AccountServerSettings({ account }: { account: Account }) {
           if (!open) setDeleting(null);
         }}
         title={t`Delete filter?`}
-        description={t`This removes the filter from the server.`}
+        description={t`This removes the filter from the server. Existing messages are unchanged.`}
       >
         <AlertCancel>
           <Trans>Cancel</Trans>
@@ -155,7 +199,11 @@ function AccountServerSettings({ account }: { account: Account }) {
           onClick={async () => {
             if (!deleting) return;
             const exit = await remove({
-              payload: { accountId: account.id, id: deleting },
+              payload: {
+                accountId: account.id,
+                id: deleting.id,
+                confirmed: true,
+              },
               reactivityKeys: [Keys.serverSettings, Keys.audit],
             });
             if (exit._tag === "Success") setDeleting(null);
@@ -168,27 +216,170 @@ function AccountServerSettings({ account }: { account: Account }) {
   );
 }
 
+function PendingRuleRestorations({ account }: { account: Account }) {
+  const { t, i18n } = useLingui();
+  const backups = useAtomValue(
+    MailClient.query(
+      "FilterRestorations",
+      { accountId: account.id },
+      { reactivityKeys: [Keys.serverSettings] },
+    ),
+  );
+  const [prepared, prepare] = useAtom(prepareFilterRestorationAtom, { mode: "promiseExit" });
+  const [restored, restore] = useAtom(restoreFilterAtom, { mode: "promiseExit" });
+  const [discarded, discard] = useAtom(discardFilterRestorationAtom, { mode: "promiseExit" });
+  const [discarding, setDiscarding] = useState<FilterRestoration | null>(null);
+  const [pending, setPending] = useState<{
+    backup: FilterRestoration;
+    preview: FilterPreview;
+  } | null>(null);
+  const busy = prepared.waiting || restored.waiting || discarded.waiting;
+  return (
+    <section className="space-y-2">
+      {AsyncResult.getOrElse(backups, () => []).map((backup) => (
+        <div key={backup.id}>
+          <span>{backup.input.name || backup.originalId} </span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              const exit = await prepare({
+                payload: { accountId: account.id, id: backup.id },
+                reactivityKeys: MAIL_KEYS,
+              });
+              if (exit._tag === "Success" && exit.value.kind === "preview")
+                setPending({ backup, preview: exit.value.preview });
+            }}
+          >{t`Restore rule`}</button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setDiscarding(backup)}
+          >{t`Discard`}</button>
+        </div>
+      ))}
+      {(resultError(i18n, backups) ||
+        resultError(i18n, prepared) ||
+        resultError(i18n, restored) ||
+        resultError(i18n, discarded)) && (
+        <p role="alert">
+          {resultError(i18n, backups) ??
+            resultError(i18n, prepared) ??
+            resultError(i18n, restored) ??
+            resultError(i18n, discarded)}
+        </p>
+      )}
+      <Alert
+        open={pending !== null}
+        onOpenChange={(open) => {
+          if (!open) setPending(null);
+        }}
+        title={t`Restore rule?`}
+        description={
+          pending
+            ? t`Restore the saved original rule on the server. Preview: ${pending.preview.matches.length} messages.`
+            : ""
+        }
+      >
+        {pending && requiresFilterDeleteConfirmation(pending.backup.input) && (
+          <FilterDeletionWarning />
+        )}
+        <AlertCancel>
+          <Trans>Cancel</Trans>
+        </AlertCancel>
+        <button
+          type="button"
+          disabled={busy}
+          className={formButton}
+          onClick={async () => {
+            if (!pending) return;
+            const exit = await restore({
+              payload: {
+                accountId: account.id,
+                id: pending.backup.id,
+                token: pending.preview.token,
+                ...(requiresFilterDeleteConfirmation(pending.backup.input)
+                  ? { queryDeletionConfirmed: true as const }
+                  : {}),
+              },
+              reactivityKeys: MAIL_KEYS,
+            });
+            if (exit._tag === "Success") setPending(null);
+          }}
+        >{t`Restore rule`}</button>
+      </Alert>
+      <Alert
+        open={discarding !== null}
+        onOpenChange={(open) => {
+          if (!open) setDiscarding(null);
+        }}
+        title={t`Discard saved rule?`}
+        description={t`This deletes the saved recovery copy. Rules on the server are unchanged.`}
+      >
+        <AlertCancel>
+          <Trans>Cancel</Trans>
+        </AlertCancel>
+        <button
+          type="button"
+          disabled={busy}
+          className={alertDanger}
+          onClick={async () => {
+            if (!discarding) return;
+            const exit = await discard({
+              payload: { accountId: account.id, id: discarding.id, confirmed: true },
+              reactivityKeys: MAIL_KEYS,
+            });
+            if (exit._tag === "Success") setDiscarding(null);
+          }}
+        >{t`Discard`}</button>
+      </Alert>
+    </section>
+  );
+}
+
+function FilterDeletionWarning() {
+  return (
+    <p role="alert">
+      <Trans>
+        This rule deletes messages matching a search query. Confirm only if the preview matches the
+        messages you intend to delete.
+      </Trans>
+    </p>
+  );
+}
+
 export function FilterEditor({
   account,
   from = "",
+  initial,
+  mode = "save",
   onClose,
 }: {
   account: Account;
   from?: string;
+  initial?: ServerFilter | undefined;
+  mode?: "save" | "apply";
   onClose: () => void;
 }) {
   const { t, i18n } = useLingui();
-  const [input, setInput] = useState<FilterInput>({
-    ...EMPTY_FILTER,
-    criteria: { ...EMPTY_FILTER.criteria, from },
+  const [input, setInput] = useState<FilterInput>(() => {
+    const value = initial ?? { ...EMPTY_FILTER, criteria: { ...EMPTY_FILTER.criteria, from } };
+    return { name: value.name, criteria: value.criteria, action: value.action };
   });
-  const [confirming, setConfirming] = useState<FilterInput | null>(null);
+  const [confirming, setConfirming] = useState<{
+    input: FilterInput;
+    preview: FilterPreview;
+  } | null>(null);
   const [previewCriteria, setPreviewCriteria] = useState(input.criteria);
   useEffect(() => {
     const timer = setTimeout(() => setPreviewCriteria(input.criteria), 350);
     return () => clearTimeout(timer);
   }, [input.criteria]);
   const [result, create] = useAtom(createFilterAtom, { mode: "promiseExit" });
+  const [updated, update] = useAtom(updateFilterAtom, { mode: "promiseExit" });
+  const [applied, apply] = useAtom(applyFilterAtom, { mode: "promiseExit" });
+  const [prepared, prepare] = useAtom(prepareFilterAtom, { mode: "promiseExit" });
+  const busy = result.waiting || updated.waiting || applied.waiting || prepared.waiting;
   const [signedIn, reauth] = useAtom(reauthAtom(account.id));
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom([account.id])), () => []);
   const preview = useAtomValue(
@@ -202,11 +393,21 @@ export function FilterEditor({
   const count = matches.length;
   const previewBusy =
     previewCriteria !== input.criteria || preview._tag === "Initial" || preview.waiting;
-  const submit = async (value: FilterInput) => {
-    const exit = await create({
-      payload: { accountId: account.id, input: value },
-      reactivityKeys: [Keys.serverSettings, Keys.audit],
-    });
+  const submit = async (value: FilterInput, token: string) => {
+    const payload = {
+      accountId: account.id,
+      input: requiresFilterDeleteConfirmation(value)
+        ? { ...value, queryDeletionConfirmed: true as const }
+        : value,
+      token,
+    };
+    const reactivityKeys = MAIL_KEYS;
+    const exit =
+      mode === "apply"
+        ? await apply({ payload, reactivityKeys })
+        : initial
+          ? await update({ payload: { ...payload, id: initial.id }, reactivityKeys })
+          : await create({ payload, reactivityKeys });
     if (exit._tag === "Success") onClose();
   };
   const criteria = (patch: Partial<FilterInput["criteria"]>) =>
@@ -221,14 +422,14 @@ export function FilterEditor({
     >
       <form
         className="space-y-3"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (requiresFilterDeleteConfirmation(input)) setConfirming(input);
-          else void submit(input);
+          const exit = await prepare({ payload: { accountId: account.id, input } });
+          if (exit._tag === "Success") setConfirming({ input, preview: exit.value });
         }}
       >
         <h2 className="font-semibold">
-          <Trans>Create filter</Trans>
+          {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
         </h2>
         {account.provider === "outlook" && (
           <label className="block space-y-1">
@@ -291,7 +492,13 @@ export function FilterEditor({
           <label className="flex items-center gap-2">
             <Checkbox
               checked={input.action.archive}
-              onCheckedChange={(archive) => action({ archive, trash: false, label: null })}
+              onCheckedChange={(archive) =>
+                action({
+                  archive,
+                  trash: false,
+                  ...(account.provider === "gmail" ? {} : { label: null }),
+                })
+              }
             />
             <span>{t`Archive`}</span>
           </label>
@@ -323,7 +530,11 @@ export function FilterEditor({
               ...labels.map((l) => ({ value: l.id, label: l.name })),
             ]}
             onValueChange={(label) =>
-              action({ label: label || null, archive: false, trash: false })
+              action({
+                label: label || null,
+                trash: false,
+                ...(account.provider === "gmail" ? {} : { archive: false }),
+              })
             }
           />
         </fieldset>
@@ -350,13 +561,23 @@ export function FilterEditor({
               </li>
             ))}
           </ul>
-          <p className="text-[12px] text-neutral-500">
-            <Trans>The filter applies to future mail on the server.</Trans>
-          </p>
+          {mode !== "apply" && (
+            <p className="text-[12px] text-neutral-500">
+              <Trans>The filter applies to future mail on the server.</Trans>
+            </p>
+          )}
         </div>
-        {resultError(i18n, result) && (
+        {(resultError(i18n, result) ||
+          resultError(i18n, updated) ||
+          resultError(i18n, applied) ||
+          resultError(i18n, prepared)) && (
           <div role="alert" className="text-red-500">
-            <p>{resultError(i18n, result)}</p>
+            <p>
+              {resultError(i18n, result) ??
+                resultError(i18n, updated) ??
+                resultError(i18n, applied) ??
+                resultError(i18n, prepared)}
+            </p>
             {settingsScopeMissing(result) && (
               <button type="button" disabled={signedIn.waiting} onClick={() => reauth()}>
                 <Trans>Sign in again to enable filters</Trans>
@@ -368,11 +589,10 @@ export function FilterEditor({
           type="submit"
           className={formButton}
           disabled={
-            result.waiting ||
-            (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
+            busy || (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
           }
         >
-          <Trans>Create filter</Trans>
+          {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
         </button>
       </form>
       <Alert
@@ -380,21 +600,31 @@ export function FilterEditor({
         onOpenChange={(open) => {
           if (!open) setConfirming(null);
         }}
-        title={t`Create a deleting filter?`}
-        description={t`This filter will delete future messages matching the server query. The preview shows at most 200 messages.`}
+        title={mode === "apply" ? t`Apply to existing mail?` : t`Confirm rule changes?`}
+        description={
+          confirming
+            ? t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`
+            : ""
+        }
       >
+        {confirming && requiresFilterDeleteConfirmation(confirming.input) && (
+          <FilterDeletionWarning />
+        )}
+        {confirming?.preview.truncated && (
+          <p>{t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}</p>
+        )}
         <AlertCancel>
           <Trans>Cancel</Trans>
         </AlertCancel>
         <button
           type="button"
-          disabled={result.waiting}
+          disabled={busy}
           className={alertDanger}
           onClick={() => {
-            if (confirming) void submit({ ...confirming, queryDeletionConfirmed: true });
+            if (confirming) void submit(confirming.input, confirming.preview.token);
           }}
         >
-          <Trans>Confirm deleting filter</Trans>
+          <Trans>Confirm</Trans>
         </button>
       </Alert>
     </Dialog>

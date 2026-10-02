@@ -7,6 +7,9 @@ import { TestClock } from "effect/testing";
 
 import type { Account, OutgoingMessage } from "./domain.js";
 import { makeGmail, parseGmailMessage } from "./gmail.js";
+import { makeGmailSettings } from "./gmail-settings.js";
+import { ProviderError } from "./errors.js";
+import { type GmailRuleDefinition, EMPTY_FILTER } from "./organization.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import type { Change, ProviderAdapter } from "./services.js";
 
@@ -1666,4 +1669,330 @@ it.effect(
       }),
     );
   },
+);
+
+it.effect(
+  "Gmail Move To adds the destination and removes the current label in one modify request",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /messages/m1": { json: { labelIds: ["INBOX"] } },
+        "POST /messages/m1/modify": { json: {} },
+      });
+      yield* run(http, (a) =>
+        a.push(account, "m1", { kind: "move", labelId: "Label_2", removeLabelId: "INBOX" }),
+      );
+      assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 1);
+      assert.deepStrictEqual(http.calls.at(-1)?.body, {
+        addLabelIds: ["Label_2"],
+        removeLabelIds: ["INBOX", "SPAM"],
+      });
+    }),
+);
+it.effect("Gmail label visibility is read and PATCHed; reparenting renames descendants", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": {
+        json: {
+          labels: [
+            {
+              id: "a",
+              name: "A",
+              type: "user",
+              labelListVisibility: "labelHide",
+              messageListVisibility: "hide",
+            },
+            { id: "child", name: "A/Child", type: "user" },
+            { id: "b", name: "B", type: "user" },
+          ],
+        },
+      },
+      "PATCH /labels/a": { json: {} },
+      "PATCH /labels/child": { json: {} },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const labels = yield* a.changeLabel(account, {
+          kind: "visibility",
+          id: "a",
+          labelListVisibility: "labelShowIfUnread",
+          messageListVisibility: "show",
+        });
+        assert.strictEqual(labels[0]?.labelListVisibility, "labelHide");
+        assert.strictEqual(labels[0]?.messageListVisibility, "hide");
+        yield* a.changeLabel(account, { kind: "parent", id: "a", parentId: "b" });
+      }),
+    );
+    assert.deepStrictEqual(
+      http.calls.filter((c) => c.method === "PATCH").map((c) => c.body),
+      [
+        { labelListVisibility: "labelShowIfUnread", messageListVisibility: "show" },
+        { name: "B/A" },
+        { name: "B/A/Child" },
+      ],
+    );
+  }),
+);
+it.effect(
+  "Gmail edits filters by delete and create; a failed create restores the original rule",
+  () =>
+    Effect.gen(function* () {
+      const original = {
+        id: "old",
+        criteria: { from: "alice" },
+        action: { removeLabelIds: ["UNREAD"] },
+      };
+      const replacement = {
+        name: "Edited",
+        criteria: { from: "bob", to: "", subject: "", query: "", hasAttachment: false },
+        action: { archive: true, markRead: false, star: false, trash: false, label: null },
+      };
+      const success = fakeHttp({
+        "GET /settings/filters/old": { json: original },
+        "DELETE /settings/filters/old": { status: 204 },
+        "POST /settings/filters": { json: { ...original, id: "new" } },
+      });
+      const edited = yield* run(success, (a) => a.updateFilter(account, "old", replacement));
+      assert.strictEqual(edited.id, "new");
+      assert.deepStrictEqual(
+        success.calls.map((c) => c.method),
+        ["GET", "DELETE", "POST"],
+      );
+      let posts = 0;
+      const failure = fakeHttp({
+        "GET /settings/filters/old": { json: original },
+        "DELETE /settings/filters/old": { status: 204 },
+        "POST /settings/filters": () =>
+          ++posts === 1
+            ? { status: 400, json: { error: "invalid replacement" } }
+            : { json: { ...original, id: "restored" } },
+      });
+      const error = yield* run(failure, (a) =>
+        a.updateFilter(account, "old", replacement).pipe(Effect.flip),
+      );
+      assert.match(error.message, /previous rule was restored/);
+      assert.deepStrictEqual(failure.calls.at(-1)?.body, {
+        criteria: original.criteria,
+        action: original.action,
+      });
+    }),
+);
+it.effect("Gmail rejects edits of rules with unrepresented actions before deleting them", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /settings/filters/old": {
+        json: {
+          id: "old",
+          criteria: { from: "alice", negatedQuery: "urgent" },
+          action: { forward: "someone@example.com", removeLabelIds: ["UNREAD"] },
+        },
+      },
+    });
+    const result = yield* run(http, (a) =>
+      a
+        .updateFilter(account, "old", {
+          name: "",
+          criteria: { from: "bob", to: "", subject: "", query: "", hasAttachment: false },
+          action: { archive: false, markRead: true, star: false, trash: false, label: null },
+        })
+        .pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(http.calls.length, 1);
+  }),
+);
+
+for (const source of ["TRASH", "SPAM"] as const) {
+  it.effect(`Gmail Move To from ${source} clears the system label in single and batch paths`, () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /messages/m1": { json: { labelIds: [source] } },
+        "POST /messages/m1/untrash": { json: {} },
+        "POST /messages/m1/modify": { json: {} },
+      });
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          const op = { kind: "move", labelId: "Label_target", removeLabelId: null } as const;
+          yield* adapter.push(account, "m1", op);
+          assert.ok(adapter.pushBatch);
+          yield* adapter.pushBatch(account, ["m1"], op);
+        }),
+      );
+      const posts = http.calls.filter((call) => call.method === "POST");
+      assert.strictEqual(
+        posts.filter((call) => call.url.pathname.endsWith("/untrash")).length,
+        source === "TRASH" ? 2 : 0,
+      );
+      const modifications = posts.filter((call) => call.url.pathname.endsWith("/modify"));
+      assert.strictEqual(modifications.length, 2);
+      for (const call of modifications)
+        assert.deepStrictEqual(call.body, {
+          addLabelIds: ["Label_target"],
+          removeLabelIds: ["SPAM"],
+        });
+    }),
+  );
+}
+
+it.effect(
+  "Gmail category and system-label filters remain listable and deletable but cannot be edited",
+  () =>
+    Effect.gen(function* () {
+      const rules = ["CATEGORY_UPDATES", "SENT", "INBOX", "IMPORTANT"].map((label, index) => ({
+        id: String(index),
+        criteria: { from: "alice" },
+        action: { addLabelIds: [label] },
+      }));
+      const http = fakeHttp({
+        "GET /settings/filters": { json: { filter: rules } },
+        ...Object.fromEntries(
+          rules.map((rule) => [`DELETE /settings/filters/${rule.id}`, { status: 204 }]),
+        ),
+      });
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          const filters = yield* adapter.filters(account);
+          assert.ok(filters.every((filter) => filter.editable === false));
+          for (const filter of filters) yield* adapter.deleteFilter(account, filter.id);
+        }),
+      );
+      assert.strictEqual(
+        http.calls.filter((call) => call.method === "DELETE").length,
+        rules.length,
+      );
+    }),
+);
+
+for (const collision of ["B/A", "B/A/Child"]) {
+  it.effect(`Gmail reparent checks ${collision} for collisions before any PATCH`, () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /labels": {
+          json: {
+            labels: [
+              { id: "a", name: "A", type: "user" },
+              { id: "child", name: "A/Child", type: "user" },
+              { id: "b", name: "B", type: "user" },
+              { id: "collision", name: collision, type: "user" },
+            ],
+          },
+        },
+      });
+      const exit = yield* run(http, (adapter) =>
+        adapter.changeLabel(account, { kind: "parent", id: "a", parentId: "b" }),
+      ).pipe(Effect.result);
+      assert.strictEqual(exit._tag, "Failure");
+      assert.strictEqual(
+        http.calls.some((call) => call.method === "PATCH"),
+        false,
+      );
+    }),
+  );
+}
+
+it.effect("Gmail reparent rolls back already-renamed labels on a descendant failure", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": {
+        json: {
+          labels: [
+            { id: "a", name: "A", type: "user" },
+            { id: "child", name: "A/Child", type: "user" },
+            { id: "b", name: "B", type: "user" },
+          ],
+        },
+      },
+      "PATCH /labels/a": { json: {} },
+      "PATCH /labels/child": { status: 400, json: { error: "rename refused" } },
+    });
+    const exit = yield* run(http, (adapter) =>
+      adapter.changeLabel(account, { kind: "parent", id: "a", parentId: "b" }),
+    ).pipe(Effect.result);
+    assert.strictEqual(exit._tag, "Failure");
+    assert.deepStrictEqual(
+      http.calls.filter((call) => call.method === "PATCH").map((call) => call.body),
+      [{ name: "B/A" }, { name: "B/A/Child" }, { name: "A" }],
+    );
+  }),
+);
+
+for (const recoverySucceeds of [true, false]) {
+  it.effect(
+    `Gmail restore retries with backoff and ${recoverySucceeds ? "recovers" : "retains an exact original backup"}`,
+    () =>
+      Effect.gen(function* () {
+        const original = {
+          id: "old",
+          criteria: { from: "alice" },
+          action: { removeLabelIds: ["UNREAD"] },
+        };
+        let posts = 0;
+        const attempted: unknown[] = [];
+        const saved: GmailRuleDefinition[] = [];
+        const settings = makeGmailSettings(
+          (_id, schema) => Schema.decodeUnknownEffect(schema)(original).pipe(Effect.orDie),
+          (_id, method, _path, body) =>
+            Effect.suspend(() => {
+              if (method === "DELETE") return Effect.void;
+              posts++;
+              attempted.push(body);
+              return recoverySucceeds && posts === 3
+                ? Effect.succeed({ ...original, id: "restored" })
+                : Effect.fail(new ProviderError({ message: "offline" }));
+            }),
+        );
+        const request = yield* Effect.forkChild(
+          settings
+            .updateFilter(
+              account,
+              "old",
+              {
+                ...EMPTY_FILTER,
+                criteria: { ...EMPTY_FILTER.criteria, from: "bob" },
+                action: { ...EMPTY_FILTER.action, markRead: true },
+              },
+              (definition) =>
+                Effect.sync(() => {
+                  saved.push(definition);
+                }),
+            )
+            .pipe(Effect.result),
+        );
+        yield* TestClock.adjust("2 seconds");
+        const result = yield* Fiber.join(request);
+        assert.strictEqual(result._tag, "Failure");
+        const definition = { criteria: original.criteria, action: original.action };
+        assert.deepStrictEqual(
+          attempted.slice(1),
+          Array.from({ length: recoverySucceeds ? 2 : 3 }, () => definition),
+        );
+        assert.deepStrictEqual(saved, recoverySucceeds ? [] : [definition]);
+      }),
+  );
+}
+
+it.effect(
+  "Gmail exposes archive plus one label for editing but rejects other destination combinations",
+  () =>
+    Effect.gen(function* () {
+      const rules = [
+        {
+          id: "label-and-archive",
+          action: { addLabelIds: ["Label_1"], removeLabelIds: ["INBOX"] },
+        },
+        {
+          id: "trash-and-label",
+          action: { addLabelIds: ["TRASH", "Label_1"], removeLabelIds: [] },
+        },
+        { id: "trash-and-archive", action: { addLabelIds: ["TRASH"], removeLabelIds: ["INBOX"] } },
+        {
+          id: "multiple-labels",
+          action: { addLabelIds: ["Label_1", "Label_2"], removeLabelIds: ["INBOX"] },
+        },
+      ].map((rule) => ({ ...rule, criteria: { from: "alice" } }));
+      const http = fakeHttp({ "GET /settings/filters": { json: { filter: rules } } });
+      const filters = yield* run(http, (adapter) => adapter.filters(account));
+      assert.notStrictEqual(filters[0]?.editable, false);
+      assert.ok(filters.slice(1).every((filter) => filter.editable === false));
+    }),
 );

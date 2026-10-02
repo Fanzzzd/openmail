@@ -1,7 +1,17 @@
+import { SYSTEM_FOLDERS, systemFolderId } from "@openmail/core/schema";
+import { Effect } from "effect";
+import {
+  MESSAGE_DRAG,
+  LABEL_DRAG,
+  FAVORITE_DRAG,
+  DragMessages,
+  DragLabel,
+  decodeDrag,
+} from "../organize-drag";
+import { MAIL_KEYS, Keys } from "../state/keys";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Effect } from "effect";
 import { AsyncResult, Reactivity } from "effect/reactivity";
 import {
   ArrowRight,
@@ -30,7 +40,13 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { type ComponentType, type ReactNode, useRef, useState } from "react";
+import {
+  type ButtonHTMLAttributes,
+  type ComponentType,
+  type ReactNode,
+  useRef,
+  useState,
+} from "react";
 
 import type {
   Account,
@@ -47,8 +63,7 @@ import {
   accountColorValue,
   PROFILE_BG,
 } from "../format";
-import { syncNow, useRunMail, withMail } from "../state/mail";
-import { Keys } from "../state/keys";
+import { type MailEnv, withMail, syncNow, useRunMail } from "../state/mail";
 import {
   prefsAtom,
   labelsAtom,
@@ -110,6 +125,8 @@ interface Props {
   accounts: readonly Account[];
   profiles: readonly Profile[];
   unread: Readonly<Record<string, number>>;
+  actions?: (label: Label) => ButtonHTMLAttributes<HTMLButtonElement>;
+  favorite?: (label: Label) => void;
   syncState: SyncState;
   progress: SyncProgress | null;
   proposals: number;
@@ -138,7 +155,8 @@ export function Sidebar({
   onSettings,
 }: Props) {
   const [categoriesOpen, setCategoriesOpen] = useState(true);
-  const [moreOpen, setMoreOpen] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [organizeError, setOrganizeError] = useState("");
   const run = useRunMail();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
@@ -155,29 +173,152 @@ export function Sidebar({
   const labelPrefs = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
   const organization = AsyncResult.getOrElse(useAtomValue(organizationAtom), () => []);
   const allLabels = AsyncResult.getOrElse(useAtomValue(labelsAtom(scope)), () => []);
-  const labels = allLabels
+  const colored = allLabels.map((l) => ({
+    ...l,
+    color:
+      labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ??
+      l.color ??
+      accounts.filter((a) => a.id === l.accountId).map(accountColorValue)[0] ??
+      null,
+  }));
+  const visible = (l: Label) => {
+    const local = labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id);
+    if (l.labelListVisibility)
+      return (
+        l.labelListVisibility === "labelShow" ||
+        (l.labelListVisibility === "labelShowIfUnread" && (byLabel[l.id] ?? 0) > 0)
+      );
+    return local?.visible !== false;
+  };
+  const labels = colored.filter(visible);
+  const hidden = colored.filter((l) => !visible(l));
+  const favorites = labelPrefs
     .filter(
-      (l) =>
-        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.visible !== false,
+      (p) =>
+        p.favorite &&
+        members.some((a) => a.id === p.accountId) &&
+        (!scope || scope.includes(p.accountId)),
     )
-    .map((l) => ({
-      ...l,
-      color:
-        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ??
-        l.color ??
-        accounts.filter((a) => a.id === l.accountId).map(accountColorValue)[0] ??
-        null,
-    }));
-  const favorites = allLabels
-    .filter((l) => labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.favorite)
-    .map((l) => ({
-      ...l,
-      color:
-        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ??
-        l.color ??
-        accounts.filter((a) => a.id === l.accountId).map(accountColorValue)[0] ??
-        null,
-    }));
+    .flatMap<Label & { mailbox: Mailbox | null }>((p) => {
+      const custom = colored.find((l) => l.accountId === p.accountId && l.id === p.id);
+      const mailbox = SYSTEM_FOLDERS.find((id) => systemFolderId(id) === p.id);
+      return custom
+        ? [{ ...custom, mailbox: null }]
+        : mailbox
+          ? [
+              {
+                accountId: p.accountId,
+                id: p.id,
+                name: i18n._(MAILBOX_NAMES[mailbox]),
+                color: null,
+                mailbox,
+              },
+            ]
+          : [];
+    });
+  const perform = <A, E>(effect: Effect.Effect<A, E, MailEnv>) =>
+    run(
+      effect.pipe(
+        Reactivity.mutation(MAIL_KEYS),
+        Effect.catchCause(() => Effect.sync(() => setOrganizeError(t`Action failed`))),
+      ),
+    );
+  const toggleFavorite = (accountId: string, id: string) => {
+    const pref = labelPrefs.find((p) => p.accountId === accountId && p.id === id) ?? {
+      accountId,
+      id,
+      visible: true,
+      favorite: false,
+      color: null,
+    };
+    perform(
+      withMail((call) =>
+        call("SetLabelPreference", {
+          input: {
+            ...pref,
+            favorite: !pref.favorite,
+            position: favorites.length
+              ? Math.max(...labelPrefs.map((p) => p.position ?? 0)) + 1
+              : 0,
+          },
+        }),
+      ),
+    );
+  };
+  const reorder = (
+    source: { accountId: string; id: string },
+    target: { accountId: string; id: string },
+  ) => {
+    const from = favorites.findIndex((f) => f.accountId === source.accountId && f.id === source.id);
+    const to = favorites.findIndex((f) => f.accountId === target.accountId && f.id === target.id);
+    if (from < 0 || to < 0 || from === to) return;
+    const ordered = [...favorites];
+    const moved = ordered.splice(from, 1)[0];
+    if (!moved) return;
+    ordered.splice(to, 0, moved);
+    perform(
+      withMail((call) =>
+        call("ReorderFavorites", {
+          order: ordered.map((f) => ({ accountId: f.accountId, id: f.id })),
+        }),
+      ),
+    );
+  };
+  const drop = (
+    event: React.DragEvent<HTMLButtonElement>,
+    target: { accountId: string; id: string },
+    parent: boolean,
+  ) => {
+    event.preventDefault();
+    const favorite = decodeDrag(DragLabel, event.dataTransfer.getData(FAVORITE_DRAG));
+    if (favorite) {
+      reorder(favorite, target);
+      return;
+    }
+    const label = decodeDrag(DragLabel, event.dataTransfer.getData(LABEL_DRAG));
+    if (label) {
+      if (parent && label.accountId === target.accountId)
+        perform(
+          withMail((call) =>
+            call("ChangeLabel", {
+              accountId: label.accountId,
+              change: { kind: "parent", id: label.id, parentId: target.id },
+            }),
+          ),
+        );
+      return;
+    }
+    const messages = decodeDrag(DragMessages, event.dataTransfer.getData(MESSAGE_DRAG));
+    if (messages) {
+      const mailbox = SYSTEM_FOLDERS.find((id) => systemFolderId(id) === target.id);
+      if (mailbox && mailbox !== "inbox" && mailbox !== "trash" && mailbox !== "spam") return;
+      const ids = messages.ids.filter((id) => id.startsWith(`${target.accountId}/`));
+      if (ids.length)
+        perform(
+          withMail((call) =>
+            call("ModifyWithUndo", {
+              threads: ids,
+              op: mailbox
+                ? { kind: mailbox }
+                : { kind: "move", labelId: target.id, removeLabelId: messages.removeLabelId },
+              flat: messages.flat,
+            }),
+          ).pipe(Effect.asVoid),
+        );
+    }
+  };
+  const labelActions = (l: Label): ButtonHTMLAttributes<HTMLButtonElement> => ({
+    draggable: true,
+    onDragStart: (e) => {
+      e.dataTransfer.setData(LABEL_DRAG, JSON.stringify({ accountId: l.accountId, id: l.id }));
+      e.dataTransfer.effectAllowed = "move";
+    },
+    onDragOver: (e) => {
+      if ([MESSAGE_DRAG, LABEL_DRAG].some((type) => e.dataTransfer.types.includes(type)))
+        e.preventDefault();
+    },
+    onDrop: (e) => drop(e, l, true),
+  });
   const profile = profiles.find((p) => p.id === view.space);
   const hasGmail = accounts.some(
     (a) =>
@@ -332,10 +473,36 @@ export function Sidebar({
 
         <ContextMenuRoot>
           <ContextMenuTrigger render={<div />}>
-            <Section title={t`Favorites`}>
+            <Section title={t`Mailboxes`}>
               {MAILBOXES.map(({ id, icon: Icon, color }) => (
                 <div key={id}>
                   <Item
+                    buttonProps={{
+                      onDragOver: (e) => {
+                        if (
+                          e.dataTransfer.types.includes(MESSAGE_DRAG) &&
+                          ["inbox", "trash", "spam"].includes(id)
+                        )
+                          e.preventDefault();
+                      },
+                      onDrop: (e) => {
+                        e.preventDefault();
+                        const messages = decodeDrag(
+                          DragMessages,
+                          e.dataTransfer.getData(MESSAGE_DRAG),
+                        );
+                        if (messages && (id === "inbox" || id === "trash" || id === "spam"))
+                          perform(
+                            withMail((call) =>
+                              call("ModifyWithUndo", {
+                                threads: messages.ids,
+                                op: { kind: id },
+                                flat: messages.flat,
+                              }),
+                            ).pipe(Effect.asVoid),
+                          );
+                      },
+                    }}
                     active={view.mailbox === id && !view.label}
                     onClick={() => onView({ ...view, mailbox: id, label: undefined })}
                     icon={<Icon className={`size-4.5 ${color}`} />}
@@ -348,25 +515,47 @@ export function Sidebar({
                           : 0
                     }
                     disclosure={
-                      id === "inbox" && hasGmail ? (
-                        <button
-                          type="button"
-                          aria-label={
-                            categoriesOpen ? t`Collapse categories` : t`Expand categories`
-                          }
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCategoriesOpen((v) => !v);
-                          }}
-                          className="-ml-1 rounded p-0.5 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
-                        >
-                          {categoriesOpen ? (
-                            <ChevronDown className="size-3.5" />
-                          ) : (
-                            <ChevronRight className="size-3.5" />
-                          )}
-                        </button>
-                      ) : undefined
+                      <>
+                        {members[0] && (
+                          <button
+                            type="button"
+                            aria-label={t`Favorite`}
+                            onClick={() => {
+                              const accountId = view.accountId ?? members[0]?.id;
+                              if (accountId) toggleFavorite(accountId, systemFolderId(id));
+                            }}
+                            className="px-1 text-amber-500"
+                          >
+                            {labelPrefs.some(
+                              (p) =>
+                                p.accountId === (view.accountId ?? members[0]?.id) &&
+                                p.id === systemFolderId(id) &&
+                                p.favorite,
+                            )
+                              ? "★"
+                              : "☆"}
+                          </button>
+                        )}
+                        {id === "inbox" && hasGmail ? (
+                          <button
+                            type="button"
+                            aria-label={
+                              categoriesOpen ? t`Collapse categories` : t`Expand categories`
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCategoriesOpen((v) => !v);
+                            }}
+                            className="-ml-1 rounded p-0.5 text-neutral-400 hover:bg-black/5 dark:hover:bg-white/10"
+                          >
+                            {categoriesOpen ? (
+                              <ChevronDown className="size-3.5" />
+                            ) : (
+                              <ChevronRight className="size-3.5" />
+                            )}
+                          </button>
+                        ) : undefined}
+                      </>
                     }
                   />
                   {id === "inbox" &&
@@ -388,19 +577,86 @@ export function Sidebar({
                     })}
                 </div>
               ))}
-              {favorites.map((l) => (
-                <Item
-                  key={`${l.accountId}/${l.id}`}
-                  active={view.label?.id === l.id && view.label.accountId === l.accountId}
-                  onClick={() =>
-                    onView({ ...view, mailbox: "all", label: { id: l.id, accountId: l.accountId } })
-                  }
-                  icon={<Star className="size-4 text-amber-500" />}
-                  label={l.name}
-                  badge={0}
-                />
-              ))}
             </Section>
+
+            {favorites.length > 0 && (
+              <Section title={t`Favorites`}>
+                {favorites.map((l, index) => (
+                  <Item
+                    key={`${l.accountId}/${l.id}`}
+                    buttonProps={{
+                      draggable: true,
+                      onDragStart: (e) =>
+                        e.dataTransfer.setData(
+                          FAVORITE_DRAG,
+                          JSON.stringify({ accountId: l.accountId, id: l.id }),
+                        ),
+                      onDragOver: (e) => e.preventDefault(),
+                      onDrop: (e) => drop(e, l, false),
+                    }}
+                    disclosure={
+                      <>
+                        <button
+                          type="button"
+                          aria-label={t`Move up`}
+                          disabled={index === 0}
+                          onClick={() => {
+                            const target = favorites[index - 1];
+                            if (target) reorder(l, target);
+                          }}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={t`Move down`}
+                          disabled={index === favorites.length - 1}
+                          onClick={() => {
+                            const target = favorites[index + 1];
+                            if (target) reorder(l, target);
+                          }}
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={t`Remove favorite`}
+                          onClick={() => toggleFavorite(l.accountId, l.id)}
+                        >
+                          ×
+                        </button>
+                      </>
+                    }
+                    active={
+                      l.mailbox
+                        ? view.mailbox === l.mailbox &&
+                          view.accountId === l.accountId &&
+                          !view.label
+                        : view.label?.id === l.id && view.label.accountId === l.accountId
+                    }
+                    onClick={() =>
+                      onView(
+                        l.mailbox
+                          ? {
+                              ...view,
+                              accountId: l.accountId,
+                              mailbox: l.mailbox,
+                              label: undefined,
+                            }
+                          : {
+                              ...view,
+                              mailbox: "all",
+                              label: { id: l.id, accountId: l.accountId },
+                            },
+                      )
+                    }
+                    icon={<Star className="size-4 text-amber-500" />}
+                    label={l.name}
+                    badge={0}
+                  />
+                ))}
+              </Section>
+            )}
           </ContextMenuTrigger>
           <ContextMenuContent>
             <MenuItem
@@ -421,28 +677,61 @@ export function Sidebar({
           </ContextMenuContent>
         </ContextMenuRoot>
         {favoriteError && <output className="px-3 text-xs text-red-600">{favoriteError}</output>}
-        {(prefs?.showMore ?? true) && (
+        <LabelSections
+          labels={labels}
+          accounts={accounts}
+          view={view}
+          onView={onView}
+          unread={byLabel}
+          actions={labelActions}
+          favorite={(l) => toggleFavorite(l.accountId, l.id)}
+        />
+        {hidden.length > 0 && (prefs?.showMore ?? true) && (
           <>
             <button
               type="button"
               aria-expanded={moreOpen}
-              onClick={() => setMoreOpen((open) => !open)}
-              className="flex w-full items-center gap-1 px-3 py-2 text-xs text-neutral-500"
-            >
-              {moreOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-              {t`More`}
-            </button>
+              className="px-2 py-1 text-sm"
+              onClick={() => setMoreOpen(!moreOpen)}
+            >{t`More`}</button>
             {moreOpen && (
               <LabelSections
-                labels={labels}
+                labels={hidden}
                 accounts={accounts}
                 view={view}
                 onView={onView}
                 unread={byLabel}
+                actions={labelActions}
               />
             )}
           </>
         )}
+        {organizeError && <p role="alert">{organizeError}</p>}
+        {members.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes(LABEL_DRAG)) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const label = decodeDrag(DragLabel, e.dataTransfer.getData(LABEL_DRAG));
+              if (label?.accountId === a.id)
+                perform(
+                  withMail((call) =>
+                    call("ChangeLabel", {
+                      accountId: a.id,
+                      change: { kind: "parent", id: label.id, parentId: null },
+                    }),
+                  ),
+                );
+            }}
+            className="block px-2 py-1 text-xs text-neutral-500"
+          >
+            {t`No parent`} · {accountName(a)}
+          </button>
+        ))}
       </nav>
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-neutral-500">
@@ -615,12 +904,16 @@ function LabelSections({
   view,
   onView,
   unread,
+  actions,
+  favorite,
 }: {
   labels: readonly Label[];
   accounts: readonly Account[];
   view: View;
   onView: (v: View) => void;
   unread: Readonly<Record<string, number>>;
+  actions?: (label: Label) => ButtonHTMLAttributes<HTMLButtonElement>;
+  favorite?: (label: Label) => void;
 }) {
   const { t } = useLingui();
   const groups = new Map<string, Label[]>();
@@ -633,6 +926,19 @@ function LabelSections({
         {list.map((l) => (
           <Item
             key={l.id}
+            buttonProps={actions?.(l)}
+            disclosure={
+              favorite && (
+                <button
+                  type="button"
+                  aria-label={t`Favorite`}
+                  className="text-amber-500"
+                  onClick={() => favorite(l)}
+                >
+                  ☆
+                </button>
+              )
+            }
             active={view.label?.id === l.id && view.label.accountId === accountId}
             onClick={() => onView({ ...view, mailbox: "all", label: { id: l.id, accountId } })}
             icon={
@@ -731,6 +1037,7 @@ function Item(props: {
   badge: number;
   indent?: boolean;
   disclosure?: ReactNode;
+  buttonProps?: ButtonHTMLAttributes<HTMLButtonElement> | undefined;
 }) {
   return (
     <div
@@ -742,6 +1049,7 @@ function Item(props: {
     >
       <button
         type="button"
+        {...props.buttonProps}
         onClick={props.onClick}
         aria-current={props.active ? "page" : undefined}
         className={`flex h-full min-w-0 flex-1 items-center gap-2.5 text-left ${

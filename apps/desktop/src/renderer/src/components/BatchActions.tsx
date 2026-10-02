@@ -1,7 +1,8 @@
+import { moveSourceLabel } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
-import type { Account, Label, MailOp, ThreadSummary } from "../../../shared/api";
-import { DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
+import type { Account, Label, MailOp, Mailbox, ThreadSummary } from "../../../shared/api";
+import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
 import { Tip } from "./ui/Tip";
 
 interface Props {
@@ -9,11 +10,23 @@ interface Props {
   accounts: readonly Account[];
   labels: readonly Label[];
   onPermanentDelete?: (() => void) | undefined;
+  mailbox: Mailbox;
+  currentLabel?: string | undefined;
+  onCreate?: ((accountId: string, move: boolean) => void) | undefined;
   onOp: (op: MailOp, accountId?: string) => void;
 }
 
 /** Labels belong to an account; a folder choice never reaches another account. */
-export function BatchMenuItems({ rows, accounts, labels, onOp, onPermanentDelete }: Props) {
+export function BatchMenuItems({
+  rows,
+  accounts,
+  labels,
+  onOp,
+  onPermanentDelete,
+  currentLabel,
+  onCreate,
+  mailbox,
+}: Props) {
   const { t } = useLingui();
   return (
     <>
@@ -40,13 +53,46 @@ export function BatchMenuItems({ rows, accounts, labels, onOp, onPermanentDelete
         .map((account) => {
           const selected = rows.filter((row) => row.accountId === account.id);
           const available = labels.filter((label) => label.accountId === account.id);
-          if (!available.length) return null;
+
           return (
             <div key={account.id}>
               <MenuSeparator />
               <div className="px-2 py-1 text-xs text-neutral-500">
                 {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
               </div>
+              <ContextSubmenu icon={Tag} label={t`Move To`}>
+                {available.map((label) => (
+                  <MenuItem
+                    key={`move:${label.id}`}
+                    onClick={() =>
+                      onOp(
+                        {
+                          kind: "move",
+                          labelId: label.id,
+                          removeLabelId: moveSourceLabel(mailbox, currentLabel),
+                        },
+                        account.id,
+                      )
+                    }
+                  >
+                    {label.name}
+                  </MenuItem>
+                ))}
+                {onCreate && (
+                  <MenuItem
+                    onClick={() => onCreate(account.id, true)}
+                  >{t`New label or folder`}</MenuItem>
+                )}
+              </ContextSubmenu>
+              {currentLabel &&
+                account.provider === "gmail" &&
+                available.some((l) => l.id === currentLabel) && (
+                  <MenuItem
+                    onClick={() =>
+                      onOp({ kind: "label", labelId: currentLabel, value: false }, account.id)
+                    }
+                  >{t`Remove Current Label`}</MenuItem>
+                )}
               {available.map((label) => (
                 <MenuCheckboxItem
                   key={label.id}
@@ -65,6 +111,11 @@ export function BatchMenuItems({ rows, accounts, labels, onOp, onPermanentDelete
                   {label.name}
                 </MenuCheckboxItem>
               ))}
+              {onCreate && (
+                <MenuItem
+                  onClick={() => onCreate(account.id, account.provider !== "gmail")}
+                >{t`New label or folder`}</MenuItem>
+              )}
             </div>
           );
         })}

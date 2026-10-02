@@ -13,6 +13,7 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import {
   applySignature,
+  moveSourceLabel,
   DEFAULT_PREFS,
   holdSend,
   markReadAfter,
@@ -133,6 +134,7 @@ import {
 
 import { moveMailPaneFocus } from "./pane-navigation";
 import { GoToFolder } from "./components/GoToFolder";
+import { CreateLabelDialog, type LabelApplyTarget } from "./components/CreateLabelDialog";
 import { SnoozeDialog } from "./components/SnoozeDialog";
 import { FilterEditor } from "./components/ServerSettings";
 
@@ -147,6 +149,7 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   inbox: () => msg`Moved to Inbox`,
   trash: () => msg`Deleted`,
   spam: () => msg`Reported as spam`,
+  move: () => msg`Moved`,
   label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };
 
@@ -198,7 +201,9 @@ export function App() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [compose, setCompose] = useState<Draft | null>(null);
   const [labelPicker, setLabelPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [goToFolder, setGoToFolder] = useState(false);
+  const [labelCreation, setLabelCreation] = useState<LabelApplyTarget | null>(null);
   const [snoozeIds, setSnoozeIds] = useState<readonly string[] | null>(null);
   const [filterSeed, setFilterSeed] = useState<{ accountId: string; from: string } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -877,7 +882,8 @@ export function App() {
   const receiveLink = useEffectEvent(receiveDesktop);
   useEffect(() => {
     // An incoming link waits while another draft/dialog is being edited.
-    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed) return constVoid;
+    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed || labelCreation)
+      return constVoid;
     const event = desktopEvents.find(
       (item) => accountList.length || (item._tag === "Command" && item.command !== "compose"),
     );
@@ -897,6 +903,7 @@ export function App() {
     editing,
     goToFolder,
     snoozeIds,
+    labelCreation,
     filterSeed,
   ]);
 
@@ -1070,7 +1077,10 @@ export function App() {
         break;
       case "label":
       case "move":
-        if (batchRows.length && labels.length) setLabelPicker(true);
+        if (batchRows.length) {
+          setPickerMode(action);
+          setLabelPicker(true);
+        }
         break;
       case "next":
       case "previous": {
@@ -1234,12 +1244,27 @@ export function App() {
                           ? () => requestPermanentDelete(batchRows.map((row) => row.id))
                           : undefined
                       }
+                      onCreate={(accountId, move) =>
+                        setLabelCreation({
+                          accountId,
+                          move,
+                          threads: batchRows
+                            .filter((row) => row.accountId === accountId)
+                            .map((row) => row.id),
+                          flat: !prefs.threadGrouping,
+                          removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+                        })
+                      }
+                      currentLabel={view.label?.id}
+                      mailbox={view.mailbox}
                       rows={batchRows}
                       accounts={accountList}
                       labels={labels}
                       onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
                     />
                   ),
+                  grouped: prefs.threadGrouping,
+                  currentLabel: view.label?.id,
                   mailbox: view.mailbox,
                   labels,
                   stateOf: rowState,
@@ -1248,6 +1273,14 @@ export function App() {
                   onPermanentDelete: deleteFolder
                     ? (thread) => requestPermanentDelete([thread.id])
                     : undefined,
+                  onCreate: (thread, move) =>
+                    setLabelCreation({
+                      accountId: thread.accountId,
+                      move,
+                      threads: [thread.id],
+                      flat: !prefs.threadGrouping,
+                      removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+                    }),
                   onSnooze: (thread) => setSnoozeIds([thread.id]),
                   onFilter: (thread) =>
                     setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
@@ -1313,6 +1346,19 @@ export function App() {
                           ? () => requestPermanentDelete(batchRows.map((row) => row.id))
                           : undefined
                       }
+                      onCreate={(accountId, move) =>
+                        setLabelCreation({
+                          accountId,
+                          move,
+                          threads: batchRows
+                            .filter((row) => row.accountId === accountId)
+                            .map((row) => row.id),
+                          flat: !prefs.threadGrouping,
+                          removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+                        })
+                      }
+                      currentLabel={view.label?.id}
+                      mailbox={view.mailbox}
                       rows={batchRows}
                       canLoadMore={threads.canLoadMore}
                       moreNotLoaded={threads.moreNotLoaded}
@@ -1325,6 +1371,17 @@ export function App() {
                   ) : (
                     threadState && (
                       <ThreadActions
+                        currentLabel={view.label?.id}
+                        pickerMode={pickerMode}
+                        organizationTarget={
+                          batchRows[0]
+                            ? {
+                                accountId: batchRows[0].accountId,
+                                threads: [batchRows[0].id],
+                                flat: !prefs.threadGrouping,
+                              }
+                            : undefined
+                        }
                         compact={compact}
                         state={threadState}
                         mailbox={view.mailbox}
@@ -1511,6 +1568,13 @@ export function App() {
           view={view}
           onView={changeView}
           onClose={() => setGoToFolder(false)}
+        />
+      )}
+      {labelCreation && (
+        <CreateLabelDialog
+          target={labelCreation}
+          labels={labels}
+          onClose={() => setLabelCreation(null)}
         />
       )}
       {snoozeIds && (

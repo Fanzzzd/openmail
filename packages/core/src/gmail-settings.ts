@@ -1,17 +1,19 @@
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Schedule } from "effect";
 import type { Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
 import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
   EMPTY_FILTER,
+  filterDestinationsSupported,
   type FilterInput,
+  type GmailRuleDefinition,
   type SendAs,
   type ServerFilter,
   type Vacation,
 } from "./organization.js";
 
-const GmailFilter = Schema.Struct({
+const ParsedGmailFilter = Schema.Struct({
   id: Schema.String,
   criteria: Schema.optionalKey(
     Schema.Struct({
@@ -28,6 +30,11 @@ const GmailFilter = Schema.Struct({
       removeLabelIds: Schema.optionalKey(Schema.Array(Schema.String)),
     }),
   ),
+});
+const GmailFilter = Schema.Struct({
+  id: Schema.String,
+  criteria: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+  action: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
 });
 const GmailVacation = Schema.Struct({
   enableAutoReply: Schema.optionalKey(Schema.Boolean),
@@ -53,19 +60,34 @@ const Aliases = Schema.Struct({
 });
 
 function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
-  const add = raw.action?.addLabelIds ?? [];
-  const remove = raw.action?.removeLabelIds ?? [];
+  const parsed = Schema.decodeUnknownSync(ParsedGmailFilter)(raw);
+  const add = parsed.action?.addLabelIds ?? [];
+  const remove = parsed.action?.removeLabelIds ?? [];
+  const action = {
+    archive: remove.includes("INBOX"),
+    markRead: remove.includes("UNREAD"),
+    star: add.includes("STARRED"),
+    trash: add.includes("TRASH"),
+    label: add.find((l) => !["STARRED", "TRASH", "IMPORTANT", "INBOX"].includes(l)) ?? null,
+  };
+  const editable =
+    filterDestinationsSupported(action, "gmail") &&
+    Object.keys(raw.criteria ?? {}).every((key) =>
+      ["from", "to", "subject", "query", "hasAttachment"].includes(key),
+    ) &&
+    Object.keys(raw.action ?? {}).every((key) => ["addLabelIds", "removeLabelIds"].includes(key)) &&
+    (parsed.action?.removeLabelIds ?? []).every((id) => ["INBOX", "UNREAD"].includes(id)) &&
+    !(parsed.action?.addLabelIds ?? []).some(
+      (id) => !["STARRED", "TRASH"].includes(id) && !id.startsWith("Label_"),
+    ) &&
+    (parsed.action?.addLabelIds ?? []).filter((id) => !["STARRED", "TRASH"].includes(id)).length <=
+      1;
   return {
     id: raw.id,
-    name: raw.criteria?.from || raw.criteria?.subject || raw.criteria?.query || raw.id,
-    criteria: { ...EMPTY_FILTER.criteria, ...raw.criteria },
-    action: {
-      archive: remove.includes("INBOX"),
-      markRead: remove.includes("UNREAD"),
-      star: add.includes("STARRED"),
-      trash: add.includes("TRASH"),
-      label: add.find((l) => !["STARRED", "TRASH", "IMPORTANT", "INBOX"].includes(l)) ?? null,
-    },
+    ...(editable ? {} : { editable: false }),
+    name: parsed.criteria?.from || parsed.criteria?.subject || parsed.criteria?.query || raw.id,
+    criteria: { ...EMPTY_FILTER.criteria, ...parsed.criteria },
+    action,
   };
 }
 
@@ -109,7 +131,68 @@ export function makeGmailSettings<
         });
       }),
     );
+  const createFilter = (account: Account, input: FilterInput) => {
+    const a = input.action;
+    return wrap(
+      account,
+      write(account.id, "POST", "/settings/filters", {
+        criteria: input.criteria,
+        action: {
+          addLabelIds: [
+            ...(a.star ? ["STARRED"] : []),
+            ...(a.trash ? ["TRASH"] : []),
+            ...(a.label ? [a.label] : []),
+          ],
+          removeLabelIds: [...(a.archive ? ["INBOX"] : []), ...(a.markRead ? ["UNREAD"] : [])],
+        },
+      }).pipe(
+        Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),
+      ),
+    ).pipe(Effect.map(fromFilter));
+  };
+  const restoreFilter = (account: Account, definition: GmailRuleDefinition) =>
+    wrap(
+      account,
+      write(account.id, "POST", "/settings/filters", definition).pipe(
+        Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),
+      ),
+    ).pipe(Effect.map(fromFilter));
   return {
+    restoreFilter,
+    updateFilter: (
+      account: Account,
+      id: string,
+      input: FilterInput,
+      onRestoreFailure?: (definition: GmailRuleDefinition) => Effect.Effect<void>,
+    ) =>
+      Effect.gen(function* () {
+        const original = yield* wrap(
+          account,
+          get(account.id, GmailFilter, `/settings/filters/${encodeURIComponent(id)}`),
+        );
+        if (fromFilter(original).editable === false)
+          return yield* new ProviderError({
+            message: "This rule uses conditions or actions the editor cannot preserve",
+          });
+        yield* wrap(
+          account,
+          write(account.id, "DELETE", `/settings/filters/${encodeURIComponent(id)}`),
+        );
+        const result = yield* createFilter(account, input).pipe(Effect.result);
+        if (result._tag === "Success") return result.success;
+        const definition = { criteria: original.criteria, action: original.action };
+        const restored = yield* restoreFilter(account, definition).pipe(
+          Effect.retry({ schedule: Schedule.exponential("500 millis"), times: 2 }),
+          Effect.result,
+        );
+        if (restored._tag === "Failure" && onRestoreFailure) yield* onRestoreFailure(definition);
+        return yield* new ProviderError({
+          message:
+            restored._tag === "Success"
+              ? "Rule update failed. The previous rule was restored; reload the rule list before editing again."
+              : "Rule update failed and automatic recovery failed. Use Restore rule to recover the saved original rule.",
+        });
+      }),
     clearMissingScopes: (accountId: string) => missingSendAsScopes.delete(accountId),
     filters: (account: Account) =>
       wrap(
@@ -120,24 +203,7 @@ export function makeGmailSettings<
           "/settings/filters",
         ).pipe(Effect.map((r) => (r?.filter ?? []).map(fromFilter))),
       ),
-    createFilter: (account: Account, input: FilterInput) => {
-      const a = input.action;
-      const addLabelIds = [
-        ...(a.star ? ["STARRED"] : []),
-        ...(a.trash ? ["TRASH"] : []),
-        ...(a.label ? [a.label] : []),
-      ];
-      const removeLabelIds = [...(a.archive ? ["INBOX"] : []), ...(a.markRead ? ["UNREAD"] : [])];
-      return wrap(
-        account,
-        write(account.id, "POST", "/settings/filters", {
-          criteria: input.criteria,
-          action: { addLabelIds, removeLabelIds },
-        }).pipe(
-          Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),
-        ),
-      ).pipe(Effect.map(fromFilter));
-    },
+    createFilter,
     deleteFilter: (account: Account, id: string) =>
       wrap(
         account,

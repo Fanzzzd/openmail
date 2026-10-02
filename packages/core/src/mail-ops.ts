@@ -14,7 +14,7 @@ export function applyOpToLabels(
 ): string[] {
   const out = new Set(labels);
   if (
-    ["inbox", "archive", "trash", "spam"].includes(op.kind) ||
+    ["inbox", "archive", "trash", "spam", "move"].includes(op.kind) ||
     (op.kind === "label" && op.value && provider !== "gmail")
   )
     out.delete("SNOOZED");
@@ -39,6 +39,12 @@ export function applyOpToLabels(
         out.delete("INBOX");
         out.add(op.kind === "trash" ? "TRASH" : "SPAM");
         break;
+      case "move":
+        if (op.removeLabelId && op.removeLabelId !== op.labelId) out.delete(op.removeLabelId);
+        if (op.labelId !== "TRASH") out.delete("TRASH");
+        if (op.labelId !== "SPAM") out.delete("SPAM");
+        out.add(op.labelId);
+        break;
       case "label":
         flag(op.labelId, op.value);
         break;
@@ -56,6 +62,8 @@ export function applyOpToLabels(
 /** The folder label a moving op sends a folder-model message to, or null for no move. */
 export function folderTarget(op: MailOp, labels: readonly string[]): string | null {
   switch (op.kind) {
+    case "move":
+      return op.labelId;
     case "archive":
       return "ARCHIVE";
     case "inbox":

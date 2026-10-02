@@ -162,6 +162,7 @@ const Handlers = MailRpcs.toLayer(
       SetCacheWindow: ({ input }) => m.setCacheWindow(input),
       SearchServer: ({ query }) => m.searchServer(query),
       ChangeLabel: ({ accountId, change }) => m.changeLabel(accountId, change),
+      ReorderFavorites: ({ order }) => m.reorderFavorites(order),
       LabelPreferences: () => m.labelPreferences,
       SetLabelPreference: ({ input }) => m.setLabelPreference(input),
       Organization: () => m.organization,
@@ -169,8 +170,20 @@ const Handlers = MailRpcs.toLayer(
       Snooze: ({ threads, due }) => m.snooze(threads, due),
       Filters: ({ accountId }) => m.filters(accountId),
       PreviewFilter: ({ accountId, criteria }) => m.previewFilter(accountId, criteria),
-      CreateFilter: ({ accountId, input }) => m.createFilter(accountId, input),
-      DeleteFilter: ({ accountId, id }) => m.deleteFilter(accountId, id),
+      PrepareFilter: ({ accountId, input }) => m.prepareFilter(accountId, input),
+      FilterRestorations: ({ accountId }) => m.filterRestorations(accountId),
+      PrepareFilterRestoration: ({ accountId, id }) => m.prepareFilterRestoration(accountId, id),
+      DiscardFilterRestoration: ({ accountId, id, confirmed }) =>
+        m.discardFilterRestoration(accountId, id, confirmed),
+      RestoreFilter: ({ accountId, id, token, queryDeletionConfirmed }) =>
+        m.restoreFilter(accountId, id, token, queryDeletionConfirmed),
+      UpdateFilter: ({ accountId, id, input, token }) =>
+        m.updateFilter(accountId, id, input, token),
+      ApplyFilter: ({ accountId, input, token }) => m.applyFilter(accountId, input, token),
+      CreateLabelAndApply: ({ accountId, name, parentId, threads, move, removeLabelId, flat }) =>
+        m.createLabelAndApply(accountId, name, parentId, threads, move, removeLabelId, flat),
+      CreateFilter: ({ accountId, input, token }) => m.createFilter(accountId, input, token),
+      DeleteFilter: ({ accountId, id, confirmed }) => m.deleteFilter(accountId, id, confirmed),
       Vacation: ({ accountId }) => m.vacation(accountId),
       SetVacation: ({ accountId, input }) => m.setVacation(accountId, input),
       SendAs: () => m.sendAs,

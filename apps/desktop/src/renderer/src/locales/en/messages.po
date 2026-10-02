@@ -119,6 +119,10 @@ msgstr "{seconds, plural, one {# second} other {# seconds}}"
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "1 week, tomorrow 9am, next monday"
+msgstr "1 week, tomorrow 9am, next monday"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "1 year"
 msgstr "1 year"
@@ -186,6 +190,10 @@ msgstr "Accounts"
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "Action"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Action failed"
+msgstr "Action failed"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -429,6 +437,14 @@ msgstr "Apple Mail"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "Apply link"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail"
+msgstr "Apply to existing mail"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail?"
+msgstr "Apply to existing mail?"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
@@ -715,8 +731,8 @@ msgid "Compose"
 msgstr "Compose"
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "Confirm deleting filter"
-msgstr "Confirm deleting filter"
+msgid "Confirm"
+msgstr "Confirm"
 
 #: src/renderer/src/errors.ts
 msgid "Confirm deletion for a filter with a search query"
@@ -725,6 +741,10 @@ msgstr "Confirm deletion for a filter with a search query"
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
 msgstr "Confirm Remove"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm rule changes?"
+msgstr "Confirm rule changes?"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
@@ -833,10 +853,6 @@ msgstr "Couldn't send: {reason}"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "Create"
-
-#: src/renderer/src/components/ServerSettings.tsx
-msgid "Create a deleting filter?"
-msgstr "Create a deleting filter?"
 
 #: src/renderer/src/components/imapPresetText.ts
 msgid "Create an app password under Account Security in your Yahoo account."
@@ -951,10 +967,18 @@ msgstr "Denied"
 msgid "Disabled"
 msgstr "Disabled"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard"
+msgstr "Discard"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Discard draft"
 msgstr "Discard draft"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard saved rule?"
+msgstr "Discard saved rule?"
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Display name"
@@ -993,6 +1017,7 @@ msgstr "Drafts"
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 msgstr "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
 msgstr "Edit"
@@ -1018,6 +1043,10 @@ msgstr "Edit space"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Edit this draft body?"
 msgstr "Edit this draft body?"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Edit this rule in webmail to preserve all conditions and actions."
+msgstr "Edit this rule in webmail to preserve all conditions and actions."
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Edit token"
@@ -1058,6 +1087,10 @@ msgstr "Enabled"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "End"
 msgstr "End"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Enter a future reminder time"
+msgstr "Enter a future reminder time"
 
 #: src/renderer/src/errors.ts
 msgid "Enter a single access token"
@@ -1108,6 +1141,7 @@ msgid "External replies"
 msgstr "External replies"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Favorite"
 msgstr "Favorite"
 
@@ -1242,6 +1276,10 @@ msgstr "Has attachment"
 msgid "Headers"
 msgstr "Headers"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Hide"
+msgstr "Hide"
+
 #: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
@@ -1349,6 +1387,10 @@ msgid "Label added"
 msgstr "Label added"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Label list visibility"
+msgstr "Label list visibility"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Label or folder"
 msgstr "Label or folder"
@@ -1427,6 +1469,10 @@ msgstr "Location"
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Mailboxes"
+msgstr "Mailboxes"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
@@ -1556,6 +1602,10 @@ msgstr "Message body"
 msgid "Message link copied"
 msgstr "Message link copied"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Message list visibility"
+msgstr "Message list visibility"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
@@ -1623,6 +1673,7 @@ msgid "Move {0} later"
 msgstr "Move {0} later"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Move down"
 msgstr "Move down"
 
@@ -1633,6 +1684,11 @@ msgstr "Move focus between panes"
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
 msgstr "Move message to Trash"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move To"
+msgstr "Move To"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1652,8 +1708,14 @@ msgid "Move to Inbox"
 msgstr "Move to Inbox"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
 msgstr "Move up"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Moved"
+msgstr "Moved"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -1685,7 +1747,9 @@ msgstr "Needs sign-in"
 msgid "New draft"
 msgstr "New draft"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "New label or folder"
 msgstr "New label or folder"
 
@@ -1789,6 +1853,7 @@ msgid "No messages match the filters"
 msgstr "No messages match the filters"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "No parent"
 msgstr "No parent"
 
@@ -2068,6 +2133,11 @@ msgstr "Port"
 msgid "Press ? outside a text field to show this list."
 msgstr "Press ? outside a text field to show this list."
 
+#. placeholder {0}: confirming.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
+msgstr "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Previous match"
@@ -2151,6 +2221,10 @@ msgstr "Reject suggestion"
 msgid "Remind me"
 msgstr "Remind me"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Reminder time"
+msgstr "Reminder time"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Remote images are blocked so the sender can't tell if you read this."
@@ -2180,6 +2254,15 @@ msgstr "Remove {token}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "Remove account"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Remove Current Label"
+msgstr "Remove Current Label"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Remove favorite"
+msgstr "Remove favorite"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Remove label"
@@ -2287,6 +2370,19 @@ msgstr "Reset Favorites"
 msgid "Restore"
 msgstr "Restore"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule"
+msgstr "Restore rule"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule?"
+msgstr "Restore rule?"
+
+#. placeholder {0}: pending.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore the saved original rule on the server. Preview: {0} messages."
+msgstr "Restore the saved original rule on the server. Preview: {0} messages."
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "Resume"
@@ -2350,6 +2446,10 @@ msgstr "Save message as EML…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "Save message as PDF…"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Save rule"
+msgstr "Save rule"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -2560,6 +2660,10 @@ msgstr "Show full email addresses in recipient fields"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"
 msgstr "Show Gmail categories"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show if unread"
+msgstr "Show if unread"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
@@ -2850,6 +2954,10 @@ msgstr "the operation failed."
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
 msgstr "The organizer differs from the message sender. Check the response recipient before replying."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
+msgstr "The preview is limited to 200 messages. Narrow the conditions to process other messages."
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "The rest is left out here. Copy gets the whole message."
@@ -2884,6 +2992,10 @@ msgstr "These loaded conversations will be moved to Trash. You can undo this bat
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
 msgstr "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
+msgstr "This deletes the saved recovery copy. Rules on the server are unchanged."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
@@ -2891,10 +3003,6 @@ msgstr "This draft contains formatting or images this editor cannot keep. The or
 #: src/renderer/src/components/Composer.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "This draft has unsaved changes or is waiting to sync."
-
-#: src/renderer/src/components/ServerSettings.tsx
-msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
-msgstr "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 
 #: src/renderer/src/errors.ts
 msgid "This invitation cannot be answered by this account"
@@ -2917,8 +3025,12 @@ msgid "This permission lets openmail permanently delete mail in this Gmail accou
 msgstr "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This removes the filter from the server."
-msgstr "This removes the filter from the server."
+msgid "This removes the filter from the server. Existing messages are unchanged."
+msgstr "This removes the filter from the server. Existing messages are unchanged."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
+msgstr "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."

@@ -97,18 +97,56 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
               className="flex flex-wrap items-center gap-3 border-b border-black/5 pb-2 dark:border-white/10"
             >
               <span className="min-w-0 flex-1 truncate">{label.name}</span>
-              <label className="flex items-center gap-1.5">
-                <Checkbox
-                  checked={pref.visible}
-                  onCheckedChange={(visible) =>
-                    setPref({
-                      payload: { input: { ...pref, visible } },
-                      reactivityKeys: [Keys.organization],
-                    })
-                  }
-                />
-                <span>{t`Show`}</span>
-              </label>
+              {account?.provider === "gmail" ? (
+                <>
+                  <Select
+                    aria-label={t`Label list visibility`}
+                    value={label.labelListVisibility ?? "labelShow"}
+                    options={[
+                      { value: "labelShow", label: t`Show` },
+                      { value: "labelShowIfUnread", label: t`Show if unread` },
+                      { value: "labelHide", label: t`Hide` },
+                    ]}
+                    onValueChange={(labelListVisibility) => {
+                      void perform({
+                        kind: "visibility",
+                        id: label.id,
+                        labelListVisibility,
+                        messageListVisibility: label.messageListVisibility ?? "show",
+                      });
+                    }}
+                  />
+                  <Select
+                    aria-label={t`Message list visibility`}
+                    value={label.messageListVisibility ?? "show"}
+                    options={[
+                      { value: "show", label: t`Show` },
+                      { value: "hide", label: t`Hide` },
+                    ]}
+                    onValueChange={(messageListVisibility) => {
+                      void perform({
+                        kind: "visibility",
+                        id: label.id,
+                        labelListVisibility: label.labelListVisibility ?? "labelShow",
+                        messageListVisibility,
+                      });
+                    }}
+                  />
+                </>
+              ) : (
+                <label className="flex items-center gap-1.5">
+                  <Checkbox
+                    checked={pref.visible}
+                    onCheckedChange={(visible) =>
+                      setPref({
+                        payload: { input: { ...pref, visible } },
+                        reactivityKeys: [Keys.organization],
+                      })
+                    }
+                  />
+                  <span>{t`Show`}</span>
+                </label>
+              )}
               <label className="flex items-center gap-1.5">
                 <Checkbox
                   checked={pref.favorite}
@@ -195,7 +233,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
   );
 }
 
-function LabelEditor({
+export function LabelEditor({
   label,
   labels,
   busy,
@@ -221,8 +259,8 @@ function LabelEditor({
           e.preventDefault();
           onSave(
             label === "new"
-              ? { kind: "create", name, ...(parent ? { parentId: parent } : {}) }
-              : { kind: "rename", id: label.id, name },
+              ? { kind: "create", name: name.trim(), ...(parent ? { parentId: parent } : {}) }
+              : { kind: "rename", id: label.id, name: name.trim() },
           );
         }}
       >

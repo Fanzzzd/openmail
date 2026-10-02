@@ -6,6 +6,7 @@ import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
   EMPTY_FILTER,
+  filterDestinationsSupported,
   type FilterInput,
   type ServerFilter,
   type Vacation,
@@ -22,7 +23,7 @@ const Recipients = Schema.optionalKey(
     }),
   ),
 );
-const GraphRule = Schema.Struct({
+const ParsedGraphRule = Schema.Struct({
   id: Schema.String,
   displayName: Schema.String,
   conditions: Schema.optionalKey(
@@ -44,6 +45,14 @@ const GraphRule = Schema.Struct({
     }),
   ),
 });
+const GraphRule = Schema.Struct({
+  id: Schema.String,
+  displayName: Schema.String,
+  conditions: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+  actions: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+  exceptions: Schema.optionalKey(Schema.Record(Schema.String, Schema.Unknown)),
+  isReadOnly: Schema.optionalKey(Schema.Boolean),
+});
 const DateTime = Schema.Struct({ dateTime: Schema.String, timeZone: Schema.String });
 const Replies = Schema.Struct({
   status: Schema.String,
@@ -53,10 +62,33 @@ const Replies = Schema.Struct({
   internalReplyMessage: Schema.optionalKey(Schema.String),
   externalReplyMessage: Schema.optionalKey(Schema.String),
 });
-function fromRule(r: typeof GraphRule.Type): ServerFilter {
-  const c = r.conditions;
+function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): ServerFilter {
+  const parsed = Schema.decodeUnknownSync(ParsedGraphRule)(r);
+  const c = parsed.conditions;
+  const action = {
+    ...EMPTY_FILTER.action,
+    markRead: parsed.actions?.markAsRead ?? false,
+    trash: parsed.actions?.delete ?? false,
+    archive: !!archiveId && parsed.actions?.moveToFolder === archiveId,
+    label:
+      parsed.actions?.moveToFolder === archiveId ? null : (parsed.actions?.moveToFolder ?? null),
+  };
+  const editable =
+    filterDestinationsSupported(action, "outlook") &&
+    !r.isReadOnly &&
+    Object.keys(r.exceptions ?? {}).length === 0 &&
+    Object.keys(r.conditions ?? {}).every((key) =>
+      ["senderContains", "recipientContains", "subjectContains", "hasAttachments"].includes(key),
+    ) &&
+    Object.keys(r.actions ?? {}).every((key) =>
+      ["markAsRead", "delete", "moveToFolder"].includes(key),
+    ) &&
+    [c?.senderContains, c?.recipientContains, c?.subjectContains].every(
+      (values) => !values || values.length <= 1,
+    );
   return {
     id: r.id,
+    ...(editable ? {} : { editable: false }),
     name: r.displayName,
     criteria: {
       ...EMPTY_FILTER.criteria,
@@ -72,12 +104,7 @@ function fromRule(r: typeof GraphRule.Type): ServerFilter {
       query: c?.bodyContains?.join(" ") ?? "",
       hasAttachment: c?.hasAttachments ?? false,
     },
-    action: {
-      ...EMPTY_FILTER.action,
-      markRead: r.actions?.markAsRead ?? false,
-      trash: r.actions?.delete ?? false,
-      label: r.actions?.moveToFolder ?? null,
-    },
+    action,
   };
 }
 
@@ -97,6 +124,23 @@ export function makeOutlookSettings<
     body?: unknown,
   ) => Effect.Effect<unknown, E>,
 ) {
+  const parseRule = (account: Account, raw: typeof GraphRule.Type) =>
+    Effect.gen(function* () {
+      const archiveId = raw.actions?.moveToFolder
+        ? yield* get(
+            account.id,
+            Schema.Struct({ id: Schema.String }),
+            "/me/mailFolders/archive?$select=id",
+          ).pipe(
+            Effect.map((folder) => folder.id),
+            Effect.catchIf(
+              (error) => error.status === 404,
+              () => Effect.succeed(null),
+            ),
+          )
+        : null;
+      return fromRule(raw, archiveId);
+    });
   const wrap = <A>(account: Account, effect: Effect.Effect<A, E | PermanentError>) =>
     effect.pipe(
       Effect.mapError((e) => {
@@ -116,7 +160,58 @@ export function makeOutlookSettings<
         });
       }),
     );
+  const saveRule = (account: Account, input: FilterInput, id: string) =>
+    Effect.gen(function* () {
+      if (input.criteria.query || input.action.star)
+        return yield* new PermanentError({
+          message: "Outlook rules do not support search queries or starring",
+        });
+      const original = yield* get(
+        account.id,
+        GraphRule,
+        `/me/mailFolders/inbox/messageRules/${encodeURIComponent(id)}`,
+      );
+      if ((yield* parseRule(account, original)).editable === false)
+        return yield* new PermanentError({
+          message: "This rule uses conditions or actions the editor cannot preserve",
+        });
+      const c = input.criteria;
+      const archive = input.action.archive
+        ? yield* get(
+            account.id,
+            Schema.Struct({ id: Schema.String }),
+            "/me/mailFolders/archive?$select=id",
+          )
+        : null;
+      const raw = yield* write(
+        account.id,
+        "PATCH",
+        `/me/mailFolders/inbox/messageRules/${encodeURIComponent(id)}`,
+        {
+          displayName: input.name,
+          conditions: {
+            ...(c.from ? { senderContains: [c.from] } : {}),
+            ...(c.to ? { recipientContains: [c.to] } : {}),
+            ...(c.subject ? { subjectContains: [c.subject] } : {}),
+            ...(c.hasAttachment ? { hasAttachments: true } : {}),
+          },
+          actions: {
+            ...(input.action.markRead ? { markAsRead: true } : {}),
+            ...(input.action.trash ? { delete: true } : {}),
+            ...(input.action.label || archive
+              ? { moveToFolder: input.action.label ?? archive?.id }
+              : {}),
+          },
+        },
+      );
+      return yield* parseRule(
+        account,
+        yield* Schema.decodeUnknownEffect(GraphRule)(raw).pipe(Effect.orDie),
+      );
+    }).pipe((effect) => wrap(account, effect));
   return {
+    updateFilter: (account: Account, id: string, input: FilterInput) =>
+      saveRule(account, input, id),
     filters: (account: Account) =>
       wrap(
         account,
@@ -124,7 +219,7 @@ export function makeOutlookSettings<
           account.id,
           Schema.Struct({ value: Schema.Array(GraphRule) }),
           "/me/mailFolders/inbox/messageRules",
-        ).pipe(Effect.map((r) => r.value.map(fromRule))),
+        ).pipe(Effect.flatMap((r) => Effect.forEach(r.value, (raw) => parseRule(account, raw)))),
       ),
     createFilter: (account: Account, input: FilterInput) =>
       Effect.gen(function* () {
@@ -164,7 +259,10 @@ export function makeOutlookSettings<
               : {}),
           },
         });
-        return fromRule(yield* Schema.decodeUnknownEffect(GraphRule)(raw).pipe(Effect.orDie));
+        return yield* parseRule(
+          account,
+          yield* Schema.decodeUnknownEffect(GraphRule)(raw).pipe(Effect.orDie),
+        );
       }).pipe((effect) => wrap(account, effect)),
     deleteFilter: (account: Account, id: string) =>
       wrap(

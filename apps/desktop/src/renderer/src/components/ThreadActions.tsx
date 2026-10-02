@@ -1,9 +1,11 @@
+import { moveSourceLabel } from "@openmail/core/schema";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Toggle } from "@base-ui/react/toggle";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useLingui } from "@lingui/react/macro";
 import {
   Clock,
+  FolderInput,
   MoreHorizontal,
   ListFilter,
   AppWindow,
@@ -21,7 +23,12 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import type { ComponentType, ReactElement } from "react";
+import { useState, type ComponentType, type ReactElement } from "react";
+import { useAtom } from "@effect/atom-react";
+import { createLabelAndApplyAtom } from "../state/mutations";
+import { MAIL_KEYS } from "../state/keys";
+import { resultError } from "../errors";
+import { LabelEditor } from "./OrganizationSettings";
 
 import type { Label, MailOp, Mailbox, Provider } from "../../../shared/api";
 import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
@@ -43,6 +50,10 @@ export interface ThreadState {
 interface Props {
   /** The reader collapses actions before there is too little room for search. */
   compact?: boolean;
+  currentLabel?: string | undefined;
+  onCreate?: ((move: boolean) => void) | undefined;
+  pickerMode?: "label" | "move";
+  organizationTarget?: { accountId: string; threads: readonly string[]; flat: boolean } | undefined;
   state: ThreadState;
   mailbox: Mailbox;
   /** User labels or folders of the thread's account. */
@@ -86,6 +97,9 @@ const button =
  */
 export function ThreadActions({
   compact = false,
+  currentLabel,
+  pickerMode = "label",
+  organizationTarget,
   state,
   mailbox,
   labels,
@@ -103,16 +117,50 @@ export function ThreadActions({
   const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";
 
+  const [moveOpen, setMoveOpen] = useState(false);
+  const [labelOpen, setLabelOpen] = useState(false);
+  const removeLabelId = moveSourceLabel(mailbox, currentLabel);
+  const moveControl = (
+    <LabelPicker
+      open={moveOpen || (labelPicker && pickerMode === "move")}
+      onOpenChange={(open) => {
+        setMoveOpen(open);
+        if (!open) onLabelPicker(false);
+      }}
+      labels={labels}
+      current={state.labels}
+      folders
+      onPick={(label) => {
+        setMoveOpen(false);
+        onLabelPicker(false);
+        onOp({ kind: "move", labelId: label.id, removeLabelId });
+      }}
+      tip={{ label: t`Move To`, shortcut: shortcut("move") }}
+      trigger={
+        <Toolbar.Button aria-label={t`Move To`} className={button}>
+          <FolderInput className="size-4" />
+        </Toolbar.Button>
+      }
+      target={organizationTarget}
+      move
+      removeLabelId={removeLabelId}
+    />
+  );
   const labelControl =
-    labels.length > 0 ? (
+    state.provider === "gmail" ? (
       <LabelPicker
-        open={labelPicker}
-        onOpenChange={onLabelPicker}
+        open={labelOpen || (labelPicker && pickerMode === "label")}
+        onOpenChange={(open) => {
+          setLabelOpen(open);
+          if (!open) onLabelPicker(false);
+        }}
         labels={labels}
+        target={organizationTarget}
         current={state.labels}
         folders={folders}
         onPick={(label, value) => {
           onLabelPicker(false);
+          setLabelOpen(false);
           onOp({ kind: "label", labelId: label.id, value });
         }}
         tip={{
@@ -132,6 +180,7 @@ export function ThreadActions({
         aria-label={t`Conversation actions`}
         className="flex shrink-0 items-center gap-0.5"
       >
+        {moveControl}
         {labelControl}
         <DropdownMenu
           trigger={
@@ -141,6 +190,7 @@ export function ThreadActions({
           }
         >
           <ThreadMenuItems
+            currentLabel={currentLabel}
             state={state}
             mailbox={mailbox}
             labels={labels}
@@ -216,7 +266,15 @@ export function ThreadActions({
           onPressedChange={(value) => onOp({ kind: "important", value })}
         />
       )}
+      {moveControl}
       {labelControl}
+      {currentLabel && state.provider === "gmail" && labels.some((l) => l.id === currentLabel) && (
+        <Action
+          icon={Tag}
+          label={t`Remove Current Label`}
+          onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
+        />
+      )}
       {onSendAgain && <Action icon={MailPlus} label={t`Send Again`} onClick={onSendAgain} />}
       {onCompose && (
         <>
@@ -267,6 +325,8 @@ export function ThreadActions({
  * toggle on Gmail; folder providers move the thread.
  */
 export function ThreadMenuItems({
+  currentLabel,
+  onCreate,
   state,
   mailbox,
   labels,
@@ -376,6 +436,34 @@ export function ThreadMenuItems({
           {state.isImportant ? t`Mark as not important` : t`Mark as important`}
         </MenuItem>
       )}
+      {currentLabel && state.provider === "gmail" && labels.some((l) => l.id === currentLabel) && (
+        <MenuItem
+          icon={Tag}
+          onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
+        >{t`Remove Current Label`}</MenuItem>
+      )}
+      {(labels.length > 0 || onCreate) && (
+        <ContextSubmenu icon={FolderInput} label={t`Move To`}>
+          {labels.map((l) => (
+            <MenuItem
+              key={l.id}
+              onClick={() =>
+                onOp({
+                  kind: "move",
+                  labelId: l.id,
+                  removeLabelId: moveSourceLabel(mailbox, currentLabel),
+                })
+              }
+            >
+              {l.name}
+            </MenuItem>
+          ))}
+          {onCreate && <MenuItem onClick={() => onCreate(true)}>{t`New label or folder`}</MenuItem>}
+        </ContextSubmenu>
+      )}
+      {onCreate && state.provider === "gmail" && (
+        <MenuItem onClick={() => onCreate(false)}>{t`New label or folder`}</MenuItem>
+      )}
       {labels.length > 0 && (
         <ContextSubmenu icon={Tag} label={folders ? t`Move to folder` : t`Labels`}>
           {labels.map((l) => (
@@ -413,6 +501,9 @@ function LabelPicker({
   current,
   folders,
   onPick,
+  target,
+  move = false,
+  removeLabelId = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -422,46 +513,89 @@ function LabelPicker({
   current: string[];
   folders: boolean;
   onPick: (label: Label, value: boolean) => void;
+  target?: Props["organizationTarget"];
+  move?: boolean;
+  removeLabelId?: string | null;
 }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
+  const [creating, setCreating] = useState(false);
+  const [result, create] = useAtom(createLabelAndApplyAtom, { mode: "promiseExit" });
   return (
-    <PickerPopover open={open} onOpenChange={onOpenChange} trigger={trigger} tip={tip}>
-      <Autocomplete.Root
-        inline
-        open
-        items={labels}
-        itemToStringValue={(l: Label) => l.name}
-        autoHighlight="always"
-        keepHighlight
-      >
-        <Autocomplete.Input
-          aria-label={folders ? t`Move to folder` : t`Labels`}
-          placeholder={folders ? t`Move to folder…` : t`Labels…`}
-          className={pickerInput}
-        />
-        <Autocomplete.List className={pickerList}>
-          {(l: Label) => {
-            const on = current.includes(l.id);
-            return (
-              <Autocomplete.Item
-                key={l.id}
-                value={l}
-                onClick={() => onPick(l, !on)}
-                className={`h-7 ${pickerItem}`}
-              >
-                <LabelDot label={l} />
-                <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                {on && (
-                  <span className="text-blue-600 group-data-highlighted:text-white dark:text-blue-400">
-                    ✓
-                  </span>
-                )}
-              </Autocomplete.Item>
-            );
+    <>
+      {creating && target && (
+        <LabelEditor
+          label="new"
+          labels={labels}
+          busy={result.waiting}
+          error={resultError(i18n, result)}
+          onClose={() => setCreating(false)}
+          onSave={async (change) => {
+            if (change.kind !== "create") return;
+            const exit = await create({
+              payload: {
+                ...target,
+                name: change.name,
+                parentId: change.parentId ?? null,
+                move: move || folders,
+                removeLabelId,
+              },
+              reactivityKeys: MAIL_KEYS,
+            });
+            if (exit._tag === "Success") {
+              setCreating(false);
+              onOpenChange(false);
+            }
           }}
-        </Autocomplete.List>
-      </Autocomplete.Root>
-    </PickerPopover>
+        />
+      )}
+      <PickerPopover open={open} onOpenChange={onOpenChange} trigger={trigger} tip={tip}>
+        <Autocomplete.Root
+          inline
+          open
+          items={labels}
+          itemToStringValue={(l: Label) => l.name}
+          autoHighlight="always"
+          keepHighlight
+        >
+          <Autocomplete.Input
+            aria-label={folders ? t`Move to folder` : t`Labels`}
+            placeholder={folders ? t`Move to folder…` : t`Labels…`}
+            className={pickerInput}
+          />
+          <Autocomplete.List className={pickerList}>
+            {(l: Label) => {
+              const on = current.includes(l.id);
+              return (
+                <Autocomplete.Item
+                  key={l.id}
+                  value={l}
+                  onClick={() => onPick(l, !on)}
+                  className={`h-7 ${pickerItem}`}
+                >
+                  <LabelDot label={l} />
+                  <span className="min-w-0 flex-1 truncate">{l.name}</span>
+                  {on && (
+                    <span className="text-blue-600 group-data-highlighted:text-white dark:text-blue-400">
+                      ✓
+                    </span>
+                  )}
+                </Autocomplete.Item>
+              );
+            }}
+          </Autocomplete.List>
+        </Autocomplete.Root>
+        {target && (
+          <button
+            type="button"
+            className="w-full p-2 text-left text-blue-500"
+            onClick={() => {
+              setCreating(true);
+              onOpenChange(false);
+            }}
+          >{t`New label or folder`}</button>
+        )}
+      </PickerPopover>
+    </>
   );
 }
 

@@ -53,7 +53,10 @@ import type { ClientConfig, ConnectInput } from "./services.js";
 import type {
   AccountOrganization,
   FilterCriteria,
+  FilterPreview,
   FilterInput,
+  FilterRestoration,
+  FilterRestorationPreview,
   LabelChange,
   LabelPreference,
   SearchResult,
@@ -196,18 +199,69 @@ export class Mailbox extends Context.Service<
     searchServer(query: ThreadQuery): Effect.Effect<SearchResult>;
     changeLabel(accountId: string, change: LabelChange): Effect.Effect<void, PerformError>;
     readonly labelPreferences: Effect.Effect<LabelPreference[]>;
+    reorderFavorites(
+      order: readonly Pick<LabelPreference, "accountId" | "id">[],
+    ): Effect.Effect<void, PerformError>;
     setLabelPreference(input: LabelPreference): Effect.Effect<void, PerformError>;
     readonly organization: Effect.Effect<AccountOrganization[]>;
     setOrganization(input: AccountOrganization): Effect.Effect<void, NotFound>;
     snooze(threads: readonly string[], due: number): Effect.Effect<void, PerformError>;
     wakeSnoozed(): Effect.Effect<void>;
     filters(accountId: string): Effect.Effect<ServerFilter[], PerformError>;
+    filterRestorations(accountId: string): Effect.Effect<FilterRestoration[], PerformError>;
+    prepareFilterRestoration(
+      accountId: string,
+      id: string,
+    ): Effect.Effect<FilterRestorationPreview, PerformError>;
+    discardFilterRestoration(
+      accountId: string,
+      id: string,
+      confirmed: boolean,
+    ): Effect.Effect<void, PerformError>;
+    restoreFilter(
+      accountId: string,
+      id: string,
+      token: string,
+      queryDeletionConfirmed?: true,
+    ): Effect.Effect<ServerFilter, PerformError>;
     previewFilter(
       accountId: string,
       criteria: FilterCriteria,
     ): Effect.Effect<ThreadSummary[], PerformError>;
-    createFilter(accountId: string, input: FilterInput): Effect.Effect<ServerFilter, PerformError>;
-    deleteFilter(accountId: string, id: string): Effect.Effect<void, PerformError>;
+    prepareFilter(
+      accountId: string,
+      input: FilterInput,
+    ): Effect.Effect<FilterPreview, PerformError>;
+    updateFilter(
+      accountId: string,
+      id: string,
+      input: FilterInput,
+      token: string,
+    ): Effect.Effect<ServerFilter, PerformError>;
+    applyFilter(
+      accountId: string,
+      input: FilterInput,
+      token: string,
+    ): Effect.Effect<number, PerformError>;
+    createLabelAndApply(
+      accountId: string,
+      name: string,
+      parentId: string | null,
+      threads: readonly string[],
+      move: boolean,
+      removeLabelId: string | null,
+      flat: boolean,
+    ): Effect.Effect<BatchResult, PerformError>;
+    createFilter(
+      accountId: string,
+      input: FilterInput,
+      token?: string,
+    ): Effect.Effect<ServerFilter, PerformError>;
+    deleteFilter(
+      accountId: string,
+      id: string,
+      confirmed?: boolean,
+    ): Effect.Effect<void, PerformError>;
     vacation(accountId: string): Effect.Effect<Vacation, PerformError>;
     setVacation(accountId: string, input: Vacation): Effect.Effect<void, PerformError>;
     readonly sendAs: Effect.Effect<SendAs[]>;

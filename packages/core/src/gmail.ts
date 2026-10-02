@@ -6,12 +6,12 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { buildMime, type Threading } from "./compose.js";
 import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
+import { Label } from "./domain.js";
 import type {
   Account,
   Attachment,
   DraftRemote,
   IncomingMessage,
-  Label,
   MailOp,
   OutgoingMessage,
 } from "./domain.js";
@@ -124,6 +124,8 @@ const LabelList = Schema.Struct({
         id: Schema.String,
         name: Schema.String,
         type: Schema.optionalKey(Schema.String),
+        labelListVisibility: Label.fields.labelListVisibility,
+        messageListVisibility: Label.fields.messageListVisibility,
         color: Schema.optionalKey(
           Schema.Struct({ backgroundColor: Schema.optionalKey(Schema.String) }),
         ),
@@ -364,7 +366,13 @@ export const makeGmail: Effect.Effect<
       Effect.map(({ labels = [] }): Omit<Label, "accountId">[] =>
         labels
           .filter((l) => l.type === "user")
-          .map((l) => ({ id: l.id, name: l.name, color: l.color?.backgroundColor ?? null })),
+          .map((l) => ({
+            id: l.id,
+            name: l.name,
+            color: l.color?.backgroundColor ?? null,
+            ...(l.labelListVisibility ? { labelListVisibility: l.labelListVisibility } : {}),
+            ...(l.messageListVisibility ? { messageListVisibility: l.messageListVisibility } : {}),
+          })),
       ),
     );
 
@@ -494,6 +502,14 @@ export const makeGmail: Effect.Effect<
         // Untrash restores the labels the message had before trashing; the
         // modify below then makes sure it lands in the inbox.
         yield* post(account.id, `${path}/untrash`);
+      }
+      if (op.kind === "move" && op.labelId !== "TRASH") {
+        const current = yield* get(
+          account.id,
+          Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
+          `${path}?format=minimal`,
+        );
+        if (current.labelIds?.includes("TRASH")) yield* post(account.id, `${path}/untrash`);
       }
       const { add, remove } = gmailDelta(op);
       yield* post(account.id, `${path}/modify`, { addLabelIds: add, removeLabelIds: remove });
@@ -712,11 +728,66 @@ export const makeGmail: Effect.Effect<
         });
       } else if (change.kind === "delete")
         yield* del(account.id, `/labels/${encodeURIComponent(change.id)}`);
-      else {
+      else if (change.kind === "parent") {
+        const labels = yield* fetchUserLabels(account.id);
+        const old = labels.find((l) => l.id === change.id);
+        const parent = labels.find((l) => l.id === change.parentId);
+        if (old) {
+          const name = `${parent ? `${parent.name}/` : ""}${old.name.split("/").at(-1)}`;
+          const moving = labels.filter(
+            (candidate) => candidate.id === old.id || candidate.name.startsWith(`${old.name}/`),
+          );
+          const planned = moving.map((label) => ({
+            label,
+            name: name + label.name.slice(old.name.length),
+          }));
+          const otherNames = new Set(
+            labels
+              .filter((label) => !moving.some((item) => item.id === label.id))
+              .map((label) => label.name.toLowerCase()),
+          );
+          if (planned.some((item) => otherNames.has(item.name.toLowerCase())))
+            return yield* new ApiError({
+              status: 400,
+              body: "A label with the destination name already exists",
+            });
+          const patchName = (id: string, labelName: string) =>
+            api(
+              account.id,
+              HttpClientRequest.bodyJsonUnsafe(
+                HttpClientRequest.patch(`${API}/labels/${encodeURIComponent(id)}`),
+                { name: labelName },
+              ),
+            );
+          const renamed: typeof moving = [];
+          for (const item of planned) {
+            const result = yield* patchName(item.label.id, item.name).pipe(Effect.result);
+            if (result._tag === "Failure") {
+              let rollbackFailed = false;
+              for (const previous of renamed.toReversed()) {
+                const rollback = yield* patchName(previous.id, previous.name).pipe(Effect.result);
+                rollbackFailed ||= rollback._tag === "Failure";
+              }
+              if (rollbackFailed)
+                return yield* new ApiError({
+                  status: 500,
+                  body: "Moving the label failed and rollback was incomplete. Reload the labels before trying again.",
+                });
+              return yield* result.failure;
+            }
+            renamed.push(item.label);
+          }
+        }
+      } else {
         const body =
-          change.kind === "rename"
-            ? { name: change.name }
-            : { color: { backgroundColor: change.color ?? "#ffffff", textColor: "#000000" } };
+          change.kind === "visibility"
+            ? {
+                labelListVisibility: change.labelListVisibility,
+                messageListVisibility: change.messageListVisibility,
+              }
+            : change.kind === "rename"
+              ? { name: change.name }
+              : { color: { backgroundColor: change.color ?? "#ffffff", textColor: "#000000" } };
         yield* api(
           account.id,
           HttpClientRequest.bodyJsonUnsafe(
@@ -844,7 +915,7 @@ export const makeGmail: Effect.Effect<
     pull,
     push,
     pushBatch: (account, ids, op) => {
-      if (op.kind === "trash" || op.kind === "inbox")
+      if (op.kind === "trash" || op.kind === "inbox" || op.kind === "move")
         return Effect.forEach(ids, (id) => push(account, id, op), { discard: true });
       const { add, remove } = gmailDelta(op);
       return post(account.id, "/messages/batchModify", {
@@ -877,6 +948,18 @@ export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
       return { add: ["TRASH"], remove: [] };
     case "spam":
       return { add: ["SPAM"], remove: ["INBOX"] };
+    case "move":
+      return {
+        add: [op.labelId],
+        remove: [
+          ...new Set([
+            ...(op.removeLabelId && op.removeLabelId !== op.labelId && op.removeLabelId !== "TRASH"
+              ? [op.removeLabelId]
+              : []),
+            ...(op.labelId !== "SPAM" ? ["SPAM"] : []),
+          ]),
+        ],
+      };
     default:
       return op.value ? { add: [op.labelId], remove: [] } : { add: [], remove: [op.labelId] };
   }

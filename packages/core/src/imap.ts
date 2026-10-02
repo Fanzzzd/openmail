@@ -870,7 +870,10 @@ const applyOp = Effect.fnUntraced(function* (
     yield* flag(op.kind === "read" ? "\\Seen" : "\\Flagged", op.value);
     return;
   }
-  if (op.kind === "label" && op.value && !list.some((f) => f.path === op.labelId)) {
+  if (
+    (op.kind === "move" || (op.kind === "label" && op.value)) &&
+    !list.some((f) => f.path === op.labelId)
+  ) {
     yield* new PermanentError({ message: `Folder ${op.labelId} does not exist` });
   }
   const target =
@@ -882,12 +885,14 @@ const applyOp = Effect.fnUntraced(function* (
           ? yield* ensureFolder(s, list, "\\Junk", "Junk")
           : op.kind === "inbox"
             ? "INBOX"
-            : op.value
+            : op.kind === "move"
               ? op.labelId
-              : // Removing a folder label only means something for the folder the message is in.
-                ref.path === op.labelId
-                ? "INBOX"
-                : ref.path;
+              : op.value
+                ? op.labelId
+                : // Removing a folder label only means something for the folder the message is in.
+                  ref.path === op.labelId
+                  ? "INBOX"
+                  : ref.path;
   yield* moveTo(s, ref.uid, ref.path, target);
 });
 
@@ -1241,6 +1246,15 @@ export const makeImapWith = (
             ? `${parent.path}${parent.delimiter || "/"}${change.name}`
             : change.name;
           yield* call(s, (c) => c.mailboxCreate(path));
+        } else if (change.kind === "parent") {
+          const delimiter = folders.find((f) => f.path === change.id)?.delimiter || "/";
+          const name = change.id.split(delimiter).at(-1);
+          yield* call(s, (c) =>
+            c.mailboxRename(
+              change.id,
+              `${change.parentId ? `${change.parentId}${delimiter}` : ""}${name}`,
+            ),
+          );
         } else if (change.kind === "rename") {
           const delimiter = folders.find((f) => f.path === change.id)?.delimiter || "/";
           yield* call(s, (c) => c.mailboxRename(change.id, change.name.split("/").join(delimiter)));
@@ -1532,6 +1546,7 @@ export const makeImapWith = (
       search,
       filters: () => unsupported,
       createFilter: () => unsupported,
+      updateFilter: () => unsupported,
       deleteFilter: () => unsupported,
       vacation: () => unsupported,
       setVacation: () => unsupported,

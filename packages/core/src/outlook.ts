@@ -1084,6 +1084,22 @@ export const makeOutlook: Effect.Effect<
           name: `${prefix}${folder.displayName ?? change.name}`,
           ...(old ? { previousName: old.name } : {}),
         });
+      } else if (change.kind === "parent") {
+        const old = before.find((f) => f.id === change.id);
+        const result = yield* write(
+          account.id,
+          "POST",
+          `/me/mailFolders/${encodeURIComponent(change.id)}/move`,
+          { destinationId: change.parentId ?? "msgfolderroot" },
+        );
+        const folder = yield* decode(WithId)(result);
+        const parent = before.find((f) => f.id === change.parentId);
+        if (old)
+          rememberFolder(account.id, folder.id, {
+            name: `${parent ? `${parent.name}/` : ""}${old.name.split("/").at(-1)}`,
+            previousName: old.name,
+          });
+        if (folder.id !== change.id) rememberFolder(account.id, change.id, { name: null });
       } else if (change.kind === "delete") {
         yield* write(account.id, "DELETE", `/me/mailFolders/${encodeURIComponent(change.id)}`);
         rememberFolder(account.id, change.id, { name: null });
@@ -1410,6 +1426,12 @@ export function destination(op: MailOp): string | null {
       return "deleteditems";
     case "spam":
       return "junkemail";
+    case "move":
+      return (
+        { INBOX: "inbox", ARCHIVE: "archive", TRASH: "deleteditems", SPAM: "junkemail" }[
+          op.labelId
+        ] ?? op.labelId
+      );
     case "label":
       return op.value ? op.labelId : "inbox";
     default:

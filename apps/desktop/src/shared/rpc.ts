@@ -16,6 +16,9 @@ import {
   CacheWindowInput,
   AccountOrganization,
   FilterCriteria,
+  FilterPreview,
+  FilterRestoration,
+  FilterRestorationPreview,
   FilterInput,
   LabelChange,
   LabelPreference,
@@ -218,6 +221,12 @@ export class MailRpcs extends RpcGroup.make(
 
   Rpc.make("SearchServer", { payload: { query: ThreadQuery }, success: SearchResult }),
   Rpc.make("ChangeLabel", { payload: { accountId: Schema.String, change: LabelChange }, error }),
+  Rpc.make("ReorderFavorites", {
+    payload: {
+      order: Schema.Array(Schema.Struct({ accountId: Schema.String, id: Schema.String })),
+    },
+    error,
+  }),
   Rpc.make("LabelPreferences", { success: Schema.Array(LabelPreference) }),
   Rpc.make("SetLabelPreference", { payload: { input: LabelPreference }, error }),
   Rpc.make("Organization", { success: Schema.Array(AccountOrganization) }),
@@ -236,12 +245,80 @@ export class MailRpcs extends RpcGroup.make(
     success: Schema.Array(ThreadSummary),
     error,
   }),
-  Rpc.make("CreateFilter", {
+  Rpc.make("PrepareFilter", {
     payload: { accountId: Schema.String, input: FilterInput },
+    success: FilterPreview,
+    error,
+  }),
+  Rpc.make("FilterRestorations", {
+    payload: { accountId: Schema.String },
+    success: Schema.Array(FilterRestoration),
+    error,
+  }),
+  Rpc.make("RestoreFilter", {
+    payload: {
+      accountId: Schema.String,
+      id: Schema.String,
+      token: Schema.String,
+      queryDeletionConfirmed: Schema.optionalKey(Schema.Literal(true)),
+    },
     success: ServerFilter,
     error,
   }),
-  Rpc.make("DeleteFilter", { payload: { accountId: Schema.String, id: Schema.String }, error }),
+  Rpc.make("PrepareFilterRestoration", {
+    payload: { accountId: Schema.String, id: Schema.String },
+    success: FilterRestorationPreview,
+    error,
+  }),
+  Rpc.make("DiscardFilterRestoration", {
+    payload: { accountId: Schema.String, id: Schema.String, confirmed: Schema.Boolean },
+    error,
+  }),
+  Rpc.make("UpdateFilter", {
+    payload: {
+      accountId: Schema.String,
+      id: Schema.String,
+      input: FilterInput,
+      token: Schema.String,
+    },
+    success: ServerFilter,
+    error,
+  }),
+  Rpc.make("ApplyFilter", {
+    payload: { accountId: Schema.String, input: FilterInput, token: Schema.String },
+    success: Schema.Number,
+    error,
+  }),
+  Rpc.make("CreateLabelAndApply", {
+    payload: {
+      accountId: Schema.String,
+      name: Schema.String,
+      parentId: Schema.NullOr(Schema.String),
+      threads: Schema.Array(Schema.String),
+      move: Schema.Boolean,
+      removeLabelId: Schema.NullOr(Schema.String),
+      flat: Schema.Boolean,
+    },
+    success: BatchResult,
+    error,
+  }),
+  Rpc.make("CreateFilter", {
+    payload: {
+      accountId: Schema.String,
+      input: FilterInput,
+      token: Schema.optionalKey(Schema.String),
+    },
+    success: ServerFilter,
+    error,
+  }),
+  Rpc.make("DeleteFilter", {
+    payload: {
+      accountId: Schema.String,
+      id: Schema.String,
+      confirmed: Schema.Boolean,
+    },
+    error,
+  }),
   Rpc.make("Vacation", { payload: { accountId: Schema.String }, success: Vacation, error }),
   Rpc.make("SetVacation", { payload: { accountId: Schema.String, input: Vacation }, error }),
   Rpc.make("SendAs", { success: Schema.Array(SendAs) }),

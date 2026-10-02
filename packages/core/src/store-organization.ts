@@ -1,6 +1,11 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import type { AccountOrganization, LabelPreference, SendAs } from "./organization.js";
+import {
+  FilterRestoration,
+  type AccountOrganization,
+  type LabelPreference,
+  type SendAs,
+} from "./organization.js";
 import { all, run } from "./sql-rows.js";
 
 const LabelPrefRow = Schema.Struct({
@@ -8,6 +13,7 @@ const LabelPrefRow = Schema.Struct({
   id: Schema.String,
   visible: Schema.BooleanFromBit,
   favorite: Schema.BooleanFromBit,
+  position: Schema.Number,
   color: Schema.NullOr(Schema.String),
 });
 const OrganizationRow = Schema.Struct({
@@ -25,21 +31,43 @@ const WakeRow = Schema.Struct({ account_id: Schema.String, thread_id: Schema.Str
 const IdRow = Schema.Struct({ id: Schema.String });
 
 export function makeOrganizationStore(sql: SqlClient.SqlClient) {
-  const labelPreferences = all(LabelPrefRow)(sql`SELECT * FROM label_preferences`).pipe(
+  const filterRestorations = (accountId: string) =>
+    all(Schema.Struct({ backup_json: Schema.String }))(
+      sql`SELECT backup_json FROM filter_restorations WHERE account_id=${accountId} ORDER BY rowid`,
+    ).pipe(
+      Effect.flatMap((rows) =>
+        Effect.forEach(rows, (row) =>
+          Schema.decodeUnknownEffect(Schema.fromJsonString(FilterRestoration))(
+            row.backup_json,
+          ).pipe(Effect.orDie),
+        ),
+      ),
+    );
+  const saveFilterRestoration = (backup: FilterRestoration) =>
+    run(
+      sql`INSERT INTO filter_restorations (id, account_id, backup_json)
+      VALUES (${backup.id}, ${backup.accountId}, ${JSON.stringify(backup)})`,
+    );
+  const deleteFilterRestoration = (accountId: string, id: string) =>
+    run(sql`DELETE FROM filter_restorations WHERE account_id=${accountId} AND id=${id}`);
+  const labelPreferences = all(LabelPrefRow)(
+    sql`SELECT * FROM label_preferences ORDER BY position, account_id, id`,
+  ).pipe(
     Effect.map((rows) =>
       rows.map((r) => ({
         accountId: r.account_id,
         id: r.id,
         visible: r.visible,
         favorite: r.favorite,
+        position: r.position,
         color: r.color,
       })),
     ),
   );
   const setLabelPreference = (p: LabelPreference) =>
-    run(sql`INSERT INTO label_preferences (account_id, id, visible, favorite, color)
-    VALUES (${p.accountId}, ${p.id}, ${Number(p.visible)}, ${Number(p.favorite)}, ${p.color})
-    ON CONFLICT(account_id, id) DO UPDATE SET visible=excluded.visible, favorite=excluded.favorite, color=excluded.color`);
+    run(sql`INSERT INTO label_preferences (account_id, id, visible, favorite, color, position)
+    VALUES (${p.accountId}, ${p.id}, ${Number(p.visible)}, ${Number(p.favorite)}, ${p.color}, ${p.position ?? 0})
+    ON CONFLICT(account_id, id) DO UPDATE SET visible=excluded.visible, favorite=excluded.favorite, color=excluded.color, position=excluded.position`);
   const moveLabelPreference = (accountId: string, from: string, to: string | null) =>
     Effect.gen(function* () {
       if (from === to) return;
@@ -109,6 +137,9 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
       return ids;
     });
   return {
+    filterRestorations,
+    saveFilterRestoration,
+    deleteFilterRestoration,
     labelPreferences,
     setLabelPreference,
     moveLabelPreference,

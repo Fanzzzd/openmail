@@ -125,6 +125,10 @@ msgstr "{seconds, plural, other {# 秒}}"
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "1 week, tomorrow 9am, next monday"
+msgstr "一周后、明天上午9点、下周一"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "1 year"
 msgstr "1 年"
@@ -192,6 +196,10 @@ msgstr "账户"
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "操作"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Action failed"
+msgstr "操作失败"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -435,6 +443,14 @@ msgstr "Apple 邮件"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "应用链接"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail"
+msgstr "应用到已有邮件"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail?"
+msgstr "应用到已有邮件？"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
@@ -721,8 +737,8 @@ msgid "Compose"
 msgstr "撰写"
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "Confirm deleting filter"
-msgstr "确认创建删除过滤器"
+msgid "Confirm"
+msgstr "确认"
 
 #: src/renderer/src/errors.ts
 msgid "Confirm deletion for a filter with a search query"
@@ -731,6 +747,10 @@ msgstr "请确认带查询条件的删除过滤器"
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
 msgstr "确认移除"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm rule changes?"
+msgstr "确认修改规则？"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
@@ -839,10 +859,6 @@ msgstr "发送失败：{reason}"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "创建"
-
-#: src/renderer/src/components/ServerSettings.tsx
-msgid "Create a deleting filter?"
-msgstr "创建删除过滤器？"
 
 #: src/renderer/src/components/imapPresetText.ts
 msgid "Create an app password under Account Security in your Yahoo account."
@@ -957,10 +973,18 @@ msgstr "被拒绝"
 msgid "Disabled"
 msgstr "已停用"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard"
+msgstr "丢弃"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Discard draft"
 msgstr "丢弃草稿"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard saved rule?"
+msgstr "丢弃保存的规则？"
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Display name"
@@ -999,6 +1023,7 @@ msgstr "草稿"
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 msgstr "拖动账号可排序或移入其他空间，也可用空间选择器和上下移按钮。"
 
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
 msgstr "编辑"
@@ -1024,6 +1049,10 @@ msgstr "编辑空间"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Edit this draft body?"
 msgstr "编辑这封草稿的正文？"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Edit this rule in webmail to preserve all conditions and actions."
+msgstr "请在网页版编辑此规则，以保留全部条件和操作。"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Edit token"
@@ -1064,6 +1093,10 @@ msgstr "开启"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "End"
 msgstr "结束"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Enter a future reminder time"
+msgstr "请输入未来的提醒时间"
 
 #: src/renderer/src/errors.ts
 msgid "Enter a single access token"
@@ -1114,6 +1147,7 @@ msgid "External replies"
 msgstr "外部回复"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Favorite"
 msgstr "收藏"
 
@@ -1248,6 +1282,10 @@ msgstr "有附件"
 msgid "Headers"
 msgstr "邮件头"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Hide"
+msgstr "隐藏"
+
 #: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
@@ -1355,6 +1393,10 @@ msgid "Label added"
 msgstr "已加标签"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Label list visibility"
+msgstr "侧栏标签可见性"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Label or folder"
 msgstr "标签或文件夹"
@@ -1433,6 +1475,10 @@ msgstr "地点"
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Mailboxes"
+msgstr "邮箱"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
@@ -1562,6 +1608,10 @@ msgstr "邮件正文"
 msgid "Message link copied"
 msgstr "已复制邮件链接"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Message list visibility"
+msgstr "邮件列表标签可见性"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
@@ -1629,6 +1679,7 @@ msgid "Move {0} later"
 msgstr "将 {0} 后移"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Move down"
 msgstr "下移"
 
@@ -1639,6 +1690,11 @@ msgstr "在面板间移动焦点"
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
 msgstr "将此邮件移到废纸篓"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move To"
+msgstr "移动到"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1658,8 +1714,14 @@ msgid "Move to Inbox"
 msgstr "移回收件箱"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
 msgstr "上移"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Moved"
+msgstr "已移动"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -1691,7 +1753,9 @@ msgstr "需要重新登录"
 msgid "New draft"
 msgstr "新草稿"
 
+#: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
 msgid "New label or folder"
 msgstr "新建标签或文件夹"
 
@@ -1795,6 +1859,7 @@ msgid "No messages match the filters"
 msgstr "没有符合筛选的邮件"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "No parent"
 msgstr "无上级文件夹"
 
@@ -2074,6 +2139,11 @@ msgstr "端口"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
+#. placeholder {0}: confirming.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
+msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中的邮件。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Previous match"
@@ -2157,6 +2227,10 @@ msgstr "拒绝建议"
 msgid "Remind me"
 msgstr "提醒时间"
 
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Reminder time"
+msgstr "提醒时间"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "已阻止远程图片，防止发件人追踪是否已读。"
@@ -2186,6 +2260,15 @@ msgstr "移除 {token}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "移除账户"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Remove Current Label"
+msgstr "移除当前标签"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Remove favorite"
+msgstr "取消收藏"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Remove label"
@@ -2293,6 +2376,19 @@ msgstr "重置收藏夹"
 msgid "Restore"
 msgstr "恢复"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule"
+msgstr "恢复规则"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule?"
+msgstr "恢复规则？"
+
+#. placeholder {0}: pending.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore the saved original rule on the server. Preview: {0} messages."
+msgstr "将在服务器恢复保存的原规则。预览：{0} 封邮件。"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "继续"
@@ -2356,6 +2452,10 @@ msgstr "将邮件保存为 EML…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Save rule"
+msgstr "保存规则"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -2566,6 +2666,10 @@ msgstr "收件人显示完整邮箱地址"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show Gmail categories"
 msgstr "显示 Gmail 分类"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show if unread"
+msgstr "有未读邮件时显示"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Show important messages"
@@ -2856,6 +2960,10 @@ msgstr "操作失败。"
 msgid "The organizer differs from the message sender. Check the response recipient before replying."
 msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
+msgstr "预览最多显示 200 封。请缩小条件以处理其他邮件。"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "其余部分这里没有显示。复制会得到整封邮件。"
@@ -2890,6 +2998,10 @@ msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
 msgstr "当前应用支持总计不超过 3 MB 的 Outlook 附件，尚不支持大附件上传，请移除部分附件后发送。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
+msgstr "将删除保存的恢复副本，服务器规则不变。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
@@ -2897,10 +3009,6 @@ msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保
 #: src/renderer/src/components/Composer.tsx
 msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "草稿有未保存的修改或正在等待同步。"
-
-#: src/renderer/src/components/ServerSettings.tsx
-msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
-msgstr "此过滤器会删除符合服务器查询的新邮件，预览最多显示 200 封。"
 
 #: src/renderer/src/errors.ts
 msgid "This invitation cannot be answered by this account"
@@ -2923,8 +3031,12 @@ msgid "This permission lets openmail permanently delete mail in this Gmail accou
 msgstr "此权限允许 openmail 永久删除此 Gmail 账户的邮件。Google 会征求你的同意。授权后，请再次确认删除。"
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This removes the filter from the server."
-msgstr "这会删除服务器上的过滤器。"
+msgid "This removes the filter from the server. Existing messages are unchanged."
+msgstr "将从服务器移除此规则，已有邮件不变。"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
+msgstr "此规则会删除匹配查询的邮件。请核对预览，确认这些正是你要删除的邮件。"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."

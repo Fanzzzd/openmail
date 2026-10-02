@@ -1,4 +1,5 @@
-import { listWindow, MESSAGE_ROW_HEIGHT } from "@openmail/core/schema";
+import { MESSAGE_DRAG } from "../organize-drag";
+import { moveSourceLabel, listWindow, MESSAGE_ROW_HEIGHT } from "@openmail/core/schema";
 import { Toggle } from "@base-ui/react/toggle";
 import { constVoid } from "effect/Function";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -49,6 +50,8 @@ interface Props {
 }
 
 export interface RowActions {
+  grouped?: boolean;
+  currentLabel?: string | undefined;
   mailbox: Mailbox;
   /** User labels of every account. */
   labels: readonly Label[];
@@ -64,6 +67,7 @@ export interface RowActions {
   onSnooze: (thread: ThreadSummary) => void;
   onPermanentDelete?: ((thread: ThreadSummary) => void) | undefined;
   onFilter: (thread: ThreadSummary) => void;
+  onCreate?: ((thread: ThreadSummary, move: boolean) => void) | undefined;
   batchMenu?: ReactNode;
 }
 
@@ -278,6 +282,13 @@ export function MessageList({
                         range: event.shiftKey,
                       })
                     }
+                    dragData={JSON.stringify({
+                      ids: selectedIds.has(m.id)
+                        ? threads.filter((row) => selectedIds.has(row.id)).map((row) => row.id)
+                        : [m.id],
+                      removeLabelId: moveSourceLabel(rowActions.mailbox, rowActions.currentLabel),
+                      flat: !rowActions.grouped,
+                    })}
                     onOpen={() => rowActions.onOpenWindow(m)}
                   />
                 );
@@ -304,7 +315,9 @@ function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: RowActio
       <ThreadMenuItems
         state={state}
         mailbox={actions.mailbox}
+        currentLabel={actions.currentLabel}
         labels={actions.labels.filter((l) => l.accountId === thread.accountId)}
+        onCreate={actions.onCreate ? (move) => actions.onCreate?.(thread, move) : undefined}
         onOp={(op) => actions.onOp(thread, state, op)}
         onCompose={(mode, asAttachment) => actions.onCompose(thread, mode, asAttachment)}
         onSnooze={() => actions.onSnooze(thread)}
@@ -358,6 +371,7 @@ function Row({
   showAccount,
   onSelect,
   onOpen,
+  dragData,
 }: {
   thread: ThreadSummary;
   rowHeight: number;
@@ -373,13 +387,22 @@ function Row({
   onSelect: (event: MouseEvent<HTMLButtonElement>) => void;
   /** Double-click: open in a window of its own. */
   onOpen: () => void;
+  dragData: string;
 }) {
   const { i18n } = useLingui();
   const muted = accent ? "text-white/75" : "text-neutral-500 dark:text-neutral-400";
-  const chips = m.labels.flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? []).slice(0, 2);
+  const chips = m.labels
+    .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
+    .filter((l) => l.messageListVisibility !== "hide")
+    .slice(0, 2);
   return (
     <button
       type="button"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(MESSAGE_DRAG, dragData);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       data-id={m.id}
       // Keep the virtual conversation row clickable and expose its listbox position.
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
