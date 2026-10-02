@@ -97,17 +97,17 @@ it.effect(
 );
 const serverEmail = "me@example.com";
 
-it("font wrapper recognition never permits arbitrary editor CSS, nested wrappers or active attributes", () => {
+it("font wrappers and nested safe styles stay editable while arbitrary CSS and active attributes are rejected", () => {
   const valid = '<div style="font-family:Georgia;font-size:18px"><b>Hello</b></div>';
   assert.strictEqual(composeHtmlHasUnsupported(valid), false);
-  assert.strictEqual(richComposeBody(valid).html.includes("style="), false);
+  assert.strictEqual(richComposeBody(valid).html.includes("style="), true);
+  assert.strictEqual(composeHtmlHasUnsupported(`<span>${valid}</span>`), false);
+  assert.strictEqual(composeHtmlHasUnsupported(valid.replace("<b>Hello</b>", valid)), false);
   for (const invalid of [
     valid.replace("18px", "999px"),
     valid.replace("Georgia", "Comic Sans"),
     valid.replace('18px"', '18px;color:red"'),
     valid.replace("<div style", '<div onclick="evil()" style'),
-    `<span>${valid}</span>`,
-    valid.replace("<b>Hello</b>", valid),
   ])
     assert.strictEqual(composeHtmlHasUnsupported(invalid), true);
 });

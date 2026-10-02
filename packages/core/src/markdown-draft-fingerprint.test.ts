@@ -8,6 +8,7 @@ import {
   draftBodyFingerprint,
   draftTextFingerprint,
   markdownDraftSource,
+  type MarkdownDraftSource,
 } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
 import { htmlDocument } from "./mime.js";
@@ -147,3 +148,38 @@ describe("Markdown source freshness", () => {
       }),
   );
 });
+
+it.effect(
+  "styled Markdown quote drafts retain their source and legacy quote fingerprints stay valid",
+  () =>
+    Effect.gen(function* () {
+      const quoted = "> quoted\n>\n> > nested\n";
+      const html = renderMarkdown(quoted);
+      const raw = yield* buildMime(
+        { name: "", address: "me@example.com" },
+        { ...message, text: quoted, html },
+        {},
+        { draft: true },
+      );
+      const current = yield* parseRawDraft(raw);
+      assert.strictEqual(current.markdown, true);
+      assert.strictEqual(current.text, quoted);
+      const legacy = {
+        version: 1,
+        text: quoted,
+        bodyFingerprint: draftBodyFingerprint(html),
+      } satisfies MarkdownDraftSource;
+      const legacyRaw = yield* parseRawDraft(
+        Buffer.from(`MIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${html}`),
+      );
+      assert.strictEqual(withDraftMarkdownSource(legacyRaw, legacy).markdown, true);
+      const editedHtml = html.replace("color:#555", "color:red");
+      assert.notStrictEqual(editedHtml, html);
+      const edited = yield* parseRawDraft(
+        Buffer.from(
+          `MIME-Version: 1.0\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${editedHtml}`,
+        ),
+      );
+      assert.strictEqual(withDraftMarkdownSource(edited, legacy), edited);
+    }),
+);

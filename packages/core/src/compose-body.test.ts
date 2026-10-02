@@ -22,7 +22,7 @@ describe("compose HTML boundary", () => {
     assert.deepStrictEqual(richComposeBody(body.html), body);
   });
 
-  it("keeps Outlook span marks without copying any CSS or resource attributes", () => {
+  it("keeps Outlook span marks and allowed decoration without resource attributes", () => {
     const body = richComposeBody(
       '<span style="font-weight:700;font-style:italic;text-decoration:underline;background:url(https://tracker.test)">你好</span>',
     );

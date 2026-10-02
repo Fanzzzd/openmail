@@ -1,7 +1,12 @@
 import { parseHTML } from "linkedom";
 import { afterEach, expect, it, vi } from "vitest";
 import { composeEditorText, composeMatches, richComposeBody } from "@openmail/core/schema";
-import { composeEditorHtml, editorMatchPoints, replaceEditorMatches } from "./compose-editor-dom";
+import {
+  composeEditorHtml,
+  editorMatchPoints,
+  replaceEditorMatches,
+  editorStartsParagraph,
+} from "./compose-editor-dom";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -129,4 +134,20 @@ it("blob previews never enter saved compose HTML and CID images retain surroundi
   expect(richComposeBody(html).html).toContain("<strong>before</strong>");
   expect(richComposeBody(html).html).toContain("<em>after</em>");
   expect(element.innerHTML).toContain("blob:local");
+});
+
+it("smart list prefixes respect paragraph boundaries through inline marks", () => {
+  for (const [html, expected] of [
+    ["<div><strong>* </strong></div>", true],
+    ["<div>hello <strong>* </strong></div>", false],
+    ["<div><span>hello</span><strong>* </strong></div>", false],
+    ["<div>previous</div><div><strong>* </strong></div>", true],
+  ] as const) {
+    const element = editor(html);
+    const target = element.querySelector("strong")?.firstChild;
+    if (!target) throw new Error("Missing prefix");
+    const range = element.ownerDocument.createRange();
+    Object.assign(range, { startContainer: target });
+    expect(editorStartsParagraph(element, range)).toBe(expected);
+  }
 });

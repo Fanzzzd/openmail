@@ -354,6 +354,21 @@ msgstr "AI 改动邮件的权限"
 msgid "AI suggestions"
 msgstr "AI 建议"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align center"
+msgstr "居中"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align left"
+msgstr "左对齐"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align right"
+msgstr "右对齐"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
 msgstr "全部"
@@ -450,6 +465,10 @@ msgstr "Apple 邮件"
 msgid "Apply"
 msgstr "应用"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Apply color"
+msgstr "应用颜色"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "应用链接"
@@ -537,6 +556,11 @@ msgstr "授权永久删除"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "请授权永久删除此 Gmail 账户的邮件。"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Automatic direction"
+msgstr "自动方向"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "自动回复"
@@ -556,6 +580,10 @@ msgstr "回填已暂停"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill runs between syncs"
 msgstr "同步间隙回填"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Background color"
+msgstr "背景色"
 
 #: src/renderer/src/components/BatchActions.tsx
 msgid "Batch actions"
@@ -589,6 +617,11 @@ msgstr "粗体"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Bug report"
 msgstr "问题报告"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Bulleted list"
+msgstr "圆点列表"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
@@ -745,6 +778,11 @@ msgstr "请选择一个目标位置"
 msgid "Choose your email provider."
 msgstr "选择邮箱服务商。"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Clear formatting"
+msgstr "清除格式"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "清除选择"
@@ -771,6 +809,11 @@ msgstr "关闭查找"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Code block"
+msgstr "代码块"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
 msgstr "全部收起"
@@ -791,6 +834,10 @@ msgstr "收起邮件"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "颜色"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Color target"
+msgstr "颜色类型"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Compact"
@@ -873,6 +920,11 @@ msgstr "复制邮件链接"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
 msgstr "复制选中附件"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Copy style"
+msgstr "复制样式"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1015,6 +1067,10 @@ msgstr "当前文件夹"
 msgid "Custom colour"
 msgstr "自定义颜色"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Custom hex color"
+msgstr "自定义十六进制颜色"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
 msgstr "自定义图标"
@@ -1026,6 +1082,11 @@ msgstr "自选时间"
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "深色背景"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Dashed list"
+msgstr "短横线列表"
 
 #: src/renderer/src/recovery-labels.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
@@ -1043,6 +1104,16 @@ msgstr "拒绝"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Declined"
 msgstr "已拒绝"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease indent"
+msgstr "减少缩进"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease quote level"
+msgstr "减少引用层级"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -1398,13 +1469,19 @@ msgstr "文件夹颜色仅保存在这台电脑上。"
 msgid "Follow system"
 msgstr "跟随系统"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Font family"
 msgstr "字体"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Font size"
 msgstr "字号"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Formatting"
+msgstr "格式"
 
 #: src/renderer/src/view.ts
 msgid "Forums"
@@ -1497,6 +1574,10 @@ msgstr "邮件头"
 msgid "Hide"
 msgstr "隐藏"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Hide format bar"
+msgstr "隐藏格式栏"
+
 #: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
@@ -1584,6 +1665,26 @@ msgstr "包含匹配项"
 msgid "Include original attachments"
 msgstr "包含原附件"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase indent"
+msgstr "增加缩进"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase quote level"
+msgstr "增加引用层级"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Indent list"
+msgstr "缩进列表"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Inline code"
+msgstr "行内代码"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Insert image"
 msgstr "插入图片"
@@ -1608,6 +1709,11 @@ msgstr "斜体"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "加入会议"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Justify"
+msgstr "两端对齐"
 
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
@@ -1671,6 +1777,11 @@ msgstr "最近 7 天"
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
 msgstr "上次同步失败"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Left to right"
+msgstr "从左到右"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Light background"
@@ -1793,6 +1904,10 @@ msgstr "从此邮件起标为未读"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
 msgstr "Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown replacements"
+msgstr "Markdown 即时替换"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
@@ -2204,6 +2319,11 @@ msgstr "通知"
 msgid "Notifications for {0}"
 msgstr "{0} 的通知"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Numbered list"
+msgstr "编号列表"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -2376,6 +2496,11 @@ msgstr "其他反馈"
 msgid "Other IMAP"
 msgstr "其他 IMAP"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Outdent list"
+msgstr "减少列表缩进"
+
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook 自动回复不支持自定主题"
@@ -2417,6 +2542,11 @@ msgstr "粘贴并匹配样式"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Paste as quotation"
 msgstr "粘贴为引用"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste style"
+msgstr "粘贴样式"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Pause"
@@ -2760,6 +2890,11 @@ msgstr "富文本"
 msgid "Right away"
 msgstr "立即"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Right to left"
+msgstr "从右到左"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "执行"
@@ -3039,6 +3174,11 @@ msgstr "在统一邮件夹中显示账号名称"
 msgid "Show Cc field"
 msgstr "展开抄送栏"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show format bar"
+msgstr "显示格式栏"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Show full email addresses in recipient fields"
 msgstr "收件人显示完整邮箱地址"
@@ -3147,6 +3287,10 @@ msgstr "小"
 msgid "Smaller text"
 msgstr "缩小文字"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Smart Lists"
+msgstr "智能列表"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SMTP encryption"
 msgstr "SMTP 加密"
@@ -3252,6 +3396,11 @@ msgstr "主题"
 msgid "Subject contains"
 msgstr "主题包含"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Subscript"
+msgstr "下标"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Suggested"
 msgstr "提出建议"
@@ -3259,6 +3408,11 @@ msgstr "提出建议"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Sunday"
 msgstr "星期日"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Superscript"
+msgstr "上标"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Switch spaces"
@@ -3322,6 +3476,10 @@ msgstr "模板…"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Tentative"
 msgstr "暂定"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Text color"
+msgstr "文字色"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Text size"

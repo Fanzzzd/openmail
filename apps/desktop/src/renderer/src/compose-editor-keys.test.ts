@@ -3,6 +3,7 @@ import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { afterAll, expect, it, vi } from "vitest";
 import { Effect } from "effect";
+import { Reactivity } from "effect/reactivity";
 import { DEFAULT_PREFS, richComposeBody, type ComposeBody } from "@openmail/core/schema";
 import type { ReactNode } from "react";
 import type { ComposeElement } from "./compose-editor-dom";
@@ -10,12 +11,23 @@ import { testDom } from "./test-dom";
 
 const controls = vi.hoisted(() => {
   vi.resetModules();
-  return { clipboard: "<img src=x onerror=bad()>\nsecond line" };
+  return {
+    clipboard: "<img src=x onerror=bad()>\nsecond line",
+    calls: new Array<{ name: string; payload: unknown }>(),
+  };
 });
 vi.mock("./state/mail", () => ({
-  useRunMail: () => (effect: Effect.Effect<unknown>) => Effect.runSync(effect),
-  withMail: (callback: (call: (name: string) => Effect.Effect<string>) => Effect.Effect<unknown>) =>
-    callback(() => Effect.succeed(controls.clipboard)),
+  useRunMail: () => (effect: Effect.Effect<unknown, unknown, Reactivity.Reactivity>) =>
+    Effect.runSync(Effect.provide(effect, Reactivity.layer)),
+  withMail: (
+    callback: (
+      call: (name: string, payload?: unknown) => Effect.Effect<string>,
+    ) => Effect.Effect<unknown>,
+  ) =>
+    callback((name, payload) => {
+      controls.calls.push({ name, payload });
+      return Effect.succeed(controls.clipboard);
+    }),
 }));
 vi.mock("./components/ui/Select", () => ({ Select: () => null }));
 vi.mock("./components/ui/Dialog", () => ({
@@ -34,7 +46,7 @@ afterAll(() => {
   vi.resetModules();
 });
 
-function editor(body: ComposeBody) {
+function editor(body: ComposeBody, prefs = DEFAULT_PREFS) {
   const dom = testDom();
   for (const name of [
     "Node",
@@ -45,7 +57,7 @@ function editor(body: ComposeBody) {
   ] as const)
     vi.stubGlobal(name, dom.window[name]);
   dom.window.getSelection = () => null;
-  const command = vi.fn(() => true);
+  const command = vi.fn((_name: string, _ui?: boolean, _value?: string) => true);
   dom.window.document.execCommand = command;
   const bodyRef = createRef<ComposeElement>();
   const selectionRef = createRef<Range>();
@@ -61,7 +73,7 @@ function editor(body: ComposeBody) {
         bodyRef,
         selectionRef,
         shortcutSet: "mimestream",
-        prefs: DEFAULT_PREFS,
+        prefs,
         from: undefined,
         onImageSize: vi.fn(),
         onMention: vi.fn(),
@@ -189,3 +201,122 @@ it("Markdown textarea leaves emoji in code untouched and replaces tokens outside
     }
   }
 });
+
+it("format bar and substitution switches update persisted preferences and stay available while hidden", () => {
+  const dom = editor(richComposeBody("Hello"));
+  try {
+    const toggle = dom.element.querySelector('[aria-pressed="true"]');
+    if (!toggle) throw new Error("Missing format toggle");
+    expect(dom.element.querySelector('[aria-label="Formatting"]')).not.toBeNull();
+    void act(() => toggle.dispatchEvent(new dom.window.Event("click", { bubbles: true })));
+    expect(dom.element.querySelector('[aria-label="Formatting"]')).toBeNull();
+    expect(controls.calls.at(-1)).toEqual({
+      name: "SetPrefs",
+      payload: { patch: { composeFormatBar: false } },
+    });
+    expect(dom.key(dom.body, "b").defaultPrevented).toBe(true);
+  } finally {
+    dom.dispose();
+  }
+});
+
+for (const [literal, tag] of [
+  ["**bold**", "strong"],
+  ["* ", "ul"],
+  ["1. ", "ol"],
+  ["> ", "blockquote"],
+] as const) {
+  it(`rich typing replaces ${literal} and Cmd-Z immediately restores the literal with its caret`, () => {
+    const dom = editor(richComposeBody(""));
+    try {
+      dom.body.innerHTML = `<div>${literal.replaceAll(" ", "\u00a0")}</div>`;
+      const paragraph = dom.body.firstElementChild;
+      const text = paragraph?.firstChild;
+      if (!text) throw new Error("Missing typing node");
+      let selected: Range;
+      const nativeRange = dom.window.document.createRange.bind(dom.window.document);
+      const rangeAt = (node: Node, offset: number): Range => {
+        const range = nativeRange();
+        let start = offset;
+        let end = offset;
+        Object.assign(range, {
+          collapsed: true,
+          commonAncestorContainer: node,
+          startContainer: node,
+          endContainer: node,
+          startOffset: offset,
+          endOffset: offset,
+          cloneRange: () => rangeAt(node, offset),
+          selectNodeContents: vi.fn(),
+          setStart: (nextNode: Node, value: number) => {
+            start = value;
+            Object.assign(range, {
+              startContainer: nextNode,
+              startOffset: value,
+              commonAncestorContainer: nextNode,
+            });
+          },
+          setEnd: (_node: Node, value: number) => {
+            end = value;
+          },
+          collapse: vi.fn(),
+          cloneContents: () => {
+            const fragment = dom.window.document.createDocumentFragment();
+            fragment.append(
+              dom.window.document.createTextNode((node.textContent ?? "").slice(0, end)),
+            );
+            Object.defineProperty(fragment, "textContent", {
+              get: () => (node.textContent ?? "").slice(0, end),
+            });
+            return fragment;
+          },
+        });
+        Object.defineProperty(range, "testOffsets", { value: () => ({ start, end }) });
+        return range;
+      };
+      Object.defineProperty(dom.window.document, "createRange", {
+        configurable: true,
+        value: () => rangeAt(dom.body.firstChild ?? dom.body, 0),
+      });
+      selected = rangeAt(text, literal.length);
+      dom.window.getSelection = () => null;
+      Object.defineProperty(dom.window, "getSelection", {
+        configurable: true,
+        value: () => ({
+          rangeCount: 1,
+          getRangeAt: () => selected,
+          removeAllRanges: vi.fn(),
+          addRange: (range: Range) => {
+            selected = range;
+          },
+          anchorNode: selected.startContainer,
+        }),
+      });
+      dom.command.mockImplementation((name: string, _ui?: boolean, value?: string) => {
+        if (name === "insertHTML") dom.body.innerHTML = `<div>${value ?? ""}</div>`;
+        if (name === "delete") dom.body.innerHTML = "<div></div>";
+        if (name === "insertUnorderedList" || name === "insertOrderedList")
+          dom.body.innerHTML = `<${tag}><li></li></${tag}>`;
+        if (name === "formatBlock") dom.body.innerHTML = `<${tag}></${tag}>`;
+        const target = dom.body.querySelector("strong,li,blockquote") ?? dom.body;
+        if (!target.firstChild) target.append(dom.window.document.createTextNode(""));
+        selected = rangeAt(target.firstChild ?? target, target.textContent.length);
+        return true;
+      });
+      const event = new dom.window.Event("input", { bubbles: true });
+      Object.assign(event, { inputType: "insertText", isComposing: false });
+      void act(() => dom.body.dispatchEvent(event));
+      const converted = dom.change.mock.calls.at(-1)?.[0];
+      expect(dom.body.getAttribute("dir")).toBe("auto");
+      expect(converted?.html).not.toContain('dir="auto"');
+      expect(converted?.html).toContain(`<${tag}`);
+      expect(dom.key(dom.body, "z").defaultPrevented).toBe(true);
+      expect(dom.change).toHaveBeenLastCalledWith(
+        richComposeBody(`<div>${literal.replaceAll(" ", "\u00a0")}</div>`),
+      );
+      expect(dom.body.textContent.replaceAll("\u00a0", " ")).toBe(literal);
+    } finally {
+      dom.dispose();
+    }
+  });
+}

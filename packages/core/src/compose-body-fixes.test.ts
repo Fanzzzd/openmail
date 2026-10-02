@@ -27,7 +27,7 @@ describe("rich compose whitespace", () => {
     const body = richComposeBody("<pre>A   B\r\nC\tD\n</pre>");
     assert.strictEqual(body.text, "A   B\nC    D\n");
     assert.include(body.html, "<br>");
-    assert.notMatch(body.html, /<pre|\r|\n/);
+    assert.notMatch(body.html, /\r|\n/);
     assert.include(body.html, "\u00a0");
     assert.deepStrictEqual(richComposeBody(body.html), body);
   });
@@ -176,6 +176,6 @@ describe("remote source and mode conversion", () => {
       true,
     );
     assert.strictEqual(composeHtmlHasUnsupported("<h1>heading</h1>"), true);
-    assert.strictEqual(composeHtmlHasUnsupported("<blockquote>quote</blockquote>"), true);
+    assert.strictEqual(composeHtmlHasUnsupported("<blockquote>quote</blockquote>"), false);
   });
 });

@@ -348,6 +348,21 @@ msgstr "AI permission to change mail"
 msgid "AI suggestions"
 msgstr "AI suggestions"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align center"
+msgstr "Align center"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align left"
+msgstr "Align left"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align right"
+msgstr "Align right"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
 msgstr "All"
@@ -444,6 +459,10 @@ msgstr "Apple Mail"
 msgid "Apply"
 msgstr "Apply"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Apply color"
+msgstr "Apply color"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "Apply link"
@@ -531,6 +550,11 @@ msgstr "Authorize permanent deletion"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "Authorize permission to permanently delete mail in this Gmail account."
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Automatic direction"
+msgstr "Automatic direction"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Automatic replies"
@@ -550,6 +574,10 @@ msgstr "Backfill paused"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill runs between syncs"
 msgstr "Backfill runs between syncs"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Background color"
+msgstr "Background color"
 
 #: src/renderer/src/components/BatchActions.tsx
 msgid "Batch actions"
@@ -583,6 +611,11 @@ msgstr "Bold"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Bug report"
 msgstr "Bug report"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Bulleted list"
+msgstr "Bulleted list"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
@@ -739,6 +772,11 @@ msgstr "Choose one destination for the filter"
 msgid "Choose your email provider."
 msgstr "Choose your email provider."
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Clear formatting"
+msgstr "Clear formatting"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Clear selection"
@@ -765,6 +803,11 @@ msgstr "Close find"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Code block"
+msgstr "Code block"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
 msgstr "Collapse all"
@@ -785,6 +828,10 @@ msgstr "Collapse message"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Color"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Color target"
+msgstr "Color target"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Compact"
@@ -867,6 +914,11 @@ msgstr "Copy link to message"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
 msgstr "Copy selected"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Copy style"
+msgstr "Copy style"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1009,6 +1061,10 @@ msgstr "Current folder"
 msgid "Custom colour"
 msgstr "Custom colour"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Custom hex color"
+msgstr "Custom hex color"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
 msgstr "Custom icon"
@@ -1020,6 +1076,11 @@ msgstr "Custom time"
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "Dark background"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Dashed list"
+msgstr "Dashed list"
 
 #: src/renderer/src/recovery-labels.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
@@ -1037,6 +1098,16 @@ msgstr "Decline"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Declined"
 msgstr "Declined"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease indent"
+msgstr "Decrease indent"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease quote level"
+msgstr "Decrease quote level"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -1392,13 +1463,19 @@ msgstr "Folder colors are stored on this computer only."
 msgid "Follow system"
 msgstr "Follow system"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Font family"
 msgstr "Font family"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Font size"
 msgstr "Font size"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Formatting"
+msgstr "Formatting"
 
 #: src/renderer/src/view.ts
 msgid "Forums"
@@ -1491,6 +1568,10 @@ msgstr "Headers"
 msgid "Hide"
 msgstr "Hide"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Hide format bar"
+msgstr "Hide format bar"
+
 #: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
@@ -1578,6 +1659,26 @@ msgstr "Include matches"
 msgid "Include original attachments"
 msgstr "Include original attachments"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase indent"
+msgstr "Increase indent"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase quote level"
+msgstr "Increase quote level"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Indent list"
+msgstr "Indent list"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Inline code"
+msgstr "Inline code"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Insert image"
 msgstr "Insert image"
@@ -1602,6 +1703,11 @@ msgstr "Italic"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "Join meeting"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Justify"
+msgstr "Justify"
 
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
@@ -1665,6 +1771,11 @@ msgstr "Last 7 days"
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
 msgstr "Last sync failed"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Left to right"
+msgstr "Left to right"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Light background"
@@ -1787,6 +1898,10 @@ msgstr "Mark unread from this message"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
 msgstr "Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown replacements"
+msgstr "Markdown replacements"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown works: **bold**, `code`, ```code block```"
@@ -2198,6 +2313,11 @@ msgstr "Notifications"
 msgid "Notifications for {0}"
 msgstr "Notifications for {0}"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Numbered list"
+msgstr "Numbered list"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -2370,6 +2490,11 @@ msgstr "Other feedback"
 msgid "Other IMAP"
 msgstr "Other IMAP"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Outdent list"
+msgstr "Outdent list"
+
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook automatic replies do not support a custom subject"
@@ -2411,6 +2536,11 @@ msgstr "Paste and match style"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Paste as quotation"
 msgstr "Paste as quotation"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste style"
+msgstr "Paste style"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Pause"
@@ -2754,6 +2884,11 @@ msgstr "Rich text"
 msgid "Right away"
 msgstr "Right away"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Right to left"
+msgstr "Right to left"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Run"
 msgstr "Run"
@@ -3033,6 +3168,11 @@ msgstr "Show account names in unified folders"
 msgid "Show Cc field"
 msgstr "Show Cc field"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show format bar"
+msgstr "Show format bar"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Show full email addresses in recipient fields"
 msgstr "Show full email addresses in recipient fields"
@@ -3141,6 +3281,10 @@ msgstr "Small"
 msgid "Smaller text"
 msgstr "Smaller text"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Smart Lists"
+msgstr "Smart Lists"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SMTP encryption"
 msgstr "SMTP encryption"
@@ -3246,6 +3390,11 @@ msgstr "Subject"
 msgid "Subject contains"
 msgstr "Subject contains"
 
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Subscript"
+msgstr "Subscript"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Suggested"
 msgstr "Suggested"
@@ -3253,6 +3402,11 @@ msgstr "Suggested"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Sunday"
 msgstr "Sunday"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Superscript"
+msgstr "Superscript"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Switch spaces"
@@ -3316,6 +3470,10 @@ msgstr "Templates…"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Tentative"
 msgstr "Tentative"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Text color"
+msgstr "Text color"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Text size"

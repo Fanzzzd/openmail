@@ -66,7 +66,9 @@ function textPoints(element: HTMLElement): Point[] {
           points.push({ node, offset: i + 1 });
         }
       } else if (node instanceof HTMLElement) {
-        const block = new Set(["DIV", "P", "UL", "OL", "LI", "BLOCKQUOTE"]).has(node.tagName);
+        const block = new Set(["DIV", "P", "UL", "OL", "LI", "BLOCKQUOTE", "PRE"]).has(
+          node.tagName,
+        );
         if (block) newline({ node: parent, offset: index });
         if (node.tagName === "BR") {
           text += "\n";
@@ -114,6 +116,40 @@ export function composeEditorHtml(element: HTMLElement): string {
     image.removeAttribute("data-compose-cid");
   }
   return copy.innerHTML;
+}
+
+/** A list prefix may be inside inline marks, but must precede all paragraph content. */
+export function editorStartsParagraph(element: HTMLElement, range: Range): boolean {
+  const paragraph =
+    range.startContainer.parentElement?.closest("div,p,li,blockquote,pre") ?? element;
+  let node: Node = range.startContainer;
+  while (node !== paragraph && node !== element) {
+    for (let previous = node.previousSibling; previous; previous = previous.previousSibling) {
+      if (
+        previous.textContent ||
+        (previous instanceof HTMLElement &&
+          (previous.matches("img,br") || previous.querySelector("img,br")))
+      )
+        return false;
+    }
+    if (!node.parentNode) return false;
+    node = node.parentNode;
+  }
+  return true;
+}
+
+export function editorCaretOffset(
+  element: HTMLElement,
+  range: Range,
+  endpoint: "start" | "end" = "start",
+): number {
+  const points = textPoints(element);
+  const offset = points.findIndex(
+    (point) =>
+      point.node === (endpoint === "start" ? range.startContainer : range.endContainer) &&
+      point.offset === (endpoint === "start" ? range.startOffset : range.endOffset),
+  );
+  return offset < 0 ? points.length - 1 : offset;
 }
 
 export function editorMatchPoints(element: HTMLElement, start: number, end: number) {

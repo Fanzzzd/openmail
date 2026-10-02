@@ -3,6 +3,7 @@
 // itself pulls in node:sqlite, the keychain and IMAP.
 export * from "./compose-text.js";
 export * from "./compose-body.js";
+export * from "./compose-format.js";
 export * from "./domain.js";
 export * from "./errors.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";

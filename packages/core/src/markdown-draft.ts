@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Schema } from "effect";
 import { ElementType, parseDocument } from "htmlparser2";
 
+import { composeTransportHtml } from "./compose-body.js";
 import { renderMarkdown } from "./markdown.js";
 
 export const MarkdownDraftSource = Schema.Struct({
@@ -53,9 +54,16 @@ export function draftTextFingerprint(text: string): string {
 }
 
 export function markdownDraftSource(text: string): MarkdownDraftSource {
-  return { version: 1, text, bodyFingerprint: draftBodyFingerprint(renderMarkdown(text)) };
+  return {
+    version: 1,
+    text,
+    bodyFingerprint: draftBodyFingerprint(
+      composeTransportHtml({ html: renderMarkdown(text) }) ?? "",
+    ),
+  };
 }
 
+/** Prior drafts used the unadorned renderer hash; that exact hash still detects remote edits. */
 export function matchesMarkdownDraft(
   source: MarkdownDraftSource,
   currentFingerprint: string | undefined,
@@ -63,6 +71,7 @@ export function matchesMarkdownDraft(
   return (
     currentFingerprint !== undefined &&
     source.bodyFingerprint === currentFingerprint &&
-    source.bodyFingerprint === markdownDraftSource(source.text).bodyFingerprint
+    (source.bodyFingerprint === markdownDraftSource(source.text).bodyFingerprint ||
+      source.bodyFingerprint === draftBodyFingerprint(renderMarkdown(source.text)))
   );
 }

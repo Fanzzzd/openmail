@@ -540,6 +540,9 @@ export const NotificationActions = Schema.Array(
 export const Prefs = Schema.Struct({
   contactPhotos: Schema.Boolean,
   emojiReplacement: Schema.Boolean,
+  composeFormatBar: Schema.Boolean,
+  composeMarkdownReplacement: Schema.Boolean,
+  composeSmartLists: Schema.Boolean,
   inlineImageSize: InlineImageSize,
   composeFont: ComposeFont,
   messageListDensity: Schema.Literals(["dense", "compact", "default", "expanded"]),
@@ -585,6 +588,9 @@ export type Prefs = typeof Prefs.Type;
 export const DEFAULT_PREFS: Prefs = {
   contactPhotos: true,
   emojiReplacement: true,
+  composeFormatBar: true,
+  composeMarkdownReplacement: true,
+  composeSmartLists: true,
   inlineImageSize: "medium",
   composeFont: { family: "Arial", size: 14 },
   messageListDensity: "default",

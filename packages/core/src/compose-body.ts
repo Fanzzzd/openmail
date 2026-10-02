@@ -6,6 +6,8 @@ import {
   type OutgoingMessage,
 } from "./domain.js";
 
+import { composeStyle, composeStyleValue } from "./compose-format.js";
+
 export type ComposeBody =
   | { kind: "plain"; text: string }
   | { kind: "markdown"; text: string }
@@ -82,7 +84,26 @@ const INLINE = new Map([
   ["u", "u"],
   ["s", "s"],
   ["strike", "s"],
+  ["sub", "sub"],
+  ["sup", "sup"],
+  ["code", "code"],
 ]);
+const RICH_TAGS = new Set(["span", "div", "pre", "blockquote", "ul", "ol", "li", "br"]);
+function richAttrs(name: string, attrs: Record<string, string>): Record<string, string> {
+  const result: Record<string, string> = {};
+  const style = composeStyle(attrs.style ?? "")
+    .split(";")
+    .filter((declaration) => name !== "span" || !declaration.startsWith("text-decoration:"))
+    .join(";");
+  if (style) result.style = style;
+  if (attrs.dir === "ltr" || attrs.dir === "rtl" || attrs.dir === "auto") result.dir = attrs.dir;
+  if (
+    (name === "ul" && ["disc", "dash"].includes(attrs.type ?? "")) ||
+    (name === "ol" && ["1", "a", "A", "i", "I"].includes(attrs.type ?? ""))
+  )
+    result.type = attrs.type ?? "";
+  return result;
+}
 const REMOTE_TAGS = new Set([
   "p",
   "div",
@@ -125,9 +146,9 @@ function spanMarks(style: string): string[] {
     if (property === "font-weight" && /^(bold|[7-9]00)$/.test(value ?? "")) marks.push("strong");
     if (property === "font-style" && value === "italic") marks.push("em");
     if (property === "text-decoration") {
-      const decorations = (value ?? "").split(/\s+/);
-      if (decorations.includes("underline")) marks.push("u");
-      if (decorations.includes("line-through")) marks.push("s");
+      const decoration = composeStyleValue(property, value ?? "");
+      if (decoration?.includes("underline")) marks.push("u");
+      if (decoration?.includes("line-through")) marks.push("s");
     }
   }
   return marks;
@@ -164,6 +185,69 @@ function remoteAttrs(name: string, attrs: Record<string, string>): Record<string
   return result;
 }
 
+// Transport-only defaults are recognized as an exact prefix, never as general editor CSS.
+const QUOTE_TRANSPORT_STYLE = "border-left:2px solid #ccc;padding-left:12px;margin-left:0";
+const DASH_TRANSPORT_STYLE = "list-style-type:none";
+const DASH_TRANSPORT_PREFIX = "– ";
+function stripTransportStyle(style: string, prefix: string): string | undefined {
+  const declarations = style.split(";").filter((declaration) => declaration.trim());
+  const expected = prefix.split(";");
+  if (
+    !expected.every((declaration, index) => {
+      const raw = declarations[index] ?? "";
+      const colon = raw.indexOf(":");
+      return (
+        colon >= 0 &&
+        `${raw.slice(0, colon).trim().toLowerCase()}:${raw
+          .slice(colon + 1)
+          .trim()
+          .toLowerCase()}` === declaration
+      );
+    })
+  )
+    return undefined;
+  return declarations.slice(expected.length).join(";");
+}
+/** Restore the semantic editor representation before sanitizing or checking remote editability. */
+function parseComposeNodes(input: string): HtmlNode[] {
+  const nodes = parseDocument(input).children;
+  const normalize = (children: HtmlNode[], depth = 0) => {
+    if (depth > 128) return;
+    for (const node of children) {
+      if (node.type !== ElementType.Tag) continue;
+      const { name, attribs } = node;
+      let style: string | undefined;
+      if (name === "blockquote")
+        style = stripTransportStyle(attribs.style ?? "", QUOTE_TRANSPORT_STYLE);
+      if (name === "ul" && attribs.type === "dash") {
+        const items = node.children.flatMap((child) =>
+          child.type === ElementType.Tag && child.name === "li" ? [child] : [],
+        );
+        if (
+          items.every(
+            (item) =>
+              item.children[0]?.type === ElementType.Text &&
+              item.children[0].data.startsWith(DASH_TRANSPORT_PREFIX),
+          )
+        ) {
+          style = stripTransportStyle(attribs.style ?? "", DASH_TRANSPORT_STYLE);
+          if (style !== undefined)
+            for (const item of items) {
+              const first = item.children[0];
+              if (first?.type === ElementType.Text)
+                first.data = first.data.slice(DASH_TRANSPORT_PREFIX.length);
+            }
+        }
+      }
+      if (style === "") delete attribs.style;
+      else if (style !== undefined) attribs.style = style;
+      normalize(node.children, depth + 1);
+    }
+  };
+  normalize(nodes);
+  return nodes;
+}
+
 /** Builds allow-listed nodes only. Whitespace follows normal HTML, including across inline tags. */
 function composeNodes(input: string, preserveRemote = false): SafeNode[] {
   const space = { pending: false, lineStart: true };
@@ -173,6 +257,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
   };
   const text = (value: string, target: SafeNode[], pre: boolean) => {
     if (pre) {
+      if (space.pending) target.push({ kind: "text", value: "\u00a0" });
       const lines = value.replace(/\r\n?/g, "\n").replaceAll("\t", "    ").split("\n");
       for (const [index, line] of lines.entries()) {
         if (index) target.push({ kind: "tag", name: "br", attrs: {}, children: [] });
@@ -210,12 +295,16 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
       }
       const block = BLOCKS.has(name) || LISTS.has(name) || name === "table";
       if (block || name === "br") reset();
-      const children = visit(node.children, pre || name === "pre", depth + 1);
+      let children = visit(node.children, pre || name === "pre" || name === "code", depth + 1);
+      if (name === "span" && !preserveRemote) {
+        for (const mark of spanMarks(attribs.style ?? "").toReversed())
+          children = [{ kind: "tag", name: mark, attrs: {}, children }];
+      }
       if (block || name === "br") reset();
       const inline = INLINE.get(name);
       const tag =
         inline ??
-        (LISTS.has(name) || name === "br" || name === "blockquote"
+        (RICH_TAGS.has(name)
           ? name
           : preserveRemote && REMOTE_TAGS.has(name)
             ? name
@@ -232,6 +321,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
                   name: "a",
                   attrs: {
                     href,
+                    ...richAttrs(name, attribs),
                     ...(/^[a-f0-9-]{36}$/.test(attribs["data-compose-mention"] ?? "")
                       ? { "data-compose-mention": attribs["data-compose-mention"] ?? "" }
                       : {}),
@@ -253,25 +343,50 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
           children: [],
         });
       } else if (tag) {
+        if (name === "span" && !preserveRemote && !Object.keys(richAttrs(name, attribs)).length) {
+          result.push(...children);
+          continue;
+        }
         result.push({
           kind: "tag",
           name: tag,
-          attrs: preserveRemote ? remoteAttrs(name, attribs) : {},
+          attrs: preserveRemote ? transportAttrs(name, attribs) : richAttrs(name, attribs),
           children,
         });
-      } else if (name === "span" && !preserveRemote) {
-        const marks = spanMarks(attribs.style ?? "");
-        let marked = children;
-        for (const mark of marks.toReversed())
-          marked = [{ kind: "tag", name: mark, attrs: {}, children: marked }];
-        result.push(...marked);
       } else result.push(...children);
     }
     return result;
   };
-  return closeSiblingListItems(visit(parseDocument(input).children));
+  return capComposeNodes(closeSiblingListItems(visit(parseComposeNodes(input))));
 }
 
+/** Semantic marks can expand a single input span into several tags; cap the emitted tree too. */
+function capComposeNodes(nodes: SafeNode[], depth = 0): SafeNode[] {
+  if (depth > 128) return [];
+  return nodes.map((node) =>
+    node.kind === "text" ? node : { ...node, children: capComposeNodes(node.children, depth + 1) },
+  );
+}
+function transportAttrs(name: string, attribs: Record<string, string>): Record<string, string> {
+  const remote = remoteAttrs(name, attribs);
+  const rich = richAttrs(name, attribs);
+  const styles = new Map<string, string>();
+  for (const declaration of [remote.style ?? "", rich.style ?? ""].join(";").split(";")) {
+    const colon = declaration.indexOf(":");
+    if (colon >= 0) styles.set(declaration.slice(0, colon), declaration.slice(colon + 1));
+  }
+  const ordered = new Map<string, string>();
+  for (const declaration of (attribs.style ?? "").split(";")) {
+    const property = declaration.slice(0, declaration.indexOf(":")).trim().toLowerCase();
+    const value = styles.get(property);
+    if (value !== undefined) ordered.set(property, value);
+  }
+  return {
+    ...remote,
+    ...rich,
+    ...(ordered.size ? { style: [...ordered].map(([p, v]) => `${p}:${v}`).join(";") } : {}),
+  };
+}
 /** Removing table/unknown wrappers can expose a second li inside the first one. */
 function closeSiblingListItems(nodes: SafeNode[]): SafeNode[] {
   const result: SafeNode[] = [];
@@ -457,21 +572,40 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode):
         )
       )
         return false;
-      if (BLOCKS.has(name) && name !== "div" && name !== "p") return true;
-      if (!INLINE.has(name) && !BLOCKS.has(name) && !LISTS.has(name) && !NEUTRAL_TAGS.has(name))
+      if (BLOCKS.has(name) && name !== "div" && name !== "p" && !RICH_TAGS.has(name)) return true;
+      if (
+        !INLINE.has(name) &&
+        !BLOCKS.has(name) &&
+        !LISTS.has(name) &&
+        !NEUTRAL_TAGS.has(name) &&
+        !RICH_TAGS.has(name)
+      )
         return true;
       for (const [key, value] of Object.entries(attribs)) {
         if (node === fontWrapper && key === "style") continue;
         if (key === "href" && name === "a" && composeLink(value)) continue;
         if (key === "data-compose-mention" && name === "a" && /^[a-f0-9-]{36}$/.test(value))
           continue;
+        if (key === "dir" && (value === "ltr" || value === "rtl" || value === "auto")) continue;
+        if (key === "type" && richAttrs(name, { type: value }).type) continue;
         if (
           key === "style" &&
-          name === "span" &&
           value
             .split(";")
             .filter((s) => s.trim())
-            .every((s) => spanMarks(s).length > 0)
+            .every((declaration) => {
+              const colon = declaration.indexOf(":");
+              const property = declaration.slice(0, colon).trim().toLowerCase();
+              const raw = declaration.slice(colon + 1);
+              return (
+                colon >= 0 &&
+                (composeStyleValue(property, raw) !== undefined ||
+                  (name === "span" &&
+                    /^(font-weight|font-style)$/.test(property) &&
+                    spanMarks(declaration).length > 0 &&
+                    !/[\\/!*]/.test(raw)))
+              );
+            })
         )
           continue;
         if (key === "class" || key === "id") continue;
@@ -482,7 +616,7 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode):
   );
 }
 export function composeHtmlHasUnsupported(input: string): boolean {
-  const nodes = parseDocument(input).children;
+  const nodes = parseComposeNodes(input);
   return unsupportedNodes(nodes, 0, composeFontWrapper(nodes)?.node);
 }
 export function textComposeHtml(text: string): string {
@@ -568,6 +702,14 @@ function markdownNodes(nodes: SafeNode[], depth = 0): string {
         }
         break;
       }
+      case "pre":
+        boundary();
+        result += `\`\`\`\n${plainNodes(node.children, false)}\n\`\`\``;
+        boundary();
+        break;
+      case "code":
+        result += markdownMark(plainNodes(node.children, false), "`");
+        break;
       case "div":
         boundary();
         result += contents;
@@ -595,11 +737,17 @@ export function composeConversion(
   if (kind === "markdown")
     return {
       body: { kind, text: markdownNodes(composeNodes(body.html)).trimEnd() },
-      losesFormatting: unsupported || /<(u|s|blockquote)>|\u00a0/.test(body.html),
+      losesFormatting:
+        unsupported ||
+        /<(u|s|sub|sup)\b|\u00a0/.test(body.html) ||
+        /<[^>]*\s(?:style=|dir="(?:ltr|rtl)"|type="(?:dash|[aAiI])")/.test(body.html),
     };
   return {
     body: { kind: "plain", text: body.text },
-    losesFormatting: unsupported || /<(strong|em|u|s|blockquote|ul|ol)>/.test(body.html),
+    losesFormatting:
+      unsupported ||
+      /<(strong|em|u|s|sub|sup|code|pre|blockquote)\b/.test(body.html) ||
+      /<[^>]*\s(?:style=|dir="(?:ltr|rtl)"|type="(?:dash|[aAiI])")/.test(body.html),
   };
 }
 export function changeComposeBodyKind(body: ComposeBody, kind: ComposeBody["kind"]): ComposeBody {
@@ -654,12 +802,82 @@ export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessa
     : { ...rest, attachments };
 }
 
+/** Locate the end of a parsed opening tag without treating quoted > as a delimiter. */
+function openingTagEnd(input: string, start: number): number {
+  let quote = "";
+  for (let index = start; index < input.length; index++) {
+    const character = input.charAt(index);
+    if (quote) {
+      if (character === quote) quote = "";
+    } else if (character === '"' || character === "'") quote = character;
+    else if (character === ">") return index + 1;
+  }
+  return input.length;
+}
 export function composeTransportHtml(
   message: Pick<OutgoingMessage, "html" | "composeFont">,
 ): string | undefined {
   if (message.html === undefined) return undefined;
+  const input = message.html;
+  const edits: { start: number; end: number; text: string }[] = [];
+  const decorate = (
+    children: HtmlNode[],
+    dashedParent = false,
+    existingMarkers = false,
+    depth = 0,
+  ) => {
+    if (depth > 128) return;
+    for (const node of children) {
+      if (node.type !== ElementType.Tag) continue;
+      const { name, attribs } = node;
+      const prefix =
+        name === "blockquote"
+          ? QUOTE_TRANSPORT_STYLE
+          : name === "ul" && attribs.type === "dash"
+            ? DASH_TRANSPORT_STYLE
+            : undefined;
+      const remainder = prefix ? stripTransportStyle(attribs.style ?? "", prefix) : undefined;
+      if (node.startIndex !== null && (prefix || (dashedParent && name === "li"))) {
+        const end = openingTagEnd(input, node.startIndex);
+        if (prefix) {
+          const attrs = transportAttrs(name, {
+            ...attribs,
+            style: remainder ?? attribs.style ?? "",
+          });
+          attrs.style = [prefix, attrs.style].filter(Boolean).join(";");
+          const attributes = Object.entries(attrs)
+            .map(([key, value]) => ` ${key}="${escapeComposeText(value)}"`)
+            .join("");
+          edits.push({ start: node.startIndex, end, text: `<${name}${attributes}>` });
+        }
+        if (dashedParent && name === "li") {
+          const first = node.children[0];
+          if (
+            !existingMarkers ||
+            first?.type !== ElementType.Text ||
+            !first.data.startsWith(DASH_TRANSPORT_PREFIX)
+          )
+            edits.push({ start: end, end, text: DASH_TRANSPORT_PREFIX });
+        }
+      }
+      decorate(
+        node.children,
+        name === "ul" && attribs.type === "dash",
+        remainder !== undefined,
+        depth + 1,
+      );
+    }
+  };
+  decorate(parseDocument(input, { withStartIndices: true }).children);
+  let cursor = 0;
+  const parts: string[] = [];
+  for (const edit of edits) {
+    parts.push(input.slice(cursor, edit.start), edit.text);
+    cursor = edit.end;
+  }
+  parts.push(input.slice(cursor));
+  const html = parts.join("").replace(/ data-compose-mention="[a-f0-9-]{36}"/g, "");
   const font = message.composeFont;
-  const html = message.html.replace(/ data-compose-mention="[a-f0-9-]{36}"/g, "");
   return font
     ? `<div style="font-family:${font.family};font-size:${font.size}px">${html}</div>`
     : html;

@@ -258,6 +258,21 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const d = DEFAULT_PREFS;
       return {
         contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
+        composeFormatBar: pref(
+          f.composeFormatBar,
+          stored.get("composeFormatBar"),
+          d.composeFormatBar,
+        ),
+        composeMarkdownReplacement: pref(
+          f.composeMarkdownReplacement,
+          stored.get("composeMarkdownReplacement"),
+          d.composeMarkdownReplacement,
+        ),
+        composeSmartLists: pref(
+          f.composeSmartLists,
+          stored.get("composeSmartLists"),
+          d.composeSmartLists,
+        ),
         emojiReplacement: pref(
           f.emojiReplacement,
           stored.get("emojiReplacement"),

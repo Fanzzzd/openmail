@@ -4,10 +4,11 @@ import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../state/mail";
 import { useAtomValue } from "@effect/atom-react";
-import { AsyncResult, Atom } from "effect/reactivity";
+import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
 import { suggestionsAtom } from "../state/queries";
 import { useLingui } from "@lingui/react/macro";
 import {
+  composeReplacement,
   composePaste,
   composeConversion,
   composeMatches,
@@ -41,6 +42,8 @@ import {
   restoreEditorSelection,
   composeEditorHtml,
   editorBody,
+  editorCaretOffset,
+  editorStartsParagraph,
   selectEditorMatch,
   replaceEditorMatches,
   type ComposeElement,
@@ -48,6 +51,16 @@ import {
 import type { OutgoingAttachment } from "../../../shared/api";
 import { makeInlinePreviewCache } from "../compose-previews";
 import { Select } from "./ui/Select";
+import { ComposeFormatBar } from "./ComposeFormatBar";
+import {
+  FORMAT_ACTIONS,
+  formatEditor,
+  styleEditor,
+  replaceMarkdownEditor,
+  restoreFormatCaret,
+  type FormatAction,
+} from "../compose-format-dom";
+import { Keys } from "../state/keys";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 
 const noSuggestions = Atom.make(AsyncResult.success<readonly Address[]>([]));
@@ -80,6 +93,33 @@ export function ComposeEditor({
 }: Props) {
   const { t } = useLingui();
   const run = useRunMail();
+  const richRef = useRef<HTMLDivElement>(null);
+  const [formatBar, setFormatBar] = useState(prefs.composeFormatBar);
+  const [smartLists, setSmartLists] = useState(prefs.composeSmartLists);
+  const [markdownReplacement, setMarkdownReplacement] = useState(prefs.composeMarkdownReplacement);
+  const copiedStyle = useRef("");
+  const smartUndo = useRef<{ body: ComposeBody; caret: number } | null>(null);
+  const saveFormatPrefs = (patch: Partial<Prefs>) =>
+    run(withMail((call) => call("SetPrefs", { patch })).pipe(Reactivity.mutation([Keys.prefs])));
+  const toggleFormatBar = () => {
+    setFormatBar(!formatBar);
+    saveFormatPrefs({ composeFormatBar: !formatBar });
+  };
+  const format = (action: FormatAction) => {
+    if (!richRef.current || locked) return;
+    copiedStyle.current = formatEditor(
+      richRef.current,
+      selectionRef.current,
+      action,
+      copiedStyle.current,
+    );
+    if (action !== "copyStyle") changed();
+  };
+  const style = (property: string, value: string) => {
+    if (!richRef.current || locked) return;
+    styleEditor(richRef.current, selectionRef.current, property, value);
+    changed();
+  };
   const [pasteError, setPasteError] = useState(false);
   const [mention, setMention] = useState<{ query: string; range: Range } | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
@@ -91,7 +131,6 @@ export function ComposeEditor({
   const [imageCid, setImageCid] = useState<string | null>(null);
   const [emojiUndo, setEmojiUndo] = useState<ComposeBody | null>(null);
   const replacingEmoji = useRef(false);
-  const richRef = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef<string | null>(null);
   const [previewCache] = useState(makeInlinePreviewCache);
   const [linkOpen, setLinkOpen] = useState(false);
@@ -154,7 +193,7 @@ export function ComposeEditor({
     }
     syncMentions();
     return constVoid;
-  }, [body, attachments, previewCache]);
+  }, [body, attachments, previewCache, richRef]);
 
   const remember = () => {
     const selection = window.getSelection();
@@ -204,6 +243,7 @@ export function ComposeEditor({
     if (replacingEmoji.current) return;
     remember();
     setEmojiUndo(null);
+    smartUndo.current = null;
     if (typing) {
       const range = selectionRef.current;
       if (
@@ -235,6 +275,28 @@ export function ComposeEditor({
             selection?.removeAllRanges();
             selection?.addRange(caret);
           }
+          remember();
+        }
+      }
+    }
+    if (typing) {
+      const range = selectionRef.current;
+      if (
+        range?.collapsed &&
+        range.startContainer.nodeType === Node.TEXT_NODE &&
+        !range.startContainer.parentElement?.closest("a,pre,code")
+      ) {
+        const before = (range.startContainer.textContent ?? "").slice(0, range.startOffset);
+        const substitution = composeReplacement(before, markdownReplacement, smartLists);
+        const prefix = substitution && "block" in substitution;
+        // List/quote prefixes must start a paragraph, never a later inline node.
+        const startsParagraph = editorStartsParagraph(richRef.current, range);
+        if (substitution && (!prefix || startsParagraph)) {
+          const undo = editedComposeBody(body, composeEditorHtml(richRef.current));
+          smartUndo.current = { body: undo, caret: editorCaretOffset(richRef.current, range) };
+          replacingEmoji.current = true;
+          replaceMarkdownEditor(richRef.current, range, substitution);
+          replacingEmoji.current = false;
           remember();
         }
       }
@@ -363,6 +425,20 @@ export function ComposeEditor({
     const inFind = event.target instanceof Element && Boolean(event.target.closest("search"));
     if (!inBody && !inFind) return;
     if (inBody && !locked) {
+      if (smartUndo.current && matchesShortcut(shortcutSet, "undo", event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const undo = smartUndo.current;
+        smartUndo.current = null;
+        if (undo.body.kind === "rich" && richRef.current) {
+          richRef.current.innerHTML = richComposeBody(undo.body.html).html;
+          lastEmitted.current = undo.body.html;
+          restoreFormatCaret(richRef.current, undo.caret);
+          remember();
+          onChange(undo.body);
+        }
+        return;
+      }
       if (
         emojiUndo &&
         (event.metaKey || event.ctrlKey) &&
@@ -454,6 +530,20 @@ export function ComposeEditor({
       return;
     }
     if (body.kind !== "rich") return;
+    if (matchesShortcut(shortcutSet, "toggleFormatBar", event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleFormatBar();
+      return;
+    }
+    for (const action of FORMAT_ACTIONS) {
+      if (!matchesShortcut(shortcutSet, action, event)) continue;
+      event.preventDefault();
+      event.stopPropagation();
+      remember();
+      format(action);
+      return;
+    }
     for (const action of ["bold", "italic", "underline", "link", "strikethrough"] as const) {
       if (!matchesShortcut(shortcutSet, action, event)) continue;
       event.preventDefault();
@@ -516,6 +606,36 @@ export function ComposeEditor({
           >{t`Undo mode change`}</button>
         )}
         {body.kind === "rich" && (
+          <>
+            <button
+              type="button"
+              className={button}
+              aria-pressed={formatBar}
+              onClick={toggleFormatBar}
+            >
+              {formatBar ? t`Hide format bar` : t`Show format bar`}
+            </button>
+            <button
+              type="button"
+              className={button}
+              aria-pressed={smartLists}
+              onClick={() => {
+                setSmartLists(!smartLists);
+                saveFormatPrefs({ composeSmartLists: !smartLists });
+              }}
+            >{t`Smart Lists`}</button>
+            <button
+              type="button"
+              className={button}
+              aria-pressed={markdownReplacement}
+              onClick={() => {
+                setMarkdownReplacement(!markdownReplacement);
+                saveFormatPrefs({ composeMarkdownReplacement: !markdownReplacement });
+              }}
+            >{t`Markdown replacements`}</button>
+          </>
+        )}
+        {body.kind === "rich" && formatBar && (
           <>
             {[
               { name: "bold", label: t`Bold`, Icon: Bold },
@@ -587,6 +707,9 @@ export function ComposeEditor({
           />
         )}
       </div>
+      {body.kind === "rich" && formatBar && (
+        <ComposeFormatBar disabled={locked} onFormat={format} onStyle={style} />
+      )}
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
       {mention && mentionSuggestions.length > 0 && (
         <div className="shrink-0 border-b px-4 py-2" aria-label={t`Mention suggestions`}>
@@ -756,6 +879,7 @@ export function ComposeEditor({
             richRef.current = element;
             bodyRef.current = element;
           }}
+          dir="auto"
           contentEditable={!locked}
           suppressContentEditableWarning
           tabIndex={0}
@@ -763,7 +887,7 @@ export function ComposeEditor({
           aria-multiline="true"
           aria-readonly={locked}
           aria-label={t`Body`}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-pointer"
+          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
           style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
           onClick={(event) => {
             const target = event.target;
