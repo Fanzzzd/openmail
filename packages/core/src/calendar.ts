@@ -27,6 +27,8 @@ export const CalendarInvite = Schema.Struct({
   start: Schema.NullOr(CalendarTime),
   end: Schema.NullOr(CalendarTime),
   location: Schema.String,
+  description: Schema.optionalKey(Schema.String),
+  url: Schema.optionalKey(Schema.String),
   organizer: Schema.NullOr(Address),
   attendees: Schema.Array(Schema.Struct({ ...Address.fields, status: Schema.String })),
   /** RFC 5545 rules/dates, rendered without expanding an unbounded series. */

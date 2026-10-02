@@ -191,6 +191,9 @@ export class MailRpcs extends RpcGroup.make(
   }),
   /** Opens the thread of `id` in a window of its own. */
   Rpc.make("OpenThreadWindow", { payload: { id: Schema.String } }),
+  Rpc.make("OpenMessageWindow", { payload: { id: Schema.String } }),
+  Rpc.make("OpenMeeting", { payload: { url: Schema.String }, error }),
+  Rpc.make("MarkUnreadFrom", { payload: { id: Schema.String }, success: BatchResult, error }),
   Rpc.make("Labels", { payload: { accountIds: AccountIds }, success: Schema.Array(Label) }),
   Rpc.make("UnreadCounts", { success: Counts }),
   Rpc.make("UnreadByLabel", {

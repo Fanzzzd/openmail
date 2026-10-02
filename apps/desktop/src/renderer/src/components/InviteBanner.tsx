@@ -18,6 +18,7 @@ import { resultError } from "../errors";
 import { Keys } from "../state/keys";
 import { reauthAtom, respondInviteAtom } from "../state/mutations";
 import { accountsAtom, invitationsAtom } from "../state/queries";
+import { MeetingLinks } from "./MeetingLinks";
 import { formButton } from "./OrganizationSettings";
 
 export function InviteBanner({ message }: { message: Message }) {
@@ -196,6 +197,9 @@ function Invitation({
             replying.
           </Trans>
         </p>
+      )}
+      {!invite.cancelled && (
+        <MeetingLinks sources={[invite.location, invite.description ?? "", invite.url ?? ""]} />
       )}
       <Recurrence invite={invite} />
       {canRespond && (

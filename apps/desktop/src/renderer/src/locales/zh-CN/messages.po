@@ -393,6 +393,10 @@ msgstr "确认建议"
 msgid "Archive"
 msgstr "归档"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Archive message"
+msgstr "归档此邮件"
+
 #: src/renderer/src/App.tsx
 msgid "Archived"
 msgstr "已归档"
@@ -598,6 +602,10 @@ msgstr "关闭"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Close compose window"
 msgstr "关闭写信窗口"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Close find"
+msgstr "关闭查找"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
@@ -952,6 +960,10 @@ msgstr "收藏夹"
 msgid "File"
 msgstr "文件"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Find in message"
+msgstr "在正文中查找"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -1043,6 +1055,11 @@ msgstr "有附件"
 msgid "Headers"
 msgstr "邮件头"
 
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Hide quoted text"
+msgstr "收起引用"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "打开会话多久后标为已读。选「手动」时，用 {readShortcut} 或工具栏操作。"
@@ -1107,6 +1124,10 @@ msgstr "内部回复"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Italic"
 msgstr "斜体"
+
+#: src/renderer/src/components/MeetingLinks.tsx
+msgid "Join meeting"
+msgstr "加入会议"
 
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
@@ -1239,10 +1260,18 @@ msgstr "标为已读"
 msgid "Mark as unread"
 msgstr "标为未读"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark message unread"
+msgstr "将此邮件标为未读"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
 msgstr "标记已读/未读"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark unread from this message"
+msgstr "从此邮件起标为未读"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
@@ -1288,6 +1317,7 @@ msgstr "会议已取消"
 msgid "Meeting response"
 msgstr "会议响应"
 
+#: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
 msgstr "正文"
@@ -1312,6 +1342,10 @@ msgstr "已复制邮件链接"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
+
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Message updated"
+msgstr "邮件已更新"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
@@ -1352,6 +1386,10 @@ msgstr "还有更多结果，请缩小搜索范围。"
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Move message to Trash"
+msgstr "将此邮件移到废纸篓"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1453,6 +1491,10 @@ msgstr "上一项"
 msgid "Next below"
 msgstr "下一项"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Next match"
+msgstr "下一处"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "下一个会话"
@@ -1480,6 +1522,10 @@ msgstr "关闭外部回复"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "No matches"
+msgstr "无匹配"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No matching messages"
@@ -1613,6 +1659,10 @@ msgstr "在 Outlook 中打开"
 msgid "Open in web mail"
 msgstr "在网页版邮箱中打开"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Open only this message in a new window"
+msgstr "在新窗口中只打开此邮件"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "打开空间"
@@ -1716,6 +1766,10 @@ msgstr "端口"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Previous match"
+msgstr "上一处"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -2057,6 +2111,10 @@ msgstr "选择一封邮件"
 msgid "Select all"
 msgstr "全选"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Selected message"
+msgstr "已选邮件"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Selection after moving messages"
 msgstr "移除邮件后的选择"
@@ -2184,6 +2242,11 @@ msgstr "只看未读"
 msgid "Show original"
 msgstr "显示原始邮件"
 
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Show quoted text"
+msgstr "展开引用"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "在菜单栏显示未读数"
@@ -2284,6 +2347,10 @@ msgstr "SSL/TLS（通常是 465）"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "星标"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Star message"
+msgstr "为此邮件加星标"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/view.ts
@@ -2436,6 +2503,10 @@ msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 
+#: src/renderer/src/errors.ts
+msgid "The selected message is no longer available."
+msgstr "所选邮件已不存在。"
+
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
 msgid "The server refused this action: {0}"
@@ -2481,6 +2552,10 @@ msgstr "此邀请已有更新版本"
 #: src/renderer/src/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "此会议已取消"
+
+#: src/renderer/src/errors.ts
+msgid "This meeting link is not supported."
+msgstr "不支持此会议链接。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
@@ -2536,6 +2611,7 @@ msgstr "下划线"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Undo"
 msgstr "撤销"
 
@@ -2584,6 +2660,10 @@ msgstr "只显示未读"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "去掉星标"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Unstar message"
+msgstr "取消此邮件星标"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"

@@ -68,6 +68,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     updateProfile: () => notUsed("updateProfile"),
     deleteProfile: () => notUsed("deleteProfile"),
     assignProfile: () => notUsed("assignProfile"),
+    markUnreadFrom: () => Effect.die("not used"),
     modifyWithUndo: () => Effect.die("not used"),
     threadCount: () => Effect.die("not used"),
     undoBatch: () => Effect.die("not used"),

@@ -214,6 +214,7 @@ export class Mailbox extends Context.Service<
       op: MailOp,
       flat?: boolean,
     ): Effect.Effect<BatchResult, PerformError>;
+    markUnreadFrom(id: string): Effect.Effect<BatchResult, PerformError>;
     undoBatch(undoId: string): Effect.Effect<void, PerformError>;
     /** A person approves or rejects an agent's proposal. Approved modify commands run as that person. */
     decideProposal(

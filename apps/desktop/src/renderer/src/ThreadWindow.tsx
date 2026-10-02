@@ -13,12 +13,14 @@ import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import type { MailOp } from "../../shared/api";
 import { ThreadView, useThreadPrint } from "./components/Reader";
+import { readerThreadKey } from "./reader-selection";
+import { useBatchUndo } from "./state/undo";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom } from "./state/events";
-import { modifyThreads, useRunMail, withMail } from "./state/mail";
+import { modifyMessages, modifyThreads, useRunMail, withMail } from "./state/mail";
 import { accountsAtom, labelsAtom, prefsAtom, threadAtom } from "./state/queries";
 
 /** Ops after which the thread has left where it was; the window closes, as in Mail. */
@@ -29,7 +31,7 @@ const LEAVES = new Set<MailOp["kind"]>(["archive", "trash", "spam"]);
  * or the reader toolbar. Same renderer and preload as the main window; it
  * shows only the reader, with the thread's actions but no compose.
  */
-export function ThreadWindow({ id }: { id: string }) {
+export function ThreadWindow({ id, single = false }: { id: string; single?: boolean }) {
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
@@ -37,10 +39,23 @@ export function ThreadWindow({ id }: { id: string }) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), []);
   const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
+  const { undoRef, showUndo } = useBatchUndo({
+    notify: say,
+    clearToast: hideToast,
+    label: t`Undo`,
+    failureText: (cause) => {
+      const reason = causeText(i18n, cause);
+      return t`Action failed: ${reason}`;
+    },
+  });
   const print = useThreadPrint((next) => say(next));
 
   const thread = useAtomValue(threadAtom(id));
-  const messages = AsyncResult.isSuccess(thread) ? thread.value : undefined;
+  const messages = AsyncResult.isSuccess(thread)
+    ? single
+      ? thread.value.filter((message) => message.id === id)
+      : thread.value
+    : undefined;
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const account = accounts.find((a) => a.id === messages?.[0]?.accountId);
@@ -69,7 +84,11 @@ export function ThreadWindow({ id }: { id: string }) {
   // Opening the window counts as opening the thread, with the same delay.
   const unread = state?.isUnread ?? false;
   const markRead = useEffectEvent(() => {
-    run(modifyThreads([id], { kind: "read", value: true }));
+    run(
+      single
+        ? modifyMessages([id], { kind: "read", value: true }).pipe(Effect.asVoid)
+        : modifyThreads([id], { kind: "read", value: true }).pipe(Effect.asVoid),
+    );
   });
   const [marked, setMarked] = useState(false);
   useEffect(
@@ -83,9 +102,13 @@ export function ThreadWindow({ id }: { id: string }) {
     [unread, marked, prefs.markReadDelay],
   );
 
-  const act = (op: MailOp) =>
-    run(
-      modifyThreads([id], op).pipe(
+  const act = (op: MailOp) => {
+    if (op.kind === "read" && !op.value) setMarked(true);
+    return run(
+      (single
+        ? modifyMessages([id], op).pipe(Effect.asVoid)
+        : modifyThreads([id], op).pipe(Effect.asVoid)
+      ).pipe(
         Effect.matchCause({
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
@@ -97,7 +120,7 @@ export function ThreadWindow({ id }: { id: string }) {
         }),
       ),
     );
-
+  };
   const onKey = useEffectEvent((e: KeyboardEvent) => {
     if (
       dialog ||
@@ -109,9 +132,13 @@ export function ThreadWindow({ id }: { id: string }) {
     const action = shortcutAction(prefs.shortcutSet, e);
     if (!action) return;
     switch (action) {
+      case "undo":
+        e.preventDefault();
+        undoRef.current?.();
+        break;
       case "print":
         e.preventDefault();
-        print(id, false, prefs.threadGrouping ? undefined : id);
+        print(id, false, !single && prefs.threadGrouping ? undefined : id);
         break;
       case "newWindow":
         e.preventDefault();
@@ -181,9 +208,12 @@ export function ThreadWindow({ id }: { id: string }) {
       </header>
       {messages ? (
         <ThreadView
-          messages={messages}
+          key={readerThreadKey(messages[0])}
+          messages={AsyncResult.isSuccess(thread) ? thread.value : []}
           selectedId={id}
-          single={!prefs.threadGrouping}
+          onMarkUnread={() => setMarked(true)}
+          onActionDone={({ result, ids }) => showUndo(result, ids, t`Message updated`)}
+          single={single || !prefs.threadGrouping}
           notify={(next) => say(next)}
         />
       ) : (

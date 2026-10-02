@@ -2,10 +2,13 @@ import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
 
 vi.mock("electron", () => ({
-  app: { isPackaged: true },
+  app: { isPackaged: true, getPreferredSystemLanguages: () => ["en"], getLocale: () => "en" },
   nativeTheme: { shouldUseDarkColors: false },
   shell: { openExternal: vi.fn(() => Promise.resolve()) },
   BrowserWindow: class {
+    once = vi.fn();
+    loadFile = vi.fn(() => Promise.resolve());
+    loadURL = vi.fn(() => Promise.resolve());
     webContents = Object.assign(new EventEmitter(), {
       setWindowOpenHandler: vi.fn(),
     });
@@ -13,7 +16,7 @@ vi.mock("electron", () => ({
 }));
 
 import { BrowserWindow, shell } from "electron";
-import { lockNavigation } from "./windows";
+import { lockNavigation, openMessageWindow, openThreadWindow } from "./windows";
 
 it("blocks subframe navigation without opening unrequested pages externally", () => {
   const win = new BrowserWindow({ show: false });
@@ -73,4 +76,16 @@ it("allows local reader documents to load while blocking navigation of the main 
     win.webContents.emit("will-frame-navigate", main);
     expect(main.preventDefault).toHaveBeenCalledOnce();
   }
+});
+
+it("single-message windows force single scope independently of conversation settings", () => {
+  const id = "gmail:me@example.com/older";
+  const single = openMessageWindow(id);
+  expect(vi.mocked(single).loadFile.mock.calls[0]?.[1]).toEqual({
+    query: { system: "en", thread: id, single: "1" },
+  });
+  const thread = openThreadWindow(id);
+  expect(vi.mocked(thread).loadFile.mock.calls[0]?.[1]).toEqual({
+    query: { system: "en", thread: id },
+  });
 });

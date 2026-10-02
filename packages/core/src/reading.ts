@@ -111,3 +111,91 @@ export function splitRawMessage(raw: string): RawParts {
   if (!match) return { headers: raw, body: "" };
   return { headers: raw.slice(0, match.index), body: raw.slice(match.index + match[0].length) };
 }
+
+/** Chronological suffix, including the selected message; independent of reader ordering. */
+export function messagesFrom<T extends { readonly id: string; readonly date: number }>(
+  messages: readonly T[],
+  id: string,
+): T[] {
+  const ordered = orderThread(messages, "oldest");
+  const index = ordered.findIndex((message) => message.id === id);
+  return index < 0 ? [] : ordered.slice(index);
+}
+
+/** Exact HTTPS origins only. Zoom's regional meeting hosts are listed explicitly. */
+export function meetingUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    const origins = [
+      "https://meet.google.com",
+      "https://teams.microsoft.com",
+      "https://teams.live.com",
+      "https://zoom.us",
+      "https://us02web.zoom.us",
+      "https://us04web.zoom.us",
+      "https://us05web.zoom.us",
+      "https://us06web.zoom.us",
+      "https://us07web.zoom.us",
+      "https://us08web.zoom.us",
+    ];
+    if (url.username || url.password || !origins.includes(url.origin)) return null;
+    const path = url.pathname;
+    const meeting =
+      url.hostname === "meet.google.com"
+        ? /^\/[a-z]{3}-[a-z]{4}-[a-z]{3}\/?$/i.test(path)
+        : url.hostname.startsWith("teams.")
+          ? /^\/(?:l\/meetup-join\/|meet\/)/.test(path)
+          : /^\/(?:j|my)\/[^/]+/.test(path);
+    return meeting ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Candidates from body text, HTML hrefs and iCalendar fields; validation is shared with main. */
+export function meetingLinks(...sources: readonly string[]): string[] {
+  const links = new Set<string>();
+  for (const source of sources) {
+    const decoded = source.replaceAll("&amp;", "&").replaceAll("&#38;", "&");
+    for (const match of decoded.matchAll(/https:\/\/[^\s<>"']+/gi)) {
+      const url = meetingUrl(match[0].replace(/[),.;]+$/, ""));
+      if (url) links.add(url);
+    }
+  }
+  return [...links];
+}
+
+/** Remove quote prefixes only for comparison, never from the rendered original. */
+export const normalizeQuote = (value: string) =>
+  value
+    .replace(/^\s*>+\s?/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** Bodies are normalized once per thread; each message only sees its earlier prefix. */
+export interface QuoteHistory {
+  readonly bodies: readonly string[];
+  readonly before: number;
+}
+export const EMPTY_QUOTE_HISTORY: QuoteHistory = { bodies: [], before: 0 };
+export const prepareQuoteHistory = (bodies: readonly string[]): QuoteHistory => ({
+  bodies: bodies.map(normalizeQuote),
+  before: bodies.length,
+});
+
+export function repeatedQuote(text: string, previous: QuoteHistory): boolean {
+  const quote = normalizeQuote(text);
+  if (quote.length < 20) return false;
+  for (let index = 0; index < previous.before; index++)
+    if (previous.bodies[index]?.includes(quote)) return true;
+  return false;
+}
+
+export function splitRepeatedQuote(
+  text: string,
+  previous: QuoteHistory,
+): { body: string; quote: string } {
+  const match = /(?:^|\n)[ \t]*>[^]*$/.exec(text);
+  if (!match || !repeatedQuote(match[0], previous)) return { body: text, quote: "" };
+  return { body: text.slice(0, match.index), quote: text.slice(match.index) };
+}

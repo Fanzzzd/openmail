@@ -1,4 +1,6 @@
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
+import { readerMessageId, useReaderMessages } from "../reader-selection";
+import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
@@ -7,6 +9,13 @@ import {
   addressDomain,
   DEFAULT_PREFS,
   imagesAllowed,
+  htmlToText,
+  normalizeQuote,
+  EMPTY_QUOTE_HISTORY,
+  type QuoteHistory,
+  type BatchResult,
+  type MailOp,
+  splitRepeatedQuote,
   orderThread,
   prepareMessageHtml,
   shouldLoadInvitation,
@@ -39,6 +48,8 @@ import {
 import {
   type ReactNode,
   type RefObject,
+  useCallback,
+  useMemo,
   useEffect,
   useEffectEvent,
   useRef,
@@ -50,7 +61,15 @@ import type { Message, DerivedChunk } from "../../../shared/api";
 import { causeText } from "../errors";
 import { avatarColor, displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
-import { openThreadWindow, printThread, useRunMail, withMail } from "../state/mail";
+import {
+  openThreadWindow,
+  openMessageWindow,
+  modifyMessages,
+  markUnreadFrom,
+  printThread,
+  useRunMail,
+  withMail,
+} from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import {
   accountsAtom,
@@ -64,6 +83,8 @@ import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
+import { MeetingLinks } from "./MeetingLinks";
+import { highlightBody } from "./body-text";
 import { InviteBanner } from "./InviteBanner";
 
 import { useShortcutText } from "./SystemSettings";
@@ -74,9 +95,15 @@ import { PickerPopover } from "./ui/Picker";
 
 /** Shows a one-line notice, the app's toast. */
 export type Notify = (toast: { text: string; tone?: "error" }) => void;
+export type ReaderActionDone = (action: {
+  result: BatchResult;
+  ids: readonly string[];
+  op: MailOp;
+}) => void;
 
 interface Props {
   messageId: string | null;
+  threadKey: string | null;
   derivedMatches?: readonly DerivedChunk[] | undefined;
   query: string;
   onQuery: (q: string) => void;
@@ -86,15 +113,28 @@ interface Props {
   /** Opens a draft of the thread in the compose window, by local draft id or message id. */
   onEditDraft: (messageId: string) => void;
   notify: Notify;
+  onSelectMessage: (id: string) => void;
+  onMarkUnread: () => void;
+  onActionDone: ReaderActionDone;
+  onComposeMessage: (
+    id: string,
+    mode: "reply" | "replyAll" | "forward",
+    attachment?: boolean,
+  ) => void;
 }
 
 export function Reader({
   messageId,
+  threadKey,
   derivedMatches,
   query,
   onQuery,
   searchRef,
   renderToolbar,
+  onSelectMessage,
+  onMarkUnread,
+  onActionDone,
+  onComposeMessage,
   onEditDraft,
   notify,
 }: Props) {
@@ -110,7 +150,7 @@ export function Reader({
     () => headerRef.current?.clientWidth ?? 0,
   );
   const thread = AsyncResult.value(useAtomValue(threadAtom(messageId)));
-  const messages = thread._tag === "Some" ? thread.value : undefined;
+  const messages = useReaderMessages(threadKey, thread._tag === "Some" ? thread.value : undefined);
   const grouping = AsyncResult.getOrElse(
     useAtomValue(prefsAtom),
     () => DEFAULT_PREFS,
@@ -134,11 +174,15 @@ export function Reader({
           </p>
         </div>
       ) : (
-        // Keyed by message so expansion state resets when the selection changes.
+        // A newly synced representative keeps selection, expansion and find state.
         <ThreadView
-          key={messageId}
+          key={threadKey}
           messages={messages}
           selectedId={messageId}
+          onSelectMessage={onSelectMessage}
+          onMarkUnread={onMarkUnread}
+          onActionDone={onActionDone}
+          onComposeMessage={onComposeMessage}
           derivedMatches={derivedMatches}
           // Grouping off lists messages on their own; the reader shows just that one.
           single={!grouping}
@@ -222,6 +266,10 @@ export function ThreadView({
   onEditDraft,
   notify,
   canOpenWindow,
+  onSelectMessage,
+  onMarkUnread,
+  onActionDone,
+  onComposeMessage,
 }: {
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
@@ -232,6 +280,10 @@ export function ThreadView({
   notify: Notify;
   /** Offer Open in New Window (not inside a thread window). */
   canOpenWindow?: boolean;
+  onSelectMessage?: ((id: string) => void) | undefined;
+  onMarkUnread?: (() => void) | undefined;
+  onActionDone?: ReaderActionDone | undefined;
+  onComposeMessage?: Props["onComposeMessage"] | undefined;
 }) {
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -241,9 +293,79 @@ export function ThreadView({
   const print = useThreadPrint(notify);
   const [raw, setRaw] = useState<string | null>(null);
   const save = useSaveMessage(notify);
-  const [activeId, setActiveId] = useState(selectedId);
+  const [activeSelection, setActiveId] = useState(selectedId);
+  const activeId = readerMessageId(stored, activeSelection, selectedId, single);
+  const [finding, setFinding] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [findIndex, setFindIndex] = useState(0);
+  const [findCount, setFindCount] = useState(0);
+  const findRef = useRef<HTMLInputElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const selectInitial = useEffectEvent((id: string) => onSelectMessage?.(id));
+  useEffect(() => {
+    selectInitial(activeId);
+  }, [activeId]);
+  const activate = (id: string) => {
+    if (id !== activeId) {
+      setActiveId(id);
+      onSelectMessage?.(id);
+      setFindIndex(0);
+      setFindCount(0);
+    }
+  };
+  const reportMatches = useCallback((count: number) => {
+    setFindCount(count);
+  }, []);
+  const findNext = (direction: number) =>
+    setFindIndex((index) => (findCount ? (index + direction + findCount) % findCount : 0));
+  const beginFind = (id = activeId) => {
+    activate(id);
+    setFinding(true);
+    setOpen((previous) => new Set([...previous, id]));
+    requestAnimationFrame(() => {
+      findRef.current?.focus();
+      findRef.current?.select();
+    });
+  };
+  const closeFind = () => {
+    setFinding(false);
+    scroller.current?.focus({ preventScroll: true });
+  };
+  const messageAction = (id: string, op: Parameters<typeof modifyMessages>[1]) => {
+    if (op.kind === "read" && !op.value) onMarkUnread?.();
+    return run(
+      modifyMessages([id], op).pipe(
+        Effect.tap((result) => Effect.sync(() => onActionDone?.({ result, ids: [id], op }))),
+        Effect.catchCause((cause) =>
+          Effect.sync(() => notify({ text: causeText(i18n, cause), tone: "error" })),
+        ),
+      ),
+    );
+  };
+  const unreadFrom = (id: string) => {
+    onMarkUnread?.();
+    return run(
+      markUnreadFrom(id).pipe(
+        Effect.tap((result) =>
+          Effect.sync(() =>
+            onActionDone?.({ result, ids: [id], op: { kind: "read", value: false } }),
+          ),
+        ),
+        Effect.catchCause((cause) =>
+          Effect.sync(() => notify({ text: causeText(i18n, cause), tone: "error" })),
+        ),
+      ),
+    );
+  };
+  const previousBodies = useMemo(() => {
+    const chronological = orderThread(stored, "oldest");
+    const bodies = chronological.map((prior) =>
+      normalizeQuote(prior.bodyText || htmlToText(prior.bodyHtml)),
+    );
+    return new Map(chronological.map((message, index) => [message.id, { bodies, before: index }]));
+  }, [stored]);
   const shown = single ? stored.filter((m) => m.id === selectedId) : stored;
-  const messages = orderThread(shown.length ? shown : stored, prefs.threadOrder);
+  const messages = orderThread(shown, prefs.threadOrder);
   const addresses = [
     ...new Set(messages.map((m) => m.from.address.trim().toLowerCase())),
   ].toSorted();
@@ -271,20 +393,32 @@ export function ThreadView({
     undefined,
   );
   const [open, setOpen] = useState(() => new Set([selectedId, newest?.id ?? selectedId]));
-  const expand = (expanded: boolean) =>
+  if (activeSelection !== activeId) {
+    setActiveId(activeId);
+    setFinding(false);
+    setFindQuery("");
+    setFindIndex(0);
+    setFindCount(0);
+    setOpen(new Set([...open, activeId]));
+  }
+  const expand = (expanded: boolean) => {
+    if (!expanded) setFinding(false);
     setOpen(
       threadExpansion(
         messages.map((m) => m.id),
         expanded,
       ),
     );
-  const toggle = (id: string) =>
+  };
+  const toggle = (id: string) => {
+    if (id === activeId && open.has(id)) setFinding(false);
     setOpen((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  };
 
   const zoom = prefs.readerZoom;
   const setZoom = (next: ReaderZoom) => {
@@ -301,20 +435,67 @@ export function ThreadView({
   const printOnly = single ? selectedId : undefined;
 
   // ⌘+ and ⌘- apply while focus is in the thread; a click anywhere in it focuses it.
-  const scroller = useRef<HTMLDivElement>(null);
   const zoomKeys = useEffectEvent((e: KeyboardEvent) => onZoomKey(e));
   const onReaderKey = (e: KeyboardEvent, messageId = activeId) => {
     if (
       e.defaultPrevented ||
       document.querySelector('[role="dialog"],[role="alertdialog"]') ||
-      (e.target instanceof Element &&
-        e.target.closest('input,textarea,select,[contenteditable],[role="menu"]'))
+      (e.target instanceof Element && e.target.closest('[role="menu"]'))
     )
       return;
+    const insideReader =
+      e.currentTarget !== window ||
+      (e.target instanceof Element && !!e.target.closest("[data-reader-text]"));
+    const targetMessageId =
+      (e.target instanceof Element
+        ? e.target.closest<HTMLElement>("[data-message-id]")?.dataset.messageId
+        : undefined) ?? messageId;
+    if (insideReader && e.isTrusted) activate(targetMessageId);
+    if (insideReader) {
+      const findAction = readerFindAction(prefs.shortcutSet, e, finding);
+      if (findAction === "find") {
+        e.preventDefault();
+        beginFind(targetMessageId);
+        return;
+      }
+      if (findAction === "next") {
+        e.preventDefault();
+        findNext(1);
+        return;
+      }
+    }
+    if (insideReader && finding && e.key === "Escape") {
+      e.preventDefault();
+      closeFind();
+      return;
+    }
     const action = shortcutAction(prefs.shortcutSet, e);
-    const active = messages.find((m) => m.id === messageId) ?? newest;
+    const findCommand =
+      e.target === findRef.current &&
+      (e.metaKey || e.ctrlKey) &&
+      (action === "forward" || action === "forwardAttachment" || action === "openMessageWeb");
+    if (
+      !findCommand &&
+      e.target instanceof Element &&
+      e.target.closest('input,textarea,select,[contenteditable],[role="menu"]')
+    )
+      return;
+    const active = messages.find((m) => m.id === targetMessageId);
     if (!active) return;
     switch (action) {
+      case "reply":
+      case "replyAll":
+      case "forward":
+      case "forwardAttachment":
+        if (insideReader && onComposeMessage) {
+          e.preventDefault();
+          onComposeMessage(
+            active.id,
+            action === "forwardAttachment" ? "forward" : action,
+            action === "forwardAttachment",
+          );
+        }
+        break;
       case "expandAll":
         e.preventDefault();
         expand(true);
@@ -342,7 +523,7 @@ export function ThreadView({
   const readerKeys = useEffectEvent((e: KeyboardEvent) => onReaderKey(e));
   const frameKeys = (id: string, e: KeyboardEvent) => {
     // A key in a frame targets that message even before React processes focus.
-    setActiveId(id);
+    activate(id);
     onZoomKey(e);
     onReaderKey(e, id);
   };
@@ -357,7 +538,7 @@ export function ThreadView({
     const listener = (e: KeyboardEvent) => zoomKeys(e);
     el.addEventListener("keydown", listener);
     return () => el.removeEventListener("keydown", listener);
-  }, []);
+  }, [scroller]);
 
   return (
     // Focusable so ⌘+ and ⌘- reach it after a click anywhere in the thread.
@@ -459,6 +640,48 @@ export function ThreadView({
           </MenuItem>
         </DropdownMenu>
       </div>
+      {finding && (
+        <search
+          className="sticky top-0 z-10 mb-3 flex items-center gap-2 rounded border border-neutral-200 bg-white p-2 dark:bg-neutral-900"
+          aria-label={t`Find in message`}
+        >
+          <input
+            ref={findRef}
+            aria-label={t`Find in message`}
+            placeholder={t`Find in message`}
+            className="min-w-0 flex-1 outline-none"
+            value={findQuery}
+            onChange={(event) => {
+              setFindQuery(event.target.value);
+              setFindIndex(0);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                findNext(event.shiftKey ? -1 : 1);
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                closeFind();
+              }
+            }}
+          />
+          <output aria-live="polite">
+            {findCount ? `${(findIndex % findCount) + 1}/${findCount}` : t`No matches`}
+          </output>
+          <button
+            type="button"
+            disabled={!findCount}
+            onClick={() => findNext(-1)}
+          >{t`Previous match`}</button>
+          <button
+            type="button"
+            disabled={!findCount}
+            onClick={() => findNext(1)}
+          >{t`Next match`}</button>
+          <button type="button" onClick={closeFind}>{t`Close find`}</button>
+        </search>
+      )}
       <MediaMatches chunks={derivedMatches} />
       <div className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
         {messages.map((m) =>
@@ -467,7 +690,15 @@ export function ThreadView({
               key={m.id}
               message={m}
               known={known.includes(m.from.address.trim().toLowerCase())}
-              onActivate={() => setActiveId(m.id)}
+              onActivate={() => activate(m.id)}
+              active={m.id === activeId}
+              onMessageOp={(op) => messageAction(m.id, op)}
+              onUnreadFrom={() => unreadFrom(m.id)}
+              onOpenSingle={() => run(openMessageWindow(m.id))}
+              previous={previousBodies.get(m.id) ?? EMPTY_QUOTE_HISTORY}
+              findQuery={finding && activeId === m.id ? findQuery : ""}
+              findIndex={findIndex}
+              onMatches={activeId === m.id ? reportMatches : undefined}
               onSave={() => save(m.id)}
               onSearchSender={() => searchSender(m)}
               onOpenWeb={canOpenWeb ? () => openWeb(m.id) : undefined}
@@ -489,13 +720,14 @@ export function ThreadView({
           ) : (
             <button
               key={m.id}
+              data-message-id={m.id}
               type="button"
               onClick={() => {
-                setActiveId(m.id);
+                activate(m.id);
                 toggle(m.id);
               }}
-              onFocus={() => setActiveId(m.id)}
-              className="flex w-full gap-3 py-3 text-left"
+              onFocus={() => activate(m.id)}
+              className={`flex w-full gap-3 py-3 text-left ${m.id === activeId ? "border-l-2 border-blue-400 pl-2" : ""}`}
             >
               <Avatar message={m} />
               <span className="min-w-0 flex-1">
@@ -585,6 +817,14 @@ function Expanded({
   onSearchSender,
   onOpenWeb,
   webLabel,
+  active,
+  onMessageOp,
+  onUnreadFrom,
+  onOpenSingle,
+  previous,
+  findQuery,
+  findIndex,
+  onMatches,
 }: {
   message: Message;
   zoom: ReaderZoom;
@@ -601,6 +841,14 @@ function Expanded({
   onSearchSender: () => void;
   onOpenWeb: (() => void) | undefined;
   webLabel: string;
+  active: boolean;
+  onMessageOp: (op: Parameters<typeof modifyMessages>[1]) => void;
+  onUnreadFrom: () => void;
+  onOpenSingle: () => void;
+  previous: QuoteHistory;
+  findQuery: string;
+  findIndex: number;
+  onMatches: ((count: number) => void) | undefined;
 }) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
@@ -642,9 +890,13 @@ function Expanded({
   const cc = m.cc.map(displayName).join(separator);
   return (
     <article
+      data-message-id={m.id}
       onMouseDownCapture={onActivate}
-      onFocusCapture={onActivate}
-      className="@container/message py-3"
+      onKeyDownCapture={(event) => {
+        if (event.nativeEvent.isTrusted) onActivate();
+      }}
+      aria-label={active ? t`Selected message` : t`Message`}
+      className={`@container/message py-3 ${active ? "border-l-2 border-blue-400 pl-2" : ""}`}
     >
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-md bg-red-500/[0.06] px-3 py-1.5 text-[13px]">
@@ -700,6 +952,22 @@ function Expanded({
             </button>
           }
         >
+          <MenuItem onClick={() => onMessageOp({ kind: "archive" })}>{t`Archive message`}</MenuItem>
+          <MenuItem
+            onClick={() => onMessageOp({ kind: "trash" })}
+          >{t`Move message to Trash`}</MenuItem>
+          <MenuItem onClick={() => onMessageOp({ kind: "star", value: !m.isStarred })}>
+            {m.isStarred ? t`Unstar message` : t`Star message`}
+          </MenuItem>
+          <MenuItem
+            onClick={() => onMessageOp({ kind: "read", value: false })}
+          >{t`Mark message unread`}</MenuItem>
+          <MenuItem onClick={onUnreadFrom}>{t`Mark unread from this message`}</MenuItem>
+          <MenuItem
+            icon={AppWindow}
+            onClick={onOpenSingle}
+          >{t`Open only this message in a new window`}</MenuItem>
+          <MenuSeparator />
           <MenuItem icon={background === "dark" ? Sun : Moon} onClick={toggleBackground}>
             {background === "dark" ? t`Light background` : t`Dark background`}
           </MenuItem>
@@ -746,6 +1014,7 @@ function Expanded({
         </DropdownMenu>
       </div>
 
+      <MeetingLinks sources={[m.bodyText, m.bodyHtml]} />
       {shouldLoadInvitation(m) && <InviteBanner message={m} />}
 
       {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
@@ -803,18 +1072,22 @@ function Expanded({
             background={background}
             zoom={zoom}
             onKeyDown={onZoomKey}
+            onActivate={onActivate}
+            previous={previous}
+            findQuery={findQuery}
+            findIndex={findIndex}
+            onMatches={onMatches}
           />
         ) : (
-          <pre
-            className={`rounded-lg p-4 font-sans leading-relaxed whitespace-pre-wrap ${
-              background === "dark"
-                ? "bg-black text-neutral-100 ring-1 ring-white/10"
-                : "bg-white text-neutral-900 dark:ring-1 dark:ring-white/10"
-            }`}
-            style={{ fontSize: (14 * zoom) / 100 }}
-          >
-            {m.bodyText}
-          </pre>
+          <PlainBody
+            text={m.bodyText}
+            previous={previous}
+            background={background}
+            zoom={zoom}
+            findQuery={findQuery}
+            findIndex={findIndex}
+            onMatches={onMatches}
+          />
         )}
       </div>
     </article>
@@ -852,5 +1125,55 @@ function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixel
         ))}
       </div>
     </PickerPopover>
+  );
+}
+
+function PlainBody({
+  text,
+  previous,
+  background,
+  zoom,
+  findQuery,
+  findIndex,
+  onMatches,
+}: {
+  text: string;
+  previous: QuoteHistory;
+  background: MessageBackground;
+  zoom: ReaderZoom;
+  findQuery: string;
+  findIndex: number;
+  onMatches: ((count: number) => void) | undefined;
+}) {
+  const { t } = useLingui();
+  const [showQuotes, setShowQuotes] = useState(false);
+  const parts = useMemo(() => splitRepeatedQuote(text, previous), [text, previous]);
+  const root = useRef<HTMLPreElement>(null);
+  const visible = parts.body + (showQuotes || findQuery ? parts.quote : "");
+  useEffect(() => {
+    if (!root.current) return constVoid;
+    root.current.textContent = visible;
+    const highlights = highlightBody(root.current, findQuery);
+    onMatches?.(highlights.count);
+    highlights.select(highlights.count ? findIndex % highlights.count : 0);
+    return () => highlights.dispose();
+  }, [visible, findQuery, findIndex, onMatches]);
+  return (
+    <>
+      <pre
+        ref={root}
+        className={`rounded-lg p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
+        style={{ fontSize: (14 * zoom) / 100 }}
+      />
+      {parts.quote && (
+        <button
+          type="button"
+          className="px-4 text-blue-600"
+          onClick={() => setShowQuotes(!showQuotes)}
+        >
+          {showQuotes ? t`Hide quoted text` : t`Show quoted text`}
+        </button>
+      )}
+    </>
   );
 }

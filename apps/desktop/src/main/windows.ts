@@ -134,6 +134,17 @@ export function openThreadWindow(messageId: string): BrowserWindow {
   });
 }
 
+/** A window whose view and actions are scoped to one message, regardless of grouping. */
+export function openMessageWindow(messageId: string): BrowserWindow {
+  return createAppWindow({
+    width: 820,
+    height: 860,
+    minWidth: 480,
+    minHeight: 400,
+    query: { thread: messageId, single: "1" },
+  });
+}
+
 /** The window a renderer (RPC client id = webContents id) lives in. */
 export function windowOf(webContentsId: number): BrowserWindow | null {
   return (

@@ -387,6 +387,10 @@ msgstr "Approve suggestion"
 msgid "Archive"
 msgstr "Archive"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Archive message"
+msgstr "Archive message"
+
 #: src/renderer/src/App.tsx
 msgid "Archived"
 msgstr "Archived"
@@ -592,6 +596,10 @@ msgstr "Close"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Close compose window"
 msgstr "Close compose window"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Close find"
+msgstr "Close find"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
@@ -946,6 +954,10 @@ msgstr "Favorites"
 msgid "File"
 msgstr "File"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Find in message"
+msgstr "Find in message"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
@@ -1037,6 +1049,11 @@ msgstr "Has attachment"
 msgid "Headers"
 msgstr "Headers"
 
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Hide quoted text"
+msgstr "Hide quoted text"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
 msgstr "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -1101,6 +1118,10 @@ msgstr "Internal reply"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Italic"
 msgstr "Italic"
+
+#: src/renderer/src/components/MeetingLinks.tsx
+msgid "Join meeting"
+msgstr "Join meeting"
 
 #. placeholder {0}: label.name
 #: src/renderer/src/components/CacheSettings.tsx
@@ -1233,10 +1254,18 @@ msgstr "Mark as read"
 msgid "Mark as unread"
 msgstr "Mark as unread"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark message unread"
+msgstr "Mark message unread"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
 msgstr "Mark read/unread"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark unread from this message"
+msgstr "Mark unread from this message"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
@@ -1282,6 +1311,7 @@ msgstr "Meeting cancelled"
 msgid "Meeting response"
 msgstr "Meeting response"
 
+#: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Message"
 msgstr "Message"
@@ -1306,6 +1336,10 @@ msgstr "Message link copied"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
+
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Message updated"
+msgstr "Message updated"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
@@ -1346,6 +1380,10 @@ msgstr "More matches exist. Narrow your search."
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "More messages not loaded"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Move message to Trash"
+msgstr "Move message to Trash"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1447,6 +1485,10 @@ msgstr "Next above"
 msgid "Next below"
 msgstr "Next below"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Next match"
+msgstr "Next match"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "Next thread"
@@ -1474,6 +1516,10 @@ msgstr "No external replies"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "No label or folder"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "No matches"
+msgstr "No matches"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "No matching messages"
@@ -1607,6 +1653,10 @@ msgstr "Open in Outlook"
 msgid "Open in web mail"
 msgstr "Open in web mail"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Open only this message in a new window"
+msgstr "Open only this message in a new window"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "Open space"
@@ -1710,6 +1760,10 @@ msgstr "Port"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "Press ? outside a text field to show this list."
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Previous match"
+msgstr "Previous match"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -2051,6 +2105,10 @@ msgstr "Select a message"
 msgid "Select all"
 msgstr "Select all"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Selected message"
+msgstr "Selected message"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Selection after moving messages"
 msgstr "Selection after moving messages"
@@ -2178,6 +2236,11 @@ msgstr "Show only unread"
 msgid "Show original"
 msgstr "Show original"
 
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Show quoted text"
+msgstr "Show quoted text"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "Show unread count in the menu bar"
@@ -2278,6 +2341,10 @@ msgstr "SSL/TLS (usually 465)"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Star"
 msgstr "Star"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Star message"
+msgstr "Star message"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/view.ts
@@ -2430,6 +2497,10 @@ msgstr "The organizer differs from the message sender. Check the response recipi
 msgid "The rest is left out here. Copy gets the whole message."
 msgstr "The rest is left out here. Copy gets the whole message."
 
+#: src/renderer/src/errors.ts
+msgid "The selected message is no longer available."
+msgstr "The selected message is no longer available."
+
 #. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
 msgid "The server refused this action: {0}"
@@ -2475,6 +2546,10 @@ msgstr "This invitation has a newer update"
 #: src/renderer/src/errors.ts
 msgid "This meeting has been cancelled"
 msgstr "This meeting has been cancelled"
+
+#: src/renderer/src/errors.ts
+msgid "This meeting link is not supported."
+msgstr "This meeting link is not supported."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server."
@@ -2530,6 +2605,7 @@ msgstr "Underline"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Undo"
 msgstr "Undo"
 
@@ -2578,6 +2654,10 @@ msgstr "Unread filter"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Unstar"
 msgstr "Unstar"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Unstar message"
+msgstr "Unstar message"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"

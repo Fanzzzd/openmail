@@ -19,6 +19,8 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "The selected message is no longer available.": msg`The selected message is no longer available.`,
+  "This meeting link is not supported.": msg`This meeting link is not supported.`,
   "Enter a single access token": msg`Enter a single access token`,
 
   "This invitation cannot be answered by this account": msg`This invitation cannot be answered by this account`,

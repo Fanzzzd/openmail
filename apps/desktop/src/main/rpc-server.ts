@@ -13,8 +13,9 @@ import {
   saveAttachment,
   saveMessage,
 } from "./files";
+import { openMeeting } from "./meeting";
 import { Desktop } from "./system";
-import { createMainWindow, openThreadWindow, windowOf } from "./windows";
+import { createMainWindow, openThreadWindow, openMessageWindow, windowOf } from "./windows";
 
 /** Brings the app back to the front after a sign-in in the system browser. */
 const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
@@ -132,6 +133,12 @@ const Handlers = MailRpcs.toLayer(
         Effect.sync(() => {
           openThreadWindow(id);
         }),
+      OpenMessageWindow: ({ id }) =>
+        Effect.sync(() => {
+          openMessageWindow(id);
+        }),
+      OpenMeeting: ({ url }) => openMeeting(url),
+      MarkUnreadFrom: ({ id }) => m.markUnreadFrom(id),
       Labels: ({ accountIds }) => m.labels(accountIds),
       UnreadCounts: () => m.unreadCounts,
       UnreadByLabel: ({ accountIds, within }) => m.unreadByLabel(accountIds, within),

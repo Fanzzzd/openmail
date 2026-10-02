@@ -1,3 +1,9 @@
+import type { QuoteHistory } from "@openmail/core/schema";
+import { listenForMessageActivation } from "./message-activation";
+import { useLingui } from "@lingui/react/macro";
+import { constVoid } from "effect/Function";
+import { useBodyQuotes } from "./body-quotes";
+import { presentBody } from "./body-text";
 import { type SyntheticEvent, useEffect, useRef, useState } from "react";
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 
@@ -42,9 +48,41 @@ interface Props {
   zoom: number;
   /** Keys pressed while the message itself has focus; the frame's document does not bubble to ours. */
   onKeyDown?: (event: KeyboardEvent) => void;
+  onActivate: () => void;
+  previous: QuoteHistory;
+  findQuery: string;
+  findIndex: number;
+  onMatches: ((count: number) => void) | undefined;
 }
 
-export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props) {
+export function EmailFrame({
+  html,
+  remote,
+  background,
+  zoom,
+  onKeyDown,
+  onActivate,
+  previous,
+  findQuery,
+  findIndex,
+  onMatches,
+}: Props) {
+  const { t } = useLingui();
+  const [frameDocument, setFrameDocument] = useState<Document | null>(null);
+  const quotes = useBodyQuotes(frameDocument, previous);
+  const hasQuotes = !!quotes?.length;
+  const [showQuotes, setShowQuotes] = useState(false);
+  const activate = useRef(onActivate);
+  useEffect(() => {
+    activate.current = onActivate;
+  });
+  useEffect(() => {
+    if (!frameDocument || !quotes) return constVoid;
+    const view = presentBody(frameDocument.body, quotes, showQuotes, findQuery);
+    onMatches?.(view.count);
+    view.select(view.count ? findIndex % view.count : 0);
+    return () => view.dispose();
+  }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches]);
   const [height, setHeight] = useState(120);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
   const dispose = useRef<(() => void) | undefined>(undefined);
@@ -77,6 +115,7 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
     const frameDoc = e.currentTarget.contentDocument;
     const root = frameDoc?.documentElement;
     if (!frameDoc || !root || frameDoc.URL !== "about:srcdoc") return;
+    setFrameDocument(frameDoc);
     externalLinkTargets(frameDoc);
     // Mail styles cannot hide the viewport's horizontal overflow.
     root.style.setProperty("overflow-x", "auto", "important");
@@ -85,10 +124,14 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
     observer.current = new ResizeObserver(() => setHeight(root.scrollHeight));
     observer.current.observe(root);
     const keydown = (event: KeyboardEvent) => {
-      if (!frameDoc.activeElement?.closest("input,textarea,select,[contenteditable]"))
+      if (
+        event.isTrusted &&
+        !frameDoc.activeElement?.closest("input,textarea,select,[contenteditable]")
+      )
         keys.current?.(event);
     };
     frameDoc.addEventListener("keydown", keydown);
+    const stopActivation = listenForMessageActivation(frameDoc, () => activate.current());
     const stopHints = listenForLinkHints(
       frameDoc,
       (event) => frameLinkTarget(frameDoc, event),
@@ -97,6 +140,7 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
     dispose.current = () => {
       stopHints();
       frameDoc.removeEventListener("keydown", keydown);
+      stopActivation();
     };
   };
 
@@ -117,6 +161,15 @@ export function EmailFrame({ html, remote, background, zoom, onKeyDown }: Props)
         style={{ height }}
         className="block w-full border-0"
       />
+      {hasQuotes && (
+        <button
+          type="button"
+          className="mt-2 text-blue-600"
+          onClick={() => setShowQuotes(!showQuotes)}
+        >
+          {showQuotes ? t`Hide quoted text` : t`Show quoted text`}
+        </button>
+      )}
       {link && (
         <output className="pointer-events-none fixed right-3 bottom-3 left-3 z-50 w-fit max-w-[calc(100%-1.5rem)] rounded border border-black/10 bg-neutral-100 px-2 py-1 font-mono text-[12px] break-all text-neutral-800 shadow dark:border-white/15 dark:bg-neutral-800 dark:text-neutral-100">
           {link}

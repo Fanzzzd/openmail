@@ -1,3 +1,9 @@
+import {
+  readerThreadKey,
+  replySource,
+  replyTarget,
+  type ReaderSelection,
+} from "./reader-selection";
 import { useAtom, useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -55,7 +61,6 @@ import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "./state/events
 import {
   discardDraft,
   modifyWithUndo,
-  undoBatch,
   openDraft,
   openThreadWindow,
   reauthAccount,
@@ -92,6 +97,7 @@ import {
 } from "./state/selection";
 import { Alert, AlertCancel, alertDanger } from "./components/ui/Dialog";
 import { BatchActions, BatchMenuItems } from "./components/BatchActions";
+import { useBatchUndo } from "./state/undo";
 import { leavesList } from "./state/batch";
 import { listQueryAtom, threadListAtom } from "./state/threads";
 import {
@@ -185,10 +191,18 @@ export function App() {
     );
   const undoSend = () =>
     [...pendingSends.current.values()].filter((undo) => undo !== null).at(-1)?.();
-  const undoRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const hideToast = useCallback(() => setToast(null), []);
   const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
+  const { undoRef, showUndo } = useBatchUndo({
+    notify: say,
+    clearToast: hideToast,
+    label: t`Undo`,
+    failureText: (cause) => {
+      const reason = causeText(i18n, cause);
+      return t`Action failed: ${reason}`;
+    },
+  });
 
   const accounts = useAtomValue(accountsAtom);
   const accountList = AsyncResult.getOrElse(accounts, () => []);
@@ -254,8 +268,10 @@ export function App() {
   }
   const batchRows = batchScope(selection, rowMap).rows;
   const selected = selectedId ? rowMap.get(selectedId) : undefined;
+  const [readerSelection, setReaderSelection] = useState<ReaderSelection | null>(null);
   const openThread = AsyncResult.value(useAtomValue(threadAtom(selectedId)));
   const messages = openThread._tag === "Some" ? openThread.value : undefined;
+  const currentReaderThreadKey = readerThreadKey(selected ?? messages?.[0]);
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
@@ -367,33 +383,9 @@ export function App() {
           onSuccess: (result) => {
             applyActionSelection(before, next, actionScopeKey);
             if (opts.quiet) return;
-            let used = false;
-            const undo = () => {
-              if (used) return;
-              used = true;
-              run(
-                undoBatch(result.undoId, targets).pipe(
-                  Effect.matchCause({
-                    onFailure: (cause) => {
-                      used = false;
-                      const reason = causeText(i18n, cause);
-                      say({
-                        text: t`Action failed: ${reason}`,
-                        tone: "error",
-                        action: { label: t`Undo`, run: undo },
-                      });
-                    },
-                    onSuccess: () => {
-                      restoreActionSelection(before, actionScopeKey, rows);
-                      if (undoRef.current === undo) undoRef.current = null;
-                      setToast(null);
-                    },
-                  }),
-                ),
-              );
-            };
-            undoRef.current = undo;
-            say({ text: i18n._(OP_DONE[op.kind](op)), action: { label: t`Undo`, run: undo } });
+            showUndo(result, targets, i18n._(OP_DONE[op.kind](op)), () => {
+              restoreActionSelection(before, actionScopeKey, rows);
+            });
           },
         }),
       ),
@@ -522,7 +514,11 @@ export function App() {
     );
   };
 
-  const startCompose = (mode: Draft["mode"], asAttachment = false, id = selectedId) => {
+  const startCompose = (
+    mode: Draft["mode"],
+    asAttachment = false,
+    id = replyTarget(readerSelection, selectedId, prefs.threadGrouping, currentReaderThreadKey),
+  ) => {
     if (mode === "new") {
       startNewMessage();
       return;
@@ -533,7 +529,7 @@ export function App() {
       Effect.gen(function* () {
         const thread = yield* Atom.getResult(threadAtom(id));
         const aliases = mode === "forward" ? [] : yield* Atom.getResult(sendAsAtom);
-        const last = thread.at(-1);
+        const last = replySource(thread, id);
         const account = accountList.find((a) => a.id === last?.accountId);
         if (last && account)
           setCompose(signed(draftFor(mode, last, account, asAttachment, aliases)));
@@ -1195,10 +1191,20 @@ export function App() {
             <Panel id="reader" minSize={360}>
               <Reader
                 messageId={selectedId}
+                threadKey={currentReaderThreadKey}
+                onMarkUnread={() => setReadTarget(null)}
+                onActionDone={({ result, ids, op }) =>
+                  showUndo(result, ids, i18n._(OP_DONE[op.kind](op)))
+                }
+                onSelectMessage={(id) => {
+                  if (currentReaderThreadKey)
+                    setReaderSelection({ threadKey: currentReaderThreadKey, id });
+                }}
                 derivedMatches={selected?.derivedMatches}
                 query={query}
                 onQuery={setQuery}
                 searchRef={searchRef}
+                onComposeMessage={(id, mode, attachment) => startCompose(mode, attachment, id)}
                 onEditDraft={openSavedDraft}
                 notify={(next) => say(next)}
                 renderToolbar={(compact) =>

@@ -17,7 +17,16 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RegistryProvider>
       <LocaleProvider>
-        <TipProvider>{thread ? <ThreadWindow id={thread} /> : <App />}</TipProvider>
+        <TipProvider>
+          {thread ? (
+            <ThreadWindow
+              id={thread}
+              single={new URLSearchParams(window.location.search).get("single") === "1"}
+            />
+          ) : (
+            <App />
+          )}
+        </TipProvider>
       </LocaleProvider>
     </RegistryProvider>
   </StrictMode>,

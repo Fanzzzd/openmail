@@ -1,6 +1,7 @@
 import { Effect, Option, Semaphore } from "effect";
 
 import type { Actor, MailOp, Message, Provider } from "./domain.js";
+import { messagesFrom } from "./reading.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "./services.js";
@@ -193,5 +194,20 @@ export const makeBatchMailbox = (
           Effect.tap(() => changed),
           Effect.tap(() => flushLater),
         );
-    return { modifyWithUndo, undoBatch };
+    const markUnreadFrom: Mailbox["Service"]["markUnreadFrom"] = (id) =>
+      Effect.gen(function* () {
+        const messages = messagesFrom(yield* store.getThread(id), id).filter(
+          (message) => !message.labels.some((label) => ["DRAFT", "TRASH", "SPAM"].includes(label)),
+        );
+        if (!messages.length)
+          return yield* new InvalidInput({
+            message: "The selected message is no longer available.",
+          });
+        return yield* modifyWithUndo(
+          messages.map((message) => message.id),
+          { kind: "read", value: false },
+          true,
+        );
+      });
+    return { modifyWithUndo, undoBatch, markUnreadFrom };
   });

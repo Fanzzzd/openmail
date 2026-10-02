@@ -100,6 +100,15 @@ export const printThread = (request: {
 export const openThreadWindow = (id: string) =>
   withMail((call) => call("OpenThreadWindow", { id }));
 
+/** Message-scoped actions never expand the ID into its conversation. */
+export const modifyMessages = (ids: readonly string[], op: MailOp) => modifyWithUndo(ids, op, true);
+export const markUnreadFrom = (id: string) =>
+  withMail((call) => call("MarkUnreadFrom", { id })).pipe(
+    Reactivity.mutation(threadChangeKeys([id])),
+  );
+export const openMessageWindow = (id: string) =>
+  withMail((call) => call("OpenMessageWindow", { id }));
+
 /** Starts a sync of every account. Progress and results arrive as events. */
 export const syncNow = withMail((call) => call("Sync", undefined));
 

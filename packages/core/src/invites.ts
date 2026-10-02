@@ -131,6 +131,8 @@ export function parseCalendar(source: string): ParsedInvite[] {
         start,
         end,
         location: text(event, "location"),
+        description: text(event, "description"),
+        url: text(event, "url"),
         organizer: org ? address(org) : null,
         attendees: event.getAllProperties("attendee").flatMap((p) => {
           const a = address(p);
