@@ -200,6 +200,8 @@ export function resetLocalCache(directory: string): CacheResetResult {
     );
     if (tables.has("messages_fts"))
       db.exec("INSERT INTO messages_fts(messages_fts) VALUES ('rebuild')");
+    if (tables.has("contact_candidates_fts"))
+      db.exec("INSERT INTO contact_candidates_fts(contact_candidates_fts) VALUES ('rebuild')");
     if (tables.has("derived_fts"))
       db.exec("INSERT INTO derived_fts(derived_fts) VALUES ('rebuild')");
     // Recovery precedes migrations, so older caches may lack some of these tables.
@@ -209,6 +211,10 @@ export function resetLocalCache(directory: string): CacheResetResult {
       "backfill",
       "cache_maintenance",
       "server_contacts",
+      "contact_candidates",
+      "contact_groups",
+      "contact_photos",
+      "sent_recipients",
       "contact_sync",
       "seen_incoming",
       "incoming_state",
@@ -229,6 +235,8 @@ export function resetLocalCache(directory: string): CacheResetResult {
     }
     if (tables.has("messages_fts"))
       db.exec("INSERT INTO messages_fts(messages_fts) VALUES ('rebuild')");
+    if (tables.has("contact_candidates_fts"))
+      db.exec("INSERT INTO contact_candidates_fts(contact_candidates_fts) VALUES ('rebuild')");
     if (tables.has("derived_fts"))
       db.exec("INSERT INTO derived_fts(derived_fts) VALUES ('rebuild')");
     db.exec("COMMIT");

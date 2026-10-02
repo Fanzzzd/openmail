@@ -473,8 +473,8 @@ it.effect("preferences, signatures and templates are stored in core", () =>
       yield* m.setSignature({ address: "Me@Gmail.com", kind: "new", text: "王\n产品部" });
       yield* m.setSignature({ address: "me@gmail.com", kind: "reply", text: "王" });
       assert.deepStrictEqual(yield* m.signatures, [
-        { address: "me@gmail.com", kind: "new", text: "王\n产品部" },
-        { address: "me@gmail.com", kind: "reply", text: "王" },
+        { address: "me@gmail.com", kind: "new", text: "王\n产品部", html: "王<br>产品部" },
+        { address: "me@gmail.com", kind: "reply", text: "王", html: "王" },
       ]);
       yield* m.setSignature({ address: "me@gmail.com", kind: "reply", text: " " });
       assert.strictEqual((yield* m.signatures).length, 1);

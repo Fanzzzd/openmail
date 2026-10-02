@@ -233,7 +233,12 @@ export const MailboxLive = (
       const pushDraft = Effect.fnUntraced(function* (account: Account, draftId: string) {
         const stored = yield* store.getDraft(draftId);
         // Discarded, or moved to another account (a newer op pushes it there).
-        if (Option.isNone(stored) || stored.value.accountId !== account.id) return;
+        if (
+          Option.isNone(stored) ||
+          stored.value.accountId !== account.id ||
+          stored.value.localOnly
+        )
+          return;
         const draft = stored.value;
         const adapter = providers.get(account.provider);
         const { message, original } = yield* prepare(draft.message).pipe(
@@ -256,8 +261,14 @@ export const MailboxLive = (
           original,
           replaceAttachments: key !== draft.pushedAttachments,
         });
-        if (!(yield* store.setDraftRemote(draftId, remote, key))) {
-          yield* adapter.deleteDraft(account, remote);
+        if (!(yield* store.setDraftRemote(draftId, remote, key, account.id))) {
+          yield* adapter
+            .deleteDraft(account, remote)
+            .pipe(
+              Effect.catch(() =>
+                store.enqueueOp(account.id, draftId, { kind: "deleteDraft", remote }),
+              ),
+            );
           return;
         }
         const old = draft.remote?.messageId;
@@ -317,16 +328,22 @@ export const MailboxLive = (
               }),
             ),
             Effect.catchTags({
-              AuthError: () =>
+              AuthError: (error) =>
                 Effect.gen(function* () {
+                  for (const item of items)
+                    if (item.op.kind === "saveDraft")
+                      yield* store.setDraftSyncError(item.op.draftId, error.message);
                   yield* store.setNeedsReauth(account.id, true);
                   yield* Effect.forEach(items, (item) => store.releasePendingOp(item.id), {
                     discard: true,
                   });
                   result.reauth.push(account.id);
                 }),
-              PermanentError: () =>
+              PermanentError: (error) =>
                 Effect.gen(function* () {
+                  for (const item of items)
+                    if (item.op.kind === "saveDraft")
+                      yield* store.setDraftSyncError(item.op.draftId, error.message);
                   yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
                     discard: true,
                   });
@@ -335,6 +352,8 @@ export const MailboxLive = (
               ProviderError: (error) =>
                 Effect.gen(function* () {
                   for (const item of items) {
+                    if (item.op.kind === "saveDraft")
+                      yield* store.setDraftSyncError(item.op.draftId, error.message);
                     blocked.add(`${item.accountId}/${item.providerId}`);
                     yield* item.attempts + 1 >= MAX_ATTEMPTS
                       ? store.removePendingOp(item.id)
@@ -429,7 +448,9 @@ export const MailboxLive = (
 
       /** Flushes without making the caller wait for the network. */
       const flushNow = flush().pipe(
-        Effect.flatMap((result) => (result.reauth.length ? changed : Effect.void)),
+        Effect.flatMap((result) =>
+          result.reauth.length || result.failed || result.done ? changed : Effect.void,
+        ),
         Effect.catchCause((cause) => Effect.logWarning("flush failed", cause)),
       );
       const flushLater =
@@ -754,14 +775,11 @@ export const MailboxLive = (
       // Drafts
 
       const publicDraft = Effect.fnUntraced(function* (draft: StoredDraft) {
-        const pending = yield* store.listPendingOps;
-        return toDraft(
-          draft,
-          pending.some((p) => p.op.kind === "saveDraft" && p.op.draftId === draft.id),
-        );
+        const saveStatus = yield* store.draftSaveState(draft.id);
+        return { ...toDraft(draft, saveStatus.pending), syncRetrying: saveStatus.retrying };
       });
 
-      const saveDraft = Effect.fn("Mailbox.saveDraft")(function* (input: DraftInput) {
+      const persistDraft = Effect.fnUntraced(function* (input: DraftInput, enqueue: boolean) {
         const account = yield* store.getAccount(input.accountId);
         const draftOrganizationInput = input.message.draftOrganization;
         if (
@@ -779,11 +797,12 @@ export const MailboxLive = (
         const saved = yield* store.transaction(
           Effect.gen(function* () {
             const existing = yield* store.getDraft(input.id);
+            const localOnly = Option.isSome(existing) && existing.value.localOnly;
             if (Option.isSome(existing)) {
               const old = existing.value;
-              // A new From account: the copy on the old account goes.
+              // Detach a local copy from its old mirror; synced drafts remove that mirror.
               if (old.accountId !== input.accountId && old.remote) {
-                yield* removeDraft(old);
+                yield* localOnly ? store.deleteDraft(old.id) : removeDraft(old);
               }
             } else {
               yield* store.audit({
@@ -798,15 +817,53 @@ export const MailboxLive = (
               accountId: input.accountId,
               message: normalizeComposeMessage(input.message),
             });
-            if (!isLocalFeedbackDraft(input.id))
+            const restoreLocalOnly = localOnly && !draft.localOnly;
+            if (restoreLocalOnly) yield* store.setDraftLocalOnly(input.id, true);
+            if (enqueue && !isLocalFeedbackDraft(input.id))
               yield* store.enqueueDraftSave(input.accountId, input.id);
-            return draft;
+            return restoreLocalOnly ? { ...draft, localOnly: true, syncError: null } : draft;
           }),
         );
+        return saved;
+      });
+      const saveDraft = Effect.fn("Mailbox.saveDraft")(function* (input: DraftInput) {
+        const saved = yield* persistDraft(input, true);
         yield* changed;
         yield* flushLater;
-        // Feedback remains local; regular drafts show the completed inline push.
         return yield* publicDraft(Option.getOrElse(yield* store.getDraft(input.id), () => saved));
+      });
+
+      const recoverDraft = Effect.fn("Mailbox.recoverDraft")(function* (
+        id: string,
+        action: "retry" | "local",
+        latest?: DraftInput,
+      ) {
+        if (latest && latest.id !== id)
+          return yield* new InvalidInput({ message: "Recovery draft id does not match" });
+        const draft = yield* store.transaction(
+          Effect.gen(function* () {
+            const stored = yield* store.getDraft(id);
+            if (Option.isNone(stored)) return yield* new NotFound({ what: "draft", id });
+            const saved = latest ? yield* persistDraft(latest, false) : stored.value;
+            yield* store.setDraftLocalOnly(id, action === "local");
+            if (action === "retry") yield* store.enqueueDraftSave(saved.accountId, id);
+            return saved;
+          }),
+        );
+        if (action === "retry") {
+          const account = yield* store.getAccount(draft.accountId);
+          if (account.needsReauth || account.enabled === false)
+            yield* store.setDraftSyncError(
+              id,
+              draft.syncError ??
+                (account.needsReauth
+                  ? "Sign in again to sync this draft"
+                  : "Enable the account to sync this draft"),
+            );
+          yield* flushLater;
+        }
+        yield* changed;
+        return yield* publicDraft(Option.getOrElse(yield* store.getDraft(id), () => draft));
       });
 
       const discardDraft = Effect.fn("Mailbox.discardDraft")(function* (id: string) {
@@ -1760,6 +1817,7 @@ export const MailboxLive = (
         composeAttachments,
         pendingSendCount: Effect.sync(() => pendingSends),
         saveDraft,
+        recoverDraft,
         discardDraft,
 
         indexingProgress: Effect.gen(function* () {
@@ -1799,6 +1857,11 @@ export const MailboxLive = (
               patch.updateChannel ? emit({ _tag: "UpdateSettingsChanged" }) : Effect.void,
             ),
           ),
+        namedSignatures: store.namedSignatures,
+        signatureDefaults: store.signatureDefaults,
+        saveNamedSignature: (input, id) => mutate(store.saveNamedSignature(input, id)),
+        deleteNamedSignature: (id) => mutate(store.deleteNamedSignature(id)),
+        setSignatureDefault: (setting) => mutate(store.setSignatureDefault(setting)),
         signatures: store.signatures,
         setSignature: (signature) => mutate(store.setSignature(signature)),
         templates: store.templates,
@@ -1807,6 +1870,7 @@ export const MailboxLive = (
 
         suggestContacts: (query, { limit = DEFAULT_SUGGESTIONS, exclude, accountIds } = {}) =>
           store.suggestContacts(query, limit, exclude, accountIds),
+        contactAlternatives: (address) => store.contactAlternatives(address),
         hiddenContacts: store.hiddenContacts,
         setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
 

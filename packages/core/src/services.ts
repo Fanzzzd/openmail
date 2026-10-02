@@ -1,3 +1,4 @@
+import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type {
   DeleteFolder,
   FolderScope,
@@ -167,6 +168,8 @@ export interface StoredDraft {
   /** attachmentsKey() of the attachments last pushed. */
   pushedAttachments: string | null;
   pushedOrganization: string | null;
+  syncError: string | null;
+  localOnly: boolean;
 }
 
 /**
@@ -327,8 +330,14 @@ export class Store extends Context.Service<
       id: string,
       remote: DraftRemote | null,
       pushedAttachments: string | null,
+      accountId?: string,
     ): Effect.Effect<boolean>;
     setDraftOrganizationKey(id: string, key: string | null): Effect.Effect<void>;
+    draftSaveState(
+      id: string,
+    ): Effect.Effect<{ readonly pending: boolean; readonly retrying: boolean }>;
+    setDraftSyncError(id: string, error: string | null): Effect.Effect<void>;
+    setDraftLocalOnly(id: string, localOnly: boolean): Effect.Effect<void>;
     /** Deletes the draft and its queued saves that are not being pushed. */
     deleteDraft(id: string): Effect.Effect<void>;
     /** Queues a push of the draft unless one is already waiting. */
@@ -356,6 +365,14 @@ export class Store extends Context.Service<
     readonly prefs: Effect.Effect<Prefs>;
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
     readonly signatures: Effect.Effect<Signature[]>;
+    readonly namedSignatures: Effect.Effect<NamedSignature[]>;
+    readonly signatureDefaults: Effect.Effect<readonly SignatureDefault[]>;
+    saveNamedSignature(
+      input: NamedSignatureInput,
+      id?: string,
+    ): Effect.Effect<NamedSignature, NotFound | InvalidInput>;
+    deleteNamedSignature(id: string): Effect.Effect<void>;
+    setSignatureDefault(setting: SignatureDefault): Effect.Effect<void, InvalidInput>;
     /** Empty text removes the signature. */
     setSignature(signature: Signature): Effect.Effect<void>;
     readonly templates: Effect.Effect<Template[]>;
@@ -411,6 +428,7 @@ export class Store extends Context.Service<
       exclude?: string,
       accountIds?: readonly string[],
     ): Effect.Effect<Address[]>;
+    contactAlternatives(address: string): Effect.Effect<readonly Address[]>;
     readonly hiddenContacts: Effect.Effect<string[]>;
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 

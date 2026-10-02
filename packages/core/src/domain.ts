@@ -110,6 +110,8 @@ export type Label = typeof Label.Type;
 export const Address = Schema.Struct({
   name: Schema.String,
   address: Schema.String,
+  /** Provider contact identity, only present on contact-source addresses. */
+  contactKey: Schema.optionalKey(Schema.String),
 });
 export type Address = typeof Address.Type;
 
@@ -402,6 +404,7 @@ export const OutgoingMessage = Schema.Struct({
   forwardAsAttachment: Schema.optionalKey(Schema.Boolean),
   /** Explicit attachment list replaces Graph createForward inherited attachments. */
   includeOriginalAttachments: Schema.optionalKey(Schema.Boolean),
+  signatureId: Schema.optionalKey(Schema.NullOr(Schema.String)),
 });
 export type OutgoingMessage = typeof OutgoingMessage.Type;
 
@@ -421,6 +424,10 @@ export const Draft = Schema.Struct({
   proposalId: Schema.NullOr(Schema.Number),
   /** A copy exists on the provider. False until the first push lands. */
   synced: Schema.Boolean,
+  syncError: Schema.optionalKey(Schema.NullOr(Schema.String)),
+  /** A save remains queued and the enabled account can retry it automatically. */
+  syncRetrying: Schema.optionalKey(Schema.Boolean),
+  localOnly: Schema.optionalKey(Schema.Boolean),
 });
 export type Draft = typeof Draft.Type;
 
@@ -591,6 +598,7 @@ export const Prefs = Schema.Struct({
   defaultFrom: Schema.NullOr(Schema.Struct({ accountId: Schema.String, address: Schema.String })),
   /** Show names and full email addresses in recipient chips. */
   showFullRecipientAddresses: Schema.Boolean,
+  replyFrom: Schema.Literals(["received", "default"]),
   quoteSelection: Schema.Literals(["ask", "always", "never"]),
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
@@ -636,6 +644,7 @@ export const DEFAULT_PREFS: Prefs = {
   undoSendSeconds: 5,
   defaultFrom: null,
   showFullRecipientAddresses: false,
+  replyFrom: "received",
   quoteSelection: "ask",
   language: "system",
   markReadDelay: 0,
@@ -665,6 +674,7 @@ export const Signature = Schema.Struct({
   address: Schema.String,
   kind: SignatureKind,
   text: Schema.String,
+  html: Schema.optionalKey(Schema.String),
 });
 export type Signature = typeof Signature.Type;
 

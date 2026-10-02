@@ -1,3 +1,5 @@
+import { SignatureSettings } from "./SignatureSettings";
+import { TemplateSettings } from "./TemplateSettings";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -8,24 +10,11 @@ import {
   COMPOSE_FONT_SIZES,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useState } from "react";
 
-import type { Account, SignatureKind } from "../../../shared/api";
+import type { Account } from "../../../shared/api";
 import { Keys } from "../state/keys";
-import {
-  deleteTemplateAtom,
-  setContactHiddenAtom,
-  setPrefsAtom,
-  setSignatureAtom,
-} from "../state/mutations";
-import {
-  accountsAtom,
-  sendAsAtom,
-  hiddenContactsAtom,
-  prefsAtom,
-  signaturesAtom,
-  templatesAtom,
-} from "../state/queries";
+import { setContactHiddenAtom, setPrefsAtom } from "../state/mutations";
+import { accountsAtom, sendAsAtom, hiddenContactsAtom, prefsAtom } from "../state/queries";
 import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
@@ -39,6 +28,7 @@ export function ComposeSettings() {
     <div className="space-y-6">
       <DefaultFrom />
       <ComposeAppearance />
+      <ReplyFrom />
       <RecipientAddresses />
       <QuoteSelection />
       <UndoSend />
@@ -103,107 +93,10 @@ function UndoSend() {
 }
 
 export function Signatures({ accounts }: { accounts: readonly Account[] }) {
-  const { t } = useLingui();
-  return (
-    <section>
-      <h3 className={heading}>
-        <Trans>Signatures</Trans>
-      </h3>
-      <div className="space-y-4">
-        {accounts.map((a) => (
-          <div key={a.id}>
-            <p className="mb-1.5 font-medium">{a.email}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <SignatureField address={a.email} kind="new" label={t`New messages`} />
-              <SignatureField address={a.email} kind="reply" label={t`Replies and forwards`} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2 text-neutral-500 dark:text-neutral-400">
-        <Trans>
-          Added as you write, and switched when you change the From account. Signatures stay on this
-          Mac.
-        </Trans>
-      </p>
-    </section>
-  );
+  return <SignatureSettings accounts={accounts} />;
 }
-
-function SignatureField({
-  address,
-  kind,
-  label,
-}: {
-  address: string;
-  kind: SignatureKind;
-  label: string;
-}) {
-  const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
-  const stored =
-    signatures.find((s) => s.address === address.toLowerCase() && s.kind === kind)?.text ?? "";
-  const [text, setText] = useState<string | null>(null);
-  const setSignature = useAtomSet(setSignatureAtom);
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[12px] text-neutral-500">{label}</span>
-      <textarea
-        value={text ?? stored}
-        rows={3}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => {
-          if (text === null || text === stored) return;
-          setSignature({
-            payload: { signature: { address, kind, text } },
-            reactivityKeys: [Keys.signatures],
-          });
-          setText(null);
-        }}
-        className={`${box} w-full resize-none bg-transparent px-2.5 py-1.5 outline-none focus:border-blue-500`}
-      />
-    </label>
-  );
-}
-
 function Templates() {
-  const templates = AsyncResult.getOrElse(useAtomValue(templatesAtom), () => []);
-  const remove = useAtomSet(deleteTemplateAtom);
-  return (
-    <section>
-      <h3 className={heading}>
-        <Trans>Templates</Trans>
-      </h3>
-      {templates.length === 0 ? (
-        <p className="text-neutral-500 dark:text-neutral-400">
-          <Trans>
-            No templates yet. While writing, press ⌘/ and choose “Save this message as a template”.
-          </Trans>
-        </p>
-      ) : (
-        <ul className={`${box} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
-          {templates.map((template) => (
-            <li key={template.id} className="flex items-center gap-3 px-3 py-2">
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{template.name}</span>
-                <span className="block truncate text-[12px] text-neutral-500">
-                  {template.subject || template.body.replace(/\s+/g, " ").slice(0, 80)}
-                </span>
-              </span>
-              <button
-                type="button"
-                onClick={() =>
-                  remove({ payload: { id: template.id }, reactivityKeys: [Keys.templates] })
-                }
-                className="h-7 shrink-0 rounded-md px-2.5 text-red-600 hover:bg-red-500/10 dark:text-red-400"
-              >
-                <Trans>Delete</Trans>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
+  return <TemplateSettings />;
 }
 
 function HiddenContacts() {
@@ -356,6 +249,28 @@ function ComposeAppearance() {
         />
         <span>{t`Show Google contact photos`}</span>
       </label>
+    </section>
+  );
+}
+
+function ReplyFrom() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  return (
+    <section>
+      <h3 className={heading}>{t`Reply From`}</h3>
+      <Select
+        aria-label={t`Reply From`}
+        value={prefs.replyFrom}
+        options={[
+          { value: "received", label: t`Use the address the message was sent to` },
+          { value: "default", label: t`Use the account default address` },
+        ]}
+        onValueChange={(replyFrom) =>
+          setPrefs({ payload: { patch: { replyFrom } }, reactivityKeys: [Keys.prefs] })
+        }
+      />
     </section>
   );
 }

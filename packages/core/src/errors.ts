@@ -38,6 +38,7 @@ export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
     "profile",
     "draft",
     "template",
+    "signature",
     "attachment",
   ]),
   id: Schema.String,

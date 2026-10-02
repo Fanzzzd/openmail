@@ -33,7 +33,13 @@ export function mergeContacts(contacts: readonly Address[]): Address[] {
     const address = contact.address.trim().toLowerCase();
     if (!/^[^\s@<>;,]+@[^\s@<>;,]+\.[^\s@<>;,]+$/.test(address)) continue;
     const previous = merged.get(address);
-    merged.set(address, { address, name: previous?.name || contact.name.trim() });
+    merged.set(address, {
+      address,
+      name: previous?.name || contact.name.trim(),
+      ...(previous?.contactKey || contact.contactKey
+        ? { contactKey: previous?.contactKey || contact.contactKey }
+        : {}),
+    });
   }
   return [...merged.values()];
 }

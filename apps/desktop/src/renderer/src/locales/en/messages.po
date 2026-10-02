@@ -210,8 +210,10 @@ msgstr "Action menu"
 msgid "Actions"
 msgstr "Actions"
 
+#. placeholder {0}: address.address
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/RecipientField.tsx
 msgid "Actions for {0}"
 msgstr "Actions for {0}"
 
@@ -298,10 +300,6 @@ msgstr "Add Your First Account"
 #: src/renderer/src/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "Added {email}. Syncing…"
-
-#: src/renderer/src/components/ComposeSettings.tsx
-msgid "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
-msgstr "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
 
 #: src/renderer/src/App.tsx
 msgid "Added star"
@@ -598,6 +596,7 @@ msgid "Batch actions"
 msgstr "Batch actions"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "Bcc"
 
@@ -614,6 +613,7 @@ msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Body"
 msgstr "Body"
 
@@ -676,6 +676,10 @@ msgid "Can't find this proposal."
 msgstr "Can't find this proposal."
 
 #: src/renderer/src/errors.ts
+msgid "Can't find this signature."
+msgstr "Can't find this signature."
+
+#: src/renderer/src/errors.ts
 msgid "Can't find this space."
 msgstr "Can't find this space."
 
@@ -727,6 +731,7 @@ msgstr "Category names, separated by commas"
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Cc"
 
@@ -818,6 +823,8 @@ msgstr "Clear selection"
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Close"
 msgstr "Close"
 
@@ -942,6 +949,10 @@ msgstr "Copied"
 msgid "Copy"
 msgstr "Copy"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Copy address"
+msgstr "Copy address"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to message"
 msgstr "Copy link to message"
@@ -954,6 +965,10 @@ msgstr "Copy selected"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Copy style"
 msgstr "Copy style"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Copy to local signature"
+msgstr "Copy to local signature"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1011,6 +1026,10 @@ msgstr "Could not register OpenMail. Try again from the installed app."
 msgid "Could not reset the local cache"
 msgstr "Could not reset the local cache"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Couldn't copy address"
+msgstr "Couldn't copy address"
+
 #: src/renderer/src/App.tsx
 msgid "Couldn't delete: {reason}"
 msgstr "Couldn't delete: {reason}"
@@ -1066,6 +1085,11 @@ msgstr "Couldn't save the PDF: {reason}"
 #: src/renderer/src/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "Couldn't send: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Couldn't sync"
+msgstr "Couldn't sync"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
@@ -1128,8 +1152,13 @@ msgstr "Database recovery was interrupted. Restore a preserved database before r
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Date"
 msgstr "Date"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Day"
+msgstr "Day"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1166,20 +1195,32 @@ msgstr "Default email app"
 msgid "Default From address"
 msgstr "Default From address"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Default signature"
+msgstr "Default signature"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "Delete"
+
+#. placeholder {0}: signature.name
+#. placeholder {0}: template.name
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Delete {0}"
+msgstr "Delete {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/App.tsx
@@ -1303,9 +1344,20 @@ msgid "Drag selected to Finder"
 msgstr "Drag selected to Finder"
 
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
 msgstr "Edit"
+
+#. placeholder {0}: template.name
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit {0}"
+msgstr "Edit {0}"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Edit address"
+msgstr "Edit address"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Edit automatic reply"
@@ -1320,11 +1372,19 @@ msgstr "Edit body"
 msgid "Edit link"
 msgstr "Edit link"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Edit signature"
+msgstr "Edit signature"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Edit space"
 msgstr "Edit space"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit template"
+msgstr "Edit template"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Edit this draft body?"
@@ -1386,9 +1446,17 @@ msgstr "End"
 msgid "Enter a future reminder time"
 msgstr "Enter a future reminder time"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Enter a signature name."
+msgstr "Enter a signature name."
+
 #: src/renderer/src/errors.ts
 msgid "Enter a single access token"
 msgstr "Enter a single access token"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter a template name."
+msgstr "Enter a template name."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -1397,6 +1465,10 @@ msgstr "Enter the IMAP and SMTP servers your email provider gives you."
 #: src/renderer/src/components/Feedback.tsx
 msgid "Enter the project's feedback address"
 msgstr "Enter the project's feedback address"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter valid email addresses in To, Cc and Bcc."
+msgstr "Enter valid email addresses in To, Cc and Bcc."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -1606,6 +1678,15 @@ msgstr "Gmail attachments exceed 25 MB in total. Remove attachments before sendi
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail blocks {filename}. Remove this attachment before sending."
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail copy"
+msgstr "Gmail copy"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail default"
+msgstr "Gmail default"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
@@ -1751,6 +1832,14 @@ msgstr "Insert image"
 msgid "Insert template"
 msgstr "Insert template"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable"
+msgstr "Insert variable"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable…"
+msgstr "Insert variable…"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
@@ -1789,6 +1878,15 @@ msgstr "Justify"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
 msgstr "Keep bodies in {0}"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Keep local copy"
+msgstr "Keep local copy"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Kept on this Mac"
+msgstr "Kept on this Mac"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1921,6 +2019,10 @@ msgstr "Loading…"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "Local preview: {count} messages"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
+msgstr "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2128,6 +2230,10 @@ msgstr "Modify {token}"
 msgid "Monday"
 msgstr "Monday"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Month"
+msgstr "Month"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
 msgstr "More"
@@ -2182,6 +2288,14 @@ msgstr "Move message to Trash"
 msgid "Move To"
 msgstr "Move To"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Bcc"
+msgstr "Move to Bcc"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Cc"
+msgstr "Move to Cc"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2198,6 +2312,10 @@ msgstr "Move to folder…"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "Move to Inbox"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to To"
+msgstr "Move to To"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -2266,19 +2384,31 @@ msgstr "New message"
 msgid "New Message"
 msgstr "New Message"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New message signature for {address}"
+msgstr "New message signature for {address}"
+
 #: src/renderer/src/state/desktop.ts
 msgid "new messages"
 msgstr "new messages"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "New messages"
 msgstr "New messages"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New signature"
+msgstr "New signature"
 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "New space"
 msgstr "New space"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "New template"
+msgstr "New template"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -2386,10 +2516,6 @@ msgstr "No suggestions waiting for review."
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "No templates yet. Use {token} for the first recipient's name."
 
-#: src/renderer/src/components/ComposeSettings.tsx
-msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
-msgstr "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
-
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "No time zone supplied; shown in your local time."
 msgstr "No time zone supplied; shown in your local time."
@@ -2403,8 +2529,10 @@ msgid "No unread mail in the inbox"
 msgstr "No unread mail in the inbox"
 
 #: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "None"
 
@@ -2782,6 +2910,22 @@ msgstr "Read only"
 msgid "Reading"
 msgstr "Reading"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient email"
+msgstr "Recipient email"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient first name"
+msgstr "Recipient first name"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient last name"
+msgstr "Recipient last name"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient name"
+msgstr "Recipient name"
+
 #: src/renderer/src/recovery-labels.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
@@ -2923,7 +3067,7 @@ msgstr "Replace emoji text as you type"
 msgid "Replace with"
 msgstr "Replace with"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "Replies and forwards"
 msgstr "Replies and forwards"
 
@@ -2944,6 +3088,10 @@ msgstr "Reply all"
 msgid "Reply All"
 msgstr "Reply All"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Reply From"
+msgstr "Reply From"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply mode"
 msgstr "Reply mode"
@@ -2951,6 +3099,10 @@ msgstr "Reply mode"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Reply only to contacts"
 msgstr "Reply only to contacts"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Reply signature for {address}"
+msgstr "Reply signature for {address}"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -2996,6 +3148,14 @@ msgstr "Restore the saved original rule on the server. Preview: {0} messages."
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "Resume"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Resume syncing"
+msgstr "Resume syncing"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Retry"
+msgstr "Retry"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -3052,6 +3212,8 @@ msgstr "Saturday"
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Save"
 msgstr "Save"
 
@@ -3107,6 +3269,8 @@ msgid "Save…"
 msgstr "Save…"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "Saved"
 
@@ -3121,6 +3285,10 @@ msgstr "Saved as EML"
 #: src/renderer/src/components/Reader.tsx
 msgid "Saved as PDF"
 msgstr "Saved as PDF"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Retrying sync automatically."
+msgstr "Saved on this Mac. Retrying sync automatically."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved on this Mac. Syncs when online."
@@ -3233,6 +3401,22 @@ msgstr "Send Feedback…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "Send this message without a subject?"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender email"
+msgstr "Sender email"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender first name"
+msgstr "Sender first name"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender last name"
+msgstr "Sender last name"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender name"
+msgstr "Sender name"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
@@ -3409,8 +3593,16 @@ msgstr "Sign In with Browser"
 msgid "Sign-in failed: {reason}"
 msgstr "Sign-in failed: {reason}"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Composer.tsx
+msgid "Signature"
+msgstr "Signature"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature name"
+msgstr "Signature name"
+
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "Signatures"
 msgstr "Signatures"
 
@@ -3536,6 +3728,7 @@ msgstr "Strikethrough"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Subject"
 msgstr "Subject"
 
@@ -3615,12 +3808,13 @@ msgid "System notification permission"
 msgstr "System notification permission"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Template name"
 msgstr "Template name"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Templates"
 msgstr "Templates"
 
@@ -3795,6 +3989,7 @@ msgid "Thursday"
 msgstr "Thursday"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "Time"
 
@@ -3802,6 +3997,7 @@ msgstr "Time"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "To"
 
@@ -3940,6 +4136,10 @@ msgstr "Update checks require a signed, installed macOS app and a saved GitHub a
 msgid "Updates"
 msgstr "Updates"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
+msgstr "Use {token} for a custom variable. You will be asked for its value when inserting the template."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Use an http, https or mailto link"
 msgstr "Use an http, https or mailto link"
@@ -3959,6 +4159,14 @@ msgstr "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use selection for find"
 msgstr "Use selection for find"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the account default address"
+msgstr "Use the account default address"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the address the message was sent to"
+msgstr "Use the address the message was sent to"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
@@ -4012,6 +4220,10 @@ msgstr "Window"
 msgid "Writing mode"
 msgstr "Writing mode"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Year"
+msgstr "Year"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts
 msgid "Yesterday"
@@ -4028,6 +4240,10 @@ msgstr "You"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "You (command line)"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Your changes are saved on this Mac. Try again or keep a local copy."
+msgstr "Your changes are saved on this Mac. Try again or keep a local copy."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

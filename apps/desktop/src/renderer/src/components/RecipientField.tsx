@@ -1,10 +1,18 @@
+import {
+  RECIPIENT_MIME,
+  parseRecipientDrag,
+  replaceRecipient,
+  type RecipientDrag,
+  type RecipientFieldName,
+} from "../recipient-actions";
+import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { recipientLabel, splitAddresses } from "@openmail/core/schema";
 import { Combobox } from "@base-ui/react/combobox";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { AsyncResult, Atom } from "effect/reactivity";
-import { X } from "lucide-react";
-import { type Ref, useState } from "react";
+import { MoreHorizontal, X } from "lucide-react";
+import { type Ref, useRef, useState } from "react";
 
 import type { Address } from "../../../shared/api";
 import { ADDRESS_SEPARATOR, formatAddress, parseAddresses } from "../draft";
@@ -12,7 +20,7 @@ import type { AppError } from "../errors";
 import { displayName } from "../format";
 import { Keys } from "../state/keys";
 import { setContactHiddenAtom } from "../state/mutations";
-import { contactGroupsAtom, suggestionsAtom } from "../state/queries";
+import { contactGroupsAtom, contactAlternativesAtom, suggestionsAtom } from "../state/queries";
 import { itemClass, popupMotion, popupSurface } from "./ui/styles";
 
 type Suggestions = Atom.Atom<AsyncResult.AsyncResult<readonly Address[], AppError>>;
@@ -20,6 +28,10 @@ const none: Suggestions = Atom.make(AsyncResult.success([]));
 
 interface Props {
   label: string;
+  fieldName?: RecipientFieldName;
+  onMove?: (index: number, target: RecipientFieldName) => void;
+  onDropRecipient?: (chip: RecipientDrag) => void;
+  onDragChip?: () => void;
   value: string;
   onChange: (value: string) => void;
   inputRef?: Ref<HTMLInputElement>;
@@ -54,8 +66,14 @@ export function RecipientField({
   inputRef,
   from,
   showFullAddresses,
+  fieldName,
+  onMove,
+  onDropRecipient,
+  onDragChip,
 }: Props) {
   const { t } = useLingui();
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const [copyError, setCopyError] = useState(false);
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | undefined>();
@@ -140,13 +158,40 @@ export function RecipientField({
       autoHighlight
       onItemHighlighted={(item) => setHighlighted(item)}
     >
-      <Combobox.Chips className="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5">
+      <Combobox.Chips
+        ref={fieldRef}
+        onDragOver={(event) => {
+          if (onDropRecipient && event.dataTransfer.types.includes(RECIPIENT_MIME)) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+          }
+        }}
+        onDrop={(event) => {
+          const chip = parseRecipientDrag(event.dataTransfer.getData(RECIPIENT_MIME));
+          if (chip && onDropRecipient) {
+            event.preventDefault();
+            event.stopPropagation();
+            onDropRecipient(chip);
+          }
+        }}
+        className="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5"
+      >
         {chips.map((text, i) => {
           const address = parseAddresses(text).addresses[0];
           return (
             <Combobox.Chip
               key={`${i}:${text}`}
               aria-label={text}
+              draggable={Boolean(address && fieldName)}
+              onDragStart={(event) => {
+                if (!address || !fieldName) return;
+                event.dataTransfer.setData(
+                  RECIPIENT_MIME,
+                  JSON.stringify({ source: fieldName, index: i, text }),
+                );
+                event.dataTransfer.effectAllowed = "move";
+                onDragChip?.();
+              }}
               className={`group flex h-[22px] max-w-full items-center gap-0.5 rounded-[5px] pr-0.5 pl-1.5 outline-none focus:bg-blue-500 focus:text-white ${
                 address
                   ? "bg-blue-500/10 text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
@@ -156,6 +201,30 @@ export function RecipientField({
               <span className="truncate">
                 {address ? recipientLabel(address, showFullAddresses) : text}
               </span>
+              {address && (
+                <ChipActions
+                  address={address}
+                  fieldName={fieldName}
+                  onCopy={() => {
+                    void navigator.clipboard.writeText(address.address).then(
+                      () => setCopyError(false),
+                      () => setCopyError(true),
+                    );
+                  }}
+                  onEdit={() => {
+                    setTyped(text);
+                    emit(
+                      serialize(
+                        chips.filter((_, index) => index !== i),
+                        text,
+                      ),
+                    );
+                    requestAnimationFrame(() => fieldRef.current?.querySelector("input")?.focus());
+                  }}
+                  onReplace={(next) => emit(replaceRecipient(value, i, next))}
+                  onMove={onMove ? (target) => onMove(i, target) : undefined}
+                />
+              )}
               <Combobox.ChipRemove
                 aria-label={t`Remove ${text}`}
                 tabIndex={-1}
@@ -187,6 +256,7 @@ export function RecipientField({
           className="h-[22px] min-w-24 flex-1 bg-transparent text-[13px] outline-none placeholder:text-neutral-400"
         />
       </Combobox.Chips>
+      {copyError && <output>{t`Couldn't copy address`}</output>}
       <Combobox.Portal>
         <Combobox.Positioner
           side="bottom"
@@ -251,5 +321,62 @@ export function RecipientField({
         </Combobox.Positioner>
       </Combobox.Portal>
     </Combobox.Root>
+  );
+}
+
+function ChipActions({
+  address,
+  fieldName,
+  onCopy,
+  onEdit,
+  onReplace,
+  onMove,
+}: {
+  address: Address;
+  fieldName: RecipientFieldName | undefined;
+  onCopy: () => void;
+  onEdit: () => void;
+  onReplace: (address: Address) => void;
+  onMove: ((target: RecipientFieldName) => void) | undefined;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+  const alternatives = AsyncResult.getOrElse(
+    useAtomValue(open ? contactAlternativesAtom(address.address) : none),
+    () => [],
+  );
+  return (
+    <DropdownMenu
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <button
+          type="button"
+          aria-label={t`Actions for ${address.address}`}
+          className="rounded p-0.5 hover:bg-black/10"
+        >
+          <MoreHorizontal className="size-3" />
+        </button>
+      }
+    >
+      <MenuItem onClick={onCopy}>{t`Copy address`}</MenuItem>
+      <MenuItem onClick={onEdit}>{t`Edit address`}</MenuItem>
+      {onMove && fieldName !== "to" && (
+        <MenuItem onClick={() => onMove("to")}>{t`Move to To`}</MenuItem>
+      )}
+      {onMove && fieldName !== "cc" && (
+        <MenuItem onClick={() => onMove("cc")}>{t`Move to Cc`}</MenuItem>
+      )}
+      {onMove && fieldName !== "bcc" && (
+        <MenuItem onClick={() => onMove("bcc")}>{t`Move to Bcc`}</MenuItem>
+      )}
+      {alternatives
+        .filter((a) => a.address.toLowerCase() !== address.address.toLowerCase())
+        .map((a) => (
+          <MenuItem key={a.address} onClick={() => onReplace(a)}>
+            {a.address}
+          </MenuItem>
+        ))}
+    </DropdownMenu>
   );
 }

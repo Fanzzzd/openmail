@@ -12,6 +12,7 @@ import { graphTimestamp } from "./graph-time.js";
 import { featureRequest } from "./provider-features.js";
 
 const Person = Schema.Struct({
+  resourceName: Schema.optionalKey(Schema.String),
   photos: Schema.optionalKey(
     Schema.Array(
       Schema.Struct({
@@ -170,7 +171,13 @@ export function makeGmailFeatures<
               const addresses = mergeContacts(
                 (person.emailAddresses ?? []).flatMap((email) =>
                   email.value
-                    ? [{ address: email.value, name: person.names?.[0]?.displayName ?? "" }]
+                    ? [
+                        {
+                          address: email.value,
+                          name: person.names?.[0]?.displayName ?? "",
+                          ...(person.resourceName ? { contactKey: person.resourceName } : {}),
+                        },
+                      ]
                     : [],
                 ),
               );

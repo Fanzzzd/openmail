@@ -138,7 +138,9 @@ export function toDraft(d: StoredDraft, pendingSave = false): Draft {
     message: d.message,
     updatedAt: d.updatedAt,
     proposalId: d.proposalId,
-    synced: d.remote !== null && !pendingSave,
+    synced: d.remote !== null && !pendingSave && !d.syncError && !d.localOnly,
+    syncError: d.syncError,
+    localOnly: d.localOnly,
   };
 }
 

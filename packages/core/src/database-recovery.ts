@@ -29,6 +29,8 @@ export const RECOVERY_TABLES = [
   "pending_ops",
   "prefs",
   "signatures",
+  "named_signatures",
+  "signature_defaults",
   "templates",
   "hidden_contacts",
   "image_senders",

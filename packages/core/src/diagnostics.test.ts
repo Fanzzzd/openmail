@@ -372,6 +372,8 @@ it("salvages every migrated non-cache table from a database with a damaged cache
       `INSERT INTO ${table}(${columns.map((c) => c.name).join(",")}) VALUES (${columns.map(() => "?").join(",")})`,
     ).run(...values);
   }
+  db.exec("UPDATE signature_defaults SET signature_id=(SELECT id FROM named_signatures LIMIT 1)");
+  db.exec("UPDATE drafts SET local_only=1,sync_error='Keep these local edits'");
   const expected = new Map(
     retained.map((table) => [table, db.prepare(`SELECT * FROM ${table}`).all()]),
   );
@@ -459,6 +461,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "derived_jobs",
     "derived_chunks",
     "server_contacts",
+    "contact_candidates",
     "contact_sync",
     "contact_groups",
     "contact_photos",
@@ -475,7 +478,10 @@ it("enumerates every migrated plain table as retained state or disposable cache"
   ]);
   try {
     for (const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()) {
-      if (typeof row.name !== "string" || /^(?:sqlite_|messages_fts|derived_fts)/.test(row.name))
+      if (
+        typeof row.name !== "string" ||
+        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts)/.test(row.name)
+      )
         continue;
       expect([...RECOVERY_TABLES, ...cache]).toContain(row.name);
     }

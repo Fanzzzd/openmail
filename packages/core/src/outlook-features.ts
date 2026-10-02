@@ -10,10 +10,12 @@ const Email = Schema.Struct({
   name: Schema.optionalKey(Schema.String),
 });
 const Contact = Schema.Struct({
+  id: Schema.optionalKey(Schema.String),
   displayName: Schema.optionalKey(Schema.NullOr(Schema.String)),
   emailAddresses: Schema.optionalKey(Schema.Array(Email)),
 });
 const Person = Schema.Struct({
+  id: Schema.optionalKey(Schema.String),
   displayName: Schema.optionalKey(Schema.NullOr(Schema.String)),
   scoredEmailAddresses: Schema.optionalKey(Schema.Array(Email)),
 });
@@ -69,8 +71,8 @@ export function makeOutlookFeatures<
           for (const source of ["contacts", "people"] as const) {
             const select =
               source === "contacts"
-                ? "displayName,emailAddresses"
-                : "displayName,scoredEmailAddresses";
+                ? "id,displayName,emailAddresses"
+                : "id,displayName,scoredEmailAddresses";
             let path = `/me/${source}?$select=${select}&$top=250`;
             const seen = new Set<string>();
             while (path) {
@@ -93,6 +95,7 @@ export function makeOutlookFeatures<
                     contacts.push({
                       address: email.address,
                       name: person.displayName ?? email.name ?? "",
+                      ...(person.id ? { contactKey: `${source}:${person.id}` } : {}),
                     });
               }
               path = page["@odata.nextLink"]

@@ -100,6 +100,14 @@ export const prefsAtom = MailClient.query("Prefs", undefined, {
   ...always,
 });
 
+export const namedSignaturesAtom = MailClient.query("NamedSignatures", undefined, {
+  reactivityKeys: [Keys.signatures],
+  ...always,
+});
+export const signatureDefaultsAtom = MailClient.query("SignatureDefaults", undefined, {
+  reactivityKeys: [Keys.signatures],
+  ...always,
+});
 export const signaturesAtom = MailClient.query("Signatures", undefined, {
   reactivityKeys: [Keys.signatures],
   ...always,
@@ -110,6 +118,14 @@ export const templatesAtom = MailClient.query("Templates", undefined, {
   ...cached,
 });
 
+export const contactAlternativesAtom = (address: string) =>
+  MailClient.query(
+    "ContactAlternatives",
+    { address },
+    { reactivityKeys: [Keys.contacts], ...cached },
+  );
+export const draftStatusAtom = (id: string) =>
+  MailClient.query("OpenDraft", { id }, { reactivityKeys: [Keys.threads], ...cached });
 export const hiddenContactsAtom = MailClient.query("HiddenContacts", undefined, {
   reactivityKeys: [Keys.contacts],
   ...cached,

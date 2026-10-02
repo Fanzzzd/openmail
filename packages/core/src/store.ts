@@ -57,6 +57,7 @@ import {
 import { makeOrganizationStore } from "./store-organization.js";
 import { makeContactStore } from "./store-contacts.js";
 import { makeCacheStore } from "./store-cache.js";
+import { makeSignatureStore } from "./store-signatures.js";
 import { makeComposeStore } from "./store-compose.js";
 import { notificationEligible, profileNotificationsActive } from "./system.js";
 
@@ -269,6 +270,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const sql = yield* SqlClient.SqlClient;
     const cache = makeCacheStore(sql);
     const compose = makeComposeStore(sql);
+    const signatureLibrary = makeSignatureStore(sql);
     const capabilities = yield* Effect.serviceOption(DatabaseCapabilities);
     const vectors = Option.isSome(capabilities) && capabilities.value.vectors;
     const media = makeMediaStore(sql, vectors);
@@ -1398,11 +1400,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       putDraft: compose.putDraft,
       setDraftRemote: compose.setDraftRemote,
       setDraftOrganizationKey: compose.setDraftOrganizationKey,
+      draftSaveState: compose.draftSaveState,
+      setDraftSyncError: compose.setDraftSyncError,
+      setDraftLocalOnly: compose.setDraftLocalOnly,
       deleteDraft: compose.deleteDraft,
       enqueueDraftSave: compose.enqueueDraftSave,
       dropSyncedDrafts: compose.dropSyncedDrafts,
       prefs: compose.prefs,
       setPrefs: compose.setPrefs,
+      ...signatureLibrary,
       signatures: compose.signatures,
       setSignature: compose.setSignature,
       templates: compose.templates,
@@ -1410,6 +1416,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       deleteTemplate: compose.deleteTemplate,
       ...contacts,
       setMessageWebLink: (id, url) => run(sql`UPDATE messages SET web_link=${url} WHERE id=${id}`),
+      contactAlternatives: contacts.contactAlternatives,
       suggestContacts: compose.suggestContacts,
       hiddenContacts: compose.hiddenContacts,
       setContactHidden: compose.setContactHidden,

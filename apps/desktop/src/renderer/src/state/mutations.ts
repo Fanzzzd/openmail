@@ -22,6 +22,9 @@ export const setAccountSettingsAtom = Atom.family((_id: string) =>
 );
 export const moveAccountAtom = MailClient.mutation("MoveAccount");
 export const setPrefsAtom = MailClient.mutation("SetPrefs");
+export const saveNamedSignatureAtom = MailClient.mutation("SaveNamedSignature");
+export const deleteNamedSignatureAtom = MailClient.mutation("DeleteNamedSignature");
+export const setSignatureDefaultAtom = MailClient.mutation("SetSignatureDefault");
 export const setSignatureAtom = MailClient.mutation("SetSignature");
 export const saveTemplateAtom = MailClient.mutation("SaveTemplate");
 export const deleteTemplateAtom = MailClient.mutation("DeleteTemplate");

@@ -1,6 +1,7 @@
 import {
   displayName,
   applySignature,
+  replyFromAddress,
   isEmailAddress,
   replyRecipients,
   splitAddresses,
@@ -50,6 +51,10 @@ export interface Draft {
   loadOriginalAttachments?: boolean;
   /** Whether the version opened from storage was synced to the provider. */
   synced?: boolean;
+  syncError?: string | null;
+  syncRetrying?: boolean;
+  localOnly?: boolean;
+  signatureId?: string | null;
   organization?: OutgoingMessage["draftOrganization"];
   /** The agent proposal this draft came from. */
   proposalId?: number;
@@ -150,6 +155,7 @@ export function draftFor(
   asAttachment = false,
   aliases: readonly Pick<SendAs, "accountId" | "address">[] = [],
   selectedText?: string,
+  replyFrom?: { preference: "received" | "default"; aliases: readonly SendAs[] },
 ): Draft {
   const { to, cc } =
     mode === "forward"
@@ -178,6 +184,9 @@ export function draftFor(
     id: newDraftId(),
     mode,
     accountId: account.id,
+    ...(mode !== "forward" && replyFrom
+      ? { from: replyFromAddress(m, account, replyFrom.aliases, replyFrom.preference) }
+      : {}),
     to: to.map(formatAddress).join(", "),
     cc: cc.map(formatAddress).join(", "),
     bcc: "",
@@ -205,6 +214,10 @@ export function fromStored(d: StoredDraft): Draft {
   return {
     id: d.id,
     synced: d.synced,
+    ...(m.signatureId === undefined ? {} : { signatureId: m.signatureId }),
+    syncError: d.syncError,
+    syncRetrying: d.syncRetrying,
+    localOnly: d.localOnly,
     ...(m.draftOrganization ? { organization: m.draftOrganization } : {}),
     mode: m.mode ?? "new",
     accountId: d.accountId,
@@ -253,6 +266,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
         ? {}
         : { includeOriginalAttachments: d.includeOriginalAttachments }),
       mode: d.mode,
+      ...(d.signatureId === undefined ? {} : { signatureId: d.signatureId }),
       ...(d.inReplyTo ? { inReplyTo: d.inReplyTo } : {}),
       ...(body.kind === "markdown" ? { markdown: true } : {}),
       ...(d.forwardAsAttachment ? { forwardAsAttachment: true } : {}),
@@ -341,7 +355,7 @@ export function needsClosePrompt(
   if (stored === null && draft === options.initial) return false;
   const { message, invalid } = toMessage(draft);
   return (
-    !stored?.synced ||
+    (!stored?.synced && !stored?.localOnly) ||
     stored.accountId !== draft.accountId ||
     invalid.length > 0 ||
     JSON.stringify(message) !== JSON.stringify(toMessage(fromStored(stored)).message)

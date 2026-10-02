@@ -6,7 +6,7 @@ import { richComposeBody, composeConversion, normalizeComposeMessage } from "./c
 it("template form discovers unique custom variables across subject/body and never expands values twice", () => {
   expect(
     customTemplateVariables("{project}: {first_name}", "{project} {date} {email} {toString}"),
-  ).toEqual(["project", "date", "toString"]);
+  ).toEqual(["project", "toString"]);
   expect(
     fillTemplate(
       "{name} {project} {date}",

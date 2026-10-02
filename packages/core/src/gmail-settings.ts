@@ -1,3 +1,4 @@
+import { richComposeBody } from "./compose-body.js";
 import { Effect, Schema, Schedule } from "effect";
 import type { Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
@@ -286,7 +287,8 @@ export function makeGmailSettings<
                   address: a.sendAsEmail,
                   name: a.displayName ?? "",
                   isDefault: a.isDefault ?? false,
-                  signature: htmlToText(a.signature ?? ""),
+                  signature: richComposeBody(a.signature ?? "").text,
+                  signatureHtml: richComposeBody(a.signature ?? "").html,
                 })),
             ),
           ),

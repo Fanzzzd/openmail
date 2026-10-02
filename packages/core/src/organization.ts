@@ -165,6 +165,7 @@ export const SendAs = Schema.Struct({
   name: Schema.String,
   isDefault: Schema.Boolean,
   signature: Schema.String,
+  signatureHtml: Schema.optionalKey(Schema.String),
 });
 export type SendAs = typeof SendAs.Type;
 

@@ -1,3 +1,4 @@
+import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "./attachment-view.js";
 import type { FolderScope, DeleteFolder } from "./folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "./media.js";
@@ -367,6 +368,11 @@ export class Mailbox extends Context.Service<
     openDraft(id: string): Effect.Effect<Draft, PerformError>;
     /** Saves locally right away; the provider's copy follows through the change queue. */
     saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound | InvalidInput>;
+    recoverDraft(
+      id: string,
+      action: "retry" | "local",
+      latest?: DraftInput,
+    ): Effect.Effect<Draft, NotFound | InvalidInput>;
     /** Deletes the draft here and on the provider. An agent's draft rejects its proposal. */
     discardDraft(id: string): Effect.Effect<void>;
 
@@ -382,6 +388,14 @@ export class Mailbox extends Context.Service<
     setPrefs(patch: Partial<Prefs>): Effect.Effect<void>;
     /** Local signatures take precedence over synced Gmail send-as signatures. */
     readonly signatures: Effect.Effect<Signature[]>;
+    readonly namedSignatures: Effect.Effect<NamedSignature[]>;
+    readonly signatureDefaults: Effect.Effect<readonly SignatureDefault[]>;
+    saveNamedSignature(
+      input: NamedSignatureInput,
+      id?: string,
+    ): Effect.Effect<NamedSignature, NotFound | InvalidInput>;
+    deleteNamedSignature(id: string): Effect.Effect<void>;
+    setSignatureDefault(setting: SignatureDefault): Effect.Effect<void, InvalidInput>;
     setSignature(signature: Signature): Effect.Effect<void>;
     readonly templates: Effect.Effect<Template[]>;
     /** Creates a template, or updates the one with `id`. */
@@ -405,6 +419,7 @@ export class Mailbox extends Context.Service<
         readonly accountIds?: readonly string[];
       },
     ): Effect.Effect<Address[]>;
+    contactAlternatives(address: string): Effect.Effect<readonly Address[]>;
     readonly hiddenContacts: Effect.Effect<string[]>;
     /** Hides an address from suggestions, or shows it again. */
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;

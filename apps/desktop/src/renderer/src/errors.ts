@@ -16,6 +16,7 @@ const NOT_FOUND = {
   profile: msg`Can't find this space.`,
   draft: msg`Can't find this draft.`,
   template: msg`Can't find this template.`,
+  signature: msg`Can't find this signature.`,
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {

@@ -216,8 +216,10 @@ msgstr "动作菜单"
 msgid "Actions"
 msgstr "操作"
 
+#. placeholder {0}: address.address
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/RecipientField.tsx
 msgid "Actions for {0}"
 msgstr "{0} 的操作"
 
@@ -304,10 +306,6 @@ msgstr "添加第一个邮箱"
 #: src/renderer/src/App.tsx
 msgid "Added {email}. Syncing…"
 msgstr "已添加 {email}，正在同步"
-
-#: src/renderer/src/components/ComposeSettings.tsx
-msgid "Added as you write, and switched when you change the From account. Signatures stay on this Mac."
-msgstr "写信时自动加上；换发件账户时跟着换。签名只存在本机。"
 
 #: src/renderer/src/App.tsx
 msgid "Added star"
@@ -604,6 +602,7 @@ msgid "Batch actions"
 msgstr "批量操作"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "密送"
 
@@ -620,6 +619,7 @@ msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Body"
 msgstr "正文"
 
@@ -682,6 +682,10 @@ msgid "Can't find this proposal."
 msgstr "找不到这个建议。"
 
 #: src/renderer/src/errors.ts
+msgid "Can't find this signature."
+msgstr "找不到这个签名。"
+
+#: src/renderer/src/errors.ts
 msgid "Can't find this space."
 msgstr "找不到这个空间。"
 
@@ -733,6 +737,7 @@ msgstr "分类名称，用逗号分隔"
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "抄送"
 
@@ -824,6 +829,8 @@ msgstr "清除选择"
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -948,6 +955,10 @@ msgstr "已复制"
 msgid "Copy"
 msgstr "复制"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Copy address"
+msgstr "复制地址"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to message"
 msgstr "复制邮件链接"
@@ -960,6 +971,10 @@ msgstr "复制选中附件"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Copy style"
 msgstr "复制样式"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Copy to local signature"
+msgstr "复制为本地签名"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1017,6 +1032,10 @@ msgstr "注册失败，请从安装后的 app 重试。"
 msgid "Could not reset the local cache"
 msgstr "无法重置本地缓存"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Couldn't copy address"
+msgstr "无法复制地址"
+
 #: src/renderer/src/App.tsx
 msgid "Couldn't delete: {reason}"
 msgstr "删除失败：{reason}"
@@ -1072,6 +1091,11 @@ msgstr "无法保存 PDF：{reason}"
 #: src/renderer/src/App.tsx
 msgid "Couldn't send: {reason}"
 msgstr "发送失败：{reason}"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Couldn't sync"
+msgstr "无法同步"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
@@ -1134,8 +1158,13 @@ msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 Op
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Date"
 msgstr "日期"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Day"
+msgstr "日"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1172,20 +1201,32 @@ msgstr "默认邮件客户端"
 msgid "Default From address"
 msgstr "默认发件地址"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Default signature"
+msgstr "默认签名"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "删除"
+
+#. placeholder {0}: signature.name
+#. placeholder {0}: template.name
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Delete {0}"
+msgstr "删除 {0}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/App.tsx
@@ -1309,9 +1350,20 @@ msgid "Drag selected to Finder"
 msgstr "将选中附件拖到访达"
 
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
 msgstr "编辑"
+
+#. placeholder {0}: template.name
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit {0}"
+msgstr "编辑 {0}"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Edit address"
+msgstr "编辑地址"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Edit automatic reply"
@@ -1326,11 +1378,19 @@ msgstr "编辑正文"
 msgid "Edit link"
 msgstr "编辑链接"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Edit signature"
+msgstr "编辑签名"
+
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Edit space"
 msgstr "编辑空间"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit template"
+msgstr "编辑模板"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Edit this draft body?"
@@ -1392,9 +1452,17 @@ msgstr "结束"
 msgid "Enter a future reminder time"
 msgstr "请输入未来的提醒时间"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Enter a signature name."
+msgstr "请输入签名名称。"
+
 #: src/renderer/src/errors.ts
 msgid "Enter a single access token"
 msgstr "请输入一个访问令牌"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter a template name."
+msgstr "请输入模板名称。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -1403,6 +1471,10 @@ msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Enter the project's feedback address"
 msgstr "填写项目反馈邮箱"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter valid email addresses in To, Cc and Bcc."
+msgstr "请在收件人、抄送和密送中输入有效邮箱地址。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -1612,6 +1684,15 @@ msgstr "Gmail 附件总大小超过 25 MB，请移除部分附件后发送。"
 msgid "Gmail blocks {filename}. Remove this attachment before sending."
 msgstr "Gmail 禁止发送 {filename}，请移除此附件。"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail copy"
+msgstr "Gmail 副本"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail default"
+msgstr "Gmail 默认签名"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
@@ -1757,6 +1838,14 @@ msgstr "插入图片"
 msgid "Insert template"
 msgstr "插入模板"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable"
+msgstr "插入变量"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable…"
+msgstr "插入变量…"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
@@ -1795,6 +1884,15 @@ msgstr "两端对齐"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
 msgstr "{0} 正文保留期限"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Keep local copy"
+msgstr "保留本地副本"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Kept on this Mac"
+msgstr "已保留在此 Mac"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1927,6 +2025,10 @@ msgstr "加载中…"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "本地预览：{count} 封邮件"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
+msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2134,6 +2236,10 @@ msgstr "修改 {token}"
 msgid "Monday"
 msgstr "星期一"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Month"
+msgstr "月"
+
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
 msgstr "更多"
@@ -2188,6 +2294,14 @@ msgstr "将此邮件移到废纸篓"
 msgid "Move To"
 msgstr "移动到"
 
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Bcc"
+msgstr "移到密送"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Cc"
+msgstr "移到抄送"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2204,6 +2318,10 @@ msgstr "移到文件夹…"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "移回收件箱"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to To"
+msgstr "移到收件人"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -2272,19 +2390,31 @@ msgstr "写邮件"
 msgid "New Message"
 msgstr "新邮件"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New message signature for {address}"
+msgstr "{address} 的新邮件签名"
+
 #: src/renderer/src/state/desktop.ts
 msgid "new messages"
 msgstr "封新邮件"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "New messages"
 msgstr "新邮件"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New signature"
+msgstr "新建签名"
 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "New space"
 msgstr "新建空间"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "New template"
+msgstr "新建模板"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -2392,10 +2522,6 @@ msgstr "没有待确认的建议。"
 msgid "No templates yet. Use {token} for the first recipient's name."
 msgstr "还没有模板。可以用 {token} 代入第一个收件人的名字。"
 
-#: src/renderer/src/components/ComposeSettings.tsx
-msgid "No templates yet. While writing, press ⌘/ and choose “Save this message as a template”."
-msgstr "还没有模板。写信时按 ⌘/，选「把这封邮件存为模板」。"
-
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "No time zone supplied; shown in your local time."
 msgstr "邀请未指定时区，按本地时间显示。"
@@ -2409,8 +2535,10 @@ msgid "No unread mail in the inbox"
 msgstr "收件箱没有未读"
 
 #: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "不选"
 
@@ -2788,6 +2916,22 @@ msgstr "只读"
 msgid "Reading"
 msgstr "阅读"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient email"
+msgstr "收件人邮箱"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient first name"
+msgstr "收件人名字"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient last name"
+msgstr "收件人姓氏"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient name"
+msgstr "收件人姓名"
+
 #: src/renderer/src/recovery-labels.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
@@ -2929,7 +3073,7 @@ msgstr "输入时替换 Emoji"
 msgid "Replace with"
 msgstr "替换为"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "Replies and forwards"
 msgstr "回复和转发"
 
@@ -2950,6 +3094,10 @@ msgstr "回复全部"
 msgid "Reply All"
 msgstr "回复全部"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Reply From"
+msgstr "回复发件地址"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply mode"
 msgstr "回复模式"
@@ -2957,6 +3105,10 @@ msgstr "回复模式"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Reply only to contacts"
 msgstr "仅回复联系人"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Reply signature for {address}"
+msgstr "{address} 的回复签名"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -3002,6 +3154,14 @@ msgstr "将在服务器恢复保存的原规则。预览：{0} 封邮件。"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "继续"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Resume syncing"
+msgstr "恢复同步"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Retry"
+msgstr "重试"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -3058,6 +3218,8 @@ msgstr "星期六"
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Save"
 msgstr "保存"
 
@@ -3113,6 +3275,8 @@ msgid "Save…"
 msgstr "保存…"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Saved"
 msgstr "已保存"
 
@@ -3127,6 +3291,10 @@ msgstr "已保存为 EML"
 #: src/renderer/src/components/Reader.tsx
 msgid "Saved as PDF"
 msgstr "已保存为 PDF"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Retrying sync automatically."
+msgstr "已保存在此 Mac，将自动重试同步。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved on this Mac. Syncs when online."
@@ -3239,6 +3407,22 @@ msgstr "发送反馈…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender email"
+msgstr "发件人邮箱"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender first name"
+msgstr "发件人名字"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender last name"
+msgstr "发件人姓氏"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender name"
+msgstr "发件人姓名"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
@@ -3415,8 +3599,16 @@ msgstr "在浏览器中登录"
 msgid "Sign-in failed: {reason}"
 msgstr "登录失败：{reason}"
 
-#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/Composer.tsx
+msgid "Signature"
+msgstr "签名"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature name"
+msgstr "签名名称"
+
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
 msgid "Signatures"
 msgstr "签名"
 
@@ -3542,6 +3734,7 @@ msgstr "删除线"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Subject"
 msgstr "主题"
 
@@ -3621,12 +3814,13 @@ msgid "System notification permission"
 msgstr "系统通知权限"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Template name"
 msgstr "模板名称"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Templates"
 msgstr "模板"
 
@@ -3801,6 +3995,7 @@ msgid "Thursday"
 msgstr "星期四"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "时间"
 
@@ -3808,6 +4003,7 @@ msgstr "时间"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "收件人"
 
@@ -3946,6 +4142,10 @@ msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitH
 msgid "Updates"
 msgstr "动态"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
+msgstr "用 {token} 等自定义变量，插入模板时填写其值。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Use an http, https or mailto link"
 msgstr "请输入 http、https 或 mailto 链接"
@@ -3965,6 +4165,14 @@ msgstr "请使用不超过 8 MB 的 PNG、JPEG、GIF 或 WebP 图片。"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use selection for find"
 msgstr "查找选中文字"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the account default address"
+msgstr "使用账户默认地址"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the address the message was sent to"
+msgstr "使用邮件收到时的地址"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
@@ -4018,6 +4226,10 @@ msgstr "窗口"
 msgid "Writing mode"
 msgstr "撰写模式"
 
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Year"
+msgstr "年"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts
 msgid "Yesterday"
@@ -4034,6 +4246,10 @@ msgstr "你"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "你（命令行）"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Your changes are saved on this Mac. Try again or keep a local copy."
+msgstr "更改已保存在此 Mac，可重试或保留本地副本。"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

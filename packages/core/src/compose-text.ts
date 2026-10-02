@@ -25,7 +25,7 @@ function isQuoteStart(line: string): boolean {
 }
 
 /** Offset of the first quoted line in `body`, or its length when nothing is quoted. */
-function quoteOffset(body: string): number {
+export function quoteOffset(body: string): number {
   let offset = 0;
   for (const line of body.split("\n")) {
     if (isQuoteStart(line)) return offset;
@@ -116,33 +116,97 @@ function nameParts(recipient: Address): { first: string; last: string; full: str
   return { first: words[0] ?? raw, last: words.at(-1) ?? "", full: raw };
 }
 
-/** Template variables and their values for one recipient. */
-export function templateVariables(recipient: Address | undefined): Record<string, string> {
-  if (!recipient) return { first_name: "", last_name: "", name: "", email: "" };
-  const { first, last, full } = nameParts(recipient);
-  return { first_name: first, last_name: last, name: full, email: recipient.address };
+export const TEMPLATE_VARIABLES = [
+  "first_name",
+  "last_name",
+  "name",
+  "email",
+  "recipient_first_name",
+  "recipient_last_name",
+  "recipient_name",
+  "recipient_email",
+  "sender_first_name",
+  "sender_last_name",
+  "sender_name",
+  "sender_email",
+  "date",
+  "time",
+  "day",
+  "month",
+  "year",
+  "subject",
+  "to",
+  "cc",
+  "bcc",
+] as const;
+export interface TemplateContext {
+  readonly sender?: Address;
+  readonly now?: Date;
+  readonly locale?: string;
+  readonly subject?: string;
+  readonly to?: readonly Address[];
+  readonly cc?: readonly Address[];
+  readonly bcc?: readonly Address[];
 }
+const templateAddresses = (list: readonly Address[] | undefined) =>
+  (list ?? []).map((a) => (a.name ? `${a.name} <${a.address}>` : a.address)).join(", ");
+/** The legacy four recipient variables are retained for saved templates. */
+export function templateVariables(
+  recipient: Address | undefined,
+  context?: TemplateContext,
+): Record<string, string> {
+  const names = recipient ? nameParts(recipient) : { first: "", last: "", full: "" };
+  const base = {
+    first_name: names.first,
+    last_name: names.last,
+    name: names.full,
+    email: recipient?.address ?? "",
+  };
+  if (context === undefined) return base;
+  const sender = context.sender ? nameParts(context.sender) : { first: "", last: "", full: "" };
+  const date = context.now ?? new Date();
 
-/** Replaces {first_name} and the other variables. Unknown ones stay as written. */
+  return {
+    ...base,
+    recipient_first_name: names.first,
+    recipient_last_name: names.last,
+    recipient_name: names.full,
+    recipient_email: base.email,
+    sender_first_name: sender.first,
+    sender_last_name: sender.last,
+    sender_name: sender.full,
+    sender_email: context.sender?.address ?? "",
+    date: date.toLocaleDateString(context.locale),
+    time: date.toLocaleTimeString(context.locale, { hour: "2-digit", minute: "2-digit" }),
+    day: String(date.getDate()),
+    month: String(date.getMonth() + 1),
+    year: String(date.getFullYear()),
+    subject: context.subject ?? "",
+    to: templateAddresses(context.to),
+    cc: templateAddresses(context.cc),
+    bcc: templateAddresses(context.bcc),
+  };
+}
 export function customTemplateVariables(...texts: string[]): string[] {
-  const builtins = templateVariables(undefined);
+  const builtins = new Set<string>(TEMPLATE_VARIABLES);
   return [
     ...new Set(
       texts.flatMap((text) =>
         [...text.matchAll(/\{(\w+)\}/g)].flatMap((m) =>
-          m[1] && !Object.hasOwn(builtins, m[1]) ? [m[1]] : [],
+          m[1] && !builtins.has(m[1]) ? [m[1]] : [],
         ),
       ),
     ),
   ];
 }
-
+/** Unknown variables stay literal and values are substituted once. */
 export function fillTemplate(
   text: string,
   recipient: Address | undefined,
   custom: Readonly<Record<string, string>> = {},
+  context?: TemplateContext,
 ): string {
-  const vars = { ...custom, ...templateVariables(recipient) };
+  const vars = { ...custom, ...templateVariables(recipient, context) };
   return text.replace(/\{(\w+)\}/g, (whole, key: string) =>
     Object.hasOwn(vars, key) ? (vars[key] ?? whole) : whole,
   );

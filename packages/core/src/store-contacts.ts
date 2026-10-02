@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import type { Address } from "./domain.js";
+import { Address } from "./domain.js";
 import { ContactGroup, mergeContacts, type ContactSnapshot, type ContactSync } from "./contacts.js";
 import { all, run } from "./sql-rows.js";
 
@@ -124,6 +124,13 @@ export function makeContactStore(sql: SqlClient.SqlClient) {
         ),
       );
     },
+    contactAlternatives: (address: string) =>
+      all(Address)(sql`
+      SELECT DISTINCT c.address,c.name FROM server_contacts c
+      WHERE c.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND c.contact_key!=''
+        AND EXISTS(SELECT 1 FROM server_contacts original WHERE original.account_id=c.account_id
+          AND original.contact_key=c.contact_key AND original.address=${address.trim().toLowerCase()})
+      ORDER BY c.address LIMIT 50`),
     knownSenders: (accountId: string, addresses: readonly string[]) =>
       all(Schema.Struct({ address: Schema.String }))(
         sql`SELECT candidate.value AS address
@@ -149,7 +156,7 @@ export function makeContactStore(sql: SqlClient.SqlClient) {
             yield* run(sql`DELETE FROM server_contacts WHERE account_id = ${accountId}`);
             for (const a of mergeContacts(contacts))
               yield* run(
-                sql`INSERT INTO server_contacts (account_id, address, name) VALUES (${accountId}, ${a.address}, ${a.name})`,
+                sql`INSERT INTO server_contacts (account_id, address, name, contact_key) VALUES (${accountId}, ${a.address}, ${a.name}, ${a.contactKey ?? ""})`,
               );
             yield* run(sql`INSERT INTO contact_sync (account_id, refreshed_at, attempted_at, error, scope_missing)
           VALUES (${accountId}, ${now}, ${now}, NULL, 0) ON CONFLICT(account_id) DO UPDATE SET

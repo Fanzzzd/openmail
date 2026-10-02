@@ -543,6 +543,102 @@ export const MIGRATIONS: readonly string[] = [
     INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.to_json) THEN new.to_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
     INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.cc_json) THEN new.cc_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
   END;`,
+  // Migration 23: local signature library, durable draft recovery and indexed recipient candidates.
+  `CREATE TABLE named_signatures (
+    id TEXT PRIMARY KEY, address TEXT NOT NULL, name TEXT NOT NULL,
+    text TEXT NOT NULL, html TEXT NOT NULL
+  );
+  CREATE INDEX named_signatures_address ON named_signatures(address);
+  INSERT INTO named_signatures(id,address,name,text,html) SELECT 'legacy:'||address||':'||kind,address,CASE kind WHEN 'new' THEN 'New messages' ELSE 'Replies' END,text,'' FROM signatures WHERE source='local';
+  -- Retained settings keep rowid for recovery's per-row salvage.
+  CREATE TABLE signature_defaults (
+    address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('new','reply')), signature_id TEXT,
+    PRIMARY KEY(address,kind)
+  );
+  INSERT INTO signature_defaults(address,kind,signature_id) SELECT address,kind,'legacy:'||address||':'||kind FROM signatures WHERE source='local';
+  ALTER TABLE server_contacts ADD COLUMN contact_key TEXT NOT NULL DEFAULT '';
+  CREATE INDEX server_contacts_key ON server_contacts(account_id,contact_key);
+  ALTER TABLE send_as ADD COLUMN signature_html TEXT NOT NULL DEFAULT '';
+  ALTER TABLE drafts ADD COLUMN sync_error TEXT;
+  ALTER TABLE drafts ADD COLUMN local_only INTEGER NOT NULL DEFAULT 0;
+  CREATE TABLE contact_candidates (
+    id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, name TEXT NOT NULL, date INTEGER NOT NULL, weight REAL NOT NULL,
+    source INTEGER NOT NULL
+  );
+  CREATE INDEX contact_candidates_address ON contact_candidates(address,source DESC,date DESC);
+  CREATE INDEX contact_candidates_account ON contact_candidates(account_id);
+  CREATE INDEX contact_candidates_message ON contact_candidates(message_id);
+  CREATE VIRTUAL TABLE contact_candidates_fts USING fts5(name,address,content='contact_candidates',content_rowid='rowid');
+  CREATE TRIGGER contact_candidates_ai AFTER INSERT ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(rowid,name,address) VALUES(new.rowid,new.name,new.address);
+  END;
+  CREATE TRIGGER contact_candidates_ad AFTER DELETE ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(contact_candidates_fts,rowid,name,address) VALUES('delete',old.rowid,old.name,old.address);
+  END;
+  CREATE TRIGGER contact_candidates_au AFTER UPDATE ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(contact_candidates_fts,rowid,name,address) VALUES('delete',old.rowid,old.name,old.address);
+    INSERT INTO contact_candidates_fts(rowid,name,address) VALUES(new.rowid,new.name,new.address);
+  END;
+  INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
+    SELECT 'server:'||account_id||':'||address,account_id,address,name,0,0.2,3 FROM server_contacts WHERE trim(address)!='';
+  CREATE TRIGGER server_contact_candidate_ai AFTER INSERT ON server_contacts WHEN trim(new.address)!='' BEGIN
+    INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
+      SELECT 'server:'||new.account_id||':'||new.address,new.account_id,new.address,new.name,0,0.2,3 WHERE trim(new.address)!='';
+  END;
+  CREATE TRIGGER server_contact_candidate_ad AFTER DELETE ON server_contacts BEGIN
+    DELETE FROM contact_candidates WHERE id='server:'||old.account_id||':'||old.address;
+  END;
+  CREATE TRIGGER server_contact_candidate_au AFTER UPDATE ON server_contacts BEGIN
+    DELETE FROM contact_candidates WHERE id='server:'||old.account_id||':'||old.address;
+    INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
+      SELECT 'server:'||new.account_id||':'||new.address,new.account_id,new.address,new.name,0,0.2,3 WHERE trim(new.address)!='';
+  END;
+  -- sent_recipients owns sent history; candidates are its FTS projection, enriched with names.
+  INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'sent:'||s.message_id||':'||s.address,s.account_id,s.message_id,s.address,
+    COALESCE((SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),
+      (SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.cc_json) THEN m.cc_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),''),s.sent_at,
+    CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address) THEN 3.0 ELSE 2.0 END,2
+    FROM sent_recipients s JOIN messages m ON m.id=s.message_id WHERE trim(s.address)!='';
+  INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'from:'||m.id,m.account_id,m.id,lower(trim(m.from_addr)),m.from_name,m.date,1.0,1
+    FROM messages m WHERE trim(m.from_addr)!='' AND NOT EXISTS(SELECT 1 FROM
+      json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
+      WHERE value IN ('SENT','SPAM','TRASH','DRAFT'));
+  CREATE TRIGGER sent_contact_candidate_ai AFTER INSERT ON sent_recipients BEGIN
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'sent:'||s.message_id||':'||s.address,s.account_id,s.message_id,s.address,
+    COALESCE((SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),
+      (SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.cc_json) THEN m.cc_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),''),s.sent_at,
+    CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address) THEN 3.0 ELSE 2.0 END,2
+    FROM sent_recipients s JOIN messages m ON m.id=s.message_id WHERE trim(s.address)!='' AND s.message_id=new.message_id AND s.address=new.address;
+  END;
+  CREATE TRIGGER sent_contact_candidate_ad AFTER DELETE ON sent_recipients BEGIN
+    DELETE FROM contact_candidates WHERE id='sent:'||old.message_id||':'||old.address;
+  END;
+  CREATE TRIGGER sent_contact_candidate_au AFTER UPDATE ON sent_recipients
+    WHEN old.message_id!=new.message_id OR old.address!=new.address OR old.account_id!=new.account_id OR old.sent_at!=new.sent_at BEGIN
+    DELETE FROM contact_candidates WHERE id='sent:'||old.message_id||':'||old.address;
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'sent:'||s.message_id||':'||s.address,s.account_id,s.message_id,s.address,
+    COALESCE((SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),
+      (SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.cc_json) THEN m.cc_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),''),s.sent_at,
+    CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address) THEN 3.0 ELSE 2.0 END,2
+    FROM sent_recipients s JOIN messages m ON m.id=s.message_id WHERE trim(s.address)!='' AND s.message_id=new.message_id AND s.address=new.address;
+  END;
+  CREATE TRIGGER message_contact_candidate_ai AFTER INSERT ON messages BEGIN
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'from:'||m.id,m.account_id,m.id,lower(trim(m.from_addr)),m.from_name,m.date,1.0,1
+    FROM messages m WHERE trim(m.from_addr)!='' AND NOT EXISTS(SELECT 1 FROM
+      json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
+      WHERE value IN ('SENT','SPAM','TRASH','DRAFT')) AND m.id=new.id;
+  END;
+  CREATE TRIGGER message_contact_candidate_au AFTER UPDATE OF account_id,from_name,from_addr,to_json,cc_json,labels_json,date ON messages
+    WHEN old.account_id!=new.account_id OR old.from_name!=new.from_name OR old.from_addr!=new.from_addr
+      OR old.to_json!=new.to_json OR old.cc_json!=new.cc_json OR old.labels_json!=new.labels_json OR old.date!=new.date BEGIN
+    DELETE FROM contact_candidates WHERE message_id=new.id AND source=1;
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'from:'||m.id,m.account_id,m.id,lower(trim(m.from_addr)),m.from_name,m.date,1.0,1
+    FROM messages m WHERE trim(m.from_addr)!='' AND NOT EXISTS(SELECT 1 FROM
+      json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
+      WHERE value IN ('SENT','SPAM','TRASH','DRAFT')) AND m.id=new.id;
+  END;`,
 ];
 
 /**

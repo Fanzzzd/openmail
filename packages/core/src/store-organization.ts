@@ -6,6 +6,7 @@ import {
   type LabelPreference,
   type SendAs,
 } from "./organization.js";
+import { richComposeBody, textComposeHtml } from "./compose-body.js";
 import { all, run } from "./sql-rows.js";
 
 const LabelPrefRow = Schema.Struct({
@@ -26,6 +27,7 @@ const AliasRow = Schema.Struct({
   name: Schema.String,
   is_default: Schema.BooleanFromBit,
   signature: Schema.String,
+  signature_html: Schema.String,
 });
 const WakeRow = Schema.Struct({ account_id: Schema.String, thread_id: Schema.String });
 const IdRow = Schema.Struct({ id: Schema.String });
@@ -93,6 +95,7 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
         name: r.name,
         isDefault: r.is_default,
         signature: r.signature,
+        signatureHtml: r.signature_html,
       })),
     ),
   );
@@ -106,7 +109,7 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
       yield* run(sql`DELETE FROM send_as WHERE account_id=${accountId}`);
       for (const alias of aliases) {
         yield* run(
-          sql`INSERT INTO send_as (account_id, address, name, is_default, signature) VALUES (${accountId}, ${alias.address}, ${alias.name}, ${Number(alias.isDefault)}, ${alias.signature})`,
+          sql`INSERT INTO send_as (account_id, address, name, is_default, signature, signature_html) VALUES (${accountId}, ${alias.address.trim().toLowerCase()}, ${alias.name}, ${Number(alias.isDefault)}, ${alias.signature}, ${richComposeBody(alias.signatureHtml ?? textComposeHtml(alias.signature)).html})`,
         );
         for (const kind of ["new", "reply"]) {
           if (alias.signature)

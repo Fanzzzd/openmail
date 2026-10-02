@@ -1,3 +1,5 @@
+import { makeSignatureStore } from "./store-signatures.js";
+import { signatureDefault } from "./signatures.js";
 import { attachmentFilename } from "./attachment-filename.js";
 /**
  * The Store's SQL for writing and reading settings: drafts, preferences,
@@ -24,7 +26,7 @@ import {
 } from "./domain.js";
 import { NotFound } from "./errors.js";
 import { imageSenderKey } from "./reading.js";
-import { normalizeComposeMessage } from "./compose-body.js";
+import { richComposeBody, textComposeHtml, normalizeComposeMessage } from "./compose-body.js";
 import type { StoredDraft } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 
@@ -38,6 +40,8 @@ const DraftRow = Schema.Struct({
   remote_message_id: Schema.NullOr(Schema.String),
   pushed_attachments: Schema.NullOr(Schema.String),
   pushed_organization: Schema.NullOr(Schema.String),
+  sync_error: Schema.NullOr(Schema.String),
+  local_only: Schema.BooleanFromBit,
 });
 
 const LocalDraftRow = Schema.Struct({
@@ -80,6 +84,8 @@ function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
     remote,
     pushedAttachments: r.pushed_attachments,
     pushedOrganization: r.pushed_organization,
+    syncError: r.sync_error,
+    localOnly: r.local_only,
   };
 }
 
@@ -114,10 +120,7 @@ const MONTH = 30 * 86_400_000;
 
 export function makeComposeStore(sql: SqlClient.SqlClient) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
-    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization`);
-
-  const hasLabel = (label: string) =>
-    sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
+    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only`);
 
   // A queued push of one draft, found by the draft id inside the op.
   const saveOpFor = (draftId: Fragment | string) =>
@@ -163,12 +166,13 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     id: string,
     remote: DraftRemote | null,
     pushedAttachments: string | null,
+    accountId?: string,
   ) {
     const row = yield* first(IdRow)(sql`UPDATE drafts SET
         remote_draft_id = ${remote?.draftId ?? null},
         remote_message_id = ${remote?.messageId ?? null},
-        pushed_attachments = ${pushedAttachments}
-      WHERE id = ${id} RETURNING id`);
+        pushed_attachments = ${pushedAttachments}, sync_error=CASE WHEN local_only=0 THEN NULL ELSE sync_error END
+      WHERE id = ${id} ${accountId === undefined ? sql.literal("") : sql`AND account_id=${accountId}`} RETURNING id`);
     return Option.isSome(row);
   });
 
@@ -186,6 +190,8 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     draftId: string,
   ) {
     const now = yield* Clock.currentTimeMillis;
+    const draft = yield* getDraft(draftId);
+    if (Option.isNone(draft) || draft.value.localOnly) return;
     // A waiting push reads the latest content when it runs, so one is enough.
     // It is replaced rather than kept so it carries the draft's current account.
     yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(draftId)}`);
@@ -197,7 +203,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
   const dropSyncedDrafts = Effect.fn("Store.dropSyncedDrafts")(
     (accountId: string, messageId?: string) =>
       run(sql`DELETE FROM drafts WHERE account_id = ${accountId}
-        AND remote_message_id IS NOT NULL
+        AND remote_message_id IS NOT NULL AND local_only=0 AND sync_error IS NULL
         ${messageId === undefined ? sql.literal("") : sql`AND remote_message_id = ${messageId}`}
         AND NOT EXISTS (SELECT 1 FROM pending_ops WHERE ${saveOpFor(sql.literal("drafts.id"))})`),
   );
@@ -253,6 +259,28 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       ),
     );
   };
+
+  const draftSaveState = (id: string) =>
+    first(Schema.Struct({ pending: Schema.BooleanFromBit, retrying: Schema.BooleanFromBit }))(sql`
+    WITH state AS (SELECT EXISTS(SELECT 1 FROM pending_ops WHERE ${saveOpFor(sql.literal("d.id"))}) AS pending,
+      a.enabled=1 AND a.needs_reauth=0 AND d.local_only=0 AS active FROM drafts d JOIN accounts a ON a.id=d.account_id WHERE d.id=${id})
+    SELECT pending,pending AND active AS retrying FROM state`).pipe(
+      Effect.map(Option.getOrElse(() => ({ pending: false, retrying: false }))),
+    );
+
+  const setDraftSyncError = (id: string, error: string | null) =>
+    run(sql`UPDATE drafts SET sync_error=${error} WHERE id=${id} AND local_only=0`);
+  const setDraftLocalOnly = (id: string, localOnly: boolean) =>
+    sql
+      .withTransaction(
+        Effect.gen(function* () {
+          yield* run(
+            sql`UPDATE drafts SET local_only=${Number(localOnly)},sync_error=NULL WHERE id=${id}`,
+          );
+          yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+        }),
+      )
+      .pipe(Effect.orDie);
 
   // Preferences
 
@@ -346,6 +374,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
+        replyFrom: pref(f.replyFrom, stored.get("replyFrom"), d.replyFrom),
         quoteSelection: pref(f.quoteSelection, stored.get("quoteSelection"), d.quoteSelection),
         defaultFrom: pref(f.defaultFrom, stored.get("defaultFrom"), d.defaultFrom),
         showFullRecipientAddresses: pref(
@@ -414,7 +443,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
 
   // Signatures
 
-  const signatures = all(SignatureRow)(
+  const legacySignatures = all(SignatureRow)(
     sql`SELECT address, kind, text FROM (SELECT address, kind, text,
       ROW_NUMBER() OVER (PARTITION BY address, kind ORDER BY source = 'local' DESC) AS rank
       FROM signatures) WHERE rank=1 ORDER BY address, kind`,
@@ -423,14 +452,57 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     Effect.withSpan("Store.signatures"),
   );
 
-  const setSignature = Effect.fn("Store.setSignature")((s: Signature) => {
+  const signatures = Effect.gen(function* () {
+    const legacy = yield* legacySignatures;
+    const library = makeSignatureStore(sql);
+    const named = yield* library.namedSignatures;
+    const defaults = yield* library.signatureDefaults;
+    const addresses = new Set([
+      ...legacy.map((s) => s.address),
+      ...named.map((s) => s.address),
+      ...defaults.map((s) => s.address),
+    ]);
+    const result: Signature[] = [];
+    for (const address of addresses)
+      for (const kind of ["new", "reply"] as const) {
+        const selected = signatureDefault(named, defaults, address, kind);
+        const choice = defaults.find((s) => s.address === address && s.kind === kind);
+        if (selected) result.push({ address, kind, text: selected.text, html: selected.html });
+        else if (!choice) {
+          const old = legacy.find((s) => s.address === address && s.kind === kind);
+          if (old) result.push(old);
+        }
+      }
+    return result;
+  });
+
+  const setSignature = Effect.fn("Store.setSignature")(function* (s: Signature) {
     const address = s.address.trim().toLowerCase();
-    return s.text.trim()
-      ? run(sql`INSERT INTO signatures (address, kind, source, text)
-          VALUES (${address}, ${s.kind}, 'local', ${s.text})
-          ON CONFLICT(address, kind, source) DO UPDATE SET text = excluded.text`)
-      : run(sql`DELETE FROM signatures
-          WHERE address = ${address} AND kind = ${s.kind} AND source = 'local'`);
+    const id = `legacy:${address}:${s.kind}`;
+    const body = richComposeBody(s.html ?? textComposeHtml(s.text));
+    yield* sql
+      .withTransaction(
+        Effect.gen(function* () {
+          if (body.text.trim()) {
+            yield* run(
+              sql`INSERT INTO signatures(address,kind,source,text) VALUES(${address},${s.kind},'local',${body.text}) ON CONFLICT(address,kind,source) DO UPDATE SET text=excluded.text`,
+            );
+            yield* run(
+              sql`INSERT INTO named_signatures(id,address,name,text,html) VALUES(${id},${address},${s.kind === "new" ? "New messages" : "Replies"},${body.text},${body.html}) ON CONFLICT(id) DO UPDATE SET text=excluded.text,html=excluded.html`,
+            );
+            yield* run(
+              sql`INSERT INTO signature_defaults(address,kind,signature_id) VALUES(${address},${s.kind},${id}) ON CONFLICT(address,kind) DO UPDATE SET signature_id=excluded.signature_id`,
+            );
+          } else {
+            yield* run(
+              sql`DELETE FROM signatures WHERE address=${address} AND kind=${s.kind} AND source='local'`,
+            );
+            yield* run(sql`DELETE FROM named_signatures WHERE id=${id}`);
+            yield* run(sql`DELETE FROM signature_defaults WHERE signature_id=${id}`);
+          }
+        }),
+      )
+      .pipe(Effect.orDie);
   });
 
   // Templates
@@ -491,60 +563,36 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     accountIds?: readonly string[],
   ) {
     if (accountIds?.length === 0) return [];
-    const scopeIds = JSON.stringify(accountIds);
-    const mailScope = sql.and([
-      sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
-      accountIds === undefined
-        ? sql`1`
-        : sql`m.account_id IN (SELECT value FROM json_each(${scopeIds}))`,
-    ]);
-    const contactScope = sql.and([
-      sql`c.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
-      accountIds === undefined
-        ? sql`1`
-        : sql`c.account_id IN (SELECT value FROM json_each(${scopeIds}))`,
-    ]);
+
     const now = yield* Clock.currentTimeMillis;
-    const escaped = query
-      .trim()
-      .toLowerCase()
-      .replace(/[\\%_]/g, (c) => `\\${c}`);
-    const like = `%${escaped}%`;
-    const sent = hasLabel("SENT");
+    const tokens = query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+    if (query.trim() && tokens.length === 0) return [];
+    const match = tokens.map((token) => `"${token}"*`).join(" AND ");
+    const scope = (alias: "c" | "h") =>
+      sql.and([
+        sql`${sql.literal(`${alias}.account_id`)} IN (SELECT id FROM accounts WHERE enabled=1)`,
+        accountIds === undefined
+          ? sql`1`
+          : sql`${sql.literal(`${alias}.account_id`)} IN ${sql.in(accountIds)}`,
+      ]);
+    const boundedLimit = Number.isFinite(limit)
+      ? Math.max(0, Math.min(100, Math.trunc(limit)))
+      : 10;
     const rows = yield* all(ContactRow)(sql`
-      WITH hits AS (
-        SELECT lower(json_extract(r.value, '$.address')) AS address,
-          json_extract(r.value, '$.name') AS name, m.date AS date, 3.0 AS weight
-        FROM messages m, json_each(m.to_json) r WHERE ${mailScope} AND ${sent}
-        UNION ALL
-        SELECT lower(json_extract(r.value, '$.address')), json_extract(r.value, '$.name'),
-          m.date, 2.0
-        FROM messages m, json_each(m.cc_json) r WHERE ${mailScope} AND ${sent}
-        UNION ALL
-        SELECT lower(m.from_addr), m.from_name, m.date, 1.0 FROM messages m
-        WHERE ${mailScope} AND NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
-          AND NOT ${hasLabel("DRAFT")}
-        UNION ALL
-        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts c WHERE ${contactScope} GROUP BY address
-      ),
-      matched AS (
-        SELECT * FROM hits
-        WHERE address LIKE '%@%'
-          AND address != ${exclude?.trim().toLowerCase() ?? ""}
-          AND address NOT IN (SELECT address FROM hidden_contacts)
-          AND address NOT LIKE '%noreply%' AND address NOT LIKE '%no-reply%'
-          AND address NOT LIKE '%donotreply%'
-      ),
-      scored AS (
-        SELECT address, SUM(weight / (1.0 + MAX(${now} - date, 0) / (${MONTH} * 1.0))) AS score
-        FROM matched GROUP BY address
-        HAVING MAX(address LIKE ${like} ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ${like} ESCAPE '\\')
+      WITH matched AS (
+        SELECT c.* FROM contact_candidates c WHERE ${scope("c")}
+          ${tokens.length ? sql`AND c.rowid IN (SELECT rowid FROM contact_candidates_fts WHERE contact_candidates_fts MATCH ${match})` : sql.literal("")}
+          AND c.address LIKE '%@%' AND c.address != ${exclude?.trim().toLowerCase() ?? ""}
+          AND NOT EXISTS(SELECT 1 FROM hidden_contacts hidden WHERE hidden.address=c.address)
+          AND c.address NOT LIKE '%noreply%' AND c.address NOT LIKE '%no-reply%' AND c.address NOT LIKE '%donotreply%'
+      ), scored AS (
+        SELECT address,SUM(CASE WHEN source!=3 THEN weight / (1.0 + MAX(${now}-date,0)/(${MONTH}*1.0)) ELSE 0 END) + MAX(CASE WHEN source=3 THEN 0.2 ELSE 0 END) AS score FROM matched GROUP BY address
       )
-      SELECT s.address,
-        COALESCE((SELECT c.name FROM server_contacts c WHERE ${contactScope} AND c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
-          (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
-          ORDER BY h.date DESC LIMIT 1)) AS name
-      FROM scored s ORDER BY s.score DESC, s.address LIMIT ${limit}`);
+      SELECT s.address, (SELECT NULLIF(h.name,'') FROM contact_candidates h
+        WHERE h.address=s.address AND h.name!='' AND ${scope("h")}
+        ORDER BY h.source DESC,h.date DESC,h.account_id,h.id LIMIT 1) AS name
+      FROM scored s ORDER BY s.score DESC,s.address LIMIT ${boundedLimit}`);
+
     return rows.map((r): Address => ({ name: r.name ?? "", address: r.address }));
   });
 
@@ -597,6 +645,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     putDraft,
     setDraftRemote,
     setDraftOrganizationKey,
+    draftSaveState,
+    setDraftSyncError,
+    setDraftLocalOnly,
     deleteDraft,
     enqueueDraftSave,
     dropSyncedDrafts,

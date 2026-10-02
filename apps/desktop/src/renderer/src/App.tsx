@@ -16,14 +16,13 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import {
-  applySignature,
+  applyComposeSignature,
   moveSourceLabel,
   DEFAULT_PREFS,
   FEEDBACK_DRAFT_PREFIX,
   holdSend,
   markReadAfter,
   richComposeBody,
-  remoteComposeBody,
   textComposeHtml,
   type DeleteFolder,
   type Prefs,
@@ -375,23 +374,15 @@ export function App({ composeId }: { composeId?: string }) {
     return signatures.find((s) => s.address === address && s.kind === kind)?.text;
   };
   const [quotePrompt, setQuotePrompt] = useState<((useSelection: boolean) => void) | null>(null);
-  const signed = (d: Draft): Draft => ({
-    ...d,
-    body:
-      d.body.kind === "rich" && d.body.originalHtml !== undefined
-        ? remoteComposeBody(
-            `${textComposeHtml(applySignature("", undefined, signatureFor(d.accountId, d.mode, d.from?.address)))}${d.body.originalHtml}`,
-          )
-        : richComposeBody(
-            textComposeHtml(
-              applySignature(
-                d.body.text,
-                undefined,
-                signatureFor(d.accountId, d.mode, d.from?.address),
-              ),
-            ),
-          ),
-  });
+  const signed = (d: Draft): Draft => {
+    const address = (
+      d.from?.address ?? accountList.find((a) => a.id === d.accountId)?.email
+    )?.toLowerCase();
+    const signature = signatures.find(
+      (s) => s.address === address && s.kind === (d.mode === "new" ? "new" : "reply"),
+    );
+    return { ...d, body: applyComposeSignature(d.body, undefined, signature) };
+  };
 
   const selectedAccount = accountList.find(
     (a) => a.id === (selected?.accountId ?? messages?.[0]?.accountId),
@@ -745,6 +736,7 @@ export function App({ composeId }: { composeId?: string }) {
             asAttachment,
             aliases,
             useSelection ? selectedText : undefined,
+            { preference: prefs.replyFrom, aliases },
           );
           setCompose(signed(draft));
         }).pipe(

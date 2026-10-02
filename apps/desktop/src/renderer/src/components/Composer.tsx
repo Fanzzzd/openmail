@@ -1,3 +1,5 @@
+import { DraftSyncRecovery, draftSyncNotice } from "./DraftSyncRecovery";
+import { moveRecipient, type RecipientFieldName, type RecipientDrag } from "../recipient-actions";
 import { matchesShortcut } from "../../../shared/shortcuts";
 import { useShortcutText } from "./SystemSettings";
 import { Autocomplete } from "@base-ui/react/autocomplete";
@@ -8,8 +10,8 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
-  applySignature,
-  composeEditorText,
+  applyComposeSignature,
+  splitAddresses,
   fillTemplate,
   customTemplateVariables,
   ownText,
@@ -57,7 +59,15 @@ import { formatBytes } from "../format";
 import { openDraft, useRunMail, withMail } from "../state/mail";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom, setPrefsAtom } from "../state/mutations";
-import { templatesAtom, sendAsAtom, prefsAtom, threadAtom } from "../state/queries";
+import {
+  signaturesAtom,
+  namedSignaturesAtom,
+  draftStatusAtom,
+  templatesAtom,
+  sendAsAtom,
+  prefsAtom,
+  threadAtom,
+} from "../state/queries";
 import { RecipientField } from "./RecipientField";
 import { DraftOrganization } from "./DraftOrganization";
 import { ComposeEditor } from "./ComposeEditor";
@@ -65,7 +75,6 @@ import {
   editorBody,
   restoreEditorSelection,
   insertEditorText,
-  replaceEditorText,
   type ComposeElement,
 } from "../compose-editor-dom";
 import { Alert, AlertCancel, alertButton, alertPrimary, alertDanger } from "./ui/Dialog";
@@ -142,6 +151,7 @@ export function Composer({
   const [imageUrl, setImageUrl] = useState("");
   const [imageUrlOpen, setImageUrlOpen] = useState(false);
   const imageFileRef = useRef<HTMLInputElement>(null);
+  const saved = useRef(initial);
   const [showBcc, setShowBcc] = useState(Boolean(initial.bcc || initial.cc));
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState<{
@@ -169,6 +179,56 @@ export function Composer({
   const selectionRef = useRef<Range>(null);
   const toRef = useRef<HTMLInputElement>(null);
   const account = accounts.find((a) => a.id === draft.accountId);
+  const library = AsyncResult.getOrElse(useAtomValue(namedSignaturesAtom), () => []);
+  const defaultSignatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
+  const remoteStatus = AsyncResult.getOrElse(useAtomValue(draftStatusAtom(draft.id)), () => null);
+  const signatureAt = (accountId: string, from: string | undefined) => {
+    const address = (from ?? accounts.find((a) => a.id === accountId)?.email)?.toLowerCase();
+    return defaultSignatures.find(
+      (s) => s.address === address && s.kind === (draft.mode === "new" ? "new" : "reply"),
+    );
+  };
+  const currentSignature =
+    draft.signatureId === undefined
+      ? signatureAt(draft.accountId, draft.from?.address)
+      : library.find((s) => s.id === draft.signatureId);
+  const currentAddress = (draft.from?.address ?? account?.email ?? "").toLowerCase();
+  const localSignatures = library.filter((s) => s.address === currentAddress);
+  const syncStatus = remoteStatus ?? (saveState._tag === "Success" ? saveState.value : null);
+  const syncNotice = draftSyncNotice(syncStatus ?? initial);
+  const [recoveryError, setRecoveryError] = useState("");
+  const [recovering, setRecovering] = useState(false);
+  const recover = (action: "retry" | "local") => {
+    if (recovering) return;
+    setRecovering(true);
+    run(
+      withMail((call) =>
+        call("RecoverDraft", { id: draft.id, action, draft: toDraftInput(draft) }),
+      ).pipe(
+        Effect.matchCause({
+          onSuccess: () => {
+            saved.current = draft;
+            setRecovering(false);
+            setRecoveryError("");
+          },
+          onFailure: (cause) => {
+            setRecovering(false);
+            setRecoveryError(causeText(i18n, cause));
+          },
+        }),
+      ),
+    );
+  };
+  const moveChip = (source: RecipientFieldName, target: RecipientFieldName, index: number) => {
+    setDraft((current) => ({ ...current, ...moveRecipient(current, source, target, index) }));
+    if (target !== "to") setShowBcc(true);
+  };
+  const dropChip = (target: RecipientFieldName, chip: RecipientDrag) => {
+    const tokens = splitAddresses(draft[chip.source])
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (tokens[chip.index] === chip.text) moveChip(chip.source, target, chip.index);
+  };
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
   const senders = accounts
     .filter((a) => a.enabled !== false)
@@ -206,9 +266,9 @@ export function Composer({
   };
 
   // Autosave: locally at once, then to the provider through the queue.
-  const saved = useRef(initial);
   useEffect(() => {
-    const due = !adding && !closing && !checkingClose && draft !== saved.current && !empty;
+    const due =
+      !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
     const timer = due
       ? setTimeout(() => {
           saved.current = draft;
@@ -216,7 +276,7 @@ export function Composer({
         }, AUTOSAVE_MS)
       : undefined;
     return () => clearTimeout(timer);
-  }, [draft, save, closing, checkingClose, empty, adding]);
+  }, [draft, save, closing, checkingClose, empty, adding, recovering]);
 
   const originalsLoaded = useEffectEvent((files: readonly OutgoingAttachment[]) => {
     setDraft((current) => withOriginalAttachments(current, files));
@@ -469,22 +529,26 @@ export function Composer({
   const changeSender = (key: string) => {
     const sender = senders.find((s) => `${s.accountId}/${s.address}` === key);
     if (!sender) return;
-    const text = applySignature(
-      composeEditorText(draft.body),
-      signatureFor(draft.accountId, draft.mode, draft.from?.address),
-      signatureFor(sender.accountId, draft.mode, sender.address),
-    );
-    if (
-      bodyRef.current &&
-      text !== composeEditorText(draft.body) &&
-      (bodyRef.current instanceof HTMLTextAreaElement || bodyRef.current.isContentEditable)
-    )
-      replaceEditorText(bodyRef.current, composeEditorText(draft.body), text);
     set({
       accountId: sender.accountId,
       organization: sender.accountId === draft.accountId ? draft.organization : undefined,
       from: { name: sender.name, address: sender.address },
-      body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
+      signatureId: undefined,
+      body: applyComposeSignature(
+        draft.body,
+        currentSignature,
+        signatureAt(sender.accountId, sender.address),
+      ),
+    });
+  };
+  const chooseSignature = (id: string) => {
+    const signature =
+      id === "default"
+        ? signatureAt(draft.accountId, draft.from?.address)
+        : localSignatures.find((s) => s.id === id);
+    set({
+      signatureId: id === "default" ? undefined : id === "none" ? null : id,
+      body: applyComposeSignature(draft.body, currentSignature, signature),
     });
   };
 
@@ -696,13 +760,33 @@ export function Composer({
     const cc = merge(draft.cc, template.cc);
     const bcc = merge(draft.bcc, template.bcc ?? []);
     const first = parseAddresses(to).addresses[0];
-    const text = fillTemplate(template.body, first, values);
+    const context = {
+      sender: {
+        name:
+          draft.from?.name ||
+          aliases.find(
+            (s) => s.accountId === draft.accountId && s.address.toLowerCase() === currentAddress,
+          )?.name ||
+          account?.description ||
+          "",
+        address: currentAddress,
+      },
+      now: new Date(),
+      locale: i18n.locale,
+      subject: draft.subject,
+      to: parseAddresses(to).addresses,
+      cc: parseAddresses(cc).addresses,
+      bcc: parseAddresses(bcc).addresses,
+    };
+    const text = fillTemplate(template.body, first, values, context);
     if (bodyRef.current) insertEditorText(bodyRef.current, text, selectionRef.current);
     set({
       to,
       cc,
       bcc,
-      subject: template.subject ? fillTemplate(template.subject, first, values) : draft.subject,
+      subject: template.subject
+        ? fillTemplate(template.subject, first, values, context)
+        : draft.subject,
       body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
     if (cc || bcc) setShowBcc(true);
@@ -711,15 +795,22 @@ export function Composer({
     requestAnimationFrame(() => bodyRef.current?.focus());
   };
 
-  const status = saveState.waiting
-    ? t`Saving…`
-    : saveState._tag === "Success"
-      ? saveState.value.synced
-        ? t`Saved`
-        : t`Saved on this Mac. Syncs when online.`
+  const status =
+    recovering || saveState.waiting
+      ? t`Saving…`
       : saveState._tag === "Failure"
         ? t`Couldn't save`
-        : "";
+        : syncNotice === "local"
+          ? t`Kept on this Mac`
+          : syncNotice === "failed"
+            ? t`Couldn't sync`
+            : syncNotice === "retrying"
+              ? t`Saved on this Mac. Retrying sync automatically.`
+              : (syncStatus?.synced ?? initial.synced)
+                ? t`Saved`
+                : saveState._tag === "Success" || syncStatus
+                  ? t`Saved on this Mac. Syncs when online.`
+                  : "";
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-neutral-400";
@@ -896,6 +987,10 @@ export function Composer({
                 <Trans>To</Trans>
               </span>
               <RecipientField
+                onDragChip={() => setShowBcc(true)}
+                fieldName="to"
+                onMove={(index, target) => moveChip("to", target, index)}
+                onDropRecipient={(chip) => dropChip("to", chip)}
                 label={t`To`}
                 inputRef={toRef}
                 value={draft.to}
@@ -923,6 +1018,9 @@ export function Composer({
                     <Trans>Cc</Trans>
                   </span>
                   <RecipientField
+                    fieldName="cc"
+                    onMove={(index, target) => moveChip("cc", target, index)}
+                    onDropRecipient={(chip) => dropChip("cc", chip)}
                     label={t`Cc`}
                     inputRef={ccRef}
                     value={draft.cc}
@@ -940,6 +1038,9 @@ export function Composer({
                     <Trans>Bcc</Trans>
                   </span>
                   <RecipientField
+                    fieldName="bcc"
+                    onMove={(index, target) => moveChip("bcc", target, index)}
+                    onDropRecipient={(chip) => dropChip("bcc", chip)}
                     label={t`Bcc`}
                     value={draft.bcc}
                     onChange={(bcc) => {
@@ -1036,6 +1137,28 @@ export function Composer({
                 <button type="button" onClick={() => setImageUrlOpen(false)}>{t`Cancel`}</button>
               </div>
             )}
+            <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2">
+              <span className="text-neutral-500">{t`Signature`}</span>
+              <Select
+                aria-label={t`Signature`}
+                value={draft.signatureId === undefined ? "default" : (draft.signatureId ?? "none")}
+                options={[
+                  { value: "default", label: t`Default signature` },
+                  { value: "none", label: t`None` },
+                  ...localSignatures.map((s) => ({
+                    value: s.id,
+                    label: s.source === "gmail" ? t`Gmail default` : s.name,
+                  })),
+                ]}
+                onValueChange={chooseSignature}
+              />
+            </div>
+            <DraftSyncRecovery
+              draft={syncStatus ?? initial}
+              busy={recovering}
+              onRecover={recover}
+            />
+            {recoveryError && <output className="px-4 text-red-600">{recoveryError}</output>}
             <ComposeEditor
               shortcutSet={prefs.shortcutSet}
               prefs={prefs}

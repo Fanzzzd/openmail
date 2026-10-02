@@ -56,7 +56,7 @@ function editor(body: ComposeBody, prefs = DEFAULT_PREFS) {
     "HTMLTextAreaElement",
   ] as const)
     vi.stubGlobal(name, dom.window[name]);
-  dom.window.getSelection = () => null;
+  vi.stubGlobal("getSelection", () => null);
   const command = vi.fn((_name: string, _ui?: boolean, _value?: string) => true);
   dom.window.document.execCommand = command;
   const bodyRef = createRef<ComposeElement>();
@@ -279,19 +279,16 @@ for (const [literal, tag] of [
         value: () => rangeAt(dom.body.firstChild ?? dom.body, 0),
       });
       selected = rangeAt(text, literal.length);
-      dom.window.getSelection = () => null;
-      Object.defineProperty(dom.window, "getSelection", {
-        configurable: true,
-        value: () => ({
-          rangeCount: 1,
-          getRangeAt: () => selected,
-          removeAllRanges: vi.fn(),
-          addRange: (range: Range) => {
-            selected = range;
-          },
-          anchorNode: selected.startContainer,
-        }),
-      });
+      vi.stubGlobal("getSelection", () => null);
+      vi.stubGlobal("getSelection", () => ({
+        rangeCount: 1,
+        getRangeAt: () => selected,
+        removeAllRanges: vi.fn(),
+        addRange: (range: Range) => {
+          selected = range;
+        },
+        anchorNode: selected.startContainer,
+      }));
       dom.command.mockImplementation((name: string, _ui?: boolean, value?: string) => {
         if (name === "insertHTML") dom.body.innerHTML = `<div>${value ?? ""}</div>`;
         if (name === "delete") dom.body.innerHTML = "<div></div>";
