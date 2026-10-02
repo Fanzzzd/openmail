@@ -1,9 +1,13 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const native = vi.hoisted(() => ({
   primary: true,
+  failStart: false,
+  warnStart: false,
+  diagnosticLog: vi.fn(),
+  localLog: vi.fn(),
   exit: vi.fn(),
   nodeMailbox: vi.fn(),
   vision: vi.fn(),
@@ -27,12 +31,23 @@ vi.mock("electron", () => ({
   powerMonitor: { isOnBatteryPower: () => false, getSystemIdleTime: () => 6 },
 }));
 vi.mock("@openmail/core", () => ({
+  dataDir: Effect.succeed("/tmp/openmail-startup-test"),
+  NodeSystem: Layer.empty,
   NodeMailbox: (options: unknown) => {
     native.nodeMailbox(options);
+    if (native.failStart)
+      return Layer.effectDiscard(Effect.die(new Error("startup regression failure")));
+    if (native.warnStart)
+      return Layer.effectDiscard(Effect.logWarning("startup regression warning"));
     return Layer.empty;
   },
 }));
 vi.mock("./attachment-temp", () => ({ cleanupAttachmentTemps: native.cleanup }));
+vi.mock("./reliability", () => ({
+  prepareReliability: vi.fn(async () => true),
+  diagnosticsLogger: Logger.make(() => native.diagnosticLog()),
+  localLog: native.localLog,
+}));
 vi.mock("./updates", () => ({ UpdatesLive: Layer.empty }));
 vi.mock("./vision", () => ({ desktopVision: native.vision }));
 vi.mock("./rpc-server", () => ({ RpcServerLive: Layer.empty }));
@@ -45,6 +60,7 @@ vi.mock("./windows", () => ({ DEV_ICON: undefined, focusMainWindow: native.focus
 
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
 afterEach(() => {
+  vi.restoreAllMocks();
   if (originalResourcesPath) Object.defineProperty(process, "resourcesPath", originalResourcesPath);
   else Reflect.deleteProperty(process, "resourcesPath");
 });
@@ -63,6 +79,8 @@ beforeEach(async () => {
   app.removeAllListeners();
   vi.resetModules();
   native.primary = true;
+  native.failStart = false;
+  native.warnStart = false;
   vi.clearAllMocks();
 });
 it("the second process exits before building core or opening any data", async () => {
@@ -113,4 +131,28 @@ it("development builds in different worktrees do not request the shared packaged
   app.emit("will-quit", { preventDefault: vi.fn() });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
   Object.defineProperty(app, "isPackaged", { configurable: true, value: true });
+});
+
+it("startup defects remain visible on stderr while the file log receives only a fixed event", async () => {
+  native.failStart = true;
+  const stderr = vi.spyOn(console, "error").mockImplementation(() => {
+    /* Capture console output in this regression. */
+  });
+  await import("./index");
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(1));
+  expect(stderr).toHaveBeenCalledWith(expect.stringContaining("startup regression failure"));
+  expect(native.localLog).toHaveBeenCalledWith("startup-failed");
+  expect(native.localLog.mock.calls[0]).toEqual(["startup-failed"]);
+});
+it("the diagnostics logger merges with the existing Effect logger", async () => {
+  native.warnStart = true;
+  const existing = vi.spyOn(Logger.defaultLogger, "log").mockImplementation(() => {
+    /* Capture console output in this regression. */
+  });
+  await import("./index");
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  expect(existing).toHaveBeenCalled();
+  expect(native.diagnosticLog).toHaveBeenCalled();
+  (await import("electron")).app.emit("will-quit", { preventDefault: vi.fn() });
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
 });

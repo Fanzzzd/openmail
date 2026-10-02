@@ -67,3 +67,7 @@ export * from "./attachment-view.js";
 export * from "./tnef.js";
 
 export * from "./attachment-filename.js";
+export * from "./diagnostics.js";
+export * from "./feedback.js";
+export { DatabaseInUseError } from "./database-access.js";
+export { InterruptedRecoveryError, prepareDatabaseStartup } from "./recovery-files.js";

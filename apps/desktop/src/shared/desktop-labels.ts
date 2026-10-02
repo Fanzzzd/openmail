@@ -30,6 +30,7 @@ export const DesktopLabels = Schema.Struct({
   cancel: Schema.String,
   selectAll: Schema.String,
   window: Schema.String,
+  feedback: Schema.String,
   newMessages: Schema.String,
 });
 export type DesktopLabels = typeof DesktopLabels.Type;

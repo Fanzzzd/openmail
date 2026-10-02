@@ -1,3 +1,4 @@
+import { restoredSelection } from "../window-selection";
 /**
  * What the person is looking at: the view, list filters and search text.
  * They live in atoms because the thread list atom derives its query from them.
@@ -14,9 +15,11 @@ interface Nav {
   remembered: ReadonlyMap<SpaceId, View>;
 }
 
-const nav = Atom.make<Nav>({ view: { space: ALL, mailbox: "inbox" }, remembered: new Map() }).pipe(
-  Atom.keepAlive,
-);
+const restored = restoredSelection();
+const nav = Atom.make<Nav>({
+  view: restored ?? { space: ALL, mailbox: "inbox" },
+  remembered: new Map(),
+}).pipe(Atom.keepAlive);
 
 /** The view on screen. Writing it also remembers it as its space's last view. */
 export const viewAtom = Atom.writable(

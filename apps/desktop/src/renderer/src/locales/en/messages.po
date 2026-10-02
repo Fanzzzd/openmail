@@ -499,6 +499,10 @@ msgstr "Attach files"
 msgid "Attach Files…"
 msgstr "Attach Files…"
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Attach the redacted diagnostics shown below"
+msgstr "Attach the redacted diagnostics shown below"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Attached message"
 msgstr "Attached message"
@@ -576,6 +580,10 @@ msgstr "Body"
 msgid "Bold"
 msgstr "Bold"
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Bug report"
+msgstr "Bug report"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "Calendar invitation"
@@ -632,6 +640,7 @@ msgstr "Can't reach the mail server right now: {0}"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
@@ -646,6 +655,10 @@ msgstr "Cancel"
 #: src/renderer/src/errors.ts
 msgid "Cannot build calendar response"
 msgstr "Cannot build calendar response"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Category"
+msgstr "Category"
 
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Category names, separated by commas"
@@ -744,6 +757,10 @@ msgstr "Close compose window"
 msgid "Close find"
 msgstr "Close find"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
+msgstr "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
 msgstr "Collapse all"
@@ -789,6 +806,10 @@ msgstr "Confirm Remove"
 msgid "Confirm rule changes?"
 msgstr "Confirm rule changes?"
 
+#: src/renderer/src/App.tsx
+msgid "Connect an account to send feedback"
+msgstr "Connect an account to send feedback"
+
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Contact refresh failed. Cached suggestions remain available."
@@ -801,9 +822,17 @@ msgstr "Contacts only"
 msgid "Content matches"
 msgstr "Content matches"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Continue"
+msgstr "Continue"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "Continue editing"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Continue to draft"
+msgstr "Continue to draft"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Conversation actions"
@@ -851,6 +880,18 @@ msgstr "Could not load the next message"
 msgid "Could not open notification settings."
 msgstr "Could not open notification settings."
 
+#: src/renderer/src/App.tsx
+msgid "Could not open the compose window"
+msgstr "Could not open the compose window"
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the draft"
+msgstr "Could not open the draft"
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the feedback draft"
+msgstr "Could not open the feedback draft"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
 msgstr "Could not read attached message."
@@ -866,6 +907,10 @@ msgstr "Could not read system permission"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Could not register OpenMail. Try again from the installed app."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Could not reset the local cache"
+msgstr "Could not reset the local cache"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't delete: {reason}"
@@ -960,6 +1005,10 @@ msgstr "Custom time"
 msgid "Dark background"
 msgstr "Dark background"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
+msgstr "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
+
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
@@ -1037,6 +1086,14 @@ msgstr "Denied"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Dense"
 msgstr "Dense"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Describe what happened"
+msgstr "Describe what happened"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Diagnostics preview"
+msgstr "Diagnostics preview"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
@@ -1193,6 +1250,10 @@ msgstr "Enter a single access token"
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "Enter the IMAP and SMTP servers your email provider gives you."
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Enter the project's feedback address"
+msgstr "Enter the project's feedback address"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
 msgstr "Every {interval} days"
@@ -1245,6 +1306,18 @@ msgstr "Favorite"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "Favorites"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feature request"
+msgstr "Feature request"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback"
+msgstr "Feedback"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback address"
+msgstr "Feedback address"
 
 #: src/renderer/src/state/desktop.ts
 msgid "File"
@@ -1560,6 +1633,14 @@ msgstr "Loading attached message…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "Loading attachments…"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Loading diagnostics…"
+msgstr "Loading diagnostics…"
+
+#: src/renderer/src/App.tsx
+msgid "Loading draft…"
+msgstr "Loading draft…"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Loading image…"
@@ -2126,6 +2207,7 @@ msgstr "Open email links in a new OpenMail draft."
 msgid "Open in Gmail"
 msgstr "Open in Gmail"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2164,6 +2246,10 @@ msgstr "OpenMail is the default email app"
 msgid "OpenMail is up to date."
 msgstr "OpenMail is up to date."
 
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail safe mode"
+msgstr "OpenMail safe mode"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -2171,6 +2257,14 @@ msgstr "openmail signs in with an OAuth client you register yourself. First ente
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
 msgstr "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "OpenMail stopped unexpectedly"
+msgstr "OpenMail stopped unexpectedly"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
+msgstr "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -2203,6 +2297,10 @@ msgstr "Original message (.eml)"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Other"
 msgstr "Other"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Other feedback"
+msgstr "Other feedback"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Other IMAP"
@@ -2344,6 +2442,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Quick Look"
 
+#: src/renderer/src/recovery-labels.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Quit"
@@ -2367,6 +2466,10 @@ msgstr "Read only"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
 msgstr "Reading"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
@@ -2538,6 +2641,10 @@ msgstr "Reported as spam"
 msgid "Reset Favorites"
 msgstr "Reset Favorites"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Reset local cache"
+msgstr "Reset local cache"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Restore"
@@ -2562,6 +2669,10 @@ msgstr "Resume"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "Review and Send"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
+msgstr "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Rich text"
@@ -2760,6 +2871,11 @@ msgstr "Send anyway"
 #: src/renderer/src/components/Settings.tsx
 msgid "Send failed"
 msgstr "Send failed"
+
+#: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Send Feedback…"
+msgstr "Send Feedback…"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
@@ -3141,6 +3257,14 @@ msgstr "The button below opens the {name} sign-in page. openmail only reads your
 msgid "The calendar organizer does not match this invitation"
 msgstr "The calendar organizer does not match this invitation"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
+msgstr "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
+msgstr "The database was kept. Quit OpenMail and restore a local backup or contact support."
+
 #: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "The end must be after the start"
@@ -3148,6 +3272,14 @@ msgstr "The end must be after the start"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "The filter applies to future mail on the server."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database could not be verified"
+msgstr "The local database could not be verified"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database was recovered"
+msgstr "The local database was recovered"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."

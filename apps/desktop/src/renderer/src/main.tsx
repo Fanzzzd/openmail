@@ -26,7 +26,9 @@ createRoot(document.getElementById("root")!).render(
               single={new URLSearchParams(window.location.search).get("single") === "1"}
             />
           ) : (
-            <App />
+            <App
+              composeId={new URLSearchParams(window.location.search).get("compose") ?? undefined}
+            />
           )}
         </TipProvider>
       </LocaleProvider>

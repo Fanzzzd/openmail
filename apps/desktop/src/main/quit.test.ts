@@ -93,3 +93,14 @@ it("quit collects every window's latest state, removes closed/crashed windows an
   expect(states.total()).toBe(0);
   expect(states.get(2)).toBeUndefined();
 });
+
+it("a reload reporting zero cannot silently discard sends held by a crashed renderer", () => {
+  const states = createSendState();
+  states.update(10, { pending: 1, undoAvailable: true });
+  states.rendererGone(10);
+  states.update(10, { pending: 0, undoAvailable: false });
+  expect(states.total()).toBe(1);
+  expect(states.get(10)?.pending).toBe(1);
+  states.remove(10);
+  expect(states.total()).toBe(0);
+});

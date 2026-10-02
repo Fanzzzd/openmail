@@ -1,6 +1,8 @@
 import { pageAfterRemoval } from "./state/list-pages";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { readerSelectedText, quoteChoice } from "./quote-selection";
+import { Feedback, type FeedbackInput } from "./components/Feedback";
+import { restoredSelection, settleStartupSelection } from "./window-selection";
 import {
   readerThreadKey,
   replySource,
@@ -17,6 +19,7 @@ import {
   applySignature,
   moveSourceLabel,
   DEFAULT_PREFS,
+  FEEDBACK_DRAFT_PREFIX,
   holdSend,
   markReadAfter,
   richComposeBody,
@@ -142,7 +145,7 @@ import { CreateLabelDialog, type LabelApplyTarget } from "./components/CreateLab
 import { SnoozeDialog } from "./components/SnoozeDialog";
 import { FilterEditor } from "./components/ServerSettings";
 
-type Dialog = "add" | "settings" | "proposals" | "help" | null;
+type Dialog = "add" | "settings" | "proposals" | "help" | "feedback" | null;
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   read: (op) => (op.kind === "read" && op.value ? msg`Marked as read` : msg`Marked as unread`),
@@ -157,7 +160,7 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };
 
-export function App() {
+export function App({ composeId }: { composeId?: string }) {
   // The one subscription to the main process's events, and the RPC runtime,
   // live as long as the window.
   useAtomMount(MailClient.runtime);
@@ -174,7 +177,9 @@ export function App() {
   const [, setSearchScope] = useAtom(searchScopeAtom);
   const search = useAtomValue(searchAtom);
   const [filters, setFilters] = useAtom(filtersAtom);
-  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
+  const [selection, setSelection] = useState<Selection>(() =>
+    singleSelection(restoredSelection()?.messageId ?? null),
+  );
   const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
   const setSelectedId = (id: string | null) => setSelection(singleSelection(id));
   const [removalNavigation, setRemovalNavigation] = useState<{
@@ -211,7 +216,24 @@ export function App() {
   const syncState = useAtomValue(syncStateAtom);
   const progress = useAtomValue(syncProgressAtom);
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [compose, setCompose] = useState<Draft | null>(null);
+  const [compose, setComposeState] = useState<Draft | null>(null);
+  const setCompose = (draft: Draft | null) => {
+    if (composeId) {
+      setComposeState(draft);
+      return;
+    }
+    if (draft === null) setComposeState(null);
+    run(
+      withMail((call) => call("ClaimInlineDraft", { id: draft?.id ?? null })).pipe(
+        Effect.map((claimed) => {
+          if (draft && claimed) setComposeState(draft);
+        }),
+      ),
+    );
+  };
+  const [popOutRequested, setPopOutRequested] = useState(0);
+  const [closeRequested, setCloseRequested] = useState(0);
+  const [crashFeedback, setCrashFeedback] = useState(false);
   const [labelPicker, setLabelPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [goToFolder, setGoToFolder] = useState(false);
@@ -279,6 +301,7 @@ export function App() {
     setRestoration(null);
     setSelection(trimSelection(restoration.selection, visibleIds));
   }
+  const [startupSelection, setStartupSelection] = useState(restoredSelection()?.messageId ?? null);
   const [rowCache, setRowCache] = useState({
     list,
     selection,
@@ -292,7 +315,7 @@ export function App() {
   ) {
     const sameScope = rowCache.scopeKey === scopeKey;
     const remapped = reconcileSelection(
-      selectionForQuery(selection, rowCache.scopeKey, scopeKey),
+      startupSelection ? selection : selectionForQuery(selection, rowCache.scopeKey, scopeKey),
       sameScope ? rowCache.rows : new Map(),
       list,
       listQuery?.flat ?? false,
@@ -300,7 +323,9 @@ export function App() {
     const preserveRemoval =
       removalNavigation?.scopeKey === scopeKey && removalNavigation.before === selection;
     const reconciled =
-      threads.loading || preserveRemoval ? remapped : trimSelection(remapped, visibleIds);
+      startupSelection || threads.loading || preserveRemoval
+        ? remapped
+        : trimSelection(remapped, visibleIds);
     if (reconciled !== selection) setSelection(reconciled);
     if (!sameScope) {
       setLabelPicker(false);
@@ -311,6 +336,14 @@ export function App() {
     );
     setRowCache({ list, selection: reconciled, rows, scopeKey });
   }
+  const settled = settleStartupSelection(
+    startupSelection,
+    selection,
+    accounts._tag === "Success" && listQuery !== null && !threads.loading,
+    visibleIds,
+  );
+  if (settled.startupId !== startupSelection) setStartupSelection(settled.startupId);
+  if (settled.selection !== selection) setSelection(settled.selection);
   const batchRows = batchScope(selection, rowMap).rows;
   const selected = selectedId ? rowMap.get(selectedId) : undefined;
   const [readerSelection, setReaderSelection] = useState<ReaderSelection | null>(null);
@@ -319,16 +352,18 @@ export function App() {
   const currentReaderThreadKey = readerThreadKey(selected ?? messages?.[0]);
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
-  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const prefsResult = useAtomValue(prefsAtom);
+  const prefs = AsyncResult.getOrElse(prefsResult, () => DEFAULT_PREFS);
   const [readTarget, setReadTarget] = useState<string | null>(null);
-  const groupingRef = useRef(prefs.threadGrouping);
+  const groupingRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (groupingRef.current !== prefs.threadGrouping) {
-      groupingRef.current = prefs.threadGrouping;
+    if (prefsResult._tag !== "Success") return;
+    if (groupingRef.current !== null && groupingRef.current !== prefs.threadGrouping) {
       setSelection(EMPTY_SELECTION);
       setReadTarget(null);
     }
-  }, [prefs.threadGrouping]);
+    groupingRef.current = prefs.threadGrouping;
+  }, [prefs.threadGrouping, prefsResult._tag]);
   const undoSeconds = prefs.undoSendSeconds;
   /** The unread thread just opened with select(); it is marked read after the delay in preferences. */
   const print = useThreadPrint((next) => say(next));
@@ -730,7 +765,10 @@ export function App() {
     run(
       openDraft(id).pipe(
         Effect.matchCause({
-          onSuccess: (d) => setCompose(fromStored(d)),
+          onSuccess: (d) => {
+            if (composeId) setCompose(fromStored(d));
+            else run(withMail((call) => call("OpenComposeWindow", { id: d.id })));
+          },
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: t`Can't open the draft: ${reason}`, tone: "error" });
@@ -745,16 +783,107 @@ export function App() {
     openSavedDraft(`proposal:${p.id}`);
   };
 
+  const finishCompose = () => {
+    setCompose(null);
+    if (composeId) run(withMail((call) => call("CloseComposeWindow", undefined)));
+  };
+  const popOut = (draft: Draft) =>
+    run(
+      saveDraft(toDraftInput(draft)).pipe(
+        Effect.andThen(
+          withMail((call) =>
+            call("OpenComposeWindow", {
+              id: draft.id,
+              recipients: { to: draft.to, cc: draft.cc, bcc: draft.bcc },
+              transfer: true,
+            }),
+          ),
+        ),
+        Effect.matchCause({
+          onSuccess: () => setCompose(null),
+          onFailure: () => say({ text: t`Could not open the compose window`, tone: "error" }),
+        }),
+      ),
+    );
+  const feedbackDraft = (input: FeedbackInput) =>
+    run(
+      newMessageDraft().pipe(
+        Effect.flatMap((base) => {
+          if (!base) {
+            say({ text: t`Connect an account to send feedback`, tone: "error" });
+            return Effect.void;
+          }
+          const draft = {
+            ...base,
+            id: `${FEEDBACK_DRAFT_PREFIX}${crypto.randomUUID()}`,
+            to: input.to,
+            subject: input.subject,
+            body: richComposeBody(textComposeHtml(input.body)),
+            attachments: input.attachments,
+          };
+          return saveDraft(toDraftInput(draft)).pipe(
+            Effect.andThen(
+              withMail((call) =>
+                call("OpenComposeWindow", {
+                  id: draft.id,
+                  recipients: { to: draft.to, cc: draft.cc, bcc: draft.bcc },
+                  transfer: true,
+                }),
+              ),
+            ),
+          );
+        }),
+        Effect.catchCause(() =>
+          Effect.sync(() => say({ text: t`Could not open the feedback draft`, tone: "error" })),
+        ),
+      ),
+    );
+  const startupDraftFailed = useEffectEvent(() =>
+    say({ text: t`Could not open the draft`, tone: "error" }),
+  );
+  useEffect(() => {
+    if (composeId) {
+      run(
+        withMail((call) => call("ComposeWindowDraft", { id: composeId })).pipe(
+          Effect.matchCause({
+            onSuccess: ({ draft, recipients }) =>
+              setComposeState({ ...fromStored(draft), ...recipients }),
+            onFailure: startupDraftFailed,
+          }),
+        ),
+      );
+    } else {
+      run(
+        withMail((call) => call("CrashReportPending", undefined)).pipe(
+          Effect.map((pending) => {
+            if (pending) {
+              setCrashFeedback(true);
+              setDialog("feedback");
+            }
+          }),
+        ),
+      );
+    }
+  }, [composeId, run]);
+  useEffect(() => {
+    if (!composeId)
+      run(
+        withMail((call) =>
+          call("SetWindowSelection", { selection: { ...view, messageId: selectedId } }),
+        ),
+      );
+  }, [run, composeId, view, selectedId]);
+
   /** Quiet closes retain storage; explicit Save persists even a cleared draft. */
   const closeCompose = (draft: Draft, changed: boolean) => {
     if (!changed) {
-      setCompose(null);
+      finishCompose();
       return;
     }
     run(
       saveDraft(toDraftInput(draft)).pipe(
         Effect.matchCause({
-          onSuccess: () => setCompose(null),
+          onSuccess: finishCompose,
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: t`Couldn't save the draft: ${reason}`, tone: "error" });
@@ -769,7 +898,10 @@ export function App() {
     run(
       discardDraft(draft.id).pipe(
         Effect.matchCause({
-          onSuccess: () => say({ text: t`Draft discarded` }),
+          onSuccess: () => {
+            say({ text: t`Draft discarded` });
+            if (composeId) finishCompose();
+          },
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: t`Couldn't discard: ${reason}`, tone: "error" });
@@ -809,6 +941,7 @@ export function App() {
           Effect.matchCause({
             onSuccess: () => {
               say({ text: options.archive ? t`Sent and archived` : t`Sent` });
+              if (composeId) finishCompose();
               // The archived thread leaves the list; move on as E does.
               if (options.archive && selectedId === draft.inReplyTo) {
                 setSelection(
@@ -929,6 +1062,14 @@ export function App() {
       case "AttachFiles":
         window.dispatchEvent(new Event("openmail-attach-files"));
         break;
+      case "PopOutDraft":
+        if (compose?.id === event.id) setPopOutRequested((n) => n + 1);
+        break;
+      case "ComposeClose":
+        if (compose) setCloseRequested((n) => n + 1);
+        else if (!pendingSends.current.size)
+          run(withMail((call) => call("CloseComposeWindow", undefined)));
+        break;
       case "QuitCheck":
         reportSendState();
         break;
@@ -985,6 +1126,10 @@ export function App() {
         startNewMessage(event.draft);
         break;
       case "Command":
+        if (event.command === "feedback") {
+          setCrashFeedback(false);
+          setDialog("feedback");
+        }
         if (event.command === "compose") startCompose("new");
         else if (event.command === "inbox") {
           changeView({ space: view.space === OVERVIEW ? ALL : view.space, mailbox: "inbox" });
@@ -1321,6 +1466,28 @@ export function App() {
   });
 
   const mailOrientation = prefs.readingPanePosition === "bottom" ? "vertical" : "horizontal";
+  if (composeId)
+    return (
+      <div className="h-screen bg-white dark:bg-neutral-900">
+        {compose && (
+          <Composer
+            key={compose.id}
+            draft={compose}
+            accounts={accountList}
+            signatureFor={signatureFor}
+            onClose={closeCompose}
+            onDiscard={discard}
+            onSend={send}
+            standalone
+            closeRequested={closeRequested}
+          />
+        )}
+        {!compose && (
+          <p className="p-8 text-sm text-neutral-500">{toast?.text ?? t`Loading draft…`}</p>
+        )}
+        <Toast toast={toast} onDone={hideToast} />
+      </div>
+    );
   return (
     <div className="h-full text-[13px] text-neutral-900 dark:text-neutral-100">
       <Group
@@ -1821,6 +1988,9 @@ export function App() {
           onOpenDraft={openProposal}
         />
       )}
+      {dialog === "feedback" && (
+        <Feedback crash={crashFeedback} onClose={() => setDialog(null)} onDraft={feedbackDraft} />
+      )}
       {compose && (
         <Composer
           key={compose.id}
@@ -1830,6 +2000,8 @@ export function App() {
           onClose={closeCompose}
           onDiscard={discard}
           onSend={send}
+          onPopOut={popOut}
+          popOutRequested={popOutRequested}
         />
       )}
       <Toast toast={toast} onDone={hideToast} />

@@ -505,6 +505,10 @@ msgstr "添加附件"
 msgid "Attach Files…"
 msgstr "添加附件…"
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Attach the redacted diagnostics shown below"
+msgstr "附上以下脱敏诊断"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Attached message"
 msgstr "附加邮件"
@@ -582,6 +586,10 @@ msgstr "正文"
 msgid "Bold"
 msgstr "粗体"
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Bug report"
+msgstr "问题报告"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "日历邀请"
@@ -638,6 +646,7 @@ msgstr "暂时连不上邮件服务器：{0}"
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
@@ -652,6 +661,10 @@ msgstr "取消"
 #: src/renderer/src/errors.ts
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Category"
+msgstr "类别"
 
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Category names, separated by commas"
@@ -750,6 +763,10 @@ msgstr "关闭写信窗口"
 msgid "Close find"
 msgstr "关闭查找"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
+msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
 msgstr "全部收起"
@@ -795,6 +812,10 @@ msgstr "确认移除"
 msgid "Confirm rule changes?"
 msgstr "确认修改规则？"
 
+#: src/renderer/src/App.tsx
+msgid "Connect an account to send feedback"
+msgstr "连接账户后即可发送反馈"
+
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "联系人刷新失败，仍可使用缓存补全。"
@@ -807,9 +828,17 @@ msgstr "仅联系人"
 msgid "Content matches"
 msgstr "内容命中"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Continue"
+msgstr "继续"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Continue editing"
 msgstr "继续编辑"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Continue to draft"
+msgstr "打开草稿"
 
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Conversation actions"
@@ -857,6 +886,18 @@ msgstr "无法加载下一封邮件"
 msgid "Could not open notification settings."
 msgstr "无法打开通知设置。"
 
+#: src/renderer/src/App.tsx
+msgid "Could not open the compose window"
+msgstr "无法打开撰写窗口"
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the draft"
+msgstr "无法打开草稿"
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the feedback draft"
+msgstr "无法打开反馈草稿"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
 msgstr "无法读取附加邮件。"
@@ -872,6 +913,10 @@ msgstr "无法读取系统权限"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "注册失败，请从安装后的 app 重试。"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Could not reset the local cache"
+msgstr "无法重置本地缓存"
 
 #: src/renderer/src/App.tsx
 msgid "Couldn't delete: {reason}"
@@ -966,6 +1011,10 @@ msgstr "自选时间"
 msgid "Dark background"
 msgstr "深色背景"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
+msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 OpenMail。保留的数据库：{backup}"
+
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
@@ -1043,6 +1092,14 @@ msgstr "被拒绝"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Dense"
 msgstr "密集"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Describe what happened"
+msgstr "描述遇到的问题"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Diagnostics preview"
+msgstr "诊断预览"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
@@ -1199,6 +1256,10 @@ msgstr "请输入一个访问令牌"
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
 msgstr "填入邮箱服务商提供的 IMAP 和 SMTP 服务器地址。"
 
+#: src/renderer/src/components/Feedback.tsx
+msgid "Enter the project's feedback address"
+msgstr "填写项目反馈邮箱"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
 msgstr "每 {interval} 天"
@@ -1251,6 +1312,18 @@ msgstr "收藏"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "收藏夹"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feature request"
+msgstr "功能建议"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback"
+msgstr "反馈"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback address"
+msgstr "反馈邮箱"
 
 #: src/renderer/src/state/desktop.ts
 msgid "File"
@@ -1566,6 +1639,14 @@ msgstr "正在加载附加邮件…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "正在加载附件…"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Loading diagnostics…"
+msgstr "正在读取诊断…"
+
+#: src/renderer/src/App.tsx
+msgid "Loading draft…"
+msgstr "正在读取草稿…"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Loading image…"
@@ -2132,6 +2213,7 @@ msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
 msgid "Open in Gmail"
 msgstr "在 Gmail 中打开"
 
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2170,6 +2252,10 @@ msgstr "OpenMail 已是默认邮件客户端"
 msgid "OpenMail is up to date."
 msgstr "OpenMail 已是最新版本。"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail safe mode"
+msgstr "OpenMail 安全模式"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
 msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure 里注册的应用，类型选移动和桌面应用。只支持个人 outlook.com 和 hotmail 账户。步骤见仓库里的 {doc}。"
@@ -2177,6 +2263,14 @@ msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Azure �
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
 msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google Cloud 里创建的 OAuth 客户端，类型选桌面应用。步骤见仓库里的 {doc}。"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "OpenMail stopped unexpectedly"
+msgstr "OpenMail 意外退出"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
+msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -2209,6 +2303,10 @@ msgstr "原邮件（.eml）"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Other"
 msgstr "其他"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Other feedback"
+msgstr "其他反馈"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Other IMAP"
@@ -2350,6 +2448,7 @@ msgstr "QQ 邮箱"
 msgid "Quick Look"
 msgstr "快速查看"
 
+#: src/renderer/src/recovery-labels.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "退出"
@@ -2373,6 +2472,10 @@ msgstr "只读"
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
 msgstr "阅读"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
@@ -2544,6 +2647,10 @@ msgstr "已报告为垃圾邮件"
 msgid "Reset Favorites"
 msgstr "重置收藏夹"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "Reset local cache"
+msgstr "重置本地缓存"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "恢复"
@@ -2568,6 +2675,10 @@ msgstr "继续"
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "检查并发送"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
+msgstr "请查看以下本地诊断。不会自动上传。继续后打开邮件草稿，由你检查并用自己的账户发送。"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Rich text"
@@ -2766,6 +2877,11 @@ msgstr "仍然发送"
 #: src/renderer/src/components/Settings.tsx
 msgid "Send failed"
 msgstr "发送失败"
+
+#: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Send Feedback…"
+msgstr "发送反馈…"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
@@ -3147,6 +3263,14 @@ msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮�
 msgid "The calendar organizer does not match this invitation"
 msgstr "日历中的组织者与邀请不一致"
 
+#: src/renderer/src/recovery-labels.ts
+msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
+msgstr "数据库完整性检查（quick_check）失败，或文件无法访问。重置会用可读的本地记录重建损坏的数据库，并保留原文件和钥匙串令牌。"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
+msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
+
 #: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "结束时间须晚于开始时间"
@@ -3154,6 +3278,14 @@ msgstr "结束时间须晚于开始时间"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database could not be verified"
+msgstr "无法验证本地数据库"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database was recovered"
+msgstr "本地数据库已恢复"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."

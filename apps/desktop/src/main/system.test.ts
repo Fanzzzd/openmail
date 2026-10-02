@@ -18,6 +18,7 @@ vi.mock("electron", async () => {
     getLocale: () => "en",
     setBadgeCount: vi.fn<(count: number) => boolean>(() => true),
     quit: vi.fn(),
+    relaunch: vi.fn(),
   });
   class FakeWindow extends EventEmitter {
     static getAllWindows = () => [...windows];
@@ -26,6 +27,7 @@ vi.mock("electron", async () => {
       id: ++nextId,
       setWindowOpenHandler: vi.fn(),
       send: vi.fn(),
+      isCrashed: vi.fn(() => false),
     });
     closed = false;
     query: Record<string, string> = {};
@@ -60,6 +62,9 @@ vi.mock("electron", async () => {
     close() {
       const cancellation = { prevented: false };
       this.emit("close", {
+        get defaultPrevented() {
+          return cancellation.prevented;
+        },
         preventDefault: () => {
           cancellation.prevented = true;
         },
@@ -146,7 +151,7 @@ import { Mailbox, messageLink } from "@openmail/core";
 import { fakeServer, TestMailbox } from "../../../../packages/core/src/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 import { Desktop, DesktopLive, receiveAppUrl } from "./system";
-import { createMainWindow } from "./windows";
+import { createMainWindow, openComposeWindow } from "./windows";
 
 // Expose test-only observations without narrowing Electron's production API with a cast.
 const observations = await vi.importMock<{
@@ -216,6 +221,7 @@ const englishLabels: DesktopLabels = {
   selectAll: "Select all",
   window: "Window",
   newMessages: "new messages",
+  feedback: "Send Feedback…",
 };
 const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
   Layer.effectDiscard(
@@ -764,7 +770,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         expect(preventDefault).toHaveBeenCalledOnce();
         expect(dialog.showMessageBox).toHaveBeenCalled();
         expect(app.quit).not.toHaveBeenCalled();
-        vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({
+        vi.spyOn(dialog, "showMessageBox").mockResolvedValueOnce({
           response: 1,
           checkboxChecked: false,
         });
@@ -1013,6 +1019,140 @@ it("the app menu exposes a manual update check and explains the unpackaged gate"
         expect(messageBox).toHaveBeenCalledWith(
           expect.objectContaining({ message: "Update checks disabled" }),
         );
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("closes an orphaned compose renderer, but still asks about its cached pending send", async () => {
+  const { dialog } = await vi.importMock<{
+    dialog: { showMessageBox: Mock<() => Promise<{ response: number }>> };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const empty = openComposeWindow("orphan-empty");
+        empty.close();
+        expect(empty.isDestroyed()).toBe(true);
+        const pending = openComposeWindow("orphan-pending");
+        yield* desktop.setSendState(pending.webContents.id, { pending: 1, undoAvailable: true });
+        pending.close();
+        yield* settle;
+        expect(pending.isDestroyed()).toBe(false);
+        dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        pending.close();
+        yield* settle;
+        expect(pending.isDestroyed()).toBe(true);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+it("recovery relaunch uses the pending-send guard and can be cancelled", async () => {
+  const { requestRecoveryRelaunch } = await import("./recovery-actions");
+  const { app, dialog } = await vi.importMock<{
+    app: { quit: Mock; relaunch: Mock };
+    dialog: { showMessageBox: Mock<() => Promise<{ response: number }>> };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("No window");
+        yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+        expect(yield* Effect.promise(requestRecoveryRelaunch)).toBe(false);
+        expect(app.relaunch).not.toHaveBeenCalled();
+        expect(app.quit).not.toHaveBeenCalled();
+        dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        expect(yield* Effect.promise(requestRecoveryRelaunch)).toBe(true);
+        expect(app.relaunch).toHaveBeenCalledOnce();
+        expect(app.quit).toHaveBeenCalledOnce();
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("native Attach Files reaches the focused standalone composer after merging the attachment slice", async () => {
+  const { Menu } = await vi.importMock<{
+    Menu: {
+      setApplicationMenu: Mock<
+        (items: { label?: string; submenu?: { label?: string; click?: () => void }[] }[]) => void
+      >;
+    };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const compose = openComposeWindow("native-attachment");
+        compose.focus();
+        const receive = yield* desktop
+          .events(compose.webContents.id)
+          .pipe(Stream.take(1), Stream.runCollect, Effect.forkChild);
+        yield* Effect.yieldNow;
+        yield* settle;
+        const fileMenu = Menu.setApplicationMenu.mock.calls
+          .at(-1)?.[0]
+          .find((item) => item.label === "File");
+        const attach = fileMenu?.submenu?.find((item) => item.label === "Attach Files…");
+        if (!attach?.click) throw new Error("Missing native attachment action");
+        attach.click();
+        expect(yield* Fiber.join(receive)).toEqual([{ _tag: "AttachFiles" }]);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("a crashed compose renderer with a stale event subscription can still close", async () => {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = openComposeWindow("crashed-stale-listener");
+        const receive = vi.fn();
+        yield* desktop.events(win.webContents.id).pipe(
+          Stream.runForEach((event) => Effect.sync(() => receive(event))),
+          Effect.forkScoped,
+        );
+        yield* Effect.yieldNow;
+        yield* settle;
+        vi.spyOn(win.webContents, "isCrashed").mockReturnValue(true);
+        win.close();
+        expect(win.isDestroyed()).toBe(true);
+        expect(receive).not.toHaveBeenCalled();
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+it("killed renderers drop stale listeners and keep cached pending sends protected", async () => {
+  const { app, dialog } = await import("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = openComposeWindow("killed-pending");
+        const receive = vi.fn();
+        yield* desktop.events(win.webContents.id).pipe(
+          Stream.runForEach((event) => Effect.sync(() => receive(event))),
+          Effect.forkScoped,
+        );
+        yield* Effect.yieldNow;
+        yield* settle;
+        yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+        app.emit("render-process-gone", {}, win.webContents, { reason: "killed", exitCode: 9 });
+        yield* desktop.setSendState(win.webContents.id, { pending: 0, undoAvailable: false });
+        win.close();
+        yield* settle;
+        expect(win.isDestroyed()).toBe(false);
+        expect(receive).not.toHaveBeenCalled();
+        vi.spyOn(dialog, "showMessageBox").mockResolvedValueOnce({
+          response: 1,
+          checkboxChecked: false,
+        });
+        win.close();
+        yield* settle;
+        expect(win.isDestroyed()).toBe(true);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
   );

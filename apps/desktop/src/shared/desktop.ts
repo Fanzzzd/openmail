@@ -5,12 +5,14 @@ export const DesktopEvent = Schema.Union([
   Schema.TaggedStruct("UndoSend", {}),
   Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
+  Schema.TaggedStruct("ComposeClose", {}),
+  Schema.TaggedStruct("PopOutDraft", { id: Schema.String }),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
   Schema.TaggedStruct("OpenThread", { id: Schema.String }),
   Schema.TaggedStruct("Compose", { draft: MailtoDraft }),
   Schema.TaggedStruct("Search", { query: Schema.String }),
   Schema.TaggedStruct("Command", {
-    command: Schema.Literals(["settings", "help", "compose", "inbox"]),
+    command: Schema.Literals(["settings", "help", "compose", "inbox", "feedback"]),
   }),
 ]);
 export type DesktopEvent = typeof DesktopEvent.Type;
@@ -22,6 +24,8 @@ export function desktopEventRoute(
 ): "dispatch" | "defer" | "drop" {
   if (
     event._tag === "AttachFiles" ||
+    event._tag === "ComposeClose" ||
+    event._tag === "PopOutDraft" ||
     event._tag === "Edit" ||
     event._tag === "UndoSend" ||
     event._tag === "QuitCheck"

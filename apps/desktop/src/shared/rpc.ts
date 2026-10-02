@@ -1,3 +1,4 @@
+import { ComposeRecipients, WindowSelection } from "./window-state";
 /**
  * The app's one IPC surface: Effect RPC between the renderer and the main
  * process. Every payload, result and error is a schema, so both sides decode
@@ -470,6 +471,29 @@ export class MailRpcs extends RpcGroup.make(
     payload: { action: Schema.Literals(["nextWindow", "previousWindow", "focusMainWindow"]) },
   }),
   Rpc.make("ClipboardText", { success: Schema.String }),
+  Rpc.make("ClaimInlineDraft", {
+    payload: { id: Schema.NullOr(Schema.String) },
+    success: Schema.Boolean,
+  }),
+  Rpc.make("OpenComposeWindow", {
+    payload: {
+      id: Schema.String,
+      recipients: Schema.optionalKey(ComposeRecipients),
+      transfer: Schema.optionalKey(Schema.Boolean),
+    },
+    error,
+  }),
+  Rpc.make("ComposeWindowDraft", {
+    payload: { id: Schema.String },
+    success: Schema.Struct({ draft: Draft, recipients: Schema.NullOr(ComposeRecipients) }),
+    error,
+  }),
+  Rpc.make("CloseComposeWindow"),
+  Rpc.make("SetWindowSelection", { payload: { selection: WindowSelection } }),
+  Rpc.make("Diagnostics", { payload: { crashOnly: Schema.Boolean }, success: Schema.String }),
+  Rpc.make("CrashReportPending", { success: Schema.Boolean }),
+  Rpc.make("DismissCrashReport"),
+  Rpc.make("FeedbackAddress", { success: Schema.String }),
   Rpc.make("SetSendState", {
     payload: {
       pending: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),

@@ -82,6 +82,10 @@ const TITLES: Record<Draft["mode"], MessageDescriptor> = {
 const AUTOSAVE_MS = 2000;
 
 interface Props {
+  standalone?: boolean;
+  closeRequested?: number;
+  popOutRequested?: number;
+  onPopOut?: (draft: Draft) => void;
   draft: Draft;
   accounts: readonly Account[];
   /** The local signature for an account and compose mode, if the person set one. */
@@ -94,6 +98,10 @@ interface Props {
 }
 
 export function Composer({
+  standalone = false,
+  closeRequested = 0,
+  popOutRequested = 0,
+  onPopOut,
   draft: initial,
   accounts,
   signatureFor,
@@ -284,6 +292,15 @@ export function Composer({
       ),
     );
   };
+
+  const nativePopOut = useEffectEvent(() => onPopOut?.(draft));
+  useEffect(() => {
+    if (popOutRequested > 0) queueMicrotask(() => nativePopOut());
+  }, [popOutRequested]);
+  const nativeClose = useEffectEvent(close);
+  useEffect(() => {
+    if (closeRequested > 0) queueMicrotask(() => nativeClose());
+  }, [closeRequested]);
 
   useEffect(() => {
     // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
@@ -513,8 +530,9 @@ export function Composer({
         <Dialog.Popup
           aria-label={title}
           initialFocus={initialFocus}
-          className="no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10"
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
         >
+          {standalone && <div className="drag h-8 shrink-0" />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
             className="flex min-h-0 flex-1 flex-col"
@@ -600,6 +618,16 @@ export function Composer({
                 </span>
               )}
               <span className="flex-1 truncate text-[12px] text-neutral-400">{status}</span>
+              {onPopOut && (
+                <button
+                  type="button"
+                  className={quiet}
+                  disabled={checkingClose || saveState.waiting}
+                  onClick={() => onPopOut(draft)}
+                >
+                  <Trans>Open in New Window</Trans>
+                </button>
+              )}
               <Tip label={t`Close`} shortcut={shortcut("closeCompose")}>
                 <button
                   type="button"

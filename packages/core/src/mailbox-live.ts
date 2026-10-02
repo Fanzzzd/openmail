@@ -1,5 +1,6 @@
 import { AttachmentCache } from "./attachment-cache.js";
 import { makeReaderAttachments } from "./reader-attachments.js";
+import { isLocalFeedbackDraft } from "./feedback.js";
 import { makeFolderMailbox } from "./mailbox-folders.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import {
@@ -796,12 +797,14 @@ export const MailboxLive = (
               accountId: input.accountId,
               message: normalizeComposeMessage(input.message),
             });
-            yield* store.enqueueDraftSave(input.accountId, input.id);
+            if (!isLocalFeedbackDraft(input.id))
+              yield* store.enqueueDraftSave(input.accountId, input.id);
             return draft;
           }),
         );
+        yield* changed;
         yield* flushLater;
-        // With an inline flush the push already happened; show that.
+        // Feedback remains local; regular drafts show the completed inline push.
         return yield* publicDraft(Option.getOrElse(yield* store.getDraft(input.id), () => saved));
       });
 

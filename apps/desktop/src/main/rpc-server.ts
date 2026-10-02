@@ -5,6 +5,7 @@ import {
   releaseAttachmentDrag,
 } from "./attachment-actions";
 import { clipboardAttachments } from "./clipboard-attachments";
+import { diagnosticsPreview, hasCrashReport, dismissCrashReport } from "./reliability";
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
@@ -24,7 +25,19 @@ import {
 } from "./files";
 import { openMeeting } from "./meeting";
 import { Desktop } from "./system";
-import { createMainWindow, openThreadWindow, openMessageWindow, windowOf } from "./windows";
+import {
+  createMainWindow,
+  openThreadWindow,
+  openMessageWindow,
+  openComposeWindow,
+  approveComposeClose,
+  retainComposeRecipients,
+  takeComposeRecipients,
+  claimInlineDraft,
+  registerComposeDraft,
+  setWindowSelection,
+  windowOf,
+} from "./windows";
 
 /** Brings the app back to the front after a sign-in in the system browser. */
 const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
@@ -260,6 +273,37 @@ const Handlers = MailRpcs.toLayer(
       ClipboardText: () => Effect.promise(() => clipboard.readText()),
       ComposeNew: () => desktop.compose(),
       OpenSettings: () => desktop.openSettings(),
+      ClaimInlineDraft: ({ id }, { client }) =>
+        Effect.sync(() => claimInlineDraft(windowOf(client.id), id)),
+      OpenComposeWindow: ({ id, recipients, transfer }, { client }) =>
+        m.openDraft(id).pipe(
+          Effect.andThen(
+            Effect.sync(() => {
+              const win = openComposeWindow(
+                id,
+                undefined,
+                transfer ? windowOf(client.id) : undefined,
+              );
+              if (recipients) retainComposeRecipients(win, recipients);
+            }),
+          ),
+        ),
+      ComposeWindowDraft: ({ id }, { client }) =>
+        m.openDraft(id).pipe(
+          Effect.map((draft) => {
+            const win = windowOf(client.id);
+            registerComposeDraft(win, draft.id);
+            return { draft, recipients: takeComposeRecipients(win) };
+          }),
+        ),
+      CloseComposeWindow: (_, { client }) =>
+        Effect.sync(() => approveComposeClose(windowOf(client.id))),
+      SetWindowSelection: ({ selection }, { client }) =>
+        Effect.sync(() => setWindowSelection(windowOf(client.id), selection)),
+      Diagnostics: ({ crashOnly }) => Effect.sync(() => diagnosticsPreview(crashOnly)),
+      CrashReportPending: () => Effect.sync(hasCrashReport),
+      DismissCrashReport: () => Effect.sync(dismissCrashReport),
+      FeedbackAddress: () => Effect.succeed(process.env.OPENMAIL_FEEDBACK_ADDRESS ?? ""),
       NewWindow: () =>
         Effect.sync(() => {
           createMainWindow();

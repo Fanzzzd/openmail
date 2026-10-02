@@ -59,6 +59,7 @@ export function useDesktopLabels() {
             cancel: t`Cancel`,
             selectAll: t`Select all`,
             window: t`Window`,
+            feedback: t`Send Feedback…`,
             newMessages: t`new messages`,
           },
         }),

@@ -9,9 +9,9 @@ export function createQuitGuard(options: {
   let approved = false;
   let checking = false;
   return (event: { preventDefault(): void }) => {
-    if (approved) return Promise.resolve();
+    if (approved) return Promise.resolve(true);
     event.preventDefault();
-    if (checking) return Promise.resolve();
+    if (checking) return Promise.resolve(false);
     checking = true;
     return (async () => {
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -23,9 +23,10 @@ export function createQuitGuard(options: {
           }),
         ]).catch(() => options.fallbackPending());
         clearTimeout(timer);
-        if (pending > 0 && !(await options.confirm().catch(() => false))) return;
+        if (pending > 0 && !(await options.confirm().catch(() => false))) return false;
         approved = true;
         options.quit();
+        return true;
       } finally {
         clearTimeout(timer);
         checking = false;
@@ -37,16 +38,31 @@ export function createQuitGuard(options: {
 /** Capture each renderer's latest undo/send state with a bounded reply wait. */
 export function createSendState() {
   const states = new Map<number, { pending: number; undoAvailable: boolean }>();
+  const lost = new Map<number, number>();
   const replies = new Map<number, () => void>();
   return {
-    get: (id: number) => states.get(id),
-    total: () => [...states.values()].reduce((sum, state) => sum + state.pending, 0),
+    get: (id: number) => {
+      const state = states.get(id);
+      const pending = (state?.pending ?? 0) + (lost.get(id) ?? 0);
+      return state || lost.has(id)
+        ? { pending, undoAvailable: state?.undoAvailable ?? false }
+        : undefined;
+    },
+    total: () =>
+      [...states.values()].reduce((sum, state) => sum + state.pending, 0) +
+      [...lost.values()].reduce((sum, n) => sum + n, 0),
+    rendererGone(id: number) {
+      lost.set(id, (lost.get(id) ?? 0) + (states.get(id)?.pending ?? 0));
+      states.delete(id);
+      replies.get(id)?.();
+    },
     update(id: number, state: { pending: number; undoAvailable: boolean }) {
       states.set(id, state);
       replies.get(id)?.();
     },
     remove(id: number) {
       states.delete(id);
+      lost.delete(id);
       replies.get(id)?.();
     },
     async snapshot(requests: readonly { id: number; request: () => void }[]) {
@@ -65,7 +81,10 @@ export function createSendState() {
             }),
         ),
       );
-      return [...states.values()].reduce((sum, state) => sum + state.pending, 0);
+      return (
+        [...states.values()].reduce((sum, state) => sum + state.pending, 0) +
+        [...lost.values()].reduce((sum, n) => sum + n, 0)
+      );
     },
   };
 }

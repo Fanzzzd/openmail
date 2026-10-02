@@ -1,6 +1,6 @@
 import { cleanupAttachmentTemps } from "./attachment-temp";
-import { NodeMailbox } from "@openmail/core";
-import { Cause, Effect, Fiber, Layer } from "effect";
+import { NodeMailbox, dataDir, NodeSystem } from "@openmail/core";
+import { Cause, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, powerMonitor, shell } from "electron";
@@ -11,6 +11,8 @@ import { UpdatesLive } from "./updates";
 import { RpcServerLive } from "./rpc-server";
 import { DesktopLive, receiveAppUrl, ready } from "./system";
 import { DEV_ICON, focusMainWindow } from "./windows";
+
+import { prepareReliability, diagnosticsLogger, localLog } from "./reliability";
 
 const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
 if (isolatedData) app.setPath("userData", resolve(isolatedData));
@@ -57,6 +59,11 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
           Layer.unwrap(
             Effect.gen(function* () {
               yield* ready;
+              const directory = isolatedData
+                ? resolve(isolatedData)
+                : yield* dataDir.pipe(Effect.provide(NodeSystem));
+              if (!(yield* Effect.promise(() => prepareReliability(directory))))
+                yield* Effect.never;
               const binary = app.isPackaged
                 ? join(process.resourcesPath, "native/vision")
                 : fileURLToPath(new URL("../native/vision", import.meta.url));
@@ -65,7 +72,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 openUrl: (url) => shell.openExternal(url),
                 autoSync: "2 minutes",
                 inferenceProcess: desktopInferenceProcess,
-                ...(isolatedData ? { dataDir: resolve(isolatedData) } : {}),
+                dataDir: directory,
                 inboxPoll: "45 seconds",
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 media: {
@@ -80,13 +87,15 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
         Layer.merge(setup),
       ),
     ).pipe(
+      Effect.provide(Logger.layer([diagnosticsLogger], { mergeWithExisting: true })),
       // A failed start (the database locked by a process still quitting, say)
       // would otherwise leave a process with no window and nothing logged.
       // Quitting interrupts the program; that is not a failure.
       Effect.tapCause((cause) =>
         Effect.sync(() => {
           if (Cause.hasInterruptsOnly(cause)) return;
-          console.error(`OpenMail failed to start:\n${Cause.pretty(cause)}`);
+          localLog("startup-failed");
+          console.error(Cause.pretty(cause));
           app.exit(1);
         }),
       ),

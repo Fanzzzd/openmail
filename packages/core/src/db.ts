@@ -1,3 +1,4 @@
+import { openDatabaseAccess } from "./recovery-files.js";
 import { SqliteClient } from "@effect/sql-sqlite-node";
 import { Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
@@ -638,8 +639,17 @@ export function databaseLayer(
     );
     return DatabaseCapabilities.of({ vectors });
   });
-  return Layer.effect(DatabaseCapabilities, initialize).pipe(
-    Layer.provideMerge(SqliteClient.layer({ filename, busyTimeout: 5000 })),
-    Layer.provide(Layer.effectDiscard(ensureDir)),
+  return Layer.unwrap(
+    Effect.gen(function* () {
+      yield* ensureDir;
+      if (filename !== ":memory:")
+        yield* Effect.acquireRelease(
+          Effect.sync(() => openDatabaseAccess(filename)),
+          (access) => Effect.sync(() => access.release()),
+        );
+      return Layer.effect(DatabaseCapabilities, initialize).pipe(
+        Layer.provideMerge(SqliteClient.layer({ filename, busyTimeout: 5000 })),
+      );
+    }),
   );
 }

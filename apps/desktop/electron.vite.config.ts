@@ -7,7 +7,9 @@ import Icons from "unplugin-icons/vite";
 export default defineConfig({
   // `@openmail/core` and its keychain binding stay external: the main process
   // imports them from node_modules at runtime.
-  main: {},
+  main: {
+    plugins: [react({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }), lingui()],
+  },
   preload: {
     // Sandboxed preloads cannot be ES modules.
     build: { rollupOptions: { output: { format: "cjs", entryFileNames: "[name].cjs" } } },

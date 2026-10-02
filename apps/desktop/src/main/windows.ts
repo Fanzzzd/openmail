@@ -6,7 +6,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, nativeTheme, shell } from "electron";
+import { app, BrowserWindow, nativeTheme, shell, screen } from "electron";
+import { randomUUID } from "node:crypto";
+import type { ComposeRecipients, SavedWindow, WindowSelection } from "../shared/window-state";
+import { visibleBounds, windowStateFile } from "./window-state";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MAC = process.platform === "darwin";
@@ -30,7 +33,141 @@ export function lockNavigation(win: BrowserWindow) {
   });
 }
 
+const composeRecipients = new WeakMap<BrowserWindow, ComposeRecipients>();
+export function retainComposeRecipients(win: BrowserWindow, recipients: ComposeRecipients) {
+  composeRecipients.set(win, recipients);
+}
+export function takeComposeRecipients(win: BrowserWindow | null): ComposeRecipients | null {
+  if (!win) return null;
+  const recipients = composeRecipients.get(win) ?? null;
+  composeRecipients.delete(win);
+  return recipients;
+}
+const draftEditors = new Map<string, { win: BrowserWindow; kind: "inline" | "window" }>();
+let inlinePopOut: ((win: BrowserWindow, id: string) => void) | undefined;
+export const setInlinePopOutHandler = (handler: (win: BrowserWindow, id: string) => void) => {
+  inlinePopOut = handler;
+};
+export function releaseDraftEditors(win: BrowserWindow, inlineOnly = false) {
+  for (const [id, editor] of draftEditors)
+    if (editor.win === win && (!inlineOnly || editor.kind === "inline")) draftEditors.delete(id);
+}
+export function registerComposeDraft(win: BrowserWindow | null, id: string): boolean {
+  if (!win || !isComposeWindow(win)) return false;
+  const current = draftEditors.get(id);
+  if (current && current.win !== win) {
+    current.win.show();
+    current.win.focus();
+    return false;
+  }
+  draftEditors.set(id, { win, kind: "window" });
+  return true;
+}
+export function claimInlineDraft(win: BrowserWindow | null, id: string | null): boolean {
+  if (!win) return false;
+  const existing = id ? draftEditors.get(id) : undefined;
+  if (existing && (existing.win !== win || existing.kind !== "inline")) {
+    existing.win.show();
+    existing.win.focus();
+    return false;
+  }
+  for (const [key, editor] of draftEditors)
+    if (editor.win === win && editor.kind === "inline") draftEditors.delete(key);
+  if (id) draftEditors.set(id, { win, kind: "inline" });
+  return true;
+}
+const tracked = new Map<BrowserWindow, SavedWindow>();
+let snapshot: ReturnType<typeof windowStateFile> | undefined;
+let quitting = false;
+let ignoreSavedWindows = false;
+let lastMain: SavedWindow | undefined;
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+let reloadGuard: ((win: BrowserWindow) => Promise<boolean>) | undefined;
+export const setRendererReloadGuard = (guard: (win: BrowserWindow) => Promise<boolean>) => {
+  reloadGuard = guard;
+};
+let rendererCrash: ((code: number) => boolean) | undefined;
+export function configureWindowRecovery(
+  file: string,
+  crash: (code: number) => boolean,
+  options: { safeMode?: boolean } = {},
+) {
+  snapshot = windowStateFile(file);
+  rendererCrash = crash;
+  ignoreSavedWindows = options.safeMode ?? false;
+  lastMain = ignoreSavedWindows
+    ? undefined
+    : snapshot.read().findLast((state) => state.kind === "main");
+  app.on("before-quit", (event) => {
+    saveWindows();
+    quitting = true;
+    queueMicrotask(() => {
+      if (event.defaultPrevented) quitting = false;
+    });
+  });
+}
+const saveWindows = () => {
+  clearTimeout(saveTimer);
+  if (!snapshot || quitting) return;
+  const windows = [...tracked.values()];
+  lastMain = windows.findLast((state) => state.kind === "main") ?? lastMain;
+  if (!windows.some((state) => state.kind === "main") && lastMain) windows.push(lastMain);
+  if (!windows.length) return;
+  try {
+    snapshot.write(windows);
+  } catch {
+    /* Recovery storage failure is non-fatal. */
+  }
+};
+export function setWindowSelection(win: BrowserWindow | null, selection: WindowSelection) {
+  const state = win ? tracked.get(win) : undefined;
+  if (win && state) {
+    tracked.set(win, { ...state, selection });
+    saveWindows();
+  }
+}
+export function restoreWindows() {
+  const saved = ignoreSavedWindows ? [] : (snapshot?.read() ?? []);
+  if (!saved.length) {
+    createMainWindow();
+    return;
+  }
+  for (const state of saved) {
+    if (state.kind === "main") createMainWindow(state);
+    else if (state.target) {
+      if (state.kind === "compose") openComposeWindow(state.target, state);
+      else
+        createAppWindow({
+          width: 820,
+          height: 860,
+          minWidth: 480,
+          minHeight: 400,
+          kind: state.kind,
+          target: state.target,
+          restored: state,
+          query: { thread: state.target, ...(state.kind === "message" ? { single: "1" } : {}) },
+        });
+    }
+  }
+  if (![...tracked.values()].some((s) => s.kind === "main")) createMainWindow();
+}
+export const isComposeWindow = (win: BrowserWindow) => tracked.get(win)?.kind === "compose";
+export const approveComposeClose = (win: BrowserWindow | null) => {
+  if (win) {
+    allowedClose.add(win);
+    win.close();
+  }
+};
+let composeClose: ((win: BrowserWindow) => void) | undefined;
+export const setComposeCloseHandler = (handler: (win: BrowserWindow) => void) => {
+  composeClose = handler;
+};
+const allowedClose = new WeakSet<BrowserWindow>();
+
 interface WindowOptions {
+  kind?: SavedWindow["kind"];
+  target?: string;
+  restored?: SavedWindow;
   width: number;
   height: number;
   minWidth: number;
@@ -40,9 +177,17 @@ interface WindowOptions {
 }
 
 function createAppWindow(options: WindowOptions): BrowserWindow {
+  const restored = options.restored;
+  const bounds = restored
+    ? visibleBounds(restored.bounds, screen.getAllDisplays(), {
+        width: options.minWidth,
+        height: options.minHeight,
+      })
+    : undefined;
   const win = new BrowserWindow({
     width: options.width,
     height: options.height,
+    ...bounds,
     minWidth: options.minWidth,
     minHeight: options.minHeight,
     show: false,
@@ -68,16 +213,58 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   });
   lockNavigation(win);
 
-  // A renderer killed for memory or by a crash leaves a blank window. Log why
-  // and reload, unless it died again within a minute, which would loop.
-  let lastGone = 0;
+  {
+    const state: SavedWindow = {
+      key: restored?.key ?? randomUUID(),
+      kind: options.kind ?? "main",
+      ...(options.target ? { target: options.target } : {}),
+      bounds:
+        bounds ??
+        (snapshot
+          ? win.getNormalBounds()
+          : { x: 0, y: 0, width: options.width, height: options.height }),
+      maximized: restored?.maximized ?? false,
+      ...(restored?.selection ? { selection: restored.selection } : {}),
+    };
+    tracked.set(win, state);
+    const update = () => {
+      const previous = tracked.get(win);
+      if (previous && snapshot)
+        tracked.set(win, {
+          ...previous,
+          bounds: win.getNormalBounds(),
+          maximized: win.isMaximized(),
+        });
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveWindows, 200);
+    };
+    win.on("resize", update);
+    win.on("move", update);
+    win.on("maximize", update);
+    win.on("unmaximize", update);
+    win.once("closed", () => {
+      const closed = tracked.get(win);
+      if (closed?.kind === "main") lastMain = closed;
+      tracked.delete(win);
+      releaseDraftEditors(win);
+      saveWindows();
+    });
+    saveWindows();
+  }
+  if (options.kind === "compose")
+    win.on("close", (event) => {
+      if (event.defaultPrevented || quitting || allowedClose.has(win)) return;
+      event.preventDefault();
+      composeClose?.(win);
+    });
   win.webContents.on("render-process-gone", (_event, details) => {
-    console.error(`[renderer gone] ${details.reason} (exit code ${details.exitCode})`);
-    const now = Date.now();
-    if (details.reason !== "clean-exit" && now - lastGone > 60_000 && !win.isDestroyed()) {
-      win.webContents.reload();
-    }
-    lastGone = now;
+    if (details.reason === "clean-exit") return;
+    releaseDraftEditors(win, true);
+    if (details.reason === "killed" || !rendererCrash?.(details.exitCode))
+      void (reloadGuard?.(win) ?? Promise.resolve(true)).then((approved) => {
+        if (approved && !win.isDestroyed()) win.webContents.reload();
+        return approved;
+      });
   });
 
   // The renderer picks its UI language from the OS language unless the person
@@ -85,25 +272,32 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   const query = {
     system: app.getPreferredSystemLanguages()[0] ?? app.getLocale(),
     ...options.query,
+    ...(restored?.selection ? { selection: JSON.stringify(restored.selection) } : {}),
   };
   if (process.env.ELECTRON_RENDERER_URL) {
-    win.webContents.on("console-message", ({ level, message }) => {
-      if (level === "warning" || level === "error") console.log(`[renderer ${level}] ${message}`);
-    });
     const url = new URL(process.env.ELECTRON_RENDERER_URL);
     url.search = new URLSearchParams(query).toString();
     void win.loadURL(url.toString());
   } else {
     void win.loadFile(path.join(here, "../renderer/index.html"), { query });
   }
-  win.once("ready-to-show", () => win.show());
+  win.once("ready-to-show", () => {
+    if (restored?.maximized) win.maximize();
+    win.show();
+  });
   return win;
 }
 
 const mainWindows = new Set<BrowserWindow>();
 
-export function createMainWindow(): BrowserWindow {
-  const win = createAppWindow({ width: 1320, height: 860, minWidth: 960, minHeight: 600 });
+export function createMainWindow(restored?: SavedWindow): BrowserWindow {
+  const win = createAppWindow({
+    width: 1320,
+    height: 860,
+    minWidth: 960,
+    minHeight: 600,
+    restored,
+  });
   mainWindows.add(win);
   win.once("closed", () => mainWindows.delete(win));
   return win;
@@ -130,6 +324,8 @@ export function openThreadWindow(messageId: string): BrowserWindow {
     height: 860,
     minWidth: 480,
     minHeight: 400,
+    kind: "thread",
+    target: messageId,
     query: { thread: messageId },
   });
 }
@@ -141,6 +337,8 @@ export function openMessageWindow(messageId: string): BrowserWindow {
     height: 860,
     minWidth: 480,
     minHeight: 400,
+    kind: "message",
+    target: messageId,
     query: { thread: messageId, single: "1" },
   });
 }
@@ -151,4 +349,30 @@ export function windowOf(webContentsId: number): BrowserWindow | null {
     BrowserWindow.getAllWindows().find((w) => w.webContents.id === webContentsId) ??
     BrowserWindow.getFocusedWindow()
   );
+}
+
+export function openComposeWindow(
+  draftId: string,
+  restored?: SavedWindow,
+  transfer?: BrowserWindow | null,
+): BrowserWindow {
+  const editor = draftEditors.get(draftId);
+  if (editor && (editor.kind === "window" || editor.win !== transfer)) {
+    editor.win.show();
+    editor.win.focus();
+    if (editor.kind === "inline") inlinePopOut?.(editor.win, draftId);
+    return editor.win;
+  }
+  const win = createAppWindow({
+    width: 760,
+    height: 800,
+    minWidth: 480,
+    minHeight: 400,
+    kind: "compose",
+    target: draftId,
+    restored,
+    query: { compose: draftId },
+  });
+  draftEditors.set(draftId, { win, kind: "window" });
+  return win;
 }

@@ -1,3 +1,4 @@
+import { setRecoveryRelaunch } from "./recovery-actions";
 import {
   Mailbox,
   notificationAction,
@@ -33,7 +34,17 @@ import { createQuitGuard, createSendState } from "./quit";
 import { shouldBufferDesktopEvent, type DesktopEvent } from "../shared/desktop";
 import type { DesktopLabels } from "../shared/desktop-labels";
 import { shortcutAccelerator } from "../shared/shortcuts";
-import { createMainWindow, focusMainWindow, isMainWindow } from "./windows";
+import {
+  createMainWindow,
+  focusMainWindow,
+  isMainWindow,
+  isComposeWindow,
+  restoreWindows,
+  setComposeCloseHandler,
+  approveComposeClose,
+  setRendererReloadGuard,
+  setInlinePopOutHandler,
+} from "./windows";
 
 const activate = () => focusMainWindow();
 const allClosed = () => {
@@ -115,6 +126,7 @@ export const DesktopLive = Layer.effect(
       selectAll: "Select all",
       window: "Window",
       newMessages: "new messages",
+      feedback: "Send Feedback…",
     };
     const deliver = (event: DesktopEvent, target = focusMainWindow()) => {
       const id = target.webContents.id;
@@ -123,6 +135,12 @@ export const DesktopLive = Layer.effect(
       else if (shouldBufferDesktopEvent(event))
         pending.set(id, [...(pending.get(id) ?? []), event]);
     };
+    setComposeCloseHandler((win) => {
+      if (listeners.has(win.webContents.id) && !win.webContents.isCrashed())
+        deliver({ _tag: "ComposeClose" }, win);
+      else approveComposeClose(win);
+    });
+    setInlinePopOutHandler((win, id) => deliver({ _tag: "PopOutDraft", id }, win));
     const command = (name: "settings" | "help" | "compose" | "inbox") =>
       deliver({ _tag: "Command", command: name });
     const openThread = (id: string) => deliver({ _tag: "OpenThread", id });
@@ -262,7 +280,16 @@ export const DesktopLive = Layer.effect(
                   {
                     label: labels.attachFiles,
                     accelerator: shortcutAccelerator(prefs.shortcutSet, "attach"),
-                    click: () => deliver({ _tag: "AttachFiles" }),
+                    click: () => {
+                      const attachTarget = BrowserWindow.getFocusedWindow();
+                      deliver(
+                        { _tag: "AttachFiles" },
+                        attachTarget &&
+                          (isMainWindow(attachTarget) || isComposeWindow(attachTarget))
+                          ? attachTarget
+                          : focusMainWindow(),
+                      );
+                    },
                   },
                   {
                     label: labels.newWindow,
@@ -295,7 +322,8 @@ export const DesktopLive = Layer.effect(
                     enabled: undoAvailable,
                     click: () => {
                       const target = BrowserWindow.getFocusedWindow();
-                      if (target && isMainWindow(target)) deliver({ _tag: "UndoSend" }, target);
+                      if (target && (isMainWindow(target) || isComposeWindow(target)))
+                        deliver({ _tag: "UndoSend" }, target);
                     },
                   },
                   { role: "redo" },
@@ -318,6 +346,10 @@ export const DesktopLive = Layer.effect(
                 label: labels.help,
                 submenu: [
                   { label: labels.help, click: () => command("help") },
+                  {
+                    label: labels.feedback,
+                    click: () => deliver({ _tag: "Command", command: "feedback" }),
+                  },
                   ...(process.platform === "darwin"
                     ? []
                     : [{ label: labels.checkUpdates, click: checkUpdates }]),
@@ -456,8 +488,8 @@ export const DesktopLive = Layer.effect(
     const onResume = () => run(refresh);
     powerMonitor.on("resume", onResume);
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
-      if (!isMainWindow(win)) return;
-      activeSpace = spaces.get(win.webContents.id) ?? "all";
+      if (!isMainWindow(win) && !isComposeWindow(win)) return;
+      if (isMainWindow(win)) activeSpace = spaces.get(win.webContents.id) ?? "all";
       run(refresh);
     };
     let quittingApproved = false;
@@ -472,6 +504,14 @@ export const DesktopLive = Layer.effect(
           cancelId: 0,
         })
         .then((result) => result.response === 1);
+    setRendererReloadGuard(async (win) => {
+      const id = win.webContents.id;
+      if (!sendStates.get(id)?.pending) return true;
+      if (!(await confirmPendingSend())) return false;
+      sendStates.remove(id);
+      return true;
+    });
+    let relaunchPending = false;
     const onCreated = (_event: Electron.Event, win: BrowserWindow) => {
       const id = win.webContents.id;
       const closeGuard = createQuitGuard({
@@ -479,11 +519,19 @@ export const DesktopLive = Layer.effect(
         fallbackPending: () => sendStates.get(id)?.pending ?? 0,
         confirm: confirmPendingSend,
         quit: () => {
-          if (!win.isDestroyed()) win.close();
+          if (!win.isDestroyed()) {
+            if (isComposeWindow(win)) approveComposeClose(win);
+            else win.close();
+          }
         },
       });
       win.on("close", (event) => {
-        if (quittingApproved || !isMainWindow(win) || !sendStates.get(id)?.pending) return;
+        if (
+          quittingApproved ||
+          (!isMainWindow(win) && !isComposeWindow(win)) ||
+          !sendStates.get(id)?.pending
+        )
+          return;
         void closeGuard(event);
       });
       win.once("closed", () => {
@@ -493,8 +541,15 @@ export const DesktopLive = Layer.effect(
         sendStates.remove(id);
       });
     };
-    const onRendererGone = (_event: Electron.Event, contents: Electron.WebContents) =>
-      sendStates.remove(contents.id);
+    const onRendererGone = (
+      _event: Electron.Event,
+      contents: Electron.WebContents,
+      details: Electron.RenderProcessGoneDetails,
+    ) => {
+      if (details.reason === "clean-exit") return;
+      listeners.delete(contents.id);
+      sendStates.rendererGone(contents.id);
+    };
     const onBeforeQuit = createQuitGuard({
       pending: () =>
         new Promise<number>((resolve) => {
@@ -517,8 +572,19 @@ export const DesktopLive = Layer.effect(
       confirm: confirmPendingSend,
       quit: () => {
         quittingApproved = true;
+        if (relaunchPending) app.relaunch();
         app.quit();
       },
+    });
+    const removeRelaunch = setRecoveryRelaunch(async () => {
+      relaunchPending = true;
+      const approved = await onBeforeQuit({
+        preventDefault: () => {
+          /* No native quit event yet. */
+        },
+      });
+      if (!approved) relaunchPending = false;
+      return approved;
     });
     app.on("before-quit", onBeforeQuit);
     app.on("render-process-gone", onRendererGone);
@@ -529,6 +595,7 @@ export const DesktopLive = Layer.effect(
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
         linkHandler = undefined;
+        removeRelaunch();
         app.off("before-quit", onBeforeQuit);
         app.off("render-process-gone", onRendererGone);
         app.off("browser-window-focus", onFocus);
@@ -564,7 +631,7 @@ export const DesktopLive = Layer.effect(
         }
       }
     }
-    createMainWindow();
+    restoreWindows();
     for (const link of startupLinks.splice(0)) linkHandler(link);
     yield* refresh;
     return Desktop.of({
