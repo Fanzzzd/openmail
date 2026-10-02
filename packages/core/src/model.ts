@@ -7,6 +7,8 @@ import {
   AI_MAX_TURNS,
   AI_OUTPUT_TOKENS,
   AI_SYSTEM,
+  AI_COMPOSE_SYSTEM,
+  AI_TRIAGE_SYSTEM,
   type AiModelName,
 } from "./ai.js";
 import { InvalidInput, ProviderError } from "./errors.js";
@@ -17,6 +19,7 @@ import type { AssistantToolkit } from "./tools.js";
 export interface ModelRequest {
   readonly model: AiModelName;
   readonly prompt: string;
+  readonly purpose?: "compose" | "triage";
   readonly toolkit?: Toolkit.WithHandler<typeof AssistantToolkit.tools>;
   /** Recheck consent immediately before every provider turn. */
   readonly check: Effect.Effect<void, InvalidInput>;
@@ -52,6 +55,12 @@ export const ModelAnthropic = Layer.effect(
               Layer.provide(Layer.succeed(HttpClient.HttpClient, http)),
             );
             const chat = yield* Chat.empty;
+            const system =
+              request.purpose === "compose"
+                ? AI_COMPOSE_SYSTEM
+                : request.purpose === "triage"
+                  ? AI_TRIAGE_SYSTEM
+                  : AI_SYSTEM;
             let remaining = AI_OUTPUT_TOKENS;
             const turn = (
               index: number,
@@ -67,7 +76,7 @@ export const ModelAnthropic = Layer.effect(
                   if (
                     Buffer.byteLength(history) +
                       Buffer.byteLength(request.prompt) +
-                      Buffer.byteLength(AI_SYSTEM) +
+                      Buffer.byteLength(system) +
                       (request.toolkit ? 10_000 : 0) >
                     AI_INPUT_BUDGET
                   )
@@ -100,7 +109,7 @@ export const ModelAnthropic = Layer.effect(
                         model: request.model,
                         config: {
                           max_tokens: Math.max(1, remaining),
-                          system: AI_SYSTEM,
+                          system,
                         },
                       }).pipe(Layer.provide(client)),
                     ),

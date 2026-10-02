@@ -6,9 +6,11 @@ Mimestream 功能清单来自 mimestream.com 的用户指南、FAQ、Trust Cente
 
 ## AI 进度（2026-10-03）
 
-slice 31 已实现账户级第三方文本授权、钥匙串 API 密钥、Anthropic 流式摘要与缓存、可取消请求、逐账户自动摘要和 Cmd-J 邮件助手。助手共享 MCP 工具，修改只进待确认提议，草稿留本地。新增迁移 26，紧接 main 的真实迁移 25。OAuth scope 不变。隐私、协议、超时和缓存经 fake Model/provider、fake fetch 与临时数据库测试；未启动 Electron、未做真实模型请求。自动分拣待后续切片。详细边界见 [架构](architecture.md#model-端口)。
+slice 31 已实现账户级第三方文本授权、钥匙串 API 密钥、Anthropic 流式摘要与缓存、可取消请求、逐账户自动摘要和 Cmd-J 邮件助手。助手共享 MCP 工具，修改只进待确认提议，草稿留本地。新增迁移 26，紧接 main 的真实迁移 25。OAuth scope 不变。隐私、协议、超时和缓存经 fake Model/provider、fake fetch 与临时数据库测试；未启动 Electron、未做真实模型请求。自动分拣已由 slice 34 补齐。详细边界见 [架构](architecture.md#model-端口)。
 
 slice 31 修正：内置助手仅允许添加所属账户的 Gmail 用户标签，拒绝系统标签、移除标签及 Outlook/IMAP 文件夹移动。草稿确认展示全部收件人、模式、原邮件及完整正文；账户工具只返回必要身份字段，关闭授权即删除 AI 派生数据，截断摘要不缓存。快捷键和设置错误按平台与语言显示。回归使用 fake Model/provider、协议流和 Node DOM，未启动 Electron。
+
+slice 34 已实现撰写 AI 的文本差异预览、接受 / 丢弃 / 撤销、选区改写和翻译，独立授权的收件箱分拣建议，以及助手本地语义检索。建议默认关闭，只在前台或接电时分批、限流生成，用户确认后走 Mailbox；需要回复以星标保存。分拣确认前重查收件箱与禁止文件夹，标签变化使旧建议失效；AI 撤销不会覆盖后续输入。迁移 29 紧接 main 的真实迁移 28，没有占位。10 个语言目录齐全；验证使用 fake Model、fake provider、本地向量和 Node DOM，未启动 Electron 或请求真实 API。
 
 ## 前提：scope 升级
 

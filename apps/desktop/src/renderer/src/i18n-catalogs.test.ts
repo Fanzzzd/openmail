@@ -62,6 +62,7 @@ it("all real catalogs compile and render ICU counts, arguments and component mar
           delay: count,
           seconds: count,
           pixels: count,
+          hours: count,
           op: "ACTION",
           total: "TOTAL",
         });

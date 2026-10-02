@@ -5,6 +5,8 @@ import type {
   AiSummary,
   AiEvent,
   AiQuestion,
+  AiComposeRequest,
+  AiTriage,
 } from "./ai.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "./attachment-view.js";
@@ -158,6 +160,14 @@ export class Mailbox extends Context.Service<
     aiSummary(id: string): Effect.Effect<AiSummary | null, NotFound | InvalidInput>;
     summarize(id: string): Stream.Stream<AiEvent, NotFound | InvalidInput | ProviderError>;
     askAi(input: AiQuestion): Stream.Stream<AiEvent, PerformError>;
+    composeAi(input: AiComposeRequest): Stream.Stream<AiEvent, PerformError>;
+    aiTriage(id: string): Effect.Effect<AiTriage | null, NotFound | InvalidInput>;
+    decideAiTriage(
+      id: string,
+      accept: boolean,
+      surface: "app" | "cli",
+    ): Effect.Effect<void, PerformError>;
+    semanticSearch(query: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     // Accounts
     setAccountSettings(
       id: string,

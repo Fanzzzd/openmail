@@ -1,4 +1,5 @@
 import { EDIT_MESSAGE_TEXT } from "../message-text";
+import { ComposerAi } from "./ComposerAi";
 import { DraftSyncRecovery, draftSyncNotice } from "./DraftSyncRecovery";
 import { moveRecipient, type RecipientFieldName, type RecipientDrag } from "../recipient-actions";
 import { matchesShortcut } from "../../../shared/shortcuts";
@@ -1194,6 +1195,14 @@ export function Composer({
               onRecover={recover}
             />
             {recoveryError && <output className="px-4 text-red-600">{recoveryError}</output>}
+            <ComposerAi
+              accountId={draft.accountId}
+              replyTo={draft.inReplyTo}
+              body={draft.body}
+              bodyRef={bodyRef}
+              selectionRef={selectionRef}
+              onChange={(body) => set({ body })}
+            />
             <ComposeEditor
               shortcutSet={prefs.shortcutSet}
               prefs={prefs}

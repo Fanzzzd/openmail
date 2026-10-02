@@ -45,6 +45,8 @@ import {
   AiSummary,
   AiEvent,
   AiQuestion,
+  AiComposeRequest,
+  AiTriage,
   Account,
   AccountSettings,
   AccountPlacement,
@@ -147,6 +149,14 @@ export class MailRpcs extends RpcGroup.make(
   }),
   Rpc.make("Summarize", { payload: { id: Schema.String }, success: AiEvent, stream: true, error }),
   Rpc.make("AskAi", { payload: { input: AiQuestion }, success: AiEvent, stream: true, error }),
+  Rpc.make("ComposeAi", {
+    payload: { input: AiComposeRequest },
+    success: AiEvent,
+    stream: true,
+    error,
+  }),
+  Rpc.make("AiTriage", { payload: { id: Schema.String }, success: Schema.NullOr(AiTriage), error }),
+  Rpc.make("DecideAiTriage", { payload: { id: Schema.String, accept: Schema.Boolean }, error }),
   // Accounts and sign-in
   Rpc.make("ClientSetup", {
     success: Schema.Struct({

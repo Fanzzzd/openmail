@@ -33,7 +33,7 @@ it.effect(
         const store = yield* Store;
         const sql = yield* SqlClient.SqlClient;
         assert.deepStrictEqual(yield* store.ai.accounts, [
-          { accountId, allowed: false, autoSummaries: false },
+          { accountId, allowed: false, autoSummaries: false, autoTriage: false },
         ]);
         assert.deepStrictEqual(
           Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ rowid: Schema.Number })))(
@@ -68,5 +68,47 @@ it.effect(
         yield* store.removeAccount(accountId);
         assert.deepStrictEqual(yield* store.ai.accounts, []);
       }).pipe(Effect.provide(layer()));
+    }).pipe(Effect.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
+);
+
+it.effect(
+  "triage migration upgrades main's contact schema without placeholders or losing company search",
+  () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const directory = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-triage-upgrade-" });
+      const filename = path.join(directory, "mail.db");
+      yield* Effect.sync(() => {
+        const database = new DatabaseSync(filename);
+        for (const migration of MIGRATIONS.slice(0, -1))
+          for (const statement of splitStatements(migration)) database.exec(statement);
+        database.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
+        database.exec(
+          "INSERT INTO accounts(id,provider,email,created_at) VALUES('gmail:old@example.com','gmail','old@example.com',1)",
+        );
+        database.exec(
+          "INSERT INTO contact_organizations(rowid,account_id,address,company) VALUES(37,'gmail:old@example.com','contact@example.com','Acme')",
+        );
+        database.close();
+      });
+      yield* Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        assert.strictEqual((yield* store.ai.accounts)[0]?.autoTriage, false);
+        const rows = yield* Schema.decodeUnknownEffect(
+          Schema.Array(Schema.Struct({ rowid: Schema.Number })),
+        )(
+          yield* sql`SELECT rowid FROM contact_organizations_fts WHERE contact_organizations_fts MATCH 'Acme'`,
+        );
+        assert.deepStrictEqual(rows, [{ rowid: 37 }]);
+        yield* store.ai.setAccount({
+          accountId: "gmail:old@example.com",
+          allowed: true,
+          autoSummaries: false,
+          autoTriage: true,
+        });
+        assert.strictEqual((yield* store.ai.accounts)[0]?.autoTriage, true);
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(databaseLayer(filename)))));
     }).pipe(Effect.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
 );

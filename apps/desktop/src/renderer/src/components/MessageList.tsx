@@ -1,4 +1,5 @@
 import { useMessageSwipe } from "../message-swipe-hook";
+import { TriageChip } from "./TriageChip";
 import { swipeMailOp } from "../message-swipe";
 import { actionNames } from "./InteractionSettings";
 import type { Prefs, SwipeAction } from "@openmail/core/schema";
@@ -631,6 +632,7 @@ function Row({
           <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
         )}
       </button>
+      <TriageChip id={m.id} accountId={m.accountId} labels={m.labels} compact />
     </div>
   );
 }

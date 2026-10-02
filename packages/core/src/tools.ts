@@ -221,6 +221,21 @@ const ReadThread = readOnly(
   }),
 );
 
+const SemanticSearch = readOnly(
+  Tool.make("semantic_search", {
+    description:
+      "Search the existing on-device text vector index by meaning. Only opted-in selected accounts are available. MCP results can include message snippets, attachment names and derived media text matches; the in-app assistant redacts these fields. Never downloads a model or changes mail.",
+    parameters: Schema.Struct({
+      query: Schema.String.check(Schema.isMinLength(1)),
+      account_id: Schema.optionalKey(AccountId),
+      limit: Limit(5),
+    }),
+    success: Schema.Struct({ threads: Schema.Array(ThreadSummary) }),
+    failure: MailToolError,
+    failureMode: "return",
+  }),
+);
+
 const Sync = Tool.make("sync", {
   description:
     "Fetch new and changed mail from the providers into the local copy, and push changes already approved. Call it when the person asks about mail from the last few minutes. Changes nothing the person has not already approved.",
@@ -317,6 +332,7 @@ export const MailToolkit = Toolkit.make(
   ListLabels,
   ListThreads,
   Search,
+  SemanticSearch,
   ReadThread,
   Sync,
   ModifyThreads,
@@ -327,6 +343,7 @@ export const AssistantToolkit = Toolkit.make(
   ListAccounts,
   ListLabels,
   Search,
+  SemanticSearch,
   ReadThread,
   ModifyThreads,
   DraftMessage,
@@ -462,6 +479,18 @@ export const MailToolkitLayer = MailToolkit.toLayer(
 
       read_thread: ({ id, max_chars }) =>
         mailbox.threadForModel(id, max_chars).pipe(Effect.mapError(toToolError)),
+
+      semantic_search: ({ query, account_id, limit }) =>
+        mailbox
+          .semanticSearch({
+            search: query,
+            accountIds: account_id ? [account_id] : undefined,
+            limit,
+          })
+          .pipe(
+            Effect.map((threads) => ({ threads })),
+            Effect.mapError(toToolError),
+          ),
 
       sync: ({ account_id }) => Effect.map(mailbox.sync(account_id), (results) => ({ results })),
 

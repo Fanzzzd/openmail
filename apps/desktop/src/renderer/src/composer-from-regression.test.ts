@@ -70,6 +70,7 @@ vi.mock("@base-ui/react/dialog", () => ({
 }));
 vi.mock("./components/RecipientField", () => ({ RecipientField: () => null }));
 vi.mock("./components/ComposeEditor", () => ({ ComposeEditor: () => null }));
+vi.mock("./components/ComposerAi", () => ({ ComposerAi: () => null }));
 vi.mock("./components/DraftOrganization", () => ({ DraftOrganization: () => null }));
 vi.mock("./components/SystemSettings", () => ({ useShortcutText: () => () => "" }));
 vi.mock("./components/ui/Select", () => ({
@@ -104,6 +105,7 @@ afterAll(() => {
     "@base-ui/react/dialog",
     "./components/RecipientField",
     "./components/ComposeEditor",
+    "./components/ComposerAi",
     "./components/DraftOrganization",
     "./components/SystemSettings",
     "./components/ui/Select",

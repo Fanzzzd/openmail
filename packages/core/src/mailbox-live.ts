@@ -158,6 +158,8 @@ export interface MailboxOptions {
   inboxPoll?: Duration.Input;
   pollOnBattery?: () => boolean;
   models?: ModelRuntime;
+  /** Desktop reports foreground or AC power; absent means automatic triage cannot run. */
+  canTriage?: () => boolean;
   /**
    * Push draft saves in the background (default) so saving never waits for
    * the network. Short-lived processes and tests set false: the save then
@@ -1846,7 +1848,7 @@ export const MailboxLive = (
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
       let mailbox: Mailbox["Service"];
-      const ai = makeAiMailbox(store, secrets, model, () => mailbox, changed);
+      const ai = makeAiMailbox(store, secrets, model, () => mailbox, changed, options.canTriage);
       function thread(id: string): Effect.Effect<Message[], NotFound>;
       function thread(
         id: string,
@@ -1861,7 +1863,9 @@ export const MailboxLive = (
       // Subscribe before returning. Only opted-in auto-summary accounts can call the model.
       if (options.autoSync)
         yield* Stream.runForEach(Stream.fromPubSub(pubsub), (event) =>
-          event._tag === "NewMail" ? ai.autoSummaries(event.ids) : Effect.void,
+          event._tag === "NewMail"
+            ? Effect.andThen(ai.autoTriage(event.ids), ai.autoSummaries(event.ids))
+            : Effect.void,
         ).pipe(Effect.forkScoped);
       mailbox = Mailbox.of({
         ...ai,
@@ -2006,6 +2010,34 @@ export const MailboxLive = (
         setClient: (patch) => mutate(config.write(patch)),
 
         threads: semanticThreads,
+        semanticSearch: (q) =>
+          Effect.gen(function* () {
+            if (!q.accountIds?.length || !q.search?.trim()) return [];
+            const consent = yield* store.ai.accounts;
+            if (q.accountIds.some((id) => !consent.some((a) => a.accountId === id && a.allowed)))
+              return yield* new InvalidInput({
+                message: "This account is outside the selected accounts.",
+              });
+            const models = options.models;
+            if (
+              !models ||
+              !store.semantics.vectors ||
+              !(yield* store.semantics.enabled) ||
+              (yield* models.status).kind !== "ready"
+            )
+              return [];
+            yield* models.ensure(false);
+            const embedding = yield* models.embedder.text(q.search, "query");
+            const hits = yield* store.semantics.neighbors(
+              "text",
+              embedding,
+              models.version,
+              parseSearchQuery(q),
+            );
+            return (yield* store.vectorThreads(q, hits)).slice(0, Math.min(q.limit ?? 5, 5));
+          }).pipe(
+            Effect.mapError(() => new InvalidInput({ message: "Semantic search is unavailable." })),
+          ),
         threadCount: (query) => store.countThreads(query),
         privateMailLink: (id, kind) =>
           store.getMessage(id).pipe(Effect.map((message) => privateMailLink(message, kind))),

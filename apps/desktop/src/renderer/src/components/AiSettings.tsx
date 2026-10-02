@@ -102,6 +102,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           accountId: account.id,
           allowed: false,
           autoSummaries: false,
+          autoTriage: false,
         };
         return (
           <fieldset
@@ -121,6 +122,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                         ...current,
                         allowed: event.target.checked,
                         autoSummaries: event.target.checked && current.autoSummaries,
+                        autoTriage: event.target.checked && current.autoTriage,
                       },
                     },
                     reactivityKeys: [Keys.ai],
@@ -143,9 +145,29 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
               />
               <Trans>Automatically summarize new mail</Trans>
             </label>
+            <label className="flex gap-2">
+              <input
+                type="checkbox"
+                disabled={!current.allowed}
+                checked={current.autoTriage ?? false}
+                onChange={(event) =>
+                  setAccount({
+                    payload: { input: { ...current, autoTriage: event.target.checked } },
+                    reactivityKeys: [Keys.ai],
+                  })
+                }
+              />
+              <Trans>Suggest triage for new inbox mail</Trans>
+            </label>
           </fieldset>
         );
       })}
+      <p className="text-neutral-500">
+        <Trans>
+          Triage runs while the app is in the foreground or on AC power. Suggestions require your
+          approval. Reply needed adds a star when accepted.
+        </Trans>
+      </p>
       {resultError(i18n, accountResult) && <p role="alert">{resultError(i18n, accountResult)}</p>}
       {keyError && <p role="alert">{keyError}</p>}
     </section>

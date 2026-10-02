@@ -163,7 +163,7 @@ it.effect(
 );
 
 it.effect(
-  "Anthropic assistant continues after shared read tools and only exposes six allowed tools",
+  "Anthropic assistant continues after shared read tools and only exposes seven allowed tools",
   () => {
     let calls = 0;
     const fetch: typeof globalThis.fetch = async (url, init) => {
@@ -177,6 +177,7 @@ it.effect(
           "list_accounts",
           "list_labels",
           "search",
+          "semantic_search",
           "read_thread",
           "modify_threads",
           "draft_message",

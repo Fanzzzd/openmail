@@ -735,6 +735,8 @@ export const MIGRATIONS: readonly string[] = [
     INSERT INTO contact_organizations_fts(contact_organizations_fts,rowid,company) VALUES('delete',old.rowid,old.company);
     INSERT INTO contact_organizations_fts(rowid,company) VALUES(new.rowid,new.company);
   END;`,
+  // Migration 29: triage consent is independent of automatic summaries.
+  `ALTER TABLE ai_accounts ADD COLUMN auto_triage INTEGER NOT NULL DEFAULT 0;`,
 ];
 
 /**

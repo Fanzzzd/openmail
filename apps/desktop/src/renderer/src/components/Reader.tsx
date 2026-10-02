@@ -1,4 +1,5 @@
 import { ThreadSummary } from "./AiPanel";
+import { TriageChip } from "./TriageChip";
 import { ContactAvatar as Avatar } from "./ContactAvatar";
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
 import { readerMessageId, useReaderMessages } from "../reader-selection";
@@ -637,6 +638,13 @@ export function ThreadView({
       }}
       className="selectable flex-1 overflow-y-auto px-7 pb-10 outline-none"
     >
+      {newest && (
+        <TriageChip
+          id={newest.id}
+          accountId={newest.accountId}
+          labels={messages.flatMap((message) => message.labels)}
+        />
+      )}
       {newest && (
         <ThreadSummary
           key={`${newest.accountId}/${newest.threadId}`}

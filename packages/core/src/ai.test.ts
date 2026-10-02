@@ -38,7 +38,7 @@ const textStream = (...parts: string[]) =>
     { _tag: "Finished", reason: "stop" },
   ]);
 const deltaStream = (text: string) => Stream.make({ _tag: "Delta", text } satisfies ModelOutput);
-const consent = { accountId, allowed: true, autoSummaries: false };
+const consent = { accountId, allowed: true, autoSummaries: false, autoTriage: false };
 
 for (const provider of ["gmail", "outlook", "imap"] as const) {
   it.effect(
@@ -374,6 +374,7 @@ it.effect(
             "list_accounts",
             "list_labels",
             "search",
+            "semantic_search",
             "read_thread",
             "modify_threads",
             "draft_message",

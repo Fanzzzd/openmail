@@ -63,6 +63,7 @@ vi.mock("./components/EmailFrame", () => ({
   },
 }));
 vi.mock("./components/AiPanel", () => ({ ThreadSummary: () => null, Assistant: () => null }));
+vi.mock("./components/TriageChip", () => ({ TriageChip: () => null }));
 vi.mock("./components/Attachments", () => ({ Attachments: () => null }));
 vi.mock("./components/InviteBanner", () => ({ InviteBanner: () => null }));
 vi.mock("./components/MeetingLinks", () => ({ MeetingLinks: () => null }));

@@ -21,6 +21,7 @@ vi.mock("./components/ui/Tip", () => ({
 }));
 vi.mock("./components/ThreadActions", () => ({ ThreadMenuItems: () => null }));
 vi.mock("./components/AccountBadge", () => ({ AccountBadge: () => null }));
+vi.mock("./components/TriageChip", () => ({ TriageChip: () => null }));
 import { MessageList } from "./components/MessageList";
 
 it("each density renders its own height, preview lines and attachment indicator", () => {

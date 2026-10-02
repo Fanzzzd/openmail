@@ -315,6 +315,9 @@ const Handlers = MailRpcs.toLayer(
       AiSummary: ({ id }) => m.aiSummary(id),
       Summarize: ({ id }) => m.summarize(id),
       AskAi: ({ input }) => m.askAi(input),
+      ComposeAi: ({ input }) => m.composeAi(input),
+      AiTriage: ({ id }) => m.aiTriage(id),
+      DecideAiTriage: ({ id, accept }) => m.decideAiTriage(id, accept, "app"),
       AgentWriteMode: () => m.agentWriteMode,
       SetAgentWriteMode: ({ mode }) => m.setAgentWriteMode(mode),
 

@@ -5,7 +5,7 @@ import { NodeMailbox, dataDir, NodeSystem } from "@openmail/core";
 import { Cause, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, powerMonitor, shell } from "electron";
+import { app, BrowserWindow, powerMonitor, shell } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
 
@@ -83,6 +83,8 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 inboxPoll: "45 seconds",
                 imapIdle: true,
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
+                canTriage: () =>
+                  BrowserWindow.getFocusedWindow() !== null || !powerMonitor.isOnBatteryPower(),
                 media: {
                   vision,
                   onBattery: () => powerMonitor.isOnBatteryPower(),

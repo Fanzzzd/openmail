@@ -13,7 +13,7 @@ import { aiSettingsAtom } from "./AiSettings";
 import { Proposals } from "./Proposals";
 import { Dialog } from "./ui/Dialog";
 
-function useAiStream() {
+export function useAiStream() {
   const run = useRunMail();
   const [text, setText] = useState("");
   const [sources, setSources] = useState<readonly AiSource[]>([]);
@@ -81,7 +81,7 @@ function useAiStream() {
   return { text, sources, model, truncated, status, start, cancel };
 }
 
-function AiOutput({
+export function AiOutput({
   result,
   openSource,
 }: {
@@ -191,7 +191,7 @@ export function Assistant({
   const ids = selected.filter((id) => eligible.some((a) => a.id === id));
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key.toLowerCase() === "j") {
         event.preventDefault();
         event.stopImmediatePropagation();
         setOpen((previous) => !previous);
