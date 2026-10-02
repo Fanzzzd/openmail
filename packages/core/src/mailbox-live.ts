@@ -128,6 +128,7 @@ const PULL_RETRY = {
 const newDraftId = () => `draft:${crypto.randomUUID()}`;
 
 export interface MailboxOptions {
+  imageDownloader?: import("./compose-images.js").ImageDownloader;
   /** Sync every account on this interval, starting right away. The desktop app sets it; CLI and MCP don't. */
   autoSync?: Duration.Input;
   /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */
@@ -994,7 +995,13 @@ export const MailboxLive = (
         });
       });
 
-      const features = makeFeatureMailbox(store, providers, changed, perform);
+      const features = makeFeatureMailbox(
+        store,
+        providers,
+        changed,
+        perform,
+        options.imageDownloader,
+      );
 
       // Reading from the provider
 

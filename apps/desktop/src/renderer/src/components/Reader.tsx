@@ -1,3 +1,4 @@
+import { ContactAvatar as Avatar } from "./ContactAvatar";
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
 import { readerMessageId, useReaderMessages } from "../reader-selection";
 import { readerSelectedText } from "../quote-selection";
@@ -60,7 +61,7 @@ import {
 
 import type { Message, DerivedChunk } from "../../../shared/api";
 import { causeText } from "../errors";
-import { avatarColor, displayName, threadDate } from "../format";
+import { displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
 import {
   openThreadWindow,
@@ -789,16 +790,6 @@ export function ThreadView({
       </div>
       {raw && <RawMessageDialog messageId={raw} notify={notify} onClose={() => setRaw(null)} />}
     </div>
-  );
-}
-
-function Avatar({ message: m }: { message: Message }) {
-  return (
-    <span
-      className={`flex size-10 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-white ${avatarColor(m.from.address)}`}
-    >
-      {displayName(m.from).slice(0, 1).toUpperCase()}
-    </span>
   );
 }
 

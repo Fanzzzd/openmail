@@ -18,7 +18,9 @@ import {
   attachmentBytes,
   type AttachmentProblem,
   reorderAttachments,
-  escapeComposeText,
+  inlineImageHtml,
+  reconcileMentionRecipients,
+  type Address,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
@@ -54,7 +56,7 @@ import { submitDraft, type SendWarning } from "../send";
 import { formatBytes } from "../format";
 import { openDraft, useRunMail, withMail } from "../state/mail";
 import { Keys } from "../state/keys";
-import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
+import { saveDraftAtom, saveTemplateAtom, setPrefsAtom } from "../state/mutations";
 import { templatesAtom, sendAsAtom, prefsAtom, threadAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
 import { DraftOrganization } from "./DraftOrganization";
@@ -110,9 +112,36 @@ export function Composer({
   onSend,
 }: Props) {
   const { t, i18n } = useLingui();
-  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const prefsResult = useAtomValue(prefsAtom);
+  const prefs = AsyncResult.getOrElse(prefsResult, () => DEFAULT_PREFS);
   const shortcut = useShortcutText();
-  const [draft, setDraft] = useState(initial);
+  const [draft, setDraft] = useState(() =>
+    initial.mode === "new" &&
+    initial.synced === undefined &&
+    prefsResult._tag === "Success" &&
+    initial.body.kind === "rich" &&
+    !initial.body.originalHtml &&
+    !initial.body.font
+      ? { ...initial, body: { ...initial.body, font: prefs.composeFont } }
+      : initial,
+  );
+  if (
+    prefsResult._tag === "Success" &&
+    initial.mode === "new" &&
+    initial.synced === undefined &&
+    draft.body.kind === "rich" &&
+    !draft.body.originalHtml &&
+    !draft.body.font
+  )
+    setDraft({ ...draft, body: { ...draft.body, font: prefsResult.value.composeFont } });
+  const setPrefs = useAtomSet(setPrefsAtom);
+  const freshMentions = useRef(new Map<string, Address>());
+  const activeMentions = useRef(new Set<string>());
+  const manualSender = useRef(false);
+  const [senderUndo, setSenderUndo] = useState<{ accountId: string; address: string } | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrlOpen, setImageUrlOpen] = useState(false);
+  const imageFileRef = useRef<HTMLInputElement>(null);
   const [showBcc, setShowBcc] = useState(Boolean(initial.bcc || initial.cc));
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState<{
@@ -347,18 +376,14 @@ export function Composer({
     const insertInline = inline && element instanceof HTMLDivElement && element.isContentEditable;
     const added = files.map((file) =>
       insertInline && /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.mimeType)
-        ? { ...file, contentId: `image-${crypto.randomUUID()}@openmail` }
+        ? { ...file, contentId: file.contentId ?? `image-${crypto.randomUUID()}@openmail` }
         : file,
     );
     if (insertInline) {
       for (const file of added) {
         if (!file.contentId) continue;
         restoreEditorSelection(element, selectionRef.current);
-        document.execCommand(
-          "insertHTML",
-          false,
-          `<img src="cid:${file.contentId}" alt="${escapeComposeText(file.filename)}">`,
-        );
+        document.execCommand("insertHTML", false, inlineImageHtml(file, prefs.inlineImageSize));
         const selection = window.getSelection();
         if (selection?.rangeCount) selectionRef.current = selection.getRangeAt(0).cloneRange();
       }
@@ -461,6 +486,198 @@ export function Composer({
       from: { name: sender.name, address: sender.address },
       body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
+  };
+
+  const applyAutomaticSender = useEffectEvent((sender: { accountId: string; address: string }) => {
+    if (
+      initial.synced !== undefined ||
+      manualSender.current ||
+      prefs.defaultFrom ||
+      draft.mode !== "new"
+    )
+      return;
+    setSenderUndo({
+      accountId: draft.accountId,
+      address: draft.from?.address ?? account?.email ?? "",
+    });
+    changeSender(`${sender.accountId}/${sender.address}`);
+  });
+  const currentFrom = draft.from?.address ?? account?.email ?? "";
+  useEffect(() => {
+    if (
+      initial.synced !== undefined ||
+      draft.mode !== "new" ||
+      prefs.defaultFrom ||
+      manualSender.current ||
+      !currentFrom
+    )
+      return constVoid;
+    let active = true;
+    const timer = setTimeout(
+      () =>
+        run(
+          withMail((call) =>
+            call("SuggestSender", {
+              current: { accountId: draft.accountId, address: currentFrom },
+              recipients: parseAddresses([draft.to, draft.cc, draft.bcc].join(", ")).addresses.map(
+                (a) => a.address,
+              ),
+              accountIds: accounts.filter((a) => a.enabled !== false).map((a) => a.id),
+            }),
+          ).pipe(
+            Effect.matchCause({
+              onSuccess: (sender) => {
+                if (active && sender) applyAutomaticSender(sender);
+              },
+              onFailure: constVoid,
+            }),
+          ),
+        ),
+      300,
+    );
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    initial.synced,
+    currentFrom,
+    draft.mode,
+    draft.accountId,
+    draft.to,
+    draft.cc,
+    draft.bcc,
+    prefs.defaultFrom,
+    accounts,
+    run,
+  ]);
+
+  const addMention = (person: Address) => {
+    setDraft((current) => {
+      const result = reconcileMentionRecipients(
+        parseAddresses(current.to).addresses,
+        [...parseAddresses(current.cc).addresses, ...parseAddresses(current.bcc).addresses],
+        [...freshMentions.current.values()]
+          .filter((a) => activeMentions.current.has(a.address.toLowerCase()))
+          .concat(person),
+        new Set(freshMentions.current.keys()),
+      );
+      for (const recipient of result.to)
+        if (result.fresh.has(recipient.address.toLowerCase()))
+          freshMentions.current.set(recipient.address.toLowerCase(), recipient);
+      return {
+        ...current,
+        to: [...result.to.map(formatAddress), ...parseAddresses(current.to).invalid].join(", "),
+      };
+    });
+  };
+  const removeMentions = (active: readonly string[]) => {
+    const have = new Set(active.map((address) => address.toLowerCase()));
+    activeMentions.current = have;
+    if (!freshMentions.current.size) return;
+    setDraft((current) => {
+      const result = reconcileMentionRecipients(
+        parseAddresses(current.to).addresses,
+        [...parseAddresses(current.cc).addresses, ...parseAddresses(current.bcc).addresses],
+        [...freshMentions.current.values()].filter((person) =>
+          have.has(person.address.toLowerCase()),
+        ),
+        new Set(freshMentions.current.keys()),
+      );
+      const to = [...result.to.map(formatAddress), ...parseAddresses(current.to).invalid].join(
+        ", ",
+      );
+      return to === current.to ? current : { ...current, to };
+    });
+  };
+  const canInsertImage = () => {
+    if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
+      setError(t`Choose Edit body before inserting an image.`);
+      return false;
+    }
+    return draft.body.kind === "rich";
+  };
+  const loadImageUrl = () => {
+    if (adding || !canInsertImage()) return;
+    setAdding(true);
+    run(
+      withMail((call) => call("ImageFromUrl", { url: imageUrl })).pipe(
+        Effect.matchCause({
+          onSuccess: (file) => {
+            const problem = account
+              ? attachmentProblem(account.provider, [...draft.attachments, file])
+              : undefined;
+            if (problem) showAttachmentProblem(problem);
+            else if (
+              [...draft.attachments, file].reduce((sum, a) => sum + attachmentBytes(a.content), 0) >
+              30 * 1024 * 1024
+            )
+              setError(t`Attachments exceed the 30 MB compose limit.`);
+            else {
+              appendAttachments([file], true);
+              setImageUrlOpen(false);
+              setImageUrl("");
+              setError(null);
+            }
+            setAdding(false);
+          },
+          onFailure: () => {
+            setAdding(false);
+            setError(
+              t`Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB.`,
+            );
+          },
+        }),
+      ),
+    );
+  };
+  const addImageFiles = async (files: FileList | null) => {
+    if (!files?.length || adding || !canInsertImage()) return;
+    const sizes = [
+      ...draft.attachments.map((a) => ({ ...a, size: attachmentBytes(a.content) })),
+      ...[...files].map((f) => ({ filename: f.name, mimeType: f.type, size: f.size })),
+    ];
+    const problem = account ? attachmentSizesProblem(account.provider, sizes) : undefined;
+    if (problem) {
+      showAttachmentProblem(problem);
+      return;
+    }
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
+      setError(t`Attachments exceed the 30 MB compose limit.`);
+      return;
+    }
+    if ([...files].some((file) => file.size > 8 * 1024 * 1024)) {
+      setError(t`Use an image up to 8 MB.`);
+      return;
+    }
+    setAdding(true);
+    try {
+      const input = await Promise.all(
+        [...files].map(async (file) => ({
+          filename: file.name,
+          mimeType: file.type,
+          content: await toBase64(file),
+        })),
+      );
+      run(
+        Effect.all(input.map((file) => withMail((call) => call("ImageFromFile", { file })))).pipe(
+          Effect.matchCause({
+            onSuccess: (images) => {
+              appendAttachments(images, true);
+              setAdding(false);
+              setError(null);
+            },
+            onFailure: () => {
+              setAdding(false);
+              setError(t`Use PNG, JPEG, GIF or WebP images up to 8 MB.`);
+            },
+          }),
+        ),
+      );
+    } catch {
+      setAdding(false);
+      setError(t`Couldn't read the image.`);
+    }
   };
 
   const insertTemplate = (template: Template, values?: Readonly<Record<string, string>>) => {
@@ -648,13 +865,31 @@ export function Composer({
               <Select
                 aria-label={t`From`}
                 value={`${draft.accountId}/${draft.from?.address ?? account?.email ?? ""}`}
-                onValueChange={changeSender}
+                onValueChange={(key) => {
+                  manualSender.current = true;
+                  setSenderUndo(null);
+                  changeSender(key);
+                }}
                 options={availableSenders.map((sender) => ({
                   value: `${sender.accountId}/${sender.address}`,
                   label: sender.name ? `${sender.name} (${sender.address})` : sender.address,
                 }))}
                 className="max-w-full"
               />
+              {senderUndo && (
+                <output className="flex items-center gap-2 text-[12px] text-neutral-500">
+                  {t`From updated`}
+                  <button
+                    type="button"
+                    className="text-blue-600"
+                    onClick={() => {
+                      manualSender.current = true;
+                      changeSender(`${senderUndo.accountId}/${senderUndo.address}`);
+                      setSenderUndo(null);
+                    }}
+                  >{t`Revert`}</button>
+                </output>
+              )}
             </div>
             <div className={row}>
               <span className={label}>
@@ -664,7 +899,10 @@ export function Composer({
                 label={t`To`}
                 inputRef={toRef}
                 value={draft.to}
-                onChange={(to) => set({ to })}
+                onChange={(to) => {
+                  freshMentions.current.clear();
+                  set({ to });
+                }}
                 showFullAddresses={prefs.showFullRecipientAddresses}
                 from={draft.from?.address ?? account?.email}
               />
@@ -688,7 +926,11 @@ export function Composer({
                     label={t`Cc`}
                     inputRef={ccRef}
                     value={draft.cc}
-                    onChange={(cc) => set({ cc })}
+                    onChange={(cc) => {
+                      for (const a of parseAddresses(cc).addresses)
+                        freshMentions.current.delete(a.address.toLowerCase());
+                      set({ cc });
+                    }}
                     showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
@@ -700,7 +942,11 @@ export function Composer({
                   <RecipientField
                     label={t`Bcc`}
                     value={draft.bcc}
-                    onChange={(bcc) => set({ bcc })}
+                    onChange={(bcc) => {
+                      for (const a of parseAddresses(bcc).addresses)
+                        freshMentions.current.delete(a.address.toLowerCase());
+                      set({ bcc });
+                    }}
                     showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
@@ -761,8 +1007,44 @@ export function Composer({
                 >{t`Cancel`}</button>
               </fieldset>
             )}
+            {imageUrlOpen && (
+              <div className="flex items-center gap-2 px-4 py-2">
+                <input
+                  autoFocus
+                  aria-label={t`Image URL`}
+                  placeholder="https://"
+                  value={imageUrl}
+                  onChange={(event) => setImageUrl(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      loadImageUrl();
+                    }
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setImageUrlOpen(false);
+                    }
+                  }}
+                  className="min-w-0 flex-1 rounded border bg-transparent px-2 py-1"
+                />
+                <button
+                  type="button"
+                  disabled={adding}
+                  onClick={loadImageUrl}
+                >{t`Insert image`}</button>
+                <button type="button" onClick={() => setImageUrlOpen(false)}>{t`Cancel`}</button>
+              </div>
+            )}
             <ComposeEditor
               shortcutSet={prefs.shortcutSet}
+              prefs={prefs}
+              from={currentFrom}
+              onImageSize={(inlineImageSize) =>
+                setPrefs({ payload: { patch: { inlineImageSize } }, reactivityKeys: [Keys.prefs] })
+              }
+              onMention={addMention}
+              onMentionsChange={removeMentions}
               body={draft.body}
               attachments={draft.attachments}
               onChange={(body) => set({ body })}
@@ -879,7 +1161,7 @@ export function Composer({
               </div>
             )}
 
-            <footer className="flex shrink-0 items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
+            <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
@@ -922,6 +1204,22 @@ export function Composer({
                   }}
                 />
               )}
+              {draft.body.kind === "rich" && (
+                <>
+                  <button
+                    type="button"
+                    disabled={adding}
+                    className={quiet}
+                    onClick={() => imageFileRef.current?.click()}
+                  >{t`Image file`}</button>
+                  <button
+                    type="button"
+                    disabled={adding}
+                    className={quiet}
+                    onClick={() => setImageUrlOpen((open) => !open)}
+                  >{t`Image URL`}</button>
+                </>
+              )}
               <TemplatePicker
                 open={picker}
                 onOpenChange={setPicker}
@@ -947,6 +1245,17 @@ export function Composer({
                 </button>
               </Tip>
             </footer>
+            <input
+              ref={imageFileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              multiple
+              hidden
+              onChange={(event) => {
+                void addImageFiles(event.target.files);
+                event.target.value = "";
+              }}
+            />
             <input
               ref={fileRef}
               type="file"

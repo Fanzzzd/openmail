@@ -1,3 +1,4 @@
+import { composeTransportHtml } from "./compose-body.js";
 import { Effect } from "effect";
 import MailComposer from "nodemailer/lib/mail-composer";
 
@@ -46,7 +47,7 @@ export const buildMime = Effect.fnUntraced(function* (
         }
       : {}),
     text: message.text,
-    ...(message.html ? { html: htmlDocument(message.html) } : {}),
+    ...(message.html ? { html: htmlDocument(composeTransportHtml(message) ?? "") } : {}),
     ...(message.calendar ? { icalEvent: message.calendar } : {}),
     ...(replying && threading.messageId
       ? { inReplyTo: threading.messageId, references: references || undefined }

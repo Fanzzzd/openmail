@@ -1,10 +1,15 @@
 import { parseDocument, ElementType } from "htmlparser2";
-import type { OutgoingMessage } from "./domain.js";
+import {
+  COMPOSE_FONT_FAMILIES,
+  COMPOSE_FONT_SIZES,
+  type ComposeFont,
+  type OutgoingMessage,
+} from "./domain.js";
 
 export type ComposeBody =
   | { kind: "plain"; text: string }
   | { kind: "markdown"; text: string }
-  | { kind: "rich"; text: string; html: string; originalHtml?: string };
+  | { kind: "rich"; text: string; html: string; originalHtml?: string; font?: ComposeFont };
 type RichBody = Extract<ComposeBody, { kind: "rich" }>;
 type HtmlNode = ReturnType<typeof parseDocument>["children"][number];
 type SafeNode =
@@ -221,14 +226,30 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
         const href = composeLink(attribs.href ?? "");
         result.push(
           ...(href
-            ? [{ kind: "tag", name: "a", attrs: { href }, children } satisfies SafeNode]
+            ? [
+                {
+                  kind: "tag",
+                  name: "a",
+                  attrs: {
+                    href,
+                    ...(/^[a-f0-9-]{36}$/.test(attribs["data-compose-mention"] ?? "")
+                      ? { "data-compose-mention": attribs["data-compose-mention"] ?? "" }
+                      : {}),
+                  },
+                  children,
+                } satisfies SafeNode,
+              ]
             : children),
         );
       } else if (!preserveRemote && name === "img" && /^cid:[\w.@+-]+$/i.test(attribs.src ?? "")) {
         result.push({
           kind: "tag",
           name: "img",
-          attrs: { src: attribs.src ?? "", ...(attribs.alt ? { alt: attribs.alt } : {}) },
+          attrs: {
+            src: attribs.src ?? "",
+            ...(attribs.alt ? { alt: attribs.alt } : {}),
+            ...(/^[1-9]\d{0,3}$/.test(attribs.width ?? "") ? { width: attribs.width ?? "" } : {}),
+          },
           children: [],
         });
       } else if (tag) {
@@ -355,11 +376,24 @@ export function richComposeBody(input: string): RichBody {
 }
 /** Source is never inserted in the editor. Draft metadata retains it until a real body edit. */
 export function remoteComposeBody(input: string): RichBody {
+  const wrapper = composeFontWrapper(
+    parseDocument(input, { withStartIndices: true, withEndIndices: true }).children,
+  );
+  if (wrapper && wrapper.node.startIndex !== null && wrapper.node.endIndex !== null) {
+    const openingEnd = input.indexOf(">", wrapper.node.startIndex) + 1;
+    const closingStart = input.lastIndexOf("</", wrapper.node.endIndex);
+    if (openingEnd > 0 && closingStart >= openingEnd) {
+      const html = `${input.slice(0, wrapper.node.startIndex)}${input.slice(openingEnd, closingStart)}${input.slice(wrapper.node.endIndex + 1)}`;
+      return { ...richComposeBody(html), originalHtml: html, font: wrapper.font };
+    }
+  }
   return { ...richComposeBody(input), originalHtml: input };
 }
 export function editedComposeBody(previous: RichBody, html: string): RichBody {
   const next = richComposeBody(html);
-  return next.html === previous.html ? previous : next;
+  return next.html === previous.html
+    ? previous
+    : { ...next, ...(previous.font ? { font: previous.font } : {}) };
 }
 export function composeEditorText(body: ComposeBody): string {
   return body.kind === "rich" ? plainNodes(composeNodes(body.html), false) : body.text;
@@ -368,7 +402,32 @@ export function composeEditorText(body: ComposeBody): string {
 export function preservedComposeHtml(input: string): string {
   return serializeNodes(composeNodes(input, true));
 }
-function unsupportedNodes(nodes: HtmlNode[], depth = 0): boolean {
+/** Recognize only the single outer wrapper our transport emits, including MIME document framing. */
+function composeFontWrapper(
+  nodes: HtmlNode[],
+  depth = 0,
+): { node: HtmlNode; font: ComposeFont } | undefined {
+  if (depth > 2) return undefined;
+  const visible = nodes.filter(
+    (node) =>
+      !(
+        node.type === ElementType.Comment ||
+        node.type === ElementType.Directive ||
+        (node.type === ElementType.Text && !node.data.trim()) ||
+        (node.type === ElementType.Tag && node.name === "head")
+      ),
+  );
+  const node = visible.length === 1 ? visible[0] : undefined;
+  if (!node || node.type !== ElementType.Tag) return undefined;
+  if (node.name === "html" || node.name === "body")
+    return composeFontWrapper(node.children, depth + 1);
+  if (node.name !== "div" || Object.keys(node.attribs).length !== 1) return undefined;
+  const match = /^font-family:([^;]+);font-size:(\d+)px$/.exec(node.attribs.style ?? "");
+  const family = COMPOSE_FONT_FAMILIES.find((candidate) => candidate === match?.[1]);
+  const size = COMPOSE_FONT_SIZES.find((candidate) => String(candidate) === match?.[2]);
+  return family && size ? { node, font: { family, size } } : undefined;
+}
+function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode): boolean {
   return (
     depth > 128 ||
     nodes.some((node) => {
@@ -390,14 +449,22 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0): boolean {
       if (
         name === "img" &&
         /^cid:[\w.@+-]+$/i.test(attribs.src ?? "") &&
-        Object.keys(attribs).every((key) => key === "src" || key === "alt")
+        Object.keys(attribs).every(
+          (key) =>
+            key === "src" ||
+            key === "alt" ||
+            (key === "width" && /^[1-9]\d{0,3}$/.test(attribs[key] ?? "")),
+        )
       )
         return false;
       if (BLOCKS.has(name) && name !== "div" && name !== "p") return true;
       if (!INLINE.has(name) && !BLOCKS.has(name) && !LISTS.has(name) && !NEUTRAL_TAGS.has(name))
         return true;
       for (const [key, value] of Object.entries(attribs)) {
+        if (node === fontWrapper && key === "style") continue;
         if (key === "href" && name === "a" && composeLink(value)) continue;
+        if (key === "data-compose-mention" && name === "a" && /^[a-f0-9-]{36}$/.test(value))
+          continue;
         if (
           key === "style" &&
           name === "span" &&
@@ -410,12 +477,13 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0): boolean {
         if (key === "class" || key === "id") continue;
         return true;
       }
-      return unsupportedNodes(node.children, depth + 1);
+      return unsupportedNodes(node.children, depth + 1, fontWrapper);
     })
   );
 }
 export function composeHtmlHasUnsupported(input: string): boolean {
-  return unsupportedNodes(parseDocument(input).children);
+  const nodes = parseDocument(input).children;
+  return unsupportedNodes(nodes, 0, composeFontWrapper(nodes)?.node);
 }
 export function textComposeHtml(text: string): string {
   return escapeComposeText(text)
@@ -538,11 +606,14 @@ export function changeComposeBodyKind(body: ComposeBody, kind: ComposeBody["kind
   return composeConversion(body, kind).body;
 }
 export function outgoingComposeBody(
-  message: Pick<OutgoingMessage, "text" | "html" | "markdown" | "originalHtml">,
+  message: Pick<OutgoingMessage, "text" | "html" | "markdown" | "originalHtml" | "composeFont">,
 ): ComposeBody {
   if (message.markdown) return { kind: "markdown", text: message.text };
   if (message.html === undefined) return { kind: "plain", text: message.text };
-  const body = richComposeBody(message.html);
+  const body = {
+    ...richComposeBody(message.html),
+    ...(message.composeFont ? { font: message.composeFont } : {}),
+  };
   return message.originalHtml !== undefined &&
     richComposeBody(message.originalHtml).html === message.html
     ? { ...body, originalHtml: message.originalHtml }
@@ -550,7 +621,7 @@ export function outgoingComposeBody(
 }
 export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessage {
   const body = outgoingComposeBody(message);
-  const { html: _html, originalHtml: _originalHtml, ...rest } = message;
+  const { html: _html, originalHtml: _originalHtml, composeFont: _font, ...rest } = message;
   const sourced: OutgoingMessage["attachments"] = message.attachments.map((attachment) => {
     if (
       attachment.sourceMessageId === undefined ||
@@ -577,7 +648,19 @@ export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessa
         attachments,
         text: body.text,
         html: body.html,
+        ...(body.font ? { composeFont: body.font } : {}),
         ...(body.originalHtml === undefined ? {} : { originalHtml: body.originalHtml }),
       }
     : { ...rest, attachments };
+}
+
+export function composeTransportHtml(
+  message: Pick<OutgoingMessage, "html" | "composeFont">,
+): string | undefined {
+  if (message.html === undefined) return undefined;
+  const font = message.composeFont;
+  const html = message.html.replace(/ data-compose-mention="[a-f0-9-]{36}"/g, "");
+  return font
+    ? `<div style="font-family:${font.family};font-size:${font.size}px">${html}</div>`
+    : html;
 }

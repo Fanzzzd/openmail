@@ -3,7 +3,7 @@ import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { afterAll, expect, it, vi } from "vitest";
 import { Effect } from "effect";
-import { richComposeBody, type ComposeBody } from "@openmail/core/schema";
+import { DEFAULT_PREFS, richComposeBody, type ComposeBody } from "@openmail/core/schema";
 import type { ReactNode } from "react";
 import type { ComposeElement } from "./compose-editor-dom";
 import { testDom } from "./test-dom";
@@ -61,6 +61,11 @@ function editor(body: ComposeBody) {
         bodyRef,
         selectionRef,
         shortcutSet: "mimestream",
+        prefs: DEFAULT_PREFS,
+        from: undefined,
+        onImageSize: vi.fn(),
+        onMention: vi.fn(),
+        onMentionsChange: vi.fn(),
       }),
     ),
   );
@@ -146,5 +151,41 @@ it("plain compose supports scoped find and leaves rich style keys alone", () => 
     expect(dom.key(find, "g", { altKey: true }).defaultPrevented).toBe(true);
   } finally {
     dom.dispose();
+  }
+});
+
+it("Markdown textarea leaves emoji in code untouched and replaces tokens outside code", () => {
+  for (const prefix of ["```js\n", "~~~\n", "Use ` ", "`code` "]) {
+    const dom = editor({ kind: "markdown", text: `${prefix}:+1:` });
+    try {
+      const textarea = dom.body;
+      if (!(textarea instanceof dom.window.HTMLTextAreaElement))
+        throw new Error("Missing textarea");
+      dom.key(textarea, "a");
+      const next = `${prefix}:+1: `;
+      const move = vi.fn();
+      Object.assign(textarea, { setSelectionRange: move });
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      });
+      act(() => {
+        Reflect.set(dom.window.HTMLTextAreaElement.prototype, "value", next, textarea);
+        Object.assign(textarea, { selectionStart: next.length, selectionEnd: next.length });
+        textarea.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+        textarea.dispatchEvent(new dom.window.Event("keyup", { bubbles: true }));
+      });
+      expect(dom.change).toHaveBeenLastCalledWith({
+        kind: "markdown",
+        text: prefix === "`code` " ? `${prefix}👍 ` : next,
+      });
+      if (prefix === "`code` ") {
+        expect(move).toHaveBeenCalledWith(prefix.length + 3, prefix.length + 3);
+        expect(dom.key(textarea, "z").defaultPrevented).toBe(true);
+        expect(dom.change).toHaveBeenLastCalledWith({ kind: "markdown", text: next });
+      } else expect(move).not.toHaveBeenCalled();
+    } finally {
+      dom.dispose();
+    }
   }
 });

@@ -15,6 +15,7 @@ import {
 import type {
   Address,
   ComposeMode,
+  ComposeFont,
   Draft,
   Message,
   OutgoingAttachment,
@@ -26,6 +27,7 @@ import type { StoredDraft } from "./services.js";
 
 /** What a raw draft from the provider holds, ready for the compose window. */
 export interface ParsedDraft {
+  font?: ComposeFont;
   to: Address[];
   cc: Address[];
   bcc: Address[];
@@ -155,6 +157,7 @@ export function importedMessage(parsed: ParsedDraft, thread: readonly Message[])
         : "new";
   return {
     to: parsed.to,
+    ...(parsed.font ? { composeFont: parsed.font } : {}),
     cc: parsed.cc,
     bcc: parsed.bcc,
     subject: parsed.subject,

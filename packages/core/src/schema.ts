@@ -44,3 +44,4 @@ export * from "./attachment-filename.js";
 
 export * from "./compose-paste.js";
 export * from "./feedback.js";
+export * from "./compose-extras.js";

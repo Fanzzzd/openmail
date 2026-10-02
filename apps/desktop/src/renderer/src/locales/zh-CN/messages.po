@@ -733,6 +733,10 @@ msgstr "选择删除键动作"
 msgid "Choose Edit body before inserting a template."
 msgstr "请先选择“编辑正文”，再插入模板。"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Choose Edit body before inserting an image."
+msgstr "请先选择「编辑正文」，再插入图片。"
+
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
 msgstr "请选择一个目标位置"
@@ -815,6 +819,10 @@ msgstr "确认修改规则？"
 #: src/renderer/src/App.tsx
 msgid "Connect an account to send feedback"
 msgstr "连接账户后即可发送反馈"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Contact group"
+msgstr "联系人组"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
@@ -931,6 +939,10 @@ msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"
 
 #: src/renderer/src/components/Composer.tsx
+msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
+msgstr "无法插入图片。请使用不超过 8 MB 的公网 PNG、JPEG、GIF 或 WebP 图片。"
+
+#: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "无法加载原附件：{reason}"
 
@@ -949,6 +961,10 @@ msgstr "无法读取附件，请重新添加。"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't read the clipboard attachment."
 msgstr "无法读取剪贴板附件。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the image."
+msgstr "无法读取图片。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
@@ -1032,6 +1048,10 @@ msgstr "已拒绝"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Default"
 msgstr "默认"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default compose font"
+msgstr "默认撰写字体"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Default email app"
@@ -1378,6 +1398,14 @@ msgstr "文件夹颜色仅保存在这台电脑上。"
 msgid "Follow system"
 msgstr "跟随系统"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font family"
+msgstr "字体"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font size"
+msgstr "字号"
+
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "论坛"
@@ -1407,6 +1435,10 @@ msgstr "发件人"
 #: src/renderer/src/components/Proposals.tsx
 msgid "From {from} to {to}"
 msgstr "从 {from} 发给 {to}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "From updated"
+msgstr "已更新发件人"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -1478,6 +1510,10 @@ msgstr "打开会话多久后标为已读。选「手动」时，用 {readShortc
 msgid "Icon"
 msgstr "图标"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Image file"
+msgstr "图片文件"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Image recognition is unavailable on this platform."
 msgstr "此平台暂不支持图片识别。"
@@ -1486,6 +1522,14 @@ msgstr "此平台暂不支持图片识别。"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Image region"
 msgstr "图片区域"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Image size"
+msgstr "图片尺寸"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Image URL"
+msgstr "图片网址"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
@@ -1539,6 +1583,10 @@ msgstr "包含匹配项"
 #: src/renderer/src/components/Composer.tsx
 msgid "Include original attachments"
 msgstr "包含原附件"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert image"
+msgstr "插入图片"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Insert template"
@@ -1607,6 +1655,10 @@ msgstr "标签…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
 msgstr "语言"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Large"
+msgstr "大"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Larger text"
@@ -1778,6 +1830,10 @@ msgstr "命中的图片区域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Medium"
+msgstr "中"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting cancelled"
 msgstr "会议已取消"
@@ -1785,6 +1841,10 @@ msgstr "会议已取消"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting response"
 msgstr "会议响应"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Mention suggestions"
+msgstr "提及建议"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -2288,6 +2348,10 @@ msgstr "直接整理"
 msgid "Organizer"
 msgstr "组织者"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Original"
+msgstr "原始尺寸"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "原附件由 Outlook 保留，无需重新上传。"
@@ -2601,6 +2665,10 @@ msgstr "替换"
 msgid "Replace all"
 msgstr "全部替换"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Replace emoji text as you type"
+msgstr "输入时替换 Emoji"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Replace with"
 msgstr "替换为"
@@ -2671,6 +2739,10 @@ msgstr "将在服务器恢复保存的原规则。预览：{0} 封邮件。"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "继续"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Revert"
+msgstr "还原"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
@@ -2975,6 +3047,10 @@ msgstr "收件人显示完整邮箱地址"
 msgid "Show Gmail categories"
 msgstr "显示 Gmail 分类"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show Google contact photos"
+msgstr "显示 Google 联系人照片"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show if unread"
 msgstr "有未读邮件时显示"
@@ -3061,6 +3137,10 @@ msgstr "签名"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令牌保存在系统钥匙串。"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Small"
+msgstr "小"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3451,6 +3531,10 @@ msgid "Undo"
 msgstr "撤销"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo emoji replacement"
+msgstr "撤销 Emoji 替换"
+
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Undo mode change"
 msgstr "撤销模式切换"
 
@@ -3531,9 +3615,17 @@ msgstr "动态"
 msgid "Use an http, https or mailto link"
 msgstr "请输入 http、https 或 mailto 链接"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Use an image up to 8 MB."
+msgstr "请使用不超过 8 MB 的图片。"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "使用默认值"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
+msgstr "请使用不超过 8 MB 的 PNG、JPEG、GIF 或 WebP 图片。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use selection for find"

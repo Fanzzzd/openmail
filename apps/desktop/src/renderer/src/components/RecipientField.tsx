@@ -12,7 +12,7 @@ import type { AppError } from "../errors";
 import { displayName } from "../format";
 import { Keys } from "../state/keys";
 import { setContactHiddenAtom } from "../state/mutations";
-import { suggestionsAtom } from "../state/queries";
+import { contactGroupsAtom, suggestionsAtom } from "../state/queries";
 import { itemClass, popupMotion, popupSurface } from "./ui/styles";
 
 type Suggestions = Atom.Atom<AsyncResult.AsyncResult<readonly Address[], AppError>>;
@@ -76,7 +76,11 @@ export function RecipientField({
   const taken = new Set(parseAddresses(value).addresses.map((a) => a.address.toLowerCase()));
   const shown = found.filter((a) => !taken.has(a.address.toLowerCase()));
   const byText = new Map(shown.map((a) => [formatAddress(a), a]));
-  const items = [...byText.keys()];
+  const groups = AsyncResult.getOrElse(useAtomValue(contactGroupsAtom(query)), () => []).filter(
+    (group) => group.members.some((a) => !taken.has(a.address.toLowerCase())),
+  );
+  const byGroup = new Map(groups.map((group) => [`group:${group.accountId}:${group.id}`, group]));
+  const items = [...byText.keys(), ...(query ? byGroup.keys() : [])];
   const listed = open && query !== "" && items.length > 0;
 
   const emit = (next: string) => {
@@ -94,7 +98,11 @@ export function RecipientField({
   const pick = (text: string) => {
     setTyped("");
     setOpen(false);
-    emit(serialize([...chips, text], ""));
+    const group = byGroup.get(text);
+    const members = group
+      ? group.members.filter((a) => !taken.has(a.address.toLowerCase())).map(formatAddress)
+      : [text];
+    emit(serialize([...chips, ...members], ""));
   };
 
   /** Turns the typed text into a chip. */
@@ -192,6 +200,22 @@ export function RecipientField({
           >
             <Combobox.List>
               {(text: string) => {
+                const group = byGroup.get(text);
+                if (group)
+                  return (
+                    <Combobox.Item
+                      key={text}
+                      value={text}
+                      className={`group py-1 pr-1 ${itemClass}`}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{group.name}</span>
+                        <span className="block text-[12px] text-neutral-500">
+                          {t`Contact group`} · {group.members.length}
+                        </span>
+                      </span>
+                    </Combobox.Item>
+                  );
                 const a = byText.get(text);
                 if (!a) return null;
                 return (

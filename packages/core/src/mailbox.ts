@@ -48,7 +48,7 @@ import type {
   SettingsScopeMissing,
 } from "./errors.js";
 import type { CalendarInvite, InviteResponse } from "./calendar.js";
-import type { ContactSync } from "./contacts.js";
+import type { ContactSync, ContactGroup } from "./contacts.js";
 import type { ClientConfig, ConnectInput } from "./services.js";
 
 import type {
@@ -174,6 +174,15 @@ export class Mailbox extends Context.Service<
       response: InviteResponse,
       actor: Actor,
     ): Effect.Effect<void, PerformError>;
+    contactGroups(query: string, accountIds?: readonly string[]): Effect.Effect<ContactGroup[]>;
+    contactPhoto(accountId: string, address: string): Effect.Effect<string | null>;
+    imageFromUrl(url: string): Effect.Effect<OutgoingAttachment, InvalidInput | ProviderError>;
+    imageFromFile(file: OutgoingAttachment): Effect.Effect<OutgoingAttachment, InvalidInput>;
+    suggestSender(
+      current: Pick<import("./compose-sender.js").SuggestedSender, "accountId" | "address">,
+      recipients: readonly string[],
+      accountIds: readonly string[],
+    ): Effect.Effect<import("./compose-sender.js").SuggestedSender | null>;
     readonly contactSync: Effect.Effect<ContactSync[]>;
     refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 

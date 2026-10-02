@@ -352,7 +352,25 @@ export const DraftOrganization = Schema.Struct({
 });
 export type DraftOrganization = typeof DraftOrganization.Type;
 
+export const COMPOSE_FONT_FAMILIES = [
+  "Arial",
+  "Helvetica",
+  "Georgia",
+  "Times New Roman",
+  "Verdana",
+  "Courier New",
+] as const;
+export const COMPOSE_FONT_SIZES = [12, 14, 16, 18, 24] as const;
+export const ComposeFont = Schema.Struct({
+  family: Schema.Literals(COMPOSE_FONT_FAMILIES),
+  size: Schema.Literals(COMPOSE_FONT_SIZES),
+});
+export type ComposeFont = typeof ComposeFont.Type;
+export const InlineImageSize = Schema.Literals(["small", "medium", "large", "original"]);
+export type InlineImageSize = typeof InlineImageSize.Type;
+
 export const OutgoingMessage = Schema.Struct({
+  composeFont: Schema.optionalKey(ComposeFont),
   /** Verified Gmail send-as address; omitted uses the account address. */
   from: Schema.optionalKey(Address),
   to: Schema.Array(Address),
@@ -520,6 +538,10 @@ export const NotificationActions = Schema.Array(
   Schema.Literals(["archive", "trash", "read", "menu"]),
 ).check(Schema.isMaxLength(3));
 export const Prefs = Schema.Struct({
+  contactPhotos: Schema.Boolean,
+  emojiReplacement: Schema.Boolean,
+  inlineImageSize: InlineImageSize,
+  composeFont: ComposeFont,
   messageListDensity: Schema.Literals(["dense", "compact", "default", "expanded"]),
   specialFolderBadges: Schema.Struct({
     starred: Schema.Boolean,
@@ -561,6 +583,10 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
+  contactPhotos: true,
+  emojiReplacement: true,
+  inlineImageSize: "medium",
+  composeFont: { family: "Arial", size: 14 },
   messageListDensity: "default",
   specialFolderBadges: { starred: true, drafts: true, spam: true },
   showMore: true,

@@ -194,3 +194,16 @@ export const backfillStateAtom = MailClient.query("BackfillState", undefined, {
 export const updateTokenConfiguredAtom = MailClient.query("UpdateTokenConfigured", undefined, {
   reactivityKeys: [Keys.cache],
 });
+
+export const contactGroupsAtom = (query: string, accountIds?: readonly string[]) =>
+  MailClient.query(
+    "ContactGroups",
+    { query, ...(accountIds ? { accountIds } : {}) },
+    { reactivityKeys: [Keys.contacts], ...cached },
+  );
+export const contactPhotoAtom = (accountId: string, address: string) =>
+  MailClient.query(
+    "ContactPhoto",
+    { accountId, address },
+    { reactivityKeys: [Keys.contacts, Keys.prefs], ...cached },
+  );

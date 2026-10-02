@@ -131,6 +131,12 @@ const Handlers = MailRpcs.toLayer(
       RespondInvite: ({ messageId, key, response }) =>
         m.respondInvite(messageId, key, response, USER),
       ContactSync: () => m.contactSync,
+      ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
+      ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
+      ImageFromUrl: ({ url }) => m.imageFromUrl(url),
+      ImageFromFile: ({ file }) => m.imageFromFile(file),
+      SuggestSender: ({ current, recipients, accountIds }) =>
+        m.suggestSender(current, recipients, accountIds),
       RefreshContacts: ({ accountId }) => m.refreshContacts(accountId),
 
       Threads: ({ query }) => m.threads(query),

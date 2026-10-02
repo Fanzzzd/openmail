@@ -2019,3 +2019,137 @@ it.effect(
       assert.strictEqual(http.calls[0]?.url.searchParams.get("format"), "minimal");
     }),
 );
+
+it.effect(
+  "Google saved contacts join paginated group memberships and saved photos without extra scopes",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /v1/people/me/connections": (url) => {
+          assert.strictEqual(
+            url.searchParams.get("personFields"),
+            "names,emailAddresses,photos,memberships",
+          );
+          assert.strictEqual(url.searchParams.get("sources"), "READ_SOURCE_TYPE_CONTACT");
+          return url.searchParams.get("pageToken")
+            ? {
+                json: {
+                  connections: [
+                    {
+                      names: [{ displayName: "Bob" }],
+                      emailAddresses: [{ value: "bob@example.com" }],
+                      photos: [{ url: "https://photos.example.com/default", default: true }],
+                      memberships: [
+                        {
+                          contactGroupMembership: {
+                            contactGroupResourceName: "contactGroups/team",
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              }
+            : {
+                json: {
+                  connections: [
+                    {
+                      names: [{ displayName: "Alice" }],
+                      emailAddresses: [
+                        { value: "Alice@example.com" },
+                        { value: "second@example.com" },
+                      ],
+                      photos: [
+                        { url: "https://photos.example.com/alice", metadata: { primary: true } },
+                      ],
+                      memberships: [
+                        {
+                          contactGroupMembership: {
+                            contactGroupResourceName: "contactGroups/team",
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                  nextPageToken: "next",
+                },
+              };
+        },
+        "GET /v1/otherContacts": {
+          json: { otherContacts: [{ emailAddresses: [{ value: "other@example.com" }] }] },
+        },
+        "GET /v1/contactGroups": (url) => {
+          assert.strictEqual(url.searchParams.get("groupFields"), "name,groupType");
+          return url.searchParams.get("pageToken")
+            ? {
+                json: {
+                  contactGroups: [
+                    {
+                      resourceName: "contactGroups/empty",
+                      name: "Empty",
+                      groupType: "USER_CONTACT_GROUP",
+                    },
+                  ],
+                },
+              }
+            : {
+                json: {
+                  contactGroups: [
+                    {
+                      resourceName: "contactGroups/team",
+                      name: "Team",
+                      groupType: "USER_CONTACT_GROUP",
+                    },
+                    {
+                      resourceName: "contactGroups/myContacts",
+                      name: "My contacts",
+                      groupType: "SYSTEM_CONTACT_GROUP",
+                    },
+                  ],
+                  nextPageToken: "next",
+                },
+              };
+        },
+      });
+      const snapshot = yield* run(http, (adapter) => {
+        assert.ok("contactSnapshot" in adapter);
+        if (!adapter.contactSnapshot) throw new Error("Missing contact snapshots");
+        return adapter.contactSnapshot(account);
+      });
+      assert.deepStrictEqual(snapshot.groups, [
+        {
+          accountId: account.id,
+          id: "contactGroups/team",
+          name: "Team",
+          members: [
+            { name: "Alice", address: "alice@example.com" },
+            { name: "Alice", address: "second@example.com" },
+            { name: "Bob", address: "bob@example.com" },
+          ],
+        },
+      ]);
+      assert.deepStrictEqual(snapshot.photos, [
+        { address: "alice@example.com", url: "https://photos.example.com/alice" },
+        { address: "second@example.com", url: "https://photos.example.com/alice" },
+      ]);
+      assert.strictEqual(snapshot.contacts.length, 4);
+      assert.strictEqual(http.calls.length, 5);
+    }),
+);
+
+it.effect("repeated group pages fail rather than committing an incomplete snapshot", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /v1/people/me/connections": { json: { connections: [] } },
+      "GET /v1/otherContacts": { json: { otherContacts: [] } },
+      "GET /v1/contactGroups": { json: { contactGroups: [], nextPageToken: "repeat" } },
+    });
+    const result = yield* run(http, (adapter) => {
+      assert.ok("contactSnapshot" in adapter);
+      if (!adapter.contactSnapshot) throw new Error("Missing contact snapshots");
+      return adapter.contactSnapshot(account);
+    }).pipe(Effect.result);
+    assert.strictEqual(result._tag, "Failure");
+    if (result._tag === "Failure") assert.strictEqual(result.failure._tag, "InvalidInput");
+  }),
+);

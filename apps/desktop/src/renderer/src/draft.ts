@@ -241,6 +241,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
       ...(body.kind === "rich"
         ? {
             html: body.html,
+            ...(d.body.kind === "rich" && d.body.font ? { composeFont: d.body.font } : {}),
             ...(d.body.kind === "rich" && d.body.originalHtml !== undefined
               ? { originalHtml: d.body.originalHtml }
               : {}),

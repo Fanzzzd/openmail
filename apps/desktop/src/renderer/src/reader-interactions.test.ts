@@ -34,6 +34,7 @@ vi.mock("./state/queries", () => ({
   prefsAtom: "prefs",
   accountsAtom: "accounts",
   knownSendersAtom: () => "known",
+  contactPhotoAtom: () => "photo",
   imageSendersAtom: "images",
   inlineImagesAtom: () => "inline",
   threadAtom: () => "thread",

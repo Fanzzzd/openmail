@@ -727,6 +727,10 @@ msgstr "Choose Delete key action"
 msgid "Choose Edit body before inserting a template."
 msgstr "Choose Edit body before inserting a template."
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Choose Edit body before inserting an image."
+msgstr "Choose Edit body before inserting an image."
+
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
 msgstr "Choose one destination for the filter"
@@ -809,6 +813,10 @@ msgstr "Confirm rule changes?"
 #: src/renderer/src/App.tsx
 msgid "Connect an account to send feedback"
 msgstr "Connect an account to send feedback"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Contact group"
+msgstr "Contact group"
 
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
@@ -925,6 +933,10 @@ msgid "Couldn't get the attachment: {reason}"
 msgstr "Couldn't get the attachment: {reason}"
 
 #: src/renderer/src/components/Composer.tsx
+msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
+msgstr "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
+
+#: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments: {reason}"
 msgstr "Couldn't load the original attachments: {reason}"
 
@@ -943,6 +955,10 @@ msgstr "Couldn't read the attachment. Try adding it again."
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't read the clipboard attachment."
 msgstr "Couldn't read the clipboard attachment."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the image."
+msgstr "Couldn't read the image."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
@@ -1026,6 +1042,10 @@ msgstr "Declined"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Default"
 msgstr "Default"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default compose font"
+msgstr "Default compose font"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Default email app"
@@ -1372,6 +1392,14 @@ msgstr "Folder colors are stored on this computer only."
 msgid "Follow system"
 msgstr "Follow system"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font family"
+msgstr "Font family"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font size"
+msgstr "Font size"
+
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Forums"
@@ -1401,6 +1429,10 @@ msgstr "From"
 #: src/renderer/src/components/Proposals.tsx
 msgid "From {from} to {to}"
 msgstr "From {from} to {to}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "From updated"
+msgstr "From updated"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -1472,6 +1504,10 @@ msgstr "How long a conversation stays open before it is marked as read. Manually
 msgid "Icon"
 msgstr "Icon"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Image file"
+msgstr "Image file"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Image recognition is unavailable on this platform."
 msgstr "Image recognition is unavailable on this platform."
@@ -1480,6 +1516,14 @@ msgstr "Image recognition is unavailable on this platform."
 #: src/renderer/src/components/MessageList.tsx
 msgid "Image region"
 msgstr "Image region"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Image size"
+msgstr "Image size"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Image URL"
+msgstr "Image URL"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
@@ -1533,6 +1577,10 @@ msgstr "Include matches"
 #: src/renderer/src/components/Composer.tsx
 msgid "Include original attachments"
 msgstr "Include original attachments"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert image"
+msgstr "Insert image"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Insert template"
@@ -1601,6 +1649,10 @@ msgstr "Labels…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
 msgstr "Language"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Large"
+msgstr "Large"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Larger text"
@@ -1772,6 +1824,10 @@ msgstr "Matched image region"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Medium"
+msgstr "Medium"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting cancelled"
 msgstr "Meeting cancelled"
@@ -1779,6 +1835,10 @@ msgstr "Meeting cancelled"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting response"
 msgstr "Meeting response"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Mention suggestions"
+msgstr "Mention suggestions"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -2282,6 +2342,10 @@ msgstr "Organize directly"
 msgid "Organizer"
 msgstr "Organizer"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Original"
+msgstr "Original"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Original attachments are kept in Outlook without uploading them again."
@@ -2595,6 +2659,10 @@ msgstr "Replace"
 msgid "Replace all"
 msgstr "Replace all"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Replace emoji text as you type"
+msgstr "Replace emoji text as you type"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Replace with"
 msgstr "Replace with"
@@ -2665,6 +2733,10 @@ msgstr "Restore the saved original rule on the server. Preview: {0} messages."
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Resume"
 msgstr "Resume"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Revert"
+msgstr "Revert"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
@@ -2969,6 +3041,10 @@ msgstr "Show full email addresses in recipient fields"
 msgid "Show Gmail categories"
 msgstr "Show Gmail categories"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show Google contact photos"
+msgstr "Show Google contact photos"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show if unread"
 msgstr "Show if unread"
@@ -3055,6 +3131,10 @@ msgstr "Signatures"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Small"
+msgstr "Small"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3445,6 +3525,10 @@ msgid "Undo"
 msgstr "Undo"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo emoji replacement"
+msgstr "Undo emoji replacement"
+
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Undo mode change"
 msgstr "Undo mode change"
 
@@ -3525,9 +3609,17 @@ msgstr "Updates"
 msgid "Use an http, https or mailto link"
 msgstr "Use an http, https or mailto link"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Use an image up to 8 MB."
+msgstr "Use an image up to 8 MB."
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Use default"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
+msgstr "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use selection for find"

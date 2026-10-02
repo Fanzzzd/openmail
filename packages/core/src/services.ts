@@ -54,7 +54,7 @@ import type {
   ProviderFailure,
 } from "./errors.js";
 import type { CalendarInvite, InviteResponse } from "./calendar.js";
-import type { ContactSync } from "./contacts.js";
+import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
 import type { MarkdownDraftSource } from "./markdown-draft.js";
@@ -370,6 +370,24 @@ export class Store extends Context.Service<
     setImageSender(entry: string, allowed: boolean): Effect.Effect<void>;
 
     // Contacts
+    replaceContactExtras(
+      accountId: string,
+      snapshot: Pick<ContactSnapshot, "groups" | "photos">,
+    ): Effect.Effect<void>;
+    contactGroups(query: string, accountIds?: readonly string[]): Effect.Effect<ContactGroup[]>;
+    contactPhotoSource(
+      accountId: string,
+      address: string,
+    ): Effect.Effect<{ url: string; dataUrl: string | null } | null>;
+    cacheContactPhoto(
+      accountId: string,
+      address: string,
+      url: string,
+      dataUrl: string,
+    ): Effect.Effect<void>;
+    senderHistory(
+      recipients: readonly string[],
+    ): Effect.Effect<import("./compose-sender.js").SenderHistory[]>;
     replaceServerContacts(
       accountId: string,
       contacts: readonly Address[],
@@ -487,6 +505,9 @@ export interface ProviderAdapter {
     ids: readonly string[],
     folder: DeleteFolder,
   ): Effect.Effect<PermanentDeleteBatch, ProviderFailure | FeatureScopeMissing | InvalidInput>;
+  contactSnapshot?(
+    account: Account,
+  ): Effect.Effect<ContactSnapshot, ProviderFailure | FeatureScopeMissing | InvalidInput>;
   contacts(
     account: Account,
   ): Effect.Effect<Address[], ProviderFailure | FeatureScopeMissing | InvalidInput>;

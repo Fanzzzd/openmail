@@ -1,3 +1,4 @@
+import { composeTransportHtml } from "./compose-body.js";
 import {
   FOLDER_BATCH_LIMIT,
   type DeleteFolder,
@@ -1493,7 +1494,7 @@ function graphFields(message: OutgoingMessage) {
   return {
     subject: message.subject,
     body: message.html
-      ? { contentType: "html", content: htmlDocument(message.html) }
+      ? { contentType: "html", content: htmlDocument(composeTransportHtml(message) ?? "") }
       : { contentType: "text", content: message.text },
     toRecipients: recipients(message.to),
     ccRecipients: recipients(message.cc),

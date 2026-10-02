@@ -17,6 +17,8 @@ import {
   CalendarInvite,
   InviteResponse,
   ContactSync,
+  ContactGroup,
+  SuggestedSender,
   BackfillState,
   CacheWindow,
   CacheWindowInput,
@@ -155,6 +157,28 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("RespondInvite", {
     payload: { messageId: Schema.String, key: Schema.String, response: InviteResponse },
     error,
+  }),
+  Rpc.make("ContactGroups", {
+    payload: { query: Schema.String, accountIds: AccountIds },
+    success: Schema.Array(ContactGroup),
+  }),
+  Rpc.make("ContactPhoto", {
+    payload: { accountId: Schema.String, address: Schema.String },
+    success: Schema.NullOr(Schema.String),
+  }),
+  Rpc.make("ImageFromUrl", { payload: { url: Schema.String }, success: OutgoingAttachment, error }),
+  Rpc.make("ImageFromFile", {
+    payload: { file: OutgoingAttachment },
+    success: OutgoingAttachment,
+    error,
+  }),
+  Rpc.make("SuggestSender", {
+    payload: {
+      current: Schema.Struct({ accountId: Schema.String, address: Schema.String }),
+      recipients: Schema.Array(Schema.String),
+      accountIds: Schema.Array(Schema.String),
+    },
+    success: Schema.NullOr(SuggestedSender),
   }),
   Rpc.make("ContactSync", { success: Schema.Array(ContactSync) }),
   Rpc.make("RefreshContacts", { payload: { accountId: Schema.String }, error }),

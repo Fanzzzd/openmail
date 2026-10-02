@@ -1,7 +1,12 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_PREFS, UNDO_SEND_SECONDS } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  UNDO_SEND_SECONDS,
+  COMPOSE_FONT_FAMILIES,
+  COMPOSE_FONT_SIZES,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 
@@ -33,6 +38,7 @@ export function ComposeSettings() {
   return (
     <div className="space-y-6">
       <DefaultFrom />
+      <ComposeAppearance />
       <RecipientAddresses />
       <QuoteSelection />
       <UndoSend />
@@ -303,6 +309,53 @@ function QuoteSelection() {
           setPrefs({ payload: { patch: { quoteSelection } }, reactivityKeys: [Keys.prefs] })
         }
       />
+    </section>
+  );
+}
+
+function ComposeAppearance() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  const save = (patch: Partial<typeof prefs>) =>
+    setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
+  return (
+    <section className="space-y-3">
+      <h3 className={heading}>{t`Default compose font`}</h3>
+      <div className="flex gap-2">
+        <Select
+          aria-label={t`Font family`}
+          value={prefs.composeFont.family}
+          options={COMPOSE_FONT_FAMILIES.map((value) => ({ value, label: value }))}
+          onValueChange={(family) => save({ composeFont: { ...prefs.composeFont, family } })}
+        />
+        <Select
+          aria-label={t`Font size`}
+          value={String(prefs.composeFont.size)}
+          options={COMPOSE_FONT_SIZES.map((value) => ({
+            value: String(value),
+            label: `${value} px`,
+          }))}
+          onValueChange={(value) => {
+            const size = COMPOSE_FONT_SIZES.find((candidate) => String(candidate) === value);
+            if (size) save({ composeFont: { ...prefs.composeFont, size } });
+          }}
+        />
+      </div>
+      <label className="flex items-center gap-2">
+        <Checkbox
+          checked={prefs.emojiReplacement}
+          onCheckedChange={(emojiReplacement) => save({ emojiReplacement })}
+        />
+        <span>{t`Replace emoji text as you type`}</span>
+      </label>
+      <label className="flex items-center gap-2">
+        <Checkbox
+          checked={prefs.contactPhotos}
+          onCheckedChange={(contactPhotos) => save({ contactPhotos })}
+        />
+        <span>{t`Show Google contact photos`}</span>
+      </label>
     </section>
   );
 }

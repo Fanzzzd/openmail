@@ -1,7 +1,11 @@
+import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
 import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../state/mail";
+import { useAtomValue } from "@effect/atom-react";
+import { AsyncResult, Atom } from "effect/reactivity";
+import { suggestionsAtom } from "../state/queries";
 import { useLingui } from "@lingui/react/macro";
 import {
   composePaste,
@@ -14,10 +18,17 @@ import {
   richComposeBody,
   escapeComposeText,
   type ComposeBody,
+  type Address,
+  type InlineImageSize,
+  type Prefs,
+  mentionQuery,
+  mentionHtml,
+  emojiAtCaret,
 } from "@openmail/core/schema";
 import { Bold, Italic, Underline, Link, Unlink, Strikethrough } from "lucide-react";
 import {
   useLayoutEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -39,8 +50,14 @@ import { makeInlinePreviewCache } from "../compose-previews";
 import { Select } from "./ui/Select";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 
+const noSuggestions = Atom.make(AsyncResult.success<readonly Address[]>([]));
 interface Props {
   shortcutSet: ShortcutSet;
+  prefs: Prefs;
+  from: string | undefined;
+  onImageSize: (size: InlineImageSize) => void;
+  onMention: (person: Address) => void;
+  onMentionsChange: (addresses: readonly string[]) => void;
   body: ComposeBody;
   attachments: readonly OutgoingAttachment[];
   onChange: (body: ComposeBody) => void;
@@ -55,10 +72,25 @@ export function ComposeEditor({
   bodyRef,
   selectionRef,
   shortcutSet,
+  prefs,
+  from,
+  onImageSize,
+  onMention,
+  onMentionsChange,
 }: Props) {
   const { t } = useLingui();
   const run = useRunMail();
   const [pasteError, setPasteError] = useState(false);
+  const [mention, setMention] = useState<{ query: string; range: Range } | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mentioned = useRef(new Map<string, Address>());
+  const mentionSuggestions = AsyncResult.getOrElse(
+    useAtomValue(mention ? suggestionsAtom(mention.query, from) : noSuggestions),
+    () => [],
+  );
+  const [imageCid, setImageCid] = useState<string | null>(null);
+  const [emojiUndo, setEmojiUndo] = useState<ComposeBody | null>(null);
+  const replacingEmoji = useRef(false);
   const richRef = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef<string | null>(null);
   const [previewCache] = useState(makeInlinePreviewCache);
@@ -84,12 +116,17 @@ export function ComposeEditor({
   const locked = remoteUnsupported && !unlocked;
   const changeMode = (next: ComposeBody) => {
     setModeUndo(body);
+    setMention(null);
+    if (next.kind !== "rich") onMentionsChange([]);
     selectionRef.current = null;
     setLinkOpen(false);
     setModePrompt(null);
     onChange(next);
   };
 
+  const syncMentions = useEffectEvent(() =>
+    onMentionsChange(activeComposeMentions(richRef.current, mentioned.current)),
+  );
   useLayoutEffect(() => () => previewCache.dispose(), [previewCache]);
   useLayoutEffect(() => {
     previewCache.sync(attachments);
@@ -99,7 +136,10 @@ export function ComposeEditor({
       return constVoid;
     }
     // Leave the live DOM and caret alone for our own input/IME events.
-    if (lastEmitted.current !== body.html) element.innerHTML = richComposeBody(body.html).html;
+    if (lastEmitted.current !== body.html) {
+      element.innerHTML = richComposeBody(body.html).html;
+      setEmojiUndo(null);
+    }
     lastEmitted.current = body.html;
     for (const image of element.querySelectorAll("img")) {
       const cid =
@@ -112,6 +152,7 @@ export function ComposeEditor({
       image.setAttribute("data-compose-cid", cid);
       image.setAttribute("src", url);
     }
+    syncMentions();
     return constVoid;
   }, [body, attachments, previewCache]);
 
@@ -122,21 +163,97 @@ export function ComposeEditor({
       selectionRef.current = range.cloneRange();
     }
   };
-  const changed = () => {
+  const refreshMentions = () =>
+    onMentionsChange(activeComposeMentions(richRef.current, mentioned.current));
+  const updateMentionQuery = () => {
+    const range = selectionRef.current;
+    if (!range?.collapsed || range.startContainer.nodeType !== Node.TEXT_NODE) {
+      setMention(null);
+      return;
+    }
+    const text = (range.startContainer.textContent ?? "").slice(0, range.startOffset);
+    const token = mentionQuery(text);
+    if (!token || range.startContainer.parentElement?.closest("a,pre,code")) {
+      setMention(null);
+      return;
+    }
+    const selected = range.cloneRange();
+    selected.setStart(range.startContainer, range.startOffset - token.length);
+    setMention({ query: token.query, range: selected });
+    setMentionIndex(0);
+  };
+  const pickMention = (person: Address) => {
+    if (!mention || locked || !richRef.current?.contains(mention.range.commonAncestorContainer))
+      return;
+    const id = crypto.randomUUID();
+    mentioned.current.set(id, person);
+    selectionRef.current = mention.range;
+    if (command("insertHTML", mentionHtml(person, id))) onMention(person);
+    setMention(null);
+  };
+  const undoEmoji = () => {
+    if (!emojiUndo) return;
+    lastEmitted.current = null;
+    onChange(emojiUndo);
+    setEmojiUndo(null);
+    selectionRef.current = null;
+  };
+  const changed = (typing = false) => {
     if (!richRef.current || locked) return;
     if (body.kind !== "rich") return;
+    if (replacingEmoji.current) return;
+    remember();
+    setEmojiUndo(null);
+    if (typing) {
+      const range = selectionRef.current;
+      if (
+        prefs.emojiReplacement &&
+        range?.collapsed &&
+        range.startContainer.nodeType === Node.TEXT_NODE &&
+        !range.startContainer.parentElement?.closest("a,pre,code")
+      ) {
+        const before = (range.startContainer.textContent ?? "").slice(0, range.startOffset);
+        const emojiChange = emojiAtCaret(before);
+        if (emojiChange) {
+          const undo = editedComposeBody(body, composeEditorHtml(richRef.current));
+          const selected = range.cloneRange();
+          selected.setStart(range.startContainer, emojiChange.start);
+          selected.setEnd(range.startContainer, emojiChange.end);
+          restoreEditorSelection(richRef.current, selected);
+          replacingEmoji.current = true;
+          document.execCommand("insertText", false, emojiChange.replacement);
+          replacingEmoji.current = false;
+          setEmojiUndo(undo);
+          const selection = window.getSelection();
+          const caret = selection?.rangeCount ? selection.getRangeAt(0) : null;
+          if (
+            caret?.endContainer.nodeType === Node.TEXT_NODE &&
+            /[\s\u00a0]/.test((caret.endContainer.textContent ?? "").charAt(caret.endOffset))
+          ) {
+            caret.setStart(caret.endContainer, caret.endOffset + 1);
+            caret.collapse(true);
+            selection?.removeAllRanges();
+            selection?.addRange(caret);
+          }
+          remember();
+        }
+      }
+    }
     const next = editedComposeBody(body, composeEditorHtml(richRef.current));
     if (next !== body) setModeUndo(null);
     lastEmitted.current = next.html;
     remember();
     onChange(next);
+    refreshMentions();
+    updateMentionQuery();
   };
   const command = (name: string, value?: string) => {
-    if (!richRef.current || locked) return;
+    if (!richRef.current || locked) return false;
     restoreEditorSelection(richRef.current, selectionRef.current);
     document.execCommand("styleWithCSS", false, "false");
-    document.execCommand(name, false, value);
+    const inserted = document.execCommand(name, false, value);
     changed();
+    return inserted;
   };
   const openLink = () => {
     const node = selectionRef.current?.startContainer;
@@ -245,6 +362,47 @@ export function ComposeEditor({
       (event.target instanceof Node && richRef.current?.contains(event.target));
     const inFind = event.target instanceof Element && Boolean(event.target.closest("search"));
     if (!inBody && !inFind) return;
+    if (inBody && !locked) {
+      if (
+        emojiUndo &&
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "z" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        undoEmoji();
+        return;
+      }
+      if (
+        mention &&
+        mentionSuggestions.length &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey
+      ) {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          setMentionIndex(
+            (index) =>
+              (index + (event.key === "ArrowDown" ? 1 : -1) + mentionSuggestions.length) %
+              mentionSuggestions.length,
+          );
+          return;
+        }
+        if (event.key === "Enter" || event.key === "Tab") {
+          event.preventDefault();
+          const person = mentionSuggestions[mentionIndex];
+          if (person) pickMention(person);
+          return;
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          setMention(null);
+          return;
+        }
+      }
+    }
     if (
       matchesShortcut(shortcutSet, "search", event) &&
       (event.metaKey || event.ctrlKey) &&
@@ -402,8 +560,49 @@ export function ComposeEditor({
             </button>
           </>
         )}
+        {emojiUndo && (
+          <button
+            type="button"
+            className={button}
+            onClick={undoEmoji}
+          >{t`Undo emoji replacement`}</button>
+        )}
+        {body.kind === "rich" && (
+          <Select
+            disabled={locked}
+            aria-label={t`Image size`}
+            value={prefs.inlineImageSize}
+            options={[
+              { value: "small", label: t`Small` },
+              { value: "medium", label: t`Medium` },
+              { value: "large", label: t`Large` },
+              { value: "original", label: t`Original` },
+            ]}
+            onValueChange={(size) => {
+              if (locked) return;
+              onImageSize(size);
+              resizeComposeImage(richRef.current, imageCid, size);
+              changed();
+            }}
+          />
+        )}
       </div>
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
+      {mention && mentionSuggestions.length > 0 && (
+        <div className="shrink-0 border-b px-4 py-2" aria-label={t`Mention suggestions`}>
+          {mentionSuggestions.map((person, index) => (
+            <button
+              key={person.address}
+              type="button"
+              className={`${button} ${index === mentionIndex ? "bg-blue-500/10" : ""}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => pickMention(person)}
+            >
+              {person.name || person.address}
+            </button>
+          ))}
+        </div>
+      )}
       {finding && (
         <search
           aria-label={t`Find and replace`}
@@ -564,12 +763,30 @@ export function ComposeEditor({
           aria-multiline="true"
           aria-readonly={locked}
           aria-label={t`Body`}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3"
-          onKeyDown={editorKey}
-          onInput={changed}
+          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-pointer"
+          style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
+          onClick={(event) => {
+            const target = event.target;
+            setImageCid(
+              target instanceof HTMLImageElement
+                ? (target.getAttribute("data-compose-cid") ??
+                    target.getAttribute("src")?.replace(/^cid:/, "") ??
+                    null)
+                : null,
+            );
+          }}
+          onInput={(event) =>
+            changed(
+              "inputType" in event.nativeEvent &&
+                event.nativeEvent.inputType === "insertText" &&
+                !("isComposing" in event.nativeEvent && event.nativeEvent.isComposing),
+            )
+          }
+          onCompositionEnd={() => changed(true)}
           onKeyUp={remember}
           onMouseUp={remember}
           onBlur={remember}
+          onKeyDown={editorKey}
           onPaste={(e) => {
             if (e.defaultPrevented) return;
             e.preventDefault();
@@ -591,7 +808,28 @@ export function ComposeEditor({
           onKeyDown={editorKey}
           onChange={(e) => {
             setModeUndo(null);
-            onChange({ kind: body.kind, text: e.target.value });
+            setEmojiUndo(null);
+            const text = e.target.value;
+            const at = e.target.selectionStart;
+            const emojiChange =
+              prefs.emojiReplacement &&
+              !("isComposing" in e.nativeEvent && e.nativeEvent.isComposing === true)
+                ? emojiAtCaret(text.slice(0, at), body.kind === "markdown")
+                : null;
+            if (emojiChange) {
+              setEmojiUndo({ kind: body.kind, text });
+              const element = e.target;
+              const caret =
+                at + emojiChange.replacement.length - (emojiChange.end - emojiChange.start);
+              requestAnimationFrame(() => element.setSelectionRange(caret, caret));
+              onChange({
+                kind: body.kind,
+                text:
+                  text.slice(0, emojiChange.start) +
+                  emojiChange.replacement +
+                  text.slice(emojiChange.end),
+              });
+            } else onChange({ kind: body.kind, text });
           }}
           aria-label={t`Body`}
           placeholder={

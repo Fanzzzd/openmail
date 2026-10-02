@@ -505,6 +505,44 @@ export const MIGRATIONS: readonly string[] = [
    );`,
   // Migration 21: last pushed draft organization, independent of body autosaves.
   `ALTER TABLE drafts ADD COLUMN pushed_organization TEXT;`,
+  // Migration 22 (unreleased): saved contact groups, bounded photos and indexed sent recipients.
+  `CREATE TABLE contact_groups (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    id TEXT NOT NULL, name TEXT NOT NULL, members_json TEXT NOT NULL,
+    PRIMARY KEY(account_id,id)
+  );
+  CREATE TABLE contact_photos (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, url TEXT NOT NULL, data_url TEXT, last_used INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(account_id,address)
+  );
+  CREATE INDEX contact_photos_lru ON contact_photos(last_used DESC, account_id, address) WHERE data_url IS NOT NULL;
+  CREATE TABLE sent_recipients (
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, from_addr TEXT NOT NULL, sent_at REAL NOT NULL,
+    PRIMARY KEY(message_id,address)
+  ) WITHOUT ROWID;
+  CREATE INDEX sent_recipients_address ON sent_recipients(address,account_id,from_addr,sent_at);
+  INSERT OR IGNORE INTO sent_recipients
+    WITH sent AS MATERIALIZED (
+      SELECT id,account_id,from_addr,date,CASE WHEN json_valid(to_json) THEN to_json ELSE '[]' END AS to_json,CASE WHEN json_valid(cc_json) THEN cc_json ELSE '[]' END AS cc_json FROM messages m
+      WHERE EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END) l WHERE l.value='SENT')
+    )
+    SELECT m.id,m.account_id,lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address'))),lower(trim(m.from_addr)),m.date FROM sent m,json_each(m.to_json) r WHERE trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address'))!=''
+    UNION ALL
+    SELECT m.id,m.account_id,lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address'))),lower(trim(m.from_addr)),m.date FROM sent m,json_each(m.cc_json) r WHERE trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address'))!='';
+  CREATE TRIGGER sent_message_insert AFTER INSERT ON messages
+    WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') BEGIN
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN json_valid(new.to_json) THEN new.to_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN json_valid(new.cc_json) THEN new.cc_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+  END;
+  CREATE TRIGGER sent_message_update AFTER UPDATE OF account_id,from_addr,to_json,cc_json,date,labels_json ON messages
+    WHEN old.account_id!=new.account_id OR old.from_addr!=new.from_addr OR old.to_json!=new.to_json OR old.cc_json!=new.cc_json OR old.date!=new.date OR old.labels_json!=new.labels_json BEGIN
+    DELETE FROM sent_recipients WHERE message_id=new.id;
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.to_json) THEN new.to_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.cc_json) THEN new.cc_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+  END;`,
 ];
 
 /**

@@ -2,11 +2,36 @@ import { Effect, Result, Schema } from "effect";
 import type { Account, Address } from "./domain.js";
 import type { CalendarInvite, CalendarTime, InviteResponse } from "./calendar.js";
 import { InvalidInput } from "./errors.js";
-import { mergeContacts } from "./contacts.js";
+import {
+  type ContactGroup,
+  type ContactPhoto,
+  type ContactSnapshot,
+  mergeContacts,
+} from "./contacts.js";
 import { graphTimestamp } from "./graph-time.js";
 import { featureRequest } from "./provider-features.js";
 
 const Person = Schema.Struct({
+  photos: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({
+        url: Schema.String,
+        default: Schema.optionalKey(Schema.Boolean),
+        metadata: Schema.optionalKey(
+          Schema.Struct({ primary: Schema.optionalKey(Schema.Boolean) }),
+        ),
+      }),
+    ),
+  ),
+  memberships: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({
+        contactGroupMembership: Schema.optionalKey(
+          Schema.Struct({ contactGroupResourceName: Schema.String }),
+        ),
+      }),
+    ),
+  ),
   names: Schema.optionalKey(
     Schema.Array(Schema.Struct({ displayName: Schema.optionalKey(Schema.String) })),
   ),
@@ -20,6 +45,18 @@ const Connections = Schema.Struct({
 });
 const Others = Schema.Struct({
   otherContacts: Schema.optionalKey(Schema.Array(Person)),
+  nextPageToken: Schema.optionalKey(Schema.String),
+});
+const Groups = Schema.Struct({
+  contactGroups: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({
+        resourceName: Schema.String,
+        name: Schema.String,
+        groupType: Schema.optionalKey(Schema.String),
+      }),
+    ),
+  ),
   nextPageToken: Schema.optionalKey(Schema.String),
 });
 const EventTime = Schema.Struct({
@@ -90,55 +127,112 @@ export function makeGmailFeatures<
   get: <A>(id: string, schema: Schema.Decoder<A>, url: string) => Effect.Effect<A, E>,
   patch: (id: string, url: string, body: unknown) => Effect.Effect<unknown, E>,
 ) {
+  const loadContacts = (account: Account, details: boolean) =>
+    featureRequest(
+      account,
+      "contacts",
+      Effect.gen(function* () {
+        const contacts: Address[] = [];
+        const photos: ContactPhoto[] = [];
+        const members = new Map<string, Address[]>();
+        for (const source of ["connections", "otherContacts"] as const) {
+          let token = "";
+          const seen = new Set<string>();
+          do {
+            const query = new URLSearchParams({
+              pageSize: "1000",
+              ...(source === "connections"
+                ? {
+                    personFields: details
+                      ? "names,emailAddresses,photos,memberships"
+                      : "names,emailAddresses",
+                    sources: "READ_SOURCE_TYPE_CONTACT",
+                  }
+                : { readMask: "names,emailAddresses" }),
+              ...(token ? { pageToken: token } : {}),
+            });
+            const url = `${PEOPLE}/${source === "connections" ? "people/me/connections" : "otherContacts"}?${query.toString()}`;
+            const page =
+              source === "connections"
+                ? yield* get(account.id, Connections, url)
+                : yield* featureRequest(account, "contacts", get(account.id, Others, url)).pipe(
+                    Effect.catchTag("FeatureScopeMissing", () =>
+                      Effect.succeed<typeof Others.Type>({ otherContacts: [] }),
+                    ),
+                  );
+            const people =
+              "connections" in page
+                ? page.connections
+                : "otherContacts" in page
+                  ? page.otherContacts
+                  : [];
+            for (const person of people ?? []) {
+              const addresses = mergeContacts(
+                (person.emailAddresses ?? []).flatMap((email) =>
+                  email.value
+                    ? [{ address: email.value, name: person.names?.[0]?.displayName ?? "" }]
+                    : [],
+                ),
+              );
+              contacts.push(...addresses);
+              if (details && source === "connections") {
+                const photo =
+                  person.photos?.find((p) => p.default !== true && p.metadata?.primary === true) ??
+                  person.photos?.find((p) => p.default !== true);
+                if (photo)
+                  photos.push(...addresses.map((a) => ({ address: a.address, url: photo.url })));
+                for (const membership of person.memberships ?? []) {
+                  const id = membership.contactGroupMembership?.contactGroupResourceName;
+                  if (id) members.set(id, [...(members.get(id) ?? []), ...addresses]);
+                }
+              }
+            }
+            token = page.nextPageToken ?? "";
+            if (token && seen.has(token))
+              return yield* new InvalidInput({ message: "Contact pagination repeated a page" });
+            seen.add(token);
+          } while (token);
+        }
+        const groups: ContactGroup[] = [];
+        if (details) {
+          let token = "";
+          const seen = new Set<string>();
+          do {
+            const query = new URLSearchParams({
+              pageSize: "1000",
+              groupFields: "name,groupType",
+              ...(token ? { pageToken: token } : {}),
+            });
+            const page = yield* get(
+              account.id,
+              Groups,
+              `${PEOPLE}/contactGroups?${query.toString()}`,
+            );
+            for (const group of page.contactGroups ?? []) {
+              const addresses = mergeContacts(members.get(group.resourceName) ?? []);
+              if (group.groupType === "USER_CONTACT_GROUP" && addresses.length)
+                groups.push({
+                  accountId: account.id,
+                  id: group.resourceName,
+                  name: group.name,
+                  members: addresses,
+                });
+            }
+            token = page.nextPageToken ?? "";
+            if (token && seen.has(token))
+              return yield* new InvalidInput({
+                message: "Contact group pagination repeated a page",
+              });
+            seen.add(token);
+          } while (token);
+        }
+        return { contacts: mergeContacts(contacts), groups, photos } satisfies ContactSnapshot;
+      }),
+    );
   return {
     contacts: (account: Account) =>
-      featureRequest(
-        account,
-        "contacts",
-        Effect.gen(function* () {
-          const contacts: Address[] = [];
-          for (const source of ["connections", "otherContacts"] as const) {
-            let token = "";
-            const seen = new Set<string>();
-            do {
-              const query = new URLSearchParams({
-                pageSize: "1000",
-                ...(source === "connections"
-                  ? { personFields: "names,emailAddresses" }
-                  : { readMask: "names,emailAddresses" }),
-                ...(token ? { pageToken: token } : {}),
-              });
-              const url = `${PEOPLE}/${source === "connections" ? "people/me/connections" : "otherContacts"}?${query.toString()}`;
-              const page =
-                source === "connections"
-                  ? yield* get(account.id, Connections, url)
-                  : yield* featureRequest(account, "contacts", get(account.id, Others, url)).pipe(
-                      Effect.catchTag("FeatureScopeMissing", () =>
-                        Effect.succeed<typeof Others.Type>({ otherContacts: [] }),
-                      ),
-                    );
-              const people =
-                "connections" in page
-                  ? page.connections
-                  : "otherContacts" in page
-                    ? page.otherContacts
-                    : [];
-              for (const person of people ?? [])
-                for (const email of person.emailAddresses ?? [])
-                  if (email.value)
-                    contacts.push({
-                      address: email.value,
-                      name: person.names?.[0]?.displayName ?? "",
-                    });
-              token = page.nextPageToken ?? "";
-              if (token && seen.has(token))
-                return yield* new InvalidInput({ message: "Contact pagination repeated a page" });
-              seen.add(token);
-            } while (token);
-          }
-          return mergeContacts(contacts);
-        }),
-      ),
+      loadContacts(account, false).pipe(Effect.map((snapshot) => snapshot.contacts)),
+    contactSnapshot: (account: Account) => loadContacts(account, true),
     respondInvite: (
       account: Account,
       _providerId: string,

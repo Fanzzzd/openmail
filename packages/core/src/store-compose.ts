@@ -257,6 +257,14 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
       return {
+        contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
+        emojiReplacement: pref(
+          f.emojiReplacement,
+          stored.get("emojiReplacement"),
+          d.emojiReplacement,
+        ),
+        inlineImageSize: pref(f.inlineImageSize, stored.get("inlineImageSize"), d.inlineImageSize),
+        composeFont: pref(f.composeFont, stored.get("composeFont"), d.composeFont),
         messageListDensity: pref(
           f.messageListDensity,
           stored.get("messageListDensity"),
@@ -319,10 +327,20 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
   );
 
   const setPrefs = Effect.fn("Store.setPrefs")(function* (patch: Partial<Prefs>) {
-    for (const [key, value] of Object.entries(patch)) {
-      yield* run(sql`INSERT INTO prefs (key, value_json) VALUES (${key}, ${JSON.stringify(value)})
-        ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json`);
-    }
+    yield* sql
+      .withTransaction(
+        Effect.gen(function* () {
+          for (const [key, value] of Object.entries(patch)) {
+            yield* run(sql`INSERT INTO prefs (key, value_json) VALUES (${key}, ${JSON.stringify(value)})
+          ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json`);
+          }
+          if (patch.contactPhotos === false)
+            yield* run(
+              sql`UPDATE contact_photos SET data_url=NULL,last_used=0 WHERE data_url IS NOT NULL`,
+            );
+        }),
+      )
+      .pipe(Effect.orDie);
   });
 
   // Signatures

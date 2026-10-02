@@ -71,3 +71,6 @@ export * from "./diagnostics.js";
 export * from "./feedback.js";
 export { DatabaseInUseError } from "./database-access.js";
 export { InterruptedRecoveryError, prepareDatabaseStartup } from "./recovery-files.js";
+
+export * from "./compose-extras.js";
+export * from "./compose-images.js";

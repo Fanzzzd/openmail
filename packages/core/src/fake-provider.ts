@@ -32,6 +32,8 @@ export interface FakeServer {
   deleteFolderLabels: Record<import("./folder-actions.js").DeleteFolder, readonly string[]>;
   grantedScopes: string[];
   contacts: Address[];
+  contactGroups: import("./contacts.js").ContactGroup[];
+  contactPhotos: import("./contacts.js").ContactPhoto[];
   responses: { invite: CalendarInvite; response: InviteResponse }[];
   featureFailure?: FeatureScopeMissing;
   email: string;
@@ -74,6 +76,8 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     grantedScopes: [],
     email,
     contacts: [],
+    contactGroups: [],
+    contactPhotos: [],
     responses: [],
     messages: new Map(messages.map((m) => [m.providerId, m])),
     connects: [],
@@ -249,6 +253,24 @@ export function makeFakeProvider(
             : Effect.fail(new PermanentError({ message: `Message ${id} is gone` }));
         }),
       ),
+    ...(server.contactGroups.length || server.contactPhotos.length
+      ? {
+          contactSnapshot: () =>
+            Effect.suspend(
+              (): NonNullable<ReturnType<NonNullable<ProviderAdapter["contactSnapshot"]>>> =>
+                server.featureFailure
+                  ? Effect.fail(server.featureFailure)
+                  : Effect.andThen(
+                      failOnce,
+                      Effect.sync(() => ({
+                        contacts: server.contacts,
+                        groups: server.contactGroups,
+                        photos: server.contactPhotos,
+                      })),
+                    ),
+            ),
+        }
+      : {}),
     contacts: () =>
       Effect.suspend((): ReturnType<ProviderAdapter["contacts"]> =>
         server.featureFailure
