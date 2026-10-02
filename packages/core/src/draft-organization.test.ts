@@ -87,9 +87,9 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.deepStrictEqual(saved.message.draftOrganization, organization);
           assert.deepStrictEqual([...server.messages.values()][0]?.labels, [
             "DRAFT",
-            ...organization.labels,
+            ...(provider === "gmail" ? [] : organization.labels),
           ]);
-          assert.strictEqual([...server.messages.values()][0]?.isStarred, true);
+          assert.strictEqual([...server.messages.values()][0]?.isStarred, provider !== "gmail");
         }).pipe(Effect.provide(layer()));
         yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
@@ -107,9 +107,9 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.strictEqual(server.messages.size, 1);
           assert.deepStrictEqual([...server.messages.values()][0]?.labels, [
             "DRAFT",
-            ...organization.labels,
+            ...(provider === "gmail" ? [] : organization.labels),
           ]);
-          assert.strictEqual([...server.messages.values()][0]?.isStarred, true);
+          assert.strictEqual([...server.messages.values()][0]?.isStarred, provider !== "gmail");
           yield* mailbox.sync();
           const rows = yield* mailbox.threads({ mailbox: "drafts" });
           assert.strictEqual(rows.length, 1);
@@ -258,10 +258,10 @@ it.effect(
     };
     return Effect.gen(function* () {
       const mailbox = yield* Mailbox;
-      yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.connect({ provider: "outlook" });
       const saved = yield* mailbox.saveDraft({
         id: "draft:decorator",
-        accountId: "gmail:me@example.com",
+        accountId: "outlook:me@example.com",
         message: { ...message, draftOrganization: { labels: ["Label_work"], starred: true } },
       });
       assert.strictEqual(saved.synced, true);
@@ -285,7 +285,7 @@ it.effect(
   },
 );
 
-for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
+for (const provider of ["outlook", "imap"] satisfies Provider[]) {
   it.effect(
     `${provider}: unchanged organization is omitted during autosave so remote edits win`,
     () => {
@@ -310,7 +310,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             : { provider },
         );
         const accountId = `${provider}:${server.email}`;
-        const original = { labels: [provider === "gmail" ? "Label_work" : "Work"], starred: true };
+        const original = { labels: ["Work"], starred: true };
         const saved = yield* mailbox.saveDraft({
           id: "draft:remote-edit",
           accountId,
@@ -320,7 +320,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         assert.ok(remote);
         server.messages.set(remote.providerId, {
           ...remote,
-          labels: ["DRAFT", provider === "gmail" ? "Label_other" : "Other"],
+          labels: ["DRAFT", "Other"],
           isStarred: false,
         });
         yield* mailbox.saveDraft({
@@ -332,10 +332,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         assert.ok(last?.kind === "save");
         assert.strictEqual(last.push.message.draftOrganization, undefined);
         assert.strictEqual([...server.messages.values()][0]?.isStarred, false);
-        assert.deepStrictEqual([...server.messages.values()][0]?.labels, [
-          "DRAFT",
-          provider === "gmail" ? "Label_other" : "Other",
-        ]);
+        assert.deepStrictEqual([...server.messages.values()][0]?.labels, ["DRAFT", "Other"]);
         yield* mailbox.saveDraft({
           id: saved.id,
           accountId,

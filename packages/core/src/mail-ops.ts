@@ -1,3 +1,4 @@
+import { mergeCategoryNames } from "./categories.js";
 import type { MailOp, Provider } from "./domain.js";
 
 const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
@@ -22,6 +23,13 @@ export function applyOpToLabels(
   if (op.kind === "read") flag("UNREAD", !op.value);
   else if (op.kind === "star") flag("STARRED", op.value);
   else if (op.kind === "important" && provider !== "imap") flag("IMPORTANT", op.value);
+  else if (op.kind === "categories" && provider === "outlook") {
+    const current = [...out]
+      .filter((label) => label.startsWith("category:"))
+      .map((label) => label.slice(9));
+    for (const name of current) out.delete(`category:${name}`);
+    for (const name of mergeCategoryNames(current, op.add, op.remove)) out.add(`category:${name}`);
+  } else if (op.kind === "copy" || op.kind === "categories") return [...labels];
   else if (provider === "gmail") {
     switch (op.kind) {
       case "important":
@@ -53,7 +61,7 @@ export function applyOpToLabels(
   } else {
     const target = folderTarget(op, labels);
     if (target) {
-      for (const l of labels) if (!FLAG_LABELS.has(l)) out.delete(l);
+      for (const l of labels) if (!FLAG_LABELS.has(l) && !l.startsWith("category:")) out.delete(l);
       out.add(target);
     }
   }
@@ -79,4 +87,12 @@ export function folderTarget(op: MailOp, labels: readonly string[]): string | nu
     default:
       return null;
   }
+}
+
+export function invalidCategoryFolderOp(op: MailOp): boolean {
+  return (
+    ((op.kind === "move" || op.kind === "label") && op.labelId.startsWith("category:")) ||
+    (op.kind === "move" && op.removeLabelId?.startsWith("category:") === true) ||
+    (op.kind === "copy" && op.labelIds.some((id) => id.startsWith("category:")))
+  );
 }

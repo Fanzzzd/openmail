@@ -133,19 +133,43 @@ export function makeFakeProvider(
         Effect.andThen(
           failOnce,
           Effect.suspend(() =>
-            options.strictFolders &&
-            account.provider !== "gmail" &&
-            op.kind === "label" &&
-            op.value &&
-            !server.labels.some((label) => label.id === op.labelId)
-              ? Effect.fail(new PermanentError({ message: `Unknown folder: ${op.labelId}` }))
-              : Effect.void,
+            (op.kind === "categories" && account.provider !== "outlook") ||
+            (op.kind === "copy" && account.provider !== "imap")
+              ? Effect.fail(
+                  new PermanentError({
+                    message: "Organization action unavailable for this account",
+                  }),
+                )
+              : options.strictFolders &&
+                  account.provider !== "gmail" &&
+                  op.kind === "label" &&
+                  op.value &&
+                  !server.labels.some((label) => label.id === op.labelId)
+                ? Effect.fail(new PermanentError({ message: `Unknown folder: ${op.labelId}` }))
+                : Effect.void,
           ),
         ),
         Effect.sync(() => {
           server.pushed.push({ providerId, op });
           const m = server.messages.get(providerId);
           if (!m) return;
+          if (op.kind === "copy") {
+            for (const folder of new Set(op.labelIds)) {
+              if (m.labels.includes(folder)) continue;
+              const id = `copy:${++counter}`;
+              server.messages.set(id, {
+                ...m,
+                providerId: id,
+                threadId: id,
+                labels: [
+                  folder,
+                  ...(m.isUnread ? ["UNREAD"] : []),
+                  ...(m.isStarred ? ["STARRED"] : []),
+                ],
+              });
+            }
+            return;
+          }
           const labels = applyOpToLabels([...m.labels], op, account.provider);
           server.messages.set(providerId, {
             ...m,
@@ -159,7 +183,26 @@ export function makeFakeProvider(
   return {
     listFolderMessages: (_account, folder, cursor, listOptions) =>
       Effect.andThen(
-        failOnce,
+        Effect.andThen(
+          failOnce,
+          Effect.suspend(() =>
+            options.strictFolders &&
+            folder.label &&
+            ![
+              "inbox",
+              "archive",
+              "deleteditems",
+              "junkemail",
+              "INBOX",
+              "ARCHIVE",
+              "TRASH",
+              "SPAM",
+            ].includes(folder.label) &&
+            !server.labels.some((label) => label.id === folder.label)
+              ? Effect.fail(new PermanentError({ message: "Destination folder is gone" }))
+              : Effect.void,
+          ),
+        ),
         Effect.sync(() => {
           server.folderPages.push(cursor);
           const ids = [...server.messages.values()]

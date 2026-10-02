@@ -495,6 +495,10 @@ export const makeGmail: Effect.Effect<
 
   const push = Effect.fn("Gmail.push")(
     function* (account: Account, providerId: string, op: MailOp) {
+      if (op.kind === "categories" || op.kind === "copy")
+        yield* new PermanentError({
+          message: "This organization action is unavailable for Gmail.",
+        });
       const path = `/messages/${encodeURIComponent(providerId)}`;
       if (op.kind === "trash") {
         yield* post(account.id, `${path}/trash`);
@@ -952,23 +956,6 @@ export const makeGmail: Effect.Effect<
         })),
         Effect.mapError(writeFailure(account.id)),
       ),
-    setDraftOrganization: (account, id, organization) =>
-      Effect.gen(function* () {
-        const current = yield* get(
-          account.id,
-          Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
-          `/messages/${encodeURIComponent(id)}`,
-          { format: "minimal" },
-        );
-        const wanted = [...organization.labels, ...(organization.starred ? ["STARRED"] : [])];
-        const removable = (current.labelIds ?? []).filter(
-          (labelId) => labelId === "STARRED" || labelId.startsWith("Label_"),
-        );
-        yield* post(account.id, `/messages/${encodeURIComponent(id)}/modify`, {
-          addLabelIds: wanted,
-          removeLabelIds: removable.filter((labelId) => !wanted.includes(labelId)),
-        });
-      }).pipe(Effect.asVoid, Effect.mapError(writeFailure(account.id))),
     deleteDraft,
     fetchRaw,
     fetchAttachment,
@@ -1003,8 +990,15 @@ export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
           ]),
         ],
       };
-    default:
+    case "label":
       return op.value ? { add: [op.labelId], remove: [] } : { add: [], remove: [op.labelId] };
+    case "categories":
+    case "copy":
+      return { add: [], remove: [] };
+    default: {
+      const exhaustive: never = op;
+      return exhaustive;
+    }
   }
 }
 

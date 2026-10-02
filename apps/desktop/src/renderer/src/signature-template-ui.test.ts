@@ -4,7 +4,12 @@ import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { Exit } from "effect";
 import { AsyncResult } from "effect/reactivity";
-import { type Template, type NamedSignature, type ComposeBody } from "@openmail/core/schema";
+import {
+  type Template,
+  type NamedSignature,
+  type ComposeBody,
+  DEFAULT_PREFS,
+} from "@openmail/core/schema";
 import { testDom } from "./test-dom";
 
 const calls = vi.hoisted(() => {
@@ -13,6 +18,8 @@ const calls = vi.hoisted(() => {
     saveTemplate: vi.fn(),
     saveSignature: vi.fn(),
     setDefault: vi.fn(),
+    setPrefs: vi.fn(),
+    signatureOrder: new Array<string>(),
     removeTemplate: vi.fn(),
     removeSignature: vi.fn(),
     templates: new Array<Template>(),
@@ -22,18 +29,26 @@ const calls = vi.hoisted(() => {
 vi.mock("@effect/atom-react", () => ({
   useAtomValue: (tag: string) =>
     AsyncResult.success(
-      tag === "templates" ? calls.templates : tag === "signatures" ? calls.signatures : [],
+      tag === "prefs"
+        ? { ...DEFAULT_PREFS, signatureOrder: calls.signatureOrder }
+        : tag === "templates"
+          ? calls.templates
+          : tag === "signatures"
+            ? calls.signatures
+            : [],
     ),
   useAtom: (tag: string) => [
     AsyncResult.initial(),
     tag === "saveTemplate" ? calls.saveTemplate : calls.saveSignature,
   ],
   useAtomSet: (tag: string) =>
-    tag === "setDefault"
-      ? calls.setDefault
-      : tag === "removeTemplate"
-        ? calls.removeTemplate
-        : calls.removeSignature,
+    tag === "setPrefs"
+      ? calls.setPrefs
+      : tag === "setDefault"
+        ? calls.setDefault
+        : tag === "removeTemplate"
+          ? calls.removeTemplate
+          : calls.removeSignature,
 }));
 vi.mock("./state/queries", () => ({
   templatesAtom: "templates",
@@ -43,11 +58,26 @@ vi.mock("./state/queries", () => ({
   prefsAtom: "prefs",
 }));
 vi.mock("./state/mutations", () => ({
+  setPrefsAtom: "setPrefs",
   saveTemplateAtom: "saveTemplate",
   saveNamedSignatureAtom: "saveSignature",
   setSignatureDefaultAtom: "setDefault",
   deleteTemplateAtom: "removeTemplate",
   deleteNamedSignatureAtom: "removeSignature",
+}));
+vi.mock("./components/ui/Checkbox", () => ({
+  Checkbox: ({
+    checked,
+    onCheckedChange,
+  }: {
+    checked: boolean;
+    onCheckedChange: (value: boolean) => void;
+  }) =>
+    createElement("input", {
+      type: "checkbox",
+      checked,
+      onChange: (event) => onCheckedChange(event.currentTarget.checked),
+    }),
 }));
 vi.mock("./components/ui/Select", () => ({
   Select: ({
@@ -190,7 +220,7 @@ it("Gmail signature editing creates a sanitized local copy, then updates its id;
   );
   const dom = render(createElement(SignatureSettings, { accounts: [account] }));
   try {
-    const menus = [...dom.element.querySelectorAll("div[aria-label]")];
+    const menus = [...dom.element.querySelectorAll('div[aria-label*="signature for"]')];
     expect(menus).toHaveLength(2);
     act(() => button(dom, "None", menus[0]).click());
     act(() => button(dom, "Gmail default", menus[1]).click());
@@ -260,4 +290,69 @@ afterAll(() => {
   vi.doUnmock("./components/ui/Select");
   vi.doUnmock("./components/ComposeEditor");
   vi.resetModules();
+});
+
+it("named signatures support drag and keyboard button ordering without changing defaults", () => {
+  calls.signatureOrder = [];
+  calls.signatures = ["A", "B", "C"].map((name) => ({
+    id: name,
+    address: "me@example.com",
+    name,
+    text: name,
+    source: "local",
+  }));
+  calls.setPrefs.mockClear();
+  calls.setDefault.mockClear();
+  const dom = render(
+    createElement(SignatureSettings, {
+      accounts: [
+        {
+          id: "gmail:me@example.com",
+          email: "me@example.com",
+          provider: "gmail",
+          createdAt: 0,
+          lastSyncedAt: null,
+          profileId: null,
+          needsReauth: false,
+          lastSyncError: null,
+        },
+      ],
+    }),
+  );
+  try {
+    const up = dom.element.querySelector<HTMLButtonElement>('button[aria-label="Move B up"]');
+    act(() => up?.click());
+    expect(calls.setPrefs).toHaveBeenLastCalledWith({
+      payload: { patch: { signatureOrder: ["B", "A", "C"] } },
+      reactivityKeys: ["prefs"],
+    });
+    const down = dom.element.querySelector<HTMLButtonElement>('button[aria-label="Move B down"]');
+    act(() => down?.click());
+    expect(calls.setPrefs).toHaveBeenLastCalledWith({
+      payload: { patch: { signatureOrder: ["A", "C", "B"] } },
+      reactivityKeys: ["prefs"],
+    });
+    const drag = dom.element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Drag C to reorder"]',
+    );
+    const target = dom.element.querySelector<HTMLButtonElement>(
+      'button[aria-label="Drag A to reorder"]',
+    )?.parentElement;
+    act(() => {
+      drag?.dispatchEvent(new dom.window.Event("dragstart", { bubbles: true }));
+      target?.dispatchEvent(new dom.window.Event("drop", { bubbles: true, cancelable: true }));
+    });
+    expect(calls.setPrefs).toHaveBeenLastCalledWith({
+      payload: { patch: { signatureOrder: ["C", "A", "B"] } },
+      reactivityKeys: ["prefs"],
+    });
+    expect(calls.setDefault).not.toHaveBeenCalled();
+    act(() => button(dom, "Below quoted text").click());
+    expect(calls.setPrefs).toHaveBeenLastCalledWith({
+      payload: { patch: { signaturePosition: "below" } },
+      reactivityKeys: ["prefs"],
+    });
+  } finally {
+    dom.dispose();
+  }
 });

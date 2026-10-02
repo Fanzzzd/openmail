@@ -1,3 +1,4 @@
+import { categoryKey } from "./categories.js";
 import { makeWordIndexStore } from "./store-word-index.js";
 import { makeInviteStatusStore } from "./store-invite-status.js";
 import { attachmentFilename } from "./attachment-filename.js";
@@ -69,6 +70,7 @@ import {
 import { makeOrganizationStore } from "./store-organization.js";
 import { makeContactStore } from "./store-contacts.js";
 import { makeCacheStore } from "./store-cache.js";
+import { makeUndoStore } from "./undo-journal.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { makeComposeStore } from "./store-compose.js";
 import { notificationEligible, profileNotificationsActive } from "./system.js";
@@ -343,9 +345,20 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     });
 
     const removeAccount = Effect.fn("Store.removeAccount")((id: string) =>
-      media
-        .deleteVectorsForMessages(sql`m.account_id=${id}`)
-        .pipe(Effect.andThen(run(sql`DELETE FROM accounts WHERE id=${id}`))),
+      media.deleteVectorsForMessages(sql`m.account_id=${id}`).pipe(
+        Effect.andThen(
+          sql
+            .withTransaction(
+              Effect.gen(function* () {
+                yield* run(
+                  sql`DELETE FROM undo_batches WHERE EXISTS (SELECT 1 FROM json_each(payload,'$.expected') e WHERE json_extract(e.value,'$.accountId')=${id})`,
+                );
+                yield* run(sql`DELETE FROM accounts WHERE id=${id}`);
+              }),
+            )
+            .pipe(Effect.orDie),
+        ),
+      ),
     );
 
     const setAccountProfile = Effect.fn("Store.setAccountProfile")(
@@ -488,6 +501,25 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         sql`SELECT r.due_at, r.woken_at, s.wake_pending FROM thread_reminders r JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id WHERE s.account_id=${account} AND s.provider_id=${incoming.providerId}`,
       );
       let m = incoming;
+      if (incoming.labels.includes("DRAFT")) {
+        const owner = yield* getAccount(account).pipe(Effect.orDie);
+        if (owner.provider === "gmail") {
+          const draft = yield* compose.draftByRemoteMessage(account, incoming.providerId);
+          const draftOrganization = Option.isSome(draft)
+            ? draft.value.message.draftOrganization
+            : undefined;
+          if (draftOrganization)
+            m = {
+              ...incoming,
+              labels: [
+                "DRAFT",
+                ...draftOrganization.labels,
+                ...(draftOrganization.starred ? ["STARRED"] : []),
+              ],
+              isStarred: draftOrganization.starred,
+            };
+        }
+      }
       if (Option.isSome(reminder) && reminder.value.due_at !== null) {
         const owner = yield* getAccount(account).pipe(Effect.orDie);
         m = {
@@ -1098,14 +1130,35 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       )(sql`SELECT account_id, id, name, color, label_list_visibility, message_list_visibility FROM labels m
         WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND ${accountIds ? inAccounts(accountIds) : sql.literal("1")}
         ORDER BY account_id, name`);
-      return rows.map((r) => ({
-        accountId: r.account_id,
-        id: r.id,
-        name: r.name,
-        color: r.color,
-        ...(r.label_list_visibility ? { labelListVisibility: r.label_list_visibility } : {}),
-        ...(r.message_list_visibility ? { messageListVisibility: r.message_list_visibility } : {}),
-      }));
+      const categories = yield* all(
+        Schema.Struct({
+          accountId: Schema.String,
+          id: Schema.String,
+          name: Schema.String,
+          color: Schema.NullOr(Schema.String),
+        }),
+      )(sql`
+        SELECT DISTINCT m.account_id AS accountId, j.value AS id, substr(j.value,10) AS name, NULL AS color
+        FROM messages m JOIN accounts a ON a.id=m.account_id, json_each(m.labels_json) j
+        WHERE a.enabled=1 AND a.provider='outlook' AND j.value LIKE 'category:%' AND ${accountIds ? inAccounts(accountIds) : sql.literal("1")}`);
+      return [
+        ...new Map(
+          categories.map((category) => [
+            `${category.accountId}/${categoryKey(category.id.slice(9))}`,
+            category,
+          ]),
+        ).values(),
+        ...rows.map((r) => ({
+          accountId: r.account_id,
+          id: r.id,
+          name: r.name,
+          color: r.color,
+          ...(r.label_list_visibility ? { labelListVisibility: r.label_list_visibility } : {}),
+          ...(r.message_list_visibility
+            ? { messageListVisibility: r.message_list_visibility }
+            : {}),
+        })),
+      ];
     });
 
     // Profiles
@@ -1531,6 +1584,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       prefs: compose.prefs,
       setPrefs: compose.setPrefs,
       ...signatureLibrary,
+      ...makeUndoStore(sql),
       signatures: compose.signatures,
       setSignature: compose.setSignature,
       templates: compose.templates,

@@ -319,6 +319,11 @@ export function AttachmentList({
                 <MenuItem onClick={() => action("open", [file])}>
                   <Trans>Open</Trans>
                 </MenuItem>
+                {share && (
+                  <MenuItem onClick={() => action("openWith", [file])}>
+                    <Trans>Open With…</Trans>
+                  </MenuItem>
+                )}
                 <MenuItem onClick={() => action("preview", [file])}>
                   <Trans>Quick Look</Trans>
                 </MenuItem>

@@ -6,6 +6,7 @@ import {
   replyRecipients,
   splitAddresses,
   type SendAs,
+  type SignatureOptions,
   type ComposeBody,
   outgoingComposeBody,
   normalizeComposeMessage,
@@ -280,10 +281,12 @@ export function toDraftInput(d: Draft): DraftInput {
   return { id: d.id, accountId: d.accountId, message: toMessage(d).message };
 }
 
-export function isEmpty(d: Draft, signature?: string): boolean {
+export function isEmpty(d: Draft, signature?: string, options?: SignatureOptions): boolean {
   const body = d.body.text.trim();
   const automatic = signature
-    ? richComposeBody(textComposeHtml(applySignature("", undefined, signature))).text.trim()
+    ? richComposeBody(
+        textComposeHtml(applySignature("", undefined, signature, options)),
+      ).text.trim()
     : "";
   return (
     !d.to &&

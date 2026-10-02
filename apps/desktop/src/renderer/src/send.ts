@@ -1,4 +1,4 @@
-import { composeEditorText, mentionsAttachment } from "@openmail/core/schema";
+import { composeEditorText, mentionsAttachment, type ComposeBody } from "@openmail/core/schema";
 
 import type { OutgoingMessage } from "../../shared/api";
 import { type Draft, toMessage } from "./draft";
@@ -16,6 +16,7 @@ export function submitDraft(
   archive: boolean,
   confirmed: readonly SendWarning[],
   send: (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => void,
+  ownBody: ComposeBody = draft.body,
 ): SendCheck {
   const { message, invalid } = toMessage(draft);
   if (invalid.length) return { kind: "invalid", addresses: invalid };
@@ -27,7 +28,7 @@ export function submitDraft(
     !confirmed.includes("attachment") &&
     !message.attachments.length &&
     !draft.forwardAsAttachment &&
-    mentionsAttachment(composeEditorText(draft.body))
+    mentionsAttachment(composeEditorText(ownBody))
   )
     return { kind: "confirm", warning: "attachment" };
   send(draft, message, {

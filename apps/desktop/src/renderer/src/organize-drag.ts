@@ -1,3 +1,4 @@
+import { SYSTEM_FOLDERS, systemFolderId, type MailOp } from "@openmail/core/schema";
 import { Schema } from "effect";
 
 export const MESSAGE_DRAG = "application/x-openmail-messages";
@@ -16,4 +17,20 @@ export function decodeDrag<A>(schema: Schema.Decoder<A>, value: string): A | nul
   } catch {
     return null;
   }
+}
+
+/** A category target adds membership; it never supplies a physical folder destination. */
+export function sidebarDropOperation(target: string, removeLabelId: string | null): MailOp | null {
+  if (target.startsWith("category:"))
+    return { kind: "categories", add: [target.slice(9)], remove: [] };
+  const mailbox = SYSTEM_FOLDERS.find((id) => systemFolderId(id) === target);
+  if (mailbox)
+    return mailbox === "inbox" || mailbox === "trash" || mailbox === "spam"
+      ? { kind: mailbox }
+      : null;
+  return {
+    kind: "move",
+    labelId: target,
+    removeLabelId: removeLabelId?.startsWith("category:") ? null : removeLabelId,
+  };
 }

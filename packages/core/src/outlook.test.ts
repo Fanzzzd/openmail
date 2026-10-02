@@ -2442,3 +2442,81 @@ for (const mailbox of ["all", "starred", "important"] as const) {
     );
   });
 }
+it.effect("multi-category writes reread server categories and never move the message", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/A": { json: { categories: ["Keep", "Old", "Remote"] } },
+      "GET /me/outlook/masterCategories": {
+        json: { value: [{ displayName: "Work" }, { displayName: "Personal" }] },
+      },
+      "PATCH /me/messages/A": { json: {} },
+    });
+    yield* run(http, (adapter) =>
+      adapter.push(account, "A", {
+        kind: "categories",
+        add: ["Work", "Personal", "Work"],
+        remove: ["Old"],
+      }),
+    );
+    assert.deepStrictEqual(
+      http.calls.map((call) => [call.method, call.url.pathname]),
+      [
+        ["GET", "/v1.0/me/messages/A"],
+        ["GET", "/v1.0/me/outlook/masterCategories"],
+        ["PATCH", "/v1.0/me/messages/A"],
+      ],
+    );
+    assert.deepStrictEqual(http.calls[2]?.body, {
+      categories: ["Keep", "Remote", "Work", "Personal"],
+    });
+    assert.deepStrictEqual(
+      parseGraphMessage({ ...raw, categories: ["Work", "Personal"] }, "INBOX", []).labels,
+      ["INBOX", "category:Work", "category:Personal", "UNREAD", "STARRED"],
+    );
+  }),
+);
+
+it.effect(
+  "category names compare case-insensitively and missing master names are created before assignment",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/messages/A": { json: { categories: ["Work", "OLD", "Keep"] } },
+        "GET /me/outlook/masterCategories": { json: { value: [{ displayName: "Work" }] } },
+        "POST /me/outlook/masterCategories": {
+          json: { id: "new", displayName: "Personal" },
+          status: 201,
+        },
+        "PATCH /me/messages/A": { json: {} },
+      });
+      yield* run(http, (adapter) =>
+        adapter.push(account, "A", {
+          kind: "categories",
+          add: ["work", "Personal", "PERSONAL"],
+          remove: ["old"],
+        }),
+      );
+      assert.deepStrictEqual(
+        http.calls.filter((call) => call.method === "POST").map((call) => call.body),
+        [{ displayName: "Personal", color: "none" }],
+      );
+      assert.deepStrictEqual(http.calls.at(-1)?.body, { categories: ["Work", "Keep", "Personal"] });
+    }),
+);
+it.effect("category registration failure never patches message categories", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/A": { json: { categories: ["Keep"] } },
+      "GET /me/outlook/masterCategories": { json: { value: [] } },
+      "POST /me/outlook/masterCategories": { status: 403 },
+      "PATCH /me/messages/A": { json: {} },
+    });
+    const result = yield* Effect.result(
+      run(http, (adapter) =>
+        adapter.push(account, "A", { kind: "categories", add: ["Work"], remove: [] }),
+      ),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.ok(!http.calls.some((call) => call.method === "PATCH"));
+  }),
+);

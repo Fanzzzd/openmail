@@ -22,6 +22,11 @@ import {
 } from "@openmail/core";
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
 import { EXECUTABLE, safeFilename } from "./attachment-filenames";
+import {
+  registeredAttachmentApps,
+  openAttachmentWith,
+  chooseAttachmentApp,
+} from "./attachment-apps";
 import { quarantine } from "./file-quarantine";
 
 type Request = {
@@ -248,6 +253,36 @@ export const attachmentAction: (
         }
         break;
       }
+      case "openWith":
+        return yield* Effect.gen(function* () {
+          if (process.platform !== "darwin" || files.length !== 1)
+            return yield* new DeviceError({
+              message: "Choose one attachment on macOS to open with an application.",
+            });
+          const file = files[0];
+          if (!file) return countResult(0);
+          const applications = yield* registeredAttachmentApps(file);
+          if (!applications.length)
+            return yield* new DeviceError({
+              message: "No application is registered for this file type.",
+            });
+          const application = yield* chooseAttachmentApp(applications, parent);
+          if (!application) return countResult(0);
+          if (parent?.isDestroyed())
+            return yield* new DeviceError({ message: "Attachment window is closed" });
+          yield* openAttachmentWith(application, file);
+          return countResult(1);
+        }).pipe(
+          Effect.onExit((exit) =>
+            exit._tag === "Failure" || exit.value.count === 0
+              ? remove(batch).pipe(
+                  Effect.catchCause((cause) =>
+                    Effect.logWarning("Open With cleanup failed", cause),
+                  ),
+                )
+              : Effect.void,
+          ),
+        );
       case "share":
         yield* Effect.try({
           try: () => new ShareMenu({ filePaths: files }).popup(parent ? { window: parent } : {}),

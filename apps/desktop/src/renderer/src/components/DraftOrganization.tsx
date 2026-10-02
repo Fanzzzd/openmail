@@ -27,7 +27,7 @@ export function DraftOrganization({
     <>
       <button
         type="button"
-        aria-label={t`Star draft`}
+        aria-label={provider === "gmail" ? t`Star draft on this Mac` : t`Star draft`}
         aria-pressed={value.starred}
         onClick={() => onChange({ ...value, starred: !value.starred })}
         className="rounded px-2 py-1 hover:bg-black/5"
@@ -46,10 +46,13 @@ export function DraftOrganization({
           ? t`Draft categories`
           : provider === "imap"
             ? t`Draft keywords`
-            : t`Draft labels`}
+            : t`Local draft labels`}
       </button>
       {open && (
         <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-lg border bg-white p-3 shadow-lg dark:bg-neutral-800">
+          {provider === "gmail" && (
+            <p className="text-xs text-neutral-500">{t`Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts.`}</p>
+          )}
           {provider === "gmail" ? (
             <div className="max-h-48 overflow-auto">
               {labels.length ? (

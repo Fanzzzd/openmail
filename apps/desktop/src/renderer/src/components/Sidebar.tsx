@@ -11,6 +11,7 @@ import {
   FAVORITE_DRAG,
   DragMessages,
   DragLabel,
+  sidebarDropOperation,
   decodeDrag,
 } from "../organize-drag";
 import { MAIL_KEYS, Keys } from "../state/keys";
@@ -198,8 +199,9 @@ export function Sidebar({
       );
     return local?.visible !== false;
   };
-  const labels = colored.filter(visible);
-  const hidden = colored.filter((l) => !visible(l));
+  const categories = colored.filter((label) => label.id.startsWith("category:"));
+  const labels = colored.filter((label) => !label.id.startsWith("category:") && visible(label));
+  const hidden = colored.filter((l) => !l.id.startsWith("category:") && !visible(l));
   const favorites = labelPrefs
     .filter(
       (p) =>
@@ -285,6 +287,7 @@ export function Sidebar({
     }
     const label = decodeDrag(DragLabel, event.dataTransfer.getData(LABEL_DRAG));
     if (label) {
+      if (label.id.startsWith("category:") || target.id.startsWith("category:")) return;
       if (parent && label.accountId === target.accountId)
         perform(
           withMail((call) =>
@@ -298,17 +301,15 @@ export function Sidebar({
     }
     const messages = decodeDrag(DragMessages, event.dataTransfer.getData(MESSAGE_DRAG));
     if (messages) {
-      const mailbox = SYSTEM_FOLDERS.find((id) => systemFolderId(id) === target.id);
-      if (mailbox && mailbox !== "inbox" && mailbox !== "trash" && mailbox !== "spam") return;
+      const op = sidebarDropOperation(target.id, messages.removeLabelId);
+      if (!op) return;
       const ids = messages.ids.filter((id) => id.startsWith(`${target.accountId}/`));
       if (ids.length)
         perform(
           withMail((call) =>
             call("ModifyWithUndo", {
               threads: ids,
-              op: mailbox
-                ? { kind: mailbox }
-                : { kind: "move", labelId: target.id, removeLabelId: messages.removeLabelId },
+              op,
               flat: messages.flat,
             }),
           ).pipe(Effect.asVoid),
@@ -710,6 +711,22 @@ export function Sidebar({
           actions={labelActions}
           favorite={(l) => toggleFavorite(l.accountId, l.id)}
         />
+        {categories.length > 0 && (
+          <LabelSections
+            labels={categories}
+            accounts={accounts}
+            view={view}
+            onView={onView}
+            unread={byLabel}
+            categories
+            actions={(label) => ({
+              onDragOver: (event) => {
+                if (event.dataTransfer.types.includes(MESSAGE_DRAG)) event.preventDefault();
+              },
+              onDrop: (event) => drop(event, label, false),
+            })}
+          />
+        )}
         {hidden.length > 0 && (prefs?.showMore ?? true) && (
           <>
             <button
@@ -930,7 +947,9 @@ function LabelSections({
   unread,
   actions,
   favorite,
+  categories = false,
 }: {
+  categories?: boolean;
   labels: readonly Label[];
   accounts: readonly Account[];
   view: View;
@@ -946,7 +965,10 @@ function LabelSections({
     const account = accounts.find((a) => a.id === accountId);
     const email = account ? accountName(account) : accountId;
     return (
-      <Section key={accountId} title={groups.size > 1 ? email : t`Labels`}>
+      <Section
+        key={accountId}
+        title={categories ? t`Outlook categories` : groups.size > 1 ? email : t`Labels`}
+      >
         {list.map((l) => (
           <Item
             key={l.id}

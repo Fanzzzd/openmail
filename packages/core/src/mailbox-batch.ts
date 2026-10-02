@@ -1,10 +1,20 @@
+import { categoryKey } from "./categories.js";
+import { invalidCategoryFolderOp } from "./mail-ops.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 
-import type { Actor, MailOp, Message, Provider } from "./domain.js";
+import {
+  UNDO_HISTORY_TTL_MS,
+  type Actor,
+  type MailOp,
+  type Message,
+  type Provider,
+  type IncomingMessage,
+} from "./domain.js";
 import { messagesFrom } from "./reading.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "./services.js";
+import { undoStateKey, type UndoState } from "./undo-journal.js";
 import { applyOpToLabels, folderTarget } from "./store.js";
 
 const user: Actor = { kind: "user", surface: "app" };
@@ -13,9 +23,9 @@ interface Change {
   op: MailOp;
 }
 interface UndoBatch {
-  changes: Change[];
+  changes: readonly Change[];
   reminders: ReminderSnapshot[];
-  localChanges?: Change[];
+  localChanges?: readonly Change[];
 }
 
 /** Restore only the fields this op changed, using each message's actual state. */
@@ -24,10 +34,28 @@ function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
   if (op.kind === "important" && provider !== "imap")
     return [{ kind: "important", value: message.labels.includes("IMPORTANT") }];
   if (op.kind === "star") return [{ kind: "star", value: message.isStarred }];
+  if (op.kind === "categories") {
+    const current = message.labels
+      .filter((label) => label.startsWith("category:"))
+      .map((label) => label.slice(9));
+    return [
+      {
+        kind: "categories",
+        add: current.filter((name) =>
+          op.remove.some((removed) => categoryKey(removed) === categoryKey(name)),
+        ),
+        remove: op.add.filter(
+          (name) => !current.some((old) => categoryKey(old) === categoryKey(name)),
+        ),
+      },
+    ];
+  }
+  if (op.kind === "copy") return [];
   if (provider !== "gmail") {
     if (!folderTarget(op, message.labels)) return [];
     const folder = message.labels.find(
-      (l) => !["UNREAD", "STARRED", "IMPORTANT", "SNOOZED"].includes(l),
+      (l) =>
+        !["UNREAD", "STARRED", "IMPORTANT", "SNOOZED"].includes(l) && !l.startsWith("category:"),
     );
     switch (folder) {
       case "INBOX":
@@ -74,7 +102,14 @@ const applyChanges = (store: Store["Service"], changes: readonly Change[]) =>
     );
     for (const change of resolved.flat()) {
       yield* store.applyLocalOp(change.id, change.op);
-      yield* store.enqueueOp(change.accountId, change.providerId, change.op);
+      if (change.op.kind === "copy") {
+        // Each destination owns a queue entry: a later failure must not repeat earlier copies.
+        for (const labelId of new Set(change.op.labelIds))
+          yield* store.enqueueOp(change.accountId, change.providerId, {
+            kind: "copy",
+            labelIds: [labelId],
+          });
+      } else yield* store.enqueueOp(change.accountId, change.providerId, change.op);
       yield* store.audit({
         actor: user,
         accountId: change.accountId,
@@ -84,11 +119,16 @@ const applyChanges = (store: Store["Service"], changes: readonly Change[]) =>
     }
   });
 
-/** No database migration: handles live with the app and retain at most 50 batches. */
+/** Durable organizational history; reminder restoration remains process-local. */
 export const makeBatchMailbox = (
   store: Store["Service"],
   changed: Effect.Effect<void>,
   flushLater: Effect.Effect<void>,
+  verify?: (id: string) => Effect.Effect<IncomingMessage, import("./mailbox.js").PerformError>,
+  verifyFolder?: (
+    accountId: string,
+    labelId: string,
+  ) => Effect.Effect<void, import("./mailbox.js").PerformError>,
 ) =>
   Effect.gen(function* () {
     const lock = yield* Semaphore.make(1);
@@ -99,6 +139,10 @@ export const makeBatchMailbox = (
           Effect.gen(function* () {
             if (!threads.length)
               return yield* new InvalidInput({ message: "Select at least one conversation." });
+            if (invalidCategoryFolderOp(op))
+              return yield* new InvalidInput({
+                message: "Categories cannot be used as folders. Use the categories action.",
+              });
             const undoId = crypto.randomUUID();
             const back = yield* store.transaction(
               Effect.gen(function* () {
@@ -121,6 +165,36 @@ export const makeBatchMailbox = (
                   const message = yield* store.getMessage(id);
                   const account = yield* store.getAccount(message.accountId);
                   if (
+                    (op.kind === "categories" && account.provider !== "outlook") ||
+                    (op.kind === "copy" && account.provider !== "imap")
+                  )
+                    return yield* new InvalidInput({
+                      message: "This organization action is unavailable for this account.",
+                    });
+                  if (
+                    op.kind === "categories" &&
+                    [...op.add, ...op.remove].some((name) => !name.trim() || /[\r\n\0]/.test(name))
+                  )
+                    return yield* new InvalidInput({ message: "Enter valid category names." });
+                  if (
+                    op.kind === "copy" &&
+                    !op.labelIds.every((labelId) => labelId && !labelId.startsWith("category:"))
+                  )
+                    return yield* new InvalidInput({
+                      message: "Choose folders from this account.",
+                    });
+                  if (op.kind === "copy") {
+                    const folders = yield* store.listLabels([account.id]);
+                    if (
+                      !op.labelIds.every((labelId) =>
+                        folders.some((folder) => folder.id === labelId),
+                      )
+                    )
+                      return yield* new InvalidInput({
+                        message: "Choose folders from this account.",
+                      });
+                  }
+                  if (
                     op.kind === "move" &&
                     !(yield* store.listLabels([account.id])).some((l) => l.id === op.labelId) &&
                     !["INBOX", "ARCHIVE", "TRASH", "SPAM"].includes(op.labelId)
@@ -133,6 +207,8 @@ export const makeBatchMailbox = (
                     op.kind !== "read" &&
                     op.kind !== "star" &&
                     !(op.kind === "important" && account.provider === "outlook") &&
+                    op.kind !== "categories" &&
+                    op.kind !== "copy" &&
                     !folderTarget(op, message.labels)
                   )
                     continue;
@@ -161,15 +237,32 @@ export const makeBatchMailbox = (
                   );
                 }
                 yield* applyChanges(store, forward);
+                const expected = yield* Effect.forEach([...ids], (id) =>
+                  store.getMessage(id).pipe(
+                    Effect.map((m) => ({
+                      id,
+                      accountId: m.accountId,
+                      labels: m.labels,
+                      isUnread: m.isUnread,
+                      isStarred: m.isStarred,
+                    })),
+                  ),
+                );
+                if (op.kind !== "copy")
+                  yield* store.saveUndoJournal(undoId, {
+                    changes: inverses,
+                    expected,
+                    localExpected: expected,
+                  });
                 return { changes: inverses, reminders: [...reminders.values()] };
               }),
             );
-            history.set(undoId, back);
+            if (op.kind !== "copy") history.set(undoId, back);
             if (history.size > 50) {
               const oldest = history.keys().next().value;
               if (oldest) history.delete(oldest);
             }
-            return { undoId };
+            return { undoId: op.kind === "copy" ? "" : undoId };
           }),
         )
         .pipe(
@@ -191,6 +284,7 @@ export const makeBatchMailbox = (
                 const localChanges: Change[] = [];
                 const reminders: ReminderSnapshot[] = [];
                 const seen = new Set<string>();
+                const expected: (typeof UndoState.Type)[] = [];
                 for (const id of threads) {
                   const message = yield* store.getMessage(id);
                   const threadKey = JSON.stringify([message.accountId, message.threadId]);
@@ -206,6 +300,13 @@ export const makeBatchMailbox = (
                       !member.labels.some((label) => ["DRAFT", "TRASH", "SPAM"].includes(label))
                     ) {
                       localChanges.push({ id: member.id, op: { kind: "inbox" } });
+                      expected.push({
+                        id: member.id,
+                        accountId: member.accountId,
+                        labels: member.labels,
+                        isUnread: member.isUnread,
+                        isStarred: member.isStarred,
+                      });
                     }
                   yield* store.audit({
                     actor: user,
@@ -214,6 +315,23 @@ export const makeBatchMailbox = (
                     detail: { id, due },
                   });
                 }
+                const localExpected = yield* Effect.forEach(expected, (state) =>
+                  store.getMessage(state.id).pipe(
+                    Effect.map((message) => ({
+                      id: message.id,
+                      accountId: message.accountId,
+                      labels: message.labels,
+                      isUnread: message.isUnread,
+                      isStarred: message.isStarred,
+                    })),
+                  ),
+                );
+                yield* store.saveUndoJournal(undoId, {
+                  changes: [],
+                  localChanges,
+                  expected,
+                  localExpected,
+                });
                 return { changes: [], localChanges, reminders };
               }),
             );
@@ -230,13 +348,98 @@ export const makeBatchMailbox = (
       lock
         .withPermits(1)(
           Effect.gen(function* () {
-            const back = history.get(undoId);
+            const live = history.get(undoId);
+            const journal = yield* store.undoJournal(undoId);
+            const back: UndoBatch | undefined =
+              (journal ? live : undefined) ??
+              (journal
+                ? { changes: journal.changes, localChanges: journal.localChanges, reminders: [] }
+                : undefined);
             if (!back)
               return yield* new InvalidInput({
                 message: "This operation can no longer be undone.",
               });
+            const checkLocal = Effect.gen(function* () {
+              if (live || !journal) return;
+              const pending = yield* store.listPendingOps;
+              for (const expected of journal.localExpected) {
+                const message = yield* store.getMessage(expected.id);
+                const ref = yield* store.messageRef(expected.id);
+                if (
+                  pending.some(
+                    (op) => op.accountId === message.accountId && op.providerId === ref.providerId,
+                  )
+                )
+                  yield* new InvalidInput({
+                    message: "Finish pending changes for these messages before undoing.",
+                  });
+                if (
+                  message.accountId !== expected.accountId ||
+                  undoStateKey(message) !== undoStateKey(expected)
+                )
+                  yield* new InvalidInput({
+                    message: "The message changed locally. This operation cannot be safely undone.",
+                  });
+              }
+            });
+            if (!live && journal) {
+              const now = yield* Clock.currentTimeMillis;
+              if (now - journal.createdAt > UNDO_HISTORY_TTL_MS)
+                return yield* new InvalidInput({
+                  message: "Restored operations expire after 24 hours.",
+                });
+              // Folder-model IMAP moves change UID; never replay the original UID after restart.
+              for (const change of back.changes) {
+                const expected = journal.expected.find((state) => state.id === change.id);
+                if (!expected) continue;
+                const account = yield* store.getAccount(expected.accountId);
+                const destination = folderTarget(change.op, expected.labels);
+                if (account.provider === "imap" && destination)
+                  return yield* new InvalidInput({
+                    message:
+                      "IMAP moves change message UIDs and cannot be undone after restarting. Move the message back manually.",
+                  });
+                const custom =
+                  destination && !["INBOX", "ARCHIVE", "TRASH", "SPAM"].includes(destination);
+                const checkDestination =
+                  destination &&
+                  (account.provider === "outlook" ||
+                    (account.provider === "gmail" && destination.startsWith("Label_")));
+                if (checkDestination) {
+                  if (
+                    custom &&
+                    !(yield* store.listLabels([account.id])).some(
+                      (label) => label.id === destination,
+                    )
+                  )
+                    return yield* new InvalidInput({
+                      message: "The original destination folder no longer exists.",
+                    });
+                  if (!verifyFolder)
+                    return yield* new InvalidInput({
+                      message: "Server folder verification is required before undo.",
+                    });
+                  yield* verifyFolder(account.id, destination);
+                }
+              }
+              yield* checkLocal;
+              if (!verify && journal.expected.length)
+                return yield* new InvalidInput({
+                  message: "Server verification is required before undo.",
+                });
+              for (const expected of journal.expected) {
+                if (!verify) continue;
+                const remote = yield* verify(expected.id);
+                if (undoStateKey(remote) !== undoStateKey(expected))
+                  return yield* new InvalidInput({
+                    message:
+                      "The message changed on the server. This operation cannot be safely undone.",
+                  });
+              }
+            }
             yield* store.transaction(
               Effect.gen(function* () {
+                yield* checkLocal;
                 yield* applyChanges(store, back.changes);
                 for (const change of back.localChanges ?? []) {
                   const ref = yield* store.messageRef(change.id).pipe(Effect.option);
@@ -251,6 +454,7 @@ export const makeBatchMailbox = (
                   )).flat();
                   if (members.length) yield* store.restoreReminder({ ...reminder, members });
                 }
+                yield* store.deleteUndoJournal(undoId);
               }),
             );
             history.delete(undoId);
@@ -276,5 +480,11 @@ export const makeBatchMailbox = (
           true,
         );
       });
-    return { modifyWithUndo, undoBatch, markUnreadFrom, snoozeWithUndo };
+    return {
+      modifyWithUndo,
+      undoBatch,
+      markUnreadFrom,
+      snoozeWithUndo,
+      undoHistory: store.undoHistory,
+    };
   });

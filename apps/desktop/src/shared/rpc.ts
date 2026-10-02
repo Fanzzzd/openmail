@@ -42,6 +42,7 @@ import {
   AccountSettings,
   AccountPlacement,
   BatchResult,
+  UndoHistoryEntry,
   Address,
   AgentWriteMode,
   AuditEntry,
@@ -463,6 +464,7 @@ export class MailRpcs extends RpcGroup.make(
     success: BatchResult,
     error,
   }),
+  Rpc.make("UndoHistory", { success: Schema.Array(UndoHistoryEntry) }),
   Rpc.make("UndoBatch", { payload: { undoId: Schema.String }, error }),
   Rpc.make("Modify", {
     payload: { threads: Schema.Array(Schema.String), op: MailOp },

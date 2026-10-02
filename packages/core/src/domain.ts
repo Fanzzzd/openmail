@@ -340,6 +340,16 @@ export const MailOp = Schema.Union([
     labelId: Schema.String,
     removeLabelId: Schema.NullOr(Schema.String),
   }),
+  Schema.Struct({
+    kind: Schema.Literal("categories"),
+    add: Schema.Array(Schema.String),
+    remove: Schema.Array(Schema.String),
+  }),
+  /** IMAP COPY keeps the original; server-generated copy ids are discovered by sync. */
+  Schema.Struct({
+    kind: Schema.Literal("copy"),
+    labelIds: Schema.Array(Schema.String).check(Schema.isMinLength(1)),
+  }),
   /** Add or remove a user label. On Outlook and IMAP, adding moves to that folder. */
   Schema.Struct({ kind: Schema.Literal("label"), labelId: Schema.String, value: Schema.Boolean }),
 ]);
@@ -625,6 +635,9 @@ export const Prefs = Schema.Struct({
   /** Show names and full email addresses in recipient chips. */
   showFullRecipientAddresses: Schema.Boolean,
   replyFrom: Schema.Literals(["received", "default"]),
+  signaturePosition: Schema.Literals(["above", "below"]),
+  signatureSeparator: Schema.Boolean,
+  signatureOrder: Schema.Array(Schema.String),
   quoteSelection: Schema.Literals(["ask", "always", "never"]),
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
@@ -677,6 +690,9 @@ export const DEFAULT_PREFS: Prefs = {
   defaultFrom: null,
   showFullRecipientAddresses: false,
   replyFrom: "received",
+  signaturePosition: "above",
+  signatureSeparator: true,
+  signatureOrder: [],
   quoteSelection: "ask",
   language: "system",
   markReadDelay: 0,
@@ -786,9 +802,12 @@ export const FlushResult = Schema.Struct({
 });
 export type FlushResult = typeof FlushResult.Type;
 
-/** An app operation's one-use, process-local undo handle. */
+/** A durable, one-use organizational undo handle. Empty for IMAP copy operations. */
 export const BatchResult = Schema.Struct({ undoId: Schema.String });
 export type BatchResult = typeof BatchResult.Type;
+export const UNDO_HISTORY_TTL_MS = 24 * 60 * 60 * 1000;
+export const UndoHistoryEntry = Schema.Struct({ undoId: Schema.String, createdAt: Schema.Number });
+export type UndoHistoryEntry = typeof UndoHistoryEntry.Type;
 
 /** What `perform` did with a command. */
 export const Outcome = Schema.Union([

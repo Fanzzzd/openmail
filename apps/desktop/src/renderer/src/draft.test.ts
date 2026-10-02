@@ -429,3 +429,16 @@ it("empty drafts close quietly only when never stored or unchanged; clearing a s
   expect(needsClosePrompt(empty, stored, { initial })).toBe(true);
   expect(needsClosePrompt(empty, storedEmpty, { initial })).toBe(true);
 });
+
+it("a signature without its separator still counts as an untouched empty compose", () => {
+  const draft = emptyDraft(account.id);
+  const options = { signaturePosition: "below", signatureSeparator: false } as const;
+  const automatic = {
+    ...draft,
+    body: { kind: "plain", text: applySignature("", undefined, "Me", options) } as const,
+  };
+  expect(isEmpty(automatic, "Me", options)).toBe(true);
+  expect(
+    isEmpty({ ...automatic, body: { kind: "plain", text: "Authored\n\nMe" } }, "Me", options),
+  ).toBe(false);
+});

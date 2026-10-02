@@ -2002,27 +2002,14 @@ it.effect(
     }),
 );
 
-it.effect(
-  "draft organization modifies only user labels and STARRED on the actual draft message",
-  () =>
-    Effect.gen(function* () {
-      const http = fakeHttp({
-        "GET /messages/dm": { json: { labelIds: ["DRAFT", "IMPORTANT", "Label_old", "STARRED"] } },
-        "POST /messages/dm/modify": { json: {} },
-      });
-      yield* run(http, (adapter) => {
-        if (!adapter.setDraftOrganization) throw new Error("Missing Gmail draft organization");
-        return adapter.setDraftOrganization(account, "dm", {
-          labels: ["Label_new"],
-          starred: false,
-        });
-      });
-      assert.deepStrictEqual(http.calls.at(-1)?.body, {
-        addLabelIds: ["Label_new"],
-        removeLabelIds: ["Label_old", "STARRED"],
-      });
-      assert.strictEqual(http.calls[0]?.url.searchParams.get("format"), "minimal");
-    }),
+it.effect("Gmail exposes no draft organization write unsupported by its API", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({});
+    yield* run(http, (adapter) =>
+      Effect.sync(() => assert.strictEqual("setDraftOrganization" in adapter, false)),
+    );
+    assert.strictEqual(http.calls.length, 0);
+  }),
 );
 
 it.effect(

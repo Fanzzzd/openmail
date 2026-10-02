@@ -108,6 +108,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     markUnreadFrom: () => Effect.die("not used"),
     modifyWithUndo: () => Effect.die("not used"),
     threadCount: () => Effect.die("not used"),
+    undoHistory: Effect.succeed([]),
     undoBatch: () => Effect.die("not used"),
     perform: () => notUsed("perform"),
     decideProposal: () => notUsed("decideProposal"),

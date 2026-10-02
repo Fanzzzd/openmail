@@ -159,6 +159,10 @@ msgstr "请填写有效名称"
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "原每日静音时段仍生效。修改此日程后替换。"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Above quoted text"
+msgstr "引文上方"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Absolute folder path"
 msgstr "绝对文件夹路径"
@@ -322,6 +326,10 @@ msgstr "已加星标"
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Added to calendar"
 msgstr "已加入日历"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Additional category names, separated by commas"
+msgstr "其他分类名称，用逗号分隔"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Additional labels"
@@ -490,6 +498,7 @@ msgid "Apple Mail"
 msgstr "Apple 邮件"
 
 #: src/renderer/src/components/DraftOrganization.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
 msgid "Apply"
 msgstr "应用"
 
@@ -641,6 +650,10 @@ msgstr "密送"
 msgid "Before date"
 msgstr "早于日期"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Below quoted text"
+msgstr "引文下方"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Bigger text"
 msgstr "放大文字"
@@ -761,6 +774,15 @@ msgstr "取消"
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Categories updated"
+msgstr "已更新分类"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Categories…"
+msgstr "分类…"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Category"
 msgstr "类别"
@@ -849,6 +871,10 @@ msgstr "请先选择“编辑正文”，再插入模板。"
 #: src/renderer/src/components/Composer.tsx
 msgid "Choose Edit body before inserting an image."
 msgstr "请先选择「编辑正文」，再插入图片。"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Choose multiple categories"
+msgstr "选择多个分类"
 
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
@@ -1006,7 +1032,13 @@ msgstr "会话"
 msgid "Copied"
 msgstr "已复制"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Copied to folders"
+msgstr "已复制到文件夹"
+
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "复制"
@@ -1031,6 +1063,10 @@ msgstr "复制选中附件"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Copy style"
 msgstr "复制样式"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Copy to folders…"
+msgstr "复制到文件夹…"
 
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Copy to local signature"
@@ -1202,6 +1238,10 @@ msgstr "创建 Profile"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Create profiles?"
 msgstr "创建 Profile？"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
+msgstr "保留原件，在每个所选文件夹创建副本。复制无法撤销。"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
@@ -1425,14 +1465,15 @@ msgstr "草稿已丢弃"
 msgid "Draft keywords"
 msgstr "草稿关键词"
 
-#: src/renderer/src/components/DraftOrganization.tsx
-msgid "Draft labels"
-msgstr "草稿标签"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "草稿"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Drag {0} to reorder"
+msgstr "拖动 {0} 排序"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
@@ -1799,6 +1840,10 @@ msgstr "Gmail 副本"
 msgid "Gmail default"
 msgstr "Gmail 默认签名"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
+msgstr "Gmail 草稿标签和星标仅保存在本机。服务器草稿只允许“草稿”标签。"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
@@ -1931,6 +1976,10 @@ msgstr "包含匹配项"
 #: src/renderer/src/components/Composer.tsx
 msgid "Include original attachments"
 msgstr "包含原附件"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Include signature separator"
+msgstr "显示签名分隔符"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2183,6 +2232,10 @@ msgstr "加载中…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Local cache"
 msgstr "本机缓存"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Local draft labels"
+msgstr "本机草稿标签"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
@@ -2437,6 +2490,11 @@ msgstr "还有更多结果，请缩小搜索范围。"
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
 
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} down"
+msgstr "下移 {0}"
+
 #. placeholder {0}: a.filename
 #: src/renderer/src/components/Composer.tsx
 msgid "Move {0} earlier"
@@ -2446,6 +2504,11 @@ msgstr "将 {0} 前移"
 #: src/renderer/src/components/Composer.tsx
 msgid "Move {0} later"
 msgstr "将 {0} 后移"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} up"
+msgstr "上移 {0}"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Move {label} down"
@@ -2694,6 +2757,10 @@ msgstr "没有符合筛选的邮件"
 msgid "No more messages"
 msgstr "没有更多邮件"
 
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "No operations to undo"
+msgstr "没有可撤销的操作"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "No overlapping events in your primary calendar."
 msgstr "主日历中没有重叠日程。"
@@ -2879,6 +2946,10 @@ msgstr "打开空间"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "请先在日历中添加此邀请，再响应"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open With…"
+msgstr "打开方式…"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail 已是默认邮件客户端"
@@ -2906,6 +2977,10 @@ msgstr "OpenMail 意外退出"
 #: src/renderer/src/recovery-labels.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
+
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
+msgstr "最近 24 小时的操作。核对当前状态后恢复标签、文件夹和标记。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Optional"
@@ -2963,6 +3038,10 @@ msgstr "减少列表缩进"
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook 自动回复不支持自定主题"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Outlook categories"
+msgstr "Outlook 分类"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Outlook chooses the reply subject."
@@ -3844,6 +3923,10 @@ msgstr "签名"
 msgid "Signature name"
 msgstr "签名名称"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature position in replies"
+msgstr "回复中的签名位置"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Signatures"
@@ -3961,6 +4044,10 @@ msgstr "星标"
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Star draft"
 msgstr "草稿加星"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft on this Mac"
+msgstr "在本机标记草稿星标"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Star message"
@@ -4346,9 +4433,18 @@ msgstr "撤销"
 msgid "Undo emoji replacement"
 msgstr "撤销 Emoji 替换"
 
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo history"
+msgstr "撤销历史"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Undo mode change"
 msgstr "撤销模式切换"
+
+#. placeholder {0}: new Date(entry.createdAt).toLocaleString(i18n.locale)
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo operation from {0}"
+msgstr "撤销 {0} 的操作"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/state/desktop.ts

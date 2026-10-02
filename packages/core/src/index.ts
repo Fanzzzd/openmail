@@ -76,3 +76,5 @@ export * from "./compose-extras.js";
 export * from "./compose-images.js";
 export * from "./update-feed.js";
 export * from "./signatures.js";
+
+export * from "./categories.js";

@@ -2,6 +2,7 @@ import { Schema } from "effect";
 import { ThreadSummary, type MailboxView, type Provider, CATEGORIES } from "./domain.js";
 
 export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
+  if (currentLabel?.startsWith("category:")) return null;
   if (mailbox === "inbox") return "INBOX";
   if (mailbox === "trash") return "TRASH";
   if (mailbox === "spam") return "SPAM";

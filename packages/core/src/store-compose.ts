@@ -241,9 +241,13 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
             from: me,
             date: r.updated_at,
             snippet: m.text.replace(/\s+/g, " ").trim().slice(0, 200),
-            labels: ["DRAFT"],
+            labels: [
+              "DRAFT",
+              ...(m.draftOrganization?.labels ?? []),
+              ...(m.draftOrganization?.starred ? ["STARRED"] : []),
+            ],
             isUnread: false,
-            isStarred: false,
+            isStarred: m.draftOrganization?.starred ?? false,
             hasAttachments: m.attachments.length > 0 || m.forwardAsAttachment === true,
             ...(m.attachments.length
               ? {
@@ -312,6 +316,17 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
           stored.get("attachmentCacheBytes"),
           d.attachmentCacheBytes,
         ),
+        signaturePosition: pref(
+          f.signaturePosition,
+          stored.get("signaturePosition"),
+          d.signaturePosition,
+        ),
+        signatureSeparator: pref(
+          f.signatureSeparator,
+          stored.get("signatureSeparator"),
+          d.signatureSeparator,
+        ),
+        signatureOrder: pref(f.signatureOrder, stored.get("signatureOrder"), d.signatureOrder),
         contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
         composeFormatBar: pref(
           f.composeFormatBar,

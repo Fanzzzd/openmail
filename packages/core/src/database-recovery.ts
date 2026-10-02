@@ -31,6 +31,7 @@ export const RECOVERY_TABLES = [
   "signatures",
   "named_signatures",
   "signature_defaults",
+  "undo_batches",
   "templates",
   "hidden_contacts",
   "image_senders",

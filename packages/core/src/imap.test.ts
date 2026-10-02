@@ -1192,3 +1192,85 @@ it.effect(
       ),
     ),
 );
+
+it.effect(
+  "multi-folder copies verify UIDVALIDITY and destinations, and never move or delete the original",
+  () =>
+    Effect.gen(function* () {
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      vi.spyOn(client, "list").mockResolvedValue(
+        ["INBOX", "A", "B"].map((path) => ({
+          path,
+          pathAsListed: path,
+          name: path,
+          delimiter: "/",
+          parent: [],
+          parentPath: "",
+          flags: new Set(),
+          listed: true,
+          subscribed: true,
+        })),
+      );
+      const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set(),
+        uidValidity: 7n,
+        uidNext: 2,
+        exists: 1,
+      });
+      vi.spyOn(client, "search").mockResolvedValue([1]);
+      const copy = vi.spyOn(client, "messageCopy").mockResolvedValue({
+        path: "INBOX",
+        destination: "A",
+        uidValidity: 7n,
+        uidMap: new Map([[1, 2]]),
+      });
+      const move = vi.spyOn(client, "messageMove"),
+        remove = vi.spyOn(client, "messageDelete");
+      assert.ok(account.imap);
+      const settings = account.imap;
+      const adapter = yield* makeImapWith(() =>
+        Effect.succeed({ accountId: account.id, settings, client }),
+      );
+      yield* adapter.push(account, encodeProviderId("INBOX", "7", 1), {
+        kind: "copy",
+        labelIds: ["A", "B", "A", "INBOX"],
+      });
+      assert.deepStrictEqual(copy.mock.calls, [
+        ["1", "A", { uid: true }],
+        ["1", "B", { uid: true }],
+      ]);
+      const invalid = yield* Effect.flip(
+        adapter.push(account, encodeProviderId("INBOX", "7", 1), {
+          kind: "copy",
+          labelIds: ["A", "Gone"],
+        }),
+      );
+      assert.strictEqual(invalid._tag, "PermanentError");
+      assert.strictEqual(copy.mock.calls.length, 2);
+      open.mockResolvedValue({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set(),
+        uidValidity: 8n,
+        uidNext: 2,
+        exists: 1,
+      });
+      const stale = yield* Effect.flip(
+        adapter.push(account, encodeProviderId("INBOX", "7", 1), { kind: "copy", labelIds: ["A"] }),
+      );
+      assert.strictEqual(stale._tag, "PermanentError");
+      assert.strictEqual(copy.mock.calls.length, 2);
+      assert.strictEqual(move.mock.calls.length, 0);
+      assert.strictEqual(remove.mock.calls.length, 0);
+    }).pipe(
+      Effect.provide(
+        Layer.succeed(Secrets, {
+          get: () => Effect.succeed(Option.some("password")),
+          set: () => Effect.void,
+          remove: () => Effect.void,
+        }),
+      ),
+    ),
+);

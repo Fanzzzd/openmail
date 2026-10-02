@@ -15,6 +15,7 @@ import type {
   AccountSettings,
   AccountPlacement,
   BatchResult,
+  UndoHistoryEntry,
   MailOp,
   Actor,
   Address,
@@ -344,6 +345,7 @@ export class Mailbox extends Context.Service<
       flat?: boolean,
     ): Effect.Effect<BatchResult, PerformError>;
     markUnreadFrom(id: string): Effect.Effect<BatchResult, PerformError>;
+    readonly undoHistory: Effect.Effect<readonly UndoHistoryEntry[]>;
     undoBatch(undoId: string): Effect.Effect<void, PerformError>;
     /** A person approves or rejects an agent's proposal. Approved modify commands run as that person. */
     decideProposal(

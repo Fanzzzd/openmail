@@ -247,6 +247,7 @@ const Handlers = MailRpcs.toLayer(
       ResetFavorites: ({ accountIds }) => m.resetFavorites(accountIds),
       Modify: ({ threads, op }) => m.perform({ kind: "modify", threads, op }, USER),
       ModifyWithUndo: ({ threads, op, flat }) => m.modifyWithUndo(threads, op, flat),
+      UndoHistory: () => m.undoHistory,
       UndoBatch: ({ undoId }) => m.undoBatch(undoId),
       Send: ({ accountId, message, draftId, archive }) =>
         m.perform(

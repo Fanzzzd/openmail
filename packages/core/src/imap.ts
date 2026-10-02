@@ -877,6 +877,24 @@ const applyOp = Effect.fnUntraced(function* (
         ? c.messageFlagsAdd(uid, [name], { uid: true })
         : c.messageFlagsRemove(uid, [name], { uid: true }),
     );
+  if (op.kind === "categories") {
+    yield* new PermanentError({ message: "Categories are available for Outlook accounts." });
+    return;
+  }
+  if (op.kind === "copy") {
+    for (const destination of new Set(op.labelIds)) {
+      if (!list.some((folder) => folder.path === destination))
+        yield* new PermanentError({ message: `Folder ${destination} does not exist` });
+    }
+    for (const destination of new Set(op.labelIds)) {
+      if (destination === ref.path) continue;
+      const copied = yield* call(s, (client) =>
+        client.messageCopy(uid, destination, { uid: true }),
+      );
+      if (!copied) yield* new ProviderError({ message: `Copying to ${destination} failed` });
+    }
+    return;
+  }
   if (op.kind === "important") return;
   if (op.kind === "read" || op.kind === "star") {
     yield* flag(op.kind === "read" ? "\\Seen" : "\\Flagged", op.value);

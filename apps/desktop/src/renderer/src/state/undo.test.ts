@@ -5,16 +5,30 @@ import { testDom } from "../test-dom";
 
 const state = vi.hoisted(() => {
   const calls: { id: string; targets: readonly string[] }[] = [];
-  return { fail: false, calls };
+  return {
+    fail: false,
+    calls,
+    reads: 0,
+    history: new Array<{ undoId: string; createdAt: number }>(),
+  };
 });
 vi.mock("./mail", async () => {
   const { Effect } = await import("effect");
   const { InvalidInput } = await import("@openmail/core/schema");
   return {
     useRunMail: () => Effect.runSync,
+    withMail: () =>
+      Effect.sync(() => {
+        state.reads++;
+        return state.history;
+      }),
     undoBatch: (id: string, targets: readonly string[]) => {
       state.calls.push({ id, targets });
-      return state.fail ? Effect.fail(new InvalidInput({ message: "retry" })) : Effect.void;
+      return state.fail
+        ? Effect.fail(new InvalidInput({ message: "retry" }))
+        : Effect.sync(() => {
+            state.history = state.history.filter((entry) => entry.undoId !== id);
+          });
     },
   };
 });
@@ -64,6 +78,75 @@ it("reader results set the same toast/Undo command; failed undo can retry and co
     }
     expect(restored).toHaveBeenCalledTimes(5);
     expect(clearToast).toHaveBeenCalledTimes(5);
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("restored history is fetched once and never rebinds Cmd+Z after undo-send clears it", () => {
+  const dom = testDom();
+  state.calls = [];
+  state.reads = 0;
+  state.history = [{ undoId: "old", createdAt: Date.now() }];
+  const notify = vi.fn<(toast: Omit<ToastState, "id">) => void>();
+  let handler: ReturnType<typeof useBatchUndo> | undefined;
+  function Harness() {
+    const current = useBatchUndo({
+      notify: (toast) => notify(toast),
+      clearToast: vi.fn(),
+      label: "Undo",
+      failureText: () => "Failed",
+    });
+    useEffect(() => {
+      handler = current;
+    });
+    return null;
+  }
+  try {
+    dom.render(createElement(Harness));
+    expect(notify).not.toHaveBeenCalled();
+    expect(handler?.undoRef.current).toBeNull();
+    dom.render(createElement(Harness));
+    if (handler) handler.undoRef.current = null;
+    dom.render(createElement(Harness));
+    expect(state.reads).toBe(1);
+    expect(notify).not.toHaveBeenCalled();
+    expect(handler?.undoRef.current).toBeNull();
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("an explicit history action preserves the current undo-send command and never binds an old batch", () => {
+  const dom = testDom();
+  state.calls = [];
+  state.fail = false;
+  state.reads = 0;
+  state.history = [{ undoId: "old", createdAt: Date.now() }];
+  let handler: ReturnType<typeof useBatchUndo> | undefined;
+  function Harness() {
+    const current = useBatchUndo({
+      notify: vi.fn(),
+      clearToast: vi.fn(),
+      label: "Undo",
+      failureText: () => "Failed",
+    });
+    useEffect(() => {
+      handler = current;
+    });
+    return null;
+  }
+  try {
+    dom.render(createElement(Harness));
+    if (!handler) throw new Error("Missing hook");
+    const undoSend = vi.fn();
+    handler.undoRef.current = undoSend;
+    act(() => {
+      void handler?.undoRestored("old");
+    });
+    expect(state.calls).toEqual([{ id: "old", targets: [] }]);
+    expect(handler.undoRef.current).toBe(undoSend);
+    expect(state.reads).toBe(1);
   } finally {
     dom.dispose();
   }

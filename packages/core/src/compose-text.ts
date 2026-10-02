@@ -42,16 +42,31 @@ export function ownText(body: string): string {
   return (separator === -1 ? lines : lines.slice(0, separator)).join("\n").trim();
 }
 
-function block(signature: string): string {
-  return `${SIGNATURE_SEPARATOR}\n${signature.trim()}`;
+export interface SignatureOptions {
+  readonly signaturePosition: "above" | "below";
+  readonly signatureSeparator: boolean;
+}
+export const DEFAULT_SIGNATURE_OPTIONS: SignatureOptions = {
+  signaturePosition: "above",
+  signatureSeparator: true,
+};
+function block(signature: string, separator = true): string {
+  return `${separator ? `${SIGNATURE_SEPARATOR}\n` : ""}${signature.trim()}`;
 }
 
 /** Where `sig` sits in `body` as whole lines, or -1. */
-function blockIndex(body: string, sig: string): number {
+function blockIndex(
+  body: string,
+  sig: string,
+  position: SignatureOptions["signaturePosition"],
+): number {
+  const quoted = quoteOffset(body);
   for (let at = body.indexOf(sig); at !== -1; at = body.indexOf(sig, at + 1)) {
     const end = at + sig.length;
     if ((at === 0 || body[at - 1] === "\n") && (end === body.length || body[end] === "\n")) {
-      return at;
+      if (at < quoted) return at;
+      if (position === "below" && end === body.length && body.slice(0, at).endsWith("\n\n"))
+        return at;
     }
   }
   return -1;
@@ -68,19 +83,34 @@ export function applySignature(
   body: string,
   previous: string | undefined,
   next: string | undefined,
+  options: SignatureOptions = DEFAULT_SIGNATURE_OPTIONS,
 ): string {
-  const old = previous?.trim() ? block(previous) : null;
-  const replacement = next?.trim() ? block(next) : null;
-  const index = old ? blockIndex(body, old) : -1;
+  const old = previous?.trim()
+    ? ([block(previous), block(previous, false)].find(
+        (candidate) => blockIndex(body, candidate, options.signaturePosition) >= 0,
+      ) ?? null)
+    : null;
+  const replacement = next?.trim() ? block(next, options.signatureSeparator) : null;
+  const index = old ? blockIndex(body, old, options.signaturePosition) : -1;
   if (old && index !== -1) {
     const after = body.slice(index + old.length);
-    if (replacement) return body.slice(0, index) + replacement + after;
+    if (replacement) {
+      const quoted = quoteOffset(body);
+      if (quoted < body.length && index < quoted !== (options.signaturePosition === "above"))
+        return applySignature(
+          body.slice(0, index).replace(/\n{1,2}$/, "") + after,
+          undefined,
+          next,
+          options,
+        );
+      return body.slice(0, index) + replacement + after;
+    }
     // Take the blank line before the signature with it.
     return body.slice(0, index).replace(/\n{1,2}$/, "") + after;
   }
   if (!replacement) return body;
-  const at = quoteOffset(body);
-  if (body.slice(0, at).split("\n").includes(SIGNATURE_SEPARATOR)) return body;
+  const at = options.signaturePosition === "below" ? body.length : quoteOffset(body);
+  if (body.slice(0, quoteOffset(body)).split("\n").includes(SIGNATURE_SEPARATOR)) return body;
   const head = body.slice(0, at).replace(/\n+$/, "");
   // Replies keep an empty line to type on above the signature and the quote.
   return at === body.length

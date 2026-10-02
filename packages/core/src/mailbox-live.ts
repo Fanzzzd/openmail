@@ -1,3 +1,5 @@
+import { destination as outlookDestination } from "./outlook.js";
+import { invalidCategoryFolderOp } from "./mail-ops.js";
 import { ImapIdle } from "./imap-idle.js";
 import { PersistentAttachments } from "./persistent-attachments.js";
 import { AttachmentCache } from "./attachment-cache.js";
@@ -299,7 +301,7 @@ export const MailboxLive = (
         const { draftOrganization, ...bodyMessage } = message;
         const remote = yield* adapter.saveDraft(account, {
           remote: draft.remote,
-          message: organizationChanged ? message : bodyMessage,
+          message: organizationChanged && account.provider !== "gmail" ? message : bodyMessage,
           original,
           replaceAttachments: key !== draft.pushedAttachments,
         });
@@ -320,6 +322,7 @@ export const MailboxLive = (
           organizationChanged &&
           remote.messageId &&
           draftOrganization &&
+          account.provider !== "gmail" &&
           adapter.setDraftOrganization
         ) {
           organizationApplied = yield* adapter
@@ -509,6 +512,32 @@ export const MailboxLive = (
         store,
         changed,
         FiberSet.run(background, flushNow).pipe(Effect.asVoid),
+        (id) =>
+          Effect.gen(function* () {
+            const ref = yield* store.messageRef(id);
+            const account = yield* store.getAccount(ref.accountId);
+            if (account.enabled === false)
+              return yield* new InvalidInput({
+                message: "Enable the account before undoing this operation.",
+              });
+            return yield* providers.get(account.provider).fetchMessage(account, ref.providerId);
+          }),
+        (accountId, labelId) =>
+          Effect.gen(function* () {
+            const account = yield* store.getAccount(accountId);
+            yield* providers.get(account.provider).listFolderMessages(
+              account,
+              {
+                mailbox: "all",
+                label:
+                  account.provider === "outlook"
+                    ? (outlookDestination({ kind: "move", labelId, removeLabelId: null }) ??
+                      labelId)
+                    : labelId,
+              },
+              null,
+            );
+          }),
       );
 
       const organization = makeOrganizationMailbox(
@@ -525,6 +554,10 @@ export const MailboxLive = (
         command: Extract<Command, { kind: "modify" }>,
         actor: Actor,
       ) {
+        if (invalidCategoryFolderOp(command.op))
+          return yield* new InvalidInput({
+            message: "Categories cannot be used as folders. Use the categories action.",
+          });
         const ids = new Set<string>();
         for (const thread of command.threads) {
           for (const id of yield* store.threadMessageIds(thread)) ids.add(id);

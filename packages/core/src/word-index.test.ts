@@ -42,8 +42,8 @@ it("migration leaves trigram indexes intact and empty word indexes resume across
   const file = join(directory, "mail.sqlite");
   try {
     const legacy = new DatabaseSync(file);
-    for (const migration of MIGRATIONS.slice(0, -1)) legacy.exec(migration);
-    legacy.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
+    for (const migration of MIGRATIONS.slice(0, 23)) legacy.exec(migration);
+    legacy.exec("PRAGMA user_version=23");
     legacy
       .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)")
       .run(accountId, "gmail", "me@example.com", 1);
@@ -80,7 +80,7 @@ it("migration leaves trigram indexes intact and empty word indexes resume across
         "SELECT sql FROM sqlite_master WHERE name IN ('messages_fts','derived_fts') ORDER BY name",
       )
       .all();
-    const last = MIGRATIONS.at(-1) ?? "";
+    const last = MIGRATIONS[23] ?? "";
     expect(last).not.toMatch(
       /DROP TABLE (?:messages_fts|derived_fts)|VALUES\s*\(\s*'rebuild'\s*\)/,
     );

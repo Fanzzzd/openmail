@@ -22,6 +22,8 @@ const OP_NAMES: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   trash: () => msg`Delete`,
   spam: () => msg`Report spam`,
   move: () => msg`Moved`,
+  categories: () => msg`Categories updated`,
+  copy: () => msg`Copied to folders`,
   label: (op) => (op.kind === "label" && op.value ? msg`Add label` : msg`Remove label`),
 };
 

@@ -38,6 +38,8 @@ import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker"
 import { useShortcutText } from "./SystemSettings";
 import { Tip } from "./ui/Tip";
 
+import { MultiOrganization } from "./MultiOrganization";
+
 type Icon = ComponentType<{ className?: string }>;
 type ComposeMode = "reply" | "replyAll" | "forward";
 
@@ -130,7 +132,7 @@ export function ThreadActions({
         setMoveOpen(open);
         if (!open) onLabelPicker(false);
       }}
-      labels={labels}
+      labels={labels.filter((label) => !label.id.startsWith("category:"))}
       current={state.labels}
       folders
       onPick={(label) => {
@@ -176,7 +178,14 @@ export function ThreadActions({
           </Toolbar.Button>
         }
       />
-    ) : null;
+    ) : (
+      <MultiOrganization
+        provider={state.provider}
+        labels={labels}
+        current={state.labels}
+        onOp={onOp}
+      />
+    );
   const controls: Record<ToolbarAction, ReactNode> = {
     archive: (
       <Action
@@ -452,27 +461,37 @@ export function ThreadMenuItems({
       )}
       {(labels.length > 0 || onCreate) && (
         <ContextSubmenu icon={FolderInput} label={t`Move To`}>
-          {labels.map((l) => (
-            <MenuItem
-              key={l.id}
-              onClick={() =>
-                onOp({
-                  kind: "move",
-                  labelId: l.id,
-                  removeLabelId: moveSourceLabel(mailbox, currentLabel),
-                })
-              }
-            >
-              {l.name}
-            </MenuItem>
-          ))}
+          {labels
+            .filter((label) => !label.id.startsWith("category:"))
+            .map((l) => (
+              <MenuItem
+                key={l.id}
+                onClick={() =>
+                  onOp({
+                    kind: "move",
+                    labelId: l.id,
+                    removeLabelId: moveSourceLabel(mailbox, currentLabel),
+                  })
+                }
+              >
+                {l.name}
+              </MenuItem>
+            ))}
           {onCreate && <MenuItem onClick={() => onCreate(true)}>{t`New label or folder`}</MenuItem>}
         </ContextSubmenu>
       )}
       {onCreate && state.provider === "gmail" && (
         <MenuItem onClick={() => onCreate(false)}>{t`New label or folder`}</MenuItem>
       )}
-      {labels.length > 0 && (
+      {state.provider !== "gmail" && (
+        <MultiOrganization
+          provider={state.provider}
+          labels={labels}
+          current={state.labels}
+          onOp={onOp}
+        />
+      )}
+      {labels.length > 0 && state.provider === "gmail" && (
         <ContextSubmenu icon={Tag} label={folders ? t`Move to folder` : t`Labels`}>
           {labels.map((l) => (
             <MenuCheckboxItem

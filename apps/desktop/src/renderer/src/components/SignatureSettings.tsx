@@ -5,6 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
   signatureDefault,
+  orderedSignatures,
   richComposeBody,
   textComposeHtml,
   type ComposeBody,
@@ -19,6 +20,7 @@ import {
   deleteNamedSignatureAtom,
   saveNamedSignatureAtom,
   setSignatureDefaultAtom,
+  setPrefsAtom,
 } from "../state/mutations";
 import {
   namedSignaturesAtom,
@@ -27,6 +29,7 @@ import {
   prefsAtom,
 } from "../state/queries";
 import { ComposeEditor } from "./ComposeEditor";
+import { Checkbox } from "./ui/Checkbox";
 import { Select } from "./ui/Select";
 
 type SignatureForm = { id?: string; address: string; name: string; body: ComposeBody };
@@ -35,6 +38,22 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
   const library = AsyncResult.getOrElse(useAtomValue(namedSignaturesAtom), () => []);
   const defaults = AsyncResult.getOrElse(useAtomValue(signatureDefaultsAtom), () => []);
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  const drag = useRef<string | null>(null);
+  const order = (ids: string[]) =>
+    setPrefs({ payload: { patch: { signatureOrder: ids } }, reactivityKeys: [Keys.prefs] });
+  const reorder = (from: string, to: string) => {
+    const ids = orderedSignatures(library, prefs.signatureOrder).map((signature) => signature.id);
+    const source = library.find((s) => s.id === from);
+    if (
+      source?.source !== "local" ||
+      !library.some((s) => s.id === to && s.address === source.address)
+    )
+      return;
+    const target = ids.indexOf(to);
+    order(ids.filter((id) => id !== from).toSpliced(target, 0, from));
+  };
   const remove = useAtomSet(deleteNamedSignatureAtom);
   const setDefault = useAtomSet(setSignatureDefaultAtom);
   const [form, setForm] = useState<SignatureForm | null>(null);
@@ -59,7 +78,9 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
         <Trans>Signatures</Trans>
       </h3>
       {addresses.map((address) => {
-        const signatures = library.filter((s) => s.address === address);
+        const signatures = orderedSignatures(library, prefs.signatureOrder).filter(
+          (signature) => signature.address === address,
+        );
         return (
           <div
             key={address}
@@ -94,8 +115,56 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
                 />
               </div>
             ))}
-            {signatures.map((signature) => (
-              <div key={signature.id} className="flex items-center gap-3">
+            {signatures.map((signature, index) => (
+              <div
+                key={signature.id}
+                className="flex items-center gap-3"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (drag.current) reorder(drag.current, signature.id);
+                  drag.current = null;
+                }}
+              >
+                {signature.source === "local" && (
+                  <>
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={() => {
+                        drag.current = signature.id;
+                      }}
+                      onDragEnd={() => {
+                        drag.current = null;
+                      }}
+                      aria-label={t`Drag ${signature.name} to reorder`}
+                    >
+                      ↕
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      aria-label={t`Move ${signature.name} up`}
+                      onClick={() => {
+                        const target = signatures[index - 1];
+                        if (target) reorder(signature.id, target.id);
+                      }}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === signatures.length - 1}
+                      aria-label={t`Move ${signature.name} down`}
+                      onClick={() => {
+                        const target = signatures[index + 1];
+                        if (target) reorder(signature.id, target.id);
+                      }}
+                    >
+                      ↓
+                    </button>
+                  </>
+                )}
                 <span className="min-w-0 flex-1 truncate">
                   {signature.source === "gmail" ? t`Gmail default` : signature.name}
                 </span>
@@ -122,6 +191,32 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
           </div>
         );
       })}
+      <label className="flex items-center justify-between gap-3">
+        {t`Signature position in replies`}
+        <Select
+          value={prefs.signaturePosition}
+          aria-label={t`Signature position in replies`}
+          options={[
+            { value: "above", label: t`Above quoted text` },
+            { value: "below", label: t`Below quoted text` },
+          ]}
+          onValueChange={(value) => {
+            setPrefs({
+              payload: { patch: { signaturePosition: value } },
+              reactivityKeys: [Keys.prefs],
+            });
+          }}
+        />
+      </label>
+      <label className="flex items-center gap-2">
+        <Checkbox
+          checked={prefs.signatureSeparator}
+          onCheckedChange={(signatureSeparator) =>
+            setPrefs({ payload: { patch: { signatureSeparator } }, reactivityKeys: [Keys.prefs] })
+          }
+        />
+        {t`Include signature separator`}
+      </label>
       <p className="text-neutral-500">{t`Local signatures stay on this Mac. Gmail default signatures are read from Gmail.`}</p>
       {form && (
         <SignatureEditor
@@ -156,7 +251,7 @@ function SignatureEditor({ initial, onClose }: { initial: SignatureForm; onClose
       <div className="flex h-56 flex-col overflow-hidden rounded border">
         <ComposeEditor
           shortcutSet={prefs.shortcutSet}
-          prefs={prefs}
+          prefs={{ ...prefs, composeFormatBar: true }}
           from={form.address}
           onImageSize={constVoid}
           onMention={constVoid}

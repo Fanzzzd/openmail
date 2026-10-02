@@ -17,7 +17,11 @@ module.exports = {
   extraResources: [
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },
-    { from: "out/native", to: "native", filter: ["vision", "notification-permissions.node"] },
+    {
+      from: "out/native",
+      to: "native",
+      filter: ["vision", "attachment-apps", "notification-permissions.node"],
+    },
   ],
   directories: { buildResources: "build", output: "release" },
   files: [

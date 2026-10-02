@@ -1,3 +1,4 @@
+import { categoryKey, mergeCategoryNames } from "./categories.js";
 import { composeTransportHtml } from "./compose-body.js";
 import {
   FOLDER_BATCH_LIMIT,
@@ -97,7 +98,7 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,internetMessageId,bccRecipients";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -137,6 +138,7 @@ const GraphMessage = Schema.Struct({
   isDraft: Schema.optionalKey(Schema.Boolean),
   hasAttachments: Schema.optionalKey(Schema.Boolean),
   parentFolderId: Schema.optionalKey(Schema.String),
+  categories: Schema.optionalKey(Schema.Array(Schema.String)),
   importance: Schema.optionalKey(Schema.String),
   flag: Schema.optionalKey(Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) })),
 });
@@ -770,6 +772,10 @@ export const makeOutlook: Effect.Effect<
 
   const push = Effect.fn("Outlook.push")(
     function* (account: Account, providerId: string, op: MailOp) {
+      if (op.kind === "copy")
+        yield* new PermanentError({
+          message: "Folder copies are available for IMAP accounts.",
+        });
       const path = `/me/messages/${encodeURIComponent(providerId)}`;
       if (op.kind === "read") {
         yield* write(account.id, "PATCH", path, { isRead: op.value });
@@ -782,6 +788,52 @@ export const makeOutlook: Effect.Effect<
       if (op.kind === "star") {
         yield* write(account.id, "PATCH", path, {
           flag: { flagStatus: op.value ? "flagged" : "notFlagged" },
+        });
+        return;
+      }
+      if (op.kind === "categories") {
+        const current = yield* get(
+          account.id,
+          Schema.Struct({ categories: Schema.optionalKey(Schema.Array(Schema.String)) }),
+          `${path}?$select=categories`,
+        );
+        const Page = Schema.Struct({
+          value: Schema.Array(Schema.Struct({ displayName: Schema.String })),
+          "@odata.nextLink": Schema.optionalKey(Schema.String),
+        });
+        const registered = new Map<string, string>();
+        let next: string | undefined = "/me/outlook/masterCategories?$select=displayName";
+        const seen = new Set<string>();
+        while (next) {
+          if (seen.has(next) || seen.size >= 100)
+            yield* new PermanentError({
+              message: "Category pagination repeated or exceeded its limit.",
+            });
+          seen.add(next);
+          if (
+            next.startsWith("https://") &&
+            !next.startsWith(`${GRAPH}/me/outlook/masterCategories?`)
+          )
+            yield* new PermanentError({ message: "Invalid category pagination URL." });
+          const page: typeof Page.Type = yield* get(account.id, Page, next);
+          for (const category of page.value)
+            registered.set(categoryKey(category.displayName), category.displayName);
+          next = page["@odata.nextLink"];
+        }
+        const additions: string[] = [];
+        for (const name of mergeCategoryNames([], op.add, [])) {
+          const key = categoryKey(name);
+          if (!registered.has(key)) {
+            const created = yield* write(account.id, "POST", "/me/outlook/masterCategories", {
+              displayName: name,
+              color: "none",
+            }).pipe(Effect.flatMap(decode(Schema.Struct({ displayName: Schema.String }))));
+            registered.set(key, created.displayName);
+          }
+          additions.push(registered.get(key) ?? name);
+        }
+        yield* write(account.id, "PATCH", path, {
+          categories: mergeCategoryNames(current.categories ?? [], additions, op.remove),
         });
         return;
       }
@@ -1596,7 +1648,7 @@ export function parseGraphMessage(
   const isUnread = raw.isRead === false;
   const isStarred = raw.flag?.flagStatus === "flagged";
 
-  const labels = [folderLabel];
+  const labels = [folderLabel, ...(raw.categories ?? []).map((name) => `category:${name}`)];
   if (raw.importance === "high") labels.push("IMPORTANT");
   if (isUnread) labels.push("UNREAD");
   if (isStarred) labels.push("STARRED");

@@ -690,6 +690,10 @@ export const MIGRATIONS: readonly string[] = [
      INSERT INTO derived_words(rowid,text) VALUES(new.id,new.text);
      INSERT INTO search_word_rows(kind,row_id) SELECT 'derived',new.id WHERE NOT EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=new.id);
    END;`,
+  // Migration 25: organizational undo only. Never persist bodies or credentials.
+  `CREATE TABLE undo_batches (
+    id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at INTEGER NOT NULL
+  );`,
 ];
 
 /**

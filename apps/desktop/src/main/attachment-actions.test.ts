@@ -14,8 +14,14 @@ const native = vi.hoisted(() => ({
   drag: vi.fn(),
   share: vi.fn(),
   popup: vi.fn(),
+  choose:
+    vi.fn<
+      (...args: unknown[]) => ReturnType<typeof import("./attachment-apps").chooseAttachmentApp>
+    >(),
   copy: vi.fn(),
   open: vi.fn(),
+  apps: vi.fn(),
+  openWith: vi.fn(),
   parentDestroyed: false,
   failFile: "",
 }));
@@ -31,9 +37,14 @@ vi.mock("node:fs/promises", async (original) => {
   };
 });
 vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));
+vi.mock("./attachment-apps", () => ({
+  registeredAttachmentApps: native.apps,
+  openAttachmentWith: native.openWith,
+  chooseAttachmentApp: native.choose,
+}));
 vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/tmp"), once: vi.fn() },
-  dialog: { showOpenDialog: vi.fn() },
+  dialog: { showOpenDialog: vi.fn(), showMessageBox: vi.fn() },
   BrowserWindow: class {
     once = vi.fn();
     previewFile = native.preview;
@@ -74,6 +85,11 @@ beforeEach(() => {
   native.parentDestroyed = false;
   native.failFile = "";
   native.open.mockResolvedValue("");
+  native.apps.mockReturnValue(
+    Effect.succeed(["/Applications/First.app", "/Applications/Second.app"]),
+  );
+  native.openWith.mockReturnValue(Effect.void);
+  native.choose.mockReturnValue(Effect.succeed("/Applications/Second.app"));
   native.copy.mockResolvedValue(undefined);
 });
 const original: IncomingMessage = {
@@ -413,7 +429,7 @@ it("launchers cannot be shared, copied or prepared for drag; Save remains availa
   await withFiles(
     (m, id, parent) =>
       Effect.gen(function* () {
-        for (const action of ["open", "preview", "share", "copy"] as const)
+        for (const action of ["open", "openWith", "preview", "share", "copy"] as const)
           expect(
             (yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action }).pipe(
               Effect.result,
@@ -431,3 +447,66 @@ it("launchers cannot be shared, copied or prepared for drag; Save remains availa
     "launch.webloc",
   );
 });
+
+it("Open With lists registered applications, respects cancellation, and blocks launchers before listing", async () => {
+  if (process.platform !== "darwin") return;
+  await withFiles((m, id, parent) =>
+    Effect.gen(function* () {
+      native.choose.mockReturnValue(Effect.succeed("/Applications/Second.app"));
+      const result = yield* attachmentAction(m, parent, {
+        messageId: id,
+        paths: [[0]],
+        action: "openWith",
+      });
+      expect(result.count).toBe(1);
+      expect(native.apps).toHaveBeenCalledTimes(1);
+      expect(native.openWith.mock.calls[0]?.[0]).toBe("/Applications/Second.app");
+      expect(native.choose.mock.calls[0]?.[0]).toEqual([
+        "/Applications/First.app",
+        "/Applications/Second.app",
+      ]);
+      native.choose.mockReturnValue(Effect.succeed(undefined));
+      expect(
+        (yield* attachmentAction(m, parent, { messageId: id, paths: [[1]], action: "openWith" }))
+          .count,
+      ).toBe(0);
+      expect(native.openWith).toHaveBeenCalledTimes(1);
+      yield* Effect.flip(
+        attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "openWith" }),
+      );
+      expect(native.apps).toHaveBeenCalledTimes(2);
+    }),
+  );
+});
+
+for (const failure of ["list", "choose", "launch"] as const)
+  it(`Open With removes temporary batches when ${failure} fails`, async () => {
+    if (process.platform !== "darwin") return;
+    await withFiles((m, id, parent) =>
+      Effect.gen(function* () {
+        const error = new Error("fixture failure");
+        const { DeviceError } = yield* Effect.promise(
+          () => import("../../../../packages/core/src/errors.js"),
+        );
+        const fail = Effect.fail(new DeviceError({ message: error.message }));
+        if (failure === "list") native.apps.mockReturnValue(fail);
+        else if (failure === "choose") native.choose.mockReturnValue(fail);
+        else native.openWith.mockReturnValue(fail);
+        const warm = yield* Effect.promise(() => attachmentTemp(app).writeBatch([]));
+        yield* Effect.promise(() => attachmentTemp(app).remove(warm));
+        const before = yield* Effect.promise(() =>
+          readdir(folder, { recursive: true }).then((entries) => entries.toSorted()),
+        );
+        {
+          const result = yield* Effect.result(
+            attachmentAction(m, parent, { messageId: id, paths: [[0]], action: "openWith" }),
+          );
+          expect(result._tag).toBe("Failure");
+        }
+        const after = yield* Effect.promise(() =>
+          readdir(folder, { recursive: true }).then((entries) => entries.toSorted()),
+        );
+        expect(after).toEqual(before);
+      }),
+    );
+  });

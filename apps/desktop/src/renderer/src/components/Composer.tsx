@@ -11,6 +11,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   DEFAULT_PREFS,
   applyComposeSignature,
+  orderedSignatures,
   splitAddresses,
   fillTemplate,
   customTemplateVariables,
@@ -193,7 +194,9 @@ export function Composer({
       ? signatureAt(draft.accountId, draft.from?.address)
       : library.find((s) => s.id === draft.signatureId);
   const currentAddress = (draft.from?.address ?? account?.email ?? "").toLowerCase();
-  const localSignatures = library.filter((s) => s.address === currentAddress);
+  const localSignatures = orderedSignatures(library, prefs.signatureOrder).filter(
+    (s) => s.address === currentAddress,
+  );
   const syncStatus = remoteStatus ?? (saveState._tag === "Success" ? saveState.value : null);
   const syncNotice = draftSyncNotice(syncStatus ?? initial);
   const [recoveryError, setRecoveryError] = useState("");
@@ -243,7 +246,14 @@ export function Composer({
     ]);
   const availableSenders =
     draft.mode === "new" ? senders : senders.filter((s) => s.accountId === draft.accountId);
-  const empty = isEmpty(draft, signatureFor(draft.accountId, draft.mode, draft.from?.address));
+  const empty = isEmpty(
+    draft,
+    currentSignature?.text ??
+      (draft.signatureId === undefined
+        ? signatureFor(draft.accountId, draft.mode, draft.from?.address)
+        : undefined),
+    prefs,
+  );
   const replying = draft.mode === "reply" || draft.mode === "replyAll";
   const set = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -340,7 +350,13 @@ export function Composer({
       showAttachmentProblem(problem);
       return;
     }
-    const result = submitDraft(draft, archive, confirmed, onSend);
+    const result = submitDraft(
+      draft,
+      archive,
+      confirmed,
+      onSend,
+      applyComposeSignature(draft.body, currentSignature, undefined, prefs),
+    );
     switch (result.kind) {
       case "invalid": {
         const list = result.addresses.join(
@@ -538,6 +554,7 @@ export function Composer({
         draft.body,
         currentSignature,
         signatureAt(sender.accountId, sender.address),
+        prefs,
       ),
     });
   };
@@ -548,7 +565,7 @@ export function Composer({
         : localSignatures.find((s) => s.id === id);
     set({
       signatureId: id === "default" ? undefined : id === "none" ? null : id,
-      body: applyComposeSignature(draft.body, currentSignature, signature),
+      body: applyComposeSignature(draft.body, currentSignature, signature, prefs),
     });
   };
 

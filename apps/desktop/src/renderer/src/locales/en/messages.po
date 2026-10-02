@@ -153,6 +153,10 @@ msgstr "A label or folder needs a valid name"
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Above quoted text"
+msgstr "Above quoted text"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Absolute folder path"
 msgstr "Absolute folder path"
@@ -316,6 +320,10 @@ msgstr "Added star"
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Added to calendar"
 msgstr "Added to calendar"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Additional category names, separated by commas"
+msgstr "Additional category names, separated by commas"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Additional labels"
@@ -484,6 +492,7 @@ msgid "Apple Mail"
 msgstr "Apple Mail"
 
 #: src/renderer/src/components/DraftOrganization.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
 msgid "Apply"
 msgstr "Apply"
 
@@ -635,6 +644,10 @@ msgstr "Bcc"
 msgid "Before date"
 msgstr "Before date"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Below quoted text"
+msgstr "Below quoted text"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Bigger text"
 msgstr "Bigger text"
@@ -755,6 +768,15 @@ msgstr "Cancel"
 msgid "Cannot build calendar response"
 msgstr "Cannot build calendar response"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Categories updated"
+msgstr "Categories updated"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Categories…"
+msgstr "Categories…"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Category"
 msgstr "Category"
@@ -843,6 +865,10 @@ msgstr "Choose Edit body before inserting a template."
 #: src/renderer/src/components/Composer.tsx
 msgid "Choose Edit body before inserting an image."
 msgstr "Choose Edit body before inserting an image."
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Choose multiple categories"
+msgstr "Choose multiple categories"
 
 #: src/renderer/src/errors.ts
 msgid "Choose one destination for the filter"
@@ -1000,7 +1026,13 @@ msgstr "Conversations"
 msgid "Copied"
 msgstr "Copied"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Copied to folders"
+msgstr "Copied to folders"
+
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "Copy"
@@ -1025,6 +1057,10 @@ msgstr "Copy selected"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Copy style"
 msgstr "Copy style"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Copy to folders…"
+msgstr "Copy to folders…"
 
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Copy to local signature"
@@ -1196,6 +1232,10 @@ msgstr "Create profiles"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Create profiles?"
 msgstr "Create profiles?"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
+msgstr "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
@@ -1419,14 +1459,15 @@ msgstr "Draft discarded"
 msgid "Draft keywords"
 msgstr "Draft keywords"
 
-#: src/renderer/src/components/DraftOrganization.tsx
-msgid "Draft labels"
-msgstr "Draft labels"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "Drafts"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Drag {0} to reorder"
+msgstr "Drag {0} to reorder"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
@@ -1793,6 +1834,10 @@ msgstr "Gmail copy"
 msgid "Gmail default"
 msgstr "Gmail default"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
+msgstr "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Go to folder"
@@ -1925,6 +1970,10 @@ msgstr "Include matches"
 #: src/renderer/src/components/Composer.tsx
 msgid "Include original attachments"
 msgstr "Include original attachments"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Include signature separator"
+msgstr "Include signature separator"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2177,6 +2226,10 @@ msgstr "Loading…"
 #: src/renderer/src/components/Settings.tsx
 msgid "Local cache"
 msgstr "Local cache"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Local draft labels"
+msgstr "Local draft labels"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
@@ -2431,6 +2484,11 @@ msgstr "More matches exist. Narrow your search."
 msgid "More messages not loaded"
 msgstr "More messages not loaded"
 
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} down"
+msgstr "Move {0} down"
+
 #. placeholder {0}: a.filename
 #: src/renderer/src/components/Composer.tsx
 msgid "Move {0} earlier"
@@ -2440,6 +2498,11 @@ msgstr "Move {0} earlier"
 #: src/renderer/src/components/Composer.tsx
 msgid "Move {0} later"
 msgstr "Move {0} later"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} up"
+msgstr "Move {0} up"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Move {label} down"
@@ -2688,6 +2751,10 @@ msgstr "No messages match the filters"
 msgid "No more messages"
 msgstr "No more messages"
 
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "No operations to undo"
+msgstr "No operations to undo"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "No overlapping events in your primary calendar."
 msgstr "No overlapping events in your primary calendar."
@@ -2873,6 +2940,10 @@ msgstr "Open space"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Open this invitation in your calendar to add it before responding"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open With…"
+msgstr "Open With…"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail is the default email app"
@@ -2900,6 +2971,10 @@ msgstr "OpenMail stopped unexpectedly"
 #: src/renderer/src/recovery-labels.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
+
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
+msgstr "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Optional"
@@ -2957,6 +3032,10 @@ msgstr "Outdent list"
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook automatic replies do not support a custom subject"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Outlook categories"
+msgstr "Outlook categories"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Outlook chooses the reply subject."
@@ -3838,6 +3917,10 @@ msgstr "Signature"
 msgid "Signature name"
 msgstr "Signature name"
 
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature position in replies"
+msgstr "Signature position in replies"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Signatures"
@@ -3955,6 +4038,10 @@ msgstr "Star"
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Star draft"
 msgstr "Star draft"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft on this Mac"
+msgstr "Star draft on this Mac"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Star message"
@@ -4340,9 +4427,18 @@ msgstr "Undo"
 msgid "Undo emoji replacement"
 msgstr "Undo emoji replacement"
 
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo history"
+msgstr "Undo history"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Undo mode change"
 msgstr "Undo mode change"
+
+#. placeholder {0}: new Date(entry.createdAt).toLocaleString(i18n.locale)
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo operation from {0}"
+msgstr "Undo operation from {0}"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/state/desktop.ts

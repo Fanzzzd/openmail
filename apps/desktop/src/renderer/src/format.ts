@@ -86,3 +86,27 @@ export function firstGrapheme(s: string): string {
   const [first] = new Intl.Segmenter().segment(s.trim());
   return first?.segment ?? "";
 }
+
+/** Google Material avatar tones. Gmail's private contact-to-color mapping is not public.
+ * NFC + trimmed lowercase display name; UTF-16 polynomial hash (31), unsigned 32 bit.
+ * Stable across locales and restarts; email is used only when the name is absent. */
+export const GMAIL_AVATAR_TONES = [
+  "#c62828",
+  "#ad1457",
+  "#7b1fa2",
+  "#512da8",
+  "#303f9f",
+  "#3367d6",
+  "#1565c0",
+  "#00695c",
+  "#2e7d32",
+  "#a65a00",
+  "#bf360c",
+  "#6d4c41",
+];
+export function letterAvatarColor(name: string): string {
+  const key = name.normalize("NFC").trim().toLowerCase();
+  let hash = 0;
+  for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+  return GMAIL_AVATAR_TONES[hash % GMAIL_AVATAR_TONES.length] ?? "#3367d6";
+}

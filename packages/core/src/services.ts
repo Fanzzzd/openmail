@@ -316,6 +316,15 @@ export class Store extends Context.Service<
     updateProfile(id: string, input: ProfileInput): Effect.Effect<void>;
     deleteProfile(id: string): Effect.Effect<void>;
 
+    undoHistory: ReturnType<typeof import("./undo-journal.js").makeUndoStore>["undoHistory"];
+    undoJournal: ReturnType<typeof import("./undo-journal.js").makeUndoStore>["undoJournal"];
+    saveUndoJournal: ReturnType<
+      typeof import("./undo-journal.js").makeUndoStore
+    >["saveUndoJournal"];
+    deleteUndoJournal: ReturnType<
+      typeof import("./undo-journal.js").makeUndoStore
+    >["deleteUndoJournal"];
+
     // Outgoing change queue
     enqueueOp(accountId: string, providerId: string, op: QueuedOp): Effect.Effect<void>;
     readonly listPendingOps: Effect.Effect<PendingOp[]>;

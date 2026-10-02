@@ -158,6 +158,13 @@ export function makeOrganizationMailbox(
     accountId: string,
     change: LabelChange,
   ) {
+    if (
+      ("id" in change && change.id.startsWith("category:")) ||
+      ("parentId" in change && change.parentId?.startsWith("category:"))
+    )
+      yield* new InvalidInput({
+        message: "Categories cannot be renamed, deleted or moved as folders.",
+      });
     if (change.kind === "create" || change.kind === "rename")
       change = { ...change, name: change.name.trim() };
     const { account, adapter } = yield* owner(accountId);

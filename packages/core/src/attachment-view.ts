@@ -27,6 +27,7 @@ export type EmbeddedMessage = typeof EmbeddedMessage.Type;
 export const AttachmentAction = Schema.Literals([
   "save",
   "open",
+  "openWith",
   "preview",
   "share",
   "copy",

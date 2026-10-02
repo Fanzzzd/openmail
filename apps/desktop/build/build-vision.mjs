@@ -43,6 +43,22 @@ if (process.platform === "darwin") {
       "-o",
       `out/native/vision-${arch}`,
     ]);
+  for (const arch of ["arm64", "x86_64"])
+    run("swiftc", [
+      "-O",
+      "-target",
+      `${arch}-apple-macos13.0`,
+      "native/AttachmentApps.swift",
+      "-o",
+      `out/native/attachment-apps-${arch}`,
+    ]);
+  run("lipo", [
+    "-create",
+    "out/native/attachment-apps-arm64",
+    "out/native/attachment-apps-x86_64",
+    "-output",
+    "out/native/attachment-apps",
+  ]);
   run("lipo", [
     "-create",
     "out/native/vision-arm64",

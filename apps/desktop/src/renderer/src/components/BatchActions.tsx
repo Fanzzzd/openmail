@@ -1,3 +1,4 @@
+import { MultiOrganization } from "./MultiOrganization";
 import { moveSourceLabel } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
@@ -61,23 +62,25 @@ export function BatchMenuItems({
                 {account.email} · {account.provider === "gmail" ? t`Labels` : t`Move to folder`}
               </div>
               <ContextSubmenu icon={Tag} label={t`Move To`}>
-                {available.map((label) => (
-                  <MenuItem
-                    key={`move:${label.id}`}
-                    onClick={() =>
-                      onOp(
-                        {
-                          kind: "move",
-                          labelId: label.id,
-                          removeLabelId: moveSourceLabel(mailbox, currentLabel),
-                        },
-                        account.id,
-                      )
-                    }
-                  >
-                    {label.name}
-                  </MenuItem>
-                ))}
+                {available
+                  .filter((label) => !label.id.startsWith("category:"))
+                  .map((label) => (
+                    <MenuItem
+                      key={`move:${label.id}`}
+                      onClick={() =>
+                        onOp(
+                          {
+                            kind: "move",
+                            labelId: label.id,
+                            removeLabelId: moveSourceLabel(mailbox, currentLabel),
+                          },
+                          account.id,
+                        )
+                      }
+                    >
+                      {label.name}
+                    </MenuItem>
+                  ))}
                 {onCreate && (
                   <MenuItem
                     onClick={() => onCreate(account.id, true)}
@@ -93,24 +96,38 @@ export function BatchMenuItems({
                     }
                   >{t`Remove Current Label`}</MenuItem>
                 )}
-              {available.map((label) => (
-                <MenuCheckboxItem
-                  key={label.id}
-                  checked={selected.every((row) => row.labels.includes(label.id))}
-                  onCheckedChange={(value) =>
-                    onOp(
-                      {
-                        kind: "label",
-                        labelId: label.id,
-                        value: account.provider === "gmail" ? value : true,
-                      },
-                      account.id,
-                    )
+              {account.provider !== "gmail" && (
+                <MultiOrganization
+                  provider={account.provider}
+                  labels={available}
+                  current={
+                    selected[0]?.labels.filter((label) =>
+                      selected.every((row) => row.labels.includes(label)),
+                    ) ?? []
                   }
-                >
-                  {label.name}
-                </MenuCheckboxItem>
-              ))}
+                  onOp={(op) => onOp(op, account.id)}
+                />
+              )}
+              {available
+                .filter(() => account.provider === "gmail")
+                .map((label) => (
+                  <MenuCheckboxItem
+                    key={label.id}
+                    checked={selected.every((row) => row.labels.includes(label.id))}
+                    onCheckedChange={(value) =>
+                      onOp(
+                        {
+                          kind: "label",
+                          labelId: label.id,
+                          value: account.provider === "gmail" ? value : true,
+                        },
+                        account.id,
+                      )
+                    }
+                  >
+                    {label.name}
+                  </MenuCheckboxItem>
+                ))}
               {onCreate && (
                 <MenuItem
                   onClick={() => onCreate(account.id, account.provider !== "gmail")}

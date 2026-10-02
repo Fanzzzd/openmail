@@ -122,6 +122,7 @@ import {
 } from "./state/selection";
 import { Alert, AlertCancel, alertDanger, alertButton, alertPrimary } from "./components/ui/Dialog";
 import { BatchActions, BatchMenuItems } from "./components/BatchActions";
+import { UndoHistory } from "./components/UndoHistory";
 import { useBatchUndo } from "./state/undo";
 import { leavesList } from "./state/batch";
 import { listQueryAtom, threadListAtom } from "./state/threads";
@@ -161,6 +162,8 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   trash: () => msg`Deleted`,
   spam: () => msg`Reported as spam`,
   move: () => msg`Moved`,
+  categories: () => msg`Categories updated`,
+  copy: () => msg`Copied to folders`,
   label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };
 
@@ -260,7 +263,12 @@ export function App({ composeId }: { composeId?: string }) {
   const searchRef = useRef<HTMLInputElement>(null);
   const hideToast = useCallback(() => setToast(null), []);
   const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
-  const { undoRef, showUndo } = useBatchUndo({
+  const {
+    undoRef,
+    showUndo,
+    history: undoHistory,
+    undoRestored,
+  } = useBatchUndo({
     notify: say,
     clearToast: hideToast,
     label: t`Undo`,
@@ -386,7 +394,7 @@ export function App({ composeId }: { composeId?: string }) {
     const signature = signatures.find(
       (s) => s.address === address && s.kind === (d.mode === "new" ? "new" : "reply"),
     );
-    return { ...d, body: applyComposeSignature(d.body, undefined, signature) };
+    return { ...d, body: applyComposeSignature(d.body, undefined, signature, prefs) };
   };
 
   const selectedAccount = accountList.find(
@@ -1691,16 +1699,19 @@ export function App({ composeId }: { composeId?: string }) {
                 inLabel={supportsInInboxFilter(view, accountList)}
                 onFilters={setFilters}
                 folderActions={
-                  <FolderActions
-                    folder={{
-                      mailbox: view.mailbox,
-                      ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
-                      ...(view.label ? { label: view.label.id } : {}),
-                    }}
-                    notify={(text, error) =>
-                      say({ text, ...(error ? { tone: "error" as const } : {}) })
-                    }
-                  />
+                  <>
+                    <UndoHistory entries={undoHistory} onUndo={undoRestored} />
+                    <FolderActions
+                      folder={{
+                        mailbox: view.mailbox,
+                        ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
+                        ...(view.label ? { label: view.label.id } : {}),
+                      }}
+                      notify={(text, error) =>
+                        say({ text, ...(error ? { tone: "error" as const } : {}) })
+                      }
+                    />
+                  </>
                 }
                 labels={labelMap}
                 selectedId={selection.focus}
