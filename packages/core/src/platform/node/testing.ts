@@ -1,13 +1,16 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { MailCodec } from "../mail-codec.js";
 import type { Model } from "../../model.js";
-import type { Secrets } from "../../services.js";
+import type { Secrets, Store } from "../../services.js";
 import { Effect, Layer } from "effect";
 
 import type { Provider } from "../../domain.js";
 import { type FakeServer, fakeServer, makeFakeProvider } from "./fake-provider.js";
 import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
 import type { Mailbox } from "../../mailbox.js";
-import { MemoryPlatform } from "./platform-memory.js";
+import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
 import { Providers } from "../../services.js";
 import { StoreLive } from "../../store.js";
 
@@ -23,7 +26,8 @@ export function TestMailbox(
   options: MailboxOptions = { backgroundFlush: false },
   fakeOptions: Parameters<typeof makeFakeProvider>[1] = {},
   modelLayer: Layer.Layer<Model, never, Secrets> | Layer.Layer<never> = Layer.empty,
-): Layer.Layer<Mailbox> {
+  platformOptions: MemoryPlatformOptions = {},
+): Layer.Layer<Mailbox | Store> {
   const providers = Layer.effect(
     Providers,
     Effect.gen(function* () {
@@ -46,10 +50,31 @@ export function TestMailbox(
     }),
   );
   return MailboxLive(options).pipe(
-    Layer.provide(
-      Layer.mergeAll(StoreLive, providers, modelLayer).pipe(Layer.provideMerge(MemoryPlatform())),
+    Layer.provideMerge(
+      Layer.mergeAll(StoreLive, providers, modelLayer).pipe(
+        Layer.provideMerge(MemoryPlatform(platformOptions)),
+      ),
     ),
   );
 }
 
 export { type FakeServer, fakeServer } from "./fake-provider.js";
+
+/** A scoped, temporary node:sqlite database, removed after all services close. */
+export function TemporaryTestMailbox(
+  servers: Partial<Record<Provider, FakeServer>> = {},
+  options: MailboxOptions = { backgroundFlush: false },
+) {
+  return Layer.unwrap(
+    Effect.acquireRelease(
+      Effect.sync(() => mkdtempSync(join(tmpdir(), "openmail-flow-"))),
+      (directory) => Effect.sync(() => rmSync(directory, { recursive: true, force: true })),
+    ).pipe(
+      Effect.map((directory) =>
+        TestMailbox(servers, options, { strictFolders: true }, Layer.empty, {
+          database: join(directory, "mail.db"),
+        }),
+      ),
+    ),
+  );
+}

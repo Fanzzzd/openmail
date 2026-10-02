@@ -19,6 +19,10 @@
     "./node": {
       "types": "./dist/platform/node/index.d.ts",
       "default": "./dist/platform/node/index.js"
+    },
+    "./testing/node": {
+      "types": "./dist/platform/node/testing.d.ts",
+      "default": "./dist/platform/node/testing.js"
     }
   },
   "scripts": {

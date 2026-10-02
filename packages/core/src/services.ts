@@ -340,6 +340,11 @@ export class Store extends Context.Service<
     // Outgoing change queue
     enqueueOp(accountId: string, providerId: string, op: QueuedOp): Effect.Effect<void>;
     readonly listPendingOps: Effect.Effect<PendingOp[]>;
+    /** Only queued operations affecting this incoming batch, in queue order. */
+    pendingOpsForMessages(
+      accountId: string,
+      providerIds: readonly string[],
+    ): Effect.Effect<PendingOp[]>;
     /**
      * Marks the op as being pushed. False when another process (app, CLI, MCP)
      * holds a live claim on it, so no op is pushed twice at once.

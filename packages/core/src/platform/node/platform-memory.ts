@@ -4,7 +4,8 @@ import { MailCodec } from "../mail-codec.js";
  * An in-memory platform for tests: a fresh SQLite database per build (same
  * migrations as on disk), secrets in a Ref, config.json on an in-memory file
  * system, an OAuth that hands out canned tokens, and a browser that only
- * records what it was asked to open. Nothing touches the disk or process.env.
+ * records what it was asked to open. Only an explicit database path touches disk;
+ * configuration and secrets stay in memory, without reading process.env.
  */
 import {
   ConfigProvider,
@@ -109,6 +110,8 @@ export const MemoryFileSystem = (
 export const MEMORY_DATA_DIR = "/openmail";
 
 export interface MemoryPlatformOptions {
+  /** Isolated on-disk SQLite for integration tests; defaults to an ephemeral database. */
+  database?: string;
   secrets?: Record<string, string>;
   /** Written to config.json before the platform builds. */
   config?: ClientConfig;
@@ -197,7 +200,7 @@ export function MemoryPlatform(
 
   const browserWithUrls = browser.pipe(Layer.provideMerge(opened));
   return Layer.mergeAll(
-    databaseLayer(":memory:"),
+    databaseLayer(opts.database ?? ":memory:"),
     NodeRuntime,
     secrets,
     config,

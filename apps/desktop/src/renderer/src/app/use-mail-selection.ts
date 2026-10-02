@@ -113,7 +113,19 @@ export function useMailSelection({
     setRestoration(null);
     setSelection(trimSelection(restoration.selection, visibleIds));
   }
-  const [startupSelection, setStartupSelection] = useState(restoredSelection()?.messageId ?? null);
+  const [startupTarget, setStartupTarget] = useState<{ id: string; scope: string | null } | null>(
+    () => {
+      const id = restoredSelection()?.messageId;
+      return id ? { id, scope: null } : null;
+    },
+  );
+  const startupMatchesScope =
+    startupTarget?.scope == null || startupTarget.scope === JSON.stringify([view, query]);
+  if (!startupMatchesScope) {
+    setStartupTarget(null);
+    setSelection(EMPTY_SELECTION);
+  }
+  const startupSelection = startupMatchesScope ? (startupTarget?.id ?? null) : null;
   const [rowCache, setRowCache] = useState({
     list,
     selection,
@@ -151,10 +163,12 @@ export function useMailSelection({
   const settled = settleStartupSelection(
     startupSelection,
     selection,
-    accountsReady && listQuery !== null && !threads.loading,
+    accountsReady && listQuery !== null && !threads.loading && startupMatchesScope,
     visibleIds,
   );
-  if (settled.startupId !== startupSelection) setStartupSelection(settled.startupId);
+  if (settled.startupId !== startupSelection) {
+    setStartupTarget(null);
+  }
   if (settled.selection !== selection) setSelection(settled.selection);
   const batchRows = batchScope(selection, rowMap).rows;
   const selected = selectedId ? rowMap.get(selectedId) : undefined;
@@ -306,6 +320,7 @@ export function useMailSelection({
   );
 
   const changeView = (next: View) => {
+    setStartupTarget(null);
     setView(next);
     setSelectedId(null);
   };
@@ -407,7 +422,14 @@ export function useMailSelection({
             (account) => account.id === linkedMessages[0]?.accountId,
           );
           const space = owner?.profileId ?? ALL;
-          setView({ space, mailbox: "all", ...(owner ? { accountId: owner.id } : {}) });
+          const nextView: View = {
+            space,
+            mailbox: "all",
+            ...(owner ? { accountId: owner.id } : {}),
+          };
+          // Keep the requested message selected until the destination query has loaded.
+          setStartupTarget({ id, scope: JSON.stringify([nextView, ""]) });
+          setView(nextView);
           setQuery("");
           setFilters((chosen) => ({ ...chosen, enabled: false }));
           setSelectedId(id);

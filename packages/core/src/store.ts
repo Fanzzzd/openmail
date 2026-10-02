@@ -1206,7 +1206,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     /**
      * Applies an op to the local copy so the UI updates before the provider
-     * answers. The next sync overwrites it with the provider's state either way.
+     * answers. Pulls replay queued changes until the provider accepts them.
      */
     const applyLocalOp = Effect.fn("Store.applyLocalOp")(function* (id: string, op: MailOp) {
       const row = yield* first(LabelsAndProvider)(sql`SELECT m.labels_json, a.provider
@@ -1387,22 +1387,29 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         VALUES (${account}, ${providerId}, ${JSON.stringify(op)}, ${now})`);
     });
 
+    const toPendingOps = (rows: readonly (typeof PendingOpRow.Type)[]) =>
+      rows.map((r): PendingOp => ({
+        id: r.id,
+        accountId: r.account_id,
+        providerId: r.provider_id,
+        op: r.op_json,
+        attempts: r.attempts,
+        lastError: r.last_error,
+      }));
     const listPendingOps = all(PendingOpRow)(
       sql`SELECT id, account_id, provider_id, op_json, attempts, last_error
         FROM pending_ops ORDER BY id`,
-    ).pipe(
-      Effect.map((rows) =>
-        rows.map((r): PendingOp => ({
-          id: r.id,
-          accountId: r.account_id,
-          providerId: r.provider_id,
-          op: r.op_json,
-          attempts: r.attempts,
-          lastError: r.last_error,
-        })),
-      ),
-      Effect.withSpan("Store.listPendingOps"),
-    );
+    ).pipe(Effect.map(toPendingOps), Effect.withSpan("Store.listPendingOps"));
+    const pendingOpsForMessages: Store["Service"]["pendingOpsForMessages"] = (
+      ownerId,
+      providerIds,
+    ) =>
+      providerIds.length === 0
+        ? Effect.succeed([])
+        : all(PendingOpRow)(
+            sql`SELECT id, account_id, provider_id, op_json, attempts, last_error
+          FROM pending_ops WHERE account_id=${ownerId} AND provider_id IN ${sql.in(providerIds)} ORDER BY id`,
+          ).pipe(Effect.map(toPendingOps), Effect.withSpan("Store.pendingOpsForMessages"));
 
     const claimPendingOp = Effect.fn("Store.claimPendingOp")(function* (id: number) {
       const now = yield* Clock.currentTimeMillis;
@@ -1748,6 +1755,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       deleteProfile,
       enqueueOp,
       listPendingOps,
+      pendingOpsForMessages,
       claimPendingOp,
       releasePendingOp,
       removePendingOp,

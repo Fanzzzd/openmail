@@ -60,6 +60,7 @@ export interface FakeServer {
   aliases: SendAs[];
   deleted: (readonly string[])[];
   folderPages: (string | null)[];
+  pulls: (string | null)[];
   searched: import("../../domain.js").ThreadQuery[];
   searchResults?: IncomingMessage[];
   pushed: { providerId: string; op: MailOp }[];
@@ -80,7 +81,7 @@ export interface FakeServer {
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
   /** A test-controlled network stall; local batch commits must not wait for it. */
-  beforePush?: Effect.Effect<void>;
+  beforePush?: Effect.Effect<void, ProviderFailure>;
   settingsFailure?: SettingsScopeMissing;
 }
 
@@ -102,6 +103,7 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     filters: [],
     vacation: EMPTY_VACATION,
     aliases: [],
+    pulls: [],
     searched: [],
     deleted: [],
     folderPages: [],
@@ -484,25 +486,31 @@ export function makeFakeProvider(
       }),
     pull: (_account, cursor, scope) =>
       Stream.unwrap(
-        Effect.map(failOnce, () => {
-          const next = String(Number(Option.getOrElse(cursor, () => "0")) + 1);
-          // Messages gone since the last pull are reported deleted, as Gmail history does.
-          const gone = scope ? [] : [...pulled].filter((id) => !server.messages.has(id));
-          if (!scope) pulled = new Set(server.messages.keys());
-          const changes: Change[] = [
-            ...(!scope ? [{ _tag: "Labels", labels: server.labels } as const] : []),
-            ...[...server.messages.values()]
-              .filter((m) => !scope || m.labels.includes("INBOX"))
-              .map((message): Change => ({
-                _tag: "Upsert",
-                message,
-              })),
-            ...gone.map((providerId): Change => ({ _tag: "Delete", providerId })),
-            { _tag: "Progress", fetched: server.messages.size, total: server.messages.size },
-            { _tag: "Cursor", cursor: next },
-          ];
-          return Stream.fromIterable(changes);
-        }),
+        Effect.map(
+          Effect.andThen(
+            Effect.sync(() => server.pulls.push(Option.getOrNull(cursor))),
+            failOnce,
+          ),
+          () => {
+            const next = String(Number(Option.getOrElse(cursor, () => "0")) + 1);
+            // Messages gone since the last pull are reported deleted, as Gmail history does.
+            const gone = scope ? [] : [...pulled].filter((id) => !server.messages.has(id));
+            if (!scope) pulled = new Set(server.messages.keys());
+            const changes: Change[] = [
+              ...(!scope ? [{ _tag: "Labels", labels: server.labels } as const] : []),
+              ...[...server.messages.values()]
+                .filter((m) => !scope || m.labels.includes("INBOX"))
+                .map((message): Change => ({
+                  _tag: "Upsert",
+                  message,
+                })),
+              ...gone.map((providerId): Change => ({ _tag: "Delete", providerId })),
+              { _tag: "Progress", fetched: server.messages.size, total: server.messages.size },
+              { _tag: "Cursor", cursor: next },
+            ];
+            return Stream.fromIterable(changes);
+          },
+        ),
       ),
     push: pushMessage,
     ...(options.batches

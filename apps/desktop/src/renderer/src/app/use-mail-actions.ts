@@ -217,11 +217,29 @@ export function useMailActions({
     );
   };
 
-  const snoozed = (result: Parameters<typeof showUndo>[0]) => {
-    if (!panels.snoozeIds) return;
-    showUndo(result, panels.snoozeIds, messages.snoozed);
-    panels.setSnoozeIds(null);
-    navigation.setSelectedId(null);
+  const startSnooze = () => {
+    const ids = panels.snoozeIds ?? [];
+    const before = selection;
+    const actionScope = scopeKey;
+    const rows = list;
+    const next = selectionAfterRemoval(
+      before,
+      rows.map((row) => row.id),
+      new Set(ids),
+      prefs.nextSelection,
+    );
+    navigation.beginRemoval(before, next, actionScope);
+    return (result: Parameters<typeof showUndo>[0] | null) => {
+      if (!result) {
+        navigation.cancelRemoval(before);
+        return;
+      }
+      navigation.settleRemoval(before, actionScope, next);
+      showUndo(result, ids, messages.snoozed, () =>
+        restoreActionSelection(before, actionScope, rows),
+      );
+      panels.setSnoozeIds(null);
+    };
   };
 
   const confirmPermanentDelete = () => {
@@ -263,7 +281,7 @@ export function useMailActions({
 
   return {
     reauth,
-    snoozed,
+    startSnooze,
     confirmPermanentDelete,
     actionDone: (result: Parameters<typeof showUndo>[0], ids: readonly string[], op: MailOp) =>
       showUndo(result, ids, messages.opDone(op)),

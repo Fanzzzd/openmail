@@ -11,11 +11,11 @@ import { formButton, formInput } from "./ui/form-styles";
 export function SnoozeDialog({
   threads,
   onClose,
-  onSnoozed,
+  onStart,
 }: {
   threads: readonly string[];
   onClose: () => void;
-  onSnoozed: (result: BatchResult) => void;
+  onStart: () => (result: BatchResult | null) => void;
 }) {
   const { t, i18n } = useLingui();
   const [custom, setCustom] = useState("");
@@ -25,8 +25,9 @@ export function SnoozeDialog({
   const [result, run] = useAtom(snoozeAtom, { mode: "promiseExit" });
   const [times] = useState(() => snoozeTimes(Date.now()));
   const choose = async (reminderAt: number) => {
+    const finished = onStart();
     const exit = await run({ payload: { threads, due: reminderAt }, reactivityKeys: MAIL_KEYS });
-    if (exit._tag === "Success") onSnoozed(exit.value);
+    finished(exit._tag === "Success" ? exit.value : null);
   };
   return (
     <Dialog aria-label={t`Snooze`} onClose={onClose} className="w-80 space-y-3 p-5">

@@ -106,9 +106,11 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
   const dom = testDom();
   vi.stubGlobal("Element", dom.window.Element);
   vi.stubGlobal("requestAnimationFrame", vi.fn());
-  Object.defineProperty(dom.window, "matchMedia", {
-    value: () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
-  });
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
   const older = message("old", 1);
   const newer = message("new", 2);

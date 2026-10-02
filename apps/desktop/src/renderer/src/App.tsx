@@ -776,7 +776,7 @@ export function App({ composeId }: { composeId?: string }) {
         <SnoozeDialog
           threads={snoozeIds}
           onClose={() => setSnoozeIds(null)}
-          onSnoozed={mailActions.snoozed}
+          onStart={mailActions.startSnooze}
         />
       )}
       {filterSeed && filterAccount && (

@@ -6,11 +6,14 @@ vi.mock("electron", () => ({
   BrowserWindow: { getAllWindows: () => [] },
   Menu: {},
 }));
-import { app } from "electron";
 import type { DesktopLabels } from "../shared/desktop-labels";
-import { installSpellingMenu } from "./spellcheck";
 
-it("closed windows release their spelling listener and cleanup closure", () => {
+it("closed windows release their spelling listener and cleanup closure", async () => {
+  // Low-memory runs share module caches with the system test's spelling mock.
+  vi.doUnmock("./spellcheck");
+  vi.resetModules();
+  const { app } = await import("electron");
+  const { installSpellingMenu } = await import("./spellcheck");
   const stop = installSpellingMenu(vi.fn<() => DesktopLabels["spelling"]>(), vi.fn());
   const checked = vi.fn(() => false);
   for (let i = 0; i < 1000; i++) {

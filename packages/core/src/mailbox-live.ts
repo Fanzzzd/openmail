@@ -1,7 +1,7 @@
 import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
 import { Buffer } from "./platform/bytes.js";
 import { destination as outlookDestination } from "./outlook.js";
-import { invalidCategoryFolderOp } from "./mail-ops.js";
+import { applyOpToLabels, invalidCategoryFolderOp } from "./mail-ops.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, ModelUnavailable } from "./model.js";
 import { modelContext } from "./model-view.js";
@@ -69,6 +69,9 @@ import type {
   DraftInput,
   FlushResult,
   Message,
+  IncomingMessage,
+  MailOp,
+  Provider,
   Outcome,
   OutgoingMessage,
   SyncResult,
@@ -184,6 +187,25 @@ export interface MailboxOptions {
    */
   backgroundFlush?: boolean;
 }
+
+// Merge queued intent without running local-action reminder side effects.
+const withPendingOps = (
+  incoming: IncomingMessage,
+  ops: readonly MailOp[],
+  provider: Provider,
+): IncomingMessage => {
+  if (!ops.length) return incoming;
+  const labels = ops.reduce(
+    (current, op) => applyOpToLabels(current, op, provider),
+    [...incoming.labels],
+  );
+  return {
+    ...incoming,
+    labels,
+    isUnread: labels.includes("UNREAD"),
+    isStarred: labels.includes("STARRED"),
+  };
+};
 
 export const MailboxLive = (
   options: MailboxOptions = {},
@@ -1511,6 +1533,7 @@ export const MailboxLive = (
           const now = new Date(yield* Clock.currentTimeMillis);
           const writes: Effect.Effect<void>[] = [];
           const newIds: string[] = [];
+          const pendingById = new Map<string, MailOp[]>();
           for (const change of batch) {
             // Polling only discovers arrivals/flags; full sync reconciles moves and resets.
             if (scope && ["Delete", "DeleteLabel", "Reset", "Labels"].includes(change._tag))
@@ -1536,7 +1559,12 @@ export const MailboxLive = (
                           )
                         : change.message.providerId;
                     const first = yield* store.observeIncoming(account.id, identity);
-                    yield* store.upsertMessage(account.id, change.message);
+                    const incoming = withPendingOps(
+                      change.message,
+                      pendingById.get(change.message.providerId) ?? [],
+                      account.provider,
+                    );
+                    yield* store.upsertMessage(account.id, incoming);
                     if (
                       first &&
                       !known &&
@@ -1576,9 +1604,35 @@ export const MailboxLive = (
               case "Flags":
                 counts.changed++;
                 writes.push(
-                  store.setFlags(account.id, change.providerId, {
-                    isUnread: change.isUnread,
-                    isStarred: change.isStarred,
+                  Effect.gen(function* () {
+                    const cached = yield* store
+                      .getMessage(`${account.id}/${change.providerId}`)
+                      .pipe(Effect.option);
+                    if (Option.isNone(cached)) return;
+                    const message = cached.value;
+                    const labels = applyOpToLabels(
+                      applyOpToLabels(
+                        message.labels.filter((label) => label !== "SNOOZED"),
+                        { kind: "read", value: !change.isUnread },
+                        account.provider,
+                      ),
+                      { kind: "star", value: change.isStarred },
+                      account.provider,
+                    );
+                    yield* store.upsertMessage(
+                      account.id,
+                      withPendingOps(
+                        {
+                          ...message,
+                          providerId: change.providerId,
+                          labels,
+                          isUnread: change.isUnread,
+                          isStarred: change.isStarred,
+                        },
+                        pendingById.get(change.providerId) ?? [],
+                        account.provider,
+                      ),
+                    );
                   }),
                 );
                 break;
@@ -1623,7 +1677,28 @@ export const MailboxLive = (
           }
           // Changes apply in order, so a Cursor inside the batch is saved only
           // together with everything before it.
-          yield* store.transaction(Effect.all(writes, { discard: true }));
+          yield* store.transaction(
+            Effect.gen(function* () {
+              const ids = [
+                ...new Set(
+                  batch.flatMap((change) =>
+                    change._tag === "Upsert"
+                      ? [change.message.providerId]
+                      : change._tag === "Flags"
+                        ? [change.providerId]
+                        : [],
+                  ),
+                ),
+              ];
+              for (const pending of yield* store.pendingOpsForMessages(account.id, ids)) {
+                if (pending.op.kind === "saveDraft" || pending.op.kind === "deleteDraft") continue;
+                const ops = pendingById.get(pending.providerId) ?? [];
+                ops.push(pending.op);
+                pendingById.set(pending.providerId, ops);
+              }
+              yield* Effect.all(writes, { discard: true });
+            }),
+          );
           if (newIds.length) yield* emit({ _tag: "NewMail", accountId: account.id, ids: newIds });
         });
 

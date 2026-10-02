@@ -10,7 +10,7 @@
     "build": "node build/build-vision.mjs && electron-vite build",
     "check-types": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "package": "pnpm dist",
-    "test": "vitest run && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1 && node scripts/i18n-missing.mjs",
+    "test": "vitest run && vitest run --config vitest.e2e.config.ts && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1 && node scripts/i18n-missing.mjs",
     "i18n:extract": "lingui extract --clean",
     "dist": "pnpm --filter @openmail/core build && pnpm build && electron-builder --config electron-builder.config.cjs --mac --publish never",
     "dist:signed": "OPENMAIL_SIGNED_BUILD=1 pnpm dist",

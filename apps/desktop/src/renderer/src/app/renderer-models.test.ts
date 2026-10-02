@@ -546,8 +546,18 @@ it("label changes keep selection, bulk Trash requires captured confirmation, and
     model.navigation.select("0", "mouse");
     model.panels.setSnoozeIds(["0"]);
   });
-  act(() => model.mailActions.snoozed({ undoId: "snooze" }));
-  expect(showUndo).toHaveBeenCalledWith({ undoId: "snooze" }, ["0"], "Snoozed");
+  let finish: ReturnType<typeof model.mailActions.startSnooze>;
+  act(() => {
+    finish = model.mailActions.startSnooze();
+  });
+  act(() => finish({ undoId: "snooze" }));
+  expect(showUndo).toHaveBeenCalledWith(
+    { undoId: "snooze" },
+    ["0"],
+    "Snoozed",
+    expect.any(Function),
+  );
   expect(model.panels.snoozeIds).toBeNull();
-  expect(model.navigation.selectedId).toBeNull();
+  await flush();
+  expect(model.navigation.selectedId).toBe("1");
 });
