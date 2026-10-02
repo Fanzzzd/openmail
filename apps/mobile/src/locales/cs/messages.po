@@ -1,0 +1,139 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-03 07:27+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: cs\n"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "(No subject)"
+msgstr "(Bez předmětu)"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Accounts"
+msgstr "Účty"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Gmail account"
+msgstr "Přidat účet Gmail"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Outlook account"
+msgstr "Přidat účet Outlook"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Archive"
+msgstr "Archivovat"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Conversation"
+msgstr "Konverzace"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+#: app/mailboxes.tsx
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "Could not load mail. Try again."
+msgstr "Poštu se nepodařilo načíst. Zkuste to znovu."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not open the local mail database."
+msgstr "Místní databázi pošty se nepodařilo otevřít."
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Drafts"
+msgstr "Koncepty"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Inbox"
+msgstr "Doručená pošta"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Loading…"
+msgstr "Načítání…"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Mailboxes"
+msgstr "Schránky"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Messages"
+msgstr "Zprávy"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "No accounts yet"
+msgstr "Zatím žádné účty"
+
+#. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "No mailboxes yet. Pull to refresh."
+msgstr "Zatím žádné schránky. Obnovte tažením dolů."
+
+#. Empty plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "No message text"
+msgstr "Žádný text zprávy"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "No messages"
+msgstr "Žádné zprávy"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Register mobile OAuth clients in app config to add accounts."
+msgstr "Chcete-li přidat účty, zaregistrujte mobilní klienty OAuth v konfiguraci aplikace."
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Sent"
+msgstr "Odeslané"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show HTML"
+msgstr "Zobrazit HTML"
+
+#. Button label for the plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show message text"
+msgstr "Zobrazit text zprávy"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Sign in again"
+msgstr "Znovu se přihlaste"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Spam"
+msgstr "Nevyžádaná pošta"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Trash"
+msgstr "Koš"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Try again"
+msgstr "Zkusit znovu"

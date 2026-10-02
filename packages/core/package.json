@@ -47,6 +47,7 @@
     "nodemailer": "^10.0.11",
     "onnxruntime-node": "1.30.0",
     "pdfjs-dist": "6.3.289",
+    "postal-mime": "4.0.2",
     "semver": "^7.8.5",
     "sqlite-vec": "0.1.9"
   },

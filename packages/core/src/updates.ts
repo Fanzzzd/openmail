@@ -1,3 +1,4 @@
+import type { ProviderError } from "./errors.js";
 import type { UpdateState } from "./update-state.js";
 import { parse } from "semver";
 import { Effect, Option, Schema } from "effect";
@@ -152,9 +153,9 @@ export const UPDATE_TOKEN_KEY = "updates:github-release-token";
 export function startStoredUpdates(
   client: UpdateClient,
   options: UpdateOptions,
-  token: Effect.Effect<Option.Option<string>>,
+  token: Effect.Effect<Option.Option<string>, ProviderError>,
   verify?: (bundle: string) => Promise<boolean>,
-): Effect.Effect<() => void> {
+): Effect.Effect<() => void, ProviderError> {
   return Effect.gen(function* () {
     client.autoInstallOnAppQuit = false;
     client.autoDownload = false;
@@ -188,7 +189,7 @@ export type ManualUpdateResult =
 export function checkStoredUpdates(
   client: UpdateClient,
   options: UpdateOptions,
-  token: Effect.Effect<Option.Option<string>>,
+  token: Effect.Effect<Option.Option<string>, ProviderError>,
   verify?: (bundle: string) => Promise<boolean>,
 ): Effect.Effect<ManualUpdateResult> {
   const report = options.onState ?? discardState;

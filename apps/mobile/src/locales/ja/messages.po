@@ -1,0 +1,139 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-03 07:27+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ja\n"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "(No subject)"
+msgstr "（件名なし）"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Accounts"
+msgstr "アカウント"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Gmail account"
+msgstr "Gmail アカウントを追加"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Outlook account"
+msgstr "Outlook アカウントを追加"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Archive"
+msgstr "アーカイブ"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Conversation"
+msgstr "スレッド"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+#: app/mailboxes.tsx
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "Could not load mail. Try again."
+msgstr "メールを読み込めませんでした。もう一度お試しください。"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not open the local mail database."
+msgstr "ローカルのメールデータベースを開けませんでした。"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Drafts"
+msgstr "下書き"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Inbox"
+msgstr "受信"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Loading…"
+msgstr "読み込み中…"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Mailboxes"
+msgstr "メールボックス"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Messages"
+msgstr "メッセージ"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "No accounts yet"
+msgstr "まだアカウントがありません"
+
+#. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "No mailboxes yet. Pull to refresh."
+msgstr "メールボックスがありません。下に引いて更新してください。"
+
+#. Empty plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "No message text"
+msgstr "メッセージ本文がありません"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "No messages"
+msgstr "メッセージがありません"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Register mobile OAuth clients in app config to add accounts."
+msgstr "アカウントを追加するには、アプリ設定にモバイル OAuth クライアントを登録してください。"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Sent"
+msgstr "送信済み"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show HTML"
+msgstr "HTML を表示"
+
+#. Button label for the plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show message text"
+msgstr "メッセージ本文を表示"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Sign in again"
+msgstr "再度サインインしてください"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Spam"
+msgstr "迷惑メール"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Trash"
+msgstr "ゴミ箱"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Try again"
+msgstr "再試行"

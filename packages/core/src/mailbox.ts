@@ -153,7 +153,7 @@ export type PerformError =
 export class Mailbox extends Context.Service<
   Mailbox,
   {
-    readonly aiSettings: Effect.Effect<AiSettings>;
+    readonly aiSettings: Effect.Effect<AiSettings, ProviderError>;
     setAiKey(key: string): Effect.Effect<void, InvalidInput>;
     setAiAccount(input: AiAccountSettings): Effect.Effect<void, NotFound | InvalidInput>;
     setAiModel(model: AiModelName): Effect.Effect<void>;
@@ -463,12 +463,12 @@ export class Mailbox extends Context.Service<
       client: UpdateClient,
       options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<import("./updates.js").ManualUpdateResult>;
-    readonly updateTokenConfigured: Effect.Effect<boolean>;
+    readonly updateTokenConfigured: Effect.Effect<boolean, ProviderError>;
     setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
     startUpdates(
       client: UpdateClient,
       options: import("./updates.js").UpdateOptions,
-    ): Effect.Effect<() => void>;
+    ): Effect.Effect<() => void, ProviderError>;
     readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
     clearCache(accountId?: string): Effect.Effect<void>;
     initializeProfiles(

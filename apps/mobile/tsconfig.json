@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["node", "react"],
+    "noEmit": true
+  },
+  "include": ["app", "src", "app.config.ts", "lingui.config.ts", "vitest.config.ts"]
+}

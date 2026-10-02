@@ -1,0 +1,57 @@
+{
+  "name": "@openmail/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "build": "pnpm i18n:compile && pnpm check-types",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run && lingui check sync --clean --workers 1 && lingui check missing --mode catalog --workers 1",
+    "start": "expo start --dev-client",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:compile": "lingui compile --typescript --strict && oxfmt src/locales/*/messages.ts"
+  },
+  "dependencies": {
+    "@lingui/core": "^6.8.0",
+    "@lingui/react": "^6.8.0",
+    "@noble/hashes": "^2.4.0",
+    "@op-engineering/op-sqlite": "18.2.5",
+    "@openmail/core": "workspace:*",
+    "effect": "4.0.0-rc.118",
+    "expo": "57.0.26",
+    "expo-auth-session": "~57.0.13",
+    "expo-constants": "~57.0.20",
+    "expo-crypto": "~57.0.3",
+    "expo-dev-client": "~57.0.19",
+    "expo-file-system": "~57.0.7",
+    "expo-linking": "~57.0.11",
+    "expo-localization": "~57.0.2",
+    "expo-router": "~57.0.24",
+    "expo-secure-store": "~57.0.4",
+    "expo-web-browser": "~57.0.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-webview": "13.16.1",
+    "react-native-worklets": "0.10.1"
+  },
+  "devDependencies": {
+    "@lingui/cli": "^6.8.0",
+    "@lingui/format-po": "^6.8.0",
+    "@react-native/metro-config": "0.86.3",
+    "@types/node": "^22.20.4",
+    "@types/react": "~19.2.2",
+    "@types/react-dom": "~19.2.3",
+    "babel-preset-expo": "~57.0.9",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.2"
+  },
+  "op-sqlite": {
+    "fts5": true,
+    "iosSqlite": false
+  }
+}

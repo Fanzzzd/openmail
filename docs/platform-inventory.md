@@ -36,6 +36,6 @@ Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、
 
 core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，缺少该全局对象时回退到 `buffer/index.js` 的浏览器实现。该模块的 native Buffer 探测由导入守卫检查，边界规则见 AGENTS.md。base64url 明确转换字母表及 padding。TNEF 直接使用 Uint8Array / DataView，共享有界输入；UTF-16LE 手工保留 BOM 和独立代理码元，丢弃末尾单字节，保持原生 Buffer 的解码结果。同步 SHA-256 / HMAC 使用 `@noble/hashes` 的可移植实现，Node 的 `PlatformCrypto` 使用原生加密；随机数服务须由手机安全随机实现提供。
 
-手机端待办以[路线图](roadmap.md#core-平台接口slice-39-已完成)为准。现阶段没有 Expo 项目或 mobile adapter；portable 入口已通过浏览器平台打包。导入检查证明 core 的本地模块边界，不代替 React Native 真机验证、第三方包的 Metro 打包验证或 op-sqlite 的兼容性检查。
+手机端待办以[路线图](roadmap.md#core-平台接口slice-39-已完成)为准。slice 41 已添加 Expo 项目、无 RN 依赖的 core op-sqlite/OAuth/provider/MIME adapters，以及手机端 Expo OS Layers，入口见[手机端说明](../apps/mobile/README.md)。portable 入口在 slice 39 已通过浏览器平台打包。导入检查证明 core 的本地模块边界，不代替 React Native 真机验证、第三方包的 Metro 打包验证或 op-sqlite 的兼容性检查。
 
 MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect services，缺少 Layer 会在类型检查中报错。provider、阅读附件和 indexer 构建时捕获依赖，返回的方法不读调用方的隐藏 context。真实 NodeMailbox 回归测试覆盖 IMAP 原始 MIME fallback、正文/日历/嵌套附件、PDF 索引、文件缓存、图片输入和 SSRF 拒绝；仅替换 IMAP 传输和合成密码，使用临时数据库，不启动 Electron。

@@ -1,0 +1,139 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-03 07:27+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: es\n"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "(No subject)"
+msgstr "(Sin asunto)"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Accounts"
+msgstr "Cuentas"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Gmail account"
+msgstr "Añadir cuenta de Gmail"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Add Outlook account"
+msgstr "Añadir cuenta de Outlook"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Archive"
+msgstr "Archivar"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Conversation"
+msgstr "Conversación"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+#: app/mailboxes.tsx
+#: app/reader.tsx
+#: app/threads.tsx
+msgid "Could not load mail. Try again."
+msgstr "No se pudo cargar el correo. Inténtalo de nuevo."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not open the local mail database."
+msgstr "No se pudo abrir la base de datos local de correo."
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Drafts"
+msgstr "Borradores"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Inbox"
+msgstr "Bandeja de entrada"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Loading…"
+msgstr "Cargando…"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Mailboxes"
+msgstr "Buzones"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+msgid "Messages"
+msgstr "Mensajes"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "No accounts yet"
+msgstr "Aún no hay cuentas"
+
+#. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "No mailboxes yet. Pull to refresh."
+msgstr "Aún no hay buzones. Desliza hacia abajo para actualizar."
+
+#. Empty plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "No message text"
+msgstr "Sin texto del mensaje"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "No messages"
+msgstr "No hay mensajes"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Register mobile OAuth clients in app config to add accounts."
+msgstr "Registra clientes OAuth móviles en la configuración para añadir cuentas."
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Sent"
+msgstr "Enviado"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show HTML"
+msgstr "Mostrar HTML"
+
+#. Button label for the plain message body text.
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Show message text"
+msgstr "Mostrar texto del mensaje"
+
+#. js-lingui-explicit-id
+#: app/index.tsx
+msgid "Sign in again"
+msgstr "Iniciar sesión nuevamente"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Spam"
+msgstr "Correo no deseado"
+
+#. js-lingui-explicit-id
+#: src/mailbox-name.ts
+msgid "Trash"
+msgstr "Papelera"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Try again"
+msgstr "Intentar de nuevo"

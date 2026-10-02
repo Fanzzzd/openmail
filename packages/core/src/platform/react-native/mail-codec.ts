@@ -1,0 +1,58 @@
+import PostalMime, { type Address } from "postal-mime";
+import { Effect, Layer } from "effect";
+import { PermanentError } from "../../errors.js";
+import { MailCodec, type MimeAddresses, type MimeMessage } from "../mail-codec.js";
+
+const addresses = (value: readonly Address[]): MimeAddresses => ({
+  value,
+  text: value.map((address) => address.address ?? address.name).join(", "),
+});
+export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
+  if (raw.byteLength > 25 * 1024 * 1024) throw new Error("Mobile MIME exceeds 25 MiB");
+  const email = await PostalMime.parse(raw, {
+    attachmentEncoding: "arraybuffer",
+    forceRfc822Attachments: true,
+    maxNestingDepth: 32,
+    maxHeadersSize: 256 * 1024,
+    maxRfc822NestingDepth: 0,
+  });
+  return {
+    html: email.html ?? false,
+    ...(email.text === undefined ? {} : { text: email.text }),
+    ...(email.subject === undefined ? {} : { subject: email.subject }),
+    ...(email.from ? { from: addresses([email.from]) } : {}),
+    ...(email.to ? { to: addresses(email.to) } : {}),
+    ...(email.cc ? { cc: addresses(email.cc) } : {}),
+    ...(email.bcc ? { bcc: addresses(email.bcc) } : {}),
+    ...(email.inReplyTo ? { inReplyTo: email.inReplyTo } : {}),
+    ...(email.date ? { date: new Date(email.date) } : {}),
+    headers: new Map(email.headers.map((header) => [header.key, header.value])),
+    attachments: email.attachments.map((part) => {
+      if (typeof part.content === "string")
+        throw new Error("Unexpected mobile attachment encoding");
+      const content =
+        part.content instanceof Uint8Array ? part.content : new Uint8Array(part.content);
+      return {
+        content,
+        size: content.byteLength,
+        contentType: part.mimeType,
+        related: part.related ?? false,
+        headers: new Map<string, unknown>(
+          part.method
+            ? [["content-type", { value: part.mimeType, params: { method: part.method } }]]
+            : [],
+        ),
+        ...(part.filename ? { filename: part.filename } : {}),
+        ...(part.contentId
+          ? { contentId: part.contentId, cid: part.contentId.replace(/^<|>$/g, "") }
+          : {}),
+      };
+    }),
+  };
+}
+/** Reader MIME is portable. Sending stays disabled until a mobile composer exists. */
+export const mobileMailCodecLayer = Layer.succeed(MailCodec, {
+  parse: parseMobileMime,
+  build: () =>
+    Effect.fail(new PermanentError({ message: "Composing MIME is unavailable on mobile" })),
+});

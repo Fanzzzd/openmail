@@ -89,7 +89,7 @@ import type { BackfillPage, BackfillState, CacheWindow, CacheWindowInput } from 
 export class Secrets extends Context.Service<
   Secrets,
   {
-    get(key: string): Effect.Effect<Option.Option<string>>;
+    get(key: string): Effect.Effect<Option.Option<string>, ProviderError>;
     set(key: string, value: string): Effect.Effect<void>;
     remove(key: string): Effect.Effect<void>;
   }

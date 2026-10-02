@@ -100,3 +100,13 @@ export { MIGRATIONS, splitStatements, migrate, DatabaseCapabilities } from "./db
 
 export { makeGmail } from "./gmail.js";
 export { makeOutlook } from "./outlook.js";
+
+export {
+  opSqliteLayer,
+  makeOpSqliteClient,
+  type OpSqliteDatabase,
+} from "./platform/react-native/sqlite.js";
+export { mobileOAuthLayer, type MobileAuthSession } from "./platform/react-native/oauth.js";
+export { mobileProvidersLayer, unsupportedMobileImap } from "./platform/react-native/providers.js";
+export { mobileMailCodecLayer, parseMobileMime } from "./platform/react-native/mail-codec.js";
+export { stripMobileForms } from "./platform/react-native/reader-html.js";

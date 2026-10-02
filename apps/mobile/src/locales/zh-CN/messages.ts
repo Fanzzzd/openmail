@@ -1,0 +1,4 @@
+/*eslint-disable*/ import type { Messages } from "@lingui/core";
+export const messages = JSON.parse(
+  '{"(No subject)":["（无主题）"],"Accounts":["账户"],"Add Gmail account":["添加 Gmail 账户"],"Add Outlook account":["添加 Outlook 账户"],"Archive":["归档"],"Conversation":["会话"],"Could not load mail. Try again.":["无法加载邮件，请重试。"],"Could not open the local mail database.":["无法打开本地邮件数据库。"],"Drafts":["草稿"],"Inbox":["收件箱"],"Loading…":["加载中…"],"Mailboxes":["邮箱"],"Messages":["邮件"],"No accounts yet":["还没有账户"],"No mailboxes yet. Pull to refresh.":["尚无邮箱，下拉刷新。"],"No message text":["无消息文本"],"No messages":["暂无邮件"],"Register mobile OAuth clients in app config to add accounts.":["在应用配置中注册手机 OAuth 客户端后可添加账户。"],"Sent":["已发送"],"Show HTML":["显示 HTML"],"Show message text":["显示消息文本"],"Sign in again":["重新登录"],"Spam":["垃圾邮件"],"Trash":["已删除"],"Try again":["重试"]}',
+) as Messages;

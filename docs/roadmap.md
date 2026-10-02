@@ -293,24 +293,26 @@ Electron 做不到、需要原生模块的：macOS Focus 过滤器、分享扩�
 
 Node 实现已集中到 `packages/core/src/platform/node/`，媒体检查脚本也从对应的 `dist/platform/node/` 入口加载适配器。`@openmail/core/portable` 的本地依赖不加载 Node 适配器；桌面、CLI、MCP 保留原 API，并可显式使用 `@openmail/core/node` 与 `NodeLayer`。导入守卫和 oxlint 防止平台依赖回流。迁移、OAuth scope、队列与策略未改。
 
-手机端仍需实现：
+### 手机基础（slice 41 已完成）
 
-- **数据库**：op-sqlite 的 Effect `SqlClient` adapter，运行现有迁移，验证 FTS5/trigram、事务、WAL 和并发行为；sqlite-vec 可用性通过 `DatabaseCapabilities` 报告。
-- **密钥**：expo-secure-store 的 `Secrets` Layer。refresh token 和 AI 密钥继续只进安全存储。
-- **授权**：expo-auth-session 的 `OAuth` 与 `Browser` Layer，系统浏览器加 app scheme 回调，使用用户注册的手机客户端，保留现有 scope 和个人 Outlook consumers 租户约束。
-- **沙箱文件与随机数**：Expo `FileSystem`、`Path`、`AppPaths`、配置和 `AttachmentFiles` adapter，以及安全 UUID、Effect `Crypto` 的实现。
-- **邮件编解码与 provider**：手机可用的 `MailCodec`，替换 mailparser / nodemailer；IMAP/SMTP 另写 `ProviderAdapter`。Gmail 和 Outlook 的 HTTP 逻辑可直接复用。
-- **可选能力**：保留 SSRF 防护的 DNS/TCP 图片传输、PDF 提取、端侧推理、模型文件下载及数据库文件恢复。不能用普通 fetch 替代固定地址的 `ImageNetwork`。手机的应用更新由平台分发处理。
-- **系统状态**：把电源、空闲与前台状态接到 Mailbox 已有回调，时钟使用 Effect `Clock`。
+`apps/mobile` 已接入 pnpm/turbo，使用稳定 Expo SDK 57、TypeScript、expo-router 和隔离依赖安装。根 `build` 只编译手机 Lingui 目录并检查类型，不运行原生构建。开发与验证入口见[手机端说明](../apps/mobile/README.md)。
 
-接口和逐文件依赖见[架构的 Platform 端口](architecture.md#platform-端口给手机留的接缝)及[平台依赖清单](platform-inventory.md)。源码导入边界规则只定义在 AGENTS.md。
+已实现：
 
-### OAuth 客户端
+- op-sqlite 18.2.5 的 Effect `SqlClient` adapter，运行全部原有迁移；启用 FTS5、启动探测 trigram，单连接串行事务与 savepoints。向量扩展报告不可用。
+- expo-secure-store、沙箱文件/路径、expo-crypto 和 fetch HttpClient；原生 UI 只调用 portable Mailbox，token HTTP 与 SQL 留在 core。
+- AuthSession 系统浏览器、PKCE S256 与 state。独立手机 client ID 来自 app config/env，Outlook 仅 `consumers`。注册步骤见 [Google](setup-google.md#手机端)、[Microsoft](setup-microsoft.md#手机端)。
+- 账户、添加 Gmail/Outlook、邮箱、keyset 分页会话、消息文本阅读、受限 HTML WebView 和下拉刷新；Lingui 包含桌面的全部十种语言。
+- Gmail/Outlook 复用 portable fetch provider，PostalMime 解析原始 MIME；IMAP/SMTP 明确返回不支持。
+- 原生服务 mocks、通过 Node SQLite shim 的原有迁移/FTS/事务/分页测试，以及类型检查。安装时间记录与验证边界见手机端说明。
 
-手机端要另外注册客户端，`scripts/setup-oauth.sh` 到时加这两步：
+下一步：
 
-- Google：iOS 类型和 Android 类型客户端，没有 secret，回调用反向 client ID scheme。
-- Azure：同一个应用注册里加 iOS/macOS 和 Android 平台，回调 `msauth.<bundle id>://auth`。
+1. 真机开发构建验证 op-sqlite/FTS5/WAL、Metro 软链接、两家 OAuth、Android 自定义 scheme 与大邮箱分页。本切片未启动模拟器、Metro 或 EAS，未实测真实授权。
+2. 补发送和附件界面、便携 MIME composer、附件缓存、离线错误、前后台生命周期及后台刷新。PDF、固定地址图片传输、端侧推理、数据库恢复仍需适配；当前返回明确失败，不能用普通 fetch 替代固定地址 `ImageNetwork`。
+3. IMAP/SMTP 需独立移动实现；推送先决定中转服务。本切片没有推送或自动轮询。
+
+接口和逐文件依赖见[架构的 Platform 端口](architecture.md#platform-端口给手机留的接缝)及[平台依赖清单](platform-inventory.md)。源码边界规则仍只定义在 AGENTS.md。
 
 ### 推送
 
