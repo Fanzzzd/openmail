@@ -1,3 +1,4 @@
+import { formatBytes } from "../format";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DEFAULT_CACHE_WINDOWS, DEFAULT_PREFS } from "@openmail/core/schema";
@@ -62,7 +63,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             { value: "0", label: t`Disabled` },
             ...[128, 512, 1024, 2048].map((mb) => ({
               value: String(mb * 1024 ** 2),
-              label: `${mb} MB`,
+              label: formatBytes(mb * 1024 ** 2, i18n.locale),
             })),
           ]}
           disabled={limitResult.waiting}
@@ -77,8 +78,10 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
       <div className="flex items-center justify-between">
         <output>
           <Trans>Total cache</Trans>:{" "}
-          {(sizes.reduce((n, s) => n + s.bodyBytes + s.attachmentBytes, 0) / 1024 ** 2).toFixed(1)}{" "}
-          MB
+          {formatBytes(
+            sizes.reduce((n, s) => n + s.bodyBytes + s.attachmentBytes, 0),
+            i18n.locale,
+          )}
         </output>
         <button
           type="button"
@@ -98,7 +101,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
       </p>
       {accounts.map((account) => {
         const state = states.find((s) => s.accountId === account.id);
-        const fetched = state?.fetched ?? 0;
+        const fetched = i18n.number(state?.fetched ?? 0);
         const size = sizes.find((s) => s.accountId === account.id);
         const rows = [
           ...DEFAULT_CACHE_WINDOWS.map((w) => ({
@@ -114,9 +117,14 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             <h3 className="font-medium">{account.email}</h3>
             <div className="flex items-center justify-between">
               <output>
-                <Trans>Bodies</Trans>: {((size?.bodyBytes ?? 0) / 1024 ** 2).toFixed(1)} MB ·{" "}
-                <Trans>Attachments</Trans>: {((size?.attachmentBytes ?? 0) / 1024 ** 2).toFixed(1)}{" "}
-                MB
+                <Trans
+                  context="cached message text"
+                  comment="Cached texts of email messages, never anatomical bodies."
+                >
+                  Bodies
+                </Trans>
+                : {formatBytes(size?.bodyBytes ?? 0, i18n.locale)} · <Trans>Attachments</Trans>:{" "}
+                {formatBytes(size?.attachmentBytes ?? 0, i18n.locale)}
               </output>
               <button
                 type="button"

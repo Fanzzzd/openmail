@@ -342,11 +342,12 @@ export function Sidebar({
   const syncStatus = () => {
     if (syncState.running) {
       if (!progress) return t`Syncing…`;
-      const { fetched, total } = progress;
+      const fetched = i18n.number(progress.fetched),
+        total = i18n.number(progress.total);
       return t`Syncing ${fetched}/${total}`;
     }
     if (syncState.errors.length) {
-      const count = syncState.errors.length;
+      const count = i18n.number(syncState.errors.length);
       return t`Sync failed (${count})`;
     }
     if (!syncState.lastFinishedAt) return "";
@@ -1041,6 +1042,7 @@ function Tile(props: {
   title: string;
   badge: number;
 }) {
+  const { i18n } = useLingui();
   return (
     <Tip label={props.title}>
       <button
@@ -1056,7 +1058,7 @@ function Tile(props: {
           {props.icon}
           {props.badge > 0 && (
             <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
-              {props.badge}
+              {i18n.number(props.badge)}
             </span>
           )}
         </span>
@@ -1085,6 +1087,7 @@ function Item(props: {
   disclosure?: ReactNode;
   buttonProps?: ButtonHTMLAttributes<HTMLButtonElement> | undefined;
 }) {
+  const { i18n } = useLingui();
   return (
     <div
       className={`flex h-8 w-full items-center rounded-md pr-2 text-[14px] ${
@@ -1106,7 +1109,7 @@ function Item(props: {
         <span className="min-w-0 flex-1 truncate">{props.label}</span>
         {props.badge > 0 && (
           <span className="text-[12px] text-neutral-500 tabular-nums dark:text-neutral-400">
-            {props.badge}
+            {i18n.number(props.badge)}
           </span>
         )}
       </button>

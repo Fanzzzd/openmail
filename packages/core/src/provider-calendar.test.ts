@@ -157,7 +157,10 @@ it.effect(
       assert.strictEqual(f.writes[0]?.path, "/me/events");
       assert.strictEqual(
         (yield* f.adapter
-          .createCalendarEvent(account, { ...event, recurrence: ["RRULE:FREQ=DAILY"] })
+          .createCalendarEvent(account, {
+            ...event,
+            recurrence: ["RRULE:FREQ=DAILY", "EXDATE:20261011T090000Z"],
+          })
           .pipe(Effect.result))._tag,
         "Failure",
       );

@@ -32,7 +32,7 @@ export const dismissCrashReport = () => {
 };
 
 async function chooseRecovery(integrity: ReturnType<typeof checkLocalDatabase>) {
-  const labels = nativeRecoveryLabels();
+  const labels = await nativeRecoveryLabels();
   const result = await dialog.showMessageBox({
     type: "warning",
     message: integrity === "ok" ? labels.safeMode : labels.integrityFailed,
@@ -87,7 +87,7 @@ export async function prepareReliability(directory: string) {
   try {
     prepareDatabaseStartup(directory);
   } catch (error) {
-    const labels = nativeRecoveryLabels();
+    const labels = await nativeRecoveryLabels();
     await dialog.showMessageBox({
       type: "error",
       message: labels.resetFailed,

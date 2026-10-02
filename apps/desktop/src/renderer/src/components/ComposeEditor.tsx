@@ -1,3 +1,4 @@
+import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
 import { useAtomValue } from "@effect/atom-react";
@@ -796,11 +797,9 @@ export function ComposeEditor({
         >
           <p>{t`This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body.`}</p>
           {locked && (
-            <button
-              type="button"
-              className={button}
-              onClick={() => setEditPrompt(true)}
-            >{t`Edit body`}</button>
+            <button type="button" className={button} onClick={() => setEditPrompt(true)}>
+              {t(EDIT_MESSAGE_TEXT)}
+            </button>
           )}
         </div>
       )}
@@ -818,7 +817,9 @@ export function ComposeEditor({
             setUnlocked(true);
             setEditPrompt(false);
           }}
-        >{t`Edit body`}</button>
+        >
+          {t(EDIT_MESSAGE_TEXT)}
+        </button>
       </Alert>
       <Alert
         open={modePrompt !== null}
@@ -889,7 +890,11 @@ export function ComposeEditor({
           role="textbox"
           aria-multiline="true"
           aria-readonly={locked}
-          aria-label={t`Body`}
+          aria-label={t({
+            message: "Body",
+            context: "message text",
+            comment: "Email message text, never an anatomical body.",
+          })}
           className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
           style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
           onClick={(event) => {
@@ -958,7 +963,11 @@ export function ComposeEditor({
               });
             } else onChange({ kind: body.kind, text });
           }}
-          aria-label={t`Body`}
+          aria-label={t({
+            message: "Body",
+            context: "message text",
+            comment: "Email message text, never an anatomical body.",
+          })}
           placeholder={
             body.kind === "markdown"
               ? t`Markdown works: **bold**, \`code\`, \`\`\`code block\`\`\``

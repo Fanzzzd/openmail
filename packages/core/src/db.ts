@@ -707,6 +707,18 @@ export const MIGRATIONS: readonly string[] = [
    CREATE TRIGGER ai_derived_delete AFTER DELETE ON messages BEGIN
      DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
    END;`,
+  // Migration 27: parsed invitation cache, independent of media extraction and preferences.
+  `CREATE TABLE calendar_invites (
+    message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    invite_key TEXT NOT NULL, account_id TEXT NOT NULL, uid TEXT NOT NULL,
+    sequence INTEGER NOT NULL, message_date INTEGER NOT NULL, invite_json TEXT NOT NULL,
+    PRIMARY KEY(message_id,invite_key)
+  );
+  CREATE INDEX calendar_invites_uid ON calendar_invites(account_id,uid,sequence DESC,message_date DESC);
+  CREATE TRIGGER calendar_invites_changed AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+    WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html OR old.attachments_json IS NOT new.attachments_json BEGIN
+      DELETE FROM calendar_invites WHERE message_id=new.id;
+  END;`,
 ];
 
 /**

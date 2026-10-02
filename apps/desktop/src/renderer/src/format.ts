@@ -46,10 +46,17 @@ export const accountColorClass = (account: Account) =>
 export const accountColorStyle = (account: Account) =>
   account.color ? { backgroundColor: account.color } : undefined;
 
-export function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 ** 2) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / 1024 ** 2).toFixed(1)} MB`;
+export function formatBytes(n: number, locale: string): string {
+  const unit = n < 1024 ? "byte" : n < 1024 ** 2 ? "kilobyte" : "megabyte";
+  const value = n < 1024 ? n : n < 1024 ** 2 ? n / 1024 : n / 1024 ** 2;
+  const digits = unit === "megabyte" ? 1 : 0;
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit,
+    unitDisplay: "short",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
 }
 
 /** Thread headers: "Today 18:24", "Yesterday 18:24", "September 21 18:24", or a full date in older years. */

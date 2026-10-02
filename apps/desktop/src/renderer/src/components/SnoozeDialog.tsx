@@ -72,7 +72,9 @@ export function SnoozeDialog({
         </label>
         {phrase && (
           <p aria-live="polite">
-            {due === null ? t`Enter a future reminder time` : new Date(due).toLocaleString()}
+            {due === null
+              ? t`Enter a future reminder time`
+              : new Date(due).toLocaleString(i18n.locale)}
           </p>
         )}
         <label className="block space-y-1">

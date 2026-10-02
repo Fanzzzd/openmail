@@ -148,9 +148,9 @@ export function BatchActions(
     moreNotLoaded: number | null;
   },
 ) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { rows, onOp } = props;
-  const count = rows.length;
+  const count = i18n.number(rows.length);
   const unread = rows.some((row) => row.isUnread);
   const starred = rows.every((row) => row.isStarred);
   const actions = [
@@ -174,7 +174,7 @@ export function BatchActions(
             {props.moreNotLoaded === null ? (
               <Trans>More messages not loaded</Trans>
             ) : (
-              <Trans>{props.moreNotLoaded} more not loaded</Trans>
+              <Trans>{i18n.number(props.moreNotLoaded)} more not loaded</Trans>
             )}
           </span>
         )}

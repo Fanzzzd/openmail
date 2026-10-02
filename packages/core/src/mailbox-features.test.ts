@@ -147,6 +147,7 @@ it.effect(
         server.messages.set("m2", { ...incoming, providerId: "m2", date: 2000 });
         server.raw.set("m2", raw(method, 2));
         yield* m.sync();
+        yield* m.invitations(`${account.id}/m2`);
         const result = yield* m
           .respondInvite(`${account.id}/m1`, invite.key, "accepted", user)
           .pipe(Effect.result);

@@ -72,7 +72,16 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
         {chunks.slice(0, 20).map((chunk, index) => (
           <li key={index}>
             <p className="text-neutral-500">
-              {chunk.source.kind === "body" ? <Trans>Message body</Trans> : chunk.source.name}
+              {chunk.source.kind === "body" ? (
+                <Trans
+                  context="message text"
+                  comment="Email message text, never an anatomical body."
+                >
+                  Message body
+                </Trans>
+              ) : (
+                chunk.source.name
+              )}
               {chunk.page !== null && (
                 <>
                   {" "}

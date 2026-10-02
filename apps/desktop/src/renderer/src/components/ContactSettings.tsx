@@ -16,7 +16,7 @@ export function ContactSettings({ account }: { account: Account }) {
   );
   const [result, refresh] = useAtom(refreshContactsAtom);
   const [signIn, reauth] = useAtom(reauthAtom(account.id));
-  const count = status?.count ?? 0;
+  const count = i18n.number(status?.count ?? 0);
   return (
     <section className="space-y-2 border-t border-black/10 pt-4 dark:border-white/10">
       <h3 className="font-semibold">

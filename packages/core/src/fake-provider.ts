@@ -65,6 +65,7 @@ export interface FakeServer {
   drafts: Map<string, { messageId: string; push: DraftPush }>;
   /** Raw MIME the adapter hands out by message id; others are built from `messages`. */
   raw: Map<string, Uint8Array>;
+  rawFetched: string[];
   /** Every draft save and delete, in order. */
   backfillFetched: string[];
   bodyFetched: string[];
@@ -102,6 +103,7 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     sent: [],
     drafts: new Map(),
     raw: new Map(),
+    rawFetched: [],
     draftLog: [],
     backfillFetched: [],
     bodyFetched: [],
@@ -605,6 +607,7 @@ export function makeFakeProvider(
       Effect.andThen(
         failOnce,
         Effect.suspend(() => {
+          server.rawFetched.push(providerId);
           const raw = server.raw.get(providerId);
           if (raw) return Effect.succeed(raw);
           const m = server.messages.get(providerId);

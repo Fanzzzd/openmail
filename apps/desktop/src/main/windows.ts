@@ -270,7 +270,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   // The renderer picks its UI language from the OS language unless the person
   // chose one in Settings.
   const query = {
-    system: app.getPreferredSystemLanguages()[0] ?? app.getLocale(),
+    systemLanguages: JSON.stringify([...app.getPreferredSystemLanguages(), app.getLocale()]),
     ...options.query,
     ...(restored?.selection ? { selection: JSON.stringify(restored.selection) } : {}),
   };

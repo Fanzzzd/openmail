@@ -1,0 +1,4785 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=utf-8\n"
+"Language: es\n"
+
+#. Separator between list items
+#. Separator between list items
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid ", "
+msgstr ", "
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "(no recipients)"
+msgstr "(sin destinatarios)"
+
+#: src/renderer/src/components/AiPanel.tsx
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "(No subject)"
+msgstr "(Sin asunto)"
+
+#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
+#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
+#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
+#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{0} embedded · {1} queued · {2} running · {3} failed"
+msgstr "{0} incrustado · {1} en cola · {2} ejecutándose · {3} falló"
+
+#. placeholder {0}: i18n.number(props.moreNotLoaded)
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{0} more not loaded"
+msgstr "{0} más no cargado"
+
+#. placeholder {0}: a.email
+#: src/renderer/src/components/Sidebar.tsx
+msgid "{0}'s sign-in has expired. Sync is paused."
+msgstr "El inicio de sesión de {0} ha caducado. La sincronización está en pausa."
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
+msgstr "{accountCount, plural, one {# cuenta} other {# cuentas}}, {total} sin leer"
+
+#: src/renderer/src/App.tsx
+msgid "{baseTitle}: {user}"
+msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
+msgstr "{count, plural, one {# rastreador bloqueado} other {# rastreadores bloqueados}}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "{count, plural, one {Saved # attachment} other {Saved # attachments}}"
+msgstr "{count, plural, one {# adjunto guardado} other {# adjuntos guardados}}"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "{count} cached contacts"
+msgstr "{count} contactos almacenados en caché"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{count} occurrences"
+msgstr "{count} ocurrencias"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "{count} selected (loaded)"
+msgstr "{count} seleccionado (cargado)"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "{count} unread"
+msgstr "{count} no leído"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "{delay, plural, one {# second} other {# seconds}}"
+msgstr "{delay, plural, one {# segundo} other {# segundos}}"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
+msgstr "{done} completado · {queued} en cola · {running} en ejecución · {failed} falló"
+
+#: src/renderer/src/App.tsx
+msgid "{email} is signed in again"
+msgstr "{email} ha iniciado sesión nuevamente"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{fetched} messages checked"
+msgstr "{fetched} mensajes marcados"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "{label} suggestions"
+msgstr "{label} sugerencias"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{more} more"
+msgstr "{more} más"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "{name} client"
+msgstr "{name} cliente"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
+msgstr "{op} {count, plural, one {# conversación} other {# conversaciones}}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
+msgstr "{pixels, plural, one {# píxel de seguimiento} other {# píxeles de seguimiento}}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "{seconds, plural, one {# second} other {# seconds}}"
+msgstr "{seconds, plural, one {# segundo} other {# segundos}}"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "{text} → {recipient}"
+msgstr "{text} → {recipient}"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "1 week, tomorrow 9am, next monday"
+msgstr "1 semana, mañana a las 9h, el próximo lunes"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "1 year"
+msgstr "1 año"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "163 Mail"
+msgstr "163 Mail"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "30 days"
+msgstr "30 dias"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "90 days"
+msgstr "90 dias"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "A domain covers its subdomains. Known trackers stay blocked for these senders too."
+msgstr "Un dominio cubre sus subdominios. Los rastreadores conocidos también permanecen bloqueados para estos remitentes."
+
+#: src/renderer/src/errors.ts
+msgid "A label or folder needs a valid name"
+msgstr "Una etiqueta o carpeta necesita un nombre válido"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
+msgstr "Una configuración anterior de horas de silencio diarias todavía está activa. Cambie este horario para reemplazarlo."
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Above quoted text"
+msgstr "Encima del texto citado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Absolute folder path"
+msgstr "Ruta absoluta de la carpeta"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accept"
+msgstr "Aceptar"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Accepted"
+msgstr "Aceptado"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Access token saved"
+msgstr "Token de acceso guardado"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Account"
+msgstr "Cuenta"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account colour"
+msgstr "Color de la cuenta"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account enabled"
+msgstr "Cuenta habilitada"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account space"
+msgstr "Espacio de la cuenta"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Accounts"
+msgstr "Cuentas"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Action"
+msgstr "Acción"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Action failed"
+msgstr "La acción falló"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Action failed: {reason}"
+msgstr "Acción fallida: {reason}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Action menu"
+msgstr "Menú de acciones"
+
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Actions"
+msgstr "Acciones"
+
+#. placeholder {0}: address.address
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Actions for {0}"
+msgstr "Acciones para {0}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours by space"
+msgstr "Horas activas por espacio"
+
+#. placeholder {0}: profile.name
+#. placeholder {1}: index + 1
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours end for {0} on {dayName}, period {1}"
+msgstr "Las horas activas finalizan para {0} el {dayName}, período {1}"
+
+#. placeholder {0}: profile.name
+#. placeholder {1}: index + 1
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Active hours start for {0} on {dayName}, period {1}"
+msgstr "Las horas activas comienzan para {0} el {dayName}, período {1}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Activity"
+msgstr "Actividad"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Actual size"
+msgstr "Tamaño real"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Add"
+msgstr "Añadir"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add {provider}"
+msgstr "Añadir {provider}"
+
+#: src/renderer/src/errors.ts
+msgid "Add an automatic reply message"
+msgstr "Agregar un mensaje de respuesta automática"
+
+#: src/renderer/src/errors.ts
+msgid "Add at least one filter condition"
+msgstr "Agregar al menos una condición de filtro"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add at least one recipient"
+msgstr "Añade al menos un destinatario"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Add attachment"
+msgstr "Añadir adjunto"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Add email account"
+msgstr "Agregar cuenta de correo electrónico"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add label"
+msgstr "Agregar etiqueta"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Add period"
+msgstr "Añadir intervalo"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Add star"
+msgstr "Añadir estrella"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add this event to your calendar?"
+msgstr "¿Agregar este evento a tu calendario?"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add to calendar"
+msgstr "Añadir al calendario"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Add to Dictionary"
+msgstr "Añadir al diccionario"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Add Your First Account"
+msgstr "Agregue su primera cuenta"
+
+#: src/renderer/src/App.tsx
+msgid "Added {email}. Syncing…"
+msgstr "Se agregó {email}. Sincronizando…"
+
+#: src/renderer/src/App.tsx
+msgid "Added star"
+msgstr "Estrella añadida"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Added to calendar"
+msgstr "Agregado al calendario"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Additional category names, separated by commas"
+msgstr "Nombres de categorías adicionales, separados por comas"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Additional labels"
+msgstr "Etiquetas adicionales"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Address or domain"
+msgstr "Dirección o dominio"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Addresses no longer suggested"
+msgstr "Direcciones ya no sugeridas"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "After date"
+msgstr "Después de la fecha"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "After you click Send, the message waits this long. You can undo it until then."
+msgstr "Después de hacer clic en Enviar, el mensaje espera este tiempo. Puedes deshacerlo hasta entonces."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI ({agent})"
+msgstr "IA ({agent})"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI Access"
+msgstr "Acceso a IA"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can archive, label, and mark as read directly. Every change is recorded in Activity and can be undone."
+msgstr "La IA puede archivar, añadir etiquetas y marcar mensajes como leídos directamente. Cada cambio se registra en Actividad y se puede deshacer."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI can read and search mail, but can't change anything."
+msgstr "La IA puede leer y buscar correo, pero no puede cambiar nada."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI connects to openmail over MCP, for example Claude Code. This decides whether it can change your mail."
+msgstr "AI se conecta a openmail a través de MCP, por ejemplo Claude Code. Esto decide si puede cambiar su correo."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "AI draft"
+msgstr "Borrador de IA"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "AI permission to change mail"
+msgstr "Permiso de IA para cambiar el correo"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "AI request failed. Check account permissions and your API key, then try again."
+msgstr "La solicitud de IA falló. Comprueba los permisos de la cuenta y tu clave API e inténtalo de nuevo."
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "AI suggestions"
+msgstr "Sugerencias de IA"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align center"
+msgstr "Centrar"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align left"
+msgstr "Alinear a la izquierda"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Align right"
+msgstr "Alinear a la derecha"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All"
+msgstr "Todo"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "All accounts"
+msgstr "Todas las cuentas"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "All accounts in this space"
+msgstr "Todas las cuentas en este espacio"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "All actions"
+msgstr "Todas las acciones"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "All day"
+msgstr "Todo el día"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "All mail"
+msgstr "Todo el correo"
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ui/SearchField.tsx
+#: src/renderer/src/view.ts
+msgid "All Mail"
+msgstr "Todo el correo"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "All messages currently in this folder, including messages not loaded and Outlook child folders, will be permanently deleted. Messages restored during the operation will be excluded from later batches. This cannot be undone."
+msgstr "Todos los mensajes que se encuentren actualmente en esta carpeta, incluidos los mensajes no cargados y las carpetas secundarias de Outlook, se eliminarán permanentemente. Los mensajes restaurados durante la operación se excluirán de lotes posteriores. Esto no se puede deshacer."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allow notifications"
+msgstr "Permitir notificaciones"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Allow permanent deletion for {email}?"
+msgstr "¿Permitir la eliminación permanente de {email}?"
+
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Allow sending mail text for each selected account in AI settings."
+msgstr "Permite enviar el texto del correo de cada cuenta seleccionada en los ajustes de IA."
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Allow sending mail text to the model"
+msgstr "Permitir enviar el texto del correo al modelo"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed"
+msgstr "Permitido"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed quietly"
+msgstr "Permitido sin sonido"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed temporarily"
+msgstr "Permitido temporalmente"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always from this sender"
+msgstr "Siempre de este remitente"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always light"
+msgstr "Siempre claro"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {address}"
+msgstr "Cargar siempre imágenes desde {address}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Always load images from {domain}"
+msgstr "Cargar siempre imágenes desde {domain}"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always load remote images from"
+msgstr "Cargue siempre imágenes remotas desde"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always quote the whole message"
+msgstr "Cite siempre el mensaje completo."
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always use selection"
+msgstr "Utilice siempre la selección"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "An attachment changed while reading. Try adding it again."
+msgstr "Un archivo adjunto cambió durante la lectura. Intenta añadirlo de nuevo."
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Anthropic API key"
+msgstr "Clave API de Anthropic"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "App-specific password"
+msgstr "Contraseña específica de la aplicación"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Apple Mail"
+msgstr "Apple Mail"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Apply"
+msgstr "Aplicar"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Apply color"
+msgstr "Aplicar color"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Apply link"
+msgstr "Aplicar enlace"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail"
+msgstr "Aplicar al correo existente"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Apply to existing mail?"
+msgstr "¿Aplicar al correo existente?"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Approve"
+msgstr "Aprobar"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Approve and edit"
+msgstr "Aprobar y editar"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Approve suggestion"
+msgstr "Aprobar sugerencia"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Archive"
+msgstr "Archivar"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Archive message"
+msgstr "Archivar mensaje"
+
+#: src/renderer/src/App.tsx
+msgid "Archived"
+msgstr "Archivado"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Ask"
+msgstr "Preguntar"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Ask about your mail"
+msgstr "Preguntar sobre tu correo"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Ask each time"
+msgstr "Pregunta cada vez"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Ask me first"
+msgstr "Pregúntame primero"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Attach files"
+msgstr "Adjuntar archivos"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Attach Files…"
+msgstr "Adjuntar archivos…"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Attach the redacted diagnostics shown below"
+msgstr "Adjunte los diagnósticos redactados que se muestran a continuación"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Attached message"
+msgstr "Mensaje adjunto"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Attachment cache limit"
+msgstr "Límite de caché de adjuntos"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Attachment save folder"
+msgstr "Carpeta para guardar adjuntos"
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Attachments"
+msgstr "Archivos adjuntos"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/dock-file-errors.ts
+msgid "Attachments exceed the 30 MB compose limit."
+msgstr "Los archivos adjuntos superan el límite de redacción de 30 MB."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Attendees"
+msgstr "Asistentes"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Authorization code"
+msgstr "Código de autorización"
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "Authorize permanent deletion"
+msgstr "Autorizar la eliminación permanente"
+
+#: src/renderer/src/errors.ts
+msgid "Authorize permission to permanently delete mail in this Gmail account."
+msgstr "Autorice el permiso para eliminar permanentemente el correo en esta cuenta de Gmail."
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Automatic direction"
+msgstr "Dirección automática"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic replies"
+msgstr "Respuestas automáticas"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Automatically summarize new mail"
+msgstr "Resumir automáticamente el correo nuevo"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Available in the installed macOS app"
+msgstr "Disponible en la aplicación macOS instalada"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Awaiting response"
+msgstr "Pendiente de respuesta"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Back"
+msgstr "Atrás"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill paused"
+msgstr "Descarga de correo antiguo en pausa"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Backfill runs between syncs"
+msgstr "El reabastecimiento se ejecuta entre sincronizaciones"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Background color"
+msgstr "Color de fondo"
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "Batch actions"
+msgstr "Acciones por lotes"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Bcc"
+msgstr "Cco"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Before date"
+msgstr "Antes de la fecha"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Below quoted text"
+msgstr "Debajo del texto citado"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Bigger text"
+msgstr "Texto más grande"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Blocked before loading:"
+msgstr "Bloqueado antes de cargar:"
+
+#. Cached texts of email messages, never anatomical bodies.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Bodies"
+msgstr "Textos de los mensajes"
+
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgctxt "message text"
+msgid "Body"
+msgstr "Texto del mensaje"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Bold"
+msgstr "Negrita"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Bug report"
+msgstr "Informe de error"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Built-in AI"
+msgstr "IA integrada"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Bulleted list"
+msgstr "Lista con viñetas"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar access is unavailable for this account"
+msgstr "El acceso al calendario no está disponible para esta cuenta"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar creation requires an in-app confirmation"
+msgstr "La creación del calendario requiere una confirmación en la aplicación"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Calendar invitation"
+msgstr "Invitación de calendario"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar pagination repeated a page"
+msgstr "La paginación del calendario repitió una página."
+
+#: src/renderer/src/errors.ts
+msgid "Calendar response was not sent"
+msgstr "La respuesta a la invitación no se ha enviado"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar responses require a user action"
+msgstr "Las respuestas del calendario requieren una acción del usuario"
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this account."
+msgstr "No puedo encontrar esta cuenta."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this attachment."
+msgstr "No puedo encontrar este archivo adjunto."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this draft."
+msgstr "No puedo encontrar este borrador."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this message."
+msgstr "No puedo encontrar este mensaje."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this proposal."
+msgstr "No puedo encontrar esta propuesta."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this signature."
+msgstr "No puedo encontrar esta firma."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this space."
+msgstr "No puedo encontrar este espacio."
+
+#: src/renderer/src/errors.ts
+msgid "Can't find this template."
+msgstr "No puedo encontrar esta plantilla."
+
+#: src/renderer/src/App.tsx
+msgid "Can't open the draft: {reason}"
+msgstr "No se puede abrir el borrador: {reason}"
+
+#: src/renderer/src/App.tsx
+msgid "Can't open the message: {reason}"
+msgstr "No se puede abrir el mensaje: {reason}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "Can't reach the mail server right now: {0}"
+msgstr "No puedo comunicarme con el servidor de correo en este momento: {0}"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/AiPanel.tsx
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/renderer/src/errors.ts
+msgid "Cannot build calendar response"
+msgstr "No se puede generar la respuesta del calendario"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Categories updated"
+msgstr "Categorías actualizadas"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Categories…"
+msgstr "Categorías…"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Category"
+msgstr "Categoría"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Category action"
+msgstr "Acción de categoría"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Category names, separated by commas"
+msgstr "Nombres de categorías, separados por comas"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Cc"
+msgstr "Cc"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Cc: {cc}"
+msgstr "CC: {cc}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Cc/Bcc"
+msgstr "Cc/Cco"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change mode"
+msgstr "Cambiar modo"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Change writing mode?"
+msgstr "¿Cambiar modo de escritura?"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Check for Updates…"
+msgstr "Buscar actualizaciones..."
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Check spelling while typing"
+msgstr "Revisar ortografía al escribir"
+
+#. editBody is the exact translated Edit body button label. Preserve it unchanged.
+#: src/renderer/src/components/Composer.tsx
+msgctxt "message text instruction"
+msgid "Choose {editBody} before inserting a template."
+msgstr "Selecciona «{editBody}» antes de insertar una plantilla."
+
+#. editBody is the exact translated Edit body button label. Preserve it unchanged.
+#: src/renderer/src/components/Composer.tsx
+msgctxt "message text instruction"
+msgid "Choose {editBody} before inserting an image."
+msgstr "Selecciona «{editBody}» antes de insertar una imagen."
+
+#: src/renderer/src/errors.ts
+msgid "Choose a conversation"
+msgstr "Elige una conversación"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a future reminder time"
+msgstr "Elija una hora de recordatorio futura"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a label or folder from this account"
+msgstr "Elija una etiqueta o carpeta de esta cuenta"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a parent folder from this account"
+msgstr "Elija una carpeta principal de esta cuenta"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a user label or folder"
+msgstr "Elija una etiqueta o carpeta de usuario"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a verified send-as address for this account"
+msgstr "Elija una dirección de envío verificada para esta cuenta"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Choose actions and use the buttons to change their order."
+msgstr "Elija acciones y use los botones para cambiar su orden."
+
+#: src/renderer/src/errors.ts
+msgid "Choose at least one filter action"
+msgstr "Elija al menos una acción de filtro"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Choose Delete key action"
+msgstr "Elegir acción de la tecla Suprimir"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Choose multiple categories"
+msgstr "Elegir varias categorías"
+
+#: src/renderer/src/errors.ts
+msgid "Choose one destination for the filter"
+msgstr "Elija un destino para el filtro"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Choose your email provider."
+msgstr "Elija su proveedor de correo electrónico."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear account cache"
+msgstr "Vaciar caché de la cuenta"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clear all caches"
+msgstr "Vaciar todas las cachés"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Clear formatting"
+msgstr "Borrar formato"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Clear selection"
+msgstr "Borrar selección"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
+msgstr "Vaciar la caché elimina los textos de los mensajes y los adjuntos descargados. Los encabezados y los borradores se conservan. Se necesita conexión para abrir contenido fuera de la caché."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftOrganization.tsx
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Close"
+msgstr "Cerrar"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Close compose window"
+msgstr "Cerrar ventana de redacción"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Close find"
+msgstr "Cerrar búsqueda"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
+msgstr "Cierre otros procesos de OpenMail (CLI/MCP), luego reinicie esta aplicación e intente la recuperación nuevamente."
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Code block"
+msgstr "Bloque de código"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse all"
+msgstr "Contraer todo"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Collapse all messages"
+msgstr "Contraer todos los mensajes"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Collapse categories"
+msgstr "Colapsar categorías"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Collapse message"
+msgstr "Contraer mensaje"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Color"
+msgstr "Color"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Color target"
+msgstr "Aplicar color a"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Compact"
+msgstr "Compacto"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Compose"
+msgstr "Nuevo mensaje"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm"
+msgstr "Confirmar"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Confirm and add event"
+msgstr "Confirmar y agregar evento"
+
+#: src/renderer/src/errors.ts
+msgid "Confirm deletion for a filter with a search query"
+msgstr "Confirmar la eliminación de un filtro con una consulta de búsqueda"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Confirm removal"
+msgstr "Confirmar eliminación"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Confirm rule changes?"
+msgstr "¿Confirmar los cambios de reglas?"
+
+#: src/renderer/src/App.tsx
+msgid "Connect an account to send feedback"
+msgstr "Conecte una cuenta para enviar comentarios"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Contact group"
+msgstr "Grupo de contacto"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Contact refresh failed. Cached suggestions remain available."
+msgstr "Error al actualizar el contacto. Las sugerencias almacenadas en caché siguen disponibles."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Contacts only"
+msgstr "Solo contactos"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Content matches"
+msgstr "Coincidencias de contenido"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Continue"
+msgstr "Continuar"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Continue editing"
+msgstr "Continuar editando"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Continue to draft"
+msgstr "Continuar al borrador"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Conversation actions"
+msgstr "Acciones de conversación"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Conversations"
+msgstr "Conversaciones"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copied"
+msgstr "Copiado"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Copied to folders"
+msgstr "Copiado en carpetas"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/MultiOrganization.tsx
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Copy"
+msgstr "Copiar"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Copy address"
+msgstr "Copiar dirección"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to message"
+msgstr "Copiar enlace al mensaje"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to thread"
+msgstr "Copiar enlace a la conversación"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Copy selected"
+msgstr "Copiar seleccionado"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Copy style"
+msgstr "Copiar estilo"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Copy to folders…"
+msgstr "Copiar en carpetas…"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Copy to local signature"
+msgstr "Copiar a firma local"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Could not check for updates. Try again later."
+msgstr "No se pudo buscar actualizaciones. Vuelve a intentarlo más tarde."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not decode winmail.dat. You can save the original file."
+msgstr "No se pudo decodificar winmail.dat. Puede guardar el archivo original."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Could not load older messages. Try again."
+msgstr "No se pudieron cargar los mensajes antiguos. Inténtalo de nuevo."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Could not load the calendar invitation."
+msgstr "No se pudo cargar la invitación del calendario."
+
+#: src/renderer/src/App.tsx
+msgid "Could not load the next message"
+msgstr "No se pudo cargar el siguiente mensaje"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Could not load your calendar."
+msgstr "No se pudo cargar tu calendario."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not open notification settings."
+msgstr "No se pudo abrir los ajustes de notificaciones."
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the compose window"
+msgstr "No se pudo abrir la ventana de redacción"
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the draft"
+msgstr "No se pudo abrir el borrador."
+
+#: src/renderer/src/App.tsx
+msgid "Could not open the feedback draft"
+msgstr "No se pudo abrir el borrador de comentarios"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not read attached message."
+msgstr "No se pudo leer el mensaje adjunto."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Could not read clipboard"
+msgstr "No se pudo leer el portapapeles"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not read system permission"
+msgstr "No se pudo leer el permiso del sistema"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Could not read the attachments. Check the files and their permissions."
+msgstr "No se pudieron leer los adjuntos. Comprueba los archivos y sus permisos."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not register OpenMail. Try again from the installed app."
+msgstr "No se pudo registrar OpenMail. Inténtalo de nuevo desde la aplicación instalada."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Could not reset the local cache"
+msgstr "No se pudo restablecer el caché local"
+
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/components/AiSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Could not save the API key in the system keychain."
+msgstr "No se pudo guardar la clave API en el llavero del sistema."
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Couldn't copy address"
+msgstr "No se pudo copiar la dirección"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't delete: {reason}"
+msgstr "No se pudo eliminar: {reason}"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't discard: {reason}"
+msgstr "No se pudo descartar: {reason}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Couldn't get the attachment: {reason}"
+msgstr "No se pudo obtener el archivo adjunto: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB."
+msgstr "No se pudo insertar la imagen. Utilice una imagen pública PNG, JPEG, GIF o WebP de hasta 8 MB."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments: {reason}"
+msgstr "No se pudieron cargar los archivos adjuntos originales: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments. Try again."
+msgstr "No se pudieron cargar los archivos adjuntos originales. Intentar otra vez."
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't print: {reason}"
+msgstr "No se pudo imprimir: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the attachment. Try adding it again."
+msgstr "No se pudo leer el archivo adjunto. Intente agregarlo nuevamente."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the clipboard attachment."
+msgstr "No se pudo leer el archivo adjunto del portapapeles."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the image."
+msgstr "No se pudo leer la imagen."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't save"
+msgstr "No se pudo guardar"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't save the draft: {reason}"
+msgstr "No se pudo guardar el borrador: {reason}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Couldn't save the PDF: {reason}"
+msgstr "No se pudo guardar el PDF: {reason}"
+
+#: src/renderer/src/App.tsx
+msgid "Couldn't send: {reason}"
+msgstr "No se pudo enviar: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Couldn't sync"
+msgstr "No se pudo sincronizar"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Create"
+msgstr "Crear"
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Account Security in your Yahoo account."
+msgstr "Cree una contraseña de aplicación en Seguridad de la cuenta en su cuenta de Yahoo."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
+msgstr "Cree una contraseña de aplicación en Ajustes > Privacidad y seguridad, con IMAP y SMTP marcados."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
+msgstr "Cree una contraseña específica de la aplicación en Inicio de sesión y seguridad en su cuenta Apple."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Create filter"
+msgstr "Crear filtro"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Create filter from these messages"
+msgstr "Crear filtro a partir de estos mensajes"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create Personal and Work profiles?"
+msgstr "¿Crear los perfiles Personal y Trabajo?"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles"
+msgstr "Crear perfiles"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Create profiles?"
+msgstr "¿Crear perfiles?"
+
+#: src/renderer/src/components/MultiOrganization.tsx
+msgid "Creates a separate copy in each selected folder. Keeps the original. Copies cannot be undone."
+msgstr "Crea una copia independiente en cada carpeta seleccionada. Conserva el original. Las copias no se pueden deshacer."
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Current folder"
+msgstr "Carpeta actual"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Custom colour"
+msgstr "Color personalizado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Custom folder"
+msgstr "Carpeta personalizada"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Custom hex color"
+msgstr "Color hexagonal personalizado"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Custom icon"
+msgstr "Icono personalizado"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Custom time"
+msgstr "Hora personalizada"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Dark background"
+msgstr "Fondo oscuro"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Dashed list"
+msgstr "Lista discontinua"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
+msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Date"
+msgstr "Fecha"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Day"
+msgstr "Día"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Decline"
+msgstr "Rechazar"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Declined"
+msgstr "Rechazado"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease indent"
+msgstr "Disminuir sangría"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease quote level"
+msgstr "Reducir nivel de cita"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Default"
+msgstr "Predeterminado"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default compose font"
+msgstr "Fuente de composición predeterminada"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Default email app"
+msgstr "Aplicación de correo electrónico predeterminada"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default From address"
+msgstr "Dirección de origen predeterminada"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Default signature"
+msgstr "Firma predeterminada"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Delete"
+msgstr "Eliminar"
+
+#. placeholder {0}: signature.name
+#. placeholder {0}: template.name
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Delete {0}"
+msgstr "Eliminar {0}"
+
+#. placeholder {0}: deleteRequest?.ids.size ?? 0
+#: src/renderer/src/App.tsx
+msgid "Delete {0} conversations?"
+msgstr "¿Eliminar {0} conversaciones?"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Delete filter?"
+msgstr "¿Eliminar filtro?"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Delete key action"
+msgstr "Acción de la tecla Suprimir"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Delete label or folder?"
+msgstr "¿Eliminar etiqueta o carpeta?"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Delete Space"
+msgstr "Eliminar espacio"
+
+#: src/renderer/src/App.tsx
+msgid "Deleted"
+msgstr "Eliminado"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Deleting a folder also deletes its messages on the server."
+msgstr "Al eliminar una carpeta también se eliminan sus mensajes en el servidor."
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Denied"
+msgstr "Denegado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Dense"
+msgstr "Denso"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Describe what happened"
+msgstr "Describe lo que pasó"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Detect calendar events in messages"
+msgstr "Detectar eventos de calendario en mensajes"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Diagnostics preview"
+msgstr "Vista previa de diagnóstico"
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Disabled"
+msgstr "Desactivado"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard"
+msgstr "Descartar"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Discard draft"
+msgstr "Descartar borrador"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Discard saved rule?"
+msgstr "¿Descartar la regla guardada?"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Display name"
+msgstr "Nombre para mostrar"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Does not have words"
+msgstr "No contiene las palabras"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Don't attach the original message"
+msgstr "No adjuntes el mensaje original"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Done"
+msgstr "Aceptar"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Download on-device models, ~226 MB"
+msgstr "Descargar modelos en el dispositivo, ~226 MB"
+
+#. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Downloading models: {0}%"
+msgstr "Descargando modelos: {0}%"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Downloads"
+msgstr "Descargas"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Draft"
+msgstr "Borrador"
+
+#. Text of a draft email, never an anatomical body.
+#: src/renderer/src/components/Proposals.tsx
+msgctxt "message text"
+msgid "Draft body"
+msgstr "Texto del mensaje del borrador"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft categories"
+msgstr "Categorías del borrador"
+
+#: src/renderer/src/App.tsx
+msgid "Draft discarded"
+msgstr "Borrador descartado"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft keywords"
+msgstr "Palabras clave del borrador"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Drafts"
+msgstr "Borradores"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Drag {0} to reorder"
+msgstr "Arrastra {0} para cambiar el orden"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
+msgstr "Arrastre cuentas para reordenar o moverse entre espacios. También puede utilizar el selector de espacio y los botones Subir/Bajar."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Drag selected to Finder"
+msgstr "Arrastra el seleccionado al Finder"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Edit"
+msgstr "Editar"
+
+#. placeholder {0}: template.name
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit {0}"
+msgstr "Editar {0}"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Edit address"
+msgstr "Editar dirección"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Edit automatic reply"
+msgstr "Editar respuesta automática"
+
+#. Button that enables editing the email's text. Body means message text, never a person's body.
+#: src/renderer/src/message-text.ts
+msgctxt "message text action"
+msgid "Edit body"
+msgstr "Editar texto del mensaje"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Edit link"
+msgstr "Editar enlace"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Edit signature"
+msgstr "Editar firma"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Edit space"
+msgstr "Editar espacio"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Edit template"
+msgstr "Editar plantilla"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Edit this draft body?"
+msgstr "¿Editar el texto de este borrador?"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Edit this rule in webmail to preserve all conditions and actions."
+msgstr "Edite esta regla en webmail para preservar todas las condiciones y acciones."
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Edit token"
+msgstr "Editar token"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
+msgstr "La edición elimina el formato y las imágenes no compatibles de este borrador. Se mantienen listas, negrita, cursiva, subrayado y enlaces."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Email address"
+msgstr "Dirección de correo electrónico"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam"
+msgstr "Vaciar correo no deseado"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Spam?"
+msgstr "¿Vaciar el correo no deseado?"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash"
+msgstr "Vaciar papelera"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Empty Trash?"
+msgstr "¿Vaciar la papelera?"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Enable filters"
+msgstr "Habilitar filtros"
+
+#: src/renderer/src/errors.ts
+msgid "Enable this account to open mail on the web"
+msgstr "Habilite esta cuenta para abrir correo en la web"
+
+#: src/renderer/src/errors.ts
+msgid "Enable this account to use its calendar"
+msgstr "Habilite esta cuenta para usar su calendario"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Enabled"
+msgstr "Activado"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "End"
+msgstr "Fin"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Enter a future reminder time"
+msgstr "Introduzca una hora de recordatorio futura"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Enter a signature name."
+msgstr "Introduzca un nombre de firma."
+
+#: src/renderer/src/errors.ts
+msgid "Enter a single access token"
+msgstr "Introduzca un token de acceso único"
+
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Enter a single API key."
+msgstr "Introduce una única clave API."
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter a template name."
+msgstr "Introduzca un nombre de plantilla."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter the IMAP and SMTP servers your email provider gives you."
+msgstr "Ingresa los servidores IMAP y SMTP que te brinda tu proveedor de correo electrónico."
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Enter the project's feedback address"
+msgstr "Ingrese la dirección de comentarios del proyecto"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Enter valid email addresses in To, Cc and Bcc."
+msgstr "Ingrese direcciones de correo electrónico válidas en Para, CC y CCO."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} days"
+msgstr "Cada {interval} días"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} months"
+msgstr "Cada {interval} meses"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} weeks"
+msgstr "Cada {interval} semanas"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Every {interval} years"
+msgstr "Cada {interval} años"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Everyone"
+msgstr "Todos"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Exclude matches"
+msgstr "Excluir coincidencias"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Expand all"
+msgstr "Expandir todo"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Expand all messages"
+msgstr "Expandir todos los mensajes"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Expand categories"
+msgstr "Ampliar categorías"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Expanded"
+msgstr "Expandido"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Experimental features can be enabled separately."
+msgstr "Las funciones experimentales se pueden habilitar por separado."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "External replies"
+msgstr "Respuestas externas"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Favorite"
+msgstr "Favorito"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Favorites"
+msgstr "Favoritos"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feature request"
+msgstr "Solicitud de función"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback"
+msgstr "Comentarios"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Feedback address"
+msgstr "Dirección de comentarios"
+
+#: src/renderer/src/state/desktop.ts
+msgid "File"
+msgstr "Archivo"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Fill template variables"
+msgstr "Llenar variables de plantilla"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Filter"
+msgstr "Filtro"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find and replace"
+msgstr "Buscar y reemplazar"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find in body"
+msgstr "Buscar en el texto del mensaje"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Find in message"
+msgstr "Buscar en el mensaje"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Finish signing in in your browser"
+msgstr "Termina de iniciar sesión en tu navegador"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Finish signing in in your browser, then come back here."
+msgstr "Termine de iniciar sesión en su navegador y luego regrese aquí."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Focus main window"
+msgstr "Enfocar la ventana principal"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder action failed: {reason}"
+msgstr "Error en la acción de carpeta: {reason}"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Folder actions"
+msgstr "Acciones de carpeta"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Folder colors are stored on this computer only."
+msgstr "Los colores de las carpetas se almacenan únicamente en esta computadora."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Folder path"
+msgstr "Ruta de la carpeta"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Follow system"
+msgstr "Seguir el sistema"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font family"
+msgstr "Familia de fuentes"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Font size"
+msgstr "Tamaño de fuente"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Format"
+msgstr "Formato"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Formatting"
+msgstr "Formato"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Forums"
+msgstr "Foros"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward"
+msgstr "Reenviar"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Forward as attachment"
+msgstr "Reenviar como adjunto"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Friday"
+msgstr "Viernes"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "From"
+msgstr "De"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "From {from} to {to}"
+msgstr "De {from} a {to}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "From updated"
+msgstr "Remitente actualizado"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "General"
+msgstr "General"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate app-specific password"
+msgstr "Generar contraseña específica de la aplicación"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Generate authorization code"
+msgstr "Generar código de autorización"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Generated by {model}"
+msgstr "Generado por {model}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Gestures and toolbar"
+msgstr "Gestos y barra de herramientas"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "GitHub access token"
+msgstr "Token de acceso a GitHub"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Gmail"
+msgstr "Gmail"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Gmail aliases and signatures"
+msgstr "Alias ​​y firmas de Gmail"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
+msgstr "Los archivos adjuntos de Gmail superan los 25 MB en total. Elimine los archivos adjuntos antes de enviarlos."
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail blocks {filename}. Remove this attachment before sending."
+msgstr "Gmail bloquea {filename}. Elimine este archivo adjunto antes de enviarlo."
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail copy"
+msgstr "Copia de gmail"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Gmail default"
+msgstr "Valor predeterminado de Gmail"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
+msgstr "Las etiquetas y estrellas de los borradores de Gmail permanecen en este Mac. Gmail solo permite la etiqueta Borrador en los borradores del servidor."
+
+#: src/renderer/src/components/GoToFolder.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Go to folder"
+msgstr "Ir a la carpeta"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Group accounts and choose a profile in the window toolbar."
+msgstr "Agrupa las cuentas y elige un perfil en la barra de herramientas de la ventana."
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with ⌃1 to ⌃9."
+msgstr "Agrupa cuentas en espacios como «Trabajo» y «Personal». Cada espacio tiene su propia Bandeja de entrada. Cambia de espacio con ⌃1–⌃9."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Group messages into conversations"
+msgstr "Agrupar mensajes en conversaciones"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Has attachment"
+msgstr "Tiene archivo adjunto"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Has words"
+msgstr "Contiene las palabras"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Headers"
+msgstr "Encabezados"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Help"
+msgstr "Ayuda"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Hide"
+msgstr "Ocultar"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Hide format bar"
+msgstr "Ocultar barra de formato"
+
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Hide quoted text"
+msgstr "Ocultar texto citado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
+msgstr "Cuánto tiempo permanece abierta una conversación antes de que se marque como leída. Manualmente: use {readShortcut} o la barra de herramientas."
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Icon"
+msgstr "Icono"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Image file"
+msgstr "Archivo de imagen"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Image recognition is unavailable on this platform."
+msgstr "El reconocimiento de imágenes no está disponible en esta plataforma."
+
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Image region"
+msgstr "Región de la imagen"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Image size"
+msgstr "Tamaño de imagen"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Image URL"
+msgstr "URL de la imagen"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
+msgstr "Las imágenes y el texto PDF se procesan en este dispositivo. No se envía ningún contenido a un modelo en la nube."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP account"
+msgstr "Cuenta IMAP"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "IMAP keywords, separated by commas"
+msgstr "Palabras clave IMAP, separadas por comas"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "IMAP server"
+msgstr "Servidor IMAP"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance action"
+msgstr "Acción de importancia"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Important"
+msgstr "Importante"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "In “{elsewhere}”"
+msgstr "En \"{elsewhere}\""
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "In 3 hours"
+msgstr "Dentro de 3 horas"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "In Inbox"
+msgstr "En la Bandeja de entrada"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
+msgstr "En el lector, ⌘+ y ⌘− lo cambian y ⌘0 vuelve al 100%."
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Inbox"
+msgstr "Bandeja de entrada"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Include matches"
+msgstr "Incluir coincidencias"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Include original attachments"
+msgstr "Incluye archivos adjuntos originales."
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Include signature separator"
+msgstr "Incluir separador de firma"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase indent"
+msgstr "Aumentar sangría"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase quote level"
+msgstr "Aumentar nivel de cita"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Indent list"
+msgstr "Aumentar sangría de lista"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Inline code"
+msgstr "Código en línea"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert image"
+msgstr "Insertar imagen"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert template"
+msgstr "Insertar plantilla"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable"
+msgstr "Insertar variable"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Insert variable…"
+msgstr "Insertar variable…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Install the packaged app to make it the default. Development builds cannot register email links."
+msgstr "Instale la aplicación empaquetada para que sea la predeterminada. Las compilaciones de desarrollo no pueden registrar enlaces de correo electrónico."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Internal folder"
+msgstr "Carpeta interna"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Internal reply"
+msgstr "Respuesta interna"
+
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Invalid AI account settings."
+msgstr "Los ajustes de IA de la cuenta no son válidos."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar event time"
+msgstr "Hora del evento del calendario no válida"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar pagination link"
+msgstr "Enlace de paginación del calendario no válido"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid message link"
+msgstr "Enlace de mensaje no válido"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation changes"
+msgstr "Cambios de invitación"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation status in this conversation"
+msgstr "Estado de la invitación en esta conversación"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Italic"
+msgstr "Itálico"
+
+#: src/renderer/src/components/MeetingLinks.tsx
+msgid "Join meeting"
+msgstr "Unirse a la reunión"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Justify"
+msgstr "Justificar"
+
+#. placeholder {0}: label.name
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep bodies in {0}"
+msgstr "Conservar los textos de los mensajes en {0}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep category"
+msgstr "Mantener categoría"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep importance"
+msgstr "Mantener importancia"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Keep local copy"
+msgstr "Mantener copia local"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Kept on this Mac"
+msgstr "Mantenido en esta Mac"
+
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Keyboard shortcuts"
+msgstr "Atajos de teclado"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Label"
+msgstr "Etiqueta"
+
+#: src/renderer/src/App.tsx
+msgid "Label added"
+msgstr "Etiqueta añadida"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Label list visibility"
+msgstr "Visibilidad de la lista de etiquetas"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Label or folder"
+msgstr "Etiqueta o carpeta"
+
+#: src/renderer/src/App.tsx
+msgid "Label removed"
+msgstr "Etiqueta eliminada"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Label: {name}"
+msgstr "Etiqueta: {name}"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels"
+msgstr "Etiquetas"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Labels…"
+msgstr "Etiquetas…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Labs"
+msgstr "Laboratorios"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Language"
+msgstr "Idioma"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Large"
+msgstr "Grande"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Larger text"
+msgstr "Texto más grande"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Larger than"
+msgstr "Más grande que"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Last 7 days"
+msgstr "Últimos 7 días"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Last sync failed"
+msgstr "La última sincronización falló"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Latest"
+msgstr "El último"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left long swipe"
+msgstr "Deslizamiento largo hacia la izquierda"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left short swipe"
+msgstr "Deslizamiento corto hacia la izquierda"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Left to right"
+msgstr "De izquierda a derecha"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Light background"
+msgstr "Fondo claro"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Link URL"
+msgstr "URL del enlace"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Load images"
+msgstr "Cargar imágenes"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Load older messages"
+msgstr "Cargar mensajes antiguos"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Load remote content"
+msgstr "Cargar contenido remoto"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Loading attached message…"
+msgstr "Cargando mensaje adjunto…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Loading attachments…"
+msgstr "Cargando archivos adjuntos..."
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Loading calendar…"
+msgstr "Cargando calendario…"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Loading diagnostics…"
+msgstr "Cargando diagnóstico…"
+
+#: src/renderer/src/App.tsx
+msgid "Loading draft…"
+msgstr "Cargando borrador…"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Loading image…"
+msgstr "Cargando imagen…"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Loading older messages…"
+msgstr "Cargando mensajes antiguos…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Loading settings…"
+msgstr "Cargando ajustes…"
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Loading the original from the server…"
+msgstr "Cargando el original desde el servidor…"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Loading…"
+msgstr "Cargando…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Local cache"
+msgstr "Caché local"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Local draft labels"
+msgstr "Etiquetas locales de borradores"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Local preview: {count} messages"
+msgstr "Vista previa local: {count} mensajes"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
+msgstr "Las firmas locales permanecen en esta Mac. Las firmas predeterminadas de Gmail se leen desde Gmail."
+
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location"
+msgstr "Ubicación"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location changed:"
+msgstr "Ubicación cambiada:"
+
+#: src/renderer/src/errors.ts
+msgid "Lost the connection to the background process."
+msgstr "Se perdió la conexión con el proceso en segundo plano."
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "macOS uses the system spellchecker and detects languages automatically."
+msgstr "MacOS usa el corrector ortográfico del sistema y detecta los idiomas automáticamente."
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Mail assistant"
+msgstr "Asistente de correo"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Mailbox"
+msgstr "Buzón"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Mailboxes"
+msgstr "Buzones"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Make OpenMail default"
+msgstr "Establecer OpenMail como predeterminado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Manually"
+msgstr "A mano"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Many HTML emails are designed for white. Each message's menu can switch its background."
+msgstr "Muchos correos electrónicos HTML están diseñados para blanco. El menú de cada mensaje puede cambiar su fondo."
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Mark all as read"
+msgstr "Marcar todo como leído"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as important"
+msgstr "Marcar como importante"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as not important"
+msgstr "Marcar como no importante"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as read"
+msgstr "Marcar como leído"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Mark as unread"
+msgstr "Marcar como no leído"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark message unread"
+msgstr "Marcar mensaje como no leído"
+
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Mark read"
+msgstr "Marcar como leído"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Mark read/unread"
+msgstr "Marcar como leído/no leído"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Mark unread from this message"
+msgstr "Marcar como no leído de este mensaje"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown"
+msgstr "Markdown"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Markdown composition"
+msgstr "Redacción en Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown replacements"
+msgstr "Sustituciones de Markdown"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Markdown works: **bold**, `code`, ```code block```"
+msgstr "Markdown funciona: **negrita**, `código`, ```bloque de código```"
+
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Marked {count} messages as read"
+msgstr "{count} mensajes marcados como leídos"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as important"
+msgstr "Marcado como importante"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as not important"
+msgstr "Marcado como no importante"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as read"
+msgstr "Marcado como leído"
+
+#: src/renderer/src/App.tsx
+msgid "Marked as unread"
+msgstr "Marcado como no leído"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Match appearance"
+msgstr "Seguir apariencia"
+
+#: src/renderer/src/components/MediaMatches.tsx
+msgid "Matched image region"
+msgstr "Región de imagen coincidente"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
+msgstr "Los horarios coincidentes mantienen activo ese día de la semana durante todo el día. Los períodos nocturnos continúan hasta el día siguiente. Los días no marcados permanecen silenciados excepto durante los períodos nocturnos del día anterior. Los horarios de verano repetidos utilizan el mismo horario; los tiempos omitidos se pasan por alto."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Medium"
+msgstr "Mediano"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting cancelled"
+msgstr "Reunión cancelada"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting response"
+msgstr "Respuesta de la reunión"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting updated"
+msgstr "Reunión actualizada"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Mention suggestions"
+msgstr "Sugerencias de menciones"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Message"
+msgstr "Mensaje"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Message actions"
+msgstr "Acciones de mensaje"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message background"
+msgstr "Fondo del mensaje"
+
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgctxt "message text"
+msgid "Message body"
+msgstr "Texto del mensaje"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Message link copied"
+msgstr "Enlace del mensaje copiado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message list density"
+msgstr "Densidad de la lista de mensajes"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Message list visibility"
+msgstr "Visibilidad de la lista de mensajes"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message order in a conversation"
+msgstr "Orden de los mensajes en una conversación"
+
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Message updated"
+msgstr "Mensaje actualizado"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
+msgstr "Los mensajes dentro del plazo para deshacer el envío seguirán como borradores. Un envío ya iniciado puede completarse."
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Messages keep their other labels."
+msgstr "Los mensajes mantienen sus otras etiquetas."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Mimestream"
+msgstr "Mimestream"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mode"
+msgstr "Modo"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Model"
+msgstr "Modelo"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download failed. Retrying while idle."
+msgstr "Error en la descarga del modelo. Reintentando mientras está inactivo."
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Model download progress"
+msgstr "Progreso de la descarga del modelo"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Models verified and ready. Search stays on this device."
+msgstr "Modelos verificados y listos. La búsqueda permanece en este dispositivo."
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Modify {token}"
+msgstr "Modificar {token}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Monday"
+msgstr "Lunes"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Month"
+msgstr "Mes"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "More"
+msgstr "Más"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "More actions"
+msgstr "Más acciones"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "More matches exist. Narrow your search."
+msgstr "Existen más coincidencias. Limita tu búsqueda."
+
+#: src/renderer/src/components/BatchActions.tsx
+msgid "More messages not loaded"
+msgstr "Más mensajes no cargados"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} down"
+msgstr "Mover {0} abajo"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} earlier"
+msgstr "Mover {0} antes"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} later"
+msgstr "Mover {0} más tarde"
+
+#. placeholder {0}: signature.name
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Move {0} up"
+msgstr "Mover {0} arriba"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} down"
+msgstr "Mover {label} hacia abajo"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} up"
+msgstr "Mover {label} hacia arriba"
+
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move down"
+msgstr "Bajar"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Move focus between panes"
+msgstr "Mover el foco entre paneles"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Move message to Trash"
+msgstr "Mover mensaje a la Papelera"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move To"
+msgstr "Mover a"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Bcc"
+msgstr "Mover a Cco"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to Cc"
+msgstr "Mover a Cc"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder"
+msgstr "Mover a la carpeta"
+
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to folder…"
+msgstr "Mover a la carpeta…"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Inbox"
+msgstr "Mover a la Bandeja de entrada"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Move to To"
+msgstr "Mover a Para"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Move to Trash"
+msgstr "Mover a la papelera"
+
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move up"
+msgstr "Subir"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Proposals.tsx
+msgid "Moved"
+msgstr "Movido"
+
+#: src/renderer/src/App.tsx
+msgid "Moved to Inbox"
+msgstr "Movido a la Bandeja de entrada"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Moves from “{elsewhere}”"
+msgstr "Se mueve desde “{elsewhere}”"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Name"
+msgstr "Nombre"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Name the template, then press Return"
+msgstr "Asigne un nombre a la plantilla y luego presione Retorno."
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Name, like Work"
+msgstr "Nombre, como Trabajo"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Needs sign-in"
+msgstr "Necesita iniciar sesión"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "New draft"
+msgstr "Nuevo borrador"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "New label or folder"
+msgstr "Nueva etiqueta o carpeta"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "New mail notifications"
+msgstr "Nuevas notificaciones de correo"
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "New message"
+msgstr "Nuevo mensaje"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "New Message"
+msgstr "Nuevo mensaje"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New message signature for {address}"
+msgstr "Nueva firma de mensaje para {address}"
+
+#: src/renderer/src/state/desktop.ts
+msgid "new messages"
+msgstr "Nuevos mensajes"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New messages"
+msgstr "Nuevos mensajes"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "New profile"
+msgstr "Nuevo perfil"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "New signature"
+msgstr "Nueva firma"
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "New space"
+msgstr "Nuevo espacio"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "New template"
+msgstr "Nueva plantilla"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "New time:"
+msgstr "Nueva hora:"
+
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "New Window"
+msgstr "Nueva ventana"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Newest first"
+msgstr "Lo nuevo primero"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "news@shop.com or shop.com"
+msgstr "Noticias@shop.com o shop.com"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next above"
+msgstr "Siguiente arriba"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Next below"
+msgstr "Siguiente abajo"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next match"
+msgstr "Siguiente coincidencia"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next thread"
+msgstr "Siguiente conversación"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Next week"
+msgstr "La próxima semana"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next window"
+msgstr "Siguiente ventana"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "No access token saved"
+msgstr "No se ha guardado ningún token de acceso"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No accounts yet"
+msgstr "Aún no hay cuentas"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "No activity yet."
+msgstr "Aún no hay actividad."
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "No current label applies. Moving to Trash."
+msgstr "No se aplica ninguna etiqueta actual. Pasando a la Papelera."
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "No custom labels"
+msgstr "Sin etiquetas personalizadas"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No external replies"
+msgstr "Sin respuestas externas"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No label or folder"
+msgstr "Sin etiqueta ni carpeta"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "No matches"
+msgstr "Sin coincidencias"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No matching messages"
+msgstr "No hay mensajes coincidentes"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages here"
+msgstr "No hay mensajes aquí"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No messages match the filters"
+msgstr "Ningún mensaje coincide con los filtros."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No more messages"
+msgstr "No hay más mensajes"
+
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "No operations to undo"
+msgstr "No hay operaciones que deshacer"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "No overlapping events in your primary calendar."
+msgstr "No hay eventos superpuestos en su calendario principal."
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "No parent"
+msgstr "Sin carpeta superior"
+
+#: src/renderer/src/errors.ts
+msgid "no printers are available."
+msgstr "No hay impresoras disponibles."
+
+#: src/renderer/src/state/desktop.ts
+msgid "No suggestions"
+msgstr "Sin sugerencias"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "No suggestions waiting for review."
+msgstr "No hay sugerencias esperando revisión."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "No templates yet. Use {token} for the first recipient's name."
+msgstr "Aún no hay plantillas. Utilice {token} para el nombre del primer destinatario."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "No time zone supplied; shown in your local time."
+msgstr "No se proporciona zona horaria; se muestra en su hora local."
+
+#: src/renderer/src/state/desktop.ts
+msgid "No unread mail"
+msgstr "No hay correo no leído"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "No unread mail in the inbox"
+msgstr "No hay correo no leído en la Bandeja de entrada"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "None"
+msgstr "Ninguno"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Not requested"
+msgstr "No solicitado"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Not synced"
+msgstr "No sincronizado"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification action buttons"
+msgstr "Botones de acción de notificación"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification actions are available on macOS and Windows."
+msgstr "Las acciones de notificación están disponibles en macOS y Windows."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Notifications"
+msgstr "Notificaciones"
+
+#. placeholder {0}: account.email
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notifications for {0}"
+msgstr "Notificaciones para {0}"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Numbered list"
+msgstr "Lista numerada"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Off"
+msgstr "Desactivado"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OK"
+msgstr "Aceptar"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail and cache"
+msgstr "Correo y caché más antiguos"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
+msgstr "Los mensajes antiguos se descargan en segundo plano. Los encabezados siguen disponibles para búsquedas cuando caducan los textos. Al abrir un mensaje, su texto se descarga de nuevo."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Older mail is up to date"
+msgstr "El correo antiguo está actualizado."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Oldest first"
+msgstr "El más viejo primero"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
+msgstr "Con batería: el reconocimiento de imágenes espera la alimentación de CA. La indexación de texto PDF está limitada."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
+msgstr "En la web, active IMAP en Ajustes > POP3/SMTP/IMAP, luego siga las instrucciones para generar un código de autorización."
+
+#: src/renderer/src/components/imapPresetText.ts
+msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
+msgstr "En la web, active IMAP/SMTP en Ajustes > Cuenta y seguridad > Ajustes de seguridad y luego genere un código de autorización."
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "On-device indexing"
+msgstr "Indexación en el dispositivo"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "One occurrence of a recurring meeting"
+msgstr "Una ocurrencia de una reunión recurrente"
+
+#: src/renderer/src/errors.ts
+msgid "Only inbox messages can be snoozed"
+msgstr "Solo se pueden posponer los mensajes de la Bandeja de entrada"
+
+#: src/renderer/src/App.tsx
+msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
+msgstr "Solo se eliminarán permanentemente los mensajes de las conversaciones seleccionadas en esta Papelera o carpeta de Correo no deseado. Se conservarán las copias en la Bandeja de entrada y Enviado. Esta acción no se puede deshacer."
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Only regular files can be attached. Folders cannot be attached."
+msgstr "Solo se pueden adjuntar archivos normales. Las carpetas no se pueden adjuntar."
+
+#: src/renderer/src/App.tsx
+msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
+msgstr "Solo se eliminarán permanentemente los mensajes seleccionados en esta Papelera o carpeta de Correo no deseado. Esta acción no se puede deshacer."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open"
+msgstr "Abrir"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Open attachments from"
+msgstr "Abrir archivos adjuntos de"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open email links in a new OpenMail draft."
+msgstr "Abra enlaces de correo electrónico en un nuevo borrador de OpenMail."
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Open in Gmail"
+msgstr "Abrir en Gmail"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Open in New Window"
+msgstr "Abrir en ventana nueva"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Open in Outlook"
+msgstr "Abrir en Outlook"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open in web mail"
+msgstr "Abrir en correo web"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open macOS notification settings"
+msgstr "Abrir los ajustes de notificaciones de macOS"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Open only this message in a new window"
+msgstr "Abrir solo este mensaje en una ventana nueva"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Open space"
+msgstr "Abrir espacio"
+
+#: src/renderer/src/errors.ts
+msgid "Open this invitation in your calendar to add it before responding"
+msgstr "Abre esta invitación en tu calendario para agregarla antes de responder."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Open With…"
+msgstr "Abrir con…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "OpenMail is the default email app"
+msgstr "OpenMail es la aplicación de correo electrónico predeterminada"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OpenMail is up to date."
+msgstr "OpenMail está actualizado."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail safe mode"
+msgstr "Modo seguro de OpenMail"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
+msgstr "Openmail inicia sesión con un cliente OAuth que usted mismo registra. Primero ingresa la aplicación que registraste en Azure, con el tipo Aplicaciones móviles y de escritorio. Sólo se admiten cuentas personales de Outlook.com y Hotmail. Consulte {doc} en el repositorio para conocer los pasos."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "openmail signs in with an OAuth client you register yourself. First enter the OAuth client you created in Google Cloud, with the Desktop app type. See {doc} in the repository for the steps."
+msgstr "Openmail inicia sesión con un cliente OAuth que usted mismo registra. Primero ingrese el cliente OAuth que creó en Google Cloud, con el tipo de aplicación de escritorio. Consulte {doc} en el repositorio para conocer los pasos."
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "OpenMail stopped unexpectedly"
+msgstr "OpenMail se detuvo inesperadamente"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
+msgstr "OpenMail se cerró inesperadamente tres veces en cinco minutos. Continúa, restablece la caché local y sincroniza de nuevo, o sal. Las cuentas, los borradores y los tokens del llavero se conservan."
+
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Operations from the last 24 hours. Restores labels, folders and flags after checking current state."
+msgstr "Operaciones de las últimas 24 horas. Restaura etiquetas, carpetas y marcas después de comprobar el estado actual."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Optional"
+msgstr "Opcional"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Order"
+msgstr "Orden"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Organize"
+msgstr "Organizar"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Organize directly"
+msgstr "Organizar directamente"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Organizer"
+msgstr "Organizador"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Original"
+msgstr "Original"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Original attachments are kept in Outlook without uploading them again."
+msgstr "Los archivos adjuntos originales se guardan en Outlook sin volver a cargarlos."
+
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/RawMessage.tsx
+msgid "Original message"
+msgstr "Mensaje original"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Original message (.eml)"
+msgstr "Mensaje original (.eml)"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Original message unavailable"
+msgstr "El mensaje original no está disponible"
+
+#: src/renderer/src/components/ProfileEditor.tsx
+msgid "Other"
+msgstr "Otro"
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Other feedback"
+msgstr "Otros comentarios"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Other IMAP"
+msgstr "Otros IMAP"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Outdent list"
+msgstr "Reducir sangría de lista"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook automatic replies do not support a custom subject"
+msgstr "Las respuestas automáticas de Outlook no admiten un asunto personalizado"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Outlook categories"
+msgstr "Categorías de Outlook"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Outlook chooses the reply subject."
+msgstr "Outlook elige el asunto de la respuesta."
+
+#: src/renderer/src/errors.ts
+msgid "Outlook scheduled replies need both dates"
+msgstr "Las respuestas programadas de Outlook necesitan ambas fechas"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Output truncated at the token limit. It was not cached."
+msgstr "La respuesta se truncó al alcanzar el límite de tokens. No se guardó en la caché."
+
+#: src/renderer/src/components/Overview.tsx
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Overview"
+msgstr "Descripción general"
+
+#. placeholder {0}: chunk.page
+#. placeholder {0}: hit.page
+#: src/renderer/src/components/MediaMatches.tsx
+#: src/renderer/src/components/MessageList.tsx
+msgid "Page {0}"
+msgstr "Página {0}"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Parent folder"
+msgstr "Carpeta principal"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Password"
+msgstr "Contraseña"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste and match style"
+msgstr "Pegar con el mismo estilo"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste as quotation"
+msgstr "Pegar como cita"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste style"
+msgstr "Pegar estilo"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Pause"
+msgstr "Pausa"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Pause indexing"
+msgstr "Pausar indexación"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Permanently delete"
+msgstr "Eliminar permanentemente"
+
+#: src/renderer/src/App.tsx
+msgid "Permanently delete selected mail?"
+msgstr "¿Eliminar permanentemente el correo seleccionado?"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/FolderActions.tsx
+msgid "Permanently deleted {count} messages"
+msgstr "{count} mensajes eliminados permanentemente"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Personal"
+msgstr "Personal"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Plain text"
+msgstr "Texto sin formato"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Port"
+msgstr "Puerto"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Press ? outside a text field to show this list."
+msgstr "Prensa ? fuera de un campo de texto para mostrar esta lista."
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Preview {0}"
+msgstr "Vista previa {0}"
+
+#. placeholder {0}: confirming.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
+msgstr "Vista previa: {0} mensajes. Solo los mensajes de la vista previa se cambiarán cuando se apliquen al correo existente."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous match"
+msgstr "Coincidencia anterior"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous thread"
+msgstr "Conversación anterior"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Previous time:"
+msgstr "Hora anterior:"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous window"
+msgstr "Ventana anterior"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Primary"
+msgstr "Principal"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Principal excluye las otras categorías de Gmail. En Outlook e IMAP incluye todos los mensajes de la Bandeja de entrada. Los mensajes leídos y la primera sincronización no generan notificaciones."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Print"
+msgstr "Imprimir"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Print message…"
+msgstr "Imprimir mensaje…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Print…"
+msgstr "Imprimir…"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profile"
+msgstr "Perfil"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Profiles"
+msgstr "Perfiles"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
+msgstr "Los perfiles agrupan cuentas. Puedes asignar cuentas y editar perfiles en Ajustes."
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Promotions"
+msgstr "Promociones"
+
+#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/ProviderIcon.tsx
+msgid "QQ Mail"
+msgstr "QQ Mail"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Quick Look"
+msgstr "Vista rápida"
+
+#: src/renderer/src/recovery-labels.ts
+#: src/renderer/src/state/desktop.ts
+msgid "Quit"
+msgstr "Salir"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quit with messages waiting to send?"
+msgstr "¿Salir con mensajes esperando ser enviados?"
+
+#: src/renderer/src/App.tsx
+msgid "Quote only the selected text?"
+msgstr "¿Citar sólo el texto seleccionado?"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Quote selected text"
+msgstr "Citar texto seleccionado"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Read only"
+msgstr "Solo lectura"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Reading"
+msgstr "Lectura"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient email"
+msgstr "Correo electrónico del destinatario"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient first name"
+msgstr "Nombre del destinatario"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient last name"
+msgstr "Apellido del destinatario"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Recipient name"
+msgstr "Nombre del destinatario"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "{copied} registros locales recuperados. Se omitieron {skipped} elementos ilegibles. Base de datos original: {backup}"
+
+#: src/renderer/src/errors.ts
+msgid "Recurring event creation is unavailable for this account"
+msgstr "La creación de eventos recurrentes no está disponible para esta cuenta"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Recurring meeting"
+msgstr "Reunión recurrente"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Refresh contacts"
+msgstr "Actualizar contactos"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Reject"
+msgstr "Rechazar"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Reject suggestion"
+msgstr "Rechazar sugerencia"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Remind me"
+msgstr "Recordarme"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Reminder time"
+msgstr "Tiempo de recordatorio"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Remote images are blocked so the sender can't tell if you read this."
+msgstr "Las imágenes remotas están bloqueadas para que el remitente no pueda saber si lees esto."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove"
+msgstr "Eliminar"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Remove {0}"
+msgstr "Eliminar {0}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove {email}?"
+msgstr "¿Eliminar {email}?"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Remove {text}"
+msgstr "Eliminar {text}"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Remove {token}"
+msgstr "Eliminar {token}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove account"
+msgstr "Eliminar cuenta"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove current label"
+msgstr "Eliminar etiqueta actual"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Remove Current Label"
+msgstr "Eliminar etiqueta actual"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Remove favorite"
+msgstr "Eliminar favorito"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Remove key"
+msgstr "Eliminar clave"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove label"
+msgstr "Quitar etiqueta"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Remove link"
+msgstr "Quitar enlace"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Remove period"
+msgstr "Eliminar intervalo"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Remove star"
+msgstr "Quitar estrella"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Remove this account and its local mail from openmail. Mail on the server is not affected."
+msgstr "Elimina esta cuenta y su correo local de openmail. El correo del servidor no se ve afectado."
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Remove token"
+msgstr "Quitar token"
+
+#: src/renderer/src/App.tsx
+msgid "Removed star"
+msgstr "Estrella eliminada"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Rename"
+msgstr "Cambiar nombre"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats daily"
+msgstr "Se repite diariamente"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats monthly"
+msgstr "Se repite mensualmente"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats weekly"
+msgstr "Se repite semanalmente"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Repeats yearly"
+msgstr "Se repite anualmente"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace"
+msgstr "Reemplazar"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace all"
+msgstr "Reemplazar todo"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Replace emoji text as you type"
+msgstr "Reemplaza el texto emoji mientras escribes"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace with"
+msgstr "Reemplazar por"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Replies and forwards"
+msgstr "Responde y reenvía"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply"
+msgstr "Responder"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Reply all"
+msgstr "Responder a todos"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply All"
+msgstr "Responder a todos"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Reply From"
+msgstr "Responder desde"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply mode"
+msgstr "Modo de respuesta"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Reply only to contacts"
+msgstr "Responder solo a contactos"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Reply signature for {address}"
+msgstr "Firma de respuesta para {address}"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Report spam"
+msgstr "Marcar como correo no deseado"
+
+#: src/renderer/src/App.tsx
+msgid "Reported as spam"
+msgstr "Marcado como correo no deseado"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Reset Favorites"
+msgstr "Restablecer favoritos"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "Reset local cache"
+msgstr "Restablecer caché local"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Reset toolbar"
+msgstr "Restablecer barra de herramientas"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Restore"
+msgstr "Restaurar"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule"
+msgstr "Restaurar regla"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore rule?"
+msgstr "¿Restaurar regla?"
+
+#. placeholder {0}: pending.preview.matches.length
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Restore the saved original rule on the server. Preview: {0} messages."
+msgstr "Restaure la regla original guardada en el servidor. Vista previa: {0} mensajes."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Resume"
+msgstr "Reanudar"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Resume syncing"
+msgstr "Reanudar sincronización"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Retry"
+msgstr "Reintentar"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Revert"
+msgstr "Revertir"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Review AI suggestions"
+msgstr "Revisar sugerencias de IA"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Review and Send"
+msgstr "Revisar y enviar"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Review the event details before confirming."
+msgstr "Revise los detalles del evento antes de confirmar."
+
+#: src/renderer/src/components/Feedback.tsx
+msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
+msgstr "Revise los diagnósticos locales a continuación. No se carga nada. Continuar abre un borrador de correo electrónico que usted revisa y envía desde su propia cuenta."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Rich text"
+msgstr "Texto enriquecido"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Right away"
+msgstr "De inmediato"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right long swipe"
+msgstr "Deslizamiento largo hacia la derecha"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right short swipe"
+msgstr "Deslizamiento corto hacia la derecha"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Right to left"
+msgstr "De derecha a izquierda"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
+msgstr "Funciona mientras está inactivo. Las páginas PDF escaneadas, el audio y el vídeo aún no están indexados."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Saturday"
+msgstr "Sábado"
+
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ProfileEditor.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Save"
+msgstr "Guardar"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save {0}"
+msgstr "Guardar {0}"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save all…"
+msgstr "Guardar todo…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save as PDF…"
+msgstr "Guardar como PDF…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save draft"
+msgstr "Guardar borrador"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Save key"
+msgstr "Guardar clave"
+
+#: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Save message as EML…"
+msgstr "Guardar mensaje como EML…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Save message as PDF…"
+msgstr "Guardar mensaje como PDF…"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Save rule"
+msgstr "Guardar regla"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected…"
+msgstr "Guardar seleccionado…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this draft before closing?"
+msgstr "¿Guardar este borrador antes de cerrar?"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this message as a template…"
+msgstr "Guarde este mensaje como plantilla..."
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Save token"
+msgstr "Guardar token"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save…"
+msgstr "Guardar…"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Saved"
+msgstr "Guardado"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Saved {count} attachments. Couldn't save: {names}"
+msgstr "Se guardaron {count} archivos adjuntos. No se pudo guardar: {names}"
+
+#: src/renderer/src/components/reader-actions.ts
+msgid "Saved as EML"
+msgstr "Guardado como EML"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Saved as PDF"
+msgstr "Guardado como PDF"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Retrying sync automatically."
+msgstr "Guardado en esta Mac. Reintentando la sincronización automáticamente."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saved on this Mac. Syncs when online."
+msgstr "Guardado en esta Mac. Se sincroniza cuando está en línea."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Saving…"
+msgstr "Guardando…"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgctxt "in progress"
+msgid "Saving…"
+msgstr "Guardando…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search"
+msgstr "Buscar"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search  /"
+msgstr "Buscar  /"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search could not finish:"
+msgstr "La búsqueda no pudo finalizar:"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search mail"
+msgstr "Buscar correo"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Search messages from this sender"
+msgstr "Buscar mensajes de este remitente"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Search query"
+msgstr "Consulta de búsqueda"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search results"
+msgstr "Resultados de búsqueda"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Search scope"
+msgstr "Ámbito de búsqueda"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Search templates"
+msgstr "Buscar plantillas"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Searching server…"
+msgstr "Buscando en el servidor…"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Select {0}"
+msgstr "Seleccione {0}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Select a message"
+msgstr "Seleccione un mensaje"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
+msgstr "Selecciona las cuentas permitidas en Ajustes > Acceso a IA. El asistente busca correo y propone borradores, etiquetas o archivar. Apruebas los cambios en las sugerencias de IA."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Select all"
+msgstr "Seleccionar todo"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Selected message"
+msgstr "Mensaje seleccionado"
+
+#: src/renderer/src/App.tsx
+msgid "Selected text"
+msgstr "Texto seleccionado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Selection after moving messages"
+msgstr "Selección después de mover mensajes"
+
+#: src/renderer/src/components/IndexingSettings.tsx
+msgid "Semantic search is unavailable. Full-text search remains available."
+msgstr "La búsqueda semántica no está disponible. La búsqueda de texto completo sigue estando disponible."
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Send"
+msgstr "Enviar"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Send Again"
+msgstr "Enviar de nuevo"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Send and archive"
+msgstr "Enviar y archivar"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send anyway"
+msgstr "Enviar de todos modos"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Send failed"
+msgstr "Error al enviar"
+
+#: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Send Feedback…"
+msgstr "Enviar comentarios…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Send this message without a subject?"
+msgstr "¿Enviar este mensaje sin asunto?"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender email"
+msgstr "Correo del remitente"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender first name"
+msgstr "Nombre del remitente"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender last name"
+msgstr "Apellido del remitente"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Sender name"
+msgstr "Nombre del remitente"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Sending is not affected by this setting. Every message AI writes goes into AI suggestions, and you review and send it from the compose window."
+msgstr "El envío no se ve afectado por esta configuración. Cada mensaje que escribe AI se incluye en sugerencias de AI, y usted lo revisa y envía desde la ventana de redacción."
+
+#: src/renderer/src/App.tsx
+msgid "Sending…"
+msgstr "Enviando…"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/view.ts
+msgid "Sent"
+msgstr "Enviado"
+
+#: src/renderer/src/App.tsx
+msgid "Sent and archived"
+msgstr "Enviado y archivado"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Server"
+msgstr "Servidor"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts"
+msgstr "Contactos del servidor"
+
+#: src/renderer/src/components/ContactSettings.tsx
+msgid "Server contacts refresh every six hours while the app runs. Cached contacts and local correspondents appear in recipient suggestions."
+msgstr "Los contactos del servidor se actualizan cada seis horas mientras se ejecuta la aplicación. Los contactos almacenados en caché y los corresponsales locales aparecen en las sugerencias de destinatarios."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server filters"
+msgstr "Filtros de servidor"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server filters and automatic replies are available for Gmail and Outlook."
+msgstr "Hay filtros de servidor y respuestas automáticas disponibles para Gmail y Outlook."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Server preview: {count} messages"
+msgstr "Vista previa del servidor: {count} mensajes"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Settings"
+msgstr "Ajustes"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share selected…"
+msgstr "Compartir selección…"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share…"
+msgstr "Compartir…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Shortcut set"
+msgstr "Conjunto de atajos"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Shortcuts"
+msgstr "Atajos de teclado"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show"
+msgstr "Mostrar"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show account names in unified folders"
+msgstr "Mostrar nombres de cuentas en carpetas unificadas"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show Cc field"
+msgstr "Mostrar campo CC"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show format bar"
+msgstr "Mostrar barra de formato"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show full email addresses in recipient fields"
+msgstr "Mostrar direcciones de correo electrónico completas en los campos del destinatario"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Gmail categories"
+msgstr "Mostrar categorías de Gmail"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Show Google contact photos"
+msgstr "Mostrar fotos de contactos de Google"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show if unread"
+msgstr "Mostrar si no se ha leído"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show important messages"
+msgstr "Mostrar mensajes importantes"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Show Inbox"
+msgstr "Mostrar Bandeja de entrada"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show messages also in Inbox"
+msgstr "Mostrar mensajes también en la Bandeja de entrada"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show More in sidebar"
+msgstr "Mostrar más en la barra lateral"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only starred"
+msgstr "Mostrar solo destacados"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Show only unread"
+msgstr "Mostrar solo no leídos"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide sidebar"
+msgstr "Mostrar u ocultar la barra lateral"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show original"
+msgstr "Mostrar original"
+
+#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/Reader.tsx
+msgid "Show quoted text"
+msgstr "Mostrar texto citado"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show unread count in the menu bar"
+msgstr "Mostrar recuento de no leídos en la barra de menú"
+
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sign in again"
+msgstr "Iniciar sesión nuevamente"
+
+#: src/renderer/src/errors.ts
+msgid "Sign in again to access your calendar."
+msgstr "Inicie sesión nuevamente para acceder a su calendario."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sign in again to enable filters"
+msgstr "Inicie sesión nuevamente para habilitar los filtros"
+
+#: src/renderer/src/errors.ts
+msgid "Sign in again to enable filters and automatic replies."
+msgstr "Inicie sesión nuevamente para habilitar filtros y respuestas automáticas."
+
+#: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to sync server contacts."
+msgstr "Inicie sesión nuevamente para sincronizar los contactos del servidor."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign In with Browser"
+msgstr "Iniciar sesión con el navegador"
+
+#: src/renderer/src/App.tsx
+msgid "Sign-in failed: {reason}"
+msgstr "Error al iniciar sesión: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Signature"
+msgstr "Firma"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature name"
+msgstr "Nombre de la firma"
+
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signature position in replies"
+msgstr "Posición de la firma en respuestas"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SignatureSettings.tsx
+msgid "Signatures"
+msgstr "Firmas"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
+msgstr "Las compilaciones firmadas utilizan un token de acceso de GitHub para descargar versiones privadas. El token se almacena en el llavero de su sistema."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size comparison"
+msgstr "Comparación de tallas"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size in bytes"
+msgstr "Tamaño en bytes"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Skip"
+msgstr "Omitir"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Small"
+msgstr "Pequeño"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Smaller text"
+msgstr "Texto más pequeño"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Smaller than"
+msgstr "Más pequeño que"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Smart Lists"
+msgstr "Listas inteligentes"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP encryption"
+msgstr "Cifrado SMTP"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SMTP server"
+msgstr "Servidor SMTP"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/SnoozeDialog.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Snooze"
+msgstr "Posponer"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/view.ts
+msgid "Snoozed"
+msgstr "Pospuesto"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Social"
+msgstr "Social"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
+msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de enlace se mantienen. Puede deshacer el cambio de modo."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
+msgstr "Se omitieron algunos predicados del servidor para preservar las coincidencias; Los filtros locales aún se aplican:"
+
+#: src/renderer/src/errors.ts
+msgid "Something went wrong. Please try again."
+msgstr "Algo salió mal. Por favor inténtalo de nuevo."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Spaces"
+msgstr "Espacios"
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Spam"
+msgstr "Correo no deseado"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Special folder badges"
+msgstr "Contadores de carpetas especiales"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling"
+msgstr "Ortografía"
+
+#: src/renderer/src/components/SpellcheckSettings.tsx
+msgid "Spelling languages"
+msgstr "Idiomas de revisión ortográfica"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "SSL/TLS (usually 465)"
+msgstr "SSL/TLS (normalmente 465)"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Stable"
+msgstr "Estable"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Star"
+msgstr "Destacar"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft"
+msgstr "Destacar borrador"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft on this Mac"
+msgstr "Destacar borrador en este Mac"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Star message"
+msgstr "Destacar mensaje"
+
+#: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Starred"
+msgstr "Destacado"
+
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Start"
+msgstr "Inicio"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "STARTTLS (usually 587)"
+msgstr "STARTTLS (normalmente 587)"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {address}"
+msgstr "Dejar de cargar imágenes de {address}"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Stop loading images from {domain}"
+msgstr "Dejar de cargar imágenes de {domain}"
+
+#. placeholder {0}: a.address
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Stop suggesting {0}"
+msgstr "Dejar de sugerir {0}"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Strikethrough"
+msgstr "Tachado"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Subject"
+msgstr "Asunto"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Subject contains"
+msgstr "El asunto contiene"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Subscript"
+msgstr "Subíndice"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Suggested"
+msgstr "Sugerido"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Summarize"
+msgstr "Resumir"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Sunday"
+msgstr "Domingo"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Superscript"
+msgstr "Sobrescrito"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe actions"
+msgstr "Acciones de deslizamiento"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
+msgstr "Desliza horizontalmente con dos dedos. Suelte después de un deslizamiento corto o largo para aplicar la acción."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Switch spaces"
+msgstr "Cambiar de espacio"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sync aliases and signatures"
+msgstr "Sincronizar alias y firmas"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync All"
+msgstr "Sincronizar todo"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Sync failed"
+msgstr "Error de sincronización"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Sync failed ({count})"
+msgstr "Error de sincronización ({count})"
+
+#: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Sync now"
+msgstr "Sincronizar ahora"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Synced {time}"
+msgstr "Sincronizado {time}"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing {fetched}/{total}"
+msgstr "Sincronizando {fetched}/{total}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Syncing normally"
+msgstr "Sincronizando normalmente"
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Syncing…"
+msgstr "Sincronizando…"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "System notification permission"
+msgstr "Permiso de notificación del sistema"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Template name"
+msgstr "Nombre de la plantilla"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Templates"
+msgstr "Plantillas"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Templates…"
+msgstr "Plantillas…"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Tentative"
+msgstr "Provisional"
+
+#: src/renderer/src/components/ComposeFormatBar.tsx
+msgid "Text color"
+msgstr "Color del texto"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Text size"
+msgstr "Tamaño del texto"
+
+#: src/renderer/src/errors.ts
+msgid "The {client} OAuth client is not set up yet."
+msgstr "El cliente {client} OAuth aún no está configurado."
+
+#: src/renderer/src/components/Reader.tsx
+msgid "The body is not cached. Try opening this message again when connected."
+msgstr "El texto del mensaje no está en la caché. Intenta abrirlo de nuevo cuando tengas conexión."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
+msgstr "El siguiente botón abre la página de inicio de sesión {name}. openmail solo lee tu correo. Los tokens se guardan en el llavero del sistema."
+
+#: src/renderer/src/errors.ts
+msgid "The calendar organizer does not match this invitation"
+msgstr "El organizador del calendario no coincide con esta invitación."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
+msgstr "La verificación de integridad de la base de datos (quick_check) falló o el archivo no está disponible. Restablecer reconstruye una base de datos dañada a partir de registros locales legibles y conserva el archivo original. Se conservan las fichas de llavero."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
+msgstr "Se mantuvo la base de datos. Salga de OpenMail y restaure una copia de seguridad local o comuníquese con el soporte técnico."
+
+#: src/renderer/src/errors.ts
+msgid "The end must be after the start"
+msgstr "El final debe ser después del comienzo."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "The filter applies to future mail on the server."
+msgstr "El filtro se aplica al correo futuro en el servidor."
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database could not be verified"
+msgstr "No se pudo verificar la base de datos local"
+
+#: src/renderer/src/recovery-labels.ts
+msgid "The local database was recovered"
+msgstr "La base de datos local fue recuperada."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "The menu lists up to 50 unread messages in the current space."
+msgstr "El menú enumera hasta 50 mensajes no leídos en el espacio actual."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "The message mentions an attachment, but none is added."
+msgstr "El mensaje menciona un archivo adjunto, pero no se agrega ninguno."
+
+#: src/renderer/src/errors.ts
+msgid "the operation failed."
+msgstr "La operación fracasó."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "The organizer differs from the message sender. Check the response recipient before replying."
+msgstr "El organizador difiere del remitente del mensaje. Verifique el destinatario de la respuesta antes de responder."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
+msgstr "La vista previa está limitada a 200 mensajes. Limite las condiciones para procesar otros mensajes."
+
+#: src/renderer/src/components/RawMessage.tsx
+msgid "The rest is left out here. Copy gets the whole message."
+msgstr "El resto queda aquí. La copia recibe el mensaje completo."
+
+#: src/renderer/src/errors.ts
+msgid "The selected message is no longer available."
+msgstr "El mensaje seleccionado ya no está disponible."
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server refused this action: {0}"
+msgstr "El servidor rechazó esta acción: {0}"
+
+#. placeholder {0}: e.message
+#: src/renderer/src/errors.ts
+msgid "The server rejected the sign-in. {0}"
+msgstr "El servidor rechazó el inicio de sesión. {0}"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
+msgstr "El servidor rechazó el inicio de sesión. Verifique la dirección de correo electrónico y asegúrese de haber ingresado una contraseña o código de autorización específico de la aplicación, no su contraseña web."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "These are not email addresses: {list}"
+msgstr "Estas no son direcciones de correo electrónico: {list}"
+
+#: src/renderer/src/App.tsx
+msgid "These loaded conversations will be moved to Trash. You can undo this batch."
+msgstr "Estas conversaciones cargadas se moverán a la Papelera. Puedes deshacer este lote."
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
+msgstr "Esta aplicación admite archivos adjuntos de Outlook de hasta 3 MB en total. Aún no se admiten cargas de archivos adjuntos de gran tamaño. Elimine los archivos adjuntos antes de enviarlos."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This deletes the saved recovery copy. Rules on the server are unchanged."
+msgstr "Esto elimina la copia de recuperación guardada. Las reglas en el servidor no cambian."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
+msgstr "Este borrador contiene formato o imágenes que el editor no puede conservar. El original se mantiene hasta que edites el texto del mensaje."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "This draft has unsaved changes or is waiting to sync."
+msgstr "Este borrador tiene cambios no guardados o está esperando para sincronizarse."
+
+#: src/renderer/src/errors.ts
+msgid "This event is no longer available"
+msgstr "Este evento ya no está disponible"
+
+#: src/renderer/src/errors.ts
+msgid "This invitation cannot be answered by this account"
+msgstr "Esta invitación no puede ser respondida por esta cuenta."
+
+#: src/renderer/src/components/InviteBanner.tsx
+#: src/renderer/src/errors.ts
+msgid "This invitation has a newer update"
+msgstr "Esta invitación tiene una actualización más reciente."
+
+#: src/renderer/src/errors.ts
+msgid "This meeting has been cancelled"
+msgstr "Esta reunión ha sido cancelada."
+
+#: src/renderer/src/errors.ts
+msgid "This meeting link is not supported."
+msgstr "Este enlace de reunión no es compatible."
+
+#: src/renderer/src/components/PermanentDeletePermission.tsx
+msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+msgstr "Este permiso permite a openmail eliminar permanentemente el correo de esta cuenta de Gmail. Google le pedirá su consentimiento. Luego de otorgarlo, confirma nuevamente la eliminación."
+
+#: src/renderer/src/errors.ts
+msgid "This recurrence cannot be represented in Outlook"
+msgstr "Este patrón de repetición no se puede representar en Outlook"
+
+#: src/renderer/src/errors.ts
+msgid "This recurring event has a time zone Google Calendar cannot use"
+msgstr "Este evento recurrente tiene una zona horaria que Google Calendar no puede usar"
+
+#: src/renderer/src/errors.ts
+msgid "This recurring event has a time zone Outlook cannot use"
+msgstr "Outlook no admite la zona horaria de este evento recurrente"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This removes the filter from the server. Existing messages are unchanged."
+msgstr "Esto elimina el filtro del servidor. Los mensajes existentes no se modifican."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Esta regla elimina mensajes que coinciden con una consulta de búsqueda. Confirme solo si la vista previa coincide con los mensajes que desea eliminar."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet."
+msgstr "Este espacio aún no tiene cuentas."
+
+#: src/renderer/src/components/Sidebar.tsx
+msgid "This space has no accounts yet. <0>Add account</0>"
+msgstr "Este espacio aún no tiene cuentas. <0>Agregar cuenta</0>"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Thread link copied"
+msgstr "Enlace a la conversación copiado"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Thursday"
+msgstr "Jueves"
+
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Time"
+msgstr "Tiempo"
+
+#: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "To"
+msgstr "Para"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "To: {to}"
+msgstr "Para: {to}"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Today"
+msgstr "Hoy"
+
+#: src/renderer/src/format.ts
+msgid "Today {time}"
+msgstr "Hoy {time}"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle list filters"
+msgstr "Alternar filtros de lista"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle message background"
+msgstr "Alternar fondo del mensaje"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle reading pane position"
+msgstr "Alternar posición del panel de lectura"
+
+#: src/renderer/src/components/SnoozeDialog.tsx
+msgid "Tomorrow morning"
+msgstr "Mañana por la mañana"
+
+#: src/renderer/src/dock-file-errors.ts
+msgid "Too many attachments. Attach up to 256 files."
+msgstr "Demasiados adjuntos. Puedes adjuntar hasta 256 archivos."
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Toolbar actions"
+msgstr "Acciones de la barra de herramientas"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Total cache"
+msgstr "Caché total"
+
+#: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Trash"
+msgstr "Papelera"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Tuesday"
+msgstr "Martes"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Underline"
+msgstr "Subrayado"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Undo"
+msgstr "Deshacer"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo emoji replacement"
+msgstr "Deshacer reemplazo de emoji"
+
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo history"
+msgstr "Historial de deshacer"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Undo mode change"
+msgstr "Deshacer cambio de modo"
+
+#. placeholder {0}: new Date(entry.createdAt).toLocaleString(i18n.locale)
+#: src/renderer/src/components/UndoHistory.tsx
+msgid "Undo operation from {0}"
+msgstr "Deshacer operación de {0}"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Undo Send"
+msgstr "Deshacer envío"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Undo send delay"
+msgstr "Plazo para deshacer el envío"
+
+#: src/renderer/src/components/Overview.tsx
+msgid "Ungrouped"
+msgstr "Desagrupados"
+
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Ungrouped accounts"
+msgstr "Cuentas desagrupadas"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "unknown"
+msgstr "Desconocido"
+
+#: src/renderer/src/errors.ts
+msgid "Unknown label or folder"
+msgstr "Etiqueta o carpeta desconocida"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unknown message sizes are left unfiltered."
+msgstr "Los tamaños de mensajes desconocidos no se filtran."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Unknown organizer time zone; showing the original time."
+msgstr "Zona horaria del organizador desconocida; mostrando la hora original."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unread"
+msgstr "No leído"
+
+#: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Unstar"
+msgstr "Dejar de destacar"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Unstar message"
+msgstr "Dejar de destacar mensaje"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Unsupported on this platform"
+msgstr "No compatible con esta plataforma"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Until"
+msgstr "Hasta"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
+msgstr "Hasta tres acciones, en orden de selección. El menú de acciones incluye Archivo, Papelera y Marcar como leído. Los cambios se aplican a nuevas notificaciones."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
+msgstr "Hasta tres botones, en orden de selección. Todas las acciones agregan botones Archivar, Papelera y Marcar lectura. Los cambios se aplican a nuevas notificaciones."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update available:"
+msgstr "Actualización disponible:"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update channel"
+msgstr "Canal de actualizaciones"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
+msgstr "Las comprobaciones de actualización requieren una aplicación macOS instalada y firmada y un token de acceso de GitHub guardado."
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/components/UpdateSettings.tsx
+#: src/renderer/src/view.ts
+msgid "Updates"
+msgstr "Notificaciones"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
+msgstr "Utilice {token} para una variable personalizada. Se le pedirá su valor al insertar la plantilla."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Use an http, https or mailto link"
+msgstr "Utilice un enlace http, https o mailto"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Use an image up to 8 MB."
+msgstr "Utilice una imagen de hasta 8 MB."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Use default"
+msgstr "Usar predeterminado"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
+msgstr "Utilice imágenes PNG, JPEG, GIF o WebP de hasta 8 MB."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use selection for find"
+msgstr "Usar selección para buscar"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the account default address"
+msgstr "Utilice la dirección predeterminada de la cuenta"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the address the message was sent to"
+msgstr "Utilice la dirección a la que se envió el mensaje"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the current account"
+msgstr "Usar la cuenta actual"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
+msgstr "Utilice la hora local de esta Mac. Fuera del horario activo, las notificaciones esperan y la insignia del Dock excluye el espacio. Cuando se reanudan las horas activas, las llegadas no leídas aparecen en un resumen."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Username (defaults to the email address)"
+msgstr "Nombre de usuario (por defecto, la dirección de correo electrónico)"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Verifying…"
+msgstr "Verificando…"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Visible categories"
+msgstr "Categorías visibles"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Wait for attachments to finish loading."
+msgstr "Espere a que los archivos adjuntos terminen de cargarse."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Waiting for sign-in…"
+msgstr "Esperando iniciar sesión..."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Wednesday"
+msgstr "Miércoles"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
+msgstr "Bienvenido a openmail. Elija su proveedor de correo electrónico. Sus credenciales permanecen en esta computadora."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
+msgstr "Cuando la IA quiere archivar, añadir una etiqueta o marcar un mensaje como leído, primero crea una sugerencia. La acción solo se ejecuta después de tu aprobación."
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
+msgstr "Al permitir una cuenta, las preguntas, el texto del correo seleccionado, los asuntos y las direcciones de remitentes y destinatarios se envían a Anthropic con tu clave API. Las imágenes, los adjuntos y el contenido multimedia permanecen en este dispositivo. Las solicitudes pueden generar cargos de API. Los resúmenes automáticos solo se ejecutan cuando los habilitas para una cuenta."
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Who"
+msgstr "Quién"
+
+#: src/renderer/src/App.tsx
+msgid "Whole message"
+msgstr "Mensaje completo"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Window"
+msgstr "Ventana"
+
+#: src/renderer/src/components/ProfileSettings.tsx
+msgid "Work"
+msgstr "Trabajo"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Writing mode"
+msgstr "Modo de redacción"
+
+#: src/renderer/src/components/TemplateSettings.tsx
+msgid "Year"
+msgstr "Año"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+#: src/renderer/src/format.ts
+msgid "Yesterday"
+msgstr "Ayer"
+
+#: src/renderer/src/format.ts
+msgid "Yesterday {time}"
+msgstr "Ayer {time}"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You"
+msgstr "Tú"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "You (command line)"
+msgstr "Tú (línea de comando)"
+
+#: src/renderer/src/components/DraftSyncRecovery.tsx
+msgid "Your changes are saved on this Mac. Try again or keep a local copy."
+msgstr "Sus cambios se guardan en esta Mac. Inténtelo de nuevo o conserve una copia local."
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Your overlapping events"
+msgstr "Tus eventos superpuestos"

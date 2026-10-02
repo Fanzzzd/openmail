@@ -37,6 +37,7 @@ export const CalendarEvent = Schema.Struct({
   location: Schema.String,
   description: Schema.String,
   recurrence: Schema.Array(Schema.String),
+  hasRecurrenceOverrides: Schema.optionalKey(Schema.Boolean),
 });
 export type CalendarEvent = typeof CalendarEvent.Type;
 

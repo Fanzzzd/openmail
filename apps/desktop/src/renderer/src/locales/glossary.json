@@ -1,0 +1,172 @@
+{
+  "Inbox": {
+    "cs": "doručen(?:á|é|ou) pošt",
+    "nl": "postvak in",
+    "fr": "boîte de réception",
+    "de": "posteingang",
+    "it": "posta in arrivo",
+    "ja": "受信",
+    "ru": "входящ",
+    "es": "bandeja de entrada"
+  },
+  "Archive": {
+    "cs": "archiv",
+    "nl": "archiv|archief",
+    "fr": "archiv",
+    "de": "archiv",
+    "it": "archiv",
+    "ja": "アーカイブ",
+    "ru": "архив",
+    "es": "archiv"
+  },
+  "Trash": {
+    "cs": "koš",
+    "nl": "prullenmand",
+    "fr": "corbeille",
+    "de": "papierkorb",
+    "it": "cestino",
+    "ja": "ゴミ箱",
+    "ru": "корзин",
+    "es": "papelera"
+  },
+  "Spam": {
+    "cs": "nevyžádan",
+    "nl": "ongewenste reclame",
+    "fr": "courrier indésirable",
+    "de": "werbung",
+    "it": "indesiderat",
+    "ja": "迷惑メール",
+    "ru": "спам",
+    "es": "correo no deseado"
+  },
+  "Draft": {
+    "cs": "koncept",
+    "nl": "concept",
+    "fr": "brouillon",
+    "de": "entw[uü]rf",
+    "it": "bozz",
+    "ja": "下書き",
+    "ru": "черновик",
+    "es": "borrador"
+  },
+  "Sent": {
+    "cs": "odesl|odesíl",
+    "nl": "verstuur",
+    "fr": "envoy",
+    "de": "gesend",
+    "it": "invi",
+    "ja": "送信",
+    "ru": "отправ",
+    "es": "env[ií]"
+  },
+  "Snooze": {
+    "cs": "odlo",
+    "nl": "uitstel|uitgestel|stel uit",
+    "fr": "report",
+    "de": "zurückstell|zurückgestell",
+    "it": "posticip",
+    "ja": "スヌーズ",
+    "ru": "отлож",
+    "es": "pospon|pospuest"
+  },
+  "Reply": {
+    "cs": "odpov",
+    "nl": "antwoord",
+    "fr": "répond|répon[sd]",
+    "de": "antwort",
+    "it": "rispon|rispost",
+    "ja": "返信",
+    "ru": "ответ|отвеч",
+    "es": "respond|respuest"
+  },
+  "Reply all": {
+    "cs": "odpov.*všem",
+    "nl": "antwoord.*allen",
+    "fr": "répond.*tous",
+    "de": "allen antwort",
+    "it": "rispondi a tutti",
+    "ja": "全員に返信",
+    "ru": "ответить всем",
+    "es": "responder a todos"
+  },
+  "Forward": {
+    "cs": "přepos",
+    "nl": "doorstuur|doorgestuur|stuur door",
+    "fr": "transfér",
+    "de": "weiterleit",
+    "it": "inoltr",
+    "ja": "転送",
+    "ru": "пересл|пересыл",
+    "es": "reenvi"
+  },
+  "Label": {
+    "cs": "štít",
+    "nl": "label",
+    "fr": "libell",
+    "de": "label",
+    "it": "etichett",
+    "ja": "ラベル",
+    "ru": "ярлык|ярлыч|ярлыков",
+    "es": "etiquet"
+  },
+  "Folder": {
+    "cs": "slož",
+    "nl": "map",
+    "fr": "dossier",
+    "de": "ordner",
+    "it": "cartell",
+    "ja": "フォルダ",
+    "ru": "пап",
+    "es": "carpet"
+  },
+  "Message": {
+    "cs": "zpráv",
+    "nl": "bericht",
+    "fr": "message",
+    "de": "nachricht",
+    "it": "messagg",
+    "ja": "メッセージ",
+    "ru": "сообщен",
+    "es": "mensaje"
+  },
+  "Conversation": {
+    "cs": "konverzac",
+    "nl": "gesprek",
+    "fr": "conversation",
+    "de": "konversation",
+    "it": "conversaz",
+    "ja": "スレッド",
+    "ru": "переписк|переписок",
+    "es": "conversac"
+  },
+  "Account": {
+    "cs": "úč",
+    "nl": "account",
+    "fr": "compt",
+    "de": "account",
+    "it": "account",
+    "ja": "アカウント",
+    "ru": "уч[её]тн",
+    "es": "cuenta"
+  },
+  "Settings": {
+    "cs": "nastaven",
+    "nl": "instelling",
+    "fr": "réglage",
+    "de": "einstellung",
+    "it": "impostaz",
+    "ja": "設定",
+    "ru": "настрой|настроек",
+    "es": "ajuste"
+  },
+  "Undo": {
+    "cs": "vrátit zpět|vrácení zpět|odvol",
+    "nl": "ongedaan|herstel",
+    "fr": "annul",
+    "de": "rückgängig|widerruf",
+    "it": "annull",
+    "ja": "取り消|取消",
+    "ru": "отмен",
+    "es": "deshac|deshech"
+  }
+}

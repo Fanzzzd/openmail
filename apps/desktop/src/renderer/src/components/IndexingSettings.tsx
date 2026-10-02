@@ -8,12 +8,15 @@ import { Switch } from "@base-ui/react/switch";
 const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
 export function IndexingSettings() {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const progress = AsyncResult.getOrElse(useAtomValue(indexingProgressAtom), () => null);
   const pause = useAtomSet(pauseAtom);
   const models = useAtomSet(modelsAtom);
   if (!progress) return null;
-  const { done, queued, running, failed } = progress;
+  const done = i18n.number(progress.done),
+    queued = i18n.number(progress.queued),
+    running = i18n.number(progress.running),
+    failed = i18n.number(progress.failed);
   return (
     <section className="mt-6 space-y-2">
       <h3 className="text-[12px] font-semibold text-neutral-500">
@@ -55,7 +58,7 @@ export function IndexingSettings() {
               <p>
                 <Trans>
                   Downloading models:{" "}
-                  {Math.floor((progress.models.bytes / progress.models.total) * 100)}%
+                  {i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))}%
                 </Trans>
               </p>
             </div>
@@ -72,8 +75,10 @@ export function IndexingSettings() {
           )}
           <output>
             <Trans>
-              {progress.embeddingDone ?? 0} embedded · {progress.embeddingQueued ?? 0} queued ·{" "}
-              {progress.embeddingRunning ?? 0} running · {progress.embeddingFailed ?? 0} failed
+              {i18n.number(progress.embeddingDone ?? 0)} embedded ·{" "}
+              {i18n.number(progress.embeddingQueued ?? 0)} queued ·{" "}
+              {i18n.number(progress.embeddingRunning ?? 0)} running ·{" "}
+              {i18n.number(progress.embeddingFailed ?? 0)} failed
             </Trans>
           </output>
         </>

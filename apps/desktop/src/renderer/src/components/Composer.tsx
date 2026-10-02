@@ -1,3 +1,4 @@
+import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { DraftSyncRecovery, draftSyncNotice } from "./DraftSyncRecovery";
 import { moveRecipient, type RecipientFieldName, type RecipientDrag } from "../recipient-actions";
 import { matchesShortcut } from "../../../shared/shortcuts";
@@ -673,7 +674,15 @@ export function Composer({
   };
   const canInsertImage = () => {
     if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
-      setError(t`Choose Edit body before inserting an image.`);
+      const editBody = t(EDIT_MESSAGE_TEXT);
+      setError(
+        t({
+          message: `Choose ${editBody} before inserting an image.`,
+          context: "message text instruction",
+          comment:
+            "editBody is the exact translated Edit body button label. Preserve it unchanged.",
+        }),
+      );
       return false;
     }
     return draft.body.kind === "rich";
@@ -770,7 +779,15 @@ export function Composer({
       return;
     }
     if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
-      setError(t`Choose Edit body before inserting a template.`);
+      const editBody = t(EDIT_MESSAGE_TEXT);
+      setError(
+        t({
+          message: `Choose ${editBody} before inserting a template.`,
+          context: "message text instruction",
+          comment:
+            "editBody is the exact translated Edit body button label. Preserve it unchanged.",
+        }),
+      );
       return;
     }
     const to = merge(draft.to, template.to);
@@ -1285,7 +1302,7 @@ export function Composer({
                       ↓
                     </button>
                     <span className="text-neutral-400">
-                      {formatBytes((a.content.length * 3) / 4)}
+                      {formatBytes((a.content.length * 3) / 4, i18n.locale)}
                     </span>
                     <button
                       type="button"

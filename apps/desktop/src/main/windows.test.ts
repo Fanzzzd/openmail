@@ -121,11 +121,11 @@ it("single-message windows force single scope independently of conversation sett
   const id = "gmail:me@example.com/older";
   const single = openMessageWindow(id);
   expect(vi.mocked(single).loadFile.mock.calls[0]?.[1]).toEqual({
-    query: { system: "en", thread: id, single: "1" },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id, single: "1" },
   });
   const thread = openThreadWindow(id);
   expect(vi.mocked(thread).loadFile.mock.calls[0]?.[1]).toEqual({
-    query: { system: "en", thread: id },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id },
   });
 });
 
@@ -141,7 +141,7 @@ it("compose windows share the locked sandbox and request a renderer draft close 
     },
   });
   expect(vi.mocked(win).loadFile.mock.calls[0]?.[1]).toEqual({
-    query: { system: "en", compose: "draft-20" },
+    query: { systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-20" },
   });
   expect(vi.mocked(win.webContents).setWindowOpenHandler.mock.calls).toHaveLength(1);
   const recipients = { to: "Alice <unfinished", cc: "Bob,", bcc: "private" };
@@ -178,13 +178,16 @@ it("restores each window kind and does not lose the set while quitting", async (
     windows.restoreWindows();
     const restored = BrowserWindow.getAllWindows().slice(-3);
     expect(vi.mocked(restored[0]!).loadFile.mock.calls[0]?.[1]).toEqual({
-      query: { system: "en", selection: JSON.stringify(selection) },
+      query: {
+        systemLanguages: JSON.stringify(["en", "en"]),
+        selection: JSON.stringify(selection),
+      },
     });
     expect(vi.mocked(restored[1]!).loadFile.mock.calls[0]?.[1]).toEqual({
-      query: { system: "en", thread: "message-1", single: "1" },
+      query: { systemLanguages: JSON.stringify(["en", "en"]), thread: "message-1", single: "1" },
     });
     expect(vi.mocked(restored[2]!).loadFile.mock.calls[0]?.[1]).toEqual({
-      query: { system: "en", compose: "draft-1" },
+      query: { systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-1" },
     });
     app.emit("before-quit", { defaultPrevented: false });
     for (const win of restored) win.emit("closed");

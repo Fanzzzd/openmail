@@ -482,7 +482,19 @@ export type QueuedOp = typeof QueuedOp.Type;
 
 export const UNDO_SEND_SECONDS = [0, 5, 10, 20, 30] as const;
 
-export const LANGUAGES = ["system", "zh-CN", "en"] as const;
+export const LANGUAGES = [
+  "system",
+  "zh-CN",
+  "en",
+  "cs",
+  "nl",
+  "fr",
+  "de",
+  "it",
+  "ja",
+  "ru",
+  "es",
+] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 // Reading settings

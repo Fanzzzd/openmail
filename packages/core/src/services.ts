@@ -256,6 +256,13 @@ export class Store extends Context.Service<
       key: Pick<InviteResponseRecord, "accountId" | "uid" | "organizer" | "recurrenceId">,
     ): Effect.Effect<InviteResponseRecord | null>;
     recordInviteResponse(record: InviteResponseRecord): Effect.Effect<void>;
+    cacheInvites(messageId: string, invites: readonly CalendarInvite[]): Effect.Effect<void>;
+    cachedInvites(accountId: string, uid: string): Effect.Effect<readonly CalendarInvite[]>;
+    inviteSiblingIds(
+      accountId: string,
+      uid: string,
+      messageId: string,
+    ): Effect.Effect<readonly string[]>;
     findMessageByRfcId(accountId: string, messageId: string): Effect.Effect<string | null>;
     getMessage(id: string): Effect.Effect<Message, NotFound>;
     /** Every message of the thread `id` belongs to, oldest first. */

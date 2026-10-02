@@ -602,7 +602,13 @@ function Row({
         )}
         {m.derivedMatches?.slice(0, 2).map((hit, index) => (
           <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-            {hit.source.kind === "body" ? <Trans>Message body</Trans> : hit.source.name}
+            {hit.source.kind === "body" ? (
+              <Trans context="message text" comment="Email message text, never an anatomical body.">
+                Message body
+              </Trans>
+            ) : (
+              hit.source.name
+            )}
             {hit.page !== null && (
               <>
                 {" "}

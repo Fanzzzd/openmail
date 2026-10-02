@@ -187,6 +187,8 @@ it.effect(
         ["has:document", ["doc"]],
         ["has:spreadsheet", ["sheet"]],
         ["has:presentation", ["slides"]],
+        ["has:drive -has:document", ["drive", "sheet", "slides"]],
+        ["-has:drive", ["spoof"]],
       ] satisfies [string, string[]][]) {
         assert.deepStrictEqual(
           (yield* mailbox.threads({ search: query }))

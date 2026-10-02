@@ -283,7 +283,9 @@ export function AttachmentList({
               >
                 <Icon className="size-4 shrink-0 text-neutral-400" />
                 <span className="min-w-0 truncate">{file.filename}</span>
-                <span className="shrink-0 text-neutral-400">{formatBytes(file.size)}</span>
+                <span className="shrink-0 text-neutral-400">
+                  {formatBytes(file.size, i18n.locale)}
+                </span>
               </button>
               <Tip label={t`Quick Look`}>
                 <button

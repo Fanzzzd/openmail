@@ -29,7 +29,9 @@ pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
 
 lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion` 的警告只允许出现在 IO 边界（SQLite 行、HTTP JSON）。
 
-界面文案用 Lingui，代码里写英文原文，中文在 `apps/desktop/src/renderer/src/locales/zh-CN/messages.po`。改了渲染层文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，再补上空的 `msgstr`。`pnpm test` 会跑 `lingui check`：目录和代码不同步，或者缺中文翻译，都会失败。
+界面文案用 Lingui，代码里写英文原文，翻译在 `apps/desktop/src/renderer/src/locales/{locale}/messages.po`。新增文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，补齐 zh-CN、cs、nl、fr、de、it、ja、ru、es 的全部 `msgstr`，保留 ICU 参数、复数和组件标记。用 `pnpm --filter @openmail/desktop i18n:missing` 列出各语言漏译。`pnpm test` 会检查目录同步、每个目录的翻译完整性及参数；任何语言漏译都会失败。
+
+翻译邮件术语时读取 `apps/desktop/src/renderer/src/locales/glossary.json`；正文用“消息文本”的表达，引用按钮时插入该按钮的翻译值，并注明 Lingui context/comment。新增语言文案须通过术语一致性和严格 ICU 解析测试；日语复数只用 `other`，数值分支仍可保留。
 
 ## Agent skills
 

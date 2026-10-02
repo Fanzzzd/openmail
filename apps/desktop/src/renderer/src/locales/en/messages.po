@@ -27,15 +27,15 @@ msgstr "(no recipients)"
 msgid "(No subject)"
 msgstr "(No subject)"
 
-#. placeholder {0}: progress.embeddingDone ?? 0
-#. placeholder {1}: progress.embeddingQueued ?? 0
-#. placeholder {2}: progress.embeddingRunning ?? 0
-#. placeholder {3}: progress.embeddingFailed ?? 0
+#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
+#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
+#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
+#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "{0} embedded · {1} queued · {2} running · {3} failed"
 
-#. placeholder {0}: props.moreNotLoaded
+#. placeholder {0}: i18n.number(props.moreNotLoaded)
 #: src/renderer/src/components/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "{0} more not loaded"
@@ -695,12 +695,18 @@ msgstr "Bigger text"
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
+#. Cached texts of email messages, never anatomical bodies.
 #: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
 msgid "Bodies"
 msgstr "Bodies"
 
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+msgctxt "message text"
 msgid "Body"
 msgstr "Body"
 
@@ -866,6 +872,18 @@ msgstr "Check for Updates…"
 msgid "Check spelling while typing"
 msgstr "Check spelling while typing"
 
+#. editBody is the exact translated Edit body button label. Preserve it unchanged.
+#: src/renderer/src/components/Composer.tsx
+msgctxt "message text instruction"
+msgid "Choose {editBody} before inserting a template."
+msgstr "Choose {editBody} before inserting a template."
+
+#. editBody is the exact translated Edit body button label. Preserve it unchanged.
+#: src/renderer/src/components/Composer.tsx
+msgctxt "message text instruction"
+msgid "Choose {editBody} before inserting an image."
+msgstr "Choose {editBody} before inserting an image."
+
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "Choose a conversation"
@@ -902,14 +920,6 @@ msgstr "Choose at least one filter action"
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Choose Delete key action"
 msgstr "Choose Delete key action"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Choose Edit body before inserting a template."
-msgstr "Choose Edit body before inserting a template."
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Choose Edit body before inserting an image."
-msgstr "Choose Edit body before inserting an image."
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Choose multiple categories"
@@ -1485,7 +1495,7 @@ msgstr "Done"
 msgid "Download on-device models, ~226 MB"
 msgstr "Download on-device models, ~226 MB"
 
-#. placeholder {0}: Math.floor((progress.models.bytes / progress.models.total) * 100)
+#. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "Downloading models: {0}%"
@@ -1498,7 +1508,9 @@ msgstr "Downloads"
 msgid "Draft"
 msgstr "Draft"
 
+#. Text of a draft email, never an anatomical body.
 #: src/renderer/src/components/Proposals.tsx
+msgctxt "message text"
 msgid "Draft body"
 msgstr "Draft body"
 
@@ -1553,7 +1565,9 @@ msgstr "Edit address"
 msgid "Edit automatic reply"
 msgstr "Edit automatic reply"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#. Button that enables editing the email's text. Body means message text, never a person's body.
+#: src/renderer/src/message-text.ts
+msgctxt "message text action"
 msgid "Edit body"
 msgstr "Edit body"
 
@@ -2485,8 +2499,11 @@ msgstr "Message actions"
 msgid "Message background"
 msgstr "Message background"
 
+#. Email message text, never an anatomical body.
+#. Email message text, never an anatomical body.
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/MessageList.tsx
+msgctxt "message text"
 msgid "Message body"
 msgstr "Message body"
 
@@ -4436,8 +4453,16 @@ msgid "This permission lets openmail permanently delete mail in this Gmail accou
 msgstr "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 
 #: src/renderer/src/errors.ts
+msgid "This recurrence cannot be represented in Outlook"
+msgstr "This recurrence cannot be represented in Outlook"
+
+#: src/renderer/src/errors.ts
 msgid "This recurring event has a time zone Google Calendar cannot use"
 msgstr "This recurring event has a time zone Google Calendar cannot use"
+
+#: src/renderer/src/errors.ts
+msgid "This recurring event has a time zone Outlook cannot use"
+msgstr "This recurring event has a time zone Outlook cannot use"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."

@@ -40,7 +40,7 @@ interface Props {
  */
 export function Overview({ accounts, profiles, unread, syncState, onOpen, onEditProfile }: Props) {
   accounts = accounts.filter((a) => a.enabled !== false);
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const run = useRunMail();
   const groups: Group[] = profiles.map((p) => ({
     space: p.id,
@@ -56,7 +56,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
       accounts: ungrouped,
     });
   }
-  const total = accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
+  const total = i18n.number(accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0));
   const accountCount = accounts.length;
 
   return (
@@ -128,7 +128,8 @@ function GroupCard({
   const { t, i18n } = useLingui();
   const ids = group.accounts.map((a) => a.id);
   const threads = AsyncResult.getOrElse(useAtomValue(unreadInboxAtom(ids)), () => null);
-  const count = group.accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
+  const unreadCount = group.accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
+  const count = i18n.number(unreadCount);
 
   return (
     <section className="flex flex-col rounded-xl border border-black/[0.08] dark:border-white/10">
@@ -151,7 +152,7 @@ function GroupCard({
         >
           {group.title}
         </button>
-        {count > 0 && (
+        {unreadCount > 0 && (
           <span className="text-[13px] text-neutral-500 tabular-nums">
             <Trans>{count} unread</Trans>
           </span>
@@ -197,7 +198,7 @@ function GroupCard({
               </span>
             )}
             <span className="w-6 shrink-0 text-right text-neutral-500 tabular-nums">
-              {unread[a.id] || ""}
+              {unread[a.id] ? i18n.number(unread[a.id] ?? 0) : ""}
             </span>
           </li>
         ))}

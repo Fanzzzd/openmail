@@ -225,7 +225,11 @@ function TemplateForm({ initial, onClose }: { initial: Form; onClose: () => void
         onValueChange={insert}
       />
       <label className="block">
-        {t`Body`}
+        {t({
+          message: "Body",
+          context: "message text",
+          comment: "Email message text, never an anatomical body.",
+        })}
         <textarea
           ref={bodyRef}
           rows={7}

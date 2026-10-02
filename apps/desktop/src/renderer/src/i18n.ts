@@ -1,36 +1,25 @@
 import { i18n } from "@lingui/core";
-
+import { Schema } from "effect";
 import type { Language } from "../../shared/api";
-import { messages as en } from "./locales/en/messages.po";
-import { messages as zhCN } from "./locales/zh-CN/messages.po";
+import { loadCatalog } from "../../shared/catalogs";
+import { createLocaleActivator } from "../../shared/locale-activation";
+import { systemLocale, type Locale } from "../../shared/locales";
+export type { Locale } from "../../shared/locales";
 
-export type Locale = "en" | "zh-CN";
+const query = new URLSearchParams(window.location.search);
+const preferred = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Array(Schema.String)))(
+  query.get("systemLanguages") ?? "null",
+);
+const SYSTEM_LOCALE = systemLocale(
+  preferred._tag === "Some" ? preferred.value : navigator.languages,
+);
 
-/**
- * The OS language, from the main process (`?system=` on the page URL).
- * Chinese in any script or region maps to zh-CN; everything else to English.
- */
-const SYSTEM_LOCALE: Locale = /^zh\b/i.test(
-  new URLSearchParams(window.location.search).get("system") ?? navigator.language,
-)
-  ? "zh-CN"
-  : "en";
-
-/** The locale the UI uses for a language preference. */
 export function resolveLocale(language: Language): Locale {
   return language === "system" ? SYSTEM_LOCALE : language;
 }
 
-// Two small catalogs, both bundled, so switching is synchronous.
-i18n.load({ en, "zh-CN": zhCN });
-
-export function activateLocale(locale: Locale): void {
-  if (i18n.locale === locale) return;
-  i18n.activate(locale);
+export const activateLocale = createLocaleActivator(i18n, loadCatalog, (locale) => {
   document.documentElement.lang = locale;
-}
-
-// Until the stored preference loads, follow the OS.
-activateLocale(SYSTEM_LOCALE);
+});
 
 export { i18n };

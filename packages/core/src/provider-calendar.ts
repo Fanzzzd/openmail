@@ -11,6 +11,7 @@ import {
 import { InvalidInput } from "./errors.js";
 import { featureRequest } from "./provider-features.js";
 import { graphTimestamp } from "./graph-time.js";
+import { graphRecurrence } from "./graph-recurrence.js";
 
 const GoogleTime = Schema.Struct({
   date: Schema.optionalKey(Schema.String),
@@ -221,10 +222,6 @@ export function makeProviderCalendar<
               try: () => calendarWindow(event),
               catch: () => new InvalidInput({ message: "Invalid calendar event time" }),
             });
-            if (provider === "outlook" && event.recurrence.length)
-              return yield* new InvalidInput({
-                message: "Recurring event creation is unavailable for this account",
-              });
             const uid =
               event.uid ??
               `openmail-${createHash("sha256").update(`${account.id}:${event.key}`).digest("hex")}@openmail.local`;
@@ -246,8 +243,9 @@ export function makeProviderCalendar<
                   : {
                       subject: event.title,
                       transactionId: identity,
-                      start: graphInput(event.start),
-                      end: graphInput(event.end),
+                      ...(event.recurrence.length
+                        ? graphRecurrence(event)
+                        : { start: graphInput(event.start), end: graphInput(event.end) }),
                       isAllDay: event.start.kind === "date",
                       location: { displayName: event.location },
                       body: { contentType: "text", content: event.description },

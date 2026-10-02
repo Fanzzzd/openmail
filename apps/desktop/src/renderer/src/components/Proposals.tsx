@@ -153,7 +153,11 @@ function Item({
             {outgoing.message.subject || t`(No subject)`}
           </p>
           <textarea
-            aria-label={t`Draft body`}
+            aria-label={t({
+              message: "Draft body",
+              context: "message text",
+              comment: "Text of a draft email, never an anatomical body.",
+            })}
             readOnly
             rows={8}
             value={outgoing.message.text}

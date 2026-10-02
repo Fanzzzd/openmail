@@ -27,6 +27,8 @@ const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Enable this account to open mail on the web": msg`Enable this account to open mail on the web`,
   "Enable this account to use its calendar": msg`Enable this account to use its calendar`,
   "This recurring event has a time zone Google Calendar cannot use": msg`This recurring event has a time zone Google Calendar cannot use`,
+  "This recurring event has a time zone Outlook cannot use": msg`This recurring event has a time zone Outlook cannot use`,
+  "This recurrence cannot be represented in Outlook": msg`This recurrence cannot be represented in Outlook`,
   "The selected message is no longer available.": msg`The selected message is no longer available.`,
   "This meeting link is not supported.": msg`This meeting link is not supported.`,
   "Invalid calendar event time": msg`Invalid calendar event time`,

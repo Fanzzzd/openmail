@@ -33,7 +33,7 @@ import { CacheSettings } from "./CacheSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
-import { SegmentedControl } from "./ui/SegmentedControl";
+import { Select } from "./ui/Select";
 
 import { OrganizationSettings } from "./OrganizationSettings";
 import { ServerSettings } from "./ServerSettings";
@@ -374,11 +374,19 @@ const MODES: { id: AgentWriteMode; label: MessageDescriptor; detail: MessageDesc
   },
 ];
 
-/** "中文" and "English" are shown in their own language, whatever the UI language is. */
+/** Language names stay in their own language so users can find them. */
 const LANGUAGES: { id: Language; label: string | MessageDescriptor }[] = [
   { id: "system", label: msg`Follow system` },
   { id: "zh-CN", label: "中文" },
   { id: "en", label: "English" },
+  { id: "cs", label: "Čeština" },
+  { id: "nl", label: "Nederlands" },
+  { id: "fr", label: "Français" },
+  { id: "de", label: "Deutsch" },
+  { id: "it", label: "Italiano" },
+  { id: "ja", label: "日本語" },
+  { id: "ru", label: "Русский" },
+  { id: "es", label: "Español" },
 ];
 
 function General() {
@@ -390,9 +398,9 @@ function General() {
       <h3 className="mb-2 text-[12px] font-semibold text-neutral-500 dark:text-neutral-400">
         <Trans>Language</Trans>
       </h3>
-      <SegmentedControl
+      <Select
         aria-label={t`Language`}
-        value={prefs?.language ?? null}
+        value={prefs?.language ?? "system"}
         options={LANGUAGES.map((l) => ({
           value: l.id,
           label: typeof l.label === "string" ? l.label : i18n._(l.label),

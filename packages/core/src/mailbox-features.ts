@@ -112,6 +112,10 @@ export function makeFeatureMailbox(
       .get(account.provider)
       .fetchRaw(account, ref.providerId)
       .pipe(Effect.flatMap(invitesFromRaw));
+    yield* store.cacheInvites(
+      messageId,
+      parsed.map((p) => p.invite),
+    );
     return { account, ref, parsed };
   });
   const photoLock = Semaphore.makeUnsafe(1);
@@ -125,12 +129,30 @@ export function makeFeatureMailbox(
       const account = yield* store.getAccount(ref.accountId);
       const raw = yield* providers.get(account.provider).fetchRaw(account, ref.providerId);
       const parsed = yield* invitesFromRaw(raw, true);
+      yield* store.cacheInvites(
+        messageId,
+        parsed.map((p) => p.invite),
+      );
       // Never reinterpret an iTIP request/response/cancellation as a new personal event.
       if (parsed.some((p) => p.invite.method !== "PUBLISH")) return [];
       return parsed.flatMap((p) => {
         const event = eventFromInvite(p.invite);
         return event
-          ? [{ ...event, title: event.title || message.subject, key: JSON.stringify(event) }]
+          ? [
+              {
+                ...event,
+                ...(event.recurrence.length &&
+                parsed.some(
+                  (other) =>
+                    other.calendar === p.calendar &&
+                    other.invite.uid === p.invite.uid &&
+                    other.invite.recurrenceId,
+                )
+                  ? { hasRecurrenceOverrides: true }
+                  : {}),
+                title: event.title || message.subject,
+              },
+            ].map((value) => ({ ...value, key: JSON.stringify(value) }))
           : [];
       });
     }
@@ -232,23 +254,10 @@ export function makeFeatureMailbox(
         const { parsed, account } = yield* parsedInvites(messageId);
         const addresses =
           account.provider === "imap" ? yield* responseAddresses(account) : [account.email];
-        const history = parsed.map((p) => p.invite);
-        for (const sibling of yield* store.getThread(messageId)) {
-          if (
-            sibling.id === messageId ||
-            (!sibling.hasCalendar &&
-              !sibling.attachments.some(
-                (a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename),
-              ))
-          )
-            continue;
-          const updates = yield* parsedInvites(sibling.id).pipe(Effect.result);
-          if (updates._tag === "Success")
-            history.push(...updates.success.parsed.map((p) => p.invite));
-        }
         return yield* Effect.forEach(parsed, (p) =>
           Effect.gen(function* () {
             const attendee = matchingInviteAttendee(p.invite, addresses);
+            const history = yield* store.cachedInvites(account.id, p.invite.uid);
             const annotated = inviteHistory(p.invite, history);
             const response = yield* store.inviteResponse({
               accountId: account.id,
@@ -299,6 +308,8 @@ export function makeFeatureMailbox(
             parsed.some(
               (p) =>
                 p.invite.uid === invitation.invite.uid &&
+                p.invite.organizer?.address.toLowerCase() ===
+                  invitation.invite.organizer?.address.toLowerCase() &&
                 p.invite.cancelled &&
                 p.invite.sequence >= invitation.invite.sequence &&
                 (!p.invite.recurrenceId ||
@@ -306,23 +317,19 @@ export function makeFeatureMailbox(
             )
           )
             return yield* new InvalidInput({ message: "This meeting has been cancelled" });
-          const thread = yield* store.getThread(messageId);
-          for (const sibling of thread) {
-            if (
-              sibling.id === messageId ||
-              !(
-                sibling.hasCalendar ||
-                sibling.attachments.some(
-                  (a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename),
-                )
-              )
-            )
-              continue;
-            const updates = (yield* parsedInvites(sibling.id)).parsed;
-            for (const update of updates) {
+          for (const siblingId of yield* store.inviteSiblingIds(
+            account.id,
+            invitation.invite.uid,
+            messageId,
+          )) {
+            const updates = yield* parsedInvites(siblingId).pipe(Effect.result);
+            if (updates._tag === "Failure") continue;
+            for (const update of updates.success.parsed) {
               const latest = update.invite;
               if (
                 latest.uid !== invitation.invite.uid ||
+                latest.organizer?.address.toLowerCase() !==
+                  invitation.invite.organizer?.address.toLowerCase() ||
                 latest.sequence < invitation.invite.sequence ||
                 (latest.recurrenceId &&
                   latest.recurrenceId.value !== invitation.invite.recurrenceId?.value)
