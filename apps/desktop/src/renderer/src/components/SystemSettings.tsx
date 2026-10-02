@@ -436,10 +436,18 @@ const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
 ];
 export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   nextWindow: msg`Next window`,
+  nextTab: msg`Next tab`,
+  previousTab: msg`Previous tab`,
   previousWindow: msg`Previous window`,
   focusMainWindow: msg`Focus main window`,
   toggleReadingPane: msg`Toggle reading pane position`,
   toggleSidebar: msg`Show or hide sidebar`,
+  toggleToolbar: msg`Show or hide toolbar`,
+  toggleReader: msg`Show or hide reading pane`,
+  toggleFullScreen: msg`Toggle full screen`,
+  jumpSelection: msg`Jump to selection`,
+  fontSizeIncrease: msg`Increase font size`,
+  fontSizeDecrease: msg`Decrease font size`,
   findNext: msg`Next match`,
   findPrevious: msg`Previous match`,
   findSelection: msg`Use selection for find`,
@@ -549,6 +557,14 @@ export function ShortcutTable({ set }: { set: ShortcutSet }) {
             </td>
           </tr>
         ))}
+        <tr>
+          <td className="pt-3">
+            <Trans>Favorites in sidebar order</Trans>
+          </td>
+          <td className="pt-3 text-right">
+            <kbd>⌥⌘1…9</kbd>
+          </td>
+        </tr>
         <tr>
           <td className="pt-3">
             <Trans>Move focus between panes</Trans>

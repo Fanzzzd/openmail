@@ -719,6 +719,22 @@ export const MIGRATIONS: readonly string[] = [
     WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html OR old.attachments_json IS NOT new.attachments_json BEGIN
       DELETE FROM calendar_invites WHERE message_id=new.id;
   END;`,
+  // 28: organization metadata for provider contact completion. No message-index rebuild.
+  `CREATE TABLE contact_organizations (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, company TEXT NOT NULL, PRIMARY KEY(account_id,address)
+  );
+  CREATE VIRTUAL TABLE contact_organizations_fts USING fts5(company,content='contact_organizations',content_rowid='rowid',tokenize='unicode61');
+  CREATE TRIGGER contact_organizations_ai AFTER INSERT ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(rowid,company) VALUES(new.rowid,new.company);
+  END;
+  CREATE TRIGGER contact_organizations_ad AFTER DELETE ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(contact_organizations_fts,rowid,company) VALUES('delete',old.rowid,old.company);
+  END;
+  CREATE TRIGGER contact_organizations_au AFTER UPDATE ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(contact_organizations_fts,rowid,company) VALUES('delete',old.rowid,old.company);
+    INSERT INTO contact_organizations_fts(rowid,company) VALUES(new.rowid,new.company);
+  END;`,
 ];
 
 /**

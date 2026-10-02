@@ -52,7 +52,7 @@ pnpm --filter @openmail/desktop dist:signed
 
 core 接受 Electron updater 适配器，统一配置和发起网络检查。窗口显示后先检查钥匙串是否配置令牌，再用 `codesign --verify --deep --strict` 验证 app，并确认 Developer ID Application Authority 和 TeamIdentifier；开发环境、ad-hoc 包和未配置令牌的私库安装均不开启更新。
 
-已签名 app 从私库 `Fanzzzd/openmail` 的 GitHub Releases 获取更新。在「设置 > 常规 > 更新」保存 GitHub 访问令牌，令牌只进系统钥匙串。设置页只显示是否已保存；不读取或回显令牌，不使用环境变量或开发者的 `GH_TOKEN`。每 6 小时检查一次，下载完成后退出 app 时安装；网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
+已签名 app 从私库 `Fanzzzd/openmail` 的 GitHub Releases 获取更新。在「设置 > 常规 > 软件更新」保存 GitHub 访问令牌，令牌只进系统钥匙串。设置页显示令牌是否已保存、更新版本和检查／下载状态，不读取或回显令牌，不使用环境变量或开发者的 `GH_TOKEN`。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对令牌、签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
 
 首次真实发布前还要验证：
 

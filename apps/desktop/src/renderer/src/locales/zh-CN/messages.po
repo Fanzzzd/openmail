@@ -647,6 +647,10 @@ msgstr "自动方向"
 msgid "Automatic replies"
 msgstr "自动回复"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Automatically download updates"
+msgstr "自动下载更新"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Automatically summarize new mail"
 msgstr "自动摘要新邮件"
@@ -869,6 +873,10 @@ msgstr "切换模式"
 msgid "Change writing mode?"
 msgstr "切换撰写模式？"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Check for updates"
+msgstr "检查更新"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Check for Updates…"
 msgstr "检查更新…"
@@ -877,6 +885,10 @@ msgstr "检查更新…"
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
 msgstr "输入时检查拼写"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Checking for updates…"
+msgstr "正在检查更新…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1359,6 +1371,10 @@ msgstr "拒绝"
 msgid "Declined"
 msgstr "已拒绝"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease font size"
+msgstr "减小字号"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Decrease indent"
@@ -1501,10 +1517,27 @@ msgstr "完成"
 msgid "Download on-device models, ~226 MB"
 msgstr "下载本机模型，约 226 MB"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Download update"
+msgstr "下载更新"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloaded updates install when you quit, after pending drafts are checked."
+msgstr "下载完成后，退出时会先检查待处理草稿，再安装更新。"
+
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "正在下载模型：{0}%"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloading update {0}…"
+msgstr "正在下载更新 {0}…"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Downloading update {version}…"
+msgstr "正在下载更新 {version}…"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
@@ -1741,6 +1774,10 @@ msgstr "收藏"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "收藏夹"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Favorites in sidebar order"
+msgstr "按侧栏顺序打开收藏夹"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Feature request"
@@ -2060,6 +2097,10 @@ msgstr "包含原附件"
 msgid "Include signature separator"
 msgstr "显示签名分隔符"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase font size"
+msgstr "增大字号"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Increase indent"
@@ -2141,6 +2182,10 @@ msgstr "斜体"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "加入会议"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Jump to selection"
+msgstr "跳转到选区"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2243,6 +2288,10 @@ msgstr "上次同步失败"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Latest"
 msgstr "最新版本"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Layout"
+msgstr "布局"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
@@ -2800,6 +2849,10 @@ msgid "Next match"
 msgstr "下一处"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Next tab"
+msgstr "下一个页签"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "下一个会话"
 
@@ -3256,6 +3309,10 @@ msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中�
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "上一处"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous tab"
+msgstr "上一个页签"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -3992,9 +4049,20 @@ msgstr "只看星标"
 msgid "Show only unread"
 msgstr "只看未读"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide reading pane"
+msgstr "显示或隐藏阅读面板"
+
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show or hide sidebar"
 msgstr "显示或隐藏侧栏"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide toolbar"
+msgstr "显示或隐藏工具栏"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4117,6 +4185,11 @@ msgstr "稍后提醒"
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "社交"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Software updates"
+msgstr "软件更新"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -4520,6 +4593,10 @@ msgid "Today {time}"
 msgstr "今天 {time}"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle full screen"
+msgstr "切换全屏"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "切换列表筛选"
 
@@ -4650,6 +4727,24 @@ msgstr "最多三个动作，按选择顺序排列。动作菜单含归档、废
 msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
 msgstr "最多三个按钮，按选择顺序排列。选择全部动作会添加归档、废纸篓和标为已读按钮。修改对新通知生效。"
 
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is available."
+msgstr "有可用更新 {0}。"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is ready. It will install when you quit."
+msgstr "更新 {0} 已就绪，将在退出时安装。"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is available."
+msgstr "有可用更新 {version}。"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is ready. It will install when you quit."
+msgstr "更新 {version} 已就绪，将在退出时安装。"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "有可用更新："
@@ -4658,16 +4753,23 @@ msgstr "有可用更新："
 msgid "Update channel"
 msgstr "更新渠道"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update check or download failed. Try again."
+msgstr "检查或下载更新失败，请重试。"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitHub 访问令牌。"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
-#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "动态"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Updates require a signed macOS build and a saved access token."
+msgstr "更新需要已签名的 macOS 版本，并保存访问令牌。"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
@@ -4785,6 +4887,10 @@ msgstr "你"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "你（命令行）"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "You are up to date."
+msgstr "已是最新版本。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

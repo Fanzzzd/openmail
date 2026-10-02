@@ -1,3 +1,4 @@
+import { beginUpdateState, updateStateReporter } from "./update-state";
 import { setUpdateQuitPlan } from "./update-install";
 import { updateClient } from "./update-client";
 import { Mailbox, isSignedMacApp } from "@openmail/core";
@@ -55,17 +56,30 @@ export const UpdatesLive = Layer.effectDiscard(
       yield* Effect.addFinalizer(() => Effect.sync(removePlan));
       let stop: (() => void) | undefined;
       yield* Effect.addFinalizer(() => Effect.sync(() => stop?.()));
-      const restart = Effect.gen(function* () {
-        stop?.();
-        stop = yield* mailbox.startUpdates(client, {
-          packaged: app.isPackaged && process.platform === "darwin",
-          bundle: resolve(process.execPath, "../../.."),
+      const restart = (resetState: boolean) =>
+        Effect.gen(function* () {
+          stop?.();
+          const prefs = yield* mailbox.prefs;
+          const report = beginUpdateState({
+            reset: resetState,
+            downloadedVersion: client.downloadedVersion,
+            channel: prefs.updateChannel,
+          });
+          stop = yield* mailbox.startUpdates(client, {
+            packaged: app.isPackaged && process.platform === "darwin",
+            bundle: resolve(process.execPath, "../../.."),
+            onState: (state) =>
+              report(
+                state.status === "available" && state.version === client.downloadedVersion
+                  ? { status: "downloaded", version: state.version }
+                  : state,
+              ),
+          });
         });
-      });
-      yield* restart;
+      yield* restart(true);
       yield* mailbox.events.pipe(
         Stream.filter((event) => event._tag === "UpdateSettingsChanged"),
-        Stream.runForEach(() => restart),
+        Stream.runForEach((event) => restart(event.resetState)),
       );
     }).pipe(
       Effect.catchCause(() => Effect.void),
@@ -87,6 +101,7 @@ export function manualUpdateCheck(
             return yield* mailbox.checkUpdates(updateClient(updater.default.autoUpdater), {
               packaged: true,
               bundle: resolve(process.execPath, "../../.."),
+              onState: updateStateReporter(),
             });
           }).pipe(Effect.catchCause(() => Effect.succeed({ status: "error" } as const)))
         : ({ status: "disabled" } as const);
@@ -107,4 +122,18 @@ export function manualUpdateCheck(
       }),
     );
   });
+}
+
+export function checkForUpdateState(mailbox: Mailbox["Service"], download: boolean) {
+  const onState = updateStateReporter();
+  return Effect.gen(function* () {
+    if (!app.isPackaged || process.platform !== "darwin") return;
+    const updater = yield* Effect.promise(() => import("electron-updater"));
+    yield* mailbox.checkUpdates(updateClient(updater.default.autoUpdater), {
+      packaged: true,
+      bundle: resolve(process.execPath, "../../.."),
+      ...(download ? { autoDownload: true } : {}),
+      onState,
+    });
+  }).pipe(Effect.catchCause(() => Effect.sync(() => onState({ status: "error" }))));
 }

@@ -267,6 +267,9 @@ export function accountId(provider: Provider, email: string): string {
 }
 
 /** Gmail system label behind each mailbox. Outlook and IMAP folders are mapped onto the same names. */
+const expressionMedia = (text: string) =>
+  hasSearchExpression(text) || searchWords(text).some((term) => term.startsWith("-"));
+
 const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
   inbox: "INBOX",
   snoozed: "SNOOZED",
@@ -607,7 +610,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     );
 
     const wordIndex = makeWordIndexStore(sql);
-    type LocalQuery = ThreadQuery & { wordIndexReady?: boolean };
+    type LocalQuery = ThreadQuery & { wordIndexReady?: boolean; derivedWordIndexReady?: boolean };
     const textFilter = (
       value: string,
       derived: boolean,
@@ -701,22 +704,46 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       return sql.and(where);
     };
 
-    const expressionFilter = (node: SearchExpression, ready: boolean): Fragment => {
+    type ExpressionContext = {
+      messagesReady: boolean;
+      derivedReady: boolean;
+      media: boolean;
+      attachmentOnly: boolean;
+    };
+    const expressionFilter = (node: SearchExpression, context: ExpressionContext): Fragment => {
       switch (node.kind) {
-        case "and":
-          return sql`(${sql.and(node.children.map((child) => expressionFilter(child, ready)))})`;
+        case "and": {
+          const scoped =
+            context.attachmentOnly ||
+            node.children.some(
+              (child) =>
+                child.kind === "term" &&
+                parseSearchQuery({ search: child.value }).criteria?.attachmentText === true,
+            );
+          return sql`(${sql.and(node.children.map((child) => expressionFilter(child, { ...context, attachmentOnly: scoped })))})`;
+        }
         case "or":
-          return sql`(${sql.or(node.children.map((child) => expressionFilter(child, ready)))})`;
+          return sql`(${sql.or(node.children.map((child) => expressionFilter(child, context)))})`;
         case "not":
           return expressionHasSize(node.child)
-            ? sql`(m.message_size IS NULL OR NOT (${expressionFilter(node.child, ready)}))`
-            : sql`NOT (${expressionFilter(node.child, ready)})`;
+            ? sql`(m.message_size IS NULL OR NOT (${expressionFilter(node.child, context)}))`
+            : sql`NOT (${expressionFilter(node.child, context)})`;
         case "term": {
           const q = parseSearchQuery({ search: node.value });
-          const conditions = [searchConditionFilter(q.criteria ?? {}, ready)];
+          const conditions = [searchConditionFilter(q.criteria ?? {}, context.messagesReady)];
           if (q.unreadOnly) conditions.push(sql`m.is_unread=1`);
           if (q.starredOnly) conditions.push(sql`m.is_starred=1`);
-          if (q.search) conditions.push(textFilter(q.search, false, ready));
+          if (q.search) {
+            const body = textFilter(q.search, false, context.messagesReady);
+            const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady)})`;
+            conditions.push(
+              context.attachmentOnly
+                ? derived
+                : context.media
+                  ? sql`(${body} OR ${derived})`
+                  : body,
+            );
+          }
           return sql`(${sql.and(conditions)})`;
         }
         default: {
@@ -763,7 +790,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             : sql`NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false)})`,
         );
       where.push(
-        expressionFilter(parseSearchExpression(q.search ?? ""), q.wordIndexReady ?? false),
+        expressionFilter(parseSearchExpression(q.search ?? ""), {
+          messagesReady: q.wordIndexReady ?? false,
+          derivedReady: q.derivedWordIndexReady ?? false,
+          media: expressionMedia(q.search ?? ""),
+          attachmentOnly: q.criteria?.attachmentText ?? false,
+        }),
       );
       return sql.and(where);
     };
@@ -771,9 +803,11 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const countThreads = Effect.fn("Store.countThreads")(function* (raw: ThreadQuery) {
       const invalid = searchQueryError(raw);
       if (invalid) return yield* invalid;
+      const readiness = yield* wordIndex.wordIndexReady;
       const query = {
         ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
-        wordIndexReady: (yield* wordIndex.wordIndexReady).messages,
+        wordIndexReady: readiness.messages,
+        derivedWordIndexReady: readiness.derived,
       };
       return yield* all(Schema.Struct({ n: Schema.Number }))(
         query.flat
@@ -850,12 +884,21 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const q = {
         ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
         wordIndexReady: readiness.messages,
+        derivedWordIndexReady: readiness.derived,
       };
-      const limit = q.limit ?? 50;
+      const mediaExpression = expressionMedia(q.search ?? "");
+      const limit = mediaExpression ? Math.min(q.limit ?? 50, 1024) : (q.limit ?? 50);
       const listing = q.flat ? messageList : threadList;
       const terms = searchWords(q.search ?? "").map(unquoteSearchValue);
-      let threads = q.criteria?.attachmentText && terms.length ? [] : yield* listing(q, limit);
-      if (terms.length && !hasSearchExpression(q.search ?? "")) {
+      let threads =
+        q.criteria?.attachmentText && terms.length && !mediaExpression
+          ? []
+          : yield* listing(q, limit);
+      if (
+        terms.length &&
+        !hasSearchExpression(q.search ?? "") &&
+        !searchWords(q.search ?? "").some((term) => term.startsWith("-"))
+      ) {
         const predicates = searchWords(q.search ?? "").map((term) =>
           textFilter(term, true, readiness.derived),
         );

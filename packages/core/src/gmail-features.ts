@@ -36,6 +36,9 @@ const Person = Schema.Struct({
   names: Schema.optionalKey(
     Schema.Array(Schema.Struct({ displayName: Schema.optionalKey(Schema.String) })),
   ),
+  organizations: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ name: Schema.optionalKey(Schema.String) })),
+  ),
   emailAddresses: Schema.optionalKey(
     Schema.Array(Schema.Struct({ value: Schema.optionalKey(Schema.String) })),
   ),
@@ -145,8 +148,8 @@ export function makeGmailFeatures<
               ...(source === "connections"
                 ? {
                     personFields: details
-                      ? "names,emailAddresses,photos,memberships"
-                      : "names,emailAddresses",
+                      ? "names,emailAddresses,organizations,photos,memberships"
+                      : "names,emailAddresses,organizations",
                     sources: "READ_SOURCE_TYPE_CONTACT",
                   }
                 : { readMask: "names,emailAddresses" }),
@@ -175,6 +178,14 @@ export function makeGmailFeatures<
                         {
                           address: email.value,
                           name: person.names?.[0]?.displayName ?? "",
+                          ...(person.organizations?.length
+                            ? {
+                                company: person.organizations
+                                  .map((o) => o.name ?? "")
+                                  .filter(Boolean)
+                                  .join(" "),
+                              }
+                            : {}),
                           ...(person.resourceName ? { contactKey: person.resourceName } : {}),
                         },
                       ]

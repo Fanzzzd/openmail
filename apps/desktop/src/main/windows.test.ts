@@ -19,6 +19,8 @@ vi.mock("electron", () => ({
   BrowserWindow: class FakeWindow extends EventEmitter {
     static all: FakeWindow[] = [];
     static getAllWindows = () => FakeWindow.all;
+    isDestroyed = () => false;
+    addTabbedWindow = vi.fn();
     show = vi.fn();
     focus = vi.fn();
     getNormalBounds() {
@@ -48,6 +50,7 @@ vi.mock("electron", () => ({
 
 import { BrowserWindow, shell } from "electron";
 import {
+  createMainWindow,
   lockNavigation,
   openMessageWindow,
   openThreadWindow,
@@ -195,4 +198,19 @@ it("restores each window kind and does not lose the set while quitting", async (
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+it("only main windows opt into native macOS tabs, and the tab button creates another main window", () => {
+  const main = createMainWindow();
+  const reader = openThreadWindow("gmail:me@example.com/m");
+  if (process.platform === "darwin") {
+    expect(created.at(-2)).toMatchObject({ tabbingIdentifier: "openmail-main" });
+    expect(created.at(-1)).not.toHaveProperty("tabbingIdentifier");
+    const addTab = vi.spyOn(main, "addTabbedWindow");
+    main.emit("new-window-for-tab");
+    expect(addTab).toHaveBeenCalledOnce();
+    expect(created.at(-1)).toMatchObject({ tabbingIdentifier: "openmail-main" });
+  } else expect(created.at(-2)).not.toHaveProperty("tabbingIdentifier");
+  main.emit("closed");
+  reader.emit("closed");
 });

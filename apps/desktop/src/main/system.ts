@@ -1,3 +1,4 @@
+import { nativeTabMenu } from "./window-keys";
 import { readDockFiles, dockFileReason } from "./dock-files";
 import {
   NATIVE_MENUS,
@@ -469,7 +470,12 @@ export const DesktopLive = Layer.effect(
               })),
               {
                 label: labels.window,
-                submenu: [{ role: "minimize" }, { role: "zoom" }, { role: "front" }],
+                submenu: [
+                  { role: "minimize" },
+                  { role: "zoom" },
+                  { role: "front" },
+                  ...nativeTabMenu(prefs.shortcutSet),
+                ],
               },
               {
                 role: "help",

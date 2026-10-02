@@ -463,6 +463,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "derived_chunks",
     "server_contacts",
     "contact_candidates",
+    "contact_organizations",
     "contact_sync",
     "contact_groups",
     "contact_photos",
@@ -486,7 +487,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     for (const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()) {
       if (
         typeof row.name !== "string" ||
-        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts|messages_words_|derived_words_)/.test(
+        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts|contact_organizations_fts|messages_words_|derived_words_)/.test(
           row.name,
         )
       )
@@ -599,5 +600,45 @@ it("refuses corrupt database replacement while another connection holds a read t
     expect(readFileSync(file)).toEqual(bytes);
   } finally {
     other.close();
+  }
+});
+
+it("cache reset removes company metadata and repairs a damaged organization FTS index", () => {
+  const dir = temp();
+  const file = join(dir, "mail.db");
+  const db = new DatabaseSync(file);
+  for (const migration of MIGRATIONS) db.exec(migration);
+  db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
+    "gmail:me@example.com",
+    "gmail",
+    "me@example.com",
+    0,
+  );
+  db.prepare("INSERT INTO contact_organizations(account_id,address,company) VALUES(?,?,?)").run(
+    "gmail:me@example.com",
+    "john@example.com",
+    "Private company",
+  );
+  db.exec("INSERT INTO contact_organizations_fts(contact_organizations_fts) VALUES ('delete-all')");
+  db.close();
+  expect(resetLocalCache(dir)).toEqual({ kind: "reset" });
+  const reopened = new DatabaseSync(file);
+  try {
+    expect(reopened.prepare("SELECT company FROM contact_organizations").all()).toEqual([]);
+    expect(
+      reopened
+        .prepare(
+          "SELECT rowid FROM contact_organizations_fts WHERE contact_organizations_fts MATCH 'Private'",
+        )
+        .all(),
+    ).toEqual([]);
+    expect(() =>
+      reopened.exec(
+        "INSERT INTO contact_organizations_fts(contact_organizations_fts,rank) VALUES('integrity-check',1)",
+      ),
+    ).not.toThrow();
+    expect(reopened.prepare("SELECT id FROM accounts").all()).toHaveLength(1);
+  } finally {
+    reopened.close();
   }
 });

@@ -13,6 +13,7 @@ const Contact = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
   displayName: Schema.optionalKey(Schema.NullOr(Schema.String)),
   emailAddresses: Schema.optionalKey(Schema.Array(Email)),
+  companyName: Schema.optionalKey(Schema.NullOr(Schema.String)),
 });
 const Person = Schema.Struct({
   id: Schema.optionalKey(Schema.String),
@@ -71,7 +72,7 @@ export function makeOutlookFeatures<
           for (const source of ["contacts", "people"] as const) {
             const select =
               source === "contacts"
-                ? "id,displayName,emailAddresses"
+                ? "id,displayName,emailAddresses,companyName"
                 : "id,displayName,scoredEmailAddresses";
             let path = `/me/${source}?$select=${select}&$top=250`;
             const seen = new Set<string>();
@@ -95,6 +96,9 @@ export function makeOutlookFeatures<
                     contacts.push({
                       address: email.address,
                       name: person.displayName ?? email.name ?? "",
+                      ...("companyName" in person && person.companyName
+                        ? { company: person.companyName }
+                        : {}),
                       ...(person.id ? { contactKey: `${source}:${person.id}` } : {}),
                     });
               }

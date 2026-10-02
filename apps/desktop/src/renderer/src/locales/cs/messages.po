@@ -637,6 +637,10 @@ msgstr "Automatický směr"
 msgid "Automatic replies"
 msgstr "Automatické odpovědi"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Automatically download updates"
+msgstr "Automaticky stahovat aktualizace"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Automatically summarize new mail"
 msgstr "Automaticky shrnovat novou poštu"
@@ -859,6 +863,10 @@ msgstr "Změnit režim"
 msgid "Change writing mode?"
 msgstr "Změnit režim psaní?"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Check for updates"
+msgstr "Zkontrolovat aktualizace"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Check for Updates…"
 msgstr "Zkontrolovat aktualizace…"
@@ -867,6 +875,10 @@ msgstr "Zkontrolovat aktualizace…"
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
 msgstr "Kontrolovat pravopis při psaní"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Checking for updates…"
+msgstr "Kontrolují se aktualizace…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1349,6 +1361,10 @@ msgstr "Odmítnout"
 msgid "Declined"
 msgstr "Odmítnuto"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease font size"
+msgstr "Zmenšit velikost písma"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Decrease indent"
@@ -1491,10 +1507,27 @@ msgstr "Hotovo"
 msgid "Download on-device models, ~226 MB"
 msgstr "Stáhnout modely na zařízení, ~226 MB"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Download update"
+msgstr "Stáhnout aktualizaci"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloaded updates install when you quit, after pending drafts are checked."
+msgstr "Stažené aktualizace se nainstalují při ukončení aplikace po kontrole nevyřízených konceptů."
+
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "Stahování modelů: {0}%"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloading update {0}…"
+msgstr "Stahuje se aktualizace {0}…"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Downloading update {version}…"
+msgstr "Stahuje se aktualizace {version}…"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
@@ -1731,6 +1764,10 @@ msgstr "Oblíbený"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "Oblíbené"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Favorites in sidebar order"
+msgstr "Oblíbené v pořadí na bočním panelu"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Feature request"
@@ -2050,6 +2087,10 @@ msgstr "Vložit originální přílohy"
 msgid "Include signature separator"
 msgstr "Zahrnout oddělovač podpisu"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase font size"
+msgstr "Zvětšit velikost písma"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Increase indent"
@@ -2131,6 +2172,10 @@ msgstr "kurzíva"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "Připojte se ke schůzce"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Jump to selection"
+msgstr "Přejít na výběr"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2233,6 +2278,10 @@ msgstr "Poslední synchronizace se nezdařila"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Latest"
 msgstr "Nejnovější"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Layout"
+msgstr "Rozložení"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
@@ -2790,6 +2839,10 @@ msgid "Next match"
 msgstr "Další shoda"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Next tab"
+msgstr "Další panel"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "Další konverzace"
 
@@ -3246,6 +3299,10 @@ msgstr "Náhled: {0} zpráv. Při použití na existující poštu se změní po
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "Předchozí shoda"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous tab"
+msgstr "Předchozí panel"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -3982,9 +4039,20 @@ msgstr "Zobrazit jen s hvězdičkou"
 msgid "Show only unread"
 msgstr "Zobrazit jen nepřečtené"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide reading pane"
+msgstr "Zobrazit nebo skrýt panel čtení"
+
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show or hide sidebar"
 msgstr "Zobrazit nebo skrýt postranní panel"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide toolbar"
+msgstr "Zobrazit nebo skrýt panel nástrojů"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4107,6 +4175,11 @@ msgstr "Odložené"
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Sociální sítě"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Software updates"
+msgstr "Aktualizace softwaru"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -4510,6 +4583,10 @@ msgid "Today {time}"
 msgstr "Dnes {time}"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle full screen"
+msgstr "Přepnout režim celé obrazovky"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "Přepnout filtry seznamu"
 
@@ -4640,6 +4717,24 @@ msgstr "Až tři akce v pořadí výběru. Nabídka akcí obsahuje Archiv, Koš 
 msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
 msgstr "Až tři tlačítka v pořadí výběru. Všechny akce přidávají tlačítka Archiv, Koš a Označit přečtené. Změny se týkají nových oznámení."
 
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is available."
+msgstr "Je k dispozici aktualizace {0}."
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is ready. It will install when you quit."
+msgstr "Aktualizace {0} je připravena. Nainstaluje se při ukončení aplikace."
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is available."
+msgstr "Je k dispozici aktualizace {version}."
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is ready. It will install when you quit."
+msgstr "Aktualizace {version} je připravena. Nainstaluje se při ukončení aplikace."
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "Dostupná aktualizace:"
@@ -4648,16 +4743,23 @@ msgstr "Dostupná aktualizace:"
 msgid "Update channel"
 msgstr "Kanál aktualizací"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update check or download failed. Try again."
+msgstr "Kontrola nebo stažení aktualizace se nezdařilo. Zkuste to znovu."
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS a uložený přístupový token GitHub."
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
-#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Aktualizace"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Updates require a signed macOS build and a saved access token."
+msgstr "Aktualizace vyžadují podepsanou verzi aplikace pro macOS a uložený přístupový token."
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
@@ -4775,6 +4877,10 @@ msgstr "Vy"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "Vy (příkazový řádek)"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "You are up to date."
+msgstr "Máte nejnovější verzi."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

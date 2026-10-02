@@ -3,20 +3,22 @@ import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
 export function MailPanels({
   position,
+  readerVisible,
   children,
 }: {
   position: "right" | "bottom";
-  children: ReactNode;
+  readerVisible: boolean;
+  children?: ReactNode;
 }) {
   const panes = useDefaultLayout({
-    id: `openmail:mail-panes:${position}`,
-    panelIds: ["list", "reader"],
+    id: readerVisible ? `openmail:mail-panes:${position}` : `openmail:mail-panes:${position}:list`,
+    panelIds: readerVisible ? ["list", "reader"] : ["list"],
     storage: localStorage,
   });
   return (
     <Panel id="mail" minSize={560}>
       <Group
-        key={position}
+        key={`${position}:${readerVisible}`}
         orientation={position === "bottom" ? "vertical" : "horizontal"}
         defaultLayout={panes.defaultLayout}
         onLayoutChanged={panes.onLayoutChanged}

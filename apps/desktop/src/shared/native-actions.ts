@@ -26,6 +26,8 @@ export const NativeAction = Schema.Literals([
   "pasteStyle",
   "clearFormatting",
   "toggleFormatBar",
+  "fontSizeIncrease",
+  "fontSizeDecrease",
 
   "reply",
   "replyAll",
@@ -136,6 +138,8 @@ export const NATIVE_MENUS = [
       "pasteStyle",
       "clearFormatting",
       "toggleFormatBar",
+      "fontSizeIncrease",
+      "fontSizeDecrease",
 
       "bold",
       "italic",

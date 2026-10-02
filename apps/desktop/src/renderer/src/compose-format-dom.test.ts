@@ -1,7 +1,12 @@
 import { parseHTML } from "linkedom";
 import { afterEach, expect, it, vi } from "vitest";
 import { composeReplacement, richComposeBody } from "@openmail/core/schema";
-import { formatEditor, styleEditor, replaceMarkdownEditor } from "./compose-format-dom";
+import {
+  stepEditorFontSize,
+  formatEditor,
+  styleEditor,
+  replaceMarkdownEditor,
+} from "./compose-format-dom";
 import type { FormatAction } from "./compose-format-dom";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -247,4 +252,32 @@ it("changing a paragraph style overrides previous nested values and paste replac
   expect(dom.root.innerHTML).toContain("font-family:Verdana;color:#abc");
   expect(dom.root.innerHTML).toContain("<strong>hello</strong>");
   expect(dom.root.innerHTML).not.toContain("color:#123");
+});
+
+it("font size stepping uses selected text size, preserves siblings and one native undo", () => {
+  const dom = fixture('<div><span style="font-size:14px">selected</span> sibling</div>');
+  dom.select("span", 0, 8);
+  vi.stubGlobal("getComputedStyle", () => ({ fontSize: "14px" }));
+  stepEditorFontSize(dom.root, dom.range(), 1);
+  expect(dom.root.innerHTML).toContain("font-size:16px");
+  expect(dom.root.textContent).toBe("selected sibling");
+  expect(dom.command).toHaveBeenCalledOnce();
+  dom.document.execCommand("undo", false);
+  expect(dom.root.innerHTML).toBe(
+    '<div><span style="font-size:14px">selected</span> sibling</div>',
+  );
+  dom.select("span", 0, 8);
+  vi.stubGlobal("getComputedStyle", () => ({ fontSize: "14px" }));
+  stepEditorFontSize(dom.root, dom.range(), -1);
+  expect(dom.root.innerHTML).toContain("font-size:12px");
+});
+it("font size stepping clamps at the editor's available size boundaries", () => {
+  const dom = fixture("<div>selected</div>");
+  dom.select("div", 0, 8);
+  vi.stubGlobal("getComputedStyle", () => ({ fontSize: "1000px" }));
+  stepEditorFontSize(dom.root, dom.range(), 1);
+  expect(dom.command).not.toHaveBeenCalled();
+  vi.stubGlobal("getComputedStyle", () => ({ fontSize: "1px" }));
+  stepEditorFontSize(dom.root, dom.range(), -1);
+  expect(dom.command).not.toHaveBeenCalled();
 });

@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
 import { checkStoredUpdates, startAutoUpdates, type UpdateClient } from "./updates.js";
@@ -281,5 +282,186 @@ it("downloads never automatically hand a package to the native updater", async (
     assert.strictEqual(client.autoInstallOnAppQuit, false);
   } finally {
     stop();
+  }
+});
+
+it("background update status follows availability/downloads, honors opt-out and suppresses stopped callbacks", async () => {
+  const states: import("./update-state.js").UpdateState[] = [];
+  let finish: () => void = () => null;
+  let fail: (error: Error) => void = () => null;
+  let download = new Promise<void>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
+  const client: UpdateClient = {
+    autoDownload: false,
+    autoInstallOnAppQuit: false,
+    logger: null,
+    setFeedURL: () => null,
+    on: () => null,
+    removeListener: () => null,
+    checkForUpdates: async () => ({
+      isUpdateAvailable: true,
+      updateInfo: { version: "2.0.0" },
+      ...(client.autoDownload ? { downloadPromise: download } : {}),
+    }),
+  };
+  const flush = () =>
+    new Promise<void>((resolve) => {
+      setImmediate(resolve);
+    });
+  const start = (autoDownload: boolean) =>
+    startAutoUpdates(client, {
+      packaged: true,
+      signed: true,
+      token: "private-token",
+      autoDownload,
+      onState: (state) => states.push(state),
+    });
+  const off = start(false);
+  await flush();
+  assert.deepStrictEqual(states, [
+    { status: "checking" },
+    { status: "available", version: "2.0.0" },
+  ]);
+  assert.strictEqual(client.autoDownload, false);
+  off();
+  states.length = 0;
+  const on = start(true);
+  await flush();
+  assert.deepStrictEqual(states, [
+    { status: "checking" },
+    { status: "available", version: "2.0.0" },
+    { status: "downloading", version: "2.0.0" },
+  ]);
+  finish();
+  await flush();
+  assert.deepStrictEqual(states.at(-1), { status: "downloaded", version: "2.0.0" });
+  assert.strictEqual(client.autoInstallOnAppQuit, false);
+  on();
+  states.length = 0;
+  download = new Promise<void>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
+  const stopped = start(true);
+  await flush();
+  stopped();
+  const before = [...states];
+  finish();
+  await flush();
+  assert.deepStrictEqual(states, before);
+  states.length = 0;
+  download = new Promise<void>((resolve, reject) => {
+    finish = resolve;
+    fail = reject;
+  });
+  const failed = start(true);
+  await flush();
+  fail(new Error("https://private-token@private-release.example/signed-url"));
+  await flush();
+  assert.deepStrictEqual(states.at(-1), { status: "error" });
+  assert.ok(!JSON.stringify(states).includes("private-token"));
+  failed();
+});
+
+it.effect(
+  "manual download obeys signature/authentication gates and rejects an ineligible Stable version",
+  () =>
+    Effect.gen(function* () {
+      const states: import("./update-state.js").UpdateState[] = [];
+      let checks = 0;
+      const client: UpdateClient = {
+        autoDownload: false,
+        autoInstallOnAppQuit: false,
+        logger: null,
+        setFeedURL: () => null,
+        on: () => null,
+        removeListener: () => null,
+        checkForUpdates: async () => {
+          checks++;
+          return { isUpdateAvailable: true, updateInfo: { version: "2.0.0-beta.1" } };
+        },
+      };
+      const options = {
+        packaged: true,
+        bundle: "/OpenMail.app",
+        autoDownload: true,
+        onState: (state: import("./update-state.js").UpdateState) => states.push(state),
+      };
+      yield* checkStoredUpdates(client, options, Effect.succeed(Option.none()), async () => true);
+      assert.deepStrictEqual(states, [{ status: "disabled" }]);
+      assert.strictEqual(client.autoDownload, false);
+      yield* checkStoredUpdates(
+        client,
+        options,
+        Effect.succeed(Option.some("token")),
+        async () => false,
+      );
+      assert.strictEqual(checks, 0);
+      assert.strictEqual(client.autoDownload, false);
+      assert.deepStrictEqual(
+        yield* checkStoredUpdates(
+          client,
+          options,
+          Effect.succeed(Option.some("token")),
+          async () => true,
+        ),
+        { status: "error" },
+      );
+      assert.deepStrictEqual(states.at(-1), { status: "error" });
+      assert.strictEqual(client.autoInstallOnAppQuit, false);
+    }),
+);
+
+it("manual download restores automatic opt-out before the next timer check, including failures", async () => {
+  vi.useFakeTimers();
+  const observed: boolean[] = [];
+  let fail = false;
+  const client: UpdateClient = {
+    autoDownload: false,
+    autoInstallOnAppQuit: false,
+    logger: null,
+    setFeedURL: () => null,
+    on: () => null,
+    removeListener: () => null,
+    checkForUpdates: async () => {
+      observed.push(client.autoDownload);
+      if (fail) throw new Error("download check failed");
+      return { isUpdateAvailable: false };
+    },
+  };
+  const stop = startAutoUpdates(client, {
+    packaged: true,
+    signed: true,
+    token: "token",
+    autoDownload: false,
+  });
+  try {
+    await vi.advanceTimersByTimeAsync(0);
+    await Effect.runPromise(
+      checkStoredUpdates(
+        client,
+        { packaged: true, bundle: "/OpenMail.app", autoDownload: true },
+        Effect.succeed(Option.some("token")),
+        async () => true,
+      ),
+    );
+    assert.strictEqual(client.autoDownload, false);
+    await vi.advanceTimersByTimeAsync(6 * 60 * 60_000);
+    assert.deepStrictEqual(observed, [false, true, false]);
+    fail = true;
+    await Effect.runPromise(
+      checkStoredUpdates(
+        client,
+        { packaged: true, bundle: "/OpenMail.app", autoDownload: true },
+        Effect.succeed(Option.some("token")),
+        async () => true,
+      ),
+    );
+    assert.strictEqual(client.autoDownload, false);
+  } finally {
+    stop();
+    vi.useRealTimers();
   }
 });

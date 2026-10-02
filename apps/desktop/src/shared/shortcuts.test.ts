@@ -215,6 +215,9 @@ it("every accelerator is unique and every shortcut leaves typing to the editor",
             "nextWindow",
             "previousWindow",
             "focusMainWindow",
+            "toggleFullScreen",
+            "nextTab",
+            "previousTab",
           ].includes(action) &&
           (stroke.cmd || action === "nextWindow" || action === "previousWindow");
         expect(shortcutAction(set, input, true)).toBe(global ? action : null);

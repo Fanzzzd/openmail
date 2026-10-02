@@ -973,7 +973,10 @@ it.effect(
       const http = fakeHttp({
         "GET /v1/people/me/connections": (url) => {
           assert.strictEqual(url.hostname, "people.googleapis.com");
-          assert.strictEqual(url.searchParams.get("personFields"), "names,emailAddresses");
+          assert.strictEqual(
+            url.searchParams.get("personFields"),
+            "names,emailAddresses,organizations",
+          );
           return url.searchParams.get("pageToken")
             ? { json: { connections: [{ emailAddresses: [{ value: "second@example.com" }] }] } }
             : {
@@ -2020,7 +2023,7 @@ it.effect(
         "GET /v1/people/me/connections": (url) => {
           assert.strictEqual(
             url.searchParams.get("personFields"),
-            "names,emailAddresses,photos,memberships",
+            "names,emailAddresses,organizations,photos,memberships",
           );
           assert.strictEqual(url.searchParams.get("sources"), "READ_SOURCE_TYPE_CONTACT");
           return url.searchParams.get("pageToken")

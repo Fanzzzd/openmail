@@ -3,6 +3,7 @@ import { ContactAvatar as Avatar } from "./ContactAvatar";
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
 import { readerMessageId, useReaderMessages } from "../reader-selection";
 import { readerSelectedText } from "../quote-selection";
+import { jumpReaderSelection } from "../jump-selection";
 import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
 import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -155,10 +156,8 @@ export function Reader({
   );
   const thread = AsyncResult.value(useAtomValue(threadAtom(messageId)));
   const messages = useReaderMessages(threadKey, thread._tag === "Some" ? thread.value : undefined);
-  const grouping = AsyncResult.getOrElse(
-    useAtomValue(prefsAtom),
-    () => DEFAULT_PREFS,
-  ).threadGrouping;
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const grouping = prefs.threadGrouping;
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
@@ -167,7 +166,9 @@ export function Reader({
         data-reader-toolbar
         className="drag flex min-h-13 shrink-0 items-center gap-3 px-4 py-3"
       >
-        <div className="no-drag shrink-0">{renderToolbar?.(width < 900)}</div>
+        {prefs.toolbarVisible && (
+          <div className="no-drag shrink-0">{renderToolbar?.(width < 900)}</div>
+        )}
         <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
       </header>
       {!messageId || !messages ? (
@@ -462,6 +463,11 @@ export function ThreadView({
       Boolean(e.target.closest("input,textarea,select,[contenteditable]"));
     if (insideReader && (!typingFind || e.target === findRef.current)) {
       const findAction = readerFindAction(prefs.shortcutSet, e, finding);
+      if (findAction === "jump") {
+        e.preventDefault();
+        jumpReaderSelection(document, targetMessageId);
+        return;
+      }
       if (findAction === "find") {
         e.preventDefault();
         beginFind(targetMessageId);
@@ -576,7 +582,14 @@ export function ThreadView({
         e.target.closest("input,textarea,select,[contenteditable]"),
       );
       const action = shortcutAction(prefs.shortcutSet, e, typing);
-      if (action === "nextWindow" || action === "previousWindow" || action === "focusMainWindow") {
+      if (
+        action === "nextWindow" ||
+        action === "previousWindow" ||
+        action === "focusMainWindow" ||
+        action === "toggleFullScreen" ||
+        action === "nextTab" ||
+        action === "previousTab"
+      ) {
         e.preventDefault();
         run(withMail((call) => call("SwitchWindow", { action })));
       }

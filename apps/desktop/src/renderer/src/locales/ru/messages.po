@@ -637,6 +637,10 @@ msgstr "Автоматическое направление"
 msgid "Automatic replies"
 msgstr "Автоматические ответы"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Automatically download updates"
+msgstr "Автоматически загружать обновления"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Automatically summarize new mail"
 msgstr "Автоматически кратко излагать новую почту"
@@ -859,6 +863,10 @@ msgstr "Изменить режим"
 msgid "Change writing mode?"
 msgstr "Изменить режим записи?"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Check for updates"
+msgstr "Проверить наличие обновлений"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Check for Updates…"
 msgstr "Проверить наличие обновлений…"
@@ -867,6 +875,10 @@ msgstr "Проверить наличие обновлений…"
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
 msgstr "Проверять орфографию при вводе"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Checking for updates…"
+msgstr "Проверка обновлений…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1349,6 +1361,10 @@ msgstr "Отклонить"
 msgid "Declined"
 msgstr "Отклонено"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease font size"
+msgstr "Уменьшить размер шрифта"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Decrease indent"
@@ -1491,10 +1507,27 @@ msgstr "Готово"
 msgid "Download on-device models, ~226 MB"
 msgstr "Скачать модели на устройство, ~226 МБ"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Download update"
+msgstr "Загрузить обновление"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloaded updates install when you quit, after pending drafts are checked."
+msgstr "Загруженные обновления устанавливаются при выходе из приложения после проверки ожидающих черновиков."
+
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "Скачивание моделей: {0}%"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloading update {0}…"
+msgstr "Загрузка обновления {0}…"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Downloading update {version}…"
+msgstr "Загрузка обновления {version}…"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
@@ -1731,6 +1764,10 @@ msgstr "Любимый"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "Избранное"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Favorites in sidebar order"
+msgstr "Избранное в порядке боковой панели"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Feature request"
@@ -2050,6 +2087,10 @@ msgstr "Включить оригинальные вложения"
 msgid "Include signature separator"
 msgstr "Добавлять разделитель подписи"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase font size"
+msgstr "Увеличить размер шрифта"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Increase indent"
@@ -2131,6 +2172,10 @@ msgstr "Курсив"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "Присоединиться к встрече"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Jump to selection"
+msgstr "Перейти к выделению"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2233,6 +2278,10 @@ msgstr "Последняя синхронизация не удалась"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Latest"
 msgstr "Последний"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Layout"
+msgstr "Макет"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
@@ -2790,6 +2839,10 @@ msgid "Next match"
 msgstr "Следующее совпадение"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Next tab"
+msgstr "Следующая вкладка"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "Следующая переписка"
 
@@ -3246,6 +3299,10 @@ msgstr "Предварительный просмотр: {0} сообщений.
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "Предыдущее совпадение"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous tab"
+msgstr "Предыдущая вкладка"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -3982,9 +4039,20 @@ msgstr "Показывать только помеченные"
 msgid "Show only unread"
 msgstr "Показывать только непрочитанные"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide reading pane"
+msgstr "Показать или скрыть область чтения"
+
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show or hide sidebar"
 msgstr "Показать или скрыть боковую панель"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide toolbar"
+msgstr "Показать или скрыть панель инструментов"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4107,6 +4175,11 @@ msgstr "Отложенные"
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Соцсети"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Software updates"
+msgstr "Обновления ПО"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -4510,6 +4583,10 @@ msgid "Today {time}"
 msgstr "Сегодня {time}"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle full screen"
+msgstr "Переключить полноэкранный режим"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "Переключить фильтры списка"
 
@@ -4640,6 +4717,24 @@ msgstr "До трёх действий в порядке выбора. Меню 
 msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
 msgstr "До трех кнопок в порядке выбора. Ко всем действиям добавляются кнопки «Архивировать», «Корзина» и «Отметить как прочитанные». Изменения касаются новых уведомлений."
 
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is available."
+msgstr "Доступно обновление {0}."
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is ready. It will install when you quit."
+msgstr "Обновление {0} готово. Оно будет установлено при выходе из приложения."
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is available."
+msgstr "Доступно обновление {version}."
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is ready. It will install when you quit."
+msgstr "Обновление {version} готово. Оно будет установлено при выходе из приложения."
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "Доступно обновление:"
@@ -4648,16 +4743,23 @@ msgstr "Доступно обновление:"
 msgid "Update channel"
 msgstr "Канал обновлений"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update check or download failed. Try again."
+msgstr "Не удалось проверить или загрузить обновление. Повторите попытку."
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Для проверки обновлений требуется подписанное и установленное приложение macOS и сохраненный токен доступа GitHub."
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
-#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Оповещения"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Updates require a signed macOS build and a saved access token."
+msgstr "Для обновлений нужна подписанная версия для macOS и сохранённый токен доступа."
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
@@ -4775,6 +4877,10 @@ msgstr "Вы"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "Вы (командная строка)"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "You are up to date."
+msgstr "Установлена последняя версия."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

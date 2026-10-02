@@ -93,7 +93,7 @@ export const MailboxEvent = Schema.Union([
   /** Newly observed unread inbox mail, after it is committed. First sync is silent. */
   Schema.TaggedStruct("NewMail", { accountId: Schema.String, ids: Schema.Array(Schema.String) }),
   Schema.TaggedStruct("BackfillProgress", {}),
-  Schema.TaggedStruct("UpdateSettingsChanged", {}),
+  Schema.TaggedStruct("UpdateSettingsChanged", { resetState: Schema.Boolean }),
   /** Local mail, accounts, proposals or settings changed; views should refetch. */
   Schema.TaggedStruct("Changed", {}),
 ]);
@@ -451,13 +451,13 @@ export class Mailbox extends Context.Service<
     /** Only presence crosses IPC. The token stays in the system keychain. */
     checkUpdates(
       client: UpdateClient,
-      options: { packaged: boolean; bundle: string },
+      options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<import("./updates.js").ManualUpdateResult>;
     readonly updateTokenConfigured: Effect.Effect<boolean>;
     setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
     startUpdates(
       client: UpdateClient,
-      options: { packaged: boolean; bundle: string },
+      options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<() => void>;
     readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
     clearCache(accountId?: string): Effect.Effect<void>;

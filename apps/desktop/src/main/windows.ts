@@ -194,6 +194,9 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
     title: "OpenMail",
     ...(MAC
       ? {
+          ...(options.kind === undefined || options.kind === "main"
+            ? { tabbingIdentifier: "openmail-main" }
+            : {}),
           titleBarStyle: "hiddenInset" as const,
           trafficLightPosition: { x: 18, y: 18 },
           // The sidebar is transparent and shows this material through.
@@ -212,6 +215,11 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
     },
   });
   lockNavigation(win);
+  if (MAC && (options.kind === undefined || options.kind === "main")) {
+    win.on("new-window-for-tab", () => {
+      if (!win.isDestroyed()) win.addTabbedWindow(createMainWindow());
+    });
+  }
 
   {
     const state: SavedWindow = {

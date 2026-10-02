@@ -19,11 +19,19 @@ const shiftCmd = (value: string): KeyStroke => cmd(value, { shift: true });
 const controlCmd = (value: string): KeyStroke => cmd(value, { control: true });
 
 const common = {
+  nextTab: [cmd("ArrowRight", { alt: true })],
+  previousTab: [cmd("ArrowLeft", { alt: true })],
   nextWindow: [cmd("`"), { key: "Tab", control: true }],
   previousWindow: [cmd("~"), { key: "Tab", control: true, shift: true }],
   focusMainWindow: [cmd("0", { alt: true })],
   toggleReadingPane: [cmd("p", { alt: true })],
   toggleSidebar: [cmd("s", { alt: true, shift: true })],
+  toggleToolbar: [cmd("t", { alt: true })],
+  toggleReader: [cmd("p", { alt: true, shift: true })],
+  toggleFullScreen: [controlCmd("f")],
+  jumpSelection: [cmd("j", { alt: true })],
+  fontSizeIncrease: [cmd(".", { alt: true })],
+  fontSizeDecrease: [cmd(",", { alt: true })],
   findNext: [cmd("g")],
   findPrevious: [cmd("g", { alt: true })],
   findSelection: [cmd("e")],
@@ -206,6 +214,9 @@ export function shortcutAction(
         "nextWindow",
         "previousWindow",
         "focusMainWindow",
+        "toggleFullScreen",
+        "nextTab",
+        "previousTab",
       ].includes(action)
     )
       continue;
@@ -295,4 +306,17 @@ export function folderShortcut(
 export function paneShortcut(event: KeyEvent): "left" | "right" | null {
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return null;
   return event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : null;
+}
+
+/** Favorites keep separate digits from the fixed system mailbox and profile bindings. */
+export function favoriteShortcut(event: KeyEvent, typing = false): number | null {
+  return !typing &&
+    !event.repeat &&
+    event.metaKey &&
+    event.altKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    /^[1-9]$/.test(event.key)
+    ? Number(event.key) - 1
+    : null;
 }

@@ -32,6 +32,7 @@ it("find previous and selection use the central keymap in each set", () => {
     expect(readerFindAction(set, key("g", { altKey: true }), true)).toBe("previous");
     expect(readerFindAction(set, key("g", { altKey: true }), false)).toBeNull();
     expect(readerFindAction(set, key("e"), false)).toBe("selection");
+    expect(readerFindAction(set, key("j", { altKey: true }), false)).toBe("jump");
     expect(readerFindAction(set, key("e", { altKey: true }), false)).toBeNull();
   }
 });

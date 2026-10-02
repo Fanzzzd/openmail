@@ -39,6 +39,8 @@ export const SEARCH_OPERATORS = [
   "has:presentation",
   "in:attachment",
   "filename:",
+  "older:",
+  "newer:",
   "before:",
   "after:",
 ];
@@ -249,11 +251,13 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         else if (value === "important") criteria.important = true;
         else words.push(word);
         break;
+      case "older":
+      case "newer":
       case "before":
       case "after": {
         const date = parseSearchDate(value);
         if (date === null) words.push(word);
-        else if (key === "before")
+        else if (key === "before" || key === "older")
           criteria.dateBefore = Math.min(criteria.dateBefore ?? date, date);
         else criteria.dateAfter = Math.max(criteria.dateAfter ?? date, date);
         break;
@@ -322,12 +326,13 @@ export function gmailSearch(
       const value = searchFolderValue(unquoteSearchValue(match[3] ?? ""));
       return `${match[1]}label:${quoteSearchValue(labels.find((l) => l.id === value)?.name ?? value)}`;
     }
-    const dateWord = /^(-?)(before|after):(.+)$/i.exec(word);
+    const dateWord = /^(-?)(before|after|older|newer):(.+)$/i.exec(word);
     if (dateWord) {
       const token = parseSearchQuery({ search: word.replace(/^-/, "") }).criteria;
-      const date = dateWord[2]?.toLowerCase() === "before" ? token?.dateBefore : token?.dateAfter;
+      const before = ["before", "older"].includes(dateWord[2]?.toLowerCase() ?? "");
+      const date = before ? token?.dateBefore : token?.dateAfter;
       if (date !== undefined)
-        return `${dateWord[1]}${dateWord[2]?.toLowerCase()}:${Math.floor(date / 1000)}`;
+        return `${dateWord[1]}${before ? "before" : "after"}:${Math.floor(date / 1000)}`;
     }
     return word;
   });
@@ -977,6 +982,8 @@ export function serverSearchIgnored(
           "subject",
           "before",
           "after",
+          "older",
+          "newer",
           "older_than",
           "newer_than",
           "larger",
@@ -993,6 +1000,8 @@ export function serverSearchIgnored(
           "subject",
           "before",
           "after",
+          "older",
+          "newer",
           "older_than",
           "newer_than",
           "is",

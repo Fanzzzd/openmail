@@ -35,6 +35,35 @@ export function ReadingSettings() {
         />
         <Trans>Show account names in unified folders</Trans>
       </label>
+      <section className="space-y-2">
+        <h3 className={heading}>
+          <Trans>Layout</Trans>
+        </h3>
+        <label htmlFor="layout-sidebar" className="flex items-center gap-2">
+          <Checkbox
+            id="layout-sidebar"
+            checked={prefs?.sidebarVisible ?? true}
+            onCheckedChange={(sidebarVisible) => setPrefs({ sidebarVisible })}
+          />
+          <Trans>Show or hide sidebar</Trans>
+        </label>
+        <label htmlFor="layout-toolbar" className="flex items-center gap-2">
+          <Checkbox
+            id="layout-toolbar"
+            checked={prefs?.toolbarVisible ?? true}
+            onCheckedChange={(toolbarVisible) => setPrefs({ toolbarVisible })}
+          />
+          <Trans>Show or hide toolbar</Trans>
+        </label>
+        <label htmlFor="layout-reader" className="flex items-center gap-2">
+          <Checkbox
+            id="layout-reader"
+            checked={prefs?.readingPaneVisible ?? true}
+            onCheckedChange={(readingPaneVisible) => setPrefs({ readingPaneVisible })}
+          />
+          <Trans>Show or hide reading pane</Trans>
+        </label>
+      </section>
       <section>
         <h3 className={heading}>
           <Trans>Message list density</Trans>

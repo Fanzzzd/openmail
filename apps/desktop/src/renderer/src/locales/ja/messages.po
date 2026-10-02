@@ -637,6 +637,10 @@ msgstr "自動方向"
 msgid "Automatic replies"
 msgstr "自動返信"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Automatically download updates"
+msgstr "アップデートを自動的にダウンロード"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "Automatically summarize new mail"
 msgstr "新着メールを自動要約"
@@ -859,6 +863,10 @@ msgstr "モード変更"
 msgid "Change writing mode?"
 msgstr "書き込みモードを変更しますか?"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Check for updates"
+msgstr "アップデートを確認"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Check for Updates…"
 msgstr "アップデートを確認してください…"
@@ -867,6 +875,10 @@ msgstr "アップデートを確認してください…"
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
 msgstr "入力中にスペルをチェック"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Checking for updates…"
+msgstr "アップデートを確認中…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1349,6 +1361,10 @@ msgstr "辞退"
 msgid "Declined"
 msgstr "辞退済み"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Decrease font size"
+msgstr "文字サイズを小さくする"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Decrease indent"
@@ -1491,10 +1507,27 @@ msgstr "完了"
 msgid "Download on-device models, ~226 MB"
 msgstr "オンデバイス モデルをダウンロード、約 226 MB"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Download update"
+msgstr "アップデートをダウンロード"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloaded updates install when you quit, after pending drafts are checked."
+msgstr "ダウンロード済みのアップデートは、未処理の下書きを確認した後、アプリの終了時にインストールされます。"
+
 #. placeholder {0}: i18n.number(Math.floor((progress.models.bytes / progress.models.total) * 100))
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "モデルのダウンロード: {0}%"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Downloading update {0}…"
+msgstr "アップデート {0} をダウンロード中…"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Downloading update {version}…"
+msgstr "アップデート {version} をダウンロード中…"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Downloads"
@@ -1731,6 +1764,10 @@ msgstr "お気に入り"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Favorites"
 msgstr "お気に入り"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Favorites in sidebar order"
+msgstr "サイドバーの順序でよく使う項目を開く"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Feature request"
@@ -2050,6 +2087,10 @@ msgstr "オリジナルの付属品を含める"
 msgid "Include signature separator"
 msgstr "署名の区切り線を含める"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Increase font size"
+msgstr "文字サイズを大きくする"
+
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Increase indent"
@@ -2131,6 +2172,10 @@ msgstr "イタリック"
 #: src/renderer/src/components/MeetingLinks.tsx
 msgid "Join meeting"
 msgstr "ミーティングに参加する"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Jump to selection"
+msgstr "選択範囲に移動"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2233,6 +2278,10 @@ msgstr "前回の同期に失敗しました"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Latest"
 msgstr "最新"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Layout"
+msgstr "レイアウト"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
@@ -2790,6 +2839,10 @@ msgid "Next match"
 msgstr "次の一致"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Next tab"
+msgstr "次のタブ"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next thread"
 msgstr "次のスレッド"
 
@@ -3246,6 +3299,10 @@ msgstr "プレビュー: {0} メッセージ。既存のメールに適用する
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "前の一致"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous tab"
+msgstr "前のタブ"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
@@ -3982,9 +4039,20 @@ msgstr "スター付きのみ表示"
 msgid "Show only unread"
 msgstr "未開封のみ表示"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide reading pane"
+msgstr "閲覧ペインを表示／非表示"
+
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show or hide sidebar"
 msgstr "サイドバーの表示または非表示"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide toolbar"
+msgstr "ツールバーを表示／非表示"
 
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -4107,6 +4175,11 @@ msgstr "スヌーズ中"
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "ソーシャル"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Software updates"
+msgstr "ソフトウェアアップデート"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
@@ -4510,6 +4583,10 @@ msgid "Today {time}"
 msgstr "今日 {time}"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle full screen"
+msgstr "フルスクリーンを切り替え"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "リストフィルターの切り替え"
 
@@ -4640,6 +4717,24 @@ msgstr "選択順に最大 3 つのアクション。アクション メニュ�
 msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
 msgstr "選択順に最大 3 つのボタン。すべてのアクションで、「アーカイブ」、「ゴミ箱」、および「既読としてマーク」ボタンが追加されます。変更は新しい通知に適用されます。"
 
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is available."
+msgstr "アップデート {0} が利用可能です。"
+
+#. placeholder {0}: state.version
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update {0} is ready. It will install when you quit."
+msgstr "アップデート {0} の準備ができました。アプリの終了時にインストールされます。"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is available."
+msgstr "アップデート {version} が利用可能です。"
+
+#: src/renderer/src/components/UpdateNotice.tsx
+msgid "Update {version} is ready. It will install when you quit."
+msgstr "アップデート {version} の準備ができました。アプリの終了時にインストールされます。"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "利用可能なアップデート:"
@@ -4648,16 +4743,23 @@ msgstr "利用可能なアップデート:"
 msgid "Update channel"
 msgstr "アップデートチャネル"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update check or download failed. Try again."
+msgstr "アップデートの確認またはダウンロードに失敗しました。もう一度お試しください。"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "更新チェックには、署名されインストールされた macOS アプリと保存された GitHub アクセス トークンが必要です。"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
-#: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "新着"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Updates require a signed macOS build and a saved access token."
+msgstr "アップデートには、署名済みの macOS 版と保存済みのアクセストークンが必要です。"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
@@ -4775,6 +4877,10 @@ msgstr "あなた"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "あなた (コマンドライン)"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "You are up to date."
+msgstr "最新バージョンです。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

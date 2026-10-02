@@ -122,11 +122,13 @@ export function updateClient(updater: AppUpdater): ManagedUpdateClient {
     checkForUpdates() {
       if (installing) return Promise.resolve(null);
       const applyFeed = configure;
+      const autoDownload = updater.autoDownload;
       checking++;
       const check = queued
         .then(async () => {
           updater.autoInstallOnAppQuit = false;
           applyFeed();
+          updater.autoDownload = autoDownload;
           const result = await updater.checkForUpdates();
           if (result?.downloadPromise && !downloading.has(result.downloadPromise)) {
             const download = result.downloadPromise;

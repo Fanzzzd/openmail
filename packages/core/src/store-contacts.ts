@@ -154,10 +154,16 @@ export function makeContactStore(sql: SqlClient.SqlClient) {
         .withTransaction(
           Effect.gen(function* () {
             yield* run(sql`DELETE FROM server_contacts WHERE account_id = ${accountId}`);
-            for (const a of mergeContacts(contacts))
+            yield* run(sql`DELETE FROM contact_organizations WHERE account_id=${accountId}`);
+            for (const a of mergeContacts(contacts)) {
+              if (a.company?.trim())
+                yield* run(
+                  sql`INSERT INTO contact_organizations(account_id,address,company) VALUES(${accountId},${a.address},${a.company.trim()})`,
+                );
               yield* run(
                 sql`INSERT INTO server_contacts (account_id, address, name, contact_key) VALUES (${accountId}, ${a.address}, ${a.name}, ${a.contactKey ?? ""})`,
               );
+            }
             yield* run(sql`INSERT INTO contact_sync (account_id, refreshed_at, attempted_at, error, scope_missing)
           VALUES (${accountId}, ${now}, ${now}, NULL, 0) ON CONFLICT(account_id) DO UPDATE SET
           refreshed_at=excluded.refreshed_at, attempted_at=excluded.attempted_at, error=NULL, scope_missing=0`);

@@ -1879,13 +1879,17 @@ export const MailboxLive = (
             yield* trimmed
               ? secrets.set(UPDATE_TOKEN_KEY, trimmed)
               : secrets.remove(UPDATE_TOKEN_KEY);
-            yield* emit({ _tag: "UpdateSettingsChanged" });
+            yield* emit({ _tag: "UpdateSettingsChanged", resetState: true });
           }),
         startUpdates: (client, updateOptions) =>
           Effect.flatMap(store.prefs, (prefs) =>
             startStoredUpdates(
               client,
-              { ...updateOptions, channel: prefs.updateChannel },
+              {
+                ...updateOptions,
+                channel: prefs.updateChannel,
+                autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
+              },
               secrets.get(UPDATE_TOKEN_KEY),
             ),
           ),
@@ -1952,8 +1956,20 @@ export const MailboxLive = (
           Effect.flatMap(store.prefs, (prefs) =>
             checkStoredUpdates(
               client,
-              { ...updateOptions, channel: prefs.updateChannel },
+              {
+                ...updateOptions,
+                channel: prefs.updateChannel,
+                autoDownload: updateOptions.autoDownload ?? prefs.updateAutoDownload,
+              },
               secrets.get(UPDATE_TOKEN_KEY),
+            ).pipe(
+              Effect.ensuring(
+                Effect.flatMap(store.prefs, (latestPrefs) =>
+                  Effect.sync(() => {
+                    client.autoDownload = latestPrefs.updateAutoDownload;
+                  }),
+                ),
+              ),
             ),
           ),
         rememberNotificationActions: (id, actions) =>
@@ -2093,16 +2109,23 @@ export const MailboxLive = (
         mediaImage,
         prefs: store.prefs,
         setPrefs: (patch) =>
-          mutate(store.setPrefs(patch)).pipe(
-            Effect.tap(() =>
-              patch.attachmentCacheBytes !== undefined && diskAttachments
-                ? cacheIO(() => diskAttachments.trim(patch.attachmentCacheBytes ?? 0), undefined)
-                : Effect.void,
-            ),
-            Effect.tap(() =>
-              patch.updateChannel ? emit({ _tag: "UpdateSettingsChanged" }) : Effect.void,
-            ),
-          ),
+          Effect.gen(function* () {
+            const resetState =
+              patch.updateChannel !== undefined &&
+              patch.updateChannel !== (yield* store.prefs).updateChannel;
+            return yield* mutate(store.setPrefs(patch)).pipe(
+              Effect.tap(() =>
+                patch.attachmentCacheBytes !== undefined && diskAttachments
+                  ? cacheIO(() => diskAttachments.trim(patch.attachmentCacheBytes ?? 0), undefined)
+                  : Effect.void,
+              ),
+              Effect.tap(() =>
+                patch.updateChannel !== undefined || patch.updateAutoDownload !== undefined
+                  ? emit({ _tag: "UpdateSettingsChanged", resetState })
+                  : Effect.void,
+              ),
+            );
+          }),
         namedSignatures: store.namedSignatures,
         signatureDefaults: store.signatureDefaults,
         saveNamedSignature: (input, id) => mutate(store.saveNamedSignature(input, id)),

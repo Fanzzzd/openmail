@@ -112,6 +112,8 @@ export const Address = Schema.Struct({
   address: Schema.String,
   /** Provider contact identity, only present on contact-source addresses. */
   contactKey: Schema.optionalKey(Schema.String),
+  /** Organization metadata from a provider contact, used only for completion. */
+  company: Schema.optionalKey(Schema.String),
 });
 export type Address = typeof Address.Type;
 
@@ -625,6 +627,7 @@ export const Prefs = Schema.Struct({
   inlineImageSize: InlineImageSize,
   composeFont: ComposeFont,
   updateChannel: Schema.Literals(["stable", "latest"]),
+  updateAutoDownload: Schema.Boolean,
   labs: Schema.Struct({ markdown: Schema.Boolean, calendarDetection: Schema.Boolean }),
   swipeActions: Schema.Struct({
     leftShort: SwipeAction,
@@ -658,6 +661,8 @@ export const Prefs = Schema.Struct({
   deleteKeyAction: Schema.Literals(["trash", "archive", "removeLabel", "ask"]),
   readingPanePosition: Schema.Literals(["right", "bottom"]),
   sidebarVisible: Schema.Boolean,
+  toolbarVisible: Schema.Boolean,
+  readingPaneVisible: Schema.Boolean,
   readerZoom: Schema.Literals(READER_ZOOMS),
   messageBackground: Schema.Literals(MESSAGE_BACKGROUNDS),
   attachmentSaveFolder: Schema.optionalKey(AttachmentSaveFolder),
@@ -692,6 +697,7 @@ export const DEFAULT_PREFS: Prefs = {
   inlineImageSize: "medium",
   composeFont: { family: "Arial", size: 14 },
   updateChannel: "stable",
+  updateAutoDownload: true,
   labs: { markdown: true, calendarDetection: true },
   swipeActions: { leftShort: "archive", leftLong: "trash", rightShort: "read", rightLong: "star" },
   toolbarActions: [...TOOLBAR_ACTIONS],
@@ -712,6 +718,8 @@ export const DEFAULT_PREFS: Prefs = {
   deleteKeyAction: "trash",
   readingPanePosition: "right",
   sidebarVisible: true,
+  toolbarVisible: true,
+  readingPaneVisible: true,
   readerZoom: 100,
   messageBackground: "light",
   attachmentSaveFolder: { kind: "ask" },

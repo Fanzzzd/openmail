@@ -1,4 +1,5 @@
 import { EDIT_MESSAGE_TEXT } from "../message-text";
+import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
 import { useAtomValue } from "@effect/atom-react";
@@ -57,6 +58,7 @@ import {
   FORMAT_ACTIONS,
   formatEditor,
   styleEditor,
+  stepEditorFontSize,
   replaceMarkdownEditor,
   restoreFormatCaret,
   type FormatAction,
@@ -490,6 +492,15 @@ export function ComposeEditor({
       setFinding(true);
       return;
     }
+    if (matchesShortcut(shortcutSet, "jumpSelection", event) && inBody) {
+      event.preventDefault();
+      event.stopPropagation();
+      const element = bodyRef.current;
+      if (element instanceof HTMLTextAreaElement) {
+        jumpTextareaSelection(element);
+      } else jumpDocumentSelection(document);
+      return;
+    }
     if (matchesShortcut(shortcutSet, "findSelection", event) && inBody) {
       event.preventDefault();
       event.stopPropagation();
@@ -535,6 +546,23 @@ export function ComposeEditor({
       event.preventDefault();
       event.stopPropagation();
       toggleFormatBar();
+      return;
+    }
+    if (
+      matchesShortcut(shortcutSet, "fontSizeIncrease", event) ||
+      matchesShortcut(shortcutSet, "fontSizeDecrease", event)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      remember();
+      if (richRef.current) {
+        stepEditorFontSize(
+          richRef.current,
+          selectionRef.current,
+          matchesShortcut(shortcutSet, "fontSizeIncrease", event) ? 1 : -1,
+        );
+        changed();
+      }
       return;
     }
     for (const action of FORMAT_ACTIONS) {

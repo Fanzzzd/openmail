@@ -22,6 +22,7 @@ import {
   ContactGroup,
   SuggestedSender,
   CacheSize,
+  UpdateState,
   OlderResult,
   BackfillState,
   CacheWindow,
@@ -126,6 +127,8 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("NotificationPermission", { success: NotificationPermission }),
   Rpc.make("RequestNotificationPermission", { success: NotificationPermission }),
   Rpc.make("OpenNotificationSettings", { success: Schema.Boolean }),
+  Rpc.make("UpdateState", { success: UpdateState }),
+  Rpc.make("CheckForUpdates", { payload: { download: Schema.Boolean } }),
   Rpc.make("UpdateTokenConfigured", { success: Schema.Boolean }),
   Rpc.make("SetUpdateToken", { payload: { token: Schema.String }, error }),
   Rpc.make("BackfillState", { success: Schema.Array(BackfillState) }),
@@ -582,7 +585,16 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("ComposeNew"),
   Rpc.make("OpenSettings"),
   Rpc.make("SwitchWindow", {
-    payload: { action: Schema.Literals(["nextWindow", "previousWindow", "focusMainWindow"]) },
+    payload: {
+      action: Schema.Literals([
+        "nextWindow",
+        "previousWindow",
+        "focusMainWindow",
+        "toggleFullScreen",
+        "nextTab",
+        "previousTab",
+      ]),
+    },
   }),
   Rpc.make("ClipboardText", { success: Schema.String }),
   Rpc.make("ClaimInlineDraft", {

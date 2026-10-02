@@ -1,3 +1,5 @@
+import { currentUpdateState } from "./update-state";
+import { checkForUpdateState } from "./updates";
 import { switchWindow } from "./window-keys";
 import {
   attachmentAction,
@@ -198,6 +200,8 @@ const Handlers = MailRpcs.toLayer(
       UnreadByLabel: ({ accountIds, within, conversations }) =>
         m.unreadByLabel(accountIds, within, conversations),
 
+      UpdateState: () => Effect.sync(currentUpdateState),
+      CheckForUpdates: ({ download }) => checkForUpdateState(m, download),
       UpdateTokenConfigured: () => m.updateTokenConfigured,
       SetUpdateToken: ({ token }) => m.setUpdateToken(token),
       BackfillState: () => m.backfillState,

@@ -1,4 +1,9 @@
-import { composeStyle, richComposeBody, type ComposeReplacement } from "@openmail/core/schema";
+import {
+  COMPOSE_FONT_SIZES,
+  composeStyle,
+  richComposeBody,
+  type ComposeReplacement,
+} from "@openmail/core/schema";
 import {
   editorCaretOffset,
   composeEditorHtml,
@@ -391,4 +396,21 @@ function restoreFormatSelection(root: HTMLElement, start: number, end: number): 
   range.setEnd(points.last.node, points.last.offset);
   if (start === end) range.collapse(true);
   restoreEditorSelection(root, range);
+}
+
+export function stepEditorFontSize(
+  root: HTMLElement,
+  saved: Range | null,
+  direction: 1 | -1,
+): void {
+  restoreEditorSelection(root, saved);
+  const selection = window.getSelection();
+  if (!selection?.rangeCount) return;
+  const node = selection.getRangeAt(0).startContainer;
+  const element = node instanceof HTMLElement ? node : node.parentElement;
+  if (!element || !root.contains(element)) return;
+  const size = Number.parseFloat(window.getComputedStyle(element).fontSize) || 14;
+  const sizes = direction === 1 ? COMPOSE_FONT_SIZES : COMPOSE_FONT_SIZES.toReversed();
+  const next = sizes.find((value) => (direction === 1 ? value > size : value < size));
+  if (next !== undefined) styleEditor(root, saved, "font-size", `${next}px`);
 }

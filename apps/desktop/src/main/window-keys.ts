@@ -1,11 +1,34 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, Menu, type MenuItemConstructorOptions } from "electron";
 import { focusMainWindow, windowOf } from "./windows";
+import { shortcutAccelerator, type ShortcutSet } from "../shared/shortcuts";
 import { adjacentWindowId } from "../shared/window-keys";
 
 export function switchWindow(
   clientId: number,
-  action: "nextWindow" | "previousWindow" | "focusMainWindow",
+  action:
+    | "nextWindow"
+    | "previousWindow"
+    | "focusMainWindow"
+    | "toggleFullScreen"
+    | "nextTab"
+    | "previousTab",
 ): void {
+  if (action === "nextTab" || action === "previousTab") {
+    if (process.platform === "darwin") {
+      const win = windowOf(clientId);
+      if (!win || win.isDestroyed()) return;
+      win.focus();
+      Menu.sendActionToFirstResponder(
+        action === "nextTab" ? "selectNextTab:" : "selectPreviousTab:",
+      );
+    }
+    return;
+  }
+  if (action === "toggleFullScreen") {
+    const win = windowOf(clientId);
+    if (win && !win.isDestroyed()) win.setFullScreen(!win.isFullScreen());
+    return;
+  }
   if (action === "focusMainWindow") {
     focusMainWindow();
     return;
@@ -23,4 +46,16 @@ export function switchWindow(
   if (win.isMinimized()) win.restore();
   win.show();
   win.focus();
+}
+
+export function nativeTabMenu(set: ShortcutSet): MenuItemConstructorOptions[] {
+  return process.platform === "darwin"
+    ? [
+        { role: "toggleTabBar" },
+        { role: "selectNextTab", accelerator: shortcutAccelerator(set, "nextTab") },
+        { role: "selectPreviousTab", accelerator: shortcutAccelerator(set, "previousTab") },
+        { role: "mergeAllWindows" },
+        { role: "moveTabToNewWindow" },
+      ]
+    : [];
 }

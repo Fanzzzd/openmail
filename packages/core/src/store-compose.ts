@@ -118,6 +118,19 @@ function storedValue<A, I>(schema: Schema.Codec<A, I>, value: unknown, fallback:
 /** Suggestions lose half their weight after this many milliseconds (30 days). */
 const MONTH = 30 * 86_400_000;
 
+/** Shared by completion and its SQLite query-plan regression check. */
+export function contactMatch(sql: SqlClient.SqlClient, match: string): Fragment {
+  return sql`c.rowid IN (
+    SELECT rowid FROM contact_candidates_fts WHERE contact_candidates_fts MATCH ${match}
+    UNION ALL
+    SELECT cc.rowid FROM (
+      SELECT account_id,address FROM contact_organizations WHERE rowid IN (
+        SELECT rowid FROM contact_organizations_fts WHERE contact_organizations_fts MATCH ${match}
+      )
+    ) o CROSS JOIN contact_candidates cc ON cc.address=o.address AND +cc.account_id=o.account_id
+  )`;
+}
+
 export function makeComposeStore(sql: SqlClient.SqlClient) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
     d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only`);
@@ -351,6 +364,11 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         inlineImageSize: pref(f.inlineImageSize, stored.get("inlineImageSize"), d.inlineImageSize),
         composeFont: pref(f.composeFont, stored.get("composeFont"), d.composeFont),
         updateChannel: pref(f.updateChannel, stored.get("updateChannel"), d.updateChannel),
+        updateAutoDownload: pref(
+          f.updateAutoDownload,
+          stored.get("updateAutoDownload"),
+          d.updateAutoDownload,
+        ),
         labs: {
           markdown: storedValue(f.labs.fields.markdown, labs.markdown, d.labs.markdown),
           calendarDetection: storedValue(
@@ -423,6 +441,12 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
           d.readingPanePosition,
         ),
         sidebarVisible: pref(f.sidebarVisible, stored.get("sidebarVisible"), d.sidebarVisible),
+        toolbarVisible: pref(f.toolbarVisible, stored.get("toolbarVisible"), d.toolbarVisible),
+        readingPaneVisible: pref(
+          f.readingPaneVisible,
+          stored.get("readingPaneVisible"),
+          d.readingPaneVisible,
+        ),
         readerZoom: pref(f.readerZoom, stored.get("readerZoom"), d.readerZoom),
         messageBackground: pref(
           f.messageBackground,
@@ -606,7 +630,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     const now = yield* Clock.currentTimeMillis;
     const tokens = query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
     if (query.trim() && tokens.length === 0) return [];
-    const match = tokens.map((token) => `"${token}"*`).join(" AND ");
+    const tokenMatches = tokens.map((token) => contactMatch(sql, `"${token}"*`));
     const scope = (alias: "c" | "h") =>
       sql.and([
         sql`${sql.literal(`${alias}.account_id`)} IN (SELECT id FROM accounts WHERE enabled=1)`,
@@ -620,7 +644,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     const rows = yield* all(ContactRow)(sql`
       WITH matched AS (
         SELECT c.* FROM contact_candidates c WHERE ${scope("c")}
-          ${tokens.length ? sql`AND c.rowid IN (SELECT rowid FROM contact_candidates_fts WHERE contact_candidates_fts MATCH ${match})` : sql.literal("")}
+          ${tokens.length ? sql`AND ${sql.and(tokenMatches)}` : sql.literal("")}
           AND c.address LIKE '%@%' AND c.address != ${exclude?.trim().toLowerCase() ?? ""}
           AND NOT EXISTS(SELECT 1 FROM hidden_contacts hidden WHERE hidden.address=c.address)
           AND c.address NOT LIKE '%noreply%' AND c.address NOT LIKE '%no-reply%' AND c.address NOT LIKE '%donotreply%'

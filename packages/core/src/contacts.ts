@@ -36,6 +36,9 @@ export function mergeContacts(contacts: readonly Address[]): Address[] {
     merged.set(address, {
       address,
       name: previous?.name || contact.name.trim(),
+      ...(previous?.company || contact.company
+        ? { company: previous?.company || contact.company?.trim() }
+        : {}),
       ...(previous?.contactKey || contact.contactKey
         ? { contactKey: previous?.contactKey || contact.contactKey }
         : {}),

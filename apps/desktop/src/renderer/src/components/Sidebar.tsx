@@ -1,9 +1,5 @@
-import {
-  SYSTEM_FOLDERS,
-  systemFolderId,
-  specialFolderBadge,
-  DEFAULT_PREFS,
-} from "@openmail/core/schema";
+import { numberedFavorites, favoriteView } from "../favorite-navigation";
+import { systemFolderId, specialFolderBadge, DEFAULT_PREFS } from "@openmail/core/schema";
 import { Effect } from "effect";
 import {
   MESSAGE_DRAG,
@@ -181,6 +177,10 @@ export function Sidebar({
   );
   const labelPrefs = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
   const organization = AsyncResult.getOrElse(useAtomValue(organizationAtom), () => []);
+  const favoriteLabels = AsyncResult.getOrElse(
+    useAtomValue(labelsAtom(scopeAccountIds({ space: view.space, mailbox: "all" }, accounts))),
+    () => [],
+  );
   const allLabels = AsyncResult.getOrElse(useAtomValue(labelsAtom(scope)), () => []);
   const colored = allLabels.map((l) => ({
     ...l,
@@ -202,30 +202,10 @@ export function Sidebar({
   const categories = colored.filter((label) => label.id.startsWith("category:"));
   const labels = colored.filter((label) => !label.id.startsWith("category:") && visible(label));
   const hidden = colored.filter((l) => !l.id.startsWith("category:") && !visible(l));
-  const favorites = labelPrefs
-    .filter(
-      (p) =>
-        p.favorite &&
-        members.some((a) => a.id === p.accountId) &&
-        (!scope || scope.includes(p.accountId)),
-    )
-    .flatMap<Label & { mailbox: Mailbox | null }>((p) => {
-      const custom = colored.find((l) => l.accountId === p.accountId && l.id === p.id);
-      const mailbox = SYSTEM_FOLDERS.find((id) => systemFolderId(id) === p.id);
-      return custom
-        ? [{ ...custom, mailbox: null }]
-        : mailbox
-          ? [
-              {
-                accountId: p.accountId,
-                id: p.id,
-                name: i18n._(MAILBOX_NAMES[mailbox]),
-                color: null,
-                mailbox,
-              },
-            ]
-          : [];
-    });
+  const favorites = numberedFavorites(view, accounts, favoriteLabels, labelPrefs).map((p) => {
+    const custom = favoriteLabels.find((l) => l.accountId === p.accountId && l.id === p.id);
+    return { ...p, name: p.mailbox ? i18n._(MAILBOX_NAMES[p.mailbox]) : (custom?.name ?? p.id) };
+  });
   const perform = <A, E>(effect: Effect.Effect<A, E, MailEnv>) =>
     run(
       effect.pipe(
@@ -660,24 +640,9 @@ export function Sidebar({
                           !view.label
                         : view.label?.id === l.id && view.label.accountId === l.accountId
                     }
-                    onClick={() =>
-                      onView(
-                        l.mailbox
-                          ? {
-                              ...view,
-                              accountId: l.accountId,
-                              mailbox: l.mailbox,
-                              label: undefined,
-                            }
-                          : {
-                              ...view,
-                              mailbox: "all",
-                              label: { id: l.id, accountId: l.accountId },
-                            },
-                      )
-                    }
+                    onClick={() => onView(favoriteView(view, l))}
                     icon={<Star className="size-4 text-amber-500" />}
-                    label={l.name}
+                    label={index < 9 ? `${l.name}  ⌥⌘${index + 1}` : l.name}
                     badge={0}
                   />
                 ))}

@@ -38,6 +38,7 @@ import { Tip } from "./ui/Tip";
 export type SelectionSource = "keyboard" | "mouse";
 
 interface Props {
+  searchBar?: ReactNode;
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
@@ -92,6 +93,7 @@ export interface RowActions {
 
 export function MessageList({
   title,
+  searchBar,
   threads,
   loading,
   loadingMore = false,
@@ -172,6 +174,7 @@ export function MessageList({
 
   return (
     <section className="flex h-full w-full flex-col bg-white dark:bg-neutral-900">
+      {searchBar}
       <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
           {searching ? <Trans>Search results</Trans> : title}

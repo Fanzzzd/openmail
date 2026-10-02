@@ -16,7 +16,14 @@ export function WindowKeys() {
         event.target instanceof Element &&
         Boolean(event.target.closest("input,textarea,select,[contenteditable]"));
       const action = shortcutAction(prefs.shortcutSet, event, typing);
-      if (action !== "nextWindow" && action !== "previousWindow" && action !== "focusMainWindow")
+      if (
+        action !== "nextWindow" &&
+        action !== "previousWindow" &&
+        action !== "focusMainWindow" &&
+        action !== "toggleFullScreen" &&
+        action !== "nextTab" &&
+        action !== "previousTab"
+      )
         return;
       event.preventDefault();
       run(withMail((call) => call("SwitchWindow", { action })));
