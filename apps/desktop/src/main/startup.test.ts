@@ -10,11 +10,13 @@ const native = vi.hoisted(() => ({
   urls: vi.fn(),
   focus: vi.fn(),
   register: vi.fn(),
+  cleanup: vi.fn(),
 }));
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
     commandLine: { getSwitchValue: () => "" },
     setPath: vi.fn(),
+    getPath: vi.fn(() => "/tmp/openmail-test-temp"),
     requestSingleInstanceLock: () => native.primary,
     exit: native.exit,
     isReady: () => true,
@@ -30,6 +32,7 @@ vi.mock("@openmail/core", () => ({
     return Layer.empty;
   },
 }));
+vi.mock("./attachment-temp", () => ({ cleanupAttachmentTemps: native.cleanup }));
 vi.mock("./updates", () => ({ UpdatesLive: Layer.empty }));
 vi.mock("./vision", () => ({ desktopVision: native.vision }));
 vi.mock("./rpc-server", () => ({ RpcServerLive: Layer.empty }));
@@ -50,6 +53,7 @@ beforeEach(async () => {
     configurable: true,
     value: "/tmp/openmail-test-resources",
   });
+  native.cleanup.mockResolvedValue(undefined);
   native.vision.mockResolvedValue({
     available: false,
     version: "test",
@@ -67,6 +71,7 @@ it("the second process exits before building core or opening any data", async ()
   expect(native.exit).toHaveBeenCalledWith(0);
   expect(native.nodeMailbox).not.toHaveBeenCalled();
   expect(native.vision).not.toHaveBeenCalled();
+  expect(native.cleanup).not.toHaveBeenCalled();
 });
 it("handles open-url and forwarded second-instance URLs and enables desktop-only polling", async () => {
   await import("./index");
@@ -93,6 +98,7 @@ it("handles open-url and forwarded second-instance URLs and enables desktop-only
     }),
   );
   await vi.waitFor(() => expect(native.register).toHaveBeenCalledWith("openmail"));
+  expect(native.cleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp");
   app.emit("will-quit", { preventDefault });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
 });

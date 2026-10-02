@@ -18,6 +18,7 @@ msgstr ", "
 msgid "(no recipients)"
 msgstr "(no recipients)"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -208,6 +209,11 @@ msgstr "Action menu"
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "Actions"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Actions for {0}"
+msgstr "Actions for {0}"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Active hours by space"
@@ -485,6 +491,14 @@ msgstr "Attach files"
 msgid "Attach Files…"
 msgstr "Attach Files…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Attached message"
+msgstr "Attached message"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Attachments"
+msgstr "Attachments"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Attachments exceed the 30 MB compose limit."
@@ -623,6 +637,7 @@ msgstr "Cancel"
 msgid "Cannot build calendar response"
 msgstr "Cannot build calendar response"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc"
@@ -688,6 +703,10 @@ msgstr "Choose one destination for the filter"
 msgid "Choose your email provider."
 msgstr "Choose your email provider."
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Clear selection"
+msgstr "Clear selection"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -725,6 +744,10 @@ msgstr "Collapse message"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Color"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Compact"
+msgstr "Compact"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
@@ -770,10 +793,12 @@ msgstr "Conversation actions"
 msgid "Conversations"
 msgstr "Conversations"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copied"
 msgstr "Copied"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "Copy"
@@ -782,9 +807,17 @@ msgstr "Copy"
 msgid "Copy link to message"
 msgstr "Copy link to message"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Copy selected"
+msgstr "Copy selected"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "Could not check for updates. Try again later."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not decode winmail.dat. You can save the original file."
+msgstr "Could not decode winmail.dat. You can save the original file."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
@@ -793,6 +826,10 @@ msgstr "Could not load the calendar invitation."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
 msgstr "Could not open notification settings."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not read attached message."
+msgstr "Could not read attached message."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
@@ -895,6 +932,7 @@ msgstr "Custom time"
 msgid "Dark background"
 msgstr "Dark background"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
 msgstr "Date"
@@ -908,6 +946,7 @@ msgid "Declined"
 msgstr "Declined"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Default"
 msgstr "Default"
 
@@ -963,6 +1002,10 @@ msgstr "Deleting a folder also deletes its messages on the server."
 msgid "Denied"
 msgstr "Denied"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Dense"
+msgstr "Dense"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
 msgstr "Disabled"
@@ -1009,6 +1052,7 @@ msgstr "Draft"
 msgid "Draft discarded"
 msgstr "Draft discarded"
 
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "Drafts"
@@ -1016,6 +1060,10 @@ msgstr "Drafts"
 #: src/renderer/src/components/Settings.tsx
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 msgstr "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Drag selected to Finder"
+msgstr "Drag selected to Finder"
 
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1136,6 +1184,10 @@ msgstr "Expand all messages"
 msgid "Expand categories"
 msgstr "Expand categories"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Expanded"
+msgstr "Expanded"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "External replies"
 msgstr "External replies"
@@ -1213,6 +1265,7 @@ msgstr "Forward as attachment"
 msgid "Friday"
 msgstr "Friday"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1438,6 +1491,10 @@ msgstr "Link URL"
 msgid "Load images"
 msgstr "Load images"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Loading attached message…"
+msgstr "Loading attached message…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "Loading attachments…"
@@ -1601,6 +1658,10 @@ msgstr "Message body"
 #: src/renderer/src/components/Reader.tsx
 msgid "Message link copied"
 msgstr "Message link copied"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message list density"
+msgstr "Message list density"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Message list visibility"
@@ -2133,6 +2194,11 @@ msgstr "Port"
 msgid "Press ? outside a text field to show this list."
 msgstr "Press ? outside a text field to show this list."
 
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Preview {0}"
+msgstr "Preview {0}"
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -2176,6 +2242,10 @@ msgstr "Promotions"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Quick Look"
+msgstr "Quick Look"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -2420,7 +2490,7 @@ msgstr "Saturday"
 msgid "Save"
 msgstr "Save"
 
-#. placeholder {0}: a.filename
+#. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save {0}"
 msgstr "Save {0}"
@@ -2451,6 +2521,10 @@ msgstr "Save message as PDF…"
 msgid "Save rule"
 msgstr "Save rule"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected…"
+msgstr "Save selected…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
 msgstr "Save this draft before closing?"
@@ -2467,10 +2541,13 @@ msgstr "Save token"
 msgid "Save…"
 msgstr "Save…"
 
-#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "Saved"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Saved {count} attachments. Couldn't save: {names}"
+msgstr "Saved {count} attachments. Couldn't save: {names}"
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -2529,6 +2606,11 @@ msgstr "Search templates"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "Searching server…"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Select {0}"
+msgstr "Select {0}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
@@ -2632,6 +2714,14 @@ msgstr "Server search failed. Local results are available."
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "Settings"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share selected…"
+msgstr "Share selected…"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share…"
+msgstr "Share…"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Shortcut set"
@@ -2783,9 +2873,14 @@ msgid "Spaces"
 msgstr "Spaces"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Spam"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Special folder unread badges"
+msgstr "Special folder unread badges"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -2804,6 +2899,7 @@ msgid "Star message"
 msgstr "Star message"
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "Starred"
@@ -3048,6 +3144,7 @@ msgstr "Thursday"
 msgid "Time"
 msgstr "Time"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx

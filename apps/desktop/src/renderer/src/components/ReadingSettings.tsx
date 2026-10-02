@@ -36,6 +36,52 @@ export function ReadingSettings() {
         <Trans>Show account names in unified folders</Trans>
       </label>
       <section>
+        <h3 className={heading}>
+          <Trans>Message list density</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Message list density`}
+          value={prefs?.messageListDensity ?? "default"}
+          options={[
+            { value: "dense" as const, label: t`Dense` },
+            { value: "compact" as const, label: t`Compact` },
+            { value: "default" as const, label: t`Default` },
+            { value: "expanded" as const, label: t`Expanded` },
+          ]}
+          onValueChange={(messageListDensity) => setPrefs({ messageListDensity })}
+        />
+      </section>
+      <section className="space-y-2">
+        <h3 className={heading}>
+          <Trans>Special folder unread badges</Trans>
+        </h3>
+        {(
+          [
+            { id: "starred", label: t`Starred` },
+            { id: "drafts", label: t`Drafts` },
+            { id: "spam", label: t`Spam` },
+          ] as const
+        ).map(({ id, label }) => (
+          <label key={id} className="flex items-center gap-2">
+            <Checkbox
+              checked={prefs?.specialFolderBadges[id] ?? true}
+              onCheckedChange={(checked) =>
+                setPrefs({
+                  specialFolderBadges: {
+                    starred: true,
+                    drafts: true,
+                    spam: true,
+                    ...prefs?.specialFolderBadges,
+                    [id]: checked,
+                  },
+                })
+              }
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </section>
+      <section>
         <label className="flex items-center gap-2">
           <Checkbox
             checked={prefs?.showMore ?? true}

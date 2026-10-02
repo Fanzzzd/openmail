@@ -1,4 +1,9 @@
-import { SYSTEM_FOLDERS, systemFolderId } from "@openmail/core/schema";
+import {
+  SYSTEM_FOLDERS,
+  systemFolderId,
+  specialFolderBadge,
+  DEFAULT_PREFS,
+} from "@openmail/core/schema";
 import { Effect } from "effect";
 import {
   MESSAGE_DRAG,
@@ -507,13 +512,11 @@ export function Sidebar({
                     onClick={() => onView({ ...view, mailbox: id, label: undefined })}
                     icon={<Icon className={`size-4.5 ${color}`} />}
                     label={i18n._(MAILBOX_NAMES[id])}
-                    badge={
-                      id === "inbox"
-                        ? (byLabel.INBOX ?? 0)
-                        : id === "spam"
-                          ? (byLabel.SPAM ?? 0)
-                          : 0
-                    }
+                    badge={specialFolderBadge(
+                      id,
+                      byLabel,
+                      prefs?.specialFolderBadges ?? DEFAULT_PREFS.specialFolderBadges,
+                    )}
                     disclosure={
                       <>
                         {members[0] && (

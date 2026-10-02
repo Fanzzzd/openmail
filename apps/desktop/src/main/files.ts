@@ -1,9 +1,9 @@
+import { quarantine } from "./file-quarantine";
 /**
  * What the reader does with files: saving and opening attachments, printing
  * and saving threads as PDF. Content comes from the Mailbox; this module only
  * asks where to put it and writes it.
  */
-import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -25,20 +25,9 @@ import type { PrintHeadings } from "../shared/rpc";
 
 type MailboxService = Mailbox["Service"];
 
-/** Files that run code when opened. They can be saved, but not opened from the app. */
-const EXECUTABLE =
-  /\.(app|command|tool|sh|bash|zsh|csh|ksh|pkg|mpkg|dmg|scpt|scptd|applescript|workflow|terminal|jar|exe|msi|bat|cmd|com|scr|ps1|vbs|js|jse|wsf|hta|lnk|reg|dll|so|dylib|py|pl|rb|php)$/i;
-
-/** A filename that stays inside the folder it is written to. */
-export function safeFilename(name: string): string {
-  const base = path
-    .basename(name.replaceAll("\\", "/"))
-    .replace(/[/:]/g, "_")
-    .replaceAll(/./gsu, (c) => (c.charCodeAt(0) < 32 ? "_" : c))
-    .replace(/^\.+/, "")
-    .trim();
-  return base || "attachment";
-}
+import { EXECUTABLE, safeFilename } from "./attachment-filenames";
+import { attachmentTemp } from "./attachment-temp";
+export { safeFilename } from "./attachment-filenames";
 
 /** A subject is text, not a path. Reserve space for the extension and preserve code points. */
 export function subjectFilename(subject: string): string {
@@ -60,18 +49,6 @@ export function subjectFilename(subject: string): string {
 }
 
 const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
-
-/**
- * Marks a file as downloaded from the internet, so macOS Gatekeeper checks
- * it on first open, as it does for Mail and browsers. Best effort.
- */
-function quarantine(file: string): Effect.Effect<void> {
-  if (process.platform !== "darwin") return Effect.void;
-  const value = `0083;${Math.floor(Date.now() / 1000).toString(16)};OpenMail;`;
-  return Effect.callback<void>((resume) => {
-    execFile("xattr", ["-w", "com.apple.quarantine", value, file], () => resume(Effect.void));
-  });
-}
 
 const write = (file: string, data: Uint8Array) =>
   Effect.tryPromise({
@@ -169,11 +146,31 @@ export const saveAllAttachments: (
   );
   const folder = choice.filePaths[0];
   if (choice.canceled || !folder) return 0;
-  for (let index = 0; index < count; index++) {
-    const content = yield* m.attachment(messageId, index);
-    yield* write(yield* freePath(folder, safeFilename(content.filename)), content.data);
+  const parts = yield* m.attachmentParts(
+    messageId,
+    Array.from({ length: count }, (_, index) => [index]),
+  );
+  const errors: string[] = [];
+  let saved = 0;
+  for (const part of parts) {
+    if (part.kind === "failed") {
+      errors.push(`${safeFilename(part.filename)}: ${deviceErrorReason(part.error)}`);
+      continue;
+    }
+    const content = part.content;
+    const result = yield* write(
+      yield* freePath(folder, safeFilename(content.filename)),
+      content.data,
+    ).pipe(Effect.result);
+    if (result._tag === "Failure")
+      errors.push(`${safeFilename(content.filename)}: ${result.failure.message}`);
+    else saved++;
   }
-  return count;
+  if (errors.length)
+    return yield* new DeviceError({
+      message: `Saved ${saved} attachments. Failed: ${errors.join("; ")}`,
+    });
+  return saved;
 });
 
 /** Writes the attachment to its own temporary folder and opens it with the default app. */
@@ -194,15 +191,16 @@ export const openAttachment: (
       message: `${name} can run code. Save it and open it yourself if you trust it.`,
     });
   }
-  const folder = path.join(app.getPath("temp"), "openmail-attachments", randomUUID());
-  yield* Effect.tryPromise({
-    try: () => mkdir(folder, { recursive: true }),
+  const files = yield* Effect.tryPromise({
+    try: () => attachmentTemp(app).write([content]),
     catch: failed,
   });
-  const file = path.join(folder, name);
-  yield* write(file, content.data);
+  const file = files[0];
+  if (!file) return yield* new DeviceError({ message: "No attachment file" });
+  yield* quarantine(file);
   const error = yield* Effect.promise(() => shell.openPath(file));
   if (error) yield* new DeviceError({ message: error });
+  return yield* Effect.void;
 });
 
 /**

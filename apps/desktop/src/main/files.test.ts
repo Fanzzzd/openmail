@@ -1,3 +1,5 @@
+import { buildMime } from "../../../../packages/core/src/compose.js";
+import { ProviderError } from "../../../../packages/core/src/errors.js";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,14 +12,14 @@ import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
 vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));
 vi.mock("electron", () => ({
   app: { getPath: vi.fn(() => "/tmp") },
-  dialog: { showSaveDialog: vi.fn() },
+  dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
   BrowserWindow: vi.fn(),
   session: {},
   shell: {},
 }));
 
 import { app, dialog } from "electron";
-import { saveMessage } from "./files";
+import { saveMessage, saveAllAttachments } from "./files";
 
 let folder: string;
 beforeEach(async () => {
@@ -153,4 +155,42 @@ it("EML subjects preserve slash-separated words, use a message fallback and fit 
   } finally {
     vi.mocked(app).getPath.mockReturnValue("/tmp");
   }
+});
+
+it("legacy Save All continues after a provider failure and reports the failed filename", async () => {
+  const files = [
+    { filename: "missing.txt", mimeType: "text/plain", content: "bWlzc2luZw==" },
+    { filename: "saved.txt", mimeType: "text/plain", content: "c2F2ZWQ=" },
+  ];
+  const server = fakeServer("me@gmail.com", [
+    {
+      ...first,
+      attachments: files.map((file) => ({
+        filename: file.filename,
+        mimeType: file.mimeType,
+        size: 7,
+      })),
+    },
+  ]);
+  server.raw.set(
+    "one",
+    await Effect.runPromise(
+      buildMime(first.from, { to: [], cc: [], bcc: [], subject: "", text: "", attachments: files }),
+    ),
+  );
+  vi.mocked(dialog).showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [folder] });
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.sync();
+      server.failNext = new ProviderError({ message: "Part unavailable" });
+      const result = yield* saveAllAttachments(mailbox, null, `${account.id}/one`).pipe(
+        Effect.result,
+      );
+      expect(result._tag).toBe("Failure");
+      if (result._tag === "Failure") expect(result.failure.message).toContain("missing.txt");
+    }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
+  );
+  expect(await readFile(path.join(folder, "saved.txt"), "utf8")).toBe("saved");
 });

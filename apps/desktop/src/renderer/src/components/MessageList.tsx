@@ -1,5 +1,8 @@
 import { MESSAGE_DRAG } from "../organize-drag";
-import { moveSourceLabel, listWindow, MESSAGE_ROW_HEIGHT } from "@openmail/core/schema";
+import { useAtomValue } from "@effect/atom-react";
+import { AsyncResult } from "effect/reactivity";
+import { prefsAtom } from "../state/queries";
+import { moveSourceLabel, listWindow, LIST_DENSITIES, DEFAULT_PREFS } from "@openmail/core/schema";
 import { Toggle } from "@base-ui/react/toggle";
 import { constVoid } from "effect/Function";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -101,9 +104,11 @@ export function MessageList({
 
   const [viewport, setViewport] = useState({ top: 0, height: 600 });
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const density = LIST_DENSITIES[prefs.messageListDensity];
   const rowHeight = threads.some((m) => m.derivedMatches?.length)
-    ? MESSAGE_ROW_HEIGHT + 48
-    : MESSAGE_ROW_HEIGHT;
+    ? density.height + 48
+    : density.height;
   const window = listWindow(threads.length, viewport.top, viewport.height, rowHeight);
   const endReached = useRef(onEndReached);
   useEffect(() => {
@@ -263,6 +268,7 @@ export function MessageList({
                     key={m.id}
                     thread={m}
                     rowHeight={rowHeight}
+                    density={density}
                     position={i + 1}
                     total={threads.length}
                     labels={labels}
@@ -363,6 +369,7 @@ function Row({
   position,
   total,
   rowHeight,
+  density,
   labels,
   selected,
   accent,
@@ -375,6 +382,7 @@ function Row({
 }: {
   thread: ThreadSummary;
   rowHeight: number;
+  density: (typeof LIST_DENSITIES)[keyof typeof LIST_DENSITIES];
   position: number;
   total: number;
   labels: Map<string, Label>;
@@ -395,6 +403,32 @@ function Row({
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
     .filter((l) => l.messageListVisibility !== "hide")
     .slice(0, 2);
+  const labelChips = (
+    <>
+      {chips.map((l) => (
+        <span
+          key={l.id}
+          className={`max-w-24 shrink-0 truncate rounded px-1.5 text-[12px] leading-[18px] ${
+            accent ? "bg-white/20 text-white" : l.color ? "" : "bg-black/[0.06] dark:bg-white/10"
+          }`}
+          style={
+            !accent && l.color ? { backgroundColor: `${l.color}33`, color: l.color } : undefined
+          }
+        >
+          {l.name}
+        </span>
+      ))}
+    </>
+  );
+  const star = (
+    <>
+      {m.isStarred && (
+        <Star
+          className={`size-3.5 shrink-0 ${accent ? "fill-white text-white" : "fill-amber-400 text-amber-400"}`}
+        />
+      )}
+    </>
+  );
   return (
     <button
       type="button"
@@ -439,31 +473,46 @@ function Row({
           {shortDate(m.date, i18n)}
         </span>
       </span>
-      <span className="mt-0.5 block truncate text-[13px]">
-        {m.subject || <Trans>(No subject)</Trans>}
-      </span>
-      <span className="mt-0.5 flex items-center gap-1.5">
-        <span className={`min-w-0 flex-1 truncate text-[13px] ${muted}`}>{m.snippet}</span>
-        {chips.map((l) => (
-          <span
-            key={l.id}
-            className={`max-w-24 shrink-0 truncate rounded px-1.5 text-[12px] leading-[18px] ${
-              accent ? "bg-white/20 text-white" : l.color ? "" : "bg-black/[0.06] dark:bg-white/10"
-            }`}
-            style={
-              !accent && l.color ? { backgroundColor: `${l.color}33`, color: l.color } : undefined
-            }
-          >
-            {l.name}
-          </span>
-        ))}
-        {m.hasAttachments && <Paperclip className={`size-3.5 shrink-0 ${muted}`} />}
-        {m.isStarred && (
-          <Star
-            className={`size-3.5 shrink-0 ${accent ? "fill-white text-white" : "fill-amber-400 text-amber-400"}`}
-          />
+      <span className="mt-0.5 flex items-center gap-1.5 text-[13px]">
+        <span className="min-w-0 flex-1 truncate">{m.subject || <Trans>(No subject)</Trans>}</span>
+        {!density.attachments && m.hasAttachments && (
+          <Paperclip className={`size-3.5 shrink-0 ${muted}`} />
+        )}
+        {density.previewLines === 0 && (
+          <>
+            {labelChips}
+            {star}
+          </>
         )}
       </span>
+      {density.previewLines > 0 && (
+        <span className="mt-0.5 flex items-start gap-1.5">
+          <span
+            className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
+          >
+            {m.snippet}
+          </span>
+          {labelChips}
+          {star}
+        </span>
+      )}
+      {density.attachments && m.hasAttachments && (
+        <span className={`mt-1 flex items-center gap-1.5 text-[11px] ${muted}`}>
+          <Paperclip className="size-3.5 shrink-0" />
+          {m.attachmentNames?.length ? (
+            m.attachmentNames.slice(0, 2).map((name, index) => (
+              <span
+                key={index}
+                className="max-w-32 truncate rounded bg-black/5 px-1 dark:bg-white/10"
+              >
+                {name}
+              </span>
+            ))
+          ) : (
+            <Trans>Attachments</Trans>
+          )}
+        </span>
+      )}
       {m.derivedMatches?.slice(0, 2).map((hit, index) => (
         <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
           {hit.source.kind === "body" ? <Trans>Message body</Trans> : hit.source.name}

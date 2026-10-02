@@ -1,3 +1,4 @@
+import { attachmentFilename } from "./attachment-filename.js";
 import { applyOpToLabels } from "./mail-ops.js";
 export { applyOpToLabels, folderTarget } from "./mail-ops.js";
 import { makeSemanticStore } from "./store-semantic.js";
@@ -676,6 +677,13 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         FROM page c ORDER BY c.date DESC,c.id DESC`);
       return rows.map((r): ThreadSummary => ({
         ...toSummary(r),
+        ...(r.attachments_json.length
+          ? {
+              attachmentNames: r.attachments_json
+                .slice(0, 2)
+                .map((a) => attachmentFilename(a.filename)),
+            }
+          : {}),
         isUnread: r.any_unread,
         isStarred: r.any_starred,
         threadCount: r.thread_count,
@@ -691,7 +699,18 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         Effect.map((rows) =>
           rows.map((r): ThreadSummary => {
             const summary = toSummary(r);
-            return { ...summary, threadCount: 1, participants: [summary.from] };
+            return {
+              ...summary,
+              ...(r.attachments_json.length
+                ? {
+                    attachmentNames: r.attachments_json
+                      .slice(0, 2)
+                      .map((a) => attachmentFilename(a.filename)),
+                  }
+                : {}),
+              threadCount: 1,
+              participants: [summary.from],
+            };
           }),
         ),
       );

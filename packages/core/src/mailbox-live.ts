@@ -1,3 +1,5 @@
+import { AttachmentCache } from "./attachment-cache.js";
+import { makeReaderAttachments } from "./reader-attachments.js";
 import { makeFolderMailbox } from "./mailbox-folders.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import {
@@ -976,6 +978,7 @@ export const MailboxLive = (
         return url;
       });
 
+      const attachmentCache = new AttachmentCache();
       const attachment = Effect.fn("Mailbox.attachment")(function* (
         messageId: string,
         index: number,
@@ -987,7 +990,17 @@ export const MailboxLive = (
           return yield* new NotFound({ what: "attachment", id: `${messageId}#${index}` });
         }
         const { account, adapter, providerId } = yield* source(messageId);
+        const key = JSON.stringify([
+          providerId,
+          index,
+          listed.filename,
+          listed.mimeType,
+          listed.size,
+        ]);
+        const cached = attachmentCache.get(messageId, key);
+        if (cached) return { filename: listed.filename, mimeType: listed.mimeType, data: cached };
         const data = yield* adapter.fetchAttachment(account, providerId, ref);
+        attachmentCache.set(messageId, key, data);
         return { filename: listed.filename, mimeType: listed.mimeType, data };
       });
 
@@ -1625,6 +1638,7 @@ export const MailboxLive = (
         messageWebUrl,
         knownSenders: (accountId, addresses) => store.knownSenders(accountId, addresses),
         attachment,
+        ...makeReaderAttachments(attachment, (id) => store.getThread(id)),
         inlineImages,
         imageSenders: store.imageSenders,
         setImageSender: (entry, allowed) => mutate(store.setImageSender(entry, allowed)),

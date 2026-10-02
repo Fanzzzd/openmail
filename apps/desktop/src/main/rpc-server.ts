@@ -1,3 +1,8 @@
+import {
+  attachmentAction,
+  prepareAttachmentDrag,
+  releaseAttachmentDrag,
+} from "./attachment-actions";
 import { clipboardAttachments } from "./clipboard-attachments";
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
@@ -133,6 +138,14 @@ const Handlers = MailRpcs.toLayer(
       InlineImages: ({ id }) => m.inlineImages(id),
       ImageSenders: () => m.imageSenders,
       SetImageSender: ({ entry, allowed }) => m.setImageSender(entry, allowed),
+      AttachmentCapabilities: () => Effect.succeed({ share: process.platform === "darwin" }),
+      ReaderAttachments: ({ messageId }) => m.readerAttachments(messageId),
+      EmbeddedMessage: ({ messageId, path }) => m.embeddedMessage(messageId, path),
+      ReleaseAttachmentDrag: (request, { client }) =>
+        releaseAttachmentDrag(windowOf(client.id), request),
+      PrepareAttachmentDrag: (request, { client }) =>
+        prepareAttachmentDrag(m, windowOf(client.id), request),
+      AttachmentAction: (request, { client }) => attachmentAction(m, windowOf(client.id), request),
       SaveAttachment: ({ messageId, index }, { client }) =>
         saveAttachment(m, windowOf(client.id), messageId, index),
       OpenAttachment: ({ messageId, index }) => openAttachment(m, messageId, index),

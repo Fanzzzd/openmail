@@ -1,3 +1,4 @@
+import { attachmentFilename } from "./attachment-filename.js";
 /**
  * The Store's SQL for writing and reading settings: drafts, preferences,
  * signatures, templates, recipient suggestions and the remote image allowlist. Part of the Store service (store.ts
@@ -227,6 +228,13 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
             isUnread: false,
             isStarred: false,
             hasAttachments: m.attachments.length > 0 || m.forwardAsAttachment === true,
+            ...(m.attachments.length
+              ? {
+                  attachmentNames: m.attachments
+                    .slice(0, 2)
+                    .map((a) => attachmentFilename(a.filename)),
+                }
+              : {}),
             threadCount: 1,
             participants: [me],
           };
@@ -243,6 +251,16 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
       return {
+        messageListDensity: pref(
+          f.messageListDensity,
+          stored.get("messageListDensity"),
+          d.messageListDensity,
+        ),
+        specialFolderBadges: pref(
+          f.specialFolderBadges,
+          stored.get("specialFolderBadges"),
+          d.specialFolderBadges,
+        ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         quoteSelection: pref(f.quoteSelection, stored.get("quoteSelection"), d.quoteSelection),

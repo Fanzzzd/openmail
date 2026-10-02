@@ -24,6 +24,7 @@ msgstr "、"
 msgid "(no recipients)"
 msgstr "（未填收件人）"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -214,6 +215,11 @@ msgstr "动作菜单"
 #: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "操作"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Actions for {0}"
+msgstr "{0} 的操作"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Active hours by space"
@@ -491,6 +497,14 @@ msgstr "添加附件"
 msgid "Attach Files…"
 msgstr "添加附件…"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Attached message"
+msgstr "附加邮件"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Attachments"
+msgstr "附件"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "附件总大小超过 30 MB，请移除部分附件。"
@@ -629,6 +643,7 @@ msgstr "取消"
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc"
@@ -694,6 +709,10 @@ msgstr "请选择一个目标位置"
 msgid "Choose your email provider."
 msgstr "选择邮箱服务商。"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Clear selection"
+msgstr "清除选择"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -731,6 +750,10 @@ msgstr "收起邮件"
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "颜色"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Compact"
+msgstr "紧凑"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
@@ -776,10 +799,12 @@ msgstr "会话操作"
 msgid "Conversations"
 msgstr "会话"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copied"
 msgstr "已复制"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
 msgstr "复制"
@@ -788,9 +813,17 @@ msgstr "复制"
 msgid "Copy link to message"
 msgstr "复制邮件链接"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Copy selected"
+msgstr "复制选中附件"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
 msgstr "无法检查更新，请稍后重试。"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not decode winmail.dat. You can save the original file."
+msgstr "无法解码 winmail.dat，可保存原文件。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
@@ -799,6 +832,10 @@ msgstr "无法加载日历邀请。"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
 msgstr "无法打开通知设置。"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Could not read attached message."
+msgstr "无法读取附加邮件。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
@@ -901,6 +938,7 @@ msgstr "自选时间"
 msgid "Dark background"
 msgstr "深色背景"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Date"
 msgstr "日期"
@@ -914,6 +952,7 @@ msgid "Declined"
 msgstr "已拒绝"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Default"
 msgstr "默认"
 
@@ -969,6 +1008,10 @@ msgstr "删除文件夹也会删除服务器内的邮件。"
 msgid "Denied"
 msgstr "被拒绝"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Dense"
+msgstr "密集"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Disabled"
 msgstr "已停用"
@@ -1015,6 +1058,7 @@ msgstr "草稿"
 msgid "Draft discarded"
 msgstr "草稿已丢弃"
 
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "草稿"
@@ -1022,6 +1066,10 @@ msgstr "草稿"
 #: src/renderer/src/components/Settings.tsx
 msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 msgstr "拖动账号可排序或移入其他空间，也可用空间选择器和上下移按钮。"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Drag selected to Finder"
+msgstr "将选中附件拖到访达"
 
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -1142,6 +1190,10 @@ msgstr "展开所有邮件"
 msgid "Expand categories"
 msgstr "展开分类"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Expanded"
+msgstr "展开"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "External replies"
 msgstr "外部回复"
@@ -1219,6 +1271,7 @@ msgstr "作为附件转发"
 msgid "Friday"
 msgstr "星期五"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1444,6 +1497,10 @@ msgstr "链接地址"
 msgid "Load images"
 msgstr "加载图片"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Loading attached message…"
+msgstr "正在加载附加邮件…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "正在加载附件…"
@@ -1607,6 +1664,10 @@ msgstr "邮件正文"
 #: src/renderer/src/components/Reader.tsx
 msgid "Message link copied"
 msgstr "已复制邮件链接"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Message list density"
+msgstr "邮件列表密度"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Message list visibility"
@@ -2139,6 +2200,11 @@ msgstr "端口"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Preview {0}"
+msgstr "预览 {0}"
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -2182,6 +2248,10 @@ msgstr "推广"
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Quick Look"
+msgstr "快速查看"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
@@ -2426,7 +2496,7 @@ msgstr "星期六"
 msgid "Save"
 msgstr "保存"
 
-#. placeholder {0}: a.filename
+#. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save {0}"
 msgstr "保存 {0}"
@@ -2457,6 +2527,10 @@ msgstr "将这封邮件保存为 PDF…"
 msgid "Save rule"
 msgstr "保存规则"
 
+#: src/renderer/src/components/Attachments.tsx
+msgid "Save selected…"
+msgstr "保存选中附件…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
 msgstr "关闭前保存草稿？"
@@ -2473,10 +2547,13 @@ msgstr "保存令牌"
 msgid "Save…"
 msgstr "保存…"
 
-#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "Saved"
 msgstr "已保存"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Saved {count} attachments. Couldn't save: {names}"
+msgstr "已保存 {count} 个附件。未能保存：{names}"
 
 #: src/renderer/src/components/reader-actions.ts
 msgid "Saved as EML"
@@ -2535,6 +2612,11 @@ msgstr "搜索模板"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "搜索服务器中…"
+
+#. placeholder {0}: file.filename
+#: src/renderer/src/components/Attachments.tsx
+msgid "Select {0}"
+msgstr "选择 {0}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
@@ -2638,6 +2720,14 @@ msgstr "服务器搜索失败，仍可查看本地结果。"
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "设置"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share selected…"
+msgstr "分享选中附件…"
+
+#: src/renderer/src/components/Attachments.tsx
+msgid "Share…"
+msgstr "分享…"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Shortcut set"
@@ -2789,9 +2879,14 @@ msgid "Spaces"
 msgstr "空间"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "垃圾邮件"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Special folder unread badges"
+msgstr "特殊文件夹未读徽标"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -2810,6 +2905,7 @@ msgid "Star message"
 msgstr "为此邮件加星标"
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "星标"
@@ -3054,6 +3150,7 @@ msgstr "星期四"
 msgid "Time"
 msgstr "时间"
 
+#: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx

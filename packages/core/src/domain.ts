@@ -143,6 +143,8 @@ export type MessageSummary = typeof MessageSummary.Type;
 /** One row of a conversation list: the newest message of a thread in the view. */
 export const ThreadSummary = Schema.Struct({
   ...summaryFields,
+  /** Cached names only; showing attachments never downloads their content. */
+  attachmentNames: Schema.optionalKey(Schema.Array(Schema.String)),
   /** Messages in the whole thread, across mailboxes. */
   threadCount: Schema.Number,
   /** Distinct senders in the thread, oldest first. */
@@ -510,6 +512,12 @@ export const NotificationActions = Schema.Array(
   Schema.Literals(["archive", "trash", "read", "menu"]),
 ).check(Schema.isMaxLength(3));
 export const Prefs = Schema.Struct({
+  messageListDensity: Schema.Literals(["dense", "compact", "default", "expanded"]),
+  specialFolderBadges: Schema.Struct({
+    starred: Schema.Boolean,
+    drafts: Schema.Boolean,
+    spam: Schema.Boolean,
+  }),
   showMore: Schema.Boolean,
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
@@ -542,6 +550,8 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
+  messageListDensity: "default",
+  specialFolderBadges: { starred: true, drafts: true, spam: true },
   showMore: true,
   undoSendSeconds: 5,
   defaultFrom: null,

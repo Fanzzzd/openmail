@@ -13,6 +13,7 @@ export {
   MailboxEvent,
   ModelThread,
   type PerformError,
+  type AttachmentPartResult,
   type SignInError,
   SyncState,
 } from "./mailbox.js";
@@ -61,3 +62,8 @@ export * from "./recipients.js";
 export * from "./compose-sender.js";
 
 export * from "./attachment-policy.js";
+
+export * from "./attachment-view.js";
+export * from "./tnef.js";
+
+export * from "./attachment-filename.js";

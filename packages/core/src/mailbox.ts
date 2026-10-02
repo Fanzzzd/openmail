@@ -1,3 +1,4 @@
+import type { ReaderAttachment, EmbeddedMessage } from "./attachment-view.js";
 import type { FolderScope, DeleteFolder } from "./folder-actions.js";
 import type { DerivedChunk, IndexingProgress } from "./media.js";
 /**
@@ -117,6 +118,15 @@ export interface AttachmentContent {
   readonly data: Uint8Array;
 }
 
+export type AttachmentPartResult =
+  | { readonly kind: "file"; readonly path: readonly number[]; readonly content: AttachmentContent }
+  | {
+      readonly kind: "failed";
+      readonly path: readonly number[];
+      readonly filename: string;
+      readonly error: PerformError;
+    };
+
 export type SignInError = AuthError | ProviderError | ClientNotConfigured | InvalidInput;
 /** What performing a command can fail with. Policy denials are an Outcome, not an error. */
 export type PerformError =
@@ -183,6 +193,19 @@ export class Mailbox extends Context.Service<
     knownSenders(accountId: string, addresses: readonly string[]): Effect.Effect<string[]>;
     /** One attachment of a message, by its position in `Message.attachments`. */
     attachment(messageId: string, index: number): Effect.Effect<AttachmentContent, PerformError>;
+    attachmentPart(
+      messageId: string,
+      path: readonly number[],
+    ): Effect.Effect<AttachmentContent, PerformError>;
+    attachmentParts(
+      messageId: string,
+      paths: readonly (readonly number[])[],
+    ): Effect.Effect<AttachmentPartResult[], PerformError>;
+    readerAttachments(messageId: string): Effect.Effect<ReaderAttachment[], PerformError>;
+    embeddedMessage(
+      messageId: string,
+      path: readonly number[],
+    ): Effect.Effect<EmbeddedMessage, PerformError>;
     /** The message's inline images (cid: parts) as data: URLs keyed by Content-ID. */
     inlineImages(messageId: string): Effect.Effect<Record<string, string>, PerformError>;
     /** Addresses and domains whose mail loads remote images without asking. */

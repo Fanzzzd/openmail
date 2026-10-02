@@ -4,6 +4,11 @@
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  AttachmentPath,
+  ReaderAttachment,
+  EmbeddedMessage,
+  AttachmentAction,
+  AttachmentActionResult,
   FolderScope,
   DeleteFolder,
   DerivedChunk,
@@ -174,6 +179,39 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("ImageSenders", { success: Schema.Array(Schema.String) }),
   /** Adds or removes an address or a domain on the remote image allowlist. */
   Rpc.make("SetImageSender", { payload: { entry: Schema.String, allowed: Schema.Boolean } }),
+  Rpc.make("AttachmentCapabilities", { success: Schema.Struct({ share: Schema.Boolean }) }),
+  Rpc.make("ReaderAttachments", {
+    payload: { messageId: Schema.String },
+    success: Schema.Array(ReaderAttachment),
+    error,
+  }),
+  Rpc.make("EmbeddedMessage", {
+    payload: { messageId: Schema.String, path: AttachmentPath },
+    success: EmbeddedMessage,
+    error,
+  }),
+  Rpc.make("ReleaseAttachmentDrag", {
+    payload: { messageId: Schema.String, listId: Schema.String.check(Schema.isMaxLength(256)) },
+    error,
+  }),
+  Rpc.make("PrepareAttachmentDrag", {
+    payload: {
+      listId: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(256))),
+      messageId: Schema.String,
+      paths: Schema.Array(AttachmentPath).check(Schema.isMinLength(1), Schema.isMaxLength(256)),
+    },
+    error,
+  }),
+  Rpc.make("AttachmentAction", {
+    payload: {
+      listId: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(256))),
+      messageId: Schema.String,
+      paths: Schema.Array(AttachmentPath).check(Schema.isMinLength(1), Schema.isMaxLength(256)),
+      action: AttachmentAction,
+    },
+    success: AttachmentActionResult,
+    error,
+  }),
   /** Asks where to save, then writes the attachment. False when the person cancelled. */
   Rpc.make("SaveAttachment", {
     payload: { messageId: Schema.String, index: Schema.Int },

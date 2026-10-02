@@ -37,3 +37,7 @@ export * from "./folder-actions.js";
 export * from "./attachment-policy.js";
 
 export * from "./compose-find.js";
+
+export * from "./attachment-view.js";
+
+export * from "./attachment-filename.js";

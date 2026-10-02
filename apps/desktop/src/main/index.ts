@@ -1,3 +1,4 @@
+import { cleanupAttachmentTemps } from "./attachment-temp";
 import { NodeMailbox } from "@openmail/core";
 import { Cause, Effect, Fiber, Layer } from "effect";
 import { resolve, join } from "node:path";
@@ -35,6 +36,11 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
 
   const setup = Layer.effectDiscard(
     ready.pipe(
+      Effect.andThen(
+        Effect.tryPromise(() => cleanupAttachmentTemps(app.getPath("temp"))).pipe(
+          Effect.catch((error) => Effect.logWarning("Attachment temp cleanup failed", error)),
+        ),
+      ),
       Effect.andThen(
         Effect.sync(() => {
           if (process.platform === "darwin" && DEV_ICON) app.dock?.setIcon(DEV_ICON);
