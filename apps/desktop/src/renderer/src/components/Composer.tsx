@@ -1,86 +1,35 @@
-import { EDIT_MESSAGE_TEXT } from "../message-text";
-import { ComposerAi } from "./ComposerAi";
-import { DraftSyncRecovery, draftSyncNotice } from "./DraftSyncRecovery";
-import { moveRecipient, type RecipientFieldName, type RecipientDrag } from "../recipient-actions";
-import { matchesShortcut } from "../../../shared/shortcuts";
-import { useShortcutText } from "../use-shortcut-text";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  DEFAULT_PREFS,
-  applyComposeSignature,
-  orderedSignatures,
-  splitAddresses,
-  fillTemplate,
-  customTemplateVariables,
-  ownText,
-  attachmentProblem,
-  attachmentSizesProblem,
-  attachmentBytes,
-  type AttachmentProblem,
-  reorderAttachments,
-  inlineImageHtml,
-  reconcileMentionRecipients,
-  type Address,
-} from "@openmail/core/schema";
-import { Effect } from "effect";
+import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
-import {
-  type ReactElement,
-  type RefObject,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-} from "react";
-import { constVoid } from "effect/Function";
-
-import type { Account, OutgoingAttachment, OutgoingMessage, Template } from "../../../shared/api";
-import {
-  type ComposeMode,
-  type Draft,
-  formatAddress,
-  isEmpty,
-  parseAddresses,
-  switchReplyMode,
-  toDraftInput,
-} from "../draft";
-import { requestDraftClose } from "../draft-close";
-import {
-  inheritsOriginals,
-  withOriginalAttachments,
-  loadOriginalAttachments,
-} from "../compose-originals";
-import { causeText } from "../errors";
-import { submitDraft, type SendWarning } from "../send";
+import { useRef, useState, type ReactElement, type RefObject } from "react";
+import type { Account, OutgoingMessage, Template } from "../../../shared/api";
+import { type ComposeElement } from "../compose-editor-dom";
+import { inheritsOriginals } from "../compose-originals";
+import { useComposeDraft } from "../compose/use-compose-draft";
+import { useComposeEditor } from "../compose/use-compose-editor";
+import { useComposeRecipients } from "../compose/use-compose-recipients";
+import { useComposeSend } from "../compose/use-compose-send";
+import { useComposeShortcuts } from "../compose/use-compose-shortcuts";
+import { useDraftLifecycle } from "../compose/use-draft-lifecycle";
+import { isEmpty, parseAddresses, switchReplyMode, type ComposeMode, type Draft } from "../draft";
 import { formatBytes } from "../format";
-import { openDraft, useRunMail, withMail } from "../state/mail";
 import { Keys } from "../state/keys";
-import { saveDraftAtom, saveTemplateAtom, setPrefsAtom } from "../state/mutations";
-import {
-  signaturesAtom,
-  namedSignaturesAtom,
-  draftStatusAtom,
-  templatesAtom,
-  sendAsAtom,
-  prefsAtom,
-  threadAtom,
-} from "../state/queries";
-import { RecipientField } from "./RecipientField";
-import { DraftOrganization } from "./DraftOrganization";
+import { useRunMail } from "../state/mail";
+import { saveTemplateAtom, setPrefsAtom } from "../state/mutations";
+import { templatesAtom, threadAtom } from "../state/queries";
+import { useShortcutText } from "../use-shortcut-text";
 import { ComposeEditor } from "./ComposeEditor";
-import {
-  editorBody,
-  restoreEditorSelection,
-  insertEditorText,
-  type ComposeElement,
-} from "../compose-editor-dom";
-import { Alert, AlertCancel, alertButton, alertPrimary, alertDanger } from "./ui/Dialog";
+import { ComposerAi } from "./ComposerAi";
+import { DraftOrganization } from "./DraftOrganization";
+import { DraftSyncRecovery } from "./DraftSyncRecovery";
+import { RecipientField } from "./RecipientField";
+import { Alert, AlertCancel, alertButton, alertDanger, alertPrimary } from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { Select } from "./ui/Select";
 import { Tip } from "./ui/Tip";
@@ -91,9 +40,6 @@ const TITLES: Record<Draft["mode"], MessageDescriptor> = {
   replyAll: msg`Reply All`,
   forward: msg`Forward`,
 };
-
-/** Autosave runs this long after the last keystroke. */
-const AUTOSAVE_MS = 2000;
 
 interface Props {
   standalone?: boolean;
@@ -123,48 +69,17 @@ export function Composer({
   onDiscard,
   onSend,
 }: Props) {
+  const messages = useComposeMessages();
   const { t, i18n } = useLingui();
-  const prefsResult = useAtomValue(prefsAtom);
-  const prefs = AsyncResult.getOrElse(prefsResult, () => DEFAULT_PREFS);
+  const { draft, setDraft, prefs } = useComposeDraft(initial);
   const shortcut = useShortcutText();
-  const [draft, setDraft] = useState(() =>
-    initial.mode === "new" &&
-    initial.synced === undefined &&
-    prefsResult._tag === "Success" &&
-    initial.body.kind === "rich" &&
-    !initial.body.originalHtml &&
-    !initial.body.font
-      ? { ...initial, body: { ...initial.body, font: prefs.composeFont } }
-      : initial,
-  );
-  if (
-    prefsResult._tag === "Success" &&
-    initial.mode === "new" &&
-    initial.synced === undefined &&
-    draft.body.kind === "rich" &&
-    !draft.body.originalHtml &&
-    !draft.body.font
-  )
-    setDraft({ ...draft, body: { ...draft.body, font: prefsResult.value.composeFont } });
   const setPrefs = useAtomSet(setPrefsAtom);
-  const freshMentions = useRef(new Map<string, Address>());
-  const activeMentions = useRef(new Set<string>());
-  const manualSender = useRef(false);
-  const [senderUndo, setSenderUndo] = useState<{ accountId: string; address: string } | null>(null);
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageUrlOpen, setImageUrlOpen] = useState(false);
-  const imageFileRef = useRef<HTMLInputElement>(null);
-  const saved = useRef(initial);
-  const [showBcc, setShowBcc] = useState(Boolean(initial.bcc || initial.cc));
-  const [error, setError] = useState<string | null>(null);
-  const [asking, setAsking] = useState<{
-    warning: SendWarning;
-    archive: boolean;
-    confirmed: readonly SendWarning[];
-  } | null>(null);
+  const set = (patch: Partial<Draft>) => {
+    setDraft((d) => ({ ...d, ...patch }));
+    setAsking(null);
+  };
+
   const run = useRunMail();
-  const [closing, setClosing] = useState(false);
-  const [checkingClose, setCheckingClose] = useState(false);
   const ccRef = useRef<HTMLInputElement>(null);
   const sourceThread = AsyncResult.getOrElse(
     useAtomValue(threadAtom(initial.inReplyTo ?? null)),
@@ -172,82 +87,28 @@ export function Composer({
   );
   const original = sourceThread.find((m) => m.id === initial.inReplyTo);
   const [adding, setAdding] = useState(Boolean(initial.loadOriginalAttachments));
-  const attachmentDrag = useRef<number | null>(null);
-  const [picker, setPicker] = useState(false);
-  const [templateForm, setTemplateForm] = useState<Template | null>(null);
-  const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
-  const [saveState, save] = useAtom(saveDraftAtom(initial.id));
-  const fileRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<ComposeElement>(null);
-  const selectionRef = useRef<Range>(null);
-  const toRef = useRef<HTMLInputElement>(null);
-  const account = accounts.find((a) => a.id === draft.accountId);
-  const library = AsyncResult.getOrElse(useAtomValue(namedSignaturesAtom), () => []);
-  const defaultSignatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
-  const remoteStatus = AsyncResult.getOrElse(useAtomValue(draftStatusAtom(draft.id)), () => null);
-  const signatureAt = (accountId: string, from: string | undefined) => {
-    const address = (from ?? accounts.find((a) => a.id === accountId)?.email)?.toLowerCase();
-    return defaultSignatures.find(
-      (s) => s.address === address && s.kind === (draft.mode === "new" ? "new" : "reply"),
-    );
-  };
-  const currentSignature =
-    draft.signatureId === undefined
-      ? signatureAt(draft.accountId, draft.from?.address)
-      : library.find((s) => s.id === draft.signatureId);
-  const currentAddress = (draft.from?.address ?? account?.email ?? "").toLowerCase();
-  const localSignatures = orderedSignatures(library, prefs.signatureOrder).filter(
-    (s) => s.address === currentAddress,
-  );
-  const syncStatus = remoteStatus ?? (saveState._tag === "Success" ? saveState.value : null);
-  const syncNotice = draftSyncNotice(syncStatus ?? initial);
-  const [recoveryError, setRecoveryError] = useState("");
-  const [recovering, setRecovering] = useState(false);
-  const recover = (action: "retry" | "local") => {
-    if (recovering) return;
-    setRecovering(true);
-    run(
-      withMail((call) =>
-        call("RecoverDraft", { id: draft.id, action, draft: toDraftInput(draft) }),
-      ).pipe(
-        Effect.matchCause({
-          onSuccess: () => {
-            saved.current = draft;
-            setRecovering(false);
-            setRecoveryError("");
-          },
-          onFailure: (cause) => {
-            setRecovering(false);
-            setRecoveryError(causeText(i18n, cause));
-          },
-        }),
-      ),
-    );
-  };
-  const moveChip = (source: RecipientFieldName, target: RecipientFieldName, index: number) => {
-    setDraft((current) => ({ ...current, ...moveRecipient(current, source, target, index) }));
-    if (target !== "to") setShowBcc(true);
-  };
-  const dropChip = (target: RecipientFieldName, chip: RecipientDrag) => {
-    const tokens = splitAddresses(draft[chip.source])
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (tokens[chip.index] === chip.text) moveChip(chip.source, target, chip.index);
-  };
-  const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
-  const senders = accounts
-    .filter((a) => a.enabled !== false)
-    .flatMap((a) => [
-      { accountId: a.id, address: a.email, name: a.description?.trim() || "" },
-      ...aliases
-        .filter(
-          (alias) =>
-            alias.accountId === a.id && alias.address.toLowerCase() !== a.email.toLowerCase(),
-        )
-        .map((alias) => ({ accountId: a.id, address: alias.address, name: alias.name })),
-    ]);
-  const availableSenders =
-    draft.mode === "new" ? senders : senders.filter((s) => s.accountId === draft.accountId);
+  const recipients = useComposeRecipients({ initial, accounts, draft, prefs, setDraft, set, run });
+  const {
+    account,
+    aliases,
+    currentSignature,
+    currentAddress,
+    localSignatures,
+    availableSenders,
+    showBcc,
+    setShowBcc,
+    moveChip,
+    dropChip,
+    selectSender,
+    revertSender,
+    chooseSignature,
+    senderUndo,
+    changeRecipients,
+    currentFrom,
+    addMention,
+    removeMentions,
+  } = recipients;
+
   const empty = isEmpty(
     draft,
     currentSignature?.text ??
@@ -257,595 +118,90 @@ export function Composer({
     prefs,
   );
   const replying = draft.mode === "reply" || draft.mode === "replyAll";
-  const set = (patch: Partial<Draft>) => {
-    setDraft((d) => ({ ...d, ...patch }));
-    setAsking(null);
-  };
-
-  /** New messages and forwards start in To; replies start typing above the quote. */
-  const initialFocus = () => {
-    if (initial.mode === "new" || initial.mode === "forward") return toRef.current;
-    if (bodyRef.current instanceof HTMLTextAreaElement) bodyRef.current.setSelectionRange(0, 0);
-    else if (bodyRef.current) {
-      const range = document.createRange();
-      range.selectNodeContents(bodyRef.current);
-      range.collapse(true);
-      selectionRef.current = range;
-      window.getSelection()?.removeAllRanges();
-      window.getSelection()?.addRange(range);
-    }
-    return bodyRef.current;
-  };
-
-  // Autosave: locally at once, then to the provider through the queue.
-  useEffect(() => {
-    const due =
-      !recovering && !adding && !closing && !checkingClose && draft !== saved.current && !empty;
-    const timer = due
-      ? setTimeout(() => {
-          saved.current = draft;
-          save(toDraftInput(draft));
-        }, AUTOSAVE_MS)
-      : undefined;
-    return () => clearTimeout(timer);
-  }, [draft, save, closing, checkingClose, empty, adding, recovering]);
-
-  const originalsLoaded = useEffectEvent((files: readonly OutgoingAttachment[]) => {
-    setDraft((current) => withOriginalAttachments(current, files));
-    setAdding(false);
+  const sendFlow = useComposeSend({
+    messages,
+    adding,
+    account,
+    draft,
+    onSend,
+    currentSignature,
+    prefs,
   });
-  const originalsFailed = useEffectEvent((reason: string) => {
-    setDraft((current) => ({
-      ...current,
-      loadOriginalAttachments: false,
-      includeOriginalAttachments: false,
-    }));
-    setAdding(false);
-    setError(t`Couldn't load the original attachments: ${reason}`);
-  });
-  useEffect(() => {
-    const id = initial.inReplyTo;
-    if (!initial.loadOriginalAttachments || !id) return constVoid;
-    let active = true;
-    run(
-      loadOriginalAttachments(
-        withMail((call) => call("ComposeAttachments", { id })),
-        (files) => {
-          if (active) originalsLoaded(files);
-        },
-        (cause) => {
-          if (active) originalsFailed(causeText(i18n, cause));
-        },
-      ),
-    );
-    return () => {
-      active = false;
-    };
-  }, [initial, run, i18n]);
+  const { error, setError, asking, setAsking, showAttachmentProblem, submit } = sendFlow;
 
-  const showAttachmentProblem = (problem: AttachmentProblem) => {
-    switch (problem.kind) {
-      case "gmailSize":
-        setError(t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`);
-        break;
-      case "gmailBlocked": {
-        const filename = problem.filename;
-        setError(t`Gmail blocks ${filename}. Remove this attachment before sending.`);
-        break;
-      }
-      case "outlookSize":
-        setError(
-          t`This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`,
-        );
-        break;
-    }
-  };
-  const submit = (archive: boolean, confirmed: readonly SendWarning[] = []) => {
-    if (adding) {
-      setError(t`Wait for attachments to finish loading.`);
-      return;
-    }
-    const problem = account
-      ? attachmentProblem(account.provider, toDraftInput(draft).message.attachments)
-      : undefined;
-    if (problem) {
-      showAttachmentProblem(problem);
-      return;
-    }
-    const result = submitDraft(
-      draft,
-      archive,
-      confirmed,
-      onSend,
-      applyComposeSignature(draft.body, currentSignature, undefined, prefs),
-    );
-    switch (result.kind) {
-      case "invalid": {
-        const list = result.addresses.join(
-          t({ message: ", ", comment: "Separator between list items" }),
-        );
-        setError(t`These are not email addresses: ${list}`);
-        break;
-      }
-      case "noRecipients":
-        setError(t`Add at least one recipient`);
-        break;
-      case "confirm":
-        setError(null);
-        setAsking({ warning: result.warning, archive, confirmed });
-        break;
-      case "sent":
-        setAsking(null);
-        break;
-    }
-  };
-
-  const close = () => {
-    if (closing || checkingClose || saveState.waiting) return;
-    setCheckingClose(true);
-    run(
-      requestDraftClose({ draft, initial, empty, lookup: openDraft(draft.id) }).pipe(
-        Effect.matchCause({
-          onSuccess: (action) => {
-            setCheckingClose(false);
-            if (action === "prompt") setClosing(true);
-            else onClose(draft, false);
-          },
-          onFailure: () => {
-            setCheckingClose(false);
-            setClosing(true);
-          },
-        }),
-      ),
-    );
-  };
-
-  const nativePopOut = useEffectEvent(() => onPopOut?.(draft));
-  useEffect(() => {
-    if (popOutRequested > 0) queueMicrotask(() => nativePopOut());
-  }, [popOutRequested]);
-  const nativeClose = useEffectEvent(close);
-  useEffect(() => {
-    if (closeRequested > 0) queueMicrotask(() => nativeClose());
-  }, [closeRequested]);
-
-  useEffect(() => {
-    // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
-    // Escape belongs to the dialog: it closes the innermost popup, then the window.
-    const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || asking || closing || checkingClose || templateForm) return;
-      if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
-        e.preventDefault();
-        submit(true);
-      } else if (matchesShortcut(prefs.shortcutSet, "send", e)) {
-        e.preventDefault();
-        submit(false);
-      } else if (matchesShortcut(prefs.shortcutSet, "attach", e)) {
-        e.preventDefault();
-        fileRef.current?.click();
-      } else if (matchesShortcut(prefs.shortcutSet, "saveDraft", e)) {
-        e.preventDefault();
-        saved.current = draft;
-        save(toDraftInput(draft));
-      } else if (matchesShortcut(prefs.shortcutSet, "closeCompose", e) && e.key !== "Escape") {
-        e.preventDefault();
-        close();
-      } else if (matchesShortcut(prefs.shortcutSet, "showCc", e)) {
-        e.preventDefault();
-        setShowBcc(true);
-        requestAnimationFrame(() => ccRef.current?.focus());
-      } else if (matchesShortcut(prefs.shortcutSet, "templates", e)) {
-        e.preventDefault();
-        setPicker((v) => !v);
-      }
-    };
-    const attach = () => fileRef.current?.click();
-    window.addEventListener("openmail-attach-files", attach);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("openmail-attach-files", attach);
-    };
-  });
-
-  const appendAttachments = (files: readonly OutgoingAttachment[], inline: boolean) => {
-    const element = bodyRef.current;
-    // A paste may finish after the user switches to plain text.
-    const insertInline = inline && element instanceof HTMLDivElement && element.isContentEditable;
-    const added = files.map((file) =>
-      insertInline && /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.mimeType)
-        ? { ...file, contentId: file.contentId ?? `image-${crypto.randomUUID()}@openmail` }
-        : file,
-    );
-    if (insertInline) {
-      for (const file of added) {
-        if (!file.contentId) continue;
-        restoreEditorSelection(element, selectionRef.current);
-        document.execCommand("insertHTML", false, inlineImageHtml(file, prefs.inlineImageSize));
-        const selection = window.getSelection();
-        if (selection?.rangeCount) selectionRef.current = selection.getRangeAt(0).cloneRange();
-      }
-    }
-    setDraft((current) => ({
-      ...current,
-      attachments: [...current.attachments, ...added],
-      body: element && inline ? editorBody(element, current.body) : current.body,
-    }));
-  };
-
-  const addFiles = async (files: FileList | null, inline = false) => {
-    if (!files?.length || adding) return;
-    const sizes = [
-      ...draft.attachments.map((file) => ({ ...file, size: attachmentBytes(file.content) })),
-      ...[...files].map((file) => ({
-        filename: file.name,
-        mimeType: file.type || "application/octet-stream",
-        size: file.size,
-      })),
-    ];
-    const problem = account ? attachmentSizesProblem(account.provider, sizes) : undefined;
-    if (problem) {
-      showAttachmentProblem(problem);
-      return;
-    }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
-      setError(t`Attachments exceed the 30 MB compose limit.`);
-      return;
-    }
-    setAdding(true);
-    try {
-      const added: OutgoingAttachment[] = [];
-      for (const file of files)
-        added.push({
-          filename: file.name,
-          mimeType: file.type || "application/octet-stream",
-          content: await toBase64(file),
-        });
-      appendAttachments(added, inline);
-      setError(null);
-    } catch {
-      setError(t`Couldn't read the attachment. Try adding it again.`);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const toggleOriginalAttachments = () => {
-    if (!original || adding) return;
-    if (draft.includeOriginalAttachments || inheritsOriginals(draft, account?.provider)) {
-      set({
-        includeOriginalAttachments: false,
-        attachments: draft.attachments.filter((file) => file.sourceMessageId !== original.id),
-      });
-      return;
-    }
-    if (account?.provider === "outlook" && draft.mode === "forward") {
-      setDraft((current) => {
-        const { includeOriginalAttachments: _choice, ...rest } = current;
-        return rest;
-      });
-      return;
-    }
-    setAdding(true);
-    run(
-      withMail((call) => call("ComposeAttachments", { id: original.id })).pipe(
-        Effect.matchCause({
-          onSuccess: (files) => {
-            setDraft((current) => withOriginalAttachments(current, files));
-            setAdding(false);
-            setError(null);
-          },
-          onFailure: () => {
-            setAdding(false);
-            setError(t`Couldn't load the original attachments. Try again.`);
-          },
-        }),
-      ),
-    );
-  };
-
-  const changeSender = (key: string) => {
-    const sender = senders.find((s) => `${s.accountId}/${s.address}` === key);
-    if (!sender) return;
-    set({
-      accountId: sender.accountId,
-      organization: sender.accountId === draft.accountId ? draft.organization : undefined,
-      from: { name: sender.name, address: sender.address },
-      signatureId: undefined,
-      body: applyComposeSignature(
-        draft.body,
-        currentSignature,
-        signatureAt(sender.accountId, sender.address),
-        prefs,
-      ),
-    });
-  };
-  const chooseSignature = (id: string) => {
-    const signature =
-      id === "default"
-        ? signatureAt(draft.accountId, draft.from?.address)
-        : localSignatures.find((s) => s.id === id);
-    set({
-      signatureId: id === "default" ? undefined : id === "none" ? null : id,
-      body: applyComposeSignature(draft.body, currentSignature, signature, prefs),
-    });
-  };
-
-  const applyAutomaticSender = useEffectEvent((sender: { accountId: string; address: string }) => {
-    if (
-      initial.synced !== undefined ||
-      manualSender.current ||
-      prefs.defaultFrom ||
-      draft.mode !== "new"
-    )
-      return;
-    setSenderUndo({
-      accountId: draft.accountId,
-      address: draft.from?.address ?? account?.email ?? "",
-    });
-    changeSender(`${sender.accountId}/${sender.address}`);
-  });
-  const currentFrom = draft.from?.address ?? account?.email ?? "";
-  useEffect(() => {
-    if (
-      initial.synced !== undefined ||
-      draft.mode !== "new" ||
-      prefs.defaultFrom ||
-      manualSender.current ||
-      !currentFrom
-    )
-      return constVoid;
-    let active = true;
-    const timer = setTimeout(
-      () =>
-        run(
-          withMail((call) =>
-            call("SuggestSender", {
-              current: { accountId: draft.accountId, address: currentFrom },
-              recipients: parseAddresses([draft.to, draft.cc, draft.bcc].join(", ")).addresses.map(
-                (a) => a.address,
-              ),
-              accountIds: accounts.filter((a) => a.enabled !== false).map((a) => a.id),
-            }),
-          ).pipe(
-            Effect.matchCause({
-              onSuccess: (sender) => {
-                if (active && sender) applyAutomaticSender(sender);
-              },
-              onFailure: constVoid,
-            }),
-          ),
-        ),
-      300,
-    );
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [
-    initial.synced,
-    currentFrom,
-    draft.mode,
-    draft.accountId,
-    draft.to,
-    draft.cc,
-    draft.bcc,
-    prefs.defaultFrom,
-    accounts,
+  const editor = useComposeEditor({
+    messages,
+    initial,
+    prefs,
+    setDraft,
+    adding,
+    draft,
+    account,
+    showAttachmentProblem,
+    setError,
+    setAdding,
+    original,
+    set,
     run,
-  ]);
+    aliases,
+    currentAddress,
+    setShowBcc,
+  });
+  const {
+    imageUrl,
+    setImageUrl,
+    imageUrlOpen,
+    setImageUrlOpen,
+    imageFileRef,
+    attachmentDrag,
+    picker,
+    setPicker,
+    templateForm,
+    setTemplateForm,
+    templateValues,
+    setTemplateValues,
+    fileRef,
+    bodyRef,
+    selectionRef,
+    toRef,
+    initialFocus,
+    addFiles,
+    toggleOriginalAttachments,
+    loadImageUrl,
+    addImageFiles,
+    insertTemplate,
+  } = editor;
 
-  const addMention = (person: Address) => {
-    setDraft((current) => {
-      const result = reconcileMentionRecipients(
-        parseAddresses(current.to).addresses,
-        [...parseAddresses(current.cc).addresses, ...parseAddresses(current.bcc).addresses],
-        [...freshMentions.current.values()]
-          .filter((a) => activeMentions.current.has(a.address.toLowerCase()))
-          .concat(person),
-        new Set(freshMentions.current.keys()),
-      );
-      for (const recipient of result.to)
-        if (result.fresh.has(recipient.address.toLowerCase()))
-          freshMentions.current.set(recipient.address.toLowerCase(), recipient);
-      return {
-        ...current,
-        to: [...result.to.map(formatAddress), ...parseAddresses(current.to).invalid].join(", "),
-      };
-    });
-  };
-  const removeMentions = (active: readonly string[]) => {
-    const have = new Set(active.map((address) => address.toLowerCase()));
-    activeMentions.current = have;
-    if (!freshMentions.current.size) return;
-    setDraft((current) => {
-      const result = reconcileMentionRecipients(
-        parseAddresses(current.to).addresses,
-        [...parseAddresses(current.cc).addresses, ...parseAddresses(current.bcc).addresses],
-        [...freshMentions.current.values()].filter((person) =>
-          have.has(person.address.toLowerCase()),
-        ),
-        new Set(freshMentions.current.keys()),
-      );
-      const to = [...result.to.map(formatAddress), ...parseAddresses(current.to).invalid].join(
-        ", ",
-      );
-      return to === current.to ? current : { ...current, to };
-    });
-  };
-  const canInsertImage = () => {
-    if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
-      const editBody = t(EDIT_MESSAGE_TEXT);
-      setError(
-        t({
-          message: `Choose ${editBody} before inserting an image.`,
-          context: "message text instruction",
-          comment:
-            "editBody is the exact translated Edit body button label. Preserve it unchanged.",
-        }),
-      );
-      return false;
-    }
-    return draft.body.kind === "rich";
-  };
-  const loadImageUrl = () => {
-    if (adding || !canInsertImage()) return;
-    setAdding(true);
-    run(
-      withMail((call) => call("ImageFromUrl", { url: imageUrl })).pipe(
-        Effect.matchCause({
-          onSuccess: (file) => {
-            const problem = account
-              ? attachmentProblem(account.provider, [...draft.attachments, file])
-              : undefined;
-            if (problem) showAttachmentProblem(problem);
-            else if (
-              [...draft.attachments, file].reduce((sum, a) => sum + attachmentBytes(a.content), 0) >
-              30 * 1024 * 1024
-            )
-              setError(t`Attachments exceed the 30 MB compose limit.`);
-            else {
-              appendAttachments([file], true);
-              setImageUrlOpen(false);
-              setImageUrl("");
-              setError(null);
-            }
-            setAdding(false);
-          },
-          onFailure: () => {
-            setAdding(false);
-            setError(
-              t`Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB.`,
-            );
-          },
-        }),
-      ),
-    );
-  };
-  const addImageFiles = async (files: FileList | null) => {
-    if (!files?.length || adding || !canInsertImage()) return;
-    const sizes = [
-      ...draft.attachments.map((a) => ({ ...a, size: attachmentBytes(a.content) })),
-      ...[...files].map((f) => ({ filename: f.name, mimeType: f.type, size: f.size })),
-    ];
-    const problem = account ? attachmentSizesProblem(account.provider, sizes) : undefined;
-    if (problem) {
-      showAttachmentProblem(problem);
-      return;
-    }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
-      setError(t`Attachments exceed the 30 MB compose limit.`);
-      return;
-    }
-    if ([...files].some((file) => file.size > 8 * 1024 * 1024)) {
-      setError(t`Use an image up to 8 MB.`);
-      return;
-    }
-    setAdding(true);
-    try {
-      const input = await Promise.all(
-        [...files].map(async (file) => ({
-          filename: file.name,
-          mimeType: file.type,
-          content: await toBase64(file),
-        })),
-      );
-      run(
-        Effect.all(input.map((file) => withMail((call) => call("ImageFromFile", { file })))).pipe(
-          Effect.matchCause({
-            onSuccess: (images) => {
-              appendAttachments(images, true);
-              setAdding(false);
-              setError(null);
-            },
-            onFailure: () => {
-              setAdding(false);
-              setError(t`Use PNG, JPEG, GIF or WebP images up to 8 MB.`);
-            },
-          }),
-        ),
-      );
-    } catch {
-      setAdding(false);
-      setError(t`Couldn't read the image.`);
-    }
-  };
+  const lifecycle = useDraftLifecycle({
+    messages,
+    initial,
+    draft,
+    run,
+    adding,
+    empty,
+    setDraft,
+    setAdding,
+    setError,
+    onClose,
+    onPopOut,
+    popOutRequested,
+    closeRequested,
+  });
+  const {
+    saveState,
+    saveNow,
+    closing,
+    setClosing,
+    checkingClose,
+    recover,
+    recovering,
+    recoveryError,
+    syncStatus,
+    close,
+    status,
+  } = lifecycle;
 
-  const insertTemplate = (template: Template, values?: Readonly<Record<string, string>>) => {
-    const variables = customTemplateVariables(template.subject, template.body);
-    if (variables.length && values === undefined) {
-      setTemplateValues(Object.fromEntries(variables.map((name) => [name, ""])));
-      setTemplateForm(template);
-      setPicker(false);
-      return;
-    }
-    if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
-      const editBody = t(EDIT_MESSAGE_TEXT);
-      setError(
-        t({
-          message: `Choose ${editBody} before inserting a template.`,
-          context: "message text instruction",
-          comment:
-            "editBody is the exact translated Edit body button label. Preserve it unchanged.",
-        }),
-      );
-      return;
-    }
-    const to = merge(draft.to, template.to);
-    const cc = merge(draft.cc, template.cc);
-    const bcc = merge(draft.bcc, template.bcc ?? []);
-    const first = parseAddresses(to).addresses[0];
-    const context = {
-      sender: {
-        name:
-          draft.from?.name ||
-          aliases.find(
-            (s) => s.accountId === draft.accountId && s.address.toLowerCase() === currentAddress,
-          )?.name ||
-          account?.description ||
-          "",
-        address: currentAddress,
-      },
-      now: new Date(),
-      locale: i18n.locale,
-      subject: draft.subject,
-      to: parseAddresses(to).addresses,
-      cc: parseAddresses(cc).addresses,
-      bcc: parseAddresses(bcc).addresses,
-    };
-    const text = fillTemplate(template.body, first, values, context);
-    if (bodyRef.current) insertEditorText(bodyRef.current, text, selectionRef.current);
-    set({
-      to,
-      cc,
-      bcc,
-      subject: template.subject
-        ? fillTemplate(template.subject, first, values, context)
-        : draft.subject,
-      body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
-    });
-    if (cc || bcc) setShowBcc(true);
-    setPicker(false);
-    setTemplateForm(null);
-    requestAnimationFrame(() => bodyRef.current?.focus());
-  };
-
-  const status =
-    recovering || saveState.waiting
-      ? t`Saving…`
-      : saveState._tag === "Failure"
-        ? t`Couldn't save`
-        : syncNotice === "local"
-          ? t`Kept on this Mac`
-          : syncNotice === "failed"
-            ? t`Couldn't sync`
-            : syncNotice === "retrying"
-              ? t`Saved on this Mac. Retrying sync automatically.`
-              : (syncStatus?.synced ?? initial.synced)
-                ? t`Saved`
-                : saveState._tag === "Success" || syncStatus
-                  ? t`Saved on this Mac. Syncs when online.`
-                  : "";
+  useComposeShortcuts({ draft, prefs, recipients, sendFlow, editor, lifecycle, ccRef });
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted";
@@ -891,47 +247,7 @@ export function Composer({
               event.preventDefault();
               if (event.dataTransfer.files.length) void addFiles(event.dataTransfer.files);
             }}
-            onPasteCapture={(event) => {
-              if (
-                !(event.target instanceof Element) ||
-                !event.target.closest("[contenteditable],textarea")
-              )
-                return;
-              const element = bodyRef.current;
-              const selection = window.getSelection();
-              if (
-                element instanceof HTMLDivElement &&
-                selection?.rangeCount &&
-                element.contains(selection.getRangeAt(0).commonAncestorContainer)
-              )
-                selectionRef.current = selection.getRangeAt(0).cloneRange();
-              const inline =
-                draft.body.kind === "rich" &&
-                element instanceof HTMLDivElement &&
-                element.isContentEditable;
-              if (event.clipboardData.files.length) {
-                event.preventDefault();
-                void addFiles(event.clipboardData.files, inline);
-              } else if (!event.clipboardData.types.length) {
-                event.preventDefault();
-                if (adding) return;
-                setAdding(true);
-                run(
-                  withMail((call) => call("ClipboardAttachments", undefined)).pipe(
-                    Effect.matchCause({
-                      onSuccess: (files) => {
-                        appendAttachments(files, inline);
-                        setAdding(false);
-                      },
-                      onFailure: () => {
-                        setAdding(false);
-                        setError(t`Couldn't read the clipboard attachment.`);
-                      },
-                    }),
-                  ),
-                );
-              }
-            }}
+            onPasteCapture={editor.onPasteCapture}
             onSubmit={(e) => {
               e.preventDefault();
               submit(false);
@@ -993,11 +309,7 @@ export function Composer({
               <Select
                 aria-label={t`From`}
                 value={`${draft.accountId}/${draft.from?.address ?? account?.email ?? ""}`}
-                onValueChange={(key) => {
-                  manualSender.current = true;
-                  setSenderUndo(null);
-                  changeSender(key);
-                }}
+                onValueChange={selectSender}
                 options={availableSenders.map((sender) => ({
                   value: `${sender.accountId}/${sender.address}`,
                   label: sender.name ? `${sender.name} (${sender.address})` : sender.address,
@@ -1010,11 +322,7 @@ export function Composer({
                   <button
                     type="button"
                     className="text-a11y-accent"
-                    onClick={() => {
-                      manualSender.current = true;
-                      changeSender(`${senderUndo.accountId}/${senderUndo.address}`);
-                      setSenderUndo(null);
-                    }}
+                    onClick={revertSender}
                   >{t`Revert`}</button>
                 </output>
               )}
@@ -1031,10 +339,7 @@ export function Composer({
                 label={t`To`}
                 inputRef={toRef}
                 value={draft.to}
-                onChange={(to) => {
-                  freshMentions.current.clear();
-                  set({ to });
-                }}
+                onChange={(to) => changeRecipients("to", to)}
                 showFullAddresses={prefs.showFullRecipientAddresses}
                 from={draft.from?.address ?? account?.email}
               />
@@ -1061,11 +366,7 @@ export function Composer({
                     label={t`Cc`}
                     inputRef={ccRef}
                     value={draft.cc}
-                    onChange={(cc) => {
-                      for (const a of parseAddresses(cc).addresses)
-                        freshMentions.current.delete(a.address.toLowerCase());
-                      set({ cc });
-                    }}
+                    onChange={(cc) => changeRecipients("cc", cc)}
                     showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
@@ -1080,11 +381,7 @@ export function Composer({
                     onDropRecipient={(chip) => dropChip("bcc", chip)}
                     label={t`Bcc`}
                     value={draft.bcc}
-                    onChange={(bcc) => {
-                      for (const a of parseAddresses(bcc).addresses)
-                        freshMentions.current.delete(a.address.toLowerCase());
-                      set({ bcc });
-                    }}
+                    onChange={(bcc) => changeRecipients("bcc", bcc)}
                     showFullAddresses={prefs.showFullRecipientAddresses}
                     from={draft.from?.address ?? account?.email}
                   />
@@ -1371,8 +668,7 @@ export function Composer({
                   onChange={(organization) => {
                     const next = { ...draft, organization };
                     setDraft(next);
-                    saved.current = next;
-                    save(toDraftInput(next));
+                    saveNow(next);
                   }}
                 />
               )}
@@ -1500,12 +796,49 @@ export function Composer({
   );
 }
 
-/** Adds a template's preset addresses to what is typed, skipping ones already there. */
-const merge = (typed: string, preset: readonly { name: string; address: string }[]) => {
-  const have = new Set(parseAddresses(typed).addresses.map((a) => a.address.toLowerCase()));
-  const extra = preset.filter((a) => !have.has(a.address.toLowerCase())).map(formatAddress);
-  return [typed.trim().replace(/[,;，；]$/, ""), ...extra].filter(Boolean).join(", ");
-};
+export function useComposeMessages() {
+  const { t } = useLingui();
+  return {
+    couldntLoadTheOriginalAttachments: (reason: string) =>
+      t`Couldn't load the original attachments: ${reason}`,
+    saving: t`Saving…`,
+    couldntSave: t`Couldn't save`,
+    keptOnThisMac: t`Kept on this Mac`,
+    couldntSync: t`Couldn't sync`,
+    savedOnThisMacRetryingSyncAutomatically: t`Saved on this Mac. Retrying sync automatically.`,
+    saved: t`Saved`,
+    savedOnThisMacSyncsWhenOnline: t`Saved on this Mac. Syncs when online.`,
+    waitForAttachmentsToFinishLoading: t`Wait for attachments to finish loading.`,
+    listSeparator: t({ message: ", ", comment: "Separator between list items" }),
+    theseAreNotEmailAddresses: (list: string) => t`These are not email addresses: ${list}`,
+    addAtLeastOneRecipient: t`Add at least one recipient`,
+    attachmentsExceedThe30MBComposeLimit: t`Attachments exceed the 30 MB compose limit.`,
+    couldntReadTheAttachmentTryAddingIt: t`Couldn't read the attachment. Try adding it again.`,
+    couldntLoadTheOriginalAttachmentsTryAgain: t`Couldn't load the original attachments. Try again.`,
+    chooseBeforeInsertingAnImage: (editBody: string) =>
+      t({
+        message: `Choose ${editBody} before inserting an image.`,
+        context: "message text instruction",
+        comment: "editBody is the exact translated Edit body button label. Preserve it unchanged.",
+      }),
+    couldntInsertTheImageUseAPublic: t`Couldn't insert the image. Use a public PNG, JPEG, GIF or WebP image up to 8 MB.`,
+    useAnImageUpTo8MB: t`Use an image up to 8 MB.`,
+    usePNGJPEGGIFOrWebPImages: t`Use PNG, JPEG, GIF or WebP images up to 8 MB.`,
+    couldntReadTheImage: t`Couldn't read the image.`,
+    chooseBeforeInsertingATemplate: (editBody: string) =>
+      t({
+        message: `Choose ${editBody} before inserting a template.`,
+        context: "message text instruction",
+        comment: "editBody is the exact translated Edit body button label. Preserve it unchanged.",
+      }),
+    couldntReadTheClipboardAttachment: t`Couldn't read the clipboard attachment.`,
+    gmailSize: t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,
+    gmailBlocked: (filename: string) =>
+      t`Gmail blocks ${filename}. Remove this attachment before sending.`,
+    outlookSize: t`This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`,
+  };
+}
+export type ComposeMessages = ReturnType<typeof useComposeMessages>;
 
 /** ⌘/ in the compose window: pick a template to insert, or keep this message as one. */
 function TemplatePicker({
@@ -1646,14 +979,4 @@ function TemplatePicker({
       </button>
     </PickerPopover>
   );
-}
-
-async function toBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = "";
-  // Chunked: String.fromCharCode takes its arguments on the stack.
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary);
 }

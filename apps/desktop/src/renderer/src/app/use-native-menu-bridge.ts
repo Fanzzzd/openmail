@@ -1,0 +1,258 @@
+import { isTypingTarget } from "./use-mail-shortcuts";
+import { useLingui } from "@lingui/react/macro";
+import { attachmentProblem } from "@openmail/core/schema";
+import { Effect } from "effect";
+import { constVoid } from "effect/Function";
+import { useEffect, useEffectEvent, useState } from "react";
+import type { Account } from "../../../shared/api";
+import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../../shared/desktop";
+import type { AppMessages } from "../App";
+import { attachmentProblemMessage } from "../attachment-problem-message";
+import { type ThreadState } from "../components/ThreadActions";
+import { type ToastState } from "../components/Toast";
+import { DOCK_FILE_MESSAGES } from "../dock-file-errors";
+import { toDraftInput } from "../draft";
+import { dispatchNativeAction } from "../native-actions";
+import { useDesktopEvents } from "../state/desktop";
+import { saveDraft, useRunMail, withMail } from "../state/mail";
+import { useBatchUndo } from "../state/undo";
+import { ALL, OVERVIEW } from "../view";
+import type { useAppPanels } from "./use-app-panels";
+import type { useMailCompose } from "./use-mail-compose";
+import type { useMailSelection } from "./use-mail-selection";
+export function useNativeMenuBridge({
+  panels,
+  navigation,
+  composition,
+  run,
+  threadState,
+  say,
+  accountList,
+  undoRef,
+  openExternal,
+  messages,
+}: {
+  messages: AppMessages;
+  panels: ReturnType<typeof useAppPanels>;
+  navigation: ReturnType<typeof useMailSelection>;
+  composition: ReturnType<typeof useMailCompose>;
+  run: ReturnType<typeof useRunMail>;
+  threadState: ThreadState | null;
+  say: (next: Omit<ToastState, "id">) => void;
+  accountList: readonly Account[];
+  undoRef: ReturnType<typeof useBatchUndo>["undoRef"];
+  openExternal: (id: string) => void;
+}) {
+  const {
+    dialog,
+    editing,
+    goToFolder,
+    snoozeIds,
+    filterSeed,
+    searchRef,
+    setDialog,
+    labelCreation,
+  } = panels;
+  const { selectedId, prefs, changeView, setQuery, view, threads, setSearchScope } = navigation;
+  const {
+    compose,
+    startCompose,
+    newMessageDraft,
+    setPopOutRequested,
+    setCloseRequested,
+    hasPendingSends,
+    reportSendState,
+    undoSend,
+    startNewMessage,
+    setCrashFeedback,
+  } = composition;
+  const { i18n } = useLingui();
+  const [desktopEvents, setDesktopEvents] = useState<readonly DesktopEvent[]>([]);
+
+  useEffect(() => {
+    run(
+      withMail((call) =>
+        call("SetNativeMenuState", {
+          state: {
+            selected: Boolean(selectedId) && !dialog,
+            composing: Boolean(compose) && !dialog,
+            gmail: threadState?.provider === "gmail",
+          },
+        }),
+      ),
+    );
+  }, [run, selectedId, compose, dialog, threadState?.provider]);
+
+  const receiveDesktop = (event: DesktopEvent) => {
+    setDesktopEvents((events) => events.filter((item) => item !== event));
+    switch (event._tag) {
+      case "NativeAction": {
+        dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
+        break;
+      }
+      case "AccountInbox":
+        changeView({ space: ALL, accountId: event.accountId, mailbox: "inbox" });
+        setQuery("");
+        break;
+      case "FileError":
+        say({ text: i18n._(DOCK_FILE_MESSAGES[event.reason]), tone: "error" });
+        break;
+      case "ComposeMessage":
+        startCompose(event.mode, event.asAttachment, event.id);
+        break;
+      case "ComposeFiles":
+        run(
+          newMessageDraft().pipe(
+            Effect.flatMap((base) => {
+              if (!base) return Effect.void;
+              const account = accountList.find((a) => a.id === base.accountId);
+              const problem = account
+                ? attachmentProblem(account.provider, event.attachments)
+                : undefined;
+              if (problem) {
+                say({ text: attachmentProblemMessage(problem, messages), tone: "error" });
+                return Effect.void;
+              }
+              const draft = { ...base, attachments: event.attachments };
+              return saveDraft(toDraftInput(draft)).pipe(
+                Effect.flatMap((saved) =>
+                  withMail((call) => call("OpenComposeWindow", { id: saved.id })),
+                ),
+              );
+            }),
+          ),
+        );
+        break;
+      case "AttachFiles":
+        window.dispatchEvent(new Event("openmail-attach-files"));
+        break;
+      case "PopOutDraft":
+        if (compose?.id === event.id) setPopOutRequested((n) => n + 1);
+        break;
+      case "ComposeClose":
+        if (compose) setCloseRequested((n) => n + 1);
+        else if (!hasPendingSends()) run(withMail((call) => call("CloseComposeWindow", undefined)));
+        break;
+      case "QuitCheck":
+        reportSendState();
+        break;
+      case "UndoSend":
+        undoSend();
+        break;
+      case "Edit": {
+        const busy = Boolean(
+          dialog ||
+          compose ||
+          editing ||
+          goToFolder ||
+          snoozeIds ||
+          filterSeed ||
+          view.space === OVERVIEW ||
+          threads.loading ||
+          document.querySelector('[role="dialog"],[role="alertdialog"]'),
+        );
+        const typing = isTypingTarget(document.activeElement);
+        if (
+          editCommandRoute(
+            busy,
+            typing,
+            event.action === "selectAll" &&
+              Boolean(document.activeElement?.closest("iframe,[data-reader-text]")),
+          ) === "text"
+        )
+          run(withMail((call) => call("NativeEdit", { action: event.action })));
+        else if (event.action === "undo") undoRef.current?.();
+        else {
+          navigation.selectAll();
+        }
+        break;
+      }
+      case "OpenThread":
+        if (event.single) run(withMail((call) => call("OpenMessageWindow", { id: event.id })));
+        else openExternal(event.id);
+        break;
+      case "Search":
+        changeView({ space: ALL, mailbox: "all" });
+        setSearchScope("all");
+        setQuery(event.query);
+        searchRef.current?.focus();
+        break;
+      case "Compose":
+        startNewMessage(event.draft);
+        break;
+      case "Command":
+        if (event.command === "feedback") {
+          setCrashFeedback(false);
+          setDialog("feedback");
+        }
+        if (event.command === "compose") startCompose("new");
+        else if (event.command === "inbox") {
+          changeView({ space: view.space === OVERVIEW ? ALL : view.space, mailbox: "inbox" });
+          setQuery("");
+        } else setDialog(event.command === "help" ? "help" : "settings");
+        break;
+    }
+  };
+  useDesktopEvents((event) => {
+    if (event._tag === "ComposeFiles" && accountList.length) {
+      receiveDesktop(event);
+      return;
+    }
+    if (event._tag === "NativeAction") {
+      if (
+        !dialog &&
+        !editing &&
+        !goToFolder &&
+        !snoozeIds &&
+        !filterSeed &&
+        !labelCreation &&
+        !document.querySelector('[role="dialog"]:not([data-compose]),[role="alertdialog"]')
+      )
+        receiveDesktop(event);
+      return;
+    }
+    const route = desktopEventRoute(
+      event,
+      Boolean(
+        dialog ||
+        compose ||
+        editing ||
+        goToFolder ||
+        snoozeIds ||
+        filterSeed ||
+        document.querySelector('[role="dialog"],[role="alertdialog"]'),
+      ),
+    );
+    if (route === "dispatch") receiveDesktop(event);
+    else if (route === "defer") setDesktopEvents((events) => [...events, event]);
+  });
+  const receiveLink = useEffectEvent(receiveDesktop);
+  useEffect(() => {
+    // An incoming link waits while another draft/dialog is being edited.
+    if (dialog || compose || editing || goToFolder || snoozeIds || filterSeed || labelCreation)
+      return constVoid;
+    const event = desktopEvents.find(
+      (item) => accountList.length || (item._tag === "Command" && item.command !== "compose"),
+    );
+    if (!event) return constVoid;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) receiveLink(event);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    desktopEvents,
+    accountList.length,
+    dialog,
+    compose,
+    editing,
+    goToFolder,
+    snoozeIds,
+    labelCreation,
+    filterSeed,
+  ]);
+
+  return {};
+}
