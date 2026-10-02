@@ -18,11 +18,17 @@ import { resultError } from "../errors";
 import { Keys } from "../state/keys";
 import { reauthAtom, respondInviteAtom } from "../state/mutations";
 import { accountsAtom, invitationsAtom } from "../state/queries";
+import { DetectedCalendarEvents, OverlappingEvents } from "./CalendarEvents";
 import { MeetingLinks } from "./MeetingLinks";
 import { formButton } from "./OrganizationSettings";
 
 export function InviteBanner({ message }: { message: Message }) {
-  return shouldLoadInvitation(message) ? <LoadedInvites message={message} /> : null;
+  return (
+    <>
+      {shouldLoadInvitation(message) && <LoadedInvites message={message} />}
+      <DetectedCalendarEvents message={message} />
+    </>
+  );
 }
 
 function LoadedInvites({ message }: { message: Message }) {
@@ -202,6 +208,13 @@ function Invitation({
         <MeetingLinks sources={[invite.location, invite.description ?? "", invite.url ?? ""]} />
       )}
       <Recurrence invite={invite} />
+      {provider !== "imap" &&
+        invite.method === "REQUEST" &&
+        !invite.cancelled &&
+        invite.start &&
+        !(invite.start.kind === "zoned" && invite.start.timestamp === null) && (
+          <OverlappingEvents messageId={message.id} inviteKey={invite.key} />
+        )}
       {canRespond && (
         <div className="flex flex-wrap items-center gap-2">
           {(

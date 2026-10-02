@@ -1,3 +1,5 @@
+import { createShutdownHandler } from "./quit";
+import { prepareUpdateQuit } from "./update-install";
 import { cleanupAttachmentTemps } from "./attachment-temp";
 import { NodeMailbox, dataDir, NodeSystem } from "@openmail/core";
 import { Cause, Effect, Fiber, Layer, Logger } from "effect";
@@ -103,11 +105,12 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
   );
 
   // Interrupt scoped timers/RPC and close core before exiting.
-  let stopping = false;
+  const shutdown = createShutdownHandler({
+    prepareInstall: prepareUpdateQuit,
+    stop: () => Effect.runPromise(Fiber.interrupt(main).pipe(Effect.asVoid)),
+    exit: () => app.exit(0),
+  });
   app.on("will-quit", (event) => {
-    event.preventDefault();
-    if (stopping) return;
-    stopping = true;
-    Effect.runFork(Fiber.interrupt(main).pipe(Effect.ensuring(Effect.sync(() => app.exit(0)))));
+    void shutdown(event);
   });
 }

@@ -283,6 +283,14 @@ msgstr "Add period"
 msgid "Add star"
 msgstr "Add star"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add this event to your calendar?"
+msgstr "Add this event to your calendar?"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add to calendar"
+msgstr "Add to calendar"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "Add Your First Account"
@@ -298,6 +306,10 @@ msgstr "Added as you write, and switched when you change the From account. Signa
 #: src/renderer/src/App.tsx
 msgid "Added star"
 msgstr "Added star"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Added to calendar"
+msgstr "Added to calendar"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Address or domain"
@@ -381,6 +393,7 @@ msgstr "All accounts in this space"
 msgid "All actions"
 msgstr "All actions"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "All day"
 msgstr "All day"
@@ -481,6 +494,7 @@ msgstr "Approve suggestion"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -617,9 +631,21 @@ msgstr "Bug report"
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
+#: src/renderer/src/errors.ts
+msgid "Calendar access is unavailable for this account"
+msgstr "Calendar access is unavailable for this account"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar creation requires an in-app confirmation"
+msgstr "Calendar creation requires an in-app confirmation"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "Calendar invitation"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar pagination repeated a page"
+msgstr "Calendar pagination repeated a page"
 
 #: src/renderer/src/errors.ts
 msgid "Calendar response was not sent"
@@ -671,6 +697,7 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "Can't reach the mail server right now: {0}"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
@@ -746,6 +773,10 @@ msgstr "Choose a user label or folder"
 #: src/renderer/src/errors.ts
 msgid "Choose a verified send-as address for this account"
 msgstr "Choose a verified send-as address for this account"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Choose actions and use the buttons to change their order."
+msgstr "Choose actions and use the buttons to change their order."
 
 #: src/renderer/src/errors.ts
 msgid "Choose at least one filter action"
@@ -845,6 +876,10 @@ msgstr "Compose"
 msgid "Confirm"
 msgstr "Confirm"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Confirm and add event"
+msgstr "Confirm and add event"
+
 #: src/renderer/src/errors.ts
 msgid "Confirm deletion for a filter with a search query"
 msgstr "Confirm deletion for a filter with a search query"
@@ -935,6 +970,10 @@ msgstr "Could not load the calendar invitation."
 #: src/renderer/src/App.tsx
 msgid "Could not load the next message"
 msgstr "Could not load the next message"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Could not load your calendar."
+msgstr "Could not load your calendar."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
@@ -1048,6 +1087,7 @@ msgstr "Create an app-specific password under Sign-In and Security in your Apple
 msgid "Create filter"
 msgstr "Create filter"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
@@ -1130,6 +1170,7 @@ msgstr "Default From address"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1181,6 +1222,10 @@ msgstr "Dense"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "Describe what happened"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Detect calendar events in messages"
+msgstr "Detect calendar events in messages"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Diagnostics preview"
@@ -1321,6 +1366,14 @@ msgstr "Empty Trash?"
 msgid "Enable filters"
 msgstr "Enable filters"
 
+#: src/renderer/src/errors.ts
+msgid "Enable this account to open mail on the web"
+msgstr "Enable this account to open mail on the web"
+
+#: src/renderer/src/errors.ts
+msgid "Enable this account to use its calendar"
+msgstr "Enable this account to use its calendar"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Enabled"
 msgstr "Enabled"
@@ -1384,6 +1437,10 @@ msgstr "Expand categories"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "Expanded"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Experimental features can be enabled separately."
+msgstr "Experimental features can be enabled separately."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "External replies"
@@ -1482,11 +1539,13 @@ msgid "Forums"
 msgstr "Forums"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "Forward"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward as attachment"
@@ -1522,6 +1581,10 @@ msgstr "Generate app-specific password"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Generate authorization code"
 msgstr "Generate authorization code"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Gestures and toolbar"
+msgstr "Gestures and toolbar"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -1622,6 +1685,7 @@ msgstr "IMAP keywords, separated by commas"
 msgid "IMAP server"
 msgstr "IMAP server"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1695,6 +1759,18 @@ msgstr "Install the packaged app to make it the default. Development builds cann
 msgid "Internal reply"
 msgstr "Internal reply"
 
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar event time"
+msgstr "Invalid calendar event time"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar pagination link"
+msgstr "Invalid calendar pagination link"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid message link"
+msgstr "Invalid message link"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Italic"
@@ -1742,6 +1818,7 @@ msgid "Label removed"
 msgstr "Label removed"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1751,6 +1828,10 @@ msgstr "Labels"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels…"
 msgstr "Labels…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Labs"
+msgstr "Labs"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
@@ -1771,6 +1852,18 @@ msgstr "Last 7 days"
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
 msgstr "Last sync failed"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Latest"
+msgstr "Latest"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left long swipe"
+msgstr "Left long swipe"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left short swipe"
+msgstr "Left short swipe"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1796,6 +1889,10 @@ msgstr "Loading attached message…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "Loading attachments…"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Loading calendar…"
+msgstr "Loading calendar…"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Loading diagnostics…"
@@ -1825,6 +1922,7 @@ msgstr "Loading…"
 msgid "Local preview: {count} messages"
 msgstr "Local preview: {count} messages"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Location"
 msgstr "Location"
@@ -1886,6 +1984,7 @@ msgstr "Mark message unread"
 msgid "Mark read"
 msgstr "Mark read"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
@@ -1898,6 +1997,10 @@ msgstr "Mark unread from this message"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
 msgstr "Markdown"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Markdown composition"
+msgstr "Markdown composition"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown replacements"
@@ -2051,7 +2154,16 @@ msgstr "Move {0} earlier"
 msgid "Move {0} later"
 msgstr "Move {0} later"
 
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} down"
+msgstr "Move {label} down"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} up"
+msgstr "Move {label} up"
+
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move down"
 msgstr "Move down"
@@ -2065,6 +2177,7 @@ msgid "Move message to Trash"
 msgstr "Move message to Trash"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move To"
 msgstr "Move To"
@@ -2093,6 +2206,7 @@ msgid "Move to Trash"
 msgstr "Move to Trash"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
 msgstr "Move up"
@@ -2251,6 +2365,10 @@ msgstr "No messages here"
 msgid "No messages match the filters"
 msgstr "No messages match the filters"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "No overlapping events in your primary calendar."
+msgstr "No overlapping events in your primary calendar."
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "No parent"
@@ -2284,6 +2402,8 @@ msgstr "No unread mail"
 msgid "No unread mail in the inbox"
 msgstr "No unread mail in the inbox"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "None"
 msgstr "None"
@@ -2388,6 +2508,7 @@ msgid "Open in Gmail"
 msgstr "Open in Gmail"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2665,6 +2786,10 @@ msgstr "Reading"
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 
+#: src/renderer/src/errors.ts
+msgid "Recurring event creation is unavailable for this account"
+msgstr "Recurring event creation is unavailable for this account"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Recurring meeting"
@@ -2725,6 +2850,7 @@ msgid "Remove current label"
 msgstr "Remove current label"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Remove Current Label"
 msgstr "Remove Current Label"
@@ -2802,11 +2928,13 @@ msgid "Replies and forwards"
 msgstr "Replies and forwards"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "Reply"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply all"
@@ -2824,6 +2952,7 @@ msgstr "Reply mode"
 msgid "Reply only to contacts"
 msgstr "Reply only to contacts"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2842,6 +2971,10 @@ msgstr "Reset Favorites"
 #: src/renderer/src/recovery-labels.ts
 msgid "Reset local cache"
 msgstr "Reset local cache"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Reset toolbar"
+msgstr "Reset toolbar"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
@@ -2872,6 +3005,10 @@ msgstr "Revert"
 msgid "Review and Send"
 msgstr "Review and Send"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Review the event details before confirming."
+msgstr "Review the event details before confirming."
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
 msgstr "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
@@ -2883,6 +3020,14 @@ msgstr "Rich text"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Right away"
 msgstr "Right away"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right long swipe"
+msgstr "Right long swipe"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right short swipe"
+msgstr "Right short swipe"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3062,6 +3207,7 @@ msgstr "Semantic search is unavailable. Full-text search remains available."
 msgid "Send"
 msgstr "Send"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Send Again"
 msgstr "Send Again"
@@ -3238,6 +3384,10 @@ msgstr "Show unread count in the menu bar"
 msgid "Sign in again"
 msgstr "Sign in again"
 
+#: src/renderer/src/errors.ts
+msgid "Sign in again to access your calendar."
+msgstr "Sign in again to access your calendar."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
 msgstr "Sign in again to enable filters"
@@ -3245,10 +3395,6 @@ msgstr "Sign in again to enable filters"
 #: src/renderer/src/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
 msgstr "Sign in again to enable filters and automatic replies."
-
-#: src/renderer/src/errors.ts
-msgid "Sign in again to respond to calendar invitations."
-msgstr "Sign in again to respond to calendar invitations."
 
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/errors.ts
@@ -3293,11 +3439,13 @@ msgstr "SMTP encryption"
 msgid "SMTP server"
 msgstr "SMTP server"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
 msgstr "Snooze"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Snoozed"
 msgstr "Snoozed"
@@ -3332,7 +3480,12 @@ msgstr "Special folder unread badges"
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS (usually 465)"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Stable"
+msgstr "Stable"
+
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3407,6 +3560,14 @@ msgstr "Sunday"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Superscript"
 msgstr "Superscript"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe actions"
+msgstr "Swipe actions"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
+msgstr "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Switch spaces"
@@ -3586,6 +3747,10 @@ msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "This draft has unsaved changes or is waiting to sync."
 
 #: src/renderer/src/errors.ts
+msgid "This event is no longer available"
+msgstr "This event is no longer available"
+
+#: src/renderer/src/errors.ts
 msgid "This invitation cannot be answered by this account"
 msgstr "This invitation cannot be answered by this account"
 
@@ -3604,6 +3769,10 @@ msgstr "This meeting link is not supported."
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 msgstr "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
+
+#: src/renderer/src/errors.ts
+msgid "This recurring event has a time zone Google Calendar cannot use"
+msgstr "This recurring event has a time zone Google Calendar cannot use"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
@@ -3659,6 +3828,10 @@ msgstr "Toggle reading pane position"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
 msgstr "Tomorrow morning"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Toolbar actions"
+msgstr "Toolbar actions"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3753,6 +3926,10 @@ msgstr "Up to three buttons, in selection order. All actions adds Archive, Trash
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "Update available:"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update channel"
+msgstr "Update channel"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
@@ -3851,3 +4028,7 @@ msgstr "You"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "You (command line)"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Your overlapping events"
+msgstr "Your overlapping events"

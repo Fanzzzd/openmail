@@ -104,3 +104,65 @@ it("a reload reporting zero cannot silently discard sends held by a crashed rend
   states.remove(10);
   expect(states.total()).toBe(0);
 });
+
+it("the mail guard and window-close cancellation must finish before native installation", async () => {
+  const install = vi.fn(),
+    stop = vi.fn(() => Promise.resolve()),
+    exit = vi.fn();
+  const { createShutdownHandler } = await import("./quit");
+  const shutdown = createShutdownHandler({ prepareInstall: async () => install, stop, exit });
+  let windowCloseCancelled = true;
+  const confirm = vi.fn(async () => false);
+  const quit = vi.fn(() => {
+    // Electron cannot emit will-quit while any window cancels its close.
+    if (!windowCloseCancelled) void shutdown({ preventDefault: vi.fn() });
+  });
+  const guard = createQuitGuard({
+    pending: async () => 1,
+    fallbackPending: () => 1,
+    confirm,
+    quit,
+  });
+  await guard({ preventDefault: vi.fn() });
+  await tick();
+  expect(quit).not.toHaveBeenCalled();
+  expect(install).not.toHaveBeenCalled();
+  confirm.mockResolvedValue(true);
+  await guard({ preventDefault: vi.fn() });
+  await tick();
+  expect(install).not.toHaveBeenCalled();
+  expect(stop).not.toHaveBeenCalled();
+  windowCloseCancelled = false;
+  quit();
+  await tick();
+  expect(stop).toHaveBeenCalledOnce();
+  expect(install).toHaveBeenCalledOnce();
+  expect(exit).not.toHaveBeenCalled();
+});
+
+it("native quitAndInstall re-entry is allowed after core teardown and installation failures exit once", async () => {
+  const { createShutdownHandler } = await import("./quit");
+  const order: string[] = [],
+    exit = vi.fn();
+  const resumed = { preventDefault: vi.fn() };
+  let failure: () => void = () => null;
+  const install = vi.fn((failed: () => void) => {
+    failure = failed;
+    order.push("install");
+    void shutdown(resumed);
+  });
+  const shutdown = createShutdownHandler({
+    prepareInstall: async () => install,
+    stop: async () => {
+      order.push("stop");
+    },
+    exit,
+  });
+  await shutdown({ preventDefault: vi.fn() });
+  expect(order).toEqual(["stop", "install"]);
+  expect(resumed.preventDefault).not.toHaveBeenCalled();
+  expect(install).toHaveBeenCalledOnce();
+  failure();
+  failure();
+  expect(exit).toHaveBeenCalledOnce();
+});

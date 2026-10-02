@@ -537,6 +537,30 @@ export type NotificationBatch = {
 export const NotificationActions = Schema.Array(
   Schema.Literals(["archive", "trash", "read", "menu"]),
 ).check(Schema.isMaxLength(3));
+export const SWIPE_ACTIONS = ["none", "archive", "trash", "read", "star", "snooze"] as const;
+export const SwipeAction = Schema.Literals(SWIPE_ACTIONS);
+export type SwipeAction = typeof SwipeAction.Type;
+export const TOOLBAR_ACTIONS = [
+  "archive",
+  "trash",
+  "spam",
+  "snooze",
+  "filter",
+  "read",
+  "star",
+  "important",
+  "move",
+  "label",
+  "removeLabel",
+  "sendAgain",
+  "reply",
+  "replyAll",
+  "forward",
+  "forwardAttachment",
+  "openWindow",
+] as const;
+export const ToolbarAction = Schema.Literals(TOOLBAR_ACTIONS);
+export type ToolbarAction = typeof ToolbarAction.Type;
 export const Prefs = Schema.Struct({
   contactPhotos: Schema.Boolean,
   emojiReplacement: Schema.Boolean,
@@ -545,6 +569,15 @@ export const Prefs = Schema.Struct({
   composeSmartLists: Schema.Boolean,
   inlineImageSize: InlineImageSize,
   composeFont: ComposeFont,
+  updateChannel: Schema.Literals(["stable", "latest"]),
+  labs: Schema.Struct({ markdown: Schema.Boolean, calendarDetection: Schema.Boolean }),
+  swipeActions: Schema.Struct({
+    leftShort: SwipeAction,
+    leftLong: SwipeAction,
+    rightShort: SwipeAction,
+    rightLong: SwipeAction,
+  }),
+  toolbarActions: Schema.Array(ToolbarAction),
   messageListDensity: Schema.Literals(["dense", "compact", "default", "expanded"]),
   specialFolderBadges: Schema.Struct({
     starred: Schema.Boolean,
@@ -593,6 +626,10 @@ export const DEFAULT_PREFS: Prefs = {
   composeSmartLists: true,
   inlineImageSize: "medium",
   composeFont: { family: "Arial", size: 14 },
+  updateChannel: "stable",
+  labs: { markdown: true, calendarDetection: true },
+  swipeActions: { leftShort: "archive", leftLong: "trash", rightShort: "read", rightLong: "star" },
+  toolbarActions: [...TOOLBAR_ACTIONS],
   messageListDensity: "default",
   specialFolderBadges: { starred: true, drafts: true, spam: true },
   showMore: true,

@@ -22,7 +22,7 @@ import { agentModeAtom, auditAtom, prefsAtom, profilesAtom } from "../state/quer
 import { runAccountMove } from "../account-settings";
 import { AccountControls } from "./AccountControls";
 import { accountName } from "../format";
-import { IndexingSettings } from "./IndexingSettings";
+import { InteractionSettings, LabsSettings } from "./InteractionSettings";
 import { DefaultMailClient, NotificationsSettings, ShortcutsSettings } from "./SystemSettings";
 import { ComposeSettings, Signatures } from "./ComposeSettings";
 import { UpdateSettings } from "./UpdateSettings";
@@ -36,6 +36,8 @@ import { OrganizationSettings } from "./OrganizationSettings";
 import { ServerSettings } from "./ServerSettings";
 
 type Tab =
+  | "labs"
+  | "interactions"
   | "notifications"
   | "shortcuts"
   | "signatures"
@@ -50,6 +52,8 @@ type Tab =
 
 const TABS: { id: Tab; label: MessageDescriptor }[] = [
   { id: "general", label: msg`General` },
+  { id: "labs", label: msg`Labs` },
+  { id: "interactions", label: msg`Gestures and toolbar` },
   { id: "accounts", label: msg`Accounts` },
   { id: "notifications", label: msg`Notifications` },
   { id: "shortcuts", label: msg`Shortcuts` },
@@ -124,8 +128,14 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
         </Tabs.Panel>
         <Tabs.Panel value="general" className={panel}>
           <General />
-          <IndexingSettings />
+
           <UpdateSettings />
+        </Tabs.Panel>
+        <Tabs.Panel value="labs" className={panel}>
+          <LabsSettings />
+        </Tabs.Panel>
+        <Tabs.Panel value="interactions" className={panel}>
+          <InteractionSettings />
         </Tabs.Panel>
         <Tabs.Panel value="reading" className={panel}>
           <ReadingSettings />

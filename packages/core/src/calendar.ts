@@ -17,11 +17,103 @@ export const CalendarTime = Schema.Union([
 ]);
 export type CalendarTime = typeof CalendarTime.Type;
 
+export const CalendarEvent = Schema.Struct({
+  key: Schema.String,
+  uid: Schema.optionalKey(Schema.String),
+  title: Schema.String,
+  start: CalendarTime,
+  end: CalendarTime,
+  location: Schema.String,
+  description: Schema.String,
+  recurrence: Schema.Array(Schema.String),
+});
+export type CalendarEvent = typeof CalendarEvent.Type;
+
+/** Date-only and floating values belong to the user's local calendar day. */
+export function calendarTimestamp(time: CalendarTime): number {
+  return time.kind === "zoned"
+    ? (time.timestamp ?? NaN)
+    : new Date(time.kind === "date" ? `${time.value}T00:00:00` : time.value).getTime();
+}
+
+export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
+  const start = calendarTimestamp(event.start);
+  const end = calendarTimestamp(event.end);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)
+    throw new RangeError("Invalid calendar event time");
+  return { timeMin: new Date(start).toISOString(), timeMax: new Date(end).toISOString() };
+}
+
+/** Detect explicit ISO dates and times only; ambiguous prose is left to the person. */
+export function detectMailEvents(message: Pick<Message, "subject" | "bodyText">): CalendarEvent[] {
+  const result: CalendarEvent[] = [];
+  const pattern =
+    /\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2})(?::\d{2})?(Z|[+-]\d{2}:\d{2})?)?(?:\s*(?:–|—|-|to|至)\s*(\d{2}:\d{2}))?/g;
+  for (const match of message.bodyText.slice(0, 100_000).matchAll(pattern)) {
+    if (result.length >= 20) break;
+    const date = match[1] ?? "";
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      !Number.isFinite(Date.parse(date)) ||
+      new Date(date).toISOString().slice(0, 10) !== date
+    )
+      continue;
+    if (
+      [match[2], match[4]].some(
+        (time) => time && (Number(time.slice(0, 2)) > 23 || Number(time.slice(3, 5)) > 59),
+      )
+    )
+      continue;
+    const wall = `${date}T${match[2]}:00`;
+    const start: CalendarTime = !match[2]
+      ? { kind: "date", value: date }
+      : match[3]
+        ? {
+            kind: "zoned",
+            value: `${wall}${match[3]}`,
+            zone: "UTC",
+            timestamp: Date.parse(`${wall}${match[3]}`),
+          }
+        : { kind: "floating", value: wall };
+    const stamp = calendarTimestamp(start);
+    if (!Number.isFinite(stamp)) continue;
+    let end: CalendarTime;
+    if (start.kind === "date") {
+      const day = new Date(`${date}T00:00:00Z`);
+      day.setUTCDate(day.getUTCDate() + 1);
+      end = { kind: "date", value: day.toISOString().slice(0, 10) };
+    } else if (match[4]) {
+      const value = `${date}T${match[4]}:00${match[3] ?? ""}`;
+      end =
+        start.kind === "floating"
+          ? { kind: "floating", value }
+          : { kind: "zoned", value, zone: "UTC", timestamp: Date.parse(value) };
+    } else
+      end = {
+        kind: "zoned",
+        value: new Date(stamp + 3600000).toISOString(),
+        zone: "UTC",
+        timestamp: stamp + 3600000,
+      };
+    if (calendarTimestamp(end) <= stamp || !Number.isFinite(calendarTimestamp(end))) continue;
+    result.push({
+      key: `text:${match.index}:${match[0]}`,
+      title: message.subject,
+      start,
+      end,
+      location: "",
+      description: message.bodyText.slice(0, 8000),
+      recurrence: [],
+    });
+  }
+  return result;
+}
+
 export const CalendarInvite = Schema.Struct({
   key: Schema.String,
   uid: Schema.String,
   sequence: Schema.Int,
-  method: Schema.Literals(["REQUEST", "CANCEL", "REPLY"]),
+  method: Schema.Literals(["REQUEST", "CANCEL", "REPLY", "PUBLISH"]),
   cancelled: Schema.Boolean,
   title: Schema.String,
   start: Schema.NullOr(CalendarTime),

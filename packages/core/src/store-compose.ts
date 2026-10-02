@@ -14,6 +14,7 @@ import {
   type DraftRemote,
   OutgoingMessage,
   Prefs,
+  ToolbarAction,
   type Signature,
   SignatureKind,
   type Template,
@@ -102,6 +103,10 @@ function pref<A, I>(schema: Schema.Codec<A, I>, raw: string | undefined, fallbac
     Schema.decodeUnknownOption(Schema.fromJsonString(schema))(raw),
     () => fallback,
   );
+}
+
+function storedValue<A, I>(schema: Schema.Codec<A, I>, value: unknown, fallback: A): A {
+  return Option.getOrElse(Schema.decodeUnknownOption(schema)(value), () => fallback);
 }
 
 /** Suggestions lose half their weight after this many milliseconds (30 days). */
@@ -256,6 +261,12 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const stored = new Map(rows.map((r) => [r.key, r.value_json]));
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
+      const labs = pref(Schema.Record(Schema.String, Schema.Unknown), stored.get("labs"), {});
+      const swipes = pref(
+        Schema.Record(Schema.String, Schema.Unknown),
+        stored.get("swipeActions"),
+        {},
+      );
       return {
         contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
         composeFormatBar: pref(
@@ -280,6 +291,49 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         ),
         inlineImageSize: pref(f.inlineImageSize, stored.get("inlineImageSize"), d.inlineImageSize),
         composeFont: pref(f.composeFont, stored.get("composeFont"), d.composeFont),
+        updateChannel: pref(f.updateChannel, stored.get("updateChannel"), d.updateChannel),
+        labs: {
+          markdown: storedValue(f.labs.fields.markdown, labs.markdown, d.labs.markdown),
+          calendarDetection: storedValue(
+            f.labs.fields.calendarDetection,
+            labs.calendarDetection,
+            d.labs.calendarDetection,
+          ),
+        },
+        swipeActions: {
+          leftShort: storedValue(
+            f.swipeActions.fields.leftShort,
+            swipes.leftShort,
+            d.swipeActions.leftShort,
+          ),
+          leftLong: storedValue(
+            f.swipeActions.fields.leftLong,
+            swipes.leftLong,
+            d.swipeActions.leftLong,
+          ),
+          rightShort: storedValue(
+            f.swipeActions.fields.rightShort,
+            swipes.rightShort,
+            d.swipeActions.rightShort,
+          ),
+          rightLong: storedValue(
+            f.swipeActions.fields.rightLong,
+            swipes.rightLong,
+            d.swipeActions.rightLong,
+          ),
+        },
+        toolbarActions: [
+          ...new Set(
+            pref(
+              Schema.Array(Schema.Unknown),
+              stored.get("toolbarActions"),
+              d.toolbarActions,
+            ).flatMap((item) => {
+              const decoded = Schema.decodeUnknownOption(ToolbarAction)(item);
+              return Option.isSome(decoded) ? [decoded.value] : [];
+            }),
+          ),
+        ],
         messageListDensity: pref(
           f.messageListDensity,
           stored.get("messageListDensity"),

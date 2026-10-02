@@ -102,7 +102,7 @@ import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./upda
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
-import { gmailThreadUrl, officialMessageUrl } from "./reading.js";
+import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "./reading.js";
 
 /** Ops that failed this many times are dropped; the next sync restores the provider's state. */
 const MAX_ATTEMPTS = 5;
@@ -1022,14 +1022,34 @@ export const MailboxLive = (
       });
 
       const messageWebUrl = Effect.fn("Mailbox.messageWebUrl")(function* (id: string) {
-        const { account, adapter, providerId } = yield* source(id);
+        const cachedMessage = yield* store.getMessage(id).pipe(Effect.option);
+        const linkedAccount = Option.isSome(cachedMessage)
+          ? yield* store.getAccount(cachedMessage.value.accountId)
+          : (yield* store.listAccounts)
+              .filter((a) => id.startsWith(`${a.id}/`))
+              .toSorted((a, b) => b.id.length - a.id.length)[0];
+        if (!linkedAccount) return yield* new NotFound({ what: "account", id });
+        const account = linkedAccount;
+        if (account.enabled === false)
+          return yield* new InvalidInput({
+            message: "Enable this account to open mail on the web",
+          });
+        const adapter = providers.get(account.provider);
+        const providerId = id.slice(account.id.length + 1);
+        if (!providerId) return yield* new InvalidInput({ message: "Invalid message link" });
         if (account.provider === "imap")
           return yield* new InvalidInput({
             message: "This account has no supported web mail link.",
           });
-        const message = yield* store.getMessage(id);
-        if (account.provider === "gmail") return gmailThreadUrl(account.email, message.threadId);
-        const cached = message.webLink && officialMessageUrl("outlook", message.webLink);
+        if (
+          (account.provider !== "gmail" || Option.isNone(cachedMessage)) &&
+          !validMessageProviderId(account.provider, providerId)
+        )
+          return yield* new InvalidInput({ message: "Invalid message link" });
+        const message = Option.getOrNull(cachedMessage);
+        if (account.provider === "gmail")
+          return gmailThreadUrl(account.email, message?.threadId ?? providerId);
+        const cached = message?.webLink && officialMessageUrl("outlook", message.webLink);
         if (cached) return cached;
         const fetched = yield* adapter.fetchMessage(account, providerId);
         const url = fetched.webLink && officialMessageUrl("outlook", fetched.webLink);
@@ -1037,7 +1057,7 @@ export const MailboxLive = (
           return yield* new InvalidInput({
             message: "The provider did not return an official Outlook web link.",
           });
-        yield* store.setMessageWebLink(id, url);
+        if (message) yield* store.setMessageWebLink(id, url);
         return url;
       });
 
@@ -1635,7 +1655,13 @@ export const MailboxLive = (
             yield* emit({ _tag: "UpdateSettingsChanged" });
           }),
         startUpdates: (client, updateOptions) =>
-          startStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
+          Effect.flatMap(store.prefs, (prefs) =>
+            startStoredUpdates(
+              client,
+              { ...updateOptions, channel: prefs.updateChannel },
+              secrets.get(UPDATE_TOKEN_KEY),
+            ),
+          ),
         ...organization,
         ...batchMailbox,
         ...folderMailbox,
@@ -1658,7 +1684,13 @@ export const MailboxLive = (
               ),
             ),
         checkUpdates: (client, updateOptions) =>
-          checkStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
+          Effect.flatMap(store.prefs, (prefs) =>
+            checkStoredUpdates(
+              client,
+              { ...updateOptions, channel: prefs.updateChannel },
+              secrets.get(UPDATE_TOKEN_KEY),
+            ),
+          ),
         rememberNotificationActions: (id, actions) =>
           store.rememberNotificationActions(id, actions),
         notificationActions: (id) => store.notificationActions(id),
@@ -1761,7 +1793,12 @@ export const MailboxLive = (
         derivedChunks: store.media.chunks,
         mediaImage,
         prefs: store.prefs,
-        setPrefs: (patch) => mutate(store.setPrefs(patch)),
+        setPrefs: (patch) =>
+          mutate(store.setPrefs(patch)).pipe(
+            Effect.tap(() =>
+              patch.updateChannel ? emit({ _tag: "UpdateSettingsChanged" }) : Effect.void,
+            ),
+          ),
         signatures: store.signatures,
         setSignature: (signature) => mutate(store.setSignature(signature)),
         templates: store.templates,

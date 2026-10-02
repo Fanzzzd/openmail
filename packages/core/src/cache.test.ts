@@ -452,7 +452,7 @@ it("unsigned, unpackaged and unauthenticated builds never configure or check upd
   assert.strictEqual(checks, 0);
   assert.strictEqual(feeds, 0);
   const stop = startAutoUpdates(client, { signed: true, packaged: true, token: "secret" });
-  assert.strictEqual(client.autoInstallOnAppQuit, true);
+  assert.strictEqual(client.autoInstallOnAppQuit, false);
   stop();
   assert.strictEqual(client.autoDownload, false);
   assert.strictEqual(client.autoInstallOnAppQuit, false);

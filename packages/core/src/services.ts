@@ -53,7 +53,7 @@ import type {
   SettingsScopeMissing,
   ProviderFailure,
 } from "./errors.js";
-import type { CalendarInvite, InviteResponse } from "./calendar.js";
+import type { CalendarEvent, CalendarInvite, InviteResponse } from "./calendar.js";
 import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
@@ -486,6 +486,15 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  calendarEvents?(
+    account: Account,
+    event: CalendarEvent,
+  ): Effect.Effect<CalendarEvent[], ProviderFailure | FeatureScopeMissing | InvalidInput>;
+  createCalendarEvent?(
+    account: Account,
+    event: CalendarEvent,
+  ): Effect.Effect<void, ProviderFailure | FeatureScopeMissing | InvalidInput>;
+
   listFolderMessages(
     account: Account,
     folder: FolderScope,

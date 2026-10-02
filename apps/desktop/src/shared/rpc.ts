@@ -15,6 +15,7 @@ import {
   DerivedChunk,
   IndexingProgress,
   CalendarInvite,
+  CalendarEvent,
   InviteResponse,
   ContactSync,
   ContactGroup,
@@ -148,6 +149,20 @@ export class MailRpcs extends RpcGroup.make(
     success: Schema.Array(DerivedChunk),
   }),
   Rpc.make("MediaImage", { payload: { chunk: DerivedChunk }, success: Schema.String, error }),
+  Rpc.make("CalendarEvents", {
+    payload: { messageId: Schema.String, key: Schema.String },
+    success: Schema.Array(CalendarEvent),
+    error,
+  }),
+  Rpc.make("DetectedEvents", {
+    payload: { messageId: Schema.String },
+    success: Schema.Array(CalendarEvent),
+    error,
+  }),
+  Rpc.make("CreateCalendarEvent", {
+    payload: { messageId: Schema.String, key: Schema.String },
+    error,
+  }),
   Rpc.make("Invitations", {
     payload: { messageId: Schema.String },
     success: Schema.Array(CalendarInvite),
@@ -295,6 +310,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("Organization", { success: Schema.Array(AccountOrganization) }),
   Rpc.make("SetOrganization", { payload: { input: AccountOrganization }, error }),
   Rpc.make("Snooze", {
+    success: BatchResult,
     payload: { threads: Schema.Array(Schema.String), due: Schema.Number },
     error,
   }),

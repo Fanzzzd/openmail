@@ -36,6 +36,7 @@ import {
 } from "./services.js";
 
 import { gmailSearch } from "./search.js";
+import { makeProviderCalendar } from "./provider-calendar.js";
 import { makeGmailFeatures } from "./gmail-features.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 
@@ -437,7 +438,7 @@ export const makeGmail: Effect.Effect<
 
   /** None when the message was deleted between listing and fetching. */
   const fetchMessage = (accountId: string, id: string) =>
-    get(accountId, GmailMessage, `/messages/${id}`, { format: "full" }).pipe(
+    get(accountId, GmailMessage, `/messages/${encodeURIComponent(id)}`, { format: "full" }).pipe(
       Effect.map((raw) => Option.some(parseGmailMessage(raw))),
       Effect.catchIf(
         (e) => e._tag === "ApiError" && e.status === 404,
@@ -493,7 +494,7 @@ export const makeGmail: Effect.Effect<
 
   const push = Effect.fn("Gmail.push")(
     function* (account: Account, providerId: string, op: MailOp) {
-      const path = `/messages/${providerId}`;
+      const path = `/messages/${encodeURIComponent(providerId)}`;
       if (op.kind === "trash") {
         yield* post(account.id, `${path}/trash`);
         return;
@@ -522,7 +523,7 @@ export const makeGmail: Effect.Effect<
       accountId,
       Metadata,
       // Repeated metadataHeaders params; urlParams would need an array form.
-      `/messages/${providerId}?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References`,
+      `/messages/${encodeURIComponent(providerId)}?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References`,
     ).pipe(
       Effect.map(({ payload }): Threading => {
         const header = (name: string) =>
@@ -616,7 +617,7 @@ export const makeGmail: Effect.Effect<
       const saved = yield* (
         Option.isSome(existing)
           ? // Deleted in another client meanwhile: the person is still writing it.
-            put(account.id, `/drafts/${existing.value}`, body).pipe(
+            put(account.id, `/drafts/${encodeURIComponent(existing.value)}`, body).pipe(
               Effect.catchIf(is404, () => create),
             )
           : create
@@ -630,7 +631,9 @@ export const makeGmail: Effect.Effect<
     function* (account: Account, remote: DraftRemote) {
       const id = yield* draftIdOf(account.id, remote);
       if (Option.isNone(id)) return;
-      yield* del(account.id, `/drafts/${id.value}`).pipe(Effect.catchIf(is404, () => Effect.void));
+      yield* del(account.id, `/drafts/${encodeURIComponent(id.value)}`).pipe(
+        Effect.catchIf(is404, () => Effect.void),
+      );
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -641,15 +644,20 @@ export const makeGmail: Effect.Effect<
         const metadata = yield* get(
           account.id,
           Schema.Struct({ sizeEstimate: Schema.Number }),
-          `/messages/${providerId}`,
+          `/messages/${encodeURIComponent(providerId)}`,
           { format: "minimal", fields: "sizeEstimate" },
         );
         if (metadata.sizeEstimate > maxBytes || metadata.sizeEstimate <= 0)
           return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
       }
-      const { raw } = yield* get(account.id, RawMessage, `/messages/${providerId}`, {
-        format: "raw",
-      });
+      const { raw } = yield* get(
+        account.id,
+        RawMessage,
+        `/messages/${encodeURIComponent(providerId)}`,
+        {
+          format: "raw",
+        },
+      );
       if (maxBytes !== undefined && (raw.length * 3) / 4 > maxBytes + 3)
         return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
       return new Uint8Array(Buffer.from(raw, "base64url"));
@@ -659,9 +667,14 @@ export const makeGmail: Effect.Effect<
 
   const fetchAttachment = Effect.fn("Gmail.fetchAttachment")(
     function* (account: Account, providerId: string, ref: AttachmentRef) {
-      const message = yield* get(account.id, GmailMessage, `/messages/${providerId}`, {
-        format: "full",
-      });
+      const message = yield* get(
+        account.id,
+        GmailMessage,
+        `/messages/${encodeURIComponent(providerId)}`,
+        {
+          format: "full",
+        },
+      );
       const part = pickAttachment(attachmentParts(message.payload), (p) => p.filename ?? "", ref);
       if (!part) {
         return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
@@ -673,7 +686,7 @@ export const makeGmail: Effect.Effect<
           ? (yield* get(
               account.id,
               AttachmentBody,
-              `/messages/${providerId}/attachments/${part.body.attachmentId}`,
+              `/messages/${encodeURIComponent(providerId)}/attachments/${encodeURIComponent(part.body.attachmentId)}`,
             )).data
           : "";
       return new Uint8Array(Buffer.from(data, "base64url"));
@@ -831,6 +844,12 @@ export const makeGmail: Effect.Effect<
         ),
       ),
     ...settings,
+    ...makeProviderCalendar(
+      "gmail",
+      (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),
+      (id, url, body) =>
+        api(id, HttpClientRequest.bodyJsonUnsafe(HttpClientRequest.post(url), body)),
+    ),
     ...makeGmailFeatures(
       (id, schema, url) => api(id, HttpClientRequest.get(url)).pipe(Effect.flatMap(decode(schema))),
       (id, url, body) =>
@@ -930,7 +949,7 @@ export const makeGmail: Effect.Effect<
       get(
         account.id,
         Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
-        `/messages/${id}`,
+        `/messages/${encodeURIComponent(id)}`,
         { format: "minimal" },
       ).pipe(
         Effect.map((message) => ({
@@ -944,14 +963,14 @@ export const makeGmail: Effect.Effect<
         const current = yield* get(
           account.id,
           Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
-          `/messages/${id}`,
+          `/messages/${encodeURIComponent(id)}`,
           { format: "minimal" },
         );
         const wanted = [...organization.labels, ...(organization.starred ? ["STARRED"] : [])];
         const removable = (current.labelIds ?? []).filter(
           (labelId) => labelId === "STARRED" || labelId.startsWith("Label_"),
         );
-        yield* post(account.id, `/messages/${id}/modify`, {
+        yield* post(account.id, `/messages/${encodeURIComponent(id)}/modify`, {
           addLabelIds: wanted,
           removeLabelIds: removable.filter((labelId) => !wanted.includes(labelId)),
         });

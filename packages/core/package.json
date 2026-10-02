@@ -33,6 +33,7 @@
     "nodemailer": "^10.0.11",
     "onnxruntime-node": "1.30.0",
     "pdfjs-dist": "6.3.289",
+    "semver": "^7.8.5",
     "sqlite-vec": "0.1.9"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "@types/mailparser": "^3.4.6",
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^22.20.4",
+    "@types/semver": "^7.8.0",
     "typescript": "catalog:",
     "vitest": "^5.0.2"
   }

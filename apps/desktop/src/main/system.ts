@@ -1,3 +1,4 @@
+import { approveUpdateQuit } from "./update-install";
 import { setRecoveryRelaunch } from "./recovery-actions";
 import {
   Mailbox,
@@ -493,6 +494,7 @@ export const DesktopLive = Layer.effect(
       run(refresh);
     };
     let quittingApproved = false;
+    approveUpdateQuit(false);
     const confirmPendingSend = () =>
       dialog
         .showMessageBox({
@@ -572,6 +574,7 @@ export const DesktopLive = Layer.effect(
       confirm: confirmPendingSend,
       quit: () => {
         quittingApproved = true;
+        approveUpdateQuit(!relaunchPending);
         if (relaunchPending) app.relaunch();
         app.quit();
       },

@@ -93,16 +93,13 @@ function fixture(html: string) {
   }
   let selected = new SelectionRange();
   Object.defineProperty(document, "createRange", { value: () => new SelectionRange() });
-  Object.defineProperty(window, "getSelection", {
-    configurable: true,
-    value: () => ({
-      rangeCount: 1,
-      getRangeAt: () => selected,
-      removeAllRanges: vi.fn(),
-      addRange: (range: SelectionRange) => (selected = range),
-      anchorNode: selected.startContainer,
-    }),
-  });
+  vi.stubGlobal("getSelection", () => ({
+    rangeCount: 1,
+    getRangeAt: () => selected,
+    removeAllRanges: vi.fn(),
+    addRange: (range: SelectionRange) => (selected = range),
+    anchorNode: selected.startContainer,
+  }));
   const history: string[] = [];
   const command = vi.fn((name: string, _ui: boolean, value?: string) => {
     if (name === "undo") {

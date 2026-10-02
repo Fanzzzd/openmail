@@ -1033,7 +1033,13 @@ export function App({ composeId }: { composeId?: string }) {
     run(
       withMail((call) =>
         Effect.gen(function* () {
-          const linkedMessages = yield* call("Thread", { id });
+          const result = yield* call("Thread", { id }).pipe(Effect.result);
+          if (result._tag === "Failure") {
+            if (result.failure._tag !== "NotFound") return yield* result.failure;
+            yield* call("OpenMessageWeb", { id });
+            return yield* Effect.void;
+          }
+          const linkedMessages = result.success;
           const linkedAccounts = yield* call("Accounts", undefined);
           const owner = linkedAccounts.find(
             (account) => account.id === linkedMessages[0]?.accountId,
@@ -1045,6 +1051,7 @@ export function App({ composeId }: { composeId?: string }) {
           setSelectedId(id);
           setSelectionSource("mouse");
           setReadTarget(linkedMessages.some((m) => m.isUnread) ? id : null);
+          return yield* Effect.void;
         }),
       ).pipe(
         Effect.catchCause((cause) =>
@@ -1618,6 +1625,8 @@ export function App({ composeId }: { composeId?: string }) {
                   labels,
                   stateOf: rowState,
                   onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
+                  onSwipeOp: (m, state, op) =>
+                    act(op, { confirmedIds: new Set([m.id]) }, { id: m.id, state }),
                   onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
                   onPermanentDelete: deleteFolder
                     ? (thread) => requestPermanentDelete([thread.id])
@@ -1959,7 +1968,8 @@ export function App({ composeId }: { composeId?: string }) {
         <SnoozeDialog
           threads={snoozeIds}
           onClose={() => setSnoozeIds(null)}
-          onSnoozed={() => {
+          onSnoozed={(result) => {
+            showUndo(result, snoozeIds, t`Snoozed`);
             setSnoozeIds(null);
             setSelectedId(null);
           }}

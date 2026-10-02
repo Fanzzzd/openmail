@@ -79,6 +79,7 @@ it("each density renders its own height, preview lines and attachment indicator"
             labels: [],
             stateOf: () => null,
             onOp: noop,
+            onSwipeOp: noop,
             onCompose: noop,
             onOpenWindow: noop,
             onSnooze: noop,

@@ -127,6 +127,9 @@ const Handlers = MailRpcs.toLayer(
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       RemoveAccount: ({ accountId }) => m.perform({ kind: "removeAccount", accountId }, USER),
 
+      CalendarEvents: ({ messageId, key }) => m.calendarEvents(messageId, key),
+      DetectedEvents: ({ messageId }) => m.detectedEvents(messageId),
+      CreateCalendarEvent: ({ messageId, key }) => m.createCalendarEvent(messageId, key, USER),
       Invitations: ({ messageId }) => m.invitations(messageId),
       RespondInvite: ({ messageId, key, response }) =>
         m.respondInvite(messageId, key, response, USER),
@@ -200,7 +203,7 @@ const Handlers = MailRpcs.toLayer(
       SetLabelPreference: ({ input }) => m.setLabelPreference(input),
       Organization: () => m.organization,
       SetOrganization: ({ input }) => m.setOrganization(input),
-      Snooze: ({ threads, due }) => m.snooze(threads, due),
+      Snooze: ({ threads, due }) => m.snoozeWithUndo(threads, due),
       Filters: ({ accountId }) => m.filters(accountId),
       PreviewFilter: ({ accountId, criteria }) => m.previewFilter(accountId, criteria),
       PrepareFilter: ({ accountId, input }) => m.prepareFilter(accountId, input),

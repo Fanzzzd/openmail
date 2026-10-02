@@ -1,3 +1,7 @@
+import { useMessageSwipe } from "../message-swipe-hook";
+import { swipeMailOp } from "../message-swipe";
+import { actionNames } from "./InteractionSettings";
+import type { Prefs, SwipeAction } from "@openmail/core/schema";
 import { MESSAGE_DRAG } from "../organize-drag";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
@@ -60,6 +64,7 @@ export interface RowActions {
   labels: readonly Label[];
   stateOf: (thread: ThreadSummary) => ThreadState | null;
   onOp: (thread: ThreadSummary, state: ThreadState, op: MailOp) => void;
+  onSwipeOp: (thread: ThreadSummary, state: ThreadState, op: MailOp) => void;
   onCompose: (
     thread: ThreadSummary,
     mode: "reply" | "replyAll" | "forward",
@@ -296,6 +301,16 @@ export function MessageList({
                       flat: !rowActions.grouped,
                     })}
                     onOpen={() => rowActions.onOpenWindow(m)}
+                    swipeActions={prefs.swipeActions}
+                    onSwipe={(action) => {
+                      if (action === "snooze") {
+                        rowActions.onSnooze(m);
+                        return;
+                      }
+                      const state = rowActions.stateOf(m);
+                      const op = state && swipeMailOp(action, state);
+                      if (state && op) rowActions.onSwipeOp(m, state, op);
+                    }}
                   />
                 );
               })}
@@ -379,6 +394,8 @@ function Row({
   onSelect,
   onOpen,
   dragData,
+  swipeActions,
+  onSwipe,
 }: {
   thread: ThreadSummary;
   rowHeight: number;
@@ -396,8 +413,12 @@ function Row({
   /** Double-click: open in a window of its own. */
   onOpen: () => void;
   dragData: string;
+  swipeActions: Prefs["swipeActions"];
+  onSwipe: (action: SwipeAction) => void;
 }) {
   const { i18n } = useLingui();
+  const row = useRef<HTMLButtonElement>(null);
+  const swipe = useMessageSwipe(row, swipeActions, onSwipe);
   const muted = accent ? "text-white/75" : "text-neutral-500 dark:text-neutral-400";
   const chips = m.labels
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
@@ -430,110 +451,128 @@ function Row({
     </>
   );
   return (
-    <button
-      type="button"
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData(MESSAGE_DRAG, dragData);
-        e.dataTransfer.effectAllowed = "move";
-      }}
-      data-id={m.id}
-      // Keep the virtual conversation row clickable and expose its listbox position.
-      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-      role="option"
-      style={{ height: rowHeight }}
-      aria-selected={selected}
-      aria-setsize={total}
-      aria-posinset={position}
-      onClick={onSelect}
-      onDoubleClick={onOpen}
-      className={`relative block w-full overflow-hidden rounded-lg py-2.5 pr-3 pl-7 text-left ${
-        menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
-      } ${
-        accent
-          ? "bg-blue-600 text-white"
-          : selected
-            ? "bg-black/[0.07] dark:bg-white/10"
-            : "hover:bg-black/[0.025] dark:hover:bg-white/[0.03]"
-      }`}
-    >
-      {m.isUnread && (
+    <div className="relative overflow-hidden rounded-lg">
+      {swipe.distance !== 0 && (
         <span
-          className={`absolute top-[16px] left-2.5 size-2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
-        />
-      )}
-      <span className="flex items-baseline gap-1.5">
-        <span className="min-w-0 truncate text-[14px] font-semibold">{senders(m)}</span>
-        {m.threadCount > 1 && (
-          <span className={`shrink-0 text-[13px] tabular-nums ${muted}`}>{m.threadCount}</span>
-        )}
-        <span className="flex-1" />
-        {showAccount && <AccountBadge accountId={m.accountId} />}
-        <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
-          {shortDate(m.date, i18n)}
+          className={`absolute inset-y-0 flex items-center px-3 text-xs font-medium ${swipe.distance < 0 ? "right-0" : "left-0"}`}
+          aria-live="polite"
+        >
+          {i18n._(actionNames[swipe.action])}
         </span>
-      </span>
-      <span className="mt-0.5 flex items-center gap-1.5 text-[13px]">
-        <span className="min-w-0 flex-1 truncate">{m.subject || <Trans>(No subject)</Trans>}</span>
-        {!density.attachments && m.hasAttachments && (
-          <Paperclip className={`size-3.5 shrink-0 ${muted}`} />
+      )}
+      <button
+        ref={row}
+        type="button"
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData(MESSAGE_DRAG, dragData);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        data-id={m.id}
+        // Keep the virtual conversation row clickable and expose its listbox position.
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+        role="option"
+        style={{
+          height: rowHeight,
+          transform: swipe.distance
+            ? `translateX(${Math.max(-100, Math.min(100, swipe.distance))}px)`
+            : undefined,
+        }}
+        aria-selected={selected}
+        aria-setsize={total}
+        aria-posinset={position}
+        onClick={onSelect}
+        onDoubleClick={onOpen}
+        className={`motion-reduce:!transform-none relative block w-full overflow-hidden rounded-lg py-2.5 pr-3 pl-7 text-left ${
+          menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
+        } ${
+          accent
+            ? "bg-blue-600 text-white"
+            : selected
+              ? "bg-black/[0.07] dark:bg-white/10"
+              : "hover:bg-black/[0.025] dark:hover:bg-white/[0.03]"
+        }`}
+      >
+        {m.isUnread && (
+          <span
+            className={`absolute top-[16px] left-2.5 size-2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
+          />
         )}
-        {density.previewLines === 0 && (
-          <>
+        <span className="flex items-baseline gap-1.5">
+          <span className="min-w-0 truncate text-[14px] font-semibold">{senders(m)}</span>
+          {m.threadCount > 1 && (
+            <span className={`shrink-0 text-[13px] tabular-nums ${muted}`}>{m.threadCount}</span>
+          )}
+          <span className="flex-1" />
+          {showAccount && <AccountBadge accountId={m.accountId} />}
+          <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
+            {shortDate(m.date, i18n)}
+          </span>
+        </span>
+        <span className="mt-0.5 flex items-center gap-1.5 text-[13px]">
+          <span className="min-w-0 flex-1 truncate">
+            {m.subject || <Trans>(No subject)</Trans>}
+          </span>
+          {!density.attachments && m.hasAttachments && (
+            <Paperclip className={`size-3.5 shrink-0 ${muted}`} />
+          )}
+          {density.previewLines === 0 && (
+            <>
+              {labelChips}
+              {star}
+            </>
+          )}
+        </span>
+        {density.previewLines > 0 && (
+          <span className="mt-0.5 flex items-start gap-1.5">
+            <span
+              className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
+            >
+              {m.snippet}
+            </span>
             {labelChips}
             {star}
-          </>
-        )}
-      </span>
-      {density.previewLines > 0 && (
-        <span className="mt-0.5 flex items-start gap-1.5">
-          <span
-            className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
-          >
-            {m.snippet}
           </span>
-          {labelChips}
-          {star}
-        </span>
-      )}
-      {density.attachments && m.hasAttachments && (
-        <span className={`mt-1 flex items-center gap-1.5 text-[11px] ${muted}`}>
-          <Paperclip className="size-3.5 shrink-0" />
-          {m.attachmentNames?.length ? (
-            m.attachmentNames.slice(0, 2).map((name, index) => (
-              <span
-                key={index}
-                className="max-w-32 truncate rounded bg-black/5 px-1 dark:bg-white/10"
-              >
-                {name}
-              </span>
-            ))
-          ) : (
-            <Trans>Attachments</Trans>
-          )}
-        </span>
-      )}
-      {m.derivedMatches?.slice(0, 2).map((hit, index) => (
-        <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-          {hit.source.kind === "body" ? <Trans>Message body</Trans> : hit.source.name}
-          {hit.page !== null && (
-            <>
-              {" "}
-              · <Trans>Page {hit.page}</Trans>
-            </>
-          )}
-          {hit.region !== null && (
-            <>
-              {" "}
-              · <Trans>Image region</Trans>
-            </>
-          )}
-          : {hit.text}
-        </span>
-      ))}
-      {rule && (
-        <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
-      )}
-    </button>
+        )}
+        {density.attachments && m.hasAttachments && (
+          <span className={`mt-1 flex items-center gap-1.5 text-[11px] ${muted}`}>
+            <Paperclip className="size-3.5 shrink-0" />
+            {m.attachmentNames?.length ? (
+              m.attachmentNames.slice(0, 2).map((name, index) => (
+                <span
+                  key={index}
+                  className="max-w-32 truncate rounded bg-black/5 px-1 dark:bg-white/10"
+                >
+                  {name}
+                </span>
+              ))
+            ) : (
+              <Trans>Attachments</Trans>
+            )}
+          </span>
+        )}
+        {m.derivedMatches?.slice(0, 2).map((hit, index) => (
+          <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+            {hit.source.kind === "body" ? <Trans>Message body</Trans> : hit.source.name}
+            {hit.page !== null && (
+              <>
+                {" "}
+                · <Trans>Page {hit.page}</Trans>
+              </>
+            )}
+            {hit.region !== null && (
+              <>
+                {" "}
+                · <Trans>Image region</Trans>
+              </>
+            )}
+            : {hit.text}
+          </span>
+        ))}
+        {rule && (
+          <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+        )}
+      </button>
+    </div>
   );
 }

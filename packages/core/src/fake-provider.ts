@@ -1,4 +1,9 @@
-import type { CalendarInvite, InviteResponse } from "./calendar.js";
+import {
+  calendarTimestamp,
+  type CalendarEvent,
+  type CalendarInvite,
+  type InviteResponse,
+} from "./calendar.js";
 import { Effect, Option, Stream } from "effect";
 
 import { attachmentFromRaw } from "./attachments.js";
@@ -34,6 +39,8 @@ export interface FakeServer {
   contacts: Address[];
   contactGroups: import("./contacts.js").ContactGroup[];
   contactPhotos: import("./contacts.js").ContactPhoto[];
+  calendarEvents: CalendarEvent[];
+  createdEvents: CalendarEvent[];
   responses: { invite: CalendarInvite; response: InviteResponse }[];
   featureFailure?: FeatureScopeMissing;
   email: string;
@@ -78,6 +85,8 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
     contacts: [],
     contactGroups: [],
     contactPhotos: [],
+    calendarEvents: [],
+    createdEvents: [],
     responses: [],
     messages: new Map(messages.map((m) => [m.providerId, m])),
     connects: [],
@@ -271,6 +280,22 @@ export function makeFakeProvider(
             ),
         }
       : {}),
+    calendarEvents: (_account, event) =>
+      server.featureFailure
+        ? Effect.fail(server.featureFailure)
+        : Effect.succeed(
+            server.calendarEvents.filter(
+              (other) =>
+                calendarTimestamp(other.end) > calendarTimestamp(event.start) &&
+                calendarTimestamp(other.start) < calendarTimestamp(event.end),
+            ),
+          ),
+    createCalendarEvent: (_account, event) =>
+      server.featureFailure
+        ? Effect.fail(server.featureFailure)
+        : Effect.sync(() => {
+            server.createdEvents.push(event);
+          }),
     contacts: () =>
       Effect.suspend((): ReturnType<ProviderAdapter["contacts"]> =>
         server.featureFailure

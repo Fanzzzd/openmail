@@ -1,3 +1,4 @@
+import { parse } from "semver";
 import { Effect, Option } from "effect";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -20,6 +21,7 @@ export async function isSignedMacApp(bundle: string): Promise<boolean> {
 
 /** Platform adapter; core owns update checks and their network policy. */
 export interface UpdateClient {
+  allowPrerelease?: boolean;
   autoDownload: boolean;
   autoInstallOnAppQuit: boolean;
   logger: unknown;
@@ -35,23 +37,38 @@ export interface UpdateClient {
   removeListener(event: "error", listener: (error: Error) => void): unknown;
 }
 
-/** Tokens are supplied on the user's machine, never embedded in app-update.yml. */
-export function startAutoUpdates(
-  client: UpdateClient,
-  options: { signed: boolean; packaged: boolean; token: string | undefined },
-): () => void {
-  if (!options.packaged || !options.signed || !options.token) return () => null;
-  // Updater logs can contain request URLs/headers; suppress them rather than log credentials.
+/** A Stable quit must never stage a prerelease, even if Latest downloaded it earlier. */
+export function updateVersionAllowed(channel: "stable" | "latest", version: string): boolean {
+  const parsed = parse(version);
+  return parsed !== null && (channel === "latest" || parsed.prerelease.length === 0);
+}
+function configureUpdates(client: UpdateClient, token: string, channel: "stable" | "latest") {
+  client.autoInstallOnAppQuit = false;
   client.logger = null;
-  client.autoDownload = true;
-  client.autoInstallOnAppQuit = true;
+  client.allowPrerelease = channel === "latest";
   client.setFeedURL({
     provider: "github",
     owner: "Fanzzzd",
     repo: "openmail",
     private: true,
-    token: options.token,
+    token,
   });
+}
+
+/** Tokens are supplied on the user's machine, never embedded in app-update.yml. */
+export function startAutoUpdates(
+  client: UpdateClient,
+  options: {
+    signed: boolean;
+    packaged: boolean;
+    token: string | undefined;
+    channel?: "stable" | "latest";
+  },
+): () => void {
+  client.autoInstallOnAppQuit = false;
+  if (!options.packaged || !options.signed || !options.token) return () => null;
+  configureUpdates(client, options.token, options.channel ?? "stable");
+  client.autoDownload = true;
   client.on("error", ignoreError);
   const check = () => {
     void client.checkForUpdates().catch(() => null);
@@ -71,16 +88,22 @@ export const UPDATE_TOKEN_KEY = "updates:github-release-token";
 /** Called after the window is visible. No stored token means no codesign process. */
 export function startStoredUpdates(
   client: UpdateClient,
-  options: { packaged: boolean; bundle: string },
+  options: { packaged: boolean; bundle: string; channel?: "stable" | "latest" },
   token: Effect.Effect<Option.Option<string>>,
   verify: (bundle: string) => Promise<boolean> = isSignedMacApp,
 ): Effect.Effect<() => void> {
   return Effect.gen(function* () {
+    client.autoInstallOnAppQuit = false;
     if (!options.packaged) return () => null;
     const saved = yield* token;
     if (Option.isNone(saved)) return () => null;
     const signed = yield* Effect.promise(() => verify(options.bundle));
-    return startAutoUpdates(client, { packaged: true, signed, token: saved.value });
+    return startAutoUpdates(client, {
+      packaged: true,
+      signed,
+      token: saved.value,
+      channel: options.channel,
+    });
   });
 }
 
@@ -93,28 +116,26 @@ export type ManualUpdateResult =
 /** Manual checks obey the same packaging, signature and keychain gate as the timer. */
 export function checkStoredUpdates(
   client: UpdateClient,
-  options: { packaged: boolean; bundle: string },
+  options: { packaged: boolean; bundle: string; channel?: "stable" | "latest" },
   token: Effect.Effect<Option.Option<string>>,
   verify: (bundle: string) => Promise<boolean> = isSignedMacApp,
 ): Effect.Effect<ManualUpdateResult> {
   return Effect.gen(function* () {
+    client.autoInstallOnAppQuit = false;
     if (!options.packaged) return { status: "disabled" } satisfies ManualUpdateResult;
     const saved = yield* token;
     if (Option.isNone(saved) || !saved.value)
       return { status: "disabled" } satisfies ManualUpdateResult;
     if (!(yield* Effect.promise(() => verify(options.bundle))))
       return { status: "disabled" } satisfies ManualUpdateResult;
-    client.logger = null;
-    client.setFeedURL({
-      provider: "github",
-      owner: "Fanzzzd",
-      repo: "openmail",
-      private: true,
-      token: saved.value,
-    });
+    configureUpdates(client, saved.value, options.channel ?? "stable");
     client.on("error", ignoreError);
     const result = yield* Effect.tryPromise(() => client.checkForUpdates()).pipe(
-      Effect.ensuring(Effect.sync(() => client.removeListener("error", ignoreError))),
+      Effect.ensuring(
+        Effect.sync(() => {
+          client.removeListener("error", ignoreError);
+        }),
+      ),
     );
     if (
       typeof result !== "object" ||

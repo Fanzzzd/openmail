@@ -2259,3 +2259,104 @@ it.effect("body-only Outlook draft patches omit categories/flag and keep externa
     assert.strictEqual(Object.hasOwn(fields, "flag"), false);
   }),
 );
+
+it.effect(
+  "calendar view preserves local timezone preference and immutable IDs; personal event POST carries no attendees",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/calendarView": {
+          json: {
+            value: [
+              {
+                id: "busy",
+                isAllDay: true,
+                start: { dateTime: "2026-10-10T00:00:00", timeZone: "UTC" },
+                end: { dateTime: "2026-10-11T00:00:00", timeZone: "UTC" },
+              },
+            ],
+          },
+        },
+        "POST /me/events": { json: { id: "created" } },
+      });
+      const event = {
+        key: "candidate",
+        title: "Train",
+        start: { kind: "date", value: "2026-10-10" },
+        end: { kind: "date", value: "2026-10-11" },
+        location: "Station",
+        description: "Ticket",
+        recurrence: [],
+      } as const;
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          assert.ok(typeof adapter.calendarEvents === "function");
+          assert.ok(typeof adapter.createCalendarEvent === "function");
+          assert.deepStrictEqual(
+            (yield* adapter.calendarEvents(account, event))[0]?.start,
+            event.start,
+          );
+          yield* adapter.createCalendarEvent(account, event);
+        }),
+      );
+      const read = http.calls.find((call) => call.url.pathname.endsWith("/calendarView"));
+      assert.strictEqual(
+        read?.prefer,
+        `IdType="ImmutableId", outlook.timezone="${Intl.DateTimeFormat().resolvedOptions().timeZone}"`,
+      );
+      const write = http.calls.find((call) => call.url.pathname.endsWith("/events"));
+      assert.deepStrictEqual(write?.body, {
+        subject: "Train",
+        transactionId: Schema.decodeUnknownSync(Schema.Struct({ transactionId: Schema.String }))(
+          write?.body,
+        ).transactionId,
+        start: {
+          dateTime: "2026-10-10T00:00:00",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        end: {
+          dateTime: "2026-10-11T00:00:00",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        isAllDay: true,
+        location: { displayName: "Station" },
+        body: { contentType: "text", content: "Ticket" },
+      });
+    }),
+);
+
+it.effect("opaque message and attachment IDs are encoded as individual Graph path segments", () =>
+  Effect.gen(function* () {
+    const id = "A/B+C==";
+    const http = fakeHttp({
+      "GET /me/messages/A%2FB%2BC%3D%3D": {
+        json: { ...raw, id, parentFolderId: "inbox", hasAttachments: false },
+      },
+      "GET /me/mailFolders/inbox": { json: { id: "inbox", displayName: "Inbox" } },
+    });
+    yield* run(http, (adapter) => adapter.fetchMessage(account, id));
+    assert.ok(http.calls.some((call) => call.url.pathname === "/v1.0/me/messages/A%2FB%2BC%3D%3D"));
+    assert.ok(http.calls.every((call) => !call.url.pathname.includes("/messages/A/")));
+  }),
+);
+
+it.effect("custom folder IDs stay in one encoded segment in the initial delta URL", () =>
+  Effect.gen(function* () {
+    const id = "folder/A+B==";
+    const http = fakeHttp({
+      "GET /me/mailFolders": {
+        json: { value: [{ id, displayName: "Custom", childFolderCount: 0, totalItemCount: 0 }] },
+      },
+      "GET /me/mailFolders/folder%2FA%2BB%3D%3D/messages/delta": { json: { value: [] } },
+    });
+    yield* run(http, (adapter) => Stream.runCollect(adapter.pull(account, Option.none())));
+    const call = http.calls.find(
+      (request) =>
+        request.url.pathname.endsWith("/messages/delta") && request.url.pathname.includes("folder"),
+    );
+    assert.strictEqual(
+      call?.url.pathname,
+      "/v1.0/me/mailFolders/folder%2FA%2BB%3D%3D/messages/delta",
+    );
+  }),
+);

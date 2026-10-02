@@ -1,4 +1,4 @@
-import { Effect, Option, Semaphore } from "effect";
+import { Clock, Effect, Option, Semaphore } from "effect";
 
 import type { Actor, MailOp, Message, Provider } from "./domain.js";
 import { messagesFrom } from "./reading.js";
@@ -15,6 +15,7 @@ interface Change {
 interface UndoBatch {
   changes: Change[];
   reminders: ReminderSnapshot[];
+  localChanges?: Change[];
 }
 
 /** Restore only the fields this op changed, using each message's actual state. */
@@ -172,6 +173,56 @@ export const makeBatchMailbox = (
           Effect.tap(() => changed),
           Effect.tap(() => flushLater),
         );
+    const snoozeWithUndo: Mailbox["Service"]["snoozeWithUndo"] = (threads, due) =>
+      lock
+        .withPermits(1)(
+          Effect.gen(function* () {
+            const now = yield* Clock.currentTimeMillis;
+            if (!Number.isFinite(due) || due <= now)
+              return yield* new InvalidInput({ message: "Choose a future reminder time" });
+            if (!threads.length)
+              return yield* new InvalidInput({ message: "Choose a conversation" });
+            const undoId = crypto.randomUUID();
+            const back = yield* store.transaction(
+              Effect.gen(function* () {
+                const localChanges: Change[] = [];
+                const reminders: ReminderSnapshot[] = [];
+                const seen = new Set<string>();
+                for (const id of threads) {
+                  const message = yield* store.getMessage(id);
+                  const threadKey = JSON.stringify([message.accountId, message.threadId]);
+                  if (seen.has(threadKey)) continue;
+                  seen.add(threadKey);
+                  const reminder = yield* store.reminderSnapshot(id);
+                  if (Option.isSome(reminder)) reminders.push(reminder.value);
+                  const members = yield* store.getThread(id);
+                  yield* store.snooze(id, due);
+                  for (const member of members)
+                    if (
+                      member.labels.includes("INBOX") &&
+                      !member.labels.some((label) => ["DRAFT", "TRASH", "SPAM"].includes(label))
+                    ) {
+                      localChanges.push({ id: member.id, op: { kind: "inbox" } });
+                    }
+                  yield* store.audit({
+                    actor: user,
+                    accountId: message.accountId,
+                    action: "snooze",
+                    detail: { id, due },
+                  });
+                }
+                return { changes: [], localChanges, reminders };
+              }),
+            );
+            history.set(undoId, back);
+            if (history.size > 50) {
+              const oldest = history.keys().next().value;
+              if (oldest) history.delete(oldest);
+            }
+            return { undoId };
+          }),
+        )
+        .pipe(Effect.tap(() => changed));
     const undoBatch: Mailbox["Service"]["undoBatch"] = (undoId) =>
       lock
         .withPermits(1)(
@@ -184,6 +235,10 @@ export const makeBatchMailbox = (
             yield* store.transaction(
               Effect.gen(function* () {
                 yield* applyChanges(store, back.changes);
+                for (const change of back.localChanges ?? []) {
+                  const ref = yield* store.messageRef(change.id).pipe(Effect.option);
+                  if (Option.isSome(ref)) yield* store.applyLocalOp(change.id, change.op);
+                }
                 for (const reminder of back.reminders) {
                   const members = (yield* Effect.forEach(reminder.members, (member) =>
                     store.messageRef(`${reminder.accountId}/${member.providerId}`).pipe(
@@ -218,5 +273,5 @@ export const makeBatchMailbox = (
           true,
         );
       });
-    return { modifyWithUndo, undoBatch, markUnreadFrom };
+    return { modifyWithUndo, undoBatch, markUnreadFrom, snoozeWithUndo };
   });

@@ -73,20 +73,37 @@ export interface ParsedInvite {
 const MAX_CALENDAR_BYTES = 1024 * 1024;
 const MAX_INVITES = 20;
 const ContentType = Schema.Struct({
-  params: Schema.Struct({ charset: Schema.optionalKey(Schema.String) }),
+  params: Schema.Struct({
+    charset: Schema.optionalKey(Schema.String),
+    method: Schema.optionalKey(Schema.String),
+  }),
 });
 const SenderHeader = Schema.Struct({
   value: Schema.Array(Schema.Struct({ address: Schema.optionalKey(Schema.String) })),
 });
 
 /** Malformed events do not hide valid siblings. Parsing never performs a response. */
-export function parseCalendar(source: string): ParsedInvite[] {
+export function parseCalendar(
+  source: string,
+  includePublished = false,
+  mimeMethod = "",
+): ParsedInvite[] {
   if (Buffer.byteLength(source, "utf8") > MAX_CALENDAR_BYTES) return [];
   const parsed = Result.try(() => ICAL.Component.fromString(source));
   if (parsed._tag === "Failure" || parsed.success.name !== "vcalendar") return [];
   const calendar = parsed.success;
-  const method = text(calendar, "method").toUpperCase();
-  if (method !== "REQUEST" && method !== "CANCEL" && method !== "REPLY") return [];
+  const declared = text(calendar, "method").toUpperCase();
+  const mime = mimeMethod.trim().toUpperCase();
+  if (declared && mime && declared !== mime) return [];
+  const rawMethod = mime || declared;
+  const method = !rawMethod && includePublished ? "PUBLISH" : rawMethod;
+  if (
+    method !== "REQUEST" &&
+    method !== "CANCEL" &&
+    method !== "REPLY" &&
+    !(includePublished && method === "PUBLISH")
+  )
+    return [];
   const out: ParsedInvite[] = [];
   for (const event of calendar.getAllSubcomponents("vevent")) {
     if (out.length === MAX_INVITES) break;
@@ -96,6 +113,7 @@ export function parseCalendar(source: string): ParsedInvite[] {
       const sequence = value(event, "sequence");
       const recurrenceId = calendarTime(event, "recurrence-id");
       const org = event.getFirstProperty("organizer");
+      if (!rawMethod && (org || event.getAllProperties("attendee").length)) return null;
       const start = calendarTime(event, "dtstart");
       // REQUEST must carry DTSTART. CANCEL/REPLY can be sparse.
       if (method === "REQUEST" && !start) return null;
@@ -151,7 +169,7 @@ export function parseCalendar(source: string): ParsedInvite[] {
 }
 
 /** mailparser exposes inline text/calendar as an attachment too, including base64/QP. */
-export const invitesFromRaw = (raw: Uint8Array) =>
+export const invitesFromRaw = (raw: Uint8Array, includePublished = false) =>
   Effect.tryPromise({
     try: () => simpleParser(Buffer.from(raw), { skipImageLinks: true }),
     catch: () => new ProviderError({ message: "Cannot read calendar invitation" }),
@@ -165,8 +183,8 @@ export const invitesFromRaw = (raw: Uint8Array) =>
         ].flatMap((a) => (a.address ? [a.address.toLowerCase()] : [])),
       );
       const unique = new Map<string, ParsedInvite>();
-      const add = (source: string) => {
-        for (const p of parseCalendar(source)) {
+      const add = (source: string, method = "") => {
+        for (const p of parseCalendar(source, includePublished, method)) {
           if (unique.size === MAX_INVITES) break;
           unique.set(`${p.invite.method}:${p.invite.key}`, {
             ...p,
@@ -195,6 +213,7 @@ export const invitesFromRaw = (raw: Uint8Array) =>
             attachment.content,
             contentType._tag === "Some" ? contentType.value.params.charset : undefined,
           ),
+          contentType._tag === "Some" ? contentType.value.params.method : undefined,
         );
       }
       // Also handle a calendar sent as a plain text file/body.
@@ -202,8 +221,10 @@ export const invitesFromRaw = (raw: Uint8Array) =>
         unique.size < MAX_INVITES &&
         mail.text?.trimStart().startsWith("BEGIN:VCALENDAR") &&
         Buffer.byteLength(mail.text, "utf8") <= MAX_CALENDAR_BYTES
-      )
-        add(mail.text.trim());
+      ) {
+        const type = Schema.decodeUnknownOption(ContentType)(mail.headers.get("content-type"));
+        add(mail.text.trim(), type._tag === "Some" ? type.value.params.method : undefined);
+      }
       return [...unique.values()];
     }),
   );

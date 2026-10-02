@@ -47,7 +47,7 @@ import type {
   ProviderError,
   SettingsScopeMissing,
 } from "./errors.js";
-import type { CalendarInvite, InviteResponse } from "./calendar.js";
+import type { CalendarEvent, CalendarInvite, InviteResponse } from "./calendar.js";
 import type { ContactSync, ContactGroup } from "./contacts.js";
 import type { ClientConfig, ConnectInput } from "./services.js";
 
@@ -167,6 +167,13 @@ export class Mailbox extends Context.Service<
     setClient(patch: ClientConfig): Effect.Effect<void>;
 
     // Calendar invites, fetched from the original MIME including inline parts and .ics files.
+    calendarEvents(messageId: string, key: string): Effect.Effect<CalendarEvent[], PerformError>;
+    detectedEvents(messageId: string): Effect.Effect<CalendarEvent[], PerformError>;
+    createCalendarEvent(
+      messageId: string,
+      key: string,
+      actor: Actor,
+    ): Effect.Effect<void, PerformError>;
     invitations(messageId: string): Effect.Effect<CalendarInvite[], PerformError>;
     respondInvite(
       messageId: string,
@@ -237,6 +244,10 @@ export class Mailbox extends Context.Service<
     setLabelPreference(input: LabelPreference): Effect.Effect<void, PerformError>;
     readonly organization: Effect.Effect<AccountOrganization[]>;
     setOrganization(input: AccountOrganization): Effect.Effect<void, NotFound>;
+    snoozeWithUndo(
+      threads: readonly string[],
+      due: number,
+    ): Effect.Effect<BatchResult, PerformError>;
     snooze(threads: readonly string[], due: number): Effect.Effect<void, PerformError>;
     wakeSnoozed(): Effect.Effect<void>;
     filters(accountId: string): Effect.Effect<ServerFilter[], PerformError>;

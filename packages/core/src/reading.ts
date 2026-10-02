@@ -199,3 +199,13 @@ export function splitRepeatedQuote(
   if (!match || !repeatedQuote(match[0], previous)) return { body: text, quote: "" };
   return { body: text.slice(0, match.index), quote: text.slice(match.index) };
 }
+
+/** Web fallback IDs came from an app link, before any provider request. Graph IDs are opaque base64/base64url. */
+export function validMessageProviderId(provider: Provider, id: string): boolean {
+  if (!id || id.length > 2048) return false;
+  return provider === "gmail"
+    ? /^[a-f0-9]+$/i.test(id)
+    : provider === "outlook"
+      ? /^[A-Za-z0-9][A-Za-z0-9_+/-]*={0,2}$/.test(id)
+      : false;
+}

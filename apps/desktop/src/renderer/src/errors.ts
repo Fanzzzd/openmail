@@ -19,8 +19,19 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Enable this account to open mail on the web": msg`Enable this account to open mail on the web`,
+  "Enable this account to use its calendar": msg`Enable this account to use its calendar`,
+  "This recurring event has a time zone Google Calendar cannot use": msg`This recurring event has a time zone Google Calendar cannot use`,
   "The selected message is no longer available.": msg`The selected message is no longer available.`,
   "This meeting link is not supported.": msg`This meeting link is not supported.`,
+  "Invalid calendar event time": msg`Invalid calendar event time`,
+  "Calendar pagination repeated a page": msg`Calendar pagination repeated a page`,
+  "Invalid calendar pagination link": msg`Invalid calendar pagination link`,
+  "Recurring event creation is unavailable for this account": msg`Recurring event creation is unavailable for this account`,
+  "Calendar access is unavailable for this account": msg`Calendar access is unavailable for this account`,
+  "Calendar creation requires an in-app confirmation": msg`Calendar creation requires an in-app confirmation`,
+  "This event is no longer available": msg`This event is no longer available`,
+  "Invalid message link": msg`Invalid message link`,
   "Enter a single access token": msg`Enter a single access token`,
 
   "This invitation cannot be answered by this account": msg`This invitation cannot be answered by this account`,
@@ -65,7 +76,7 @@ export function errorText(i18n: I18n, error: AppError): string {
       e.feature === "permanentDelete"
         ? i18n._(msg`Authorize permission to permanently delete mail in this Gmail account.`)
         : e.feature === "calendar"
-          ? i18n._(msg`Sign in again to respond to calendar invitations.`)
+          ? i18n._(msg`Sign in again to access your calendar.`)
           : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
     AuthError: (e) => i18n._(msg`The server rejected the sign-in. ${e.message}`),

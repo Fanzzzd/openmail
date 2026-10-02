@@ -1,9 +1,9 @@
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
+import { useAtomValue } from "@effect/atom-react";
 import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../state/mail";
-import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
 import { suggestionsAtom } from "../state/queries";
 import { useLingui } from "@lingui/react/macro";
@@ -566,7 +566,9 @@ export function ComposeEditor({
           options={[
             { value: "rich", label: t`Rich text` },
             { value: "plain", label: t`Plain text` },
-            { value: "markdown", label: t`Markdown` },
+            ...(prefs.labs.markdown || body.kind === "markdown"
+              ? [{ value: "markdown" as const, label: t`Markdown` }]
+              : []),
           ]}
           onValueChange={(kind) => {
             const conversion = composeConversion(body, kind);

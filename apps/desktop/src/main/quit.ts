@@ -88,3 +88,36 @@ export function createSendState() {
     },
   };
 }
+
+export type QuitInstall = (failed: () => void) => void;
+/** The before-quit send guard runs first. Only will-quit, after all window closes succeeded, may stage Squirrel. */
+export function createShutdownHandler(options: {
+  prepareInstall: () => Promise<QuitInstall | null>;
+  stop: () => Promise<void>;
+  exit: () => void;
+}) {
+  let phase: "idle" | "stopping" | "installing" | "exited" = "idle";
+  return async (event: { preventDefault(): void }) => {
+    // Native quitAndInstall resumes normal Electron teardown after the old core has stopped.
+    if (phase === "installing") return;
+    event.preventDefault();
+    if (phase !== "idle") return;
+    phase = "stopping";
+    const exit = () => {
+      if (phase !== "exited") {
+        phase = "exited";
+        options.exit();
+      }
+    };
+    try {
+      const install = await options.prepareInstall().catch(() => null);
+      await options.stop();
+      if (install) {
+        phase = "installing";
+        install(exit);
+      } else exit();
+    } catch {
+      exit();
+    }
+  };
+}

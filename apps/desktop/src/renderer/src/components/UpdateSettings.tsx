@@ -1,16 +1,19 @@
 import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import { resultError } from "../errors";
 import { Keys } from "../state/keys";
-import { setUpdateTokenAtom } from "../state/mutations";
-import { updateTokenConfiguredAtom } from "../state/queries";
+import { Select } from "./ui/Select";
+import { setPrefsAtom, setUpdateTokenAtom } from "../state/mutations";
+import { prefsAtom, updateTokenConfiguredAtom } from "../state/queries";
 
 export function UpdateSettings() {
   const { t, i18n } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const setPrefs = useAtomSet(setPrefsAtom);
   const configured = AsyncResult.getOrElse(useAtomValue(updateTokenConfiguredAtom), () => false);
   const [token, setToken] = useState("");
   const [result, save] = useAtom(setUpdateTokenAtom, { mode: "promiseExit" });
@@ -29,6 +32,20 @@ export function UpdateSettings() {
           in your system keychain.
         </Trans>
       </p>
+      <label className="flex items-center gap-3">
+        <span>{t`Update channel`}</span>
+        <Select
+          aria-label={t`Update channel`}
+          value={prefs?.updateChannel ?? "stable"}
+          options={[
+            { value: "stable", label: t`Stable` },
+            { value: "latest", label: t`Latest` },
+          ]}
+          onValueChange={(updateChannel) =>
+            setPrefs({ payload: { patch: { updateChannel } }, reactivityKeys: [Keys.prefs] })
+          }
+        />
+      </label>
       <output>
         {configured ? <Trans>Access token saved</Trans> : <Trans>No access token saved</Trans>}
       </output>

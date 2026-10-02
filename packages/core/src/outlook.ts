@@ -42,6 +42,7 @@ import {
 } from "./services.js";
 
 import { graphSearch, matchesSearch, parseSearchQuery, searchMailboxLabel } from "./search.js";
+import { makeProviderCalendar } from "./provider-calendar.js";
 import { makeOutlookFeatures } from "./outlook-features.js";
 import { makeOutlookSettings } from "./outlook-settings.js";
 
@@ -312,7 +313,10 @@ export const makeOutlook: Effect.Effect<
   const execute = (token: string, request: HttpClientRequest.HttpClientRequest) =>
     Effect.gen(function* () {
       const res = yield* http.execute(
-        request.pipe(HttpClientRequest.bearerToken(token), HttpClientRequest.setHeaders(PREFER)),
+        request.pipe(
+          HttpClientRequest.bearerToken(token),
+          HttpClientRequest.setHeader("prefer", request.headers.prefer ?? PREFER.prefer),
+        ),
       );
       const text = yield* res.text;
       if (res.status < 200 || res.status >= 300) {
@@ -565,7 +569,7 @@ export const makeOutlook: Effect.Effect<
     const systemIds = yield* Effect.forEach(
       [...WELL_KNOWN.map((f) => f.name), ...SKIPPED],
       (name) =>
-        get(accountId, WithId, `/me/mailFolders/${name}?$select=id`).pipe(
+        get(accountId, WithId, `/me/mailFolders/${encodeURIComponent(name)}?$select=id`).pipe(
           Effect.map(({ id }) => Option.some({ name, id })),
           // Not every mailbox has every well-known folder.
           Effect.catchIf(is404, () => Effect.succeed(Option.none())),
@@ -594,7 +598,8 @@ export const makeOutlook: Effect.Effect<
             if (skipped.has(f.id)) continue;
             const name = prefix ? `${prefix}/${f.displayName}` : f.displayName;
             if (!system.has(f.id)) out.push({ id: f.id, name });
-            if (f.childFolderCount > 0) yield* walk(`/me/mailFolders/${f.id}/childFolders`, name);
+            if (f.childFolderCount > 0)
+              yield* walk(`/me/mailFolders/${encodeURIComponent(f.id)}/childFolders`, name);
           }
           url = page["@odata.nextLink"];
         }
@@ -622,7 +627,7 @@ export const makeOutlook: Effect.Effect<
           const whole = yield* get(
             accountId,
             GraphMessage,
-            `/me/messages/${item.id}?$select=${SELECT}`,
+            `/me/messages/${encodeURIComponent(item.id)}?$select=${SELECT}`,
           ).pipe(
             Effect.map(Option.some),
             // Deleted between the delta page and this read; a later round reports the removal.
@@ -641,7 +646,7 @@ export const makeOutlook: Effect.Effect<
     get(
       accountId,
       AttachmentList,
-      `/me/messages/${id}/attachments?$select=name,contentType,size,isInline`,
+      `/me/messages/${encodeURIComponent(id)}/attachments?$select=name,contentType,size,isInline`,
     ).pipe(
       // Inline parts are embedded images (signatures, tracking), not real files.
       Effect.map(({ value }): Attachment[] =>
@@ -690,7 +695,7 @@ export const makeOutlook: Effect.Effect<
         const restarted: string[] = [];
         for (const folder of folders) {
           const known = previous[folder.key];
-          const initial = `${GRAPH}/me/mailFolders/${folder.path}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
+          const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
           const delta = yield* readDelta(account.id, known ?? initial).pipe(
             Effect.map(Option.some),
             // Not every mailbox has an Archive folder.
@@ -763,7 +768,7 @@ export const makeOutlook: Effect.Effect<
 
   const push = Effect.fn("Outlook.push")(
     function* (account: Account, providerId: string, op: MailOp) {
-      const path = `/me/messages/${providerId}`;
+      const path = `/me/messages/${encodeURIComponent(providerId)}`;
       if (op.kind === "read") {
         yield* write(account.id, "PATCH", path, { isRead: op.value });
         return;
@@ -820,26 +825,31 @@ export const makeOutlook: Effect.Effect<
         const draft = yield* write(
           account.id,
           "POST",
-          `/me/messages/${original.value.providerId}/${action}`,
+          `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
         ).pipe(Effect.flatMap(decode(WithId)));
-        yield* write(account.id, "PATCH", `/me/messages/${draft.id}`, fields);
+        yield* write(account.id, "PATCH", `/me/messages/${encodeURIComponent(draft.id)}`, fields);
         if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
           const inherited = yield* get(
             account.id,
             AttachmentIds,
-            `/me/messages/${draft.id}/attachments?$select=id,isInline,contentId`,
+            `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
           );
           for (const attachment of inherited.value)
             yield* write(
               account.id,
               "DELETE",
-              `/me/messages/${draft.id}/attachments/${attachment.id}`,
+              `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
             );
         }
         for (const attachment of attachments) {
-          yield* write(account.id, "POST", `/me/messages/${draft.id}/attachments`, attachment);
+          yield* write(
+            account.id,
+            "POST",
+            `/me/messages/${encodeURIComponent(draft.id)}/attachments`,
+            attachment,
+          );
         }
-        yield* write(account.id, "POST", `/me/messages/${draft.id}/send`);
+        yield* write(account.id, "POST", `/me/messages/${encodeURIComponent(draft.id)}/send`);
       }
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
@@ -874,7 +884,7 @@ export const makeOutlook: Effect.Effect<
       const addAttachments = (id: string) =>
         Effect.forEach(
           attachments,
-          (a) => write(account.id, "POST", `/me/messages/${id}/attachments`, a),
+          (a) => write(account.id, "POST", `/me/messages/${encodeURIComponent(id)}/attachments`, a),
           { discard: true },
         );
 
@@ -890,20 +900,25 @@ export const makeOutlook: Effect.Effect<
           const created = yield* write(
             account.id,
             "POST",
-            `/me/messages/${original.value.providerId}/${action}`,
+            `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
           ).pipe(Effect.flatMap(decode(WithId)));
-          yield* write(account.id, "PATCH", `/me/messages/${created.id}`, fields);
+          yield* write(
+            account.id,
+            "PATCH",
+            `/me/messages/${encodeURIComponent(created.id)}`,
+            fields,
+          );
           if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
             const inherited = yield* get(
               account.id,
               AttachmentIds,
-              `/me/messages/${created.id}/attachments?$select=id,isInline,contentId`,
+              `/me/messages/${encodeURIComponent(created.id)}/attachments?$select=id,isInline,contentId`,
             );
             for (const attachment of inherited.value)
               yield* write(
                 account.id,
                 "DELETE",
-                `/me/messages/${created.id}/attachments/${attachment.id}`,
+                `/me/messages/${encodeURIComponent(created.id)}/attachments/${encodeURIComponent(attachment.id)}`,
               );
           }
           yield* addAttachments(created.id);
@@ -937,7 +952,7 @@ export const makeOutlook: Effect.Effect<
                     Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) }),
                   ),
                 }),
-                `/me/messages/${id}?$select=categories,flag`,
+                `/me/messages/${encodeURIComponent(id)}?$select=categories,flag`,
               ).pipe(
                 Effect.catchIf(is404, () =>
                   Effect.succeed({ categories: undefined, flag: undefined }),
@@ -947,17 +962,17 @@ export const makeOutlook: Effect.Effect<
               if (live.flag?.flagStatus) fields.flag = { flagStatus: live.flag.flagStatus };
             }
             const next = yield* create;
-            yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
+            yield* write(account.id, "DELETE", `/me/messages/${encodeURIComponent(id)}`).pipe(
               Effect.catchIf(is404, () => Effect.void),
             );
             return next;
           }
-          yield* write(account.id, "PATCH", `/me/messages/${id}`, fields);
+          yield* write(account.id, "PATCH", `/me/messages/${encodeURIComponent(id)}`, fields);
           if (!draft.replaceAttachments) return id;
           const current = yield* get(
             account.id,
             AttachmentIds,
-            `/me/messages/${id}/attachments?$select=id,isInline,contentId`,
+            `/me/messages/${encodeURIComponent(id)}/attachments?$select=id,isInline,contentId`,
           );
           const managedInline = new Set(
             message.attachments.flatMap((attachment) =>
@@ -970,7 +985,11 @@ export const makeOutlook: Effect.Effect<
               !x.isInline ||
               (x.contentId !== null && x.contentId !== undefined && managedInline.has(x.contentId)),
           )) {
-            yield* write(account.id, "DELETE", `/me/messages/${id}/attachments/${a.id}`);
+            yield* write(
+              account.id,
+              "DELETE",
+              `/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(a.id)}`,
+            );
           }
           yield* addAttachments(id);
           return id;
@@ -990,7 +1009,7 @@ export const makeOutlook: Effect.Effect<
     function* (account: Account, remote: DraftRemote) {
       const id = remote.messageId ?? remote.draftId;
       if (!id) return;
-      yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
+      yield* write(account.id, "DELETE", `/me/messages/${encodeURIComponent(id)}`).pipe(
         Effect.catchIf(is404, () => Effect.void),
       );
     },
@@ -1006,7 +1025,7 @@ export const makeOutlook: Effect.Effect<
             Schema.Array(Schema.Struct({ id: Schema.String, value: Schema.String })),
           ),
         }),
-        `/me/messages/${providerId}?$select=id&$expand=${encodeURIComponent(`singleValueExtendedProperties($filter=id eq '${MARKDOWN_DRAFT_PROPERTY}')`)}`,
+        `/me/messages/${encodeURIComponent(providerId)}?$select=id&$expand=${encodeURIComponent(`singleValueExtendedProperties($filter=id eq '${MARKDOWN_DRAFT_PROPERTY}')`)}`,
       );
       const value = metadata.singleValueExtendedProperties?.find(
         (property) => property.id === MARKDOWN_DRAFT_PROPERTY,
@@ -1028,7 +1047,7 @@ export const makeOutlook: Effect.Effect<
         const metadata = yield* get(
           account.id,
           Schema.Struct({ body: Schema.Struct({ content: Schema.String }) }),
-          `/me/messages/${providerId}?$select=body`,
+          `/me/messages/${encodeURIComponent(providerId)}?$select=body`,
         );
         const parts = yield* get(
           account.id,
@@ -1036,7 +1055,7 @@ export const makeOutlook: Effect.Effect<
             value: Schema.Array(Schema.Struct({ size: Schema.Number })),
             "@odata.nextLink": Schema.optionalKey(Schema.String),
           }),
-          `/me/messages/${providerId}/attachments?$select=size`,
+          `/me/messages/${encodeURIComponent(providerId)}/attachments?$select=size`,
         );
         const estimate =
           128 * 1024 +
@@ -1045,7 +1064,11 @@ export const makeOutlook: Effect.Effect<
         if (parts["@odata.nextLink"] || estimate > maxBytes)
           return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
       }
-      return yield* getBytes(account.id, `/me/messages/${providerId}/$value`, maxBytes);
+      return yield* getBytes(
+        account.id,
+        `/me/messages/${encodeURIComponent(providerId)}/$value`,
+        maxBytes,
+      );
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -1056,7 +1079,7 @@ export const makeOutlook: Effect.Effect<
       const { value } = yield* get(
         account.id,
         AttachmentNames,
-        `/me/messages/${providerId}/attachments?$select=id,name,isInline`,
+        `/me/messages/${encodeURIComponent(providerId)}/attachments?$select=id,name,isInline`,
       );
       const found = pickAttachment(
         value.filter((a) => !a.isInline),
@@ -1069,7 +1092,7 @@ export const makeOutlook: Effect.Effect<
       // $value is the file for file attachments and MIME for attached messages.
       return yield* getBytes(
         account.id,
-        `/me/messages/${providerId}/attachments/${found.id}/$value`,
+        `/me/messages/${encodeURIComponent(providerId)}/attachments/${encodeURIComponent(found.id)}/$value`,
       );
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
@@ -1242,7 +1265,7 @@ export const makeOutlook: Effect.Effect<
       const raw = yield* get(
         account.id,
         GraphMessage,
-        `/me/messages/${id}?$select=${SELECT},parentFolderId`,
+        `/me/messages/${encodeURIComponent(id)}?$select=${SELECT},parentFolderId`,
       );
       const label = yield* messageLabel(account, raw);
       const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, id) : [];
@@ -1254,6 +1277,20 @@ export const makeOutlook: Effect.Effect<
     fetchMessage,
     ...settings,
     ...makeOutlookFeatures(get, write),
+    ...makeProviderCalendar(
+      "outlook",
+      (id, schema, path) =>
+        api(
+          id,
+          HttpClientRequest.get(`${GRAPH}${path}`).pipe(
+            HttpClientRequest.setHeader(
+              "prefer",
+              `IdType="ImmutableId", outlook.timezone="${Intl.DateTimeFormat().resolvedOptions().timeZone}"`,
+            ),
+          ),
+        ).pipe(Effect.flatMap(decode(schema))),
+      (id, path, body) => write(id, "POST", path, body),
+    ),
     search,
     changeLabel,
     connect,
@@ -1335,7 +1372,11 @@ export const makeOutlook: Effect.Effect<
         if (options?.unreadOnly) filters.push("isRead eq false");
         if (!target) {
           for (const name of ["junkemail", "deleteditems"]) {
-            const ref = yield* get(account.id, WithId, `/me/mailFolders/${name}?$select=id`);
+            const ref = yield* get(
+              account.id,
+              WithId,
+              `/me/mailFolders/${encodeURIComponent(name)}?$select=id`,
+            );
             filters.push(`parentFolderId ne '${ref.id.replaceAll("'", "''")}'`);
           }
           if (folder.mailbox === "starred") filters.push("flag/flagStatus eq 'flagged'");
@@ -1434,7 +1475,7 @@ export const makeOutlook: Effect.Effect<
             Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) }),
           ),
         }),
-        `/me/messages/${id}?$select=categories,flag`,
+        `/me/messages/${encodeURIComponent(id)}?$select=categories,flag`,
       ).pipe(
         Effect.map((message) => ({
           labels: message.categories ?? [],

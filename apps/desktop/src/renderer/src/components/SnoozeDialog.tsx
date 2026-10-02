@@ -1,6 +1,6 @@
 import { useAtom } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { parseSnoozeTime, snoozeTimes } from "@openmail/core/schema";
+import { parseSnoozeTime, snoozeTimes, type BatchResult } from "@openmail/core/schema";
 import { useState } from "react";
 import { resultError } from "../errors";
 import { MAIL_KEYS } from "../state/keys";
@@ -15,7 +15,7 @@ export function SnoozeDialog({
 }: {
   threads: readonly string[];
   onClose: () => void;
-  onSnoozed: () => void;
+  onSnoozed: (result: BatchResult) => void;
 }) {
   const { t, i18n } = useLingui();
   const [custom, setCustom] = useState("");
@@ -26,7 +26,7 @@ export function SnoozeDialog({
   const [times] = useState(() => snoozeTimes(Date.now()));
   const choose = async (reminderAt: number) => {
     const exit = await run({ payload: { threads, due: reminderAt }, reactivityKeys: MAIL_KEYS });
-    if (exit._tag === "Success") onSnoozed();
+    if (exit._tag === "Success") onSnoozed(exit.value);
   };
   return (
     <Dialog aria-label={t`Snooze`} onClose={onClose} className="w-80 space-y-3 p-5">

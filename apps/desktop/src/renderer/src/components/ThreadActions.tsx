@@ -1,4 +1,6 @@
-import { moveSourceLabel } from "@openmail/core/schema";
+import { AsyncResult } from "effect/reactivity";
+import { prefsAtom } from "../state/queries";
+import { DEFAULT_PREFS, moveSourceLabel, type ToolbarAction } from "@openmail/core/schema";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Toggle } from "@base-ui/react/toggle";
 import { Toolbar } from "@base-ui/react/toolbar";
@@ -23,8 +25,8 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { useState, type ComponentType, type ReactElement } from "react";
-import { useAtom } from "@effect/atom-react";
+import { useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { useAtom, useAtomValue } from "@effect/atom-react";
 import { createLabelAndApplyAtom } from "../state/mutations";
 import { MAIL_KEYS } from "../state/keys";
 import { resultError } from "../errors";
@@ -116,6 +118,7 @@ export function ThreadActions({
   const { t } = useLingui();
   const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
 
   const [moveOpen, setMoveOpen] = useState(false);
   const [labelOpen, setLabelOpen] = useState(false);
@@ -174,80 +177,44 @@ export function ThreadActions({
         }
       />
     ) : null;
-  if (compact)
-    return (
-      <Toolbar.Root
-        aria-label={t`Conversation actions`}
-        className="flex shrink-0 items-center gap-0.5"
-      >
-        {moveControl}
-        {labelControl}
-        <DropdownMenu
-          trigger={
-            <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
-              <MoreHorizontal className="size-4" />
-            </Toolbar.Button>
-          }
-        >
-          <ThreadMenuItems
-            currentLabel={currentLabel}
-            state={state}
-            mailbox={mailbox}
-            labels={labels}
-            onOp={onOp}
-            onCompose={onCompose}
-            onSendAgain={onSendAgain}
-            onOpenWindow={onOpenWindow}
-            onSnooze={onSnooze}
-            onPermanentDelete={onPermanentDelete}
-            onFilter={onFilter}
-          />
-        </DropdownMenu>
-      </Toolbar.Root>
-    );
-
-  return (
-    <Toolbar.Root aria-label={t`Conversation actions`} className="flex items-center gap-0.5">
-      {moveBack(state, mailbox) ? (
-        <Action
-          icon={Inbox}
-          label={t`Move to Inbox`}
-          shortcut={shortcut("inbox")}
-          onClick={() => onOp({ kind: "inbox" })}
-        />
-      ) : (
-        <Action
-          icon={Archive}
-          label={t`Archive`}
-          shortcut={shortcut("archive")}
-          onClick={() => onOp({ kind: "archive" })}
-        />
-      )}
+  const controls: Record<ToolbarAction, ReactNode> = {
+    archive: (
+      <Action
+        icon={moveBack(state, mailbox) ? Inbox : Archive}
+        label={moveBack(state, mailbox) ? t`Move to Inbox` : t`Archive`}
+        shortcut={shortcut(moveBack(state, mailbox) ? "inbox" : "archive")}
+        onClick={() => onOp({ kind: moveBack(state, mailbox) ? "inbox" : "archive" })}
+      />
+    ),
+    trash: (
       <Action
         icon={Trash2}
         label={t`Delete`}
         shortcut={shortcut("trash")}
         onClick={() => onOp({ kind: "trash" })}
       />
-      {mailbox !== "spam" && (
-        <Action
-          icon={ShieldAlert}
-          label={t`Report spam`}
-          shortcut={shortcut("spam")}
-          onClick={() => onOp({ kind: "spam" })}
-        />
-      )}
-      {onSnooze && <Action icon={Clock} label={t`Snooze`} onClick={onSnooze} />}
-      {onFilter && (
-        <Action icon={ListFilter} label={t`Create filter from these messages`} onClick={onFilter} />
-      )}
-      <Divider />
+    ),
+    spam: mailbox !== "spam" && (
+      <Action
+        icon={ShieldAlert}
+        label={t`Report spam`}
+        shortcut={shortcut("spam")}
+        onClick={() => onOp({ kind: "spam" })}
+      />
+    ),
+    snooze: onSnooze && <Action icon={Clock} label={t`Snooze`} onClick={onSnooze} />,
+    filter: onFilter && (
+      <Action icon={ListFilter} label={t`Create filter from these messages`} onClick={onFilter} />
+    ),
+    read: (
       <Action
         icon={state.isUnread ? MailOpen : Mail}
         label={state.isUnread ? t`Mark as read` : t`Mark as unread`}
         shortcut={shortcut("read")}
         onClick={() => onOp({ kind: "read", value: state.isUnread })}
       />
+    ),
+    star: (
       <Switch
         icon={Star}
         pressed={state.isStarred}
@@ -256,66 +223,107 @@ export function ThreadActions({
         shortcut={shortcut("star")}
         onPressedChange={(value) => onOp({ kind: "star", value })}
       />
-      {state.provider === "gmail" && (
-        <Switch
-          icon={Bookmark}
-          pressed={state.isImportant}
-          pressedClass="fill-orange-400 text-orange-400"
-          label={state.isImportant ? t`Mark as not important` : t`Mark as important`}
-          shortcut={shortcut("important")}
-          onPressedChange={(value) => onOp({ kind: "important", value })}
-        />
-      )}
-      {moveControl}
-      {labelControl}
-      {currentLabel && state.provider === "gmail" && labels.some((l) => l.id === currentLabel) && (
+    ),
+    important: state.provider === "gmail" && (
+      <Switch
+        icon={Bookmark}
+        pressed={state.isImportant}
+        pressedClass="fill-orange-400 text-orange-400"
+        label={state.isImportant ? t`Mark as not important` : t`Mark as important`}
+        shortcut={shortcut("important")}
+        onPressedChange={(value) => onOp({ kind: "important", value })}
+      />
+    ),
+    move: moveControl,
+    label: labelControl,
+    removeLabel: currentLabel &&
+      state.provider === "gmail" &&
+      labels.some((l) => l.id === currentLabel) && (
         <Action
           icon={Tag}
           label={t`Remove Current Label`}
           onClick={() => onOp({ kind: "label", labelId: currentLabel, value: false })}
         />
-      )}
-      {onSendAgain && <Action icon={MailPlus} label={t`Send Again`} onClick={onSendAgain} />}
-      {onCompose && (
-        <>
-          <Divider />
-          <Action
-            icon={Reply}
-            label={t`Reply`}
-            shortcut={shortcut("reply")}
-            onClick={() => onCompose("reply")}
-          />
-          <Action
-            icon={ReplyAll}
-            label={t`Reply all`}
-            shortcut={shortcut("replyAll")}
-            onClick={() => onCompose("replyAll")}
-          />
-          <Action
-            icon={Forward}
-            label={t`Forward`}
-            shortcut={shortcut("forward")}
-            onClick={() => onCompose("forward")}
-          />
-          <Action
-            icon={MailPlus}
-            label={t`Forward as attachment`}
-            shortcut={shortcut("forwardAttachment")}
-            onClick={() => onCompose("forward", true)}
-          />
-        </>
-      )}
-      {onOpenWindow && (
-        <>
-          <Divider />
-          <Action
-            icon={AppWindow}
-            label={t`Open in New Window`}
-            shortcut={shortcut("openThread")}
-            onClick={onOpenWindow}
-          />
-        </>
-      )}
+      ),
+    sendAgain: onSendAgain && (
+      <Action icon={MailPlus} label={t`Send Again`} onClick={onSendAgain} />
+    ),
+    reply: onCompose && (
+      <Action
+        icon={Reply}
+        label={t`Reply`}
+        shortcut={shortcut("reply")}
+        onClick={() => onCompose("reply")}
+      />
+    ),
+    replyAll: onCompose && (
+      <Action
+        icon={ReplyAll}
+        label={t`Reply all`}
+        shortcut={shortcut("replyAll")}
+        onClick={() => onCompose("replyAll")}
+      />
+    ),
+    forward: onCompose && (
+      <Action
+        icon={Forward}
+        label={t`Forward`}
+        shortcut={shortcut("forward")}
+        onClick={() => onCompose("forward")}
+      />
+    ),
+    forwardAttachment: onCompose && (
+      <Action
+        icon={MailPlus}
+        label={t`Forward as attachment`}
+        shortcut={shortcut("forwardAttachment")}
+        onClick={() => onCompose("forward", true)}
+      />
+    ),
+    openWindow: onOpenWindow && (
+      <Action
+        icon={AppWindow}
+        label={t`Open in New Window`}
+        shortcut={shortcut("openThread")}
+        onClick={onOpenWindow}
+      />
+    ),
+  };
+  const ordered = [...new Set(prefs.toolbarActions)].filter((action) => controls[action]);
+  const visible = compact ? ordered.slice(0, 2) : ordered;
+  const picker = pickerMode === "move" ? "move" : "label";
+  if (labelPicker && !visible.includes(picker)) visible.push(picker);
+  return (
+    <Toolbar.Root
+      aria-label={t`Conversation actions`}
+      className="flex shrink-0 items-center gap-0.5"
+    >
+      {visible.map((action) => (
+        <span key={action} className="contents">
+          {controls[action]}
+        </span>
+      ))}
+      <DropdownMenu
+        trigger={
+          <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
+            <MoreHorizontal className="size-4" />
+          </Toolbar.Button>
+        }
+      >
+        <ThreadMenuItems
+          currentLabel={currentLabel}
+          state={state}
+          mailbox={mailbox}
+          labels={labels}
+          onOp={onOp}
+          onCompose={onCompose}
+          onSendAgain={onSendAgain}
+          onOpenWindow={onOpenWindow}
+          onSnooze={onSnooze}
+          onPermanentDelete={onPermanentDelete}
+          onFilter={onFilter}
+        />
+      </DropdownMenu>
     </Toolbar.Root>
   );
 }
@@ -597,10 +605,6 @@ function LabelPicker({
       </PickerPopover>
     </>
   );
-}
-
-function Divider() {
-  return <Toolbar.Separator className="mx-1.5 h-4 w-px bg-black/10 dark:bg-white/10" />;
 }
 
 function Action({

@@ -207,3 +207,7 @@ export const contactPhotoAtom = (accountId: string, address: string) =>
     { accountId, address },
     { reactivityKeys: [Keys.contacts, Keys.prefs], ...cached },
   );
+export const calendarEventsAtom = (messageId: string, key: string) =>
+  MailClient.query("CalendarEvents", { messageId, key }, { timeToLive: Duration.minutes(1) });
+export const detectedEventsAtom = (messageId: string) =>
+  MailClient.query("DetectedEvents", { messageId }, { timeToLive: Duration.minutes(1) });

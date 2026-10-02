@@ -8,11 +8,46 @@ import {
 } from "./compose-images.js";
 import { Clock, Effect, Semaphore } from "effect";
 import type { Account, Actor, Command } from "./domain.js";
-import { matchingInviteAttendee, type InviteResponse } from "./calendar.js";
+import {
+  calendarTimestamp,
+  detectMailEvents,
+  matchingInviteAttendee,
+  shouldLoadInvitation,
+  type CalendarEvent,
+  type CalendarInvite,
+  type InviteResponse,
+} from "./calendar.js";
 import { InvalidInput } from "./errors.js";
 import { inviteCanRespond, inviteReply, invitesFromRaw } from "./invites.js";
 import type { Mailbox } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
+
+function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
+  if (!invite.start || invite.cancelled) return null;
+  const start = invite.start;
+  let end = invite.end;
+  if (!end) {
+    if (start.kind === "date") {
+      const day = new Date(`${start.value}T00:00:00Z`);
+      day.setUTCDate(day.getUTCDate() + 1);
+      end = { kind: "date", value: day.toISOString().slice(0, 10) };
+    } else {
+      const timestamp = calendarTimestamp(start) + 3600000;
+      if (!Number.isFinite(timestamp)) return null;
+      end = { kind: "zoned", value: new Date(timestamp).toISOString(), zone: "UTC", timestamp };
+    }
+  }
+  return {
+    key: invite.key,
+    uid: invite.uid,
+    title: invite.title,
+    start,
+    end,
+    location: invite.location,
+    description: invite.description ?? "",
+    recurrence: invite.recurrence,
+  };
+}
 
 /** User-only responses; no toolkit exposes these operations to agents. */
 export function makeFeatureMailbox(
@@ -70,6 +105,8 @@ export function makeFeatureMailbox(
   const parsedInvites = Effect.fnUntraced(function* (messageId: string) {
     const ref = yield* store.messageRef(messageId);
     const account = yield* store.getAccount(ref.accountId);
+    if (account.enabled === false)
+      return yield* new InvalidInput({ message: "Enable this account to use its calendar" });
     const parsed = yield* providers
       .get(account.provider)
       .fetchRaw(account, ref.providerId)
@@ -77,6 +114,27 @@ export function makeFeatureMailbox(
     return { account, ref, parsed };
   });
   const photoLock = Semaphore.makeUnsafe(1);
+  const detectedEvents = Effect.fnUntraced(function* (messageId: string) {
+    const message = yield* store.getMessage(messageId);
+    const owner = yield* store.getAccount(message.accountId);
+    if (owner.enabled === false)
+      return yield* new InvalidInput({ message: "Enable this account to use its calendar" });
+    if (shouldLoadInvitation(message)) {
+      const ref = yield* store.messageRef(messageId);
+      const account = yield* store.getAccount(ref.accountId);
+      const raw = yield* providers.get(account.provider).fetchRaw(account, ref.providerId);
+      const parsed = yield* invitesFromRaw(raw, true);
+      // Never reinterpret an iTIP request/response/cancellation as a new personal event.
+      if (parsed.some((p) => p.invite.method !== "PUBLISH")) return [];
+      return parsed.flatMap((p) => {
+        const event = eventFromInvite(p.invite);
+        return event
+          ? [{ ...event, title: event.title || message.subject, key: JSON.stringify(event) }]
+          : [];
+      });
+    }
+    return detectMailEvents(message).map((event) => ({ ...event, key: JSON.stringify(event) }));
+  });
   return {
     imageFromFile: imageAttachment,
     imageFromUrl: (url: string) =>
@@ -125,6 +183,47 @@ export function makeFeatureMailbox(
           yield* store.senderHistory(recipients),
         );
       }),
+    detectedEvents,
+    calendarEvents: (messageId: string, key: string) =>
+      Effect.gen(function* () {
+        const { parsed, account } = yield* parsedInvites(messageId);
+        const invite = parsed.find((p) => p.invite.key === key)?.invite;
+        const event = invite && eventFromInvite(invite);
+        const adapter = providers.get(account.provider);
+        if (!event || account.provider === "imap" || !adapter.calendarEvents)
+          return yield* new InvalidInput({
+            message: "Calendar access is unavailable for this account",
+          });
+        return yield* adapter.calendarEvents(account, { ...event, key: invite.uid });
+      }),
+    createCalendarEvent: (messageId: string, key: string, actor: Actor) =>
+      responseLock.withPermit(
+        Effect.gen(function* () {
+          if (actor.kind !== "user" || actor.surface !== "app")
+            return yield* new InvalidInput({
+              message: "Calendar creation requires an in-app confirmation",
+            });
+          const event = (yield* detectedEvents(messageId)).find((e) => e.key === key);
+          if (!event)
+            return yield* new InvalidInput({ message: "This event is no longer available" });
+          const ref = yield* store.messageRef(messageId);
+          const account = yield* store.getAccount(ref.accountId);
+          const adapter = providers.get(account.provider);
+          if (account.provider === "imap" || !adapter.createCalendarEvent)
+            return yield* new InvalidInput({
+              message: "Calendar access is unavailable for this account",
+            });
+          yield* adapter.createCalendarEvent(account, event);
+          yield* store.audit({
+            actor,
+            accountId: account.id,
+            action: "calendar_create",
+            detail: { messageId, title: event.title },
+          });
+          yield* changed;
+          return yield* Effect.void;
+        }),
+      ),
     contactSync: store.contactSync,
     refreshContacts,
     invitations: (messageId: string) =>
@@ -233,6 +332,9 @@ export function makeFeatureMailbox(
     | "imageFromUrl"
     | "imageFromFile"
     | "suggestSender"
+    | "calendarEvents"
+    | "detectedEvents"
+    | "createCalendarEvent"
   >;
 }
 

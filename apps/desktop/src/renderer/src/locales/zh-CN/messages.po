@@ -289,6 +289,14 @@ msgstr "添加时段"
 msgid "Add star"
 msgstr "加星标"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add this event to your calendar?"
+msgstr "将此事件加入日历？"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Add to calendar"
+msgstr "加入日历"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Add Your First Account"
 msgstr "添加第一个邮箱"
@@ -304,6 +312,10 @@ msgstr "写信时自动加上；换发件账户时跟着换。签名只存在本
 #: src/renderer/src/App.tsx
 msgid "Added star"
 msgstr "已加星标"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Added to calendar"
+msgstr "已加入日历"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Address or domain"
@@ -387,6 +399,7 @@ msgstr "这个空间的所有账户"
 msgid "All actions"
 msgstr "全部动作"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "All day"
 msgstr "全天"
@@ -487,6 +500,7 @@ msgstr "确认建议"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -623,9 +637,21 @@ msgstr "问题报告"
 msgid "Bulleted list"
 msgstr "圆点列表"
 
+#: src/renderer/src/errors.ts
+msgid "Calendar access is unavailable for this account"
+msgstr "此账户无法访问日历"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar creation requires an in-app confirmation"
+msgstr "创建日程需要在 app 内确认"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Calendar invitation"
 msgstr "日历邀请"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar pagination repeated a page"
+msgstr "日历分页重复返回同一页"
 
 #: src/renderer/src/errors.ts
 msgid "Calendar response was not sent"
@@ -677,6 +703,7 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "暂时连不上邮件服务器：{0}"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
@@ -752,6 +779,10 @@ msgstr "请选择自建标签或文件夹"
 #: src/renderer/src/errors.ts
 msgid "Choose a verified send-as address for this account"
 msgstr "请选择此账户已验证的发件地址"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Choose actions and use the buttons to change their order."
+msgstr "选择操作，用按钮调整顺序。"
 
 #: src/renderer/src/errors.ts
 msgid "Choose at least one filter action"
@@ -851,6 +882,10 @@ msgstr "撰写"
 msgid "Confirm"
 msgstr "确认"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Confirm and add event"
+msgstr "确认添加事件"
+
 #: src/renderer/src/errors.ts
 msgid "Confirm deletion for a filter with a search query"
 msgstr "请确认带查询条件的删除过滤器"
@@ -941,6 +976,10 @@ msgstr "无法加载日历邀请。"
 #: src/renderer/src/App.tsx
 msgid "Could not load the next message"
 msgstr "无法加载下一封邮件"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Could not load your calendar."
+msgstr "无法加载日历。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
@@ -1054,6 +1093,7 @@ msgstr "在 Apple 账户的「登录与安全」里生成 App 专用密码。"
 msgid "Create filter"
 msgstr "创建过滤器"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
@@ -1136,6 +1176,7 @@ msgstr "默认发件地址"
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -1187,6 +1228,10 @@ msgstr "密集"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "描述遇到的问题"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Detect calendar events in messages"
+msgstr "检测邮件中的日程"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Diagnostics preview"
@@ -1327,6 +1372,14 @@ msgstr "清空废纸篓？"
 msgid "Enable filters"
 msgstr "启用筛选"
 
+#: src/renderer/src/errors.ts
+msgid "Enable this account to open mail on the web"
+msgstr "请先启用此账户以打开网页版邮件"
+
+#: src/renderer/src/errors.ts
+msgid "Enable this account to use its calendar"
+msgstr "请先启用此账户以使用日历"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Enabled"
 msgstr "开启"
@@ -1390,6 +1443,10 @@ msgstr "展开分类"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Expanded"
 msgstr "展开"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Experimental features can be enabled separately."
+msgstr "实验功能可逐项开启。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "External replies"
@@ -1488,11 +1545,13 @@ msgid "Forums"
 msgstr "论坛"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
 msgstr "转发"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward as attachment"
@@ -1528,6 +1587,10 @@ msgstr "生成应用专用密码"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Generate authorization code"
 msgstr "生成授权码"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Gestures and toolbar"
+msgstr "手势与工具栏"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "GitHub access token"
@@ -1628,6 +1691,7 @@ msgstr "IMAP 关键词，用逗号分隔"
 msgid "IMAP server"
 msgstr "IMAP 服务器"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1701,6 +1765,18 @@ msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮�
 msgid "Internal reply"
 msgstr "内部回复"
 
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar event time"
+msgstr "日程时间无效"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid calendar pagination link"
+msgstr "日历分页链接无效"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid message link"
+msgstr "邮件链接无效"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Italic"
@@ -1748,6 +1824,7 @@ msgid "Label removed"
 msgstr "已去掉标签"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -1757,6 +1834,10 @@ msgstr "标签"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Labels…"
 msgstr "标签…"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Labs"
+msgstr "实验功能"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Language"
@@ -1777,6 +1858,18 @@ msgstr "最近 7 天"
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
 msgstr "上次同步失败"
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Latest"
+msgstr "最新版本"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left long swipe"
+msgstr "向左长滑"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Left short swipe"
+msgstr "向左短滑"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1802,6 +1895,10 @@ msgstr "正在加载附加邮件…"
 #: src/renderer/src/components/Composer.tsx
 msgid "Loading attachments…"
 msgstr "正在加载附件…"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Loading calendar…"
+msgstr "正在加载日历…"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Loading diagnostics…"
@@ -1831,6 +1928,7 @@ msgstr "加载中…"
 msgid "Local preview: {count} messages"
 msgstr "本地预览：{count} 封邮件"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Location"
 msgstr "地点"
@@ -1892,6 +1990,7 @@ msgstr "将此邮件标为未读"
 msgid "Mark read"
 msgstr "标为已读"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
@@ -1904,6 +2003,10 @@ msgstr "从此邮件起标为未读"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown"
 msgstr "Markdown"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Markdown composition"
+msgstr "Markdown 撰写"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Markdown replacements"
@@ -2057,7 +2160,16 @@ msgstr "将 {0} 前移"
 msgid "Move {0} later"
 msgstr "将 {0} 后移"
 
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} down"
+msgstr "将{label}下移"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Move {label} up"
+msgstr "将{label}上移"
+
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move down"
 msgstr "下移"
@@ -2071,6 +2183,7 @@ msgid "Move message to Trash"
 msgstr "将此邮件移到废纸篓"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move To"
 msgstr "移动到"
@@ -2099,6 +2212,7 @@ msgid "Move to Trash"
 msgstr "移到废纸篓"
 
 #: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
 msgstr "上移"
@@ -2257,6 +2371,10 @@ msgstr "这里没有邮件"
 msgid "No messages match the filters"
 msgstr "没有符合筛选的邮件"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "No overlapping events in your primary calendar."
+msgstr "主日历中没有重叠日程。"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "No parent"
@@ -2290,6 +2408,8 @@ msgstr "没有未读邮件"
 msgid "No unread mail in the inbox"
 msgstr "收件箱没有未读"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "None"
 msgstr "不选"
@@ -2394,6 +2514,7 @@ msgid "Open in Gmail"
 msgstr "在 Gmail 中打开"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2671,6 +2792,10 @@ msgstr "阅读"
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
+#: src/renderer/src/errors.ts
+msgid "Recurring event creation is unavailable for this account"
+msgstr "此账户暂不支持创建重复日程"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "重复会议"
@@ -2731,6 +2856,7 @@ msgid "Remove current label"
 msgstr "移除当前标签"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Remove Current Label"
 msgstr "移除当前标签"
@@ -2808,11 +2934,13 @@ msgid "Replies and forwards"
 msgstr "回复和转发"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "回复"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply all"
@@ -2830,6 +2958,7 @@ msgstr "回复模式"
 msgid "Reply only to contacts"
 msgstr "仅回复联系人"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -2848,6 +2977,10 @@ msgstr "重置收藏夹"
 #: src/renderer/src/recovery-labels.ts
 msgid "Reset local cache"
 msgstr "重置本地缓存"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Reset toolbar"
+msgstr "重置工具栏"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
@@ -2878,6 +3011,10 @@ msgstr "还原"
 msgid "Review and Send"
 msgstr "检查并发送"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Review the event details before confirming."
+msgstr "确认前请核对事件详情。"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
 msgstr "请查看以下本地诊断。不会自动上传。继续后打开邮件草稿，由你检查并用自己的账户发送。"
@@ -2889,6 +3026,14 @@ msgstr "富文本"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Right away"
 msgstr "立即"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right long swipe"
+msgstr "向右长滑"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Right short swipe"
+msgstr "向右短滑"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3068,6 +3213,7 @@ msgstr "语义搜索暂不可用，仍可全文搜索。"
 msgid "Send"
 msgstr "发送"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Send Again"
 msgstr "再次发送"
@@ -3244,6 +3390,10 @@ msgstr "在菜单栏显示未读数"
 msgid "Sign in again"
 msgstr "重新登录"
 
+#: src/renderer/src/errors.ts
+msgid "Sign in again to access your calendar."
+msgstr "请重新登录以访问日历。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
 msgstr "重新登录以启用过滤器"
@@ -3251,10 +3401,6 @@ msgstr "重新登录以启用过滤器"
 #: src/renderer/src/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
 msgstr "重新登录以启用过滤器和自动回复。"
-
-#: src/renderer/src/errors.ts
-msgid "Sign in again to respond to calendar invitations."
-msgstr "请重新登录以响应日历邀请。"
 
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/errors.ts
@@ -3299,11 +3445,13 @@ msgstr "SMTP 加密"
 msgid "SMTP server"
 msgstr "SMTP 服务器"
 
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Snooze"
 msgstr "稍后提醒"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Snoozed"
 msgstr "稍后提醒"
@@ -3338,7 +3486,12 @@ msgstr "特殊文件夹未读徽标"
 msgid "SSL/TLS (usually 465)"
 msgstr "SSL/TLS（通常是 465）"
 
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Stable"
+msgstr "稳定版本"
+
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3413,6 +3566,14 @@ msgstr "星期日"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Superscript"
 msgstr "上标"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe actions"
+msgstr "滑动操作"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
+msgstr "用双指横向滑动。短滑或长滑后松开以执行操作。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Switch spaces"
@@ -3592,6 +3753,10 @@ msgid "This draft has unsaved changes or is waiting to sync."
 msgstr "草稿有未保存的修改或正在等待同步。"
 
 #: src/renderer/src/errors.ts
+msgid "This event is no longer available"
+msgstr "此事件已不可用"
+
+#: src/renderer/src/errors.ts
 msgid "This invitation cannot be answered by this account"
 msgstr "此账户无法响应该邀请"
 
@@ -3610,6 +3775,10 @@ msgstr "不支持此会议链接。"
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."
 msgstr "此权限允许 openmail 永久删除此 Gmail 账户的邮件。Google 会征求你的同意。授权后，请再次确认删除。"
+
+#: src/renderer/src/errors.ts
+msgid "This recurring event has a time zone Google Calendar cannot use"
+msgstr "Google 日历不支持此重复事件的时区"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This removes the filter from the server. Existing messages are unchanged."
@@ -3665,6 +3834,10 @@ msgstr "切换阅读面板位置"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
 msgstr "明天上午"
+
+#: src/renderer/src/components/InteractionSettings.tsx
+msgid "Toolbar actions"
+msgstr "工具栏操作"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3759,6 +3932,10 @@ msgstr "最多三个按钮，按选择顺序排列。选择全部动作会添加
 #: src/renderer/src/state/desktop.ts
 msgid "Update available:"
 msgstr "有可用更新："
+
+#: src/renderer/src/components/UpdateSettings.tsx
+msgid "Update channel"
+msgstr "更新渠道"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
@@ -3857,3 +4034,7 @@ msgstr "你"
 #: src/renderer/src/components/Settings.tsx
 msgid "You (command line)"
 msgstr "你（命令行）"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Your overlapping events"
+msgstr "你的重叠日程"
