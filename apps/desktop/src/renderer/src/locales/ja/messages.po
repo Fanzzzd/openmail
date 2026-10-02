@@ -249,7 +249,7 @@ msgid "Activity"
 msgstr "操作履歴"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Actual size"
 msgstr "実寸"
 
@@ -394,17 +394,17 @@ msgid "AI suggestions"
 msgstr "AIによる提案"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "中央揃え"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "左揃え"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "右揃え"
 
@@ -556,9 +556,9 @@ msgstr "承認して編集"
 msgid "Approve suggestion"
 msgstr "提案の承認"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -566,6 +566,7 @@ msgstr "提案の承認"
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Archive"
@@ -601,7 +602,7 @@ msgid "Assistant"
 msgstr "アシスタント"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Attach files"
 msgstr "ファイルを添付"
 
@@ -652,7 +653,7 @@ msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "この Gmail アカウントのメールを完全に削除する権限を承認します。"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "自動方向"
 
@@ -734,7 +735,7 @@ msgid "Body"
 msgstr "本文"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "太字"
 
@@ -747,7 +748,7 @@ msgid "Built-in AI"
 msgstr "内蔵AI"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "箇条書きリスト"
 
@@ -973,7 +974,7 @@ msgid "Clear all caches"
 msgstr "すべてのキャッシュを消去"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "書式をクリア"
 
@@ -997,7 +998,7 @@ msgstr "ダウンロード済みの本文と添付ファイルを消去します
 msgid "Close"
 msgstr "閉じる"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Close compose window"
 msgstr "作成ウィンドウを閉じる"
 
@@ -1011,7 +1012,7 @@ msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try r
 msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプリを再起動し、リカバリを再試行します。"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "コードブロック"
 
@@ -1019,7 +1020,7 @@ msgstr "コードブロック"
 msgid "Collapse all"
 msgstr "すべて折りたたむ"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Collapse all messages"
 msgstr "すべてのメッセージを折りたたむ"
 
@@ -1163,7 +1164,7 @@ msgid "Copy selected"
 msgstr "選択したものをコピー"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "スタイルをコピー"
 
@@ -1334,7 +1335,7 @@ msgstr "Apple アカウントの「サインインとセキュリティ」でア
 msgid "Create filter"
 msgstr "フィルターの作成"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
@@ -1385,7 +1386,7 @@ msgid "Dark background"
 msgstr "暗い背景"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "破線リスト"
 
@@ -1411,17 +1412,17 @@ msgstr "辞退"
 msgid "Declined"
 msgstr "辞退済み"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease font size"
 msgstr "文字サイズを小さくする"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "インデントを減らす"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "引用レベルを下げる"
 
@@ -1446,18 +1447,18 @@ msgstr "デフォルトの差出人アドレス"
 msgid "Default signature"
 msgstr "デフォルトの署名"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "削除"
@@ -1656,7 +1657,7 @@ msgid "Edit body"
 msgstr "本文を編集"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "リンクを編集"
 
@@ -1791,7 +1792,7 @@ msgstr "一致する項目を除外"
 msgid "Expand all"
 msgstr "すべて展開"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Expand all messages"
 msgstr "すべてのメッセージを展開する"
 
@@ -1873,7 +1874,7 @@ msgstr "ブラウザでのサインインを完了してから、ここに戻っ
 msgid "Fix grammar and proofread"
 msgstr "文法の修正と校正"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Focus main window"
 msgstr "メインウィンドウにフォーカスする"
 
@@ -1921,17 +1922,17 @@ msgstr "書式設定"
 msgid "Forums"
 msgstr "フォーラム"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "転送"
 
-#: src/renderer/src/components/InteractionSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "添付ファイルとして転送"
 
@@ -2026,7 +2027,7 @@ msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draf
 msgstr "Gmailの下書きのラベルとスターはこのMacに保持されます。サーバー上の下書きには、Gmailは下書きラベルのみ許可します。"
 
 #: src/renderer/src/components/GoToFolder.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Go to folder"
 msgstr "フォルダに移動"
 
@@ -2120,10 +2121,10 @@ msgstr "IMAPサーバー"
 msgid "Importance action"
 msgstr "重要なアクション"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
 msgid "Important"
 msgstr "重要"
@@ -2162,27 +2163,27 @@ msgstr "オリジナルの付属品を含める"
 msgid "Include signature separator"
 msgstr "署名の区切り線を含める"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase font size"
 msgstr "文字サイズを大きくする"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "インデントを増やす"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "引用レベルを上げる"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "リストのインデントを増やす"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "インラインコード"
 
@@ -2240,7 +2241,7 @@ msgid "Invitation status in this conversation"
 msgstr "このスレッドの招待ステータス"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "イタリック"
 
@@ -2248,12 +2249,12 @@ msgstr "イタリック"
 msgid "Join meeting"
 msgstr "ミーティングに参加する"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Jump to selection"
 msgstr "選択範囲に移動"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "両端揃え"
 
@@ -2280,6 +2281,7 @@ msgid "Kept on this Mac"
 msgstr "このMacに保存されています"
 
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "キーボードショートカット"
@@ -2314,11 +2316,11 @@ msgstr "ラベル: {label}"
 msgid "Label: {name}"
 msgstr "ラベル：{name}"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "ラベル"
 
@@ -2338,7 +2340,7 @@ msgstr "言語"
 msgid "Large"
 msgstr "大きい"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Larger text"
 msgstr "大きな文字"
 
@@ -2371,7 +2373,7 @@ msgid "Left short swipe"
 msgstr "左に短くスワイプ"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "左から右へ"
 
@@ -2391,7 +2393,7 @@ msgstr "画像の読み込み"
 msgid "Load older messages"
 msgstr "古いメッセージを読み込む"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Load remote content"
 msgstr "リモートコンテンツをロードする"
 
@@ -2531,9 +2533,9 @@ msgstr "メッセージを未開封にする"
 msgid "Mark read"
 msgstr "開封済みにする"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "開封済み／未開封にする"
 
@@ -2763,8 +2765,8 @@ msgstr "ペイン間でフォーカスを移動する"
 msgid "Move message to Trash"
 msgstr "メッセージをゴミ箱に移動"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move To"
 msgstr "移動"
@@ -2778,8 +2780,8 @@ msgid "Move to Cc"
 msgstr "Ccに移動"
 
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
 msgstr "フォルダに移動"
 
@@ -2789,8 +2791,8 @@ msgstr "フォルダに移動…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "受信に移動"
 
@@ -2857,7 +2859,7 @@ msgstr "新着メール通知"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
 msgstr "新しいメッセージ"
@@ -2900,7 +2902,7 @@ msgstr "新しいテンプレート"
 msgid "New time:"
 msgstr "変更後の日時："
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New Window"
 msgstr "新しいウィンドウ"
@@ -2923,15 +2925,15 @@ msgstr "次は下に"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "次の一致"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next tab"
 msgstr "次のタブ"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next thread"
 msgstr "次のスレッド"
 
@@ -2939,7 +2941,7 @@ msgstr "次のスレッド"
 msgid "Next week"
 msgstr "来週"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next window"
 msgstr "次のウィンドウ"
 
@@ -3034,9 +3036,9 @@ msgstr "未開封メールはありません"
 msgid "No unread mail in the inbox"
 msgstr "受信箱に未開封メールがない"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -3070,7 +3072,7 @@ msgid "Notifications for {0}"
 msgstr "{0} の通知"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "番号付きリスト"
 
@@ -3159,11 +3161,11 @@ msgstr "連絡先で開く"
 msgid "Open in Gmail"
 msgstr "Gmail で開く"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Open in New Window"
 msgstr "新しいウィンドウで開く"
 
@@ -3171,7 +3173,7 @@ msgstr "新しいウィンドウで開く"
 msgid "Open in Outlook"
 msgstr "Outlook で開く"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Open in web mail"
 msgstr "Webメールで開く"
 
@@ -3285,7 +3287,7 @@ msgid "Other IMAP"
 msgstr "その他のIMAP"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "リストのインデントを減らす"
 
@@ -3331,17 +3333,17 @@ msgid "Password"
 msgstr "パスワード"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "ペーストしてスタイルを合わせる"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "引用としてペースト"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "スタイルをペースト"
 
@@ -3401,15 +3403,15 @@ msgstr "プレビュー: {0} メッセージ。既存のメールに適用する
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "前の一致"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous tab"
 msgstr "前のタブ"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous thread"
 msgstr "前のスレッド"
 
@@ -3417,7 +3419,7 @@ msgstr "前のスレッド"
 msgid "Previous time:"
 msgstr "変更前の日時："
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous window"
 msgstr "前のウィンドウ"
 
@@ -3432,7 +3434,7 @@ msgstr "メイン"
 msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
 msgstr "メインにはGmailの他のカテゴリは含まれません。OutlookとIMAPでは受信のすべてのメッセージが対象です。開封済みのメッセージと初回同期は通知されません。"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Print"
 msgstr "印刷する"
 
@@ -3581,8 +3583,8 @@ msgstr "アカウントを削除する"
 msgid "Remove current label"
 msgstr "現在のラベルを削除する"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Remove Current Label"
 msgstr "現在のラベルを削除"
@@ -3663,18 +3665,18 @@ msgstr "置換後の文字列"
 msgid "Replies and forwards"
 msgstr "返信と転送"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Reply"
 msgstr "返信"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "全員に返信"
 
@@ -3702,11 +3704,11 @@ msgstr "連絡先にのみ返信"
 msgid "Reply signature for {address}"
 msgstr "{address} の返信署名"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Report spam"
 msgstr "迷惑メールとして報告"
 
@@ -3796,7 +3798,7 @@ msgid "Right short swipe"
 msgstr "右に短くスワイプ"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "右から左へ"
 
@@ -3840,7 +3842,7 @@ msgstr "すべて保存…"
 msgid "Save as PDF…"
 msgstr "PDF として保存…"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "下書きを保存"
 
@@ -3850,7 +3852,7 @@ msgstr "キーを保存"
 
 #: src/renderer/src/components/RawMessage.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "メッセージをEMLとして保存…"
 
@@ -3917,7 +3919,7 @@ msgctxt "in progress"
 msgid "Saving…"
 msgstr "保存中…"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Search"
 msgstr "検索"
 
@@ -3934,7 +3936,7 @@ msgid "Search mail"
 msgstr "メールを検索"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "この送信者からのメッセージを検索する"
 
@@ -3993,17 +3995,17 @@ msgstr "セマンティック検索は使用できません。全文検索は引
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "送信"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Send Again"
 msgstr "再送信"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Send and archive"
 msgstr "送信してアーカイブ"
 
@@ -4079,7 +4081,7 @@ msgstr "サーバー プレビュー: {count} メッセージ"
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "設定"
@@ -4112,12 +4114,12 @@ msgstr "表示"
 msgid "Show account names in unified folders"
 msgstr "統合フォルダ内のアカウント名を表示する"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "CCフィールドを表示"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
 msgstr "フォーマットバーを表示"
 
@@ -4162,22 +4164,22 @@ msgid "Show only unread"
 msgstr "未開封のみ表示"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "閲覧ペインを表示／非表示"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "サイドバーの表示または非表示"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "ツールバーを表示／非表示"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show original"
 msgstr "元のメッセージを表示"
 
@@ -4261,7 +4263,7 @@ msgid "Small"
 msgstr "小さい"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Smaller text"
 msgstr "小さい文字"
 
@@ -4281,7 +4283,7 @@ msgstr "SMTP暗号化"
 msgid "SMTP server"
 msgstr "SMTPサーバー"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4347,12 +4349,12 @@ msgstr "SSL/TLS (通常は 465)"
 msgid "Stable"
 msgstr "安定版"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Star"
 msgstr "スターを付ける"
 
@@ -4397,7 +4399,7 @@ msgid "Stop suggesting {0}"
 msgstr "{0} の提案をやめる"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "取り消し線"
 
@@ -4412,7 +4414,7 @@ msgid "Subject contains"
 msgstr "件名に含まれる文字"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "下付き文字"
 
@@ -4433,7 +4435,7 @@ msgid "Sunday"
 msgstr "日曜日"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "上付き文字"
 
@@ -4467,7 +4469,7 @@ msgid "Sync failed ({count})"
 msgstr "同期に失敗しました ({count})"
 
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "今すぐ同期する"
 
@@ -4502,8 +4504,8 @@ msgid "Template name"
 msgstr "テンプレート名"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Templates"
 msgstr "テンプレート"
 
@@ -4716,19 +4718,19 @@ msgstr "今日"
 msgid "Today {time}"
 msgstr "今日 {time}"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle full screen"
 msgstr "フルスクリーンを切り替え"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle list filters"
 msgstr "リストフィルターの切り替え"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle message background"
 msgstr "メッセージの背景を切り替えます"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle reading pane position"
 msgstr "閲覧ペインの位置を切り替えます"
 
@@ -4771,12 +4773,12 @@ msgid "Tuesday"
 msgstr "火曜日"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "下線"
 
 #: src/renderer/src/App.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Undo"
@@ -4936,7 +4938,7 @@ msgstr "デフォルトを使用"
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "最大 8 MB の PNG、JPEG、GIF、または WebP 画像を使用します。"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Use selection for find"
 msgstr "選択範囲を使用して検索する"
 

@@ -1,12 +1,25 @@
 import { useNarrowLayout } from "./responsive-layout";
+import { labelsById } from "./label-map";
 import { numberedFavorites, favoriteView } from "./favorite-navigation";
 import { UpdateNotice } from "./components/UpdateNotice";
+import {
+  Feedback,
+  ShortcutHelp,
+  AddAccountDialog,
+  Composer,
+  ProfileEditor,
+  Proposals,
+  Settings,
+  CreateLabelDialog,
+  FilterEditor,
+} from "./components/LazyDialogs";
 import { Assistant } from "./components/AiPanel";
 import { DOCK_FILE_MESSAGES } from "./dock-file-errors";
 import { pageAfterRemoval } from "./state/list-pages";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { readerSelectedText, quoteChoice } from "./quote-selection";
-import { Feedback, type FeedbackInput } from "./components/Feedback";
+import type { FeedbackInput } from "./components/Feedback";
+
 import { restoredSelection, settleStartupSelection } from "./window-selection";
 import {
   readerThreadKey,
@@ -53,7 +66,7 @@ import {
   favoriteShortcut,
   paneShortcut,
 } from "../../shared/shortcuts";
-import { ShortcutHelp } from "./components/SystemSettings";
+
 import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import type {
   Account,
@@ -63,17 +76,14 @@ import type {
   Proposal,
   ThreadSummary,
 } from "../../shared/api";
-import { AddAccountDialog } from "./components/AddAccountDialog";
-import { Composer } from "./components/Composer";
 import { SearchField } from "./components/ui/SearchField";
 import { MessageList, type SelectionSource } from "./components/MessageList";
 import { Overview } from "./components/Overview";
-import { ProfileEditor } from "./components/ProfileEditor";
-import { Proposals } from "./components/Proposals";
+
 import { Reader, useThreadPrint } from "./components/Reader";
 import { MailPanels } from "./components/MailPanels";
 import { ResizeHandle } from "./components/ResizeHandle";
-import { Settings } from "./components/Settings";
+
 import { Sidebar } from "./components/Sidebar";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
@@ -153,9 +163,9 @@ import {
 
 import { moveMailPaneFocus } from "./pane-navigation";
 import { GoToFolder } from "./components/GoToFolder";
-import { CreateLabelDialog, type LabelApplyTarget } from "./components/CreateLabelDialog";
+import type { LabelApplyTarget } from "./components/CreateLabelDialog";
+
 import { SnoozeDialog } from "./components/SnoozeDialog";
-import { FilterEditor } from "./components/ServerSettings";
 
 type Dialog = "add" | "settings" | "proposals" | "help" | "feedback" | null;
 
@@ -268,7 +278,7 @@ export function App({ composeId }: { composeId?: string }) {
   const undoSend = () =>
     [...pendingSends.current.values()].filter((undo) => undo !== null).at(-1)?.();
   const searchRef = useRef<HTMLInputElement>(null);
-  const hideToast = useCallback(() => setToast(null), []);
+  const hideToast = useCallback(() => setToast(null), [setToast]);
   const say = (next: Omit<ToastState, "id">) => setToast({ ...next, id: Date.now() });
   const {
     undoRef,
@@ -297,7 +307,7 @@ export function App({ composeId }: { composeId?: string }) {
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
   const labelPreferences = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
   const favorites = numberedFavorites(view, accountList, labels, labelPreferences);
-  const labelMap = new Map(labels.map((l) => [`${l.accountId}/${l.id}`, l]));
+  const labelMap = labelsById(labels);
 
   const [threads, loadMore] = useAtom(threadListAtom);
   const list = threads.threads;

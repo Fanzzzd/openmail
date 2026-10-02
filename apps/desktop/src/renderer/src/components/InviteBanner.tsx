@@ -20,7 +20,7 @@ import { reauthAtom, respondInviteAtom } from "../state/mutations";
 import { accountsAtom, invitationsAtom } from "../state/queries";
 import { DetectedCalendarEvents, OverlappingEvents } from "./CalendarEvents";
 import { MeetingLinks } from "./MeetingLinks";
-import { formButton } from "./OrganizationSettings";
+import { formButton } from "./ui/form-styles";
 
 export function InviteBanner({ message }: { message: Message }) {
   return (

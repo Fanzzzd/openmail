@@ -9,8 +9,8 @@ import type { Proposal, Account } from "../../../shared/api";
 import { MailClient } from "../rpc";
 import { Keys } from "../state/keys";
 import { useRunMail, withMail, type MailEnv } from "../state/mail";
-import { aiSettingsAtom } from "./AiSettings";
-import { Proposals } from "./Proposals";
+import { aiSettingsAtom } from "../state/ai-settings";
+import { Proposals } from "./LazyDialogs";
 import { Dialog } from "./ui/Dialog";
 
 export function useAiStream() {

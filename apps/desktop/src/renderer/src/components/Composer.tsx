@@ -3,7 +3,7 @@ import { ComposerAi } from "./ComposerAi";
 import { DraftSyncRecovery, draftSyncNotice } from "./DraftSyncRecovery";
 import { moveRecipient, type RecipientFieldName, type RecipientDrag } from "../recipient-actions";
 import { matchesShortcut } from "../../../shared/shortcuts";
-import { useShortcutText } from "./SystemSettings";
+import { useShortcutText } from "../use-shortcut-text";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";

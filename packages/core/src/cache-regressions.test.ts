@@ -208,7 +208,8 @@ it.effect(
         assert.strictEqual(yield* s.evictBodies(account.id, now + 86_400_000), 1);
         const plan = yield* sql`EXPLAIN QUERY PLAN SELECT id,date,labels_json FROM messages
       WHERE account_id=${account.id} AND body_cached=1 AND date < ${now - 30 * 86_400_000} ORDER BY date,id LIMIT 200`;
-        assert.ok(JSON.stringify(plan).includes("messages_cache_date"));
+        assert.ok(JSON.stringify(plan).includes("messages_cache_page"));
+        assert.ok(!JSON.stringify(plan).includes("TEMP B-TREE"));
         yield* s.upsertMessage(account.id, mail("policy"));
         assert.strictEqual(yield* s.evictBodies(account.id, now + 86_400_001, true), 1);
       }),

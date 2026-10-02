@@ -74,7 +74,7 @@ import {
   organizationAtom,
   unreadByLabelAtom,
 } from "../state/queries";
-import { useShortcutText } from "./SystemSettings";
+import { useShortcutText } from "../use-shortcut-text";
 import { ProviderIcon } from "./ProviderIcon";
 import {
   ContextMenuContent,

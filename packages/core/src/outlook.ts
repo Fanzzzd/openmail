@@ -5,7 +5,7 @@ import {
   type DeleteFolder,
   type PermanentDeleteBatch,
 } from "./folder-actions.js";
-import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
+import { Clock, Data, Effect, Option, Queue, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { attachmentProblem, attachmentProblemMessage } from "./attachment-policy.js";
 
@@ -16,7 +16,6 @@ import type {
   Attachment,
   DraftRemote,
   IncomingMessage,
-  Label,
   MailOp,
   OutgoingMessage,
 } from "./domain.js";
@@ -617,34 +616,6 @@ export const makeOutlook: Effect.Effect<
    * deltaLink) to the end, collecting changed messages and removed ids. The
    * final deltaLink is the cursor for the next sync.
    */
-  const readDelta = Effect.fnUntraced(function* (accountId: string, start: string) {
-    const changed: GraphMessage[] = [];
-    const removed: string[] = [];
-    let url: string | undefined = start;
-    let deltaLink = start;
-    while (url) {
-      const page: typeof DeltaPage.Type = yield* get(accountId, DeltaPage, url);
-      for (const item of page.value) {
-        if ("@removed" in item) removed.push(item.id);
-        else if ("conversationId" in item) changed.push(item);
-        else {
-          const whole = yield* get(
-            accountId,
-            GraphMessage,
-            `/me/messages/${encodeURIComponent(item.id)}?$select=${SELECT}`,
-          ).pipe(
-            Effect.map(Option.some),
-            // Deleted between the delta page and this read; a later round reports the removal.
-            Effect.catchIf(is404, () => Effect.succeed(Option.none())),
-          );
-          if (Option.isSome(whole)) changed.push(whole.value);
-        }
-      }
-      deltaLink = page["@odata.deltaLink"] ?? deltaLink;
-      url = page["@odata.nextLink"];
-    }
-    return { changed, removed, deltaLink };
-  });
 
   const fetchAttachments = (accountId: string, id: string) =>
     get(
@@ -665,110 +636,135 @@ export const makeOutlook: Effect.Effect<
     cursor: Option.Option<string>,
     scope?: "inbox",
   ): Stream.Stream<Change, ProviderFailure> =>
-    Stream.unwrap(
-      Effect.gen(function* () {
-        const stored: Readonly<Record<string, string>> = Option.getOrElse(
-          Option.flatMap(cursor, decodeCursor),
-          () => ({}),
-        );
-        // Ids stored before immutable ids were requested don't match the new
-        // ones, so the local copy is dropped and everything is fetched again.
-        const reset = stored[ID_TYPE_KEY] !== "immutable";
-        const previous = reset ? {} : stored;
-
-        const custom = scope ? [] : yield* listCustomFolders(account.id);
-        const labels: Omit<Label, "accountId">[] = custom.map((f) => ({
-          id: f.id,
-          name: f.name,
-          color: null,
-        }));
-        const folders: SyncFolder[] = [
-          ...WELL_KNOWN.filter((f) => !scope || f.name === "inbox").map((f) => ({
-            key: f.name,
-            path: f.name,
-            label: f.label,
-          })),
-          ...custom.map((f) => ({ key: f.id, path: f.id, label: f.id })),
-        ];
-
-        const changed: { message: GraphMessage; label: string }[] = [];
-        const removed: string[] = [];
-        const next: Record<string, string> = { [ID_TYPE_KEY]: "immutable" };
-        // Folders whose delta link expired: synced again from scratch, so
-        // their local copies are dropped first.
-        const restarted: string[] = [];
-        for (const folder of folders) {
-          const known = previous[folder.key];
-          const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
-          const delta = yield* readDelta(account.id, known ?? initial).pipe(
-            Effect.map(Option.some),
-            // Not every mailbox has an Archive folder.
-            Effect.catchIf(
-              (e) => known === undefined && is404(e),
-              () => Effect.succeed(Option.none()),
-            ),
-            Effect.catchIf(
-              (e) => known !== undefined && is410(e),
-              () =>
-                Effect.sync(() => restarted.push(folder.label)).pipe(
-                  Effect.andThen(readDelta(account.id, initial)),
-                  Effect.map(Option.some),
-                ),
-            ),
+    Stream.callback<Change, ProviderFailure>(
+      (queue) =>
+        Effect.gen(function* () {
+          const stored: Readonly<Record<string, string>> = Option.getOrElse(
+            Option.flatMap(cursor, decodeCursor),
+            () => ({}),
           );
-          if (Option.isNone(delta)) continue;
-          for (const message of delta.value.changed) changed.push({ message, label: folder.label });
-          removed.push(...delta.value.removed);
-          next[folder.key] = delta.value.deltaLink;
-        }
-
-        // A message moved between two custom folders can be reported removed
-        // from one and changed in the other; the change wins.
-        const kept = new Set(changed.map((c) => c.message.id));
-        const deletes = removed
-          .filter((id) => !kept.has(id))
-          .map((providerId): Change => ({ _tag: "Delete", providerId }));
-        // Custom folders deleted (or emptied) since the last sync.
-        const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
-        const vanished = Object.keys(previous)
-          .filter((key) => key !== ID_TYPE_KEY && !wellKnown.has(key) && !(key in next))
-          .map((label): Change => ({ _tag: "DeleteLabel", label }));
-
-        const total = changed.length;
-        const fetched = Stream.fromIterable(changed).pipe(
-          Stream.mapEffect(
-            ({ message, label }, i) =>
-              (message.hasAttachments
-                ? fetchAttachments(account.id, message.id)
-                : Effect.succeed<Attachment[]>([])
-              ).pipe(
-                Effect.map((attachments): Change[] => [
-                  { _tag: "Upsert", message: parseGraphMessage(message, label, attachments) },
-                  { _tag: "Progress", fetched: i + 1, total },
-                ]),
+          const reset = stored[ID_TYPE_KEY] !== "immutable";
+          const previous = reset ? {} : stored;
+          const custom = scope ? [] : yield* listCustomFolders(account.id);
+          const folders: SyncFolder[] = [
+            ...WELL_KNOWN.filter((f) => !scope || f.name === "inbox").map((f) => ({
+              key: f.name,
+              path: f.name,
+              label: f.label,
+            })),
+            ...custom.map((f) => ({ key: f.id, path: f.id, label: f.id })),
+          ];
+          let started = false;
+          const start = Effect.gen(function* () {
+            if (started) return;
+            started = true;
+            if (!scope)
+              yield* Queue.offer(queue, {
+                _tag: "Labels",
+                labels: custom.map((f) => ({ id: f.id, name: f.name, color: null })),
+              });
+          });
+          // Only identities cross page boundaries. Full Graph bodies belong to one
+          // page, with backpressure from the bounded sync queue.
+          const kept = new Set<string>();
+          const restarted = new Set<string>();
+          const removed = new Set<string>();
+          const next: Record<string, string> = { [ID_TYPE_KEY]: "immutable" };
+          let fetched = 0;
+          for (const folder of folders) {
+            const known = previous[folder.key];
+            const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
+            const first = yield* get(account.id, DeltaPage, known ?? initial).pipe(
+              Effect.map(Option.some),
+              Effect.catchIf(
+                (e) => known === undefined && is404(e),
+                () => Effect.succeed(Option.none()),
               ),
-            { concurrency: CONCURRENCY },
-          ),
-          Stream.flattenIterable,
-        );
-
-        const head: Change[] = [
-          ...(reset ? [{ _tag: "Reset" } as const] : []),
-          ...(!scope ? [{ _tag: "Labels", labels } as const] : []),
-          ...restarted.map((label): Change => ({ _tag: "DeleteLabel", label })),
-        ];
-        // Delta links only cover the whole batch, so the cursor goes last.
-        const tail: Change[] = [
-          ...deletes,
-          ...vanished,
-          { _tag: "Cursor", cursor: JSON.stringify(next) },
-        ];
-        return Stream.fromIterable(head).pipe(
-          Stream.concat(fetched),
-          Stream.concat(Stream.fromIterable(tail)),
-        );
-      }).pipe(Effect.withSpan("Outlook.pull")),
-    ).pipe(Stream.mapError(readFailure(account.id)));
+              Effect.catchIf(
+                (e) => known !== undefined && is410(e),
+                () =>
+                  Effect.gen(function* () {
+                    const fresh = yield* get(account.id, DeltaPage, initial);
+                    yield* start;
+                    restarted.add(folder.label);
+                    return Option.some(fresh);
+                  }),
+              ),
+            );
+            if (Option.isNone(first)) continue;
+            yield* start;
+            let page = first.value;
+            for (;;) {
+              const total = fetched + page.value.filter((item) => !("@removed" in item)).length;
+              yield* Stream.fromIterable(page.value).pipe(
+                Stream.mapEffect(
+                  (item) =>
+                    Effect.gen(function* () {
+                      if ("@removed" in item) {
+                        removed.add(item.id);
+                        return null;
+                      }
+                      const message =
+                        "conversationId" in item
+                          ? Option.some(item)
+                          : yield* get(
+                              account.id,
+                              GraphMessage,
+                              `/me/messages/${encodeURIComponent(item.id)}?$select=${SELECT}`,
+                            ).pipe(
+                              Effect.map(Option.some),
+                              Effect.catchIf(is404, () => Effect.succeed(Option.none())),
+                            );
+                      if (Option.isNone(message)) return null;
+                      const raw = message.value;
+                      const attachments = raw.hasAttachments
+                        ? yield* fetchAttachments(account.id, raw.id)
+                        : [];
+                      kept.add(raw.id);
+                      return {
+                        _tag: "Upsert",
+                        message: parseGraphMessage(raw, folder.label, attachments),
+                      } satisfies Change;
+                    }),
+                  { concurrency: CONCURRENCY },
+                ),
+                Stream.runForEach((change) =>
+                  Effect.gen(function* () {
+                    if (!change) return;
+                    yield* Queue.offer(queue, change);
+                    yield* Queue.offer(queue, { _tag: "Progress", fetched: ++fetched, total });
+                  }),
+                ),
+              );
+              if (page["@odata.deltaLink"]) next[folder.key] = page["@odata.deltaLink"];
+              const url = page["@odata.nextLink"];
+              if (!url) break;
+              page = yield* get(account.id, DeltaPage, url);
+            }
+          }
+          // Moves can appear as both removed and changed. A change in any folder
+          // wins; deletes and the checkpoint follow successful delivery of all pages.
+          yield* start;
+          const keep = [...kept];
+          if (reset) yield* Queue.offer(queue, { _tag: "Reset", keep });
+          else
+            for (const label of restarted)
+              yield* Queue.offer(queue, { _tag: "DeleteLabel", label, keep });
+          for (const providerId of removed)
+            if (!kept.has(providerId)) yield* Queue.offer(queue, { _tag: "Delete", providerId });
+          const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
+          for (const key of Object.keys(previous))
+            if (key !== ID_TYPE_KEY && !wellKnown.has(key) && !(key in next))
+              yield* Queue.offer(queue, { _tag: "DeleteLabel", label: key });
+          yield* Queue.offer(queue, { _tag: "Cursor", cursor: JSON.stringify(next) });
+          yield* Queue.end(queue);
+        }).pipe(
+          Effect.withSpan("Outlook.pull"),
+          Effect.mapError(readFailure(account.id)),
+          Effect.catchCause((cause) => Queue.failCause(queue, cause)),
+        ),
+      { bufferSize: 16, strategy: "suspend" },
+    );
 
   const push = Effect.fn("Outlook.push")(
     function* (account: Account, providerId: string, op: MailOp) {

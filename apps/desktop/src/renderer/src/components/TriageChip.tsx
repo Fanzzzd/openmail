@@ -7,7 +7,7 @@ import { useState } from "react";
 import { MailClient } from "../rpc";
 import { Keys } from "../state/keys";
 import { labelsAtom } from "../state/queries";
-import { aiSettingsAtom } from "./AiSettings";
+import { aiSettingsAtom } from "../state/ai-settings";
 import { Dialog } from "./ui/Dialog";
 
 const mutation = MailClient.mutation("DecideAiTriage");

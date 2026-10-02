@@ -38,7 +38,7 @@ import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
 import { Checkbox } from "./ui/Checkbox";
 import { Select } from "./ui/Select";
 import { ContactSettings } from "./ContactSettings";
-import { formButton, formInput } from "./OrganizationSettings";
+import { formButton, formInput } from "./ui/form-styles";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();

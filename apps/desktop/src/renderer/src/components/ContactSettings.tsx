@@ -7,7 +7,7 @@ import { resultError } from "../errors";
 import { Keys } from "../state/keys";
 import { reauthAtom, refreshContactsAtom } from "../state/mutations";
 import { contactSyncAtom } from "../state/queries";
-import { formButton } from "./OrganizationSettings";
+import { formButton } from "./ui/form-styles";
 
 export function ContactSettings({ account }: { account: Account }) {
   const { t, i18n } = useLingui();

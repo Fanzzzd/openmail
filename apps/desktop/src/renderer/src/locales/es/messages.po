@@ -249,7 +249,7 @@ msgid "Activity"
 msgstr "Actividad"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Actual size"
 msgstr "Tamaño real"
 
@@ -394,17 +394,17 @@ msgid "AI suggestions"
 msgstr "Sugerencias de IA"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "Centrar"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "Alinear a la izquierda"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "Alinear a la derecha"
 
@@ -556,9 +556,9 @@ msgstr "Aprobar y editar"
 msgid "Approve suggestion"
 msgstr "Aprobar sugerencia"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -566,6 +566,7 @@ msgstr "Aprobar sugerencia"
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Archive"
@@ -601,7 +602,7 @@ msgid "Assistant"
 msgstr "Asistente"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Attach files"
 msgstr "Adjuntar archivos"
 
@@ -652,7 +653,7 @@ msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "Autorice el permiso para eliminar permanentemente el correo en esta cuenta de Gmail."
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "Dirección automática"
 
@@ -734,7 +735,7 @@ msgid "Body"
 msgstr "Texto del mensaje"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "Negrita"
 
@@ -747,7 +748,7 @@ msgid "Built-in AI"
 msgstr "IA integrada"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "Lista con viñetas"
 
@@ -973,7 +974,7 @@ msgid "Clear all caches"
 msgstr "Vaciar todas las cachés"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Borrar formato"
 
@@ -997,7 +998,7 @@ msgstr "Vaciar la caché elimina los textos de los mensajes y los adjuntos desca
 msgid "Close"
 msgstr "Cerrar"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Close compose window"
 msgstr "Cerrar ventana de redacción"
 
@@ -1011,7 +1012,7 @@ msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try r
 msgstr "Cierre otros procesos de OpenMail (CLI/MCP), luego reinicie esta aplicación e intente la recuperación nuevamente."
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "Bloque de código"
 
@@ -1019,7 +1020,7 @@ msgstr "Bloque de código"
 msgid "Collapse all"
 msgstr "Contraer todo"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Collapse all messages"
 msgstr "Contraer todos los mensajes"
 
@@ -1163,7 +1164,7 @@ msgid "Copy selected"
 msgstr "Copiar seleccionado"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Copiar estilo"
 
@@ -1334,7 +1335,7 @@ msgstr "Cree una contraseña específica de la aplicación en Inicio de sesión 
 msgid "Create filter"
 msgstr "Crear filtro"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Create filter from these messages"
@@ -1385,7 +1386,7 @@ msgid "Dark background"
 msgstr "Fondo oscuro"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Lista discontinua"
 
@@ -1411,17 +1412,17 @@ msgstr "Rechazar"
 msgid "Declined"
 msgstr "Rechazado"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease font size"
 msgstr "Reducir el tamaño de letra"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "Disminuir sangría"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "Reducir nivel de cita"
 
@@ -1446,18 +1447,18 @@ msgstr "Dirección de origen predeterminada"
 msgid "Default signature"
 msgstr "Firma predeterminada"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Delete"
 msgstr "Eliminar"
@@ -1656,7 +1657,7 @@ msgid "Edit body"
 msgstr "Editar texto del mensaje"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "Editar enlace"
 
@@ -1791,7 +1792,7 @@ msgstr "Excluir coincidencias"
 msgid "Expand all"
 msgstr "Expandir todo"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Expand all messages"
 msgstr "Expandir todos los mensajes"
 
@@ -1873,7 +1874,7 @@ msgstr "Termine de iniciar sesión en su navegador y luego regrese aquí."
 msgid "Fix grammar and proofread"
 msgstr "Corregir gramática y revisar"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Focus main window"
 msgstr "Enfocar la ventana principal"
 
@@ -1921,17 +1922,17 @@ msgstr "Formato"
 msgid "Forums"
 msgstr "Foros"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "Reenviar"
 
-#: src/renderer/src/components/InteractionSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "Reenviar como adjunto"
 
@@ -2026,7 +2027,7 @@ msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draf
 msgstr "Las etiquetas y estrellas de los borradores de Gmail permanecen en este Mac. Gmail solo permite la etiqueta Borrador en los borradores del servidor."
 
 #: src/renderer/src/components/GoToFolder.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Go to folder"
 msgstr "Ir a la carpeta"
 
@@ -2120,10 +2121,10 @@ msgstr "Servidor IMAP"
 msgid "Importance action"
 msgstr "Acción de importancia"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
 msgid "Important"
 msgstr "Importante"
@@ -2162,27 +2163,27 @@ msgstr "Incluye archivos adjuntos originales."
 msgid "Include signature separator"
 msgstr "Incluir separador de firma"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase font size"
 msgstr "Aumentar el tamaño de letra"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "Aumentar sangría"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "Aumentar nivel de cita"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "Aumentar sangría de lista"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "Código en línea"
 
@@ -2240,7 +2241,7 @@ msgid "Invitation status in this conversation"
 msgstr "Estado de la invitación en esta conversación"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "Itálico"
 
@@ -2248,12 +2249,12 @@ msgstr "Itálico"
 msgid "Join meeting"
 msgstr "Unirse a la reunión"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Jump to selection"
 msgstr "Ir a la selección"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "Justificar"
 
@@ -2280,6 +2281,7 @@ msgid "Kept on this Mac"
 msgstr "Mantenido en esta Mac"
 
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
@@ -2314,11 +2316,11 @@ msgstr "Etiqueta: {label}"
 msgid "Label: {name}"
 msgstr "Etiqueta: {name}"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Labels"
 msgstr "Etiquetas"
 
@@ -2338,7 +2340,7 @@ msgstr "Idioma"
 msgid "Large"
 msgstr "Grande"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Larger text"
 msgstr "Texto más grande"
 
@@ -2371,7 +2373,7 @@ msgid "Left short swipe"
 msgstr "Deslizamiento corto hacia la izquierda"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "De izquierda a derecha"
 
@@ -2391,7 +2393,7 @@ msgstr "Cargar imágenes"
 msgid "Load older messages"
 msgstr "Cargar mensajes antiguos"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Load remote content"
 msgstr "Cargar contenido remoto"
 
@@ -2531,9 +2533,9 @@ msgstr "Marcar mensaje como no leído"
 msgid "Mark read"
 msgstr "Marcar como leído"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Mark read/unread"
 msgstr "Marcar como leído/no leído"
 
@@ -2763,8 +2765,8 @@ msgstr "Mover el foco entre paneles"
 msgid "Move message to Trash"
 msgstr "Mover mensaje a la Papelera"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move To"
 msgstr "Mover a"
@@ -2778,8 +2780,8 @@ msgid "Move to Cc"
 msgstr "Mover a Cc"
 
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
 msgstr "Mover a la carpeta"
 
@@ -2789,8 +2791,8 @@ msgstr "Mover a la carpeta…"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "Mover a la Bandeja de entrada"
 
@@ -2857,7 +2859,7 @@ msgstr "Nuevas notificaciones de correo"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
 msgstr "Nuevo mensaje"
@@ -2900,7 +2902,7 @@ msgstr "Nueva plantilla"
 msgid "New time:"
 msgstr "Nueva hora:"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New Window"
 msgstr "Nueva ventana"
@@ -2923,15 +2925,15 @@ msgstr "Siguiente abajo"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next match"
 msgstr "Siguiente coincidencia"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next tab"
 msgstr "Pestaña siguiente"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next thread"
 msgstr "Siguiente conversación"
 
@@ -2939,7 +2941,7 @@ msgstr "Siguiente conversación"
 msgid "Next week"
 msgstr "La próxima semana"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Next window"
 msgstr "Siguiente ventana"
 
@@ -3034,9 +3036,9 @@ msgstr "No hay correo no leído"
 msgid "No unread mail in the inbox"
 msgstr "No hay correo no leído en la Bandeja de entrada"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -3070,7 +3072,7 @@ msgid "Notifications for {0}"
 msgstr "Notificaciones para {0}"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "Lista numerada"
 
@@ -3159,11 +3161,11 @@ msgstr "Abrir en Contactos"
 msgid "Open in Gmail"
 msgstr "Abrir en Gmail"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Open in New Window"
 msgstr "Abrir en ventana nueva"
 
@@ -3171,7 +3173,7 @@ msgstr "Abrir en ventana nueva"
 msgid "Open in Outlook"
 msgstr "Abrir en Outlook"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Open in web mail"
 msgstr "Abrir en correo web"
 
@@ -3285,7 +3287,7 @@ msgid "Other IMAP"
 msgstr "Otros IMAP"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "Reducir sangría de lista"
 
@@ -3331,17 +3333,17 @@ msgid "Password"
 msgstr "Contraseña"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste and match style"
 msgstr "Pegar con el mismo estilo"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste as quotation"
 msgstr "Pegar como cita"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "Pegar estilo"
 
@@ -3401,15 +3403,15 @@ msgstr "Vista previa: {0} mensajes. Solo los mensajes de la vista previa se camb
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous match"
 msgstr "Coincidencia anterior"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous tab"
 msgstr "Pestaña anterior"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous thread"
 msgstr "Conversación anterior"
 
@@ -3417,7 +3419,7 @@ msgstr "Conversación anterior"
 msgid "Previous time:"
 msgstr "Hora anterior:"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Previous window"
 msgstr "Ventana anterior"
 
@@ -3432,7 +3434,7 @@ msgstr "Principal"
 msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
 msgstr "Principal excluye las otras categorías de Gmail. En Outlook e IMAP incluye todos los mensajes de la Bandeja de entrada. Los mensajes leídos y la primera sincronización no generan notificaciones."
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Print"
 msgstr "Imprimir"
 
@@ -3581,8 +3583,8 @@ msgstr "Eliminar cuenta"
 msgid "Remove current label"
 msgstr "Eliminar etiqueta actual"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Remove Current Label"
 msgstr "Eliminar etiqueta actual"
@@ -3663,18 +3665,18 @@ msgstr "Reemplazar por"
 msgid "Replies and forwards"
 msgstr "Responde y reenvía"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Reply"
 msgstr "Responder"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "Responder a todos"
 
@@ -3702,11 +3704,11 @@ msgstr "Responder solo a contactos"
 msgid "Reply signature for {address}"
 msgstr "Firma de respuesta para {address}"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Report spam"
 msgstr "Marcar como correo no deseado"
 
@@ -3796,7 +3798,7 @@ msgid "Right short swipe"
 msgstr "Deslizamiento corto hacia la derecha"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "De derecha a izquierda"
 
@@ -3840,7 +3842,7 @@ msgstr "Guardar todo…"
 msgid "Save as PDF…"
 msgstr "Guardar como PDF…"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "Guardar borrador"
 
@@ -3850,7 +3852,7 @@ msgstr "Guardar clave"
 
 #: src/renderer/src/components/RawMessage.tsx
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Save message as EML…"
 msgstr "Guardar mensaje como EML…"
 
@@ -3917,7 +3919,7 @@ msgctxt "in progress"
 msgid "Saving…"
 msgstr "Guardando…"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Search"
 msgstr "Buscar"
 
@@ -3934,7 +3936,7 @@ msgid "Search mail"
 msgstr "Buscar correo"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Search messages from this sender"
 msgstr "Buscar mensajes de este remitente"
 
@@ -3993,17 +3995,17 @@ msgstr "La búsqueda semántica no está disponible. La búsqueda de texto compl
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Send"
 msgstr "Enviar"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Send Again"
 msgstr "Enviar de nuevo"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Send and archive"
 msgstr "Enviar y archivar"
 
@@ -4079,7 +4081,7 @@ msgstr "Vista previa del servidor: {count} mensajes"
 
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Settings"
 msgstr "Ajustes"
@@ -4112,12 +4114,12 @@ msgstr "Mostrar"
 msgid "Show account names in unified folders"
 msgstr "Mostrar nombres de cuentas en carpetas unificadas"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show Cc field"
 msgstr "Mostrar campo CC"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
 msgstr "Mostrar barra de formato"
 
@@ -4162,22 +4164,22 @@ msgid "Show only unread"
 msgstr "Mostrar solo no leídos"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide reading pane"
 msgstr "Mostrar u ocultar el panel de lectura"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide sidebar"
 msgstr "Mostrar u ocultar la barra lateral"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show or hide toolbar"
 msgstr "Mostrar u ocultar la barra de herramientas"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Show original"
 msgstr "Mostrar original"
 
@@ -4261,7 +4263,7 @@ msgid "Small"
 msgstr "Pequeño"
 
 #: src/renderer/src/components/Reader.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Smaller text"
 msgstr "Texto más pequeño"
 
@@ -4281,7 +4283,7 @@ msgstr "Cifrado SMTP"
 msgid "SMTP server"
 msgstr "Servidor SMTP"
 
-#: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SnoozeDialog.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4347,12 +4349,12 @@ msgstr "SSL/TLS (normalmente 465)"
 msgid "Stable"
 msgstr "Estable"
 
+#: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
-#: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Star"
 msgstr "Destacar"
 
@@ -4397,7 +4399,7 @@ msgid "Stop suggesting {0}"
 msgstr "Dejar de sugerir {0}"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "Tachado"
 
@@ -4412,7 +4414,7 @@ msgid "Subject contains"
 msgstr "El asunto contiene"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "Subíndice"
 
@@ -4433,7 +4435,7 @@ msgid "Sunday"
 msgstr "Domingo"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "Sobrescrito"
 
@@ -4467,7 +4469,7 @@ msgid "Sync failed ({count})"
 msgstr "Error de sincronización ({count})"
 
 #: src/renderer/src/components/Sidebar.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "Sincronizar ahora"
 
@@ -4502,8 +4504,8 @@ msgid "Template name"
 msgstr "Nombre de la plantilla"
 
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Templates"
 msgstr "Plantillas"
 
@@ -4716,19 +4718,19 @@ msgstr "Hoy"
 msgid "Today {time}"
 msgstr "Hoy {time}"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle full screen"
 msgstr "Activar o desactivar la pantalla completa"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle list filters"
 msgstr "Alternar filtros de lista"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle message background"
 msgstr "Alternar fondo del mensaje"
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Toggle reading pane position"
 msgstr "Alternar posición del panel de lectura"
 
@@ -4771,12 +4773,12 @@ msgid "Tuesday"
 msgstr "Martes"
 
 #: src/renderer/src/components/ComposeEditor.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "Subrayado"
 
 #: src/renderer/src/App.tsx
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Undo"
@@ -4936,7 +4938,7 @@ msgstr "Usar predeterminado"
 msgid "Use PNG, JPEG, GIF or WebP images up to 8 MB."
 msgstr "Utilice imágenes PNG, JPEG, GIF o WebP de hasta 8 MB."
 
-#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/shortcut-names.ts
 msgid "Use selection for find"
 msgstr "Usar selección para buscar"
 

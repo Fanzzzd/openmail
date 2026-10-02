@@ -27,10 +27,16 @@ vi.mock("electron", () => ({
     isPackaged: true,
     setAsDefaultProtocolClient: native.register,
   }),
+  BrowserWindow: { getAllWindows: () => [], getFocusedWindow: () => null },
   shell: { openExternal: vi.fn() },
   powerMonitor: { isOnBatteryPower: () => false, getSystemIdleTime: () => 6 },
 }));
 vi.mock("@openmail/core", () => ({
+  unavailableVision: {
+    available: false,
+    version: "unavailable",
+    recognize: () => Effect.die("not used"),
+  },
   dataDir: Effect.succeed("/tmp/openmail-startup-test"),
   NodeSystem: Layer.empty,
   NodeMailbox: (options: unknown) => {
@@ -83,6 +89,23 @@ beforeEach(async () => {
   native.warnStart = false;
   vi.clearAllMocks();
 });
+it("any already-created window can release startup after the first window closes", async () => {
+  await import("./index");
+  const { app } = await import("electron");
+  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  const first = new EventEmitter();
+  const second = new EventEmitter();
+  app.emit("browser-window-created", undefined, first);
+  app.emit("browser-window-created", undefined, second);
+  first.emit("closed");
+  second.emit("ready-to-show");
+  await vi.waitFor(() => expect(native.vision).toHaveBeenCalledOnce());
+  expect(first.listenerCount("ready-to-show")).toBe(0);
+  expect(second.listenerCount("closed")).toBe(0);
+  expect(app.listenerCount("browser-window-created")).toBe(0);
+  app.emit("will-quit", { preventDefault: vi.fn() });
+  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
+});
 it("the second process exits before building core or opening any data", async () => {
   native.primary = false;
   await import("./index");
@@ -103,7 +126,15 @@ it("handles open-url and forwarded second-instance URLs and enables desktop-only
   app.emit("second-instance", {}, ["OpenMail"]);
   expect(native.focus).toHaveBeenCalledOnce();
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
+  expect(native.vision).not.toHaveBeenCalled();
+  const first = new EventEmitter();
+  app.emit("browser-window-created", undefined, first);
+  expect(native.vision).not.toHaveBeenCalled();
+  first.emit("ready-to-show");
+  await vi.waitFor(() => expect(native.vision).toHaveBeenCalled());
   expect(native.vision).toHaveBeenCalledWith(expect.stringContaining("native/vision"));
+  expect(first.listenerCount("ready-to-show")).toBe(0);
+  expect(app.listenerCount("browser-window-created")).toBe(0);
   expect(native.nodeMailbox).toHaveBeenCalledWith(
     expect.objectContaining({
       autoSync: "2 minutes",

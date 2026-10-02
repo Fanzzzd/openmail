@@ -1,7 +1,8 @@
 import { openDatabaseAccess } from "./recovery-files.js";
 import { SqliteClient } from "@effect/sql-sqlite-node";
-import { Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
+import { Clock, Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
+import { isSqlError } from "effect/sql/SqlError";
 
 /**
  * node:sqlite instead of better-sqlite3: it ships inside both Node and
@@ -737,6 +738,101 @@ export const MIGRATIONS: readonly string[] = [
   END;`,
   // Migration 29: triage consent is independent of automatic summaries.
   `ALTER TABLE ai_accounts ADD COLUMN auto_triage INTEGER NOT NULL DEFAULT 0;`,
+  // Migration 30: covering indexes keep list statistics away from cached bodies.
+  `CREATE INDEX messages_thread_labels ON messages(account_id,thread_id,labels_json);
+   DROP INDEX messages_account_thread;
+   CREATE INDEX messages_unread_threads ON messages(account_id,thread_id,labels_json) WHERE is_unread=1;
+   CREATE INDEX messages_badge_threads ON messages(account_id,thread_id,is_unread,labels_json)
+     WHERE is_unread=1 OR labels_json LIKE '%"STARRED"%' OR labels_json LIKE '%"DRAFT"%';
+   CREATE INDEX messages_provider ON messages(account_id,provider_id);
+   CREATE INDEX messages_rfc_trimmed ON messages(account_id,trim(rfc_message_id,'<>'),date DESC);
+   DROP INDEX messages_rfc_id;
+   CREATE INDEX messages_cache_page ON messages(account_id,body_cached,date,id,body_opened_at);
+   DROP INDEX messages_cache_date;
+   CREATE INDEX contact_candidates_score ON contact_candidates(address,source DESC,date DESC,account_id,id,name,weight);
+   CREATE INDEX contact_candidates_company ON contact_candidates(address,account_id);
+   -- A single FTS document preserves mixed name/address/company conjunctions.
+   CREATE VIRTUAL TABLE contact_completion_fts USING fts5(address,name,company,
+     content='',contentless_delete=1,tokenize='unicode61',prefix='1 2 3');
+   INSERT INTO contact_completion_fts(rowid,address,name,company)
+     SELECT c.rowid,c.address,c.name,COALESCE((SELECT company FROM contact_organizations o
+       WHERE o.account_id=c.account_id AND o.address=c.address),'') FROM contact_candidates c;
+   CREATE TRIGGER contact_completion_ai AFTER INSERT ON contact_candidates BEGIN
+     INSERT INTO contact_completion_fts(rowid,address,name,company) VALUES(new.rowid,new.address,new.name,
+       COALESCE((SELECT company FROM contact_organizations WHERE account_id=new.account_id AND address=new.address),''));
+   END;
+   CREATE TRIGGER contact_completion_ad AFTER DELETE ON contact_candidates BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid=old.rowid;
+   END;
+   CREATE TRIGGER contact_completion_au AFTER UPDATE OF address,name,account_id ON contact_candidates
+     WHEN old.address IS NOT new.address OR old.name IS NOT new.name OR old.account_id IS NOT new.account_id BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid=old.rowid;
+     INSERT INTO contact_completion_fts(rowid,address,name,company) VALUES(new.rowid,new.address,new.name,
+       COALESCE((SELECT company FROM contact_organizations WHERE account_id=new.account_id AND address=new.address),''));
+   END;
+   CREATE TRIGGER contact_completion_org_ai AFTER INSERT ON contact_organizations BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE account_id=new.account_id AND address=new.address);
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT rowid,address,name,new.company FROM contact_candidates WHERE account_id=new.account_id AND address=new.address;
+   END;
+   CREATE TRIGGER contact_completion_org_ad AFTER DELETE ON contact_organizations BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE account_id=old.account_id AND address=old.address);
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT rowid,address,name,'' FROM contact_candidates WHERE account_id=old.account_id AND address=old.address;
+   END;
+   CREATE TRIGGER contact_completion_org_au AFTER UPDATE ON contact_organizations
+     WHEN old.company IS NOT new.company OR old.account_id IS NOT new.account_id OR old.address IS NOT new.address BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE (account_id=old.account_id AND address=old.address) OR (account_id=new.account_id AND address=new.address));
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT c.rowid,c.address,c.name,
+       COALESCE((SELECT company FROM contact_organizations o WHERE o.account_id=c.account_id AND o.address=c.address),'') FROM contact_candidates c WHERE (c.account_id=old.account_id AND c.address=old.address) OR (c.account_id=new.account_id AND c.address=new.address);
+   END;
+   DROP INDEX contact_candidates_address;
+   CREATE INDEX pending_ops_account ON pending_ops(account_id,provider_id);
+   -- Only counted badge memberships are projected. The key orders each
+   -- label/account's conversations so DISTINCT does not sort message bodies.
+   CREATE TABLE message_badges (
+     label TEXT NOT NULL, account_id TEXT NOT NULL, thread_id TEXT NOT NULL,
+     message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+     in_inbox INTEGER NOT NULL,
+     PRIMARY KEY(label,account_id,thread_id,message_id)
+   ) WITHOUT ROWID;
+   CREATE INDEX message_badges_message ON message_badges(message_id);
+   INSERT INTO message_badges SELECT l.value,m.account_id,m.thread_id,m.id,
+       EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value='INBOX')
+     FROM messages m,json_each(m.labels_json) l
+     WHERE (m.is_unread=1 OR m.labels_json LIKE '%"STARRED"%' OR m.labels_json LIKE '%"DRAFT"%')
+       AND (m.is_unread=1 OR l.value IN ('STARRED','DRAFT')) GROUP BY m.id,l.value;
+   -- This covering index only accelerates the one-time projection backfill.
+   DROP INDEX messages_badge_threads;
+   CREATE TRIGGER message_badges_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO message_badges SELECT DISTINCT l.value,new.account_id,new.thread_id,new.id,
+       EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value='INBOX')
+       FROM json_each(new.labels_json) l WHERE new.is_unread=1 OR l.value IN ('STARRED','DRAFT');
+   END;
+   CREATE TRIGGER message_badges_au AFTER UPDATE OF account_id,thread_id,labels_json,is_unread ON messages
+     WHEN old.account_id IS NOT new.account_id OR old.thread_id IS NOT new.thread_id
+       OR old.labels_json IS NOT new.labels_json OR old.is_unread IS NOT new.is_unread BEGIN
+     DELETE FROM message_badges WHERE message_id=new.id;
+     INSERT INTO message_badges SELECT DISTINCT l.value,new.account_id,new.thread_id,new.id,
+       EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value='INBOX')
+       FROM json_each(new.labels_json) l WHERE new.is_unread=1 OR l.value IN ('STARRED','DRAFT');
+   END;
+   -- One compact row per message keeps broad FTS counts away from MIME bodies.
+   CREATE TABLE message_search_meta (
+     row_id INTEGER PRIMARY KEY,
+     message_id TEXT NOT NULL UNIQUE REFERENCES messages(id) ON DELETE CASCADE,
+     account_id TEXT NOT NULL, thread_id TEXT NOT NULL, eligible INTEGER NOT NULL
+   );
+   CREATE INDEX message_search_meta_threads ON message_search_meta(account_id,thread_id,eligible,row_id);
+   INSERT INTO message_search_meta SELECT m.rowid,m.id,m.account_id,m.thread_id,
+     NOT EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value IN ('SPAM','TRASH')) FROM messages m;
+   CREATE TRIGGER message_search_meta_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO message_search_meta VALUES(new.rowid,new.id,new.account_id,new.thread_id,
+       NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')));
+   END;
+   CREATE TRIGGER message_search_meta_au AFTER UPDATE OF account_id,thread_id,labels_json ON messages
+     WHEN old.account_id IS NOT new.account_id OR old.thread_id IS NOT new.thread_id OR old.labels_json IS NOT new.labels_json BEGIN
+     UPDATE message_search_meta SET account_id=new.account_id,thread_id=new.thread_id,
+       eligible=NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')) WHERE row_id=new.rowid;
+   END;`,
 ];
 
 /**
@@ -806,8 +902,33 @@ const migrate = Effect.gen(function* () {
       return true;
     }),
   );
-  while (yield* step) {
-    // Next migration.
+  const deadline = (yield* Clock.currentTimeMillis) + 120_000;
+  let waiting = false;
+  for (;;) {
+    const rows = yield* sql`PRAGMA user_version`;
+    const { user_version: version } = yield* Schema.decodeUnknownEffect(UserVersion)(rows[0]);
+    if (version >= MIGRATIONS.length) break;
+    const result = yield* Effect.result(step);
+    if (result._tag === "Success") {
+      if (!result.success) break;
+      continue;
+    }
+    const error = result.failure;
+    if (
+      !isSqlError(error) ||
+      error.reason._tag !== "LockTimeoutError" ||
+      (yield* Clock.currentTimeMillis) >= deadline
+    )
+      yield* Effect.fail(error);
+    if (!waiting) {
+      waiting = true;
+      yield* Effect.logInfo("Waiting for another process to finish database migrations", {
+        version,
+        targetVersion: MIGRATIONS.length,
+        deadlineMs: 120_000,
+      });
+    }
+    yield* Effect.sleep("100 millis");
   }
 });
 

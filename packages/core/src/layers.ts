@@ -41,15 +41,25 @@ export const NodeMailbox = (options: NodeMailboxOptions = {}): Layer.Layer<Mailb
       const models =
         options.models ??
         (yield* makeNodeModels(directory, undefined, { launch: options.inferenceProcess }));
+      const media = options.media;
       return MailboxLive({
         ...options,
         attachmentCacheDirectory: directory,
         models,
-        ...(options.media
+        ...(media
           ? {
               media: {
-                ...options.media,
-                vision: { ...options.media.vision, imageVectors: models.images },
+                ...media,
+                vision: {
+                  get available() {
+                    return media.vision.available;
+                  },
+                  get version() {
+                    return media.vision.version;
+                  },
+                  recognize: (data) => media.vision.recognize(data),
+                  imageVectors: models.images,
+                },
               },
             }
           : {}),

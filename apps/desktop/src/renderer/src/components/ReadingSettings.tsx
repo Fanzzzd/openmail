@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Keys } from "../state/keys";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, prefsAtom } from "../state/queries";
-import { useShortcutText } from "./SystemSettings";
+import { useShortcutText } from "../use-shortcut-text";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 

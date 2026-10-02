@@ -2,7 +2,7 @@ import { labelChipColors } from "../label-colors";
 import { useMessageSwipe } from "../message-swipe-hook";
 import { TriageChip } from "./TriageChip";
 import { swipeMailOp } from "../message-swipe";
-import { actionNames } from "./InteractionSettings";
+import { actionNames } from "../action-names";
 import type { Prefs, SwipeAction } from "@openmail/core/schema";
 import { MESSAGE_DRAG } from "../organize-drag";
 import { useAtomValue } from "@effect/atom-react";
@@ -21,9 +21,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Paperclip, Star } from "lucide-react";
 import {
   useEffect,
+  useCallback,
+  memo,
   useRef,
   useState,
-  type MouseEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -144,6 +145,28 @@ export function MessageList({
     textScale;
   const window = listWindow(threads.length, viewport.top, viewport.height, rowHeight);
   const endReached = useRef(onEndReached);
+  const callbacks = useRef({ onSelect, rowActions });
+  useEffect(() => {
+    callbacks.current = { onSelect, rowActions };
+  }, [onSelect, rowActions]);
+  const select = useCallback<Props["onSelect"]>(
+    (id, modifiers) => callbacks.current.onSelect(id, modifiers),
+    [],
+  );
+  const openRow = useCallback(
+    (thread: ThreadSummary) => callbacks.current.rowActions.onOpenWindow(thread),
+    [],
+  );
+  const swipe = useCallback((thread: ThreadSummary, action: SwipeAction) => {
+    const actions = callbacks.current.rowActions;
+    if (action === "snooze") {
+      actions.onSnooze(thread);
+      return;
+    }
+    const state = actions.stateOf(thread);
+    const op = state && swipeMailOp(action, state);
+    if (state && op) actions.onSwipeOp(thread, state, op);
+  }, []);
   useEffect(() => {
     endReached.current = onEndReached;
   }, [onEndReached]);
@@ -358,12 +381,7 @@ export function MessageList({
                       !selectedIds.has(threads[i + 1]?.id ?? "")
                     }
                     showAccount={showAccount}
-                    onSelect={(event) =>
-                      onSelect(m.id, {
-                        toggle: event.metaKey || event.ctrlKey,
-                        range: event.shiftKey,
-                      })
-                    }
+                    onSelect={select}
                     dragData={JSON.stringify({
                       ids: selectedIds.has(m.id)
                         ? threads.filter((row) => selectedIds.has(row.id)).map((row) => row.id)
@@ -371,17 +389,9 @@ export function MessageList({
                       removeLabelId: moveSourceLabel(rowActions.mailbox, rowActions.currentLabel),
                       flat: !rowActions.grouped,
                     })}
-                    onOpen={() => rowActions.onOpenWindow(m)}
+                    onOpen={openRow}
                     swipeActions={prefs.swipeActions}
-                    onSwipe={(action) => {
-                      if (action === "snooze") {
-                        rowActions.onSnooze(m);
-                        return;
-                      }
-                      const state = rowActions.stateOf(m);
-                      const op = state && swipeMailOp(action, state);
-                      if (state && op) rowActions.onSwipeOp(m, state, op);
-                    }}
+                    onSwipe={swipe}
                   />
                 );
               })}
@@ -469,7 +479,7 @@ function senders(t: ThreadSummary): string {
   return people.map((p) => displayName(p).split(/\s+/)[0]).join(", ");
 }
 
-function Row({
+const Row = memo(function Row({
   thread: m,
   position,
   total,
@@ -501,16 +511,16 @@ function Row({
   menuOpen: boolean;
   rule: boolean;
   showAccount: boolean;
-  onSelect: (event: MouseEvent<HTMLButtonElement>) => void;
+  onSelect: Props["onSelect"];
   /** Double-click: open in a window of its own. */
-  onOpen: () => void;
+  onOpen: (thread: ThreadSummary) => void;
   dragData: string;
   swipeActions: Prefs["swipeActions"];
-  onSwipe: (action: SwipeAction) => void;
+  onSwipe: (thread: ThreadSummary, action: SwipeAction) => void;
 }) {
   const { i18n } = useLingui();
   const row = useRef<HTMLButtonElement>(null);
-  const swipe = useMessageSwipe(row, swipeActions, onSwipe);
+  const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
   const muted = accent ? "text-white" : "text-a11y-muted";
   const chips = m.labels
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
@@ -576,8 +586,10 @@ function Row({
         aria-selected={selected}
         aria-setsize={total}
         aria-posinset={position}
-        onClick={onSelect}
-        onDoubleClick={onOpen}
+        onClick={(event) =>
+          onSelect(m.id, { toggle: event.metaKey || event.ctrlKey, range: event.shiftKey })
+        }
+        onDoubleClick={() => onOpen(m)}
         className={`motion-reduce:!transform-none relative block w-full overflow-hidden rounded-lg py-2.5 pr-3 pl-7 text-left ${
           menuOpen ? "ring-2 ring-blue-500 ring-inset" : ""
         } ${
@@ -680,4 +692,4 @@ function Row({
       <TriageChip id={m.id} accountId={m.accountId} labels={m.labels} compact />
     </div>
   );
-}
+});

@@ -13,7 +13,10 @@ import { markdownDraftSource } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
 import { replyRecipients } from "./recipients.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform-memory.js";
-import { type Change, type ProviderAdapter, Secrets } from "./services.js";
+import { type Change, type ProviderAdapter, Providers, Secrets, Store } from "./services.js";
+import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox.js";
+import { StoreLive } from "./store.js";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
@@ -196,14 +199,14 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
       Stream.runCollect(a.pull(account, Option.some(JSON.stringify({ inbox: "old-link" })))),
     );
     assert.deepStrictEqual(tags(changes), [
-      "Reset",
       "Labels",
       "Upsert",
       "Progress",
+      "Reset",
       "Delete",
       "Cursor",
     ]);
-    assert.deepStrictEqual(changes[1], {
+    assert.deepStrictEqual(changes[0], {
       _tag: "Labels",
       labels: [
         { id: "id-c1", name: "Clients", color: null },
@@ -211,7 +214,7 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
         { id: "id-empty", name: "Empty", color: null },
       ],
     });
-    const upsert = changes[2];
+    const upsert = changes[1];
     assert.ok(upsert?._tag === "Upsert");
     assert.deepStrictEqual(upsert.message.labels.toSorted(), ["INBOX", "STARRED", "UNREAD"]);
     assert.deepStrictEqual(upsert.message.attachments, [
@@ -270,6 +273,143 @@ it.effect("a delta entry without the selected fields is fetched whole", () =>
     assert.ok(upserts[0]?._tag === "Upsert");
     assert.strictEqual(upserts[0].message.threadId, raw.conversationId);
     assert.ok(!upserts[0].message.labels.includes("UNREAD"));
+  }),
+);
+
+it.effect("a failed first delta page or restart never clears cached mail", () =>
+  Effect.gen(function* () {
+    for (const restart of [false, true]) {
+      const http = fakeHttp(
+        mailbox({
+          inbox: (url) => ({
+            status: restart && url.searchParams.has("$deltatoken") ? 410 : 400,
+            json: { error: { code: "BadRequest" } },
+          }),
+        }),
+      );
+      const changes: Change[] = [];
+      const cursor = restart
+        ? Option.some(
+            JSON.stringify({
+              __idType: "immutable",
+              inbox: `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=expired`,
+            }),
+          )
+        : Option.none<string>();
+      const result = yield* run(http, (adapter) =>
+        adapter.pull(account, cursor, "inbox").pipe(
+          Stream.runForEach((change) =>
+            Effect.sync(() => {
+              changes.push(change);
+            }),
+          ),
+          Effect.result,
+        ),
+      );
+      assert.strictEqual(result._tag, "Failure");
+      assert.deepStrictEqual(changes, []);
+    }
+  }),
+);
+
+it.effect(
+  "a later delta-page failure preserves cached mail during resets and folder restarts",
+  () =>
+    Effect.gen(function* () {
+      for (const restart of [false, true]) {
+        const http = fakeHttp(
+          mailbox({
+            inbox: (url) => {
+              if (restart && url.searchParams.has("$deltatoken")) return { status: 410 };
+              if (url.searchParams.has("$skiptoken")) return { status: 400 };
+              return {
+                json: {
+                  value: Array.from({ length: 120 }, (_, i) => ({
+                    ...raw,
+                    id: `fresh-${i}`,
+                    hasAttachments: false,
+                  })),
+                  "@odata.nextLink": `${GRAPH}/me/mailFolders/inbox/messages/delta?$skiptoken=next`,
+                },
+              };
+            },
+          }),
+        );
+        const adapters = Layer.effect(
+          Providers,
+          Effect.map(makeOutlook, (adapter) => Providers.of({ get: () => adapter })),
+        );
+        const layer = MailboxLive({ backgroundFlush: false }).pipe(
+          Layer.provideMerge(Layer.mergeAll(StoreLive, adapters)),
+          Layer.provide(Layer.mergeAll(MemoryPlatform(platformOptions), http.layer)),
+        );
+        yield* Effect.gen(function* () {
+          const store = yield* Store;
+          const mailbox = yield* Mailbox;
+          yield* store.upsertAccount("outlook", account.email);
+          yield* store.upsertMessage(
+            account.id,
+            parseGraphMessage({ ...raw, id: "cached", hasAttachments: false }, "INBOX", []),
+          );
+          if (restart)
+            yield* store.saveSyncCursor(
+              account.id,
+              JSON.stringify({
+                __idType: "immutable",
+                inbox: `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=expired`,
+              }),
+            );
+          const result = yield* mailbox.sync(account.id);
+          assert.ok(result[0]?.error);
+          assert.strictEqual(yield* store.hasMessage(`${account.id}/cached`), true);
+        }).pipe(Effect.provide(layer), Effect.scoped);
+      }
+    }),
+);
+
+it.effect("delta sync delivers a page before fetching the whole history and checkpoints last", () =>
+  Effect.gen(function* () {
+    let delivered = 0;
+    let nextPageAt = -1;
+    const http = fakeHttp(
+      mailbox({
+        inbox: (url) => {
+          const page = Number(url.searchParams.get("page") ?? 0);
+          if (page === 1) nextPageAt = delivered;
+          return {
+            json: {
+              value: Array.from({ length: 40 }, (_, i) => ({
+                ...raw,
+                id: `page-${page}-${i}`,
+                hasAttachments: false,
+              })),
+              ...(page < 4
+                ? {
+                    "@odata.nextLink": `${GRAPH}/me/mailFolders/inbox/messages/delta?page=${page + 1}`,
+                  }
+                : {
+                    "@odata.deltaLink": `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=final`,
+                  }),
+            },
+          };
+        },
+      }),
+    );
+    const changes: Change[] = [];
+    yield* run(http, (adapter) =>
+      adapter.pull(account, Option.none(), "inbox").pipe(
+        Stream.runForEach((change) =>
+          Effect.sync(() => {
+            changes.push(change);
+            if (change._tag === "Upsert") delivered++;
+          }),
+        ),
+      ),
+    );
+    assert.strictEqual(delivered, 200);
+    assert.isAtLeast(nextPageAt, 24);
+    assert.isBelow(nextPageAt, 41);
+    assert.strictEqual(changes.at(-1)?._tag, "Cursor");
   }),
 );
 
@@ -345,13 +485,13 @@ it.effect("an expired delta link restarts that folder and drops its local copies
     );
     assert.deepStrictEqual(tags(changes), [
       "Labels",
-      "DeleteLabel",
       "Upsert",
       "Progress",
+      "DeleteLabel",
       "Cursor",
     ]);
-    assert.deepStrictEqual(changes[1], { _tag: "DeleteLabel", label: "INBOX" });
-    const upsert = changes[2];
+    assert.deepStrictEqual(changes[3], { _tag: "DeleteLabel", label: "INBOX", keep: ["AAMk123"] });
+    const upsert = changes[1];
     assert.ok(upsert?._tag === "Upsert");
     assert.strictEqual(upsert.message.providerId, "AAMk123");
     // The restart used the initial delta URL, not the expired link again.

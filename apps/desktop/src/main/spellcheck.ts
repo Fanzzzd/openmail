@@ -77,7 +77,7 @@ export function installSpellingMenu(
   labels: () => DesktopLabels["spelling"],
   save: (patch: Partial<Prefs>) => void,
 ) {
-  const removers: (() => void)[] = [];
+  const removers = new Set<() => void>();
   const wire = (win: BrowserWindow) => {
     apply(win.webContents);
     const context = (_event: Electron.Event, params: Electron.ContextMenuParams) => {
@@ -87,9 +87,13 @@ export function installSpellingMenu(
       });
     };
     win.webContents.on("context-menu", context);
-    removers.push(() => {
+    const remove = () => {
       if (!win.isDestroyed()) win.webContents.off("context-menu", context);
-    });
+      win.off("closed", remove);
+      removers.delete(remove);
+    };
+    removers.add(remove);
+    win.once("closed", remove);
   };
   const created = (_event: Electron.Event, win: BrowserWindow) => wire(win);
   app.on("browser-window-created", created);

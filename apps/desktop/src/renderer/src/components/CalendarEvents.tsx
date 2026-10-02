@@ -15,7 +15,7 @@ import { createCalendarEventAtom } from "../state/mutations";
 import { Keys } from "../state/keys";
 import { resultError } from "../errors";
 import { Dialog, alertButton, alertPrimary } from "./ui/Dialog";
-import { formButton } from "./OrganizationSettings";
+import { formButton } from "./ui/form-styles";
 
 export function OverlappingEvents({
   messageId,

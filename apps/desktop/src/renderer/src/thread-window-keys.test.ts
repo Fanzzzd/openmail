@@ -81,7 +81,7 @@ afterAll(() => {
     vi.doUnmock(module);
   vi.resetModules();
 });
-it("reader windows handle compose/new-window/settings rather than losing their accelerators", () => {
+it("reader windows handle compose/new-window/settings rather than losing their accelerators", async () => {
   const dom = testDom();
   vi.stubGlobal("Element", dom.window.Element);
   const i18n = setupI18n({ locale: "en", messages: { en: {} } });
@@ -101,7 +101,9 @@ it("reader windows handle compose/new-window/settings rather than losing their a
     expect(calls.rpc).toHaveBeenLastCalledWith("ComposeNew");
     expect(key("N", true).defaultPrevented).toBe(true);
     expect(calls.rpc).toHaveBeenLastCalledWith("NewWindow");
-    expect(key(",").defaultPrevented).toBe(true);
+    await act(async () => {
+      expect(key(",").defaultPrevented).toBe(true);
+    });
     expect(dom.element.querySelector("[data-settings]")).not.toBeNull();
   } finally {
     dom.dispose();

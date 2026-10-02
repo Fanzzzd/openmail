@@ -16,6 +16,8 @@ import { Keys } from "./keys";
 const always = { timeToLive: Duration.infinity };
 /** Views you switch between stay cached a while, so going back is instant. */
 const cached = { timeToLive: Duration.minutes(5) };
+/** Bodies and base64 images are owned by the mounted reader, not its history. */
+const readerContent = { timeToLive: Duration.zero };
 
 export const accountsAtom = MailClient.query("Accounts", undefined, {
   reactivityKeys: [Keys.accounts],
@@ -66,7 +68,11 @@ const noThread = Atom.make(AsyncResult.initial<readonly Message[], AppError>());
 export const threadAtom = (id: string | null) =>
   id === null
     ? noThread
-    : MailClient.query("Thread", { id }, { reactivityKeys: { [Keys.thread]: [id] }, ...cached });
+    : MailClient.query(
+        "Thread",
+        { id },
+        { reactivityKeys: { [Keys.thread]: [id] }, ...readerContent },
+      );
 
 /** Ticks every 10 s while something depends on it. */
 const every10s = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
@@ -142,11 +148,10 @@ export const imageSendersAtom = MailClient.query("ImageSenders", undefined, {
 
 /** A message's inline (cid:) images as data: URLs. Fetched from the provider, so cached a while. */
 export const inlineImagesAtom = (id: string) =>
-  MailClient.query("InlineImages", { id }, { timeToLive: Duration.minutes(10) });
+  MailClient.query("InlineImages", { id }, { timeToLive: Duration.minutes(2) });
 
 /** A message's original source, for View Original. */
-export const rawMessageAtom = (id: string) =>
-  MailClient.query("RawMessage", { id }, { timeToLive: Duration.minutes(2) });
+export const rawMessageAtom = (id: string) => MailClient.query("RawMessage", { id }, readerContent);
 
 export const knownSendersAtom = (accountId: string, addresses: readonly string[]) =>
   MailClient.query(

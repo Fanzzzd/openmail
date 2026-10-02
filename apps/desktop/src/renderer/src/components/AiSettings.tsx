@@ -9,9 +9,8 @@ import { MailClient, submitAiKey } from "../rpc";
 import { errorText, resultError } from "../errors";
 import { Keys } from "../state/keys";
 
-export const aiSettingsAtom = MailClient.query("AiSettings", undefined, {
-  reactivityKeys: [Keys.ai],
-});
+import { aiSettingsAtom } from "../state/ai-settings";
+export { aiSettingsAtom } from "../state/ai-settings";
 const accountMutation = MailClient.mutation("SetAiAccount");
 const modelMutation = MailClient.mutation("SetAiModel");
 

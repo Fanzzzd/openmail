@@ -6,7 +6,7 @@ import { resultError } from "../errors";
 import { MAIL_KEYS } from "../state/keys";
 import { snoozeAtom } from "../state/mutations";
 import { Dialog } from "./ui/Dialog";
-import { formButton, formInput } from "./OrganizationSettings";
+import { formButton, formInput } from "./ui/form-styles";
 
 export function SnoozeDialog({
   threads,

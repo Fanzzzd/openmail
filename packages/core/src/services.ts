@@ -240,8 +240,12 @@ export class Store extends Context.Service<
       providerId: string,
       flags: { isUnread: boolean; isStarred: boolean },
     ): Effect.Effect<void>;
-    deleteMessagesWithLabel(accountId: string, label: string): Effect.Effect<void>;
-    deleteAccountMessages(accountId: string): Effect.Effect<void>;
+    deleteMessagesWithLabel(
+      accountId: string,
+      label: string,
+      keep?: readonly string[],
+    ): Effect.Effect<void>;
+    deleteAccountMessages(accountId: string, keep?: readonly string[]): Effect.Effect<void>;
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
     readonly wordIndexReady: Effect.Effect<WordIndexState>;
     backfillWordIndex(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
@@ -502,10 +506,10 @@ export type Change =
       readonly isUnread: boolean;
       readonly isStarred: boolean;
     }
-  /** Drop local messages carrying this label (a folder deleted on the server). */
-  | { readonly _tag: "DeleteLabel"; readonly label: string }
-  /** Drop every local message of the account (the provider's ids changed meaning). */
-  | { readonly _tag: "Reset" }
+  /** Drop local messages carrying this label, preserving IDs delivered by a completed restart. */
+  | { readonly _tag: "DeleteLabel"; readonly label: string; readonly keep?: readonly string[] }
+  /** Drop local account messages, preserving IDs delivered by a completed reset. */
+  | { readonly _tag: "Reset"; readonly keep?: readonly string[] }
   | { readonly _tag: "BackfillReset" }
   | { readonly _tag: "Labels"; readonly labels: readonly Omit<Label, "accountId">[] }
   | { readonly _tag: "Progress"; readonly fetched: number; readonly total: number }

@@ -208,9 +208,13 @@ export function resetLocalCache(directory: string): CacheResetResult {
       );
     if (tables.has("derived_fts"))
       db.exec("INSERT INTO derived_fts(derived_fts) VALUES ('rebuild')");
+    if (tables.has("contact_completion_fts"))
+      db.exec("INSERT INTO contact_completion_fts(contact_completion_fts) VALUES ('delete-all')");
     // Recovery precedes migrations, so older caches may lack some of these tables.
     for (const table of [
       "messages",
+      "message_badges",
+      "message_search_meta",
       "labels",
       "backfill",
       "cache_maintenance",

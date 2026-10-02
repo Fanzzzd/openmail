@@ -7,7 +7,7 @@ import { useRunMail, withMail } from "../state/mail";
 import { setAppleContactsAtom } from "../state/mutations";
 import { appleContactsStatusAtom, prefsAtom } from "../state/queries";
 import { Checkbox } from "./ui/Checkbox";
-import { formButton } from "./OrganizationSettings";
+import { formButton } from "./ui/form-styles";
 
 export function AppleContactsSettings() {
   const { t } = useLingui();

@@ -1,4 +1,5 @@
 import { AppleContactActions } from "./AppleContactActions";
+import { InviteBanner, RawMessageDialog } from "./LazyDialogs";
 import { ThreadSummary } from "./AiPanel";
 import { TriageChip } from "./TriageChip";
 import { ContactAvatar as Avatar } from "./ContactAvatar";
@@ -92,10 +93,9 @@ import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { MeetingLinks } from "./MeetingLinks";
 import { highlightBody } from "./body-text";
-import { InviteBanner } from "./InviteBanner";
 
-import { useShortcutText } from "./SystemSettings";
-import { RawMessageDialog } from "./RawMessage";
+import { useShortcutText } from "../use-shortcut-text";
+
 import { useSaveMessage } from "./reader-actions";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";

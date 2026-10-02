@@ -46,7 +46,7 @@ export interface IndexerInput {
 }
 export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInput) {
   const { store, vision } = input;
-  const version = `${MEDIA_PIPELINE_VERSION}:${vision.version}`;
+  const version = () => `${MEDIA_PIPELINE_VERSION}:${vision.version}`;
   const lock = yield* Semaphore.make(1);
   const allowed = Effect.gen(function* () {
     return vision.available && !(yield* store.paused) && !(yield* input.busy);
@@ -75,7 +75,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
             source,
             page: null,
             region: line.region,
-            pipelineVersion: version,
+            pipelineVersion: version(),
             visionRevision: result.revision,
           });
       return yield* Effect.void;
@@ -110,7 +110,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
               source,
               page: page.page,
               region: null,
-              pipelineVersion: version,
+              pipelineVersion: version(),
               visionRevision: null,
             });
         }
@@ -137,7 +137,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
         available: vision.available,
         paused: yield* store.paused,
         onBattery: input.onBattery(),
-        pipelineVersion: version,
+        pipelineVersion: version(),
       };
     }),
     setPaused: store.setPaused,
@@ -147,7 +147,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
           let completed = 0;
           for (let i = 0; i < (input.onBattery() ? 1 : 3); i++) {
             if (!(yield* allowed)) break;
-            const job = yield* store.claim(version, Date.now(), !input.onBattery());
+            const job = yield* store.claim(version(), Date.now(), !input.onBattery());
             if (Option.isNone(job)) break;
             yield* Effect.gen(function* () {
               const message = yield* input.message(job.value.message_id);

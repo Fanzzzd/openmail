@@ -127,7 +127,7 @@ export function contactMatch(sql: SqlClient.SqlClient, match: string): Fragment 
       SELECT account_id,address FROM contact_organizations WHERE rowid IN (
         SELECT rowid FROM contact_organizations_fts WHERE contact_organizations_fts MATCH ${match}
       )
-    ) o CROSS JOIN contact_candidates cc ON cc.address=o.address AND +cc.account_id=o.account_id
+    ) o CROSS JOIN contact_candidates cc ON cc.address=o.address AND cc.account_id=o.account_id
   )`;
 }
 
@@ -225,7 +225,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
    * Drafts the Drafts list cannot show from `messages`: never pushed, or
    * pushed but not pulled back yet. Newest first, as thread rows.
    */
-  const localDrafts = (q: ThreadQuery, limit: number) => {
+  const localDraftFilter = (q: ThreadQuery) => {
     const where: Fragment[] = [
       sql`(d.remote_message_id IS NULL OR NOT EXISTS (SELECT 1 FROM messages m
         WHERE m.account_id = d.account_id AND m.provider_id = d.remote_message_id))`,
@@ -239,9 +239,17 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       where.push(
         sql`(d.updated_at < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (d.updated_at = ${q.before} AND d.id < ${q.beforeId})`})`,
       );
+    return sql.and(where);
+  };
+  const countLocalDrafts = (accountIds?: readonly string[]) =>
+    all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM drafts d
+      JOIN accounts a ON a.id=d.account_id WHERE a.enabled=1 AND ${localDraftFilter({ accountIds })}`).pipe(
+      Effect.map((rows) => rows[0]?.n ?? 0),
+    );
+  const localDrafts = (q: ThreadQuery, limit: number) => {
     return all(LocalDraftRow)(sql`SELECT ${DRAFT_COLUMNS}, a.email FROM drafts d
       JOIN accounts a ON a.id = d.account_id
-      WHERE a.enabled=1 AND ${sql.and(where)} ORDER BY d.updated_at DESC, d.id DESC LIMIT ${limit}`).pipe(
+      WHERE a.enabled=1 AND ${localDraftFilter(q)} ORDER BY d.updated_at DESC, d.id DESC LIMIT ${limit}`).pipe(
       Effect.map((rows) =>
         rows.map((r): ThreadSummary => {
           const me = { name: "", address: r.email };
@@ -635,7 +643,10 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     const now = yield* Clock.currentTimeMillis;
     const tokens = query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
     if (query.trim() && tokens.length === 0) return [];
-    const tokenMatches = tokens.map((token) => contactMatch(sql, `"${token}"*`));
+    const match = tokens.map((token) => `"${token}"*`).join(" AND ");
+    const matching = tokens.length
+      ? sql`c.rowid IN (SELECT rowid FROM contact_completion_fts WHERE contact_completion_fts MATCH ${match})`
+      : sql.literal("1");
     const scope = (alias: "c" | "h") =>
       sql.and([
         sql`${sql.literal(`${alias}.account_id`)} IN (SELECT id FROM accounts WHERE enabled=1)`,
@@ -649,17 +660,18 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     const rows = yield* all(ContactRow)(sql`
       WITH matched AS (
         SELECT c.* FROM contact_candidates c WHERE ${scope("c")}
-          ${tokens.length ? sql`AND ${sql.and(tokenMatches)}` : sql.literal("")}
-          AND c.address LIKE '%@%' AND c.address != ${exclude?.trim().toLowerCase() ?? ""}
-          AND NOT EXISTS(SELECT 1 FROM hidden_contacts hidden WHERE hidden.address=c.address)
-          AND c.address NOT LIKE '%noreply%' AND c.address NOT LIKE '%no-reply%' AND c.address NOT LIKE '%donotreply%'
-      ), scored AS (
+          AND ${matching}
+      ), scored AS MATERIALIZED (
         SELECT address,SUM(CASE WHEN source!=3 THEN weight / (1.0 + MAX(${now}-date,0)/(${MONTH}*1.0)) ELSE 0 END) + MAX(CASE WHEN source=3 THEN 0.2 ELSE 0 END) AS score FROM matched GROUP BY address
       )
       SELECT s.address, (SELECT NULLIF(h.name,'') FROM contact_candidates h
         WHERE h.address=s.address AND h.name!='' AND ${scope("h")}
         ORDER BY h.source DESC,h.date DESC,h.account_id,h.id LIMIT 1) AS name
-      FROM scored s ORDER BY s.score DESC,s.address LIMIT ${boundedLimit}`);
+      FROM scored s
+      WHERE s.address LIKE '%@%' AND s.address != ${exclude?.trim().toLowerCase() ?? ""}
+        AND NOT EXISTS(SELECT 1 FROM hidden_contacts hidden WHERE hidden.address=s.address)
+        AND s.address NOT LIKE '%noreply%' AND s.address NOT LIKE '%no-reply%' AND s.address NOT LIKE '%donotreply%'
+      ORDER BY s.score DESC,s.address LIMIT ${boundedLimit}`);
 
     return rows.map((r): Address => ({ name: r.name ?? "", address: r.address }));
   });
@@ -707,6 +719,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     imageSenders,
     setImageSender,
     localDrafts,
+    countLocalDrafts,
     getDraft,
     draftByRemoteMessage,
     draftByProposal,

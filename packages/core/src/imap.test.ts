@@ -25,6 +25,7 @@ import {
   threadIdOf,
   toIncoming,
   trackImapBackfill,
+  fetchMessages,
   uidSet,
 } from "./imap.js";
 import { Secrets } from "./services.js";
@@ -98,6 +99,38 @@ it("uid sets compact and expand", () => {
   assert.strictEqual(uidSet([]), "");
   assert.deepStrictEqual(parseUidSet(""), []);
 });
+
+it.effect("MIME batches fetch source through the iterator and keep attachment metadata", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    assert.ok(account.imap);
+    const source = Buffer.from(
+      "From: alice@example.com\r\nSubject: Report\r\nContent-Type: text/plain\r\n\r\nReport",
+    );
+    const heads = vi.spyOn(client, "fetchAll").mockImplementation(async (_range, query) => {
+      assert.isUndefined(query.source, "raw sources must never be collected into an array");
+      return [
+        { seq: 1, uid: 1, size: source.length },
+        { seq: 2, uid: 2, size: 11 * 1024 * 1024 },
+      ];
+    });
+    const fetch = vi.spyOn(client, "fetch").mockImplementation(async function* (range) {
+      yield { seq: Number(range), uid: Number(range), source, flags: new Set<string>() };
+    });
+    const result = yield* fetchMessages(
+      { accountId: account.id, settings: account.imap, client },
+      { path: "INBOX", label: "INBOX" },
+      "7",
+      [1, 2],
+    );
+    assert.strictEqual(result.length, 2);
+    assert.strictEqual(result[0]?.message.bodyText.trim(), "Report");
+    assert.strictEqual(heads.mock.calls.length, 1);
+    assert.strictEqual(fetch.mock.calls.length, 2);
+    assert.strictEqual(fetch.mock.calls[0]?.[1].source, true);
+    assert.deepStrictEqual(fetch.mock.calls[1]?.[1].source, { maxLength: 512 * 1024 });
+  }),
+);
 
 const rejects = (input: ImapConnectInput) =>
   Effect.gen(function* () {
@@ -474,7 +507,7 @@ it.effect("IMAP folder management uses CREATE/RENAME/DELETE with the server deli
         delimiter: ".",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -521,7 +554,7 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
         delimiter: "/",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -532,7 +565,7 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
         delimiter: "/",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         specialUse: "\\Sent",
         listed: true,
         subscribed: true,
@@ -541,7 +574,7 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
       path: "INBOX",
       delimiter: "/",
-      flags: new Set(),
+      flags: new Set<string>(),
       uidValidity: 7n,
       uidNext: 2,
       exists: 1,
@@ -550,16 +583,20 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     const mime = Buffer.from(
       'From: alice@example.com\r\nTo: me@qq.com\r\nSubject: Report\r\nMessage-ID: <r@example.com>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="x"\r\n\r\n--x\r\nContent-Type: text/plain\r\n\r\nreport\r\n--x\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename="report.pdf"\r\n\r\npdf\r\n--x--\r\n',
     );
-    vi.spyOn(client, "fetchAll").mockResolvedValue([
+    const fetched = [
       {
         seq: 1,
         uid: 1,
-        flags: new Set(),
+        flags: new Set<string>(),
         internalDate: new Date("2026-09-30"),
         size: mime.length,
         source: mime,
       },
-    ]);
+    ];
+    vi.spyOn(client, "fetchAll").mockResolvedValue(fetched);
+    vi.spyOn(client, "fetch").mockImplementation(async function* () {
+      yield* fetched;
+    });
     assert.ok(account.imap);
     const settings = account.imap;
     const adapter = yield* makeImapWith(() =>
@@ -613,7 +650,7 @@ it.effect("inbox polling opens only INBOX and skips folder discovery", () =>
     const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
       path: "INBOX",
       delimiter: "/",
-      flags: new Set(),
+      flags: new Set<string>(),
       uidValidity: 7n,
       uidNext: 1,
       exists: 0,
@@ -650,7 +687,7 @@ it.effect("IMAP historical UID ranges resume and reset on UIDVALIDITY changes", 
         delimiter: "/",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -660,7 +697,7 @@ it.effect("IMAP historical UID ranges resume and reset on UIDVALIDITY changes", 
       Promise.resolve({
         path: "INBOX",
         delimiter: "/",
-        flags: new Set(),
+        flags: new Set<string>(),
         uidValidity: validity,
         uidNext: 12001,
         exists: 12000,
@@ -719,7 +756,7 @@ it("historical IMAP tracking preserves checkpoints and detects subsequent flags/
   const message = toIncoming(parsed, {
     providerId: encodeProviderId("INBOX", "7", 1),
     label: "INBOX",
-    flags: new Set(),
+    flags: new Set<string>(),
     internalDate: new Date(0),
   });
   const tracked = readCursor(trackImapBackfill(cursor, [message]));
@@ -756,7 +793,7 @@ it.effect("IMAP excludes cached and pending UIDs before fetching MIME", () =>
         delimiter: "/",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -764,7 +801,7 @@ it.effect("IMAP excludes cached and pending UIDs before fetching MIME", () =>
     vi.spyOn(client, "mailboxOpen").mockResolvedValue({
       path: "INBOX",
       delimiter: "/",
-      flags: new Set(),
+      flags: new Set<string>(),
       uidValidity: 7n,
       uidNext: 4,
       exists: 3,
@@ -773,16 +810,20 @@ it.effect("IMAP excludes cached and pending UIDs before fetching MIME", () =>
     const mime = Buffer.from(
       "From: a@example.com\r\nSubject: Old\r\nContent-Type: text/plain\r\n\r\nhello",
     );
-    const fetch = vi.spyOn(client, "fetchAll").mockResolvedValue([
+    const fetched = [
       {
         seq: 2,
         uid: 2,
-        flags: new Set(),
+        flags: new Set<string>(),
         internalDate: new Date(0),
         size: mime.length,
         source: mime,
       },
-    ]);
+    ];
+    const fetch = vi.spyOn(client, "fetchAll").mockResolvedValue(fetched);
+    vi.spyOn(client, "fetch").mockImplementation(async function* () {
+      yield* fetched;
+    });
     assert.ok(account.imap);
     const settings = account.imap;
     const adapter = yield* makeImapWith(() =>
@@ -850,7 +891,7 @@ it.effect("folder ids page across UIDs and permanent deletion requires targeted 
         parent: [],
         delimiter: "/",
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         specialUse: "\\Inbox",
         listed: true,
         subscribed: true,
@@ -862,7 +903,7 @@ it.effect("folder ids page across UIDs and permanent deletion requires targeted 
         parent: [],
         delimiter: "/",
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         specialUse: "\\Trash",
         listed: true,
         subscribed: true,
@@ -871,7 +912,7 @@ it.effect("folder ids page across UIDs and permanent deletion requires targeted 
     const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
       path: "Trash",
       delimiter: "/",
-      flags: new Set(),
+      flags: new Set<string>(),
       uidValidity: 7n,
       uidNext: 205,
       exists: 204,
@@ -925,7 +966,7 @@ it.effect("folder ids page across UIDs and permanent deletion requires targeted 
     open.mockResolvedValue({
       path: "Trash",
       delimiter: "/",
-      flags: new Set(),
+      flags: new Set<string>(),
       uidValidity: 8n,
       uidNext: 205,
       exists: 204,
@@ -964,7 +1005,7 @@ it.effect(
       vi.spyOn(client, "mailboxOpen").mockResolvedValue({
         path: "Trash",
         delimiter: "/",
-        flags: new Set(),
+        flags: new Set<string>(),
         uidValidity: 7n,
         uidNext: 101,
         exists: 100,
@@ -1024,7 +1065,7 @@ it.effect("IMAP reparenting honors the server delimiter and supports moving back
         delimiter: ".",
         parent: ["Clients"],
         parentPath: "Clients",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -1035,7 +1076,7 @@ it.effect("IMAP reparenting honors the server delimiter and supports moving back
         delimiter: ".",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
       },
@@ -1081,7 +1122,7 @@ it.effect("composer draft keywords and star use IMAP flags while staying in Draf
         delimiter: "/",
         parent: [],
         parentPath: "",
-        flags: new Set(),
+        flags: new Set<string>(),
         listed: true,
         subscribed: true,
         specialUse: "\\Drafts",
@@ -1142,7 +1183,7 @@ it.effect(
           delimiter: "/",
           parent: [],
           parentPath: "",
-          flags: new Set(),
+          flags: new Set<string>(),
           listed: true,
           subscribed: true,
           specialUse: "\\Drafts",
@@ -1151,7 +1192,7 @@ it.effect(
       vi.spyOn(client, "mailboxOpen").mockResolvedValue({
         path: "Drafts",
         delimiter: "/",
-        flags: new Set(),
+        flags: new Set<string>(),
         uidValidity: 7n,
         uidNext: 43,
         exists: 1,
@@ -1206,7 +1247,7 @@ it.effect(
           delimiter: "/",
           parent: [],
           parentPath: "",
-          flags: new Set(),
+          flags: new Set<string>(),
           listed: true,
           subscribed: true,
         })),
@@ -1214,7 +1255,7 @@ it.effect(
       const open = vi.spyOn(client, "mailboxOpen").mockResolvedValue({
         path: "INBOX",
         delimiter: "/",
-        flags: new Set(),
+        flags: new Set<string>(),
         uidValidity: 7n,
         uidNext: 2,
         exists: 1,
@@ -1252,7 +1293,7 @@ it.effect(
       open.mockResolvedValue({
         path: "INBOX",
         delimiter: "/",
-        flags: new Set(),
+        flags: new Set<string>(),
         uidValidity: 8n,
         uidNext: 2,
         exists: 1,

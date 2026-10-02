@@ -161,10 +161,12 @@ const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
   );
 
 export interface MailboxOptions {
+  /** Desktop releases optional startup work after its first window is painted. */
+  backgroundReady?: Effect.Effect<void>;
   imapIdle?: boolean;
   attachmentCacheDirectory?: string;
   imageDownloader?: import("./compose-images.js").ImageDownloader;
-  /** Sync every account on this interval, starting right away. The desktop app sets it; CLI and MCP don't. */
+  /** Sync every account on this interval after backgroundReady. Desktop enables it; CLI and MCP don't. */
   autoSync?: Duration.Input;
   /** Desktop enables its independent idle indexer. CLI/MCP only read derived content. */
   media?: { vision: Vision; onBattery: () => boolean; idle: () => boolean };
@@ -190,6 +192,7 @@ export const MailboxLive = (
     Mailbox,
     Effect.gen(function* () {
       const store = yield* Store;
+      const backgroundReady = options.backgroundReady ?? Effect.void;
       const providers = yield* Providers;
       const secrets = yield* Secrets;
       const config = yield* AppConfig;
@@ -230,6 +233,9 @@ export const MailboxLive = (
       /** Background work (queue flushes after a draft save) that dies with the layer. */
       const background = yield* FiberSet.make();
       yield* Effect.gen(function* () {
+        // Let desktop construct/show its first window before taking the SQLite
+        // write lock for optional, resumable search backfill.
+        yield* backgroundReady;
         let indexed = false;
         let ready = false;
         while (!ready) {
@@ -1395,15 +1401,23 @@ export const MailboxLive = (
         ? yield* makeSemanticIndexer(indexInput, store, options.models)
         : undefined;
       if (options.media)
-        yield* indexer.batch().pipe(
-          Effect.catchCause(() => Effect.logWarning("Media indexing batch failed")),
-          Effect.repeat(Schedule.spaced("15 seconds")),
+        yield* backgroundReady.pipe(
+          Effect.andThen(
+            indexer.batch().pipe(
+              Effect.catchCause(() => Effect.logWarning("Media indexing batch failed")),
+              Effect.repeat(Schedule.spaced("15 seconds")),
+            ),
+          ),
           Effect.forkScoped,
         );
       if (options.media && semantic)
-        yield* semantic.batch().pipe(
-          Effect.catchCause(() => Effect.void),
-          Effect.repeat(Schedule.spaced("15 seconds")),
+        yield* backgroundReady.pipe(
+          Effect.andThen(
+            semantic.batch().pipe(
+              Effect.catchCause(() => Effect.void),
+              Effect.repeat(Schedule.spaced("15 seconds")),
+            ),
+          ),
           Effect.forkScoped,
         );
       if (!options.media && options.models?.verifyLocal && (yield* store.semantics.enabled))
@@ -1552,14 +1566,14 @@ export const MailboxLive = (
                 );
                 break;
               case "DeleteLabel":
-                writes.push(store.deleteMessagesWithLabel(account.id, change.label));
+                writes.push(store.deleteMessagesWithLabel(account.id, change.label, change.keep));
                 break;
               case "BackfillReset":
                 writes.push(store.resetBackfill(account.id));
                 break;
               case "Reset":
                 writes.push(
-                  store.deleteAccountMessages(account.id),
+                  store.deleteAccountMessages(account.id, change.keep),
                   store.resetBackfill(account.id),
                   // Their copies come back under new ids and open as drafts again.
                   store.dropSyncedDrafts(account.id),
@@ -1911,9 +1925,13 @@ export const MailboxLive = (
         yield* organization
           .wakeSnoozed()
           .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
-        yield* Effect.suspend(() => (syncPaused ? Effect.void : sync())).pipe(
-          Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
-          Effect.repeat(Schedule.spaced(options.autoSync)),
+        yield* backgroundReady.pipe(
+          Effect.andThen(
+            Effect.suspend(() => (syncPaused ? Effect.void : sync())).pipe(
+              Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
+              Effect.repeat(Schedule.spaced(options.autoSync)),
+            ),
+          ),
           Effect.forkScoped,
         );
       }

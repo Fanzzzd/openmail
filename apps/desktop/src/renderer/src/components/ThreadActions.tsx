@@ -35,7 +35,7 @@ import { LabelEditor } from "./OrganizationSettings";
 import type { Label, MailOp, Mailbox, Provider } from "../../../shared/api";
 import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker";
-import { useShortcutText } from "./SystemSettings";
+import { useShortcutText } from "../use-shortcut-text";
 import { Tip } from "./ui/Tip";
 
 import { MultiOrganization } from "./MultiOrganization";

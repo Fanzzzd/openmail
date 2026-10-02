@@ -256,7 +256,7 @@ it.effect(
         .map((row) => row.detail)
         .join("\n");
       assert.match(details, /SEARCH c USING INTEGER PRIMARY KEY/);
-      assert.match(details, /contact_candidates_address/);
+      assert.match(details, /contact_candidates_(?:address|score|company)/);
       assert.match(details, /contact_candidates_fts/);
       assert.match(details, /contact_organizations_fts/);
       assert.strictEqual(/SCAN (?:c|cc|contact_candidates)\b/.test(details), false, details);

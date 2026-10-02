@@ -21,7 +21,6 @@ import {
   NUMBERED_MAILBOXES,
   isShortcutAction,
   shortcutText,
-  type ShortcutAction,
   type ShortcutSet,
 } from "../../../shared/shortcuts";
 import { MAILBOX_NAMES } from "../view";
@@ -34,10 +33,7 @@ import { Dialog, alertButton } from "./ui/Dialog";
 import { SegmentedControl } from "./ui/SegmentedControl";
 import { Select } from "./ui/Select";
 
-export function useShortcutText() {
-  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
-  return (action: ShortcutAction) => shortcutText(prefs.shortcutSet, action);
-}
+export { useShortcutText } from "../use-shortcut-text";
 
 export function DefaultMailClient() {
   const run = useRunMail();
@@ -434,99 +430,9 @@ const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
   { value: "gmail", label: msg`Gmail` },
   { value: "apple", label: msg`Apple Mail` },
 ];
-export const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
-  nextWindow: msg`Next window`,
-  nextTab: msg`Next tab`,
-  previousTab: msg`Previous tab`,
-  previousWindow: msg`Previous window`,
-  focusMainWindow: msg`Focus main window`,
-  toggleReadingPane: msg`Toggle reading pane position`,
-  toggleSidebar: msg`Show or hide sidebar`,
-  toggleToolbar: msg`Show or hide toolbar`,
-  toggleReader: msg`Show or hide reading pane`,
-  toggleFullScreen: msg`Toggle full screen`,
-  jumpSelection: msg`Jump to selection`,
-  fontSizeIncrease: msg`Increase font size`,
-  fontSizeDecrease: msg`Decrease font size`,
-  findNext: msg`Next match`,
-  findPrevious: msg`Previous match`,
-  findSelection: msg`Use selection for find`,
-  superscript: msg`Superscript`,
-  subscript: msg`Subscript`,
-  alignLeft: msg`Align left`,
-  alignCenter: msg`Align center`,
-  alignRight: msg`Align right`,
-  alignJustify: msg`Justify`,
-  directionLtr: msg`Left to right`,
-  directionRtl: msg`Right to left`,
-  directionAuto: msg`Automatic direction`,
-  bulletList: msg`Bulleted list`,
-  numberList: msg`Numbered list`,
-  dashList: msg`Dashed list`,
-  inlineCode: msg`Inline code`,
-  blockCode: msg`Code block`,
-  indentParagraph: msg`Increase indent`,
-  outdentParagraph: msg`Decrease indent`,
-  indentList: msg`Indent list`,
-  outdentList: msg`Outdent list`,
-  quoteIncrease: msg`Increase quote level`,
-  quoteDecrease: msg`Decrease quote level`,
-  copyStyle: msg`Copy style`,
-  pasteStyle: msg`Paste style`,
-  clearFormatting: msg`Clear formatting`,
-  toggleFormatBar: msg`Show format bar`,
-  bold: msg`Bold`,
-  italic: msg`Italic`,
-  underline: msg`Underline`,
-  link: msg`Edit link`,
-  strikethrough: msg`Strikethrough`,
-  pasteMatchStyle: msg`Paste and match style`,
-  pasteQuotation: msg`Paste as quotation`,
-  compose: msg`New message`,
-  newWindow: msg`New Window`,
-  settings: msg`Settings`,
-  help: msg`Keyboard shortcuts`,
-  reply: msg`Reply`,
-  replyAll: msg`Reply all`,
-  forward: msg`Forward`,
-  forwardAttachment: msg`Forward as attachment`,
-  archive: msg`Archive`,
-  trash: msg`Delete`,
-  spam: msg`Report spam`,
-  search: msg`Search`,
-  sync: msg`Sync now`,
-  read: msg`Mark read/unread`,
-  star: msg`Star`,
-  important: msg`Important`,
-  label: msg`Labels`,
-  move: msg`Move to folder`,
-  openThread: msg`Open in New Window`,
-  next: msg`Next thread`,
-  previous: msg`Previous thread`,
-  undo: msg`Undo`,
-  print: msg`Print`,
-  goToFolder: msg`Go to folder`,
-  inbox: msg`Move to Inbox`,
-  filterUnread: msg`Toggle list filters`,
-  templates: msg`Templates`,
-  sendArchive: msg`Send and archive`,
-  attach: msg`Attach files`,
-  saveDraft: msg`Save draft`,
-  showCc: msg`Show Cc field`,
-  closeCompose: msg`Close compose window`,
-  zoomIn: msg`Larger text`,
-  zoomOut: msg`Smaller text`,
-  zoomReset: msg`Actual size`,
-  expandAll: msg`Expand all messages`,
-  collapseAll: msg`Collapse all messages`,
-  saveMessage: msg`Save message as EML…`,
-  searchSender: msg`Search messages from this sender`,
-  openMessageWeb: msg`Open in web mail`,
-  showOriginal: msg`Show original`,
-  loadRemoteContent: msg`Load remote content`,
-  toggleMessageBackground: msg`Toggle message background`,
-  send: msg`Send`,
-};
+export { ACTION_NAMES } from "../shortcut-names";
+import { ACTION_NAMES } from "../shortcut-names";
+
 const ACTIONS = Object.entries(ACTION_NAMES);
 export function ShortcutTable({ set }: { set: ShortcutSet }) {
   const { i18n } = useLingui();

@@ -1,11 +1,10 @@
+import { Settings, ShortcutHelp, AddAccountDialog } from "./components/LazyDialogs";
 import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
 import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { Alert, AlertCancel, alertButton } from "./components/ui/Dialog";
 import { shortcutAction } from "../../shared/shortcuts";
-import { Settings } from "./components/Settings";
-import { ShortcutHelp } from "./components/SystemSettings";
-import { AddAccountDialog } from "./components/AddAccountDialog";
+
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, markReadAfter } from "@openmail/core/schema";

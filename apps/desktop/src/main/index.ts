@@ -1,8 +1,8 @@
 import { createShutdownHandler } from "./quit";
 import { prepareUpdateQuit } from "./update-install";
 import { cleanupAttachmentTemps } from "./attachment-temp";
-import { NodeMailbox, dataDir, NodeSystem } from "@openmail/core";
-import { Cause, Effect, Fiber, Layer, Logger } from "effect";
+import { NodeMailbox, dataDir, NodeSystem, unavailableVision, type Vision } from "@openmail/core";
+import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow, powerMonitor, shell } from "electron";
@@ -74,7 +74,60 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
               const binary = app.isPackaged
                 ? join(process.resourcesPath, "native/vision")
                 : fileURLToPath(new URL("../native/vision", import.meta.url));
-              const vision = yield* Effect.promise(() => desktopVision(binary));
+              const painted = yield* Deferred.make<void>();
+              const windows = new Map<BrowserWindow, () => void>();
+              let released = false;
+              const cleanup = () => {
+                app.off("browser-window-created", created);
+                for (const remove of windows.values()) remove();
+                windows.clear();
+              };
+              const shown = () => {
+                if (released) return;
+                released = true;
+                cleanup();
+                Deferred.doneUnsafe(painted, Effect.void);
+              };
+              const watch = (win: BrowserWindow) => {
+                if (released || windows.has(win)) return;
+                const remove = () => {
+                  win.off("ready-to-show", shown);
+                  win.off("closed", remove);
+                  windows.delete(win);
+                };
+                windows.set(win, remove);
+                win.once("ready-to-show", shown);
+                win.once("closed", remove);
+              };
+              const created = (_event: Electron.Event, win: BrowserWindow) => watch(win);
+              // Subscribe synchronously before DesktopLive creates windows.
+              yield* Effect.sync(() => {
+                app.on("browser-window-created", created);
+                for (const win of BrowserWindow.getAllWindows()) {
+                  if (win.isVisible()) shown();
+                  else watch(win);
+                }
+              });
+              yield* Effect.addFinalizer(() => Effect.sync(cleanup));
+              let current = unavailableVision;
+              const vision: Vision = {
+                get available() {
+                  return current.available;
+                },
+                get version() {
+                  return current.version;
+                },
+                recognize: (data) => current.recognize(data),
+              };
+              yield* Deferred.await(painted).pipe(
+                Effect.andThen(Effect.promise(() => desktopVision(binary))),
+                Effect.tap((loaded) =>
+                  Effect.sync(() => {
+                    current = loaded;
+                  }),
+                ),
+                Effect.forkScoped,
+              );
               return NodeMailbox({
                 openUrl: (url) => shell.openExternal(url),
                 autoSync: "2 minutes",
@@ -82,6 +135,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 dataDir: directory,
                 inboxPoll: "45 seconds",
                 imapIdle: true,
+                backgroundReady: Deferred.await(painted),
                 pollOnBattery: () => powerMonitor.isOnBatteryPower(),
                 canTriage: () =>
                   BrowserWindow.getFocusedWindow() !== null || !powerMonitor.isOnBatteryPower(),

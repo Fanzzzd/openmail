@@ -575,7 +575,20 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             body_html = excluded.body_html, labels_json = excluded.labels_json,
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
             is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint, body_cached = excluded.body_cached, list_date = excluded.list_date,
-            web_link = COALESCE(excluded.web_link, messages.web_link)`)
+            web_link = COALESCE(excluded.web_link, messages.web_link)
+          WHERE messages.thread_id IS NOT excluded.thread_id OR messages.subject IS NOT excluded.subject
+            OR messages.from_name IS NOT excluded.from_name OR messages.from_addr IS NOT excluded.from_addr
+            OR messages.to_json IS NOT excluded.to_json OR messages.cc_json IS NOT excluded.cc_json
+            OR messages.reply_to_json IS NOT excluded.reply_to_json OR messages.bcc_json IS NOT excluded.bcc_json
+            OR messages.date IS NOT excluded.date OR messages.snippet IS NOT excluded.snippet
+            OR messages.body_text IS NOT excluded.body_text OR messages.body_html IS NOT excluded.body_html
+            OR messages.labels_json IS NOT excluded.labels_json OR messages.attachments_json IS NOT excluded.attachments_json
+            OR messages.is_unread IS NOT excluded.is_unread OR messages.is_starred IS NOT excluded.is_starred
+            OR messages.calendar_hint IS NOT excluded.calendar_hint OR messages.body_cached IS NOT excluded.body_cached
+            OR messages.list_date IS NOT excluded.list_date
+            OR messages.rfc_message_id IS NOT COALESCE(excluded.rfc_message_id,messages.rfc_message_id)
+            OR messages.message_size IS NOT COALESCE(excluded.message_size,messages.message_size)
+            OR messages.web_link IS NOT COALESCE(excluded.web_link,messages.web_link)`)
       );
       if (m.labels.includes("SENT"))
         yield* contacts.rememberMailedAddresses(
@@ -591,42 +604,69 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           Effect.andThen(run(sql`DELETE FROM messages WHERE id=${`${account}/${providerId}`}`)),
         ),
     );
+    const outsideKeep = (keep?: readonly string[]) =>
+      keep?.length
+        ? sql`m.provider_id NOT IN (SELECT value FROM json_each(${JSON.stringify(keep)}))`
+        : sql.literal("1");
     const deleteMessagesWithLabel = Effect.fn("Store.deleteMessagesWithLabel")(
-      (account: string, label: string) =>
+      (account: string, label: string, keep?: readonly string[]) =>
         media
-          .deleteVectorsForMessages(sql`m.account_id=${account} AND ${hasLabel(label)}`)
+          .deleteVectorsForMessages(
+            sql`m.account_id=${account} AND ${hasLabel(label)} AND ${outsideKeep(keep)}`,
+          )
           .pipe(
             Effect.andThen(
               run(
-                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${hasLabel(label)}`,
+                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${hasLabel(label)} AND ${outsideKeep(keep)}`,
               ),
             ),
           ),
     );
-    const deleteAccountMessages = Effect.fn("Store.deleteAccountMessages")((account: string) =>
-      media
-        .deleteVectorsForMessages(sql`m.account_id=${account}`)
-        .pipe(Effect.andThen(run(sql`DELETE FROM messages WHERE account_id=${account}`))),
+    const deleteAccountMessages = Effect.fn("Store.deleteAccountMessages")(
+      (account: string, keep?: readonly string[]) =>
+        media
+          .deleteVectorsForMessages(sql`m.account_id=${account} AND ${outsideKeep(keep)}`)
+          .pipe(
+            Effect.andThen(
+              run(
+                sql`DELETE FROM messages AS m WHERE account_id=${account} AND ${outsideKeep(keep)}`,
+              ),
+            ),
+          ),
     );
 
     const wordIndex = makeWordIndexStore(sql);
-    type LocalQuery = ThreadQuery & { wordIndexReady?: boolean; derivedWordIndexReady?: boolean };
+    type LocalQuery = ThreadQuery & {
+      wordIndexReady?: boolean;
+      derivedWordIndexReady?: boolean;
+      rowBoundText?: boolean;
+      textPage?: { index: "messages_words" | "messages_fts"; match: string };
+    };
     const textFilter = (
       value: string,
       derived: boolean,
       ready: boolean,
       subjectOnly = false,
+      rowBound = false,
     ): Fragment => {
       const match = ftsSearchTerm(value);
       if (!match) return sql.literal("1");
       const text = unquoteSearchValue(value.endsWith("*") ? value.slice(0, -1) : value);
       if (ready && !usesSubstringSearch(text)) {
+        if (rowBound)
+          return derived
+            ? sql`EXISTS (SELECT 1 FROM derived_words WHERE rowid=d.id AND derived_words MATCH ${match})`
+            : sql`EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
         return derived
           ? sql`d.id IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ${match})`
           : sql`m.rowid IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
       }
       if (Array.from(text).length >= 3) {
         const literal = ftsSearchTerm(quoteSearchValue(text));
+        if (rowBound)
+          return derived
+            ? sql`EXISTS (SELECT 1 FROM derived_fts WHERE rowid=d.id AND derived_fts MATCH ${literal})`
+            : sql`EXISTS (SELECT 1 FROM messages_fts WHERE rowid=m.rowid AND messages_fts MATCH ${subjectOnly ? `subject : ${literal}` : literal})`;
         return derived
           ? sql`d.id IN (SELECT rowid FROM derived_fts WHERE derived_fts MATCH ${literal})`
           : sql`m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ${subjectOnly ? `subject : ${literal}` : literal})`;
@@ -654,7 +694,11 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         ? sql`(${attachment} OR m.body_text LIKE ${`%https://docs.google.com/${drivePath}/%`} OR m.body_html LIKE ${`%https://docs.google.com/${drivePath}/%`})`
         : attachment;
     };
-    const searchConditionFilter = (c: SearchCondition, ready = false): Fragment => {
+    const searchConditionFilter = (
+      c: SearchCondition,
+      ready = false,
+      rowBound = false,
+    ): Fragment => {
       const where: Fragment[] = [];
       if (c.unread !== undefined) where.push(sql`m.is_unread=${c.unread ? 1 : 0}`);
       if (c.starred !== undefined) where.push(sql`m.is_starred=${c.starred ? 1 : 0}`);
@@ -685,7 +729,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         where.push(
           sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
         );
-      if (c.subject) where.push(textFilter(c.subject, false, ready, true));
+      if (c.subject) where.push(textFilter(c.subject, false, ready, true, rowBound));
       if (c.important) where.push(hasLabel("IMPORTANT"));
       if (c.attachmentText)
         where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
@@ -709,6 +753,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       derivedReady: boolean;
       media: boolean;
       attachmentOnly: boolean;
+      rowBound: boolean;
     };
     const expressionFilter = (node: SearchExpression, context: ExpressionContext): Fragment => {
       switch (node.kind) {
@@ -730,12 +775,20 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             : sql`NOT (${expressionFilter(node.child, context)})`;
         case "term": {
           const q = parseSearchQuery({ search: node.value });
-          const conditions = [searchConditionFilter(q.criteria ?? {}, context.messagesReady)];
+          const conditions = [
+            searchConditionFilter(q.criteria ?? {}, context.messagesReady, context.rowBound),
+          ];
           if (q.unreadOnly) conditions.push(sql`m.is_unread=1`);
           if (q.starredOnly) conditions.push(sql`m.is_starred=1`);
           if (q.search) {
-            const body = textFilter(q.search, false, context.messagesReady);
-            const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady)})`;
+            const body = textFilter(
+              q.search,
+              false,
+              context.messagesReady,
+              false,
+              context.rowBound,
+            );
+            const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady, false, context.rowBound)})`;
             conditions.push(
               context.attachmentOnly
                 ? derived
@@ -782,12 +835,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         if (flags.length) where.push(sql`(${sql.or(flags)})`);
         if (filters.inInbox) where.push(hasLabel("INBOX"));
       }
-      where.push(searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false));
+      where.push(
+        searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false, q.rowBoundText),
+      );
       for (const condition of q.criteria?.excluded ?? [])
         where.push(
           condition.sizeLarger !== undefined || condition.sizeSmaller !== undefined
-            ? sql`(m.message_size IS NULL OR NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false)}))`
-            : sql`NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false)})`,
+            ? sql`(m.message_size IS NULL OR NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText)}))`
+            : sql`NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText)})`,
         );
       where.push(
         expressionFilter(parseSearchExpression(q.search ?? ""), {
@@ -795,6 +850,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           derivedReady: q.derivedWordIndexReady ?? false,
           media: expressionMedia(q.search ?? ""),
           attachmentOnly: q.criteria?.attachmentText ?? false,
+          rowBound: q.rowBoundText ?? false,
         }),
       );
       return sql.and(where);
@@ -804,11 +860,39 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const invalid = searchQueryError(raw);
       if (invalid) return yield* invalid;
       const readiness = yield* wordIndex.wordIndexReady;
-      const query = {
+      const query = yield* planTextPage({
         ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
         wordIndexReady: readiness.messages,
         derivedWordIndexReady: readiness.derived,
-      };
+      });
+      if (
+        query.textPage &&
+        query.searchScope !== "folder" &&
+        !query.messageIds &&
+        !query.unreadOnly &&
+        !query.starredOnly &&
+        !query.listFilters?.enabled
+      ) {
+        const table = sql.literal(query.textPage.index);
+        const filter = sql.and([
+          sql`s.eligible=1`,
+          sql`s.row_id IN (SELECT rowid FROM ${table} WHERE ${table} MATCH ${query.textPage.match})`,
+        ]);
+        const scope = sql.and([
+          sql`a.enabled=1`,
+          query.accountIds === undefined
+            ? sql.literal("1")
+            : query.accountIds.length
+              ? sql`a.id IN ${sql.in(query.accountIds)}`
+              : sql.literal("0"),
+        ]);
+        return yield* all(Schema.Struct({ n: Schema.Number }))(
+          sql`SELECT COALESCE(SUM((SELECT COUNT(*) FROM (
+            SELECT ${query.flat ? sql.literal("s.row_id") : sql.literal("s.thread_id")} FROM message_search_meta s INDEXED BY message_search_meta_threads
+            WHERE s.account_id=a.id AND ${filter} ${query.flat ? sql.literal("") : sql.literal("GROUP BY s.thread_id")}
+          ))),0) AS n FROM accounts a WHERE ${scope}`,
+        ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
+      }
       return yield* all(Schema.Struct({ n: Schema.Number }))(
         query.flat
           ? sql`SELECT COUNT(*) AS n FROM messages m WHERE ${listFilter(query)}`
@@ -818,11 +902,22 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     // Stream the date/id index and resolve only selected conversations. The
     // CTE is inlined, so a 100k-thread inbox does not rank 100k rows per page.
+    const listSource = (q: LocalQuery) =>
+      // Across accounts SQLite otherwise sorts the entire inbox using the
+      // account/date index. Walk the global date index and stop at the limit.
+      // Search keeps the planner free to start from its selective FTS rowids.
+      q.textPage && q.messageIds === undefined && q.accountIds?.length === 1
+        ? sql.literal("messages m INDEXED BY messages_account_list_date_id")
+        : (q.textPage || q.search === undefined) &&
+            q.messageIds === undefined &&
+            q.accountIds?.length !== 1
+          ? sql.literal("messages m INDEXED BY messages_list_date_id")
+          : sql.literal("messages m");
     const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
       const rows = yield* all(ThreadRow)(sql`
-        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter(q)}),
+        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter({ ...q, rowBoundText: true })}),
         page AS (
-          SELECT c.* FROM candidates c
+          SELECT c.* FROM (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)} WHERE ${listFilter(q)}) c
           WHERE ${q.before === undefined ? sql.literal("1") : sql`(c.date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (c.date = ${q.before} AND c.id < ${q.beforeId})`})`}
             AND NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=c.account_id AND n.thread_id=c.thread_id
               AND (n.date > c.date OR (n.date=c.date AND n.id>c.id)))
@@ -854,7 +949,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     /** Conversation grouping off: each message in the view is its own row, newest first. */
     const messageList = (q: LocalQuery, limit: number) =>
-      all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m
+      all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
         WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
         ORDER BY date DESC, m.id DESC LIMIT ${limit}`).pipe(
         Effect.map((rows) =>
@@ -876,16 +971,47 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         ),
       );
 
+    const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
+      const words = searchWords(q.search ?? "");
+      if (
+        words.length !== 1 ||
+        expressionMedia(q.search ?? "") ||
+        hasSearchExpression(q.search ?? "") ||
+        Object.keys(q.criteria ?? {}).length ||
+        q.messageIds ||
+        (q.label && q.searchScope === "folder")
+      )
+        return q;
+      const word = words[0];
+      if (!word || word.startsWith("-")) return q;
+      const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
+      const ready = q.wordIndexReady && !usesSubstringSearch(text);
+      if (!ready && Array.from(text).length < 3) return q;
+      const match = ftsSearchTerm(ready ? word : quoteSearchValue(text));
+      if (!match) return q;
+      const table = sql.literal(ready ? "messages_words" : "messages_fts");
+      const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
+        SELECT rowid FROM ${table} WHERE ${table} MATCH ${match} LIMIT 2049)`);
+      // A bounded probe distinguishes rare terms from common ones. Common
+      // terms walk the date index, probing FTS by rowid only for recent rows.
+      return (rows[0]?.n ?? 0) > 2048
+        ? ({
+            ...q,
+            textPage: { index: ready ? "messages_words" : "messages_fts", match },
+            rowBoundText: true,
+          } satisfies LocalQuery)
+        : q;
+    });
     const listThreads = Effect.fn("Store.listThreads")(function* (raw: ThreadQuery) {
       const invalid = searchQueryError(raw);
       if (invalid) return yield* invalid;
       if (raw.search !== undefined && !raw.search.trim()) return [];
       const readiness = yield* wordIndex.wordIndexReady;
-      const q = {
+      const q = yield* planTextPage({
         ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
         wordIndexReady: readiness.messages,
         derivedWordIndexReady: readiness.derived,
-      };
+      });
       const mediaExpression = expressionMedia(q.search ?? "");
       const limit = mediaExpression ? Math.min(q.limit ?? 50, 1024) : (q.limit ?? 50);
       const listing = q.flat ? messageList : threadList;
@@ -1125,27 +1251,34 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       within?: string,
       conversations = false,
     ) {
-      const where: Fragment[] = [
-        sql`(m.is_unread = 1 OR l.value IN ('STARRED','DRAFT'))`,
-        sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
-      ];
-      if (accountIds) where.push(inAccounts(accountIds));
-      if (within !== undefined) where.push(hasLabel(within));
+      const where: Fragment[] = [sql`b.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
+      if (accountIds)
+        where.push(
+          accountIds.length ? sql`b.account_id IN ${sql.in(accountIds)}` : sql.literal("0"),
+        );
+      if (within === "INBOX") where.push(sql`b.in_inbox=1`);
+      else if (within !== undefined)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM messages m WHERE m.id=b.message_id AND ${hasLabel(within)})`,
+        );
       where.push(
-        sql`(l.value != 'INBOX' OR NOT EXISTS(SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL))`,
+        sql`(b.label != 'INBOX' OR NOT EXISTS(SELECT 1 FROM thread_reminders r WHERE r.account_id=b.account_id AND r.thread_id=b.thread_id AND r.due_at IS NOT NULL))`,
       );
-      const rows = yield* all(
-        Count,
-      )(sql`SELECT l.value AS key, ${conversations ? sql`COUNT(DISTINCT json_array(m.account_id,m.thread_id))` : sql`COUNT(*)`} AS n
-        FROM messages m, json_each(m.labels_json) l
-        WHERE ${sql.and(where)} GROUP BY l.value`);
+      const rows = yield* all(Count)(
+        conversations
+          ? sql`SELECT key,SUM(n) AS n FROM (
+            SELECT b.label AS key,b.account_id,COUNT(DISTINCT b.thread_id) AS n
+            FROM message_badges b
+            WHERE ${sql.and(where)} GROUP BY b.label,b.account_id
+          ) GROUP BY key`
+          : sql`SELECT b.label AS key,COUNT(*) AS n
+            FROM message_badges b
+            WHERE ${sql.and(where)} GROUP BY b.label`,
+      );
       const result = counts(rows);
       if (within === undefined || within === "DRAFT") {
-        const local = yield* compose.localDrafts(
-          { mailbox: "drafts", ...(accountIds ? { accountIds } : {}) },
-          1_000_000,
-        );
-        if (local.length) result["DRAFT"] = (result["DRAFT"] ?? 0) + local.length;
+        const local = yield* compose.countLocalDrafts(accountIds);
+        if (local) result["DRAFT"] = (result["DRAFT"] ?? 0) + local;
       }
       return result;
     });

@@ -599,7 +599,7 @@ export function trackImapBackfill(
   return Option.some(JSON.stringify(previous));
 }
 
-const fetchMessages = Effect.fnUntraced(function* (
+export const fetchMessages = Effect.fnUntraced(function* (
   s: Session,
   folder: SyncFolder,
   uidValidity: string,
@@ -610,53 +610,53 @@ const fetchMessages = Effect.fnUntraced(function* (
   )).map((m) => ({ uid: m.uid, size: m.size ?? 0 }));
   const small = heads.filter((m) => m.size <= MAX_SOURCE).map((m) => m.uid);
   const large = heads.filter((m) => m.size > MAX_SOURCE).map((m) => m.uid);
-  const fetched = [
-    ...(small.length
-      ? yield* call(s, (c) =>
-          c.fetchAll(
-            uidSet(small),
-            { uid: true, flags: true, internalDate: true, source: true },
-            { uid: true },
-          ),
-        )
-      : []),
-    ...(large.length
-      ? yield* call(s, (c) =>
-          c.fetchAll(
-            uidSet(large),
-            {
-              uid: true,
-              flags: true,
-              internalDate: true,
-              bodyStructure: true,
-              source: { maxLength: TRUNCATED_SOURCE },
-            },
-            { uid: true },
-          ),
-        )
-      : []),
-  ];
   const out: { uid: number; flags: Flags; message: IncomingMessage }[] = [];
-  for (const m of fetched) {
-    const source = m.source;
-    if (!source) continue;
-    const parsed = yield* Effect.tryPromise({
-      try: () => simpleParser(source, { skipImageLinks: true }),
-      catch: (error) =>
-        new ProviderError({ message: `Cannot parse message ${m.uid}: ${describe(error)}` }),
-    });
-    out.push({
-      uid: m.uid,
-      flags: flagsOf(m.flags),
-      message: toIncoming(parsed, {
-        providerId: encodeProviderId(folder.path, uidValidity, m.uid),
-        label: folder.label,
-        flags: m.flags,
-        internalDate: m.internalDate,
-        size: heads.find((head) => head.uid === m.uid)?.size,
-        ...(large.includes(m.uid) ? { attachments: structureAttachments(m.bodyStructure) } : {}),
-      }),
-    });
+  for (const [ids, truncated] of [
+    [small, false],
+    [large, true],
+  ] as const) {
+    if (!ids.length) continue;
+    // ImapFlow applies backpressure between iterator yields. Parse and release
+    // each raw source before asking for the next; no IMAP commands in this loop.
+    yield* Stream.fromAsyncIterable(
+      s.client.fetch(
+        uidSet(ids),
+        {
+          uid: true,
+          flags: true,
+          internalDate: true,
+          ...(truncated
+            ? { bodyStructure: true, source: { maxLength: TRUNCATED_SOURCE } }
+            : { source: true }),
+        },
+        { uid: true },
+      ),
+      (error) => failure(s.accountId, s.settings.imapHost, error),
+    ).pipe(
+      Stream.runForEach((m) =>
+        Effect.gen(function* () {
+          const source = m.source;
+          if (!source) return;
+          const parsed = yield* Effect.tryPromise({
+            try: () => simpleParser(source, { skipImageLinks: true }),
+            catch: (error) =>
+              new ProviderError({ message: `Cannot parse message ${m.uid}: ${describe(error)}` }),
+          });
+          out.push({
+            uid: m.uid,
+            flags: flagsOf(m.flags),
+            message: toIncoming(parsed, {
+              providerId: encodeProviderId(folder.path, uidValidity, m.uid),
+              label: folder.label,
+              flags: m.flags,
+              internalDate: m.internalDate,
+              size: heads.find((head) => head.uid === m.uid)?.size,
+              ...(truncated ? { attachments: structureAttachments(m.bodyStructure) } : {}),
+            }),
+          });
+        }),
+      ),
+    );
   }
   return out;
 });

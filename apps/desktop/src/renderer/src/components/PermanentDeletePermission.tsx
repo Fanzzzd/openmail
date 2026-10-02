@@ -3,7 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { resultError } from "../errors";
 import { authorizePermanentDeleteAtom } from "../state/mutations";
 import { Alert, AlertCancel } from "./ui/Dialog";
-import { formButton } from "./OrganizationSettings";
+import { formButton } from "./ui/form-styles";
 
 /** Consent grants permission only. Deletion always requires a new confirmation. */
 export function PermanentDeletePermission({

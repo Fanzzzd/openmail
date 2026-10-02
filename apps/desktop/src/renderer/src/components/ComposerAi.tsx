@@ -20,7 +20,7 @@ import {
 } from "../compose-editor-dom";
 import { withMail } from "../state/mail";
 import { AiOutput, useAiStream } from "./AiPanel";
-import { aiSettingsAtom } from "./AiSettings";
+import { aiSettingsAtom } from "../state/ai-settings";
 import { Dialog } from "./ui/Dialog";
 
 const tones = {

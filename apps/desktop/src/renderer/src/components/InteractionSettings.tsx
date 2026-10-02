@@ -1,5 +1,4 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, SWIPE_ACTIONS, TOOLBAR_ACTIONS, type Prefs } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
@@ -11,26 +10,9 @@ import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
 import { IndexingSettings } from "./IndexingSettings";
 
-export const actionNames = {
-  none: msg`None`,
-  archive: msg`Archive`,
-  trash: msg`Delete`,
-  spam: msg`Report spam`,
-  snooze: msg`Snooze`,
-  filter: msg`Create filter from these messages`,
-  read: msg`Mark read/unread`,
-  star: msg`Star`,
-  important: msg`Important`,
-  move: msg`Move To`,
-  label: msg`Labels`,
-  removeLabel: msg`Remove Current Label`,
-  sendAgain: msg`Send Again`,
-  reply: msg`Reply`,
-  replyAll: msg`Reply all`,
-  forward: msg`Forward`,
-  forwardAttachment: msg`Forward as attachment`,
-  openWindow: msg`Open in New Window`,
-};
+export { actionNames } from "../action-names";
+import { actionNames } from "../action-names";
+
 function usePreferences() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const set = useAtomSet(setPrefsAtom);
