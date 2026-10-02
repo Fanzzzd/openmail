@@ -179,7 +179,8 @@ it("migration 23 safely indexes mixed/empty recipients already stored by migrati
   const directory = mkdtempSync(join(tmpdir(), "openmail-signatures-fixes-"));
   const db = new DatabaseSync(join(directory, "mail.db"));
   try {
-    assert.strictEqual(MIGRATIONS.length, 23);
+    const migration23 = MIGRATIONS[22];
+    assert.ok(migration23);
     for (const migration of MIGRATIONS.slice(0, 22)) db.exec(migration);
     db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
       accountId,
@@ -215,7 +216,7 @@ it("migration 23 safely indexes mixed/empty recipients already stored by migrati
       0,
       0,
     );
-    db.exec(MIGRATIONS[22] ?? "");
+    db.exec(migration23);
     assert.deepStrictEqual(
       db
         .prepare("SELECT DISTINCT address FROM contact_candidates WHERE source=2")

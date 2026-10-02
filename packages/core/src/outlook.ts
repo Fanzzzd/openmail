@@ -97,7 +97,7 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,internetMessageId,bccRecipients";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -129,6 +129,8 @@ const GraphMessage = Schema.Struct({
   toRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
   ccRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
   replyTo: Schema.optionalKey(Schema.Array(GraphAddress)),
+  bccRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
+  internetMessageId: Schema.optionalKey(Schema.String),
   receivedDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
   sentDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
   isRead: Schema.optionalKey(Schema.Boolean),
@@ -773,6 +775,10 @@ export const makeOutlook: Effect.Effect<
         yield* write(account.id, "PATCH", path, { isRead: op.value });
         return;
       }
+      if (op.kind === "important") {
+        yield* write(account.id, "PATCH", path, { importance: op.value ? "high" : "normal" });
+        return;
+      }
       if (op.kind === "star") {
         yield* write(account.id, "PATCH", path, {
           flag: { flagStatus: op.value ? "flagged" : "notFlagged" },
@@ -1179,7 +1185,13 @@ export const makeOutlook: Effect.Effect<
         $select: `${SELECT},parentFolderId`,
         $top: "100",
       });
-      if (kql) params.set("$search", JSON.stringify(kql));
+      const messageId = parseSearchQuery(query).criteria?.rfcMessageId;
+      if (messageId)
+        params.set(
+          "$filter",
+          `internetMessageId eq '${`<${messageId.replace(/^<|>$/g, "")}>`.replaceAll("'", "''")}'`,
+        );
+      else if (kql) params.set("$search", JSON.stringify(kql));
       const messages: IncomingMessage[] = [];
       let url: string | undefined = `${base}?${params.toString()}`;
       let scanned = 0;
@@ -1591,6 +1603,8 @@ export function parseGraphMessage(
     from: address(raw.from),
     to: (raw.toRecipients ?? []).map(address),
     cc: (raw.ccRecipients ?? []).map(address),
+    bcc: (raw.bccRecipients ?? []).map(address),
+    ...(raw.internetMessageId ? { rfcMessageId: raw.internetMessageId } : {}),
     replyTo: (raw.replyTo ?? []).map(address).filter((a) => a.address.trim()),
     date: Date.parse(raw.receivedDateTime || raw.sentDateTime || ""),
     snippet: raw.bodyPreview ?? "",

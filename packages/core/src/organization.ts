@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { ThreadSummary, type MailboxView, type Provider } from "./domain.js";
+import { ThreadSummary, type MailboxView, type Provider, CATEGORIES } from "./domain.js";
 
 export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
   if (mailbox === "inbox") return "INBOX";
@@ -67,6 +67,7 @@ export type LabelPreference = typeof LabelPreference.Type;
 export const AccountOrganization = Schema.Struct({
   accountId: Schema.String,
   categories: Schema.Boolean,
+  selectedCategories: Schema.optionalKey(Schema.Array(Schema.Literals(CATEGORIES))),
 });
 export type AccountOrganization = typeof AccountOrganization.Type;
 
@@ -77,6 +78,10 @@ export const FilterCriteria = Schema.Struct({
   subject: Schema.String,
   query: Schema.String,
   hasAttachment: Schema.Boolean,
+  hasWords: Schema.optionalKey(Schema.String),
+  notWords: Schema.optionalKey(Schema.String),
+  size: Schema.optionalKey(Schema.Number),
+  sizeComparison: Schema.optionalKey(Schema.Literals(["larger", "smaller"])),
 });
 export type FilterCriteria = typeof FilterCriteria.Type;
 export const FilterAction = Schema.Struct({
@@ -85,12 +90,19 @@ export const FilterAction = Schema.Struct({
   star: Schema.Boolean,
   trash: Schema.Boolean,
   label: Schema.NullOr(Schema.String),
+  labels: Schema.optionalKey(Schema.Array(Schema.String)),
+  important: Schema.optionalKey(Schema.Boolean),
+  category: Schema.optionalKey(Schema.Literals(CATEGORIES)),
 });
 export type FilterAction = typeof FilterAction.Type;
 export function filterDestinationsSupported(action: FilterAction, provider: Provider): boolean {
   return (
-    !(action.trash && (action.archive || action.label)) &&
-    !(action.archive && action.label && provider !== "gmail")
+    !(
+      action.trash &&
+      (action.archive || action.label || action.labels?.length || action.category)
+    ) &&
+    !(action.archive && action.label && provider !== "gmail") &&
+    !(provider !== "gmail" && (action.labels?.length || action.category))
   );
 }
 export const FilterInput = Schema.Struct({
@@ -132,11 +144,18 @@ export function sameFilterRule(left: FilterInput, right: FilterInput): boolean {
     input.criteria.subject,
     input.criteria.query,
     input.criteria.hasAttachment,
+    input.criteria.hasWords ?? "",
+    input.criteria.notWords ?? "",
+    input.criteria.size ?? null,
+    input.criteria.sizeComparison ?? null,
     input.action.archive,
     input.action.markRead,
     input.action.star,
     input.action.trash,
     input.action.label,
+    input.action.labels ?? [],
+    input.action.important ?? null,
+    input.action.category ?? null,
   ];
   return JSON.stringify(values(left)) === JSON.stringify(values(right));
 }
@@ -215,6 +234,11 @@ export function fuzzyFolders<T>(
 export const SearchResult = Schema.Struct({
   threads: Schema.Array(ThreadSummary),
   truncated: Schema.Boolean,
+  ignored: Schema.optionalKey(
+    Schema.Array(
+      Schema.Struct({ accountId: Schema.String, operators: Schema.Array(Schema.String) }),
+    ),
+  ),
   errors: Schema.Array(Schema.Struct({ accountId: Schema.String, message: Schema.String })),
 });
 export type SearchResult = typeof SearchResult.Type;

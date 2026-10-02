@@ -4,6 +4,17 @@ import { Address, type Message, type Provider } from "./domain.js";
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
 export type InviteResponse = typeof InviteResponse.Type;
 
+export const InviteResponseRecord = Schema.Struct({
+  accountId: Schema.String,
+  uid: Schema.String,
+  organizer: Schema.String,
+  recurrenceId: Schema.String,
+  sequence: Schema.Int,
+  address: Address,
+  response: InviteResponse,
+});
+export type InviteResponseRecord = typeof InviteResponseRecord.Type;
+
 /** Preserve wall time when a sender uses an unknown zone; never guess UTC. */
 export const CalendarTime = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("date"), value: Schema.String }),
@@ -122,7 +133,13 @@ export const CalendarInvite = Schema.Struct({
   description: Schema.optionalKey(Schema.String),
   url: Schema.optionalKey(Schema.String),
   organizer: Schema.NullOr(Address),
-  attendees: Schema.Array(Schema.Struct({ ...Address.fields, status: Schema.String })),
+  attendees: Schema.Array(
+    Schema.Struct({
+      ...Address.fields,
+      status: Schema.String,
+      optional: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
   /** RFC 5545 rules/dates, rendered without expanding an unbounded series. */
   recurrence: Schema.Array(Schema.String),
   recurrenceId: Schema.NullOr(CalendarTime),
@@ -130,6 +147,20 @@ export const CalendarInvite = Schema.Struct({
   organizerMismatch: Schema.optionalKey(Schema.Boolean),
   /** IMAP identity matched against addresses the user has already configured. */
   responseAddress: Schema.optionalKey(Address),
+  previous: Schema.optionalKey(
+    Schema.Struct({
+      start: Schema.NullOr(CalendarTime),
+      end: Schema.NullOr(CalendarTime),
+      location: Schema.String,
+    }),
+  ),
+  threadStatus: Schema.optionalKey(
+    Schema.Struct({
+      sequence: Schema.Int,
+      cancelled: Schema.Boolean,
+      statuses: Schema.Array(Schema.Struct({ ...Address.fields, status: Schema.String })),
+    }),
+  ),
 });
 export type CalendarInvite = typeof CalendarInvite.Type;
 
@@ -207,4 +238,45 @@ export function inviteCanRespond(
   return (
     attendee !== null && invite.organizer.address.toLowerCase() !== attendee.address.toLowerCase()
   );
+}
+
+/** Compare only the same organizer/event occurrence; later replies supply attendee status. */
+export function inviteHistory(
+  invite: CalendarInvite,
+  history: readonly CalendarInvite[],
+): CalendarInvite {
+  const same = history
+    .filter(
+      (other) =>
+        other.uid === invite.uid &&
+        other.organizer?.address.toLowerCase() === invite.organizer?.address.toLowerCase() &&
+        (other.recurrenceId?.value ?? "") === (invite.recurrenceId?.value ?? ""),
+    )
+    .toSorted((a, b) => a.sequence - b.sequence);
+  const requests = same.filter((other) => other.method === "REQUEST");
+  const previous = requests.filter((other) => other.sequence < invite.sequence).at(-1);
+  const latest = same.filter((other) => other.method !== "REPLY").at(-1) ?? invite;
+  const statuses = new Map(
+    latest.attendees.map((attendee) => [attendee.address.toLowerCase(), attendee]),
+  );
+  for (const reply of same.filter(
+    (other) => other.method === "REPLY" && other.sequence === latest.sequence,
+  ))
+    for (const attendee of reply.attendees) statuses.set(attendee.address.toLowerCase(), attendee);
+  const changed =
+    previous &&
+    (JSON.stringify(previous.start) !== JSON.stringify(invite.start) ||
+      JSON.stringify(previous.end) !== JSON.stringify(invite.end) ||
+      previous.location !== invite.location);
+  return {
+    ...invite,
+    ...(changed
+      ? { previous: { start: previous.start, end: previous.end, location: previous.location } }
+      : {}),
+    threadStatus: {
+      sequence: latest.sequence,
+      cancelled: latest.cancelled,
+      statuses: [...statuses.values()],
+    },
+  };
 }

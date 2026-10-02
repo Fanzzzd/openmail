@@ -4,7 +4,12 @@
  * what it has loaded; asking for one more page fetches only that page, and a
  * refresh reloads the loaded extent in one query.
  */
-import { DEFAULT_PREFS, mergeSearchResults, parseSearchQuery } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  mergeSearchResults,
+  parseSearchQuery,
+  searchInputError,
+} from "@openmail/core/schema";
 import { Effect, Option, Stream, Schedule } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
@@ -138,6 +143,7 @@ export interface ThreadList {
   searchingServer: boolean;
   searchTruncated: boolean;
   searchErrors: readonly string[];
+  searchIgnored: readonly string[];
 }
 
 const EMPTY: ThreadList = {
@@ -149,6 +155,7 @@ const EMPTY: ThreadList = {
   searchingServer: false,
   searchTruncated: false,
   searchErrors: [],
+  searchIgnored: [],
 };
 
 // Separate request: local hits can render while the network is in flight.
@@ -172,12 +179,16 @@ export const threadListAtom = Atom.writable(
   (get): ThreadList => {
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
+    const invalid = searchInputError(query.search ?? "");
+    if (invalid) return { ...EMPTY, searchErrors: [invalid.message] };
     const result = get(pagedList(query).loaded);
     const total = AsyncResult.getOrElse(
       get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
       () => null,
     );
-    const mediaCriteria = parseSearchQuery(query).criteria;
+    const mediaCriteria = searchInputError(query.search ?? "")
+      ? undefined
+      : parseSearchQuery(query).criteria;
     const server =
       query.search === undefined || mediaCriteria?.image || mediaCriteria?.attachmentText
         ? null
@@ -186,6 +197,7 @@ export const threadListAtom = Atom.writable(
     const serverState = {
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
       searchTruncated: remote?.truncated ?? false,
+      searchIgnored: remote?.ignored?.map((e) => `${e.accountId}: ${e.operators.join(", ")}`) ?? [],
       searchErrors: remote?.errors.map((e) => `${e.accountId}: ${e.message}`) ?? [],
     };
     const liveRemote = remote
@@ -194,6 +206,7 @@ export const threadListAtom = Atom.writable(
             "Threads",
             {
               query: {
+                ...query,
                 messageIds: remote.threads.map((row) => row.id),
                 limit: SEARCH_LIMIT,
                 flat: query.flat ?? false,

@@ -104,11 +104,14 @@ it("each negated and repeated Gmail date token uses its own local midnight", () 
   assert.strictEqual(parseSearchQuery({ search: "after:2026-02-30" }).search, "after:2026-02-30");
 });
 
-it("Gmail narrows every attachment type before paging without Drive type operators", () => {
+it("Gmail narrows attachment types and includes native Drive document types before paging", () => {
   for (const type of ["pdf", "image", "document", "spreadsheet", "presentation"] as const) {
     const query = gmailSearch({ search: `has:${type}` });
     assert.ok(query.includes("has:attachment"));
-    assert.ok(!query.includes(`has:${type}`));
+    assert.strictEqual(
+      query.includes(`has:${type}`),
+      ["document", "spreadsheet", "presentation"].includes(type),
+    );
     for (const extension of ATTACHMENT_TYPES[type].extensions)
       assert.ok(query.includes(`filename:${extension}`));
     const negated = gmailSearch({ search: `-has:${type}` });

@@ -155,10 +155,27 @@ export const DesktopLive = Layer.effect(
       else if (action === "undo") focused.webContents.undo();
       else focused.webContents.selectAll();
     };
-    linkHandler = (link) =>
-      link.kind === "message"
-        ? openThread(link.id)
-        : deliver({ _tag: "Compose", draft: link.draft });
+    linkHandler = (link) => {
+      if (link.kind === "compose") deliver({ _tag: "Compose", draft: link.draft });
+      else
+        run(
+          Effect.gen(function* () {
+            const accounts = yield* mailbox.accounts;
+            const owner = accounts.find((account) => link.id.startsWith(`${account.id}/`));
+            if (owner?.enabled === false) return;
+            // Legacy uncached links retain their launch behavior. New single links resolve and validate ownership.
+            const id =
+              link.id.startsWith("rfc:") || link.single !== undefined
+                ? yield* mailbox.resolveMailLink(link.id)
+                : link.id;
+            deliver({
+              _tag: "OpenThread",
+              id,
+              ...(link.single === undefined ? {} : { single: link.single }),
+            });
+          }).pipe(Effect.catch(() => Effect.void)),
+        );
+    };
 
     // Template image adapts to the menu bar's light/dark appearance.
     const trayIcon = nativeImage.createFromPath(
@@ -206,15 +223,34 @@ export const DesktopLive = Layer.effect(
           activeSpace = "all";
         const accountIds = spaceAccountIds(activeSpace, accounts);
         const prefs = yield* mailbox.prefs;
-        const counts = yield* mailbox.unreadCounts;
+        const folderCounts = yield* mailbox.unreadCounts;
+        const counts = prefs.threadGrouping
+          ? Object.fromEntries(
+              yield* Effect.forEach(accounts, (account) =>
+                mailbox
+                  .threadCount({
+                    mailbox: "inbox",
+                    accountIds: [account.id],
+                    unreadOnly: true,
+                    flat: true,
+                  })
+                  .pipe(
+                    Effect.orDie,
+                    Effect.map((count) => [account.id, count]),
+                  ),
+              ),
+            )
+          : folderCounts;
         const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
-        const recent = yield* mailbox.threads({
-          mailbox: "inbox",
-          unreadOnly: true,
-          accountIds,
-          limit: MENU_BAR_MAIL_LIMIT,
-          flat: true,
-        });
+        const recent = yield* mailbox
+          .threads({
+            mailbox: "inbox",
+            unreadOnly: true,
+            accountIds,
+            limit: MENU_BAR_MAIL_LIMIT,
+            flat: true,
+          })
+          .pipe(Effect.orDie);
         const title = profiles.find((p) => p.id === activeSpace)?.name ?? labels.allAccounts;
         app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
         if (process.platform === "darwin")

@@ -1835,7 +1835,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
 }
 
 it.effect(
-  "Gmail category and system-label filters remain listable and deletable but cannot be edited",
+  "Gmail category and important filters are editable while unsupported system actions remain protected",
   () =>
     Effect.gen(function* () {
       const rules = ["CATEGORY_UPDATES", "SENT", "INBOX", "IMPORTANT"].map((label, index) => ({
@@ -1852,7 +1852,10 @@ it.effect(
       yield* run(http, (adapter) =>
         Effect.gen(function* () {
           const filters = yield* adapter.filters(account);
-          assert.ok(filters.every((filter) => filter.editable === false));
+          assert.notStrictEqual(filters[0]?.editable, false);
+          assert.strictEqual(filters[1]?.editable, false);
+          assert.strictEqual(filters[2]?.editable, false);
+          assert.notStrictEqual(filters[3]?.editable, false);
           for (const filter of filters) yield* adapter.deleteFilter(account, filter.id);
         }),
       );
@@ -1993,7 +1996,9 @@ it.effect(
       const http = fakeHttp({ "GET /settings/filters": { json: { filter: rules } } });
       const filters = yield* run(http, (adapter) => adapter.filters(account));
       assert.notStrictEqual(filters[0]?.editable, false);
-      assert.ok(filters.slice(1).every((filter) => filter.editable === false));
+      assert.ok(filters.slice(1, 3).every((filter) => filter.editable === false));
+      assert.notStrictEqual(filters[3]?.editable, false);
+      assert.deepStrictEqual(filters[3]?.action.labels, ["Label_2"]);
     }),
 );
 
@@ -2152,4 +2157,65 @@ it.effect("repeated group pages fail rather than committing an incomplete snapsh
     assert.strictEqual(result._tag, "Failure");
     if (result._tag === "Failure") assert.strictEqual(result.failure._tag, "InvalidInput");
   }),
+);
+
+it.effect(
+  "Gmail extended rules map words, exclusions, size, importance, category and multiple labels without forwarding",
+  () =>
+    Effect.gen(function* () {
+      const rule = {
+        id: "extended",
+        criteria: {
+          from: "",
+          to: "",
+          subject: "",
+          hasAttachment: false,
+          query: "(budget)",
+          negatedQuery: "private",
+          size: 1_000_000,
+          sizeComparison: "larger",
+        },
+        action: {
+          addLabelIds: ["Label_1", "Label_2", "CATEGORY_UPDATES"],
+          removeLabelIds: ["IMPORTANT"],
+        },
+      };
+      const http = fakeHttp({ "POST /settings/filters": { json: rule } });
+      const saved = yield* run(http, (adapter) =>
+        adapter.createFilter(account, {
+          name: "Budget",
+          criteria: {
+            from: "",
+            to: "",
+            subject: "",
+            query: "",
+            hasAttachment: false,
+            hasWords: "budget",
+            notWords: "private",
+            size: 1_000_000,
+            sizeComparison: "larger",
+          },
+          action: {
+            archive: false,
+            markRead: false,
+            star: false,
+            trash: false,
+            label: "Label_1",
+            labels: ["Label_2"],
+            important: false,
+            category: "CATEGORY_UPDATES",
+          },
+        }),
+      );
+      assert.deepStrictEqual(http.calls.find((call) => call.method === "POST")?.body, {
+        criteria: rule.criteria,
+        action: rule.action,
+      });
+      assert.notStrictEqual(saved.editable, false);
+      assert.strictEqual(saved.criteria.notWords, "private");
+      assert.strictEqual(saved.criteria.size, 1_000_000);
+      assert.deepStrictEqual(saved.action.labels, ["Label_2"]);
+      assert.strictEqual(saved.action.category, "CATEGORY_UPDATES");
+      assert.strictEqual(saved.action.important, false);
+    }),
 );

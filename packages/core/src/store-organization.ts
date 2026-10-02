@@ -7,6 +7,7 @@ import {
   type SendAs,
 } from "./organization.js";
 import { richComposeBody, textComposeHtml } from "./compose-body.js";
+import { CATEGORIES } from "./domain.js";
 import { all, run } from "./sql-rows.js";
 
 const LabelPrefRow = Schema.Struct({
@@ -20,6 +21,9 @@ const LabelPrefRow = Schema.Struct({
 const OrganizationRow = Schema.Struct({
   account_id: Schema.String,
   categories: Schema.BooleanFromBit,
+  selected_categories: Schema.NullOr(
+    Schema.fromJsonString(Schema.Array(Schema.Literals(CATEGORIES))),
+  ),
 });
 const AliasRow = Schema.Struct({
   account_id: Schema.String,
@@ -79,13 +83,19 @@ export function makeOrganizationStore(sql: SqlClient.SqlClient) {
     });
   const organization = all(
     OrganizationRow,
-  )(sql`SELECT a.id AS account_id, COALESCE(o.categories, 1) AS categories
+  )(sql`SELECT a.id AS account_id, COALESCE(o.categories, 1) AS categories, o.selected_categories
     FROM accounts a LEFT JOIN account_organization o ON a.id=o.account_id`).pipe(
-    Effect.map((rows) => rows.map((r) => ({ accountId: r.account_id, categories: r.categories }))),
+    Effect.map((rows) =>
+      rows.map((r) => ({
+        accountId: r.account_id,
+        categories: r.categories,
+        selectedCategories: r.selected_categories ?? [...CATEGORIES],
+      })),
+    ),
   );
   const setOrganization = (p: AccountOrganization) =>
     run(
-      sql`INSERT INTO account_organization (account_id, categories) VALUES (${p.accountId}, ${Number(p.categories)}) ON CONFLICT(account_id) DO UPDATE SET categories=excluded.categories`,
+      sql`INSERT INTO account_organization (account_id, categories, selected_categories) VALUES (${p.accountId}, ${Number(p.categories)}, ${JSON.stringify(p.selectedCategories ?? CATEGORIES)}) ON CONFLICT(account_id) DO UPDATE SET categories=excluded.categories, selected_categories=excluded.selected_categories`,
     );
   const sendAs = all(AliasRow)(sql`SELECT * FROM send_as ORDER BY is_default DESC, address`).pipe(
     Effect.map((rows) =>

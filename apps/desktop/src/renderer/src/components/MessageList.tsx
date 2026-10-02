@@ -6,7 +6,13 @@ import { MESSAGE_DRAG } from "../organize-drag";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { prefsAtom } from "../state/queries";
-import { moveSourceLabel, listWindow, LIST_DENSITIES, DEFAULT_PREFS } from "@openmail/core/schema";
+import {
+  moveSourceLabel,
+  listWindow,
+  LIST_DENSITIES,
+  DEFAULT_PREFS,
+  searchUsesSize,
+} from "@openmail/core/schema";
 import { Toggle } from "@base-ui/react/toggle";
 import { constVoid } from "effect/Function";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -20,7 +26,7 @@ import {
   type RefObject,
 } from "react";
 
-import type { Label, MailOp, Mailbox, ThreadSummary } from "../../../shared/api";
+import type { Label, MailOp, Mailbox, ThreadSummary, ThreadQuery } from "../../../shared/api";
 import { displayName, shortDate } from "../format";
 import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
@@ -40,6 +46,8 @@ interface Props {
   searchingServer: boolean;
   searchTruncated: boolean;
   searchErrors: readonly string[];
+  searchIgnored: readonly string[];
+  searchQuery?: ThreadQuery | undefined;
   filters: Filters;
   inLabel: boolean;
   folderActions: ReactNode;
@@ -88,6 +96,8 @@ export function MessageList({
   searchingServer,
   searchTruncated,
   searchErrors,
+  searchIgnored,
+  searchQuery,
   filters,
   inLabel,
   folderActions,
@@ -212,9 +222,22 @@ export function MessageList({
           <Trans>More matches exist. Narrow your search.</Trans>
         </output>
       )}
+      {searchIgnored.length > 0 && (
+        <output className="px-5 pb-2 text-[12px] text-orange-500">
+          <Trans>
+            Some server predicates were omitted to preserve matches; local filters still apply:
+          </Trans>{" "}
+          {searchIgnored.join("; ")}
+        </output>
+      )}
+      {searchQuery && searchUsesSize(searchQuery) && (
+        <output className="px-5 pb-2 text-[12px] text-orange-500">
+          <Trans>Unknown message sizes are left unfiltered.</Trans>
+        </output>
+      )}
       {searchErrors.length > 0 && (
         <output title={searchErrors.join("\n")} className="px-5 pb-2 text-[12px] text-orange-500">
-          <Trans>Server search failed. Local results are available.</Trans>
+          <Trans>Search could not finish:</Trans> {searchErrors.join("; ")}
         </output>
       )}
       <ContextMenuRoot

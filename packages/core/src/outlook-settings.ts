@@ -32,13 +32,22 @@ const ParsedGraphRule = Schema.Struct({
       recipientContains: Strings,
       subjectContains: Strings,
       bodyContains: Strings,
+      bodyOrSubjectContains: Strings,
+      withinSizeRange: Schema.optionalKey(
+        Schema.Struct({
+          minimumSize: Schema.optionalKey(Schema.Number),
+          maximumSize: Schema.optionalKey(Schema.Number),
+        }),
+      ),
       hasAttachments: Schema.optionalKey(Schema.Boolean),
       fromAddresses: Recipients,
       sentToAddresses: Recipients,
     }),
   ),
+  exceptions: Schema.optionalKey(Schema.Struct({ bodyOrSubjectContains: Strings })),
   actions: Schema.optionalKey(
     Schema.Struct({
+      markImportance: Schema.optionalKey(Schema.Literals(["high", "normal", "low"])),
       markAsRead: Schema.optionalKey(Schema.Boolean),
       delete: Schema.optionalKey(Schema.Boolean),
       moveToFolder: Schema.optionalKey(Schema.String),
@@ -68,6 +77,9 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
   const action = {
     ...EMPTY_FILTER.action,
     markRead: parsed.actions?.markAsRead ?? false,
+    ...(parsed.actions?.markImportance
+      ? { important: parsed.actions.markImportance === "high" }
+      : {}),
     trash: parsed.actions?.delete ?? false,
     archive: !!archiveId && parsed.actions?.moveToFolder === archiveId,
     label:
@@ -76,14 +88,26 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
   const editable =
     filterDestinationsSupported(action, "outlook") &&
     !r.isReadOnly &&
-    Object.keys(r.exceptions ?? {}).length === 0 &&
+    parsed.actions?.markImportance !== "low" &&
+    Object.keys(r.exceptions ?? {}).every((key) => key === "bodyOrSubjectContains") &&
+    (parsed.exceptions?.bodyOrSubjectContains?.length ?? 0) <= 1 &&
+    !(
+      c?.withinSizeRange?.minimumSize !== undefined && c.withinSizeRange.maximumSize !== undefined
+    ) &&
     Object.keys(r.conditions ?? {}).every((key) =>
-      ["senderContains", "recipientContains", "subjectContains", "hasAttachments"].includes(key),
+      [
+        "senderContains",
+        "recipientContains",
+        "subjectContains",
+        "hasAttachments",
+        "bodyOrSubjectContains",
+        "withinSizeRange",
+      ].includes(key),
     ) &&
     Object.keys(r.actions ?? {}).every((key) =>
-      ["markAsRead", "delete", "moveToFolder"].includes(key),
+      ["markAsRead", "delete", "moveToFolder", "markImportance"].includes(key),
     ) &&
-    [c?.senderContains, c?.recipientContains, c?.subjectContains].every(
+    [c?.senderContains, c?.recipientContains, c?.subjectContains, c?.bodyOrSubjectContains].every(
       (values) => !values || values.length <= 1,
     );
   return {
@@ -103,6 +127,15 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
       subject: c?.subjectContains?.join(" ") ?? "",
       query: c?.bodyContains?.join(" ") ?? "",
       hasAttachment: c?.hasAttachments ?? false,
+      ...(c?.bodyOrSubjectContains?.length ? { hasWords: c.bodyOrSubjectContains.join(" ") } : {}),
+      ...(parsed.exceptions?.bodyOrSubjectContains?.length
+        ? { notWords: parsed.exceptions.bodyOrSubjectContains.join(" ") }
+        : {}),
+      ...(c?.withinSizeRange?.minimumSize !== undefined
+        ? { size: c.withinSizeRange.minimumSize * 1024, sizeComparison: "larger" }
+        : c?.withinSizeRange?.maximumSize !== undefined
+          ? { size: c.withinSizeRange.maximumSize * 1024, sizeComparison: "smaller" }
+          : {}),
     },
     action,
   };
@@ -194,8 +227,27 @@ export function makeOutlookSettings<
             ...(c.to ? { recipientContains: [c.to] } : {}),
             ...(c.subject ? { subjectContains: [c.subject] } : {}),
             ...(c.hasAttachment ? { hasAttachments: true } : {}),
+            ...(c.hasWords ? { bodyOrSubjectContains: [c.hasWords] } : {}),
+            ...(c.size !== undefined
+              ? {
+                  withinSizeRange:
+                    c.sizeComparison === "smaller"
+                      ? { maximumSize: c.size / 1024 }
+                      : { minimumSize: c.size / 1024 },
+                }
+              : {}),
           },
+          ...(input.criteria.notWords || original.exceptions
+            ? {
+                exceptions: input.criteria.notWords
+                  ? { bodyOrSubjectContains: [input.criteria.notWords] }
+                  : {},
+              }
+            : {}),
           actions: {
+            ...(input.action.important !== undefined
+              ? { markImportance: input.action.important ? "high" : "normal" }
+              : {}),
             ...(input.action.markRead ? { markAsRead: true } : {}),
             ...(input.action.trash ? { delete: true } : {}),
             ...(input.action.label || archive
@@ -250,8 +302,23 @@ export function makeOutlookSettings<
             ...(c.to ? { recipientContains: [c.to] } : {}),
             ...(c.subject ? { subjectContains: [c.subject] } : {}),
             ...(c.hasAttachment ? { hasAttachments: true } : {}),
+            ...(c.hasWords ? { bodyOrSubjectContains: [c.hasWords] } : {}),
+            ...(c.size !== undefined
+              ? {
+                  withinSizeRange:
+                    c.sizeComparison === "smaller"
+                      ? { maximumSize: c.size / 1024 }
+                      : { minimumSize: c.size / 1024 },
+                }
+              : {}),
           },
+          ...(input.criteria.notWords
+            ? { exceptions: { bodyOrSubjectContains: [input.criteria.notWords] } }
+            : {}),
           actions: {
+            ...(input.action.important !== undefined
+              ? { markImportance: input.action.important ? "high" : "normal" }
+              : {}),
             ...(input.action.markRead ? { markAsRead: true } : {}),
             ...(input.action.trash ? { delete: true } : {}),
             ...(input.action.label || archive

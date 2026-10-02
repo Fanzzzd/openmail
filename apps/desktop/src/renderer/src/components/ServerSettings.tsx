@@ -2,6 +2,7 @@ import { accountName } from "../format";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
+  CATEGORIES,
   EMPTY_FILTER,
   requiresFilterDeleteConfirmation,
   EMPTY_VACATION,
@@ -411,9 +412,19 @@ export function FilterEditor({
     if (exit._tag === "Success") onClose();
   };
   const criteria = (patch: Partial<FilterInput["criteria"]>) =>
-    setInput((old) => ({ ...old, criteria: { ...old.criteria, ...patch } }));
+    setInput((old) => {
+      const next = { ...old.criteria, ...patch };
+      if (next.size === undefined) delete next.size;
+      if (next.sizeComparison === undefined) delete next.sizeComparison;
+      return { ...old, criteria: next };
+    });
   const action = (patch: Partial<FilterInput["action"]>) =>
-    setInput((old) => ({ ...old, action: { ...old.action, ...patch } }));
+    setInput((old) => {
+      const next = { ...old.action, ...patch };
+      if (next.important === undefined) delete next.important;
+      if (next.category === undefined) delete next.category;
+      return { ...old, action: next };
+    });
   return (
     <Dialog
       aria-label={t`Create filter from these messages`}
@@ -478,6 +489,49 @@ export function FilterEditor({
             />
           </label>
         )}
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block space-y-1">
+            <span>{t`Has words`}</span>
+            <input
+              className={formInput}
+              value={input.criteria.hasWords ?? ""}
+              onChange={(e) => criteria({ hasWords: e.target.value })}
+            />
+          </label>
+          <label className="block space-y-1">
+            <span>{t`Does not have words`}</span>
+            <input
+              className={formInput}
+              value={input.criteria.notWords ?? ""}
+              onChange={(e) => criteria({ notWords: e.target.value })}
+            />
+          </label>
+          <Select
+            aria-label={t`Size comparison`}
+            value={input.criteria.sizeComparison ?? "larger"}
+            options={[
+              { value: "larger", label: t`Larger than` },
+              { value: "smaller", label: t`Smaller than` },
+            ]}
+            onValueChange={(sizeComparison) => criteria({ sizeComparison })}
+          />
+          <label className="block space-y-1">
+            <span>{t`Size in bytes`}</span>
+            <input
+              type="number"
+              min="0"
+              step={account.provider === "outlook" ? "1024" : "1"}
+              className={formInput}
+              value={input.criteria.size ?? ""}
+              onChange={(e) =>
+                criteria({
+                  size: e.target.value ? Number(e.target.value) : undefined,
+                  sizeComparison: input.criteria.sizeComparison ?? "larger",
+                })
+              }
+            />
+          </label>
+        </div>
         <label className="flex items-center gap-2">
           <Checkbox
             checked={input.criteria.hasAttachment}
@@ -515,10 +569,71 @@ export function FilterEditor({
               <span>{t`Star`}</span>
             </label>
           )}
+          <Select
+            aria-label={t`Importance action`}
+            value={
+              input.action.important === undefined
+                ? "unchanged"
+                : input.action.important
+                  ? "important"
+                  : "normal"
+            }
+            options={[
+              { value: "unchanged", label: t`Keep importance` },
+              { value: "important", label: t`Mark as important` },
+              { value: "normal", label: t`Mark as not important` },
+            ]}
+            onValueChange={(value) =>
+              action({ important: value === "unchanged" ? undefined : value === "important" })
+            }
+          />
+          {account.provider === "gmail" && (
+            <>
+              <Select
+                aria-label={t`Category action`}
+                value={input.action.category ?? ""}
+                options={[
+                  { value: "", label: t`Keep category` },
+                  ...CATEGORIES.map((category) => ({
+                    value: category,
+                    label: {
+                      CATEGORY_PERSONAL: t`Primary`,
+                      CATEGORY_SOCIAL: t`Social`,
+                      CATEGORY_PROMOTIONS: t`Promotions`,
+                      CATEGORY_UPDATES: t`Updates`,
+                      CATEGORY_FORUMS: t`Forums`,
+                    }[category],
+                  })),
+                ]}
+                onValueChange={(value) => action({ category: CATEGORIES.find((c) => c === value) })}
+              />
+              <fieldset>
+                <legend>{t`Additional labels`}</legend>
+                {labels.map((label) => (
+                  <label key={label.id} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={input.action.labels?.includes(label.id) ?? false}
+                      onCheckedChange={(checked) =>
+                        action({
+                          labels: checked
+                            ? [...(input.action.labels ?? []), label.id]
+                            : (input.action.labels ?? []).filter((id) => id !== label.id),
+                          trash: false,
+                        })
+                      }
+                    />
+                    <span>{label.name}</span>
+                  </label>
+                ))}
+              </fieldset>
+            </>
+          )}
           <label className="flex items-center gap-2">
             <Checkbox
               checked={input.action.trash}
-              onCheckedChange={(trash) => action({ trash, archive: false, label: null })}
+              onCheckedChange={(trash) =>
+                action({ trash, archive: false, label: null, labels: [], category: undefined })
+              }
             />
             <span>{t`Delete`}</span>
           </label>

@@ -9,7 +9,7 @@ import { diagnosticsPreview, hasCrashReport, dismissCrashReport } from "./reliab
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
-import { IMAP_PRESETS, Mailbox, messageLink, senderSearchQuery } from "@openmail/core";
+import { IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
 import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { BrowserWindow, clipboard, ipcMain, type IpcMainEvent, webContents, shell } from "electron";
@@ -187,7 +187,8 @@ const Handlers = MailRpcs.toLayer(
       MarkUnreadFrom: ({ id }) => m.markUnreadFrom(id),
       Labels: ({ accountIds }) => m.labels(accountIds),
       UnreadCounts: () => m.unreadCounts,
-      UnreadByLabel: ({ accountIds, within }) => m.unreadByLabel(accountIds, within),
+      UnreadByLabel: ({ accountIds, within, conversations }) =>
+        m.unreadByLabel(accountIds, within, conversations),
 
       UpdateTokenConfigured: () => m.updateTokenConfigured,
       SetUpdateToken: ({ token }) => m.setUpdateToken(token),
@@ -324,7 +325,10 @@ const Handlers = MailRpcs.toLayer(
         Effect.sync(() => {
           createMainWindow();
         }),
-      CopyMessageLink: ({ id }) => Effect.promise(() => clipboard.writeText(messageLink(id))),
+      CopyMessageLink: ({ id, kind }) =>
+        m
+          .privateMailLink(id, kind ?? "message")
+          .pipe(Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link)))),
       DefaultMailClient: () => Effect.sync(defaultClientStatus),
       BecomeDefaultMailClient: () => Effect.sync(becomeDefaultClient),
       SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),

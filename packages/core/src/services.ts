@@ -1,4 +1,5 @@
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
+import type { WordIndexState } from "./store-word-index.js";
 import type {
   DeleteFolder,
   FolderScope,
@@ -54,7 +55,12 @@ import type {
   SettingsScopeMissing,
   ProviderFailure,
 } from "./errors.js";
-import type { CalendarEvent, CalendarInvite, InviteResponse } from "./calendar.js";
+import type {
+  InviteResponseRecord,
+  CalendarEvent,
+  CalendarInvite,
+  InviteResponse,
+} from "./calendar.js";
 import type { ContactSnapshot, ContactGroup, ContactSync } from "./contacts.js";
 import type { AttachmentRef } from "./attachments.js";
 import type { ImapConnectInput } from "./imap-presets.js";
@@ -236,10 +242,20 @@ export class Store extends Context.Service<
     deleteMessagesWithLabel(accountId: string, label: string): Effect.Effect<void>;
     deleteAccountMessages(accountId: string): Effect.Effect<void>;
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
-    listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
+    readonly wordIndexReady: Effect.Effect<WordIndexState>;
+    backfillWordIndex(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
+    listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     /** Cached matches without page cursors; counts rows, not conversation members. */
-    countThreads(q: ThreadQuery): Effect.Effect<number>;
-    vectorThreads(q: ThreadQuery, hits: readonly DerivedChunk[]): Effect.Effect<ThreadSummary[]>;
+    countThreads(q: ThreadQuery): Effect.Effect<number, InvalidInput>;
+    vectorThreads(
+      q: ThreadQuery,
+      hits: readonly DerivedChunk[],
+    ): Effect.Effect<ThreadSummary[], InvalidInput>;
+    inviteResponse(
+      key: Pick<InviteResponseRecord, "accountId" | "uid" | "organizer" | "recurrenceId">,
+    ): Effect.Effect<InviteResponseRecord | null>;
+    recordInviteResponse(record: InviteResponseRecord): Effect.Effect<void>;
+    findMessageByRfcId(accountId: string, messageId: string): Effect.Effect<string | null>;
     getMessage(id: string): Effect.Effect<Message, NotFound>;
     /** Every message of the thread `id` belongs to, oldest first. */
     getThread(id: string): Effect.Effect<Message[], NotFound>;
@@ -252,6 +268,7 @@ export class Store extends Context.Service<
     unreadByLabel(
       accountIds?: readonly string[],
       within?: string,
+      conversations?: boolean,
     ): Effect.Effect<Record<string, number>>;
 
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;

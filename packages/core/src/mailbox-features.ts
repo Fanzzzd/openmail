@@ -11,6 +11,7 @@ import type { Account, Actor, Command } from "./domain.js";
 import {
   calendarTimestamp,
   detectMailEvents,
+  inviteHistory,
   matchingInviteAttendee,
   shouldLoadInvitation,
   type CalendarEvent,
@@ -231,10 +232,50 @@ export function makeFeatureMailbox(
         const { parsed, account } = yield* parsedInvites(messageId);
         const addresses =
           account.provider === "imap" ? yield* responseAddresses(account) : [account.email];
-        return parsed.map((p) => {
-          const attendee = matchingInviteAttendee(p.invite, addresses);
-          return { ...p.invite, ...(attendee ? { responseAddress: attendee } : {}) };
-        });
+        const history = parsed.map((p) => p.invite);
+        for (const sibling of yield* store.getThread(messageId)) {
+          if (
+            sibling.id === messageId ||
+            (!sibling.hasCalendar &&
+              !sibling.attachments.some(
+                (a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename),
+              ))
+          )
+            continue;
+          const updates = yield* parsedInvites(sibling.id).pipe(Effect.result);
+          if (updates._tag === "Success")
+            history.push(...updates.success.parsed.map((p) => p.invite));
+        }
+        return yield* Effect.forEach(parsed, (p) =>
+          Effect.gen(function* () {
+            const attendee = matchingInviteAttendee(p.invite, addresses);
+            const annotated = inviteHistory(p.invite, history);
+            const response = yield* store.inviteResponse({
+              accountId: account.id,
+              uid: p.invite.uid,
+              organizer: p.invite.organizer?.address ?? "",
+              recurrenceId: p.invite.recurrenceId?.value ?? "",
+            });
+            const status = annotated.threadStatus;
+            const threadStatus =
+              response && status && !status.cancelled && response.sequence === status.sequence
+                ? {
+                    ...status,
+                    statuses: [
+                      ...status.statuses.filter(
+                        (a) => a.address.toLowerCase() !== response.address.address.toLowerCase(),
+                      ),
+                      { ...response.address, status: response.response.toUpperCase() },
+                    ],
+                  }
+                : status;
+            return {
+              ...annotated,
+              ...(threadStatus ? { threadStatus } : {}),
+              ...(attendee ? { responseAddress: attendee } : {}),
+            };
+          }),
+        );
       }),
     respondInvite: (messageId: string, key: string, response: InviteResponse, actor: Actor) =>
       responseLock.withPermit(
@@ -311,6 +352,18 @@ export function makeFeatureMailbox(
             yield* providers
               .get(account.provider)
               .respondInvite(account, ref.providerId, invitation.invite, response);
+          yield* store.recordInviteResponse({
+            accountId: account.id,
+            uid: invitation.invite.uid,
+            organizer: invitation.invite.organizer?.address ?? "",
+            recurrenceId: invitation.invite.recurrenceId?.value ?? "",
+            sequence: invitation.invite.sequence,
+            address: matchingInviteAttendee(invitation.invite, [account.email, ...addresses]) ?? {
+              name: "",
+              address: account.email,
+            },
+            response,
+          });
           yield* store.audit({
             actor,
             accountId: account.id,

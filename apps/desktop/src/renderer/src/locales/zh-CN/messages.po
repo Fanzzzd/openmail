@@ -159,6 +159,10 @@ msgstr "请填写有效名称"
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "原每日静音时段仍生效。修改此日程后替换。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Absolute folder path"
+msgstr "绝对文件夹路径"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Accept"
 msgstr "接受"
@@ -314,6 +318,10 @@ msgstr "已加星标"
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Added to calendar"
 msgstr "已加入日历"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Additional labels"
+msgstr "附加标签"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Address or domain"
@@ -544,6 +552,10 @@ msgstr "附上以下脱敏诊断"
 msgid "Attached message"
 msgstr "附加邮件"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Attachment save folder"
+msgstr "附件保存目录"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Attachments"
 msgstr "附件"
@@ -580,6 +592,10 @@ msgstr "自动回复"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Available in the installed macOS app"
 msgstr "需使用已安装的 macOS 应用"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Awaiting response"
+msgstr "等待回应"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
@@ -729,6 +745,10 @@ msgstr "无法生成日历响应"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Category"
 msgstr "类别"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Category action"
+msgstr "分类动作"
 
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Category names, separated by commas"
@@ -963,6 +983,10 @@ msgstr "复制地址"
 msgid "Copy link to message"
 msgstr "复制邮件链接"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to thread"
+msgstr "复制会话链接"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
 msgstr "复制选中附件"
@@ -1130,6 +1154,10 @@ msgstr "当前文件夹"
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
 msgstr "自定义颜色"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Custom folder"
+msgstr "自定义目录"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 msgid "Custom hex color"
@@ -1299,6 +1327,10 @@ msgstr "丢弃保存的规则？"
 msgid "Display name"
 msgstr "显示名称"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Does not have words"
+msgstr "不包含词语"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
 msgstr "不附上原邮件"
@@ -1315,6 +1347,10 @@ msgstr "下载本机模型，约 226 MB"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "正在下载模型：{0}%"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Downloads"
+msgstr "下载目录"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
@@ -1594,6 +1630,10 @@ msgstr "文件夹操作"
 msgid "Folder colors are stored on this computer only."
 msgstr "文件夹颜色仅保存在这台电脑上。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Folder path"
+msgstr "文件夹路径"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Follow system"
 msgstr "跟随系统"
@@ -1612,6 +1652,8 @@ msgstr "字号"
 msgid "Formatting"
 msgstr "格式"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "论坛"
@@ -1710,6 +1752,10 @@ msgstr "按会话归组邮件"
 msgid "Has attachment"
 msgstr "有附件"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Has words"
+msgstr "包含词语"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "邮件头"
@@ -1771,6 +1817,10 @@ msgstr "IMAP 关键词，用逗号分隔"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP 服务器"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance action"
+msgstr "重要性动作"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1850,6 +1900,10 @@ msgstr "插入变量…"
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Internal folder"
+msgstr "应用内部目录"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "内部回复"
@@ -1865,6 +1919,14 @@ msgstr "日历分页链接无效"
 #: src/renderer/src/errors.ts
 msgid "Invalid message link"
 msgstr "邮件链接无效"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation changes"
+msgstr "邀请变更"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation status in this conversation"
+msgstr "会话中的邀请状态"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1884,6 +1946,14 @@ msgstr "两端对齐"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
 msgstr "{0} 正文保留期限"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep category"
+msgstr "保留分类"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep importance"
+msgstr "保留重要性"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
@@ -1949,6 +2019,10 @@ msgstr "大"
 msgid "Larger text"
 msgstr "放大文字"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Larger than"
+msgstr "大于"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
 msgstr "最近 7 天"
@@ -1985,6 +2059,10 @@ msgstr "链接地址"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "加载图片"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Load remote content"
+msgstr "加载远程内容"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Loading attached message…"
@@ -2035,6 +2113,10 @@ msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
 msgid "Location"
 msgstr "地点"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location changed:"
+msgstr "地点变更："
+
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
@@ -2060,11 +2142,13 @@ msgid "Mark all as read"
 msgstr "全部标为已读"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as important"
 msgstr "标为重要"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as not important"
 msgstr "取消重要"
@@ -2161,6 +2245,10 @@ msgstr "会议已取消"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting response"
 msgstr "会议响应"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting updated"
+msgstr "会议已更新"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Mention suggestions"
@@ -2416,6 +2504,10 @@ msgstr "新建空间"
 msgid "New template"
 msgstr "新建模板"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "New time:"
+msgstr "新时间："
+
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "New Window"
@@ -2537,6 +2629,7 @@ msgstr "收件箱没有未读"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
@@ -2633,6 +2726,10 @@ msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件
 msgid "Open"
 msgstr "打开"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Open attachments from"
+msgstr "附件打开目录"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
@@ -2700,6 +2797,10 @@ msgstr "OpenMail 意外退出"
 #: src/renderer/src/recovery-labels.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Optional"
+msgstr "可选"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -2853,10 +2954,16 @@ msgstr "上一处"
 msgid "Previous thread"
 msgstr "上一个会话"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Previous time:"
+msgstr "原时间："
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous window"
 msgstr "上一个窗口"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Primary"
@@ -2878,6 +2985,8 @@ msgstr "打印这封邮件…"
 msgid "Print…"
 msgstr "打印…"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "推广"
@@ -3317,6 +3426,10 @@ msgstr "搜索"
 msgid "Search  /"
 msgstr "搜索  /"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search could not finish:"
+msgstr "搜索未完成："
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "搜索邮件"
@@ -3465,10 +3578,6 @@ msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 msgid "Server preview: {count} messages"
 msgstr "服务器预览：{count} 封邮件"
 
-#: src/renderer/src/components/MessageList.tsx
-msgid "Server search failed. Local results are available."
-msgstr "服务器搜索失败，仍可查看本地结果。"
-
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3554,6 +3663,7 @@ msgid "Show or hide sidebar"
 msgstr "显示或隐藏侧栏"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Show original"
 msgstr "显示原始邮件"
 
@@ -3616,6 +3726,14 @@ msgstr "签名"
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令牌保存在系统钥匙串。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size comparison"
+msgstr "大小比较"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size in bytes"
+msgstr "大小（字节）"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Small"
 msgstr "小"
@@ -3624,6 +3742,10 @@ msgstr "小"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
 msgstr "缩小文字"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Smaller than"
+msgstr "小于"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Smart Lists"
@@ -3648,6 +3770,8 @@ msgstr "稍后提醒"
 msgid "Snoozed"
 msgstr "稍后提醒"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "社交"
@@ -3655,6 +3779,10 @@ msgstr "社交"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
+msgstr "为保留匹配，服务器搜索省略了部分条件；本地仍会筛选："
 
 #: src/renderer/src/errors.ts
 msgid "Something went wrong. Please try again."
@@ -3671,8 +3799,8 @@ msgid "Spam"
 msgstr "垃圾邮件"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Special folder unread badges"
-msgstr "特殊文件夹未读徽标"
+msgid "Special folder badges"
+msgstr "特殊文件夹计数"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -3954,6 +4082,7 @@ msgstr "此事件已不可用"
 msgid "This invitation cannot be answered by this account"
 msgstr "此账户无法响应该邀请"
 
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/errors.ts
 msgid "This invitation has a newer update"
 msgstr "此邀请已有更新版本"
@@ -3990,6 +4119,10 @@ msgstr "这个空间还没有账户。"
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "这个空间还没有账户。<0>添加账户</0>"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Thread link copied"
+msgstr "已复制会话链接"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Thursday"
 msgstr "星期四"
@@ -4022,6 +4155,10 @@ msgstr "今天 {time}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "切换列表筛选"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle message background"
+msgstr "切换邮件背景"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle reading pane position"
@@ -4092,6 +4229,10 @@ msgstr "未知"
 msgid "Unknown label or folder"
 msgstr "找不到标签或文件夹"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unknown message sizes are left unfiltered."
+msgstr "邮件大小未知时，不按大小筛选。"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Unknown organizer time zone; showing the original time."
 msgstr "无法识别组织者时区，显示原始时间。"
@@ -4137,6 +4278,8 @@ msgstr "更新渠道"
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitHub 访问令牌。"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
@@ -4189,6 +4332,10 @@ msgstr "用户名（不填就用邮箱地址）"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "正在验证…"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Visible categories"
+msgstr "显示的分类"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."

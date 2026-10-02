@@ -404,6 +404,7 @@ it.effect("ops map onto PATCH and move destinations", () =>
         ["POST", { destinationId: "junkemail" }],
         ["POST", { destinationId: "id-c1" }],
         ["POST", { destinationId: "inbox" }],
+        ["PATCH", { importance: "high" }],
       ],
     );
   }),
@@ -2358,5 +2359,59 @@ it.effect("custom folder IDs stay in one encoded segment in the initial delta UR
       call?.url.pathname,
       "/v1.0/me/mailFolders/folder%2FA%2BB%3D%3D/messages/delta",
     );
+  }),
+);
+
+it.effect("Graph extended rules preserve native word exclusions, size and importance", () =>
+  Effect.gen(function* () {
+    const rule = {
+      id: "extended",
+      displayName: "Budget",
+      conditions: { bodyOrSubjectContains: ["budget"], withinSizeRange: { minimumSize: 1024 } },
+      exceptions: { bodyOrSubjectContains: ["private"] },
+      actions: { markImportance: "high", moveToFolder: "destination" },
+    };
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules": { json: { value: [] } },
+      "POST /me/mailFolders/inbox/messageRules": { json: rule },
+      "GET /me/mailFolders/archive": { json: { id: "archive-id" } },
+    });
+    const saved = yield* run(http, (adapter) =>
+      adapter.createFilter(account, {
+        name: "Budget",
+        criteria: {
+          from: "",
+          to: "",
+          subject: "",
+          query: "",
+          hasAttachment: false,
+          hasWords: "budget",
+          notWords: "private",
+          size: 1_048_576,
+          sizeComparison: "larger",
+        },
+        action: {
+          archive: false,
+          markRead: false,
+          star: false,
+          trash: false,
+          label: "destination",
+          important: true,
+        },
+      }),
+    );
+    assert.deepStrictEqual(http.calls.find((call) => call.method === "POST")?.body, {
+      displayName: "Budget",
+      sequence: 1,
+      isEnabled: true,
+      conditions: rule.conditions,
+      exceptions: rule.exceptions,
+      actions: rule.actions,
+    });
+    assert.notStrictEqual(saved.editable, false);
+    assert.strictEqual(saved.criteria.hasWords, "budget");
+    assert.strictEqual(saved.criteria.notWords, "private");
+    assert.strictEqual(saved.criteria.size, 1_048_576);
+    assert.strictEqual(saved.action.important, true);
   }),
 );

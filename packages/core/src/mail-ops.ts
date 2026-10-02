@@ -5,7 +5,7 @@ const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
 /**
  * The labels a message carries after `op`. Gmail labels stack; on Outlook and
  * IMAP a message sits in exactly one folder, so moving ops swap the folder
- * label and `important` does nothing.
+ * label; IMAP has no writable importance flag.
  */
 export function applyOpToLabels(
   labels: readonly string[],
@@ -21,6 +21,7 @@ export function applyOpToLabels(
   const flag = (label: string, value: boolean) => (value ? out.add(label) : out.delete(label));
   if (op.kind === "read") flag("UNREAD", !op.value);
   else if (op.kind === "star") flag("STARRED", op.value);
+  else if (op.kind === "important" && provider !== "imap") flag("IMPORTANT", op.value);
   else if (provider === "gmail") {
     switch (op.kind) {
       case "important":

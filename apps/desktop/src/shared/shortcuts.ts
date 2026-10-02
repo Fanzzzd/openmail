@@ -77,6 +77,9 @@ const common = {
   zoomReset: [cmd("0")],
   expandAll: [cmd("e", { alt: true })],
   collapseAll: [cmd("c", { alt: true })],
+  showOriginal: [cmd("u", { alt: true })],
+  loadRemoteContent: [cmd("r", { alt: true, shift: true })],
+  toggleMessageBackground: [cmd("b", { alt: true })],
   saveMessage: [cmd("s", { alt: true })],
   searchSender: [shiftCmd("k")],
   openMessageWeb: [shiftCmd("g")],
@@ -181,7 +184,17 @@ export function shortcutAction(
   for (const action of Object.keys(native)) {
     if (!isShortcutAction(action)) continue;
     // A held reader key must not queue dialogs, browser tabs or searches.
-    if (event.repeat && ["saveMessage", "openMessageWeb", "searchSender"].includes(action))
+    if (
+      event.repeat &&
+      [
+        "saveMessage",
+        "openMessageWeb",
+        "searchSender",
+        "showOriginal",
+        "loadRemoteContent",
+        "toggleMessageBackground",
+      ].includes(action)
+    )
       continue;
     if (
       typing &&

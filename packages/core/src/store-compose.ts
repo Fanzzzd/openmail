@@ -398,6 +398,14 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
           stored.get("messageBackground"),
           d.messageBackground,
         ),
+        attachmentSaveFolder: pref(f.attachmentSaveFolder, stored.get("attachmentSaveFolder"), {
+          kind: "ask",
+        }),
+        attachmentOpenFolder: pref(
+          f.attachmentOpenFolder,
+          stored.get("attachmentOpenFolder"),
+          "internal",
+        ),
         threadGrouping: pref(f.threadGrouping, stored.get("threadGrouping"), d.threadGrouping),
         threadOrder: pref(f.threadOrder, stored.get("threadOrder"), d.threadOrder),
         shortcutSet: pref(f.shortcutSet, stored.get("shortcutSet"), d.shortcutSet),

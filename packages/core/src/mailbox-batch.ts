@@ -21,6 +21,8 @@ interface UndoBatch {
 /** Restore only the fields this op changed, using each message's actual state. */
 function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
   if (op.kind === "read") return [{ kind: "read", value: !message.isUnread }];
+  if (op.kind === "important" && provider !== "imap")
+    return [{ kind: "important", value: message.labels.includes("IMPORTANT") }];
   if (op.kind === "star") return [{ kind: "star", value: message.isStarred }];
   if (provider !== "gmail") {
     if (!folderTarget(op, message.labels)) return [];
@@ -130,6 +132,7 @@ export const makeBatchMailbox = (
                     account.provider !== "gmail" &&
                     op.kind !== "read" &&
                     op.kind !== "star" &&
+                    !(op.kind === "important" && account.provider === "outlook") &&
                     !folderTarget(op, message.labels)
                   )
                     continue;

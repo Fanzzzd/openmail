@@ -1113,7 +1113,8 @@ export function App({ composeId }: { composeId?: string }) {
         break;
       }
       case "OpenThread":
-        openExternal(event.id);
+        if (event.single) run(withMail((call) => call("OpenMessageWindow", { id: event.id })));
+        else openExternal(event.id);
         break;
       case "Search":
         changeView({ space: ALL, mailbox: "all" });
@@ -1202,6 +1203,28 @@ export function App({ composeId }: { composeId?: string }) {
     const typing =
       e.target instanceof Element &&
       Boolean(e.target.closest('input,textarea,select,[contenteditable="true"]'));
+    if (
+      !typing &&
+      selectedId &&
+      (e.metaKey || e.ctrlKey) &&
+      !e.altKey &&
+      !e.shiftKey &&
+      e.key.toLowerCase() === "c" &&
+      !window.getSelection()?.toString() &&
+      e.target instanceof Element &&
+      e.target.closest('[role="listbox"]')
+    ) {
+      e.preventDefault();
+      run(
+        withMail((call) =>
+          call("CopyMessageLink", {
+            id: selectedId,
+            kind: prefs.threadGrouping ? "thread" : "message",
+          }),
+        ),
+      );
+      return;
+    }
     const spaceKey = !typing ? spaceShortcut(e, prefs.shortcutSet) : null;
     if (spaceKey) {
       e.preventDefault();
@@ -1371,7 +1394,7 @@ export function App({ composeId }: { composeId?: string }) {
           act({ kind: "star", value: !batchRows.every((row) => row.isStarred) });
         break;
       case "important":
-        if (threadState?.provider === "gmail")
+        if (threadState && threadState.provider !== "imap")
           act({ kind: "important", value: !threadState.isImportant });
         break;
       case "reply":
@@ -1564,6 +1587,8 @@ export function App({ composeId }: { composeId?: string }) {
                 searchingServer={threads.searchingServer}
                 searchTruncated={threads.searchTruncated}
                 searchErrors={threads.searchErrors}
+                searchIgnored={threads.searchIgnored}
+                searchQuery={listQuery ?? undefined}
                 filters={filters}
                 inLabel={supportsInInboxFilter(view, accountList)}
                 onFilters={setFilters}

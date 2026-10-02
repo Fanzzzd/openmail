@@ -224,7 +224,7 @@ export function ThreadActions({
         onPressedChange={(value) => onOp({ kind: "star", value })}
       />
     ),
-    important: state.provider === "gmail" && (
+    important: state.provider !== "imap" && (
       <Switch
         icon={Bookmark}
         pressed={state.isImportant}
@@ -435,7 +435,7 @@ export function ThreadMenuItems({
       >
         {state.isStarred ? t`Unstar` : t`Star`}
       </MenuItem>
-      {state.provider === "gmail" && (
+      {state.provider !== "imap" && (
         <MenuItem
           icon={Bookmark}
           shortcut={shortcut("important")}

@@ -154,7 +154,17 @@ export function parseCalendar(
         organizer: org ? address(org) : null,
         attendees: event.getAllProperties("attendee").flatMap((p) => {
           const a = address(p);
-          return a ? [{ ...a, status: parameter(p, "partstat") || "NEEDS-ACTION" }] : [];
+          return a
+            ? [
+                {
+                  ...a,
+                  status: parameter(p, "partstat") || "NEEDS-ACTION",
+                  ...(parameter(p, "role").toUpperCase() === "OPT-PARTICIPANT"
+                    ? { optional: true }
+                    : {}),
+                },
+              ]
+            : [];
         }),
         recurrence: ["rrule", "rdate", "exdate"].flatMap((name) =>
           event.getAllProperties(name).map((p) => p.toICALString()),
@@ -262,6 +272,11 @@ export function inviteReply(
   const attendee = new ICAL.Property("attendee");
   attendee.setValue(`mailto:${me.address}`);
   attendee.setParameter("partstat", response.toUpperCase());
+  const originalAttendee = parsed.event
+    .getAllProperties("attendee")
+    .find((p) => address(p)?.address.toLowerCase() === me.address.toLowerCase());
+  const role = originalAttendee ? parameter(originalAttendee, "role") : "";
+  if (role) attendee.setParameter("role", role);
   if (me.name) attendee.setParameter("cn", me.name);
   event.addProperty(attendee);
   calendar.addSubcomponent(event);

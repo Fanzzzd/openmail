@@ -19,7 +19,7 @@ vi.mock("electron", () => ({
 }));
 
 import { app, dialog } from "electron";
-import { saveMessage, saveAllAttachments } from "./files";
+import { saveAttachment, saveMessage, saveAllAttachments } from "./files";
 
 let folder: string;
 beforeEach(async () => {
@@ -194,3 +194,43 @@ it("legacy Save All continues after a provider failure and reports the failed fi
   );
   expect(await readFile(path.join(folder, "saved.txt"), "utf8")).toBe("saved");
 });
+
+for (const kind of ["downloads", "custom"] as const) {
+  it(`attachment ${kind} setting saves without a dialog and never overwrites an existing file`, async () => {
+    const listed = { filename: "saved.txt", mimeType: "text/plain", size: 5 };
+    const server = fakeServer("me@gmail.com", [{ ...first, attachments: [listed] }]);
+    server.raw.set(
+      "one",
+      await Effect.runPromise(
+        buildMime(first.from, {
+          to: [],
+          cc: [],
+          bcc: [],
+          subject: "",
+          text: "",
+          attachments: [{ ...listed, content: "c2F2ZWQ=" }],
+        }),
+      ),
+    );
+    vi.mocked(app).getPath.mockReturnValue(folder);
+    await writeFile(path.join(folder, "saved.txt"), "keep");
+    try {
+      await Effect.runPromise(
+        Effect.gen(function* () {
+          const mailbox = yield* Mailbox;
+          const account = yield* mailbox.connect({ provider: "gmail" });
+          yield* mailbox.sync();
+          yield* mailbox.setPrefs({
+            attachmentSaveFolder: kind === "custom" ? { kind, path: folder } : { kind },
+          });
+          expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(true);
+        }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
+      );
+      expect(vi.mocked(dialog).showSaveDialog.mock.calls).toHaveLength(0);
+      expect(await readFile(path.join(folder, "saved.txt"), "utf8")).toBe("keep");
+      expect(await readFile(path.join(folder, "saved (2).txt"), "utf8")).toBe("saved");
+    } finally {
+      vi.mocked(app).getPath.mockReturnValue("/tmp");
+    }
+  });
+}

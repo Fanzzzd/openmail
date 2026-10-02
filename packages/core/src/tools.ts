@@ -406,14 +406,16 @@ export const MailToolkitLayer = MailToolkit.toLayer(
           accountIds = accountIds ? accountIds.filter((id) => inProfile.includes(id)) : inProfile;
           if (accountIds.length === 0) return { threads: [] };
         }
-        const threads = yield* mailbox.threads({
-          mailbox: p.mailbox,
-          ...(accountIds ? { accountIds } : {}),
-          ...(p.label ? { label: p.label } : {}),
-          ...(p.unread_only ? { unreadOnly: true } : {}),
-          ...(p.before === undefined ? {} : { before: p.before }),
-          limit: p.limit,
-        });
+        const threads = yield* mailbox
+          .threads({
+            mailbox: p.mailbox,
+            ...(accountIds ? { accountIds } : {}),
+            ...(p.label ? { label: p.label } : {}),
+            ...(p.unread_only ? { unreadOnly: true } : {}),
+            ...(p.before === undefined ? {} : { before: p.before }),
+            limit: p.limit,
+          })
+          .pipe(Effect.mapError(toToolError));
         const last = threads.at(-1);
         return threads.length === p.limit && last
           ? { threads, next_before: last.date }
@@ -428,7 +430,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
             limit,
           }),
           (threads) => ({ threads }),
-        ),
+        ).pipe(Effect.mapError(toToolError)),
 
       read_thread: ({ id, max_chars }) =>
         mailbox.threadForModel(id, max_chars).pipe(Effect.mapError(toToolError)),

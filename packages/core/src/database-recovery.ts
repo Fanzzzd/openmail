@@ -42,6 +42,7 @@ export const RECOVERY_TABLES = [
   "cache_windows",
   "account_oauth_scopes",
   "filter_restorations",
+  "invite_responses",
   "audit_log",
 ] as const;
 export type CacheResetResult =

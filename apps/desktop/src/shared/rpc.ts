@@ -202,7 +202,11 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("RefreshContacts", { payload: { accountId: Schema.String }, error }),
 
   // Reading
-  Rpc.make("Threads", { payload: { query: ThreadQuery }, success: Schema.Array(ThreadSummary) }),
+  Rpc.make("Threads", {
+    payload: { query: ThreadQuery },
+    success: Schema.Array(ThreadSummary),
+    error,
+  }),
   Rpc.make("Thread", { payload: { id: Schema.String }, success: Schema.Array(Message), error }),
   /** The message's original source from the provider (View Original). */
   Rpc.make("RawMessage", { payload: { id: Schema.String }, success: Schema.String, error }),
@@ -296,11 +300,15 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("Labels", { payload: { accountIds: AccountIds }, success: Schema.Array(Label) }),
   Rpc.make("UnreadCounts", { success: Counts }),
   Rpc.make("UnreadByLabel", {
-    payload: { accountIds: AccountIds, within: Schema.optionalKey(Schema.String) },
+    payload: {
+      accountIds: AccountIds,
+      within: Schema.optionalKey(Schema.String),
+      conversations: Schema.optionalKey(Schema.Boolean),
+    },
     success: Counts,
   }),
 
-  Rpc.make("SearchServer", { payload: { query: ThreadQuery }, success: SearchResult }),
+  Rpc.make("SearchServer", { payload: { query: ThreadQuery }, success: SearchResult, error }),
   Rpc.make("ChangeLabel", { payload: { accountId: Schema.String, change: LabelChange }, error }),
   Rpc.make("ReorderFavorites", {
     payload: {
@@ -434,7 +442,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("ResetFavorites", { payload: { accountIds: Schema.Array(Schema.String) }, error }),
 
   // Changes, all performed as the person at the app
-  Rpc.make("ThreadCount", { payload: { query: ThreadQuery }, success: Schema.Number }),
+  Rpc.make("ThreadCount", { payload: { query: ThreadQuery }, success: Schema.Number, error }),
   Rpc.make("ModifyWithUndo", {
     payload: { threads: Schema.Array(Schema.String), op: MailOp, flat: Schema.Boolean },
     success: BatchResult,
@@ -566,7 +574,13 @@ export class MailRpcs extends RpcGroup.make(
     },
   }),
   Rpc.make("SetDesktopLabels", { payload: { labels: DesktopLabels } }),
-  Rpc.make("CopyMessageLink", { payload: { id: Schema.String } }),
+  Rpc.make("CopyMessageLink", {
+    payload: {
+      id: Schema.String,
+      kind: Schema.optionalKey(Schema.Literals(["message", "thread"])),
+    },
+    error,
+  }),
   Rpc.make("DefaultMailClient", { success: DefaultClientStatus }),
   Rpc.make("BecomeDefaultMailClient", { success: Schema.Boolean }),
   Rpc.make("SetActiveSpace", { payload: { space: Schema.String } }),

@@ -4,7 +4,7 @@ import { readerMessageId, useReaderMessages } from "../reader-selection";
 import { readerSelectedText } from "../quote-selection";
 import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
-import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -50,6 +50,7 @@ import {
 import {
   type ReactNode,
   type RefObject,
+  useContext,
   useCallback,
   useMemo,
   useEffect,
@@ -297,6 +298,8 @@ export function ThreadView({
   const save = useSaveMessage(notify);
   const [activeSelection, setActiveId] = useState(selectedId);
   const activeId = readerMessageId(stored, activeSelection, selectedId, single);
+  const registry = useContext(RegistryContext);
+  const readerDark = useDarkMode();
   const [finding, setFinding] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [findIndex, setFindIndex] = useState(0);
@@ -524,6 +527,24 @@ export function ThreadView({
         e.preventDefault();
         expand(false);
         break;
+      case "showOriginal":
+        e.preventDefault();
+        setRaw(active.id);
+        break;
+      case "loadRemoteContent":
+        e.preventDefault();
+        registry.set(imagesLoadedAtom(active.id), true);
+        break;
+      case "toggleMessageBackground":
+        e.preventDefault();
+        registry.set(
+          messageBackgroundAtom(active.id),
+          (registry.get(messageBackgroundAtom(active.id)) ??
+            (prefs.messageBackground === "theme" && readerDark ? "dark" : "light")) === "dark"
+            ? "light"
+            : "dark",
+        );
+        break;
       case "saveMessage":
         e.preventDefault();
         save(active.id);
@@ -650,6 +671,20 @@ export function ThreadView({
               )
             }
           >{t`Copy link to message`}</MenuItem>
+          <MenuItem
+            onClick={() =>
+              run(
+                withMail((call) =>
+                  call("CopyMessageLink", { id: selectedId, kind: "thread" }),
+                ).pipe(
+                  Effect.matchCause({
+                    onSuccess: () => notify({ text: t`Thread link copied` }),
+                    onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
+                  }),
+                ),
+              )
+            }
+          >{t`Copy link to thread`}</MenuItem>
           <MenuItem
             icon={Printer}
             shortcut={shortcut("print")}
@@ -1003,10 +1038,14 @@ function Expanded({
             onClick={onOpenSingle}
           >{t`Open only this message in a new window`}</MenuItem>
           <MenuSeparator />
-          <MenuItem icon={background === "dark" ? Sun : Moon} onClick={toggleBackground}>
+          <MenuItem
+            icon={background === "dark" ? Sun : Moon}
+            shortcut={shortcut("toggleMessageBackground")}
+            onClick={toggleBackground}
+          >
             {background === "dark" ? t`Light background` : t`Dark background`}
           </MenuItem>
-          <MenuItem icon={Code} onClick={onShowOriginal}>
+          <MenuItem icon={Code} shortcut={shortcut("showOriginal")} onClick={onShowOriginal}>
             {t`Show original`}
           </MenuItem>
           <MenuItem

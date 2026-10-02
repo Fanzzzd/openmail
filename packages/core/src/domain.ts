@@ -159,6 +159,9 @@ export const Message = Schema.Struct({
   ...summaryFields,
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
+  bcc: Schema.optionalKey(Schema.Array(Address)),
+  rfcMessageId: Schema.optionalKey(Schema.String),
+  size: Schema.optionalKey(Schema.Number),
   /** RFC Reply-To targets; absent means unknown cached headers, [] means no Reply-To. */
   replyTo: Schema.optionalKey(Schema.Array(Address)),
   bodyText: Schema.String,
@@ -185,6 +188,9 @@ export const IncomingMessage = Schema.Struct({
   from: Address,
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
+  bcc: Schema.optionalKey(Schema.Array(Address)),
+  rfcMessageId: Schema.optionalKey(Schema.String),
+  size: Schema.optionalKey(Schema.Number),
   replyTo: Schema.optionalKey(Schema.Array(Address)),
   date: Schema.Number,
   snippet: Schema.String,
@@ -245,6 +251,12 @@ export const SearchCondition = Schema.Struct({
   from: Schema.optionalKey(Schema.String),
   to: Schema.optionalKey(Schema.String),
   cc: Schema.optionalKey(Schema.String),
+  bcc: Schema.optionalKey(Schema.String),
+  rfcMessageId: Schema.optionalKey(Schema.String),
+  sizeLarger: Schema.optionalKey(Schema.Number),
+  sizeSmaller: Schema.optionalKey(Schema.Number),
+  drive: Schema.optionalKey(Schema.Boolean),
+  anywhere: Schema.optionalKey(Schema.Boolean),
   subject: Schema.optionalKey(Schema.String),
   labels: Schema.optionalKey(Schema.Array(Schema.String)),
   important: Schema.optionalKey(Schema.Boolean),
@@ -568,6 +580,13 @@ export const TOOLBAR_ACTIONS = [
 ] as const;
 export const ToolbarAction = Schema.Literals(TOOLBAR_ACTIONS);
 export type ToolbarAction = typeof ToolbarAction.Type;
+export const AttachmentSaveFolder = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal("ask") }),
+  Schema.Struct({ kind: Schema.Literal("downloads") }),
+  Schema.Struct({ kind: Schema.Literal("custom"), path: Schema.String }),
+]);
+export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
+
 export const Prefs = Schema.Struct({
   contactPhotos: Schema.Boolean,
   emojiReplacement: Schema.Boolean,
@@ -609,6 +628,8 @@ export const Prefs = Schema.Struct({
   sidebarVisible: Schema.Boolean,
   readerZoom: Schema.Literals(READER_ZOOMS),
   messageBackground: Schema.Literals(MESSAGE_BACKGROUNDS),
+  attachmentSaveFolder: Schema.optionalKey(AttachmentSaveFolder),
+  attachmentOpenFolder: Schema.optionalKey(Schema.Literals(["internal", "downloads"])),
   /** Group messages into conversations. Off lists every message on its own. */
   threadGrouping: Schema.Boolean,
   /** Message order inside an open conversation. */
@@ -654,6 +675,8 @@ export const DEFAULT_PREFS: Prefs = {
   sidebarVisible: true,
   readerZoom: 100,
   messageBackground: "light",
+  attachmentSaveFolder: { kind: "ask" },
+  attachmentOpenFolder: "internal",
   threadGrouping: true,
   threadOrder: "oldest",
   shortcutSet: "mimestream",

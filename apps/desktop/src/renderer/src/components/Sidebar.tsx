@@ -170,9 +170,12 @@ export function Sidebar({
 
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
-  const byLabel = AsyncResult.getOrElse(useAtomValue(unreadByLabelAtom(scope)), () => NO_COUNTS);
+  const byLabel = AsyncResult.getOrElse(
+    useAtomValue(unreadByLabelAtom(scope, undefined, prefs?.threadGrouping !== false)),
+    () => NO_COUNTS,
+  );
   const inInbox = AsyncResult.getOrElse(
-    useAtomValue(unreadByLabelAtom(scope, "INBOX")),
+    useAtomValue(unreadByLabelAtom(scope, "INBOX", prefs?.threadGrouping !== false)),
     () => NO_COUNTS,
   );
   const labelPrefs = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
@@ -564,20 +567,38 @@ export function Sidebar({
                   {id === "inbox" &&
                     hasGmail &&
                     categoriesOpen &&
-                    Object.entries(CATEGORY_NAMES).map(([cat, name]) => {
-                      const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
-                      return (
-                        <Item
-                          key={cat}
-                          indent
-                          active={view.mailbox === "inbox" && view.label?.id === cat}
-                          onClick={() => onView({ ...view, mailbox: "inbox", label: { id: cat } })}
-                          icon={<CatIcon className="size-4 text-blue-400" />}
-                          label={i18n._(name)}
-                          badge={inInbox[cat] ?? 0}
-                        />
-                      );
-                    })}
+                    Object.entries(CATEGORY_NAMES)
+                      .filter(([category]) =>
+                        accounts.some(
+                          (a) =>
+                            a.enabled !== false &&
+                            a.provider === "gmail" &&
+                            (!scope || scope.includes(a.id)) &&
+                            organization.some(
+                              (o) =>
+                                o.accountId === a.id &&
+                                o.categories &&
+                                (o.selectedCategories === undefined ||
+                                  o.selectedCategories.some((c) => c === category)),
+                            ),
+                        ),
+                      )
+                      .map(([cat, name]) => {
+                        const CatIcon = CATEGORY_ICONS[cat] ?? Tag;
+                        return (
+                          <Item
+                            key={cat}
+                            indent
+                            active={view.mailbox === "inbox" && view.label?.id === cat}
+                            onClick={() =>
+                              onView({ ...view, mailbox: "inbox", label: { id: cat } })
+                            }
+                            icon={<CatIcon className="size-4 text-blue-400" />}
+                            label={i18n._(name)}
+                            badge={inInbox[cat] ?? 0}
+                          />
+                        );
+                      })}
                 </div>
               ))}
             </Section>

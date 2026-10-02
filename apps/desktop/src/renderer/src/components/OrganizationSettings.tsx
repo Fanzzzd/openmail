@@ -1,7 +1,7 @@
 import { accountName } from "../format";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LabelChange } from "@openmail/core/schema";
+import { CATEGORIES, type LabelChange } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import type { Account, Label } from "../../../shared/api";
@@ -58,7 +58,14 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
             checked={organization.find((o) => o.accountId === accountId)?.categories ?? true}
             onCheckedChange={(categories) =>
               setOrg({
-                payload: { input: { accountId, categories } },
+                payload: {
+                  input: {
+                    accountId,
+                    categories,
+                    selectedCategories: organization.find((o) => o.accountId === accountId)
+                      ?.selectedCategories ?? [...CATEGORIES],
+                  },
+                },
                 reactivityKeys: [Keys.organization],
               })
             }
@@ -66,6 +73,45 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
           <span>{t`Show Gmail categories`}</span>
         </label>
       )}
+      {account?.provider === "gmail" &&
+        organization.find((o) => o.accountId === accountId)?.categories !== false && (
+          <fieldset className="space-y-2">
+            <legend>{t`Visible categories`}</legend>
+            {CATEGORIES.map((category) => {
+              const selected = organization.find((o) => o.accountId === accountId)
+                ?.selectedCategories ?? [...CATEGORIES];
+              const names = {
+                CATEGORY_PERSONAL: t`Primary`,
+                CATEGORY_SOCIAL: t`Social`,
+                CATEGORY_PROMOTIONS: t`Promotions`,
+                CATEGORY_UPDATES: t`Updates`,
+                CATEGORY_FORUMS: t`Forums`,
+              };
+              return (
+                <label key={category} className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selected.includes(category)}
+                    onCheckedChange={(checked) =>
+                      setOrg({
+                        payload: {
+                          input: {
+                            accountId,
+                            categories: true,
+                            selectedCategories: checked
+                              ? [...selected, category]
+                              : selected.filter((c) => c !== category),
+                          },
+                        },
+                        reactivityKeys: [Keys.organization],
+                      })
+                    }
+                  />
+                  <span>{names[category]}</span>
+                </label>
+              );
+            })}
+          </fieldset>
+        )}
       <button
         type="button"
         onClick={() => setEditing("new")}

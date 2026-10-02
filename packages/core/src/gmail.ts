@@ -35,7 +35,7 @@ import {
   Secrets,
 } from "./services.js";
 
-import { gmailSearch } from "./search.js";
+import { gmailSearch, searchIncludesSpecialFolders } from "./search.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
 import { makeGmailFeatures } from "./gmail-features.js";
 import { makeGmailSettings } from "./gmail-settings.js";
@@ -91,6 +91,7 @@ const GmailMessage = Schema.Struct({
   labelIds: Schema.optionalKey(Schema.Array(Schema.String)),
   snippet: Schema.optionalKey(Schema.String),
   internalDate: Schema.String,
+  sizeEstimate: Schema.optionalKey(Schema.Number),
   payload: GmailPart,
 });
 export type GmailMessage = typeof GmailMessage.Type;
@@ -708,14 +709,7 @@ export const makeGmail: Effect.Effect<
       do {
         const page = yield* get(account.id, MessageList, "/messages", {
           q: gmailSearch(query, labels),
-          ...(/(?:^|\s)(?:in|label):"?(?:spam|trash|anywhere)\b/i.test(query.search ?? "") ||
-          (query.searchScope === "folder" &&
-            (query.mailbox === "spam" ||
-              query.mailbox === "trash" ||
-              query.label === "SPAM" ||
-              query.label === "TRASH"))
-            ? { includeSpamTrash: "true" }
-            : {}),
+          ...(searchIncludesSpecialFolders(query) ? { includeSpamTrash: "true" } : {}),
           maxResults: String(Math.min(500, limit - messages.length)),
           ...(pageToken ? { pageToken } : {}),
         });
@@ -1065,6 +1059,9 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     from,
     to: parseAddressList(headers.get("to")),
     cc: parseAddressList(headers.get("cc")),
+    bcc: parseAddressList(headers.get("bcc")),
+    ...(headers.get("message-id") ? { rfcMessageId: headers.get("message-id") } : {}),
+    ...(raw.sizeEstimate !== undefined ? { size: raw.sizeEstimate } : {}),
     replyTo: parseAddressList(headers.get("reply-to")),
     date: Number(raw.internalDate),
     snippet: decodeEntities(raw.snippet ?? ""),

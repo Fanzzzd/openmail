@@ -75,6 +75,20 @@ const freePath = Effect.fnUntraced(function* (folder: string, name: string) {
   return candidate;
 });
 
+const attachmentFolder = Effect.fnUntraced(function* (m: MailboxService) {
+  const setting = (yield* m.prefs).attachmentSaveFolder ?? { kind: "ask" };
+  if (setting.kind === "ask") return null;
+  const folder = setting.kind === "downloads" ? app.getPath("downloads") : setting.path.trim();
+  if (!path.isAbsolute(folder))
+    return yield* new DeviceError({ message: "Choose an absolute attachment folder path" });
+  yield* Effect.tryPromise({ try: () => mkdir(folder, { recursive: true }), catch: failed });
+  return folder;
+});
+const writeNew = (file: string, data: Uint8Array) =>
+  Effect.tryPromise({ try: () => writeFile(file, data, { flag: "wx" }), catch: failed }).pipe(
+    Effect.andThen(quarantine(file)),
+  );
+
 /** Cancellation happens before fetching MIME or creating any file. */
 export const saveMessage: (
   m: MailboxService,
@@ -115,6 +129,12 @@ export const saveAttachment: (
   const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
   const listed = message?.attachments[index];
   const name = safeFilename(listed?.filename ?? "attachment");
+  const folder = yield* attachmentFolder(m);
+  if (folder) {
+    const content = yield* m.attachment(messageId, index);
+    yield* writeNew(yield* freePath(folder, name), content.data);
+    return true;
+  }
   const options = { defaultPath: path.join(app.getPath("downloads"), name) };
   const choice = yield* Effect.promise(() =>
     parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
@@ -137,15 +157,18 @@ export const saveAllAttachments: (
   const [message] = (yield* m.thread(messageId)).filter((x) => x.id === messageId);
   const count = message?.attachments.length ?? 0;
   if (count === 0) return 0;
-  const options = {
-    defaultPath: app.getPath("downloads"),
-    properties: ["openDirectory" as const, "createDirectory" as const],
-  };
-  const choice = yield* Effect.promise(() =>
-    parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options),
-  );
-  const folder = choice.filePaths[0];
-  if (choice.canceled || !folder) return 0;
+  let folder = yield* attachmentFolder(m);
+  if (!folder) {
+    const options = {
+      defaultPath: app.getPath("downloads"),
+      properties: ["openDirectory" as const, "createDirectory" as const],
+    };
+    const choice = yield* Effect.promise(() =>
+      parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options),
+    );
+    if (choice.canceled || !choice.filePaths[0]) return 0;
+    folder = choice.filePaths[0];
+  }
   const parts = yield* m.attachmentParts(
     messageId,
     Array.from({ length: count }, (_, index) => [index]),
@@ -191,10 +214,14 @@ export const openAttachment: (
       message: `${name} can run code. Save it and open it yourself if you trust it.`,
     });
   }
-  const files = yield* Effect.tryPromise({
-    try: () => attachmentTemp(app).write([content]),
-    catch: failed,
-  });
+  const downloads = (yield* m.prefs).attachmentOpenFolder === "downloads";
+  const files = downloads
+    ? [
+        yield* freePath(app.getPath("downloads"), name).pipe(
+          Effect.tap((file) => writeNew(file, content.data)),
+        ),
+      ]
+    : yield* Effect.tryPromise({ try: () => attachmentTemp(app).write([content]), catch: failed });
   const file = files[0];
   if (!file) return yield* new DeviceError({ message: "No attachment file" });
   yield* quarantine(file);

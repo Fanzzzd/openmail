@@ -133,6 +133,10 @@ function describe(error: unknown): string {
 
 /** Maps a thrown IMAP or SMTP error onto the provider failure types. */
 function failure(accountId: string, host: string, error: unknown): AuthError | ProviderError {
+  if (/STARTTLS|TLS|certificate/i.test(describe(error)))
+    return new ProviderError({
+      message: `${host}: TLS is required before authentication. ${describe(error)}`,
+    });
   if (isAuthFailure(error)) {
     return new AuthError({ accountId, message: `${host} rejected the login: ${describe(error)}` });
   }
@@ -163,13 +167,14 @@ const logout = ({ client }: Session) =>
   );
 
 /** One IMAP session, logged out when the scope closes. */
-function openImap(accountId: string, settings: ImapSettings, password: string) {
+export function openImap(accountId: string, settings: ImapSettings, password: string) {
   const connect = Effect.gen(function* () {
     const client = yield* Effect.sync(() => {
       const c = new ImapFlow({
         host: settings.imapHost,
         port: settings.imapPort,
         secure: settings.imapPort === 993,
+        doSTARTTLS: settings.imapPort !== 993 ? true : undefined,
         auth: { user: settings.username, pass: password },
         clientInfo: CLIENT_INFO,
         logger: false,
@@ -196,7 +201,7 @@ function call<A>(s: Session, f: (client: ImapFlow) => Promise<A>) {
   });
 }
 
-function smtpTransport(settings: ImapSettings, password: string) {
+export function smtpTransport(settings: ImapSettings, password: string) {
   return Effect.acquireRelease(
     Effect.sync(() =>
       createTransport({
@@ -383,6 +388,7 @@ export function toIncoming(
     internalDate?: Date | string | undefined;
     /** Overrides parsed attachments when the source was truncated. */
     attachments?: Attachment[];
+    size?: number;
   },
 ): IncomingMessage {
   const html = parsed.html || "";
@@ -397,6 +403,9 @@ export function toIncoming(
     from: addresses(parsed.from)[0] ?? { name: "", address: "" },
     to: addresses(parsed.to),
     cc: addresses(parsed.cc),
+    bcc: addresses(parsed.bcc),
+    ...(parsed.messageId ? { rfcMessageId: parsed.messageId } : {}),
+    ...(meta.size !== undefined ? { size: meta.size } : {}),
     replyTo: addresses(parsed.replyTo),
     date: Number.isFinite(received) ? received : (parsed.date?.getTime() ?? 0),
     snippet: text.replace(/\s+/g, " ").trim().slice(0, 200),
@@ -642,6 +651,7 @@ const fetchMessages = Effect.fnUntraced(function* (
         label: folder.label,
         flags: m.flags,
         internalDate: m.internalDate,
+        size: heads.find((head) => head.uid === m.uid)?.size,
         ...(large.includes(m.uid) ? { attachments: structureAttachments(m.bodyStructure) } : {}),
       }),
     });

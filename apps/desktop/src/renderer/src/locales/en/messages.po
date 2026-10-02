@@ -153,6 +153,10 @@ msgstr "A label or folder needs a valid name"
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Absolute folder path"
+msgstr "Absolute folder path"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Accept"
 msgstr "Accept"
@@ -308,6 +312,10 @@ msgstr "Added star"
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Added to calendar"
 msgstr "Added to calendar"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Additional labels"
+msgstr "Additional labels"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Address or domain"
@@ -538,6 +546,10 @@ msgstr "Attach the redacted diagnostics shown below"
 msgid "Attached message"
 msgstr "Attached message"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Attachment save folder"
+msgstr "Attachment save folder"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Attachments"
 msgstr "Attachments"
@@ -574,6 +586,10 @@ msgstr "Automatic replies"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Available in the installed macOS app"
 msgstr "Available in the installed macOS app"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Awaiting response"
+msgstr "Awaiting response"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
@@ -723,6 +739,10 @@ msgstr "Cannot build calendar response"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Category"
 msgstr "Category"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Category action"
+msgstr "Category action"
 
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Category names, separated by commas"
@@ -957,6 +977,10 @@ msgstr "Copy address"
 msgid "Copy link to message"
 msgstr "Copy link to message"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy link to thread"
+msgstr "Copy link to thread"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
 msgstr "Copy selected"
@@ -1124,6 +1148,10 @@ msgstr "Current folder"
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
 msgstr "Custom colour"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Custom folder"
+msgstr "Custom folder"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 msgid "Custom hex color"
@@ -1293,6 +1321,10 @@ msgstr "Discard saved rule?"
 msgid "Display name"
 msgstr "Display name"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Does not have words"
+msgstr "Does not have words"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
 msgstr "Don't attach the original message"
@@ -1309,6 +1341,10 @@ msgstr "Download on-device models, ~226 MB"
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Downloading models: {0}%"
 msgstr "Downloading models: {0}%"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Downloads"
+msgstr "Downloads"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Draft"
@@ -1588,6 +1624,10 @@ msgstr "Folder actions"
 msgid "Folder colors are stored on this computer only."
 msgstr "Folder colors are stored on this computer only."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Folder path"
+msgstr "Folder path"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Follow system"
 msgstr "Follow system"
@@ -1606,6 +1646,8 @@ msgstr "Font size"
 msgid "Formatting"
 msgstr "Formatting"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Forums"
@@ -1704,6 +1746,10 @@ msgstr "Group messages into conversations"
 msgid "Has attachment"
 msgstr "Has attachment"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Has words"
+msgstr "Has words"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "Headers"
@@ -1765,6 +1811,10 @@ msgstr "IMAP keywords, separated by commas"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP server"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance action"
+msgstr "Importance action"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/MessageList.tsx
@@ -1844,6 +1894,10 @@ msgstr "Insert variable…"
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Internal folder"
+msgstr "Internal folder"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Internal reply"
 msgstr "Internal reply"
@@ -1859,6 +1913,14 @@ msgstr "Invalid calendar pagination link"
 #: src/renderer/src/errors.ts
 msgid "Invalid message link"
 msgstr "Invalid message link"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation changes"
+msgstr "Invitation changes"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Invitation status in this conversation"
+msgstr "Invitation status in this conversation"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1878,6 +1940,14 @@ msgstr "Justify"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Keep bodies in {0}"
 msgstr "Keep bodies in {0}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep category"
+msgstr "Keep category"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Keep importance"
+msgstr "Keep importance"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
@@ -1943,6 +2013,10 @@ msgstr "Large"
 msgid "Larger text"
 msgstr "Larger text"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Larger than"
+msgstr "Larger than"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
 msgstr "Last 7 days"
@@ -1979,6 +2053,10 @@ msgstr "Link URL"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "Load images"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Load remote content"
+msgstr "Load remote content"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Loading attached message…"
@@ -2029,6 +2107,10 @@ msgstr "Local signatures stay on this Mac. Gmail default signatures are read fro
 msgid "Location"
 msgstr "Location"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Location changed:"
+msgstr "Location changed:"
+
 #: src/renderer/src/errors.ts
 msgid "Lost the connection to the background process."
 msgstr "Lost the connection to the background process."
@@ -2054,11 +2136,13 @@ msgid "Mark all as read"
 msgstr "Mark all as read"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as important"
 msgstr "Mark as important"
 
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Mark as not important"
 msgstr "Mark as not important"
@@ -2155,6 +2239,10 @@ msgstr "Meeting cancelled"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Meeting response"
 msgstr "Meeting response"
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Meeting updated"
+msgstr "Meeting updated"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Mention suggestions"
@@ -2410,6 +2498,10 @@ msgstr "New space"
 msgid "New template"
 msgstr "New template"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "New time:"
+msgstr "New time:"
+
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "New Window"
@@ -2531,6 +2623,7 @@ msgstr "No unread mail in the inbox"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
@@ -2627,6 +2720,10 @@ msgstr "Only the selected messages in this Trash or Spam folder will be permanen
 msgid "Open"
 msgstr "Open"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Open attachments from"
+msgstr "Open attachments from"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "Open email links in a new OpenMail draft."
@@ -2694,6 +2791,10 @@ msgstr "OpenMail stopped unexpectedly"
 #: src/renderer/src/recovery-labels.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
+
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Optional"
+msgstr "Optional"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -2847,10 +2948,16 @@ msgstr "Previous match"
 msgid "Previous thread"
 msgstr "Previous thread"
 
+#: src/renderer/src/components/InviteBanner.tsx
+msgid "Previous time:"
+msgstr "Previous time:"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous window"
 msgstr "Previous window"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Primary"
@@ -2872,6 +2979,8 @@ msgstr "Print message…"
 msgid "Print…"
 msgstr "Print…"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Promotions"
@@ -3311,6 +3420,10 @@ msgstr "Search"
 msgid "Search  /"
 msgstr "Search  /"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Search could not finish:"
+msgstr "Search could not finish:"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Search mail"
 msgstr "Search mail"
@@ -3459,10 +3572,6 @@ msgstr "Server filters and automatic replies are available for Gmail and Outlook
 msgid "Server preview: {count} messages"
 msgstr "Server preview: {count} messages"
 
-#: src/renderer/src/components/MessageList.tsx
-msgid "Server search failed. Local results are available."
-msgstr "Server search failed. Local results are available."
-
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -3548,6 +3657,7 @@ msgid "Show or hide sidebar"
 msgstr "Show or hide sidebar"
 
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Show original"
 msgstr "Show original"
 
@@ -3610,6 +3720,14 @@ msgstr "Signatures"
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size comparison"
+msgstr "Size comparison"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Size in bytes"
+msgstr "Size in bytes"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Small"
 msgstr "Small"
@@ -3618,6 +3736,10 @@ msgstr "Small"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Smaller text"
 msgstr "Smaller text"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Smaller than"
+msgstr "Smaller than"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Smart Lists"
@@ -3642,6 +3764,8 @@ msgstr "Snooze"
 msgid "Snoozed"
 msgstr "Snoozed"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Social"
@@ -3649,6 +3773,10 @@ msgstr "Social"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
+msgstr "Some server predicates were omitted to preserve matches; local filters still apply:"
 
 #: src/renderer/src/errors.ts
 msgid "Something went wrong. Please try again."
@@ -3665,8 +3793,8 @@ msgid "Spam"
 msgstr "Spam"
 
 #: src/renderer/src/components/ReadingSettings.tsx
-msgid "Special folder unread badges"
-msgstr "Special folder unread badges"
+msgid "Special folder badges"
+msgstr "Special folder badges"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "SSL/TLS (usually 465)"
@@ -3948,6 +4076,7 @@ msgstr "This event is no longer available"
 msgid "This invitation cannot be answered by this account"
 msgstr "This invitation cannot be answered by this account"
 
+#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/errors.ts
 msgid "This invitation has a newer update"
 msgstr "This invitation has a newer update"
@@ -3984,6 +4113,10 @@ msgstr "This space has no accounts yet."
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "This space has no accounts yet. <0>Add account</0>"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Thread link copied"
+msgstr "Thread link copied"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Thursday"
 msgstr "Thursday"
@@ -4016,6 +4149,10 @@ msgstr "Today {time}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle list filters"
 msgstr "Toggle list filters"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle message background"
+msgstr "Toggle message background"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Toggle reading pane position"
@@ -4086,6 +4223,10 @@ msgstr "unknown"
 msgid "Unknown label or folder"
 msgstr "Unknown label or folder"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Unknown message sizes are left unfiltered."
+msgstr "Unknown message sizes are left unfiltered."
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Unknown organizer time zone; showing the original time."
 msgstr "Unknown organizer time zone; showing the original time."
@@ -4131,6 +4272,8 @@ msgstr "Update channel"
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Update checks require a signed, installed macOS app and a saved GitHub access token."
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Updates"
@@ -4183,6 +4326,10 @@ msgstr "Username (defaults to the email address)"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "Verifying…"
+
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Visible categories"
+msgstr "Visible categories"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."

@@ -11,7 +11,7 @@ import {
 } from "./attachment-policy.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
-import { parseSearchQuery, semanticRankFusion } from "./search.js";
+import { quoteSearchValue, parseSearchQuery, semanticRankFusion } from "./search.js";
 import { makeIndexer } from "./indexer.js";
 import {
   MediaError,
@@ -22,7 +22,12 @@ import {
 } from "./media.js";
 
 import { createHash } from "node:crypto";
-import { notificationEligible, profileNotificationsActive } from "./system.js";
+import {
+  privateMailLink,
+  parseStableReference,
+  notificationEligible,
+  profileNotificationsActive,
+} from "./system.js";
 
 import {
   Cause,
@@ -184,6 +189,25 @@ export const MailboxLive = (
 
       /** Background work (queue flushes after a draft save) that dies with the layer. */
       const background = yield* FiberSet.make();
+      yield* Effect.gen(function* () {
+        let indexed = false;
+        let ready = false;
+        while (!ready) {
+          const batch = yield* store.backfillWordIndex().pipe(
+            Effect.result,
+            Effect.catchCause((cause) =>
+              Cause.hasInterrupts(cause)
+                ? Effect.failCause(cause)
+                : Effect.succeed({ _tag: "Failure" } as const),
+            ),
+          );
+          if (batch._tag === "Success" && batch.success.processed) indexed = true;
+          ready = batch._tag === "Success" && batch.success.ready;
+          if (!ready) yield* Effect.sleep(batch._tag === "Success" ? "20 millis" : "5 seconds");
+        }
+        if (indexed) yield* changed;
+      }).pipe(Effect.forkScoped);
+
       /** One flush at a time in this process; claims keep other processes off the same op. */
       const flushLock = yield* Semaphore.make(1);
 
@@ -498,9 +522,11 @@ export const MailboxLive = (
             account = yield* store.getAccount(accountId);
             accounts.set(accountId, account);
           }
-          // On folder providers some ops change nothing: `important` has no
-          // equivalent, and removing a label the message is not in moves nothing.
-          const flag = command.op.kind === "read" || command.op.kind === "star";
+          // IMAP importance is read-only; removing an absent folder does nothing.
+          const flag =
+            command.op.kind === "read" ||
+            command.op.kind === "star" ||
+            (command.op.kind === "important" && account.provider === "outlook");
           if (account.provider !== "gmail" && !flag) {
             const labels = yield* store.messageLabels(accountId, providerId);
             if (!folderTarget(command.op, labels)) continue;
@@ -1782,6 +1808,37 @@ export const MailboxLive = (
 
         threads: semanticThreads,
         threadCount: (query) => store.countThreads(query),
+        privateMailLink: (id, kind) =>
+          store.getMessage(id).pipe(Effect.map((message) => privateMailLink(message, kind))),
+        resolveMailLink: (id) =>
+          Effect.gen(function* () {
+            const reference = parseStableReference(id);
+            if (!reference) {
+              const message = yield* store.getMessage(id);
+              if ((yield* store.getAccount(message.accountId)).enabled === false)
+                return yield* new NotFound({ what: "message", id });
+              return id;
+            }
+            const account = yield* store.getAccount(reference.accountId);
+            if (account.enabled === false) return yield* new NotFound({ what: "message", id });
+            const cached = yield* store.findMessageByRfcId(
+              reference.accountId,
+              reference.messageId,
+            );
+            if (cached) return cached;
+
+            const found = yield* providers.get(account.provider).search(account, {
+              mailbox: "all",
+              search: `rfc822msgid:${quoteSearchValue(reference.messageId)}`,
+              limit: 20,
+            });
+            const message = found.messages.find(
+              (m) => m.rfcMessageId?.replace(/^<|>$/g, "") === reference.messageId,
+            );
+            if (!message) return yield* new NotFound({ what: "message", id });
+            yield* store.upsertMessage(account.id, message);
+            return `${account.id}/${message.providerId}`;
+          }),
         thread: (id) => store.getThread(id),
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
           Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),
@@ -1796,7 +1853,8 @@ export const MailboxLive = (
         setImageSender: (entry, allowed) => mutate(store.setImageSender(entry, allowed)),
         labels: (accountIds) => store.listLabels(accountIds),
         unreadCounts: store.unreadCounts,
-        unreadByLabel: (accountIds, within) => store.unreadByLabel(accountIds, within),
+        unreadByLabel: (accountIds, within, conversations) =>
+          store.unreadByLabel(accountIds, within, conversations),
 
         profiles: store.listProfiles,
         createProfile: (input) => mutate(store.createProfile(input)),

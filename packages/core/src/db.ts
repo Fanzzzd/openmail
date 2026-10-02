@@ -639,6 +639,57 @@ export const MIGRATIONS: readonly string[] = [
       json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
       WHERE value IN ('SENT','SPAM','TRASH','DRAFT')) AND m.id=new.id;
   END;`,
+  // Migration 24: word search, stable message identity and per-account categories.
+  `ALTER TABLE messages ADD COLUMN bcc_json TEXT NOT NULL DEFAULT '[]';
+   ALTER TABLE messages ADD COLUMN rfc_message_id TEXT;
+   ALTER TABLE messages ADD COLUMN message_size INTEGER;
+   CREATE INDEX messages_rfc_id ON messages(account_id,rfc_message_id);
+   ALTER TABLE account_organization ADD COLUMN selected_categories TEXT;
+   CREATE TABLE invite_responses (account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, uid TEXT NOT NULL, organizer TEXT NOT NULL, recurrence_id TEXT NOT NULL, record_json TEXT NOT NULL, PRIMARY KEY(account_id,uid,organizer,recurrence_id));
+   DROP TRIGGER messages_au;
+   CREATE TRIGGER messages_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages WHEN old.subject IS NOT new.subject OR old.from_name IS NOT new.from_name OR old.from_addr IS NOT new.from_addr OR old.body_text IS NOT new.body_text BEGIN
+    INSERT INTO messages_fts(messages_fts,rowid,subject,from_name,from_addr,body_text)
+    VALUES ('delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text);
+    INSERT INTO messages_fts(rowid,subject,from_name,from_addr,body_text)
+    VALUES (new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+   END;
+   DROP TRIGGER derived_au;
+   CREATE TRIGGER derived_au AFTER UPDATE ON derived_chunks WHEN old.text IS NOT new.text BEGIN
+    INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
+    INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
+   END;
+   CREATE TABLE search_word_index (kind TEXT PRIMARY KEY, cursor INTEGER NOT NULL DEFAULT 0, end_rowid INTEGER NOT NULL, ready INTEGER NOT NULL DEFAULT 0);
+   CREATE TABLE search_word_rows (kind TEXT NOT NULL, row_id INTEGER NOT NULL, PRIMARY KEY(kind,row_id));
+   INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'messages',COALESCE(MAX(rowid),0),CASE WHEN MAX(rowid) IS NULL THEN 1 ELSE 0 END FROM messages;
+   CREATE VIRTUAL TABLE messages_words USING fts5(subject,from_name,from_addr,body_text,content='messages',content_rowid='rowid',tokenize='unicode61');
+   CREATE TRIGGER messages_words_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO messages_words(rowid,subject,from_name,from_addr,body_text) VALUES(new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+     INSERT INTO search_word_rows(kind,row_id) VALUES('messages',new.rowid);
+   END;
+   CREATE TRIGGER messages_words_ad AFTER DELETE ON messages WHEN EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid) BEGIN
+     INSERT INTO messages_words(messages_words,rowid,subject,from_name,from_addr,body_text) VALUES('delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text);
+     DELETE FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid;
+   END;
+   CREATE TRIGGER messages_words_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages WHEN old.subject IS NOT new.subject OR old.from_name IS NOT new.from_name OR old.from_addr IS NOT new.from_addr OR old.body_text IS NOT new.body_text BEGIN
+     INSERT INTO messages_words(messages_words,rowid,subject,from_name,from_addr,body_text) SELECT 'delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text WHERE EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid);
+     INSERT INTO messages_words(rowid,subject,from_name,from_addr,body_text) VALUES(new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+     INSERT INTO search_word_rows(kind,row_id) SELECT 'messages',new.rowid WHERE NOT EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=new.rowid);
+   END;
+   INSERT INTO search_word_index(kind,end_rowid,ready) SELECT 'derived',COALESCE(MAX(id),0),CASE WHEN MAX(id) IS NULL THEN 1 ELSE 0 END FROM derived_chunks;
+   CREATE VIRTUAL TABLE derived_words USING fts5(text,content='derived_chunks',content_rowid='id',tokenize='unicode61');
+   CREATE TRIGGER derived_words_ai AFTER INSERT ON derived_chunks BEGIN
+     INSERT INTO derived_words(rowid,text) VALUES(new.id,new.text);
+     INSERT INTO search_word_rows(kind,row_id) VALUES('derived',new.id);
+   END;
+   CREATE TRIGGER derived_words_ad AFTER DELETE ON derived_chunks WHEN EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=old.id) BEGIN
+     INSERT INTO derived_words(derived_words,rowid,text) VALUES('delete',old.id,old.text);
+     DELETE FROM search_word_rows WHERE kind='derived' AND row_id=old.id;
+   END;
+   CREATE TRIGGER derived_words_au AFTER UPDATE OF text ON derived_chunks WHEN old.text IS NOT new.text BEGIN
+     INSERT INTO derived_words(derived_words,rowid,text) SELECT 'delete',old.id,old.text WHERE EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=old.id);
+     INSERT INTO derived_words(rowid,text) VALUES(new.id,new.text);
+     INSERT INTO search_word_rows(kind,row_id) SELECT 'derived',new.id WHERE NOT EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=new.id);
+   END;`,
 ];
 
 /**

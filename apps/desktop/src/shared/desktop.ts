@@ -8,7 +8,10 @@ export const DesktopEvent = Schema.Union([
   Schema.TaggedStruct("ComposeClose", {}),
   Schema.TaggedStruct("PopOutDraft", { id: Schema.String }),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
-  Schema.TaggedStruct("OpenThread", { id: Schema.String }),
+  Schema.TaggedStruct("OpenThread", {
+    id: Schema.String,
+    single: Schema.optionalKey(Schema.Boolean),
+  }),
   Schema.TaggedStruct("Compose", { draft: MailtoDraft }),
   Schema.TaggedStruct("Search", { query: Schema.String }),
   Schema.TaggedStruct("Command", {

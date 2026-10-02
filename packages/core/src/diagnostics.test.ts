@@ -475,12 +475,18 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "mailed_addresses",
     "pending_notifications",
     "notification_buttons",
+    "messages_words",
+    "derived_words",
+    "search_word_index",
+    "search_word_rows",
   ]);
   try {
     for (const row of db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()) {
       if (
         typeof row.name !== "string" ||
-        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts)/.test(row.name)
+        /^(?:sqlite_|messages_fts|derived_fts|contact_candidates_fts|messages_words_|derived_words_)/.test(
+          row.name,
+        )
       )
         continue;
       expect([...RECOVERY_TABLES, ...cache]).toContain(row.name);

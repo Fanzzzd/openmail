@@ -1,4 +1,4 @@
-import { applyOpToLabels, parseSearchQuery } from "@openmail/core/schema";
+import { applyOpToLabels, parseSearchQuery, searchInputError } from "@openmail/core/schema";
 import type { Label, MailOp, Provider, ThreadQuery, ThreadSummary } from "../../../shared/api";
 
 /** Only flags and folder/label membership change in an organization operation. */
@@ -9,6 +9,7 @@ export function leavesList(
   query: ThreadQuery,
   labels: readonly Label[],
 ): boolean {
+  if (searchInputError(query.search ?? "")) return false;
   const after = applyOpToLabels(row.labels, op, provider);
   const parsed = parseSearchQuery(query);
   if (parsed.unreadOnly && !after.includes("UNREAD")) return true;

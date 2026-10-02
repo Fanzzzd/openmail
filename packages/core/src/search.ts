@@ -1,3 +1,4 @@
+import { InvalidInput } from "./errors.js";
 import type {
   Address,
   Attachment,
@@ -15,6 +16,14 @@ export const SEARCH_OPERATORS = [
   "from:",
   "to:",
   "cc:",
+  "bcc:",
+  "has:drive",
+  "category:",
+  "rfc822msgid:",
+  "older_than:",
+  "newer_than:",
+  "larger:",
+  "smaller:",
   "subject:",
   "in:",
   "label:",
@@ -53,6 +62,12 @@ export function searchFieldParts(value: string): {
   pending: string;
 } {
   const words = searchWords(value);
+  if (hasSearchExpression(value))
+    return {
+      chips: [],
+      text: value.trimEnd(),
+      pending: /\s$/.test(value) ? "" : (words.at(-1) ?? ""),
+    };
   const complete = /\s$/.test(value) && completeQuotes(value);
   const pending = complete ? "" : (words.at(-1) ?? "");
   const finished = pending ? words.slice(0, -1) : words;
@@ -111,7 +126,12 @@ function gmailAttachmentType(type: AttachmentType, negated = false): string {
   const terms = ATTACHMENT_TYPES[type].extensions.map(
     (extension) => `${negated ? "-" : ""}filename:${extension}`,
   );
-  return negated ? terms.join(" ") : `has:attachment {${terms.join(" ")}}`;
+  const attachment = negated ? terms.join(" ") : `has:attachment {${terms.join(" ")}}`;
+  return ["document", "spreadsheet", "presentation"].includes(type)
+    ? negated
+      ? `${attachment} -has:${type}`
+      : `(${attachment} OR has:${type})`
+    : attachment;
 }
 
 /** A single quoted operator prevents provider-controlled addresses injecting search terms. */
@@ -119,6 +139,9 @@ export const senderSearchQuery = (address: string): string => `from:${quoteSearc
 
 /** Invalid/incomplete operators stay searchable text while the person is typing. */
 export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
+  const invalid = searchInputError(query.search ?? "");
+  if (invalid) throw invalid;
+  if (hasSearchExpression(query.search ?? "")) return query;
   const criteria: { -readonly [K in keyof SearchCriteria]: SearchCriteria[K] } = {
     ...query.criteria,
   };
@@ -126,6 +149,7 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
   let unread = query.unreadOnly;
   let starred = query.starredOnly;
   for (const word of searchWords(query.search ?? "")) {
+    if (ftsSearchTerm(word.replace(/^-/, "")) === null) continue;
     if (word.startsWith("-") && !word.startsWith("--")) {
       const parsed = parseSearchQuery({ search: word.slice(1) });
       if (
@@ -162,6 +186,36 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
       case "to":
         criteria.to = value;
         break;
+      case "bcc":
+        criteria.bcc = value;
+        break;
+      case "rfc822msgid":
+        criteria.rfcMessageId = value;
+        break;
+      case "category": {
+        const category = value.toUpperCase() === "PRIMARY" ? "PERSONAL" : value.toUpperCase();
+        criteria.labels = [...(criteria.labels ?? []), `CATEGORY_${category}`];
+        break;
+      }
+      case "larger":
+      case "size":
+      case "smaller": {
+        const size = parseSearchSize(value);
+        if (size === null) words.push(word);
+        else if (key === "smaller")
+          criteria.sizeSmaller = Math.min(criteria.sizeSmaller ?? size, size);
+        else criteria.sizeLarger = Math.max(criteria.sizeLarger ?? size, size);
+        break;
+      }
+      case "older_than":
+      case "newer_than": {
+        const date = relativeSearchDate(value, Date.now());
+        if (date === null) words.push(word);
+        else if (key === "older_than")
+          criteria.dateBefore = Math.min(criteria.dateBefore ?? date, date);
+        else criteria.dateAfter = Math.max(criteria.dateAfter ?? date, date);
+        break;
+      }
       case "cc":
         criteria.cc = value;
         break;
@@ -176,7 +230,8 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         criteria.filename = value;
         break;
       case "has":
-        if (value === "attachment") criteria.attachment = true;
+        if (value === "drive") criteria.drive = true;
+        else if (value === "attachment") criteria.attachment = true;
         else if (value === "image") criteria.image = true;
         else if (isAttachmentType(value))
           criteria.attachmentTypes = [...(criteria.attachmentTypes ?? []), value];
@@ -184,11 +239,12 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         break;
       case "in":
         if (value === "attachment") criteria.attachmentText = true;
-        else if (value === "anywhere" || value === "all") words.push(word);
+        else if (value === "anywhere" || value === "all") criteria.anywhere = true;
         else criteria.labels = [...(criteria.labels ?? []), searchFolderValue(value)];
         break;
       case "is":
-        if (value === "unread") unread = true;
+        if (value === "read") criteria.unread = false;
+        else if (value === "unread") unread = true;
         else if (value === "starred") starred = true;
         else if (value === "important") criteria.important = true;
         else words.push(word);
@@ -197,8 +253,9 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
       case "after": {
         const date = parseSearchDate(value);
         if (date === null) words.push(word);
-        else if (key === "before") criteria.dateBefore = date;
-        else criteria.dateAfter = date;
+        else if (key === "before")
+          criteria.dateBefore = Math.min(criteria.dateBefore ?? date, date);
+        else criteria.dateAfter = Math.max(criteria.dateAfter ?? date, date);
         break;
       }
       default:
@@ -235,6 +292,19 @@ export function gmailSearch(
   query: ThreadQuery,
   labels: readonly Pick<Label, "id" | "name">[] = [],
 ): string {
+  if (query.search && /[()]/.test(query.search.replace(/"(?:\\.|[^"\\])*(?:"|$)/g, ""))) {
+    const render = (node: SearchExpression): string => {
+      if (node.kind === "term") return gmailSearch({ search: node.value }, labels);
+      if (node.kind === "not") return `-(${render(node.child)})`;
+      return `(${node.children.map(render).join(node.kind === "or" ? " OR " : " ")})`;
+    };
+    return [
+      render(parseSearchExpression(query.search)),
+      gmailSearch({ ...query, search: undefined }, labels),
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
   // Gmail also accepts its advanced q syntax beyond our common chips.
   const words = searchWords(query.search ?? "").flatMap((word) => {
     const type = /^(-?)has:(pdf|image|document|spreadsheet|presentation)$/.exec(word);
@@ -262,6 +332,11 @@ export function gmailSearch(
     return word;
   });
   const c = query.criteria;
+  if (c?.rfcMessageId) words.push(`rfc822msgid:${quoteSearchValue(c.rfcMessageId)}`);
+  if (c?.bcc) words.push(`bcc:${quoteSearchValue(c.bcc)}`);
+  if (c?.sizeLarger !== undefined) words.push(`larger:${c.sizeLarger}`);
+  if (c?.sizeSmaller !== undefined) words.push(`smaller:${c.sizeSmaller}`);
+  if (c?.drive) words.push("has:drive");
   if (c?.from) words.push(`from:${quoteSearchValue(c.from)}`);
   if (c?.cc) words.push(`cc:${quoteSearchValue(c.cc)}`);
   if (c?.to) words.push(`to:${quoteSearchValue(c.to)}`);
@@ -286,12 +361,40 @@ export function gmailSearch(
 
 /** Graph $search uses KQL. Read/star/folder predicates are checked after fetching. */
 export function graphSearch(query: ThreadQuery): string {
+  if (
+    query.search &&
+    (hasSearchExpression(query.search) ||
+      searchWords(query.search).some((word) => word.startsWith("-")))
+  ) {
+    const expression = projectServerSearch(
+      parseSearchExpression(query.search),
+      (value) => {
+        if (serverSearchIgnored({ search: value }, "outlook").length) return null;
+        const parsed = parseSearchQuery({ search: value });
+        // Read and flagged status are checked locally; Graph KQL cannot express them reliably.
+        if (parsed.unreadOnly || parsed.starredOnly || parsed.criteria?.unread !== undefined)
+          return null;
+        return (
+          graphSearch({ ...parsed, search: undefined }) ||
+          (parsed.search ? quoteSearchValue(unquoteSearchValue(parsed.search)) : null)
+        );
+      },
+      (kind, children) =>
+        children.length === 1
+          ? children.join("")
+          : `(${children.join(kind === "and" ? " AND " : " OR ")})`,
+      (child) => `NOT (${child})`,
+    );
+    const extra = graphSearch({ ...query, search: undefined });
+    return [expression.value, extra].filter(Boolean).join(" AND ");
+  }
   const parsed = parseSearchQuery(query);
   const c = parsed.criteria ?? {};
   const terms = searchWords(parsed.search ?? "")
     .map(unquoteSearchValue)
     .map(quoteSearchValue);
   if (c.from) terms.push(`from:${quoteSearchValue(c.from)}`);
+  if (c.bcc) terms.push(`bcc:${quoteSearchValue(c.bcc)}`);
   if (c.cc) terms.push(`cc:${quoteSearchValue(c.cc)}`);
   if (c.to) terms.push(`to:${quoteSearchValue(c.to)}`);
   if (c.subject) terms.push(`subject:${quoteSearchValue(c.subject)}`);
@@ -312,6 +415,12 @@ export function matchesSearch(
   labels: readonly Pick<Label, "id" | "name">[] = [],
 ): boolean {
   const q = parseSearchQuery(raw);
+  if (
+    raw.search !== undefined &&
+    !searchIncludesSpecialFolders(raw) &&
+    message.labels.some((label) => label === "SPAM" || label === "TRASH")
+  )
+    return false;
   const c = q.criteria ?? {};
   if ((q.unreadOnly && !message.isUnread) || (q.starredOnly && !message.isStarred)) return false;
   const filters = q.listFilters;
@@ -330,13 +439,38 @@ export function matchesSearch(
   const scope = searchMailboxLabel(q);
   if (scope && !message.labels.includes(scope)) return false;
   if (!matchesSearchCondition(message, c, labels)) return false;
-  if (c.excluded?.some((condition) => matchesSearchCondition(message, condition, labels)))
+  if (
+    c.excluded?.some(
+      (condition) =>
+        !(
+          message.size === undefined &&
+          (condition.sizeLarger !== undefined || condition.sizeSmaller !== undefined)
+        ) && matchesSearchCondition(message, condition, labels),
+    )
+  )
     return false;
-  return searchWords(q.search ?? "").every((word) =>
-    contains(
-      `${message.subject} ${message.from.name} ${message.from.address} ${message.bodyText}`,
-      unquoteSearchValue(word),
-    ),
+  return evaluateSearchExpression(
+    parseSearchExpression(q.search ?? ""),
+    (word) => {
+      const atom = parseSearchQuery({ search: word });
+      if (!matchesSearchCondition(message, atom.criteria ?? {}, labels)) return false;
+      if ((atom.unreadOnly && !message.isUnread) || (atom.starredOnly && !message.isStarred))
+        return false;
+      if (
+        atom.criteria?.excluded?.some((condition) =>
+          matchesSearchCondition(message, condition, labels),
+        )
+      )
+        return false;
+      return (
+        !atom.search ||
+        wholeWordMatch(
+          `${message.subject} ${message.from.name} ${message.from.address} ${message.bodyText}`,
+          atom.search,
+        )
+      );
+    },
+    (node) => message.size === undefined && expressionHasSize(node),
   );
 }
 
@@ -347,6 +481,18 @@ export function matchesSearchCondition(
 ): boolean {
   if (c.unread !== undefined && c.unread !== message.isUnread) return false;
   if (c.starred !== undefined && c.starred !== message.isStarred) return false;
+  if (c.bcc && !(message.bcc ?? []).some((a) => contains(`${a.address} ${a.name}`, c.bcc ?? "")))
+    return false;
+  if (
+    c.rfcMessageId &&
+    message.rfcMessageId?.replace(/^<|>$/g, "") !== c.rfcMessageId.replace(/^<|>$/g, "")
+  )
+    return false;
+  if (c.sizeLarger !== undefined && message.size !== undefined && message.size <= c.sizeLarger)
+    return false;
+  if (c.sizeSmaller !== undefined && message.size !== undefined && message.size >= c.sizeSmaller)
+    return false;
+  if (c.drive && !hasDriveLink(`${message.bodyHtml} ${message.bodyText}`)) return false;
   if (c.cc && !message.cc.some((a) => contains(`${a.address} ${a.name}`, c.cc ?? ""))) return false;
   if (
     c.image &&
@@ -355,12 +501,16 @@ export function matchesSearchCondition(
   )
     return false;
   if (
-    c.attachmentTypes?.some((type) => !message.attachments.some((a) => attachmentHasType(a, type)))
+    c.attachmentTypes?.some(
+      (type) =>
+        !message.attachments.some((a) => attachmentHasType(a, type)) &&
+        !hasTypedDriveLink(`${message.bodyHtml} ${message.bodyText}`, type),
+    )
   )
     return false;
   if (c.from && !contains(`${message.from.address} ${message.from.name}`, c.from)) return false;
   if (c.to && !message.to.some((a) => contains(`${a.address} ${a.name}`, c.to ?? ""))) return false;
-  if (c.subject && !contains(message.subject, c.subject)) return false;
+  if (c.subject && !wholeWordMatch(message.subject, c.subject)) return false;
   if (c.important && !message.labels.includes("IMPORTANT")) return false;
   if (c.attachment && message.attachments.length === 0) return false;
   if (c.filename && !message.attachments.some((a) => contains(a.filename, c.filename ?? "")))
@@ -386,12 +536,31 @@ export function filterQuery(criteria: FilterCriteria): ThreadQuery {
   return {
     mailbox: "all",
     searchScope: "all",
-    ...(criteria.query.trim() ? { search: criteria.query } : {}),
+    ...([
+      criteria.query.trim(),
+      criteria.hasWords?.trim(),
+      criteria.notWords?.trim() ? `-(${criteria.notWords})` : "",
+    ].filter(Boolean).length
+      ? {
+          search: [
+            criteria.query.trim(),
+            criteria.hasWords?.trim(),
+            criteria.notWords?.trim() ? `-(${criteria.notWords})` : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+        }
+      : {}),
     criteria: {
       ...(criteria.from ? { from: criteria.from } : {}),
       ...(criteria.to ? { to: criteria.to } : {}),
       ...(criteria.subject ? { subject: criteria.subject } : {}),
       ...(criteria.hasAttachment ? { attachment: true } : {}),
+      ...(criteria.size !== undefined
+        ? criteria.sizeComparison === "smaller"
+          ? { sizeSmaller: criteria.size }
+          : { sizeLarger: criteria.size }
+        : {}),
     },
   };
 }
@@ -628,5 +797,389 @@ export function editSearchToken(value: string, index: number): string {
   return serializeSearchField(
     chips.filter((_, i) => i !== index),
     [text, token].filter(Boolean).join(" "),
+  );
+}
+
+export type SearchExpression =
+  | { kind: "term"; value: string }
+  | { kind: "and" | "or"; children: SearchExpression[] }
+  | { kind: "not"; child: SearchExpression };
+
+/** Quoted values are indivisible. Unfinished groups/quotes are accepted while typing. */
+export function parseSearchExpression(input: string): SearchExpression {
+  const invalid = searchInputError(input);
+  if (invalid) throw invalid;
+  const tokens = expressionTokens(input);
+  let index = 0;
+  const group = (depth: number, disjunction = false): SearchExpression => {
+    const alternatives: SearchExpression[] = [];
+    let terms: SearchExpression[] = [];
+    const flush = () => {
+      alternatives.push({ kind: "and", children: terms });
+      terms = [];
+    };
+    while (index < tokens.length) {
+      const token = tokens[index++] ?? "";
+      if (token === ")" || token === "}") break;
+      if (token === "OR" || token === "|") {
+        if (terms.length) flush();
+        continue;
+      }
+      if (token === "AND") continue;
+      let node: SearchExpression;
+      if (/^[a-z_]+:$/i.test(token) && ["(", "{"].includes(tokens[index] ?? "") && depth < 64) {
+        const opening = tokens[index++];
+        const scoped = (value: SearchExpression): SearchExpression => {
+          if (value.kind === "term")
+            return {
+              ...value,
+              value: value.value.includes(":") ? value.value : `${token}${value.value}`,
+            };
+          if (value.kind === "not") return { ...value, child: scoped(value.child) };
+          return { ...value, children: value.children.map(scoped) };
+        };
+        node = scoped(group(depth + 1, opening === "{"));
+      } else if ((token === "(" || token === "{") && depth < 64)
+        node = group(depth + 1, token === "{");
+      else if (token === "-" && ["(", "{"].includes(tokens[index] ?? "") && depth < 64) {
+        const opening = tokens[index++];
+        node = { kind: "not", child: group(depth + 1, opening === "{") };
+      } else
+        node =
+          token.startsWith("-") && token.length > 1
+            ? { kind: "not", child: { kind: "term", value: token.slice(1) } }
+            : { kind: "term", value: token };
+      if (
+        (node.kind === "term" && ftsSearchTerm(node.value) === null) ||
+        (node.kind === "not" &&
+          node.child.kind === "term" &&
+          ftsSearchTerm(node.child.value) === null)
+      )
+        continue;
+      terms.push(node);
+      if (disjunction) flush();
+    }
+    if (terms.length || !alternatives.length) flush();
+    return alternatives.length === 1
+      ? (alternatives[0] ?? { kind: "and", children: [] })
+      : { kind: "or", children: alternatives };
+  };
+  return group(0);
+}
+export function hasSearchExpression(text: string): boolean {
+  const unquoted = text.replace(/"(?:\\.|[^"\\])*(?:"|$)/g, "");
+  if (/[(){}]|(?:^|\s)(?:OR|AND|\|)(?:\s|$)/.test(unquoted)) return true;
+  const fields = searchWords(text)
+    .filter((word) => !word.startsWith("-"))
+    .map((word) => /^([a-z_]+):/i.exec(word)?.[1])
+    .filter(
+      (field) =>
+        field !== undefined &&
+        ["from", "to", "cc", "bcc", "subject", "filename", "rfc822msgid"].includes(field),
+    );
+  return new Set(fields).size !== fields.length;
+}
+export function evaluateSearchExpression(
+  node: SearchExpression,
+  term: (value: string) => boolean,
+  skipNegation: (node: SearchExpression) => boolean = () => false,
+): boolean {
+  switch (node.kind) {
+    case "term":
+      return term(node.value);
+    case "and":
+      return node.children.every((n) => evaluateSearchExpression(n, term, skipNegation));
+    case "or":
+      return node.children.some((n) => evaluateSearchExpression(n, term, skipNegation));
+    case "not":
+      return skipNegation(node.child) || !evaluateSearchExpression(node.child, term, skipNegation);
+    default: {
+      const exhaustive: never = node;
+      return exhaustive;
+    }
+  }
+}
+/** Only a trailing, explicit star enables FTS prefix matching; all syntax is quoted. */
+export function ftsSearchTerm(value: string): string | null {
+  const prefix = value.endsWith("*");
+  const text = unquoteSearchValue(prefix ? value.slice(0, -1) : value);
+  if (!/[\p{L}\p{N}]/u.test(text)) return null;
+  return `"${text.replaceAll('"', '""')}"${prefix ? "*" : ""}`;
+}
+const wordTokens = (text: string): string[] =>
+  text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .match(/[\p{L}\p{N}]+/gu) ?? [];
+export function wholeWordMatch(text: string, value: string): boolean {
+  const literal = unquoteSearchValue(value.endsWith("*") ? value.slice(0, -1) : value);
+  if (ftsSearchTerm(value) === null) return true;
+  if (usesSubstringSearch(literal)) return contains(text, literal);
+  const haystack = wordTokens(text);
+  const prefix = value.endsWith("*");
+  const needle = wordTokens(unquoteSearchValue(prefix ? value.slice(0, -1) : value));
+  return (
+    needle.length > 0 &&
+    haystack.some((_, start) =>
+      needle.every((word, offset) => {
+        const candidate = haystack[start + offset];
+        return prefix && offset === needle.length - 1
+          ? candidate?.startsWith(word)
+          : candidate === word;
+      }),
+    )
+  );
+}
+export function parseSearchSize(value: string): number | null {
+  const match = /^(\d+(?:\.\d+)?)([km]?)$/i.exec(value);
+  if (!match) return null;
+  const amount =
+    Number(match[1]) *
+    (match[2]?.toLowerCase() === "m" ? 1_000_000 : match[2]?.toLowerCase() === "k" ? 1_000 : 1);
+  return Number.isSafeInteger(amount) ? amount : null;
+}
+export function relativeSearchDate(value: string, now: number): number | null {
+  const match = /^(\d+)([dmy])$/i.exec(value);
+  if (!match) return null;
+  const date = new Date(now);
+  const amount = Number(match[1]);
+  switch (match[2]?.toLowerCase()) {
+    case "d":
+      date.setDate(date.getDate() - amount);
+      break;
+    case "m":
+      date.setMonth(date.getMonth() - amount);
+      break;
+    case "y":
+      date.setFullYear(date.getFullYear() - amount);
+      break;
+  }
+  return Number.isFinite(date.getTime()) ? date.getTime() : null;
+}
+export function hasDriveLink(text: string): boolean {
+  return /https:\/\/(?:drive|docs)\.google\.com\//i.test(text);
+}
+
+/** Unsupported server predicates are omitted; fetched candidates still get the local checks. */
+export function serverSearchIgnored(
+  query: ThreadQuery,
+  provider: "gmail" | "outlook" | "imap",
+): string[] {
+  if (provider === "gmail") return [];
+  const supported =
+    provider === "imap"
+      ? new Set([
+          "from",
+          "to",
+          "cc",
+          "bcc",
+          "subject",
+          "before",
+          "after",
+          "older_than",
+          "newer_than",
+          "larger",
+          "smaller",
+          "size",
+          "rfc822msgid",
+          "is",
+        ])
+      : new Set([
+          "from",
+          "to",
+          "cc",
+          "bcc",
+          "subject",
+          "before",
+          "after",
+          "older_than",
+          "newer_than",
+          "is",
+          "has",
+          "filename",
+        ]);
+  if (provider === "outlook" && !hasSearchExpression(query.search ?? ""))
+    supported.add("rfc822msgid");
+  const ignored: string[] = [];
+  const supportedTerm = (term: string): boolean => {
+    const match = /^([\w]+):(.+)$/.exec(term);
+    if (!match) return true;
+    const key = match[1]?.toLowerCase() ?? "";
+    const value = unquoteSearchValue(match[2] ?? "");
+    return (
+      supported.has(key) &&
+      !(key === "has" && value !== "attachment") &&
+      !(
+        key === "is" &&
+        !(
+          provider === "outlook" ? ["important"] : ["important", "unread", "read", "starred"]
+        ).includes(value)
+      )
+    );
+  };
+  const projection = (node: SearchExpression) =>
+    projectServerSearch(
+      node,
+      (term) => (supportedTerm(term) ? [term] : null),
+      (_kind, children) => children.flat(),
+      (child) => child,
+    );
+  const visit = (node: SearchExpression, dropped = false): void => {
+    if (node.kind === "term") {
+      if (!supportedTerm(node.value) || (dropped && /^\w+:/.test(node.value)))
+        ignored.push(node.value);
+    } else if (node.kind === "not") visit(node.child, dropped || !projection(node.child).exact);
+    else {
+      const omitted = dropped || (node.kind === "or" && projection(node).value === null);
+      for (const child of node.children) visit(child, omitted);
+    }
+  };
+  visit(parseSearchExpression(query.search ?? ""));
+  return [...new Set(ignored)];
+}
+
+/** A partial AND is a safe superset, but its negation would be an unsafe subset. */
+export function projectServerSearch<T>(
+  node: SearchExpression,
+  term: (value: string) => T | null,
+  combine: (kind: "and" | "or", children: T[]) => T,
+  negate: (child: T) => T,
+): { value: T | null; exact: boolean } {
+  if (node.kind === "term") {
+    const value = term(node.value);
+    return { value, exact: value !== null };
+  }
+  if (node.kind === "not") {
+    const child = projectServerSearch(node.child, term, combine, negate);
+    return child.exact && child.value !== null
+      ? { value: negate(child.value), exact: true }
+      : { value: null, exact: false };
+  }
+  const children = node.children.map((child) => projectServerSearch(child, term, combine, negate));
+  const exact = children.every((child) => child.exact);
+  if (node.kind === "or" && children.some((child) => child.value === null))
+    return { value: null, exact: false };
+  const supported = children.flatMap((child) => (child.value === null ? [] : [child.value]));
+  return { value: supported.length ? combine(node.kind, supported) : null, exact };
+}
+
+export const MAX_SEARCH_TERMS = 256;
+const expressionTokens = (input: string): string[] =>
+  input.match(/-?(?:[^\s(){}"]|"(?:\\.|[^"\\])*(?:"|$))+|[(){}]|-(?=[({])/g) ?? [];
+/** Used at Effect and UI boundaries before invoking the synchronous parser. */
+export function searchInputError(input: string): InvalidInput | null {
+  let terms = 0;
+  let depth = 0;
+  for (const token of expressionTokens(input)) {
+    if (token === "(" || token === "{") depth++;
+    else if (token === ")" || token === "}") depth = Math.max(0, depth - 1);
+    else if (!["OR", "AND", "|", "-"].includes(token)) terms++;
+    if (terms > MAX_SEARCH_TERMS)
+      return new InvalidInput({
+        message: `Search supports at most ${MAX_SEARCH_TERMS} terms. Narrow your query.`,
+      });
+    if (depth > 32)
+      return new InvalidInput({
+        message: "Search groups are nested too deeply. Simplify your query.",
+      });
+  }
+  return null;
+}
+/** Scripts normally written without spaces retain the existing substring search. */
+export const usesSubstringSearch = (text: string): boolean =>
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}\p{Script=Tibetan}\p{Script=Bopomofo}]/u.test(
+    text,
+  );
+
+export function searchIncludesSpecialFolders(query: ThreadQuery): boolean {
+  if (
+    query.searchScope === "folder" &&
+    (["spam", "trash"].includes(query.mailbox ?? "") ||
+      ["SPAM", "TRASH"].includes(query.label ?? ""))
+  )
+    return true;
+  if (
+    query.criteria?.anywhere ||
+    query.criteria?.labels?.some((label) => ["SPAM", "TRASH"].includes(label))
+  )
+    return true;
+  return expressionIncludesSpecialFolders(parseSearchExpression(query.search ?? ""));
+}
+
+export function typedDrivePath(type: AttachmentType): string | null {
+  switch (type) {
+    case "document":
+      return "document";
+    case "spreadsheet":
+      return "spreadsheets";
+    case "presentation":
+      return "presentation";
+    case "image":
+    case "pdf":
+      return null;
+    default: {
+      const exhaustive: never = type;
+      return exhaustive;
+    }
+  }
+}
+export function hasTypedDriveLink(text: string, type: AttachmentType): boolean {
+  const path = typedDrivePath(type);
+  return path !== null && text.toLowerCase().includes(`https://docs.google.com/${path}/`);
+}
+
+function expressionIncludesSpecialFolders(node: SearchExpression): boolean {
+  if (node.kind === "not") return false;
+  if (node.kind === "term") {
+    const q = parseSearchQuery({ search: node.value });
+    return (
+      q.criteria?.anywhere === true ||
+      (q.criteria?.labels?.some((label) => ["SPAM", "TRASH"].includes(label)) ?? false)
+    );
+  }
+  return node.children.some(expressionIncludesSpecialFolders);
+}
+
+export function expressionHasSize(node: SearchExpression): boolean {
+  if (node.kind === "term") {
+    const criteria = parseSearchQuery({ search: node.value }).criteria;
+    return criteria?.sizeLarger !== undefined || criteria?.sizeSmaller !== undefined;
+  }
+  return node.kind === "not"
+    ? expressionHasSize(node.child)
+    : node.children.some(expressionHasSize);
+}
+
+const searchConditionTerms = (condition: SearchCondition): number =>
+  Object.values(condition).reduce<number>(
+    (count, value) => count + (Array.isArray(value) ? value.length : 1),
+    0,
+  );
+
+/** Structured criteria share the same total budget as parsed search terms. */
+export function searchQueryError(query: ThreadQuery): InvalidInput | null {
+  const invalid = searchInputError(query.search ?? "");
+  if (invalid) return invalid;
+  const { excluded = [], ...criteria } = query.criteria ?? {};
+  const terms = expressionTokens(query.search ?? "").filter(
+    (token) => !["OR", "AND", "|", "-", "(", ")", "{", "}"].includes(token),
+  ).length;
+  return terms +
+    searchConditionTerms(criteria) +
+    excluded.reduce((count, condition) => count + searchConditionTerms(condition), 0) >
+    MAX_SEARCH_TERMS
+    ? new InvalidInput({
+        message: `Search supports at most ${MAX_SEARCH_TERMS} terms. Narrow your query.`,
+      })
+    : null;
+}
+
+export function searchUsesSize(query: ThreadQuery): boolean {
+  if (searchQueryError(query)) return false;
+  return (
+    query.criteria?.sizeLarger !== undefined ||
+    query.criteria?.sizeSmaller !== undefined ||
+    expressionHasSize(parseSearchExpression(query.search ?? ""))
   );
 }

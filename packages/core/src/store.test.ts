@@ -335,10 +335,10 @@ it("gmail labels stack; folder providers swap the folder", () => {
     applyOpToLabels(["INBOX"], { kind: "label", labelId: "f1", value: true }, "outlook"),
     ["f1"],
   );
-  // Important has no folder equivalent.
+  // Outlook importance changes flags without moving the folder.
   assert.deepStrictEqual(
     applyOpToLabels(["INBOX"], { kind: "important", value: true }, "outlook"),
-    ["INBOX"],
+    ["INBOX", "IMPORTANT"],
   );
   assert.strictEqual(folderTarget({ kind: "label", labelId: "f1", value: false }, ["INBOX"]), null);
   assert.strictEqual(folderTarget({ kind: "label", labelId: "f1", value: false }, ["f1"]), "INBOX");

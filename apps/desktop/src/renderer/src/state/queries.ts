@@ -41,10 +41,14 @@ export const labelsAtom = (accountIds?: readonly string[]) =>
   });
 
 /** Unread count per label id, optionally only for mail that also carries `within`. */
-export const unreadByLabelAtom = (accountIds?: readonly string[], within?: string) =>
+export const unreadByLabelAtom = (
+  accountIds?: readonly string[],
+  within?: string,
+  conversations = false,
+) =>
   MailClient.query(
     "UnreadByLabel",
-    { ...(accountIds ? { accountIds } : {}), ...(within ? { within } : {}) },
+    { ...(accountIds ? { accountIds } : {}), ...(within ? { within } : {}), conversations },
     { reactivityKeys: [Keys.counts], ...cached },
   );
 
@@ -194,7 +198,11 @@ export const indexingProgressAtom = MailClient.query("IndexingProgress", undefin
 export const mediaImageAtom = (chunk: import("../../../shared/api").DerivedChunk) =>
   MailClient.query("MediaImage", { chunk }, { timeToLive: Duration.minutes(2) });
 export const invitationsAtom = (messageId: string) =>
-  MailClient.query("Invitations", { messageId }, { timeToLive: Duration.minutes(10) });
+  MailClient.query(
+    "Invitations",
+    { messageId },
+    { reactivityKeys: [Keys.threads, Keys.audit], timeToLive: Duration.minutes(10) },
+  );
 export const contactSyncAtom = MailClient.query("ContactSync", undefined, {
   reactivityKeys: [Keys.contacts],
   ...always,

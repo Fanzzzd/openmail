@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -253,5 +254,19 @@ it("typing retains application/window accelerators and native edit/close/quit ke
     for (const key of ["c", "v", "x", "a", "z", "w", "q"])
       expect(shortcutAction(set, event(key, { metaKey: true }), true)).toBeNull();
     expect(shortcutAction(set, event("c"), true)).toBeNull();
+  }
+});
+
+it("reader source, remote content, background and filter shortcuts exist in every keymap and suppress repeated opens", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    const base = { metaKey: true, ctrlKey: false, altKey: true, shiftKey: false };
+    assert.strictEqual(shortcutAction(set, { ...base, key: "u" }), "showOriginal");
+    assert.strictEqual(
+      shortcutAction(set, { ...base, key: "r", shiftKey: true }),
+      "loadRemoteContent",
+    );
+    assert.strictEqual(shortcutAction(set, { ...base, key: "b" }), "toggleMessageBackground");
+    assert.strictEqual(shortcutAction(set, { ...base, key: "l" }), "filterUnread");
+    assert.strictEqual(shortcutAction(set, { ...base, key: "u", repeat: true }), null);
   }
 });

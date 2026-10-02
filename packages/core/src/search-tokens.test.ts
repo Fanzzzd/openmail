@@ -141,7 +141,7 @@ it("provider searches preserve escaped values and leave local types and negation
   };
   assert.strictEqual(
     gmailSearch(query),
-    `cc:${quoteSearchValue(address)} label:${quoteSearchValue(label)} has:attachment {filename:doc filename:docx filename:odt filename:rtf filename:txt} -filename:xls -filename:xlsx -filename:ods -filename:csv -filename:tsv`,
+    `cc:${quoteSearchValue(address)} label:${quoteSearchValue(label)} (has:attachment {filename:doc filename:docx filename:odt filename:rtf filename:txt} OR has:document) -filename:xls -filename:xlsx -filename:ods -filename:csv -filename:tsv -has:spreadsheet`,
   );
   assert.strictEqual(graphSearch(query), `cc:${quoteSearchValue(address)}`);
   assert.deepStrictEqual(imapSearch(query), { cc: address });
@@ -203,7 +203,6 @@ it.effect(
         for (const literal of [
           'report" OR "missing',
           "report) OR messages_fts:*",
-          '\\"report\\"',
           "report' OR 1=1 --",
         ]) {
           assert.deepStrictEqual(

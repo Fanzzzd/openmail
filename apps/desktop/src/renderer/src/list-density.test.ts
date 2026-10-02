@@ -57,6 +57,7 @@ it("each density renders its own height, preview lines and attachment indicator"
           searchingServer: false,
           searchTruncated: false,
           searchErrors: [],
+          searchIgnored: [],
           filters: {
             enabled: false,
             unread: false,
@@ -93,5 +94,70 @@ it("each density renders its own height, preview lines and attachment indicator"
     expect(markup.includes("visible.pdf")).toBe(LIST_DENSITIES[density].attachments);
     expect(markup.includes("lucide-paperclip")).toBe(true);
     expect(markup.includes("line-clamp-2")).toBe(density === "expanded");
+  }
+});
+
+it("unknown-size notices only appear for real size conditions, while omitted operators remain visible", () => {
+  state.density = "default";
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const noop = vi.fn();
+  for (const [search, sizeNotice] of [
+    ["label:work", false],
+    ['subject:"larger:1M"', false],
+    ['"smaller:1M"', false],
+    ["larger:1M", true],
+    ["smaller:1M", true],
+    ["-(from:bob larger:1M)", true],
+    [Array.from({ length: 1000 }, () => "larger:1M").join(" OR "), false],
+  ] satisfies [string, boolean][]) {
+    const markup = renderToStaticMarkup(
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(MessageList, {
+          title: "Inbox",
+          threads: [],
+          loading: false,
+          showAccount: false,
+          searching: true,
+          searchingServer: false,
+          searchTruncated: false,
+          searchErrors: [],
+          searchIgnored: ["label:work"],
+          searchQuery: { search },
+          filters: {
+            enabled: false,
+            unread: false,
+            starred: false,
+            important: false,
+            inInbox: false,
+          },
+          inLabel: false,
+          folderActions: null,
+          onFilters: noop,
+          labels: new Map(),
+          selectedId: null,
+          selectedIds: new Set<string>(),
+          listRef: { current: null },
+          selectionSource: "mouse",
+          onSelect: noop,
+          onEndReached: noop,
+          rowActions: {
+            mailbox: "inbox",
+            labels: [],
+            stateOf: () => null,
+            onOp: noop,
+            onSwipeOp: noop,
+            onCompose: noop,
+            onOpenWindow: noop,
+            onSnooze: noop,
+            onFilter: noop,
+          },
+        }),
+      ),
+    );
+    expect(markup.includes("Unknown message sizes are left unfiltered.")).toBe(sizeNotice);
+    expect(markup).toContain("label:work");
+    expect(markup).toContain("Some server predicates were omitted");
   }
 });

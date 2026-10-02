@@ -1,6 +1,6 @@
 import { richComposeBody } from "./compose-body.js";
 import { Effect, Schema, Schedule } from "effect";
-import type { Account } from "./domain.js";
+import { CATEGORIES, type Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
 import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
@@ -23,6 +23,9 @@ const ParsedGmailFilter = Schema.Struct({
       subject: Schema.optionalKey(Schema.String),
       query: Schema.optionalKey(Schema.String),
       hasAttachment: Schema.optionalKey(Schema.Boolean),
+      negatedQuery: Schema.optionalKey(Schema.String),
+      size: Schema.optionalKey(Schema.Number),
+      sizeComparison: Schema.optionalKey(Schema.Literals(["larger", "smaller"])),
     }),
   ),
   action: Schema.optionalKey(
@@ -64,30 +67,56 @@ function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
   const parsed = Schema.decodeUnknownSync(ParsedGmailFilter)(raw);
   const add = parsed.action?.addLabelIds ?? [];
   const remove = parsed.action?.removeLabelIds ?? [];
+  const category = CATEGORIES.find((value) => add.includes(value));
+  const { negatedQuery, ...criteria } = parsed.criteria ?? {};
   const action = {
     archive: remove.includes("INBOX"),
     markRead: remove.includes("UNREAD"),
     star: add.includes("STARRED"),
     trash: add.includes("TRASH"),
-    label: add.find((l) => !["STARRED", "TRASH", "IMPORTANT", "INBOX"].includes(l)) ?? null,
+    label: add.find((l) => l.startsWith("Label_")) ?? null,
+    ...(add.filter((l) => l.startsWith("Label_")).length > 1
+      ? { labels: add.filter((l) => l.startsWith("Label_")).slice(1) }
+      : {}),
+    ...(add.includes("IMPORTANT")
+      ? { important: true }
+      : remove.includes("IMPORTANT")
+        ? { important: false }
+        : {}),
+    ...(category ? { category } : {}),
   };
   const editable =
     filterDestinationsSupported(action, "gmail") &&
+    add.filter((id) => CATEGORIES.some((value) => value === id)).length <= 1 &&
     Object.keys(raw.criteria ?? {}).every((key) =>
-      ["from", "to", "subject", "query", "hasAttachment"].includes(key),
+      [
+        "from",
+        "to",
+        "subject",
+        "query",
+        "hasAttachment",
+        "negatedQuery",
+        "size",
+        "sizeComparison",
+      ].includes(key),
     ) &&
     Object.keys(raw.action ?? {}).every((key) => ["addLabelIds", "removeLabelIds"].includes(key)) &&
-    (parsed.action?.removeLabelIds ?? []).every((id) => ["INBOX", "UNREAD"].includes(id)) &&
-    !(parsed.action?.addLabelIds ?? []).some(
-      (id) => !["STARRED", "TRASH"].includes(id) && !id.startsWith("Label_"),
+    (parsed.action?.removeLabelIds ?? []).every((id) =>
+      ["INBOX", "UNREAD", "IMPORTANT"].includes(id),
     ) &&
-    (parsed.action?.addLabelIds ?? []).filter((id) => !["STARRED", "TRASH"].includes(id)).length <=
-      1;
+    !(parsed.action?.addLabelIds ?? []).some(
+      (id) =>
+        !["STARRED", "TRASH", "IMPORTANT", ...CATEGORIES].includes(id) && !id.startsWith("Label_"),
+    );
   return {
     id: raw.id,
     ...(editable ? {} : { editable: false }),
     name: parsed.criteria?.from || parsed.criteria?.subject || parsed.criteria?.query || raw.id,
-    criteria: { ...EMPTY_FILTER.criteria, ...parsed.criteria },
+    criteria: {
+      ...EMPTY_FILTER.criteria,
+      ...criteria,
+      ...(negatedQuery ? { notWords: negatedQuery } : {}),
+    },
     action,
   };
 }
@@ -137,14 +166,36 @@ export function makeGmailSettings<
     return wrap(
       account,
       write(account.id, "POST", "/settings/filters", {
-        criteria: input.criteria,
+        criteria: {
+          from: input.criteria.from,
+          to: input.criteria.to,
+          subject: input.criteria.subject,
+          hasAttachment: input.criteria.hasAttachment,
+          query: input.criteria.hasWords
+            ? [input.criteria.query, input.criteria.hasWords]
+                .filter(Boolean)
+                .map((q) => `(${q})`)
+                .join(" ")
+            : input.criteria.query,
+          ...(input.criteria.notWords ? { negatedQuery: input.criteria.notWords } : {}),
+          ...(input.criteria.size !== undefined
+            ? { size: input.criteria.size, sizeComparison: input.criteria.sizeComparison }
+            : {}),
+        },
         action: {
           addLabelIds: [
             ...(a.star ? ["STARRED"] : []),
             ...(a.trash ? ["TRASH"] : []),
             ...(a.label ? [a.label] : []),
+            ...(a.labels ?? []),
+            ...(a.important === true ? ["IMPORTANT"] : []),
+            ...(a.category ? [a.category] : []),
           ],
-          removeLabelIds: [...(a.archive ? ["INBOX"] : []), ...(a.markRead ? ["UNREAD"] : [])],
+          removeLabelIds: [
+            ...(a.archive ? ["INBOX"] : []),
+            ...(a.markRead ? ["UNREAD"] : []),
+            ...(a.important === false ? ["IMPORTANT"] : []),
+          ],
         },
       }).pipe(
         Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),

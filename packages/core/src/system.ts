@@ -18,7 +18,9 @@ export const MailtoDraft = Schema.Struct({
   body: Schema.String,
 });
 export type MailtoDraft = typeof MailtoDraft.Type;
-export type AppLink = { kind: "compose"; draft: MailtoDraft } | { kind: "message"; id: string };
+export type AppLink =
+  | { kind: "compose"; draft: MailtoDraft }
+  | { kind: "message"; id: string; single?: boolean };
 
 function hasHeaderControl(value: string): boolean {
   for (let i = 0; i < value.length; i++) {
@@ -34,12 +36,28 @@ export function parseAppLink(raw: string): AppLink | null {
   try {
     const url = new URL(raw);
     if (url.protocol === "openmail:") {
-      if (url.host !== "message" || url.username || url.password || url.search || url.hash)
+      if (
+        !["message", "thread", "single"].includes(url.host) ||
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash
+      )
         return null;
       const encoded = url.pathname.slice(1);
       if (!encoded || encoded.includes("/")) return null;
       const id = decodeURIComponent(encoded);
-      return id && !hasHeaderControl(id) ? { kind: "message", id } : null;
+      return id && !hasHeaderControl(id)
+        ? {
+            kind: "message",
+            id,
+            ...(url.host === "thread"
+              ? { single: false }
+              : url.host === "single" || id.startsWith("rfc:")
+                ? { single: true }
+                : {}),
+          }
+        : null;
     }
     if (url.protocol !== "mailto:" || url.host || url.hash) return null;
     // URLSearchParams treats '+' as space. RFC 6068 uses percent encoding instead.
@@ -59,6 +77,30 @@ export function parseAppLink(raw: string): AppLink | null {
 }
 
 export const messageLink = (id: string) => `openmail://message/${encodeURIComponent(id)}`;
+
+const StableReference = Schema.Tuple([Schema.String, Schema.String]);
+export function stableReference(
+  message: Pick<Message, "id" | "accountId" | "rfcMessageId">,
+): string {
+  return message.rfcMessageId
+    ? `rfc:${JSON.stringify([message.accountId, message.rfcMessageId.replace(/^<|>$/g, "")])}`
+    : message.id;
+}
+export function parseStableReference(id: string): { accountId: string; messageId: string } | null {
+  if (!id.startsWith("rfc:")) return null;
+  const parsed = Schema.decodeUnknownOption(Schema.fromJsonString(StableReference))(id.slice(4));
+  if (parsed._tag === "None") return null;
+  const [accountId, messageId] = parsed.value;
+  return accountId && messageId && !hasHeaderControl(accountId + messageId)
+    ? { accountId, messageId }
+    : null;
+}
+export function privateMailLink(
+  message: Pick<Message, "id" | "accountId" | "rfcMessageId">,
+  kind: "message" | "thread",
+): string {
+  return `openmail://${kind === "message" ? "single" : "thread"}/${encodeURIComponent(stableReference(message))}`;
+}
 
 export function inQuietHours(hours: QuietHours | undefined, now: Date): boolean {
   if (!hours?.enabled) return false;

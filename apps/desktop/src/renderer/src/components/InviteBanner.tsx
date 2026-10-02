@@ -120,12 +120,17 @@ function Invitation({
   const attendee = invite.attendees.find(
     (a) => a.address.toLowerCase() === attendeeAddress.toLowerCase(),
   );
-  const canRespond = inviteCanRespond(
-    invite,
-    email,
-    provider,
-    invite.responseAddress ? [invite.responseAddress.address] : [],
-  );
+  const current =
+    !invite.threadStatus?.cancelled &&
+    (invite.threadStatus?.sequence ?? invite.sequence) <= invite.sequence;
+  const canRespond =
+    current &&
+    inviteCanRespond(
+      invite,
+      email,
+      provider,
+      invite.responseAddress ? [invite.responseAddress.address] : [],
+    );
   const recipient = provider === "imap" ? invite.organizer?.address : null;
   const error = result._tag === "Failure" ? Cause.findErrorOption(result.cause) : null;
   const missing = error?._tag === "Some" && error.value._tag === "FeatureScopeMissing";
@@ -156,6 +161,49 @@ function Invitation({
           {formatCalendarRange(invite, i18n.locale)}
           {invite.start.kind === "date" && <> · {t`All day`}</>}
         </p>
+      )}
+      {invite.previous && (
+        <div className="space-y-1" aria-label={t`Invitation changes`}>
+          <p className="font-medium">
+            <Trans>Meeting updated</Trans>
+          </p>
+          <p>
+            <Trans>Previous time:</Trans> {formatCalendarRange(invite.previous, i18n.locale)}
+          </p>
+          <p>
+            <Trans>New time:</Trans> {formatCalendarRange(invite, i18n.locale)}
+          </p>
+          {invite.previous.location !== invite.location && (
+            <p>
+              <Trans>Location changed:</Trans> {invite.previous.location || t`None`} →{" "}
+              {invite.location || t`None`}
+            </p>
+          )}
+        </div>
+      )}
+      {invite.threadStatus && (
+        <details>
+          <summary>{t`Invitation status in this conversation`}</summary>
+          {invite.threadStatus.cancelled ? (
+            <p>{t`Meeting cancelled`}</p>
+          ) : invite.threadStatus.sequence > invite.sequence ? (
+            <p>{t`This invitation has a newer update`}</p>
+          ) : null}
+          <ul>
+            {invite.threadStatus.statuses.map((a) => (
+              <li key={a.address}>
+                {a.name || a.address}:{" "}
+                {a.status === "ACCEPTED"
+                  ? t`Accepted`
+                  : a.status === "TENTATIVE"
+                    ? t`Tentative`
+                    : a.status === "DECLINED"
+                      ? t`Declined`
+                      : t`Awaiting response`}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
       {invite.start?.kind === "floating" && (
         <p className="text-neutral-500">
@@ -189,7 +237,7 @@ function Invitation({
               {invite.attendees
                 .map(
                   (a) =>
-                    `${a.name ? `${a.name} <${a.address}>` : a.address}${invite.method === "REPLY" ? ` (${a.status === "ACCEPTED" ? t`Accepted` : a.status === "TENTATIVE" ? t`Tentative` : a.status === "DECLINED" ? t`Declined` : a.status})` : ""}`,
+                    `${a.name ? `${a.name} <${a.address}>` : a.address}${a.optional ? ` (${t`Optional`})` : ""}${invite.method === "REPLY" ? ` (${a.status === "ACCEPTED" ? t`Accepted` : a.status === "TENTATIVE" ? t`Tentative` : a.status === "DECLINED" ? t`Declined` : a.status})` : ""}`,
                 )
                 .join(", ")}
             </dd>

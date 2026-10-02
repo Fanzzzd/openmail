@@ -16,7 +16,13 @@ import {
   type SearchResult,
   type Vacation,
 } from "./organization.js";
-import { filterQuery, mergeSearchResults, parseSearchQuery } from "./search.js";
+import {
+  filterQuery,
+  mergeSearchResults,
+  parseSearchQuery,
+  serverSearchIgnored,
+  searchQueryError,
+} from "./search.js";
 import type { Providers, Store } from "./services.js";
 
 const validateFilter = (input: FilterInput, provider: Provider) => {
@@ -24,10 +30,32 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     return new InvalidInput({ message: "Confirm deletion for a filter with a search query" });
   const c = input.criteria;
   const a = input.action;
-  if (!c.from.trim() && !c.to.trim() && !c.subject.trim() && !c.query.trim() && !c.hasAttachment)
+  if (
+    !c.from.trim() &&
+    !c.to.trim() &&
+    !c.subject.trim() &&
+    !c.query.trim() &&
+    !c.hasAttachment &&
+    !c.hasWords?.trim() &&
+    !c.notWords?.trim() &&
+    c.size === undefined
+  )
     return new InvalidInput({ message: "Add at least one filter condition" });
-  if (!a.archive && !a.markRead && !a.star && !a.trash && !a.label)
+  if (
+    !a.archive &&
+    !a.markRead &&
+    !a.star &&
+    !a.trash &&
+    !a.label &&
+    !a.labels?.length &&
+    a.important === undefined &&
+    !a.category
+  )
     return new InvalidInput({ message: "Choose at least one filter action" });
+  if (c.size !== undefined && (!Number.isSafeInteger(c.size) || c.size < 0 || !c.sizeComparison))
+    return new InvalidInput({ message: "Choose a size in bytes and a comparison" });
+  if (provider === "outlook" && c.size !== undefined && c.size % 1024 !== 0)
+    return new InvalidInput({ message: "Outlook rule sizes must be a multiple of 1024 bytes" });
   if (!filterDestinationsSupported(a, provider))
     return new InvalidInput({ message: "Choose one destination for the filter" });
   return null;
@@ -59,6 +87,8 @@ export function makeOrganizationMailbox(
   const ruleMutation = <A, E>(effect: Effect.Effect<A, E>) =>
     ruleLock.withPermits(1)(mutation(effect));
   const searchServer = Effect.fn("Mailbox.searchServer")(function* (query: ThreadQuery) {
+    const invalid = searchQueryError(query);
+    if (invalid) return yield* invalid;
     const parsed = parseSearchQuery(query);
     const criteria = parsed.criteria;
     if (
@@ -74,8 +104,11 @@ export function makeOrganizationMailbox(
     const pendingBefore = yield* store.listPendingOps;
     const ids: string[] = [];
     const errors: SearchResult["errors"][number][] = [];
+    const ignored: NonNullable<SearchResult["ignored"]>[number][] = [];
     let truncated = false;
     for (const account of accounts) {
+      const operators = serverSearchIgnored(query, account.provider);
+      if (operators.length) ignored.push({ accountId: account.id, operators });
       const result = yield* providers
         .get(account.provider)
         .search(account, query)
@@ -103,6 +136,8 @@ export function makeOrganizationMailbox(
     const local = yield* store.listThreads({ ...query, limit: query.limit ?? 200 });
     const remote = yield* store.listThreads({
       mailbox: "all",
+      ...query,
+      searchScope: "all",
       criteria,
       unreadOnly: parsed.unreadOnly,
       starredOnly: parsed.starredOnly,
@@ -116,6 +151,7 @@ export function makeOrganizationMailbox(
       threads: merged.slice(0, query.limit ?? 200),
       truncated: truncated || merged.length > (query.limit ?? 200),
       errors,
+      ignored,
     } satisfies SearchResult;
   });
   const changeLabelUnlocked = Effect.fn("Mailbox.changeLabel")(function* (
@@ -256,9 +292,11 @@ export function makeOrganizationMailbox(
     const account = yield* store.getAccount(accountId);
     const invalid = validateFilter(input, account.provider);
     if (invalid) return yield* invalid;
+    const labelsForRule = yield* store.listLabels([accountId]);
     if (
-      input.action.label &&
-      !(yield* store.listLabels([accountId])).some((l) => l.id === input.action.label)
+      [input.action.label, ...(input.action.labels ?? [])]
+        .filter(Boolean)
+        .some((id) => !labelsForRule.some((l) => l.id === id))
     )
       return yield* new InvalidInput({ message: "Choose a label or folder from this account" });
     return preview;
@@ -272,9 +310,11 @@ export function makeOrganizationMailbox(
       (account.provider === "outlook" && (input.criteria.query || input.action.star))
     )
       return yield* new InvalidInput({ message: "Unsupported server rule" });
+    const labelsForRule = yield* store.listLabels([accountId]);
     if (
-      input.action.label &&
-      !(yield* store.listLabels([accountId])).some((l) => l.id === input.action.label)
+      [input.action.label, ...(input.action.labels ?? [])]
+        .filter(Boolean)
+        .some((id) => !labelsForRule.some((l) => l.id === id))
     )
       return yield* new InvalidInput({ message: "Choose a label or folder from this account" });
     const query = {
@@ -283,6 +323,8 @@ export function makeOrganizationMailbox(
       flat: true,
       limit: 201,
     };
+    const searchError = searchQueryError(query);
+    if (searchError) return yield* searchError;
     const pending = yield* store.listPendingOps;
     const page = yield* adapter.search(account, query);
     yield* store.transaction(
@@ -437,6 +479,13 @@ export function makeOrganizationMailbox(
           previews.delete(token);
           const ops: MailOp[] = [
             ...(input.action.markRead ? [{ kind: "read", value: true } satisfies MailOp] : []),
+            ...(input.action.important !== undefined
+              ? [{ kind: "important", value: input.action.important } satisfies MailOp]
+              : []),
+            ...[
+              ...(input.action.labels ?? []),
+              ...(input.action.category ? [input.action.category] : []),
+            ].map((labelId): MailOp => ({ kind: "label", labelId, value: true })),
             ...(input.action.star ? [{ kind: "star", value: true } satisfies MailOp] : []),
             ...(input.action.archive ? [{ kind: "archive" } satisfies MailOp] : []),
             ...(input.action.trash ? [{ kind: "trash" } satisfies MailOp] : []),
@@ -578,6 +627,8 @@ export function makeOrganizationMailbox(
         const query = { ...filterQuery(criteria), accountIds: [accountId], flat: true, limit: 200 };
         if (account.provider !== "gmail")
           return (yield* store.listThreads(query)).filter(eligibleForFilter);
+        const searchError = searchQueryError(query);
+        if (searchError) return yield* searchError;
         const pendingBefore = yield* store.listPendingOps;
         const page = yield* adapter.search(account, query);
         yield* store.transaction(

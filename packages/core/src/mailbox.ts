@@ -195,8 +195,10 @@ export class Mailbox extends Context.Service<
     refreshContacts(accountId: string, force?: boolean): Effect.Effect<void, PerformError>;
 
     // Reading
-    threads(q: ThreadQuery): Effect.Effect<ThreadSummary[]>;
+    threads(q: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     /** Local read: no writes or provider requests (CLI/MCP default). */
+    privateMailLink(id: string, kind: "message" | "thread"): Effect.Effect<string, NotFound>;
+    resolveMailLink(id: string): Effect.Effect<string, PerformError>;
     thread(id: string): Effect.Effect<Message[], NotFound>;
     /** Explicit reader hydration. Failed bodies retain their headers. */
     readerThread(id: string): Effect.Effect<Message[], PerformError>;
@@ -234,9 +236,10 @@ export class Mailbox extends Context.Service<
     unreadByLabel(
       accountIds?: readonly string[],
       within?: string,
+      conversations?: boolean,
     ): Effect.Effect<Record<string, number>>;
 
-    searchServer(query: ThreadQuery): Effect.Effect<SearchResult>;
+    searchServer(query: ThreadQuery): Effect.Effect<SearchResult, InvalidInput>;
     changeLabel(accountId: string, change: LabelChange): Effect.Effect<void, PerformError>;
     readonly labelPreferences: Effect.Effect<LabelPreference[]>;
     reorderFavorites(
@@ -332,7 +335,7 @@ export class Mailbox extends Context.Service<
     resetFavorites(accountIds: readonly string[]): Effect.Effect<void, PerformError>;
 
     // Changes. Every one is checked against policy and audited.
-    threadCount(query: ThreadQuery): Effect.Effect<number>;
+    threadCount(query: ThreadQuery): Effect.Effect<number, InvalidInput>;
     perform(command: Command, actor: Actor): Effect.Effect<Outcome, PerformError>;
     /** App-only batch operations with exact per-message undo. */
     modifyWithUndo(

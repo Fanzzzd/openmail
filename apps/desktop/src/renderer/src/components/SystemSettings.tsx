@@ -514,6 +514,9 @@ const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   saveMessage: msg`Save message as EML…`,
   searchSender: msg`Search messages from this sender`,
   openMessageWeb: msg`Open in web mail`,
+  showOriginal: msg`Show original`,
+  loadRemoteContent: msg`Load remote content`,
+  toggleMessageBackground: msg`Toggle message background`,
   send: msg`Send`,
 };
 const ACTIONS = Object.entries(ACTION_NAMES);

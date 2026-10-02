@@ -53,7 +53,7 @@ export function ReadingSettings() {
       </section>
       <section className="space-y-2">
         <h3 className={heading}>
-          <Trans>Special folder unread badges</Trans>
+          <Trans>Special folder badges</Trans>
         </h3>
         {(
           [
@@ -89,6 +89,59 @@ export function ReadingSettings() {
           />
           <span>{t`Show More in sidebar`}</span>
         </label>
+      </section>
+      <section className="space-y-2">
+        <h3 className={heading}>
+          <Trans>Attachment save folder</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Attachment save folder`}
+          value={prefs?.attachmentSaveFolder?.kind ?? "ask"}
+          options={[
+            { value: "ask" as const, label: t`Ask each time` },
+            { value: "downloads" as const, label: t`Downloads` },
+            { value: "custom" as const, label: t`Custom folder` },
+          ]}
+          onValueChange={(kind) =>
+            setPrefs({
+              attachmentSaveFolder:
+                kind === "custom"
+                  ? {
+                      kind,
+                      path:
+                        prefs?.attachmentSaveFolder?.kind === "custom"
+                          ? prefs.attachmentSaveFolder.path
+                          : "",
+                    }
+                  : { kind },
+            })
+          }
+        />
+        {prefs?.attachmentSaveFolder?.kind === "custom" && (
+          <label className="block">
+            <span>{t`Folder path`}</span>
+            <input
+              className="w-full rounded border p-2"
+              placeholder={t`Absolute folder path`}
+              value={prefs.attachmentSaveFolder.path}
+              onChange={(e) =>
+                setPrefs({ attachmentSaveFolder: { kind: "custom", path: e.target.value } })
+              }
+            />
+          </label>
+        )}
+        <h3 className={heading}>
+          <Trans>Open attachments from</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Open attachments from`}
+          value={prefs?.attachmentOpenFolder ?? "internal"}
+          options={[
+            { value: "internal" as const, label: t`Internal folder` },
+            { value: "downloads" as const, label: t`Downloads` },
+          ]}
+          onValueChange={(attachmentOpenFolder) => setPrefs({ attachmentOpenFolder })}
+        />
       </section>
       <section>
         <h3 className={heading}>
