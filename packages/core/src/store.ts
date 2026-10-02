@@ -1,4 +1,5 @@
 import { categoryKey } from "./categories.js";
+import { makeAiStore } from "./store-ai.js";
 import { makeWordIndexStore } from "./store-word-index.js";
 import { makeInviteStatusStore } from "./store-invite-status.js";
 import { attachmentFilename } from "./attachment-filename.js";
@@ -1482,6 +1483,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
 
     return Store.of({
+      ai: makeAiStore(sql),
       rememberNotificationActions: (id, actions) =>
         run(sql`INSERT INTO notification_buttons(message_id,actions_json)
         SELECT id, ${JSON.stringify(actions)} FROM messages WHERE id=${id}

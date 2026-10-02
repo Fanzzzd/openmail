@@ -304,6 +304,13 @@ const Handlers = MailRpcs.toLayer(
       Audit: ({ limit }) => m.audit(limit),
       Proposals: () => m.proposals,
       DecideProposal: ({ id, approve }) => m.decideProposal(id, approve, "app"),
+      AiSettings: () => m.aiSettings,
+      SetAiKey: ({ key }) => m.setAiKey(key),
+      SetAiAccount: ({ input }) => m.setAiAccount(input),
+      SetAiModel: ({ model }) => m.setAiModel(model),
+      AiSummary: ({ id }) => m.aiSummary(id),
+      Summarize: ({ id }) => m.summarize(id),
+      AskAi: ({ input }) => m.askAi(input),
       AgentWriteMode: () => m.agentWriteMode,
       SetAgentWriteMode: ({ mode }) => m.setAgentWriteMode(mode),
 

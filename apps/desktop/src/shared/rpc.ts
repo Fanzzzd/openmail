@@ -38,6 +38,12 @@ import {
   SendAs,
   ServerFilter,
   Vacation,
+  AiSettings,
+  AiAccountSettings,
+  AiModelName,
+  AiSummary,
+  AiEvent,
+  AiQuestion,
   Account,
   AccountSettings,
   AccountPlacement,
@@ -127,6 +133,17 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("FetchOlder", { payload: { query: ThreadQuery }, success: OlderResult, error }),
   Rpc.make("CacheWindows", { success: Schema.Array(CacheWindow) }),
   Rpc.make("SetCacheWindow", { payload: { input: CacheWindowInput }, error }),
+  Rpc.make("AiSettings", { success: AiSettings }),
+  Rpc.make("SetAiKey", { payload: { key: Schema.String }, error }),
+  Rpc.make("SetAiAccount", { payload: { input: AiAccountSettings }, error }),
+  Rpc.make("SetAiModel", { payload: { model: AiModelName } }),
+  Rpc.make("AiSummary", {
+    payload: { id: Schema.String },
+    success: Schema.NullOr(AiSummary),
+    error,
+  }),
+  Rpc.make("Summarize", { payload: { id: Schema.String }, success: AiEvent, stream: true, error }),
+  Rpc.make("AskAi", { payload: { input: AiQuestion }, success: AiEvent, stream: true, error }),
   // Accounts and sign-in
   Rpc.make("ClientSetup", {
     success: Schema.Struct({

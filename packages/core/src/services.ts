@@ -199,6 +199,7 @@ export class Store extends Context.Service<
     /** Runs `effect` in one SQLite transaction. */
     transaction<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
 
+    readonly ai: ReturnType<typeof import("./store-ai.js").makeAiStore>;
     readonly semantics: ReturnType<typeof makeSemanticStore>;
     readonly media: ReturnType<typeof makeMediaStore>;
 

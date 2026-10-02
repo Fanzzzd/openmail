@@ -24,6 +24,7 @@ msgstr "、"
 msgid "(no recipients)"
 msgstr "（未填收件人）"
 
+#: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
@@ -379,6 +380,10 @@ msgstr "AI 草稿"
 msgid "AI permission to change mail"
 msgstr "AI 改动邮件的权限"
 
+#: src/renderer/src/components/AiPanel.tsx
+msgid "AI request failed. Check account permissions and your API key, then try again."
+msgstr "AI 请求失败。请检查账户授权和 API 密钥后重试。"
+
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "AI suggestions"
@@ -445,6 +450,15 @@ msgstr "允许通知"
 msgid "Allow permanent deletion for {email}?"
 msgstr "允许永久删除 {email} 的邮件？"
 
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Allow sending mail text for each selected account in AI settings."
+msgstr "请在 AI 设置中授权所选账户发送邮件文本。"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Allow sending mail text to the model"
+msgstr "允许向模型发送邮件文本"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Allowed"
 msgstr "已允许"
@@ -489,6 +503,10 @@ msgstr "总是引用选中文字"
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "附件在读取时发生变化，请重新添加。"
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Anthropic API key"
+msgstr "Anthropic API 密钥"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
@@ -518,6 +536,14 @@ msgstr "应用到已有邮件"
 msgid "Apply to existing mail?"
 msgstr "应用到已有邮件？"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Approve"
+msgstr "批准"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Approve and edit"
+msgstr "批准并编辑"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Approve suggestion"
 msgstr "确认建议"
@@ -543,6 +569,14 @@ msgstr "归档此邮件"
 #: src/renderer/src/App.tsx
 msgid "Archived"
 msgstr "已归档"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Ask"
+msgstr "提问"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Ask about your mail"
+msgstr "询问邮件内容"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
@@ -613,6 +647,10 @@ msgstr "自动方向"
 msgid "Automatic replies"
 msgstr "自动回复"
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Automatically summarize new mail"
+msgstr "自动摘要新邮件"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Available in the installed macOS app"
 msgstr "需使用已安装的 macOS 应用"
@@ -642,6 +680,7 @@ msgid "Batch actions"
 msgstr "批量操作"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Bcc"
 msgstr "密送"
@@ -679,6 +718,10 @@ msgstr "粗体"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Bug report"
 msgstr "问题报告"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Built-in AI"
+msgstr "内置 AI"
 
 #: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -755,6 +798,7 @@ msgid "Can't reach the mail server right now: {0}"
 msgstr "暂时连不上邮件服务器：{0}"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -797,6 +841,7 @@ msgstr "分类名称，用逗号分隔"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
@@ -1136,6 +1181,12 @@ msgstr "注册失败，请从安装后的 app 重试。"
 msgid "Could not reset the local cache"
 msgstr "无法重置本地缓存"
 
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/components/AiSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Could not save the API key in the system keychain."
+msgstr "无法将 API 密钥存入系统钥匙串。"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
 msgstr "无法复制地址"
@@ -1453,6 +1504,10 @@ msgstr "下载目录"
 msgid "Draft"
 msgstr "草稿"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Draft body"
+msgstr "草稿正文"
+
 #: src/renderer/src/components/DraftOrganization.tsx
 msgid "Draft categories"
 msgstr "草稿分类"
@@ -1594,6 +1649,11 @@ msgstr "请输入签名名称。"
 #: src/renderer/src/errors.ts
 msgid "Enter a single access token"
 msgstr "请输入一个访问令牌"
+
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Enter a single API key."
+msgstr "请输入单个 API 密钥。"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter a template name."
@@ -1763,6 +1823,7 @@ msgstr "论坛"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Forward"
@@ -1804,6 +1865,10 @@ msgstr "生成应用专用密码"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Generate authorization code"
 msgstr "生成授权码"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Generated by {model}"
+msgstr "由 {model} 生成"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Gestures and toolbar"
@@ -2029,6 +2094,11 @@ msgstr "应用内部目录"
 msgid "Internal reply"
 msgstr "内部回复"
 
+#: src/renderer/src/ai-settings-errors.test.ts
+#: src/renderer/src/errors.ts
+msgid "Invalid AI account settings."
+msgstr "AI 账户设置无效。"
+
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
 msgstr "日程时间无效"
@@ -2111,6 +2181,10 @@ msgstr "标签或文件夹"
 #: src/renderer/src/App.tsx
 msgid "Label removed"
 msgstr "已去掉标签"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Label: {name}"
+msgstr "标签：{name}"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
@@ -2261,6 +2335,10 @@ msgstr "和后台的连接出错了。"
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS 使用系统拼写检查器，自动识别语言。"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Mail assistant"
+msgstr "邮件助手"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Mailbox"
@@ -2450,6 +2528,14 @@ msgstr "邮件保留其他标签。"
 msgid "Mimestream"
 msgstr "Mimestream"
 
+#: src/renderer/src/components/Proposals.tsx
+msgid "Mode"
+msgstr "模式"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Model"
+msgstr "模型"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Model download failed. Retrying while idle."
 msgstr "模型下载失败，空闲时重试。"
@@ -2624,6 +2710,7 @@ msgstr "新建标签或文件夹"
 msgid "New mail notifications"
 msgstr "新邮件通知"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -2802,6 +2889,7 @@ msgstr "收件箱没有未读"
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
 #: src/renderer/src/components/InviteBanner.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
@@ -3010,6 +3098,7 @@ msgstr "原始尺寸"
 msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "原附件由 Outlook 保留，无需重新上传。"
 
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Original message"
 msgstr "原始邮件"
@@ -3017,6 +3106,10 @@ msgstr "原始邮件"
 #: src/renderer/src/components/Composer.tsx
 msgid "Original message (.eml)"
 msgstr "原邮件（.eml）"
+
+#: src/renderer/src/components/Proposals.tsx
+msgid "Original message unavailable"
+msgstr "原邮件不可用"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Other"
@@ -3050,6 +3143,10 @@ msgstr "回复主题由 Outlook 决定。"
 #: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook 定时回复须填起止时间"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Output truncated at the token limit. It was not cached."
+msgstr "输出已达到 token 上限，内容被截断，未缓存。"
 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
@@ -3324,6 +3421,10 @@ msgstr "移除当前标签"
 msgid "Remove favorite"
 msgstr "取消收藏"
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Remove key"
+msgstr "移除密钥"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Remove label"
 msgstr "去掉标签"
@@ -3394,12 +3495,14 @@ msgstr "回复和转发"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply"
 msgstr "回复"
 
 #: src/renderer/src/components/InteractionSettings.tsx
+#: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Reply all"
@@ -3482,6 +3585,10 @@ msgstr "重试"
 msgid "Revert"
 msgstr "还原"
 
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Review AI suggestions"
+msgstr "查看 AI 建议"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "检查并发送"
@@ -3514,10 +3621,6 @@ msgstr "向右短滑"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Right to left"
 msgstr "从右到左"
-
-#: src/renderer/src/components/Proposals.tsx
-msgid "Run"
-msgstr "执行"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Runs while idle. Scanned PDF pages, audio and video are not indexed yet."
@@ -3554,6 +3657,10 @@ msgstr "保存为 PDF…"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Save draft"
 msgstr "保存草稿"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "Save key"
+msgstr "保存密钥"
 
 #: src/renderer/src/components/RawMessage.tsx
 #: src/renderer/src/components/Reader.tsx
@@ -3673,6 +3780,10 @@ msgstr "选择 {0}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Select a message"
 msgstr "选择一封邮件"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Select accounts allowed in Settings > AI Access. The assistant searches mail and proposes drafts, labels or archive. You approve changes in AI suggestions."
+msgstr "选择已在设置中授权 AI 访问的账户。助手可搜索邮件，提出草稿、标签或归档建议。修改需在 AI 建议中确认。"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
@@ -4104,6 +4215,10 @@ msgstr "下标"
 #: src/renderer/src/components/Settings.tsx
 msgid "Suggested"
 msgstr "提出建议"
+
+#: src/renderer/src/components/AiPanel.tsx
+msgid "Summarize"
+msgstr "摘要"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Sunday"
@@ -4600,6 +4715,10 @@ msgstr "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这
 #: src/renderer/src/components/Settings.tsx
 msgid "When AI wants to archive, label, or mark as read, it goes into AI suggestions first and runs only after you approve."
 msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你确认后才执行。"
+
+#: src/renderer/src/components/AiSettings.tsx
+msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
+msgstr "授权账户后，问题及选中的邮件文本、主题、收发件地址会使用你的 API 密钥发送给 Anthropic。图片、附件和媒体保留在本机。请求可能产生 API 费用。自动摘要需逐账户开启。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Who"

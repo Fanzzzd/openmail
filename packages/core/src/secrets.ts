@@ -8,6 +8,7 @@ import { Secrets } from "./services.js";
 // loads in Node and Electron. A locked or broken keychain is a defect: no
 // caller can do anything about it but report it.
 const SERVICE = "openmail";
+export const MODEL_KEY = "anthropic-api-key";
 
 export const SecretsKeyring: Layer.Layer<Secrets> = Layer.succeed(
   Secrets,

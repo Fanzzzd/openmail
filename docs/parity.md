@@ -1,5 +1,7 @@
 # Mimestream 功能对齐审计
 
+slice 31 修正（2026-10-03）：内置助手限制为 Gmail 用户标签提议，拒绝系统标签、移除标签和 Outlook/IMAP 文件夹移动；审批显示标签名与完整草稿信息。账户信息最小化，撤销授权清理 AI 派生行，截断输出明确提示且不缓存，快捷键及错误本地化。AI 迁移 26 紧接 main 的真实迁移 25。验证使用 fake providers、fake 模型协议、临时数据库和 Node DOM，未启动 Electron。
+
 审计日期：2026-09-30。共 **284 项：done 235、partial 28、missing 21**。已阅读官方用户指南的 54 个入口、FAQ、完整发布历史和相关发布／安全说明。基准为 macOS 稳定版 Mimestream 1.10.8（2026-09-04）；每项行为均附官方来源。
 
 代码基准：`/Users/fanzhende/code/personal/openmail` 的 main `f0cdbd9`。审计开始时为 `720b706`，期间合入 `41fb23b` 的媒体检索 phase 2 和 `f0cdbd9` 的图标；本表已按最终 main 更新。`slice7-media` 已在 `41fb23b`，不再作为待合并能力。`/Users/fanzhende/orca/workspaces/openmail/slice6-release` 的 HEAD 为 `720b706`，正在重放 `3ad165e`，仍有 rebase 冲突及未提交文件；其能力统一判 partial。证据中 `slice6-release:` 指该工作树，其余路径均相对 main 仓库。

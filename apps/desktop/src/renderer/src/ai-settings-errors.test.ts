@@ -1,0 +1,31 @@
+import { setupI18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { InvalidInput } from "@openmail/core/schema";
+import { expect, it } from "vitest";
+import { errorText } from "./errors";
+
+it("AI settings InvalidInput errors use the selected UI locale", () => {
+  const cases = [
+    { message: msg`Enter a single API key.`, translated: "请输入单个 API 密钥。" },
+    { message: msg`Invalid AI account settings.`, translated: "AI 账户设置无效。" },
+    {
+      message: msg`Could not save the API key in the system keychain.`,
+      translated: "无法将 API 密钥存入系统钥匙串。",
+    },
+    {
+      message: msg`Allow sending mail text for each selected account in AI settings.`,
+      translated: "请在 AI 设置中授权所选账户发送邮件文本。",
+    },
+  ];
+  const i18n = setupI18n({
+    locale: "zh-CN",
+    messages: {
+      "zh-CN": Object.fromEntries(cases.map(({ message, translated }) => [message.id, translated])),
+    },
+  });
+  for (const { message, translated } of cases) {
+    expect(errorText(i18n, new InvalidInput({ message: String(message.message) }))).toBe(
+      translated,
+    );
+  }
+});

@@ -1,3 +1,4 @@
+import { AiSettings } from "./AiSettings";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -157,6 +158,7 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
           <SpellcheckSettings />
         </Tabs.Panel>
         <Tabs.Panel value="ai" className={panel}>
+          <AiSettings accounts={accounts} />
           <AgentPolicy />
         </Tabs.Panel>
         <Tabs.Panel value="log" className={panel}>

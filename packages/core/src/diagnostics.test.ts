@@ -458,6 +458,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
   const cache = new Set([
     "messages",
     "labels",
+    "derived",
     "derived_jobs",
     "derived_chunks",
     "server_contacts",

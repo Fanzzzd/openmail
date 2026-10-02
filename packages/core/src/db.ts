@@ -694,6 +694,19 @@ export const MIGRATIONS: readonly string[] = [
   `CREATE TABLE undo_batches (
     id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at INTEGER NOT NULL
   );`,
+  // 26: third-party AI consent is absent/false for every existing and new account.
+  `CREATE TABLE ai_accounts(account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    allowed INTEGER NOT NULL DEFAULT 0, auto_summaries INTEGER NOT NULL DEFAULT 0);
+   CREATE TABLE ai_config(id INTEGER PRIMARY KEY CHECK(id=1),model TEXT NOT NULL);
+   CREATE TABLE derived(account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    thread_id TEXT NOT NULL,kind TEXT NOT NULL,model TEXT NOT NULL,prompt_version TEXT NOT NULL,
+    input_hash TEXT NOT NULL,text TEXT NOT NULL,PRIMARY KEY(thread_id,kind));
+   CREATE TRIGGER ai_derived_update AFTER UPDATE OF body_text,subject,from_addr,to_json,cc_json,date ON messages WHEN old.body_text IS NOT new.body_text OR old.subject IS NOT new.subject OR old.from_addr IS NOT new.from_addr OR old.to_json IS NOT new.to_json OR old.cc_json IS NOT new.cc_json OR old.date IS NOT new.date BEGIN
+     DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
+   END;
+   CREATE TRIGGER ai_derived_delete AFTER DELETE ON messages BEGIN
+     DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
+   END;`,
 ];
 
 /**

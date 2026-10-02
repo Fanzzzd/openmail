@@ -8,6 +8,7 @@
  * thread, or "thread" for all of them.
  */
 export const Keys = {
+  ai: "ai",
   cache: "cache",
   accounts: "accounts",
   organization: "organization",
@@ -47,6 +48,7 @@ export const threadChangeKeys = (ids: readonly string[]) => [
 
 /** Everything the main process can change behind the app's back. */
 export const MAIL_KEYS = [
+  Keys.ai,
   Keys.cache,
   Keys.accounts,
   Keys.organization,

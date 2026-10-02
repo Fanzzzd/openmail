@@ -58,3 +58,10 @@ export class MailClient extends AtomRpc.Service<MailClient>()("openmail/MailClie
   group: MailRpcs,
   protocol: ElectronProtocol,
 }) {}
+
+/** Key submission uses a short-lived RPC client, without storing its payload in atoms. */
+export const submitAiKey = (key: string) =>
+  Effect.gen(function* () {
+    const client = yield* RpcClient.make(MailRpcs);
+    yield* client.SetAiKey({ key });
+  }).pipe(Effect.provide(ElectronProtocol), Effect.scoped);

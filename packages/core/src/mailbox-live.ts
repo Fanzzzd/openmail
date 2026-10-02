@@ -1,5 +1,8 @@
 import { destination as outlookDestination } from "./outlook.js";
 import { invalidCategoryFolderOp } from "./mail-ops.js";
+import { makeAiMailbox } from "./mailbox-ai.js";
+import { Model, ModelUnavailable } from "./model.js";
+import { modelContext } from "./model-view.js";
 import { ImapIdle } from "./imap-idle.js";
 import { PersistentAttachments } from "./persistent-attachments.js";
 import { AttachmentCache } from "./attachment-cache.js";
@@ -93,7 +96,6 @@ import {
   remoteComposeBody,
   preservedComposeHtml,
 } from "./compose-body.js";
-import { toModelThread } from "./model-view.js";
 import { decide } from "./policy.js";
 import {
   AppConfig,
@@ -174,6 +176,7 @@ export const MailboxLive = (
       const providers = yield* Providers;
       const secrets = yield* Secrets;
       const config = yield* AppConfig;
+      const model = Option.getOrElse(yield* Effect.serviceOption(Model), () => ModelUnavailable);
       const diskAttachments = options.attachmentCacheDirectory
         ? new PersistentAttachments(options.attachmentCacheDirectory)
         : undefined;
@@ -803,7 +806,9 @@ export const MailboxLive = (
                 // stays local until the person saves it from the composer.
                 // Otherwise the app's next flush pushes it, not the agent's process.
                 const push =
-                  actor.kind === "agent" && (yield* store.agentWriteMode(actor.name)) !== "off";
+                  actor.kind === "agent" &&
+                  !(actor.surface === "rule" && actor.name === "openmail-assistant") &&
+                  (yield* store.agentWriteMode(actor.name)) !== "off";
                 if (push) yield* store.enqueueDraftSave(draft.accountId, draft.id);
               }
               yield* store.audit({
@@ -826,6 +831,14 @@ export const MailboxLive = (
         surface: "app" | "cli",
       ) {
         const proposal = yield* store.getProposal(id);
+        if (
+          approve &&
+          surface !== "app" &&
+          proposal.actor.kind === "agent" &&
+          proposal.actor.surface === "rule" &&
+          proposal.actor.name === "openmail-assistant"
+        )
+          return yield* new InvalidInput({ message: "Approve assistant suggestions in the app." });
         if (proposal.status !== "pending") {
           return yield* new InvalidInput({
             message: `Proposal ${id} is already ${proposal.status}.`,
@@ -1832,7 +1845,26 @@ export const MailboxLive = (
 
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
-      return Mailbox.of({
+      let mailbox: Mailbox["Service"];
+      const ai = makeAiMailbox(store, secrets, model, () => mailbox, changed);
+      function thread(id: string): Effect.Effect<Message[], NotFound>;
+      function thread(
+        id: string,
+        view: "model",
+        tokenBudget?: number,
+      ): Effect.Effect<import("./mailbox.js").ModelThread, NotFound>;
+      function thread(id: string, view?: "model", tokenBudget = 6000) {
+        return view === "model"
+          ? Effect.map(store.getThread(id), (messages) => modelContext(messages, tokenBudget))
+          : store.getThread(id);
+      }
+      // Subscribe before returning. Only opted-in auto-summary accounts can call the model.
+      if (options.autoSync)
+        yield* Stream.runForEach(Stream.fromPubSub(pubsub), (event) =>
+          event._tag === "NewMail" ? ai.autoSummaries(event.ids) : Effect.void,
+        ).pipe(Effect.forkScoped);
+      mailbox = Mailbox.of({
+        ...ai,
         setSyncPaused: (paused) =>
           Effect.sync(() => {
             syncPaused = paused;
@@ -1990,9 +2022,9 @@ export const MailboxLive = (
             yield* store.upsertMessage(account.id, message);
             return `${account.id}/${message.providerId}`;
           }),
-        thread: (id) => store.getThread(id),
+        thread,
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>
-          Effect.map(store.getThread(id), (messages) => toModelThread(messages, maxChars)),
+          Effect.map(store.getThread(id), (messages) => modelContext(messages, maxChars)),
         rawMessage,
         rawMessageBytes,
         messageWebUrl,
@@ -2093,5 +2125,6 @@ export const MailboxLive = (
         syncState: Ref.get(state),
         events: Stream.fromPubSub(pubsub),
       });
+      return mailbox;
     }),
   );

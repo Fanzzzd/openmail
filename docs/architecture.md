@@ -182,7 +182,7 @@ SQL、迁移、同步逻辑、策略全部复用。手机端只写这三个适�
 
 ### 派生数据：模型的产出单独存
 
-摘要、分类、待办、embedding 都是派生数据，存在 `derived` 表，按 `(message_id, kind)` 主键。每行带模型名、提示词版本、输入哈希。
+摘要、分类、待办、embedding 都是派生数据，存在 `derived` 表，当前摘要按 `(thread_id, kind)` 主键，账户通过外键关联。每行带模型名、提示词版本、输入哈希。
 
 - 不覆盖 provider 的数据。同步改了邮件，输入哈希变了，派生行作废重算。
 - 换模型或改提示词只需按版本批量重算。
@@ -192,12 +192,21 @@ SQL、迁移、同步逻辑、策略全部复用。手机端只写这三个适�
 
 ```ts
 interface Model {
-  complete(req): Promise<Result>;
-  embed(texts): Promise<number[][]>;
+  stream(req: ModelRequest): Stream<ModelOutput, InvalidInput | ProviderError>;
 }
 ```
 
-适配器：Anthropic（用户自己的 key，默认 `claude-sonnet-5`，存钥匙串）、本地模型、测试用 fake。邮件内容发给第三方模型前要用户按账户开启，默认关闭。
+实现见 `model.ts`：`Model` Effect service、`ModelAnthropic` Layer 和 `FakeModelLayer`。Anthropic 使用 pinned `effect/ai` 的 `LanguageModel` 与 Messages API，默认 `claude-sonnet-5-5`，可选 `claude-opus-5-5`、`claude-haiku-4-5-20251001`。端侧 embedding 仍由现有 `ModelRuntime` 提供，语义检索复用本机索引。
+
+第三方 AI 的设置、隐私与执行边界统一在 `mailbox-ai.ts`：
+
+- 迁移 26 紧接 slice 29 的真实迁移 25，新增 `ai_accounts`、`ai_config`、`derived`。新旧账户发送文本和自动摘要默认关闭，密钥只经 `secrets.ts` 存系统钥匙串；渲染层只查询是否已保存，提交不经过 mutation atom。
+- `thread(id, "model", tokenBudget)` 和 MCP 的 `threadForModel` 共用 `modelContext`：纯文本、去引用和标准签名、保留消息 id，以 UTF-8 字节保守限制 token。图片、附件内容与端侧媒体派生内容不进入第三方模型上下文。邮件以转义 JSON 数据标记包裹，工具权限由代码固定。
+- 摘要按 `(thread_id, kind)` 存模型名、提示词版本、完整文本上下文哈希。读取时验证哈希、模型和提示词版本；正文更新和删除也清理派生行。缓存不覆盖 provider 数据。账户撤销授权时，事务内清理该账户全部 AI 派生行；提示词版本 v2 使旧版无法区分完整与截断的缓存失效。
+- 单次请求最多 24,000 输入预算、1,024 输出 token、4 轮、12 次工具调用，60 秒总超时。输出预算跨轮共享。取消、移除密钥或调整账户授权会中断请求，半截摘要不缓存。Model 端口保留结束原因，达到 token 上限的文本显示为截断且不缓存。自动摘要仅处理明确开启账户的新邮件，每批最多三个，顺序运行且不重试。
+- Cmd-J 助手使用 `MailToolkit` 的六个工具子集：账户、标签、搜索、会话读取、整理提议、草稿提议。读取限定本次选中且授权的账户，移除媒体搜索命中；语义排序仍在本机完成。账户工具只返回 id、provider、email、needsReauth。`Policy` 强制内置助手只提议归档、标签和草稿，确认只接受 app。标签提议限定为添加所属账户的 Gmail 用户标签，排除系统标签与特殊文件夹，拒绝 Outlook/IMAP 标签移动。审批展示真实标签名及草稿的 From、To、Cc、Bcc、模式、原邮件主题和完整可滚动正文。草稿先留本地，人在撰写窗口编辑和发送。MCP 默认权限不变。
+
+设置页说明发送的数据和 API 费用；阅读区摘要与助手回答显示模型及可打开的来源消息。协议与边界用 fake fetch、fake Model Layer、fake providers、内存和临时磁盘库测试。
 
 ## 用 Effect v4 实现
 
@@ -226,5 +235,5 @@ core、CLI、MCP 全部用 Effect v4（`effect@4.0.0-rc.118`，版本锁死，�
 
 1. Policy 和 proposals 表进 core。（已完成）
 2. core 改写成 Effect：Mailbox、Store、Provider 端口、Platform 端口、fake provider 和端到端测试一起落地。desktop、CLI、MCP 改用 Mailbox。（本轮）
-3. Context、派生数据、Model 端口，内置助手和自动分拣建立在这上面。
+3. Context、派生数据、Model 端口、内置助手与逐账户自动摘要已完成（slice 31）；自动分拣仍待实现。
 4. 手机端：React Native 的 Platform Layer。

@@ -97,11 +97,27 @@ const WriteResult = Schema.Struct({
 
 // Tools
 
+export const toModelAccount = ({ id, provider, email, needsReauth }: Account) => ({
+  id,
+  provider,
+  email,
+  needsReauth,
+});
+
 const ListAccounts = readOnly(
   Tool.make("list_accounts", {
     description:
       "List the person's connected mail accounts. Each id is used as account_id by the other tools. needsReauth means the account must be signed in again in openmail.",
-    success: Schema.Struct({ accounts: Schema.Array(Account) }),
+    success: Schema.Struct({
+      accounts: Schema.Array(
+        Schema.Struct({
+          id: Account.fields.id,
+          provider: Account.fields.provider,
+          email: Account.fields.email,
+          needsReauth: Account.fields.needsReauth,
+        }),
+      ),
+    }),
     failure: MailToolError,
     failureMode: "return",
   }),
@@ -110,7 +126,7 @@ const ListAccounts = readOnly(
 const ListProfiles = readOnly(
   Tool.make("list_profiles", {
     description:
-      "List profiles: named groups of accounts such as Work and Personal. An account's profileId points to one of these; pass the id as profile_id to list_threads.",
+      "List profiles: named groups of accounts such as Work and Personal. Pass a profile id as profile_id to list_threads.",
     success: Schema.Struct({ profiles: Schema.Array(Profile) }),
     failure: MailToolError,
     failureMode: "return",
@@ -307,6 +323,15 @@ export const MailToolkit = Toolkit.make(
   DraftMessage,
 );
 
+export const AssistantToolkit = Toolkit.make(
+  ListAccounts,
+  ListLabels,
+  Search,
+  ReadThread,
+  ModifyThreads,
+  DraftMessage,
+);
+
 // Handlers
 
 const toToolError = (e: PerformError): MailToolError => {
@@ -390,7 +415,10 @@ export const MailToolkitLayer = MailToolkit.toLayer(
       }));
 
     return MailToolkit.of({
-      list_accounts: () => Effect.map(mailbox.accounts, (accounts) => ({ accounts })),
+      list_accounts: () =>
+        Effect.map(mailbox.accounts, (accounts) => ({
+          accounts: accounts.map(toModelAccount),
+        })),
 
       list_profiles: () => Effect.map(mailbox.profiles, (profiles) => ({ profiles })),
 

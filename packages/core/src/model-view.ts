@@ -67,3 +67,26 @@ export function toModelThread(messages: readonly Message[], maxChars: number): M
     truncated,
   };
 }
+
+/** Byte budget includes headers, ids and JSON escaping, conservatively bounding tokens. */
+export function modelContext(messages: readonly Message[], tokenBudget = 6000): ModelThread {
+  const bytes = Math.max(256, Math.min(tokenBudget, Number.MAX_SAFE_INTEGER));
+  let view = toModelThread(messages, bytes);
+  view = { ...view, labels: [], messages: view.messages.map((m) => ({ ...m, attachments: [] })) };
+  while (
+    new TextEncoder().encode(JSON.stringify(view)).length > bytes &&
+    view.messages.length > 0
+  ) {
+    const first = view.messages[0];
+    if (!first) break;
+    if (first.text.length > 0) {
+      const cut = Math.max(1, Math.ceil(first.text.length / 2));
+      view = {
+        ...view,
+        truncated: view.truncated + cut,
+        messages: [{ ...first, text: first.text.slice(0, -cut) }, ...view.messages.slice(1)],
+      };
+    } else view = { ...view, messages: view.messages.slice(1) };
+  }
+  return view;
+}

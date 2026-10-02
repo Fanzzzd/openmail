@@ -23,6 +23,8 @@ import { MIGRATIONS } from "./db.js";
 export const RECOVERY_TABLES = [
   "profiles",
   "accounts",
+  "ai_accounts",
+  "ai_config",
   "agent_policies",
   "proposals",
   "drafts",

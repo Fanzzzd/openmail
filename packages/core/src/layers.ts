@@ -1,3 +1,4 @@
+import { ModelAnthropic } from "./model.js";
 import type { NodeModelsOptions } from "./embeddings-node.js";
 import { makeNodeModels } from "./embeddings-node.js";
 import { dataDir } from "./paths.js";
@@ -54,7 +55,9 @@ export const NodeMailbox = (options: NodeMailboxOptions = {}): Layer.Layer<Mailb
           : {}),
       }).pipe(
         Layer.provide(
-          Layer.mergeAll(StoreLive, ProvidersLive).pipe(Layer.provideMerge(NodePlatform(options))),
+          Layer.mergeAll(StoreLive, ProvidersLive, ModelAnthropic).pipe(
+            Layer.provideMerge(NodePlatform(options)),
+          ),
         ),
       );
     }),

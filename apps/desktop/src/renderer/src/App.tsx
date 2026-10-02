@@ -1,3 +1,4 @@
+import { Assistant } from "./components/AiPanel";
 import { DOCK_FILE_MESSAGES } from "./dock-file-errors";
 import { pageAfterRemoval } from "./state/list-pages";
 import { deleteKeyOp, usesDeletePreference } from "./delete-key";
@@ -2108,6 +2109,7 @@ export function App({ composeId }: { composeId?: string }) {
           onClose={() => setFilterSeed(null)}
         />
       )}
+      <Assistant accounts={accountList} proposals={proposals} onOpenDraft={openProposal} />
       {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
       {dialog === "settings" && (
         <Settings

@@ -1,3 +1,5 @@
+import { Effect } from "effect";
+import { useRunMail, withMail } from "../state/mail";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg, plural } from "@lingui/core/macro";
@@ -5,11 +7,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { Sparkles, X } from "lucide-react";
 
-import type { Account, MailOp, Proposal } from "../../../shared/api";
+import type { Account, MailOp, OutgoingMessage, Proposal } from "../../../shared/api";
 import { formatAddress } from "../draft";
 import { resultError } from "../errors";
 import { decideAtom } from "../state/mutations";
-import { threadAtom } from "../state/queries";
+import { labelsAtom, threadAtom } from "../state/queries";
 import { Dialog } from "./ui/Dialog";
 
 const OP_NAMES: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
@@ -85,6 +87,9 @@ function Item({
   onOpenDraft: (proposal: Proposal) => void;
 }) {
   const { t, i18n } = useLingui();
+  const run = useRunMail();
+  const builtIn =
+    p.actor.kind === "agent" && p.actor.surface === "rule" && p.actor.name === "openmail-assistant";
   const [decide, runDecide] = useAtom(decideAtom(p.id));
   const error = resultError(i18n, decide);
   const { command } = p;
@@ -95,7 +100,11 @@ function Item({
   const op = command.kind === "modify" ? i18n._(OP_NAMES[command.op.kind](command.op)) : "";
   const more = count - threadIds.length;
   const outgoing = command.kind === "send" || command.kind === "draft" ? command : null;
-  const from = outgoing ? email(outgoing.accountId) : "";
+  const from = outgoing
+    ? outgoing.message.from
+      ? formatAddress(outgoing.message.from)
+      : email(outgoing.accountId)
+    : "";
   const to = outgoing
     ? outgoing.message.to.map(formatAddress).join(", ") || t`(no recipients)`
     : "";
@@ -118,7 +127,11 @@ function Item({
           </p>
           <ul className="mt-1 space-y-0.5 text-neutral-600 dark:text-neutral-300">
             {threadIds.map((id) => (
-              <ThreadSubject key={id} id={id} />
+              <ThreadSubject
+                key={id}
+                id={id}
+                labelId={command.op.kind === "label" ? command.op.labelId : undefined}
+              />
             ))}
             {more > 0 && (
               <li className="text-neutral-400">
@@ -128,17 +141,24 @@ function Item({
           </ul>
         </>
       )}
-      {(command.kind === "send" || command.kind === "draft") && (
+      {outgoing && (
         <>
           <p className="mt-1 font-medium">
             <Trans>
               From {from} to {to}
             </Trans>
           </p>
-          <p className="mt-0.5 truncate">{command.message.subject || t`(No subject)`}</p>
-          <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-neutral-500 dark:text-neutral-400">
-            {command.message.text}
+          <DraftDetails message={outgoing.message} />
+          <p className="mt-0.5 whitespace-pre-wrap break-words">
+            {outgoing.message.subject || t`(No subject)`}
           </p>
+          <textarea
+            aria-label={t`Draft body`}
+            readOnly
+            rows={8}
+            value={outgoing.message.text}
+            className="mt-1 block max-h-64 w-full resize-y overflow-y-auto rounded border border-black/10 bg-transparent p-2 whitespace-pre-wrap break-words text-neutral-500 dark:border-white/10 dark:text-neutral-400"
+          />
         </>
       )}
       {agent?.rationale && (
@@ -154,15 +174,24 @@ function Item({
             onClick={() => runDecide(true)}
             className="h-7 rounded-md bg-blue-600 px-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            <Trans>Run</Trans>
+            <Trans>Approve</Trans>
           </button>
         ) : (
           <button
             type="button"
-            onClick={() => onOpenDraft(p)}
+            onClick={() => {
+              if (builtIn)
+                run(
+                  withMail((call) => call("DecideProposal", { id: p.id, approve: true })).pipe(
+                    Effect.tap(() => Effect.sync(() => onOpenDraft(p))),
+                    Effect.catchCause(() => Effect.void),
+                  ),
+                );
+              else onOpenDraft(p);
+            }}
             className="h-7 rounded-md bg-blue-600 px-3 font-medium text-white hover:bg-blue-700"
           >
-            <Trans>Review and Send</Trans>
+            {builtIn ? <Trans>Approve and edit</Trans> : <Trans>Review and Send</Trans>}
           </button>
         )}
         <button
@@ -179,8 +208,62 @@ function Item({
   );
 }
 
-function ThreadSubject({ id }: { id: string }) {
+function ThreadSubject({ id, labelId }: { id: string; labelId?: string }) {
   const { t } = useLingui();
   const thread = AsyncResult.getOrElse(useAtomValue(threadAtom(id)), () => []);
-  return <li className="truncate">{thread.at(-1)?.subject || t`(No subject)`}</li>;
+  const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
+  const label = labels.find(
+    (item) => item.id === labelId && item.accountId === thread[0]?.accountId,
+  );
+  const name = label?.name ?? labelId;
+  return (
+    <li className="break-words">
+      {thread.at(-1)?.subject || t`(No subject)`}
+      {labelId && <span className="ml-2 text-neutral-500">{t`Label: ${name}`}</span>}
+    </li>
+  );
+}
+
+const COMPOSE_MODES = {
+  new: msg`New message`,
+  reply: msg`Reply`,
+  replyAll: msg`Reply all`,
+  forward: msg`Forward`,
+};
+function DraftDetails({ message }: { message: OutgoingMessage }) {
+  const { t, i18n } = useLingui();
+  const target = AsyncResult.getOrElse(
+    useAtomValue(threadAtom(message.inReplyTo ?? null)),
+    () => [],
+  );
+  const subject =
+    target.find((item) => item.id === message.inReplyTo)?.subject ??
+    t`Original message unavailable`;
+  const mode = message.mode ?? (message.inReplyTo ? "reply" : "new");
+  return (
+    <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 break-words">
+      <dt>
+        <Trans>Cc</Trans>
+      </dt>
+      <dd>{message.cc.map(formatAddress).join(", ") || t`None`}</dd>
+      <dt>
+        <Trans>Bcc</Trans>
+      </dt>
+      <dd>{message.bcc.map(formatAddress).join(", ") || t`None`}</dd>
+      <dt>
+        <Trans>Mode</Trans>
+      </dt>
+      <dd>{i18n._(COMPOSE_MODES[mode])}</dd>
+      {message.inReplyTo && (
+        <>
+          <dt>
+            <Trans>Original message</Trans>
+          </dt>
+          <dd>
+            {subject} [{message.inReplyTo}]
+          </dd>
+        </>
+      )}
+    </dl>
+  );
 }

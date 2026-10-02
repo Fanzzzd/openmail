@@ -19,6 +19,11 @@ export function decide(command: Command, actor: Actor, mode: AgentWriteMode): De
       ? { status: "denied", reason: "Drafts open in the compose window; send them from there." }
       : { status: "applied" };
   }
+  if (actor.surface === "rule" && actor.name === "openmail-assistant") {
+    return command.kind === "removeAccount"
+      ? { status: "denied", reason: "Agents cannot remove accounts." }
+      : { status: "proposed" };
+  }
   switch (command.kind) {
     case "send":
     case "draft":

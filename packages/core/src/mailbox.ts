@@ -1,3 +1,11 @@
+import type {
+  AiSettings,
+  AiAccountSettings,
+  AiModelName,
+  AiSummary,
+  AiEvent,
+  AiQuestion,
+} from "./ai.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { ReaderAttachment, EmbeddedMessage } from "./attachment-view.js";
 import type { FolderScope, DeleteFolder } from "./folder-actions.js";
@@ -143,6 +151,13 @@ export type PerformError =
 export class Mailbox extends Context.Service<
   Mailbox,
   {
+    readonly aiSettings: Effect.Effect<AiSettings>;
+    setAiKey(key: string): Effect.Effect<void, InvalidInput>;
+    setAiAccount(input: AiAccountSettings): Effect.Effect<void, NotFound | InvalidInput>;
+    setAiModel(model: AiModelName): Effect.Effect<void>;
+    aiSummary(id: string): Effect.Effect<AiSummary | null, NotFound | InvalidInput>;
+    summarize(id: string): Stream.Stream<AiEvent, NotFound | InvalidInput | ProviderError>;
+    askAi(input: AiQuestion): Stream.Stream<AiEvent, PerformError>;
     // Accounts
     setAccountSettings(
       id: string,
@@ -201,9 +216,13 @@ export class Mailbox extends Context.Service<
     privateMailLink(id: string, kind: "message" | "thread"): Effect.Effect<string, NotFound>;
     resolveMailLink(id: string): Effect.Effect<string, PerformError>;
     thread(id: string): Effect.Effect<Message[], NotFound>;
+    thread(id: string, view: "model", tokenBudget?: number): Effect.Effect<ModelThread, NotFound>;
     /** Explicit reader hydration. Failed bodies retain their headers. */
     readerThread(id: string): Effect.Effect<Message[], PerformError>;
-    threadForModel(id: string, maxChars?: number): Effect.Effect<ModelThread, NotFound>;
+    threadForModel(
+      id: string,
+      maxChars?: number,
+    ): Effect.Effect<ModelThread, NotFound | InvalidInput>;
     /** The message's original source (RFC 5322) from the provider, as text. */
     rawMessage(id: string): Effect.Effect<string, PerformError>;
     /** Original bytes for lossless EML export. */
