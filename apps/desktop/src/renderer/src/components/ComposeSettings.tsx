@@ -1,3 +1,4 @@
+import { AppleContactsSettings } from "./AppleContactsSettings";
 import { SignatureSettings } from "./SignatureSettings";
 import { TemplateSettings } from "./TemplateSettings";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -30,6 +31,7 @@ export function ComposeSettings() {
       <ComposeAppearance />
       <ReplyFrom />
       <RecipientAddresses />
+      <AppleContactsSettings />
       <QuoteSelection />
       <UndoSend />
       <Templates />

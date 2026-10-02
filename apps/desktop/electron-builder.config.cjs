@@ -15,12 +15,13 @@ module.exports = {
     { name: "Email", schemes: ["mailto"], role: "Editor" },
   ],
   extraResources: [
+    { from: "build/contacts-locales", to: ".", filter: ["**/InfoPlist.strings"] },
     { from: "build/trayTemplate.png", to: "trayTemplate.png" },
     { from: "build/trayTemplate@2x.png", to: "trayTemplate@2x.png" },
     {
       from: "out/native",
       to: "native",
-      filter: ["vision", "attachment-apps", "notification-permissions.node"],
+      filter: ["vision", "attachment-apps", "contacts", "notification-permissions.node"],
     },
   ],
   directories: { buildResources: "build", output: "release" },
@@ -50,6 +51,8 @@ module.exports = {
   publish: [{ provider: "github", owner: "Fanzzzd", repo: "openmail", private: true }],
   mac: {
     extendInfo: {
+      NSContactsUsageDescription:
+        "Use Apple Contacts for local recipient suggestions. Contacts are never sent to AI models.",
       NSUserNotificationAlertStyle: "alert",
       CFBundleDocumentTypes: [
         {
@@ -66,10 +69,12 @@ module.exports = {
     // Ad-hoc signing repairs Electron's seal on Apple Silicon. It does not enable updates.
     identity: signed ? undefined : "-",
     hardenedRuntime: true,
+    binaries: ["Contents/Resources/native/contacts"],
+    sign: require("./build/sign-contacts.cjs").sign,
     entitlements: signed ? "build/entitlements.mac.plist" : "build/entitlements.mac.unsigned.plist",
     entitlementsInherit: signed
       ? "build/entitlements.mac.inherit.plist"
-      : "build/entitlements.mac.unsigned.plist",
+      : "build/entitlements.mac.unsigned.inherit.plist",
     notarize: signed && Boolean(appleId || apiKey || profile),
     target: [
       { target: "dmg", arch: ["arm64", "x64"] },

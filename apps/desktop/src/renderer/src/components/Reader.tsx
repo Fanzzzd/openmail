@@ -1,3 +1,4 @@
+import { AppleContactActions } from "./AppleContactActions";
 import { ThreadSummary } from "./AiPanel";
 import { TriageChip } from "./TriageChip";
 import { ContactAvatar as Avatar } from "./ContactAvatar";
@@ -883,6 +884,7 @@ function MessageHead({
               onClick={onSearchSender}
               shortcut={shortcut("searchSender")}
             >{t`Search messages from this sender`}</MenuItem>
+            <AppleContactActions address={m.from} />
           </DropdownMenu>
         ) : (
           senderLabel(m.from, known)

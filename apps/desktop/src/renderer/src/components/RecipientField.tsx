@@ -5,6 +5,7 @@ import {
   type RecipientDrag,
   type RecipientFieldName,
 } from "../recipient-actions";
+import { AppleContactActions } from "./AppleContactActions";
 import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { recipientLabel, splitAddresses } from "@openmail/core/schema";
 import { Combobox } from "@base-ui/react/combobox";
@@ -361,6 +362,7 @@ function ChipActions({
     >
       <MenuItem onClick={onCopy}>{t`Copy address`}</MenuItem>
       <MenuItem onClick={onEdit}>{t`Edit address`}</MenuItem>
+      <AppleContactActions address={address} />
       {onMove && fieldName !== "to" && (
         <MenuItem onClick={() => onMove("to")}>{t`Move to To`}</MenuItem>
       )}

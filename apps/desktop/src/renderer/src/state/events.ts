@@ -7,6 +7,7 @@ import { Atom, Reactivity } from "effect/reactivity";
 
 import type { MailboxEvent, SyncProgress, SyncState } from "../../../shared/api";
 import { MailClient } from "../rpc";
+import { appleContactsStatusAtom } from "./apple-contacts";
 import { Keys, MAIL_KEYS } from "./keys";
 
 export const syncStateAtom = Atom.make<SyncState>({
@@ -23,8 +24,9 @@ export const syncProgressAtom = Atom.make<SyncProgress | null>(null).pipe(Atom.k
  * progress go into their atoms, and a finished sync or a `Changed` notice
  * invalidates every mail query.
  */
-export const liveUpdatesAtom = MailClient.runtime.atom((get) =>
-  Effect.gen(function* () {
+export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
+  get.mount(appleContactsStatusAtom);
+  return Effect.gen(function* () {
     const call = yield* MailClient;
     const reactivity = yield* Reactivity.Reactivity;
     get.set(syncStateAtom, yield* call("SyncState", undefined));
@@ -46,5 +48,5 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) =>
         }),
       ),
     );
-  }),
-);
+  });
+});

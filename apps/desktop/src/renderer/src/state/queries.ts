@@ -240,3 +240,11 @@ export const updateStateAtom = MailClient.query("UpdateState", undefined, {
   reactivityKeys: [Keys.cache],
   ...always,
 }).pipe(Atom.makeRefreshOnSignal(every10s));
+
+export { appleContactsStatusAtom } from "./apple-contacts";
+export const appleContactIdentifierAtom = (address: string) =>
+  MailClient.query(
+    "AppleContactIdentifier",
+    { address },
+    { reactivityKeys: [Keys.contacts, Keys.prefs], ...cached },
+  );

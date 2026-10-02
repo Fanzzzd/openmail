@@ -68,6 +68,7 @@ const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Choose a verified send-as address for this account": msg`Choose a verified send-as address for this account`,
 };
 const DEVICE_REASONS: Record<string, MessageDescriptor> = {
+  "Contacts operation failed.": msg`Contacts operation failed.`,
   "no printers are available.": msg`no printers are available.`,
   "the operation failed.": msg`the operation failed.`,
 };

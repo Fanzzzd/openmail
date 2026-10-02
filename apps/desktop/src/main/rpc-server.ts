@@ -1,3 +1,4 @@
+import { desktopAppleContacts } from "./apple-contacts";
 import { currentUpdateState } from "./update-state";
 import { checkForUpdateState } from "./updates";
 import { switchWindow } from "./window-keys";
@@ -118,6 +119,7 @@ const Handlers = MailRpcs.toLayer(
   Effect.gen(function* () {
     const m = yield* Mailbox;
     const desktop = yield* Desktop;
+    const apple = desktopAppleContacts(m);
     return MailRpcs.of({
       ClientSetup: () => m.clientSetup,
       SetGoogleClient: ({ clientId, clientSecret }) =>
@@ -144,8 +146,15 @@ const Handlers = MailRpcs.toLayer(
       RespondInvite: ({ messageId, key, response }) =>
         m.respondInvite(messageId, key, response, USER),
       ContactSync: () => m.contactSync,
-      ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
-      ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
+      AppleContactsStatus: () => apple.status,
+      RefreshAppleContacts: () => apple.refresh(),
+      SetAppleContacts: ({ enabled }) => apple.setEnabled(enabled),
+      AppleContactIdentifier: ({ address }) => apple.identifier(address),
+      OpenAppleContact: ({ address }) => apple.open(address),
+      AddAppleContact: ({ contact }) => apple.add(contact),
+      OpenAppleContactsSettings: () => apple.openSettings(),
+      ContactGroups: ({ query, accountIds }) => apple.groups(query, accountIds),
+      ContactPhoto: ({ accountId, address }) => apple.photo(accountId, address),
       ImageFromUrl: ({ url }) => m.imageFromUrl(url),
       ImageFromFile: ({ file }) => m.imageFromFile(file),
       SuggestSender: ({ current, recipients, accountIds }) =>
@@ -286,7 +295,7 @@ const Handlers = MailRpcs.toLayer(
       ClearCache: ({ accountId }) => m.clearCache(accountId),
       InitializeProfiles: ({ accept, names }) => m.initializeProfiles(accept, names),
       Prefs: () => m.prefs,
-      SetPrefs: ({ patch }) => m.setPrefs(patch),
+      SetPrefs: ({ patch }) => apple.setPrefs(patch),
       NamedSignatures: () => m.namedSignatures,
       SignatureDefaults: () => m.signatureDefaults,
       SaveNamedSignature: ({ input, id }) => m.saveNamedSignature(input, id),
@@ -298,11 +307,11 @@ const Handlers = MailRpcs.toLayer(
       SaveTemplate: ({ input, id }) => m.saveTemplate(input, id),
       DeleteTemplate: ({ id }) => m.deleteTemplate(id),
       SuggestContacts: ({ query, exclude, accountIds }) =>
-        m.suggestContacts(query, {
+        apple.suggest(query, {
           ...(exclude === undefined ? {} : { exclude }),
           ...(accountIds === undefined ? {} : { accountIds }),
         }),
-      ContactAlternatives: ({ address }) => m.contactAlternatives(address),
+      ContactAlternatives: ({ address }) => apple.alternatives(address),
       HiddenContacts: () => m.hiddenContacts,
       SetContactHidden: ({ address, hidden }) => m.setContactHidden(address, hidden),
       Audit: ({ limit }) => m.audit(limit),

@@ -88,3 +88,5 @@ export {
 } from "./model.js";
 
 export * from "./update-state.js";
+
+export * from "./apple-contacts.js";

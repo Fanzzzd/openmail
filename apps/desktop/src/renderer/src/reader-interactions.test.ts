@@ -24,6 +24,8 @@ vi.mock("@effect/atom-react", async (original) => ({
   useAtom: () => [null, vi.fn()],
   useAtomSet: () => vi.fn(),
   useAtomValue: (atom: string) => {
+    if (atom === "apple-status") return AsyncResult.success({ status: "off", revision: 0 });
+    if (atom === "apple-id") return AsyncResult.success(null);
     if (atom === "prefs")
       return AsyncResult.success({ ...DEFAULT_PREFS, shortcutSet: "mimestream" });
     if (atom === "accounts") return AsyncResult.success([{ id: "gmail:one", provider: "gmail" }]);
@@ -31,6 +33,8 @@ vi.mock("@effect/atom-react", async (original) => ({
   },
 }));
 vi.mock("./state/queries", () => ({
+  appleContactsStatusAtom: "apple-status",
+  appleContactIdentifierAtom: () => "apple-id",
   prefsAtom: "prefs",
   accountsAtom: "accounts",
   knownSendersAtom: () => "known",

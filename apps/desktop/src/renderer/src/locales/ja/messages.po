@@ -304,6 +304,10 @@ msgstr "このイベントをカレンダーに追加しますか?"
 msgid "Add to calendar"
 msgstr "カレンダーに追加"
 
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Add to Contacts"
+msgstr "連絡先に追加"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Add to Dictionary"
 msgstr "辞書に追加"
@@ -514,6 +518,10 @@ msgstr "AnthropicのAPIキー"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "アプリ固有のパスワード"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Apple Contacts stay on this device and are never sent to AI models."
+msgstr "Appleの連絡先はこのデバイス内に保存され、AIモデルには送信されません。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Apple Mail"
@@ -1072,9 +1080,30 @@ msgstr "連絡先グループ"
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "連絡先の更新に失敗しました。キャッシュされた提案は引き続き利用可能です。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access allowed."
+msgstr "連絡先へのアクセスは許可されています。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access denied. Allow access in System Settings."
+msgstr "連絡先へのアクセスが拒否されています。システム設定で許可してください。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access not granted. Turn this setting off and on to request access."
+msgstr "連絡先へのアクセスは許可されていません。この設定を一度オフにしてからオンにすると、アクセスを要求できます。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access restricted by system policy."
+msgstr "システムポリシーにより連絡先へのアクセスが制限されています。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "連絡先のみ"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Contacts operation failed."
+msgstr "連絡先の操作に失敗しました。"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Content matches"
@@ -1152,6 +1181,10 @@ msgstr "アップデートを確認できませんでした。後でもう一度
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "winmail.datをデコードできませんでした。元のファイルを保存できます。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Could not load Apple Contacts. Try refreshing."
+msgstr "Appleの連絡先を読み込めませんでした。更新してください。"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Could not load older messages. Try again."
@@ -3083,6 +3116,10 @@ msgstr "選択したスレッドのうち、このゴミ箱または迷惑メー
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "通常のファイルのみ添付できます。フォルダは添付できません。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Only selected Apple Contacts are available."
+msgstr "選択したAppleの連絡先のみ利用できます。"
+
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "このゴミ箱または迷惑メールフォルダで選択したメッセージのみ完全に削除されます。この操作は取り消せません。"
@@ -3098,6 +3135,10 @@ msgstr "添付ファイルを開く"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "新しい OpenMail 下書きで電子メール リンクを開きます。"
+
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Open in Contacts"
+msgstr "連絡先で開く"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Open in Gmail"
@@ -3130,6 +3171,10 @@ msgstr "このメッセージのみを新しいウィンドウで開きます"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "スペースを開く"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Open System Settings"
+msgstr "システム設定を開く"
 
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -3465,6 +3510,7 @@ msgstr "このアカウントでは定期的なイベントの作成を利用で
 msgid "Recurring meeting"
 msgstr "定期的な会議"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Refresh contacts"
 msgstr "連絡先を更新する"
@@ -4855,6 +4901,10 @@ msgstr "http、https、または mailto リンクを使用します"
 msgid "Use an image up to 8 MB."
 msgstr "最大 8 MB の画像を使用します。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Use Apple Contacts"
+msgstr "Appleの連絡先を使用"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "デフォルトを使用"
@@ -4898,6 +4948,10 @@ msgstr "表示可能なカテゴリ"
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."
 msgstr "添付ファイルの読み込みが完了するまで待ちます。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Waiting for Contacts permission. Respond to the system prompt."
+msgstr "連絡先へのアクセス許可を待っています。システムの確認に応答してください。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"

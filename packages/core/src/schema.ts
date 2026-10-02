@@ -53,3 +53,4 @@ export * from "./categories.js";
 export * from "./ai.js";
 export * from "./update-state.js";
 export * from "./compose-ai.js";
+export * from "./apple-contacts.js";

@@ -33,6 +33,22 @@ if (process.platform === "darwin") {
     "-o",
     "out/native/notification-permissions.node",
   ]);
+  for (const arch of ["arm64", "x86_64"])
+    run("swiftc", [
+      "-O",
+      "-target",
+      `${arch}-apple-macos13.0`,
+      "native/ContactsCLI.swift",
+      "-o",
+      `out/native/contacts-${arch}`,
+    ]);
+  run("lipo", [
+    "-create",
+    "out/native/contacts-arm64",
+    "out/native/contacts-x86_64",
+    "-output",
+    "out/native/contacts",
+  ]);
   // Both release architectures use the same universal Vision helper.
   for (const arch of ["arm64", "x86_64"])
     run("swiftc", [

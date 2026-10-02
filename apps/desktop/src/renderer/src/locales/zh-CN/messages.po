@@ -314,6 +314,10 @@ msgstr "将此事件加入日历？"
 msgid "Add to calendar"
 msgstr "加入日历"
 
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Add to Contacts"
+msgstr "添加到通讯录"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Add to Dictionary"
 msgstr "加入词典"
@@ -524,6 +528,10 @@ msgstr "Anthropic API 密钥"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Apple Contacts stay on this device and are never sent to AI models."
+msgstr "Apple 联系人只保留在本机，绝不发送给 AI 模型。"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Apple Mail"
@@ -1082,9 +1090,30 @@ msgstr "联系人组"
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "联系人刷新失败，仍可使用缓存补全。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access allowed."
+msgstr "已允许访问通讯录。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access denied. Allow access in System Settings."
+msgstr "通讯录访问被拒绝。请在系统设置中允许访问。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access not granted. Turn this setting off and on to request access."
+msgstr "尚未获准访问通讯录。关闭后重新开启此设置以申请权限。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access restricted by system policy."
+msgstr "系统策略限制了通讯录访问。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "仅联系人"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Contacts operation failed."
+msgstr "通讯录操作失败。"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Content matches"
@@ -1162,6 +1191,10 @@ msgstr "无法检查更新，请稍后重试。"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Could not load Apple Contacts. Try refreshing."
+msgstr "无法加载 Apple 联系人。请尝试刷新。"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Could not load older messages. Try again."
@@ -3093,6 +3126,10 @@ msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "只能添加普通文件，不能添加文件夹。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Only selected Apple Contacts are available."
+msgstr "仅可使用已选的 Apple 联系人。"
+
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
@@ -3108,6 +3145,10 @@ msgstr "附件打开目录"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "点击邮件链接时，在 OpenMail 中新建草稿。"
+
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Open in Contacts"
+msgstr "在通讯录中打开"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Open in Gmail"
@@ -3140,6 +3181,10 @@ msgstr "在新窗口中只打开此邮件"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "打开空间"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Open System Settings"
+msgstr "打开系统设置"
 
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -3475,6 +3520,7 @@ msgstr "此账户暂不支持创建重复日程"
 msgid "Recurring meeting"
 msgstr "重复会议"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Refresh contacts"
 msgstr "刷新联系人"
@@ -4865,6 +4911,10 @@ msgstr "请输入 http、https 或 mailto 链接"
 msgid "Use an image up to 8 MB."
 msgstr "请使用不超过 8 MB 的图片。"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Use Apple Contacts"
+msgstr "使用 Apple 联系人"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "使用默认值"
@@ -4908,6 +4958,10 @@ msgstr "显示的分类"
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."
 msgstr "请等待附件加载完成。"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Waiting for Contacts permission. Respond to the system prompt."
+msgstr "正在等待通讯录权限。请回应系统提示。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"

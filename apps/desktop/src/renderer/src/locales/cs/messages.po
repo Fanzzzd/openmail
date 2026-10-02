@@ -304,6 +304,10 @@ msgstr "Přidat tuto událost do kalendáře?"
 msgid "Add to calendar"
 msgstr "Přidat do kalendáře"
 
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Add to Contacts"
+msgstr "Přidat do Kontaktů"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Add to Dictionary"
 msgstr "Přidat do slovníku"
@@ -514,6 +518,10 @@ msgstr "Klíč API Anthropic"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "Heslo pro konkrétní aplikaci"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Apple Contacts stay on this device and are never sent to AI models."
+msgstr "Kontakty Apple zůstávají v tomto zařízení a nikdy se neodesílají modelům AI."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Apple Mail"
@@ -1072,9 +1080,30 @@ msgstr "Kontaktní skupina"
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Obnovení kontaktu se nezdařilo. Návrhy uložené v mezipaměti zůstávají k dispozici."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access allowed."
+msgstr "Přístup ke kontaktům je povolen."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access denied. Allow access in System Settings."
+msgstr "Přístup ke kontaktům byl zamítnut. Povolte ho v nastavení systému."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access not granted. Turn this setting off and on to request access."
+msgstr "Přístup ke kontaktům nebyl udělen. Vypněte a znovu zapněte toto nastavení a požádejte o přístup."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access restricted by system policy."
+msgstr "Přístup ke kontaktům omezuje zásada systému."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "Pouze kontakty"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Contacts operation failed."
+msgstr "Operace s kontakty selhala."
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Content matches"
@@ -1152,6 +1181,10 @@ msgstr "Nelze zkontrolovat aktualizace. Zkuste to znovu později."
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Nelze dekódovat winmail.dat. Můžete uložit původní soubor."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Could not load Apple Contacts. Try refreshing."
+msgstr "Kontakty Apple se nepodařilo načíst. Zkuste je obnovit."
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Could not load older messages. Try again."
@@ -3083,6 +3116,10 @@ msgstr "Trvale se smažou jen zprávy z vybraných konverzací v této složce k
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "Přiložit lze jen běžné soubory. Složky nelze přiložit."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Only selected Apple Contacts are available."
+msgstr "K dispozici jsou pouze vybrané kontakty Apple."
+
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Trvale se smažou jen vybrané zprávy v této složce koše nebo nevyžádané pošty. Tuto akci nelze vrátit zpět."
@@ -3098,6 +3135,10 @@ msgstr "Otevřít přílohy z"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "Otevřete e-mailové odkazy v novém konceptu OpenMail."
+
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Open in Contacts"
+msgstr "Otevřít v Kontaktech"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Open in Gmail"
@@ -3130,6 +3171,10 @@ msgstr "Otevřít pouze tuto zprávu v novém okně"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "Otevřít prostor"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Open System Settings"
+msgstr "Otevřít nastavení systému"
 
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -3465,6 +3510,7 @@ msgstr "Vytváření opakované události není pro tento účet dostupné"
 msgid "Recurring meeting"
 msgstr "Opakující se setkání"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Refresh contacts"
 msgstr "Obnovte kontakty"
@@ -4855,6 +4901,10 @@ msgstr "Použijte odkaz http, https nebo mailto"
 msgid "Use an image up to 8 MB."
 msgstr "Použijte obrázek do velikosti 8 MB."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Use Apple Contacts"
+msgstr "Používat kontakty Apple"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Použít výchozí"
@@ -4898,6 +4948,10 @@ msgstr "Viditelné kategorie"
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."
 msgstr "Počkejte na dokončení načítání příloh."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Waiting for Contacts permission. Respond to the system prompt."
+msgstr "Čeká se na povolení přístupu ke kontaktům. Odpovězte na systémovou výzvu."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"

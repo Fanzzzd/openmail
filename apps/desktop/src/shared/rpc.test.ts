@@ -13,6 +13,7 @@ it("every Prefs field survives the real RPC client/server JSON codecs and is sto
   const group = RpcGroup.make(set, get);
   const values: Prefs = {
     ...DEFAULT_PREFS,
+    useAppleContacts: true,
     messageListDensity: "expanded",
     specialFolderBadges: { starred: false, drafts: true, spam: false },
     showAccountLabels: true,

@@ -304,6 +304,10 @@ msgstr "Aggiungere questo evento al tuo calendario?"
 msgid "Add to calendar"
 msgstr "Aggiungi al calendario"
 
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Add to Contacts"
+msgstr "Aggiungi a Contatti"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Add to Dictionary"
 msgstr "Aggiungi al dizionario"
@@ -514,6 +518,10 @@ msgstr "Chiave API Anthropic"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "Password specifica per l’app"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Apple Contacts stay on this device and are never sent to AI models."
+msgstr "I contatti Apple rimangono su questo dispositivo e non vengono mai inviati ai modelli di IA."
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Apple Mail"
@@ -1072,9 +1080,30 @@ msgstr "Gruppo di contatto"
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Aggiornamento dei contatti non riuscito. I suggerimenti memorizzati nella cache rimangono disponibili."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access allowed."
+msgstr "Accesso ai contatti consentito."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access denied. Allow access in System Settings."
+msgstr "Accesso ai contatti negato. Consenti l’accesso nelle impostazioni di sistema."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access not granted. Turn this setting off and on to request access."
+msgstr "L’accesso ai contatti non è stato concesso. Disattiva e riattiva questa impostazione per richiederlo."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Contacts access restricted by system policy."
+msgstr "La politica di sistema limita l’accesso ai contatti."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Contacts only"
 msgstr "Solo contatti"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+#: src/renderer/src/errors.ts
+msgid "Contacts operation failed."
+msgstr "L’operazione sui contatti non è riuscita."
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Content matches"
@@ -1152,6 +1181,10 @@ msgstr "Impossibile verificare la presenza di aggiornamenti. Riprova più tardi.
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Impossibile decodificare winmail.dat. È possibile salvare il file originale."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Could not load Apple Contacts. Try refreshing."
+msgstr "Impossibile caricare i contatti Apple. Prova ad aggiornarli."
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Could not load older messages. Try again."
@@ -3083,6 +3116,10 @@ msgstr "Verranno eliminati definitivamente solo i messaggi delle conversazioni s
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "Si possono allegare solo file normali. Le cartelle non possono essere allegate."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Only selected Apple Contacts are available."
+msgstr "Sono disponibili solo i contatti Apple selezionati."
+
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Verranno eliminati definitivamente solo i messaggi selezionati in questo Cestino o nella cartella Indesiderata. L’operazione non può essere annullata."
@@ -3098,6 +3135,10 @@ msgstr "Apri gli allegati da"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open email links in a new OpenMail draft."
 msgstr "Apri i collegamenti e-mail in una nuova bozza di OpenMail."
+
+#: src/renderer/src/components/AppleContactActions.tsx
+msgid "Open in Contacts"
+msgstr "Apri in Contatti"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Open in Gmail"
@@ -3130,6 +3171,10 @@ msgstr "Apri solo questo messaggio in una nuova finestra"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Open space"
 msgstr "Apri spazio"
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Open System Settings"
+msgstr "Apri impostazioni di sistema"
 
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
@@ -3465,6 +3510,7 @@ msgstr "La creazione di eventi ricorrenti non è disponibile per questo account"
 msgid "Recurring meeting"
 msgstr "Incontro ricorrente"
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Refresh contacts"
 msgstr "Aggiorna i contatti"
@@ -4855,6 +4901,10 @@ msgstr "Utilizzare un collegamento http, https o mailto"
 msgid "Use an image up to 8 MB."
 msgstr "Utilizza un’immagine fino a 8 MB."
 
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Use Apple Contacts"
+msgstr "Usa i contatti Apple"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Usa predefinito"
@@ -4898,6 +4948,10 @@ msgstr "Categorie visibili"
 #: src/renderer/src/components/Composer.tsx
 msgid "Wait for attachments to finish loading."
 msgstr "Attendi il completamento del caricamento degli allegati."
+
+#: src/renderer/src/components/AppleContactsSettings.tsx
+msgid "Waiting for Contacts permission. Respond to the system prompt."
+msgstr "In attesa dell’autorizzazione per i contatti. Rispondi alla richiesta del sistema."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"

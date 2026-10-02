@@ -341,6 +341,11 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         ),
         signatureOrder: pref(f.signatureOrder, stored.get("signatureOrder"), d.signatureOrder),
         contactPhotos: pref(f.contactPhotos, stored.get("contactPhotos"), d.contactPhotos),
+        useAppleContacts: pref(
+          f.useAppleContacts,
+          stored.get("useAppleContacts"),
+          d.useAppleContacts,
+        ),
         composeFormatBar: pref(
           f.composeFormatBar,
           stored.get("composeFormatBar"),
