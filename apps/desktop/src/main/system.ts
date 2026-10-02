@@ -1,5 +1,8 @@
 import {
   Mailbox,
+  notificationAction,
+  notificationButtonActions,
+  type Prefs,
   messageLink,
   parseAppLink,
   dockUnreadCount,
@@ -23,6 +26,8 @@ import {
   Tray,
 } from "electron";
 
+import { manualUpdateCheck } from "./updates";
+import { notificationPermission } from "./notification-permission";
 import { createQuitGuard, createSendState } from "./quit";
 import { shouldBufferDesktopEvent, type DesktopEvent } from "../shared/desktop";
 import type { DesktopLabels } from "../shared/desktop-labels";
@@ -76,6 +81,15 @@ export const DesktopLive = Layer.effect(
     let activeSpace = "all";
     let labelsReady = false;
     let labels: DesktopLabels = {
+      checkUpdates: "Check for Updates…",
+      updatesDisabled:
+        "Update checks require a signed, installed macOS app and a saved GitHub access token.",
+      updatesCurrent: "OpenMail is up to date.",
+      updatesAvailable: "Update available:",
+      updatesFailed: "Could not check for updates. Try again later.",
+      ok: "OK",
+      read: "Mark read",
+      actionMenu: "Actions",
       settings: "Settings…",
       newWindow: "New Window",
       compose: "New message",
@@ -131,11 +145,32 @@ export const DesktopLive = Layer.effect(
     tray.setToolTip("OpenMail");
     yield* Effect.addFinalizer(() => Effect.sync(() => tray.destroy()));
 
+    let checkingUpdates = false;
+    const checkUpdates = () => {
+      if (checkingUpdates) return;
+      checkingUpdates = true;
+      run(
+        manualUpdateCheck(mailbox, labels).pipe(
+          Effect.ensuring(
+            Effect.sync(() => {
+              checkingUpdates = false;
+            }),
+          ),
+        ),
+      );
+    };
     let menuKey = "";
     const refreshLock = yield* Semaphore.make(1);
     const refresh = refreshLock.withPermits(1)(
       Effect.gen(function* () {
         const accounts = yield* mailbox.accounts;
+        for (const [notification, ids] of notificationAccounts) {
+          if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
+            notification.close();
+            notifications.delete(notification);
+            notificationAccounts.delete(notification);
+          }
+        }
         const profiles = yield* mailbox.profiles;
         if (
           activeSpace !== "all" &&
@@ -192,6 +227,7 @@ export const DesktopLive = Layer.effect(
                       role: "appMenu" as const,
                       submenu: [
                         { role: "about" as const },
+                        { label: labels.checkUpdates, click: checkUpdates },
                         { type: "separator" as const },
                         {
                           label: labels.settings,
@@ -268,7 +304,12 @@ export const DesktopLive = Layer.effect(
               },
               {
                 label: labels.help,
-                submenu: [{ label: labels.help, click: () => command("help") }],
+                submenu: [
+                  { label: labels.help, click: () => command("help") },
+                  ...(process.platform === "darwin"
+                    ? []
+                    : [{ label: labels.checkUpdates, click: checkUpdates }]),
+                ],
               },
             ]),
           );
@@ -278,17 +319,24 @@ export const DesktopLive = Layer.effect(
     );
 
     const notifications = new Set<Notification>();
-    const wireNotification = (notification: Notification, id: string) => {
+    const notificationAccounts = new Map<Notification, readonly string[]>();
+    yield* Effect.promise(async () => {
+      if ((await notificationPermission()) === "notDetermined") await notificationPermission(true);
+    }).pipe(Effect.forkScoped);
+    const wireNotification = (
+      notification: Notification,
+      id: string,
+      actions: Prefs["notificationActions"],
+    ) => {
       notifications.add(notification);
       notification.on("click", () => openThread(id));
       // Electron 44 supplies actionIndex on the event; the positional argument is deprecated.
       notification.on("action", (event) => {
-        const op =
-          event.actionIndex === 0
-            ? { kind: "archive" as const }
-            : event.actionIndex === 1
-              ? { kind: "trash" as const }
-              : null;
+        const op = notificationAction(
+          notificationButtonActions(actions, process.platform),
+          event.actionIndex,
+          event.selectionIndex,
+        );
         if (!op) return;
         notification.close();
         run(
@@ -299,12 +347,20 @@ export const DesktopLive = Layer.effect(
             ),
         );
       });
-      notification.on("close", () => notifications.delete(notification));
-      notification.on("failed", () => notifications.delete(notification));
+      notification.on("close", () => {
+        notifications.delete(notification);
+        notificationAccounts.delete(notification);
+      });
+      notification.on("failed", () => {
+        notifications.delete(notification);
+        notificationAccounts.delete(notification);
+      });
     };
     const notify = Effect.gen(function* () {
       // Startup refresh and arrivals must wait for the renderer's Lingui labels.
       if (!labelsReady || !Notification.isSupported()) return;
+      const prefs = yield* mailbox.prefs;
+      const actions = notificationButtonActions(prefs.notificationActions, process.platform);
       const batches = yield* mailbox.takeNotifications;
       const accounts = yield* mailbox.accounts;
       const profiles = yield* mailbox.profiles;
@@ -322,12 +378,26 @@ export const DesktopLive = Layer.effect(
             title: `${batch.messages.length} ${labels.newMessages}`,
             body:
               profiles.find((p) => p.id === batch.profileId)?.name ??
-              (singleAccount ? (account?.email ?? labels.allAccounts) : labels.allAccounts),
+              (singleAccount
+                ? account
+                  ? account.description?.trim() || account.email
+                  : labels.allAccounts
+                : labels.allAccounts),
           });
+          notificationAccounts.set(
+            notification,
+            batch.messages.map((message) => message.accountId),
+          );
           notifications.add(notification);
           notification.on("click", () => openThread(first.id));
-          notification.on("close", () => notifications.delete(notification));
-          notification.on("failed", () => notifications.delete(notification));
+          notification.on("close", () => {
+            notifications.delete(notification);
+            notificationAccounts.delete(notification);
+          });
+          notification.on("failed", () => {
+            notifications.delete(notification);
+            notificationAccounts.delete(notification);
+          });
           notification.show();
           continue;
         }
@@ -339,12 +409,19 @@ export const DesktopLive = Layer.effect(
             title: message.from.name || message.from.address,
             subtitle: message.subject,
             body: message.snippet,
-            actions: [
-              { type: "button", text: labels.archive },
-              { type: "button", text: labels.trash },
-            ],
+            actions: actions.map((action) =>
+              action === "menu"
+                ? {
+                    type: "selection" as const,
+                    text: labels.actionMenu,
+                    items: [labels.archive, labels.trash, labels.read],
+                  }
+                : { type: "button" as const, text: labels[action] },
+            ),
           });
-          wireNotification(notification, id);
+          notificationAccounts.set(notification, [message.accountId]);
+          yield* mailbox.rememberNotificationActions(id, actions);
+          wireNotification(notification, id, actions);
           notification.show();
         }
       }
@@ -462,7 +539,17 @@ export const DesktopLive = Layer.effect(
       );
       for (const notification of history) {
         const link = parseAppLink(notification.id);
-        if (link?.kind === "message") wireNotification(notification, link.id);
+        if (link?.kind === "message") {
+          const messages = yield* mailbox.thread(link.id).pipe(Effect.orElseSucceed(() => []));
+          const accounts = yield* mailbox.accounts;
+          const ids = messages.map((m) => m.accountId);
+          if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
+            notification.close();
+            continue;
+          }
+          notificationAccounts.set(notification, ids);
+          wireNotification(notification, link.id, yield* mailbox.notificationActions(link.id));
+        }
       }
     }
     createMainWindow();

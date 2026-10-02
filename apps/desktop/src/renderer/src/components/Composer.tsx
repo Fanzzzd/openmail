@@ -106,15 +106,17 @@ export function Composer({
   const toRef = useRef<HTMLInputElement>(null);
   const account = accounts.find((a) => a.id === draft.accountId);
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
-  const senders = accounts.flatMap((a) => [
-    { accountId: a.id, address: a.email, name: "" },
-    ...aliases
-      .filter(
-        (alias) =>
-          alias.accountId === a.id && alias.address.toLowerCase() !== a.email.toLowerCase(),
-      )
-      .map((alias) => ({ accountId: a.id, address: alias.address, name: alias.name })),
-  ]);
+  const senders = accounts
+    .filter((a) => a.enabled !== false)
+    .flatMap((a) => [
+      { accountId: a.id, address: a.email, name: a.description?.trim() || "" },
+      ...aliases
+        .filter(
+          (alias) =>
+            alias.accountId === a.id && alias.address.toLowerCase() !== a.email.toLowerCase(),
+        )
+        .map((alias) => ({ accountId: a.id, address: alias.address, name: alias.name })),
+    ]);
   const availableSenders =
     draft.mode === "new" ? senders : senders.filter((s) => s.accountId === draft.accountId);
   const empty = isEmpty(draft, signatureFor(draft.accountId, draft.mode, draft.from?.address));
@@ -379,7 +381,7 @@ export function Composer({
                 onValueChange={changeSender}
                 options={availableSenders.map((sender) => ({
                   value: `${sender.accountId}/${sender.address}`,
-                  label: sender.address,
+                  label: sender.name ? `${sender.name} (${sender.address})` : sender.address,
                 }))}
                 className="max-w-full"
               />

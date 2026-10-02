@@ -210,7 +210,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       );
     return all(LocalDraftRow)(sql`SELECT ${DRAFT_COLUMNS}, a.email FROM drafts d
       JOIN accounts a ON a.id = d.account_id
-      WHERE ${sql.and(where)} ORDER BY d.updated_at DESC, d.id DESC LIMIT ${limit}`).pipe(
+      WHERE a.enabled=1 AND ${sql.and(where)} ORDER BY d.updated_at DESC, d.id DESC LIMIT ${limit}`).pipe(
       Effect.map((rows) =>
         rows.map((r): ThreadSummary => {
           const me = { name: "", address: r.email };
@@ -262,6 +262,16 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         threadGrouping: pref(f.threadGrouping, stored.get("threadGrouping"), d.threadGrouping),
         threadOrder: pref(f.threadOrder, stored.get("threadOrder"), d.threadOrder),
         shortcutSet: pref(f.shortcutSet, stored.get("shortcutSet"), d.shortcutSet),
+        showAccountLabels: pref(
+          f.showAccountLabels,
+          stored.get("showAccountLabels"),
+          d.showAccountLabels,
+        ),
+        notificationActions: pref(
+          f.notificationActions,
+          stored.get("notificationActions"),
+          d.notificationActions,
+        ),
         notifications: pref(f.notifications, stored.get("notifications"), d.notifications),
         quietHours: pref(f.quietHours, stored.get("quietHours"), d.quietHours),
         activeHours: pref(f.activeHours, stored.get("activeHours"), d.activeHours),
@@ -370,17 +380,17 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       WITH hits AS (
         SELECT lower(json_extract(r.value, '$.address')) AS address,
           json_extract(r.value, '$.name') AS name, m.date AS date, 3.0 AS weight
-        FROM messages m, json_each(m.to_json) r WHERE ${sent}
+        FROM messages m, json_each(m.to_json) r WHERE ${sent} AND m.account_id IN (SELECT id FROM accounts WHERE enabled=1)
         UNION ALL
         SELECT lower(json_extract(r.value, '$.address')), json_extract(r.value, '$.name'),
           m.date, 2.0
-        FROM messages m, json_each(m.cc_json) r WHERE ${sent}
+        FROM messages m, json_each(m.cc_json) r WHERE ${sent} AND m.account_id IN (SELECT id FROM accounts WHERE enabled=1)
         UNION ALL
         SELECT lower(m.from_addr), m.from_name, m.date, 1.0 FROM messages m
-        WHERE NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
+        WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
           AND NOT ${hasLabel("DRAFT")}
         UNION ALL
-        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts GROUP BY address
+        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts WHERE account_id IN (SELECT id FROM accounts WHERE enabled=1) GROUP BY address
       ),
       matched AS (
         SELECT * FROM hits
@@ -396,7 +406,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         HAVING MAX(address LIKE ${like} ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ${like} ESCAPE '\\')
       )
       SELECT s.address,
-        COALESCE((SELECT c.name FROM server_contacts c WHERE c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
+        COALESCE((SELECT c.name FROM server_contacts c WHERE c.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
           (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
           ORDER BY h.date DESC LIMIT 1)) AS name
       FROM scored s ORDER BY s.score DESC, s.address LIMIT ${limit}`);

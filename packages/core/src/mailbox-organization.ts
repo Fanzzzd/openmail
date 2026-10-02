@@ -49,7 +49,8 @@ export function makeOrganizationMailbox(
     )
       return { threads: yield* store.listThreads(query), truncated: false, errors: [] };
     const accounts = (yield* store.listAccounts).filter(
-      (a) => query.accountIds === undefined || query.accountIds.includes(a.id),
+      (a) =>
+        a.enabled !== false && (query.accountIds === undefined || query.accountIds.includes(a.id)),
     );
     const pendingBefore = yield* store.listPendingOps;
     const ids: string[] = [];

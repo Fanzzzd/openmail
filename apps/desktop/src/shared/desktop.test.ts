@@ -57,3 +57,26 @@ it("send and quit commands are dropped when the renderer is missing, while navig
     }),
   ).toBe(true);
 });
+
+it("notification settings expose platform capabilities and macOS menu indexes map to real buttons", async () => {
+  const { notificationActionCapabilities } = await import("./desktop");
+  const { notificationButtonActions, notificationAction } = await import("@openmail/core/schema");
+  expect(notificationActionCapabilities("darwin")).toEqual({ buttons: true, selection: false });
+  expect(notificationActionCapabilities("win32")).toEqual({ buttons: true, selection: true });
+  expect(notificationActionCapabilities("linux")).toEqual({ buttons: false, selection: false });
+  const mac = notificationButtonActions(["menu", "read"], "darwin");
+  expect(mac).toEqual(["archive", "trash", "read"]);
+  expect(mac.map((_, index) => notificationAction(mac, index, -1))).toEqual([
+    { kind: "archive" },
+    { kind: "trash" },
+    { kind: "read", value: true },
+  ]);
+  expect(notificationButtonActions(["read", "menu"], "darwin")).toEqual([
+    "read",
+    "archive",
+    "trash",
+  ]);
+  const windows = notificationButtonActions(["menu", "read"], "win32");
+  expect(windows).toEqual(["menu", "read"]);
+  expect(notificationAction(windows, 0, 2)).toEqual({ kind: "read", value: true });
+});

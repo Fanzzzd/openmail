@@ -162,6 +162,7 @@ const observations = await vi.importMock<{
       isDestroyed(): boolean;
     }[];
     notifications: {
+      close: Mock<() => void>;
       options: { actions?: { text: string }[]; title: string; body?: string };
       emit(event: string, data?: unknown): void;
     }[];
@@ -186,6 +187,14 @@ const incoming = (id: string): IncomingMessage => ({
   attachments: [],
 });
 const englishLabels: DesktopLabels = {
+  checkUpdates: "Check for Updates…",
+  updatesDisabled: "Update checks disabled",
+  updatesCurrent: "Up to date",
+  updatesAvailable: "Update available:",
+  updatesFailed: "Check failed",
+  ok: "OK",
+  read: "Mark read",
+  actionMenu: "Actions",
   settings: "Settings…",
   newWindow: "New Window",
   compose: "New message",
@@ -907,6 +916,102 @@ it("closing a main window without pending sends needs no confirmation", async ()
         yield* settle;
         expect(win.isDestroyed()).toBe(true);
         expect(dialog.showMessageBox).not.toHaveBeenCalled();
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("notification buttons keep their captured order; menu Mark read and disabled-account cleanup work", async () => {
+  const server = fakeServer("me@gmail.com", [incoming("initial")]);
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.sync();
+        yield* mailbox.setPrefs({ notificationActions: ["menu", "read"] });
+        yield* settle;
+        server.messages.set("menu", incoming("menu"));
+        yield* mailbox.pollInbox();
+        yield* settle;
+        const menu = observations.testState.notifications.at(-1);
+        expect(menu?.options.actions).toEqual(
+          process.platform === "win32"
+            ? [
+                { type: "selection", text: "Actions", items: ["Archive", "Delete", "Mark read"] },
+                { type: "button", text: "Mark read" },
+              ]
+            : [
+                { type: "button", text: "Archive" },
+                { type: "button", text: "Delete" },
+                { type: "button", text: "Mark read" },
+              ],
+        );
+        yield* mailbox.setPrefs({ notificationActions: ["trash"] });
+        yield* settle;
+        menu?.emit(
+          "action",
+          process.platform === "win32"
+            ? { actionIndex: 0, selectionIndex: 2 }
+            : { actionIndex: 2, selectionIndex: -1 },
+        );
+        yield* settle;
+        expect(server.pushed.at(-1)).toEqual({
+          providerId: "menu",
+          op: { kind: "read", value: true },
+        });
+        server.messages.set("disabled", incoming("disabled"));
+        yield* mailbox.pollInbox();
+        yield* settle;
+        const disabled = observations.testState.notifications.at(-1);
+        yield* mailbox.setAccountSettings(account.id, {
+          enabled: false,
+          description: "Personal",
+          color: null,
+        });
+        yield* settle;
+        expect(disabled?.close).toHaveBeenCalled();
+        const count = observations.testState.notifications.length;
+        server.messages.set("hidden", incoming("hidden"));
+        yield* mailbox.pollInbox();
+        yield* settle;
+        expect(observations.testState.notifications).toHaveLength(count);
+      }),
+    ).pipe(Effect.provide(desktopLayer(server))),
+  );
+});
+
+it("the app menu exposes a manual update check and explains the unpackaged gate", async () => {
+  const electron = await import("electron");
+  const messageBox = vi.spyOn(electron.dialog, "showMessageBox");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* Desktop;
+        const template = vi.spyOn(electron.Menu, "setApplicationMenu").mock.calls.at(-1)?.[0];
+        const menu = Schema.decodeUnknownSync(
+          Schema.Array(
+            Schema.Struct({
+              submenu: Schema.optionalKey(
+                Schema.Array(
+                  Schema.Struct({
+                    label: Schema.optionalKey(Schema.String),
+                    click: Schema.optionalKey(Schema.Unknown),
+                  }),
+                ),
+              ),
+            }),
+          ),
+        )(template);
+        const click = menu
+          .flatMap((item) => item.submenu ?? [])
+          .find((item) => item.label === "Check for Updates…")?.click;
+        expect(typeof click).toBe("function");
+        if (typeof click === "function") click();
+        yield* settle;
+        expect(messageBox).toHaveBeenCalledWith(
+          expect.objectContaining({ message: "Update checks disabled" }),
+        );
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
   );

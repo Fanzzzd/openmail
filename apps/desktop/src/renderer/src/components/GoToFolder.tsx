@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { fuzzyFolders, MAILBOXES } from "@openmail/core/schema";
 import { useState } from "react";
+import { accountName } from "../format";
 import type { Account, Label } from "../../../shared/api";
 import { ALL, OVERVIEW, MAILBOX_NAMES, type View } from "../view";
 import { Dialog } from "./ui/Dialog";
@@ -34,7 +35,7 @@ export function GoToFolder({
     })),
     ...labels.map((l) => ({
       id: `${l.accountId}/${l.id}`,
-      name: `${l.name} (${accounts.find((a) => a.id === l.accountId)?.email ?? ""})`,
+      name: `${l.name} (${accounts.filter((a) => a.id === l.accountId).map(accountName)[0] ?? ""})`,
       target: {
         space,
         mailbox: "all",

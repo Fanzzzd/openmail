@@ -480,6 +480,14 @@ export const MIGRATIONS: readonly string[] = [
   CREATE INDEX pending_notifications_enqueued ON pending_notifications(enqueued_at);`,
   // Migration 17: existing templates have no blind-copy recipients.
   `ALTER TABLE templates ADD COLUMN bcc_json TEXT NOT NULL DEFAULT '[]';`,
+  // Migration 18: local account controls; cached mail and secrets remain intact.
+  `ALTER TABLE accounts ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1;
+   ALTER TABLE accounts ADD COLUMN description TEXT NOT NULL DEFAULT '';
+   ALTER TABLE accounts ADD COLUMN color TEXT;
+   ALTER TABLE accounts ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
+   UPDATE accounts SET position = (SELECT COUNT(*) FROM accounts b
+     WHERE b.created_at < accounts.created_at OR (b.created_at = accounts.created_at AND b.id < accounts.id));
+   CREATE TABLE notification_buttons (message_id TEXT PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE, actions_json TEXT NOT NULL);`,
 ];
 
 /**

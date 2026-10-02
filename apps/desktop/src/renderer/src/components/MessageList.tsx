@@ -13,7 +13,8 @@ import {
 } from "react";
 
 import type { Label, MailOp, Mailbox, ThreadSummary } from "../../../shared/api";
-import { avatarColor, displayName, shortDate } from "../format";
+import { displayName, shortDate } from "../format";
+import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
 import { ThreadMenuItems, type ThreadState } from "./ThreadActions";
@@ -378,11 +379,7 @@ function Row({
           <span className={`shrink-0 text-[13px] tabular-nums ${muted}`}>{m.threadCount}</span>
         )}
         <span className="flex-1" />
-        {showAccount && (
-          <span
-            className={`size-1.5 shrink-0 self-center rounded-full ${avatarColor(m.accountId.split(":")[1] ?? "")}`}
-          />
-        )}
+        {showAccount && <AccountBadge accountId={m.accountId} />}
         <span className={`shrink-0 text-[12px] tabular-nums ${muted}`}>
           {shortDate(m.date, i18n)}
         </span>

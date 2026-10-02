@@ -9,6 +9,7 @@ export function composeSender(
   view: { accountId?: string; label?: { accountId?: string } },
   scope?: readonly string[],
 ): { accountId: string; address: string; name: string } | undefined {
+  accounts = accounts.filter((a) => a.enabled !== false);
   const configured = accounts.find((a) => a.id === fixed?.accountId);
   if (configured && fixed) {
     if (configured.email.toLowerCase() === fixed.address.toLowerCase())

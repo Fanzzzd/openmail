@@ -1,3 +1,4 @@
+import { accountName } from "../format";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -31,7 +32,7 @@ import { formButton, formInput } from "./OrganizationSettings";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
-  const available = accounts.filter((a) => a.provider !== "imap");
+  const available = accounts.filter((a) => a.enabled !== false && a.provider !== "imap");
   const [id, setId] = useState(available[0]?.id ?? "");
   const account = available.find((a) => a.id === id);
   if (!account)
@@ -46,7 +47,7 @@ export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
         aria-label={t`Account`}
         value={id}
         onValueChange={setId}
-        options={available.map((a) => ({ value: a.id, label: a.email }))}
+        options={available.map((a) => ({ value: a.id, label: accountName(a) }))}
       />
       <AccountServerSettings key={id} account={account} />
       <ContactSettings key={`contacts:${id}`} account={account} />

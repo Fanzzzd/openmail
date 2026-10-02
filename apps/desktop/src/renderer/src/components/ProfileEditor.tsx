@@ -7,7 +7,13 @@ import { useState } from "react";
 
 import type { Account, Profile, ProfileColor } from "../../../shared/api";
 import { resultError } from "../errors";
-import { avatarColor, firstGrapheme, PROFILE_BG } from "../format";
+import {
+  accountName,
+  accountColorClass,
+  accountColorStyle,
+  firstGrapheme,
+  PROFILE_BG,
+} from "../format";
 import { Keys } from "../state/keys";
 import { deleteProfileAtom, saveProfileAtom } from "../state/mutations";
 import { Checkbox } from "./ui/Checkbox";
@@ -179,8 +185,11 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                       })
                     }
                   />
-                  <span className={`size-2 rounded-full ${avatarColor(a.email)}`} />
-                  <span className="min-w-0 flex-1 truncate">{a.email}</span>
+                  <span
+                    className={`size-2 rounded-full ${accountColorClass(a)}`}
+                    style={accountColorStyle(a)}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{accountName(a)}</span>
                   {elsewhere && (
                     <span className="shrink-0 text-[12px] text-neutral-400">
                       {members.has(a.id) ? (

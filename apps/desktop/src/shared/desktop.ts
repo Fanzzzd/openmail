@@ -36,3 +36,24 @@ export type DefaultClientStatus = typeof DefaultClientStatus.Type;
 export function shouldBufferDesktopEvent(event: DesktopEvent): boolean {
   return event._tag === "OpenThread" || event._tag === "Compose" || event._tag === "Search";
 }
+
+export const NotificationPermission = Schema.Literals([
+  "notDetermined",
+  "denied",
+  "authorized",
+  "provisional",
+  "ephemeral",
+  "unknown",
+  "unavailable",
+  "unsupported",
+]);
+export type NotificationPermission = typeof NotificationPermission.Type;
+
+export const NotificationActionCapabilities = Schema.Struct({
+  buttons: Schema.Boolean,
+  selection: Schema.Boolean,
+});
+export const notificationActionCapabilities = (platform: string) => ({
+  buttons: platform === "darwin" || platform === "win32",
+  selection: platform === "win32",
+});

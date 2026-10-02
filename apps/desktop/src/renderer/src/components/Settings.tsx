@@ -6,13 +6,22 @@ import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { Account, AgentWriteMode, Language } from "../../../shared/api";
 import { resultError } from "../errors";
-import { Keys } from "../state/keys";
-import { reauthAtom, removeAccountAtom, setAgentModeAtom, setPrefsAtom } from "../state/mutations";
-import { agentModeAtom, auditAtom, prefsAtom } from "../state/queries";
+import { Keys, MAIL_KEYS } from "../state/keys";
+import {
+  reauthAtom,
+  removeAccountAtom,
+  setAgentModeAtom,
+  setPrefsAtom,
+  moveAccountAtom,
+} from "../state/mutations";
+import { agentModeAtom, auditAtom, prefsAtom, profilesAtom } from "../state/queries";
+import { runAccountMove } from "../account-settings";
+import { AccountControls } from "./AccountControls";
+import { accountName } from "../format";
 import { IndexingSettings } from "./IndexingSettings";
 import { DefaultMailClient, NotificationsSettings, ShortcutsSettings } from "./SystemSettings";
 import { ComposeSettings, Signatures } from "./ComposeSettings";
@@ -143,17 +152,82 @@ function Accounts({
   accounts: readonly Account[];
   onAddAccount: () => void;
 }) {
+  const { t, i18n } = useLingui();
+  const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
+  const dragged = useRef<string | null>(null);
+  const [result, reorder] = useAtom(moveAccountAtom, { mode: "promiseExit" });
+  const moving = useRef(false);
+  const move = (id: string, profileId: string | null, beforeId: string | null) =>
+    void runAccountMove(moving, () =>
+      reorder({
+        payload: { accountId: id, input: { profileId, beforeId } },
+        reactivityKeys: MAIL_KEYS,
+      }),
+    );
   return (
-    <div>
-      <ul className="divide-y divide-black/[0.07] rounded-lg border border-black/10 dark:divide-white/[0.08] dark:border-white/10">
-        {accounts.map((a) => (
-          <AccountRow key={a.id} account={a} onAddAccount={onAddAccount} />
-        ))}
-      </ul>
+    <div className="space-y-4">
+      <p className="text-neutral-500">
+        <Trans>
+          Drag accounts to reorder or move between spaces. You can also use the space picker and
+          Move up / Move down buttons.
+        </Trans>
+      </p>
+      {[{ id: null, name: t`Ungrouped accounts` }, ...profiles].map((profile) => (
+        <section
+          key={profile.id ?? "ungrouped"}
+          onDragOver={(event) => {
+            if (!result.waiting && dragged.current) event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            if (dragged.current) move(dragged.current, profile.id, null);
+            dragged.current = null;
+          }}
+          className="min-h-16 rounded-lg border border-black/10 p-2 dark:border-white/10"
+        >
+          <h3 className="px-3 py-2 font-semibold">{profile.name}</h3>
+          <ul className="divide-y divide-black/[0.07] dark:divide-white/[0.08]">
+            {accounts
+              .filter((a) => a.profileId === profile.id)
+              .map((a) => (
+                <AccountRow
+                  key={a.id}
+                  account={a}
+                  accounts={accounts}
+                  move={move}
+                  moving={result.waiting}
+                  onAddAccount={onAddAccount}
+                  onDragStart={(event) => {
+                    if (moving.current) {
+                      event.preventDefault();
+                      return;
+                    }
+                    dragged.current = a.id;
+                    event.dataTransfer.setData("application/x-openmail-account", a.id);
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragEnd={() => {
+                    dragged.current = null;
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (dragged.current && dragged.current !== a.id)
+                      move(dragged.current, profile.id, a.id);
+                    dragged.current = null;
+                  }}
+                />
+              ))}
+          </ul>
+        </section>
+      ))}
+      {resultError(i18n, result) && (
+        <output className="text-red-500">{resultError(i18n, result)}</output>
+      )}
       <button
         type="button"
         onClick={onAddAccount}
-        className="mt-3 h-7 rounded-md border border-black/10 px-3 font-medium hover:bg-black/[0.04] dark:border-white/15 dark:hover:bg-white/5"
+        className="h-7 rounded-md border border-black/10 px-3 font-medium dark:border-white/15"
       >
         <Trans>Add email account</Trans>
       </button>
@@ -161,24 +235,49 @@ function Accounts({
   );
 }
 
-function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccount: () => void }) {
+function AccountRow({
+  account: a,
+  accounts,
+  move,
+  onAddAccount,
+  moving,
+  ...dragProps
+}: {
+  account: Account;
+  moving: boolean;
+  accounts: readonly Account[];
+  onAddAccount: () => void;
+  move: (id: string, profileId: string | null, beforeId: string | null) => void;
+  onDragStart: React.DragEventHandler<HTMLLIElement>;
+  onDragEnd: React.DragEventHandler<HTMLLIElement>;
+  onDrop: React.DragEventHandler<HTMLLIElement>;
+}) {
   const { t, i18n } = useLingui();
   const [confirming, setConfirming] = useState(false);
   const [reauth, runReauth] = useAtom(reauthAtom(a.id));
   const [remove, runRemove] = useAtom(removeAccountAtom(a.id));
   const email = a.email;
 
-  const status = a.needsReauth
-    ? { text: t`Needs sign-in`, className: "text-red-500" }
-    : a.lastSyncError
-      ? { text: t`Last sync failed`, className: "text-orange-500" }
-      : { text: t`Syncing normally`, className: "text-neutral-400" };
+  const status =
+    a.enabled === false
+      ? { text: t`Disabled`, className: "text-neutral-400" }
+      : a.needsReauth
+        ? { text: t`Needs sign-in`, className: "text-red-500" }
+        : a.lastSyncError
+          ? { text: t`Last sync failed`, className: "text-orange-500" }
+          : { text: t`Syncing normally`, className: "text-neutral-400" };
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2.5">
+    <li
+      {...dragProps}
+      draggable={!moving}
+      className="flex flex-wrap items-center gap-3 px-3 py-2.5"
+    >
       <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-5 shrink-0" />
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium">{a.email}</span>
+        <span className="block truncate font-medium" title={a.email}>
+          {accountName(a)}
+        </span>
         <span
           className={`block truncate text-[12px] ${status.className}`}
           title={a.lastSyncError ?? undefined}
@@ -204,6 +303,13 @@ function AccountRow({ account: a, onAddAccount }: { account: Account; onAddAccou
       >
         <Trans>Remove</Trans>
       </button>
+      <AccountControls
+        key={`${a.id}:${a.description}:${a.color}`}
+        account={a}
+        accounts={accounts}
+        move={move}
+        moving={moving}
+      />
       <Alert
         open={confirming}
         onOpenChange={setConfirming}

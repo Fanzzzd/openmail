@@ -15,7 +15,10 @@ import { isSqlError } from "effect/sql/SqlError";
 import type { Fragment } from "effect/sql/Statement";
 
 import {
+  NotificationActions,
   type Account,
+  type AccountSettings,
+  type AccountPlacement,
   Actor,
   actorLabel,
   Address,
@@ -61,6 +64,10 @@ const AccountRow = Schema.Struct({
   profile_id: Schema.NullOr(Schema.String),
   settings_json: Schema.NullOr(Schema.fromJsonString(ImapSettings)),
   needs_reauth: Schema.BooleanFromBit,
+  enabled: Schema.BooleanFromBit,
+  description: Schema.String,
+  color: Schema.NullOr(Schema.String),
+  position: Schema.Int,
 });
 
 const summaryRowFields = {
@@ -168,6 +175,10 @@ function toAccount(r: typeof AccountRow.Type): Account {
     lastSyncError: r.last_sync_error,
     profileId: r.profile_id,
     needsReauth: r.needs_reauth,
+    enabled: r.enabled,
+    description: r.description,
+    color: r.color,
+    position: r.position,
     ...(r.settings_json ? { imap: r.settings_json } : {}),
   };
 }
@@ -266,10 +277,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const accountRows = all(AccountRow);
     const ACCOUNT_COLUMNS = sql.literal(`id, provider, email, created_at, last_synced_at,
-      COALESCE(last_sync_error,(SELECT poll_error FROM incoming_state WHERE account_id=accounts.id)) AS last_sync_error, profile_id, settings_json, needs_reauth`);
+      COALESCE(last_sync_error,(SELECT poll_error FROM incoming_state WHERE account_id=accounts.id)) AS last_sync_error, profile_id, settings_json, needs_reauth, enabled, description, color, position`);
 
     const listAccounts = accountRows(
-      sql`SELECT ${ACCOUNT_COLUMNS} FROM accounts ORDER BY created_at`,
+      sql`SELECT ${ACCOUNT_COLUMNS} FROM accounts ORDER BY position, created_at, id`,
     ).pipe(
       Effect.map((rows) => rows.map(toAccount)),
       Effect.withSpan("Store.listAccounts"),
@@ -291,8 +302,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     ) {
       const id = accountId(provider, email);
       const now = yield* Clock.currentTimeMillis;
-      yield* run(sql`INSERT INTO accounts (id, provider, email, created_at)
-        VALUES (${id}, ${provider}, ${email}, ${now}) ON CONFLICT(id) DO NOTHING`);
+      yield* run(sql`INSERT INTO accounts (id, provider, email, created_at, position)
+        VALUES (${id}, ${provider}, ${email}, ${now}, (SELECT COALESCE(MAX(position), -1) + 1 FROM accounts)) ON CONFLICT(id) DO NOTHING`);
       return yield* Effect.orDie(getAccount(id));
     });
 
@@ -306,6 +317,57 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       (id: string, profileId: string | null) =>
         run(sql`UPDATE accounts SET profile_id = ${profileId} WHERE id = ${id}`),
     );
+
+    const setAccountSettings = Effect.fn("Store.setAccountSettings")(function* (
+      id: string,
+      input: AccountSettings,
+    ) {
+      yield* getAccount(id);
+      yield* run(
+        sql`UPDATE accounts SET enabled=${input.enabled ? 1 : 0}, description=${input.description.trim()}, color=${input.color} WHERE id=${id}`,
+      );
+      if (!input.enabled)
+        yield* run(
+          sql`DELETE FROM pending_notifications WHERE message_id IN (SELECT id FROM messages WHERE account_id=${id})`,
+        );
+    });
+    const moveAccount = Effect.fn("Store.moveAccount")(function* (
+      id: string,
+      input: AccountPlacement,
+    ) {
+      return yield* sql
+        .withTransaction(
+          Effect.gen(function* () {
+            yield* getAccount(id);
+            if (input.profileId !== null) {
+              const profile = yield* first(Profile)(
+                sql`SELECT id, name, icon, color, position FROM profiles WHERE id=${input.profileId}`,
+              );
+              if (Option.isNone(profile))
+                return yield* new NotFound({ what: "profile", id: input.profileId });
+            }
+            const accounts = (yield* listAccounts).filter((a) => a.id !== id);
+            if (
+              input.beforeId !== null &&
+              !accounts.some((a) => a.id === input.beforeId && a.profileId === input.profileId)
+            )
+              return yield* new InvalidInput({
+                message: "The destination account must belong to the target space",
+              });
+            const before =
+              input.beforeId === null
+                ? accounts.length
+                : accounts.findIndex((a) => a.id === input.beforeId);
+            const ordered = accounts.map((a) => a.id);
+            ordered.splice(before, 0, id);
+            yield* run(sql`UPDATE accounts SET profile_id=${input.profileId} WHERE id=${id}`);
+            for (const [position, orderedId] of ordered.entries())
+              yield* run(sql`UPDATE accounts SET position=${position} WHERE id=${orderedId}`);
+            return yield* Effect.void;
+          }),
+        )
+        .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
+    });
 
     const setImapSettings = Effect.fn("Store.setImapSettings")(
       (id: string, settings: ImapSettings) =>
@@ -477,7 +539,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
     const listFilter = (q: ThreadQuery) => {
-      const where: Fragment[] = [];
+      const where: Fragment[] = [sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
       const mailbox =
         q.search !== undefined && q.searchScope !== "folder" ? "all" : (q.mailbox ?? "inbox");
       if (mailbox === "all") {
@@ -800,7 +862,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     /** Unread inbox messages per account, for the sidebar badges. */
     const unreadCounts = all(Count)(sql`SELECT account_id AS key, COUNT(*) AS n FROM messages m
-      WHERE is_unread = 1 AND ${hasLabel("INBOX")} AND NOT EXISTS (SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL) GROUP BY account_id`).pipe(
+      WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND is_unread = 1 AND ${hasLabel("INBOX")} AND NOT EXISTS (SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL) GROUP BY account_id`).pipe(
       Effect.map(counts),
       Effect.withSpan("Store.unreadCounts"),
     );
@@ -815,7 +877,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       accountIds?: readonly string[],
       within?: string,
     ) {
-      const where: Fragment[] = [sql`m.is_unread = 1`];
+      const where: Fragment[] = [
+        sql`m.is_unread = 1`,
+        sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
+      ];
       if (accountIds) where.push(inAccounts(accountIds));
       if (within !== undefined) where.push(hasLabel(within));
       const rows = yield* all(Count)(sql`SELECT l.value AS key, COUNT(*) AS n
@@ -844,7 +909,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const listLabels = Effect.fn("Store.listLabels")(function* (accountIds?: readonly string[]) {
       const rows = yield* all(LabelRow)(sql`SELECT account_id, id, name, color FROM labels m
-        WHERE ${accountIds ? inAccounts(accountIds) : sql.literal("1")}
+        WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND ${accountIds ? inAccounts(accountIds) : sql.literal("1")}
         ORDER BY account_id, name`);
       return rows.map((r) => ({ accountId: r.account_id, id: r.id, name: r.name, color: r.color }));
     });
@@ -1170,6 +1235,18 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
 
     return Store.of({
+      rememberNotificationActions: (id, actions) =>
+        run(sql`INSERT INTO notification_buttons(message_id,actions_json)
+        SELECT id, ${JSON.stringify(actions)} FROM messages WHERE id=${id}
+        ON CONFLICT(message_id) DO UPDATE SET actions_json=excluded.actions_json`),
+      notificationActions: (id) =>
+        first(Schema.Struct({ actions: Schema.fromJsonString(NotificationActions) }))(
+          sql`SELECT actions_json AS actions FROM notification_buttons WHERE message_id=${id}`,
+        ).pipe(
+          Effect.map((row) =>
+            Option.match(row, { onSome: (r) => r.actions, onNone: () => ["archive", "trash"] }),
+          ),
+        ),
       ...cache,
       ...organization,
       snooze,
@@ -1182,6 +1259,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       upsertAccount,
       removeAccount,
       setAccountProfile,
+      setAccountSettings,
+      moveAccount,
       setImapSettings,
       setNeedsReauth,
       setSyncError,

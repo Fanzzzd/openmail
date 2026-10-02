@@ -54,3 +54,38 @@ export const UpdatesLive = Layer.effectDiscard(
     );
   }),
 );
+
+/** Menu checks report a result without exposing updater errors or release credentials. */
+export function manualUpdateCheck(
+  mailbox: Mailbox["Service"],
+  labels: import("../shared/desktop-labels").DesktopLabels,
+) {
+  return Effect.gen(function* () {
+    const result =
+      app.isPackaged && process.platform === "darwin"
+        ? yield* Effect.gen(function* () {
+            const updater = yield* Effect.promise(() => import("electron-updater"));
+            return yield* mailbox.checkUpdates(updater.default.autoUpdater, {
+              packaged: true,
+              bundle: resolve(process.execPath, "../../.."),
+            });
+          }).pipe(Effect.catchCause(() => Effect.succeed({ status: "error" } as const)))
+        : ({ status: "disabled" } as const);
+    const { dialog } = yield* Effect.promise(() => import("electron"));
+    const message =
+      result.status === "disabled"
+        ? labels.updatesDisabled
+        : result.status === "upToDate"
+          ? labels.updatesCurrent
+          : result.status === "available"
+            ? `${labels.updatesAvailable} ${result.version}`
+            : labels.updatesFailed;
+    yield* Effect.promise(() =>
+      dialog.showMessageBox({
+        type: result.status === "error" ? "error" : "info",
+        message,
+        buttons: [labels.ok],
+      }),
+    );
+  });
+}

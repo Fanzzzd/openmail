@@ -2,6 +2,14 @@ import { Schema } from "effect";
 
 /** Localized by the renderer's Lingui catalog, reused by native menus and notifications. */
 export const DesktopLabels = Schema.Struct({
+  checkUpdates: Schema.String,
+  updatesDisabled: Schema.String,
+  updatesCurrent: Schema.String,
+  updatesAvailable: Schema.String,
+  updatesFailed: Schema.String,
+  ok: Schema.String,
+  read: Schema.String,
+  actionMenu: Schema.String,
   settings: Schema.String,
   newWindow: Schema.String,
   compose: Schema.String,

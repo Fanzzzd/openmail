@@ -31,6 +31,14 @@ export function useDesktopLabels() {
       withMail((call) =>
         call("SetDesktopLabels", {
           labels: {
+            checkUpdates: t`Check for Updates…`,
+            updatesDisabled: t`Update checks require a signed, installed macOS app and a saved GitHub access token.`,
+            updatesCurrent: t`OpenMail is up to date.`,
+            updatesAvailable: t`Update available:`,
+            updatesFailed: t`Could not check for updates. Try again later.`,
+            ok: t`OK`,
+            read: t`Mark read`,
+            actionMenu: t`Actions`,
             settings: t`Settings`,
             newWindow: t`New Window`,
             compose: t`New message`,

@@ -10,6 +10,8 @@ import { Context, type Effect, type Option, type Stream } from "effect";
 
 import type {
   Account,
+  AccountSettings,
+  AccountPlacement,
   Address,
   AgentWriteMode,
   AuditEntry,
@@ -180,6 +182,15 @@ export class Store extends Context.Service<
     readonly media: ReturnType<typeof makeMediaStore>;
 
     // Accounts
+    setAccountSettings(id: string, input: AccountSettings): Effect.Effect<void, NotFound>;
+    moveAccount(id: string, input: AccountPlacement): Effect.Effect<void, NotFound | InvalidInput>;
+    rememberNotificationActions(
+      id: string,
+      actions: import("./domain.js").Prefs["notificationActions"],
+    ): Effect.Effect<void>;
+    notificationActions(
+      id: string,
+    ): Effect.Effect<import("./domain.js").Prefs["notificationActions"]>;
     readonly listAccounts: Effect.Effect<Account[]>;
     getAccount(id: string): Effect.Effect<Account, NotFound>;
     /** Inserts or returns the existing account `${provider}:${email}`. */

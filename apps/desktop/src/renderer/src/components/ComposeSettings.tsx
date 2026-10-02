@@ -240,15 +240,17 @@ function DefaultFrom() {
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
   const setPrefs = useAtomSet(setPrefsAtom);
-  const senders = accounts.flatMap((a) => [
-    { accountId: a.id, address: a.email },
-    ...aliases.filter(
-      (s) =>
-        a.provider === "gmail" &&
-        s.accountId === a.id &&
-        s.address.toLowerCase() !== a.email.toLowerCase(),
-    ),
-  ]);
+  const senders = accounts
+    .filter((a) => a.enabled !== false)
+    .flatMap((a) => [
+      { accountId: a.id, address: a.email },
+      ...aliases.filter(
+        (s) =>
+          a.provider === "gmail" &&
+          s.accountId === a.id &&
+          s.address.toLowerCase() !== a.email.toLowerCase(),
+      ),
+    ]);
   const fixed = prefs.defaultFrom;
   return (
     <section>
@@ -258,7 +260,10 @@ function DefaultFrom() {
         value={fixed ? senderKey(fixed) : "view"}
         options={[
           { value: "view", label: t`Use the current account` },
-          ...senders.map((s) => ({ value: senderKey(s), label: s.address })),
+          ...senders.map((s) => ({
+            value: senderKey(s),
+            label: `${accounts.find((a) => a.id === s.accountId)?.description?.trim() || s.address}${accounts.find((a) => a.id === s.accountId)?.description?.trim() ? ` (${s.address})` : ""}`,
+          })),
         ]}
         onValueChange={(value) => {
           const sender = senders.find((s) => senderKey(s) === value);

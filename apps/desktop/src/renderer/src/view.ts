@@ -46,14 +46,19 @@ export const CATEGORY_NAMES: Record<string, MessageDescriptor> = {
 
 /** Accounts that belong to a space. */
 export function spaceAccounts(space: SpaceId, accounts: readonly Account[]): readonly Account[] {
+  accounts = accounts.filter((a) => a.enabled !== false);
   if (space === ALL || space === OVERVIEW) return accounts;
   return accounts.filter((a) => a.profileId === space);
 }
 
 /** Account ids a list query is limited to; undefined means no limit. */
 export function scopeAccountIds(view: View, accounts: readonly Account[]): string[] | undefined {
-  if (view.label?.accountId) return [view.label.accountId];
-  if (view.accountId) return [view.accountId];
+  if (view.label?.accountId)
+    return accounts
+      .filter((a) => a.enabled !== false && a.id === view.label?.accountId)
+      .map((a) => a.id);
+  if (view.accountId)
+    return accounts.filter((a) => a.enabled !== false && a.id === view.accountId).map((a) => a.id);
   if (view.space === ALL || view.space === OVERVIEW) return undefined;
   return spaceAccounts(view.space, accounts).map((a) => a.id);
 }

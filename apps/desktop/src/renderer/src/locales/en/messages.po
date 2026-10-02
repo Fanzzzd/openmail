@@ -166,6 +166,18 @@ msgstr "Access token saved"
 msgid "Account"
 msgstr "Account"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account colour"
+msgstr "Account colour"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account enabled"
+msgstr "Account enabled"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account space"
+msgstr "Account space"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Accounts"
@@ -180,7 +192,12 @@ msgstr "Action"
 msgid "Action failed: {reason}"
 msgstr "Action failed: {reason}"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Action menu"
+msgstr "Action menu"
+
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "Actions"
 
@@ -327,6 +344,10 @@ msgstr "All accounts"
 msgid "All accounts in this space"
 msgstr "All accounts in this space"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "All actions"
+msgstr "All actions"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "All day"
 msgstr "All day"
@@ -340,6 +361,22 @@ msgstr "All mail"
 #: src/renderer/src/view.ts
 msgid "All Mail"
 msgstr "All Mail"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allow notifications"
+msgstr "Allow notifications"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed"
+msgstr "Allowed"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed quietly"
+msgstr "Allowed quietly"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed temporarily"
+msgstr "Allowed temporarily"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Always from this sender"
@@ -419,6 +456,10 @@ msgstr "Authorization code"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Automatic replies"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Available in the installed macOS app"
+msgstr "Available in the installed macOS app"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
@@ -544,6 +585,10 @@ msgstr "Change mode"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "Change writing mode?"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Check for Updates…"
+msgstr "Check for Updates…"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
@@ -674,9 +719,21 @@ msgstr "Copy"
 msgid "Copy link to message"
 msgstr "Copy link to message"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Could not check for updates. Try again later."
+msgstr "Could not check for updates. Try again later."
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "Could not load the calendar invitation."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not open notification settings."
+msgstr "Could not open notification settings."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not read system permission"
+msgstr "Could not read system permission"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
@@ -742,6 +799,10 @@ msgstr "Create filter from these messages"
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "Current folder"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Custom colour"
+msgstr "Custom colour"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
@@ -819,13 +880,22 @@ msgid "Deleting a folder also deletes its messages on the server."
 msgstr "Deleting a folder also deletes its messages on the server."
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Denied"
 msgstr "Denied"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Disabled"
+msgstr "Disabled"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Discard draft"
 msgstr "Discard draft"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Display name"
+msgstr "Display name"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -855,6 +925,10 @@ msgstr "Draft discarded"
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "Drafts"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
+msgstr "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
 
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
@@ -1258,6 +1332,11 @@ msgstr "Mark as unread"
 msgid "Mark message unread"
 msgstr "Mark message unread"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Mark read"
+msgstr "Mark read"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
@@ -1381,6 +1460,10 @@ msgstr "More matches exist. Narrow your search."
 msgid "More messages not loaded"
 msgstr "More messages not loaded"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Move down"
+msgstr "Move down"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
 msgstr "Move message to Trash"
@@ -1401,6 +1484,10 @@ msgstr "Move to folder…"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "Move to Inbox"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Move up"
+msgstr "Move up"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -1569,9 +1656,21 @@ msgstr "No unread mail in the inbox"
 msgid "None"
 msgstr "None"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Not requested"
+msgstr "Not requested"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "Not synced"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification action buttons"
+msgstr "Notification action buttons"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification actions are available on macOS and Windows."
+msgstr "Notification actions are available on macOS and Windows."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Notifications"
@@ -1586,6 +1685,10 @@ msgstr "Notifications for {0}"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "Off"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OK"
+msgstr "OK"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Older mail and cache"
@@ -1653,6 +1756,10 @@ msgstr "Open in Outlook"
 msgid "Open in web mail"
 msgstr "Open in web mail"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open macOS notification settings"
+msgstr "Open macOS notification settings"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Open only this message in a new window"
 msgstr "Open only this message in a new window"
@@ -1668,6 +1775,10 @@ msgstr "Open this invitation in your calendar to add it before responding"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail is the default email app"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OpenMail is up to date."
+msgstr "OpenMail is up to date."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1983,6 +2094,7 @@ msgstr "Runs while idle. Scanned PDF pages, audio and video are not indexed yet.
 msgid "Saturday"
 msgstr "Saturday"
 
+#: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -2208,6 +2320,10 @@ msgstr "Shortcuts"
 msgid "Show"
 msgstr "Show"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show account names in unified folders"
+msgstr "Show account names in unified folders"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show Cc field"
 msgstr "Show Cc field"
@@ -2431,6 +2547,10 @@ msgstr "Syncing normally"
 msgid "Syncing…"
 msgstr "Syncing…"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "System notification permission"
+msgstr "System notification permission"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Template name"
 msgstr "Template name"
@@ -2590,6 +2710,7 @@ msgid "Tomorrow morning"
 msgstr "Tomorrow morning"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
 msgstr "Trash"
@@ -2626,6 +2747,8 @@ msgstr "Undo send delay"
 msgid "Ungrouped"
 msgstr "Ungrouped"
 
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Ungrouped accounts"
 msgstr "Ungrouped accounts"
@@ -2660,8 +2783,28 @@ msgid "Unstar message"
 msgstr "Unstar message"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Unsupported on this platform"
+msgstr "Unsupported on this platform"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "Until"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
+msgstr "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
+msgstr "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update available:"
+msgstr "Update available:"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
+msgstr "Update checks require a signed, installed macOS app and a saved GitHub access token."
 
 #: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts

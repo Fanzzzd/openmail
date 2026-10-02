@@ -9,6 +9,8 @@ import { Context, type Effect, Schema, type Stream } from "effect";
 import { SyncProgress as SyncProgressSchema } from "./domain.js";
 import type {
   Account,
+  AccountSettings,
+  AccountPlacement,
   BatchResult,
   MailOp,
   Actor,
@@ -125,6 +127,16 @@ export class Mailbox extends Context.Service<
   Mailbox,
   {
     // Accounts
+    setAccountSettings(
+      id: string,
+      input: AccountSettings,
+    ): Effect.Effect<void, NotFound | InvalidInput>;
+    moveAccount(id: string, input: AccountPlacement): Effect.Effect<void, NotFound | InvalidInput>;
+    rememberNotificationActions(
+      id: string,
+      actions: Prefs["notificationActions"],
+    ): Effect.Effect<void>;
+    notificationActions(id: string): Effect.Effect<Prefs["notificationActions"]>;
     readonly accounts: Effect.Effect<Account[]>;
     /** Signs in (OAuth consent page or IMAP password) and starts a sync. Re-adding an account signs it in again. */
     connect(input: ConnectInput): Effect.Effect<Account, SignInError>;
@@ -279,6 +291,10 @@ export class Mailbox extends Context.Service<
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 
     /** Only presence crosses IPC. The token stays in the system keychain. */
+    checkUpdates(
+      client: UpdateClient,
+      options: { packaged: boolean; bundle: string },
+    ): Effect.Effect<import("./updates.js").ManualUpdateResult>;
     readonly updateTokenConfigured: Effect.Effect<boolean>;
     setUpdateToken(token: string): Effect.Effect<void, InvalidInput>;
     startUpdates(

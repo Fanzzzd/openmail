@@ -103,6 +103,7 @@ export function notificationEligible(
   message: Pick<Message, "isUnread" | "labels">,
   prefs: Prefs,
 ): boolean {
+  if (account.enabled === false) return false;
   const mode = prefs.notifications[account.id] ?? "primary";
   if (mode === "off" || !message.isUnread || !message.labels.includes("INBOX")) return false;
   if (message.labels.some((l) => ["DRAFT", "SENT", "SPAM", "TRASH", "SNOOZED"].includes(l)))
@@ -140,6 +141,45 @@ export function dockUnreadCount(
 /** The active space scopes system surfaces; an empty profile must count nothing. */
 export function spaceAccountIds(space: string, accounts: readonly Account[]): string[] {
   return accounts
-    .filter((a) => space === "all" || space === "overview" || a.profileId === space)
+    .filter(
+      (a) =>
+        a.enabled !== false && (space === "all" || space === "overview" || a.profileId === space),
+    )
     .map((a) => a.id);
+}
+
+/** Resolve indexes against the configuration captured when the notification was shown. */
+export function notificationAction(
+  actions: Prefs["notificationActions"],
+  actionIndex: number,
+  selectionIndex = -1,
+): import("./domain.js").MailOp | null {
+  const selected = actions[actionIndex];
+  const action =
+    selected === "menu" ? (["archive", "trash", "read"] as const)[selectionIndex] : selected;
+  switch (action) {
+    case "archive":
+      return { kind: "archive" };
+    case "trash":
+      return { kind: "trash" };
+    case "read":
+      return { kind: "read", value: true };
+    default:
+      return null;
+  }
+}
+
+/** macOS has button actions; selection actions are supported only on Windows. */
+export function notificationButtonActions(
+  actions: Prefs["notificationActions"],
+  platform: string,
+): Prefs["notificationActions"] {
+  if (platform === "win32") return actions;
+  return [
+    ...new Set(
+      actions.flatMap((action) =>
+        action === "menu" ? (["archive", "trash", "read"] as const) : [action],
+      ),
+    ),
+  ];
 }

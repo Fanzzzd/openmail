@@ -5,7 +5,14 @@ import { AsyncResult } from "effect/reactivity";
 import { CircleAlert, Layers, Pencil, Plus, RefreshCw } from "lucide-react";
 
 import type { Account, Profile, SyncState } from "../../../shared/api";
-import { avatarColor, displayName, PROFILE_BG, shortDate } from "../format";
+import {
+  accountName,
+  accountColorClass,
+  accountColorStyle,
+  displayName,
+  PROFILE_BG,
+  shortDate,
+} from "../format";
 import { syncNow, useRunMail } from "../state/mail";
 import { unreadInboxAtom } from "../state/queries";
 import { ALL, type SpaceId } from "../view";
@@ -32,6 +39,7 @@ interface Props {
  * newest unread conversations. Accounts outside any profile form their own group.
  */
 export function Overview({ accounts, profiles, unread, syncState, onOpen, onEditProfile }: Props) {
+  accounts = accounts.filter((a) => a.enabled !== false);
   const { t } = useLingui();
   const run = useRunMail();
   const groups: Group[] = profiles.map((p) => ({
@@ -170,8 +178,11 @@ function GroupCard({
         )}
         {group.accounts.map((a) => (
           <li key={a.id} className="flex items-center gap-2 py-1 text-[13px]">
-            <span className={`size-2 shrink-0 rounded-full ${avatarColor(a.email)}`} />
-            <span className="min-w-0 flex-1 truncate">{a.email}</span>
+            <span
+              className={`size-2 shrink-0 rounded-full ${accountColorClass(a)}`}
+              style={accountColorStyle(a)}
+            />
+            <span className="min-w-0 flex-1 truncate">{accountName(a)}</span>
             {a.lastSyncError ? (
               <span
                 className="flex shrink-0 items-center gap-1 text-red-500"

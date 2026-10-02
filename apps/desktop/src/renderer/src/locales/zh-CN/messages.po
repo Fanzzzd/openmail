@@ -172,6 +172,18 @@ msgstr "已保存访问令牌"
 msgid "Account"
 msgstr "账户"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account colour"
+msgstr "账号颜色"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account enabled"
+msgstr "启用账号"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Account space"
+msgstr "账号所属空间"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Accounts"
@@ -186,7 +198,12 @@ msgstr "操作"
 msgid "Action failed: {reason}"
 msgstr "操作失败：{reason}"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Action menu"
+msgstr "动作菜单"
+
 #: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Actions"
 msgstr "操作"
 
@@ -333,6 +350,10 @@ msgstr "全部账户"
 msgid "All accounts in this space"
 msgstr "这个空间的所有账户"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "All actions"
+msgstr "全部动作"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "All day"
 msgstr "全天"
@@ -346,6 +367,22 @@ msgstr "全部保留"
 #: src/renderer/src/view.ts
 msgid "All Mail"
 msgstr "所有邮件"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allow notifications"
+msgstr "允许通知"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed"
+msgstr "已允许"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed quietly"
+msgstr "已允许静默通知"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Allowed temporarily"
+msgstr "已临时允许"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Always from this sender"
@@ -425,6 +462,10 @@ msgstr "授权码"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "自动回复"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Available in the installed macOS app"
+msgstr "需使用已安装的 macOS 应用"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Back"
@@ -550,6 +591,10 @@ msgstr "切换模式"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "切换撰写模式？"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Check for Updates…"
+msgstr "检查更新…"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
@@ -680,9 +725,21 @@ msgstr "复制"
 msgid "Copy link to message"
 msgstr "复制邮件链接"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Could not check for updates. Try again later."
+msgstr "无法检查更新，请稍后重试。"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Could not load the calendar invitation."
 msgstr "无法加载日历邀请。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not open notification settings."
+msgstr "无法打开通知设置。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Could not read system permission"
+msgstr "无法读取系统权限"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not register OpenMail. Try again from the installed app."
@@ -748,6 +805,10 @@ msgstr "按这些邮件创建过滤器"
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "当前文件夹"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Custom colour"
+msgstr "自定义颜色"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Custom icon"
@@ -825,13 +886,22 @@ msgid "Deleting a folder also deletes its messages on the server."
 msgstr "删除文件夹也会删除服务器内的邮件。"
 
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Denied"
 msgstr "被拒绝"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Disabled"
+msgstr "已停用"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Discard draft"
 msgstr "丢弃草稿"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Display name"
+msgstr "显示名称"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -861,6 +931,10 @@ msgstr "草稿已丢弃"
 #: src/renderer/src/view.ts
 msgid "Drafts"
 msgstr "草稿"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Drag accounts to reorder or move between spaces. You can also use the space picker and Move up / Move down buttons."
+msgstr "拖动账号可排序或移入其他空间，也可用空间选择器和上下移按钮。"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Edit"
@@ -1264,6 +1338,11 @@ msgstr "标为未读"
 msgid "Mark message unread"
 msgstr "将此邮件标为未读"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/state/desktop.ts
+msgid "Mark read"
+msgstr "标为已读"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mark read/unread"
@@ -1387,6 +1466,10 @@ msgstr "还有更多结果，请缩小搜索范围。"
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Move down"
+msgstr "下移"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
 msgstr "将此邮件移到废纸篓"
@@ -1407,6 +1490,10 @@ msgstr "移到文件夹…"
 #: src/renderer/src/components/ThreadActions.tsx
 msgid "Move to Inbox"
 msgstr "移回收件箱"
+
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Move up"
+msgstr "上移"
 
 #: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
@@ -1575,9 +1662,21 @@ msgstr "收件箱没有未读"
 msgid "None"
 msgstr "不选"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Not requested"
+msgstr "尚未请求"
+
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "未同步"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification action buttons"
+msgstr "通知动作按钮"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Notification actions are available on macOS and Windows."
+msgstr "通知动作仅支持 macOS 和 Windows。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Notifications"
@@ -1592,6 +1691,10 @@ msgstr "{0} 的通知"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
 msgstr "关闭"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OK"
+msgstr "好"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Older mail and cache"
@@ -1659,6 +1762,10 @@ msgstr "在 Outlook 中打开"
 msgid "Open in web mail"
 msgstr "在网页版邮箱中打开"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Open macOS notification settings"
+msgstr "打开 macOS 通知设置"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Open only this message in a new window"
 msgstr "在新窗口中只打开此邮件"
@@ -1674,6 +1781,10 @@ msgstr "请先在日历中添加此邀请，再响应"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "OpenMail is the default email app"
 msgstr "OpenMail 已是默认邮件客户端"
+
+#: src/renderer/src/state/desktop.ts
+msgid "OpenMail is up to date."
+msgstr "OpenMail 已是最新版本。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "openmail signs in with an OAuth client you register yourself. First enter the app you registered in Azure, with the Mobile and desktop applications type. Only personal outlook.com and Hotmail accounts are supported. See {doc} in the repository for the steps."
@@ -1989,6 +2100,7 @@ msgstr "空闲时运行。扫描版 PDF、音频和视频暂未索引。"
 msgid "Saturday"
 msgstr "星期六"
 
+#: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -2214,6 +2326,10 @@ msgstr "快捷键"
 msgid "Show"
 msgstr "显示"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Show account names in unified folders"
+msgstr "在统一邮件夹中显示账号名称"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show Cc field"
 msgstr "展开抄送栏"
@@ -2437,6 +2553,10 @@ msgstr "正常"
 msgid "Syncing…"
 msgstr "同步中…"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "System notification permission"
+msgstr "系统通知权限"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Template name"
 msgstr "模板名称"
@@ -2596,6 +2716,7 @@ msgid "Tomorrow morning"
 msgstr "明天上午"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
 msgstr "已删除"
@@ -2632,6 +2753,8 @@ msgstr "撤销发送的时长"
 msgid "Ungrouped"
 msgstr "未分组"
 
+#: src/renderer/src/components/AccountControls.tsx
+#: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Ungrouped accounts"
 msgstr "未分组账户"
@@ -2666,8 +2789,28 @@ msgid "Unstar message"
 msgstr "取消此邮件星标"
 
 #: src/renderer/src/components/SystemSettings.tsx
+msgid "Unsupported on this platform"
+msgstr "此平台不支持"
+
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Until"
 msgstr "至"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three actions, in selection order. The action menu includes Archive, Trash and Mark read. Changes apply to new notifications."
+msgstr "最多三个动作，按选择顺序排列。动作菜单含归档、废纸篓和标为已读。修改对新通知生效。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Up to three buttons, in selection order. All actions adds Archive, Trash and Mark read buttons. Changes apply to new notifications."
+msgstr "最多三个按钮，按选择顺序排列。选择全部动作会添加归档、废纸篓和标为已读按钮。修改对新通知生效。"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update available:"
+msgstr "有可用更新："
+
+#: src/renderer/src/state/desktop.ts
+msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
+msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitHub 访问令牌。"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 #: src/renderer/src/view.ts

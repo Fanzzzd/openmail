@@ -27,6 +27,7 @@ import {
   Schedule,
   Semaphore,
   Stream,
+  Schema,
 } from "effect";
 
 import {
@@ -47,7 +48,7 @@ import type {
   OutgoingMessage,
   SyncResult,
 } from "./domain.js";
-import { actorLabel } from "./domain.js";
+import { AccountSettings, actorLabel } from "./domain.js";
 import {
   attachmentsKey,
   importedMessage,
@@ -79,7 +80,7 @@ import {
 } from "./services.js";
 import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeOrganizationMailbox } from "./mailbox-organization.js";
-import { startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
+import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
@@ -308,6 +309,7 @@ export const MailboxLive = (
             yield* store.removePendingOp(pending.id);
             continue;
           }
+          if (account.value.enabled === false) continue;
           if (account.value.needsReauth) {
             result.reauth.push(account.value.id);
             continue;
@@ -493,6 +495,8 @@ export const MailboxLive = (
               message: "Choose a verified send-as address for this account",
             });
         }
+        if (account.enabled === false)
+          return yield* new InvalidInput({ message: "Enable the account before sending" });
         if (account.needsReauth) {
           yield* new AuthError({ accountId, message: "Sign in again before sending." });
         }
@@ -1044,6 +1048,8 @@ export const MailboxLive = (
         scope?: "inbox",
       ) =>
         Effect.fnUntraced(function* (batch: readonly Change[]) {
+          account = yield* store.getAccount(account.id).pipe(Effect.orDie);
+          if (account.enabled === false) return;
           const prefs = yield* store.prefs;
           const now = new Date(yield* Clock.currentTimeMillis);
           const writes: Effect.Effect<void>[] = [];
@@ -1171,6 +1177,8 @@ export const MailboxLive = (
         scope?: "inbox",
       ) {
         const counts = { changed: 0, deleted: 0 };
+        account = yield* store.getAccount(account.id).pipe(Effect.orDie);
+        if (account.enabled === false) return { accountId: account.id, ...counts };
         if (account.needsReauth) {
           return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
         }
@@ -1209,13 +1217,23 @@ export const MailboxLive = (
               : store.getSyncCursor(account.id),
           ),
           Effect.flatMap((cursor) =>
-            providers
-              .get(account.provider)
-              .pull(account, cursor, scope)
-              .pipe(
-                Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
-                Stream.runForEach(apply(account, counts, notificationsReady, scope)),
-              ),
+            Effect.gen(function* () {
+              const currentAccount = yield* store.getAccount(account.id).pipe(Effect.orDie);
+              if (currentAccount.enabled === false) return;
+              yield* providers
+                .get(account.provider)
+                .pull(currentAccount, cursor, scope)
+                .pipe(
+                  Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
+                  Stream.takeWhileEffect(() =>
+                    store.getAccount(account.id).pipe(
+                      Effect.orDie,
+                      Effect.map((a) => a.enabled !== false),
+                    ),
+                  ),
+                  Stream.runForEach(apply(currentAccount, counts, notificationsReady, scope)),
+                );
+            }),
           ),
         );
         return yield* pull.pipe(
@@ -1230,16 +1248,23 @@ export const MailboxLive = (
           Effect.andThen(scope ? Effect.void : store.finishInitialSync(account.id)),
           Effect.andThen(
             !scope && account.provider === "gmail"
-              ? providers
-                  .get("gmail")
-                  .sendAs(account)
-                  .pipe(
-                    Effect.flatMap((aliases) =>
-                      store.transaction(store.replaceSendAs(account.id, aliases)),
-                    ),
-                    // Settings permission is optional for existing mail accounts.
-                    Effect.catch(() => Effect.void),
-                  )
+              ? store.getAccount(account.id).pipe(
+                  Effect.orDie,
+                  Effect.flatMap((a) =>
+                    a.enabled === false
+                      ? Effect.void
+                      : providers
+                          .get("gmail")
+                          .sendAs(a)
+                          .pipe(
+                            Effect.flatMap((aliases) =>
+                              store.transaction(store.replaceSendAs(account.id, aliases)),
+                            ),
+                            // Settings permission is optional for existing mail accounts.
+                            Effect.catch(() => Effect.void),
+                          ),
+                  ),
+                )
               : Effect.void,
           ),
           // `counts` is filled while the stream runs, so read it afterwards.
@@ -1266,6 +1291,7 @@ export const MailboxLive = (
         const results: SyncResult[] = [];
         // One failing account does not stop the rest.
         for (const account of accounts) {
+          if (account.enabled === false) continue;
           const result: SyncResult = yield* pullAccount(account);
           results.push(result);
           if (!result.error) polling.delete(account.id);
@@ -1321,7 +1347,11 @@ export const MailboxLive = (
             const results: SyncResult[] = [];
             let anyChange = false;
             for (const account of accounts) {
-              if (account.lastSyncedAt === null || (polling.get(account.id)?.due ?? 0) > now)
+              if (
+                account.enabled === false ||
+                account.lastSyncedAt === null ||
+                (polling.get(account.id)?.due ?? 0) > now
+              )
                 continue;
               const before = yield* store.getInboxError(account.id);
               const pulled: SyncResult = yield* pullAccount(account, "inbox");
@@ -1462,7 +1492,29 @@ export const MailboxLive = (
                     : FiberSet.run(background, sync(accountId)).pipe(Effect.asVoid),
               ),
             ),
+        checkUpdates: (client, updateOptions) =>
+          checkStoredUpdates(client, updateOptions, secrets.get(UPDATE_TOKEN_KEY)),
+        rememberNotificationActions: (id, actions) =>
+          store.rememberNotificationActions(id, actions),
+        notificationActions: (id) => store.notificationActions(id),
         accounts: store.listAccounts,
+        setAccountSettings: (id, input) =>
+          Effect.gen(function* () {
+            const settings = yield* Schema.decodeUnknownEffect(AccountSettings)(input).pipe(
+              Effect.mapError(() => new InvalidInput({ message: "Invalid account settings" })),
+            );
+            const previous = yield* store.getAccount(id);
+            // Local edits and the enabled flag never wait for provider work.
+            yield* store.setAccountSettings(id, settings);
+            const resumed = previous.enabled === false && settings.enabled;
+
+            yield* changed;
+            if (resumed) {
+              polling.delete(id);
+              yield* FiberSet.run(background, sync(id));
+            }
+          }),
+        moveAccount: (id, input) => mutate(store.moveAccount(id, input)),
         takeNotifications: Clock.currentTimeMillis.pipe(
           Effect.flatMap((now) => store.takeNotifications(now)),
         ),

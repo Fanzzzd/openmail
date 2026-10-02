@@ -17,6 +17,10 @@ type ConnectInput = typeof ConnectInputSchema.Type;
 
 export const setAgentModeAtom = MailClient.mutation("SetAgentWriteMode");
 export const deleteProfileAtom = MailClient.mutation("DeleteProfile");
+export const setAccountSettingsAtom = Atom.family((_id: string) =>
+  MailClient.mutation("SetAccountSettings"),
+);
+export const moveAccountAtom = MailClient.mutation("MoveAccount");
 export const setPrefsAtom = MailClient.mutation("SetPrefs");
 export const setSignatureAtom = MailClient.mutation("SetSignature");
 export const saveTemplateAtom = MailClient.mutation("SaveTemplate");

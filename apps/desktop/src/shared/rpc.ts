@@ -22,6 +22,8 @@ import {
   ServerFilter,
   Vacation,
   Account,
+  AccountSettings,
+  AccountPlacement,
   BatchResult,
   Address,
   AgentWriteMode,
@@ -49,8 +51,13 @@ import {
   ThreadQuery,
   ThreadSummary,
 } from "@openmail/core/schema";
-import { Schema } from "effect";
-import { DefaultClientStatus, DesktopEvent } from "./desktop";
+import { Schema, Struct } from "effect";
+import {
+  DefaultClientStatus,
+  DesktopEvent,
+  NotificationPermission,
+  NotificationActionCapabilities,
+} from "./desktop";
 import { DesktopLabels } from "./desktop-labels";
 import { Rpc, RpcGroup } from "effect/rpc";
 
@@ -62,21 +69,7 @@ export const ConnectInput = Schema.Union([
 
 const Counts = Schema.Record(Schema.String, Schema.Number);
 /** Only the preferences being changed. */
-const PrefsPatch = Schema.Struct({
-  undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
-  defaultFrom: Schema.optionalKey(Prefs.fields.defaultFrom),
-  showFullRecipientAddresses: Schema.optionalKey(Prefs.fields.showFullRecipientAddresses),
-  language: Schema.optionalKey(Prefs.fields.language),
-  markReadDelay: Schema.optionalKey(Prefs.fields.markReadDelay),
-  nextSelection: Schema.optionalKey(Prefs.fields.nextSelection),
-  readerZoom: Schema.optionalKey(Prefs.fields.readerZoom),
-  messageBackground: Schema.optionalKey(Prefs.fields.messageBackground),
-  threadGrouping: Schema.optionalKey(Prefs.fields.threadGrouping),
-  threadOrder: Schema.optionalKey(Prefs.fields.threadOrder),
-  shortcutSet: Schema.optionalKey(Prefs.fields.shortcutSet),
-  notifications: Schema.optionalKey(Prefs.fields.notifications),
-  quietHours: Schema.optionalKey(Prefs.fields.quietHours),
-});
+const PrefsPatch = Schema.Struct(Struct.map(Prefs.fields, Schema.optionalKey));
 
 /** Header labels for printing, in the UI language. */
 export const PrintHeadings = Schema.Struct({
@@ -89,6 +82,10 @@ const AccountIds = Schema.optionalKey(Schema.Array(Schema.String));
 const error = MailError;
 
 export class MailRpcs extends RpcGroup.make(
+  Rpc.make("NotificationActionCapabilities", { success: NotificationActionCapabilities }),
+  Rpc.make("NotificationPermission", { success: NotificationPermission }),
+  Rpc.make("RequestNotificationPermission", { success: NotificationPermission }),
+  Rpc.make("OpenNotificationSettings", { success: Schema.Boolean }),
   Rpc.make("UpdateTokenConfigured", { success: Schema.Boolean }),
   Rpc.make("SetUpdateToken", { payload: { token: Schema.String }, error }),
   Rpc.make("BackfillState", { success: Schema.Array(BackfillState) }),
@@ -107,6 +104,14 @@ export class MailRpcs extends RpcGroup.make(
     payload: { clientId: Schema.String, clientSecret: Schema.String },
   }),
   Rpc.make("SetMicrosoftClient", { payload: { clientId: Schema.String } }),
+  Rpc.make("SetAccountSettings", {
+    payload: { accountId: Schema.String, input: AccountSettings },
+    error,
+  }),
+  Rpc.make("MoveAccount", {
+    payload: { accountId: Schema.String, input: AccountPlacement },
+    error,
+  }),
   Rpc.make("Accounts", { success: Schema.Array(Account) }),
   /** Opens the consent page (OAuth) or checks the password (IMAP), then starts a sync. */
   Rpc.make("Connect", { payload: { input: ConnectInput }, success: Account, error }),

@@ -56,7 +56,7 @@ export function makeMediaStore(
         WHERE status='running' AND claimed_at < ${now - 5 * 60_000}`);
           const candidate = yield* first(Schema.Struct({ message_id: Schema.String }))(
             sql`SELECT j.message_id FROM ${jobs} j INDEXED BY ${priorityIndex} CROSS JOIN messages m ON m.id=j.message_id CROSS JOIN accounts a ON a.id=m.account_id
-        WHERE j.status='queued' AND j.retry_at <= ${now} AND j.attempts < ${MAX_MEDIA_ATTEMPTS} AND a.needs_reauth=0
+        WHERE j.status='queued' AND j.retry_at <= ${now} AND j.attempts < ${MAX_MEDIA_ATTEMPTS} AND a.needs_reauth=0 AND a.enabled=1
         AND (${images ? 1 : 0}=1 OR (m.body_html NOT LIKE '%cid:%' AND NOT EXISTS(
           SELECT 1 FROM json_each(m.attachments_json) WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%')))
         ORDER BY j.priority_at DESC,j.message_id LIMIT 1`,

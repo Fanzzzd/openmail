@@ -29,6 +29,10 @@ export const Account = Schema.Struct({
   id: Schema.String,
   provider: Provider,
   email: Schema.String,
+  enabled: Schema.optionalKey(Schema.Boolean),
+  description: Schema.optionalKey(Schema.String),
+  color: Schema.optionalKey(Schema.NullOr(Schema.String)),
+  position: Schema.optionalKey(Schema.Int),
   createdAt: Schema.Number,
   lastSyncedAt: Schema.NullOr(Schema.Number),
   /** Error from the most recent sync, cleared by the next successful one. */
@@ -40,6 +44,20 @@ export const Account = Schema.Struct({
   imap: Schema.optionalKey(ImapSettings),
 });
 export type Account = typeof Account.Type;
+
+export const AccountSettings = Schema.Struct({
+  enabled: Schema.Boolean,
+  description: Schema.String.check(Schema.isMaxLength(200)),
+  color: Schema.NullOr(Schema.String.check(Schema.isPattern(/^#[0-9a-fA-F]{6}$/))),
+});
+export type AccountSettings = typeof AccountSettings.Type;
+export const AccountPlacement = Schema.Struct({
+  profileId: Schema.NullOr(Schema.String),
+  /** Insert before this account in the target profile; null appends. */
+  beforeId: Schema.NullOr(Schema.String),
+});
+export type AccountPlacement = typeof AccountPlacement.Type;
+export const accountName = (account: Account) => account.description?.trim() || account.email;
 
 export const PROFILE_COLORS = [
   "blue",
@@ -439,6 +457,9 @@ export type NotificationBatch = {
 };
 
 /** App preferences, stored in core so the CLI and a mobile app see the same values. */
+export const NotificationActions = Schema.Array(
+  Schema.Literals(["archive", "trash", "read", "menu"]),
+).check(Schema.isMaxLength(3));
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
@@ -464,6 +485,8 @@ export const Prefs = Schema.Struct({
   /** A configured weekly schedule supersedes legacy daily quiet hours. */
   activeHours: Schema.Record(Schema.String, ActiveHours),
   menuBarUnreadCount: Schema.Boolean,
+  showAccountLabels: Schema.Boolean,
+  notificationActions: NotificationActions,
 });
 export type Prefs = typeof Prefs.Type;
 
@@ -483,6 +506,8 @@ export const DEFAULT_PREFS: Prefs = {
   quietHours: {},
   activeHours: {},
   menuBarUnreadCount: false,
+  showAccountLabels: false,
+  notificationActions: ["archive", "trash"],
 };
 
 /** Signatures differ for new messages and for replies and forwards. */

@@ -1,6 +1,7 @@
 import type { I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
-export { displayName } from "@openmail/core/schema";
+import type { Account } from "../../shared/api";
+export { accountName, displayName } from "@openmail/core/schema";
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
@@ -37,6 +38,13 @@ export function avatarColor(key: string): string {
   for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return AVATAR_COLORS[h % AVATAR_COLORS.length]!;
 }
+
+export const accountColorValue = (account: Account) =>
+  account.color ?? `var(--color-${avatarColor(account.email).slice(3)})`;
+export const accountColorClass = (account: Account) =>
+  account.color ? "" : avatarColor(account.email);
+export const accountColorStyle = (account: Account) =>
+  account.color ? { backgroundColor: account.color } : undefined;
 
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;

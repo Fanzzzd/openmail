@@ -19,7 +19,7 @@ export function makeFeatureMailbox(
     contactsLock.withPermit(
       Effect.gen(function* () {
         const account = yield* store.getAccount(accountId);
-        if (account.provider === "imap") return yield* Effect.void;
+        if (account.enabled === false || account.provider === "imap") return yield* Effect.void;
         const now = yield* Clock.currentTimeMillis;
         const previous = (yield* store.contactSync).find((s) => s.accountId === accountId);
         const interval = previous?.error ? 3600000 : 6 * 3600000;

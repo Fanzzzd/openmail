@@ -83,3 +83,57 @@ export function startStoredUpdates(
     return startAutoUpdates(client, { packaged: true, signed, token: saved.value });
   });
 }
+
+export type ManualUpdateResult =
+  | { status: "disabled" }
+  | { status: "upToDate" }
+  | { status: "available"; version: string }
+  | { status: "error" };
+
+/** Manual checks obey the same packaging, signature and keychain gate as the timer. */
+export function checkStoredUpdates(
+  client: UpdateClient,
+  options: { packaged: boolean; bundle: string },
+  token: Effect.Effect<Option.Option<string>>,
+  verify: (bundle: string) => Promise<boolean> = isSignedMacApp,
+): Effect.Effect<ManualUpdateResult> {
+  return Effect.gen(function* () {
+    if (!options.packaged) return { status: "disabled" } satisfies ManualUpdateResult;
+    const saved = yield* token;
+    if (Option.isNone(saved) || !saved.value)
+      return { status: "disabled" } satisfies ManualUpdateResult;
+    if (!(yield* Effect.promise(() => verify(options.bundle))))
+      return { status: "disabled" } satisfies ManualUpdateResult;
+    client.logger = null;
+    client.setFeedURL({
+      provider: "github",
+      owner: "Fanzzzd",
+      repo: "openmail",
+      private: true,
+      token: saved.value,
+    });
+    client.on("error", ignoreError);
+    const result = yield* Effect.tryPromise(() => client.checkForUpdates()).pipe(
+      Effect.ensuring(Effect.sync(() => client.removeListener("error", ignoreError))),
+    );
+    if (
+      typeof result !== "object" ||
+      result === null ||
+      !("isUpdateAvailable" in result) ||
+      typeof result.isUpdateAvailable !== "boolean"
+    )
+      return { status: "error" } satisfies ManualUpdateResult;
+    if (!result.isUpdateAvailable) return { status: "upToDate" } satisfies ManualUpdateResult;
+    if (
+      !("updateInfo" in result) ||
+      typeof result.updateInfo !== "object" ||
+      result.updateInfo === null ||
+      !("version" in result.updateInfo) ||
+      typeof result.updateInfo.version !== "string"
+    )
+      return { status: "error" } satisfies ManualUpdateResult;
+    return { status: "available", version: result.updateInfo.version } satisfies ManualUpdateResult;
+  }).pipe(
+    Effect.catchCause(() => Effect.succeed({ status: "error" } satisfies ManualUpdateResult)),
+  );
+}

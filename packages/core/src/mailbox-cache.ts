@@ -19,7 +19,8 @@ export function makeCacheMailbox(
       Effect.gen(function* () {
         if (yield* syncPending()) return;
         const account = yield* store.getAccount(accountId);
-        if (account.needsReauth || account.lastSyncedAt === null) return;
+        if (account.enabled === false || account.needsReauth || account.lastSyncedAt === null)
+          return;
         const state = yield* store.getBackfillState(accountId);
         const now = yield* Clock.currentTimeMillis;
         if (state.paused || state.done || state.nextRunAt > now) return;
@@ -113,6 +114,7 @@ export function makeCacheMailbox(
       const hydrate = Effect.gen(function* () {
         const ref = yield* store.messageRef(message.id);
         const account = yield* store.getAccount(ref.accountId);
+        if (account.enabled === false) return;
         const full = yield* providers.get(account.provider).fetchMessage(account, ref.providerId);
         yield* store.transaction(
           Effect.gen(function* () {

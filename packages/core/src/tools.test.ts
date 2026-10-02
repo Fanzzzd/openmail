@@ -13,6 +13,11 @@ const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in thi
 
 function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
   const base: Service = {
+    setAccountSettings: () => Effect.die("unused"),
+    moveAccount: () => Effect.die("unused"),
+    checkUpdates: () => Effect.die("unused"),
+    rememberNotificationActions: () => Effect.die("unused"),
+    notificationActions: () => Effect.die("unused"),
     updateTokenConfigured: Effect.die("unused"),
     setUpdateToken: () => Effect.die("unused"),
     startUpdates: () => Effect.die("unused"),

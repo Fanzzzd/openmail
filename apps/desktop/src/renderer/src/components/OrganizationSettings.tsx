@@ -1,3 +1,4 @@
+import { accountName } from "../format";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LabelChange } from "@openmail/core/schema";
@@ -17,6 +18,7 @@ export const formInput =
 export const formButton = "rounded-md bg-blue-500 px-3 py-1.5 text-white disabled:opacity-50";
 
 export function OrganizationSettings({ accounts }: { accounts: readonly Account[] }) {
+  accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [editing, setEditing] = useState<Label | "new" | null>(null);
@@ -48,7 +50,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
           setEditing(null);
           setDeleting(null);
         }}
-        options={accounts.map((a) => ({ value: a.id, label: a.email }))}
+        options={accounts.map((a) => ({ value: a.id, label: accountName(a) }))}
       />
       {account?.provider === "gmail" && (
         <label className="flex items-center gap-2">

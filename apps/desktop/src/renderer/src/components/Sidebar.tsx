@@ -39,7 +39,13 @@ import type {
   SyncProgress,
   SyncState,
 } from "../../../shared/api";
-import { avatarColor, PROFILE_BG } from "../format";
+import {
+  accountName,
+  accountColorClass,
+  accountColorStyle,
+  accountColorValue,
+  PROFILE_BG,
+} from "../format";
 import { syncNow, useRunMail } from "../state/mail";
 import {
   labelsAtom,
@@ -150,17 +156,26 @@ export function Sidebar({
     )
     .map((l) => ({
       ...l,
-      color: labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ?? l.color,
+      color:
+        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ??
+        l.color ??
+        accounts.filter((a) => a.id === l.accountId).map(accountColorValue)[0] ??
+        null,
     }));
   const favorites = allLabels
     .filter((l) => labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.favorite)
     .map((l) => ({
       ...l,
-      color: labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ?? l.color,
+      color:
+        labelPrefs.find((p) => p.accountId === l.accountId && p.id === l.id)?.color ??
+        l.color ??
+        accounts.filter((a) => a.id === l.accountId).map(accountColorValue)[0] ??
+        null,
     }));
   const profile = profiles.find((p) => p.id === view.space);
   const hasGmail = accounts.some(
     (a) =>
+      a.enabled !== false &&
       a.provider === "gmail" &&
       (!scope || scope.includes(a.id)) &&
       organization.find((o) => o.accountId === a.id)?.categories !== false,
@@ -250,7 +265,7 @@ export function Sidebar({
                 active={view.accountId === a.id}
                 onClick={() => onView({ ...view, accountId: a.id, label: undefined })}
                 icon={<AccountAvatar account={a} />}
-                label={a.email.split("@")[0] ?? a.email}
+                label={accountName(a)}
                 sublabel={a.needsReauth ? t`Needs sign-in` : a.email.split("@")[1]}
                 warn={a.needsReauth}
                 title={a.email}
@@ -559,7 +574,8 @@ function LabelSections({
   const groups = new Map<string, Label[]>();
   for (const l of labels) groups.set(l.accountId, [...(groups.get(l.accountId) ?? []), l]);
   return [...groups].map(([accountId, list]) => {
-    const email = accounts.find((a) => a.id === accountId)?.email ?? accountId;
+    const account = accounts.find((a) => a.id === accountId);
+    const email = account ? accountName(account) : accountId;
     return (
       <Section key={accountId} title={groups.size > 1 ? email : t`Labels`}>
         {list.map((l) => (
@@ -599,9 +615,10 @@ function AccountAvatar({ account: a }: { account: Account }) {
   return (
     <span className="relative">
       <span
-        className={`flex size-6 items-center justify-center rounded-full text-[12px] font-semibold text-white ${avatarColor(a.email)}`}
+        className={`flex size-6 items-center justify-center rounded-full text-[12px] font-semibold text-white ${accountColorClass(a)}`}
+        style={accountColorStyle(a)}
       >
-        {a.email.slice(0, 1).toUpperCase()}
+        {accountName(a).slice(0, 1).toUpperCase()}
       </span>
       <span className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-[4px] bg-white shadow-sm dark:bg-neutral-800">
         <ProviderIcon provider={a.imap?.preset ?? a.provider} className="size-2.5" />

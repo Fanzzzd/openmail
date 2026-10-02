@@ -27,6 +27,14 @@ export function ReadingSettings() {
 
   return (
     <div className="space-y-6">
+      <label htmlFor="show-account-labels" className="flex items-center gap-2">
+        <Checkbox
+          id="show-account-labels"
+          checked={prefs?.showAccountLabels ?? false}
+          onCheckedChange={(showAccountLabels) => setPrefs({ showAccountLabels })}
+        />
+        <Trans>Show account names in unified folders</Trans>
+      </label>
       <section>
         <h3 className={heading}>
           <Trans>Mark as read</Trans>

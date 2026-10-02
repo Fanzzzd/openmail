@@ -1,4 +1,4 @@
-import type { DefaultClientStatus } from "../../../shared/desktop";
+import type { NotificationPermission, DefaultClientStatus } from "../../../shared/desktop";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
@@ -116,15 +116,139 @@ const WEEKDAY_NAMES: Record<Weekday, MessageDescriptor> = {
   saturday: msg`Saturday`,
 };
 
+const PERMISSION_NAMES: Record<NotificationPermission, MessageDescriptor> = {
+  notDetermined: msg`Not requested`,
+  denied: msg`Denied`,
+  authorized: msg`Allowed`,
+  provisional: msg`Allowed quietly`,
+  ephemeral: msg`Allowed temporarily`,
+  unknown: msg`Could not read system permission`,
+  unavailable: msg`Available in the installed macOS app`,
+  unsupported: msg`Unsupported on this platform`,
+};
+const NOTIFICATION_ACTIONS = [
+  { value: "archive", label: msg`Archive` },
+  { value: "trash", label: msg`Trash` },
+  { value: "read", label: msg`Mark read` },
+  { value: "menu", label: msg`Action menu` },
+] as const;
+
 export function NotificationsSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const setPrefs = useAtomSet(setPrefsAtom);
+  const run = useRunMail();
+  const [capabilities, setCapabilities] = useState({ buttons: false, selection: false });
+  const [permission, setPermission] = useState<NotificationPermission>("unknown");
+  const [permissionBusy, setPermissionBusy] = useState(false);
+  const [settingsFailed, setSettingsFailed] = useState(false);
+  useEffect(() => {
+    run(
+      withMail((call) => call("NotificationActionCapabilities", undefined)).pipe(
+        Effect.tap((value) => Effect.sync(() => setCapabilities(value))),
+      ),
+    );
+    const refresh = () =>
+      run(
+        withMail((call) => call("NotificationPermission", undefined)).pipe(
+          Effect.tap((value) => Effect.sync(() => setPermission(value))),
+        ),
+      );
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [run]);
   const save = (patch: Partial<Prefs>) =>
     setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
   return (
     <div className="space-y-6">
+      <section className="space-y-3">
+        <h3 className="font-semibold">
+          <Trans>System notification permission</Trans>
+        </h3>
+        <output aria-live="polite">{t(PERMISSION_NAMES[permission])}</output>
+        <div className="flex gap-3">
+          <Button
+            disabled={permissionBusy || permission !== "notDetermined"}
+            onClick={() => {
+              setPermissionBusy(true);
+              run(
+                withMail((call) => call("RequestNotificationPermission", undefined)).pipe(
+                  Effect.tap((value) => Effect.sync(() => setPermission(value))),
+                  Effect.ensuring(Effect.sync(() => setPermissionBusy(false))),
+                ),
+              );
+            }}
+            className={alertButton}
+          >
+            <Trans>Allow notifications</Trans>
+          </Button>
+          <Button
+            onClick={() =>
+              run(
+                withMail((call) => call("OpenNotificationSettings", undefined)).pipe(
+                  Effect.tap((opened) => Effect.sync(() => setSettingsFailed(!opened))),
+                ),
+              )
+            }
+            className={alertButton}
+          >
+            <Trans>Open macOS notification settings</Trans>
+          </Button>
+        </div>
+        {settingsFailed && (
+          <output className="text-orange-600">
+            <Trans>Could not open notification settings.</Trans>
+          </output>
+        )}
+      </section>
+      <section className="space-y-3">
+        <h3 className="font-semibold">
+          <Trans>Notification action buttons</Trans>
+        </h3>
+        {capabilities.buttons &&
+          NOTIFICATION_ACTIONS.map(({ value, label }) => (
+            <label
+              key={value}
+              htmlFor={`notification-action-${value}`}
+              className="flex items-center gap-2"
+            >
+              <Checkbox
+                id={`notification-action-${value}`}
+                checked={prefs.notificationActions.includes(value)}
+                onCheckedChange={(checked) =>
+                  save({
+                    notificationActions: checked
+                      ? [
+                          ...prefs.notificationActions.filter((action) => action !== value),
+                          value,
+                        ].slice(-3)
+                      : prefs.notificationActions.filter((action) => action !== value),
+                  })
+                }
+              />
+              {value === "menu" && !capabilities.selection ? <Trans>All actions</Trans> : t(label)}
+            </label>
+          ))}
+        <p className="text-neutral-500">
+          {capabilities.buttons ? (
+            capabilities.selection ? (
+              <Trans>
+                Up to three actions, in selection order. The action menu includes Archive, Trash and
+                Mark read. Changes apply to new notifications.
+              </Trans>
+            ) : (
+              <Trans>
+                Up to three buttons, in selection order. All actions adds Archive, Trash and Mark
+                read buttons. Changes apply to new notifications.
+              </Trans>
+            )
+          ) : (
+            <Trans>Notification actions are available on macOS and Windows.</Trans>
+          )}
+        </p>
+      </section>
       <section>
         <h3 className="mb-3 font-semibold">
           <Trans>New mail notifications</Trans>
@@ -132,7 +256,7 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         <div className="space-y-3">
           {accounts.map((account) => (
             <div key={account.id} className="flex items-center justify-between gap-4">
-              <span className="truncate">{account.email}</span>
+              <span className="truncate">{account.description?.trim() || account.email}</span>
               <Select
                 aria-label={t`Notifications for ${account.email}`}
                 value={prefs.notifications[account.id] ?? "primary"}

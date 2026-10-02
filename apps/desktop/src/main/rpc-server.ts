@@ -1,3 +1,5 @@
+import { notificationActionCapabilities } from "../shared/desktop";
+import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
 import { IMAP_PRESETS, Mailbox, messageLink, senderSearchQuery } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
@@ -92,7 +94,14 @@ const Handlers = MailRpcs.toLayer(
         m.setClient({ google: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } }),
       SetMicrosoftClient: ({ clientId }) =>
         m.setClient({ microsoft: { clientId: clientId.trim() } }),
+      NotificationActionCapabilities: () =>
+        Effect.succeed(notificationActionCapabilities(process.platform)),
+      NotificationPermission: () => Effect.promise(() => notificationPermission()),
+      RequestNotificationPermission: () => Effect.promise(() => notificationPermission(true)),
+      OpenNotificationSettings: () => Effect.promise(openNotificationSettings),
       Accounts: () => m.accounts,
+      SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
+      MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
       Connect: ({ input }) => Effect.tap(m.connect(input), () => focusApp),
       Reauth: ({ accountId }) => Effect.tap(m.reauth(accountId), () => focusApp),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
