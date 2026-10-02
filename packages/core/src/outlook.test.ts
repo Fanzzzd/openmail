@@ -674,6 +674,9 @@ it.effect(
       const http = fakeHttp({
         "POST /me/messages/orig/createForward": { json: { id: "fresh" } },
         "PATCH /me/messages/fresh": { json: {} },
+        "GET /me/messages/old": {
+          json: { categories: ["External"], flag: { flagStatus: "flagged" } },
+        },
         "DELETE /me/messages/old": { status: 204 },
         "POST /me/messages/fresh/attachments": { json: {} },
         "POST /me/messages/fresh/send": { status: 202 },
@@ -694,7 +697,16 @@ it.effect(
           );
         }),
       );
+      const fields = Schema.decodeUnknownSync(
+        Schema.Struct({
+          categories: Schema.Array(Schema.String),
+          flag: Schema.Struct({ flagStatus: Schema.String }),
+        }),
+      )(http.calls.find((call) => call.method === "PATCH")?.body);
+      assert.deepStrictEqual(fields.categories, ["External"]);
+      assert.strictEqual(fields.flag.flagStatus, "flagged");
       assert.deepStrictEqual(paths(http.calls), [
+        "GET /me/messages/old",
         "POST /me/messages/orig/createForward",
         "PATCH /me/messages/fresh",
         "POST /me/messages/fresh/attachments",
@@ -2202,3 +2214,48 @@ it.effect("Outlook rules with delete and another destination are not offered for
     ),
   );
 });
+
+it.effect("composer draft labels/star patch categories and flag without moving out of Drafts", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "PATCH /me/messages/draft": { json: {} } });
+    yield* run(http, (adapter) =>
+      adapter.saveDraft(account, {
+        remote: { draftId: "draft", messageId: "draft" },
+        original: Option.none(),
+        replaceAttachments: false,
+        message: {
+          ...draftMessage,
+          draftOrganization: { labels: ["Work", "Project"], starred: true },
+        },
+      }),
+    );
+    const body = Schema.decodeUnknownSync(
+      Schema.Struct({
+        categories: Schema.Array(Schema.String),
+        flag: Schema.Struct({ flagStatus: Schema.String }),
+      }),
+    )(http.calls[0]?.body);
+    assert.deepStrictEqual(body.categories, ["Work", "Project"]);
+    assert.deepStrictEqual(body.flag, { flagStatus: "flagged" });
+    assert.deepStrictEqual(paths(http.calls), ["PATCH /me/messages/draft"]);
+  }),
+);
+
+it.effect("body-only Outlook draft patches omit categories/flag and keep external edits", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "PATCH /me/messages/draft": { json: {} } });
+    yield* run(http, (adapter) =>
+      adapter.saveDraft(account, {
+        remote: { draftId: "draft", messageId: "draft" },
+        original: Option.none(),
+        replaceAttachments: false,
+        message: draftMessage,
+      }),
+    );
+    const fields = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown))(
+      http.calls[0]?.body,
+    );
+    assert.strictEqual(Object.hasOwn(fields, "categories"), false);
+    assert.strictEqual(Object.hasOwn(fields, "flag"), false);
+  }),
+);

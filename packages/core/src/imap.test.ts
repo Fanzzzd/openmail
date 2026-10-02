@@ -1069,3 +1069,126 @@ it.effect("IMAP reparenting honors the server delimiter and supports moving back
     ),
   ),
 );
+
+it.effect("composer draft keywords and star use IMAP flags while staying in Drafts", () =>
+  Effect.gen(function* () {
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    vi.spyOn(client, "list").mockResolvedValue([
+      {
+        path: "Drafts",
+        pathAsListed: "Drafts",
+        name: "Drafts",
+        delimiter: "/",
+        parent: [],
+        parentPath: "",
+        flags: new Set(),
+        listed: true,
+        subscribed: true,
+        specialUse: "\\Drafts",
+      },
+    ]);
+    const append = vi
+      .spyOn(client, "append")
+      .mockResolvedValue({ destination: "Drafts", uid: 42, uidValidity: 7n, seq: 42 });
+    assert.ok(account.imap);
+    const settings = account.imap;
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    const remote = yield* adapter.saveDraft(account, {
+      remote: null,
+      original: Option.none(),
+      replaceAttachments: true,
+      message: {
+        to: [],
+        cc: [],
+        bcc: [],
+        subject: "Draft",
+        text: "Body",
+        attachments: [],
+        draftOrganization: { labels: ["Work", "$Project"], starred: true },
+      },
+    });
+    assert.strictEqual(remote.messageId, encodeProviderId("Drafts", "7", 42));
+    assert.deepStrictEqual(append.mock.calls[0]?.[2], [
+      "\\Draft",
+      "\\Seen",
+      "\\Flagged",
+      "Work",
+      "$Project",
+    ]);
+    assert.strictEqual(append.mock.calls[0]?.[0], "Drafts");
+  }).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);
+
+it.effect(
+  "body-only IMAP draft replacement keeps keywords and star changed in another client",
+  () =>
+    Effect.gen(function* () {
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      vi.spyOn(client, "list").mockResolvedValue([
+        {
+          path: "Drafts",
+          pathAsListed: "Drafts",
+          name: "Drafts",
+          delimiter: "/",
+          parent: [],
+          parentPath: "",
+          flags: new Set(),
+          listed: true,
+          subscribed: true,
+          specialUse: "\\Drafts",
+        },
+      ]);
+      vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "Drafts",
+        delimiter: "/",
+        flags: new Set(),
+        uidValidity: 7n,
+        uidNext: 43,
+        exists: 1,
+      });
+      vi.spyOn(client, "fetchOne").mockResolvedValue({
+        seq: 1,
+        uid: 1,
+        flags: new Set(["\\Draft", "\\Seen", "\\Flagged", "Other"]),
+      });
+      vi.spyOn(client, "messageDelete").mockResolvedValue(true);
+      const append = vi
+        .spyOn(client, "append")
+        .mockResolvedValue({ destination: "Drafts", uid: 42, uidValidity: 7n, seq: 42 });
+      assert.ok(account.imap);
+      const settings = account.imap;
+      const adapter = yield* makeImapWith(() =>
+        Effect.succeed({ accountId: account.id, settings, client }),
+      );
+      yield* adapter.saveDraft(account, {
+        remote: { draftId: null, messageId: encodeProviderId("Drafts", "7", 1) },
+        original: Option.none(),
+        replaceAttachments: false,
+        message: { to: [], cc: [], bcc: [], subject: "Edited", text: "Body", attachments: [] },
+      });
+      assert.deepStrictEqual(append.mock.calls[0]?.[2], [
+        "\\Draft",
+        "\\Seen",
+        "\\Flagged",
+        "Other",
+      ]);
+    }).pipe(
+      Effect.provide(
+        Layer.succeed(Secrets, {
+          get: () => Effect.succeed(Option.some("password")),
+          set: () => Effect.void,
+          remove: () => Effect.void,
+        }),
+      ),
+    ),
+);

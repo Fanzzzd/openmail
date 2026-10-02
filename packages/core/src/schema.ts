@@ -41,3 +41,5 @@ export * from "./compose-find.js";
 export * from "./attachment-view.js";
 
 export * from "./attachment-filename.js";
+
+export * from "./compose-paste.js";

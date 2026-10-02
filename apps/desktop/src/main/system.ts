@@ -26,6 +26,7 @@ import {
   Tray,
 } from "electron";
 
+import { menuEdit } from "./menu-edit";
 import { manualUpdateCheck } from "./updates";
 import { notificationPermission } from "./notification-permission";
 import { createQuitGuard, createSendState } from "./quit";
@@ -60,6 +61,8 @@ export class Desktop extends Context.Service<
     setSpace(clientId: number, space: string): Effect.Effect<void>;
     setLabels(labels: DesktopLabels): Effect.Effect<void>;
     search(query: string): Effect.Effect<void>;
+    compose(): Effect.Effect<void>;
+    openSettings(): Effect.Effect<void>;
   }
 >()("openmail/Desktop") {}
 
@@ -126,7 +129,10 @@ export const DesktopLive = Layer.effect(
     const edit = (action: "undo" | "selectAll") => {
       const focused = BrowserWindow.getFocusedWindow();
       if (!focused) return;
-      if (isMainWindow(focused)) deliver({ _tag: "Edit", action }, focused);
+      if (isMainWindow(focused))
+        void menuEdit(focused.webContents, action, () =>
+          deliver({ _tag: "Edit", action }, focused),
+        );
       else if (action === "undo") focused.webContents.undo();
       else focused.webContents.selectAll();
     };
@@ -562,6 +568,11 @@ export const DesktopLive = Layer.effect(
     for (const link of startupLinks.splice(0)) linkHandler(link);
     yield* refresh;
     return Desktop.of({
+      compose: () =>
+        Effect.sync(() =>
+          deliver({ _tag: "Compose", draft: { to: "", cc: "", bcc: "", subject: "", body: "" } }),
+        ),
+      openSettings: () => Effect.sync(() => command("settings")),
       search: (query) => Effect.sync(() => deliver({ _tag: "Search", query })),
       events: (id) =>
         Stream.callback((queue) => {

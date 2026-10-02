@@ -75,6 +75,8 @@ const INLINE = new Map([
   ["i", "em"],
   ["em", "em"],
   ["u", "u"],
+  ["s", "s"],
+  ["strike", "s"],
 ]);
 const REMOTE_TAGS = new Set([
   "p",
@@ -117,7 +119,11 @@ function spanMarks(style: string): string[] {
     const [property, value] = declaration.split(":").map((s) => s.trim());
     if (property === "font-weight" && /^(bold|[7-9]00)$/.test(value ?? "")) marks.push("strong");
     if (property === "font-style" && value === "italic") marks.push("em");
-    if (property === "text-decoration" && value === "underline") marks.push("u");
+    if (property === "text-decoration") {
+      const decorations = (value ?? "").split(/\s+/);
+      if (decorations.includes("underline")) marks.push("u");
+      if (decorations.includes("line-through")) marks.push("s");
+    }
   }
   return marks;
 }
@@ -204,7 +210,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
       const inline = INLINE.get(name);
       const tag =
         inline ??
-        (LISTS.has(name) || name === "br"
+        (LISTS.has(name) || name === "br" || name === "blockquote"
           ? name
           : preserveRemote && REMOTE_TAGS.has(name)
             ? name
@@ -300,6 +306,15 @@ function plainNodes(nodes: SafeNode[], alternatives = true): string {
       }
       if (node.name === "br") {
         text += "\n";
+        continue;
+      }
+      if (node.name === "blockquote" && alternatives) {
+        boundary();
+        text += plainNodes(node.children, true)
+          .split("\n")
+          .map((line) => `> ${line}`)
+          .join("\n");
+        boundary();
         continue;
       }
       const block =
@@ -440,6 +455,18 @@ function markdownNodes(nodes: SafeNode[], depth = 0): string {
     const contents =
       node.name === "ul" || node.name === "ol" ? "" : markdownNodes(node.children, depth);
     switch (node.name) {
+      case "blockquote":
+        boundary();
+        result += contents
+          .trimEnd()
+          .split("\n")
+          .map((line) => `> ${line}`)
+          .join("\n");
+        boundary();
+        break;
+      case "s":
+        result += markdownMark(contents, "~~");
+        break;
       case "strong":
         result += markdownMark(contents, "**");
         break;
@@ -500,11 +527,11 @@ export function composeConversion(
   if (kind === "markdown")
     return {
       body: { kind, text: markdownNodes(composeNodes(body.html)).trimEnd() },
-      losesFormatting: unsupported || /<u>|\u00a0/.test(body.html),
+      losesFormatting: unsupported || /<(u|s|blockquote)>|\u00a0/.test(body.html),
     };
   return {
     body: { kind: "plain", text: body.text },
-    losesFormatting: unsupported || /<(strong|em|u|ul|ol)>/.test(body.html),
+    losesFormatting: unsupported || /<(strong|em|u|s|blockquote|ul|ol)>/.test(body.html),
   };
 }
 export function changeComposeBodyKind(body: ComposeBody, kind: ComposeBody["kind"]): ComposeBody {

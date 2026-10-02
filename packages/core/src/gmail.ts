@@ -926,6 +926,36 @@ export const makeGmail: Effect.Effect<
     },
     send,
     saveDraft,
+    getDraftOrganization: (account, id) =>
+      get(
+        account.id,
+        Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
+        `/messages/${id}`,
+        { format: "minimal" },
+      ).pipe(
+        Effect.map((message) => ({
+          labels: (message.labelIds ?? []).filter((label) => label.startsWith("Label_")),
+          starred: message.labelIds?.includes("STARRED") ?? false,
+        })),
+        Effect.mapError(writeFailure(account.id)),
+      ),
+    setDraftOrganization: (account, id, organization) =>
+      Effect.gen(function* () {
+        const current = yield* get(
+          account.id,
+          Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
+          `/messages/${id}`,
+          { format: "minimal" },
+        );
+        const wanted = [...organization.labels, ...(organization.starred ? ["STARRED"] : [])];
+        const removable = (current.labelIds ?? []).filter(
+          (labelId) => labelId === "STARRED" || labelId.startsWith("Label_"),
+        );
+        yield* post(account.id, `/messages/${id}/modify`, {
+          addLabelIds: wanted,
+          removeLabelIds: removable.filter((labelId) => !wanted.includes(labelId)),
+        });
+      }).pipe(Effect.asVoid, Effect.mapError(writeFailure(account.id))),
     deleteDraft,
     fetchRaw,
     fetchAttachment,

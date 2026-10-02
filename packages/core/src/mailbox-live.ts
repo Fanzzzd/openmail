@@ -61,6 +61,7 @@ import type {
 import { AccountSettings, actorLabel } from "./domain.js";
 import {
   attachmentsKey,
+  draftOrganizationKey,
   importedMessage,
   originalAttachment,
   type ParsedDraft,
@@ -243,9 +244,13 @@ export const MailboxLive = (
           (message.includeOriginalAttachments === undefined
             ? ""
             : `|original:${message.includeOriginalAttachments}`);
+        const organizationKey = draftOrganizationKey(message.draftOrganization);
+        const organizationChanged =
+          organizationKey !== null && organizationKey !== draft.pushedOrganization;
+        const { draftOrganization, ...bodyMessage } = message;
         const remote = yield* adapter.saveDraft(account, {
           remote: draft.remote,
-          message,
+          message: organizationChanged ? message : bodyMessage,
           original,
           replaceAttachments: key !== draft.pushedAttachments,
         });
@@ -253,12 +258,30 @@ export const MailboxLive = (
           yield* adapter.deleteDraft(account, remote);
           return;
         }
-        // Gmail and IMAP replace the message; the old local copy would show twice.
         const old = draft.remote?.messageId;
         if (old && old !== remote.messageId) yield* store.deleteMessage(account.id, old);
-        // A reader showing the old copy, or the Drafts list, has to look again.
-        // Pushes run in the background, so nothing else tells the app.
-        if (old !== remote.messageId) yield* changed;
+        let organizationApplied = organizationChanged;
+        if (
+          organizationChanged &&
+          remote.messageId &&
+          draftOrganization &&
+          adapter.setDraftOrganization
+        ) {
+          organizationApplied = yield* adapter
+            .setDraftOrganization(account, remote.messageId, draftOrganization)
+            .pipe(
+              Effect.as(true),
+              Effect.catchCause(() =>
+                Effect.logWarning("Draft organization could not be applied; body saved").pipe(
+                  Effect.as(false),
+                ),
+              ),
+            );
+        }
+        // A label failure must not replay a successful MIME save through the op queue.
+        // Record the attempted intent as well: a new UI change gets a new key.
+        if (organizationChanged) yield* store.setDraftOrganizationKey(draftId, organizationKey);
+        if (old !== remote.messageId || organizationApplied) yield* changed;
       });
 
       const pushOp = (account: Account, pending: PendingOp) => {
@@ -737,7 +760,20 @@ export const MailboxLive = (
       });
 
       const saveDraft = Effect.fn("Mailbox.saveDraft")(function* (input: DraftInput) {
-        yield* store.getAccount(input.accountId);
+        const account = yield* store.getAccount(input.accountId);
+        const draftOrganizationInput = input.message.draftOrganization;
+        if (
+          draftOrganizationInput?.labels.some(
+            (label) =>
+              !label.trim() ||
+              label.includes("\r") ||
+              label.includes("\n") ||
+              label.includes("\0") ||
+              (account.provider === "gmail" && !label.startsWith("Label_")) ||
+              (account.provider === "imap" && !/^[a-zA-Z0-9_$.-]+$/.test(label)),
+          )
+        )
+          return yield* new InvalidInput({ message: "Invalid draft label or keyword" });
         const saved = yield* store.transaction(
           Effect.gen(function* () {
             const existing = yield* store.getDraft(input.id);
@@ -819,13 +855,29 @@ export const MailboxLive = (
                 .pipe(Effect.catch(() => Effect.succeed(undefined)))
             : undefined;
         const parsed = withDraftMarkdownSource(decoded.parsed, markdownSource);
+        const fetchedOrganization = adapter.getDraftOrganization
+          ? yield* adapter
+              .getDraftOrganization(account, providerId)
+              .pipe(Effect.catch(() => Effect.succeed(undefined)))
+          : undefined;
+        const draftOrganization =
+          fetchedOrganization ??
+          (account.provider === "gmail"
+            ? {
+                labels: message.labels.filter((label) => label.startsWith("Label_")),
+                starred: message.isStarred,
+              }
+            : undefined);
         const thread = yield* store.getThread(message.id);
         return yield* store.transaction(
           Effect.gen(function* () {
             const draft = yield* store.putDraft({
               id: newDraftId(),
               accountId: account.id,
-              message: importedMessage(parsed, thread),
+              message: {
+                ...importedMessage(parsed, thread),
+                ...(draftOrganization ? { draftOrganization } : {}),
+              },
             });
             yield* store.setDraftRemote(
               draft.id,
@@ -833,6 +885,7 @@ export const MailboxLive = (
               { draftId: account.provider === "gmail" ? null : providerId, messageId: providerId },
               attachmentsKey(parsed.attachments),
             );
+            yield* store.setDraftOrganizationKey(draft.id, draftOrganizationKey(draftOrganization));
             return yield* store.getDraft(draft.id).pipe(Effect.map(Option.getOrThrow));
           }),
         );

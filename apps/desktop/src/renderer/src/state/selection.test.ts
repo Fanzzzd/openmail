@@ -140,3 +140,28 @@ it("one visible row set determines loaded count, action IDs and delete confirmat
   expect(requiresBatchDeleteConfirmation(50)).toBe(false);
   expect(requiresBatchDeleteConfirmation(51)).toBe(true);
 });
+
+it("selection after delete/archive follows the current ascending/descending sort order", () => {
+  const ascending = ["old", "middle", "new"];
+  const descending = ascending.toReversed();
+  const removed = new Set(["middle"]);
+  expect(selectionAfterRemoval(singleSelection("middle"), ascending, removed, "below").focus).toBe(
+    "new",
+  );
+  expect(selectionAfterRemoval(singleSelection("middle"), descending, removed, "below").focus).toBe(
+    "old",
+  );
+  expect(selectionAfterRemoval(singleSelection("middle"), ascending, removed, "above").focus).toBe(
+    "old",
+  );
+  expect(selectionAfterRemoval(singleSelection("middle"), descending, removed, "above").focus).toBe(
+    "new",
+  );
+});
+it("removing the last loaded row waits for the next page instead of jumping upward", () => {
+  const before = singleSelection("m99");
+  const loaded = Array.from({ length: 100 }, (_, index) => `m${index}`);
+  expect(selectionAfterRemoval(before, loaded, new Set(["m99"]), "below", true)).toBe(
+    EMPTY_SELECTION,
+  );
+});

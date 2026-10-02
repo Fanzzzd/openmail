@@ -36,6 +36,7 @@ const DraftRow = Schema.Struct({
   remote_draft_id: Schema.NullOr(Schema.String),
   remote_message_id: Schema.NullOr(Schema.String),
   pushed_attachments: Schema.NullOr(Schema.String),
+  pushed_organization: Schema.NullOr(Schema.String),
 });
 
 const LocalDraftRow = Schema.Struct({
@@ -77,6 +78,7 @@ function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
     proposalId: r.proposal_id,
     remote,
     pushedAttachments: r.pushed_attachments,
+    pushedOrganization: r.pushed_organization,
   };
 }
 
@@ -107,7 +109,7 @@ const MONTH = 30 * 86_400_000;
 
 export function makeComposeStore(sql: SqlClient.SqlClient) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
-    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments`);
+    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization`);
 
   const hasLabel = (label: string) =>
     sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
@@ -145,7 +147,8 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         ${draft.proposalId ?? null})
       ON CONFLICT(id) DO UPDATE SET account_id = excluded.account_id,
         message_json = excluded.message_json, updated_at = excluded.updated_at,
-        proposal_id = COALESCE(excluded.proposal_id, drafts.proposal_id)`);
+        proposal_id = COALESCE(excluded.proposal_id, drafts.proposal_id),
+        pushed_organization = CASE WHEN drafts.account_id = excluded.account_id THEN drafts.pushed_organization ELSE NULL END`);
     const saved = yield* getDraft(draft.id);
     if (Option.isNone(saved)) return yield* Effect.die("A draft just written is missing");
     return saved.value;
@@ -163,6 +166,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       WHERE id = ${id} RETURNING id`);
     return Option.isSome(row);
   });
+
+  const setDraftOrganizationKey = (id: string, key: string | null) =>
+    run(sql`UPDATE drafts SET pushed_organization = ${key} WHERE id = ${id}`);
 
   const deleteDraft = Effect.fn("Store.deleteDraft")(function* (id: string) {
     yield* run(sql`DELETE FROM drafts WHERE id = ${id}`);
@@ -273,6 +279,13 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         language: pref(f.language, stored.get("language"), d.language),
         markReadDelay: pref(f.markReadDelay, stored.get("markReadDelay"), d.markReadDelay),
         nextSelection: pref(f.nextSelection, stored.get("nextSelection"), d.nextSelection),
+        deleteKeyAction: pref(f.deleteKeyAction, stored.get("deleteKeyAction"), d.deleteKeyAction),
+        readingPanePosition: pref(
+          f.readingPanePosition,
+          stored.get("readingPanePosition"),
+          d.readingPanePosition,
+        ),
+        sidebarVisible: pref(f.sidebarVisible, stored.get("sidebarVisible"), d.sidebarVisible),
         readerZoom: pref(f.readerZoom, stored.get("readerZoom"), d.readerZoom),
         messageBackground: pref(
           f.messageBackground,
@@ -496,6 +509,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     draftByProposal,
     putDraft,
     setDraftRemote,
+    setDraftOrganizationKey,
     deleteDraft,
     enqueueDraftSave,
     dropSyncedDrafts,

@@ -111,6 +111,17 @@ export function originalAttachment(subject: string, raw: Uint8Array): OutgoingAt
   };
 }
 
+export function draftOrganizationKey(
+  organization: OutgoingMessage["draftOrganization"],
+): string | null {
+  return organization
+    ? JSON.stringify({
+        labels: [...new Set(organization.labels)].toSorted(),
+        starred: organization.starred,
+      })
+    : null;
+}
+
 /** Identifies an attachment list well enough to tell whether it changed since the last push. */
 export function attachmentsKey(list: readonly OutgoingAttachment[]): string {
   return JSON.stringify(

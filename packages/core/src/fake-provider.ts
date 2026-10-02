@@ -421,6 +421,18 @@ export function makeFakeProvider(
           server.sent.push({ message, original });
         }),
       ),
+    getDraftOrganization: (account, id) =>
+      Effect.sync(() => {
+        const message = server.messages.get(id);
+        return {
+          labels: (message?.labels ?? []).filter((label) =>
+            account.provider === "gmail"
+              ? label.startsWith("Label_")
+              : !["DRAFT", "STARRED", "UNREAD"].includes(label),
+          ),
+          starred: message?.isStarred ?? false,
+        };
+      }),
     saveDraft: (_account, push) =>
       Effect.andThen(
         failOnce,
@@ -429,7 +441,11 @@ export function makeFakeProvider(
           const known = push.remote?.draftId ?? findDraft(server, push.remote?.messageId);
           const draftId = known && server.drafts.has(known) ? known : `d${++counter}`;
           const previous = server.drafts.get(draftId);
+          const previousMessage = server.messages.get(
+            previous?.messageId ?? push.remote?.messageId ?? "",
+          );
           if (previous) server.messages.delete(previous.messageId);
+          else if (push.remote?.messageId) server.messages.delete(push.remote.messageId);
           const messageId = `dm${++counter}`;
           server.drafts.set(draftId, { messageId, push });
           const m = push.message;
@@ -447,14 +463,17 @@ export function makeFakeProvider(
             snippet: m.text.slice(0, 50),
             bodyText: m.text,
             bodyHtml: m.html ?? "",
-            labels: ["DRAFT"],
+            labels: push.message.draftOrganization
+              ? ["DRAFT", ...push.message.draftOrganization.labels]
+              : (previousMessage?.labels ?? ["DRAFT"]),
             attachments: m.attachments.map((a) => ({
               filename: a.filename,
               mimeType: a.mimeType,
               size: (a.content.length * 3) / 4,
             })),
             isUnread: false,
-            isStarred: false,
+            isStarred:
+              push.message.draftOrganization?.starred ?? previousMessage?.isStarred ?? false,
           });
           return { draftId, messageId };
         }),

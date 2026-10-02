@@ -19,6 +19,21 @@ const shiftCmd = (value: string): KeyStroke => cmd(value, { shift: true });
 const controlCmd = (value: string): KeyStroke => cmd(value, { control: true });
 
 const common = {
+  nextWindow: [cmd("`"), { key: "Tab", control: true }],
+  previousWindow: [cmd("~"), { key: "Tab", control: true, shift: true }],
+  focusMainWindow: [cmd("0", { alt: true })],
+  toggleReadingPane: [cmd("p", { alt: true })],
+  toggleSidebar: [cmd("s", { alt: true, shift: true })],
+  findNext: [cmd("g")],
+  findPrevious: [cmd("g", { alt: true })],
+  findSelection: [cmd("e")],
+  bold: [cmd("b")],
+  italic: [cmd("i")],
+  underline: [cmd("u")],
+  link: [cmd("k")],
+  strikethrough: [cmd("x", { alt: true })],
+  pasteMatchStyle: [cmd("v", { alt: true, shift: true })],
+  pasteQuotation: [cmd("v", { alt: true })],
   newWindow: [shiftCmd("n")],
   settings: [cmd(",")],
   help: [key("?")],
@@ -50,7 +65,7 @@ const native = {
   forward: [shiftCmd("f")],
   forwardAttachment: [cmd("f", { alt: true, shift: true })],
   archive: [controlCmd("a")],
-  trash: [cmd("Backspace")],
+  trash: [cmd("Backspace"), key("Backspace"), key("Delete")],
   spam: [shiftCmd("j")],
   search: [cmd("f", { alt: true }), cmd("f")],
   sync: [controlCmd("r")],
@@ -75,7 +90,7 @@ export const KEYMAP = {
     forward: [key("f")],
     forwardAttachment: [key("F")],
     archive: [key("e")],
-    trash: [key("#"), key("Backspace")],
+    trash: [key("#"), cmd("Backspace"), key("Backspace"), key("Delete")],
     spam: [key("!")],
     search: [key("/"), cmd("f")],
     sync: [cmd("r")],
@@ -121,7 +136,7 @@ function matches(stroke: KeyStroke, event: KeyEvent): boolean {
   // Symbols and uppercase letters already encode Shift in KeyboardEvent.key.
   const literalShift =
     stroke.key.length === 1 &&
-    (stroke.key !== stroke.key.toLowerCase() || /[?!#+]/.test(stroke.key));
+    (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key));
   if (!literalShift && Boolean(stroke.shift) !== event.shiftKey) return false;
   return literalShift
     ? event.key === stroke.key
@@ -144,8 +159,26 @@ export function shortcutAction(
     // A held reader key must not queue dialogs, browser tabs or searches.
     if (event.repeat && ["saveMessage", "openMessageWeb", "searchSender"].includes(action))
       continue;
-    if (typing && !["compose", "newWindow", "settings", "search"].includes(action)) continue;
-    if (KEYMAP[set][action].some((stroke) => (!typing || stroke.cmd) && matches(stroke, event)))
+    if (
+      typing &&
+      ![
+        "compose",
+        "newWindow",
+        "settings",
+        "search",
+        "nextWindow",
+        "previousWindow",
+        "focusMainWindow",
+      ].includes(action)
+    )
+      continue;
+    if (
+      KEYMAP[set][action].some(
+        (stroke) =>
+          (!typing || stroke.cmd || action === "nextWindow" || action === "previousWindow") &&
+          matches(stroke, event),
+      )
+    )
       return action;
   }
   return null;

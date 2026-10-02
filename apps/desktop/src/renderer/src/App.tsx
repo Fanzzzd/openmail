@@ -1,3 +1,5 @@
+import { pageAfterRemoval } from "./state/list-pages";
+import { deleteKeyOp, usesDeletePreference } from "./delete-key";
 import { readerSelectedText, quoteChoice } from "./quote-selection";
 import {
   readerThreadKey,
@@ -21,12 +23,13 @@ import {
   remoteComposeBody,
   textComposeHtml,
   type DeleteFolder,
+  type Prefs,
 } from "@openmail/core/schema";
 import { Cause, Effect, Fiber, Option } from "effect";
 import { PermanentDeletePermission } from "./components/PermanentDeletePermission";
 import { constVoid } from "effect/Function";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
-import { MAIL_KEYS } from "./state/keys";
+import { Keys, MAIL_KEYS } from "./state/keys";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
@@ -55,6 +58,7 @@ import { Overview } from "./components/Overview";
 import { ProfileEditor } from "./components/ProfileEditor";
 import { Proposals } from "./components/Proposals";
 import { Reader, useThreadPrint } from "./components/Reader";
+import { MailPanels } from "./components/MailPanels";
 import { ResizeHandle } from "./components/ResizeHandle";
 import { Settings } from "./components/Settings";
 import { Sidebar } from "./components/Sidebar";
@@ -173,12 +177,20 @@ export function App() {
   const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
   const selectedId = selection.ids.size === 1 ? ([...selection.ids][0] ?? null) : null;
   const setSelectedId = (id: string | null) => setSelection(singleSelection(id));
+  const [removalNavigation, setRemovalNavigation] = useState<{
+    scopeKey: string;
+    before: Selection;
+    fromList: readonly ThreadSummary[];
+    fallback: Selection;
+    target: Selection | null;
+  } | null>(null);
   const [restoration, setRestoration] = useState<{
     selection: Selection;
     scopeKey: string;
     fromList: readonly ThreadSummary[];
     expected: Selection;
   } | null>(null);
+  const [deleteKeyPrompt, setDeleteKeyPrompt] = useState(false);
   const [deleteRequest, setDeleteRequest] = useState<{
     ids: ReadonlySet<string>;
     scopeKey: string;
@@ -285,7 +297,10 @@ export function App() {
       list,
       listQuery?.flat ?? false,
     );
-    const reconciled = threads.loading ? remapped : trimSelection(remapped, visibleIds);
+    const preserveRemoval =
+      removalNavigation?.scopeKey === scopeKey && removalNavigation.before === selection;
+    const reconciled =
+      threads.loading || preserveRemoval ? remapped : trimSelection(remapped, visibleIds);
     if (reconciled !== selection) setSelection(reconciled);
     if (!sameScope) {
       setLabelPicker(false);
@@ -412,16 +427,67 @@ export function App() {
           prefs.nextSelection,
         )
       : before;
+    const nextPaged = removed.size
+      ? selectionAfterRemoval(
+          before,
+          list.map((row) => row.id),
+          removed,
+          prefs.nextSelection,
+          threads.canLoadMore,
+        )
+      : before;
+    const lastLoaded = list.at(-1);
+    const needsPage =
+      nextPaged === EMPTY_SELECTION &&
+      before.ids.size > 0 &&
+      [...before.ids].every((id) => removed.has(id)) &&
+      threads.canLoadMore &&
+      prefs.nextSelection === "below" &&
+      lastLoaded &&
+      listQuery;
+    if (needsPage)
+      setRemovalNavigation({
+        scopeKey: actionScopeKey,
+        before,
+        fromList: list,
+        fallback: next,
+        target: null,
+      });
     setReadTarget(null);
     run(
       modifyWithUndo(targets, op, !prefs.threadGrouping).pipe(
+        Effect.tap(() =>
+          needsPage
+            ? pageAfterRemoval(listQuery, lastLoaded, (nextQuery) =>
+                withMail((call) => call("Threads", { query: nextQuery })),
+              ).pipe(
+                Effect.matchCause({
+                  onSuccess: (page) =>
+                    setRemovalNavigation((pending) =>
+                      pending?.scopeKey === actionScopeKey && pending.before === before
+                        ? { ...pending, target: page[0] ? singleSelection(page[0].id) : next }
+                        : pending,
+                    ),
+                  onFailure: () => {
+                    setRemovalNavigation((pending) =>
+                      pending?.scopeKey === actionScopeKey && pending.before === before
+                        ? { ...pending, target: next }
+                        : pending,
+                    );
+                    say({ text: t`Could not load the next message`, tone: "error" });
+                  },
+                }),
+              )
+            : Effect.void,
+        ),
         Effect.matchCause({
           onFailure: (cause) => {
+            setRemovalNavigation((pending) => (pending?.before === before ? null : pending));
             const reason = causeText(i18n, cause);
             say({ text: t`Action failed: ${reason}`, tone: "error" });
           },
           onSuccess: (result) => {
-            applyActionSelection(before, next, actionScopeKey);
+            if (!needsPage) applyActionSelection(before, next, actionScopeKey);
             if (opts.quiet) return;
             showUndo(result, targets, i18n._(OP_DONE[op.kind](op)), () => {
               restoreActionSelection(before, actionScopeKey, rows);
@@ -430,6 +496,17 @@ export function App() {
         }),
       ),
     );
+  };
+
+  const applyDeleteKey = (action: Exclude<Prefs["deleteKeyAction"], "ask">) => {
+    const { op, fallback } = deleteKeyOp(action, {
+      mailbox: view.mailbox,
+      ...(view.label ? { currentLabel: view.label.id } : {}),
+      ...(selectedAccount ? { provider: selectedAccount.provider } : {}),
+    });
+    if (fallback) say({ text: t`No current label applies. Moving to Trash.` });
+    if (op.kind === "trash" && deleteFolder) requestPermanentDelete(batchRows.map((row) => row.id));
+    else act(op, fallback ? { quiet: true } : {});
   };
 
   const focusList = (focus: string | null) => {
@@ -443,6 +520,58 @@ export function App() {
       (row ?? element)?.focus({ preventScroll: true });
     });
   };
+  const continueRemovalNavigation = useEffectEvent(
+    (state: {
+      pending: typeof removalNavigation;
+      scopeKey: string;
+      selected: Selection;
+      rows: readonly ThreadSummary[];
+      loadingMore: boolean;
+      canLoadMore: boolean;
+    }) => {
+      const pending = state.pending;
+      if (!pending) return;
+      if (pending.scopeKey !== state.scopeKey || state.selected !== pending.before) {
+        setRemovalNavigation(null);
+        return;
+      }
+      const target = pending.target;
+      if (!target) return;
+      if (target.focus && !state.rows.some((row) => row.id === target.focus)) {
+        if (state.loadingMore) return;
+        if (state.canLoadMore) {
+          loadMore();
+          return;
+        }
+        if (state.rows === pending.fromList) return;
+      }
+      setRemovalNavigation(null);
+      const next =
+        target.focus && !state.rows.some((row) => row.id === target.focus)
+          ? trimSelection(pending.fallback, new Set(state.rows.map((row) => row.id)))
+          : target;
+      setSelection(next);
+      setSelectionSource("keyboard");
+      focusList(next.focus);
+    },
+  );
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled)
+        continueRemovalNavigation({
+          pending: removalNavigation,
+          scopeKey,
+          selected: selection,
+          rows: list,
+          loadingMore: threads.loadingMore,
+          canLoadMore: threads.canLoadMore,
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [removalNavigation, scopeKey, selection, list, threads.loadingMore, threads.canLoadMore]);
   const applyActionSelection = (before: Selection, next: Selection, actionScope: string) => {
     const current = currentSelection.current;
     if (current.scopeKey !== actionScope || current.selection !== before) return;
@@ -455,6 +584,7 @@ export function App() {
     actionScope: string,
     rows: readonly ThreadSummary[],
   ) => {
+    setRemovalNavigation(null);
     if (currentSelection.current.scopeKey !== actionScope) return;
     const current = currentSelection.current;
     const remapped = reconcileSelection(
@@ -920,6 +1050,7 @@ export function App() {
       snoozeIds ||
       filterSeed ||
       deleteRequest ||
+      deleteKeyPrompt ||
       e.defaultPrevented
     )
       return;
@@ -998,10 +1129,19 @@ export function App() {
       }
     }
     const action = shortcutAction(prefs.shortcutSet, e, typing);
-    if (!action) return;
+    if (!action || ["nextWindow", "previousWindow", "focusMainWindow"].includes(action)) return;
     if (
       view.space === OVERVIEW &&
-      !["compose", "newWindow", "settings", "help", "search", "sync"].includes(action)
+      ![
+        "compose",
+        "newWindow",
+        "settings",
+        "help",
+        "search",
+        "sync",
+        "toggleSidebar",
+        "toggleReadingPane",
+      ].includes(action)
     )
       return;
     e.preventDefault();
@@ -1043,8 +1183,35 @@ export function App() {
       case "archive":
         act({ kind: "archive" });
         break;
-      case "trash":
-        act({ kind: "trash" });
+      case "trash": {
+        if (!usesDeletePreference(e) || deleteFolder) {
+          applyDeleteKey("trash");
+          break;
+        }
+        if (prefs.deleteKeyAction === "ask") {
+          setDeleteKeyPrompt(true);
+          break;
+        }
+        applyDeleteKey(prefs.deleteKeyAction);
+        break;
+      }
+      case "toggleReadingPane":
+        run(
+          withMail((call) =>
+            call("SetPrefs", {
+              patch: {
+                readingPanePosition: prefs.readingPanePosition === "right" ? "bottom" : "right",
+              },
+            }),
+          ).pipe(Reactivity.mutation([Keys.prefs])),
+        );
+        break;
+      case "toggleSidebar":
+        run(
+          withMail((call) =>
+            call("SetPrefs", { patch: { sidebarVisible: !prefs.sidebarVisible } }),
+          ).pipe(Reactivity.mutation([Keys.prefs])),
+        );
         break;
       case "spam":
         act({ kind: "spam" });
@@ -1095,6 +1262,19 @@ export function App() {
         if (next.focus === list.at(-1)?.id) loadMore();
         break;
       }
+      case "nextWindow":
+      case "previousWindow":
+      case "focusMainWindow":
+      case "findNext":
+      case "findPrevious":
+      case "findSelection":
+      case "bold":
+      case "italic":
+      case "underline":
+      case "link":
+      case "strikethrough":
+      case "pasteMatchStyle":
+      case "pasteQuotation":
       // Composer and Reader own these actions.
       case "templates":
       case "sendArchive":
@@ -1132,53 +1312,55 @@ export function App() {
   const user = viewAccount?.email.split("@")[0];
   const title = viewAccount ? t`${baseTitle}: ${user}` : baseTitle;
 
-  // Pane widths persist per layout: mail has three panes, the overview and
-  // the empty state two.
+  // Sidebar widths persist separately from the list/reader orientation.
   const paneMode = !hasAccounts ? "empty" : view.space === OVERVIEW ? "overview" : "mail";
   const panes = useDefaultLayout({
     id: `openmail:panes:${paneMode}`,
-    panelIds: paneMode === "mail" ? ["sidebar", "list", "reader"] : ["sidebar", "main"],
+    panelIds: [...(prefs.sidebarVisible ? ["sidebar"] : []), paneMode === "mail" ? "mail" : "main"],
     storage: localStorage,
   });
 
+  const mailOrientation = prefs.readingPanePosition === "bottom" ? "vertical" : "horizontal";
   return (
     <div className="h-full text-[13px] text-neutral-900 dark:text-neutral-100">
       <Group
-        key={paneMode}
+        key={`${paneMode}:${prefs.sidebarVisible}`}
         orientation="horizontal"
         className="h-full"
         defaultLayout={panes.defaultLayout}
         onLayoutChanged={panes.onLayoutChanged}
         resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
       >
-        <Panel
-          id="sidebar"
-          data-mail-pane="sidebar"
-          defaultSize={232}
-          minSize={190}
-          maxSize={380}
-          groupResizeBehavior="preserve-pixel-size"
-        >
-          <Sidebar
-            view={view}
-            // The overview has no list; picking a mailbox there opens it in All.
-            onView={(v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v)}
-            onSpace={switchSpace}
-            onEditProfile={setEditing}
-            accounts={accountList}
-            profiles={profileList}
-            unread={counts}
-            syncState={syncState}
-            progress={progress}
-            proposals={proposals.length}
-            onAddAccount={() => setDialog("add")}
-            onCompose={() => startCompose("new")}
-            onReauth={reauth}
-            onProposals={() => setDialog("proposals")}
-            onSettings={() => setDialog("settings")}
-          />
-        </Panel>
-        <ResizeHandle />
+        {prefs.sidebarVisible && (
+          <Panel
+            id="sidebar"
+            data-mail-pane="sidebar"
+            defaultSize={232}
+            minSize={190}
+            maxSize={380}
+            groupResizeBehavior="preserve-pixel-size"
+          >
+            <Sidebar
+              view={view}
+              // The overview has no list; picking a mailbox there opens it in All.
+              onView={(v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v)}
+              onSpace={switchSpace}
+              onEditProfile={setEditing}
+              accounts={accountList}
+              profiles={profileList}
+              unread={counts}
+              syncState={syncState}
+              progress={progress}
+              proposals={proposals.length}
+              onAddAccount={() => setDialog("add")}
+              onCompose={() => startCompose("new")}
+              onReauth={reauth}
+              onProposals={() => setDialog("proposals")}
+              onSettings={() => setDialog("settings")}
+            />
+          </Panel>
+        )}
+        {prefs.sidebarVisible && <ResizeHandle />}
         {!hasAccounts ? (
           <Panel id="main" minSize={360}>
             <main className="h-full bg-white dark:bg-neutral-900">
@@ -1197,13 +1379,13 @@ export function App() {
             />
           </Panel>
         ) : (
-          <>
+          <MailPanels position={prefs.readingPanePosition}>
             <Panel
               id="list"
               data-mail-pane="list"
               defaultSize={380}
-              minSize={280}
-              maxSize={720}
+              minSize={mailOrientation === "vertical" ? 120 : 280}
+              maxSize={mailOrientation === "vertical" ? undefined : 720}
               groupResizeBehavior="preserve-pixel-size"
             >
               <MessageList
@@ -1318,8 +1500,13 @@ export function App() {
                 }}
               />
             </Panel>
-            <ResizeHandle />
-            <Panel id="reader" data-mail-pane="reader" tabIndex={-1} minSize={360}>
+            <ResizeHandle orientation={mailOrientation} />
+            <Panel
+              id="reader"
+              data-mail-pane="reader"
+              tabIndex={-1}
+              minSize={mailOrientation === "vertical" ? 150 : 360}
+            >
               <Reader
                 messageId={selectedId}
                 threadKey={currentReaderThreadKey}
@@ -1428,9 +1615,33 @@ export function App() {
                 }
               />
             </Panel>
-          </>
+          </MailPanels>
         )}
       </Group>
+      <Alert
+        open={deleteKeyPrompt}
+        onOpenChange={setDeleteKeyPrompt}
+        title={t`Choose Delete key action`}
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        {(["trash", "archive", "removeLabel"] as const).map((action) => (
+          <button
+            type="button"
+            key={action}
+            className={alertButton}
+            onClick={() => {
+              setDeleteKeyPrompt(false);
+              applyDeleteKey(action);
+            }}
+          >
+            {action === "trash"
+              ? t`Move to Trash`
+              : action === "archive"
+                ? t`Archive`
+                : t`Remove current label`}
+          </button>
+        ))}
+      </Alert>
       <Alert
         open={quotePrompt !== null}
         onOpenChange={(open) => {

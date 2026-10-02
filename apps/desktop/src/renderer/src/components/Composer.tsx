@@ -11,6 +11,7 @@ import {
   applySignature,
   composeEditorText,
   fillTemplate,
+  customTemplateVariables,
   ownText,
   attachmentProblem,
   attachmentSizesProblem,
@@ -56,6 +57,7 @@ import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
 import { templatesAtom, sendAsAtom, prefsAtom, threadAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
+import { DraftOrganization } from "./DraftOrganization";
 import { ComposeEditor } from "./ComposeEditor";
 import {
   editorBody,
@@ -122,6 +124,8 @@ export function Composer({
   const [adding, setAdding] = useState(Boolean(initial.loadOriginalAttachments));
   const attachmentDrag = useRef<number | null>(null);
   const [picker, setPicker] = useState(false);
+  const [templateForm, setTemplateForm] = useState<Template | null>(null);
+  const [templateValues, setTemplateValues] = useState<Record<string, string>>({});
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
   const fileRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<ComposeElement>(null);
@@ -285,7 +289,7 @@ export function Composer({
     // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
     // Escape belongs to the dialog: it closes the innermost popup, then the window.
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || asking || closing || checkingClose) return;
+      if (e.defaultPrevented || asking || closing || checkingClose || templateForm) return;
       if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
         e.preventDefault();
         submit(true);
@@ -436,12 +440,20 @@ export function Composer({
       replaceEditorText(bodyRef.current, composeEditorText(draft.body), text);
     set({
       accountId: sender.accountId,
+      organization: sender.accountId === draft.accountId ? draft.organization : undefined,
       from: { name: sender.name, address: sender.address },
       body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
   };
 
-  const insertTemplate = (template: Template) => {
+  const insertTemplate = (template: Template, values?: Readonly<Record<string, string>>) => {
+    const variables = customTemplateVariables(template.subject, template.body);
+    if (variables.length && values === undefined) {
+      setTemplateValues(Object.fromEntries(variables.map((name) => [name, ""])));
+      setTemplateForm(template);
+      setPicker(false);
+      return;
+    }
     if (bodyRef.current instanceof HTMLDivElement && !bodyRef.current.isContentEditable) {
       setError(t`Choose Edit body before inserting a template.`);
       return;
@@ -450,17 +462,18 @@ export function Composer({
     const cc = merge(draft.cc, template.cc);
     const bcc = merge(draft.bcc, template.bcc ?? []);
     const first = parseAddresses(to).addresses[0];
-    const text = fillTemplate(template.body, first);
+    const text = fillTemplate(template.body, first, values);
     if (bodyRef.current) insertEditorText(bodyRef.current, text, selectionRef.current);
     set({
       to,
       cc,
       bcc,
-      subject: template.subject ? fillTemplate(template.subject, first) : draft.subject,
+      subject: template.subject ? fillTemplate(template.subject, first, values) : draft.subject,
       body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
     if (cc || bcc) setShowBcc(true);
     setPicker(false);
+    setTemplateForm(null);
     requestAnimationFrame(() => bodyRef.current?.focus());
   };
 
@@ -678,7 +691,50 @@ export function Composer({
               />
             </div>
 
+            {templateForm && (
+              <fieldset className="shrink-0 space-y-2 border-b px-4 py-3">
+                <legend>{t`Fill template variables`}</legend>
+                {customTemplateVariables(templateForm.subject, templateForm.body).map((name) => (
+                  <label key={name} className="flex items-center gap-2">
+                    <span>{name}</span>
+                    <input
+                      aria-label={name}
+                      value={templateValues[name] ?? ""}
+                      className="min-w-0 flex-1 rounded border px-2 py-1"
+                      onChange={(event) =>
+                        setTemplateValues((previous) => ({
+                          ...previous,
+                          [name]: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setTemplateForm(null);
+                        }
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          insertTemplate(templateForm, templateValues);
+                        }
+                      }}
+                    />
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  className={alertPrimary}
+                  onClick={() => insertTemplate(templateForm, templateValues)}
+                >{t`Insert template`}</button>
+                <button
+                  type="button"
+                  className={alertButton}
+                  onClick={() => setTemplateForm(null)}
+                >{t`Cancel`}</button>
+              </fieldset>
+            )}
             <ComposeEditor
+              shortcutSet={prefs.shortcutSet}
               body={draft.body}
               attachments={draft.attachments}
               onChange={(body) => set({ body })}
@@ -825,6 +881,19 @@ export function Composer({
                   <Paperclip className="size-4" />
                 </button>
               </Tip>
+              {account && (
+                <DraftOrganization
+                  provider={account.provider}
+                  accountId={account.id}
+                  value={draft.organization ?? { labels: [], starred: false }}
+                  onChange={(organization) => {
+                    const next = { ...draft, organization };
+                    setDraft(next);
+                    saved.current = next;
+                    save(toDraftInput(next));
+                  }}
+                />
+              )}
               <TemplatePicker
                 open={picker}
                 onOpenChange={setPicker}

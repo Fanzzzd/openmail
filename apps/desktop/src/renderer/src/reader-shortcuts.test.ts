@@ -26,3 +26,12 @@ for (const set of ["mimestream", "apple", "gmail"] satisfies ShortcutSet[]) {
     expect(readerFindAction(set, key("f", { altKey: true }), true)).toBeNull();
   });
 }
+
+it("find previous and selection use the central keymap in each set", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(readerFindAction(set, key("g", { altKey: true }), true)).toBe("previous");
+    expect(readerFindAction(set, key("g", { altKey: true }), false)).toBeNull();
+    expect(readerFindAction(set, key("e"), false)).toBe("selection");
+    expect(readerFindAction(set, key("e", { altKey: true }), false)).toBeNull();
+  }
+});

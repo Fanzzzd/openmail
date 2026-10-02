@@ -1,6 +1,10 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
+import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
+import { Effect } from "effect";
+import { useRunMail, withMail } from "../state/mail";
 import { useLingui } from "@lingui/react/macro";
 import {
+  composePaste,
   composeConversion,
   composeMatches,
   composeEditorText,
@@ -11,7 +15,7 @@ import {
   escapeComposeText,
   type ComposeBody,
 } from "@openmail/core/schema";
-import { Bold, Italic, Underline, Link, Unlink } from "lucide-react";
+import { Bold, Italic, Underline, Link, Unlink, Strikethrough } from "lucide-react";
 import {
   useLayoutEffect,
   useMemo,
@@ -36,6 +40,7 @@ import { Select } from "./ui/Select";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 
 interface Props {
+  shortcutSet: ShortcutSet;
   body: ComposeBody;
   attachments: readonly OutgoingAttachment[];
   onChange: (body: ComposeBody) => void;
@@ -43,8 +48,17 @@ interface Props {
   selectionRef: RefObject<Range | null>;
 }
 
-export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionRef }: Props) {
+export function ComposeEditor({
+  body,
+  attachments,
+  onChange,
+  bodyRef,
+  selectionRef,
+  shortcutSet,
+}: Props) {
   const { t } = useLingui();
+  const run = useRunMail();
+  const [pasteError, setPasteError] = useState(false);
   const richRef = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef<string | null>(null);
   const [previewCache] = useState(makeInlinePreviewCache);
@@ -168,9 +182,12 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
     setFindIndex(0);
   };
   const findKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    editorKey(event);
+    if (event.defaultPrevented) return;
     if (event.key === "Enter") {
       event.preventDefault();
-      if (matches.length) selectMatch((findIndex + 1) % matches.length);
+      if (matches.length)
+        selectMatch((findIndex + (event.shiftKey ? matches.length - 1 : 1)) % matches.length);
     }
     if (event.key === "Escape") {
       event.preventDefault();
@@ -178,12 +195,123 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
       setFinding(false);
     }
   };
+  const paste = (mode: "matchStyle" | "quotation") => {
+    if (locked) return;
+    remember();
+    const element = bodyRef.current;
+    const selection = selectionRef.current?.cloneRange() ?? null;
+    const snapshot = element instanceof HTMLTextAreaElement ? element.value : element?.innerHTML;
+    const caret =
+      element instanceof HTMLTextAreaElement
+        ? { start: element.selectionStart, end: element.selectionEnd }
+        : null;
+    setPasteError(false);
+    run(
+      withMail((call) => call("ClipboardText", undefined)).pipe(
+        Effect.matchCause({
+          onFailure: () => setPasteError(true),
+          onSuccess: (text) => {
+            if (
+              !element ||
+              element !== bodyRef.current ||
+              (element instanceof HTMLDivElement && !element.isContentEditable)
+            )
+              return;
+            if (
+              snapshot !==
+              (element instanceof HTMLTextAreaElement ? element.value : element.innerHTML)
+            )
+              return;
+            const content = composePaste(text, mode);
+            if (element instanceof HTMLTextAreaElement) {
+              element.focus();
+              if (caret) element.setSelectionRange(caret.start, caret.end);
+              document.execCommand("insertText", false, content.text);
+              onChange(editorBody(element, body));
+            } else {
+              restoreEditorSelection(element, selection);
+              document.execCommand("insertHTML", false, content.html);
+              changed();
+            }
+          },
+        }),
+      ),
+    );
+  };
+  const editorKey = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.defaultPrevented) return;
+    const inBody =
+      event.target === bodyRef.current ||
+      (event.target instanceof Node && richRef.current?.contains(event.target));
+    const inFind = event.target instanceof Element && Boolean(event.target.closest("search"));
+    if (!inBody && !inFind) return;
+    if (
+      matchesShortcut(shortcutSet, "search", event) &&
+      (event.metaKey || event.ctrlKey) &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      setFinding(true);
+      return;
+    }
+    if (matchesShortcut(shortcutSet, "findSelection", event) && inBody) {
+      event.preventDefault();
+      event.stopPropagation();
+      const element = bodyRef.current;
+      const text =
+        element instanceof HTMLTextAreaElement
+          ? element.value.slice(element.selectionStart, element.selectionEnd)
+          : (window.getSelection()?.toString() ?? "");
+      if (text) {
+        setFindQuery(text);
+        setFindIndex(0);
+        setFinding(true);
+      }
+      return;
+    }
+    if (
+      matchesShortcut(shortcutSet, "findNext", event) ||
+      matchesShortcut(shortcutSet, "findPrevious", event)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!finding) setFinding(true);
+      if (matches.length)
+        selectMatch(
+          (findIndex +
+            (matchesShortcut(shortcutSet, "findPrevious", event) ? matches.length - 1 : 1)) %
+            matches.length,
+        );
+      return;
+    }
+    if (!inBody || locked) return;
+    if (
+      matchesShortcut(shortcutSet, "pasteMatchStyle", event) ||
+      matchesShortcut(shortcutSet, "pasteQuotation", event)
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      paste(matchesShortcut(shortcutSet, "pasteQuotation", event) ? "quotation" : "matchStyle");
+      return;
+    }
+    if (body.kind !== "rich") return;
+    for (const action of ["bold", "italic", "underline", "link", "strikethrough"] as const) {
+      if (!matchesShortcut(shortcutSet, action, event)) continue;
+      event.preventDefault();
+      event.stopPropagation();
+      remember();
+      if (action === "link") openLink();
+      else command(action === "strikethrough" ? "strikeThrough" : action);
+      return;
+    }
+  };
   const button =
     "rounded p-1.5 text-neutral-500 hover:bg-black/5 focus-visible:outline-blue-500 dark:text-neutral-400 dark:hover:bg-white/10";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-1 border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]">
+      <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]">
         <Select
           aria-label={t`Writing mode`}
           value={body.kind}
@@ -204,6 +332,20 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
           disabled={locked}
           onClick={() => setFinding((value) => !value)}
         >{t`Find and replace`}</button>
+        <button
+          type="button"
+          className={button}
+          disabled={locked}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => paste("matchStyle")}
+        >{t`Paste and match style`}</button>
+        <button
+          type="button"
+          className={button}
+          disabled={locked}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => paste("quotation")}
+        >{t`Paste as quotation`}</button>
         {modeUndo && (
           <button
             type="button"
@@ -221,6 +363,7 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
               { name: "bold", label: t`Bold`, Icon: Bold },
               { name: "italic", label: t`Italic`, Icon: Italic },
               { name: "underline", label: t`Underline`, Icon: Underline },
+              { name: "strikeThrough", label: t`Strikethrough`, Icon: Strikethrough },
             ].map(({ name, label, Icon }) => (
               <button
                 key={name}
@@ -260,6 +403,7 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
           </>
         )}
       </div>
+      {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
       {finding && (
         <search
           aria-label={t`Find and replace`}
@@ -420,28 +564,12 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
           aria-multiline="true"
           aria-readonly={locked}
           aria-label={t`Body`}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold"
+          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3"
+          onKeyDown={editorKey}
           onInput={changed}
           onKeyUp={remember}
           onMouseUp={remember}
           onBlur={remember}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
-              e.preventDefault();
-              setFinding(true);
-              return;
-            }
-            if (locked) return;
-            if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
-              const key = e.key.toLowerCase();
-              if (key === "b" || key === "i" || key === "u" || key === "k") {
-                e.preventDefault();
-                remember();
-                if (key === "k") openLink();
-                else command(key === "b" ? "bold" : key === "i" ? "italic" : "underline");
-              }
-            }
-          }}
           onPaste={(e) => {
             if (e.defaultPrevented) return;
             e.preventDefault();
@@ -460,12 +588,7 @@ export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionR
             bodyRef.current = element;
           }}
           value={body.text}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
-              e.preventDefault();
-              setFinding(true);
-            }
-          }}
+          onKeyDown={editorKey}
           onChange={(e) => {
             setModeUndo(null);
             onChange({ kind: body.kind, text: e.target.value });

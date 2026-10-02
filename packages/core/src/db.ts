@@ -502,6 +502,8 @@ export const MIGRATIONS: readonly string[] = [
      account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
      backup_json TEXT NOT NULL
    );`,
+  // Migration 21: last pushed draft organization, independent of body autosaves.
+  `ALTER TABLE drafts ADD COLUMN pushed_organization TEXT;`,
 ];
 
 /**

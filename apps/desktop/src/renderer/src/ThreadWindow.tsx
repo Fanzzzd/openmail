@@ -1,3 +1,5 @@
+import { deleteKeyOp, usesDeletePreference } from "./delete-key";
+import { Alert, AlertCancel, alertButton } from "./components/ui/Dialog";
 import { shortcutAction } from "../../shared/shortcuts";
 import { Settings } from "./components/Settings";
 import { ShortcutHelp } from "./components/SystemSettings";
@@ -62,6 +64,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []).filter(
     (l) => l.accountId === account?.id,
   );
+  const [deleteKeyPrompt, setDeleteKeyPrompt] = useState(false);
   const [labelPicker, setLabelPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [dialog, setDialog] = useState<"settings" | "help" | "add" | null>(null);
@@ -103,7 +106,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     [unread, marked, prefs.markReadDelay],
   );
 
-  const act = (op: MailOp) => {
+  const act = (op: MailOp, keepOpen = false) => {
     if (op.kind === "read" && !op.value) setMarked(true);
     return run(
       (single
@@ -116,7 +119,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             say({ text: t`Action failed: ${reason}`, tone: "error" });
           },
           onSuccess: () => {
-            if (LEAVES.has(op.kind)) window.close();
+            if (LEAVES.has(op.kind) && !keepOpen) window.close();
           },
         }),
       ),
@@ -125,12 +128,15 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const onKey = useEffectEvent((e: KeyboardEvent) => {
     if (
       dialog ||
+      deleteKeyPrompt ||
       e.defaultPrevented ||
-      (e.target instanceof Element &&
-        e.target.closest('[role="menu"],[role="dialog"],input,textarea,[contenteditable="true"]'))
+      (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]'))
     )
       return;
-    const action = shortcutAction(prefs.shortcutSet, e);
+    const typing =
+      e.target instanceof Element &&
+      Boolean(e.target.closest("input,textarea,select,[contenteditable]"));
+    const action = shortcutAction(prefs.shortcutSet, e, typing);
     if (!action) return;
     switch (action) {
       case "undo":
@@ -140,6 +146,10 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       case "print":
         e.preventDefault();
         print(id, false, !single && prefs.threadGrouping ? undefined : id);
+        break;
+      case "compose":
+        e.preventDefault();
+        run(withMail((call) => call("ComposeNew", undefined)));
         break;
       case "newWindow":
         e.preventDefault();
@@ -157,10 +167,21 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
         e.preventDefault();
         act({ kind: "archive" });
         break;
-      case "trash":
+      case "trash": {
         e.preventDefault();
-        act({ kind: "trash" });
+        if (!usesDeletePreference(e)) {
+          act({ kind: "trash" });
+          break;
+        }
+        if (prefs.deleteKeyAction === "ask") {
+          setDeleteKeyPrompt(true);
+          break;
+        }
+        const { op, fallback } = deleteKeyOp(prefs.deleteKeyAction, {});
+        if (fallback) say({ text: t`No current label applies. Moving to Trash.` });
+        act(op, fallback);
         break;
+      }
       case "spam":
         e.preventDefault();
         act({ kind: "spam" });
@@ -241,6 +262,26 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       {dialog === "add" && (
         <AddAccountDialog onClose={() => setDialog(null)} onAdded={() => setDialog("settings")} />
       )}
+      <Alert
+        open={deleteKeyPrompt}
+        onOpenChange={setDeleteKeyPrompt}
+        title={t`Choose Delete key action`}
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        {(["trash", "archive"] as const).map((action) => (
+          <button
+            type="button"
+            key={action}
+            className={alertButton}
+            onClick={() => {
+              setDeleteKeyPrompt(false);
+              act({ kind: action });
+            }}
+          >
+            {action === "trash" ? t`Move to Trash` : t`Archive`}
+          </button>
+        ))}
+      </Alert>
       <Toast toast={toast} onDone={hideToast} />
     </div>
   );

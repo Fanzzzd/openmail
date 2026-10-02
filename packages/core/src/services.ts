@@ -166,6 +166,7 @@ export interface StoredDraft {
   remote: DraftRemote | null;
   /** attachmentsKey() of the attachments last pushed. */
   pushedAttachments: string | null;
+  pushedOrganization: string | null;
 }
 
 /**
@@ -327,6 +328,7 @@ export class Store extends Context.Service<
       remote: DraftRemote | null,
       pushedAttachments: string | null,
     ): Effect.Effect<boolean>;
+    setDraftOrganizationKey(id: string, key: string | null): Effect.Effect<void>;
     /** Deletes the draft and its queued saves that are not being pushed. */
     deleteDraft(id: string): Effect.Effect<void>;
     /** Queues a push of the draft unless one is already waiting. */
@@ -569,6 +571,16 @@ export interface ProviderAdapter {
    * every save. A copy deleted on the server meanwhile is created again.
    */
   saveDraft(account: Account, draft: DraftPush): Effect.Effect<DraftRemote, ProviderFailure>;
+  getDraftOrganization?(
+    account: Account,
+    id: string,
+  ): Effect.Effect<NonNullable<OutgoingMessage["draftOrganization"]>, ProviderFailure>;
+  /** Providers that label the created message separately, after its remote ID is durable. */
+  setDraftOrganization?(
+    account: Account,
+    id: string,
+    organization: NonNullable<OutgoingMessage["draftOrganization"]>,
+  ): Effect.Effect<void, ProviderFailure>;
   /** Deletes the provider's copy. One that is already gone counts as deleted. */
   deleteDraft(account: Account, remote: DraftRemote): Effect.Effect<void, ProviderFailure>;
   /** Graph preserves editable Markdown source as a draft extended property. */

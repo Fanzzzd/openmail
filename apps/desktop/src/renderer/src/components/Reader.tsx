@@ -1,5 +1,6 @@
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
 import { readerMessageId, useReaderMessages } from "../reader-selection";
+import { readerSelectedText } from "../quote-selection";
 import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -451,11 +452,29 @@ export function ThreadView({
         ? e.target.closest<HTMLElement>("[data-message-id]")?.dataset.messageId
         : undefined) ?? messageId;
     if (insideReader && e.isTrusted) activate(targetMessageId);
-    if (insideReader) {
+    const typingFind =
+      e.target instanceof Element &&
+      Boolean(e.target.closest("input,textarea,select,[contenteditable]"));
+    if (insideReader && (!typingFind || e.target === findRef.current)) {
       const findAction = readerFindAction(prefs.shortcutSet, e, finding);
       if (findAction === "find") {
         e.preventDefault();
         beginFind(targetMessageId);
+        return;
+      }
+      if (findAction === "selection") {
+        e.preventDefault();
+        const text = readerSelectedText(document, targetMessageId);
+        if (text) {
+          setFindQuery(text);
+          setFindIndex(0);
+          beginFind(targetMessageId);
+        }
+        return;
+      }
+      if (findAction === "previous") {
+        e.preventDefault();
+        findNext(-1);
         return;
       }
       if (findAction === "next") {
@@ -526,6 +545,31 @@ export function ThreadView({
     activate(id);
     onZoomKey(e);
     onReaderKey(e, id);
+    if (!e.defaultPrevented && !e.repeat) {
+      const typing = Boolean(
+        e.target &&
+        "closest" in e.target &&
+        typeof e.target.closest === "function" &&
+        e.target.closest("input,textarea,select,[contenteditable]"),
+      );
+      const action = shortcutAction(prefs.shortcutSet, e, typing);
+      if (action === "nextWindow" || action === "previousWindow" || action === "focusMainWindow") {
+        e.preventDefault();
+        run(withMail((call) => call("SwitchWindow", { action })));
+      }
+      if (action === "compose" || action === "newWindow" || action === "settings") {
+        e.preventDefault();
+        run(
+          withMail((call) =>
+            action === "compose"
+              ? call("ComposeNew", undefined)
+              : action === "newWindow"
+                ? call("NewWindow", undefined)
+                : call("OpenSettings", undefined),
+          ),
+        );
+      }
+    }
   };
   useEffect(() => {
     const listener = (e: KeyboardEvent) => readerKeys(e);

@@ -2,6 +2,7 @@ import { RegistryProvider } from "@effect/atom-react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { WindowKeys } from "./components/WindowKeys";
 import { App } from "./App";
 import { ThreadWindow } from "./ThreadWindow";
 import { LocaleProvider } from "./components/LocaleProvider";
@@ -18,6 +19,7 @@ createRoot(document.getElementById("root")!).render(
     <RegistryProvider>
       <LocaleProvider>
         <TipProvider>
+          <WindowKeys />
           {thread ? (
             <ThreadWindow
               id={thread}

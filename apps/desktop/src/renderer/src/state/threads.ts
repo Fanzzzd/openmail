@@ -131,6 +131,7 @@ export interface ThreadList {
   threads: readonly ThreadSummary[];
   /** No result for this query yet; `threads` may still be the previous view's. */
   loading: boolean;
+  loadingMore: boolean;
   /** Older threads exist and no page is in flight. */
   canLoadMore: boolean;
   moreNotLoaded: number | null;
@@ -142,6 +143,7 @@ export interface ThreadList {
 const EMPTY: ThreadList = {
   threads: [],
   loading: false,
+  loadingMore: false,
   canLoadMore: false,
   moreNotLoaded: null,
   searchingServer: false,
@@ -215,6 +217,7 @@ export const threadListAtom = Atom.writable(
         moreNotLoaded: null,
         threads: remote ? remoteRows : shown.threads,
         loading: result._tag === "Initial",
+        loadingMore: result.waiting,
         canLoadMore: false,
       };
     }
@@ -224,6 +227,7 @@ export const threadListAtom = Atom.writable(
         ? mergeSearchResults(loaded.value.threads, remoteRows, query.flat)
         : loaded.value.threads,
       loading: false,
+      loadingMore: result.waiting,
       moreNotLoaded:
         total === null ||
         query.search !== undefined ||

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Effect } from "effect";
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
-import { refreshPages } from "./list-pages";
+import { pageAfterRemoval, refreshPages } from "./list-pages";
 
 const row = (i: number): ThreadSummary => ({
   id: `m${i}`,
@@ -48,4 +48,21 @@ describe("list invalidation", () => {
     expect(next.threads).toHaveLength(299);
     expect(next.threads.at(-1)?.id).toBe("m299");
   });
+});
+
+it("deleting the loaded tail queries and selects the first row beyond the deleted cursor", async () => {
+  const rows = Array.from({ length: 200 }, (_, index) => row(index));
+  const boundary = rows[99];
+  if (!boundary) throw new Error("Missing tail");
+  const afterDelete = rows.filter((item) => item.id !== boundary.id);
+  const read = (query: ThreadQuery) =>
+    Effect.succeed(
+      afterDelete.filter((item) => item.date < (query.before ?? Infinity)).slice(0, query.limit),
+    );
+  const page = await Effect.runPromise(
+    pageAfterRemoval({ mailbox: "inbox", accountIds: ["a"] }, boundary, read),
+  );
+  expect(page[0]?.id).toBe("m100");
+  expect(page[0]?.id).not.toBe("m98");
+  expect(page).toHaveLength(100);
 });

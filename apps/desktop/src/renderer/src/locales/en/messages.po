@@ -440,6 +440,10 @@ msgstr "App-specific password"
 msgid "Apple Mail"
 msgstr "Apple Mail"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Apply"
+msgstr "Apply"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "Apply link"
@@ -456,13 +460,16 @@ msgstr "Apply to existing mail?"
 msgid "Approve suggestion"
 msgstr "Approve suggestion"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Archive"
 msgstr "Archive"
 
@@ -475,6 +482,7 @@ msgid "Archived"
 msgstr "Archived"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Ask each time"
 msgstr "Ask each time"
 
@@ -564,6 +572,7 @@ msgid "Body"
 msgstr "Body"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Bold"
 msgstr "Bold"
 
@@ -630,12 +639,17 @@ msgstr "Can't reach the mail server right now: {0}"
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
 msgstr "Cancel"
 
 #: src/renderer/src/errors.ts
 msgid "Cannot build calendar response"
 msgstr "Cannot build calendar response"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Category names, separated by commas"
+msgstr "Category names, separated by commas"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -691,6 +705,11 @@ msgstr "Choose a verified send-as address for this account"
 msgid "Choose at least one filter action"
 msgstr "Choose at least one filter action"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Choose Delete key action"
+msgstr "Choose Delete key action"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Choose Edit body before inserting a template."
 msgstr "Choose Edit body before inserting a template."
@@ -709,6 +728,7 @@ msgstr "Clear selection"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
@@ -823,6 +843,10 @@ msgstr "Could not decode winmail.dat. You can save the original file."
 msgid "Could not load the calendar invitation."
 msgstr "Could not load the calendar invitation."
 
+#: src/renderer/src/App.tsx
+msgid "Could not load the next message"
+msgstr "Could not load the next message"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
 msgstr "Could not open notification settings."
@@ -830,6 +854,10 @@ msgstr "Could not open notification settings."
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
 msgstr "Could not read attached message."
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Could not read clipboard"
+msgstr "Could not read clipboard"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
@@ -981,6 +1009,10 @@ msgstr "Delete {0} conversations?"
 msgid "Delete filter?"
 msgstr "Delete filter?"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Delete key action"
+msgstr "Delete key action"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "Delete label or folder?"
@@ -1048,9 +1080,21 @@ msgstr "Downloading models: {0}%"
 msgid "Draft"
 msgstr "Draft"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft categories"
+msgstr "Draft categories"
+
 #: src/renderer/src/App.tsx
 msgid "Draft discarded"
 msgstr "Draft discarded"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft keywords"
+msgstr "Draft keywords"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft labels"
+msgstr "Draft labels"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
@@ -1079,6 +1123,7 @@ msgid "Edit body"
 msgstr "Edit body"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Edit link"
 msgstr "Edit link"
 
@@ -1205,6 +1250,10 @@ msgstr "Favorites"
 msgid "File"
 msgstr "File"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Fill template variables"
+msgstr "Fill template variables"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
 msgstr "Filter"
@@ -1229,6 +1278,10 @@ msgstr "Finish signing in in your browser"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Finish signing in in your browser, then come back here."
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Focus main window"
+msgstr "Focus main window"
 
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
@@ -1363,6 +1416,10 @@ msgstr "Images and PDF text are processed on this device. No content is sent to 
 msgid "IMAP account"
 msgstr "IMAP account"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "IMAP keywords, separated by commas"
+msgstr "IMAP keywords, separated by commas"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP server"
@@ -1404,6 +1461,10 @@ msgstr "Include matches"
 msgid "Include original attachments"
 msgstr "Include original attachments"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert template"
+msgstr "Insert template"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
@@ -1413,6 +1474,7 @@ msgid "Internal reply"
 msgstr "Internal reply"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Italic"
 msgstr "Italic"
 
@@ -1768,6 +1830,12 @@ msgstr "Move to folder…"
 msgid "Move to Inbox"
 msgstr "Move to Inbox"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Move to Trash"
+msgstr "Move to Trash"
+
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
@@ -1865,6 +1933,7 @@ msgstr "Next below"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next match"
 msgstr "Next match"
 
@@ -1875,6 +1944,10 @@ msgstr "Next thread"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Next week"
 msgstr "Next week"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next window"
+msgstr "Next window"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "No access token saved"
@@ -1887,6 +1960,15 @@ msgstr "No accounts yet"
 #: src/renderer/src/components/Settings.tsx
 msgid "No activity yet."
 msgstr "No activity yet."
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "No current label applies. Moving to Trash."
+msgstr "No current label applies. Moving to Trash."
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "No custom labels"
+msgstr "No custom labels"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
@@ -2158,6 +2240,16 @@ msgstr "Parent folder"
 msgid "Password"
 msgstr "Password"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste and match style"
+msgstr "Paste and match style"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste as quotation"
+msgstr "Paste as quotation"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Pause"
 msgstr "Pause"
@@ -2206,12 +2298,17 @@ msgstr "Preview: {0} messages. Only the previewed messages will be changed when 
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "Previous match"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
 msgstr "Previous thread"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous window"
+msgstr "Previous window"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
@@ -2324,6 +2421,11 @@ msgstr "Remove {token}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "Remove account"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove current label"
+msgstr "Remove current label"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2779,6 +2881,10 @@ msgstr "Show only starred"
 msgid "Show only unread"
 msgstr "Show only unread"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide sidebar"
+msgstr "Show or hide sidebar"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Show original"
 msgstr "Show original"
@@ -2894,6 +3000,10 @@ msgstr "SSL/TLS (usually 465)"
 msgid "Star"
 msgstr "Star"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft"
+msgstr "Star draft"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Star message"
 msgstr "Star message"
@@ -2925,6 +3035,11 @@ msgstr "Stop loading images from {domain}"
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "Stop suggesting {0}"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Strikethrough"
+msgstr "Strikethrough"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -3167,6 +3282,10 @@ msgstr "Today {time}"
 msgid "Toggle list filters"
 msgstr "Toggle list filters"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle reading pane position"
+msgstr "Toggle reading pane position"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
 msgstr "Tomorrow morning"
@@ -3182,6 +3301,7 @@ msgid "Tuesday"
 msgstr "Tuesday"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Underline"
 msgstr "Underline"
 
@@ -3276,6 +3396,10 @@ msgstr "Use an http, https or mailto link"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Use default"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use selection for find"
+msgstr "Use selection for find"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"

@@ -446,6 +446,10 @@ msgstr "应用专用密码"
 msgid "Apple Mail"
 msgstr "Apple 邮件"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Apply"
+msgstr "应用"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Apply link"
 msgstr "应用链接"
@@ -462,13 +466,16 @@ msgstr "应用到已有邮件？"
 msgid "Approve suggestion"
 msgstr "确认建议"
 
+#: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Archive"
 msgstr "归档"
 
@@ -481,6 +488,7 @@ msgid "Archived"
 msgstr "已归档"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
 msgid "Ask each time"
 msgstr "每次询问"
 
@@ -570,6 +578,7 @@ msgid "Body"
 msgstr "正文"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Bold"
 msgstr "粗体"
 
@@ -636,12 +645,17 @@ msgstr "暂时连不上邮件服务器：{0}"
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/state/desktop.ts
+#: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
 msgstr "取消"
 
 #: src/renderer/src/errors.ts
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Category names, separated by commas"
+msgstr "分类名称，用逗号分隔"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -697,6 +711,11 @@ msgstr "请选择此账户已验证的发件地址"
 msgid "Choose at least one filter action"
 msgstr "请选择至少一项操作"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Choose Delete key action"
+msgstr "选择删除键动作"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Choose Edit body before inserting a template."
 msgstr "请先选择“编辑正文”，再插入模板。"
@@ -715,6 +734,7 @@ msgstr "清除选择"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx
@@ -829,6 +849,10 @@ msgstr "无法解码 winmail.dat，可保存原文件。"
 msgid "Could not load the calendar invitation."
 msgstr "无法加载日历邀请。"
 
+#: src/renderer/src/App.tsx
+msgid "Could not load the next message"
+msgstr "无法加载下一封邮件"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not open notification settings."
 msgstr "无法打开通知设置。"
@@ -836,6 +860,10 @@ msgstr "无法打开通知设置。"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
 msgstr "无法读取附加邮件。"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Could not read clipboard"
+msgstr "无法读取剪贴板"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Could not read system permission"
@@ -987,6 +1015,10 @@ msgstr "删除 {0} 个会话？"
 msgid "Delete filter?"
 msgstr "删除过滤器？"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Delete key action"
+msgstr "删除键动作"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "删除标签或文件夹？"
@@ -1054,9 +1086,21 @@ msgstr "正在下载模型：{0}%"
 msgid "Draft"
 msgstr "草稿"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft categories"
+msgstr "草稿分类"
+
 #: src/renderer/src/App.tsx
 msgid "Draft discarded"
 msgstr "草稿已丢弃"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft keywords"
+msgstr "草稿关键词"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Draft labels"
+msgstr "草稿标签"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/view.ts
@@ -1085,6 +1129,7 @@ msgid "Edit body"
 msgstr "编辑正文"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Edit link"
 msgstr "编辑链接"
 
@@ -1211,6 +1256,10 @@ msgstr "收藏夹"
 msgid "File"
 msgstr "文件"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Fill template variables"
+msgstr "填写模板变量"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Filter"
 msgstr "筛选"
@@ -1235,6 +1284,10 @@ msgstr "请在浏览器里完成授权"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Focus main window"
+msgstr "聚焦主窗口"
 
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
@@ -1369,6 +1422,10 @@ msgstr "图片和 PDF 文字只在本机处理，不发送给云端模型。"
 msgid "IMAP account"
 msgstr "IMAP 账户"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "IMAP keywords, separated by commas"
+msgstr "IMAP 关键词，用逗号分隔"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP 服务器"
@@ -1410,6 +1467,10 @@ msgstr "包含匹配项"
 msgid "Include original attachments"
 msgstr "包含原附件"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Insert template"
+msgstr "插入模板"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
@@ -1419,6 +1480,7 @@ msgid "Internal reply"
 msgstr "内部回复"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Italic"
 msgstr "斜体"
 
@@ -1774,6 +1836,12 @@ msgstr "移到文件夹…"
 msgid "Move to Inbox"
 msgstr "移回收件箱"
 
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Move to Trash"
+msgstr "移到废纸篓"
+
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Move up"
@@ -1871,6 +1939,7 @@ msgstr "下一项"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Next match"
 msgstr "下一处"
 
@@ -1881,6 +1950,10 @@ msgstr "下一个会话"
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Next week"
 msgstr "下周"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Next window"
+msgstr "下一个窗口"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "No access token saved"
@@ -1893,6 +1966,15 @@ msgstr "还没有账户"
 #: src/renderer/src/components/Settings.tsx
 msgid "No activity yet."
 msgstr "还没有操作记录。"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "No current label applies. Moving to Trash."
+msgstr "无适用标签，改为移到废纸篓。"
+
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "No custom labels"
+msgstr "没有自定义标签"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
@@ -2164,6 +2246,16 @@ msgstr "上级文件夹"
 msgid "Password"
 msgstr "密码"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste and match style"
+msgstr "粘贴并匹配样式"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Paste as quotation"
+msgstr "粘贴为引用"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Pause"
 msgstr "暂停"
@@ -2212,12 +2304,17 @@ msgstr "预览：{0} 封邮件。应用到已有邮件时，只修改预览中�
 
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous match"
 msgstr "上一处"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Previous thread"
 msgstr "上一个会话"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Previous window"
+msgstr "上一个窗口"
 
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
@@ -2330,6 +2427,11 @@ msgstr "移除 {token}"
 #: src/renderer/src/components/Settings.tsx
 msgid "Remove account"
 msgstr "移除账户"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove current label"
+msgstr "移除当前标签"
 
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2785,6 +2887,10 @@ msgstr "只看星标"
 msgid "Show only unread"
 msgstr "只看未读"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show or hide sidebar"
+msgstr "显示或隐藏侧栏"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Show original"
 msgstr "显示原始邮件"
@@ -2900,6 +3006,10 @@ msgstr "SSL/TLS（通常是 465）"
 msgid "Star"
 msgstr "星标"
 
+#: src/renderer/src/components/DraftOrganization.tsx
+msgid "Star draft"
+msgstr "草稿加星"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Star message"
 msgstr "为此邮件加星标"
@@ -2931,6 +3041,11 @@ msgstr "不再自动加载 {domain} 的图片"
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "不再建议 {0}"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Strikethrough"
+msgstr "删除线"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -3173,6 +3288,10 @@ msgstr "今天 {time}"
 msgid "Toggle list filters"
 msgstr "切换列表筛选"
 
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Toggle reading pane position"
+msgstr "切换阅读面板位置"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Tomorrow morning"
 msgstr "明天上午"
@@ -3188,6 +3307,7 @@ msgid "Tuesday"
 msgstr "星期二"
 
 #: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/SystemSettings.tsx
 msgid "Underline"
 msgstr "下划线"
 
@@ -3282,6 +3402,10 @@ msgstr "请输入 http、https 或 mailto 链接"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "使用默认值"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Use selection for find"
+msgstr "查找选中文字"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"

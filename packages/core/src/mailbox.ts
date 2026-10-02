@@ -346,7 +346,7 @@ export class Mailbox extends Context.Service<
     readonly pendingSendCount: Effect.Effect<number>;
     openDraft(id: string): Effect.Effect<Draft, PerformError>;
     /** Saves locally right away; the provider's copy follows through the change queue. */
-    saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound>;
+    saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound | InvalidInput>;
     /** Deletes the draft here and on the provider. An agent's draft rejects its proposal. */
     discardDraft(id: string): Effect.Effect<void>;
 

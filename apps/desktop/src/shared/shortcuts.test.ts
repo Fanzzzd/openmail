@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   KEYMAP,
+  isShortcutAction,
   folderShortcut,
   NUMBERED_MAILBOXES,
   paneShortcut,
@@ -9,6 +10,7 @@ import {
   selectionShortcut,
   shortcutAction,
   shortcutText,
+  shortcutAccelerator,
   spaceShortcut,
   type KeyEvent,
 } from "./shortcuts";
@@ -81,7 +83,7 @@ describe("central shortcut sets", () => {
     expect(shortcutAction("gmail", event("Backspace"), true)).toBeNull();
     expect(shortcutAction("mimestream", event("Backspace", { metaKey: true }), true)).toBeNull();
     expect(shortcutAction("gmail", event("e", { altKey: true }))).toBeNull();
-    expect(shortcutAction("gmail", event("e", { metaKey: true }))).toBeNull();
+    expect(shortcutAction("gmail", event("e", { metaKey: true }))).toBe("findSelection");
     expect(shortcutAction("gmail", event("?", { shiftKey: true }))).toBe("help");
     expect(shortcutAction("mimestream", event("N", { metaKey: true, shiftKey: true }), true)).toBe(
       "newWindow",
@@ -181,4 +183,75 @@ it("only unmodified horizontal arrows request a pane move", () => {
     expect(paneShortcut(event("ArrowRight", { [modifier]: true }))).toBeNull();
   }
   expect(paneShortcut(event("ArrowDown"))).toBeNull();
+});
+
+it("every accelerator is unique and every shortcut leaves typing to the editor", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    const accelerators = new Set<string>();
+    for (const action of Object.keys(KEYMAP[set])) {
+      if (!isShortcutAction(action)) throw new Error(action);
+      const accelerator = shortcutAccelerator(set, action);
+      if (accelerator) {
+        expect(accelerators.has(accelerator)).toBe(false);
+        accelerators.add(accelerator);
+      }
+      for (const stroke of KEYMAP[set][action]) {
+        const shifted =
+          stroke.key.length === 1 &&
+          (stroke.key !== stroke.key.toLowerCase() || /[?!#+~]/.test(stroke.key));
+        const input = event(stroke.key, {
+          metaKey: Boolean(stroke.cmd),
+          ctrlKey: Boolean(stroke.control),
+          altKey: Boolean(stroke.alt),
+          shiftKey: Boolean(stroke.shift) || shifted,
+        });
+        const global =
+          [
+            "compose",
+            "newWindow",
+            "settings",
+            "search",
+            "nextWindow",
+            "previousWindow",
+            "focusMainWindow",
+          ].includes(action) &&
+          (stroke.cmd || action === "nextWindow" || action === "previousWindow");
+        expect(shortcutAction(set, input, true)).toBe(global ? action : null);
+        expect(matchesShortcut(set, action, input)).toBe(true);
+        expect(shortcutAction(set, input)).toBe(action);
+      }
+    }
+  }
+});
+it("keyboard extras are shared by every set without overriding web/forward keys", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(shortcutAction(set, event("v", { metaKey: true, altKey: true, shiftKey: true }))).toBe(
+      "pasteMatchStyle",
+    );
+    expect(shortcutAction(set, event("v", { metaKey: true, altKey: true }))).toBe("pasteQuotation");
+    expect(shortcutAction(set, event("g", { metaKey: true, altKey: true }))).toBe("findPrevious");
+    expect(shortcutAction(set, event("G", { metaKey: true, shiftKey: true }))).toBe(
+      "openMessageWeb",
+    );
+    expect(shortcutAction(set, event("Delete"))).toBe("trash");
+    expect(shortcutAction(set, event("Backspace"))).toBe("trash");
+  }
+});
+
+it("typing retains application/window accelerators and native edit/close/quit keys", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    for (const [key, modifiers, action] of [
+      ["n", {}, "compose"],
+      ["n", { shiftKey: true }, "newWindow"],
+      [",", {}, "settings"],
+      ["f", {}, "search"],
+      ["`", {}, "nextWindow"],
+      ["~", { shiftKey: true }, "previousWindow"],
+      ["0", { altKey: true }, "focusMainWindow"],
+    ] as const)
+      expect(shortcutAction(set, event(key, { metaKey: true, ...modifiers }), true)).toBe(action);
+    for (const key of ["c", "v", "x", "a", "z", "w", "q"])
+      expect(shortcutAction(set, event(key, { metaKey: true }), true)).toBeNull();
+    expect(shortcutAction(set, event("c"), true)).toBeNull();
+  }
 });

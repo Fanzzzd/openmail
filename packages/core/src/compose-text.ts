@@ -124,7 +124,26 @@ export function templateVariables(recipient: Address | undefined): Record<string
 }
 
 /** Replaces {first_name} and the other variables. Unknown ones stay as written. */
-export function fillTemplate(text: string, recipient: Address | undefined): string {
-  const vars = templateVariables(recipient);
-  return text.replace(/\{(\w+)\}/g, (whole, key: string) => vars[key] ?? whole);
+export function customTemplateVariables(...texts: string[]): string[] {
+  const builtins = templateVariables(undefined);
+  return [
+    ...new Set(
+      texts.flatMap((text) =>
+        [...text.matchAll(/\{(\w+)\}/g)].flatMap((m) =>
+          m[1] && !Object.hasOwn(builtins, m[1]) ? [m[1]] : [],
+        ),
+      ),
+    ),
+  ];
+}
+
+export function fillTemplate(
+  text: string,
+  recipient: Address | undefined,
+  custom: Readonly<Record<string, string>> = {},
+): string {
+  const vars = { ...custom, ...templateVariables(recipient) };
+  return text.replace(/\{(\w+)\}/g, (whole, key: string) =>
+    Object.hasOwn(vars, key) ? (vars[key] ?? whole) : whole,
+  );
 }

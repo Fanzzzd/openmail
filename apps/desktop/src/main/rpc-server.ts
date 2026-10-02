@@ -1,3 +1,4 @@
+import { switchWindow } from "./window-keys";
 import {
   attachmentAction,
   prepareAttachmentDrag,
@@ -255,6 +256,10 @@ const Handlers = MailRpcs.toLayer(
       AgentWriteMode: () => m.agentWriteMode,
       SetAgentWriteMode: ({ mode }) => m.setAgentWriteMode(mode),
 
+      SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
+      ClipboardText: () => Effect.promise(() => clipboard.readText()),
+      ComposeNew: () => desktop.compose(),
+      OpenSettings: () => desktop.openSettings(),
       NewWindow: () =>
         Effect.sync(() => {
           createMainWindow();

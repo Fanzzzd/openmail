@@ -124,6 +124,7 @@ export function selectionAfterRemoval(
   rows: readonly string[],
   removed: ReadonlySet<string>,
   preference: Prefs["nextSelection"],
+  moreBelow = false,
 ): Selection {
   if (![...selection.ids].some((id) => removed.has(id))) return selection;
   const remaining = new Set([...selection.ids].filter((id) => !removed.has(id)));
@@ -145,5 +146,6 @@ export function selectionAfterRemoval(
     .toReversed()
     .find((id) => !removed.has(id));
   const below = rows.slice(last + 1).find((id) => !removed.has(id));
+  if (preference === "below" && !below && moreBelow) return EMPTY_SELECTION;
   return singleSelection((preference === "above" ? (above ?? below) : (below ?? above)) ?? null);
 }

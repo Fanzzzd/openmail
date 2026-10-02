@@ -9,12 +9,16 @@ import type { Message, MailOp } from "../../shared/api";
 import { readerThreadKey } from "./reader-selection";
 import { testDom } from "./test-dom";
 
-const calls = vi.hoisted(() => ({
-  modify: vi.fn(),
-  unread: vi.fn(),
-  web: vi.fn(),
-  prefs: {},
-}));
+const calls = vi.hoisted(() => {
+  const frameKey: (event: KeyboardEvent) => void = vi.fn();
+  return {
+    modify: vi.fn(),
+    unread: vi.fn(),
+    web: vi.fn(),
+    prefs: {},
+    frameKey,
+  };
+});
 vi.mock("@effect/atom-react", async (original) => ({
   ...(await original<typeof import("@effect/atom-react")>()),
   useAtom: () => [null, vi.fn()],
@@ -50,6 +54,12 @@ vi.mock("./state/mail", () => ({
   openMessageWindow: vi.fn(),
   openThreadWindow: vi.fn(),
   printThread: vi.fn(),
+}));
+vi.mock("./components/EmailFrame", () => ({
+  EmailFrame: ({ onKeyDown }: { onKeyDown: (event: KeyboardEvent) => void }) => {
+    calls.frameKey = onKeyDown;
+    return null;
+  },
 }));
 vi.mock("./components/Attachments", () => ({ Attachments: () => null }));
 vi.mock("./components/InviteBanner", () => ({ InviteBanner: () => null }));
@@ -190,6 +200,42 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
     expect(select.mock.calls.at(-1)).toEqual([latest.id]);
     expect(selected().textContent).toContain("latest original body");
     expect(dom.element.querySelector('input[aria-label="Find in message"]')).toBeNull();
+    render([{ ...latest, bodyHtml: "<p>body</p>" }], latest.id);
+    for (const [key, shiftKey, tag] of [
+      ["n", false, "ComposeNew"],
+      ["N", true, "NewWindow"],
+      [",", false, "OpenSettings"],
+    ] as const) {
+      const event = new dom.window.Event("keydown", { bubbles: true, cancelable: true });
+      const frameEvent = Object.assign(event, {
+        key,
+        metaKey: true,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey,
+        view: null,
+        detail: 0,
+        which: 0,
+        initUIEvent: vi.fn(),
+        charCode: 0,
+        code: "",
+        isComposing: false,
+        keyCode: 0,
+        location: 0,
+        repeat: false,
+        DOM_KEY_LOCATION_STANDARD: 0,
+        DOM_KEY_LOCATION_LEFT: 1,
+        DOM_KEY_LOCATION_RIGHT: 2,
+        DOM_KEY_LOCATION_NUMPAD: 3,
+        getModifierState: () => false,
+        initKeyboardEvent: vi.fn(),
+      } satisfies Omit<KeyboardEvent, keyof Event>);
+      act(() => {
+        calls.frameKey(frameEvent);
+      });
+      expect(event.defaultPrevented).toBe(true);
+      expect(calls.web.mock.calls.at(-1)).toEqual([tag, undefined]);
+    }
   } finally {
     dom.dispose();
   }

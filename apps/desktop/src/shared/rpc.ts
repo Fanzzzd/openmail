@@ -464,6 +464,12 @@ export class MailRpcs extends RpcGroup.make(
   // Desktop system integration. No provider or database access in these handlers.
   Rpc.make("NativeEdit", { payload: { action: Schema.Literals(["undo", "selectAll"]) } }),
   Rpc.make("NewWindow"),
+  Rpc.make("ComposeNew"),
+  Rpc.make("OpenSettings"),
+  Rpc.make("SwitchWindow", {
+    payload: { action: Schema.Literals(["nextWindow", "previousWindow", "focusMainWindow"]) },
+  }),
+  Rpc.make("ClipboardText", { success: Schema.String }),
   Rpc.make("SetSendState", {
     payload: {
       pending: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),

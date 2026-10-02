@@ -346,6 +346,12 @@ export type OutgoingAttachment = typeof OutgoingAttachment.Type;
 export const ComposeMode = Schema.Literals(["new", "reply", "replyAll", "forward"]);
 export type ComposeMode = typeof ComposeMode.Type;
 
+export const DraftOrganization = Schema.Struct({
+  labels: Schema.Array(Schema.String),
+  starred: Schema.Boolean,
+});
+export type DraftOrganization = typeof DraftOrganization.Type;
+
 export const OutgoingMessage = Schema.Struct({
   /** Verified Gmail send-as address; omitted uses the account address. */
   from: Schema.optionalKey(Address),
@@ -357,6 +363,8 @@ export const OutgoingMessage = Schema.Struct({
   text: Schema.String,
   /** Rich compose HTML; normalized with its text alternative at draft/send boundaries. */
   html: Schema.optionalKey(Schema.String),
+  /** Draft-only organization. Labels are Gmail user IDs, Outlook category names or IMAP keywords. */
+  draftOrganization: Schema.optionalKey(DraftOrganization),
   /** Remote draft source, never rendered. Retained only while the body is unchanged. */
   originalHtml: Schema.optionalKey(Schema.String),
   attachments: Schema.Array(OutgoingAttachment),
@@ -530,6 +538,9 @@ export const Prefs = Schema.Struct({
   language: Schema.Literals(LANGUAGES),
   markReadDelay: Schema.Literals(MARK_READ_DELAYS),
   nextSelection: Schema.Literals(["below", "above", "none"]),
+  deleteKeyAction: Schema.Literals(["trash", "archive", "removeLabel", "ask"]),
+  readingPanePosition: Schema.Literals(["right", "bottom"]),
+  sidebarVisible: Schema.Boolean,
   readerZoom: Schema.Literals(READER_ZOOMS),
   messageBackground: Schema.Literals(MESSAGE_BACKGROUNDS),
   /** Group messages into conversations. Off lists every message on its own. */
@@ -560,6 +571,9 @@ export const DEFAULT_PREFS: Prefs = {
   language: "system",
   markReadDelay: 0,
   nextSelection: "below",
+  deleteKeyAction: "trash",
+  readingPanePosition: "right",
+  sidebarVisible: true,
   readerZoom: 100,
   messageBackground: "light",
   threadGrouping: true,

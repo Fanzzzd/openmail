@@ -856,6 +856,12 @@ export const makeOutlook: Effect.Effect<
       yield* checkAttachmentSize(message);
       const fields = {
         ...graphFields(message),
+        ...(message.draftOrganization
+          ? {
+              categories: message.draftOrganization.labels,
+              flag: { flagStatus: message.draftOrganization.starred ? "flagged" : "notFlagged" },
+            }
+          : {}),
         singleValueExtendedProperties: [
           {
             id: MARKDOWN_DRAFT_PROPERTY,
@@ -919,6 +925,26 @@ export const makeOutlook: Effect.Effect<
             draft.replaceAttachments &&
             Option.isSome(original)
           ) {
+            // This replaces the message. Read live metadata instead of replaying
+            // stale local intent when another client changed its categories/flag.
+            if (message.draftOrganization === undefined) {
+              const live = yield* get(
+                account.id,
+                Schema.Struct({
+                  categories: Schema.optionalKey(Schema.Array(Schema.String)),
+                  flag: Schema.optionalKey(
+                    Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) }),
+                  ),
+                }),
+                `/me/messages/${id}?$select=categories,flag`,
+              ).pipe(
+                Effect.catchIf(is404, () =>
+                  Effect.succeed({ categories: undefined, flag: undefined }),
+                ),
+              );
+              if (live.categories) fields.categories = live.categories;
+              if (live.flag?.flagStatus) fields.flag = { flagStatus: live.flag.flagStatus };
+            }
             const next = yield* create;
             yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
               Effect.catchIf(is404, () => Effect.void),
@@ -1398,6 +1424,23 @@ export const makeOutlook: Effect.Effect<
       ),
     send,
     saveDraft,
+    getDraftOrganization: (account, id) =>
+      get(
+        account.id,
+        Schema.Struct({
+          categories: Schema.optionalKey(Schema.Array(Schema.String)),
+          flag: Schema.optionalKey(
+            Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) }),
+          ),
+        }),
+        `/me/messages/${id}?$select=categories,flag`,
+      ).pipe(
+        Effect.map((message) => ({
+          labels: message.categories ?? [],
+          starred: message.flag?.flagStatus === "flagged",
+        })),
+        Effect.mapError(writeFailure(account.id)),
+      ),
     deleteDraft,
     fetchRaw,
     draftMarkdownSource,

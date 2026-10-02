@@ -1001,10 +1001,37 @@ const deleteMessage = Effect.fnUntraced(function* (s: Session, providerId: strin
  * replaces; IMAP messages cannot be edited in place. The new UID comes from
  * UIDPLUS, or from a search by Message-ID on servers without it.
  */
-const appendDraft = Effect.fnUntraced(function* (s: Session, raw: Buffer, previous: string | null) {
+const appendDraft = Effect.fnUntraced(function* (
+  s: Session,
+  raw: Buffer,
+  previous: string | null,
+  organization: OutgoingMessage["draftOrganization"],
+) {
+  let preservedFlags: string[] = [];
+  if (previous && organization === undefined) {
+    const ref = decodeProviderId(previous);
+    if (Option.isSome(ref) && (yield* openFolderOf(s, ref.value, true))) {
+      const current = yield* call(s, (client) =>
+        client.fetchOne(String(ref.value.uid), { flags: true }, { uid: true }),
+      );
+      if (current)
+        preservedFlags = [...(current.flags ?? [])].filter(
+          (flag) =>
+            flag !== "\\Deleted" && flag !== "\\Recent" && flag !== "\\Draft" && flag !== "\\Seen",
+        );
+    }
+  }
   const list = yield* call(s, (c) => c.list());
   const drafts = yield* ensureFolder(s, list, "\\Drafts", "Drafts");
-  const appended = yield* call(s, (c) => c.append(drafts, raw, ["\\Draft", "\\Seen"]));
+  const appended = yield* call(s, (c) =>
+    c.append(drafts, raw, [
+      "\\Draft",
+      "\\Seen",
+      ...(organization?.starred ? ["\\Flagged"] : []),
+      ...(organization?.labels ?? []),
+      ...preservedFlags,
+    ]),
+  );
   let uid = appended ? appended.uid : undefined;
   let uidValidity = appended ? appended.uidValidity : undefined;
   if (uid === undefined || uidValidity === undefined) {
@@ -1157,7 +1184,12 @@ export const makeImapWith = (
             (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),
           ),
         );
-        return yield* appendDraft(s, raw, draft.remote?.messageId ?? null);
+        return yield* appendDraft(
+          s,
+          raw,
+          draft.remote?.messageId ?? null,
+          draft.message.draftOrganization,
+        );
       }).pipe(Effect.scoped);
 
     const deleteDraft: ProviderAdapter["deleteDraft"] = (account, remote) =>
@@ -1539,6 +1571,24 @@ export const makeImapWith = (
       push,
       send,
       saveDraft,
+      getDraftOrganization: (account, id) =>
+        Effect.gen(function* () {
+          const ref = decodeProviderId(id);
+          if (Option.isNone(ref))
+            return yield* new PermanentError({ message: `Not an IMAP message id: ${id}` });
+          const { s } = yield* session(account);
+          const same = yield* openFolderOf(s, ref.value, true);
+          const message = same
+            ? yield* call(s, (client) =>
+                client.fetchOne(String(ref.value.uid), { flags: true }, { uid: true }),
+              )
+            : false;
+          if (!message) return yield* new PermanentError({ message: `Message ${id} is gone` });
+          return {
+            labels: [...(message.flags ?? [])].filter((flag) => !flag.startsWith("\\")),
+            starred: message.flags?.has("\\Flagged") ?? false,
+          };
+        }).pipe(Effect.scoped),
       deleteDraft,
       fetchRaw,
       fetchAttachment,

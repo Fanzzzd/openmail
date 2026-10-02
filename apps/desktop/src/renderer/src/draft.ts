@@ -50,6 +50,7 @@ export interface Draft {
   loadOriginalAttachments?: boolean;
   /** Whether the version opened from storage was synced to the provider. */
   synced?: boolean;
+  organization?: OutgoingMessage["draftOrganization"];
   /** The agent proposal this draft came from. */
   proposalId?: number;
 }
@@ -204,6 +205,7 @@ export function fromStored(d: StoredDraft): Draft {
   return {
     id: d.id,
     synced: d.synced,
+    ...(m.draftOrganization ? { organization: m.draftOrganization } : {}),
     mode: m.mode ?? "new",
     accountId: d.accountId,
     ...(m.from ? { from: m.from } : {}),
@@ -245,6 +247,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
           }
         : {}),
       attachments: d.attachments,
+      ...(d.organization ? { draftOrganization: d.organization } : {}),
       ...(d.includeOriginalAttachments === undefined
         ? {}
         : { includeOriginalAttachments: d.includeOriginalAttachments }),

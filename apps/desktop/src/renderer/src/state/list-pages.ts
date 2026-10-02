@@ -22,3 +22,12 @@ export function refreshPages<E>(
     })),
   );
 }
+
+/** The deleted cursor is still a valid boundary, even after it disappears from the DB. */
+export function pageAfterRemoval<E, R>(
+  query: ThreadQuery,
+  lastLoaded: Pick<ThreadSummary, "date" | "id">,
+  read: (query: ThreadQuery) => Effect.Effect<readonly ThreadSummary[], E, R>,
+) {
+  return read({ ...query, before: lastLoaded.date, beforeId: lastLoaded.id, limit: 100 });
+}

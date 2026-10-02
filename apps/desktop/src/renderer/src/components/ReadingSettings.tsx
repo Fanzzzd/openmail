@@ -118,6 +118,22 @@ export function ReadingSettings() {
 
       <section>
         <h3 className={heading}>
+          <Trans>Delete key action</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Delete key action`}
+          value={prefs?.deleteKeyAction ?? "trash"}
+          options={[
+            { value: "trash" as const, label: t`Move to Trash` },
+            { value: "archive" as const, label: t`Archive` },
+            { value: "removeLabel" as const, label: t`Remove current label` },
+            { value: "ask" as const, label: t`Ask each time` },
+          ]}
+          onValueChange={(deleteKeyAction) => setPrefs({ deleteKeyAction })}
+        />
+      </section>
+      <section>
+        <h3 className={heading}>
           <Trans>Selection after moving messages</Trans>
         </h3>
         <SegmentedControl
