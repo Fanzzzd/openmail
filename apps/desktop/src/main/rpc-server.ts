@@ -180,6 +180,7 @@ const Handlers = MailRpcs.toLayer(
           USER,
         ),
 
+      SendAgain: ({ id }) => m.sendAgain(id),
       OpenDraft: ({ id }) => m.openDraft(id),
       SaveDraft: ({ draft }) => m.saveDraft(draft),
       DiscardDraft: ({ id }) => m.discardDraft(id),
@@ -215,6 +216,7 @@ const Handlers = MailRpcs.toLayer(
           if (action === "undo") target?.undo();
           else target?.selectAll();
         }),
+      SetSendState: (state, { client }) => desktop.setSendState(client.id, state),
       SetDesktopLabels: ({ labels }) => desktop.setLabels(labels),
       DesktopEvents: (_, { client }) => desktop.events(client.id),
 

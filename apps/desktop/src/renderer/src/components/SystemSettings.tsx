@@ -339,6 +339,7 @@ const ACTION_NAMES: Record<ShortcutAction, MessageDescriptor> = {
   sendArchive: msg`Send and archive`,
   attach: msg`Attach files`,
   saveDraft: msg`Save draft`,
+  showCc: msg`Show Cc field`,
   closeCompose: msg`Close compose window`,
   zoomIn: msg`Larger text`,
   zoomOut: msg`Smaller text`,

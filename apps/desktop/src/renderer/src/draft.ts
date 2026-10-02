@@ -1,5 +1,6 @@
 import {
   displayName,
+  applySignature,
   isEmailAddress,
   replyRecipients,
   splitAddresses,
@@ -42,6 +43,8 @@ export interface Draft {
   inReplyTo?: string;
   /** Forward `inReplyTo` as an attached .eml instead of quoting it. */
   forwardAsAttachment: boolean;
+  /** Whether the version opened from storage was synced to the provider. */
+  synced?: boolean;
   /** The agent proposal this draft came from. */
   proposalId?: number;
 }
@@ -183,6 +186,7 @@ export function fromStored(d: StoredDraft): Draft {
   const m = d.message;
   return {
     id: d.id,
+    synced: d.synced,
     mode: m.mode ?? "new",
     accountId: d.accountId,
     ...(m.from ? { from: m.from } : {}),
@@ -235,16 +239,84 @@ export function toDraftInput(d: Draft): DraftInput {
   return { id: d.id, accountId: d.accountId, message: toMessage(d).message };
 }
 
-export function isEmpty(d: Draft): boolean {
+export function isEmpty(d: Draft, signature?: string): boolean {
+  const body = d.body.text.trim();
+  const automatic = signature
+    ? richComposeBody(textComposeHtml(applySignature("", undefined, signature))).text.trim()
+    : "";
   return (
     !d.to &&
     !d.cc &&
     !d.bcc &&
     !d.subject &&
-    !d.body.text.trim() &&
+    (!body || body === automatic) &&
     // An untouched image-only remote body has no editable text, but closing must keep it.
     (d.body.kind !== "rich" || d.body.originalHtml === undefined) &&
     d.attachments.length === 0 &&
     !d.forwardAsAttachment
+  );
+}
+
+/** Switching reply modes only replaces addressing/threading fields; the edited body survives. */
+export function switchReplyMode(
+  draft: Draft,
+  mode: Exclude<ComposeMode, "new">,
+  original: Message,
+  account: Account,
+  aliases: readonly Pick<SendAs, "accountId" | "address">[],
+): Draft {
+  const next = draftFor(mode, original, account, false, aliases);
+  const previous =
+    draft.mode === "new"
+      ? { to: "", cc: "" }
+      : draftFor(draft.mode, original, account, false, aliases);
+  const automatic = new Set(
+    [...parseAddresses(previous.to).addresses, ...parseAddresses(previous.cc).addresses].map((a) =>
+      a.address.toLowerCase(),
+    ),
+  );
+  const seen = new Set<string>();
+  const merge = (preset: string, typed: string) => {
+    const entered = parseAddresses(typed);
+    const manual = entered.addresses.filter((a) => !automatic.has(a.address.toLowerCase()));
+    const recipients = [...parseAddresses(preset).addresses, ...manual].filter((a) => {
+      const key = a.address.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return [...recipients.map(formatAddress), ...entered.invalid].join(", ");
+  };
+  const subject = /^(?:re|fwd?|fw)\s*:/i.test(draft.subject)
+    ? prefixed(
+        mode === "forward" ? "Fwd" : "Re",
+        draft.subject.replace(/^(?:(?:re|fwd?|fw)\s*:\s*)+/i, ""),
+      )
+    : draft.subject;
+  return {
+    ...draft,
+    mode,
+    to: merge(next.to, draft.to),
+    cc: merge(next.cc, draft.cc),
+    subject,
+    forwardAsAttachment: false,
+    inReplyTo: original.id,
+  };
+}
+
+/** Autosaved, remotely synced versions close quietly; incomplete recipient text still needs a choice. */
+export function needsClosePrompt(
+  draft: Draft,
+  stored: StoredDraft | null,
+  options: { initial?: Draft; empty?: boolean } = {},
+): boolean {
+  if (options.empty ?? isEmpty(draft)) return stored !== null && draft !== options.initial;
+  if (stored === null && draft === options.initial) return false;
+  const { message, invalid } = toMessage(draft);
+  return (
+    !stored?.synced ||
+    stored.accountId !== draft.accountId ||
+    invalid.length > 0 ||
+    JSON.stringify(message) !== JSON.stringify(toMessage(fromStored(stored)).message)
   );
 }

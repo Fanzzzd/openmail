@@ -1,7 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { UNDO_SEND_SECONDS } from "@openmail/core/schema";
+import { DEFAULT_PREFS, UNDO_SEND_SECONDS } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 
@@ -13,7 +13,15 @@ import {
   setPrefsAtom,
   setSignatureAtom,
 } from "../state/mutations";
-import { hiddenContactsAtom, prefsAtom, signaturesAtom, templatesAtom } from "../state/queries";
+import {
+  accountsAtom,
+  sendAsAtom,
+  hiddenContactsAtom,
+  prefsAtom,
+  signaturesAtom,
+  templatesAtom,
+} from "../state/queries";
+import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
@@ -24,6 +32,7 @@ const box = "rounded-lg border border-black/10 dark:border-white/10";
 export function ComposeSettings() {
   return (
     <div className="space-y-6">
+      <DefaultFrom />
       <RecipientAddresses />
       <UndoSend />
       <Templates />
@@ -218,6 +227,53 @@ function HiddenContacts() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+const senderKey = (sender: { accountId: string; address: string }) =>
+  JSON.stringify([sender.accountId, sender.address]);
+
+function DefaultFrom() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
+  const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  const senders = accounts.flatMap((a) => [
+    { accountId: a.id, address: a.email },
+    ...aliases.filter(
+      (s) =>
+        a.provider === "gmail" &&
+        s.accountId === a.id &&
+        s.address.toLowerCase() !== a.email.toLowerCase(),
+    ),
+  ]);
+  const fixed = prefs.defaultFrom;
+  return (
+    <section>
+      <h3 className={heading}>{t`Default From address`}</h3>
+      <Select
+        aria-label={t`Default From address`}
+        value={fixed ? senderKey(fixed) : "view"}
+        options={[
+          { value: "view", label: t`Use the current account` },
+          ...senders.map((s) => ({ value: senderKey(s), label: s.address })),
+        ]}
+        onValueChange={(value) => {
+          const sender = senders.find((s) => senderKey(s) === value);
+          setPrefs({
+            payload: {
+              patch: {
+                defaultFrom: sender
+                  ? { accountId: sender.accountId, address: sender.address }
+                  : null,
+              },
+            },
+            reactivityKeys: [Keys.prefs],
+          });
+        }}
+      />
     </section>
   );
 }

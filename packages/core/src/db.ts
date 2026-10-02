@@ -478,6 +478,8 @@ export const MIGRATIONS: readonly string[] = [
     enqueued_at INTEGER NOT NULL
   );
   CREATE INDEX pending_notifications_enqueued ON pending_notifications(enqueued_at);`,
+  // Migration 17: existing templates have no blind-copy recipients.
+  `ALTER TABLE templates ADD COLUMN bcc_json TEXT NOT NULL DEFAULT '[]';`,
 ];
 
 /**

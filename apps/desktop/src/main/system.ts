@@ -12,9 +12,19 @@ import { Context, Effect, FiberSet, Layer, Queue, Schedule, Semaphore, Stream } 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, Menu, nativeImage, Notification, powerMonitor, Tray } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  dialog,
+  nativeImage,
+  Notification,
+  powerMonitor,
+  Tray,
+} from "electron";
 
-import type { DesktopEvent } from "../shared/desktop";
+import { createQuitGuard, createSendState } from "./quit";
+import { shouldBufferDesktopEvent, type DesktopEvent } from "../shared/desktop";
 import type { DesktopLabels } from "../shared/desktop-labels";
 import { shortcutAccelerator } from "../shared/shortcuts";
 import { createMainWindow, focusMainWindow, isMainWindow } from "./windows";
@@ -38,6 +48,10 @@ export class Desktop extends Context.Service<
   Desktop,
   {
     events(clientId: number): Stream.Stream<DesktopEvent>;
+    setSendState(
+      clientId: number,
+      state: { pending: number; undoAvailable: boolean },
+    ): Effect.Effect<void>;
     setSpace(clientId: number, space: string): Effect.Effect<void>;
     setLabels(labels: DesktopLabels): Effect.Effect<void>;
     search(query: string): Effect.Effect<void>;
@@ -58,6 +72,7 @@ export const DesktopLive = Layer.effect(
     const pending = new Map<number, DesktopEvent[]>();
     const listeners = new Map<number, (event: DesktopEvent) => void>();
     const spaces = new Map<number, string>();
+    const sendStates = createSendState();
     let activeSpace = "all";
     let labelsReady = false;
     let labels: DesktopLabels = {
@@ -73,6 +88,12 @@ export const DesktopLive = Layer.effect(
       file: "File",
       edit: "Edit",
       undo: "Undo",
+      undoSend: "Undo Send",
+      quitPending: "Quit with messages waiting to send?",
+      quitPendingDetail:
+        "Messages in the undo window will remain drafts. A send already in progress may finish.",
+      quit: "Quit",
+      cancel: "Cancel",
       selectAll: "Select all",
       window: "Window",
       newMessages: "new messages",
@@ -81,7 +102,7 @@ export const DesktopLive = Layer.effect(
       const id = target.webContents.id;
       const listener = listeners.get(id);
       if (listener) listener(event);
-      else if (event._tag !== "Command" && event._tag !== "Edit")
+      else if (shouldBufferDesktopEvent(event))
         pending.set(id, [...(pending.get(id) ?? []), event]);
     };
     const command = (name: "settings" | "help" | "compose" | "inbox") =>
@@ -156,7 +177,11 @@ export const DesktopLive = Layer.effect(
             { label: labels.settings, click: () => command("settings") },
           ]),
         );
-        const nextMenuKey = JSON.stringify([labels, prefs.shortcutSet]);
+        const focused = BrowserWindow.getFocusedWindow();
+        const undoAvailable = focused
+          ? (sendStates.get(focused.webContents.id)?.undoAvailable ?? false)
+          : false;
+        const nextMenuKey = JSON.stringify([labels, prefs.shortcutSet, undoAvailable]);
         if (menuKey !== nextMenuKey) {
           menuKey = nextMenuKey;
           Menu.setApplicationMenu(
@@ -216,6 +241,14 @@ export const DesktopLive = Layer.effect(
                     label: labels.undo,
                     accelerator: "CommandOrControl+Z",
                     click: () => edit("undo"),
+                  },
+                  {
+                    label: labels.undoSend,
+                    enabled: undoAvailable,
+                    click: () => {
+                      const target = BrowserWindow.getFocusedWindow();
+                      if (target && isMainWindow(target)) deliver({ _tag: "UndoSend" }, target);
+                    },
                   },
                   { role: "redo" },
                   { type: "separator" },
@@ -338,14 +371,68 @@ export const DesktopLive = Layer.effect(
       activeSpace = spaces.get(win.webContents.id) ?? "all";
       run(refresh);
     };
+    let quittingApproved = false;
+    const confirmPendingSend = () =>
+      dialog
+        .showMessageBox({
+          type: "warning",
+          message: labels.quitPending,
+          detail: labels.quitPendingDetail,
+          buttons: [labels.cancel, labels.quit],
+          defaultId: 0,
+          cancelId: 0,
+        })
+        .then((result) => result.response === 1);
     const onCreated = (_event: Electron.Event, win: BrowserWindow) => {
       const id = win.webContents.id;
+      const closeGuard = createQuitGuard({
+        pending: async () => sendStates.get(id)?.pending ?? 0,
+        fallbackPending: () => sendStates.get(id)?.pending ?? 0,
+        confirm: confirmPendingSend,
+        quit: () => {
+          if (!win.isDestroyed()) win.close();
+        },
+      });
+      win.on("close", (event) => {
+        if (quittingApproved || !isMainWindow(win) || !sendStates.get(id)?.pending) return;
+        void closeGuard(event);
+      });
       win.once("closed", () => {
         pending.delete(id);
         listeners.delete(id);
         spaces.delete(id);
+        sendStates.remove(id);
       });
     };
+    const onRendererGone = (_event: Electron.Event, contents: Electron.WebContents) =>
+      sendStates.remove(contents.id);
+    const onBeforeQuit = createQuitGuard({
+      pending: () =>
+        new Promise<number>((resolve) => {
+          run(
+            Effect.gen(function* () {
+              const held = yield* Effect.promise(() =>
+                sendStates.snapshot(
+                  [...listeners].map(([id, listener]) => ({
+                    id,
+                    request: () => listener({ _tag: "QuitCheck" }),
+                  })),
+                ),
+              );
+              const outbox = yield* mailbox.pendingSendCount;
+              resolve(held + outbox);
+            }).pipe(Effect.catchCause(() => Effect.sync(() => resolve(sendStates.total())))),
+          );
+        }),
+      fallbackPending: () => sendStates.total(),
+      confirm: confirmPendingSend,
+      quit: () => {
+        quittingApproved = true;
+        app.quit();
+      },
+    });
+    app.on("before-quit", onBeforeQuit);
+    app.on("render-process-gone", onRendererGone);
     app.on("browser-window-focus", onFocus);
     app.on("browser-window-created", onCreated);
     app.on("activate", activate);
@@ -353,6 +440,8 @@ export const DesktopLive = Layer.effect(
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
         linkHandler = undefined;
+        app.off("before-quit", onBeforeQuit);
+        app.off("render-process-gone", onRendererGone);
         app.off("browser-window-focus", onFocus);
         app.off("browser-window-created", onCreated);
         powerMonitor.off("resume", onResume);
@@ -398,6 +487,8 @@ export const DesktopLive = Layer.effect(
             yield* Effect.never;
           });
         }),
+      setSendState: (id, state) =>
+        Effect.sync(() => sendStates.update(id, state)).pipe(Effect.andThen(refresh)),
       setSpace: (id, space) =>
         Effect.gen(function* () {
           spaces.set(id, space);

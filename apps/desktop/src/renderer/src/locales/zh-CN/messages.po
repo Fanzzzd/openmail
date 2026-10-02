@@ -518,6 +518,7 @@ msgstr "暂时连不上邮件服务器：{0}"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cancel"
 msgstr "取消"
 
@@ -597,10 +598,6 @@ msgstr "关闭"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Close compose window"
 msgstr "关闭写信窗口"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Close. The draft is saved."
-msgstr "关闭，草稿会保存"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
@@ -699,6 +696,10 @@ msgstr "无法打印：{reason}"
 msgid "Couldn't save"
 msgstr "保存失败"
 
+#: src/renderer/src/App.tsx
+msgid "Couldn't save the draft: {reason}"
+msgstr "无法保存草稿：{reason}"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't save the PDF: {reason}"
 msgstr "无法保存 PDF：{reason}"
@@ -772,8 +773,13 @@ msgstr "默认"
 msgid "Default email app"
 msgstr "默认邮件客户端"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default From address"
+msgstr "默认发件地址"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -1307,6 +1313,10 @@ msgstr "已复制邮件链接"
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
+msgstr "撤销等待中的邮件将保留为草稿。已开始发送的邮件可能发出。"
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "邮件保留其他标签。"
@@ -1741,6 +1751,14 @@ msgstr "推广"
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit"
+msgstr "退出"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quit with messages waiting to send?"
+msgstr "仍有待发邮件，是否退出？"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "只读"
@@ -1866,6 +1884,10 @@ msgstr "回复全部"
 msgid "Reply All"
 msgstr "回复全部"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply mode"
+msgstr "回复模式"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Reply only to contacts"
 msgstr "仅回复联系人"
@@ -1947,6 +1969,10 @@ msgstr "将邮件保存为 EML…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "将这封邮件保存为 PDF…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this draft before closing?"
+msgstr "关闭前保存草稿？"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
@@ -2045,6 +2071,10 @@ msgstr "语义搜索暂不可用，仍可全文搜索。"
 msgid "Send"
 msgstr "发送"
 
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Send Again"
+msgstr "再次发送"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Send and archive"
@@ -2125,6 +2155,10 @@ msgstr "快捷键"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
 msgstr "显示"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show Cc field"
+msgstr "展开抄送栏"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Show full email addresses in recipient fields"
@@ -2428,6 +2462,10 @@ msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "This draft has unsaved changes or is waiting to sync."
+msgstr "草稿有未保存的修改或正在等待同步。"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "此过滤器会删除符合服务器查询的新邮件，预览最多显示 200 封。"
@@ -2506,6 +2544,7 @@ msgid "Undo mode change"
 msgstr "撤销模式切换"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Undo Send"
 msgstr "撤销发送"
 
@@ -2562,6 +2601,10 @@ msgstr "请输入 http、https 或 mailto 链接"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "使用默认值"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the current account"
+msgstr "使用当前账号"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."

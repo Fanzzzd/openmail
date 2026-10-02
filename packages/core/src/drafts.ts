@@ -118,14 +118,14 @@ export function attachmentsKey(list: readonly OutgoingAttachment[]): string {
   );
 }
 
-export function toDraft(d: StoredDraft): Draft {
+export function toDraft(d: StoredDraft, pendingSave = false): Draft {
   return {
     id: d.id,
     accountId: d.accountId,
     message: d.message,
     updatedAt: d.updatedAt,
     proposalId: d.proposalId,
-    synced: d.remote !== null,
+    synced: d.remote !== null && !pendingSave,
   };
 }
 

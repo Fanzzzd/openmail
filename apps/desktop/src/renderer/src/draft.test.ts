@@ -4,6 +4,7 @@ import {
   richComposeBody,
   remoteComposeBody,
   editedComposeBody,
+  applySignature,
   composeConversion,
 } from "@openmail/core/schema";
 import type { Account, Message } from "../../shared/api";
@@ -15,6 +16,8 @@ import {
   emptyDraft,
   fromStored,
   isEmpty,
+  needsClosePrompt,
+  switchReplyMode,
   toDraftInput,
 } from "./draft";
 
@@ -273,4 +276,114 @@ describe("compose draft model", () => {
     );
     expect(isEmpty({ ...draft, body: richComposeBody("<u>text</u>") })).toBe(false);
   });
+});
+
+it("switching Reply / Reply All / Forward preserves typed rich body, identity and attachments", () => {
+  const draft = {
+    ...draftFor("reply", message, account),
+    body: richComposeBody("<p>My <b>edited</b> reply</p>"),
+    attachments: [{ filename: "note.txt", mimeType: "text/plain", content: "aGk=" }],
+    bcc: "private@example.com",
+    from: { name: "", address: account.email },
+  };
+  const all = switchReplyMode(draft, "replyAll", message, account, [alias(account.id)]);
+  expect(toMessage(all).message.to).toEqual(message.replyTo);
+  expect(toMessage(all).message.cc).toEqual([message.to[1]]);
+  expect(all.body).toBe(draft.body);
+  expect(all.attachments).toBe(draft.attachments);
+  expect(all.id).toBe(draft.id);
+  const forward = switchReplyMode(all, "forward", message, account, []);
+  expect(forward.to).toBe("");
+  expect(forward.cc).toBe("");
+  expect(forward.bcc).toBe(draft.bcc);
+  expect(forward.subject).toBe("Fwd: Question");
+  expect(forward.body).toBe(draft.body);
+  const reply = switchReplyMode(forward, "reply", message, account, []);
+  expect(reply.subject).toBe("Re: Question");
+  expect(reply.from).toEqual(draft.from);
+  expect(
+    switchReplyMode({ ...draft, subject: "Edited subject" }, "forward", message, account, [])
+      .subject,
+  ).toBe("Edited subject");
+});
+
+it("closing asks only for nonempty, unsaved or remotely unsynced versions", () => {
+  const draft = {
+    ...emptyDraft(account.id),
+    to: "bob@example.com",
+    subject: "Saved",
+    body: richComposeBody("<p>Hi</p>"),
+  };
+  const stored = { ...toDraftInput(draft), updatedAt: 1, proposalId: null, synced: true };
+  expect(needsClosePrompt(emptyDraft(account.id), null)).toBe(false);
+  expect(needsClosePrompt(draft, null)).toBe(true);
+  expect(needsClosePrompt(draft, stored)).toBe(false);
+  expect(needsClosePrompt(draft, { ...stored, synced: false })).toBe(true);
+  expect(needsClosePrompt({ ...draft, subject: "Edited" }, stored)).toBe(true);
+  expect(needsClosePrompt({ ...draft, cc: "unfinished" }, stored)).toBe(true);
+  expect(needsClosePrompt({ ...draft, accountId: "another" }, stored)).toBe(true);
+});
+
+it("an empty new draft with only the automatic signature does not prompt", () => {
+  const signature = "My name";
+  const draft = {
+    ...emptyDraft(account.id),
+    body: richComposeBody(
+      `<p>${applySignature("", undefined, signature).replaceAll("\n", "<br>")}</p>`,
+    ),
+  };
+  expect(isEmpty(draft, signature)).toBe(true);
+  expect(isEmpty({ ...draft, subject: "Subject" }, signature)).toBe(false);
+});
+
+it("mode switches retain manual To/Cc/Bcc, remove previous automatic recipients and deduplicate across fields", () => {
+  const aliases = [alias(account.id)];
+  const automatic = draftFor("replyAll", message, account, false, aliases);
+  const edited = {
+    ...automatic,
+    to: `${automatic.to}, Manual <manual@example.com>`,
+    cc: `${automatic.cc}, Extra <extra@example.com>, MANUAL@example.com`,
+    bcc: "Private <private@example.com>",
+  };
+  const reply = switchReplyMode(edited, "reply", message, account, aliases);
+  expect(parseAddresses(reply.to).addresses.map((a) => a.address)).toEqual([
+    "reply@example.com",
+    "manual@example.com",
+  ]);
+  expect(parseAddresses(reply.cc).addresses.map((a) => a.address)).toEqual(["extra@example.com"]);
+  expect(reply.bcc).toBe(edited.bcc);
+  const forward = switchReplyMode(reply, "forward", message, account, aliases);
+  expect(parseAddresses(forward.to).addresses.map((a) => a.address)).toEqual([
+    "manual@example.com",
+  ]);
+  expect(parseAddresses(forward.cc).addresses.map((a) => a.address)).toEqual(["extra@example.com"]);
+  const all = switchReplyMode(forward, "replyAll", message, account, aliases);
+  expect(parseAddresses(all.to).addresses.map((a) => a.address)).toEqual([
+    "reply@example.com",
+    "manual@example.com",
+  ]);
+  expect(parseAddresses(all.cc).addresses.map((a) => a.address)).toEqual([
+    "other@example.com",
+    "extra@example.com",
+  ]);
+  expect(all.bcc).toBe(edited.bcc);
+});
+
+it("untouched never-stored reply and forward close without a save prompt", () => {
+  for (const mode of ["reply", "forward"] as const) {
+    const initial = draftFor(mode, message, account);
+    expect(needsClosePrompt(initial, null, { initial })).toBe(false);
+    expect(needsClosePrompt({ ...initial, subject: "Edited" }, null, { initial })).toBe(true);
+  }
+});
+
+it("empty drafts close quietly only when never stored or unchanged; clearing a stored draft asks", () => {
+  const empty = emptyDraft(account.id);
+  expect(needsClosePrompt(empty, null, { initial: empty })).toBe(false);
+  const storedEmpty = { ...toDraftInput(empty), updatedAt: 1, proposalId: null, synced: true };
+  expect(needsClosePrompt(empty, storedEmpty, { initial: empty })).toBe(false);
+  const initial = { ...empty, to: "bob@example.com", subject: "Saved content" };
+  const stored = { ...toDraftInput(initial), updatedAt: 1, proposalId: null, synced: true };
+  expect(needsClosePrompt(empty, stored, { initial })).toBe(true);
+  expect(needsClosePrompt(empty, storedEmpty, { initial })).toBe(true);
 });

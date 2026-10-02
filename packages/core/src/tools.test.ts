@@ -77,6 +77,8 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     audit: () => notUsed("audit"),
     agentWriteMode: notUsed("agentWriteMode"),
     setAgentWriteMode: () => notUsed("setAgentWriteMode"),
+    sendAgain: () => Effect.die("unused"),
+    pendingSendCount: Effect.succeed(0),
     openDraft: () => notUsed("openDraft"),
     saveDraft: () => notUsed("saveDraft"),
     discardDraft: () => notUsed("discardDraft"),

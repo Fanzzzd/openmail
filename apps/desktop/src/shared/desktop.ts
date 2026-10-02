@@ -2,6 +2,8 @@ import { MailtoDraft } from "@openmail/core/schema";
 import { Schema } from "effect";
 
 export const DesktopEvent = Schema.Union([
+  Schema.TaggedStruct("UndoSend", {}),
+  Schema.TaggedStruct("QuitCheck", {}),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
   Schema.TaggedStruct("OpenThread", { id: Schema.String }),
   Schema.TaggedStruct("Compose", { draft: MailtoDraft }),
@@ -17,7 +19,8 @@ export function desktopEventRoute(
   event: DesktopEvent,
   busy: boolean,
 ): "dispatch" | "defer" | "drop" {
-  if (event._tag === "Edit") return "dispatch";
+  if (event._tag === "Edit" || event._tag === "UndoSend" || event._tag === "QuitCheck")
+    return "dispatch";
   return event._tag === "Command" ? (busy ? "drop" : "dispatch") : "defer";
 }
 
@@ -28,3 +31,8 @@ export const DefaultClientStatus = Schema.Struct({
   isDefault: Schema.Boolean,
 });
 export type DefaultClientStatus = typeof DefaultClientStatus.Type;
+
+/** Only navigation survives a missing renderer; send/quit commands describe the current moment. */
+export function shouldBufferDesktopEvent(event: DesktopEvent): boolean {
+  return event._tag === "OpenThread" || event._tag === "Compose" || event._tag === "Search";
+}

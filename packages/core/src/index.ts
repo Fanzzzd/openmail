@@ -56,3 +56,5 @@ export * from "./list-window.js";
 export * from "./updates.js";
 
 export * from "./recipients.js";
+
+export * from "./compose-sender.js";

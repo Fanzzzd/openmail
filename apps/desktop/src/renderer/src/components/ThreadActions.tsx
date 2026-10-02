@@ -49,6 +49,7 @@ interface Props {
   labels: readonly Label[];
   onOp: (op: MailOp) => void;
   /** `asAttachment` forwards the original as an .eml file. Unset hides reply and forward. */
+  onSendAgain?: (() => void) | undefined;
   onCompose?: ((mode: ComposeMode, asAttachment?: boolean) => void) | undefined;
   /** Opens the thread in a window of its own. Unset hides the button. */
   onOpenWindow?: (() => void) | undefined;
@@ -89,6 +90,7 @@ export function ThreadActions({
   labels,
   onOp,
   onCompose,
+  onSendAgain,
   onOpenWindow,
   onSnooze,
   onFilter,
@@ -142,6 +144,7 @@ export function ThreadActions({
             labels={labels}
             onOp={onOp}
             onCompose={onCompose}
+            onSendAgain={onSendAgain}
             onOpenWindow={onOpenWindow}
             onSnooze={onSnooze}
             onFilter={onFilter}
@@ -211,6 +214,7 @@ export function ThreadActions({
         />
       )}
       {labelControl}
+      {onSendAgain && <Action icon={MailPlus} label={t`Send Again`} onClick={onSendAgain} />}
       {onCompose && (
         <>
           <Divider />
@@ -265,6 +269,7 @@ export function ThreadMenuItems({
   labels,
   onOp,
   onCompose,
+  onSendAgain,
   onOpenWindow,
   onSnooze,
   onFilter,
@@ -289,6 +294,7 @@ export function ThreadMenuItems({
           onClick={onFilter}
         >{t`Create filter from these messages`}</MenuItem>
       )}
+      {onSendAgain && <MenuItem icon={MailPlus} onClick={onSendAgain}>{t`Send Again`}</MenuItem>}
       {onCompose && (
         <>
           <MenuItem icon={Reply} shortcut={shortcut("reply")} onClick={() => onCompose("reply")}>

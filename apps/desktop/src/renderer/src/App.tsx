@@ -46,9 +46,9 @@ import {
   draftFor,
   emptyDraft,
   fromStored,
-  isEmpty,
   toDraftInput,
 } from "./draft";
+import { resolveComposeSender } from "./compose-sender";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom, syncProgressAtom, syncStateAtom } from "./state/events";
@@ -173,6 +173,18 @@ export function App() {
   const [snoozeIds, setSnoozeIds] = useState<readonly string[] | null>(null);
   const [filterSeed, setFilterSeed] = useState<{ accountId: string; from: string } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const pendingSends = useRef(new Map<string, (() => void) | null>());
+  const reportSendState = () =>
+    run(
+      withMail((call) =>
+        call("SetSendState", {
+          pending: pendingSends.current.size,
+          undoAvailable: [...pendingSends.current.values()].some((undo) => undo !== null),
+        }),
+      ),
+    );
+  const undoSend = () =>
+    [...pendingSends.current.values()].filter((undo) => undo !== null).at(-1)?.();
   const undoRef = useRef<(() => void) | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const hideToast = useCallback(() => setToast(null), []);
@@ -269,7 +281,9 @@ export function App() {
   const signed = (d: Draft): Draft => ({
     ...d,
     body: richComposeBody(
-      textComposeHtml(applySignature(d.body.text, undefined, signatureFor(d.accountId, d.mode))),
+      textComposeHtml(
+        applySignature(d.body.text, undefined, signatureFor(d.accountId, d.mode, d.from?.address)),
+      ),
     ),
   });
 
@@ -454,13 +468,63 @@ export function App() {
 
   const openWindow = (id: string) => run(openThreadWindow(id));
 
-  const defaultAccount = (): Account | undefined =>
-    accountList.find((a) => a.id === (view.accountId ?? scope?.[0])) ?? accountList[0];
+  const newMessageDraft = () =>
+    Atom.getResult(accountsAtom).pipe(
+      Effect.flatMap((loadedAccounts) =>
+        resolveComposeSender({
+          accounts: loadedAccounts,
+          view,
+          scope: scopeAccountIds(view, loadedAccounts),
+          prefs: Atom.getResult(prefsAtom),
+          aliases: Atom.getResult(sendAsAtom),
+        }),
+      ),
+      Effect.map((sender) =>
+        sender
+          ? signed({
+              ...emptyDraft(sender.accountId),
+              from: { name: sender.name, address: sender.address },
+            })
+          : null,
+      ),
+    );
+  const startNewMessage = (mailto?: Extract<DesktopEvent, { _tag: "Compose" }>["draft"]) =>
+    run(
+      newMessageDraft().pipe(
+        Effect.flatMap((base) => {
+          if (!base) return Effect.void;
+          const draft = mailto
+            ? signed({ ...base, ...mailto, body: richComposeBody(textComposeHtml(mailto.body)) })
+            : base;
+          setCompose(draft);
+          return mailto ? saveDraft(toDraftInput(draft)).pipe(Effect.asVoid) : Effect.void;
+        }),
+        Effect.catchCause((cause) =>
+          Effect.sync(() => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Can't open the draft: ${reason}`, tone: "error" });
+          }),
+        ),
+      ),
+    );
+  const sendAgain = (id = selectedId) => {
+    if (!id) return;
+    run(
+      withMail((call) => call("SendAgain", { id })).pipe(
+        Effect.matchCause({
+          onSuccess: (draft) => setCompose(fromStored(draft)),
+          onFailure: (cause) => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Can't open the draft: ${reason}`, tone: "error" });
+          },
+        }),
+      ),
+    );
+  };
 
   const startCompose = (mode: Draft["mode"], asAttachment = false, id = selectedId) => {
     if (mode === "new") {
-      const account = defaultAccount();
-      if (account) setCompose(signed(emptyDraft(account.id)));
+      startNewMessage();
       return;
     }
     if (!id) return;
@@ -497,10 +561,23 @@ export function App() {
     openSavedDraft(`proposal:${p.id}`);
   };
 
-  /** Closing keeps the draft; an untouched or empty one is not saved. */
+  /** Quiet closes retain storage; explicit Save persists even a cleared draft. */
   const closeCompose = (draft: Draft, changed: boolean) => {
-    setCompose(null);
-    if (changed && !isEmpty(draft)) run(saveDraft(toDraftInput(draft)));
+    if (!changed) {
+      setCompose(null);
+      return;
+    }
+    run(
+      saveDraft(toDraftInput(draft)).pipe(
+        Effect.matchCause({
+          onSuccess: () => setCompose(null),
+          onFailure: (cause) => {
+            const reason = causeText(i18n, cause);
+            say({ text: t`Couldn't save the draft: ${reason}`, tone: "error" });
+          },
+        }),
+      ),
+    );
   };
 
   const discard = (draft: Draft) => {
@@ -527,6 +604,8 @@ export function App() {
   const send = (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => {
     setCompose(null);
     const reopen = () => setCompose(draft);
+    pendingSends.current.set(draft.id, null);
+    reportSendState();
     const saved = run(saveDraft(toDraftInput(draft)));
     const deliver = () =>
       run(
@@ -535,6 +614,12 @@ export function App() {
             sendMessage(draft.accountId, message, {
               draftId: draft.id,
               ...(options.archive ? { archive: true } : {}),
+            }),
+          ),
+          Effect.ensuring(
+            Effect.sync(() => {
+              pendingSends.current.delete(draft.id);
+              reportSendState();
             }),
           ),
           Effect.matchCause({
@@ -567,17 +652,23 @@ export function App() {
       return;
     }
     const held = holdSend(delay, () => {
+      pendingSends.current.set(draft.id, null);
+      reportSendState();
       if (undoRef.current === undo) undoRef.current = null;
       deliver();
     });
     const undo = () => {
       if (held.undo()) {
+        pendingSends.current.delete(draft.id);
+        reportSendState();
         if (undoRef.current === undo) undoRef.current = null;
         setToast(null);
         reopen();
       }
     };
     undoRef.current = undo;
+    pendingSends.current.set(draft.id, undo);
+    reportSendState();
     say({ text: t`Sending…`, duration: delay, action: { label: t`Undo`, run: undo } });
   };
 
@@ -651,6 +742,12 @@ export function App() {
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));
     switch (event._tag) {
+      case "QuitCheck":
+        reportSendState();
+        break;
+      case "UndoSend":
+        undoSend();
+        break;
       case "Edit": {
         const busy = Boolean(
           dialog ||
@@ -698,19 +795,9 @@ export function App() {
         setQuery(event.query);
         searchRef.current?.focus();
         break;
-      case "Compose": {
-        const account = defaultAccount();
-        if (account) {
-          const draft = signed({
-            ...emptyDraft(account.id),
-            ...event.draft,
-            body: richComposeBody(textComposeHtml(event.draft.body)),
-          });
-          setCompose(draft);
-          run(saveDraft(toDraftInput(draft)));
-        }
+      case "Compose":
+        startNewMessage(event.draft);
         break;
-      }
       case "Command":
         if (event.command === "compose") startCompose("new");
         else if (event.command === "inbox") {
@@ -932,6 +1019,7 @@ export function App() {
       case "sendArchive":
       case "attach":
       case "saveDraft":
+      case "showCc":
       case "closeCompose":
       case "zoomIn":
       case "zoomOut":
@@ -1134,6 +1222,14 @@ export function App() {
                         labels={threadLabels}
                         onOp={(op) => act(op)}
                         onCompose={startCompose}
+                        onSendAgain={
+                          stateMessages?.some((m) => m.labels.includes("SENT"))
+                            ? () =>
+                                sendAgain(
+                                  stateMessages.filter((m) => m.labels.includes("SENT")).at(-1)?.id,
+                                )
+                            : undefined
+                        }
                         onSnooze={() => {
                           if (selectedId) setSnoozeIds([selectedId]);
                         }}

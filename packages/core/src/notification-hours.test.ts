@@ -289,7 +289,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           yield* TestClock.setTime(at(6, 9).getTime());
           assert.deepStrictEqual(yield* m.takeNotifications, []);
         }).pipe(Effect.provide(layer()));
-        assert.strictEqual(MIGRATIONS.length, 16);
+        assert.match(MIGRATIONS[15] ?? "", /CREATE TABLE pending_notifications/);
       }),
   );
 }

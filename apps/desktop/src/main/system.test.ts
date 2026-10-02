@@ -57,7 +57,19 @@ vi.mock("electron", async () => {
     isDestroyed() {
       return this.closed;
     }
+    close() {
+      const cancellation = { prevented: false };
+      this.emit("close", {
+        preventDefault: () => {
+          cancellation.prevented = true;
+        },
+      });
+      if (cancellation.prevented) return;
+      this.destroy();
+      if (!windows.length) app.emit("window-all-closed");
+    }
     destroy() {
+      if (this.closed) return;
       this.closed = true;
       this.emit("closed");
       windows.splice(windows.indexOf(this), 1);
@@ -101,6 +113,7 @@ vi.mock("electron", async () => {
   }
   return {
     app,
+    dialog: { showMessageBox: vi.fn(async () => ({ response: 0 })) },
     BrowserWindow: FakeWindow,
     Notification: FakeNotification,
     Tray: FakeTray,
@@ -141,7 +154,13 @@ const observations = await vi.importMock<{
     badge: Mock<(count: number) => boolean>;
     setPackaged(value: boolean): void;
     restore(id: string): { emit(event: string, data?: unknown): void };
-    windows: { webContents: { id: number }; query: Record<string, string>; focus(): void }[];
+    windows: {
+      webContents: { id: number };
+      query: Record<string, string>;
+      focus(): void;
+      close(): void;
+      isDestroyed(): boolean;
+    }[];
     notifications: {
       options: { actions?: { text: string }[]; title: string; body?: string };
       emit(event: string, data?: unknown): void;
@@ -179,6 +198,11 @@ const englishLabels: DesktopLabels = {
   file: "File",
   edit: "Edit",
   undo: "Undo",
+  undoSend: "Undo Send",
+  quitPending: "Quit with pending sends?",
+  quitPendingDetail: "Pending sends",
+  quit: "Quit",
+  cancel: "Cancel",
   selectAll: "Select all",
   window: "Window",
   newMessages: "new messages",
@@ -647,5 +671,243 @@ it("periodic refresh logs a SQL defect and runs again at the next interval", asy
         expect(attempts).toBe(beforeFailure + 2);
       }),
     ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer)), Effect.provide(TestClock.layer())),
+  );
+});
+
+it("Undo Send in Edit follows the focused window's undo window", async () => {
+  const { Menu } = await vi.importMock<{ Menu: { setApplicationMenu: Mock } }>("electron");
+  const server = fakeServer("me@gmail.com");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const first = observations.testState.windows[0];
+        if (!first) throw new Error("Missing main window");
+        first.focus();
+        yield* desktop.setSendState(first.webContents.id, { pending: 1, undoAvailable: true });
+        expect(Menu.setApplicationMenu).toHaveBeenLastCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              label: "Edit",
+              submenu: expect.arrayContaining([
+                expect.objectContaining({ label: "Undo Send", enabled: true }),
+              ]),
+            }),
+          ]),
+        );
+        const second = createMainWindow();
+        second.focus();
+        yield* desktop.setSendState(second.webContents.id, { pending: 1, undoAvailable: false });
+        expect(Menu.setApplicationMenu).toHaveBeenLastCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              label: "Edit",
+              submenu: expect.arrayContaining([
+                expect.objectContaining({ label: "Undo Send", enabled: false }),
+              ]),
+            }),
+          ]),
+        );
+        first.focus();
+        yield* desktop.setSendState(first.webContents.id, { pending: 0, undoAvailable: false });
+        expect(Menu.setApplicationMenu).toHaveBeenLastCalledWith(
+          expect.arrayContaining([
+            expect.objectContaining({
+              label: "Edit",
+              submenu: expect.arrayContaining([
+                expect.objectContaining({ label: "Undo Send", enabled: false }),
+              ]),
+            }),
+          ]),
+        );
+      }),
+    ).pipe(Effect.provide(desktopLayer(server))),
+  );
+});
+
+it("before-quit requests renderer state, asks for pending sends, and resumes quit only on approval", async () => {
+  const { app, dialog } = await vi.importMock<{
+    app: { quit: Mock<() => void>; emit: (name: string, event: unknown) => void };
+    dialog: { showMessageBox: Mock<() => Promise<{ response: number; checkboxChecked: boolean }>> };
+  }>("electron");
+  const server = fakeServer("me@gmail.com");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const first = observations.testState.windows[0];
+        if (!first) throw new Error("Missing main window");
+        yield* desktop.events(first.webContents.id).pipe(
+          Stream.runForEach((event) =>
+            event._tag === "QuitCheck"
+              ? desktop.setSendState(first.webContents.id, { pending: 1, undoAvailable: true })
+              : Effect.void,
+          ),
+          Effect.forkScoped,
+        );
+        yield* Effect.yieldNow;
+        yield* settle;
+        vi.mocked(app.quit).mockClear();
+        const preventDefault = vi.fn();
+        app.emit("before-quit", { preventDefault });
+        yield* settle;
+        expect(preventDefault).toHaveBeenCalledOnce();
+        expect(dialog.showMessageBox).toHaveBeenCalled();
+        expect(app.quit).not.toHaveBeenCalled();
+        vi.mocked(dialog.showMessageBox).mockResolvedValueOnce({
+          response: 1,
+          checkboxChecked: false,
+        });
+        app.emit("before-quit", { preventDefault });
+        yield* settle;
+        expect(app.quit).toHaveBeenCalledOnce();
+        preventDefault.mockClear();
+        app.emit("before-quit", { preventDefault });
+        expect(preventDefault).not.toHaveBeenCalled();
+      }),
+    ).pipe(Effect.provide(desktopLayer(server))),
+  );
+});
+
+it("closing a main window with a pending send asks once, preserves it on Cancel and closes on approval", async () => {
+  const { dialog } = await vi.importMock<{
+    dialog: { showMessageBox: Mock<() => Promise<{ response: number }>> };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("Missing main window");
+        dialog.showMessageBox.mockClear();
+        yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+        win.close();
+        win.close();
+        yield* settle;
+        expect(win.isDestroyed()).toBe(false);
+        expect(dialog.showMessageBox).toHaveBeenCalledOnce();
+        dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        win.close();
+        yield* settle;
+        expect(win.isDestroyed()).toBe(true);
+        expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+for (const platform of ["linux", "win32"] as const) {
+  it(`${platform}: last-window close cannot lose pending state before confirming`, async () => {
+    const { app, dialog } = await vi.importMock<{
+      app: { quit: Mock<() => void> };
+      dialog: { showMessageBox: Mock<() => Promise<{ response: number }>> };
+    }>("electron");
+    const originalPlatform = process.platform;
+    try {
+      Object.defineProperty(process, "platform", { value: platform });
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const desktop = yield* Desktop;
+            const win = observations.testState.windows[0];
+            if (!win) throw new Error("Missing main window");
+            app.quit.mockClear();
+            dialog.showMessageBox.mockClear();
+            yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+            win.close();
+            yield* settle;
+            expect(win.isDestroyed()).toBe(false);
+            expect(app.quit).not.toHaveBeenCalled();
+            expect(dialog.showMessageBox).toHaveBeenCalledOnce();
+            dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+            win.close();
+            yield* settle;
+            expect(win.isDestroyed()).toBe(true);
+            expect(app.quit).toHaveBeenCalledOnce();
+          }),
+        ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+      );
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform });
+    }
+  });
+}
+
+it("a menu Undo Send issued without a subscriber is never replayed after renderer reload", async () => {
+  const { Menu } = await vi.importMock<{
+    Menu: {
+      setApplicationMenu: Mock<
+        (
+          menu: readonly {
+            label?: string;
+            submenu?: readonly { label?: string; click?: () => void }[];
+          }[],
+        ) => void
+      >;
+    };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("Missing main window");
+        win.focus();
+        yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+        const undo = Menu.setApplicationMenu.mock.lastCall?.[0]
+          .find((item) => item.label === "Edit")
+          ?.submenu?.find((item) => item.label === "Undo Send");
+        expect(undo?.click).toBeDefined();
+        undo?.click?.();
+        receiveAppUrl(messageLink("gmail:me@gmail.com/reloaded"));
+        const events = yield* desktop
+          .events(win.webContents.id)
+          .pipe(Stream.take(1), Stream.runCollect);
+        expect([...events]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/reloaded" }]);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("app quit approval closes pending-send windows without asking a second time", async () => {
+  const { app, dialog } = await vi.importMock<{
+    app: { quit: Mock<() => void>; emit: (name: string, event: unknown) => void };
+    dialog: { showMessageBox: Mock<() => Promise<{ response: number }>> };
+  }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("Missing main window");
+        yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
+        dialog.showMessageBox.mockClear();
+        dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        app.quit.mockImplementationOnce(() => win.close());
+        app.emit("before-quit", { preventDefault: vi.fn() });
+        yield* settle;
+        expect(win.isDestroyed()).toBe(true);
+        expect(dialog.showMessageBox).toHaveBeenCalledOnce();
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("closing a main window without pending sends needs no confirmation", async () => {
+  const { dialog } = await vi.importMock<{ dialog: { showMessageBox: Mock } }>("electron");
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const win = observations.testState.windows[0];
+        if (!win) throw new Error("Missing main window");
+        yield* desktop.setSendState(win.webContents.id, { pending: 0, undoAvailable: false });
+        dialog.showMessageBox.mockClear();
+        win.close();
+        yield* settle;
+        expect(win.isDestroyed()).toBe(true);
+        expect(dialog.showMessageBox).not.toHaveBeenCalled();
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
   );
 });

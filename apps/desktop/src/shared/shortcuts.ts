@@ -31,6 +31,7 @@ const common = {
   sendArchive: [shiftCmd("Enter")],
   attach: [shiftCmd("a")],
   saveDraft: [cmd("s")],
+  showCc: [shiftCmd("c")],
   closeCompose: [key("Escape")],
   zoomIn: [cmd("+"), cmd("=")],
   zoomOut: [cmd("-")],

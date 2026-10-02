@@ -54,6 +54,7 @@ const TemplateRow = Schema.Struct({
   subject: Schema.String,
   to_json: Schema.fromJsonString(Schema.Array(Address)),
   cc_json: Schema.fromJsonString(Schema.Array(Address)),
+  bcc_json: Schema.fromJsonString(Schema.Array(Address)),
   body: Schema.String,
   updated_at: Schema.Number,
 });
@@ -85,6 +86,7 @@ function toTemplate(r: typeof TemplateRow.Type): Template {
     subject: r.subject,
     to: r.to_json,
     cc: r.cc_json,
+    bcc: r.bcc_json,
     body: r.body,
     updatedAt: r.updated_at,
   };
@@ -242,6 +244,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       const d = DEFAULT_PREFS;
       return {
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
+        defaultFrom: pref(f.defaultFrom, stored.get("defaultFrom"), d.defaultFrom),
         showFullRecipientAddresses: pref(
           f.showFullRecipientAddresses,
           stored.get("showFullRecipientAddresses"),
@@ -302,7 +305,9 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
 
   // Templates
 
-  const TEMPLATE_COLUMNS = sql.literal("id, name, subject, to_json, cc_json, body, updated_at");
+  const TEMPLATE_COLUMNS = sql.literal(
+    "id, name, subject, to_json, cc_json, bcc_json, body, updated_at",
+  );
 
   const templates = all(TemplateRow)(
     sql`SELECT ${TEMPLATE_COLUMNS} FROM templates ORDER BY name COLLATE NOCASE, id`,
@@ -322,15 +327,16 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       subject: input.subject,
       to: JSON.stringify(input.to),
       cc: JSON.stringify(input.cc),
+      bcc: JSON.stringify(input.bcc ?? []),
       body: input.body,
     };
     const row = yield* first(TemplateRow)(
       id === null
-        ? sql`INSERT INTO templates (id, name, subject, to_json, cc_json, body, updated_at)
-            VALUES (${key}, ${values.name}, ${values.subject}, ${values.to}, ${values.cc},
+        ? sql`INSERT INTO templates (id, name, subject, to_json, cc_json, bcc_json, body, updated_at)
+            VALUES (${key}, ${values.name}, ${values.subject}, ${values.to}, ${values.cc}, ${values.bcc},
               ${values.body}, ${now}) RETURNING ${TEMPLATE_COLUMNS}`
         : sql`UPDATE templates SET name = ${values.name}, subject = ${values.subject},
-            to_json = ${values.to}, cc_json = ${values.cc}, body = ${values.body},
+            to_json = ${values.to}, cc_json = ${values.cc}, bcc_json = ${values.bcc}, body = ${values.body},
             updated_at = ${now} WHERE id = ${key} RETURNING ${TEMPLATE_COLUMNS}`,
     );
     if (Option.isNone(row)) return yield* new NotFound({ what: "template", id: key });

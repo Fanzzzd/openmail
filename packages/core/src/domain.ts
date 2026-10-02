@@ -442,6 +442,8 @@ export type NotificationBatch = {
 export const Prefs = Schema.Struct({
   /** How long Send waits so the person can take the message back. */
   undoSendSeconds: Schema.Literals(UNDO_SEND_SECONDS),
+  /** Null follows the current view; otherwise use this account or verified alias. */
+  defaultFrom: Schema.NullOr(Schema.Struct({ accountId: Schema.String, address: Schema.String })),
   /** Show names and full email addresses in recipient chips. */
   showFullRecipientAddresses: Schema.Boolean,
   /** UI language. "system" follows the OS language. */
@@ -467,6 +469,7 @@ export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
   undoSendSeconds: 5,
+  defaultFrom: null,
   showFullRecipientAddresses: false,
   language: "system",
   markReadDelay: 0,
@@ -500,6 +503,7 @@ export const TemplateInput = Schema.Struct({
   subject: Schema.String,
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
+  bcc: Schema.optionalKey(Schema.Array(Address)),
   body: Schema.String,
 });
 export type TemplateInput = typeof TemplateInput.Type;

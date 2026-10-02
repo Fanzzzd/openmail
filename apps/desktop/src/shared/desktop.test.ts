@@ -1,5 +1,10 @@
 import { expect, it } from "vitest";
-import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "./desktop";
+import {
+  desktopEventRoute,
+  editCommandRoute,
+  shouldBufferDesktopEvent,
+  type DesktopEvent,
+} from "./desktop";
 
 it("busy editors keep links and never replay menu commands on becoming idle", () => {
   const deferred: DesktopEvent[] = [];
@@ -32,4 +37,23 @@ it("native edit commands dispatch immediately and retain text editing in editors
   expect(editCommandRoute(true, false)).toBe("text");
   expect(editCommandRoute(true, true)).toBe("text");
   expect(editCommandRoute(false, false, true)).toBe("text");
+});
+
+it("quit checks and Undo Send reach the renderer even while another editor is busy", () => {
+  expect(desktopEventRoute({ _tag: "QuitCheck" }, true)).toBe("dispatch");
+  expect(desktopEventRoute({ _tag: "UndoSend" }, true)).toBe("dispatch");
+});
+
+it("send and quit commands are dropped when the renderer is missing, while navigation is buffered", () => {
+  expect(shouldBufferDesktopEvent({ _tag: "UndoSend" })).toBe(false);
+  expect(shouldBufferDesktopEvent({ _tag: "QuitCheck" })).toBe(false);
+  expect(shouldBufferDesktopEvent({ _tag: "Edit", action: "undo" })).toBe(false);
+  expect(shouldBufferDesktopEvent({ _tag: "Command", command: "compose" })).toBe(false);
+  expect(shouldBufferDesktopEvent({ _tag: "OpenThread", id: "message" })).toBe(true);
+  expect(
+    shouldBufferDesktopEvent({
+      _tag: "Compose",
+      draft: { to: "to@example.com", cc: "", bcc: "", subject: "", body: "" },
+    }),
+  ).toBe(true);
 });

@@ -13,6 +13,7 @@ import {
   fillTemplate,
   ownText,
 } from "@openmail/core/schema";
+import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
 import { type ReactElement, type RefObject, useEffect, useRef, useState } from "react";
@@ -24,13 +25,16 @@ import {
   formatAddress,
   isEmpty,
   parseAddresses,
+  switchReplyMode,
   toDraftInput,
 } from "../draft";
+import { requestDraftClose } from "../draft-close";
 import { submitDraft, type SendWarning } from "../send";
 import { formatBytes } from "../format";
+import { openDraft, useRunMail } from "../state/mail";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
-import { templatesAtom, sendAsAtom, prefsAtom } from "../state/queries";
+import { templatesAtom, sendAsAtom, prefsAtom, threadAtom } from "../state/queries";
 import { RecipientField } from "./RecipientField";
 import { ComposeEditor } from "./ComposeEditor";
 import {
@@ -39,7 +43,7 @@ import {
   replaceEditorText,
   type ComposeElement,
 } from "../compose-editor-dom";
-import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
+import { Alert, AlertCancel, alertButton, alertPrimary, alertDanger } from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { Select } from "./ui/Select";
 import { Tip } from "./ui/Tip";
@@ -85,6 +89,15 @@ export function Composer({
     archive: boolean;
     confirmed: readonly SendWarning[];
   } | null>(null);
+  const run = useRunMail();
+  const [closing, setClosing] = useState(false);
+  const [checkingClose, setCheckingClose] = useState(false);
+  const ccRef = useRef<HTMLInputElement>(null);
+  const sourceThread = AsyncResult.getOrElse(
+    useAtomValue(threadAtom(initial.inReplyTo ?? null)),
+    () => [],
+  );
+  const original = sourceThread.find((m) => m.id === initial.inReplyTo);
   const [picker, setPicker] = useState(false);
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
   const fileRef = useRef<HTMLInputElement>(null);
@@ -104,6 +117,7 @@ export function Composer({
   ]);
   const availableSenders =
     draft.mode === "new" ? senders : senders.filter((s) => s.accountId === draft.accountId);
+  const empty = isEmpty(draft, signatureFor(draft.accountId, draft.mode, draft.from?.address));
   const replying = draft.mode === "reply" || draft.mode === "replyAll";
   const set = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -128,7 +142,7 @@ export function Composer({
   // Autosave: locally at once, then to the provider through the queue.
   const saved = useRef(initial);
   useEffect(() => {
-    const due = draft !== saved.current && !isEmpty(draft);
+    const due = !closing && !checkingClose && draft !== saved.current && !empty;
     const timer = due
       ? setTimeout(() => {
           saved.current = draft;
@@ -136,7 +150,7 @@ export function Composer({
         }, AUTOSAVE_MS)
       : undefined;
     return () => clearTimeout(timer);
-  }, [draft, save]);
+  }, [draft, save, closing, checkingClose, empty]);
 
   const submit = (archive: boolean, confirmed: readonly SendWarning[] = []) => {
     const result = submitDraft(draft, archive, confirmed, onSend);
@@ -161,13 +175,31 @@ export function Composer({
     }
   };
 
-  const close = () => onClose(draft, draft !== initial);
+  const close = () => {
+    if (closing || checkingClose || saveState.waiting) return;
+    setCheckingClose(true);
+    run(
+      requestDraftClose({ draft, initial, empty, lookup: openDraft(draft.id) }).pipe(
+        Effect.matchCause({
+          onSuccess: (action) => {
+            setCheckingClose(false);
+            if (action === "prompt") setClosing(true);
+            else onClose(draft, false);
+          },
+          onFailure: () => {
+            setCheckingClose(false);
+            setClosing(true);
+          },
+        }),
+      ),
+    );
+  };
 
   useEffect(() => {
     // Bubble phase: fields that handle a key themselves (suggestions) mark it handled first.
     // Escape belongs to the dialog: it closes the innermost popup, then the window.
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || asking) return;
+      if (e.defaultPrevented || asking || closing || checkingClose) return;
       if (matchesShortcut(prefs.shortcutSet, "sendArchive", e)) {
         e.preventDefault();
         submit(true);
@@ -184,6 +216,10 @@ export function Composer({
       } else if (matchesShortcut(prefs.shortcutSet, "closeCompose", e) && e.key !== "Escape") {
         e.preventDefault();
         close();
+      } else if (matchesShortcut(prefs.shortcutSet, "showCc", e)) {
+        e.preventDefault();
+        setShowBcc(true);
+        requestAnimationFrame(() => ccRef.current?.focus());
       } else if (matchesShortcut(prefs.shortcutSet, "templates", e)) {
         e.preventDefault();
         setPicker((v) => !v);
@@ -233,16 +269,18 @@ export function Composer({
     }
     const to = merge(draft.to, template.to);
     const cc = merge(draft.cc, template.cc);
+    const bcc = merge(draft.bcc, template.bcc ?? []);
     const first = parseAddresses(to).addresses[0];
     const text = fillTemplate(template.body, first);
     if (bodyRef.current) insertEditorText(bodyRef.current, text, selectionRef.current);
     set({
       to,
       cc,
+      bcc,
       subject: template.subject ? fillTemplate(template.subject, first) : draft.subject,
       body: bodyRef.current ? editorBody(bodyRef.current, draft.body) : draft.body,
     });
-    if (cc) setShowBcc(true);
+    if (cc || bcc) setShowBcc(true);
     setPicker(false);
     requestAnimationFrame(() => bodyRef.current?.focus());
   };
@@ -294,14 +332,38 @@ export function Composer({
           >
             <header className="flex h-11 shrink-0 items-center gap-2 border-b border-black/[0.07] px-4 dark:border-white/[0.08]">
               <Dialog.Title className="text-[14px] font-semibold">{title}</Dialog.Title>
+              {original && account && (
+                <Select
+                  aria-label={t`Reply mode`}
+                  value={draft.mode}
+                  options={[
+                    { value: "reply", label: t`Reply` },
+                    { value: "replyAll", label: t`Reply All` },
+                    { value: "forward", label: t`Forward` },
+                  ]}
+                  onValueChange={(mode) => {
+                    if (mode === "reply" || mode === "replyAll" || mode === "forward") {
+                      setDraft(switchReplyMode(draft, mode, original, account, aliases));
+                      if (mode === "replyAll") setShowBcc(true);
+                    }
+                  }}
+                />
+              )}
+
               {draft.proposalId !== undefined && (
                 <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[11px] text-violet-700 dark:text-violet-300">
                   <Trans>AI draft</Trans>
                 </span>
               )}
               <span className="flex-1 truncate text-[12px] text-neutral-400">{status}</span>
-              <Tip label={t`Close. The draft is saved.`} shortcut={shortcut("closeCompose")}>
-                <button type="button" aria-label={t`Close`} onClick={close} className={quiet}>
+              <Tip label={t`Close`} shortcut={shortcut("closeCompose")}>
+                <button
+                  type="button"
+                  aria-label={t`Close`}
+                  disabled={checkingClose || saveState.waiting}
+                  onClick={close}
+                  className={quiet}
+                >
                   <X className="size-4" />
                 </button>
               </Tip>
@@ -352,6 +414,7 @@ export function Composer({
                   </span>
                   <RecipientField
                     label={t`Cc`}
+                    inputRef={ccRef}
                     value={draft.cc}
                     onChange={(cc) => set({ cc })}
                     showFullAddresses={prefs.showFullRecipientAddresses}
@@ -508,6 +571,22 @@ export function Composer({
           </form>
 
           <Alert
+            open={closing}
+            onOpenChange={setClosing}
+            title={t`Save this draft before closing?`}
+            description={t`This draft has unsaved changes or is waiting to sync.`}
+          >
+            <AlertCancel>
+              <Trans>Cancel</Trans>
+            </AlertCancel>
+            <button type="button" onClick={() => onDiscard(draft)} className={alertDanger}>
+              <Trans>Delete</Trans>
+            </button>
+            <button type="button" onClick={() => onClose(draft, true)} className={alertPrimary}>
+              <Trans>Save</Trans>
+            </button>
+          </Alert>
+          <Alert
             open={asking !== null}
             onOpenChange={(open) => {
               if (!open) setAsking(null);
@@ -599,6 +678,7 @@ function TemplatePicker({
           subject: draft.subject,
           to: parseAddresses(draft.to).addresses,
           cc: parseAddresses(draft.cc).addresses,
+          bcc: parseAddresses(draft.bcc).addresses,
           body: ownText(draft.body.text),
         },
       },

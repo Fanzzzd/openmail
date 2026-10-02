@@ -123,3 +123,26 @@ it("selection keys preserve archive, profile and typing modifier combinations", 
   expect(selectionShortcut(event("ArrowUp", { shiftKey: true }))).toBe("extendPrevious");
   expect(selectionShortcut(event("ArrowUp", { shiftKey: true, altKey: true }))).toBeNull();
 });
+
+it("Cc expansion uses Cmd-Shift-C in every shortcut set", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    expect(
+      matchesShortcut(set, "showCc", {
+        key: "C",
+        metaKey: true,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: true,
+      }),
+    ).toBe(true);
+    expect(
+      matchesShortcut(set, "showCc", {
+        key: "c",
+        metaKey: true,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: false,
+      }),
+    ).toBe(false);
+  }
+});

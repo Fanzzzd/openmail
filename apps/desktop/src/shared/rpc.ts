@@ -64,6 +64,7 @@ const Counts = Schema.Record(Schema.String, Schema.Number);
 /** Only the preferences being changed. */
 const PrefsPatch = Schema.Struct({
   undoSendSeconds: Schema.optionalKey(Prefs.fields.undoSendSeconds),
+  defaultFrom: Schema.optionalKey(Prefs.fields.defaultFrom),
   showFullRecipientAddresses: Schema.optionalKey(Prefs.fields.showFullRecipientAddresses),
   language: Schema.optionalKey(Prefs.fields.language),
   markReadDelay: Schema.optionalKey(Prefs.fields.markReadDelay),
@@ -266,6 +267,7 @@ export class MailRpcs extends RpcGroup.make(
 
   // Drafts
   /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
+  Rpc.make("SendAgain", { payload: { id: Schema.String }, success: Draft, error }),
   Rpc.make("OpenDraft", { payload: { id: Schema.String }, success: Draft, error }),
   Rpc.make("SaveDraft", { payload: { draft: DraftInput }, success: Draft, error }),
   Rpc.make("DiscardDraft", { payload: { id: Schema.String } }),
@@ -301,6 +303,12 @@ export class MailRpcs extends RpcGroup.make(
   // Desktop system integration. No provider or database access in these handlers.
   Rpc.make("NativeEdit", { payload: { action: Schema.Literals(["undo", "selectAll"]) } }),
   Rpc.make("NewWindow"),
+  Rpc.make("SetSendState", {
+    payload: {
+      pending: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+      undoAvailable: Schema.Boolean,
+    },
+  }),
   Rpc.make("SetDesktopLabels", { payload: { labels: DesktopLabels } }),
   Rpc.make("CopyMessageLink", { payload: { id: Schema.String } }),
   Rpc.make("DefaultMailClient", { success: DefaultClientStatus }),

@@ -469,6 +469,7 @@ export const MailboxLive = (
         if (remote.messageId) yield* store.deleteMessage(draft.accountId, remote.messageId);
       });
 
+      let pendingSends = 0;
       const send = Effect.fn("Mailbox.send")(function* (
         command: Extract<Command, { kind: "send" }>,
         actor: Actor,
@@ -561,7 +562,16 @@ export const MailboxLive = (
           case "modify":
             return { status: "applied", flush: yield* modify(command, actor) } satisfies Outcome;
           case "send": {
-            const flushed = yield* send(command, actor);
+            const flushed = yield* Effect.sync(() => {
+              pendingSends++;
+            }).pipe(
+              Effect.andThen(send(command, actor)),
+              Effect.ensuring(
+                Effect.sync(() => {
+                  pendingSends--;
+                }),
+              ),
+            );
             return (
               flushed ? { status: "applied", flush: flushed } : { status: "applied" }
             ) satisfies Outcome;
@@ -680,6 +690,14 @@ export const MailboxLive = (
 
       // Drafts
 
+      const publicDraft = Effect.fnUntraced(function* (draft: StoredDraft) {
+        const pending = yield* store.listPendingOps;
+        return toDraft(
+          draft,
+          pending.some((p) => p.op.kind === "saveDraft" && p.op.draftId === draft.id),
+        );
+      });
+
       const saveDraft = Effect.fn("Mailbox.saveDraft")(function* (input: DraftInput) {
         yield* store.getAccount(input.accountId);
         const saved = yield* store.transaction(
@@ -710,7 +728,7 @@ export const MailboxLive = (
         );
         yield* flushLater;
         // With an inline flush the push already happened; show that.
-        return toDraft(Option.getOrElse(yield* store.getDraft(input.id), () => saved));
+        return yield* publicDraft(Option.getOrElse(yield* store.getDraft(input.id), () => saved));
       });
 
       const discardDraft = Effect.fn("Mailbox.discardDraft")(function* (id: string) {
@@ -787,7 +805,7 @@ export const MailboxLive = (
         if (proposalRef) {
           const proposalId = Number(proposalRef[1]);
           const linked = yield* store.draftByProposal(proposalId);
-          if (Option.isSome(linked)) return toDraft(linked.value);
+          if (Option.isSome(linked)) return yield* publicDraft(linked.value);
           // A proposal from before drafts were synced: it becomes one now.
           const proposal = yield* store.getProposal(proposalId);
           const { command } = proposal;
@@ -801,20 +819,49 @@ export const MailboxLive = (
             proposalId,
           });
           yield* store.enqueueDraftSave(draft.accountId, draft.id);
-          return toDraft(draft);
+          return yield* publicDraft(draft);
         }
         const local = yield* store.getDraft(id);
-        if (Option.isSome(local)) return toDraft(local.value);
+        if (Option.isSome(local)) return yield* publicDraft(local.value);
         const message = yield* store.getMessage(id);
         const { providerId } = yield* store.messageRef(id);
         const linked = yield* store.draftByRemoteMessage(message.accountId, providerId);
-        if (Option.isSome(linked)) return toDraft(linked.value);
+        if (Option.isSome(linked)) return yield* publicDraft(linked.value);
         if (!message.labels.includes("DRAFT")) {
           return yield* new InvalidInput({ message: "This message is not a draft." });
         }
-        const imported = toDraft(yield* importDraft(message));
+        const imported = yield* publicDraft(yield* importDraft(message));
         yield* changed;
         return imported;
+      });
+
+      const sendAgain = Effect.fn("Mailbox.sendAgain")(function* (id: string) {
+        const message = yield* store.getMessage(id);
+        if (!message.labels.includes("SENT"))
+          return yield* new InvalidInput({ message: "Choose a sent message to send again." });
+        const account = yield* store.getAccount(message.accountId);
+        const { providerId } = yield* store.messageRef(id);
+        const parsed = yield* providers
+          .get(account.provider)
+          .fetchRaw(account, providerId)
+          .pipe(Effect.flatMap(parseRawDraft));
+        return yield* saveDraft({
+          id: newDraftId(),
+          accountId: account.id,
+          message: normalizeComposeMessage({
+            from: message.from,
+            to: parsed.to,
+            cc: parsed.cc,
+            bcc: parsed.bcc,
+            subject: parsed.subject,
+            text: parsed.text,
+            ...(parsed.html === undefined ? {} : { html: parsed.html }),
+            ...(parsed.originalHtml === undefined ? {} : { originalHtml: parsed.originalHtml }),
+            ...(parsed.markdown ? { markdown: true } : {}),
+            attachments: parsed.attachments,
+            mode: "new",
+          }),
+        });
       });
 
       const features = makeFeatureMailbox(store, providers, changed, perform);
@@ -1459,6 +1506,8 @@ export const MailboxLive = (
         setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
 
         openDraft,
+        sendAgain,
+        pendingSendCount: Effect.sync(() => pendingSends),
         saveDraft,
         discardDraft,
 

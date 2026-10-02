@@ -512,6 +512,7 @@ msgstr "Can't reach the mail server right now: {0}"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -591,10 +592,6 @@ msgstr "Close"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Close compose window"
 msgstr "Close compose window"
-
-#: src/renderer/src/components/Composer.tsx
-msgid "Close. The draft is saved."
-msgstr "Close. The draft is saved."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Collapse all"
@@ -693,6 +690,10 @@ msgstr "Couldn't print: {reason}"
 msgid "Couldn't save"
 msgstr "Couldn't save"
 
+#: src/renderer/src/App.tsx
+msgid "Couldn't save the draft: {reason}"
+msgstr "Couldn't save the draft: {reason}"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't save the PDF: {reason}"
 msgstr "Couldn't save the PDF: {reason}"
@@ -766,8 +767,13 @@ msgstr "Default"
 msgid "Default email app"
 msgstr "Default email app"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Default From address"
+msgstr "Default From address"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -1301,6 +1307,10 @@ msgstr "Message link copied"
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Messages in the undo window will remain drafts. A send already in progress may finish."
+msgstr "Messages in the undo window will remain drafts. A send already in progress may finish."
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Messages keep their other labels."
 msgstr "Messages keep their other labels."
@@ -1735,6 +1745,14 @@ msgstr "Promotions"
 msgid "QQ Mail"
 msgstr "QQ Mail"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Quit"
+msgstr "Quit"
+
+#: src/renderer/src/state/desktop.ts
+msgid "Quit with messages waiting to send?"
+msgstr "Quit with messages waiting to send?"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "Read only"
@@ -1860,6 +1878,10 @@ msgstr "Reply all"
 msgid "Reply All"
 msgstr "Reply All"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Reply mode"
+msgstr "Reply mode"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Reply only to contacts"
 msgstr "Reply only to contacts"
@@ -1941,6 +1963,10 @@ msgstr "Save message as EML…"
 #: src/renderer/src/components/Reader.tsx
 msgid "Save message as PDF…"
 msgstr "Save message as PDF…"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Save this draft before closing?"
+msgstr "Save this draft before closing?"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this message as a template…"
@@ -2039,6 +2065,10 @@ msgstr "Semantic search is unavailable. Full-text search remains available."
 msgid "Send"
 msgstr "Send"
 
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Send Again"
+msgstr "Send Again"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Send and archive"
@@ -2119,6 +2149,10 @@ msgstr "Shortcuts"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Show"
 msgstr "Show"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Show Cc field"
+msgstr "Show Cc field"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Show full email addresses in recipient fields"
@@ -2422,6 +2456,10 @@ msgstr "These loaded conversations will be moved to Trash. You can undo this bat
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 
+#: src/renderer/src/components/Composer.tsx
+msgid "This draft has unsaved changes or is waiting to sync."
+msgstr "This draft has unsaved changes or is waiting to sync."
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
 msgstr "This filter will delete future messages matching the server query. The preview shows at most 200 messages."
@@ -2500,6 +2538,7 @@ msgid "Undo mode change"
 msgstr "Undo mode change"
 
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Undo Send"
 msgstr "Undo Send"
 
@@ -2556,6 +2595,10 @@ msgstr "Use an http, https or mailto link"
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Use default"
 msgstr "Use default"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Use the current account"
+msgstr "Use the current account"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."

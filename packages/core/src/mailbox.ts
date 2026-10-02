@@ -233,6 +233,10 @@ export class Mailbox extends Context.Service<
      * the Drafts list (one written in another client is fetched from the
      * provider and kept locally), or as "proposal:<id>" for an agent's draft.
      */
+    /** New editable copy of a sent message, including MIME recipients and attachments. */
+    sendAgain(id: string): Effect.Effect<Draft, PerformError>;
+    /** Sends currently executing in core, including provider and cleanup work. */
+    readonly pendingSendCount: Effect.Effect<number>;
     openDraft(id: string): Effect.Effect<Draft, PerformError>;
     /** Saves locally right away; the provider's copy follows through the change queue. */
     saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound>;
