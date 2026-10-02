@@ -367,9 +367,14 @@ export class Store extends Context.Service<
     /**
      * People from local mail history, best first, hidden ones and `exclude`
      * (the address being written from) left out. The person's other
-     * accounts stay in: writing to yourself elsewhere is common.
+     * accounts stay in when no account scope is supplied.
      */
-    suggestContacts(query: string, limit: number, exclude?: string): Effect.Effect<Address[]>;
+    suggestContacts(
+      query: string,
+      limit: number,
+      exclude?: string,
+      accountIds?: readonly string[],
+    ): Effect.Effect<Address[]>;
     readonly hiddenContacts: Effect.Effect<string[]>;
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 

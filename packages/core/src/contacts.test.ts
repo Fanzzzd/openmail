@@ -133,3 +133,87 @@ it.effect(
       assert.deepStrictEqual(yield* store.suggestContacts("", 10), before);
     }).pipe(Effect.provide(contactStore)),
 );
+
+it.effect(
+  "scoped contact suggestions restrict history, saved names and limits to Profile accounts",
+  () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const first = yield* store.upsertAccount("gmail", "one@example.com");
+      const second = yield* store.upsertAccount("outlook", "two@example.com");
+      yield* store.replaceServerContacts(
+        first.id,
+        [
+          { name: "First Alice", address: "alice@example.com" },
+          { name: "First Bob", address: "bob@example.com" },
+        ],
+        0,
+      );
+      yield* store.replaceServerContacts(
+        second.id,
+        [
+          { name: "Other Alice", address: "alice@example.com" },
+          { name: "Other Remote", address: "outside@example.com" },
+        ],
+        0,
+      );
+      yield* store.upsertMessage(second.id, {
+        providerId: "heard",
+        threadId: "heard",
+        subject: "",
+        from: { name: "Other History", address: "history@example.com" },
+        to: [{ name: "Recipient", address: "recipient@example.com" }],
+        cc: [{ name: "Copy", address: "copy@example.com" }],
+        date: 0,
+        snippet: "",
+        bodyText: "",
+        bodyHtml: "",
+        labels: ["SENT"],
+        attachments: [],
+        isUnread: false,
+        isStarred: false,
+      });
+      assert.deepStrictEqual(yield* store.suggestContacts("Alice", 8, undefined, [first.id]), [
+        { name: "First Alice", address: "alice@example.com" },
+      ]);
+      assert.deepStrictEqual(yield* store.suggestContacts("Other", 8, undefined, [first.id]), []);
+      assert.deepStrictEqual(
+        yield* store.suggestContacts("recipient", 8, undefined, [first.id]),
+        [],
+      );
+      assert.deepStrictEqual(yield* store.suggestContacts("copy", 8, undefined, [first.id]), []);
+      assert.deepStrictEqual(yield* store.suggestContacts("Other", 8, undefined, [second.id]), [
+        { name: "Other Alice", address: "alice@example.com" },
+        { name: "Other Remote", address: "outside@example.com" },
+      ]);
+      assert.strictEqual(
+        (yield* store.suggestContacts("example.com", 1, undefined, [first.id])).length,
+        1,
+      );
+      assert.deepStrictEqual(yield* store.suggestContacts("Alice", 8, undefined, []), []);
+      yield* store.setAccountSettings(first.id, {
+        enabled: false,
+        description: "First",
+        color: null,
+      });
+      assert.deepStrictEqual(yield* store.suggestContacts("Alice", 8, undefined, [first.id]), []);
+      assert.deepStrictEqual(
+        yield* store.suggestContacts("Alice", 8, undefined, [first.id, second.id]),
+        [{ name: "Other Alice", address: "alice@example.com" }],
+      );
+      assert.deepStrictEqual(yield* store.suggestContacts("Alice", 8), [
+        { name: "Other Alice", address: "alice@example.com" },
+      ]);
+      yield* store.setAccountSettings(second.id, {
+        enabled: false,
+        description: "Second",
+        color: null,
+      });
+      for (const query of ["Alice", "recipient", "copy"]) {
+        assert.deepStrictEqual(
+          yield* store.suggestContacts(query, 8, undefined, [first.id, second.id]),
+          [],
+        );
+      }
+    }).pipe(Effect.provide(contactStore)),
+);

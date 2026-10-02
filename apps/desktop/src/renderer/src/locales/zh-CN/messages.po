@@ -299,6 +299,10 @@ msgstr "地址或域名"
 msgid "Addresses no longer suggested"
 msgstr "不再建议的地址"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "After date"
+msgstr "晚于日期"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "After you click Send, the message waits this long. You can undo it until then."
 msgstr "点发送后先等这么久，期间可以撤销。"
@@ -486,6 +490,10 @@ msgstr "批量操作"
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
 msgstr "密送"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Before date"
+msgstr "早于日期"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Bigger text"
@@ -962,6 +970,10 @@ msgstr "编辑空间"
 msgid "Edit this draft body?"
 msgstr "编辑这封草稿的正文？"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Edit token"
+msgstr "编辑条件"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "编辑将移除不支持的格式和图片，保留列表、粗体、斜体、下划线和链接。"
@@ -1005,6 +1017,10 @@ msgstr "每 {interval} 年"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "所有人"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Exclude matches"
+msgstr "排除匹配项"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Expand all"
@@ -1187,6 +1203,10 @@ msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 msgid "Inbox"
 msgstr "收件箱"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Include matches"
+msgstr "包含匹配项"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
@@ -1249,6 +1269,10 @@ msgstr "语言"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Larger text"
 msgstr "放大文字"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Last 7 days"
+msgstr "最近 7 天"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
@@ -1450,6 +1474,10 @@ msgstr "模型下载进度"
 msgid "Models verified and ready. Search stays on this device."
 msgstr "模型已校验，可在本机搜索。"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Modify {token}"
+msgstr "修改 {token}"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Monday"
 msgstr "星期一"
@@ -1469,6 +1497,10 @@ msgstr "还有未加载的邮件"
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Move down"
 msgstr "下移"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Move focus between panes"
+msgstr "在面板间移动焦点"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
@@ -2707,6 +2739,10 @@ msgstr "收件人"
 msgid "To: {to}"
 msgstr "收件人：{to}"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Today"
+msgstr "今天"
+
 #: src/renderer/src/format.ts
 msgid "Today {time}"
 msgstr "今天 {time}"
@@ -2869,6 +2905,7 @@ msgstr "窗口"
 msgid "Writing mode"
 msgstr "撰写模式"
 
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts
 msgid "Yesterday"
 msgstr "昨天"

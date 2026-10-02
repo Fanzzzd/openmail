@@ -174,11 +174,15 @@ export function shortcutAccelerator(set: ShortcutSet, action: ShortcutAction): s
   ].join("+");
 }
 
-/** All sets use ⌃⌘1…9 for profiles; retain the earlier ⌃1 overview / ⌃2 all mapping. */
+/** Native sets use ⌃⌘1…9 for profiles, Gmail uses ⌘1…9. ⌃1/2 retain overview/all. */
 export function spaceShortcut(
   event: KeyEvent,
+  set: ShortcutSet = "mimestream",
 ): { kind: "profile"; index: number } | { kind: "overview" } | { kind: "all" } | null {
-  if (!event.ctrlKey || event.altKey || event.shiftKey || !/^[1-9]$/.test(event.key)) return null;
+  if (event.altKey || event.shiftKey || !/^[1-9]$/.test(event.key)) return null;
+  if (set === "gmail" && event.metaKey)
+    return event.ctrlKey ? null : { kind: "profile", index: Number(event.key) - 1 };
+  if (!event.ctrlKey) return null;
   const index = Number(event.key) - 1;
   return event.metaKey
     ? { kind: "profile", index }
@@ -187,4 +191,38 @@ export function spaceShortcut(
       : index === 1
         ? { kind: "all" }
         : { kind: "profile", index: index - 2 };
+}
+
+export const NUMBERED_MAILBOXES = [
+  "inbox",
+  "starred",
+  "snoozed",
+  "drafts",
+  "sent",
+  "all",
+  "trash",
+  "spam",
+] as const;
+
+/** Gmail swaps folder/profile modifiers; plain Control digits retain overview/all. */
+export function folderShortcut(
+  set: ShortcutSet,
+  event: KeyEvent,
+  typing = false,
+): (typeof NUMBERED_MAILBOXES)[number] | null {
+  if (
+    typing ||
+    event.repeat ||
+    event.altKey ||
+    event.shiftKey ||
+    !event.metaKey ||
+    event.ctrlKey !== (set === "gmail") ||
+    !/^[1-8]$/.test(event.key)
+  )
+    return null;
+  return NUMBERED_MAILBOXES[Number(event.key) - 1] ?? null;
+}
+export function paneShortcut(event: KeyEvent): "left" | "right" | null {
+  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return null;
+  return event.key === "ArrowLeft" ? "left" : event.key === "ArrowRight" ? "right" : null;
 }

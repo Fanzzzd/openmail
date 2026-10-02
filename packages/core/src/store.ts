@@ -24,6 +24,8 @@ import {
   Address,
   AgentWriteMode,
   Attachment,
+  type AttachmentType,
+  type SearchCondition,
   Command,
   ImapSettings,
   type IncomingMessage,
@@ -44,7 +46,13 @@ import {
 import { InvalidInput, NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
-import { parseSearchQuery, searchWords, reciprocalRankFusion } from "./search.js";
+import {
+  ATTACHMENT_TYPES,
+  parseSearchQuery,
+  searchWords,
+  unquoteSearchValue,
+  reciprocalRankFusion,
+} from "./search.js";
 import { makeOrganizationStore } from "./store-organization.js";
 import { makeContactStore } from "./store-contacts.js";
 import { makeCacheStore } from "./store-cache.js";
@@ -537,6 +545,53 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         .pipe(Effect.andThen(run(sql`DELETE FROM messages WHERE account_id=${account}`))),
     );
 
+    const attachmentTypeFilter = (type: AttachmentType): Fragment => {
+      const spec = ATTACHMENT_TYPES[type];
+      const mime = sql`lower(trim(substr(json_extract(a.value,'$.mimeType'), 1, instr(json_extract(a.value,'$.mimeType') || ';', ';') - 1)))`;
+      return sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) a WHERE ${sql.or([
+        ...(type === "image" ? [sql`${mime} LIKE 'image/%'`] : []),
+        sql`${mime} IN (SELECT value FROM json_each(${JSON.stringify(spec.mimeTypes)}))`,
+        ...spec.extensions.map(
+          (ext) => sql`lower(json_extract(a.value,'$.filename')) LIKE ${`%.${ext}`}`,
+        ),
+      ])})`;
+    };
+    const searchConditionFilter = (c: SearchCondition): Fragment => {
+      const where: Fragment[] = [];
+      if (c.unread !== undefined) where.push(sql`m.is_unread=${c.unread ? 1 : 0}`);
+      if (c.starred !== undefined) where.push(sql`m.is_starred=${c.starred ? 1 : 0}`);
+      if (c.cc)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.cc_json) WHERE json_extract(value,'$.address') LIKE ${literalLike(c.cc)} ESCAPE '\\' OR json_extract(value,'$.name') LIKE ${literalLike(c.cc)} ESCAPE '\\')`,
+        );
+      for (const type of c.attachmentTypes ?? []) where.push(attachmentTypeFilter(type));
+      if (c.from)
+        where.push(
+          sql`(m.from_addr LIKE ${literalLike(c.from)} ESCAPE '\\' OR m.from_name LIKE ${literalLike(c.from)} ESCAPE '\\')`,
+        );
+      if (c.to)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
+        );
+      if (c.subject) where.push(sql`m.subject LIKE ${literalLike(c.subject)} ESCAPE '\\'`);
+      if (c.important) where.push(hasLabel("IMPORTANT"));
+      if (c.attachmentText)
+        where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
+      if (c.image) where.push(sql`(${attachmentTypeFilter("image")} OR m.body_html LIKE '%cid:%')`);
+      if (c.attachment) where.push(sql`json_array_length(m.attachments_json)>0`);
+      if (c.filename)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
+        );
+      if (c.dateBefore !== undefined) where.push(sql`m.date < ${c.dateBefore}`);
+      if (c.dateAfter !== undefined) where.push(sql`m.date >= ${c.dateAfter}`);
+      for (const label of c.labels ?? [])
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value=${label} OR j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label}))`,
+        );
+      return sql.and(where);
+    };
+
     /** WHERE clauses of a thread list. Paging (`before`) is applied after collapsing threads. */
     const listFilter = (q: ThreadQuery) => {
       const where: Fragment[] = [sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`];
@@ -557,34 +612,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         where.push(sql`m.id IN (SELECT value FROM json_each(${JSON.stringify(q.messageIds)}))`);
       if (q.unreadOnly) where.push(sql`m.is_unread = 1`);
       if (q.starredOnly) where.push(sql`m.is_starred = 1`);
-      const c = q.criteria;
-      if (c?.from)
-        where.push(
-          sql`(m.from_addr LIKE ${literalLike(c.from)} ESCAPE '\\' OR m.from_name LIKE ${literalLike(c.from)} ESCAPE '\\')`,
-        );
-      if (c?.to)
-        where.push(
-          sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
-        );
-      if (c?.subject) where.push(sql`m.subject LIKE ${literalLike(c.subject)} ESCAPE '\\'`);
-      if (c?.important) where.push(hasLabel("IMPORTANT"));
-      if (c?.attachmentText)
-        where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
-      if (c?.image)
-        where.push(sql`(EXISTS(SELECT 1 FROM json_each(m.attachments_json)
-        WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%') OR m.body_html LIKE '%cid:%')`);
-      if (c?.attachment) where.push(sql`json_array_length(m.attachments_json)>0`);
-      if (c?.filename)
-        where.push(
-          sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
-        );
-      if (c?.dateBefore !== undefined) where.push(sql`m.date < ${c.dateBefore}`);
-      if (c?.dateAfter !== undefined) where.push(sql`m.date >= ${c.dateAfter}`);
-      for (const label of c?.labels ?? [])
-        where.push(
-          sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value=${label} OR j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label}))`,
-        );
-      const terms = searchWords(q.search ?? "").map((word) => word.replace(/^"(.*)"$/, "$1"));
+      where.push(searchConditionFilter(q.criteria ?? {}));
+      for (const condition of q.criteria?.excluded ?? [])
+        where.push(sql`NOT (${searchConditionFilter(condition)})`);
+      const terms = searchWords(q.search ?? "").map(unquoteSearchValue);
       const fts = terms.filter((t) => Array.from(t).length >= 3);
       if (fts.length) {
         const match = fts.map((t) => `"${t.replaceAll('"', '""')}"`).join(" AND ");
@@ -657,7 +688,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const q = raw.search === undefined ? raw : parseSearchQuery(raw);
       const limit = q.limit ?? 50;
       const listing = q.flat ? messageList : threadList;
-      const terms = searchWords(q.search ?? "").map((word) => word.replace(/^"(.*)"$/, "$1"));
+      const terms = searchWords(q.search ?? "").map(unquoteSearchValue);
       let threads = q.criteria?.attachmentText && terms.length ? [] : yield* listing(q, limit);
       if (terms.length) {
         const predicates: Fragment[] = [];

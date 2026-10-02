@@ -1696,3 +1696,29 @@ it.effect("Graph reply drafts replace server defaults with the selected Reply-To
     }
   }),
 );
+
+it.effect(
+  "Graph search outer wrapping roundtrips KQL values containing quotes and backslashes",
+  () =>
+    Effect.gen(function* () {
+      const value = 'Alice "private" \\ archive';
+      const query = {
+        search: `from:${JSON.stringify(value)} subject:${JSON.stringify(value)} after:2026-10-02`,
+      };
+      const http = fakeHttp({
+        "GET /me/mailFolders": { json: { value: [] } },
+        "GET /me/messages": (url) => {
+          const wrapped = url.searchParams.get("$search");
+          assert.ok(wrapped);
+          const kql = Schema.decodeUnknownSync(Schema.String)(JSON.parse(wrapped));
+          assert.strictEqual(
+            kql,
+            `from:${JSON.stringify(value)} AND subject:${JSON.stringify(value)} AND received>=${new Date(2026, 9, 2).toISOString()}`,
+          );
+          return { json: { value: [] } };
+        },
+      });
+      yield* run(http, (adapter) => adapter.search(account, query));
+      assert.ok(http.calls.some((call) => call.url.pathname.endsWith("/me/messages")));
+    }),
+);

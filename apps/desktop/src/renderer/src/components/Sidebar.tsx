@@ -51,6 +51,7 @@ import {
   labelsAtom,
   labelPreferencesAtom,
   organizationAtom,
+  prefsAtom,
   unreadByLabelAtom,
 } from "../state/queries";
 import { useShortcutText } from "./SystemSettings";
@@ -458,6 +459,9 @@ function SpaceSwitcher({
   onEditProfile: (profile: Profile | "new") => void;
 }) {
   const { t } = useLingui();
+  const shortcutSet = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => ({
+    shortcutSet: "mimestream",
+  })).shortcutSet;
   const [menuFor, setMenuFor] = useState<Profile | null>(null);
   /** The space under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<Profile | null>(null);
@@ -510,7 +514,12 @@ function SpaceSwitcher({
           }
         >
           {profiles.map((p, i) => (
-            <Tip key={p.id} label={p.name} shortcut={i < 9 ? `⌃⌘${i + 1}` : undefined} side="top">
+            <Tip
+              key={p.id}
+              label={p.name}
+              shortcut={i < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${i + 1}` : undefined}
+              side="top"
+            >
               <Toolbar.Button
                 aria-label={p.name}
                 aria-current={space === p.id || undefined}
@@ -691,6 +700,7 @@ function Item(props: {
       <button
         type="button"
         onClick={props.onClick}
+        aria-current={props.active ? "page" : undefined}
         className={`flex h-full min-w-0 flex-1 items-center gap-2.5 text-left ${
           props.indent ? "pl-8" : "pl-2"
         }`}

@@ -23,7 +23,13 @@ import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
 
 import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../shared/desktop";
-import { selectionShortcut, shortcutAction, spaceShortcut } from "../../shared/shortcuts";
+import {
+  selectionShortcut,
+  shortcutAction,
+  spaceShortcut,
+  folderShortcut,
+  paneShortcut,
+} from "../../shared/shortcuts";
 import { ShortcutHelp } from "./components/SystemSettings";
 import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
 import type {
@@ -119,6 +125,7 @@ import {
   type View,
 } from "./view";
 
+import { moveMailPaneFocus } from "./pane-navigation";
 import { GoToFolder } from "./components/GoToFolder";
 import { SnoozeDialog } from "./components/SnoozeDialog";
 import { FilterEditor } from "./components/ServerSettings";
@@ -866,7 +873,7 @@ export function App() {
     const typing =
       e.target instanceof Element &&
       Boolean(e.target.closest('input,textarea,select,[contenteditable="true"]'));
-    const spaceKey = !typing ? spaceShortcut(e) : null;
+    const spaceKey = !typing ? spaceShortcut(e, prefs.shortcutSet) : null;
     if (spaceKey) {
       e.preventDefault();
       const space =
@@ -876,6 +883,27 @@ export function App() {
             ? ALL
             : profileList[spaceKey.index]?.id;
       if (space) switchSpace(space);
+      return;
+    }
+    const mailboxKey = folderShortcut(prefs.shortcutSet, e, typing);
+    if (mailboxKey) {
+      e.preventDefault();
+      changeView({
+        ...view,
+        space: view.space === OVERVIEW ? ALL : view.space,
+        mailbox: mailboxKey,
+        label: undefined,
+      });
+      focusList(null);
+      return;
+    }
+    const direction = !typing ? paneShortcut(e) : null;
+    if (
+      direction &&
+      view.space !== OVERVIEW &&
+      moveMailPaneFocus(document, direction, selection.focus)
+    ) {
+      e.preventDefault();
       return;
     }
     if (e.key === "Escape") {
@@ -1068,6 +1096,7 @@ export function App() {
       >
         <Panel
           id="sidebar"
+          data-mail-pane="sidebar"
           defaultSize={232}
           minSize={190}
           maxSize={380}
@@ -1114,6 +1143,7 @@ export function App() {
           <>
             <Panel
               id="list"
+              data-mail-pane="list"
               defaultSize={380}
               minSize={280}
               maxSize={720}
@@ -1188,7 +1218,7 @@ export function App() {
               />
             </Panel>
             <ResizeHandle />
-            <Panel id="reader" minSize={360}>
+            <Panel id="reader" data-mail-pane="reader" tabIndex={-1} minSize={360}>
               <Reader
                 messageId={selectedId}
                 threadKey={currentReaderThreadKey}

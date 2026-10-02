@@ -49,8 +49,8 @@ it("parses every common chip, quoted folder names and inclusive/exclusive dates"
     important: true,
     attachment: true,
     filename: "pdf",
-    dateAfter: Date.parse("2026-09-01"),
-    dateBefore: Date.parse("2026-10-01"),
+    dateAfter: new Date(2026, 8, 1).getTime(),
+    dateBefore: new Date(2026, 9, 1).getTime(),
   });
   assert.strictEqual(
     parseSearchQuery({ search: "before:2026-02-30 from: has:banana" }).search,
@@ -71,7 +71,7 @@ it("compiles provider syntax and keeps Gmail advanced operators", () => {
   );
   assert.strictEqual(
     graphSearch({ search: "from:alice has:attachment after:2026-09-01 before:2026-10-01" }),
-    'from:"alice" AND hasAttachments:true AND received>=2026-09-01 AND received<2026-10-01',
+    `from:"alice" AND hasAttachments:true AND received>=${new Date(2026, 8, 1).toISOString()} AND received<${new Date(2026, 9, 1).toISOString()}`,
   );
   assert.deepStrictEqual(
     imapSearch({ search: "from:alice is:unread is:starred after:2026-09-01 before:2026-10-01" }),
@@ -79,8 +79,8 @@ it("compiles provider syntax and keeps Gmail advanced operators", () => {
       from: "alice",
       seen: false,
       flagged: true,
-      since: new Date("2026-09-01"),
-      before: new Date("2026-10-01"),
+      since: "2026-09-01",
+      before: "2026-10-01",
     },
   );
 });

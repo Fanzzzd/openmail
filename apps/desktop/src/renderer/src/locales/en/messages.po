@@ -293,6 +293,10 @@ msgstr "Address or domain"
 msgid "Addresses no longer suggested"
 msgstr "Addresses no longer suggested"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "After date"
+msgstr "After date"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "After you click Send, the message waits this long. You can undo it until then."
 msgstr "After you click Send, the message waits this long. You can undo it until then."
@@ -480,6 +484,10 @@ msgstr "Batch actions"
 #: src/renderer/src/components/Composer.tsx
 msgid "Bcc"
 msgstr "Bcc"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Before date"
+msgstr "Before date"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Bigger text"
@@ -956,6 +964,10 @@ msgstr "Edit space"
 msgid "Edit this draft body?"
 msgstr "Edit this draft body?"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Edit token"
+msgstr "Edit token"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
 msgstr "Editing removes unsupported formatting and images from this draft. Lists, bold, italic, underline and links are kept."
@@ -999,6 +1011,10 @@ msgstr "Every {interval} years"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Everyone"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Exclude matches"
+msgstr "Exclude matches"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Expand all"
@@ -1181,6 +1197,10 @@ msgstr "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgid "Inbox"
 msgstr "Inbox"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Include matches"
+msgstr "Include matches"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
@@ -1243,6 +1263,10 @@ msgstr "Language"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Larger text"
 msgstr "Larger text"
+
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Last 7 days"
+msgstr "Last 7 days"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Last sync failed"
@@ -1444,6 +1468,10 @@ msgstr "Model download progress"
 msgid "Models verified and ready. Search stays on this device."
 msgstr "Models verified and ready. Search stays on this device."
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Modify {token}"
+msgstr "Modify {token}"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Monday"
 msgstr "Monday"
@@ -1463,6 +1491,10 @@ msgstr "More messages not loaded"
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Move down"
 msgstr "Move down"
+
+#: src/renderer/src/components/SystemSettings.tsx
+msgid "Move focus between panes"
+msgstr "Move focus between panes"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Move message to Trash"
@@ -2701,6 +2733,10 @@ msgstr "To"
 msgid "To: {to}"
 msgstr "To: {to}"
 
+#: src/renderer/src/components/ui/SearchField.tsx
+msgid "Today"
+msgstr "Today"
+
 #: src/renderer/src/format.ts
 msgid "Today {time}"
 msgstr "Today {time}"
@@ -2863,6 +2899,7 @@ msgstr "Window"
 msgid "Writing mode"
 msgstr "Writing mode"
 
+#: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts
 msgid "Yesterday"
 msgstr "Yesterday"

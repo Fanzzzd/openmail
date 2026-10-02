@@ -1601,8 +1601,8 @@ export const MailboxLive = (
         saveTemplate: (input, id) => mutate(store.saveTemplate(id ?? null, input)),
         deleteTemplate: (id) => mutate(store.deleteTemplate(id)),
 
-        suggestContacts: (query, { limit = DEFAULT_SUGGESTIONS, exclude } = {}) =>
-          store.suggestContacts(query, limit, exclude),
+        suggestContacts: (query, { limit = DEFAULT_SUGGESTIONS, exclude, accountIds } = {}) =>
+          store.suggestContacts(query, limit, exclude, accountIds),
         hiddenContacts: store.hiddenContacts,
         setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
 

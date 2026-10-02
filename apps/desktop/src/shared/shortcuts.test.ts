@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   KEYMAP,
+  folderShortcut,
+  NUMBERED_MAILBOXES,
+  paneShortcut,
   matchesShortcut,
   selectionShortcut,
   shortcutAction,
@@ -145,4 +148,37 @@ it("Cc expansion uses Cmd-Shift-C in every shortcut set", () => {
       }),
     ).toBe(false);
   }
+});
+
+it("folder number keys follow each keymap without claiming Profile, overview/all or typing keys", () => {
+  for (const set of ["mimestream", "apple", "gmail"] as const) {
+    for (const [index, mailbox] of NUMBERED_MAILBOXES.entries()) {
+      const digit = String(index + 1);
+      const folderKey = event(digit, { metaKey: true, ctrlKey: set === "gmail" });
+      const profileKey = event(digit, { metaKey: true, ctrlKey: set !== "gmail" });
+      expect(folderShortcut(set, folderKey)).toBe(mailbox);
+      expect(spaceShortcut(folderKey, set)).toBeNull();
+      expect(spaceShortcut(profileKey, set)).toEqual({ kind: "profile", index });
+      expect(folderShortcut(set, profileKey)).toBeNull();
+      expect(folderShortcut(set, folderKey, true)).toBeNull();
+      expect(folderShortcut(set, { ...folderKey, altKey: true })).toBeNull();
+      expect(folderShortcut(set, { ...folderKey, shiftKey: true })).toBeNull();
+      expect(folderShortcut(set, { ...folderKey, repeat: true })).toBeNull();
+    }
+    expect(folderShortcut(set, event("9", { metaKey: true, ctrlKey: set === "gmail" }))).toBeNull();
+    expect(spaceShortcut(event("9", { metaKey: true, ctrlKey: set !== "gmail" }), set)).toEqual({
+      kind: "profile",
+      index: 8,
+    });
+    expect(spaceShortcut(event("1", { ctrlKey: true }), set)).toEqual({ kind: "overview" });
+    expect(spaceShortcut(event("2", { ctrlKey: true }), set)).toEqual({ kind: "all" });
+  }
+});
+it("only unmodified horizontal arrows request a pane move", () => {
+  expect(paneShortcut(event("ArrowLeft"))).toBe("left");
+  expect(paneShortcut(event("ArrowRight"))).toBe("right");
+  for (const modifier of ["metaKey", "ctrlKey", "altKey", "shiftKey"]) {
+    expect(paneShortcut(event("ArrowRight", { [modifier]: true }))).toBeNull();
+  }
+  expect(paneShortcut(event("ArrowDown"))).toBeNull();
 });

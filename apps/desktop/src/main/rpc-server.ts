@@ -208,8 +208,11 @@ const Handlers = MailRpcs.toLayer(
       Templates: () => m.templates,
       SaveTemplate: ({ input, id }) => m.saveTemplate(input, id),
       DeleteTemplate: ({ id }) => m.deleteTemplate(id),
-      SuggestContacts: ({ query, exclude }) =>
-        m.suggestContacts(query, exclude === undefined ? {} : { exclude }),
+      SuggestContacts: ({ query, exclude, accountIds }) =>
+        m.suggestContacts(query, {
+          ...(exclude === undefined ? {} : { exclude }),
+          ...(accountIds === undefined ? {} : { accountIds }),
+        }),
       HiddenContacts: () => m.hiddenContacts,
       SetContactHidden: ({ address, hidden }) => m.setContactHidden(address, hidden),
       Audit: ({ limit }) => m.audit(limit),

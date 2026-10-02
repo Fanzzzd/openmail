@@ -1364,3 +1364,43 @@ it.effect("Gmail fetch parses a folded, encoded, multi-address Reply-To header",
     );
   }),
 );
+
+it.effect(
+  "Gmail attachment type tokens constrain the server page before fetching older mail",
+  () => {
+    const older = message("older-pdf", ["INBOX"]);
+    const http = fakeHttp({
+      "GET /labels": { json: labels },
+      "GET /messages": (url) => {
+        assert.strictEqual(url.searchParams.get("q"), "has:attachment {filename:pdf}");
+        assert.strictEqual(url.searchParams.get("maxResults"), "200");
+        return { json: { messages: [{ id: "older-pdf" }] } };
+      },
+      "GET /messages/older-pdf": {
+        json: {
+          ...older,
+          payload: {
+            ...older.payload,
+            mimeType: "multipart/mixed",
+            parts: [
+              older.payload,
+              {
+                mimeType: "application/pdf",
+                filename: "older.pdf",
+                body: { size: 12, attachmentId: "pdf" },
+              },
+            ],
+          },
+        },
+      },
+    });
+    return run(http, (adapter) => adapter.search(account, { search: "has:pdf" })).pipe(
+      Effect.map((page) =>
+        assert.deepStrictEqual(
+          page.messages.map((item) => item.providerId),
+          ["older-pdf"],
+        ),
+      ),
+    );
+  },
+);

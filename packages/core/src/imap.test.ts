@@ -491,6 +491,16 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     assert.strictEqual(limited.messages.length, 1);
     assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
     assert.strictEqual(search.mock.calls.length, 1);
+    open.mockClear();
+    search.mockClear();
+    const suggestedFolder = yield* adapter.search(account, {
+      search: 'folder:"inbox" after:2026-09-01 before:2026-10-01',
+    });
+    assert.strictEqual(suggestedFolder.messages.length, 1);
+    assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
+    assert.deepStrictEqual(search.mock.calls, [
+      [{ since: "2026-09-01", before: "2026-10-01" }, { uid: true }],
+    ]);
   }).pipe(
     Effect.provide(
       Layer.succeed(Secrets, {

@@ -280,11 +280,16 @@ export class Mailbox extends Context.Service<
      * written to and heard from, ranked by frequency and recency, merged with
      * cached Google and Outlook contacts. Suggestions never require network.
      * `exclude` is the address the message is written from; the person's
-     * other accounts are suggested like anyone else.
+     * other accounts are suggested like anyone else when `accountIds` is omitted.
+     * `accountIds` limits both local history and saved contacts to those accounts.
      */
     suggestContacts(
       query: string,
-      options?: { readonly limit?: number; readonly exclude?: string },
+      options?: {
+        readonly limit?: number;
+        readonly exclude?: string;
+        readonly accountIds?: readonly string[];
+      },
     ): Effect.Effect<Address[]>;
     readonly hiddenContacts: Effect.Effect<string[]>;
     /** Hides an address from suggestions, or shows it again. */

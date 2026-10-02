@@ -135,12 +135,24 @@ export const knownSendersAtom = (accountId: string, addresses: readonly string[]
     { reactivityKeys: [Keys.contacts], ...cached },
   );
 
-/** Recipient suggestions for what is typed in a To, Cc or Bcc field, sending from `from`. */
-export const suggestionsAtom = (query: string, from: string | undefined) =>
-  MailClient.query("SuggestContacts", from === undefined ? { query } : { query, exclude: from }, {
-    reactivityKeys: [Keys.contacts],
-    timeToLive: Duration.seconds(30),
-  });
+/** Contact suggestions for recipient/search fields, optionally limited to selected accounts. */
+export const suggestionsAtom = (
+  query: string,
+  from: string | undefined,
+  accountIds?: readonly string[],
+) =>
+  MailClient.query(
+    "SuggestContacts",
+    {
+      query,
+      ...(from === undefined ? {} : { exclude: from }),
+      ...(accountIds === undefined ? {} : { accountIds }),
+    },
+    {
+      reactivityKeys: [Keys.contacts],
+      timeToLive: Duration.seconds(30),
+    },
+  );
 
 export const labelPreferencesAtom = MailClient.query("LabelPreferences", undefined, {
   reactivityKeys: [Keys.organization],

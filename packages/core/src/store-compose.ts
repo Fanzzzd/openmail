@@ -368,7 +368,22 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
     query: string,
     limit: number,
     exclude?: string,
+    accountIds?: readonly string[],
   ) {
+    if (accountIds?.length === 0) return [];
+    const scopeIds = JSON.stringify(accountIds);
+    const mailScope = sql.and([
+      sql`m.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
+      accountIds === undefined
+        ? sql`1`
+        : sql`m.account_id IN (SELECT value FROM json_each(${scopeIds}))`,
+    ]);
+    const contactScope = sql.and([
+      sql`c.account_id IN (SELECT id FROM accounts WHERE enabled=1)`,
+      accountIds === undefined
+        ? sql`1`
+        : sql`c.account_id IN (SELECT value FROM json_each(${scopeIds}))`,
+    ]);
     const now = yield* Clock.currentTimeMillis;
     const escaped = query
       .trim()
@@ -380,17 +395,17 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       WITH hits AS (
         SELECT lower(json_extract(r.value, '$.address')) AS address,
           json_extract(r.value, '$.name') AS name, m.date AS date, 3.0 AS weight
-        FROM messages m, json_each(m.to_json) r WHERE ${sent} AND m.account_id IN (SELECT id FROM accounts WHERE enabled=1)
+        FROM messages m, json_each(m.to_json) r WHERE ${mailScope} AND ${sent}
         UNION ALL
         SELECT lower(json_extract(r.value, '$.address')), json_extract(r.value, '$.name'),
           m.date, 2.0
-        FROM messages m, json_each(m.cc_json) r WHERE ${sent} AND m.account_id IN (SELECT id FROM accounts WHERE enabled=1)
+        FROM messages m, json_each(m.cc_json) r WHERE ${mailScope} AND ${sent}
         UNION ALL
         SELECT lower(m.from_addr), m.from_name, m.date, 1.0 FROM messages m
-        WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
+        WHERE ${mailScope} AND NOT ${sent} AND NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}
           AND NOT ${hasLabel("DRAFT")}
         UNION ALL
-        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts WHERE account_id IN (SELECT id FROM accounts WHERE enabled=1) GROUP BY address
+        SELECT address, MAX(NULLIF(name, '')), ${now}, 0.2 FROM server_contacts c WHERE ${contactScope} GROUP BY address
       ),
       matched AS (
         SELECT * FROM hits
@@ -406,7 +421,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
         HAVING MAX(address LIKE ${like} ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ${like} ESCAPE '\\')
       )
       SELECT s.address,
-        COALESCE((SELECT c.name FROM server_contacts c WHERE c.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
+        COALESCE((SELECT c.name FROM server_contacts c WHERE ${contactScope} AND c.address = s.address AND c.name != '' ORDER BY c.account_id LIMIT 1),
           (SELECT h.name FROM matched h WHERE h.address = s.address AND COALESCE(h.name, '') != ''
           ORDER BY h.date DESC LIMIT 1)) AS name
       FROM scored s ORDER BY s.score DESC, s.address LIMIT ${limit}`);

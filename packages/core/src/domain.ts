@@ -224,18 +224,36 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 /** Parsed search operators, shared by local queries and provider adapters. */
-export const SearchCriteria = Schema.Struct({
+export const AttachmentType = Schema.Literals([
+  "pdf",
+  "image",
+  "document",
+  "spreadsheet",
+  "presentation",
+]);
+export type AttachmentType = typeof AttachmentType.Type;
+
+export const SearchCondition = Schema.Struct({
   from: Schema.optionalKey(Schema.String),
   to: Schema.optionalKey(Schema.String),
+  cc: Schema.optionalKey(Schema.String),
   subject: Schema.optionalKey(Schema.String),
   labels: Schema.optionalKey(Schema.Array(Schema.String)),
   important: Schema.optionalKey(Schema.Boolean),
   attachment: Schema.optionalKey(Schema.Boolean),
   image: Schema.optionalKey(Schema.Boolean),
   attachmentText: Schema.optionalKey(Schema.Boolean),
+  attachmentTypes: Schema.optionalKey(Schema.Array(AttachmentType)),
+  unread: Schema.optionalKey(Schema.Boolean),
+  starred: Schema.optionalKey(Schema.Boolean),
   filename: Schema.optionalKey(Schema.String),
   dateBefore: Schema.optionalKey(Schema.Number),
   dateAfter: Schema.optionalKey(Schema.Number),
+});
+export type SearchCondition = typeof SearchCondition.Type;
+export const SearchCriteria = Schema.Struct({
+  ...SearchCondition.fields,
+  excluded: Schema.optionalKey(Schema.Array(SearchCondition)),
 });
 export type SearchCriteria = typeof SearchCriteria.Type;
 

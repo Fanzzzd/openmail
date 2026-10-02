@@ -41,10 +41,11 @@ export function makeOrganizationMailbox(
     store.audit({ actor: { kind: "user", surface: "app" }, accountId, action, detail });
   const mutation = <A, E>(effect: Effect.Effect<A, E>) => effect.pipe(Effect.tap(() => changed));
   const searchServer = Effect.fn("Mailbox.searchServer")(function* (query: ThreadQuery) {
-    const criteria = parseSearchQuery(query).criteria;
+    const parsed = parseSearchQuery(query);
+    const criteria = parsed.criteria;
     if (
       criteria?.attachmentText ||
-      criteria?.image ||
+      criteria?.excluded?.some((condition) => condition.attachmentText) ||
       (query.searchScope === "folder" && query.mailbox === "snoozed")
     )
       return { threads: yield* store.listThreads(query), truncated: false, errors: [] };
@@ -84,6 +85,9 @@ export function makeOrganizationMailbox(
     const local = yield* store.listThreads({ ...query, limit: query.limit ?? 200 });
     const remote = yield* store.listThreads({
       mailbox: "all",
+      criteria,
+      unreadOnly: parsed.unreadOnly,
+      starredOnly: parsed.starredOnly,
       messageIds: ids,
       flat: query.flat ?? false,
       limit: Math.max(ids.length, 1),

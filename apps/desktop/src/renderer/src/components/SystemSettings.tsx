@@ -18,11 +18,13 @@ import { useEffect, useState } from "react";
 
 import type { Account, Prefs } from "../../../shared/api";
 import {
+  NUMBERED_MAILBOXES,
   isShortcutAction,
   shortcutText,
   type ShortcutAction,
   type ShortcutSet,
 } from "../../../shared/shortcuts";
+import { MAILBOX_NAMES } from "../view";
 import { Keys } from "../state/keys";
 import { useRunMail, withMail } from "../state/mail";
 import { setPrefsAtom } from "../state/mutations";
@@ -494,12 +496,31 @@ export function ShortcutTable({ set }: { set: ShortcutSet }) {
             </tr>
           );
         })}
+        {NUMBERED_MAILBOXES.map((mailbox, index) => (
+          <tr key={mailbox} className="border-b border-black/5 dark:border-white/5">
+            <td className="py-1.5">{i18n._(MAILBOX_NAMES[mailbox])}</td>
+            <td className="py-1.5 text-right">
+              <kbd>
+                {set === "gmail" ? "⌃⌘" : "⌘"}
+                {index + 1}
+              </kbd>
+            </td>
+          </tr>
+        ))}
+        <tr>
+          <td className="pt-3">
+            <Trans>Move focus between panes</Trans>
+          </td>
+          <td className="pt-3 text-right">
+            <kbd>← / →</kbd>
+          </td>
+        </tr>
         <tr>
           <td className="pt-3">
             <Trans>Switch spaces</Trans>
           </td>
           <td className="pt-3 text-right">
-            <kbd>⌃⌘1…9</kbd>
+            <kbd>{set === "gmail" ? "⌘1…9" : "⌃⌘1…9"}</kbd>
           </td>
         </tr>
       </tbody>

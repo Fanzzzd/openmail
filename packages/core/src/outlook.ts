@@ -1012,7 +1012,7 @@ export const makeOutlook: Effect.Effect<
         $select: `${SELECT},parentFolderId`,
         $top: "100",
       });
-      if (kql) params.set("$search", `"${kql.replaceAll('"', '\\"')}"`);
+      if (kql) params.set("$search", JSON.stringify(kql));
       const messages: IncomingMessage[] = [];
       let url: string | undefined = `${base}?${params.toString()}`;
       let scanned = 0;

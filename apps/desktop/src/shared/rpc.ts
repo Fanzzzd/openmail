@@ -293,7 +293,11 @@ export class MailRpcs extends RpcGroup.make(
   }),
   Rpc.make("DeleteTemplate", { payload: { id: Schema.String } }),
   Rpc.make("SuggestContacts", {
-    payload: { query: Schema.String, exclude: Schema.optionalKey(Schema.String) },
+    payload: {
+      query: Schema.String,
+      exclude: Schema.optionalKey(Schema.String),
+      accountIds: Schema.optionalKey(Schema.Array(Schema.String)),
+    },
     success: Schema.Array(Address),
   }),
   Rpc.make("HiddenContacts", { success: Schema.Array(Schema.String) }),
