@@ -93,6 +93,7 @@ export const DesktopLive = Layer.effect(
       settings: "Settings…",
       newWindow: "New Window",
       compose: "New message",
+      attachFiles: "Attach Files…",
       help: "Keyboard shortcuts",
       archive: "Archive",
       trash: "Delete",
@@ -251,6 +252,11 @@ export const DesktopLive = Layer.effect(
                     label: labels.compose,
                     accelerator: shortcutAccelerator(prefs.shortcutSet, "compose"),
                     click: () => command("compose"),
+                  },
+                  {
+                    label: labels.attachFiles,
+                    accelerator: shortcutAccelerator(prefs.shortcutSet, "attach"),
+                    click: () => deliver({ _tag: "AttachFiles" }),
                   },
                   {
                     label: labels.newWindow,

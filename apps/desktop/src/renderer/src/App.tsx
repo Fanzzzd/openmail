@@ -1,3 +1,4 @@
+import { readerSelectedText, quoteChoice } from "./quote-selection";
 import {
   readerThreadKey,
   replySource,
@@ -16,6 +17,7 @@ import {
   holdSend,
   markReadAfter,
   richComposeBody,
+  remoteComposeBody,
   textComposeHtml,
   type DeleteFolder,
 } from "@openmail/core/schema";
@@ -106,7 +108,7 @@ import {
   requiresBatchDeleteConfirmation,
   type Selection,
 } from "./state/selection";
-import { Alert, AlertCancel, alertDanger } from "./components/ui/Dialog";
+import { Alert, AlertCancel, alertDanger, alertButton, alertPrimary } from "./components/ui/Dialog";
 import { BatchActions, BatchMenuItems } from "./components/BatchActions";
 import { useBatchUndo } from "./state/undo";
 import { leavesList } from "./state/batch";
@@ -317,13 +319,23 @@ export function App() {
     const kind = mode === "new" ? "new" : "reply";
     return signatures.find((s) => s.address === address && s.kind === kind)?.text;
   };
+  const [quotePrompt, setQuotePrompt] = useState<((useSelection: boolean) => void) | null>(null);
   const signed = (d: Draft): Draft => ({
     ...d,
-    body: richComposeBody(
-      textComposeHtml(
-        applySignature(d.body.text, undefined, signatureFor(d.accountId, d.mode, d.from?.address)),
-      ),
-    ),
+    body:
+      d.body.kind === "rich" && d.body.originalHtml !== undefined
+        ? remoteComposeBody(
+            `${textComposeHtml(applySignature("", undefined, signatureFor(d.accountId, d.mode, d.from?.address)))}${d.body.originalHtml}`,
+          )
+        : richComposeBody(
+            textComposeHtml(
+              applySignature(
+                d.body.text,
+                undefined,
+                signatureFor(d.accountId, d.mode, d.from?.address),
+              ),
+            ),
+          ),
   });
 
   const selectedAccount = accountList.find(
@@ -547,17 +559,35 @@ export function App() {
       return;
     }
     if (!id) return;
-    // The reader usually has the thread loaded already; this waits for it if not.
-    run(
-      Effect.gen(function* () {
-        const thread = yield* Atom.getResult(threadAtom(id));
-        const aliases = mode === "forward" ? [] : yield* Atom.getResult(sendAsAtom);
-        const last = replySource(thread, id);
-        const account = accountList.find((a) => a.id === last?.accountId);
-        if (last && account)
-          setCompose(signed(draftFor(mode, last, account, asAttachment, aliases)));
-      }),
-    );
+    const selectedText = asAttachment ? undefined : readerSelectedText(document, id);
+    const open = (useSelection: boolean) =>
+      run(
+        Effect.gen(function* () {
+          const thread = yield* Atom.getResult(threadAtom(id));
+          const aliases = mode === "forward" ? [] : yield* Atom.getResult(sendAsAtom);
+          const last = replySource(thread, id);
+          const account = accountList.find((a) => a.id === last?.accountId);
+          if (!last || !account) return;
+          const draft = draftFor(
+            mode,
+            last,
+            account,
+            asAttachment,
+            aliases,
+            useSelection ? selectedText : undefined,
+          );
+          setCompose(signed(draft));
+        }).pipe(
+          Effect.catchCause((cause) =>
+            Effect.sync(() => {
+              say({ text: causeText(i18n, cause), tone: "error" });
+            }),
+          ),
+        ),
+      );
+    const choice = quoteChoice(prefs.quoteSelection, selectedText);
+    if (choice === "ask") setQuotePrompt(() => open);
+    else open(choice === "selection");
   };
 
   /** Opens a saved draft: a local draft id, a draft message, or "proposal:<id>". */
@@ -761,6 +791,9 @@ export function App() {
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));
     switch (event._tag) {
+      case "AttachFiles":
+        window.dispatchEvent(new Event("openmail-attach-files"));
+        break;
       case "QuitCheck":
         reportSendState();
         break;
@@ -1341,6 +1374,31 @@ export function App() {
           </>
         )}
       </Group>
+      <Alert
+        open={quotePrompt !== null}
+        onOpenChange={(open) => {
+          if (!open) setQuotePrompt(null);
+        }}
+        title={t`Quote only the selected text?`}
+      >
+        <AlertCancel>{t`Cancel`}</AlertCancel>
+        <button
+          type="button"
+          className={alertButton}
+          onClick={() => {
+            quotePrompt?.(false);
+            setQuotePrompt(null);
+          }}
+        >{t`Whole message`}</button>
+        <button
+          type="button"
+          className={alertPrimary}
+          onClick={() => {
+            quotePrompt?.(true);
+            setQuotePrompt(null);
+          }}
+        >{t`Selected text`}</button>
+      </Alert>
       <Alert
         open={deleteRequest !== null}
         onOpenChange={(open) => {

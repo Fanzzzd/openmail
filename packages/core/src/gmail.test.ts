@@ -72,6 +72,31 @@ function run<A, E>(
 
 const b64 = (s: string) => Buffer.from(s).toString("base64url");
 
+it.effect("Gmail checks the built MIME length including a large body before posting", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /messages/send": { json: { id: "sent" } } });
+    const error = yield* run(http, (adapter) =>
+      Effect.flip(
+        adapter.send(
+          account,
+          {
+            to: [{ name: "Bob", address: "bob@example.com" }],
+            cc: [],
+            bcc: [],
+            subject: "Body limit",
+            text: "a".repeat(26 * 1024 * 1024),
+            attachments: [],
+          },
+          Option.none(),
+        ),
+      ),
+    );
+    assert.strictEqual(error._tag, "PermanentError");
+    assert.include(error.message, "25 MB");
+    assert.strictEqual(http.calls.length, 0);
+  }),
+);
+
 const message = (id: string, labelIds: string[]) => ({
   id,
   threadId: `t-${id}`,

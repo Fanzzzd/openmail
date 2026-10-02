@@ -2,6 +2,7 @@ import {
   richComposeBody,
   editedComposeBody,
   textComposeHtml,
+  escapeComposeText,
   type ComposeBody,
 } from "@openmail/core/schema";
 
@@ -11,8 +12,8 @@ export function editorBody(element: ComposeElement, previous: ComposeBody): Comp
   return element instanceof HTMLTextAreaElement
     ? { kind: previous.kind === "markdown" ? "markdown" : "plain", text: element.value }
     : previous.kind === "rich"
-      ? editedComposeBody(previous, element.innerHTML)
-      : richComposeBody(element.innerHTML);
+      ? editedComposeBody(previous, composeEditorHtml(element))
+      : richComposeBody(composeEditorHtml(element));
 }
 
 /** Return selection to this editor after a toolbar, template picker or link field. */
@@ -45,7 +46,7 @@ export function insertEditorText(element: ComposeElement, text: string, saved: R
 type Point = { node: Node; offset: number };
 
 /** Text offsets include block/BR line breaks, just like the core compose serializer. */
-function textPoints(element: HTMLDivElement): Point[] {
+function textPoints(element: HTMLElement): Point[] {
   const points: Point[] = [{ node: element, offset: 0 }];
   let text = "";
   const newline = (point: Point) => {
@@ -102,4 +103,88 @@ export function replaceEditorText(element: ComposeElement, previous: string, nex
   range.setEnd(last.node, last.offset);
   restoreEditorSelection(element, range);
   document.execCommand("insertHTML", false, textComposeHtml(next.slice(start, nextEnd)));
+}
+
+/** Blob previews are local presentation only; drafts and MIME retain the CID. */
+export function composeEditorHtml(element: HTMLElement): string {
+  const copy = element.cloneNode(true);
+  if (!(copy instanceof HTMLElement)) return "";
+  for (const image of copy.querySelectorAll("img[data-compose-cid]")) {
+    image.setAttribute("src", `cid:${image.getAttribute("data-compose-cid") ?? ""}`);
+    image.removeAttribute("data-compose-cid");
+  }
+  return copy.innerHTML;
+}
+
+export function editorMatchPoints(element: HTMLElement, start: number, end: number) {
+  const points = textPoints(element);
+  const first = points[start];
+  const last = points[end];
+  return first && last ? { first, last } : undefined;
+}
+
+export function selectEditorMatch(element: ComposeElement, start: number, end: number): boolean {
+  if (element instanceof HTMLTextAreaElement) {
+    element.focus();
+    element.setSelectionRange(start, end);
+    return true;
+  }
+  const points = editorMatchPoints(element, start, end);
+  if (!points) return false;
+  const range = document.createRange();
+  range.setStart(points.first.node, points.first.offset);
+  range.setEnd(points.last.node, points.last.offset);
+  restoreEditorSelection(element, range);
+  return true;
+}
+
+/** One editing command per Replace/Replace All keeps the operation on Chromium's undo stack. */
+export function replaceEditorMatches(
+  element: ComposeElement,
+  matches: readonly { start: number; end: number }[],
+  replacement: string,
+): boolean {
+  const ordered = matches.toSorted((a, b) => a.start - b.start);
+  const first = ordered[0];
+  const last = ordered.at(-1);
+  if (!first || !last) return false;
+  if (element instanceof HTMLTextAreaElement) {
+    let text = element.value.slice(first.start, last.end);
+    for (const match of ordered.toReversed()) {
+      text =
+        text.slice(0, match.start - first.start) +
+        replacement +
+        text.slice(match.end - first.start);
+    }
+    selectEditorMatch(element, first.start, last.end);
+    return document.execCommand("insertText", false, text);
+  }
+  if (ordered.length === 1) {
+    if (!selectEditorMatch(element, first.start, first.end)) return false;
+    return document.execCommand(
+      "insertHTML",
+      false,
+      escapeComposeText(replacement).replaceAll("\n", "<br>"),
+    );
+  }
+  const copy = element.cloneNode(true);
+  if (!(copy instanceof HTMLElement)) return false;
+  for (const match of ordered.toReversed()) {
+    const points = editorMatchPoints(copy, match.start, match.end);
+    if (!points) return false;
+    const range = document.createRange();
+    range.setStart(points.first.node, points.first.offset);
+    range.setEnd(points.last.node, points.last.offset);
+    range.deleteContents();
+    const fragment = document.createDocumentFragment();
+    for (const [index, line] of replacement.split("\n").entries()) {
+      if (index) fragment.append(document.createElement("br"));
+      fragment.append(document.createTextNode(line));
+    }
+    range.insertNode(fragment);
+  }
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  restoreEditorSelection(element, range);
+  return document.execCommand("insertHTML", false, composeEditorHtml(copy));
 }

@@ -41,6 +41,7 @@ import {
   Message,
   Outcome,
   OutgoingMessage,
+  OutgoingAttachment,
   Prefs,
   Profile,
   ProfileInput,
@@ -302,6 +303,12 @@ export class MailRpcs extends RpcGroup.make(
 
   // Drafts
   /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
+  Rpc.make("ClipboardAttachments", { success: Schema.Array(OutgoingAttachment), error }),
+  Rpc.make("ComposeAttachments", {
+    payload: { id: Schema.String },
+    success: Schema.Array(OutgoingAttachment),
+    error,
+  }),
   Rpc.make("SendAgain", { payload: { id: Schema.String }, success: Draft, error }),
   Rpc.make("OpenDraft", { payload: { id: Schema.String }, success: Draft, error }),
   Rpc.make("SaveDraft", { payload: { draft: DraftInput }, success: Draft, error }),

@@ -410,6 +410,14 @@ msgstr "Always load images from {domain}"
 msgid "Always load remote images from"
 msgstr "Always load remote images from"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always quote the whole message"
+msgstr "Always quote the whole message"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always use selection"
+msgstr "Always use selection"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "App-specific password"
@@ -444,6 +452,10 @@ msgstr "Archive message"
 msgid "Archived"
 msgstr "Archived"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Ask each time"
+msgstr "Ask each time"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "Ask me first"
@@ -453,9 +465,13 @@ msgstr "Ask me first"
 msgid "Attach files"
 msgstr "Attach files"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Attach Files…"
+msgstr "Attach Files…"
+
 #: src/renderer/src/components/Composer.tsx
-msgid "Attachments of the original message are not forwarded"
-msgstr "Attachments of the original message are not forwarded"
+msgid "Attachments exceed the 30 MB compose limit."
+msgstr "Attachments exceed the 30 MB compose limit."
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -668,6 +684,7 @@ msgstr "Close"
 msgid "Close compose window"
 msgstr "Close compose window"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Close find"
 msgstr "Close find"
@@ -777,9 +794,25 @@ msgstr "Couldn't discard: {reason}"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "Couldn't get the attachment: {reason}"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments: {reason}"
+msgstr "Couldn't load the original attachments: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments. Try again."
+msgstr "Couldn't load the original attachments. Try again."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "Couldn't print: {reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the attachment. Try adding it again."
+msgstr "Couldn't read the attachment. Try adding it again."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the clipboard attachment."
+msgstr "Couldn't read the clipboard attachment."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
@@ -1090,6 +1123,14 @@ msgstr "File"
 msgid "Filter"
 msgstr "Filter"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find and replace"
+msgstr "Find and replace"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find in body"
+msgstr "Find in body"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Find in message"
 msgstr "Find in message"
@@ -1171,6 +1212,14 @@ msgstr "Gmail"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Gmail aliases and signatures"
 msgstr "Gmail aliases and signatures"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
+msgstr "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail blocks {filename}. Remove this attachment before sending."
+msgstr "Gmail blocks {filename}. Remove this attachment before sending."
 
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1260,6 +1309,10 @@ msgstr "Inbox"
 msgid "Include matches"
 msgstr "Include matches"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Include original attachments"
+msgstr "Include original attachments"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "Install the packaged app to make it the default. Development builds cannot register email links."
@@ -1342,6 +1395,10 @@ msgstr "Link URL"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "Load images"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Loading attachments…"
+msgstr "Loading attachments…"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Loading image…"
@@ -1555,6 +1612,16 @@ msgstr "More matches exist. Narrow your search."
 msgid "More messages not loaded"
 msgstr "More messages not loaded"
 
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} earlier"
+msgstr "Move {0} earlier"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} later"
+msgstr "Move {0} later"
+
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Move down"
 msgstr "Move down"
@@ -1671,6 +1738,7 @@ msgstr "Next above"
 msgid "Next below"
 msgstr "Next below"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Next match"
 msgstr "Next match"
@@ -1703,6 +1771,7 @@ msgstr "No external replies"
 msgid "No label or folder"
 msgstr "No label or folder"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "No matches"
 msgstr "No matches"
@@ -1911,6 +1980,10 @@ msgstr "Organize directly"
 msgid "Organizer"
 msgstr "Organizer"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Original attachments are kept in Outlook without uploading them again."
+msgstr "Original attachments are kept in Outlook without uploading them again."
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Original message"
 msgstr "Original message"
@@ -1995,6 +2068,7 @@ msgstr "Port"
 msgid "Press ? outside a text field to show this list."
 msgstr "Press ? outside a text field to show this list."
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Previous match"
 msgstr "Previous match"
@@ -2040,6 +2114,14 @@ msgstr "Quit"
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "Quit with messages waiting to send?"
+
+#: src/renderer/src/App.tsx
+msgid "Quote only the selected text?"
+msgstr "Quote only the selected text?"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Quote selected text"
+msgstr "Quote selected text"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -2146,6 +2228,18 @@ msgstr "Repeats weekly"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats yearly"
 msgstr "Repeats yearly"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace"
+msgstr "Replace"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace all"
+msgstr "Replace all"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace with"
+msgstr "Replace with"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Replies and forwards"
@@ -2347,6 +2441,10 @@ msgstr "Select all"
 #: src/renderer/src/components/Reader.tsx
 msgid "Selected message"
 msgstr "Selected message"
+
+#: src/renderer/src/App.tsx
+msgid "Selected text"
+msgstr "Selected text"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Selection after moving messages"
@@ -2782,6 +2880,10 @@ msgstr "These are not email addresses: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "These loaded conversations will be moved to Trash. You can undo this batch."
 
+#: src/renderer/src/components/Composer.tsx
+msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
+msgstr "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
@@ -2982,6 +3084,10 @@ msgstr "Username (defaults to the email address)"
 msgid "Verifying…"
 msgstr "Verifying…"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Wait for attachments to finish loading."
+msgstr "Wait for attachments to finish loading."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "Waiting for sign-in…"
@@ -3001,6 +3107,10 @@ msgstr "When AI wants to archive, label, or mark as read, it goes into AI sugges
 #: src/renderer/src/components/Settings.tsx
 msgid "Who"
 msgstr "Who"
+
+#: src/renderer/src/App.tsx
+msgid "Whole message"
+msgstr "Whole message"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Window"

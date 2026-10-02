@@ -1,5 +1,11 @@
 import { makeFolderMailbox } from "./mailbox-folders.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import {
+  attachmentProblem,
+  attachmentSizesProblem,
+  attachmentProblemMessage,
+  GMAIL_MIME_LIMIT,
+} from "./attachment-policy.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
 import { parseSearchQuery, semanticRankFusion } from "./search.js";
@@ -230,7 +236,11 @@ export const MailboxLive = (
             Effect.fail(new PermanentError({ message: `The original ${e.what} is gone` })),
           ),
         );
-        const key = attachmentsKey(message.attachments);
+        const key =
+          attachmentsKey(message.attachments) +
+          (message.includeOriginalAttachments === undefined
+            ? ""
+            : `|original:${message.includeOriginalAttachments}`);
         const remote = yield* adapter.saveDraft(account, {
           remote: draft.remote,
           message,
@@ -514,6 +524,8 @@ export const MailboxLive = (
           yield* new AuthError({ accountId, message: "Sign in again before sending." });
         }
         const prepared = yield* prepare(message);
+        const problem = attachmentProblem(account.provider, prepared.message.attachments);
+        if (problem) return yield* new InvalidInput({ message: attachmentProblemMessage(problem) });
         const detail = {
           to: message.to.map((a) => a.address),
           cc: message.cc.map((a) => a.address),
@@ -850,6 +862,42 @@ export const MailboxLive = (
         const imported = yield* publicDraft(yield* importDraft(message));
         yield* changed;
         return imported;
+      });
+
+      const composeAttachments = Effect.fn("Mailbox.composeAttachments")(function* (id: string) {
+        const ref = yield* store.messageRef(id);
+        const account = yield* store.getAccount(ref.accountId);
+        const source = yield* store.getMessage(id);
+        const problem = attachmentSizesProblem(account.provider, source.attachments);
+        if (problem) return yield* new InvalidInput({ message: attachmentProblemMessage(problem) });
+        if (source.attachments.reduce((total, file) => total + file.size, 0) > 30 * 1024 * 1024)
+          return yield* new InvalidInput({
+            message: "Original attachments exceed the 30 MB compose limit.",
+          });
+        const maxBytes =
+          account.provider === "gmail"
+            ? GMAIL_MIME_LIMIT
+            : account.provider === "outlook"
+              ? 4 * 1024 * 1024
+              : 42 * 1024 * 1024;
+        const parsed = yield* providers
+          .get(account.provider)
+          .fetchRaw(account, ref.providerId, maxBytes)
+          .pipe(
+            Effect.flatMap((raw) =>
+              raw.byteLength > maxBytes
+                ? Effect.fail(
+                    new InvalidInput({
+                      message: "Original message exceeds the compose size limit.",
+                    }),
+                  )
+                : Effect.succeed(raw),
+            ),
+          )
+          .pipe(Effect.flatMap(parseRawDraft));
+        const actual = attachmentProblem(account.provider, parsed.attachments);
+        if (actual) return yield* new InvalidInput({ message: attachmentProblemMessage(actual) });
+        return parsed.attachments.map((attachment) => ({ ...attachment, sourceMessageId: id }));
       });
 
       const sendAgain = Effect.fn("Mailbox.sendAgain")(function* (id: string) {
@@ -1593,6 +1641,7 @@ export const MailboxLive = (
 
         openDraft,
         sendAgain,
+        composeAttachments,
         pendingSendCount: Effect.sync(() => pendingSends),
         saveDraft,
         discardDraft,

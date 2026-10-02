@@ -34,6 +34,7 @@ export function ComposeSettings() {
     <div className="space-y-6">
       <DefaultFrom />
       <RecipientAddresses />
+      <QuoteSelection />
       <UndoSend />
       <Templates />
       <HiddenContacts />
@@ -278,6 +279,29 @@ function DefaultFrom() {
             reactivityKeys: [Keys.prefs],
           });
         }}
+      />
+    </section>
+  );
+}
+
+function QuoteSelection() {
+  const { t } = useLingui();
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const setPrefs = useAtomSet(setPrefsAtom);
+  return (
+    <section>
+      <h3 className={heading}>{t`Quote selected text`}</h3>
+      <Select
+        aria-label={t`Quote selected text`}
+        value={prefs.quoteSelection}
+        options={[
+          { value: "ask", label: t`Ask each time` },
+          { value: "always", label: t`Always use selection` },
+          { value: "never", label: t`Always quote the whole message` },
+        ]}
+        onValueChange={(quoteSelection) =>
+          setPrefs({ payload: { patch: { quoteSelection } }, reactivityKeys: [Keys.prefs] })
+        }
       />
     </section>
   );

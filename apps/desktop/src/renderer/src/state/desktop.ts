@@ -42,6 +42,7 @@ export function useDesktopLabels() {
             settings: t`Settings`,
             newWindow: t`New Window`,
             compose: t`New message`,
+            attachFiles: t`Attach Files…`,
             help: t`Keyboard shortcuts`,
             archive: t`Archive`,
             trash: t`Delete`,

@@ -33,3 +33,7 @@ export * from "./recipients.js";
 
 export * from "./compose-sender.js";
 export * from "./folder-actions.js";
+
+export * from "./attachment-policy.js";
+
+export * from "./compose-find.js";

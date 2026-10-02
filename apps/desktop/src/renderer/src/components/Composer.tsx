@@ -12,13 +12,27 @@ import {
   composeEditorText,
   fillTemplate,
   ownText,
+  attachmentProblem,
+  attachmentSizesProblem,
+  attachmentBytes,
+  type AttachmentProblem,
+  reorderAttachments,
+  escapeComposeText,
 } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
-import { type ReactElement, type RefObject, useEffect, useRef, useState } from "react";
+import {
+  type ReactElement,
+  type RefObject,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
+import { constVoid } from "effect/Function";
 
-import type { Account, OutgoingMessage, Template } from "../../../shared/api";
+import type { Account, OutgoingAttachment, OutgoingMessage, Template } from "../../../shared/api";
 import {
   type ComposeMode,
   type Draft,
@@ -29,9 +43,15 @@ import {
   toDraftInput,
 } from "../draft";
 import { requestDraftClose } from "../draft-close";
+import {
+  inheritsOriginals,
+  withOriginalAttachments,
+  loadOriginalAttachments,
+} from "../compose-originals";
+import { causeText } from "../errors";
 import { submitDraft, type SendWarning } from "../send";
 import { formatBytes } from "../format";
-import { openDraft, useRunMail } from "../state/mail";
+import { openDraft, useRunMail, withMail } from "../state/mail";
 import { Keys } from "../state/keys";
 import { saveDraftAtom, saveTemplateAtom } from "../state/mutations";
 import { templatesAtom, sendAsAtom, prefsAtom, threadAtom } from "../state/queries";
@@ -39,6 +59,7 @@ import { RecipientField } from "./RecipientField";
 import { ComposeEditor } from "./ComposeEditor";
 import {
   editorBody,
+  restoreEditorSelection,
   insertEditorText,
   replaceEditorText,
   type ComposeElement,
@@ -98,6 +119,8 @@ export function Composer({
     () => [],
   );
   const original = sourceThread.find((m) => m.id === initial.inReplyTo);
+  const [adding, setAdding] = useState(Boolean(initial.loadOriginalAttachments));
+  const attachmentDrag = useRef<number | null>(null);
   const [picker, setPicker] = useState(false);
   const [saveState, save] = useAtom(saveDraftAtom(initial.id));
   const fileRef = useRef<HTMLInputElement>(null);
@@ -144,7 +167,7 @@ export function Composer({
   // Autosave: locally at once, then to the provider through the queue.
   const saved = useRef(initial);
   useEffect(() => {
-    const due = !closing && !checkingClose && draft !== saved.current && !empty;
+    const due = !adding && !closing && !checkingClose && draft !== saved.current && !empty;
     const timer = due
       ? setTimeout(() => {
           saved.current = draft;
@@ -152,9 +175,70 @@ export function Composer({
         }, AUTOSAVE_MS)
       : undefined;
     return () => clearTimeout(timer);
-  }, [draft, save, closing, checkingClose, empty]);
+  }, [draft, save, closing, checkingClose, empty, adding]);
 
+  const originalsLoaded = useEffectEvent((files: readonly OutgoingAttachment[]) => {
+    setDraft((current) => withOriginalAttachments(current, files));
+    setAdding(false);
+  });
+  const originalsFailed = useEffectEvent((reason: string) => {
+    setDraft((current) => ({
+      ...current,
+      loadOriginalAttachments: false,
+      includeOriginalAttachments: false,
+    }));
+    setAdding(false);
+    setError(t`Couldn't load the original attachments: ${reason}`);
+  });
+  useEffect(() => {
+    const id = initial.inReplyTo;
+    if (!initial.loadOriginalAttachments || !id) return constVoid;
+    let active = true;
+    run(
+      loadOriginalAttachments(
+        withMail((call) => call("ComposeAttachments", { id })),
+        (files) => {
+          if (active) originalsLoaded(files);
+        },
+        (cause) => {
+          if (active) originalsFailed(causeText(i18n, cause));
+        },
+      ),
+    );
+    return () => {
+      active = false;
+    };
+  }, [initial, run, i18n]);
+
+  const showAttachmentProblem = (problem: AttachmentProblem) => {
+    switch (problem.kind) {
+      case "gmailSize":
+        setError(t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`);
+        break;
+      case "gmailBlocked": {
+        const filename = problem.filename;
+        setError(t`Gmail blocks ${filename}. Remove this attachment before sending.`);
+        break;
+      }
+      case "outlookSize":
+        setError(
+          t`This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`,
+        );
+        break;
+    }
+  };
   const submit = (archive: boolean, confirmed: readonly SendWarning[] = []) => {
+    if (adding) {
+      setError(t`Wait for attachments to finish loading.`);
+      return;
+    }
+    const problem = account
+      ? attachmentProblem(account.provider, toDraftInput(draft).message.attachments)
+      : undefined;
+    if (problem) {
+      showAttachmentProblem(problem);
+      return;
+    }
     const result = submitDraft(draft, archive, confirmed, onSend);
     switch (result.kind) {
       case "invalid": {
@@ -227,20 +311,113 @@ export function Composer({
         setPicker((v) => !v);
       }
     };
+    const attach = () => fileRef.current?.click();
+    window.addEventListener("openmail-attach-files", attach);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("openmail-attach-files", attach);
+    };
   });
 
-  const addFiles = async (files: FileList | null) => {
-    if (!files) return;
-    const added = await Promise.all(
-      [...files].map(async (f) => ({
-        filename: f.name,
-        mimeType: f.type || "application/octet-stream",
-        content: await toBase64(f),
-      })),
+  const appendAttachments = (files: readonly OutgoingAttachment[], inline: boolean) => {
+    const element = bodyRef.current;
+    // A paste may finish after the user switches to plain text.
+    const insertInline = inline && element instanceof HTMLDivElement && element.isContentEditable;
+    const added = files.map((file) =>
+      insertInline && /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.mimeType)
+        ? { ...file, contentId: `image-${crypto.randomUUID()}@openmail` }
+        : file,
     );
-    set({ attachments: [...draft.attachments, ...added] });
+    if (insertInline) {
+      for (const file of added) {
+        if (!file.contentId) continue;
+        restoreEditorSelection(element, selectionRef.current);
+        document.execCommand(
+          "insertHTML",
+          false,
+          `<img src="cid:${file.contentId}" alt="${escapeComposeText(file.filename)}">`,
+        );
+        const selection = window.getSelection();
+        if (selection?.rangeCount) selectionRef.current = selection.getRangeAt(0).cloneRange();
+      }
+    }
+    setDraft((current) => ({
+      ...current,
+      attachments: [...current.attachments, ...added],
+      body: element && inline ? editorBody(element, current.body) : current.body,
+    }));
+  };
+
+  const addFiles = async (files: FileList | null, inline = false) => {
+    if (!files?.length || adding) return;
+    const sizes = [
+      ...draft.attachments.map((file) => ({ ...file, size: attachmentBytes(file.content) })),
+      ...[...files].map((file) => ({
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+      })),
+    ];
+    const problem = account ? attachmentSizesProblem(account.provider, sizes) : undefined;
+    if (problem) {
+      showAttachmentProblem(problem);
+      return;
+    }
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
+      setError(t`Attachments exceed the 30 MB compose limit.`);
+      return;
+    }
+    setAdding(true);
+    try {
+      const added: OutgoingAttachment[] = [];
+      for (const file of files)
+        added.push({
+          filename: file.name,
+          mimeType: file.type || "application/octet-stream",
+          content: await toBase64(file),
+        });
+      appendAttachments(added, inline);
+      setError(null);
+    } catch {
+      setError(t`Couldn't read the attachment. Try adding it again.`);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const toggleOriginalAttachments = () => {
+    if (!original || adding) return;
+    if (draft.includeOriginalAttachments || inheritsOriginals(draft, account?.provider)) {
+      set({
+        includeOriginalAttachments: false,
+        attachments: draft.attachments.filter((file) => file.sourceMessageId !== original.id),
+      });
+      return;
+    }
+    if (account?.provider === "outlook" && draft.mode === "forward") {
+      setDraft((current) => {
+        const { includeOriginalAttachments: _choice, ...rest } = current;
+        return rest;
+      });
+      return;
+    }
+    setAdding(true);
+    run(
+      withMail((call) => call("ComposeAttachments", { id: original.id })).pipe(
+        Effect.matchCause({
+          onSuccess: (files) => {
+            setDraft((current) => withOriginalAttachments(current, files));
+            setAdding(false);
+            setError(null);
+          },
+          onFailure: () => {
+            setAdding(false);
+            setError(t`Couldn't load the original attachments. Try again.`);
+          },
+        }),
+      ),
+    );
   };
 
   const changeSender = (key: string) => {
@@ -325,8 +502,60 @@ export function Composer({
           initialFocus={initialFocus}
           className="no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10"
         >
+          {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
             className="flex min-h-0 flex-1 flex-col"
+            onDragOver={(event) => {
+              if (event.dataTransfer.types.includes("Files")) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+              }
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              if (event.dataTransfer.files.length) void addFiles(event.dataTransfer.files);
+            }}
+            onPasteCapture={(event) => {
+              if (
+                !(event.target instanceof Element) ||
+                !event.target.closest("[contenteditable],textarea")
+              )
+                return;
+              const element = bodyRef.current;
+              const selection = window.getSelection();
+              if (
+                element instanceof HTMLDivElement &&
+                selection?.rangeCount &&
+                element.contains(selection.getRangeAt(0).commonAncestorContainer)
+              )
+                selectionRef.current = selection.getRangeAt(0).cloneRange();
+              const inline =
+                draft.body.kind === "rich" &&
+                element instanceof HTMLDivElement &&
+                element.isContentEditable;
+              if (event.clipboardData.files.length) {
+                event.preventDefault();
+                void addFiles(event.clipboardData.files, inline);
+              } else if (!event.clipboardData.types.length) {
+                event.preventDefault();
+                if (adding) return;
+                setAdding(true);
+                run(
+                  withMail((call) => call("ClipboardAttachments", undefined)).pipe(
+                    Effect.matchCause({
+                      onSuccess: (files) => {
+                        appendAttachments(files, inline);
+                        setAdding(false);
+                      },
+                      onFailure: () => {
+                        setAdding(false);
+                        setError(t`Couldn't read the clipboard attachment.`);
+                      },
+                    }),
+                  ),
+                );
+              }
+            }}
             onSubmit={(e) => {
               e.preventDefault();
               submit(false);
@@ -451,11 +680,29 @@ export function Composer({
 
             <ComposeEditor
               body={draft.body}
+              attachments={draft.attachments}
               onChange={(body) => set({ body })}
               bodyRef={bodyRef}
               selectionRef={selectionRef}
             />
 
+            {original && !draft.forwardAsAttachment && (
+              <label className="flex items-center gap-2 px-4 py-2">
+                <input
+                  type="checkbox"
+                  checked={
+                    draft.includeOriginalAttachments ?? inheritsOriginals(draft, account?.provider)
+                  }
+                  disabled={adding}
+                  onChange={toggleOriginalAttachments}
+                />
+                <span>{t`Include original attachments`}</span>
+              </label>
+            )}
+            {inheritsOriginals(draft, account?.provider) && original?.attachments.length ? (
+              <output className="px-4 py-2">{t`Original attachments are kept in Outlook without uploading them again.`}</output>
+            ) : null}
+            {adding && <output className="px-4 py-2">{t`Loading attachments…`}</output>}
             {(draft.attachments.length > 0 || draft.forwardAsAttachment) && (
               <div className="flex flex-wrap gap-2 px-4 pb-2">
                 {draft.forwardAsAttachment && (
@@ -475,10 +722,61 @@ export function Composer({
                 {draft.attachments.map((a, i) => (
                   <span
                     key={`${a.filename}-${i}`}
+                    draggable
+                    onDragStart={(event) => {
+                      attachmentDrag.current = i;
+                      event.dataTransfer.setData("application/x-openmail-attachment", String(i));
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => {
+                      attachmentDrag.current = null;
+                    }}
+                    onDragOver={(event) => {
+                      if (attachmentDrag.current !== null) {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                      }
+                    }}
+                    onDrop={(event) => {
+                      if (attachmentDrag.current !== null) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        set({
+                          attachments: reorderAttachments(
+                            draft.attachments,
+                            attachmentDrag.current,
+                            i,
+                          ),
+                        });
+                        attachmentDrag.current = null;
+                      }
+                    }}
                     className="flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 dark:border-white/10"
                   >
                     <Paperclip className="size-3.5 text-neutral-400" />
                     {a.filename}
+                    <button
+                      type="button"
+                      disabled={i === 0}
+                      aria-label={t`Move ${a.filename} earlier`}
+                      onClick={() =>
+                        set({ attachments: reorderAttachments(draft.attachments, i, i - 1) })
+                      }
+                      className={quiet}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={i === draft.attachments.length - 1}
+                      aria-label={t`Move ${a.filename} later`}
+                      onClick={() =>
+                        set({ attachments: reorderAttachments(draft.attachments, i, i + 1) })
+                      }
+                      className={quiet}
+                    >
+                      ↓
+                    </button>
                     <span className="text-neutral-400">
                       {formatBytes((a.content.length * 3) / 4)}
                     </span>
@@ -541,14 +839,6 @@ export function Composer({
                 }
               />
               <span className="min-w-0 flex-1 truncate text-[12px] text-red-500">{error}</span>
-              {!error &&
-                draft.mode === "forward" &&
-                !draft.forwardAsAttachment &&
-                account?.provider !== "outlook" && (
-                  <span className="shrink-0 text-[12px] text-neutral-400">
-                    <Trans>Attachments of the original message are not forwarded</Trans>
-                  </span>
-                )}
               <Tip label={t`Discard draft`} side="top">
                 <button
                   type="button"

@@ -59,3 +59,5 @@ export * from "./updates.js";
 export * from "./recipients.js";
 
 export * from "./compose-sender.js";
+
+export * from "./attachment-policy.js";

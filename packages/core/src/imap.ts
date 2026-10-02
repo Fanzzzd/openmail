@@ -1049,6 +1049,7 @@ const requireTargetedExpunge = (client: ImapFlow) =>
 
 export const makeImapWith = (
   open: typeof openImap,
+  smtp: typeof smtpTransport = smtpTransport,
 ): Effect.Effect<ProviderAdapter, never, Secrets> =>
   Effect.gen(function* () {
     const secrets = yield* Secrets;
@@ -1105,14 +1106,25 @@ export const makeImapWith = (
           ),
         );
 
-        const transport = yield* smtpTransport(settings, pass);
+        const transport = yield* smtp(settings, pass);
+        const smtpRaw = stripBcc(raw);
         yield* Effect.tryPromise({
           try: () =>
             transport.sendMail({
-              envelope: { from: account.email, to: recipients },
-              raw: stripBcc(raw),
+              envelope: { from: account.email, to: recipients, size: smtpRaw.length },
+              raw: smtpRaw,
             }),
-          catch: (error) => failure(account.id, settings.smtpHost, error),
+          catch: (error) =>
+            Predicate.isObject(error) &&
+            "code" in error &&
+            error.code === "EMESSAGE" &&
+            "command" in error &&
+            error.command === "MAIL FROM" &&
+            /size larger than allowed/i.test(describe(error))
+              ? new PermanentError({
+                  message: `SMTP SIZE limit: ${describe(error)}. Remove attachments before sending.`,
+                })
+              : failure(account.id, settings.smtpHost, error),
         });
 
         // The mail is out; a failed Sent copy must not make the caller send it again.

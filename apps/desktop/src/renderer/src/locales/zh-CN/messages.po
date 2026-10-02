@@ -416,6 +416,14 @@ msgstr "总是加载 {domain} 的图片"
 msgid "Always load remote images from"
 msgstr "总是加载以下发件人的远程图片"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always quote the whole message"
+msgstr "总是引用全文"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Always use selection"
+msgstr "总是引用选中文字"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
@@ -450,6 +458,10 @@ msgstr "归档此邮件"
 msgid "Archived"
 msgstr "已归档"
 
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Ask each time"
+msgstr "每次询问"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Ask me first"
 msgstr "先问我"
@@ -459,9 +471,13 @@ msgstr "先问我"
 msgid "Attach files"
 msgstr "添加附件"
 
+#: src/renderer/src/state/desktop.ts
+msgid "Attach Files…"
+msgstr "添加附件…"
+
 #: src/renderer/src/components/Composer.tsx
-msgid "Attachments of the original message are not forwarded"
-msgstr "原邮件的附件不会一起转发"
+msgid "Attachments exceed the 30 MB compose limit."
+msgstr "附件总大小超过 30 MB，请移除部分附件。"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
@@ -674,6 +690,7 @@ msgstr "关闭"
 msgid "Close compose window"
 msgstr "关闭写信窗口"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Close find"
 msgstr "关闭查找"
@@ -783,9 +800,25 @@ msgstr "丢弃失败：{reason}"
 msgid "Couldn't get the attachment: {reason}"
 msgstr "无法获取附件：{reason}"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments: {reason}"
+msgstr "无法加载原附件：{reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't load the original attachments. Try again."
+msgstr "无法加载原附件，请重试。"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
 msgstr "无法打印：{reason}"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the attachment. Try adding it again."
+msgstr "无法读取附件，请重新添加。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Couldn't read the clipboard attachment."
+msgstr "无法读取剪贴板附件。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't save"
@@ -1096,6 +1129,14 @@ msgstr "文件"
 msgid "Filter"
 msgstr "筛选"
 
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find and replace"
+msgstr "查找替换"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Find in body"
+msgstr "查找正文"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Find in message"
 msgstr "在正文中查找"
@@ -1177,6 +1218,14 @@ msgstr "Gmail"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Gmail aliases and signatures"
 msgstr "Gmail 别名和签名"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail attachments exceed 25 MB in total. Remove attachments before sending."
+msgstr "Gmail 附件总大小超过 25 MB，请移除部分附件后发送。"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Gmail blocks {filename}. Remove this attachment before sending."
+msgstr "Gmail 禁止发送 {filename}，请移除此附件。"
 
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -1266,6 +1315,10 @@ msgstr "收件箱"
 msgid "Include matches"
 msgstr "包含匹配项"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Include original attachments"
+msgstr "包含原附件"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Install the packaged app to make it the default. Development builds cannot register email links."
 msgstr "安装打包后的 app 才能设为默认。开发版本不能注册邮件链接。"
@@ -1348,6 +1401,10 @@ msgstr "链接地址"
 #: src/renderer/src/components/Reader.tsx
 msgid "Load images"
 msgstr "加载图片"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Loading attachments…"
+msgstr "正在加载附件…"
 
 #: src/renderer/src/components/MediaMatches.tsx
 msgid "Loading image…"
@@ -1561,6 +1618,16 @@ msgstr "还有更多结果，请缩小搜索范围。"
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
 
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} earlier"
+msgstr "将 {0} 前移"
+
+#. placeholder {0}: a.filename
+#: src/renderer/src/components/Composer.tsx
+msgid "Move {0} later"
+msgstr "将 {0} 后移"
+
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Move down"
 msgstr "下移"
@@ -1677,6 +1744,7 @@ msgstr "上一项"
 msgid "Next below"
 msgstr "下一项"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Next match"
 msgstr "下一处"
@@ -1709,6 +1777,7 @@ msgstr "关闭外部回复"
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "No matches"
 msgstr "无匹配"
@@ -1917,6 +1986,10 @@ msgstr "直接整理"
 msgid "Organizer"
 msgstr "组织者"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Original attachments are kept in Outlook without uploading them again."
+msgstr "原附件由 Outlook 保留，无需重新上传。"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Original message"
 msgstr "原始邮件"
@@ -2001,6 +2074,7 @@ msgstr "端口"
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
 
+#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Reader.tsx
 msgid "Previous match"
 msgstr "上一处"
@@ -2046,6 +2120,14 @@ msgstr "退出"
 #: src/renderer/src/state/desktop.ts
 msgid "Quit with messages waiting to send?"
 msgstr "仍有待发邮件，是否退出？"
+
+#: src/renderer/src/App.tsx
+msgid "Quote only the selected text?"
+msgstr "只引用选中文字？"
+
+#: src/renderer/src/components/ComposeSettings.tsx
+msgid "Quote selected text"
+msgstr "引用选中文字"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -2152,6 +2234,18 @@ msgstr "每周重复"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats yearly"
 msgstr "每年重复"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace"
+msgstr "替换"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace all"
+msgstr "全部替换"
+
+#: src/renderer/src/components/ComposeEditor.tsx
+msgid "Replace with"
+msgstr "替换为"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Replies and forwards"
@@ -2353,6 +2447,10 @@ msgstr "全选"
 #: src/renderer/src/components/Reader.tsx
 msgid "Selected message"
 msgstr "已选邮件"
+
+#: src/renderer/src/App.tsx
+msgid "Selected text"
+msgstr "选中文字"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Selection after moving messages"
@@ -2788,6 +2886,10 @@ msgstr "这些不是邮件地址：{list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
+msgstr "当前应用支持总计不超过 3 MB 的 Outlook 附件，尚不支持大附件上传，请移除部分附件后发送。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
@@ -2988,6 +3090,10 @@ msgstr "用户名（不填就用邮箱地址）"
 msgid "Verifying…"
 msgstr "正在验证…"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Wait for attachments to finish loading."
+msgstr "请等待附件加载完成。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "等待授权…"
@@ -3007,6 +3113,10 @@ msgstr "AI 想归档、打标签、标已读时，先放进「AI 建议」，你
 #: src/renderer/src/components/Settings.tsx
 msgid "Who"
 msgstr "谁"
+
+#: src/renderer/src/App.tsx
+msgid "Whole message"
+msgstr "全文"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Window"

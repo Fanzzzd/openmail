@@ -5,6 +5,7 @@ import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { buildMime, type Threading } from "./compose.js";
+import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
 import type {
   Account,
   Attachment,
@@ -532,6 +533,11 @@ export const makeGmail: Effect.Effect<
         message,
         threading,
       );
+      if (raw.byteLength > GMAIL_MIME_LIMIT)
+        yield* new PermanentError({
+          message:
+            "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
+        });
       yield* post(account.id, "/messages/send", {
         raw: raw.toString("base64url"),
         ...(threadId ? { threadId } : {}),
@@ -581,6 +587,11 @@ export const makeGmail: Effect.Effect<
         threading,
         { draft: true },
       );
+      if (raw.byteLength > GMAIL_MIME_LIMIT)
+        return yield* new PermanentError({
+          message:
+            "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
+        });
       const body = {
         message: { raw: raw.toString("base64url"), ...(threadId ? { threadId } : {}) },
       };

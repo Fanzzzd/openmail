@@ -6,6 +6,7 @@ import {
   editedComposeBody,
   applySignature,
   composeConversion,
+  preservedComposeHtml,
 } from "@openmail/core/schema";
 import type { Account, Message } from "../../shared/api";
 import {
@@ -55,6 +56,32 @@ const message: Message = {
   hasAttachments: false,
 };
 
+it("forward preserves sanitized HTML while reply/forward selected quotes contain only selected text", () => {
+  const source = {
+    ...message,
+    bodyText: "Whole message",
+    bodyHtml:
+      '<table><tr><td style="color:red">Whole message</td></tr></table><script>evil()</script><img src="https://evil.test/track">',
+  };
+  const forward = draftFor("forward", source, account);
+  const sent = toMessage(forward).message;
+  expect(forward.includeOriginalAttachments).toBe(true);
+  const transportHtml = preservedComposeHtml(sent.originalHtml ?? sent.html ?? "");
+  expect(transportHtml).toContain("<table>");
+  expect(transportHtml).toContain('style="color:red"');
+  expect(transportHtml).not.toContain("script");
+  expect(forward.body.kind === "rich" ? forward.body.html : "").not.toContain("https://evil.test");
+  for (const mode of ["reply", "replyAll", "forward"] as const) {
+    const draft = draftFor(mode, source, account, false, [], "Chosen <text>");
+    const outgoing = toMessage(draft).message;
+    expect(outgoing.text).toContain("Chosen <text>");
+    expect(outgoing.text).not.toContain("Whole message");
+    expect(outgoing.html).toContain("Chosen &lt;text&gt;");
+    expect(outgoing.html).not.toContain("<table>");
+    expect(draft.includeOriginalAttachments).toBe(mode === "forward");
+  }
+});
+
 it("reply drafts preserve quoted names, Reply-To and original threading", () => {
   for (const mode of ["reply", "replyAll"] as const) {
     const draft = draftFor(mode, message, account, false, [alias(account.id, "ALIAS@example.com")]);
@@ -65,6 +92,21 @@ it("reply drafts preserve quoted names, Reply-To and original threading", () => 
     expect(outgoing.inReplyTo).toBe(message.id);
     expect(outgoing.subject).toBe("Re: Question");
   }
+});
+
+it("Outlook forwards retain large originals on the server without scheduling a MIME fetch", () => {
+  const outlook = { ...account, provider: "outlook" } satisfies Account;
+  const draft = draftFor(
+    "forward",
+    {
+      ...message,
+      attachments: [{ filename: "large.pdf", mimeType: "application/pdf", size: 5 * 1024 * 1024 }],
+    },
+    outlook,
+  );
+  expect(draft.includeOriginalAttachments).toBeUndefined();
+  expect(draft.attachments).toEqual([]);
+  expect(toMessage(draft).message.includeOriginalAttachments).toBeUndefined();
 });
 
 it("replying in a second account treats the first account and its aliases as recipients", () => {

@@ -5,6 +5,7 @@ import {
 } from "./folder-actions.js";
 import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
+import { attachmentProblem, attachmentProblemMessage } from "./attachment-policy.js";
 
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import type {
@@ -99,7 +100,6 @@ const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
 /** sendMail and attachment POSTs carry files inline; Graph caps a request at 4 MB. */
-const INLINE_ATTACHMENT_LIMIT = 3 * 1024 * 1024;
 const REQUEST_LIMIT = 4 * 1024 * 1024;
 
 // Provider JSON. Only the fields openmail reads; extra fields are ignored.
@@ -822,6 +822,19 @@ export const makeOutlook: Effect.Effect<
           `/me/messages/${original.value.providerId}/${action}`,
         ).pipe(Effect.flatMap(decode(WithId)));
         yield* write(account.id, "PATCH", `/me/messages/${draft.id}`, fields);
+        if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
+          const inherited = yield* get(
+            account.id,
+            AttachmentIds,
+            `/me/messages/${draft.id}/attachments?$select=id,isInline,contentId`,
+          );
+          for (const attachment of inherited.value)
+            yield* write(
+              account.id,
+              "DELETE",
+              `/me/messages/${draft.id}/attachments/${attachment.id}`,
+            );
+        }
         for (const attachment of attachments) {
           yield* write(account.id, "POST", `/me/messages/${draft.id}/attachments`, attachment);
         }
@@ -834,8 +847,8 @@ export const makeOutlook: Effect.Effect<
   /**
    * Outlook drafts are messages in the Drafts folder, edited in place, so the
    * id stays the same across saves. Replies are created with createReply so
-   * Outlook threads them; new messages and forwards are plain drafts (the
-   * send path forwards the original's attachments itself).
+   * Outlook threads them; new messages use plain drafts. Forwards inherit the original attachments
+   * on the server, so large originals never enter the upload path.
    */
   const saveDraft = Effect.fn("Outlook.saveDraft")(
     function* (account: Account, draft: DraftPush) {
@@ -860,14 +873,32 @@ export const makeOutlook: Effect.Effect<
 
       const create = Effect.gen(function* () {
         const mode = message.mode ?? "new";
-        if (Option.isSome(original) && (mode === "reply" || mode === "replyAll")) {
-          const action = mode === "reply" ? "createReply" : "createReplyAll";
+        if (Option.isSome(original) && mode !== "new") {
+          const action =
+            mode === "forward"
+              ? "createForward"
+              : mode === "reply"
+                ? "createReply"
+                : "createReplyAll";
           const created = yield* write(
             account.id,
             "POST",
             `/me/messages/${original.value.providerId}/${action}`,
           ).pipe(Effect.flatMap(decode(WithId)));
           yield* write(account.id, "PATCH", `/me/messages/${created.id}`, fields);
+          if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
+            const inherited = yield* get(
+              account.id,
+              AttachmentIds,
+              `/me/messages/${created.id}/attachments?$select=id,isInline,contentId`,
+            );
+            for (const attachment of inherited.value)
+              yield* write(
+                account.id,
+                "DELETE",
+                `/me/messages/${created.id}/attachments/${attachment.id}`,
+              );
+          }
           yield* addAttachments(created.id);
           return created.id;
         }
@@ -880,6 +911,20 @@ export const makeOutlook: Effect.Effect<
 
       const update = (id: string) =>
         Effect.gen(function* () {
+          // Recreate the server-side forward when uploaded parts change. Its inherited
+          // parts are opaque to the upload list and must never be deleted with it.
+          if (
+            message.mode === "forward" &&
+            message.includeOriginalAttachments === undefined &&
+            draft.replaceAttachments &&
+            Option.isSome(original)
+          ) {
+            const next = yield* create;
+            yield* write(account.id, "DELETE", `/me/messages/${id}`).pipe(
+              Effect.catchIf(is404, () => Effect.void),
+            );
+            return next;
+          }
           yield* write(account.id, "PATCH", `/me/messages/${id}`, fields);
           if (!draft.replaceAttachments) return id;
           const current = yield* get(
@@ -894,6 +939,7 @@ export const makeOutlook: Effect.Effect<
           );
           for (const a of current.value.filter(
             (x) =>
+              (message.mode === "forward" && message.includeOriginalAttachments !== undefined) ||
               !x.isInline ||
               (x.contentId !== null && x.contentId !== undefined && managedInline.has(x.contentId)),
           )) {
@@ -1402,14 +1448,12 @@ const checkRequestSize = (body: string) =>
 const forwardsMessage = (message: OutgoingMessage) =>
   message.attachments.some((a) => a.mimeType.toLowerCase() === "message/rfc822");
 
-const checkAttachmentSize = (message: OutgoingMessage) =>
-  message.attachments.reduce((n, a) => n + (a.content.length * 3) / 4, 0) > INLINE_ATTACHMENT_LIMIT
-    ? Effect.fail(
-        new PermanentError({
-          message: "Outlook attachments over 3 MB in total are not supported yet",
-        }),
-      )
+const checkAttachmentSize = (message: OutgoingMessage) => {
+  const problem = attachmentProblem("outlook", message.attachments);
+  return problem
+    ? Effect.fail(new PermanentError({ message: attachmentProblemMessage(problem) }))
     : Effect.void;
+};
 
 function address(a: GraphAddress | null | undefined): Address {
   return { name: a?.emailAddress?.name ?? "", address: a?.emailAddress?.address ?? "" };

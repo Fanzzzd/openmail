@@ -13,6 +13,7 @@ export const DesktopLabels = Schema.Struct({
   settings: Schema.String,
   newWindow: Schema.String,
   compose: Schema.String,
+  attachFiles: Schema.String,
   help: Schema.String,
   archive: Schema.String,
   trash: Schema.String,

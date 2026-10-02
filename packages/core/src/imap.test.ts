@@ -4,6 +4,8 @@ import { Effect, Exit, Layer, Option, Stream } from "effect";
 import { vi } from "vitest";
 import { ImapFlow, type ListResponse } from "imapflow";
 import { simpleParser } from "mailparser";
+import { createServer } from "node:net";
+import { createTransport } from "nodemailer";
 
 import type { Account } from "./domain.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
@@ -273,6 +275,93 @@ const account: Account = {
 
 const errorTag = <A, E extends { _tag: string }>(exit: Exit.Exit<A, E>) =>
   Exit.findErrorOption(exit).pipe(Option.map((e) => e._tag));
+
+it.effect(
+  "SMTP SIZE rejects encoded MIME before MAIL FROM or DATA, even when raw attachments fit",
+  () =>
+    Effect.gen(function* () {
+      const commands: string[] = [];
+      const server = yield* Effect.acquireRelease(
+        Effect.promise(async () => {
+          const server = createServer((socket) => {
+            socket.write("220 fake SMTP ready\r\n");
+            let pending = "";
+            socket.on("data", (bytes) => {
+              pending += bytes.toString();
+              let end: number;
+              while ((end = pending.indexOf("\r\n")) >= 0) {
+                const line = pending.slice(0, end);
+                pending = pending.slice(end + 2);
+                commands.push(line);
+                if (line.startsWith("EHLO")) socket.write("250-fake\r\n250 SIZE 100\r\n");
+                else if (line === "QUIT") socket.end("221 bye\r\n");
+                else socket.write("250 OK\r\n");
+              }
+            });
+          });
+          await new Promise<void>((resolve) => {
+            server.listen(0, "127.0.0.1", resolve);
+          });
+          return server;
+        }),
+        (server) =>
+          Effect.promise(
+            () =>
+              new Promise<void>((resolve) => {
+                server.close(() => resolve());
+              }),
+          ),
+      );
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Missing SMTP test port");
+      const settings = account.imap;
+      if (!settings) throw new Error("Missing IMAP test settings");
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      const adapter = yield* makeImapWith(
+        () => Effect.succeed({ accountId: account.id, settings, client }),
+        () =>
+          Effect.acquireRelease(
+            Effect.sync(() =>
+              createTransport({
+                host: "127.0.0.1",
+                port: address.port,
+                secure: false,
+                ignoreTLS: true,
+              }),
+            ),
+            (transport) => Effect.sync(() => transport.close()),
+          ),
+      );
+      const error = yield* Effect.flip(
+        adapter.send(
+          account,
+          {
+            to: [{ name: "Bob", address: "bob@example.com" }],
+            cc: [],
+            bcc: [],
+            subject: "Small file",
+            text: "Body",
+            attachments: [{ filename: "a.txt", mimeType: "text/plain", content: "aGk=" }],
+          },
+          Option.none(),
+        ),
+      );
+      assert.strictEqual(error._tag, "PermanentError");
+      assert.include(error.message, "SMTP SIZE");
+      assert.include(error.message, "100");
+      assert.ok(commands.some((line) => line.startsWith("EHLO")));
+      assert.ok(!commands.some((line) => /^(MAIL|RCPT|DATA)/.test(line)));
+    }).pipe(
+      Effect.scoped,
+      Effect.provide(
+        Layer.succeed(Secrets, {
+          get: () => Effect.succeed(Option.some("password")),
+          set: () => Effect.void,
+          remove: () => Effect.void,
+        }),
+      ),
+    ),
+);
 
 // Neither test reaches the network: both stop before a connection opens.
 layer(

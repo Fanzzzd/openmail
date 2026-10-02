@@ -198,6 +198,7 @@ const englishLabels: DesktopLabels = {
   settings: "Settings…",
   newWindow: "New Window",
   compose: "New message",
+  attachFiles: "Attach Files…",
   help: "Keyboard shortcuts",
   archive: "Archive",
   trash: "Delete",

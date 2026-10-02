@@ -42,10 +42,12 @@ it("native edit commands dispatch immediately and retain text editing in editors
 it("quit checks and Undo Send reach the renderer even while another editor is busy", () => {
   expect(desktopEventRoute({ _tag: "QuitCheck" }, true)).toBe("dispatch");
   expect(desktopEventRoute({ _tag: "UndoSend" }, true)).toBe("dispatch");
+  expect(desktopEventRoute({ _tag: "AttachFiles" }, true)).toBe("dispatch");
 });
 
 it("send and quit commands are dropped when the renderer is missing, while navigation is buffered", () => {
   expect(shouldBufferDesktopEvent({ _tag: "UndoSend" })).toBe(false);
+  expect(shouldBufferDesktopEvent({ _tag: "AttachFiles" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "QuitCheck" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Edit", action: "undo" })).toBe(false);
   expect(shouldBufferDesktopEvent({ _tag: "Command", command: "compose" })).toBe(false);

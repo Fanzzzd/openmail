@@ -1,3 +1,4 @@
+import { clipboardAttachments } from "./clipboard-attachments";
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
@@ -201,6 +202,8 @@ const Handlers = MailRpcs.toLayer(
           USER,
         ),
 
+      ClipboardAttachments: () => clipboardAttachments(),
+      ComposeAttachments: ({ id }) => m.composeAttachments(id),
       SendAgain: ({ id }) => m.sendAgain(id),
       OpenDraft: ({ id }) => m.openDraft(id),
       SaveDraft: ({ draft }) => m.saveDraft(draft),

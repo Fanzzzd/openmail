@@ -24,6 +24,7 @@ import type {
   Label,
   Message,
   Outcome,
+  OutgoingAttachment,
   Prefs,
   Profile,
   ProfileInput,
@@ -262,6 +263,7 @@ export class Mailbox extends Context.Service<
      * provider and kept locally), or as "proposal:<id>" for an agent's draft.
      */
     /** New editable copy of a sent message, including MIME recipients and attachments. */
+    composeAttachments(id: string): Effect.Effect<readonly OutgoingAttachment[], PerformError>;
     sendAgain(id: string): Effect.Effect<Draft, PerformError>;
     /** Sends currently executing in core, including provider and cleanup work. */
     readonly pendingSendCount: Effect.Effect<number>;

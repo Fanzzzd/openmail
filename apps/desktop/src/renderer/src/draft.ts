@@ -9,6 +9,8 @@ import {
   outgoingComposeBody,
   normalizeComposeMessage,
   richComposeBody,
+  remoteComposeBody,
+  preservedComposeHtml,
   textComposeHtml,
 } from "@openmail/core/schema";
 import type {
@@ -43,6 +45,9 @@ export interface Draft {
   inReplyTo?: string;
   /** Forward `inReplyTo` as an attached .eml instead of quoting it. */
   forwardAsAttachment: boolean;
+  includeOriginalAttachments?: boolean;
+  /** First-open work only; never persisted or repeated when reopening a draft. */
+  loadOriginalAttachments?: boolean;
   /** Whether the version opened from storage was synced to the provider. */
   synced?: boolean;
   /** The agent proposal this draft came from. */
@@ -143,6 +148,7 @@ export function draftFor(
   account: Account,
   asAttachment = false,
   aliases: readonly Pick<SendAs, "accountId" | "address">[] = [],
+  selectedText?: string,
 ): Draft {
   const { to, cc } =
     mode === "forward"
@@ -160,11 +166,12 @@ export function draftFor(
         );
   const forwardAsAttachment = mode === "forward" && asAttachment;
 
+  const quoted = selectedText === undefined ? m : { ...m, bodyText: selectedText, bodyHtml: "" };
   const body = forwardAsAttachment
     ? ""
     : mode === "forward"
-      ? `\n\n---------- 转发的邮件 ----------\n发件人：${formatAddress(m.from)}\n日期：${quoteDate(m.date)}\n主题：${m.subject}\n收件人：${m.to.map(formatAddress).join(", ")}\n\n${m.bodyText}`
-      : quote(m);
+      ? `\n\n---------- 转发的邮件 ----------\n发件人：${formatAddress(m.from)}\n日期：${quoteDate(m.date)}\n主题：${m.subject}\n收件人：${m.to.map(formatAddress).join(", ")}\n\n${quoted.bodyText}`
+      : quote(quoted);
 
   return {
     id: newDraftId(),
@@ -174,7 +181,17 @@ export function draftFor(
     cc: cc.map(formatAddress).join(", "),
     bcc: "",
     subject: prefixed(mode === "forward" ? "Fwd" : "Re", m.subject),
-    body: richComposeBody(textComposeHtml(body)),
+    body:
+      mode === "forward" && !forwardAsAttachment && quoted.bodyHtml
+        ? remoteComposeBody(
+            `${textComposeHtml(body.slice(0, body.length - quoted.bodyText.length))}${preservedComposeHtml(quoted.bodyHtml)}`,
+          )
+        : richComposeBody(textComposeHtml(body)),
+    ...(account.provider === "outlook" && mode === "forward" && !forwardAsAttachment
+      ? {}
+      : { includeOriginalAttachments: mode === "forward" && !forwardAsAttachment }),
+    loadOriginalAttachments:
+      account.provider !== "outlook" && mode === "forward" && !forwardAsAttachment,
     attachments: [],
     inReplyTo: m.id,
     forwardAsAttachment,
@@ -198,6 +215,9 @@ export function fromStored(d: StoredDraft): Draft {
     attachments: m.attachments,
     ...(m.inReplyTo ? { inReplyTo: m.inReplyTo } : {}),
     forwardAsAttachment: m.forwardAsAttachment ?? false,
+    ...(m.includeOriginalAttachments === undefined
+      ? {}
+      : { includeOriginalAttachments: m.includeOriginalAttachments }),
     ...(d.proposalId === null ? {} : { proposalId: d.proposalId }),
   };
 }
@@ -225,6 +245,9 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
           }
         : {}),
       attachments: d.attachments,
+      ...(d.includeOriginalAttachments === undefined
+        ? {}
+        : { includeOriginalAttachments: d.includeOriginalAttachments }),
       mode: d.mode,
       ...(d.inReplyTo ? { inReplyTo: d.inReplyTo } : {}),
       ...(body.kind === "markdown" ? { markdown: true } : {}),

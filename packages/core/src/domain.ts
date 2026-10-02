@@ -325,7 +325,9 @@ export const OutgoingAttachment = Schema.Struct({
   mimeType: Schema.String,
   /** Base64 content. */
   content: Schema.String,
-  /** Inline image referenced by cid: in an untouched remote draft. */
+  /** Original message this attachment was copied from; local compose metadata. */
+  sourceMessageId: Schema.optionalKey(Schema.String),
+  /** Inline image referenced by cid: in the compose body. */
   contentId: Schema.optionalKey(Schema.String),
 });
 export type OutgoingAttachment = typeof OutgoingAttachment.Type;
@@ -361,6 +363,8 @@ export const OutgoingMessage = Schema.Struct({
    * quoting it. Core fetches the original's raw MIME at send time.
    */
   forwardAsAttachment: Schema.optionalKey(Schema.Boolean),
+  /** Explicit attachment list replaces Graph createForward inherited attachments. */
+  includeOriginalAttachments: Schema.optionalKey(Schema.Boolean),
 });
 export type OutgoingMessage = typeof OutgoingMessage.Type;
 
@@ -504,6 +508,7 @@ export const Prefs = Schema.Struct({
   defaultFrom: Schema.NullOr(Schema.Struct({ accountId: Schema.String, address: Schema.String })),
   /** Show names and full email addresses in recipient chips. */
   showFullRecipientAddresses: Schema.Boolean,
+  quoteSelection: Schema.Literals(["ask", "always", "never"]),
   /** UI language. "system" follows the OS language. */
   language: Schema.Literals(LANGUAGES),
   markReadDelay: Schema.Literals(MARK_READ_DELAYS),
@@ -532,6 +537,7 @@ export const DEFAULT_PREFS: Prefs = {
   undoSendSeconds: 5,
   defaultFrom: null,
   showFullRecipientAddresses: false,
+  quoteSelection: "ask",
   language: "system",
   markReadDelay: 0,
   nextSelection: "below",

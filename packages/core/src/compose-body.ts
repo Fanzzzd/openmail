@@ -218,6 +218,13 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
             ? [{ kind: "tag", name: "a", attrs: { href }, children } satisfies SafeNode]
             : children),
         );
+      } else if (!preserveRemote && name === "img" && /^cid:[\w.@+-]+$/i.test(attribs.src ?? "")) {
+        result.push({
+          kind: "tag",
+          name: "img",
+          attrs: { src: attribs.src ?? "", ...(attribs.alt ? { alt: attribs.alt } : {}) },
+          children: [],
+        });
       } else if (tag) {
         result.push({
           kind: "tag",
@@ -365,6 +372,12 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0): boolean {
             (child.type === ElementType.Tag && child.name === "link"),
         );
       if (name === "meta") return false;
+      if (
+        name === "img" &&
+        /^cid:[\w.@+-]+$/i.test(attribs.src ?? "") &&
+        Object.keys(attribs).every((key) => key === "src" || key === "alt")
+      )
+        return false;
       if (BLOCKS.has(name) && name !== "div" && name !== "p") return true;
       if (!INLINE.has(name) && !BLOCKS.has(name) && !LISTS.has(name) && !NEUTRAL_TAGS.has(name))
         return true;
@@ -511,10 +524,26 @@ export function outgoingComposeBody(
 export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessage {
   const body = outgoingComposeBody(message);
   const { html: _html, originalHtml: _originalHtml, ...rest } = message;
+  const sourced: OutgoingMessage["attachments"] = message.attachments.map((attachment) => {
+    if (
+      attachment.sourceMessageId === undefined ||
+      attachment.contentId === undefined ||
+      (body.kind === "rich" &&
+        body.html.includes(`src="cid:${escapeComposeText(attachment.contentId)}"`))
+    )
+      return attachment;
+    const { contentId: _cid, ...regular } = attachment;
+    return regular;
+  });
   const attachments =
     body.kind === "rich" && body.originalHtml !== undefined
-      ? message.attachments
-      : message.attachments.filter((attachment) => attachment.contentId === undefined);
+      ? sourced
+      : sourced.filter(
+          (attachment) =>
+            attachment.contentId === undefined ||
+            (body.kind === "rich" &&
+              body.html.includes(`src="cid:${escapeComposeText(attachment.contentId)}"`)),
+        );
   return body.kind === "rich"
     ? {
         ...rest,

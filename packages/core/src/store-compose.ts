@@ -245,6 +245,7 @@ export function makeComposeStore(sql: SqlClient.SqlClient) {
       return {
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
+        quoteSelection: pref(f.quoteSelection, stored.get("quoteSelection"), d.quoteSelection),
         defaultFrom: pref(f.defaultFrom, stored.get("defaultFrom"), d.defaultFrom),
         showFullRecipientAddresses: pref(
           f.showFullRecipientAddresses,

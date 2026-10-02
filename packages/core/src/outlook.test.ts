@@ -6,7 +6,7 @@ import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 
-import type { Account } from "./domain.js";
+import type { Account, OutgoingMessage } from "./domain.js";
 import { makeOutlook, parseGraphMessage, MARKDOWN_DRAFT_PROPERTY } from "./outlook.js";
 import { importedMessage, parseRawDraft, withDraftMarkdownSource } from "./drafts.js";
 import { markdownDraftSource } from "./markdown-draft.js";
@@ -513,6 +513,62 @@ it.effect("replies go through a draft; new messages through sendMail", () =>
   }),
 );
 
+for (const includeOriginalAttachments of [true, false, undefined]) {
+  it.effect(
+    `Graph forward attachment choice ${includeOriginalAttachments} replaces inherited parts only when explicit`,
+    () =>
+      Effect.gen(function* () {
+        const http = fakeHttp({
+          "POST /me/messages/orig/createForward": { json: { id: "draft" } },
+          "PATCH /me/messages/draft": { json: {} },
+          "GET /me/messages/draft/attachments": {
+            json: {
+              value: [{ id: "copied" }, { id: "inline", isInline: true, contentId: "logo" }],
+            },
+          },
+          "DELETE /me/messages/draft/attachments/copied": { status: 204 },
+          "DELETE /me/messages/draft/attachments/inline": { status: 204 },
+          "POST /me/messages/draft/attachments": { json: {} },
+          "POST /me/messages/draft/send": { status: 202 },
+        });
+        const parts = includeOriginalAttachments
+          ? [
+              { filename: "original.txt", mimeType: "text/plain", content: "aGk=" },
+              { filename: "logo.png", mimeType: "image/png", content: "aGk=", contentId: "logo" },
+            ]
+          : [];
+        yield* run(http, (adapter) =>
+          adapter.send(
+            account,
+            {
+              to: [{ name: "Bob", address: "bob@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Forward",
+              text: "Body",
+              attachments: parts,
+              mode: "forward",
+              ...(includeOriginalAttachments === undefined ? {} : { includeOriginalAttachments }),
+            },
+            Option.some({ providerId: "orig", threadId: "thread" }),
+          ),
+        );
+        const calls = http.calls.map(
+          (call) => `${call.method} ${call.url.pathname.replace("/v1.0", "")}`,
+        );
+        assert.strictEqual(
+          calls.filter((call) => call.startsWith("DELETE")).length,
+          includeOriginalAttachments === undefined ? 0 : 2,
+        );
+        assert.strictEqual(
+          calls.filter((call) => call === "POST /me/messages/draft/attachments").length,
+          parts.length,
+        );
+        assert.strictEqual(calls.at(-1), "POST /me/messages/draft/send");
+      }),
+  );
+}
+
 it.effect("attachments over 3 MB are refused before any request", () =>
   Effect.gen(function* () {
     const http = fakeHttp({});
@@ -587,6 +643,69 @@ const draftMessage = {
 
 const paths = (calls: readonly Call[]) =>
   calls.map((c) => `${c.method} ${c.url.pathname.replace("/v1.0", "")}`);
+
+it.effect(
+  "default forward autosave uses createForward and never uploads inherited large attachments",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "POST /me/messages/orig/createForward": { json: { id: "d1" } },
+        "PATCH /me/messages/d1": { json: {} },
+      });
+      yield* run(http, (adapter) =>
+        adapter.saveDraft(account, {
+          remote: null,
+          original: Option.some({ providerId: "orig", threadId: "thread" }),
+          message: { ...draftMessage, mode: "forward", attachments: [] },
+          replaceAttachments: true,
+        }),
+      );
+      assert.deepStrictEqual(paths(http.calls), [
+        "POST /me/messages/orig/createForward",
+        "PATCH /me/messages/d1",
+      ]);
+    }),
+);
+
+it.effect(
+  "changing uploaded parts of an inherited forward recreates its server copy and preserves originals",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "POST /me/messages/orig/createForward": { json: { id: "fresh" } },
+        "PATCH /me/messages/fresh": { json: {} },
+        "DELETE /me/messages/old": { status: 204 },
+        "POST /me/messages/fresh/attachments": { json: {} },
+        "POST /me/messages/fresh/send": { status: 202 },
+      });
+      const message = { ...draftMessage, mode: "forward" } satisfies OutgoingMessage;
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          yield* adapter.saveDraft(account, {
+            remote: { draftId: "old", messageId: "old" },
+            original: Option.some({ providerId: "orig", threadId: "thread" }),
+            message,
+            replaceAttachments: true,
+          });
+          yield* adapter.send(
+            account,
+            message,
+            Option.some({ providerId: "orig", threadId: "thread" }),
+          );
+        }),
+      );
+      assert.deepStrictEqual(paths(http.calls), [
+        "POST /me/messages/orig/createForward",
+        "PATCH /me/messages/fresh",
+        "POST /me/messages/fresh/attachments",
+        "DELETE /me/messages/old",
+        "POST /me/messages/orig/createForward",
+        "PATCH /me/messages/fresh",
+        "POST /me/messages/fresh/attachments",
+        "POST /me/messages/fresh/send",
+      ]);
+    }),
+);
 
 it.effect(
   "drafts are messages in Drafts: created, patched, attachments replaced only when changed",

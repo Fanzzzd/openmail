@@ -2,6 +2,8 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   composeConversion,
+  composeMatches,
+  composeEditorText,
   composeHtmlHasUnsupported,
   editedComposeBody,
   composeLink,
@@ -10,24 +12,48 @@ import {
   type ComposeBody,
 } from "@openmail/core/schema";
 import { Bold, Italic, Underline, Link, Unlink } from "lucide-react";
-import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+  type KeyboardEvent,
+} from "react";
+import { constVoid } from "effect/Function";
 
-import { restoreEditorSelection, type ComposeElement } from "../compose-editor-dom";
+import {
+  restoreEditorSelection,
+  composeEditorHtml,
+  editorBody,
+  selectEditorMatch,
+  replaceEditorMatches,
+  type ComposeElement,
+} from "../compose-editor-dom";
+import type { OutgoingAttachment } from "../../../shared/api";
+import { makeInlinePreviewCache } from "../compose-previews";
 import { Select } from "./ui/Select";
 import { Alert, AlertCancel, alertButton, alertPrimary } from "./ui/Dialog";
 
 interface Props {
   body: ComposeBody;
+  attachments: readonly OutgoingAttachment[];
   onChange: (body: ComposeBody) => void;
   bodyRef: RefObject<ComposeElement | null>;
   selectionRef: RefObject<Range | null>;
 }
 
-export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) {
+export function ComposeEditor({ body, attachments, onChange, bodyRef, selectionRef }: Props) {
   const { t } = useLingui();
   const richRef = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef<string | null>(null);
+  const [previewCache] = useState(makeInlinePreviewCache);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [finding, setFinding] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [replacement, setReplacement] = useState("");
+  const [findIndex, setFindIndex] = useState(0);
+  const matches = composeMatches(composeEditorText(body), findQuery);
   const [href, setHref] = useState("");
   const [linkError, setLinkError] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -50,16 +76,30 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
     onChange(next);
   };
 
+  useLayoutEffect(() => () => previewCache.dispose(), [previewCache]);
   useLayoutEffect(() => {
+    previewCache.sync(attachments);
     const element = richRef.current;
     if (body.kind !== "rich" || !element) {
       lastEmitted.current = null;
-      return;
+      return constVoid;
     }
     // Leave the live DOM and caret alone for our own input/IME events.
     if (lastEmitted.current !== body.html) element.innerHTML = richComposeBody(body.html).html;
     lastEmitted.current = body.html;
-  }, [body]);
+    for (const image of element.querySelectorAll("img")) {
+      const cid =
+        image.getAttribute("data-compose-cid") ?? image.getAttribute("src")?.replace(/^cid:/, "");
+      // Removing an attachment must also stop displaying its now-revoked preview.
+      if (cid) image.setAttribute("src", `cid:${cid}`);
+      if (!cid) continue;
+      const url = previewCache.get(cid);
+      if (!url) continue;
+      image.setAttribute("data-compose-cid", cid);
+      image.setAttribute("src", url);
+    }
+    return constVoid;
+  }, [body, attachments, previewCache]);
 
   const remember = () => {
     const selection = window.getSelection();
@@ -71,7 +111,7 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
   const changed = () => {
     if (!richRef.current || locked) return;
     if (body.kind !== "rich") return;
-    const next = editedComposeBody(body, richRef.current.innerHTML);
+    const next = editedComposeBody(body, composeEditorHtml(richRef.current));
     if (next !== body) setModeUndo(null);
     lastEmitted.current = next.html;
     remember();
@@ -107,6 +147,37 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
     } else command("createLink", safe);
     setLinkOpen(false);
   };
+  const selectMatch = (index: number) => {
+    const match = matches[index];
+    if (match && bodyRef.current) selectEditorMatch(bodyRef.current, match.start, match.end);
+    setFindIndex(index);
+    remember();
+  };
+  const replaceMatches = (all: boolean) => {
+    const element = bodyRef.current;
+    if (!element || locked) return;
+    const targets = all
+      ? matches.toReversed()
+      : matches.slice(
+          findIndex % Math.max(1, matches.length),
+          (findIndex % Math.max(1, matches.length)) + 1,
+        );
+    if (!replaceEditorMatches(element, targets, replacement)) return;
+    if (element instanceof HTMLTextAreaElement) onChange(editorBody(element, body));
+    else changed();
+    setFindIndex(0);
+  };
+  const findKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (matches.length) selectMatch((findIndex + 1) % matches.length);
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      setFinding(false);
+    }
+  };
   const button =
     "rounded p-1.5 text-neutral-500 hover:bg-black/5 focus-visible:outline-blue-500 dark:text-neutral-400 dark:hover:bg-white/10";
 
@@ -127,6 +198,12 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
             else changeMode(conversion.body);
           }}
         />
+        <button
+          type="button"
+          className={button}
+          disabled={locked}
+          onClick={() => setFinding((value) => !value)}
+        >{t`Find and replace`}</button>
         {modeUndo && (
           <button
             type="button"
@@ -183,6 +260,67 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
           </>
         )}
       </div>
+      {finding && (
+        <search
+          aria-label={t`Find and replace`}
+          className="flex shrink-0 flex-wrap items-center gap-2 px-4 py-2"
+        >
+          <input
+            autoFocus
+            aria-label={t`Find in body`}
+            placeholder={t`Find in body`}
+            value={findQuery}
+            onKeyDown={findKey}
+            onChange={(event) => {
+              setFindQuery(event.target.value);
+              setFindIndex(0);
+            }}
+            className="min-w-0 flex-1 rounded border px-2 py-1"
+          />
+          <input
+            aria-label={t`Replace with`}
+            placeholder={t`Replace with`}
+            value={replacement}
+            onKeyDown={findKey}
+            onChange={(event) => setReplacement(event.target.value)}
+            className="min-w-0 flex-1 rounded border px-2 py-1"
+          />
+          <output aria-live="polite">
+            {matches.length
+              ? `${(findIndex % matches.length) + 1}/${matches.length}`
+              : t`No matches`}
+          </output>
+          <button
+            type="button"
+            disabled={!matches.length}
+            className={button}
+            onClick={() => selectMatch((findIndex + matches.length - 1) % matches.length)}
+          >{t`Previous match`}</button>
+          <button
+            type="button"
+            disabled={!matches.length}
+            className={button}
+            onClick={() => selectMatch((findIndex + 1) % matches.length)}
+          >{t`Next match`}</button>
+          <button
+            type="button"
+            disabled={locked || !matches.length}
+            className={button}
+            onClick={() => replaceMatches(false)}
+          >{t`Replace`}</button>
+          <button
+            type="button"
+            disabled={locked || !matches.length}
+            className={button}
+            onClick={() => replaceMatches(true)}
+          >{t`Replace all`}</button>
+          <button
+            type="button"
+            className={button}
+            onClick={() => setFinding(false)}
+          >{t`Close find`}</button>
+        </search>
+      )}
       {remoteUnsupported && (
         <div
           role="status"
@@ -288,6 +426,11 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
           onMouseUp={remember}
           onBlur={remember}
           onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+              e.preventDefault();
+              setFinding(true);
+              return;
+            }
             if (locked) return;
             if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
               const key = e.key.toLowerCase();
@@ -300,6 +443,7 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
             }
           }}
           onPaste={(e) => {
+            if (e.defaultPrevented) return;
             e.preventDefault();
             if (locked) return;
             remember();
@@ -316,6 +460,12 @@ export function ComposeEditor({ body, onChange, bodyRef, selectionRef }: Props) 
             bodyRef.current = element;
           }}
           value={body.text}
+          onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+              e.preventDefault();
+              setFinding(true);
+            }
+          }}
           onChange={(e) => {
             setModeUndo(null);
             onChange({ kind: body.kind, text: e.target.value });

@@ -3,6 +3,7 @@ import { Schema } from "effect";
 
 export const DesktopEvent = Schema.Union([
   Schema.TaggedStruct("UndoSend", {}),
+  Schema.TaggedStruct("AttachFiles", {}),
   Schema.TaggedStruct("QuitCheck", {}),
   Schema.TaggedStruct("Edit", { action: Schema.Literals(["undo", "selectAll"]) }),
   Schema.TaggedStruct("OpenThread", { id: Schema.String }),
@@ -19,7 +20,12 @@ export function desktopEventRoute(
   event: DesktopEvent,
   busy: boolean,
 ): "dispatch" | "defer" | "drop" {
-  if (event._tag === "Edit" || event._tag === "UndoSend" || event._tag === "QuitCheck")
+  if (
+    event._tag === "AttachFiles" ||
+    event._tag === "Edit" ||
+    event._tag === "UndoSend" ||
+    event._tag === "QuitCheck"
+  )
     return "dispatch";
   return event._tag === "Command" ? (busy ? "drop" : "dispatch") : "defer";
 }
