@@ -2,10 +2,11 @@ import { Mailbox, type Message } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useLingui } from "@lingui/react";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,14 +15,58 @@ import {
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
-import { handleReaderNavigation, readerDocument } from "../src/reader-html";
-import { Button } from "../src/controls";
+import { handleReaderNavigation, readerDocument, type ReaderLink } from "../src/reader-html";
+import { useMessageInlineImages } from "../src/inline-images";
+import { shareReceivedAttachment } from "../src/received-attachments";
+import { Button, Sheet } from "../src/controls";
 import { ThreadMenu } from "../src/thread-actions";
 import { styles } from "../src/styles";
 
 function ReaderMessage({ message, remoteImages }: { message: Message; remoteImages: boolean }) {
   const { i18n } = useLingui();
+  const [pendingLink, setPendingLink] = useState<ReaderLink | null>(null);
   const [html, setHtml] = useState(false);
+  const [loadedRemote, setLoadedRemote] = useState(false);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [attachmentFailed, setAttachmentFailed] = useState(false);
+  const [linkFailed, setLinkFailed] = useState(false);
+  const runtime = useMailbox();
+  const fetchInline = useCallback(
+    (id: string) =>
+      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.inlineImages(id))),
+    [runtime],
+  );
+  const inline = useMessageInlineImages(message.id, message.bodyHtml, html, fetchInline);
+  const source = useMemo(
+    () => ({
+      html: readerDocument(message.bodyHtml, remoteImages || loadedRemote, inline.value),
+      baseUrl: "about:blank",
+    }),
+    [message.bodyHtml, remoteImages, loadedRemote, inline.value],
+  );
+  const openLink = async (target: string) => {
+    setLinkFailed(false);
+    try {
+      await Linking.openURL(target);
+    } catch {
+      setLinkFailed(true);
+    }
+  };
+  const openAttachment = async (index: number) => {
+    if (attachmentBusy) return;
+    setAttachmentBusy(true);
+    setAttachmentFailed(false);
+    try {
+      const content = await runtime.runPromise(
+        Effect.flatMap(Mailbox, (mailbox) => mailbox.attachment(message.id, index)),
+      );
+      await shareReceivedAttachment(content);
+    } catch {
+      setAttachmentFailed(true);
+    } finally {
+      setAttachmentBusy(false);
+    }
+  };
   return (
     <View style={styles.message}>
       <Text style={styles.subject}>
@@ -42,16 +87,27 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
           </Text>
         </Pressable>
       )}
+      {html && !remoteImages && !loadedRemote && (
+        <Button
+          label={i18n._({ id: "Load remote images", message: "Load remote images" })}
+          onPress={() => setLoadedRemote(true)}
+        />
+      )}
       {html ? (
         <WebView
           style={styles.webview}
           incognito={true}
-          source={{ html: readerDocument(message.bodyHtml, remoteImages), baseUrl: "about:blank" }}
+          source={source}
           // Let the callback handle every scheme; unmatched originWhitelist entries
           // would otherwise be handed to an external app by WebView automatically.
           originWhitelist={["*"]}
-          onShouldStartLoadWithRequest={({ url, isTopFrame }) =>
-            isTopFrame ? handleReaderNavigation(url, (target) => Linking.openURL(target)) : false
+          onShouldStartLoadWithRequest={(request) =>
+            handleReaderNavigation(
+              request,
+              Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "other",
+              openLink,
+              setPendingLink,
+            )
           }
           javaScriptEnabled={false}
           javaScriptCanOpenWindowsAutomatically={false}
@@ -74,6 +130,56 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
             })}
         </Text>
       )}
+      {pendingLink && (
+        <Sheet
+          title={i18n._({ id: "Open external link?", message: "Open external link?" })}
+          close={() => setPendingLink(null)}
+          cancel={i18n._({ id: "Cancel", message: "Cancel" })}
+        >
+          <Text selectable style={styles.body}>
+            {pendingLink.destination}
+          </Text>
+          <Text selectable style={styles.detail}>
+            {pendingLink.url}
+          </Text>
+          <Button
+            label={i18n._({ id: "Open link", message: "Open link" })}
+            onPress={() => {
+              const target = pendingLink.url;
+              setPendingLink(null);
+              void openLink(target);
+            }}
+          />
+        </Sheet>
+      )}
+      {message.attachments.map((attachment, index) => (
+        <Button
+          key={`${index}:${attachment.filename}`}
+          disabled={attachmentBusy}
+          label={i18n._({
+            id: "Open or share {filename}",
+            message: "Open or share {filename}",
+            values: { filename: attachment.filename },
+          })}
+          onPress={() => void openAttachment(index)}
+        />
+      ))}
+      {linkFailed && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {i18n._({
+            id: "Could not open the link. Try again.",
+            message: "Could not open the link. Try again.",
+          })}
+        </Text>
+      )}
+      {(attachmentFailed || (html && inline.kind === "failed")) && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {i18n._({
+            id: "Could not load attachments. Try again.",
+            message: "Could not load attachments. Try again.",
+          })}
+        </Text>
+      )}
     </View>
   );
 }
@@ -87,6 +193,7 @@ export default function Reader() {
       () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs)),
       [runtime],
     ),
+    { keepPrevious: true },
   );
   const [refreshing, setRefreshing] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -96,6 +203,7 @@ export default function Reader() {
         runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.readerThread(messageId))),
       [runtime, messageId],
     ),
+    { keepPrevious: true },
   );
   const refresh = async () => {
     setRefreshing(true);

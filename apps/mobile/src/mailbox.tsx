@@ -82,7 +82,10 @@ export function useMailbox() {
 export const useMailboxRevision = () => useContext(RevisionContext);
 
 type QueryState<A> = { kind: "loading" } | { kind: "ready"; value: A } | { kind: "failed" };
-export function useMailboxQuery<A>(load: () => Promise<A>) {
+export function useMailboxQuery<A>(
+  load: () => Promise<A>,
+  options: { keepPrevious?: boolean } = {},
+) {
   const revision = useMailboxRevision();
   const [result, setResult] = useState<{
     load: typeof load;
@@ -105,5 +108,7 @@ export function useMailboxQuery<A>(load: () => Promise<A>) {
     };
   }, [load, revision]);
   const loading: QueryState<A> = { kind: "loading" };
-  return result?.load === load && result.revision === revision ? result.state : loading;
+  return result?.load === load && (result.revision === revision || options.keepPrevious)
+    ? result.state
+    : loading;
 }

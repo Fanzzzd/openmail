@@ -17,6 +17,12 @@ function Navigation() {
         options={{ title: i18n._({ id: "Compose", message: "Compose" }), presentation: "modal" }}
       />
       <Stack.Screen
+        name="imap-setup"
+        options={{
+          title: i18n._({ id: "Add IMAP/SMTP account", message: "Add IMAP/SMTP account" }),
+        }}
+      />
+      <Stack.Screen
         name="settings"
         options={{ title: i18n._({ id: "Settings", message: "Settings" }) }}
       />

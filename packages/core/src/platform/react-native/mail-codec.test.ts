@@ -1,8 +1,5 @@
 import { expect, it } from "vitest";
-import { Effect } from "effect";
-import { parseMobileMime, mobileMailCodecLayer } from "./mail-codec.js";
-import { MailCodec } from "../mail-codec.js";
-import { unsupportedMobileImap } from "./providers.js";
+import { parseMobileMime } from "./mail-codec.js";
 
 it("parses portable MIME body text, HTML, addresses and inline binary attachments", async () => {
   const raw = [
@@ -44,18 +41,6 @@ it("parses portable MIME body text, HTML, addresses and inline binary attachment
     content: new Uint8Array([1, 2, 3]),
   });
 });
-it("rejects oversized MIME and explicitly reports unsupported IMAP/SMTP", async () => {
+it("rejects oversized MIME", async () => {
   await expect(parseMobileMime(new Uint8Array(25 * 1024 * 1024 + 1))).rejects.toThrow("25 MiB");
-  const result = await Effect.runPromise(
-    unsupportedMobileImap.connect({ provider: "outlook" }).pipe(Effect.result),
-  );
-  expect(result._tag).toBe("Failure");
-  if (result._tag === "Failure")
-    expect(result.failure.message).toContain("IMAP/SMTP is unsupported on mobile");
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const codec = yield* MailCodec;
-      expect(typeof codec.parse).toBe("function");
-    }).pipe(Effect.provide(mobileMailCodecLayer)),
-  );
 });

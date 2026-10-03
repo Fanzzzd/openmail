@@ -110,6 +110,11 @@ export default function Accounts() {
                 {i18n._({ id: "Add Outlook account", message: "Add Outlook account" })}
               </Text>
             </Pressable>
+            <Button
+              label={i18n._({ id: "Add IMAP/SMTP account", message: "Add IMAP/SMTP account" })}
+              onPress={() => router.push("/imap-setup")}
+              disabled={busy}
+            />
             {setup.kind === "ready" &&
               (!setup.value.googleConfigured || !setup.value.microsoftConfigured) && (
                 <Text style={styles.empty}>

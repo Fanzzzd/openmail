@@ -1,5 +1,4 @@
 import {
-  AttachmentFiles,
   ImageNetwork,
   mobileMailCodecLayer,
   MediaError,
@@ -8,7 +7,9 @@ import {
 } from "@openmail/core/portable";
 import { Effect, Layer } from "effect";
 
-// MIME send is portable. Reader disk caching and media extraction remain unavailable.
+import { attachmentFilesLayer } from "./attachment-cache";
+
+// MIME and attachment cache are portable; media extraction still needs a native worker.
 export const readerCapabilitiesLayer = Layer.mergeAll(
   mobileMailCodecLayer,
   Layer.succeed(PdfWorker, {
@@ -21,9 +22,5 @@ export const readerCapabilitiesLayer = Layer.mergeAll(
         new ProviderError({ message: "Pinned image transport is unavailable on mobile" }),
       ),
   }),
-  Layer.succeed(AttachmentFiles, {
-    open: () => {
-      throw new Error("Attachment disk caching is unavailable on mobile");
-    },
-  }),
+  attachmentFilesLayer,
 );

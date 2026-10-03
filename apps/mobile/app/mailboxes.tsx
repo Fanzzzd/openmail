@@ -7,6 +7,7 @@ import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } fr
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
 import { Button } from "../src/controls";
 import { styles } from "../src/styles";
+import { mailboxTree } from "../src/mailbox-tree";
 import { mailboxName } from "../src/mailbox-name";
 
 export default function Mailboxes() {
@@ -18,6 +19,15 @@ export default function Mailboxes() {
   const labels = useMailboxQuery(
     useCallback(
       () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.labels([accountId]))),
+      [runtime, accountId],
+    ),
+  );
+  const counts = useMailboxQuery(
+    useCallback(
+      () =>
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) => mailbox.unreadByLabel([accountId])),
+        ),
       [runtime, accountId],
     ),
   );
@@ -48,18 +58,33 @@ export default function Mailboxes() {
         }
       />
       <FlatList
-        data={labels.kind === "ready" ? labels.value.filter((item) => item.id !== "DRAFT") : []}
-        keyExtractor={(label) => label.id}
+        data={
+          labels.kind === "ready"
+            ? mailboxTree(labels.value.filter((item) => item.id !== "DRAFT"))
+            : []
+        }
+        keyExtractor={(item) => item.label.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"
-            style={styles.row}
+            style={[styles.row, { paddingLeft: 20 + item.depth * 20 }]}
             onPress={() =>
-              router.push({ pathname: "/threads", params: { accountId, label: item.id } })
+              router.push({ pathname: "/threads", params: { accountId, label: item.label.id } })
             }
           >
-            <Text style={styles.subject}>{mailboxName(i18n, item)}</Text>
+            <Text style={styles.subject}>
+              {mailboxName(i18n, { ...item.label, name: item.name })}
+            </Text>
+            {counts.kind === "ready" && (counts.value[item.label.id] ?? 0) > 0 && (
+              <Text style={styles.detail}>
+                {i18n._({
+                  id: "{count} unread",
+                  message: "{count} unread",
+                  values: { count: counts.value[item.label.id] },
+                })}
+              </Text>
+            )}
           </Pressable>
         )}
         ListEmptyComponent={
@@ -75,7 +100,7 @@ export default function Mailboxes() {
           )
         }
       />
-      {(failed || labels.kind === "failed") && (
+      {(failed || labels.kind === "failed" || counts.kind === "failed") && (
         <Text accessibilityRole="alert" style={styles.error}>
           {i18n._({
             id: "Could not load mail. Try again.",

@@ -14,6 +14,11 @@ msgid "(No subject)"
 msgstr "(Geen onderwerp)"
 
 #. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "{count} unread"
+msgstr "{count} ongelezen"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "{seconds} seconds"
 msgstr "{seconds} seconden"
@@ -38,9 +43,20 @@ msgid "Add Gmail account"
 msgstr "Gmail-account toevoegen"
 
 #. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/index.tsx
+msgid "Add IMAP/SMTP account"
+msgstr "IMAP/SMTP-account toevoegen"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Add Outlook account"
 msgstr "Outlook-account toevoegen"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "App password"
+msgstr "App-wachtwoord"
 
 #. js-lingui-explicit-id
 #: src/labels.ts
@@ -85,6 +101,7 @@ msgstr "Lijst met opsommingstekens"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: app/reader.tsx
 #: app/threads.tsx
 #: src/labels.ts
 msgid "Cancel"
@@ -118,6 +135,11 @@ msgid "Compose"
 msgstr "Nieuw bericht"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Connect"
+msgstr "Verbinden"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
 msgstr "Gesprek"
@@ -129,12 +151,28 @@ msgid "Could not apply action. Try again."
 msgstr "Actie mislukt. Probeer het opnieuw."
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Could not connect. Check the servers and app password."
+msgstr "Verbinding mislukt. Controleer de servers en het app-wachtwoord."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not load attachments. Try again."
+msgstr "Bijlagen konden niet worden geladen. Probeer het opnieuw."
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
 #: app/index.tsx
 #: app/mailboxes.tsx
 #: app/reader.tsx
 #: app/threads.tsx
 msgid "Could not load mail. Try again."
 msgstr "E-mail laden mislukt. Probeer opnieuw."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not open the link. Try again."
+msgstr "De link kon niet worden geopend. Probeer het opnieuw."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -155,6 +193,11 @@ msgstr "Opslaan, bijvoegen of in de wachtrij plaatsen mislukt. Probeer het opnie
 #: src/undo.tsx
 msgid "Could not undo. Try again."
 msgstr "Ongedaan maken mislukt. Probeer het opnieuw."
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Create an app password"
+msgstr "Een app-wachtwoord maken"
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -194,6 +237,11 @@ msgid "Drafts"
 msgstr "Concepten"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Email address"
+msgstr "E-mailadres"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Enable account"
 msgstr "Account inschakelen"
@@ -207,6 +255,16 @@ msgstr "Voer geldige e-mailadressen in."
 #: app/reader.tsx
 msgid "Forward"
 msgstr "Stuur door"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP port"
+msgstr "IMAP-poort"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP server"
+msgstr "IMAP-server"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -232,6 +290,11 @@ msgstr "Taal"
 #: src/thread-actions.tsx
 msgid "Later today"
 msgstr "Later vandaag"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Load remote images"
+msgstr "Externe afbeeldingen laden"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -314,6 +377,26 @@ msgstr "Geen berichten"
 #: src/labels.ts
 msgid "None"
 msgstr "Geen"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open external link?"
+msgstr "Externe link openen?"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open link"
+msgstr "Link openen"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open or share {filename}"
+msgstr "{filename} openen of delen"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Other"
+msgstr "Overig"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -456,6 +539,26 @@ msgid "Sign in again"
 msgstr "Meld u opnieuw aan"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP port"
+msgstr "SMTP-poort"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP server"
+msgstr "SMTP-server"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: STARTTLS"
+msgstr "SMTP: STARTTLS"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: TLS"
+msgstr "SMTP: TLS"
+
+#. js-lingui-explicit-id
 #: src/labels.ts
 msgid "Snooze"
 msgstr "Stel uit"
@@ -519,3 +622,8 @@ msgstr "Verzenden ongedaan maken"
 #: src/labels.ts
 msgid "Unstar"
 msgstr "Verwijder ster"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Username"
+msgstr "Gebruikersnaam"

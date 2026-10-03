@@ -14,6 +14,11 @@ msgid "(No subject)"
 msgstr "(Без темы)"
 
 #. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "{count} unread"
+msgstr "Непрочитанных: {count}"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "{seconds} seconds"
 msgstr "{seconds} секунд"
@@ -38,9 +43,20 @@ msgid "Add Gmail account"
 msgstr "Добавить учётную запись Gmail"
 
 #. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/index.tsx
+msgid "Add IMAP/SMTP account"
+msgstr "Добавить учётную запись IMAP/SMTP"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Add Outlook account"
 msgstr "Добавить учётную запись Outlook"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "App password"
+msgstr "Пароль приложения"
 
 #. js-lingui-explicit-id
 #: src/labels.ts
@@ -85,6 +101,7 @@ msgstr "Маркированный список"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: app/reader.tsx
 #: app/threads.tsx
 #: src/labels.ts
 msgid "Cancel"
@@ -118,6 +135,11 @@ msgid "Compose"
 msgstr "Новое сообщение"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Connect"
+msgstr "Подключить"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
 msgstr "Переписка"
@@ -129,12 +151,28 @@ msgid "Could not apply action. Try again."
 msgstr "Не удалось выполнить действие. Повторите попытку."
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Could not connect. Check the servers and app password."
+msgstr "Не удалось подключиться. Проверьте серверы и пароль приложения."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not load attachments. Try again."
+msgstr "Не удалось загрузить вложения. Повторите попытку."
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
 #: app/index.tsx
 #: app/mailboxes.tsx
 #: app/reader.tsx
 #: app/threads.tsx
 msgid "Could not load mail. Try again."
 msgstr "Не удалось загрузить почту. Повторите попытку."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not open the link. Try again."
+msgstr "Не удалось открыть ссылку. Повторите попытку."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -155,6 +193,11 @@ msgstr "Не удалось сохранить письмо, добавить в
 #: src/undo.tsx
 msgid "Could not undo. Try again."
 msgstr "Не удалось отменить. Повторите попытку."
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Create an app password"
+msgstr "Создать пароль приложения"
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -194,6 +237,11 @@ msgid "Drafts"
 msgstr "Черновики"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Email address"
+msgstr "Адрес электронной почты"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Enable account"
 msgstr "Включить аккаунт"
@@ -207,6 +255,16 @@ msgstr "Введите корректные адреса электронной 
 #: app/reader.tsx
 msgid "Forward"
 msgstr "Переслать"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP port"
+msgstr "Порт IMAP"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP server"
+msgstr "Сервер IMAP"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -232,6 +290,11 @@ msgstr "Язык"
 #: src/thread-actions.tsx
 msgid "Later today"
 msgstr "Позже сегодня"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Load remote images"
+msgstr "Загрузить внешние изображения"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -314,6 +377,26 @@ msgstr "Нет сообщений"
 #: src/labels.ts
 msgid "None"
 msgstr "Нет"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open external link?"
+msgstr "Открыть внешнюю ссылку?"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open link"
+msgstr "Открыть ссылку"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open or share {filename}"
+msgstr "Открыть или поделиться {filename}"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Other"
+msgstr "Другое"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -456,6 +539,26 @@ msgid "Sign in again"
 msgstr "Войдите снова"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP port"
+msgstr "Порт SMTP"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP server"
+msgstr "Сервер SMTP"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: STARTTLS"
+msgstr "SMTP: STARTTLS"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: TLS"
+msgstr "SMTP: TLS"
+
+#. js-lingui-explicit-id
 #: src/labels.ts
 msgid "Snooze"
 msgstr "Отложить"
@@ -519,3 +622,8 @@ msgstr "Отмена отправки"
 #: src/labels.ts
 msgid "Unstar"
 msgstr "Убрать звезду"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Username"
+msgstr "Имя пользователя"

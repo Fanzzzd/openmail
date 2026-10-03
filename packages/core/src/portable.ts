@@ -110,6 +110,9 @@ export {
   type OpSqliteDatabase,
 } from "./platform/react-native/sqlite.js";
 export { mobileOAuthLayer, type MobileAuthSession } from "./platform/react-native/oauth.js";
-export { mobileProvidersLayer, unsupportedMobileImap } from "./platform/react-native/providers.js";
+export { mobileProvidersLayer } from "./platform/react-native/providers.js";
 export { mobileMailCodecLayer, parseMobileMime } from "./platform/react-native/mail-codec.js";
 export { stripMobileForms } from "./platform/react-native/reader-html.js";
+
+export * from "./platform/mail-socket.js";
+export { makeMobileImap } from "./platform/react-native/imap.js";

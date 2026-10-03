@@ -13,6 +13,8 @@ allowBuilds:
 catalog:
   typescript: ^5.9.3
   zod: ^4.6.5
+patchedDependencies:
+  react-native-tcp-socket@6.4.3: patches/react-native-tcp-socket@6.4.3.patch
 # Both macOS distributables need their N-API prebuilt optional dependencies.
 supportedArchitectures:
   os: [current, darwin]

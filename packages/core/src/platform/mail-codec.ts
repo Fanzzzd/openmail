@@ -29,6 +29,7 @@ export interface MimeMessage {
   readonly html: string | false;
   readonly from?: MimeAddresses;
   readonly to?: MimeAddresses | MimeAddresses[];
+  readonly replyTo?: MimeAddresses;
   readonly cc?: MimeAddresses | MimeAddresses[];
   readonly bcc?: MimeAddresses | MimeAddresses[];
   readonly inReplyTo?: string;

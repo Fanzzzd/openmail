@@ -14,6 +14,11 @@ msgid "(No subject)"
 msgstr "（无主题）"
 
 #. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "{count} unread"
+msgstr "{count} 封未读"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "{seconds} seconds"
 msgstr "{seconds} 秒"
@@ -38,9 +43,20 @@ msgid "Add Gmail account"
 msgstr "添加 Gmail 账户"
 
 #. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/index.tsx
+msgid "Add IMAP/SMTP account"
+msgstr "添加 IMAP/SMTP 账户"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Add Outlook account"
 msgstr "添加 Outlook 账户"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "App password"
+msgstr "应用专用密码"
 
 #. js-lingui-explicit-id
 #: src/labels.ts
@@ -85,6 +101,7 @@ msgstr "圆点列表"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: app/reader.tsx
 #: app/threads.tsx
 #: src/labels.ts
 msgid "Cancel"
@@ -118,6 +135,11 @@ msgid "Compose"
 msgstr "撰写"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Connect"
+msgstr "连接"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
 msgstr "会话"
@@ -129,12 +151,28 @@ msgid "Could not apply action. Try again."
 msgstr "操作失败，请重试。"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Could not connect. Check the servers and app password."
+msgstr "连接失败。请检查服务器和应用专用密码。"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not load attachments. Try again."
+msgstr "附件加载失败。请重试。"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
 #: app/index.tsx
 #: app/mailboxes.tsx
 #: app/reader.tsx
 #: app/threads.tsx
 msgid "Could not load mail. Try again."
 msgstr "无法加载邮件，请重试。"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Could not open the link. Try again."
+msgstr "链接打开失败。请重试。"
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -155,6 +193,11 @@ msgstr "保存、添加附件或加入发送队列失败，请重试。"
 #: src/undo.tsx
 msgid "Could not undo. Try again."
 msgstr "撤销失败，请重试。"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Create an app password"
+msgstr "创建应用专用密码"
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -194,6 +237,11 @@ msgid "Drafts"
 msgstr "草稿"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Email address"
+msgstr "邮箱地址"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Enable account"
 msgstr "启用账户"
@@ -207,6 +255,16 @@ msgstr "请输入有效的邮件地址。"
 #: app/reader.tsx
 msgid "Forward"
 msgstr "转发"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP port"
+msgstr "IMAP 端口"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "IMAP server"
+msgstr "IMAP 服务器"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -232,6 +290,11 @@ msgstr "语言"
 #: src/thread-actions.tsx
 msgid "Later today"
 msgstr "今天稍后"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Load remote images"
+msgstr "加载远程图片"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -314,6 +377,26 @@ msgstr "暂无邮件"
 #: src/labels.ts
 msgid "None"
 msgstr "不选"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open external link?"
+msgstr "打开外部链接？"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open link"
+msgstr "打开链接"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Open or share {filename}"
+msgstr "打开或分享 {filename}"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Other"
+msgstr "其他"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -456,6 +539,26 @@ msgid "Sign in again"
 msgstr "重新登录"
 
 #. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP port"
+msgstr "SMTP 端口"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP server"
+msgstr "SMTP 服务器"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: STARTTLS"
+msgstr "SMTP：STARTTLS"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "SMTP: TLS"
+msgstr "SMTP：TLS"
+
+#. js-lingui-explicit-id
 #: src/labels.ts
 msgid "Snooze"
 msgstr "稍后提醒"
@@ -519,3 +622,8 @@ msgstr "撤销发送"
 #: src/labels.ts
 msgid "Unstar"
 msgstr "去掉星标"
+
+#. js-lingui-explicit-id
+#: app/imap-setup.tsx
+msgid "Username"
+msgstr "用户名"

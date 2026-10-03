@@ -54,7 +54,7 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 - 发送先人工确认，再按共享偏好等待 0／5／10／20／30 秒。发送意图持久保存在既有 prefs 表的保留键中，无新增迁移；执行仍走 `Mailbox.perform` 的 user/app 命令和审计。撤销会保留草稿。离线时保持待发送，下次前台或下拉刷新再处理。
 - 传输失败或执行中进程退出后，发件箱保留待检查项，不自动重发。先检查已发送，再取消队列项并从草稿重试，避免不确定的投递结果产生重复邮件。
 - 搜索复用 Gmail 操作符 parser。本地无结果时回退到服务器，也可主动搜索服务器；显示回退提示及错误、截断或忽略操作符的提示。
-- 设置包含账户添加、重新登录、启用／停用、移除，四种滑动动作、撤销发送时间、远程图片默认值和语言。远程图片默认阻断；主动开启后仅允许图片 HTTP／HTTPS，脚本、表单、字体与导航限制继续生效。
+- 设置包含账户添加、重新登录、启用／停用、移除，四种滑动动作、撤销发送时间、远程图片默认值和语言。远程图片默认阻断；主动开启后仅允许图片 HTTPS，脚本、表单、字体与导航限制继续生效。
 - Lingui 包含 en、zh-CN、cs、nl、fr、de、it、ja、ru、es。相同文案复用桌面译文，消息文本字段保留提取注释。修改后执行 `pnpm --filter @openmail/mobile i18n:extract`、补齐译文，再执行 `i18n:compile`。测试检查目录同步与漏译。
 
 ## 前台同步与原生权限
@@ -63,11 +63,25 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 
 手机端暂不更新 app icon 徽标，已移除仅为徽标引入的 expo-notifications，避免 APNs entitlement、FCM service 和启动广播。image-picker plugin 关闭 cameraPermission 与 microphonePermission；Android 显式屏蔽 CAMERA、RECORD_AUDIO、RECEIVE_BOOT_COMPLETED、POST_NOTIFICATIONS。测试检查 Expo introspect 后的 manifest、entitlements、plist 和实际 autolinking，不启动 bundler。依据：[DocumentPicker](https://docs.expo.dev/versions/latest/sdk/document-picker/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)、[ImageManipulator](https://docs.expo.dev/versions/latest/sdk/imagemanipulator/)。
 
+## 能力（slice 47）
+
+| 能力            | 当前实现与边界                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gmail／Outlook  | 共享 core fetch provider、OAuth、同步、阅读、整理与确认发送；个人 Outlook 只用 consumers。                                                                                                                                                                                                                                                                                                                          |
+| IMAP／SMTP      | iCloud、Yahoo、QQ、163、Fastmail、Other 设置及密码更新。共享 Mailbox 命令接入 portable 协议，原生 TCP/TLS 使用 react-native-tcp-socket 6.4.3；应用密码只存 SecureStore。993／465 使用 TLS，其他端口强制 STARTTLS。依赖补丁补齐 Android 证书主机名校验及读取线程升级同步，并补齐两端 STARTTLS 握手完成事件。                                                                                                         |
+| IMAP 同步与整理 | 首次同步每文件夹最近 90 天内最多 1000 封；后续追踪 UIDVALIDITY、增量、已读、星标和删除。移动使用 MOVE，或 UIDPLUS 定向 expunge；缺少两者时拒绝移动。支持历史分页和有上限的服务器搜索，无 IDLE、服务端草稿、永久删除、过滤器或自动回复。                                                                                                                                                                             |
+| IMAP 发送       | core MIME／SMTP，发送前沿用手机人工确认与撤销队列；Bcc 只进信封，不进入投递 MIME。SMTP DATA 和 IMAP APPEND 按 64 KiB 分块并等待写入。SMTP 接受后不因 Sent 归档失败重发；归档失败记录脱敏警告，已发送副本仍可能缺失。                                                                                                                                                                                                |
+| 阅读附件        | Gmail／Outlook／IMAP 经 core 下载；按账户与缓存键哈希写入 `Paths.cache/openmail-attachments`，遵循共享缓存容量和清理；本进程按最近访问驱逐，重启后以文件修改时间排序，系统也可驱逐。iOS 分享面板结束即删除副本。Android 在 URI 交接后保留副本，供接收应用延迟读取；启动及分享时按 24 小时和 64 MiB 总量驱逐，分享失败立即清理。iOS 的预览／打开选项由系统分享面板和已安装应用提供。IMAP 原始 MIME 单封上限 25 MiB。 |
+| 图片与链接      | 仅含 cid: 的 HTML 查询 core 图片，按消息 ID 复用下载结果，邮箱刷新保留阅读视图。远程图片默认阻断，可逐封加载，CSP 仅允许 HTTPS；WebView JS 始终关闭。移除 form、全部 meta http-equiv 和非 stylesheet link；iOS 只打开用户点击链接，Android 兼容省略 isTopFrame 的 release 事件，明确子框架仍拒绝；先显示 ASCII 域名及解码后的国际化域名供确认，CSP 禁止框架。                                                       |
+| 联系人          | 撰写 To／Cc／Bcc 自动补全查询共享联系人表及本地邮件历史；已有 slice 44 路径保留。                                                                                                                                                                                                                                                                                                                                   |
+| 邮箱列表        | 账户内标签／文件夹的嵌套名称与共享未读数；未缓存邮件不计入本地未读数。                                                                                                                                                                                                                                                                                                                                              |
+| 仍不支持        | PDF 文本提取、固定地址图片下载、推理和数据库恢复。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。                                                                                                                                                                                                                                                                         |
+
+原生库需重新生成开发构建。自动测试使用分片协议流、SQLite 与原生 API mocks，没有连接真实邮箱；不能证明各服务商兼容性、真机 TLS、分享面板预览或 Metro 打包。依赖依据：[TCP/TLS API](https://github.com/Rapsssito/react-native-tcp-socket)、[Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)。
+
 ## 尚需验证
 
-Gmail/Outlook 复用 core 的 fetch provider；portable MIME 生成 UTF-8、Bcc、回复头、HTML／消息文本和二进制附件。IMAP/SMTP、阅读附件磁盘缓存、PDF、固定地址图片下载、推理和数据库恢复仍返回明确不支持。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。
-
-自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。真机仍需验证 SQLite／Metro、两家 OAuth、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、附件投递及前后台生命周期。推送须先决定中转服务。
+自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。真机仍需验证 SQLite／Metro、两家 OAuth、五家 IMAP／SMTP 及 Other 服务器、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、附件投递及前后台生命周期。推送须先决定中转服务。
 
 版本依据：[SDK 57](https://expo.dev/changelog/sdk-57)、[Expo monorepo](https://docs.expo.dev/guides/monorepos/)、[AuthSession](https://docs.expo.dev/guides/authentication/)。
 
@@ -79,6 +93,6 @@ iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数
 
 SecureStore 当前使用 `WHEN_UNLOCKED_THIS_DEVICE_ONLY`，锁屏或安全存储不可用时，读取返回可重试的 `ProviderError`，不把它当作凭证撤销，不删除 token，错误不包含原生异常或密钥内容。解锁后重试。后台刷新落地时，必须改用 `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`，并继续处理重启后首次解锁前的读取失败；该可访问性设置只在 iOS 生效。
 
-阅读器的 CSP 在桌面资源限制上增加 `form-action 'none'` 和 `base-uri 'none'`，渲染前移除 form 子树，防止 Android POST 绕过导航回调。WebView 始终拒绝导航；验证过且不含 URL 用户名/密码的 http、https、mailto 链接交给系统浏览器或邮件应用。OAuth 回调经 `+native-intent.tsx` 路由到账户页，code/state 仍由 AuthSession 监听和校验。
+阅读器在渲染前移除全部 meta http-equiv 和非 stylesheet link，阻止自动刷新与资源预取。iOS 只将 navigationType=click 的顶层链接交给系统，Android 必须先确认真实域名与完整 URL。远程图片 CSP 只允许 HTTPS。阅读器的 CSP 在桌面资源限制上增加 `form-action 'none'` 和 `base-uri 'none'`，渲染前移除 form 子树，防止 Android POST 绕过导航回调。WebView 始终拒绝导航；通过上述点击／确认流程且不含 URL 用户名/密码的 http、https、mailto 链接才交给系统浏览器或邮件应用。OAuth 回调经 `+native-intent.tsx` 路由到账户页，code/state 仍由 AuthSession 监听和校验。
 
 依据：[Apple 目录与备份](https://developer.apple.com/documentation/foundation/using-the-file-system-effectively)、[Android allowBackup](https://docs.expo.dev/versions/latest/config/app/#allowbackup)、[SecureStore 可访问性](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/)、[Expo native intent](https://docs.expo.dev/router/advanced/native-intent/)。

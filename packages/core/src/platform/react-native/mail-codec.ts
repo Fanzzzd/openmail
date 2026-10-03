@@ -22,6 +22,7 @@ export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
     ...(email.subject === undefined ? {} : { subject: email.subject }),
     ...(email.from ? { from: addresses([email.from]) } : {}),
     ...(email.to ? { to: addresses(email.to) } : {}),
+    ...(email.replyTo ? { replyTo: addresses(email.replyTo) } : {}),
     ...(email.cc ? { cc: addresses(email.cc) } : {}),
     ...(email.bcc ? { bcc: addresses(email.bcc) } : {}),
     ...(email.inReplyTo ? { inReplyTo: email.inReplyTo } : {}),

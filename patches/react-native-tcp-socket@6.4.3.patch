@@ -1,0 +1,188 @@
+diff --git a/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketClient.java b/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketClient.java
+index 75115700e46138a43b5c63c36bee88016bd6129e..3724de45fe5db1501edc6ab463cf254b50b82459 100644
+--- a/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketClient.java
++++ b/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketClient.java
+@@ -6,11 +6,11 @@ import android.net.Network;
+ import com.facebook.react.bridge.ReadableMap;
+ import com.facebook.react.bridge.ReadableArray;
+ 
+-import java.io.BufferedInputStream;
+ import java.io.IOException;
+ import java.net.InetAddress;
+ import java.net.InetSocketAddress;
+ import java.net.Socket;
++import java.net.SocketTimeoutException;
+ import java.security.GeneralSecurityException;
+ import java.util.Arrays;
+ import java.util.concurrent.ExecutorService;
+@@ -24,8 +24,10 @@ class TcpSocketClient extends TcpSocket {
+     private final ExecutorService writeExecutor;
+     private final TcpEventListener receiverListener;
+     private TcpReceiverTask receiverTask;
+-    private Socket socket;
+-    private boolean closed = true;
++    private volatile Socket socket;
++    private volatile boolean closed = true;
++    private final Object readLock = new Object();
++    private volatile boolean upgrading = false;
+ 
+     TcpSocketClient(TcpEventListener receiverListener, Integer id, Socket socket) {
+         super(id);
+@@ -39,15 +41,12 @@ class TcpSocketClient extends TcpSocket {
+         return socket;
+     }
+ 
++    private String mailServerHost;
++
+     public void connect(Context context, String address, final Integer port, ReadableMap options, Network network, ReadableMap tlsOptions) throws IOException, GeneralSecurityException {
+         if (socket != null) throw new IOException("Already connected");
+-        if (tlsOptions != null) {
+-            SSLSocketFactory ssf = getSSLSocketFactory(context, tlsOptions);
+-            socket = ssf.createSocket();
+-            ((SSLSocket) socket).setUseClientMode(true);
+-        } else {
+-            socket = new Socket();
+-        }
++        mailServerHost = address;
++        socket = new Socket();
+         // Get the addresses
+         final String localAddress = options.hasKey("localAddress") ? options.getString("localAddress") : "0.0.0.0";
+         final InetAddress localInetAddress = InetAddress.getByName(localAddress);
+@@ -67,17 +66,35 @@ class TcpSocketClient extends TcpSocket {
+         socket.bind(new InetSocketAddress(localInetAddress, localPort));
+         final int connectTimeout = options.hasKey("connectTimeout") ? options.getInt("connectTimeout") : 0; 
+         socket.connect(new InetSocketAddress(remoteInetAddress, port), connectTimeout);
+-        if (socket instanceof SSLSocket) ((SSLSocket) socket).startHandshake();
++        closed = false;
++        socket.setSoTimeout(250);
++        if (tlsOptions != null) startTLS(context, tlsOptions);
+         startListening();
+     }
+ 
+     public void startTLS(Context context, ReadableMap tlsOptions) throws IOException, GeneralSecurityException {
+-        if (socket instanceof SSLSocket) return;
+-        SSLSocketFactory ssf = getSSLSocketFactory(context, tlsOptions);
+-        SSLSocket sslSocket = (SSLSocket) ssf.createSocket(socket, socket.getInetAddress().getHostAddress(), socket.getPort(), true);
+-        sslSocket.setUseClientMode(true);
+-        sslSocket.startHandshake();
+-        socket = sslSocket;
++        upgrading = true;
++        try {
++            // The receiver releases this lock after at most 250ms. It must never read TLS handshake bytes.
++            synchronized (readLock) {
++                if (socket instanceof SSLSocket) return;
++                SSLSocketFactory ssf = getSSLSocketFactory(context, tlsOptions);
++                SSLSocket sslSocket = (SSLSocket) ssf.createSocket(socket, mailServerHost, socket.getPort(), true);
++                sslSocket.setUseClientMode(true);
++                javax.net.ssl.SSLParameters parameters = sslSocket.getSSLParameters();
++                parameters.setEndpointIdentificationAlgorithm("HTTPS");
++                sslSocket.setSSLParameters(parameters);
++                sslSocket.setSoTimeout(20000);
++                sslSocket.startHandshake();
++                sslSocket.setSoTimeout(250);
++                socket = sslSocket;
++            }
++        } finally {
++            synchronized (readLock) {
++                upgrading = false;
++                readLock.notifyAll();
++            }
++        }
+     }
+ 
+     private boolean containsKey(ReadableArray array, String key) {
+@@ -251,20 +268,22 @@ class TcpSocketClient extends TcpSocket {
+         @Override
+         public void run() {
+             int socketId = clientSocket.getId();
+-            Socket socket = clientSocket.getSocket();
+-
+-            // Guard against null socket - can happen if destroy() is called
+-            // before the receiver task starts, or if socket creation failed
+-            if (socket == null) {
+-                return;
+-            }
+-
+             byte[] buffer = new byte[16384];
+             try {
+-                BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
+-                while (!socket.isClosed()) {
+-                    int bufferCount = in.read(buffer);
++                while (!clientSocket.closed) {
+                     waitIfPaused();
++                    int bufferCount;
++                    synchronized (clientSocket.readLock) {
++                        while (clientSocket.upgrading && !clientSocket.closed) clientSocket.readLock.wait(250);
++                        Socket active = clientSocket.getSocket();
++                        if (active == null || active.isClosed()) break;
++                        try {
++                            // Re-read the active stream after STARTTLS swaps the socket. No plaintext read-ahead.
++                            bufferCount = active.getInputStream().read(buffer);
++                        } catch (SocketTimeoutException timeout) {
++                            continue;
++                        }
++                    }
+                     if (bufferCount > 0) {
+                         receiverListener.onData(socketId, Arrays.copyOfRange(buffer, 0, bufferCount));
+                     } else if (bufferCount == -1) {
+@@ -272,10 +291,8 @@ class TcpSocketClient extends TcpSocket {
+                         break;
+                     }
+                 }
+-            } catch (IOException | InterruptedException ioe) {
+-                if (receiverListener != null && socket != null && !socket.isClosed() && !clientSocket.closed) {
+-                    receiverListener.onError(socketId, ioe);
+-                }
++            } catch (IOException | InterruptedException error) {
++                if (!clientSocket.closed) receiverListener.onError(socketId, error);
+             }
+         }
+ 
+diff --git a/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketModule.java b/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketModule.java
+index 121edb47dbecb4ca2a044722b2ad5a71d50c1fa7..01d96417ac31fbdc8e77622877bae6e42c96f903 100644
+--- a/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketModule.java
++++ b/android/src/main/java/com/asterinet/react/tcpsocket/TcpSocketModule.java
+@@ -118,6 +118,7 @@ public class TcpSocketModule extends ReactContextBaseJavaModule {
+         } else {
+             try {
+                 socketClient.startTLS(mReactContext, tlsOptions);
++                tcpEvtListener.onConnect(cId, socketClient);
+             } catch (Exception e) {
+                 tcpEvtListener.onError(cId, e);
+             }
+diff --git a/ios/TcpSocketClient.m b/ios/TcpSocketClient.m
+index 7490ec4b118100ced160216893e6fe80feb20700..2e86727151c1791b7cb60a0d92b7a21db59b4a97 100644
+--- a/ios/TcpSocketClient.m
++++ b/ios/TcpSocketClient.m
+@@ -251,6 +251,7 @@ NSString *const RCTTCPErrorDomain = @"RCTTCPErrorDomain";
+ 
+     //RCTLogWarn(@"startTLS: Final settings: %@", settings);
+     _tls = true;
++    _connecting = true; // Emit connect only after the STARTTLS handshake finishes.
+     [_tcpSocket startTLS:settings];
+ }
+ 
+diff --git a/src/TLSSocket.js b/src/TLSSocket.js
+index f308991134d8d89d12908a68534a912d527806c6..41c2fb70f8093bfc89d761f52a20c29ac18ddfac 100644
+--- a/src/TLSSocket.js
++++ b/src/TLSSocket.js
+@@ -33,6 +33,7 @@ export default class TLSSocket extends Socket {
+         this._socket = socket;
+         // @ts-ignore
+         this._setId(this._socket._id);
++        this.once('connect', () => this.emit('secureConnect'));
+         this._startTLS();
+         if (socket.pending || socket.connecting) socket.once('connect', () => this._initialize());
+         else this._initialize();
+diff --git a/src/index.js b/src/index.js
+index 8a62aab1a2aa151848be49bd32c6d19fbda080b6..12f8a8986660353714a378acb4b4bad8748bc449 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -46,7 +46,6 @@ function createTLSServer(options, connectionListener) {
+ function connectTLS(options, callback) {
+     const socket = new Socket();
+     const tlsSocket = new TLSSocket(socket, options);
+-    socket.once('connect', () => tlsSocket.emit('secureConnect'));
+     if (callback) tlsSocket.once('secureConnect', callback);
+     socket.connect(options);
+     return tlsSocket;

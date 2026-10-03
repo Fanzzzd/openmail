@@ -13,9 +13,12 @@ import { cryptoLayer } from "./crypto";
 import { prepareMailDirectory, filesLayer } from "./files";
 import { authSession, browserLayer } from "./oauth";
 import { readerCapabilitiesLayer } from "./runtime";
+import { clearShareCopies } from "../received-attachments";
+import { transportLayer } from "./transport";
 import { secretsLayer } from "./secrets";
 
 export function mobileMailboxLayer() {
+  clearShareCopies();
   const config = readMobileConfig();
   const database = opSqliteLayer(() => {
     const directory = prepareMailDirectory();
@@ -25,6 +28,7 @@ export function mobileMailboxLayer() {
     database,
     configLayer(config),
     secretsLayer,
+    transportLayer,
     cryptoLayer,
     filesLayer,
     readerCapabilitiesLayer,

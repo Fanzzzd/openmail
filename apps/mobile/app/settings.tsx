@@ -58,6 +58,10 @@ export default function Settings() {
             <Button
               label={i18n._({ id: "Sign in again", message: "Sign in again" })}
               onPress={() => {
+                if (account.provider === "imap") {
+                  router.push({ pathname: "/imap-setup", params: { accountId: account.id } });
+                  return;
+                }
                 void runtime
                   .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.reauth(account.id)))
                   .catch(() => setFailed(true));
