@@ -656,6 +656,10 @@ msgstr "附加邮件"
 msgid "Attachment cache limit"
 msgstr "附件缓存上限"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "附件例外"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "附件保存目录"
@@ -1614,6 +1618,10 @@ msgstr "不附上原邮件"
 msgid "Done"
 msgstr "完成"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "下载日历文件"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "下载本机模型，约 226 MB"
@@ -1786,6 +1794,10 @@ msgstr "开启"
 msgid "End"
 msgstr "结束"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "结束时间为估算值。添加事件前请核对。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "请输入未来的提醒时间"
@@ -1838,6 +1850,18 @@ msgstr "每 {interval} 年"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "所有人"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "排除收件人包含"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "排除发件人包含"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "排除主题包含"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2868,6 +2892,10 @@ msgstr "移回收件箱"
 msgid "Move to To"
 msgstr "移到收件人"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "移到顶层"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3114,6 +3142,7 @@ msgstr "收件箱没有未读"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "不选"
@@ -3628,6 +3657,10 @@ msgstr "提醒时间"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "已阻止远程图片，防止发件人追踪是否已读。"
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "此只读会话已禁用远程写入"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4488,6 +4521,10 @@ msgstr "不再自动加载 {address} 的图片"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "不再自动加载 {domain} 的图片"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "停止处理后续规则"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

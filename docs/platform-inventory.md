@@ -41,3 +41,5 @@ core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，�
 MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect services，缺少 Layer 会在类型检查中报错。provider、阅读附件和 indexer 构建时捕获依赖，返回的方法不读调用方的隐藏 context。真实 NodeMailbox 回归测试覆盖 IMAP 原始 MIME fallback、正文/日历/嵌套附件、PDF 索引、文件缓存、图片输入和 SSRF 拒绝；仅替换 IMAP 传输和合成密码，使用临时数据库，不启动 Electron。
 
 Slice 47：portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力slice-47)。
+
+开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `read-only.ts`、`mailbox-live.ts`，没有引入隐式 Node 全局。

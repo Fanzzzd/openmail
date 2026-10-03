@@ -3396,6 +3396,9 @@ exports[`tool input and output schemas are stable 1`] = `
                     },
                   ],
                 },
+                "endEstimated": {
+                  "type": "boolean",
+                },
                 "hasRecurrenceOverrides": {
                   "type": "boolean",
                 },

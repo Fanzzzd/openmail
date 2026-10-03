@@ -23,9 +23,14 @@ const account: Account = {
 async function fakeImap(idle: boolean) {
   const sockets = new Set<Socket>();
   const commands: string[] = [];
+  const socketErrors: Error[] = [];
   let idleCount = 0;
   const server = createServer((socket) => {
     sockets.add(socket);
+    socket.on("error", (error: Error) => {
+      // Aborting IDLE can reset the peer while its final reply is still buffered.
+      if (!("code" in error && error.code === "ECONNRESET")) socketErrors.push(error);
+    });
     socket.on("close", () => sockets.delete(socket));
     socket.write(`* OK [CAPABILITY IMAP4rev1${idle ? " IDLE" : ""}] test ready\r\n`);
     let buffer = "";
@@ -86,6 +91,7 @@ async function fakeImap(idle: boolean) {
       await new Promise<void>((resolve) => {
         server.close(() => resolve());
       });
+      expect(socketErrors).toEqual([]);
     },
   };
 }

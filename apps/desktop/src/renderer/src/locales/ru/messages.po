@@ -646,6 +646,10 @@ msgstr "Вложенное сообщение"
 msgid "Attachment cache limit"
 msgstr "Лимит кэша вложений"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Исключение для вложений"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Папка для сохранения вложений"
@@ -1604,6 +1608,10 @@ msgstr "Не прикрепляйте исходное сообщение"
 msgid "Done"
 msgstr "Готово"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Скачать файл календаря"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Скачать модели на устройство, ~226 МБ"
@@ -1776,6 +1784,10 @@ msgstr "Включено"
 msgid "End"
 msgstr "Окончание"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "Время окончания указано приблизительно. Проверьте его перед добавлением события."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Введите время напоминания в будущем"
@@ -1828,6 +1840,18 @@ msgstr "Каждые {interval} лет"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Каждый"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Кроме случаев, когда получатель содержит"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Кроме случаев, когда отправитель содержит"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Кроме случаев, когда тема содержит"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "Переместить в папку «Входящие»"
 msgid "Move to To"
 msgstr "Переместить в поле «Кому»"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Переместить на верхний уровень"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "Нет непрочитанных писем во входящих"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Нет"
@@ -3618,6 +3647,10 @@ msgstr "Время напоминания"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Удаленные изображения блокируются, поэтому отправитель не сможет узнать, читаете ли вы это."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Удалённые изменения отключены в этом сеансе только для чтения"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Прекратить загрузку изображений с {address
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Прекратить загрузку изображений с {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Остановить обработку следующих правил"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

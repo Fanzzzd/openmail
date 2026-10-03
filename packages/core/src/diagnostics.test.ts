@@ -480,6 +480,8 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "mailed_addresses",
     "pending_notifications",
     "notification_buttons",
+    "messages_word_positions",
+    "derived_word_positions",
     "messages_words",
     "derived_words",
     "search_word_index",

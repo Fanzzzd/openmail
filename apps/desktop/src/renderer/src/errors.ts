@@ -20,6 +20,7 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Remote writes are disabled in this read-only session": msg`Remote writes are disabled in this read-only session`,
   "Save an Anthropic API key in AI settings.": msg`Save an Anthropic API key in AI settings.`,
   "AI input could not be encoded.": msg`AI input could not be encoded.`,
   "AI input budget exceeded. Ask about fewer messages.": msg`AI input budget exceeded. Ask about fewer messages.`,
@@ -109,7 +110,10 @@ export function errorText(i18n: I18n, error: AppError): string {
       return reason ? i18n._(reason) : e.message;
     },
     PermanentError: () => i18n._(msg`The server refused this action.`),
-    ProviderError: () => i18n._(msg`Can't reach the mail server right now.`),
+    ProviderError: (e) =>
+      e.message === "Remote writes are disabled in this read-only session"
+        ? i18n._(msg`Remote writes are disabled in this read-only session`)
+        : i18n._(msg`Can't reach the mail server right now.`),
     InvalidInput: (e) => {
       const message = INPUT_ERRORS[e.message];
       return message

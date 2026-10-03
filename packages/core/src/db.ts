@@ -827,6 +827,10 @@ export const MIGRATIONS: readonly string[] = [
      UPDATE message_search_meta SET account_id=new.account_id,thread_id=new.thread_id,
        eligible=NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')) WHERE row_id=new.rowid;
    END;`,
+  // 31: Cached headers and word positions for local Gmail search operators.
+  `ALTER TABLE messages ADD COLUMN headers_json TEXT;
+   CREATE VIRTUAL TABLE messages_word_positions USING fts5vocab(messages_words, 'instance');
+   CREATE VIRTUAL TABLE derived_word_positions USING fts5vocab(derived_words, 'instance');`,
 ];
 
 /**

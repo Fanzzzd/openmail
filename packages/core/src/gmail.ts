@@ -1062,6 +1062,10 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     to: parseAddressList(headers.get("to")),
     cc: parseAddressList(headers.get("cc")),
     bcc: parseAddressList(headers.get("bcc")),
+    headers: (raw.payload.headers ?? []).map((h) => ({
+      name: h.name.toLowerCase(),
+      value: h.value,
+    })),
     ...(headers.get("message-id") ? { rfcMessageId: headers.get("message-id") } : {}),
     ...(raw.sizeEstimate !== undefined ? { size: raw.sizeEstimate } : {}),
     replyTo: parseAddressList(headers.get("reply-to")),

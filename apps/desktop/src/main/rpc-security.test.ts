@@ -240,3 +240,15 @@ it("accepts different frame wrappers with the same stable Electron frame id", ()
     trustedSender({ sender: win.webContents, senderFrame: { ...frame, frameTreeNodeId: 999 } }),
   ).toBe(false);
 });
+
+it("keeps the fixed read-only session error across RPC without exposing provider details", () => {
+  for (const tag of ["ProviderError", "InvalidInput"] as const) {
+    const message = "Remote writes are disabled in this read-only session";
+    const response = {
+      _tag: "Exit",
+      requestId: 1,
+      exit: { _tag: "Failure", cause: [{ _tag: "Fail", error: { _tag: tag, message } }] },
+    } as const;
+    expect(JSON.stringify(publicRpcResponse(response))).toContain(message);
+  }
+});

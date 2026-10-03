@@ -646,6 +646,10 @@ msgstr "Angehängte Nachricht"
 msgid "Attachment cache limit"
 msgstr "Cache-Limit für Anhänge"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Ausnahme für Anhänge"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Ordner für gespeicherte Anhänge"
@@ -1604,6 +1608,10 @@ msgstr "Originalnachricht nicht anhängen"
 msgid "Done"
 msgstr "Fertig"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Kalenderdatei herunterladen"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Lokale Modelle herunterladen, ca. 226 MB"
@@ -1776,6 +1784,10 @@ msgstr "Aktiviert"
 msgid "End"
 msgstr "Ende"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "Die Endzeit ist geschätzt. Prüfen Sie sie, bevor Sie den Termin hinzufügen."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Zukünftigen Erinnerungszeitpunkt eingeben"
@@ -1828,6 +1840,18 @@ msgstr "Alle {interval} Jahre"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Alle"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Außer wenn der Empfänger enthält"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Außer wenn der Absender enthält"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Außer wenn der Betreff enthält"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "In den Posteingang verschieben"
 msgid "Move to To"
 msgstr "In „An“ verschieben"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Auf die oberste Ebene verschieben"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "Keine ungelesenen E-Mails im Posteingang"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Keine"
@@ -3618,6 +3647,10 @@ msgstr "Erinnerungszeit"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Remote-Bilder werden blockiert, sodass der Absender nicht erkennen kann, ob Sie dies lesen."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Remote-Änderungen sind in dieser schreibgeschützten Sitzung deaktiviert"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Bilder von {address} nicht mehr laden"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Bilder von {domain} nicht mehr laden"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Verarbeitung weiterer Regeln beenden"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

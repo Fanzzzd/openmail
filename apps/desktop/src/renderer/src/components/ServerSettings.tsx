@@ -539,10 +539,58 @@ export function FilterEditor({
           />
           <span>{t`Has attachment`}</span>
         </label>
+        {account.provider === "outlook" && (
+          <div className="space-y-2">
+            <label className="block space-y-1">
+              <span>{t`Except sender contains`}</span>
+              <input
+                className={formInput}
+                value={input.criteria.exceptFrom ?? ""}
+                onChange={(e) => criteria({ exceptFrom: e.target.value })}
+              />
+            </label>
+            <label className="block space-y-1">
+              <span>{t`Except recipient contains`}</span>
+              <input
+                className={formInput}
+                value={input.criteria.exceptTo ?? ""}
+                onChange={(e) => criteria({ exceptTo: e.target.value })}
+              />
+            </label>
+            <label className="block space-y-1">
+              <span>{t`Except subject contains`}</span>
+              <input
+                className={formInput}
+                value={input.criteria.exceptSubject ?? ""}
+                onChange={(e) => criteria({ exceptSubject: e.target.value })}
+              />
+            </label>
+            <Select
+              aria-label={t`Attachment exception`}
+              value={input.criteria.exceptAttachment === true ? "with" : "none"}
+              options={[
+                { value: "none", label: t`None` },
+                { value: "with", label: t`Has attachment` },
+              ]}
+              onValueChange={(value) =>
+                criteria({ exceptAttachment: value === "none" ? undefined : true })
+              }
+            />
+          </div>
+        )}
         <fieldset className="space-y-2 rounded-md border border-black/10 p-3 dark:border-white/10">
           <legend>
             <Trans>Actions</Trans>
           </legend>
+          {account.provider === "outlook" && (
+            <label className="flex items-center gap-2">
+              <Checkbox
+                checked={input.action.stopProcessing ?? false}
+                onCheckedChange={(stopProcessing) => action({ stopProcessing })}
+              />
+              <span>{t`Stop processing more rules`}</span>
+            </label>
+          )}
           <label className="flex items-center gap-2">
             <Checkbox
               checked={input.action.archive}

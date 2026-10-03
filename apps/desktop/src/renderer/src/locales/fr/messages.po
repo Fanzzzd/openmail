@@ -646,6 +646,10 @@ msgstr "Message joint"
 msgid "Attachment cache limit"
 msgstr "Limite du cache des pièces jointes"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Exception pour les pièces jointes"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Dossier d’enregistrement des pièces jointes"
@@ -1604,6 +1608,10 @@ msgstr "Ne joignez pas le message d’origine"
 msgid "Done"
 msgstr "Terminé"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Télécharger le fichier de calendrier"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Télécharger des modèles sur l’appareil, ~226 Mo"
@@ -1776,6 +1784,10 @@ msgstr "Activé"
 msgid "End"
 msgstr "Fin"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "L’heure de fin est estimée. Vérifiez-la avant d’ajouter l’événement."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Entrez une heure de rappel future"
@@ -1828,6 +1840,18 @@ msgstr "Tous les {interval} ans"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Tout le monde"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Sauf si le destinataire contient"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Sauf si l’expéditeur contient"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Sauf si l’objet contient"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "Déplacer vers la boîte de réception"
 msgid "Move to To"
 msgstr "Déplacer vers À"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Déplacer au niveau supérieur"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "Aucun courrier non lu dans la boîte de réception"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Aucun"
@@ -3618,6 +3647,10 @@ msgstr "Heure de rappel"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Les images distantes sont bloquées, de sorte que l’expéditeur ne peut pas savoir si vous lisez ceci."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Les modifications à distance sont désactivées dans cette session en lecture seule"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Arrêter de charger les images depuis {address}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Arrêter de charger les images depuis {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Arrêter le traitement des règles suivantes"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

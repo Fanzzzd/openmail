@@ -646,6 +646,10 @@ msgstr "Přiložená zpráva"
 msgid "Attachment cache limit"
 msgstr "Limit mezipaměti příloh"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Výjimka pro přílohy"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Složka pro ukládání příloh"
@@ -1604,6 +1608,10 @@ msgstr "Nepřipojujte původní zprávu"
 msgid "Done"
 msgstr "Hotovo"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Stáhnout soubor kalendáře"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Stáhnout modely na zařízení, ~226 MB"
@@ -1776,6 +1784,10 @@ msgstr "Zapnuto"
 msgid "End"
 msgstr "Konec"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "Čas konce je odhadovaný. Před přidáním události jej zkontrolujte."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Zadejte budoucí čas připomenutí"
@@ -1828,6 +1840,18 @@ msgstr "Každých {interval} let"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Každý"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Kromě příjemce obsahujícího"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Kromě odesílatele obsahujícího"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Kromě předmětu obsahujícího"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "Přesunout do doručené pošty"
 msgid "Move to To"
 msgstr "Přesunout do pole Komu"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Přesunout na nejvyšší úroveň"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "V doručené poště nejsou žádné nepřečtené zprávy"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Žádné"
@@ -3618,6 +3647,10 @@ msgstr "Čas připomenutí"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Vzdálené obrázky jsou blokovány, takže odesílatel nemůže zjistit, zda jste si toto přečetli."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "V této relaci jen pro čtení jsou vzdálené změny zakázány"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Zastavit načítání obrázků z {address}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Zastavit načítání obrázků z {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Zastavit zpracování dalších pravidel"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

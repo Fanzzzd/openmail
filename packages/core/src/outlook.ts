@@ -99,7 +99,7 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients,internetMessageHeaders";
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -132,6 +132,9 @@ const GraphMessage = Schema.Struct({
   ccRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
   replyTo: Schema.optionalKey(Schema.Array(GraphAddress)),
   bccRecipients: Schema.optionalKey(Schema.Array(GraphAddress)),
+  internetMessageHeaders: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ name: Schema.String, value: Schema.String })),
+  ),
   internetMessageId: Schema.optionalKey(Schema.String),
   receivedDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
   sentDateTime: Schema.optionalKey(Schema.NullOr(Schema.String)),
@@ -1663,6 +1666,7 @@ export function parseGraphMessage(
     to: (raw.toRecipients ?? []).map(address),
     cc: (raw.ccRecipients ?? []).map(address),
     bcc: (raw.bccRecipients ?? []).map(address),
+    ...(raw.internetMessageHeaders ? { headers: raw.internetMessageHeaders } : {}),
     ...(raw.internetMessageId ? { rfcMessageId: raw.internetMessageId } : {}),
     replyTo: (raw.replyTo ?? []).map(address).filter((a) => a.address.trim()),
     date: Date.parse(raw.receivedDateTime || raw.sentDateTime || ""),

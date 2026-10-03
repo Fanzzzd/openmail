@@ -1,3 +1,7 @@
+import { sha256Hex } from "./platform/crypto.js";
+import { structuredMailEvents } from "./structured-events.js";
+import { CalendarTime, calendarTimestamp } from "./calendar-time.js";
+export { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 import { Schema } from "effect";
 import { Address, type Message, type Provider } from "./domain.js";
 
@@ -15,19 +19,6 @@ export const InviteResponseRecord = Schema.Struct({
 });
 export type InviteResponseRecord = typeof InviteResponseRecord.Type;
 
-/** Preserve wall time when a sender uses an unknown zone; never guess UTC. */
-export const CalendarTime = Schema.Union([
-  Schema.Struct({ kind: Schema.Literal("date"), value: Schema.String }),
-  Schema.Struct({ kind: Schema.Literal("floating"), value: Schema.String }),
-  Schema.Struct({
-    kind: Schema.Literal("zoned"),
-    value: Schema.String,
-    zone: Schema.String,
-    timestamp: Schema.NullOr(Schema.Number),
-  }),
-]);
-export type CalendarTime = typeof CalendarTime.Type;
-
 export const CalendarEvent = Schema.Struct({
   key: Schema.String,
   uid: Schema.optionalKey(Schema.String),
@@ -37,16 +28,10 @@ export const CalendarEvent = Schema.Struct({
   location: Schema.String,
   description: Schema.String,
   recurrence: Schema.Array(Schema.String),
+  endEstimated: Schema.optionalKey(Schema.Boolean),
   hasRecurrenceOverrides: Schema.optionalKey(Schema.Boolean),
 });
 export type CalendarEvent = typeof CalendarEvent.Type;
-
-/** Date-only and floating values belong to the user's local calendar day. */
-export function calendarTimestamp(time: CalendarTime): number {
-  return time.kind === "zoned"
-    ? (time.timestamp ?? NaN)
-    : new Date(time.kind === "date" ? `${time.value}T00:00:00` : time.value).getTime();
-}
 
 export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
   const start = calendarTimestamp(event.start);
@@ -57,7 +42,11 @@ export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
 }
 
 /** Detect explicit ISO dates and times only; ambiguous prose is left to the person. */
-export function detectMailEvents(message: Pick<Message, "subject" | "bodyText">): CalendarEvent[] {
+export function detectMailEvents(
+  message: Pick<Message, "subject" | "bodyText"> & Partial<Pick<Message, "bodyHtml">>,
+): CalendarEvent[] {
+  const structured = structuredMailEvents(message.bodyHtml ?? "", message.subject);
+  if (structured.events.length || structured.cancelled) return structured.events;
   const result: CalendarEvent[] = [];
   const pattern =
     /\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2})(?::\d{2})?(Z|[+-]\d{2}:\d{2})?)?(?:\s*(?:–|—|-|to|至)\s*(\d{2}:\d{2}))?/g;
@@ -280,4 +269,64 @@ export function inviteHistory(
       statuses: [...statuses.values()],
     },
   };
+}
+
+const escapeCalendarText = (value: string) =>
+  value
+    .replaceAll("\\", "\\\\")
+    .replace(/\r?\n/g, "\\n")
+    .replaceAll(",", "\\,")
+    .replaceAll(";", "\\;")
+    .replaceAll("\r", "");
+const icsTime = (time: CalendarTime) => {
+  if (time.kind === "date") return `;VALUE=DATE:${time.value.replaceAll("-", "")}`;
+  if (time.kind === "floating")
+    return `:${(time.value.length === 16 ? `${time.value}:00` : time.value).replaceAll("-", "").replaceAll(":", "")}`;
+  if (time.timestamp === null) throw new RangeError("Cannot export an unknown time zone");
+  return `:${new Date(time.timestamp)
+    .toISOString()
+    .replaceAll("-", "")
+    .replaceAll(":", "")
+    .replace(/\.\d{3}/, "")}`;
+};
+
+/** Export detected one-off events without needing a calendar permission. */
+export function calendarEventIcs(event: CalendarEvent): string {
+  calendarWindow(event);
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//OpenMail//Calendar//EN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${escapeCalendarText(event.uid ?? `openmail-${sha256Hex(event.key)}@openmail.local`)}`,
+    "DTSTAMP:19700101T000000Z",
+    `DTSTART${icsTime(event.start)}`,
+    `DTEND${icsTime(event.end)}`,
+    `SUMMARY:${escapeCalendarText(event.title)}`,
+    `LOCATION:${escapeCalendarText(event.location)}`,
+    `DESCRIPTION:${escapeCalendarText(event.description)}`,
+    ...event.recurrence,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+  return `${lines
+    .map((line) => {
+      const folded: string[] = [];
+      let part = "",
+        bytes = 0;
+      for (const character of line) {
+        const size = new TextEncoder().encode(character).length;
+        if (bytes + size > 75) {
+          folded.push(part);
+          part = " ";
+          bytes = 1;
+        }
+        part += character;
+        bytes += size;
+      }
+      folded.push(part);
+      return folded.join("\r\n");
+    })
+    .join("\r\n")}\r\n`;
 }

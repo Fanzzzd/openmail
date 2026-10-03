@@ -31,6 +31,8 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     return new InvalidInput({ message: "Confirm deletion for a filter with a search query" });
   const c = input.criteria;
   const a = input.action;
+  if (provider === "outlook" && c.exceptAttachment === false)
+    return new InvalidInput({ message: "Unsupported server rule" });
   if (
     !c.from.trim() &&
     !c.to.trim() &&
@@ -39,6 +41,10 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     !c.hasAttachment &&
     !c.hasWords?.trim() &&
     !c.notWords?.trim() &&
+    !c.exceptFrom?.trim() &&
+    !c.exceptTo?.trim() &&
+    !c.exceptSubject?.trim() &&
+    c.exceptAttachment === undefined &&
     c.size === undefined
   )
     return new InvalidInput({ message: "Add at least one filter condition" });
@@ -50,13 +56,19 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     !a.label &&
     !a.labels?.length &&
     a.important === undefined &&
-    !a.category
+    !a.category &&
+    !a.stopProcessing
   )
     return new InvalidInput({ message: "Choose at least one filter action" });
   if (c.size !== undefined && (!Number.isSafeInteger(c.size) || c.size < 0 || !c.sizeComparison))
     return new InvalidInput({ message: "Choose a size in bytes and a comparison" });
   if (provider === "outlook" && c.size !== undefined && c.size % 1024 !== 0)
     return new InvalidInput({ message: "Outlook rule sizes must be a multiple of 1024 bytes" });
+  if (
+    provider !== "outlook" &&
+    (c.exceptFrom || c.exceptTo || c.exceptSubject || c.exceptAttachment !== undefined)
+  )
+    return new InvalidInput({ message: "Unsupported server rule" });
   if (!filterDestinationsSupported(a, provider))
     return new InvalidInput({ message: "Choose one destination for the filter" });
   return null;
@@ -633,6 +645,8 @@ export function makeOrganizationMailbox(
     previewFilter: (accountId, criteria) =>
       Effect.gen(function* () {
         const { account, adapter } = yield* owner(accountId);
+        if (account.provider === "outlook" && criteria.exceptAttachment === false)
+          return yield* new InvalidInput({ message: "Unsupported server rule" });
         const query = { ...filterQuery(criteria), accountIds: [accountId], flat: true, limit: 200 };
         if (account.provider !== "gmail")
           return (yield* store.listThreads(query)).filter(eligibleForFilter);

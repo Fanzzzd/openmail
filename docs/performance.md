@@ -112,3 +112,5 @@ IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留�
 | Button            |    0.72 |    0.35 |
 
 数字来自 `out/renderer`，gzip 由 Python 计算。React、Effect／RPC／schema、Base UI 和邮件阅读代码仍在入口。拆分减少初始解析，安装字节总量仍包含所有块。重新构建后须重新测量，不能沿用表中的大小或哈希文件名。
+
+AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词索引，再执行有序计数、无序计数和列表查询，三次查询合计须低于 3 秒。通过 [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries) 预筛选候选，词位置 CTE 每条查询只读取一次。索引未就绪时请求只执行 AND 回退，不写入或回填索引；这是自动回归上限，不是实机界面时延保证。

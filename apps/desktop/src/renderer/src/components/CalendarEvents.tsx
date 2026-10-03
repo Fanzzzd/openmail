@@ -1,10 +1,9 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
+  calendarEventIcs,
   DEFAULT_PREFS,
-  detectMailEvents,
   formatCalendarRange,
-  shouldLoadInvitation,
   type CalendarEvent,
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
@@ -61,13 +60,7 @@ export function DetectedCalendarEvents({ message }: { message: Message }) {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const provider = accounts.find((a) => a.id === message.accountId)?.provider;
-  if (
-    !prefs.labs.calendarDetection ||
-    !provider ||
-    provider === "imap" ||
-    !(shouldLoadInvitation(message) || detectMailEvents(message).length)
-  )
-    return null;
+  if (!prefs.labs.calendarDetection || !provider) return null;
   return <LoadedEvents message={message} />;
 }
 function LoadedEvents({ message }: { message: Message }) {
@@ -86,6 +79,7 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
   const [added, setAdded] = useState(false);
   const [result, create] = useAtom(createCalendarEventAtom, { mode: "promiseExit" });
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
+  const provider = accounts.find((a) => a.id === message.accountId)?.provider;
   const email = accounts.find((a) => a.id === message.accountId)?.email ?? "";
   const range = formatCalendarRange(event, i18n.locale);
   return (
@@ -95,6 +89,11 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
         {range}
         {event.start.kind === "date" && <> · {t`All day`}</>}
       </p>
+      {event.endEstimated && (
+        <p>
+          <Trans>End time is estimated. Review it before adding the event.</Trans>
+        </p>
+      )}
       <button type="button" className={formButton} disabled={added} onClick={() => setOpen(true)}>
         {added ? t`Added to calendar` : t`Add to calendar`}
       </button>
@@ -110,6 +109,11 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
             <p>{email}</p>
             <h3 className="font-semibold">{event.title || message.subject}</h3>
             <p>{range}</p>
+            {event.endEstimated && (
+              <p>
+                <Trans>End time is estimated. Review it before adding the event.</Trans>
+              </p>
+            )}
             {event.start.kind === "date" && (
               <p>
                 <Trans>All day</Trans>
@@ -137,21 +141,38 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
             </button>
             <button
               type="button"
-              className={alertPrimary}
-              disabled={result.waiting}
-              onClick={async () => {
-                const exit = await create({
-                  payload: { messageId: message.id, key: event.key },
-                  reactivityKeys: [Keys.audit],
-                });
-                if (exit._tag === "Success") {
-                  setAdded(true);
-                  setOpen(false);
-                }
+              className={alertButton}
+              onClick={() => {
+                const url = URL.createObjectURL(
+                  new Blob([calendarEventIcs(event)], { type: "text/calendar;charset=utf-8" }),
+                );
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "event.ics";
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                setOpen(false);
               }}
-            >
-              <Trans>Confirm and add event</Trans>
-            </button>
+            >{t`Download calendar file`}</button>
+            {provider !== "imap" && (
+              <button
+                type="button"
+                className={alertPrimary}
+                disabled={result.waiting}
+                onClick={async () => {
+                  const exit = await create({
+                    payload: { messageId: message.id, key: event.key },
+                    reactivityKeys: [Keys.audit],
+                  });
+                  if (exit._tag === "Success") {
+                    setAdded(true);
+                    setOpen(false);
+                  }
+                }}
+              >
+                <Trans>Confirm and add event</Trans>
+              </button>
+            )}
           </div>
         </Dialog>
       )}

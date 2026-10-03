@@ -196,3 +196,32 @@ it.effect("common terms preserve grouped/flat pagination and the trigram fallbac
     assert.deepStrictEqual(yield* sql`SELECT * FROM message_search_meta`, []);
   }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );
+
+it.effect("AROUND reads candidate positions once for 5000 messages", () =>
+  Effect.gen(function* () {
+    const store = yield* Store,
+      sql = yield* SqlClient.SqlClient;
+    const account = yield* store.upsertAccount("gmail", "near@example.com");
+    yield* sql`WITH RECURSIVE n(i) AS (VALUES(0) UNION ALL SELECT i+1 FROM n WHERE i<4999)
+      INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
+      SELECT ${account.id}||'/'||i,${account.id},CAST(i AS TEXT),CAST(i AS TEXT),'','','','[]','[]',i,'',CASE i%4 WHEN 0 THEN 'alpha beta' WHEN 1 THEN 'beta alpha' WHEN 2 THEN 'alpha one beta' ELSE 'unrelated' END,'','["INBOX"]','[]',0,0 FROM n`;
+    while (!(yield* store.backfillWordIndex(500)).ready) {
+      /* Complete the background index before measuring. */
+    }
+    const start = performance.now();
+    assert.strictEqual(
+      yield* store.countThreads({ search: '"alpha AROUND 0 beta"', flat: true }),
+      1250,
+    );
+    assert.strictEqual(
+      yield* store.countThreads({ search: "alpha AROUND 0 beta", flat: true }),
+      2500,
+    );
+    assert.strictEqual(
+      (yield* store.listThreads({ search: '"alpha AROUND 0 beta"', flat: true, limit: 20 })).length,
+      20,
+    );
+    const elapsed = performance.now() - start;
+    assert.isBelow(elapsed, 3000, `5k AROUND queries took ${elapsed.toFixed(1)} ms`);
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

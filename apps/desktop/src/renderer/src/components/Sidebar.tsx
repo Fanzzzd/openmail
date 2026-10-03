@@ -159,6 +159,7 @@ export function Sidebar({
 }: Props) {
   const [categoriesOpen, setCategoriesOpen] = useState(true);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [dragAccount, setDragAccount] = useState<string | null>(null);
   const [organizeError, setOrganizeError] = useState("");
   const run = useRunMail();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
@@ -297,12 +298,23 @@ export function Sidebar({
         );
     }
   };
+  const unnest = (label: Label) =>
+    perform(
+      withMail((call) =>
+        call("ChangeLabel", {
+          accountId: label.accountId,
+          change: { kind: "parent", id: label.id, parentId: null },
+        }),
+      ),
+    );
   const labelActions = (l: Label): ButtonHTMLAttributes<HTMLButtonElement> => ({
     draggable: true,
     onDragStart: (e) => {
       e.dataTransfer.setData(LABEL_DRAG, JSON.stringify({ accountId: l.accountId, id: l.id }));
       e.dataTransfer.effectAllowed = "move";
+      setDragAccount(l.accountId);
     },
+    onDragEnd: () => setDragAccount(null),
     onDragOver: (e) => {
       if ([MESSAGE_DRAG, LABEL_DRAG].some((type) => e.dataTransfer.types.includes(type)))
         e.preventDefault();
@@ -340,7 +352,11 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70">
+    <aside
+      onDropCapture={() => setDragAccount(null)}
+      onDragEndCapture={() => setDragAccount(null)}
+      className="flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
+    >
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
         <Tip label={t`Add email account`}>
           <button
@@ -680,6 +696,7 @@ export function Sidebar({
           onView={onView}
           unread={byLabel}
           actions={labelActions}
+          unnest={unnest}
           favorite={(l) => toggleFavorite(l.accountId, l.id)}
         />
         {categories.length > 0 && (
@@ -714,36 +731,40 @@ export function Sidebar({
                 onView={onView}
                 unread={byLabel}
                 actions={labelActions}
+                unnest={unnest}
               />
             )}
           </>
         )}
         {organizeError && <p role="alert">{organizeError}</p>}
-        {members.map((a) => (
-          <button
-            key={a.id}
-            type="button"
-            onDragOver={(e) => {
-              if (e.dataTransfer.types.includes(LABEL_DRAG)) e.preventDefault();
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const label = decodeDrag(DragLabel, e.dataTransfer.getData(LABEL_DRAG));
-              if (label?.accountId === a.id)
-                perform(
-                  withMail((call) =>
-                    call("ChangeLabel", {
-                      accountId: a.id,
-                      change: { kind: "parent", id: label.id, parentId: null },
-                    }),
-                  ),
-                );
-            }}
-            className="block px-2 py-1 text-xs text-a11y-muted"
-          >
-            {t`No parent`} · {accountName(a)}
-          </button>
-        ))}
+        {members
+          .filter((a) => a.id === dragAccount)
+          .map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes(LABEL_DRAG)) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragAccount(null);
+                const label = decodeDrag(DragLabel, e.dataTransfer.getData(LABEL_DRAG));
+                if (label?.accountId === a.id)
+                  perform(
+                    withMail((call) =>
+                      call("ChangeLabel", {
+                        accountId: a.id,
+                        change: { kind: "parent", id: label.id, parentId: null },
+                      }),
+                    ),
+                  );
+              }}
+              className="my-2 block rounded-md border-2 border-dashed border-blue-400 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+            >
+              {t`No parent`} · {accountName(a)}
+            </button>
+          ))}
       </nav>
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-a11y-muted">
@@ -919,8 +940,10 @@ function LabelSections({
   unread,
   actions,
   favorite,
+  unnest,
   categories = false,
 }: {
+  unnest?: (label: Label) => void;
   categories?: boolean;
   labels: readonly Label[];
   accounts: readonly Account[];
@@ -942,33 +965,67 @@ function LabelSections({
         title={categories ? t`Outlook categories` : groups.size > 1 ? email : t`Labels`}
       >
         {list.map((l) => (
-          <Item
-            key={l.id}
-            buttonProps={actions?.(l)}
-            disclosure={
-              favorite && (
-                <button
-                  type="button"
-                  aria-label={t`Favorite`}
-                  className="text-amber-600 dark:text-amber-400"
-                  onClick={() => favorite(l)}
-                >
-                  ☆
-                </button>
-              )
-            }
-            active={view.label?.id === l.id && view.label.accountId === accountId}
-            onClick={() => onView({ ...view, mailbox: "all", label: { id: l.id, accountId } })}
-            icon={
-              l.color ? (
-                <span className="size-2.5 rounded-full" style={{ backgroundColor: l.color }} />
-              ) : (
-                <Tag className="size-4 text-a11y-muted" />
-              )
-            }
-            label={l.name}
-            badge={unread[l.id] ?? 0}
-          />
+          <ContextMenuRoot key={l.id}>
+            <ContextMenuTrigger
+              render={
+                <div
+                  onKeyDownCapture={(event) => {
+                    if (
+                      !unnest ||
+                      !l.name.includes("/") ||
+                      (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10"))
+                    )
+                      return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    event.currentTarget.dispatchEvent(
+                      new MouseEvent("contextmenu", {
+                        bubbles: true,
+                        clientX: rect.left,
+                        clientY: rect.bottom,
+                      }),
+                    );
+                  }}
+                />
+              }
+            >
+              <Item
+                buttonProps={actions?.(l)}
+                disclosure={
+                  favorite && (
+                    <button
+                      type="button"
+                      aria-label={t`Favorite`}
+                      className="text-amber-600 dark:text-amber-400"
+                      onClick={() => favorite(l)}
+                    >
+                      ☆
+                    </button>
+                  )
+                }
+                active={view.label?.id === l.id && view.label.accountId === accountId}
+                onClick={() => onView({ ...view, mailbox: "all", label: { id: l.id, accountId } })}
+                icon={
+                  l.color ? (
+                    <span className="size-2.5 rounded-full" style={{ backgroundColor: l.color }} />
+                  ) : (
+                    <Tag className="size-4 text-a11y-muted" />
+                  )
+                }
+                label={l.name}
+                badge={unread[l.id] ?? 0}
+              />
+            </ContextMenuTrigger>
+            {unnest && l.name.includes("/") && (
+              <ContextMenuContent>
+                <MenuItem
+                  icon={ArrowRight}
+                  onClick={() => unnest(l)}
+                >{t`Move to top level`}</MenuItem>
+              </ContextMenuContent>
+            )}
+          </ContextMenuRoot>
         ))}
       </Section>
     );

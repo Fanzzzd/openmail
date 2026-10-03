@@ -81,11 +81,16 @@ export const FilterCriteria = Schema.Struct({
   hasAttachment: Schema.Boolean,
   hasWords: Schema.optionalKey(Schema.String),
   notWords: Schema.optionalKey(Schema.String),
+  exceptFrom: Schema.optionalKey(Schema.String),
+  exceptTo: Schema.optionalKey(Schema.String),
+  exceptSubject: Schema.optionalKey(Schema.String),
+  exceptAttachment: Schema.optionalKey(Schema.Boolean),
   size: Schema.optionalKey(Schema.Number),
   sizeComparison: Schema.optionalKey(Schema.Literals(["larger", "smaller"])),
 });
 export type FilterCriteria = typeof FilterCriteria.Type;
 export const FilterAction = Schema.Struct({
+  stopProcessing: Schema.optionalKey(Schema.Boolean),
   archive: Schema.Boolean,
   markRead: Schema.Boolean,
   star: Schema.Boolean,
@@ -98,6 +103,7 @@ export const FilterAction = Schema.Struct({
 export type FilterAction = typeof FilterAction.Type;
 export function filterDestinationsSupported(action: FilterAction, provider: Provider): boolean {
   return (
+    !(provider !== "outlook" && action.stopProcessing) &&
     !(
       action.trash &&
       (action.archive || action.label || action.labels?.length || action.category)
@@ -147,6 +153,11 @@ export function sameFilterRule(left: FilterInput, right: FilterInput): boolean {
     input.criteria.hasAttachment,
     input.criteria.hasWords ?? "",
     input.criteria.notWords ?? "",
+    input.criteria.exceptFrom ?? "",
+    input.criteria.exceptTo ?? "",
+    input.criteria.exceptSubject ?? "",
+    input.criteria.exceptAttachment ?? false,
+    input.action.stopProcessing ?? false,
     input.criteria.size ?? null,
     input.criteria.sizeComparison ?? null,
     input.action.archive,

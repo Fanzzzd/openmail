@@ -64,6 +64,7 @@ import {
   parseSearchExpression,
   hasSearchExpression,
   type SearchExpression,
+  wordTokens,
   parseSearchQuery,
   searchWords,
   unquoteSearchValue,
@@ -117,6 +118,11 @@ const MessageRow = Schema.Struct({
   to_json: Schema.fromJsonString(Schema.Array(Address)),
   cc_json: Schema.fromJsonString(Schema.Array(Address)),
   bcc_json: Schema.fromJsonString(Schema.Array(Address)),
+  headers_json: Schema.NullOr(
+    Schema.fromJsonString(
+      Schema.Array(Schema.Struct({ name: Schema.String, value: Schema.String })),
+    ),
+  ),
   rfc_message_id: Schema.NullOr(Schema.String),
   message_size: Schema.NullOr(Schema.Number),
   reply_to_json: Schema.NullOr(Schema.fromJsonString(Schema.Array(Address))),
@@ -240,6 +246,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     to: r.to_json,
     cc: r.cc_json,
     bcc: r.bcc_json,
+    ...(r.headers_json === null ? {} : { headers: r.headers_json }),
     ...(r.rfc_message_id === null ? {} : { rfcMessageId: r.rfc_message_id }),
     ...(r.message_size === null ? {} : { size: r.message_size }),
     ...(r.reply_to_json === null ? {} : { replyTo: r.reply_to_json }),
@@ -567,13 +574,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, reply_to_json, date, snippet, body_text, body_html, labels_json,
-            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link, bcc_json, rfc_message_id, message_size)
+            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link, bcc_json, rfc_message_id, message_size, headers_json)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${JSON.stringify(m.replyTo ?? [])}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
-            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)}, ${m.webLink ?? null}, ${JSON.stringify(m.bcc ?? [])}, ${m.rfcMessageId ?? null}, ${m.size ?? null})
+            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)}, ${m.webLink ?? null}, ${JSON.stringify(m.bcc ?? [])}, ${m.rfcMessageId ?? null}, ${m.size ?? null}, ${m.headers ? JSON.stringify(m.headers) : null})
           ON CONFLICT(id) DO UPDATE SET
+            headers_json=COALESCE(excluded.headers_json,messages.headers_json),
             bcc_json=excluded.bcc_json, rfc_message_id=COALESCE(excluded.rfc_message_id,messages.rfc_message_id), message_size=COALESCE(excluded.message_size,messages.message_size),
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
@@ -593,6 +601,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             OR messages.is_unread IS NOT excluded.is_unread OR messages.is_starred IS NOT excluded.is_starred
             OR messages.calendar_hint IS NOT excluded.calendar_hint OR messages.body_cached IS NOT excluded.body_cached
             OR messages.list_date IS NOT excluded.list_date
+            OR messages.headers_json IS NOT COALESCE(excluded.headers_json,messages.headers_json)
             OR messages.rfc_message_id IS NOT COALESCE(excluded.rfc_message_id,messages.rfc_message_id)
             OR messages.message_size IS NOT COALESCE(excluded.message_size,messages.message_size)
             OR messages.web_link IS NOT COALESCE(excluded.web_link,messages.web_link)`)
@@ -701,6 +710,39 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         ? sql`(${attachment} OR m.body_text LIKE ${`%https://docs.google.com/${drivePath}/%`} OR m.body_html LIKE ${`%https://docs.google.com/${drivePath}/%`})`
         : attachment;
     };
+    const proximityFilter = (
+      p: NonNullable<SearchCondition["proximity"]>,
+      derived = false,
+      ready = true,
+    ): Fragment => {
+      const left = wordTokens(p.left),
+        right = wordTokens(p.right);
+      if (!left.length || !right.length) return sql.literal("0");
+      if (!ready)
+        return sql.and([
+          textFilter(quoteSearchValue(p.left), derived, false),
+          textFilter(quoteSearchValue(p.right), derived, false),
+        ]);
+      const index = sql.literal(derived ? "derived_words" : "messages_words");
+      const table = sql.literal(derived ? "derived_word_positions" : "messages_word_positions");
+      const near = `NEAR(${quoteSearchValue(left.join(" "))} ${quoteSearchValue(right.join(" "))}, ${p.distance})`;
+      const samePhrase = (words: string[], alias: "a" | "b") =>
+        words.slice(1).map((word, i) => {
+          const ref = sql.literal(alias);
+          return sql`EXISTS (SELECT 1 FROM positions w WHERE w.doc=${ref}.doc AND w.col=${ref}.col AND w.offset=${ref}.offset+${i + 1} AND w.term=${word})`;
+        });
+      const forward = sql`b.offset>=a.offset+${left.length} AND b.offset-a.offset-${left.length}<=${p.distance}`;
+      const reverse = sql`a.offset>=b.offset+${right.length} AND a.offset-b.offset-${right.length}<=${p.distance}`;
+      // These materialized sets have no outer-row references: FTS and each term's
+      // instance stream are read once, not once per candidate message/chunk.
+      return sql`${derived ? sql.literal("d.id") : sql.literal("m.rowid")} IN (
+        WITH candidates AS MATERIALIZED (SELECT rowid FROM ${index} WHERE ${index} MATCH ${near}),
+        positions AS MATERIALIZED (SELECT term,doc,col,offset FROM ${table} WHERE term IN (SELECT value FROM json_each(${JSON.stringify([...new Set([...left, ...right])])})) AND doc IN (SELECT rowid FROM candidates))
+        SELECT DISTINCT a.doc FROM positions a JOIN positions b ON b.doc=a.doc AND b.col=a.col
+        WHERE a.term=${left[0]} AND b.term=${right[0]} AND (${p.ordered ? forward : sql`(${forward}) OR (${reverse})`}) AND ${sql.and([...samePhrase(left, "a"), ...samePhrase(right, "b")])}
+      )`;
+    };
+
     const searchConditionFilter = (
       c: SearchCondition,
       ready = false,
@@ -713,6 +755,21 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         where.push(
           sql`EXISTS (SELECT 1 FROM json_each(m.bcc_json) WHERE json_extract(value,'$.address') LIKE ${literalLike(c.bcc)} ESCAPE '\\' OR json_extract(value,'$.name') LIKE ${literalLike(c.bcc)} ESCAPE '\\')`,
         );
+      if (c.proximity) where.push(proximityFilter(c.proximity, false, ready));
+      if (c.subjectContains)
+        where.push(sql`m.subject LIKE ${literalLike(c.subjectContains)} ESCAPE '\\'`);
+      if (c.mailingList)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.headers_json) h WHERE lower(json_extract(h.value,'$.name')) IN ('list-id','list-post') AND (json_extract(h.value,'$.value') LIKE ${literalLike(c.mailingList)} ESCAPE '\\' OR (lower(json_extract(h.value,'$.name'))='list-id' AND json_extract(h.value,'$.value') LIKE ${literalLike(c.mailingList.replace("@", "."))} ESCAPE '\\'))) `,
+        );
+      if (c.header)
+        where.push(
+          sql`EXISTS (SELECT 1 FROM json_each(m.headers_json) h WHERE lower(json_extract(h.value,'$.name'))=${c.header.name.toLowerCase()} AND json_extract(h.value,'$.value') LIKE ${literalLike(c.header.value)} ESCAPE '\\')`,
+        );
+      if (c.userLabels !== undefined) {
+        const labeled = sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) j JOIN labels l ON l.account_id=m.account_id AND l.id=j.value WHERE j.value NOT LIKE 'CATEGORY_%' AND j.value NOT LIKE 'category:%')`;
+        where.push(c.userLabels ? labeled : sql`NOT (${labeled})`);
+      }
       if (c.rfcMessageId)
         where.push(sql`trim(m.rfc_message_id, '<>')=${c.rfcMessageId.replace(/^<|>$/g, "")}`);
       if (c.sizeLarger !== undefined)
@@ -741,7 +798,12 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       if (c.attachmentText)
         where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
       if (c.image) where.push(sql`(${attachmentTypeFilter("image")} OR m.body_html LIKE '%cid:%')`);
-      if (c.attachment) where.push(sql`json_array_length(m.attachments_json)>0`);
+      if (c.attachment !== undefined)
+        where.push(
+          c.attachment
+            ? sql`json_array_length(m.attachments_json)>0`
+            : sql`json_array_length(m.attachments_json)=0`,
+        );
       if (c.filename)
         where.push(
           sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
@@ -785,6 +847,17 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           const conditions = [
             searchConditionFilter(q.criteria ?? {}, context.messagesReady, context.rowBound),
           ];
+          if (q.criteria?.proximity) {
+            const body = conditions.pop() ?? sql.literal("1");
+            const derived = sql`EXISTS (SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${proximityFilter(q.criteria.proximity, true, context.derivedReady)})`;
+            conditions.push(
+              context.attachmentOnly
+                ? derived
+                : context.media
+                  ? sql`(${body} OR ${derived})`
+                  : body,
+            );
+          }
           if (q.unreadOnly) conditions.push(sql`m.is_unread=1`);
           if (q.starredOnly) conditions.push(sql`m.is_starred=1`);
           if (q.search) {

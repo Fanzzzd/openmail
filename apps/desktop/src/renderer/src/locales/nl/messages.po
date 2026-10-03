@@ -646,6 +646,10 @@ msgstr "Bijgevoegd bericht"
 msgid "Attachment cache limit"
 msgstr "Cachelimiet voor bijlagen"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Uitzondering voor bijlagen"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Map voor opgeslagen bijlagen"
@@ -1604,6 +1608,10 @@ msgstr "Voeg het originele bericht niet toe"
 msgid "Done"
 msgstr "Gereed"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Kalenderbestand downloaden"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Modellen op het apparaat downloaden, ~226 MB"
@@ -1776,6 +1784,10 @@ msgstr "Ingeschakeld"
 msgid "End"
 msgstr "Einde"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "De eindtijd is geschat. Controleer deze voordat u de afspraak toevoegt."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Voer een toekomstige herinneringstijd in"
@@ -1828,6 +1840,18 @@ msgstr "Elke {interval} jaar"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Iedereen"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Behalve ontvanger bevat"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Behalve afzender bevat"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Behalve onderwerp bevat"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "Verplaatsen naar Postvak IN"
 msgid "Move to To"
 msgstr "Verplaats naar Aan"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Naar hoogste niveau verplaatsen"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "Geen ongelezen mail in de Postvak IN"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Geen"
@@ -3618,6 +3647,10 @@ msgstr "Herinneringstijd"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Afbeeldingen op afstand worden geblokkeerd, zodat de afzender niet kan zien of u dit leest."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Wijzigingen op de server zijn uitgeschakeld in deze alleen-lezen sessie"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Stop met het laden van afbeeldingen van {address}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Stop met het laden van afbeeldingen van {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Verwerking van volgende regels stoppen"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

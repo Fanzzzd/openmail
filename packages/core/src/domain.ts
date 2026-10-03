@@ -162,6 +162,9 @@ export const Message = Schema.Struct({
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
   bcc: Schema.optionalKey(Schema.Array(Address)),
+  headers: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ name: Schema.String, value: Schema.String })),
+  ),
   rfcMessageId: Schema.optionalKey(Schema.String),
   size: Schema.optionalKey(Schema.Number),
   /** RFC Reply-To targets; absent means unknown cached headers, [] means no Reply-To. */
@@ -191,6 +194,9 @@ export const IncomingMessage = Schema.Struct({
   to: Schema.Array(Address),
   cc: Schema.Array(Address),
   bcc: Schema.optionalKey(Schema.Array(Address)),
+  headers: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ name: Schema.String, value: Schema.String })),
+  ),
   rfcMessageId: Schema.optionalKey(Schema.String),
   size: Schema.optionalKey(Schema.Number),
   replyTo: Schema.optionalKey(Schema.Array(Address)),
@@ -250,6 +256,18 @@ export const AttachmentType = Schema.Literals([
 export type AttachmentType = typeof AttachmentType.Type;
 
 export const SearchCondition = Schema.Struct({
+  subjectContains: Schema.optionalKey(Schema.String),
+  mailingList: Schema.optionalKey(Schema.String),
+  header: Schema.optionalKey(Schema.Struct({ name: Schema.String, value: Schema.String })),
+  userLabels: Schema.optionalKey(Schema.Boolean),
+  proximity: Schema.optionalKey(
+    Schema.Struct({
+      left: Schema.String,
+      right: Schema.String,
+      distance: Schema.Int,
+      ordered: Schema.Boolean,
+    }),
+  ),
   from: Schema.optionalKey(Schema.String),
   to: Schema.optionalKey(Schema.String),
   cc: Schema.optionalKey(Schema.String),

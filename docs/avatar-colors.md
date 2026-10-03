@@ -16,3 +16,10 @@ The palette gives Gmail-like tones. Gmail does not publish its contact-to-color
 mapping; this algorithm does not claim exact parity with a Gmail account's avatar.
 The implementation is in `apps/desktop/src/renderer/src/format.ts`, with golden
 values and normalization cases in `format-avatar.test.ts`.
+
+The reference is Google's [Material color system](https://m2.material.io/design/color/the-color-system.html),
+not a published Gmail identity hash. Most tones above are Material 800/900;
+`#3367d6` retains the Google blue and `#a65a00` darkens amber for white-text contrast.
+These choices favor the documented Google hue families within the existing 4.5:1
+contrast requirement. No authenticated Gmail screenshots or sender-color samples
+were available in slice 46, so the mapping remains an approximation and R26 stays partial.

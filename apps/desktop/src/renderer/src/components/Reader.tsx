@@ -26,7 +26,6 @@ import {
   splitRepeatedQuote,
   orderThread,
   prepareMessageHtml,
-  shouldLoadInvitation,
   READER_ZOOMS,
   senderLabel,
   threadExpansion,
@@ -1159,7 +1158,7 @@ function Expanded({
       </div>
 
       <MeetingLinks sources={[m.bodyText, m.bodyHtml]} />
-      {shouldLoadInvitation(m) && <InviteBanner message={m} />}
+      <InviteBanner message={m} />
 
       {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
 

@@ -1,5 +1,6 @@
 /** Fixed validation and device messages authored by OpenMail. Provider/OS details are excluded. */
 export const PUBLIC_ERROR_MESSAGES = new Set([
+  "Remote writes are disabled in this read-only session",
   "A folder cannot be moved inside itself",
   "A label or folder needs a valid name",
   "A message needs at least one recipient.",

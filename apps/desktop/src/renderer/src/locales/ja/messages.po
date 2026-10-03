@@ -646,6 +646,10 @@ msgstr "添付メッセージ"
 msgid "Attachment cache limit"
 msgstr "添付ファイルのキャッシュ上限"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "添付ファイルの例外"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "添付ファイルの保存先フォルダ"
@@ -1604,6 +1608,10 @@ msgstr "元のメッセージを添付しないでください"
 msgid "Done"
 msgstr "完了"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "カレンダーファイルをダウンロード"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "オンデバイス モデルをダウンロード、約 226 MB"
@@ -1776,6 +1784,10 @@ msgstr "有効"
 msgid "End"
 msgstr "終了"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "終了時刻は推定です。予定を追加する前に確認してください。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "将来のリマインダー時刻を入力してください"
@@ -1828,6 +1840,18 @@ msgstr "{interval}年ごと"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "みんな"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "宛先に含まれる場合は除外"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "差出人に含まれる場合は除外"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "件名に含まれる場合は除外"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "受信に移動"
 msgid "Move to To"
 msgstr "宛先に移動"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "最上位に移動"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "受信箱に未開封メールがない"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "なし"
@@ -3618,6 +3647,10 @@ msgstr "リマインダー時間"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "リモート画像はブロックされているため、送信者はあなたがこれを読んだかどうかを知ることができません。"
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "この読み取り専用セッションではリモートへの書き込みが無効です"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "{address} からの画像の読み込みを停止します"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "{domain} からの画像の読み込みを停止します"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "後続ルールの処理を停止"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

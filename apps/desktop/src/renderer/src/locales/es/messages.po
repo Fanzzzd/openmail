@@ -646,6 +646,10 @@ msgstr "Mensaje adjunto"
 msgid "Attachment cache limit"
 msgstr "Límite de caché de adjuntos"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Excepción de archivos adjuntos"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Carpeta para guardar adjuntos"
@@ -1604,6 +1608,10 @@ msgstr "No adjuntes el mensaje original"
 msgid "Done"
 msgstr "Aceptar"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Descargar archivo de calendario"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Descargar modelos en el dispositivo, ~226 MB"
@@ -1776,6 +1784,10 @@ msgstr "Activado"
 msgid "End"
 msgstr "Fin"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "La hora de finalización es estimada. Revísala antes de añadir el evento."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Introduzca una hora de recordatorio futura"
@@ -1828,6 +1840,18 @@ msgstr "Cada {interval} años"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Todos"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Excepto si el destinatario contiene"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Excepto si el remitente contiene"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Excepto si el asunto contiene"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2858,6 +2882,10 @@ msgstr "Mover a la Bandeja de entrada"
 msgid "Move to To"
 msgstr "Mover a Para"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Mover al nivel superior"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3104,6 +3132,7 @@ msgstr "No hay correo no leído en la Bandeja de entrada"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "Ninguno"
@@ -3618,6 +3647,10 @@ msgstr "Tiempo de recordatorio"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Las imágenes remotas están bloqueadas para que el remitente no pueda saber si lees esto."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Las modificaciones remotas están desactivadas en esta sesión de solo lectura"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4478,6 +4511,10 @@ msgstr "Dejar de cargar imágenes de {address}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Dejar de cargar imágenes de {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Detener el procesamiento de más reglas"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

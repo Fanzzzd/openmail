@@ -2,7 +2,7 @@ import { ModelAnthropic } from "../../model.js";
 import type { NodeModelsOptions } from "./embeddings-node.js";
 import { makeNodeModels } from "./embeddings-node.js";
 import { dataDir } from "./paths.js";
-import { Effect, Layer } from "effect";
+import { Config, Effect, Layer } from "effect";
 
 import { makeGmail } from "../../gmail.js";
 import { makeImap } from "./imap.js";
@@ -10,6 +10,7 @@ import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
 import type { Mailbox } from "../../mailbox.js";
 import { makeOutlook } from "../../outlook.js";
 import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-node.js";
+import { readOnlyAdapter } from "../../read-only.js";
 import { Providers } from "../../services.js";
 import { StoreLive } from "../../store.js";
 
@@ -21,7 +22,12 @@ export const ProvidersLive = Layer.effect(
       outlook: yield* makeOutlook,
       imap: yield* makeImap,
     };
-    return Providers.of({ get: (provider) => adapters[provider] });
+    const readOnly =
+      (yield* Config.String("OPENMAIL_READ_ONLY").pipe(Config.withDefault("0"), Effect.orDie)) ===
+      "1";
+    return Providers.of({
+      get: (provider) => (readOnly ? readOnlyAdapter(adapters[provider]) : adapters[provider]),
+    });
   }),
 );
 

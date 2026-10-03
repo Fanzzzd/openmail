@@ -239,7 +239,11 @@ export const contactPhotoAtom = (accountId: string, address: string) =>
 export const calendarEventsAtom = (messageId: string, key: string) =>
   MailClient.query("CalendarEvents", { messageId, key }, { timeToLive: Duration.minutes(1) });
 export const detectedEventsAtom = (messageId: string) =>
-  MailClient.query("DetectedEvents", { messageId }, { timeToLive: Duration.minutes(1) });
+  MailClient.query(
+    "DetectedEvents",
+    { messageId },
+    { reactivityKeys: [Keys.threads], timeToLive: Duration.minutes(1) },
+  );
 
 export const updateStateAtom = MailClient.query("UpdateState", undefined, {
   reactivityKeys: [Keys.cache],

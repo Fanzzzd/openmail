@@ -650,6 +650,10 @@ msgstr "Attached message"
 msgid "Attachment cache limit"
 msgstr "Attachment cache limit"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Attachment exception"
+msgstr "Attachment exception"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Attachment save folder"
 msgstr "Attachment save folder"
@@ -1608,6 +1612,10 @@ msgstr "Don't attach the original message"
 msgid "Done"
 msgstr "Done"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Download calendar file"
+msgstr "Download calendar file"
+
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "Download on-device models, ~226 MB"
 msgstr "Download on-device models, ~226 MB"
@@ -1780,6 +1788,10 @@ msgstr "Enabled"
 msgid "End"
 msgstr "End"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "End time is estimated. Review it before adding the event."
+msgstr "End time is estimated. Review it before adding the event."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Enter a future reminder time"
@@ -1832,6 +1844,18 @@ msgstr "Every {interval} years"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Everyone"
 msgstr "Everyone"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except recipient contains"
+msgstr "Except recipient contains"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except sender contains"
+msgstr "Except sender contains"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Except subject contains"
+msgstr "Except subject contains"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
@@ -2862,6 +2886,10 @@ msgstr "Move to Inbox"
 msgid "Move to To"
 msgstr "Move to To"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Move to top level"
+msgstr "Move to top level"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
@@ -3108,6 +3136,7 @@ msgstr "No unread mail in the inbox"
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "None"
 msgstr "None"
@@ -3622,6 +3651,10 @@ msgstr "Reminder time"
 #: src/renderer/src/components/Reader.tsx
 msgid "Remote images are blocked so the sender can't tell if you read this."
 msgstr "Remote images are blocked so the sender can't tell if you read this."
+
+#: src/renderer/src/errors.ts
+msgid "Remote writes are disabled in this read-only session"
+msgstr "Remote writes are disabled in this read-only session"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/Settings.tsx
@@ -4482,6 +4515,10 @@ msgstr "Stop loading images from {address}"
 #: src/renderer/src/components/Reader.tsx
 msgid "Stop loading images from {domain}"
 msgstr "Stop loading images from {domain}"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Stop processing more rules"
+msgstr "Stop processing more rules"
 
 #. placeholder {0}: a.address
 #: src/renderer/src/components/RecipientField.tsx

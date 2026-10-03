@@ -104,3 +104,5 @@ export * from "../../platform/crypto.js";
 export * from "../../platform/paths.js";
 export * from "../../platform/mail-codec.js";
 export * from "../../platform/runtime.js";
+export { prepareSmokeDatabase } from "./smoke.js";
+export { createSmokeCleanup } from "./smoke-cleanup.js";

@@ -352,6 +352,13 @@ export function toIncoming(
     to: addresses(parsed.to),
     cc: addresses(parsed.cc),
     bcc: addresses(parsed.bcc),
+    headers: parsed.headerLines.map((h) => ({
+      name: h.key.toLowerCase(),
+      value: h.line
+        .slice(h.line.indexOf(":") + 1)
+        .replace(/\r?\n[ \t]+/g, " ")
+        .trim(),
+    })),
     ...(parsed.messageId ? { rfcMessageId: parsed.messageId } : {}),
     ...(meta.size !== undefined ? { size: meta.size } : {}),
     replyTo: addresses(parsed.replyTo),

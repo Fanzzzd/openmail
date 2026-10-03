@@ -44,10 +44,19 @@ const ParsedGraphRule = Schema.Struct({
       sentToAddresses: Recipients,
     }),
   ),
-  exceptions: Schema.optionalKey(Schema.Struct({ bodyOrSubjectContains: Strings })),
+  exceptions: Schema.optionalKey(
+    Schema.Struct({
+      bodyOrSubjectContains: Strings,
+      senderContains: Strings,
+      recipientContains: Strings,
+      subjectContains: Strings,
+      hasAttachments: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
   actions: Schema.optionalKey(
     Schema.Struct({
       markImportance: Schema.optionalKey(Schema.Literals(["high", "normal", "low"])),
+      stopProcessingRules: Schema.optionalKey(Schema.Boolean),
       markAsRead: Schema.optionalKey(Schema.Boolean),
       delete: Schema.optionalKey(Schema.Boolean),
       moveToFolder: Schema.optionalKey(Schema.String),
@@ -76,6 +85,9 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
   const c = parsed.conditions;
   const action = {
     ...EMPTY_FILTER.action,
+    ...(parsed.actions?.stopProcessingRules !== undefined
+      ? { stopProcessing: parsed.actions.stopProcessingRules }
+      : {}),
     markRead: parsed.actions?.markAsRead ?? false,
     ...(parsed.actions?.markImportance
       ? { important: parsed.actions.markImportance === "high" }
@@ -89,8 +101,21 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
     filterDestinationsSupported(action, "outlook") &&
     !r.isReadOnly &&
     parsed.actions?.markImportance !== "low" &&
-    Object.keys(r.exceptions ?? {}).every((key) => key === "bodyOrSubjectContains") &&
-    (parsed.exceptions?.bodyOrSubjectContains?.length ?? 0) <= 1 &&
+    Object.keys(r.exceptions ?? {}).every((key) =>
+      [
+        "bodyOrSubjectContains",
+        "senderContains",
+        "recipientContains",
+        "subjectContains",
+        "hasAttachments",
+      ].includes(key),
+    ) &&
+    [
+      parsed.exceptions?.bodyOrSubjectContains,
+      parsed.exceptions?.senderContains,
+      parsed.exceptions?.recipientContains,
+      parsed.exceptions?.subjectContains,
+    ].every((values) => !values || values.length <= 1) &&
     !(
       c?.withinSizeRange?.minimumSize !== undefined && c.withinSizeRange.maximumSize !== undefined
     ) &&
@@ -105,7 +130,9 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
       ].includes(key),
     ) &&
     Object.keys(r.actions ?? {}).every((key) =>
-      ["markAsRead", "delete", "moveToFolder", "markImportance"].includes(key),
+      ["markAsRead", "delete", "moveToFolder", "markImportance", "stopProcessingRules"].includes(
+        key,
+      ),
     ) &&
     [c?.senderContains, c?.recipientContains, c?.subjectContains, c?.bodyOrSubjectContains].every(
       (values) => !values || values.length <= 1,
@@ -125,6 +152,18 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
         c?.sentToAddresses?.map((a) => a.emailAddress.address).join(" ") ??
         "",
       subject: c?.subjectContains?.join(" ") ?? "",
+      ...(parsed.exceptions?.senderContains?.[0]
+        ? { exceptFrom: parsed.exceptions.senderContains[0] }
+        : {}),
+      ...(parsed.exceptions?.recipientContains?.[0]
+        ? { exceptTo: parsed.exceptions.recipientContains[0] }
+        : {}),
+      ...(parsed.exceptions?.subjectContains?.[0]
+        ? { exceptSubject: parsed.exceptions.subjectContains[0] }
+        : {}),
+      ...(parsed.exceptions?.hasAttachments === true
+        ? { exceptAttachment: parsed.exceptions.hasAttachments }
+        : {}),
       query: c?.bodyContains?.join(" ") ?? "",
       hasAttachment: c?.hasAttachments ?? false,
       ...(c?.bodyOrSubjectContains?.length ? { hasWords: c.bodyOrSubjectContains.join(" ") } : {}),
@@ -141,6 +180,13 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
   };
 }
 
+const ruleExceptions = (criteria: FilterInput["criteria"]) => ({
+  ...(criteria.notWords ? { bodyOrSubjectContains: [criteria.notWords] } : {}),
+  ...(criteria.exceptFrom ? { senderContains: [criteria.exceptFrom] } : {}),
+  ...(criteria.exceptTo ? { recipientContains: [criteria.exceptTo] } : {}),
+  ...(criteria.exceptSubject ? { subjectContains: [criteria.exceptSubject] } : {}),
+  ...(criteria.exceptAttachment === true ? { hasAttachments: true } : {}),
+});
 export function makeOutlookSettings<
   E extends {
     readonly _tag: string;
@@ -195,7 +241,7 @@ export function makeOutlookSettings<
     );
   const saveRule = (account: Account, input: FilterInput, id: string) =>
     Effect.gen(function* () {
-      if (input.criteria.query || input.action.star)
+      if (input.criteria.query || input.action.star || input.criteria.exceptAttachment === false)
         return yield* new PermanentError({
           message: "Outlook rules do not support search queries or starring",
         });
@@ -237,14 +283,13 @@ export function makeOutlookSettings<
                 }
               : {}),
           },
-          ...(input.criteria.notWords || original.exceptions
-            ? {
-                exceptions: input.criteria.notWords
-                  ? { bodyOrSubjectContains: [input.criteria.notWords] }
-                  : {},
-              }
+          ...(Object.keys(ruleExceptions(c)).length || original.exceptions
+            ? { exceptions: ruleExceptions(c) }
             : {}),
           actions: {
+            ...(input.action.stopProcessing !== undefined
+              ? { stopProcessingRules: input.action.stopProcessing }
+              : {}),
             ...(input.action.important !== undefined
               ? { markImportance: input.action.important ? "high" : "normal" }
               : {}),
@@ -276,7 +321,7 @@ export function makeOutlookSettings<
     createFilter: (account: Account, input: FilterInput) =>
       Effect.gen(function* () {
         // Graph rules have no Gmail query parser or flag action. Reject rather than create a broader rule.
-        if (input.criteria.query || input.action.star)
+        if (input.criteria.query || input.action.star || input.criteria.exceptAttachment === false)
           return yield* new PermanentError({
             message: "Outlook rules do not support search queries or starring",
           });
@@ -312,10 +357,11 @@ export function makeOutlookSettings<
                 }
               : {}),
           },
-          ...(input.criteria.notWords
-            ? { exceptions: { bodyOrSubjectContains: [input.criteria.notWords] } }
-            : {}),
+          ...(Object.keys(ruleExceptions(c)).length ? { exceptions: ruleExceptions(c) } : {}),
           actions: {
+            ...(input.action.stopProcessing !== undefined
+              ? { stopProcessingRules: input.action.stopProcessing }
+              : {}),
             ...(input.action.important !== undefined
               ? { markImportance: input.action.important ? "high" : "normal" }
               : {}),

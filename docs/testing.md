@@ -56,3 +56,20 @@ node apps/desktop/scripts/e2e-mutations.mjs
 ```
 
 脚本串行临时修改行为，要求所选测试全部失败，每轮恢复文件；覆盖全部 24 项。新增流程时同步扩展脚本的故障案例和总数。完成后再跑正常测试与仓库检查。
+
+## 桌面生产构建 smoke
+
+协调者可在构建后运行开发 smoke harness：
+
+```sh
+pnpm build
+node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
+```
+
+脚本会启动 Electron。本 slice 的自动验证不运行它。`--db` 可省略，届时使用空临时库，邮件与撰写步骤会注明跳过。`--timeout` 为总等待毫秒数，默认 60000；`--port` 可指定本地 CDP 端口，默认自动选取。
+
+提供数据库时先关闭其写入进程。core 只读取并复制原库和 WAL，不打开原库连接；发现复制期间文件变化即停止。副本在临时目录升级，强制 `markReadDelay="manual"` 和英语界面，并关闭首次 Profiles 建议。脚本不复制 OAuth client 配置或钥匙串项。脚本通过 [electron-vite preview](https://electron-vite.org/guide/cli) 的 `--skipBuild` 和 `--user-data-dir` 打开副本，启用本地 CDP，通过 [Browser.getBrowserCommandLine](https://chromedevtools.github.io/devtools-protocol/tot/Browser/#method-getBrowserCommandLine) 核对临时 `user-data-dir` 后，等待主窗口并依次打开首个会话、撰写窗口、Settings，并输出 JSON。当前视图没有缓存会话时首个会话步骤注明跳过；没有账户时撰写与 Settings 步骤跳过，报告注明首次账户设置阻挡。正常完成或收到 SIGINT／SIGTERM／SIGHUP 时共用一次清理，终止预览进程并删除临时目录；信号退出码分别为 130／143／129，已有退出码保持不变。
+
+`OPENMAIL_READ_ONLY=1` 在 core Layer 构建时读取，只允许明确列出的读取与连接方法，默认拒绝未知方法及 accessor；阻止 provider 邮件／文件夹／规则／假期回复／日历写入、草稿上传、发送和延迟发送。现有待处理操作与待发消息保持原状态；本地偏好、草稿、已读等写入仍可保存到副本。网络读取仍可发生，现有账户凭证仍由标准 Secrets 服务读取，网络认证沿用正常的 token 刷新路径。只读模式不扩大 OAuth scopes。
+
+脚本收集 renderer 控制台错误、异常和 RPC 拒绝；正常的请求中断不算拒绝。只忽略已确认来自 `about:srcdoc` 的 CSP 远程图片拦截。出现其他错误、RPC 拒绝、步骤超时或预览退出时退出码为 1。报告和 stderr 可能含错误文本，分享前检查内容。此脚本尚未实机运行；复制／迁移／只读隔离由 core 临时数据库和 fake provider 测试验证。

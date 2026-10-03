@@ -1,9 +1,10 @@
+import { Option, Schema } from "effect";
+import { SearchCondition } from "./domain.js";
 import { InvalidInput } from "./errors.js";
 import type {
   Address,
   Attachment,
   AttachmentType,
-  SearchCondition,
   IncomingMessage,
   Label,
   SearchCriteria,
@@ -13,6 +14,11 @@ import type {
 import type { FilterCriteria } from "./organization.js";
 
 export const SEARCH_OPERATORS = [
+  "list:",
+  "deliveredto:",
+  "header:",
+  "has:userlabels",
+  "has:nouserlabels",
   "from:",
   "to:",
   "cc:",
@@ -182,6 +188,31 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
       continue;
     }
     switch (key) {
+      case "__around": {
+        const parsed = Schema.decodeUnknownOption(
+          Schema.fromJsonString(SearchCondition.fields.proximity.schema),
+        )(value);
+        if (Option.isSome(parsed)) criteria.proximity = parsed.value;
+        else words.push(word);
+        break;
+      }
+      case "list":
+        criteria.mailingList = value;
+        break;
+      case "deliveredto":
+        criteria.header = { name: "delivered-to", value };
+        break;
+      case "header": {
+        const separator = value.indexOf(":");
+        const name = separator < 0 ? value : value.slice(0, separator);
+        if (/^[A-Za-z0-9-]+$/.test(name))
+          criteria.header = {
+            name: name.toLowerCase(),
+            value: separator < 0 ? "" : value.slice(separator + 1),
+          };
+        else words.push(word);
+        break;
+      }
       case "from":
         criteria.from = value;
         break;
@@ -232,7 +263,9 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         criteria.filename = value;
         break;
       case "has":
-        if (value === "drive") criteria.drive = true;
+        if (value === "userlabels" || value === "nouserlabels")
+          criteria.userLabels = value === "userlabels";
+        else if (value === "drive") criteria.drive = true;
         else if (value === "attachment") criteria.attachment = true;
         else if (value === "image") criteria.image = true;
         else if (isAttachmentType(value))
@@ -298,7 +331,16 @@ export function gmailSearch(
 ): string {
   if (query.search && /[()]/.test(query.search.replace(/"(?:\\.|[^"\\])*(?:"|$)/g, ""))) {
     const render = (node: SearchExpression): string => {
-      if (node.kind === "term") return gmailSearch({ search: node.value }, labels);
+      if (node.kind === "term") {
+        const proximity = parseSearchQuery({ search: node.value }).criteria?.proximity;
+        if (proximity) {
+          const value = `${proximity.left} AROUND ${proximity.distance} ${proximity.right}`;
+          return proximity.ordered
+            ? quoteSearchValue(value)
+            : `${quoteSearchValue(proximity.left)} AROUND ${proximity.distance} ${quoteSearchValue(proximity.right)}`;
+        }
+        return gmailSearch({ search: node.value }, labels);
+      }
       if (node.kind === "not") return `-(${render(node.child)})`;
       return `(${node.children.map(render).join(node.kind === "or" ? " OR " : " ")})`;
     };
@@ -484,6 +526,45 @@ export function matchesSearchCondition(
   c: SearchCondition,
   labels: readonly Pick<Label, "id" | "name">[] = [],
 ): boolean {
+  const proximity = c.proximity;
+  if (
+    proximity &&
+    ![message.subject, message.from.name, message.from.address, message.bodyText].some((text) =>
+      proximityMatch(text, proximity),
+    )
+  )
+    return false;
+  if (c.subjectContains && !contains(message.subject, c.subjectContains)) return false;
+  const mailingList = c.mailingList;
+  if (
+    mailingList &&
+    !(message.headers ?? []).some(
+      (h) =>
+        ["list-id", "list-post"].includes(h.name.toLowerCase()) &&
+        (contains(h.value, mailingList) ||
+          (h.name.toLowerCase() === "list-id" && contains(h.value, mailingList.replace("@", ".")))),
+    )
+  )
+    return false;
+  const header = c.header;
+  if (
+    header &&
+    !(message.headers ?? []).some(
+      (h) => h.name.toLowerCase() === header.name.toLowerCase() && contains(h.value, header.value),
+    )
+  )
+    return false;
+  if (
+    c.userLabels !== undefined &&
+    c.userLabels !==
+      message.labels.some(
+        (id) =>
+          !id.startsWith("CATEGORY_") &&
+          !id.startsWith("category:") &&
+          labels.some((l) => l.id === id),
+      )
+  )
+    return false;
   if (c.unread !== undefined && c.unread !== message.isUnread) return false;
   if (c.starred !== undefined && c.starred !== message.isStarred) return false;
   if (c.bcc && !(message.bcc ?? []).some((a) => contains(`${a.address} ${a.name}`, c.bcc ?? "")))
@@ -517,7 +598,7 @@ export function matchesSearchCondition(
   if (c.to && !message.to.some((a) => contains(`${a.address} ${a.name}`, c.to ?? ""))) return false;
   if (c.subject && !wholeWordMatch(message.subject, c.subject)) return false;
   if (c.important && !message.labels.includes("IMPORTANT")) return false;
-  if (c.attachment && message.attachments.length === 0) return false;
+  if (c.attachment !== undefined && c.attachment !== message.attachments.length > 0) return false;
   if (c.filename && !message.attachments.some((a) => contains(a.filename, c.filename ?? "")))
     return false;
   if (
@@ -557,6 +638,14 @@ export function filterQuery(criteria: FilterCriteria): ThreadQuery {
         }
       : {}),
     criteria: {
+      excluded: [
+        ...(criteria.exceptFrom ? [{ from: criteria.exceptFrom }] : []),
+        ...(criteria.exceptTo ? [{ to: criteria.exceptTo }, { cc: criteria.exceptTo }] : []),
+        ...(criteria.exceptSubject ? [{ subjectContains: criteria.exceptSubject }] : []),
+        ...(criteria.exceptAttachment !== undefined
+          ? [{ attachment: criteria.exceptAttachment }]
+          : []),
+      ],
       ...(criteria.from ? { from: criteria.from } : {}),
       ...(criteria.to ? { to: criteria.to } : {}),
       ...(criteria.subject ? { subject: criteria.subject } : {}),
@@ -814,7 +903,26 @@ export type SearchExpression =
 export function parseSearchExpression(input: string): SearchExpression {
   const invalid = searchInputError(input);
   if (invalid) throw invalid;
-  const tokens = expressionTokens(input);
+  const rawTokens = expressionTokens(input);
+  const tokens: string[] = [];
+  for (let i = 0; i < rawTokens.length; i++) {
+    const token = rawTokens[i] ?? "";
+    const ordered = /^"([^"\n]+) AROUND (\d+) ([^"\n]+)"$/.exec(token);
+    const around =
+      ordered ??
+      (rawTokens[i + 1] === "AROUND" &&
+      /^\d+$/.test(rawTokens[i + 2] ?? "") &&
+      rawTokens[i + 3] &&
+      !/[(){}:]/.test(token + rawTokens[i + 3])
+        ? ["", token, rawTokens[i + 2], rawTokens[i + 3]]
+        : null);
+    if (around && Number(around[2]) <= 1000) {
+      tokens.push(
+        `__around:${quoteSearchValue(JSON.stringify({ left: unquoteSearchValue(around[1]), right: unquoteSearchValue(around[3] ?? ""), distance: Number(around[2]), ordered: !!ordered }))}`,
+      );
+      if (!ordered) i += 3;
+    } else tokens.push(token);
+  }
   let index = 0;
   const group = (depth: number, disjunction = false): SearchExpression => {
     const alternatives: SearchExpression[] = [];
@@ -873,6 +981,7 @@ export function parseSearchExpression(input: string): SearchExpression {
 }
 export function hasSearchExpression(text: string): boolean {
   const unquoted = text.replace(/"(?:\\.|[^"\\])*(?:"|$)/g, "");
+  if (/\bAROUND \d+\b/.test(text)) return true;
   if (/[(){}]|(?:^|\s)(?:OR|AND|\|)(?:\s|$)/.test(unquoted)) return true;
   const fields = searchWords(text)
     .filter((word) => !word.startsWith("-"))
@@ -880,9 +989,24 @@ export function hasSearchExpression(text: string): boolean {
     .filter(
       (field) =>
         field !== undefined &&
-        ["from", "to", "cc", "bcc", "subject", "filename", "rfc822msgid"].includes(field),
+        [
+          "from",
+          "to",
+          "cc",
+          "bcc",
+          "subject",
+          "filename",
+          "rfc822msgid",
+          "header",
+          "list",
+          "deliveredto",
+        ].includes(field),
     );
-  return new Set(fields).size !== fields.length;
+  return (
+    new Set(
+      fields.map((field) => (["header", "deliveredto"].includes(field ?? "") ? "header" : field)),
+    ).size !== fields.length
+  );
 }
 export function evaluateSearchExpression(
   node: SearchExpression,
@@ -911,7 +1035,7 @@ export function ftsSearchTerm(value: string): string | null {
   if (!/[\p{L}\p{N}]/u.test(text)) return null;
   return `"${text.replaceAll('"', '""')}"${prefix ? "*" : ""}`;
 }
-const wordTokens = (text: string): string[] =>
+export const wordTokens = (text: string): string[] =>
   text
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
@@ -1037,7 +1161,9 @@ export function serverSearchIgnored(
   const visit = (node: SearchExpression, dropped = false): void => {
     if (node.kind === "term") {
       if (!supportedTerm(node.value) || (dropped && /^\w+:/.test(node.value)))
-        ignored.push(node.value);
+        ignored.push(
+          parseSearchQuery({ search: node.value }).criteria?.proximity ? "AROUND" : node.value,
+        );
     } else if (node.kind === "not") visit(node.child, dropped || !projection(node.child).exact);
     else {
       const omitted = dropped || (node.kind === "or" && projection(node).value === null);
@@ -1190,5 +1316,24 @@ export function searchUsesSize(query: ThreadQuery): boolean {
     query.criteria?.sizeLarger !== undefined ||
     query.criteria?.sizeSmaller !== undefined ||
     expressionHasSize(parseSearchExpression(query.search ?? ""))
+  );
+}
+
+export function proximityMatch(
+  text: string,
+  proximity: NonNullable<SearchCondition["proximity"]>,
+): boolean {
+  const words = wordTokens(text);
+  const left = wordTokens(proximity.left),
+    right = wordTokens(proximity.right);
+  if (!left.length || !right.length) return false;
+  const positions = (phrase: string[]) =>
+    words.flatMap((_, i) => (phrase.every((word, j) => words[i + j] === word) ? [i] : []));
+  return positions(left).some((a) =>
+    positions(right).some((b) =>
+      b >= a + left.length
+        ? b - a - left.length <= proximity.distance
+        : !proximity.ordered && a >= b + right.length && a - b - right.length <= proximity.distance,
+    ),
   );
 }

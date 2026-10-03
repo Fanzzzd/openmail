@@ -3,15 +3,16 @@ import { writeSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { databaseLayer } from "../../../../dist/platform/node/db.js";
+import { databaseLayer, MIGRATIONS, splitStatements } from "../../../../dist/platform/node/db.js";
 import { NodeSystem } from "../../../../dist/platform/node/platform-node.js";
 
 if (process.argv[3] === "hold") {
+  const checkpoint = splitStatements(MIGRATIONS.at(-1) ?? "")[0];
   // The saved method always receives its owning connection through .call.
   // oxlint-disable-next-line typescript/unbound-method
   const prepare = DatabaseSync.prototype.prepare;
   DatabaseSync.prototype.prepare = function (sql) {
-    if (sql.startsWith("CREATE INDEX messages_thread_labels")) {
+    if (sql === checkpoint) {
       writeSync(1, "migration-lock-held\n");
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 6500);
     }

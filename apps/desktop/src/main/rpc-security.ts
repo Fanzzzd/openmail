@@ -54,6 +54,11 @@ const publicError = (value: unknown): unknown => {
   if (decoded._tag === "None") return { _tag: "DeviceError", message: FAILED };
   const error = Schema.encodeSync(MailError)(decoded.value);
   if (!("message" in error)) return error;
+  if (
+    error._tag === "ProviderError" &&
+    error.message === "Remote writes are disabled in this read-only session"
+  )
+    return error;
   if (error._tag === "InvalidInput" || error._tag === "DeviceError")
     return PUBLIC_ERROR_MESSAGES.has(error.message) ? error : { ...error, message: FAILED };
   return { ...error, message: "" };

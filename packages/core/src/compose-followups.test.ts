@@ -159,6 +159,8 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
   return Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     const account = yield* mailbox.connect({ provider: "gmail" });
+    // Drain connect's detached sync before injecting a failure into the edited save.
+    yield* mailbox.sync();
     const draft = yield* mailbox.saveDraft({
       id: "draft:sync",
       accountId: account.id,

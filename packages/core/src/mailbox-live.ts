@@ -1,3 +1,4 @@
+import { readOnlyAdapter, READ_ONLY_MESSAGE } from "./read-only.js";
 import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
 import { Buffer } from "./platform/bytes.js";
 import { destination as outlookDestination } from "./outlook.js";
@@ -40,6 +41,7 @@ import {
 
 import {
   Cause,
+  Config,
   Clock,
   Deferred,
   Duration,
@@ -235,7 +237,21 @@ export const MailboxLive = (
         unboundInlineMediaFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
       const store = yield* Store;
       const backgroundReady = options.backgroundReady ?? Effect.void;
-      const providers = yield* Providers;
+      const readOnly =
+        (yield* Config.String("OPENMAIL_READ_ONLY").pipe(Config.withDefault("0"), Effect.orDie)) ===
+        "1";
+      const rawProviders = yield* Providers;
+      const adapters = new Map<Provider, import("./services.js").ProviderAdapter>();
+      const providers = Providers.of({
+        get: (provider) => {
+          if (!readOnly) return rawProviders.get(provider);
+          const cached = adapters.get(provider);
+          if (cached) return cached;
+          const adapter = readOnlyAdapter(rawProviders.get(provider));
+          adapters.set(provider, adapter);
+          return adapter;
+        },
+      });
       const secrets = yield* Secrets;
       const config = yield* AppConfig;
       const model = Option.getOrElse(yield* Effect.serviceOption(Model), () => ModelUnavailable);
@@ -426,6 +442,12 @@ export const MailboxLive = (
         const result = { done: 0, failed: 0, reauth: new Array<string>() };
         const blocked = new Set<string>();
         const queued = yield* store.listPendingOps;
+        if (readOnly) {
+          for (const item of queued)
+            if (item.op.kind === "saveDraft")
+              yield* store.setDraftSyncError(item.op.draftId, READ_ONLY_MESSAGE);
+          return { ...result, failed: queued.length };
+        }
         const settle = (
           account: Account,
           items: readonly PendingOp[],
@@ -702,6 +724,7 @@ export const MailboxLive = (
         command: Extract<Command, { kind: "send" }>,
         actor: Actor,
       ) {
+        if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         const { accountId, message } = command;
         if (message.to.length + message.cc.length + message.bcc.length === 0) {
           yield* new InvalidInput({ message: "A message needs at least one recipient." });
@@ -2069,6 +2092,7 @@ export const MailboxLive = (
         ).pipe(Effect.forkScoped);
       const outboxLock = yield* Semaphore.make(1);
       const queueSend = Effect.fn("Mailbox.queueSend")(function* (input: DraftInput, due: number) {
+        if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         if (
           !Number.isFinite(due) ||
           [...input.message.to, ...input.message.cc, ...input.message.bcc].some(
@@ -2109,6 +2133,7 @@ export const MailboxLive = (
       const flushQueuedSends = (canSend: () => boolean = () => true) =>
         Effect.gen(function* () {
           const now = yield* Clock.currentTimeMillis;
+          if (readOnly) return;
           for (const item of yield* store.queuedSends) {
             if (!canSend()) break;
             if (item.status !== "waiting" || item.due > now) continue;
