@@ -8,7 +8,7 @@ Files in `apps/desktop/build/`:
 
 | File                                      | Use                                                                                  |
 | ----------------------------------------- | ------------------------------------------------------------------------------------ |
-| `icon.icon`                               | Icon Composer master; `mac.icon` in electron-builder.yml points here                 |
+| `icon.icon`                               | Icon Composer master; `mac.icon` in electron-builder.config.cjs points here          |
 | `icon-small.icon`                         | Heavier variant for the 16 and 32 px icns slots                                      |
 | `icon.svg`                                | Flat vector version on the macOS grid, for places that cannot use the `.icon` bundle |
 | `icon.png`                                | 1024 px Liquid Glass render; Dock and window icon in dev                             |

@@ -1,83 +1,92 @@
 # openmail
 
-本地优先的桌面邮件客户端。人用 Electron 界面，模型用 CLI 和 MCP，两边读同一个本地数据库。
+本地优先的邮件客户端。桌面界面、CLI 和 MCP 共用 core 与本机 SQLite 数据库。手机端已有 Expo 基础，尚需真机验证。
 
-## 现状
+## 当前功能
 
-- Gmail：OAuth 登录，首次同步最近 90 天，之后按 history 增量同步（app 内每 2 分钟一次）。
-- 个人 Outlook（outlook.com）：OAuth 登录，按 Graph delta 增量同步各文件夹。
-- iCloud、Yahoo、QQ 邮箱、163 邮箱、Fastmail 和任意 IMAP/SMTP 服务器：用应用专用密码或授权码登录。
-- 归档、删除、星标、已读、标签和文件夹、写信、回复、转发。改动先写本地，再排队推到服务器，断网时等下次同步。
-- 写信：草稿自动保存并和服务器双向同步，发送并归档，可设的撤销发送（0 到 30 秒），作为附件转发，忘带附件提醒，Markdown，模板（⌘/），按发件地址的签名（Gmail 同步，本地优先），按往来邮件补全收件人。
-- 阅读：标为已读的时机（立即、1/3/5 秒后、手动），会话归组开关和会话内顺序，原始邮件，打印和存为 PDF，在单独窗口打开会话，每封邮件切换浅色或深色背景，7 档字号（⌘+ ⌘− ⌘0），附件打开、保存和全部保存。
-- 搜索与整理（待真实账户验证）：本地 FTS 与三家服务器搜索合并，搜索 token 和文件夹范围；标签和嵌套文件夹管理、显隐、颜色、收藏，⇧⌘G 前往文件夹；持久化稍后提醒；Gmail 和 Outlook 服务器过滤器、自动回复；Gmail 发件别名、签名同步和按账户分类开关。范围和验证清单见 [路线图切片 3](docs/roadmap.md#切片-3-搜索与整理做了什么留了什么)。
-- 新增设置 scope 不影响已有账户收发。过滤器、自动回复或 Gmail 别名提示权限不足时，在对应设置页重新登录。
-- 远程图片默认拦截，可按发件人或域名总是加载。约 100 个追踪服务的像素和 1×1 远程图片在任何情况下都会拦掉，邮件上显示拦了几个。
-- AI 通过 MCP 读邮件。改动邮件默认关闭，在设置的「AI 权限」里打开。AI 写的邮件只能作为建议，由你在 app 里检查后发出。
-- 公司 M365 不支持：需要租户管理员授权应用，openmail 不绕过。
+- 账户：Gmail、个人 Outlook，以及 iCloud、Yahoo、QQ、163、Fastmail 和自定义 IMAP/SMTP。OAuth 使用用户自己注册的客户端；IMAP 使用应用专用密码或授权码。公司 M365 不在支持范围。
+- 同步与整理：增量同步、离线操作队列、旧邮件回填、批量及单封操作、持久撤销记录、稍后提醒、标签与嵌套文件夹、Gmail 分类、服务器过滤器和自动回复。IMAP IDLE 提供新邮件信号，断线时保留轮询。
+- 撰写：草稿自动保存与双向同步、富文本／纯文本／Markdown、回复与转发、附件转发、发送并归档、0 至 30 秒撤销发送、附件提醒、模板、命名签名、发件地址选择和联系人补全。支持服务器联系人；macOS 可显式开启 Apple Contacts。
+- 阅读与搜索：会话和单封视图、消息文本查找、原始邮件与 EML、打印和 PDF、附件打开与保存、远程图片控制、追踪器拦截。本地全文检索支持布尔、短语、日期、大小等运算符，并可合并服务器搜索；可选本机 OCR、PDF 文本和语义索引。
+- 桌面：Profiles 账户分组、通知时段、菜单栏、Dock、原生菜单、拼写检查、多窗口、邮件链接和三套快捷键。包含键盘导航与无障碍回归，界面支持英语、简体中文、捷克语、荷兰语、法语、德语、意大利语、日语、俄语、西班牙语。
+- AI：账户授权默认关闭。开启后可用 Anthropic 流式摘要、邮件助手、撰写改写与翻译、收件箱分拣建议。MCP 默认读取；写工具只创建提议，发送须在 app 中确认。授权、数据范围和工具限制见[架构](docs/architecture.md#model-端口)与[代理使用指南](docs/agents.md)。
 
-## 结构
+代码已覆盖这些产品路径。真实账户、系统权限和签名成品的验收范围见[路线图](docs/roadmap.md#待用户完成)。功能对齐的剩余缺口见 [parity](docs/parity.md)。
 
-```
-apps/desktop     Electron 44 / electron-vite / React 19 / Tailwind v4 / Effect atoms / Base UI / Lingui
-packages/core    Effect v4：Mailbox 服务、provider 适配器、OAuth、SQLite（node:sqlite + FTS5 trigram）、AI 工具
-packages/cli     `openmail` CLI 和 `openmail-mcp` MCP server
-```
+## 安装、构建与运行
 
-架构和 AI 权限的设计见 [docs/architecture.md](docs/architecture.md)。
+桌面开发和打包目前以 macOS 为目标。使用 Node ≥22.13、pnpm 11.17.0；原生 helper 编译需要 Xcode Command Line Tools。
 
-数据目录：macOS 在 `~/Library/Application Support/openmail`，可用 `OPENMAIL_HOME` 覆盖。里面有 `mail.db` 和 `config.json`。refresh token 和 IMAP 密码在系统钥匙串，service 名 `openmail`。
-
-## 开发
+在仓库根目录运行：
 
 ```sh
-pnpm install
-pnpm build            # core → cli → desktop
-pnpm dev              # 启动桌面 app
-pnpm test
-pnpm check            # oxlint + oxfmt
+pnpm install --frozen-lockfile
+pnpm build
+pnpm dev
 ```
 
-先按 [docs/setup-google.md](docs/setup-google.md)（Gmail）或 [docs/setup-microsoft.md](docs/setup-microsoft.md)（个人 Outlook）建好各自的 OAuth 客户端。`pnpm build` 之后跑 `scripts/setup-oauth.sh`，向导会逐步打开控制台页面、收集 client ID、存进 config.json 并登录。
+`pnpm build` 构建 core、CLI 和桌面，同时编译手机端语言目录并检查类型。它不生成手机原生应用。`pnpm dev` 启动 Electron 桌面端。
 
-## CLI
+按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 注册自己的 OAuth 客户端，在 app 的账户引导中填入配置。构建后也可运行 `scripts/setup-oauth.sh` 完成配置与登录。IMAP 账户在 app 中选择预设并填写密码。
+
+打包还需 Xcode 26 编译 Icon Composer 图标。生成本地 macOS arm64／x64 DMG 和 ZIP：
 
 ```sh
-openmail config google --client-id <id> --client-secret <secret>
-openmail config microsoft --client-id <id>
-openmail accounts add gmail
-openmail accounts add outlook
-openmail accounts add imap --preset icloud --email me@icloud.com   # 提示输入 App 专用密码
-openmail accounts reauth gmail:me@example.com
-openmail sync
-openmail list --mailbox inbox --unread --json
-openmail search 报价 1550 --json
-openmail profiles add 工作 --icon 🏭 --color blue
-openmail profiles assign gmail:me@example.com <profile-id>
-openmail list --profile <profile-id> --label <label-id>
-openmail show '<message-id>' --thread
-openmail proposals list
-openmail proposals approve <id>
-openmail agents write-mode propose
-openmail audit --limit 20
+pnpm --filter @openmail/desktop dist
 ```
 
-传统 CLI 操作记在审计里，身份是 `user:cli`；模型工具调用的身份见[代理使用指南](docs/agents.md)。CLI 不发信，没有 send 命令。发信要在 app 的审阅窗口里完成。
+本地包使用 ad-hoc 签名。正式签名、公证、安装包验证和自动更新配置见[发布说明](docs/release.md)。
 
-IMAP 密码按顺序取 `--password`、环境变量 `OPENMAIL_IMAP_PASSWORD`、交互提示。`--preset` 可选 `icloud`、`yahoo`、`qq`、`163`、`fastmail`、`custom`。`custom` 需要 `--imap-host` 和 `--smtp-host`。
+## CLI 与 MCP
 
-`proposals approve` 可批准普通规则的分拣提议。MCP 和内置助手提议须在 app 中批准；发信须在 app 中审阅。
+构建后无需全局安装即可调用 CLI：
 
-本地调用：`node packages/cli/dist/cli.js …`，或在 `packages/cli` 里 `pnpm link --global`。
+```sh
+node packages/cli/dist/cli.js accounts list
+node packages/cli/dist/cli.js sync
+node packages/cli/dist/cli.js list --mailbox inbox --unread --json
+node packages/cli/dist/cli.js search 'from:alice@example.com has:attachment' --server --json
+node packages/cli/dist/cli.js tools --json
+```
 
-## MCP
+也可运行 `pnpm --dir packages/cli link --global`，之后使用 `openmail`。MCP 客户端的 stdio 配置如下，`args` 路径须替换为本机仓库绝对路径：
 
-`openmail mcp` 默认只暴露读取工具。开启 `--allow-writes` 后，改动仍须 app 内审批。CLI 的模型工具命令共用同一 Toolkit，支持游标、输出预算和 `--json`。接入配置及工具说明见 [代理使用指南](docs/agents.md)。
+```json
+{
+  "mcpServers": {
+    "openmail": {
+      "command": "node",
+      "args": ["/absolute/path/to/openmail/packages/cli/dist/cli.js", "mcp"]
+    }
+  }
+}
+```
 
-## 路线
+`openmail mcp` 和 `openmail-mcp` 共用工具与权限。CLI 没有发送命令。接入方式、分页、预算、写提议与审批边界只在[代理使用指南](docs/agents.md)维护。
 
-目标是对齐 Mimestream 的全部功能，之后出手机端。分阶段计划见 [docs/roadmap.md](docs/roadmap.md)。
+桌面、CLI 和 MCP 默认数据目录为 `~/Library/Application Support/openmail`，可用 `OPENMAIL_HOME` 覆盖。`mail.db` 保存邮件和设置，`config.json` 保存 OAuth 客户端配置；refresh token、IMAP 密码与 AI API 密钥经 core 存入系统钥匙串。手机端使用设备自己的数据库和安全存储，目前没有跨设备本地状态同步。
+
+## 手机端
+
+`apps/mobile` 使用 Expo、React Native 和 `@openmail/core/portable`。已接入 Gmail／个人 Outlook 授权、账户和邮箱列表、分页会话、受限 HTML 阅读、下拉同步，以及十种语言。测试通过 Node SQLite shim 和原生服务 mocks 验证核心路径。
+
+原生 SQLite、Metro 和 OAuth 仍需开发构建实测。当前没有发送界面、IMAP/SMTP、自动轮询、后台刷新或推送。配置、能力限制与后续步骤见[手机端说明](apps/mobile/README.md)。
+
+## 文档与检查
+
+- [领域术语与模块入口](CONTEXT.md)、[架构](docs/architecture.md)、[平台依赖清单](docs/platform-inventory.md)：探索或调整模块时读取。
+- [路线图](docs/roadmap.md)、[功能对齐审计](docs/parity.md)：查看进度、验收和剩余范围。
+- [测试](docs/testing.md)、[性能](docs/performance.md)：复现自动检查与测量。
+- [Apple Contacts](docs/apple-contacts.md)：查看本机通讯录权限、缓存和签名要求。
+- [仓库规则](AGENTS.md)：查看网络、数据库、凭证、邮件 HTML 和 MCP 的约束。
+
+```sh
+pnpm build
+OPENMAIL_LOW_MEMORY_TESTS=1 pnpm test
+pnpm exec oxlint
+pnpm exec oxfmt --check .
+```
 
 ## 致谢
 
-服务商图标来自 Iconify 图标包。Icons by selfh.st, https://selfh.st/icons（CC BY 4.0）。
+服务商图标来自 Iconify 图标包。selfh.st 图标使用 CC BY 4.0，见 [selfh.st/icons](https://selfh.st/icons)。

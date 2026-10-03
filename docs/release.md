@@ -1,6 +1,6 @@
 # macOS 构建与验证
 
-配置在 [electron-builder.config.cjs](../apps/desktop/electron-builder.config.cjs)。图标仍用现有占位图，正式图标从 [候选](design/icon-options/README.md) 中选。
+配置在 [electron-builder.config.cjs](../apps/desktop/electron-builder.config.cjs)。当前使用 Flap o 图标，源文件和生成命令见[图标说明](design/icons.md)。打包需要 Xcode 26 编译 Icon Composer 资源。
 
 ## 本地构建
 
@@ -38,7 +38,7 @@ x64 的目录是 `release/mac/`。该参数同时隔离 Chromium、core 的数�
 pnpm --filter @openmail/desktop dist:signed
 ```
 
-签名使用钥匙串中的 Developer ID，或 `CSC_LINK` 与 `CSC_KEY_PASSWORD`。`forceCodeSigning` 会让缺少签名身份的正式构建失败。启用 hardened runtime，正式 entitlements 只允许 JIT；ad-hoc 包另用 unsigned plist 允许加载 Electron 的不同团队预签名库。
+签名使用钥匙串中的 Developer ID，或 `CSC_LINK` 与 `CSC_KEY_PASSWORD`。`forceCodeSigning` 会让缺少签名身份的正式构建失败。启用 hardened runtime；签名与 helper entitlement 规则见 [Apple Contacts](apple-contacts.md#打包与权限)。ad-hoc 包另用 unsigned plist 允许加载 Electron 的不同团队预签名库。
 
 公证接受任一完整配置，缺省时跳过：
 
@@ -46,7 +46,7 @@ pnpm --filter @openmail/desktop dist:signed
 - `APPLE_API_KEY`、`APPLE_API_KEY_ID`、`APPLE_API_ISSUER`。
 - `APPLE_KEYCHAIN_PROFILE`，需要时加 `APPLE_KEYCHAIN`。
 
-构建器的凭证规则见 [electron-builder 26 macOS 文档](https://www.electron.build/v26/docs/mac/)。三个 plist 均在 `apps/desktop/build/`。
+构建器的凭证规则见 [electron-builder 26 macOS 文档](https://www.electron.build/v26/docs/mac/)。签名与继承 plist 在 `apps/desktop/build/`；Apple Contacts helper 使用独立 entitlement，具体规则见 [Apple Contacts](apple-contacts.md#打包与权限)。
 
 ## 自动更新
 
@@ -63,7 +63,7 @@ core 接受 Electron updater 适配器，统一配置和发起网络检查。窗
 
 ## 旧邮件与缓存
 
-「设置 > 阅读 > 旧邮件与缓存」显示每账户已检查的邮件数、完成状态和最近错误，支持暂停、继续。检查点保存在缓存迁移的 `backfill` 表。真实媒体、联系人和系统迁移保留，已移除占位。媒体二期占用 11、12，缓存迁移现为 13。
+设置中的 Local cache 页显示每账户已检查的邮件数、完成状态和最近错误，支持暂停、继续。检查点保存在迁移 13 的 `backfill` 表。页面同时显示消息文本与附件缓存字节，可清理单账户或全部缓存；统计不包含邮件头与索引的数据库空间。
 
 每页最多 50 封。后台每 20 秒轮流处理一个账户，至少间隔 10 秒；失败等 5 分钟重试，单页超时 90 秒。正常同步占用同一个网络锁，回填在同步之间运行；已开始的单页会完成或超时，再让同步接手。暂停阻止下一页，当前页落库后保存检查点。退出中断未完成的页，重启从上一页重试。
 
@@ -73,13 +73,17 @@ Gmail 用固定时间上界的 `messages.list` 与 `pageToken`，Graph 按 `rece
 
 缓存默认：Inbox 全部，All Mail 一年，Spam/Trash 30 天。标签设置覆盖 All Mail；多标签邮件用最长的匹配期限，草稿始终保留。自定义标签的「使用默认值」继承账户规则。
 
-过期时清空正文，保留邮件头、预览和附件名称、大小、类型。现有附件每次按需下载，没有持久化字节缓存；用户保存的文件不属于缓存。每日按日期索引只检查可能过期的缓存；修改缓存规则可强制清理。最近 24 小时打开的邮件跳过清理。FTS 触发器只响应主题、发件人和纯文本正文变更，清正文仍保留 rowid 和邮件头词项。媒体和语义更新触发器都跳过 body_cached 状态切换，保留 OCR/PDF 文本及向量。CLI/MCP 的 thread 和模型读取只读本地；桌面显式 readerThread 才补取正文，单封失败返回邮件头与 bodyCached:false，其他邮件仍可阅读。
+过期时清空消息文本与 HTML，保留邮件头、预览和附件名称、大小、类型。附件按需下载到持久文件缓存，默认全局上限 512 MiB，按访问时间 LRU 淘汰；可在 Local cache 页调整上限或关闭。清缓存保留邮件头与草稿，用户保存的文件不属于缓存。内存附件 LRU 是另一个限额，见[性能](performance.md#内存与启动)。
+
+每日按日期索引只检查可能过期的消息文本；修改缓存规则可强制清理。最近 24 小时打开的邮件跳过清理。FTS 触发器响应索引内容变更，清内容仍保留 rowid 和邮件头词项。媒体和语义更新触发器跳过 body_cached 状态切换，保留 OCR/PDF 文本及向量。CLI/MCP 的 thread 和模型读取只读本地；桌面显式 readerThread 才补取内容，单封失败返回邮件头与 bodyCached:false，其他邮件仍可阅读。
 
 ## Intel 版语义搜索限制
 
 本次保留主线 ONNX Runtime 1.30.0。它的 npm 包没有 macOS x64 binding，postinstall 也没有提供补下载；[上游已记录该问题](https://github.com/microsoft/onnxruntime/issues/27961)。x64 包的邮件、联系人、日历和通用 Vision helper 可用，语义模型加载需等待上游补齐或另行提供同版本构建。未混入其他版本的 native binding，未降级主线运行时。
 
-## 本次验证
+## 历史验证（发布切片）
+
+以下为发布切片的验收记录，测试数量不代表当前仓库。现在的自动检查见[测试](testing.md)，尚需用户完成的验收见[路线图](roadmap.md#待用户完成)。
 
 - `pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .` 通过，core 330 个测试、桌面 18 个测试，1 项模型集成默认跳过，只有原有两条 IO 边界类型断言警告。
 - `pnpm --filter @openmail/desktop dist` 生成四个安装包，两种 app 的 `codesign --verify --deep --strict` 通过。构建中未公证、未发布。

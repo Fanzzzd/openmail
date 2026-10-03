@@ -1,8 +1,12 @@
-# Performance
+# 性能
 
-Measured on this Mac with Node v24.21.0 and `node:sqlite`. No Electron, dev app, packaged app, model download or real account was started.
+本页保留 slice 36 在本机的测量，使用 Node v24.21.0 和 `node:sqlite`。测量未启动 Electron、开发应用、安装包、模型下载或真实账户。后续切片未在本页重新测量，以下数字不代表当前构建的冷启动或端到端时延。
 
-The scratch database uses real migrations and `Store.upsertMessage`: 150,000 messages, 3 accounts, 50,001 conversations, 20 custom labels, 3,000 company/contact snapshots, 15,000 attachment descriptors, both FTS indexes, incoming/sent/server contact candidates, 1,000 invite responses, 1,500 cached invite revisions, and reminders. Bodies contain about 1 KiB of synthetic text/HTML. SQLite page cache: 8 MiB; Node heap limit: 192 MiB. SQL baseline: main `1434a8b` with migration 26. Reads use five warm runs, writes three; the table reports medians in milliseconds. Plans come from the actual Store statements, captured separately from read/write timing. Full cache eviction is one timed run with plan capture.
+## 条件与复现
+
+合成数据库运行真实迁移，通过 `Store.upsertMessage` 写入 150,000 封邮件、3 个账户、50,001 个会话、20 个自定义标签、3,000 个公司／联系人快照和 15,000 项附件元数据。包含两个 FTS 索引、往来及服务端联系人候选、1,000 条邀请响应、1,500 条邀请历史和提醒。消息文本与 HTML 约 1 KiB。SQLite 页缓存 8 MiB，Node 堆上限 192 MiB。
+
+SQL 基准为 main `1434a8b`，含迁移 26。读取取五次热运行中位数，写入取三次中位数；完整缓存清理只测一次。查询计划来自真实 Store SQL，单独采集，不计入读写时间。
 
 ```sh
 pnpm --filter @openmail/core build
@@ -12,73 +16,73 @@ OPENMAIL_LOW_MEMORY_TESTS=1 node --expose-gc packages/core/scripts/sync-memory.m
 OPENMAIL_LOW_MEMORY_TESTS=1 node --expose-gc packages/core/scripts/idle-memory.mjs
 ```
 
-The JSON reports contain every SQL statement and `EXPLAIN QUERY PLAN`. The historical runner skips broad FTS cases because they can stall for minutes. The common-word lower bound was measured before the targeted FTS fix, with earlier indexes already present; that query was stopped after more than three minutes. Common result-count and company baselines are intermediate pre-fix measurements; invitation-cache/trigram-common baselines are N/A. Temporary databases are removed on completion. Historical SQL modules are compiled from git without changing the checkout.
+JSON 报告包含 SQL 和 `EXPLAIN QUERY PLAN`。历史 SQL 从 git 编译，不切换工作树；结束时清理临时数据库。历史运行跳过可能持续数分钟的宽范围 FTS 查询。常见词的旧查询在超过三分钟后终止；常见词计数与公司查询的旧值来自优化中间版本，N/A 表示没有基准。现在重跑的“修改后”使用当前构建，不能据此复写历史测量。
 
-| Path                   |         Before ms | After ms |
-| ---------------------- | ----------------: | -------: |
-| label first page       |              3.99 |     4.32 |
-| label next page        |              3.99 |     4.03 |
-| label unread           |              1.64 |     1.77 |
-| label flat             |              1.39 |     1.06 |
-| inbox first page       |            395.29 |     1.24 |
-| thread count           |            185.83 |    24.33 |
-| unread account badges  |            230.70 |    12.43 |
-| unread label badges    |            167.35 |    18.59 |
-| inbox label badges     |            157.55 |    14.32 |
-| FTS trigram            |              3.07 |     8.69 |
-| word search            |              2.93 |     5.89 |
-| word search common     | >180000 (timeout) |     6.18 |
-| search count common    |            186.88 |    41.94 |
-| FTS trigram common     |               N/A |    25.00 |
-| Gmail operators        |             21.48 |    18.20 |
-| contacts prefix        |             35.32 |    25.99 |
-| contacts empty         |            100.87 |    30.57 |
-| contacts company       |             81.63 |    19.10 |
-| sender history         |              0.08 |     0.08 |
-| invite lookup          |             67.66 |     0.01 |
-| reminder scan          |              0.02 |     0.01 |
-| invite response lookup |              0.01 |     0.01 |
-| cached invite history  |               N/A |     0.40 |
-| invite siblings        |               N/A |     0.03 |
-| cache candidates       |             66.50 |     0.13 |
-| rule backfill page     |              0.87 |     0.60 |
-| cache eviction scan    |              0.14 |     0.09 |
-| label change           |             16.93 |    19.87 |
-| sync 1000 new          |            326.11 |   381.33 |
-| sync 1000 re-upsert    |            109.06 |    28.03 |
-| full cache eviction    |           9680.99 |  1461.93 |
+## 查询与写入
 
-Every measured UI read is below 50 ms. Sync batches and eviction run in the background. Label changes toggle one label on 100 messages; sync measures 1,000 new messages and 1,000 unchanged re-upserts. Eviction scans in 200-row pages and clears 1,364 expired bodies.
+| 路径                 |      修改前 ms | 修改后 ms |
+| -------------------- | -------------: | --------: |
+| 标签首页             |           3.99 |      4.32 |
+| 标签下一页           |           3.99 |      4.03 |
+| 标签未读             |           1.64 |      1.77 |
+| 标签单封视图         |           1.39 |      1.06 |
+| 收件箱首页           |         395.29 |      1.24 |
+| 会话计数             |         185.83 |     24.33 |
+| 账户未读徽标         |         230.70 |     12.43 |
+| 标签未读徽标         |         167.35 |     18.59 |
+| 收件箱标签徽标       |         157.55 |     14.32 |
+| FTS trigram          |           3.07 |      8.69 |
+| 词索引搜索           |           2.93 |      5.89 |
+| 词索引常见词         | >180000 (超时) |      6.18 |
+| 常见词搜索计数       |         186.88 |     41.94 |
+| trigram 常见词       |            N/A |     25.00 |
+| Gmail 运算符         |          21.48 |     18.20 |
+| 联系人前缀           |          35.32 |     25.99 |
+| 空条件联系人         |         100.87 |     30.57 |
+| 联系人公司           |          81.63 |     19.10 |
+| 发件历史             |           0.08 |      0.08 |
+| 邀请查询             |          67.66 |      0.01 |
+| 提醒扫描             |           0.02 |      0.01 |
+| 邀请响应查询         |           0.01 |      0.01 |
+| 邀请历史缓存         |            N/A |      0.40 |
+| 关联邀请邮件         |            N/A |      0.03 |
+| 缓存候选             |          66.50 |      0.13 |
+| 规则历史应用分页     |           0.87 |      0.60 |
+| 缓存淘汰扫描         |           0.14 |      0.09 |
+| 标签修改             |          16.93 |     19.87 |
+| 同步 1000 封新邮件   |         326.11 |    381.33 |
+| 同步 1000 封不变邮件 |         109.06 |     28.03 |
+| 完整缓存清理         |        9680.99 |   1461.93 |
 
-Migration 30 follows the coordinator’s allocation. Main includes migrations 27, 28 and 29; there are no placeholders. Covering indexes avoid fetching bodies for counts, suggestions and provider-ID lookups; the trimmed RFC ID has its own index. The multi-account list walks the global date/id index instead of sorting the entire inbox. Trigger-maintained badge/search projections remove repeated JSON expansion and MIME-body reads from counts. FTS checks inside a thread now probe its rowids instead of iterating the whole hit set; a bounded 2,049-hit probe chooses date-first paging for common terms. Company completion uses one combined name/address/company FTS document with prefix indexes, preserving mixed-token matches and account ownership. Its contentless-delete index avoids duplicating original strings. [SQLite FTS5 reference](https://sqlite.org/fts5.html#contentless_delete_tables). Local-draft badges now count rows without decoding draft bodies or attachments. Identical upserts execute no UPDATE, preserving rowids and FTS indexes.
+此次测量中的 UI 读取均小于 50 ms，仅指热数据库查询。标签修改操作 100 封邮件；同步分别写入 1,000 封新邮件和 1,000 封未变邮件。清理以 200 行分页扫描，清空 1,364 封过期消息文本。同步和清理在后台运行。
 
-Remaining plan scans are bounded or necessary: date-index walks stop at the page limit; exact badge/contact counts scan their compact projections; FTS enumerates matching rowids. Participant sorts cover the few messages in each of 50 selected conversations. Badge totals sort only label/account groups; contact ranking sorts distinct addresses. Small account/pref/progress tables also scan. No UI query sorts the full messages table.
+迁移 30 增加覆盖索引、徽标与搜索投影，移除已被替代的会话和未裁剪 RFC ID 索引。多账户列表按日期／ID 索引分页，不排序整张邮件表。投影减少徽标、联系人和搜索计数对 JSON 与 MIME 内容的读取。会话 FTS 查询按 rowid 探测，常见词用最多 2,049 个命中判断是否先按日期分页。联系人公司索引用姓名、地址、公司合成文档和前缀索引，contentless-delete 避免重复保存原字符串，见 [SQLite FTS5](https://sqlite.org/fts5.html#contentless_delete_tables)。未变化的 upsert 不执行 UPDATE，保留 rowid 与 FTS。
 
-Migration 30 drops the superseded account/thread and untrimmed RFC indexes. Query-plan tests cover unread counts, thread labels, provider IDs, trimmed RFC IDs and pending operations. Concurrent openers retry migration lock contention for up to 120 seconds, while ordinary SQL keeps the five-second busy timeout; a two-process regression holds the migration lock beyond five seconds.
+保留的扫描范围有界：日期分页到页上限停止，徽标与联系人计数扫描紧凑投影，FTS 扫描命中 rowid。参与者排序只处理选出的 50 个会话。查询计划回归覆盖未读计数、会话标签、provider ID、裁剪 RFC ID 和待推送操作。
 
-The populated upgrade took 2.26 s once. Database plus WAL grew from 578.7 to 677.6 MiB. New inserts cost 17% more because indexes and projections are maintained; repeated sync becomes cheaper. These are warm synthetic measurements, not cold-disk or live-network latency.
+并发打开数据库时，迁移锁冲突最多重试 120 秒；普通 SQL 保留五秒 busy timeout。两进程回归将迁移锁持有超过五秒。填充库升级单次用时 2.26 秒，数据库加 WAL 从 578.7 增至 677.6 MiB。维护投影使新插入增加 17% 时间，重复同步减少更新成本。这些值没有冷磁盘或真实网络测量。
 
-## Memory and startup
+## 内存与启动
 
-| Measurement                                                             |    Before |    After |
-| ----------------------------------------------------------------------- | --------: | -------: |
-| IMAP batch, 25 messages with 4 MiB attachments, peak extra ArrayBuffers | 178.7 MiB | 28.0 MiB |
-| Closed-window spelling cleanup closures after 1,000 windows             |     1,000 |        0 |
-| Visible list rows rendered on a selection change                        |        12 |        2 |
+| 测量项                                                 |    修改前 |   修改后 |
+| ------------------------------------------------------ | --------: | -------: |
+| IMAP 批次，25 封各含 4 MiB 附件，额外 ArrayBuffer 峰值 | 178.7 MiB | 28.0 MiB |
+| 关闭 1,000 个窗口后保留的拼写清理闭包                  |     1,000 |        0 |
+| 选择变化时渲染的可见列表行                             |        12 |        2 |
 
-IMAP now parses sources through ImapFlow’s iterator with backpressure; the batch keeps message metadata/text, not all raw MIME and attachment buffers. The memory harness uses GC between simulated responses to distinguish retained buffers from collector scheduling. Outlook keeps one 50-message delta page, six concurrent conversions, and a 16-event queue; only message IDs survive across pages. Regression tests cover ordered upserts, move-wins deletion and final checkpoints. Reset cleanup waits for all pages to succeed, preserving cached mail when any delta page or restart fails. Core still commits at most 200 events per sync batch.
+IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留元数据和消息文本，不累计全部原始 MIME 与附件字节。内存支架在模拟响应间执行 GC，区分保留对象与 GC 调度。Outlook 每次保留一个 50 封 delta 页、六个并发转换和最多 16 个事件；跨页仅保留 ID。回归覆盖顺序、移动优先于删除及最终检查点，任一页或重启失败时不清掉旧缓存。core 每批最多提交 200 个事件。
 
-Three local, non-TLS IDLE connections used 779 KiB extra heap. After 100/200/300 connect-close cycles, retained heap was 1,815/1,734/1,831 KiB, with zero sockets and zero message-event listeners left. This plateau includes library initialization; TLS/server memory is outside the measurement.
+三条本地非 TLS IDLE 连接增加 779 KiB 堆。100／200／300 次连接关闭后保留 1,815／1,734／1,831 KiB，残留 socket 和消息监听器均为零。数据含库初始化，不含 TLS 与真实服务器开销。
 
-Window maps, notification sets, drag slots, update listeners, RPC clients and timers were audited for close/finalizer cleanup. The spelling-menu array retained every closed window; a Set now removes each listener and closure on close. Raw MIME and thread bodies have zero idle TTL, releasing content when their reader/dialog unmounts. Inline images and derived images stay cached for two minutes to avoid refetching during reader remounts. Attachment LRU remains bounded at 16 MiB and eight messages; attachment trees are request-scoped.
+拼写菜单的 Set 在窗口关闭时移除监听器与闭包。原始 MIME 和会话查询的闲置 TTL 为零，读者卸载后释放；内嵌与派生图片保留两分钟。内存附件 LRU 上限 16 MiB、八封邮件，附件树按请求管理。持久磁盘附件缓存是另一层，容量与清理见[发布说明](release.md#旧邮件与缓存)。
 
-Mandatory schema migrations and recovery checks run before core becomes available. Vision revision probing, search backfill, media/semantic batches and initial auto-sync now wait for any current or future window’s `ready-to-show`; vision getters retain the loaded revision. Node tests verify that startup waits for this event, a second window releases the gate after the first closes, and listeners are removed. Actual Electron first-paint/RSS timing was deliberately not measured. The React list test uses a Node DOM and real row renders; reader state/selection lifecycle tests cover cached-content changes.
+迁移和恢复检查在 core 就绪前完成。Vision 版本检查、搜索回填、媒体／语义批次与初次自动同步等任一窗口 `ready-to-show` 后启动。Node 测试验证首窗口关闭后第二窗口仍可释放等待，以及监听器清理。没有实测 Electron 首帧或 RSS；列表渲染计数来自 Node DOM。Apple Contacts 的进程内快照和清理限制见 [Apple Contacts](apple-contacts.md)，通用验证入口见[测试](testing.md)。
 
-## Renderer chunks
+## Renderer 构建块
 
-Initial renderer build: 3,301.19 kB JS in one entry, 714.56 kB gzip, before rebasing onto the AI slice. The rebuilt renderer also includes that slice and slice 30’s lazy language catalogs; their savings are included in the entry size. Settings, composer/editor, invite/calendar, raw source, feedback, account setup, profile editing and proposal review now load through local Suspense boundaries. Hooks, styles and action names moved out of settings modules to keep imports from pulling settings into mail. The small AI shortcut/summary controller stays eager so its keyboard shortcut works; its settings and proposal dialog are lazy. Markdown rendering is in core; there is no renderer chart or markdown library to split.
+原初始入口为 3,301.19 kB JS，gzip 714.56 kB。下表来自性能切片构建，包含当时 AI 功能与按需语言目录。设置、撰写、编辑器、邀请／日历、原始邮件、反馈、账户／Profile 编辑和提议审批经局部 Suspense 按需加载。AI 快捷键／摘要控制器留在初始入口。
 
-| Chunk             |      kB | gzip kB |
+| 构建块            |      kB | gzip kB |
 | ----------------- | ------: | ------: |
 | index             | 2673.53 |  573.55 |
 | Settings          |  223.19 |   42.73 |
@@ -107,4 +111,4 @@ Initial renderer build: 3,301.19 kB JS in one entry, 714.56 kB gzip, before reba
 | CreateLabelDialog |    2.13 |    0.89 |
 | Button            |    0.72 |    0.35 |
 
-Sizes come from `out/renderer`, with gzip computed by Python. Shared React, Effect/RPC/schema, Base UI and mail/reader code remain in the entry. Splitting reduces initial parsing rather than total installed bytes. Regenerate these sizes after `pnpm build`; hashed filenames will change.
+数字来自 `out/renderer`，gzip 由 Python 计算。React、Effect／RPC／schema、Base UI 和邮件阅读代码仍在入口。拆分减少初始解析，安装字节总量仍包含所有块。重新构建后须重新测量，不能沿用表中的大小或哈希文件名。

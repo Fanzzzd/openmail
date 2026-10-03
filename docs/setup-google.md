@@ -35,6 +35,12 @@ Desktop 类型客户端的 secret 按 Google 的定义不算机密。openmail �
 
 过滤器列表可用已有 `gmail.modify` 或 `gmail.readonly` 读取，成功返回空列表时无需重新登录；创建或删除过滤器仍需 `gmail.settings.basic`。实际 403 权限错误只在设置中提示重新登录，不改变邮件同步状态。依据：[读取列表](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list)、[创建过滤器](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create)。
 
+## 永久删除权限
+
+Gmail 的 `gmail.modify` 不允许永久删除。需要从 app 永久删除或清空垃圾箱时，在自己项目的 **Data Access** 增加 `https://mail.google.com/`，再通过 app 的永久删除权限提示重新登录。core 只在该功能的授权流程额外请求这个 scope，并检查实际授予的权限；普通登录与收发仍使用原 scopes。权限缺失不停止普通同步。CLI 的 `accounts reauth` 不请求这个额外 scope。
+
+依据：[Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes)。
+
 ## 手机端
 
 手机端必须新建 iOS 和 Android 客户端，不使用 Desktop client ID 或 secret。先完成本页项目、API、Audience 和 Data Access 设置，再配置 `apps/mobile/app.config.ts` 使用的环境变量。
