@@ -10,6 +10,9 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     SetGoogleClient: ({ clientId, clientSecret }) =>
       m.setClient({ google: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } }),
     SetMicrosoftClient: ({ clientId }) => m.setClient({ microsoft: { clientId: clientId.trim() } }),
+    OptionalServices: ({ accountId }) => m.optionalServices(accountId),
+    SetServiceEnabled: ({ accountId, service, enabled }) =>
+      m.setServiceEnabled(accountId, service, enabled),
     Accounts: () => m.accounts,
     SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
     MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),
@@ -54,6 +57,7 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     BackfillState: () => m.backfillState,
     PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
     FetchOlder: ({ query }) => m.fetchOlder(query),
+    CacheDatabaseSize: () => m.cacheDatabaseSize,
     CacheWindows: () => m.cacheWindows,
     SetCacheWindow: ({ input }) => m.setCacheWindow(input),
     SearchServer: ({ query }) => m.searchServer(query),

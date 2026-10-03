@@ -98,7 +98,9 @@ export function errorText(i18n: I18n, error: AppError): string {
         ? i18n._(msg`Authorize permission to permanently delete mail in this Gmail account.`)
         : e.feature === "calendar"
           ? i18n._(msg`Sign in again to access your calendar.`)
-          : i18n._(msg`Sign in again to sync server contacts.`),
+          : e.feature === "settings"
+            ? i18n._(msg`Sign in again to enable filters and automatic replies.`)
+            : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
     SendUncertain: () =>
       i18n._(

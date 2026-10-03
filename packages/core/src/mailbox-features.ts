@@ -1,3 +1,4 @@
+import { serviceAvailable } from "./optional-services.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { MailCodec, type MailCodecPort } from "./platform/mail-codec.js";
 import { bestComposeSender } from "./compose-sender.js";
@@ -100,8 +101,15 @@ export function makeFeatureMailbox(
           if (result.failure._tag === "FeatureScopeMissing") return yield* Effect.void;
           return yield* result.failure;
         }
-        yield* store.replaceServerContacts(accountId, result.success.contacts, now);
-        yield* store.replaceContactExtras(accountId, result.success);
+        // Check and replace atomically with local service switches.
+        yield* store.transaction(
+          Effect.gen(function* () {
+            if (!(yield* serviceAvailable(store, account, "contacts"))) return yield* Effect.void;
+            yield* store.replaceServerContacts(accountId, result.success.contacts, now);
+            yield* store.replaceContactExtras(accountId, result.success);
+            return yield* Effect.void;
+          }),
+        );
         yield* changed;
         return yield* Effect.void;
       }),

@@ -1,3 +1,4 @@
+import type { AuthorizationFeature } from "@openmail/core/schema";
 /**
  * Mutation atoms for forms that show pending and error state. Write one with
  * `useAtom(atom, { mode: "promiseExit" })`; its value is the `AsyncResult` of
@@ -61,7 +62,7 @@ export const saveClientAtom = MailClient.runtime.fn((c: ClientInput) =>
 );
 
 export const reauthAtom = Atom.family((accountId: string) =>
-  MailClient.runtime.fn(() => reauthAccount(accountId)),
+  MailClient.runtime.fn((feature?: AuthorizationFeature) => reauthAccount(accountId, feature)),
 );
 export const authorizePermanentDeleteAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn(() => reauthAccount(accountId, "permanentDelete")),

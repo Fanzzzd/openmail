@@ -44,6 +44,7 @@ export const RECOVERY_TABLES = [
   "send_as",
   "cache_windows",
   "account_oauth_scopes",
+  "account_optional_services",
   "filter_restorations",
   "invite_responses",
   "audit_log",

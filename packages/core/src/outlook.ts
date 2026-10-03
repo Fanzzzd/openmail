@@ -1,3 +1,4 @@
+import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { cleanDisplayName, messageSecurity } from "./message-security.js";
@@ -69,16 +70,7 @@ const GRAPH = "https://graph.microsoft.com/v1.0";
 // offline_access is what makes Graph return a refresh token. Accounts added
 // under the old Mail.Read scope get a 403 on their first write and are asked
 // to sign in again.
-const SCOPES = [
-  "offline_access",
-  "User.Read",
-  "Mail.ReadWrite",
-  "Mail.Send",
-  "MailboxSettings.ReadWrite",
-  "Calendars.ReadWrite",
-  "Contacts.Read",
-  "People.Read",
-];
+const SCOPES = BASE_SCOPES.outlook;
 // Immutable ids survive moves between folders, so a message archived here
 // keeps its local row and any queued op still finds it.
 const PREFER = { prefer: 'IdType="ImmutableId"' };
@@ -617,7 +609,13 @@ export const makeOutlook: Effect.Effect<
       authUrl: AUTH_URL,
       tokenUrl: TOKEN_URL,
       clientId: microsoft.clientId,
-      scopes: SCOPES,
+      scopes: [
+        ...new Set([
+          ...SCOPES,
+          ...(input.grantedScopes ?? []),
+          ...(input.feature ? OPTIONAL_SCOPES.outlook[input.feature] : []),
+        ]),
+      ],
       // Azure's portal only accepts an http `localhost` loopback redirect, so the
       // URI says localhost even though the server binds 127.0.0.1.
       redirectHost: "localhost",
@@ -649,7 +647,11 @@ export const makeOutlook: Effect.Effect<
     tokens.clear();
     permissions.clear();
     headersDenied.clear();
-    return { email: me.mail ?? me.userPrincipalName, secret: res.refreshToken.value };
+    return {
+      email: me.mail ?? me.userPrincipalName,
+      secret: res.refreshToken.value,
+      scopes: res.scopes ?? [],
+    };
   });
 
   // Server writes are authoritative while Graph folder listings catch up.

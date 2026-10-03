@@ -1533,7 +1533,7 @@ it.effect("missing Graph settings scope does not block reading mail", () =>
   }),
 );
 
-it.effect("personal Outlook consent adds MailboxSettings.ReadWrite and stays on consumers", () => {
+it.effect("personal Outlook sign-in requests base mail scopes and stays on consumers", () => {
   const http = fakeHttp({
     "GET /me": { json: { mail: account.email, userPrincipalName: account.email } },
   });
@@ -1545,7 +1545,7 @@ it.effect("personal Outlook consent adds MailboxSettings.ReadWrite and stays on 
           assert.ok(req.scopes.includes("MailboxSettings.ReadWrite"));
           assert.ok(req.scopes.includes("Mail.ReadWrite"));
           for (const scope of ["Calendars.ReadWrite", "Contacts.Read", "People.Read"])
-            assert.ok(req.scopes.includes(scope));
+            assert.isFalse(req.scopes.includes(scope));
           assert.ok(req.authUrl.includes("/consumers/"));
           return {
             accessToken: "access-token",

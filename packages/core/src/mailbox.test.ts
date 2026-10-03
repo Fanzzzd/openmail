@@ -158,6 +158,7 @@ it.effect("an auth failure pauses the account and keeps the change queued", () =
       yield* m.reauth(account!.id);
       assert.deepStrictEqual(server.connects.at(-1), {
         provider: "gmail",
+        grantedScopes: server.grantedScopes,
         loginHint: server.email,
       });
       yield* m.sync();

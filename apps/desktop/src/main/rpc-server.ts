@@ -279,9 +279,9 @@ const Handlers = MailRpcs.toLayer(
           createMainWindow();
         }),
       CopyMessageLink: ({ id, kind }) =>
-        m
-          .privateMailLink(id, kind ?? "message")
-          .pipe(Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link)))),
+        (kind === "web" ? m.messageWebUrl(id) : m.privateMailLink(id, kind ?? "message")).pipe(
+          Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link))),
+        ),
       SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),
       NativeEdit: ({ action }, { client }) =>
         Effect.sync(() => {

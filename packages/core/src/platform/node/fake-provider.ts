@@ -1,3 +1,4 @@
+import { BASE_SCOPES, OPTIONAL_SCOPES } from "../../optional-services.js";
 import {
   calendarTimestamp,
   type CalendarEvent,
@@ -89,7 +90,14 @@ export function fakeServer(email: string, messages: IncomingMessage[] = []): Fak
   return {
     supportsPermanentDelete: true,
     deleteFolderLabels: { trash: ["TRASH"], spam: ["SPAM"] },
-    grantedScopes: [],
+    grantedScopes: [
+      ...new Set([
+        ...BASE_SCOPES.gmail,
+        ...BASE_SCOPES.outlook,
+        ...Object.values(OPTIONAL_SCOPES.gmail).flat(),
+        ...Object.values(OPTIONAL_SCOPES.outlook).flat(),
+      ]),
+    ],
     email,
     contacts: [],
     contactGroups: [],

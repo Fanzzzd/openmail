@@ -1,3 +1,4 @@
+import { OptionalServices } from "./OptionalServices";
 import { AiSettings } from "./AiSettings";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
@@ -84,11 +85,18 @@ const panel = "min-h-0 flex-1 overflow-y-auto p-5 outline-none";
 interface Props {
   accounts: readonly Account[];
   initialTab?: Tab;
+  optionalAccountId?: string | null;
   onClose: () => void;
   onAddAccount: () => void;
 }
 
-export function Settings({ accounts, initialTab = "general", onClose, onAddAccount }: Props) {
+export function Settings({
+  accounts,
+  initialTab = "general",
+  optionalAccountId,
+  onClose,
+  onAddAccount,
+}: Props) {
   const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
 
@@ -122,7 +130,11 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
           ))}
         </Tabs.List>
         <Tabs.Panel value="accounts" className={panel}>
-          <Accounts accounts={accounts} onAddAccount={onAddAccount} />
+          <Accounts
+            optionalAccountId={optionalAccountId}
+            accounts={accounts}
+            onAddAccount={onAddAccount}
+          />
         </Tabs.Panel>
         <Tabs.Panel value="organize" className={panel}>
           <OrganizationSettings accounts={accounts} />
@@ -176,9 +188,11 @@ export function Settings({ accounts, initialTab = "general", onClose, onAddAccou
 }
 
 function Accounts({
+  optionalAccountId,
   accounts,
   onAddAccount,
 }: {
+  optionalAccountId?: string | null;
   accounts: readonly Account[];
   onAddAccount: () => void;
 }) {
@@ -222,6 +236,7 @@ function Accounts({
               .map((a) => (
                 <AccountRow
                   key={a.id}
+                  optionalFocus={optionalAccountId === a.id}
                   account={a}
                   accounts={accounts}
                   move={move}
@@ -268,6 +283,7 @@ function Accounts({
 }
 
 function AccountRow({
+  optionalFocus,
   account: a,
   accounts,
   move,
@@ -275,6 +291,7 @@ function AccountRow({
   moving,
   ...dragProps
 }: {
+  optionalFocus: boolean;
   account: Account;
   moving: boolean;
   accounts: readonly Account[];
@@ -333,7 +350,7 @@ function AccountRow({
         type="button"
         disabled={reauth.waiting}
         // IMAP signs in again by adding the same address with a new password.
-        onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth())}
+        onClick={() => (a.provider === "imap" ? onAddAccount() : runReauth(undefined))}
         className="h-7 shrink-0 rounded-md px-2.5 text-a11y-accent hover:bg-blue-500/10 disabled:opacity-50 dark:text-blue-400"
       >
         <Trans>Sign in again</Trans>
@@ -352,6 +369,7 @@ function AccountRow({
         move={move}
         moving={moving}
       />
+      <OptionalServices account={a} focus={optionalFocus} />
       <Alert
         open={confirming}
         onOpenChange={setConfirming}

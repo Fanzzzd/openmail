@@ -782,6 +782,10 @@ msgstr "Vestavěná AI"
 msgid "Bulleted list"
 msgstr "Seznam s odrážkami"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Calendar"
+msgstr "Kalendář"
+
 #: src/renderer/src/errors.ts
 msgid "Calendar access is unavailable for this account"
 msgstr "Přístup ke kalendáři je pro tento účet nedostupný"
@@ -1117,9 +1121,17 @@ msgstr "Potvrďte odstranění"
 msgid "Confirm rule changes?"
 msgstr "Potvrdit změny pravidel?"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect"
+msgstr "Připojit"
+
 #: src/renderer/src/App.tsx
 msgid "Connect an account to send feedback"
 msgstr "Chcete-li odeslat zpětnou vazbu, připojte účet"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect this service in Settings → Accounts → Optional services."
+msgstr "Připojte tuto službu v Nastavení → Účty → Volitelné služby."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
@@ -1128,6 +1140,10 @@ msgstr "Kontaktní skupina"
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Obnovení kontaktu se nezdařilo. Návrhy uložené v mezipaměti zůstávají k dispozici."
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Contacts"
+msgstr "Kontakty"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access allowed."
@@ -1223,6 +1239,10 @@ msgstr "Kopírovat do složek…"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Copy to local signature"
 msgstr "Zkopírujte do místního podpisu"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy webmail link"
+msgstr "Kopírovat odkaz na webovou poštu"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1449,6 +1469,10 @@ msgstr "tmavé pozadí"
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Přerušovaný seznam"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Database pages"
+msgstr "Databázové stránky"
 
 #: src/renderer/src/recovery-labels.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
@@ -1942,6 +1966,7 @@ msgid "Find in message"
 msgstr "Najít ve zprávě"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
 msgstr "Dokončete přihlašování ve svém prohlížeči"
@@ -2106,10 +2131,18 @@ msgstr "Výchozí Gmail"
 msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
 msgstr "Štítky a hvězdičky konceptů Gmailu zůstávají na tomto Macu. Gmail povoluje u serverových konceptů pouze štítek Koncept."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Gmail Settings"
+msgstr "Nastavení Gmailu"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Go to folder"
 msgstr "Přejděte do složky"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Granted"
+msgstr "Povoleno"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Group accounts and choose a profile in the window toolbar."
@@ -2585,6 +2618,10 @@ msgstr "Schránka"
 msgid "Mailboxes"
 msgstr "Schránky"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "MailboxSettings"
+msgstr "Nastavení poštovní schránky"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Nastavit OpenMail jako výchozí"
@@ -2757,6 +2794,13 @@ msgstr "Viditelnost seznamu zpráv"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Pořadí zpráv v konverzaci"
+
+#. Storage budget for downloaded email message text.
+#. Storage budget for downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text cache limit"
+msgstr "Limit mezipaměti textů zpráv"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
@@ -3163,6 +3207,10 @@ msgstr "V doručené poště nejsou žádné nepřečtené zprávy"
 msgid "None"
 msgstr "Žádné"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Not granted"
+msgstr "Nepovoleno"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Not requested"
 msgstr "Není požadováno"
@@ -3365,6 +3413,10 @@ msgstr "Operace za posledních 24 hodin. Po ověření aktuálního stavu obnov�
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Optional"
 msgstr "Volitelné"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Optional services"
+msgstr "Volitelné služby"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -3903,9 +3955,17 @@ msgstr "Pokračovat"
 msgid "Resume syncing"
 msgstr "Obnovit synchronizaci"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
+msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
+
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Zkusit znovu"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Reusable database space"
+msgstr "Znovu využitelné místo v databázi"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -4984,6 +5044,14 @@ msgstr "Důvěryhodná ověřovací služba (volitelné)"
 msgid "Tuesday"
 msgstr "Úterý"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turn off"
+msgstr "Vypnout"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turned off"
+msgstr "Vypnuto"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
@@ -5205,6 +5273,10 @@ msgstr "Čeká se na povolení přístupu ke kontaktům. Odpovězte na systémov
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "Čekání na přihlášení…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Webmail link copied"
+msgstr "Odkaz na webovou poštu zkopírován"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Wednesday"

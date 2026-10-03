@@ -1,3 +1,4 @@
+import type { OptionalService, AuthorizationFeature, ServiceGrant } from "./optional-services.js";
 import type {
   AiSettings,
   AiAccountSettings,
@@ -184,13 +185,19 @@ export class Mailbox extends Context.Service<
       actions: Prefs["notificationActions"],
     ): Effect.Effect<void>;
     notificationActions(id: string): Effect.Effect<Prefs["notificationActions"]>;
+    optionalServices(accountId: string): Effect.Effect<ServiceGrant[], NotFound>;
+    setServiceEnabled(
+      accountId: string,
+      service: OptionalService,
+      enabled: boolean,
+    ): Effect.Effect<void, NotFound | InvalidInput>;
     readonly accounts: Effect.Effect<Account[]>;
     /** Signs in (OAuth consent page or IMAP password) and starts a sync. Re-adding an account signs it in again. */
     connect(input: ConnectInput): Effect.Effect<Account, SignInError>;
     /** Signs an OAuth account in again with its provider. */
     reauth(
       accountId: string,
-      feature?: "permanentDelete",
+      feature?: AuthorizationFeature,
     ): Effect.Effect<Account, SignInError | NotFound | FeatureScopeMissing>;
     readonly clientSetup: Effect.Effect<{
       googleConfigured: boolean;
@@ -493,6 +500,7 @@ export class Mailbox extends Context.Service<
       client: UpdateClient,
       options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<() => void, ProviderError>;
+    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").CacheDatabaseSize>;
     readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
     clearCache(accountId?: string): Effect.Effect<void>;
     initializeProfiles(

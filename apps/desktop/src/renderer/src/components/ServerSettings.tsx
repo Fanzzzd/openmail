@@ -1,3 +1,4 @@
+import { ServiceHint } from "./OptionalServices";
 import { accountName } from "../format";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -59,6 +60,7 @@ export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
         onValueChange={setId}
         options={available.map((a) => ({ value: a.id, label: accountName(a) }))}
       />
+      <ServiceHint accountId={account.id} service="settings" />
       <AccountServerSettings key={id} account={account} />
       <ContactSettings key={`contacts:${id}`} account={account} />
     </section>
@@ -84,7 +86,7 @@ function AccountServerSettings({ account }: { account: Account }) {
             <button
               type="button"
               disabled={signedIn.waiting}
-              onClick={() => reauth()}
+              onClick={() => reauth("settings")}
               className={formButton}
             >
               <Trans>Sign in again</Trans>
@@ -742,7 +744,7 @@ export function FilterEditor({
                 resultError(i18n, prepared)}
             </p>
             {settingsScopeMissing(result) && (
-              <button type="button" disabled={signedIn.waiting} onClick={() => reauth()}>
+              <button type="button" disabled={signedIn.waiting} onClick={() => reauth("settings")}>
                 <Trans>Sign in again to enable filters</Trans>
               </button>
             )}

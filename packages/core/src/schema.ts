@@ -62,3 +62,5 @@ export * from "./visible-text.js";
 export * from "./link-security.js";
 
 export * from "./attachment-import.js";
+
+export * from "./optional-services.js";

@@ -636,6 +636,9 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
               provider: "gmail",
               loginHint: account.email,
               feature: "permanentDelete",
+              grantedScopes: server.grantedScopes.filter(
+                (scope) => scope !== GMAIL_PERMANENT_DELETE_SCOPE,
+              ),
             });
           }
           assert.isTrue(

@@ -13,6 +13,9 @@ import { ComposeRecipients, WindowSelection } from "./window-state";
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  OptionalService,
+  AuthorizationFeature,
+  ServiceGrant,
   AttachmentInspection,
   AttachmentPath,
   ReaderAttachment,
@@ -31,6 +34,7 @@ import {
   ContactSync,
   ContactGroup,
   SuggestedSender,
+  CacheDatabaseSize,
   CacheSize,
   UpdateState,
   OlderResult,
@@ -127,6 +131,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("SpellcheckLanguages", {
     success: Schema.Struct({ languages: Schema.Array(Schema.String), automatic: Schema.Boolean }),
   }),
+  Rpc.make("CacheDatabaseSize", { success: CacheDatabaseSize }),
   Rpc.make("CacheSize", { success: Schema.Array(CacheSize) }),
   Rpc.make("ClearCache", { payload: { accountId: Schema.optionalKey(Schema.String) } }),
   Rpc.make("InitializeProfiles", {
@@ -186,13 +191,22 @@ export class MailRpcs extends RpcGroup.make(
     payload: { accountId: Schema.String, input: AccountPlacement },
     error,
   }),
+  Rpc.make("OptionalServices", {
+    payload: { accountId: Schema.String },
+    success: Schema.Array(ServiceGrant),
+    error,
+  }),
+  Rpc.make("SetServiceEnabled", {
+    payload: { accountId: Schema.String, service: OptionalService, enabled: Schema.Boolean },
+    error,
+  }),
   Rpc.make("Accounts", { success: Schema.Array(Account) }),
   /** Opens the consent page (OAuth) or checks the password (IMAP), then starts a sync. */
   Rpc.make("Connect", { payload: { input: ConnectInput }, success: Account, error }),
   Rpc.make("Reauth", {
     payload: {
       accountId: Schema.String,
-      feature: Schema.optionalKey(Schema.Literal("permanentDelete")),
+      feature: Schema.optionalKey(AuthorizationFeature),
     },
     success: Account,
     error,
@@ -701,7 +715,7 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("CopyMessageLink", {
     payload: {
       id: Schema.String,
-      kind: Schema.optionalKey(Schema.Literals(["message", "thread"])),
+      kind: Schema.optionalKey(Schema.Literals(["message", "thread", "web"])),
     },
     error,
   }),

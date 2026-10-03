@@ -340,6 +340,7 @@ export function makeComposeStore(
           stored.get("defaultProfilesPrompted"),
           d.defaultProfilesPrompted,
         ),
+        bodyCacheBytes: pref(f.bodyCacheBytes, stored.get("bodyCacheBytes"), d.bodyCacheBytes),
         attachmentCacheBytes: pref(
           f.attachmentCacheBytes,
           stored.get("attachmentCacheBytes"),

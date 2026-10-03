@@ -668,6 +668,10 @@ export const Prefs = Schema.Struct({
   spellcheck: Schema.Boolean,
   spellcheckLanguages: Schema.Array(Schema.String),
   defaultProfilesPrompted: Schema.Boolean,
+  bodyCacheBytes: Schema.Int.check(
+    Schema.isGreaterThanOrEqualTo(0),
+    Schema.isLessThanOrEqualTo(2 * 1024 ** 3),
+  ),
   attachmentCacheBytes: Schema.Int.check(
     Schema.isGreaterThanOrEqualTo(0),
     Schema.isLessThanOrEqualTo(2 * 1024 ** 3),
@@ -744,6 +748,7 @@ export const DEFAULT_PREFS: Prefs = {
   spellcheck: true,
   spellcheckLanguages: [],
   defaultProfilesPrompted: false,
+  bodyCacheBytes: 0,
   attachmentCacheBytes: 512 * 1024 ** 2,
   contactPhotos: true,
   useAppleContacts: false,

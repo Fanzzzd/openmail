@@ -69,6 +69,7 @@ function fixture<A, E>(
     const store = yield* Store;
     const m = yield* Mailbox;
     const account = yield* store.upsertAccount(provider, server.email);
+    yield* store.setGrantedScopes(account.id, server.grantedScopes);
     for (const message of server.messages.values()) yield* store.upsertMessage(account.id, message);
     return yield* body(m, store, server, account.id);
   }).pipe(

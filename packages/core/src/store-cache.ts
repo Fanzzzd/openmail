@@ -53,6 +53,7 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
   const BodyRow = Schema.Struct({
     id: Schema.String,
     date: Schema.Number,
+    is_starred: Schema.BooleanFromBit,
     labels_json: Schema.fromJsonString(Schema.Array(Schema.String)),
   });
   const touchBody = (id: string, now: number) =>
@@ -74,14 +75,22 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
     let evicted = 0;
     if (finite.length)
       for (;;) {
-        const rows = yield* all(BodyRow)(sql`SELECT id,date,labels_json FROM messages
-        WHERE account_id=${account} AND body_cached=1 AND date < ${cutoff}
+        const rows = yield* all(BodyRow)(sql`SELECT id,date,is_starred,labels_json FROM messages
+        WHERE account_id=${account} AND body_cached=1 AND is_starred=0 AND date < ${cutoff}
+          AND NOT EXISTS (SELECT 1 FROM drafts WHERE account_id=messages.account_id AND remote_message_id=messages.provider_id)
           AND (body_opened_at IS NULL OR body_opened_at < ${now - 86_400_000})
           ${cursor ? sql`AND (date > ${cursor.date} OR (date=${cursor.date} AND id > ${cursor.id}))` : sql.literal("")}
         ORDER BY date,id LIMIT 200`);
         if (!rows.length) break;
         const ids = rows
-          .filter((r) => !keepBody({ date: r.date, labels: r.labels_json }, windows, now))
+          .filter(
+            (r) =>
+              !keepBody(
+                { date: r.date, labels: r.labels_json, isStarred: r.is_starred },
+                windows,
+                now,
+              ),
+          )
           .map((r) => r.id);
         if (ids.length) {
           yield* run(
@@ -144,13 +153,116 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
     );
   });
   const bodySizes = all(Schema.Struct({ account_id: Schema.String, bytes: Schema.Number }))(
-    sql`SELECT account_id, COALESCE(SUM(length(CAST(body_text AS BLOB)) + length(CAST(body_html AS BLOB))),0) AS bytes FROM messages GROUP BY account_id`,
+    sql`SELECT account_id, COALESCE(SUM(body_bytes),0) AS bytes FROM messages GROUP BY account_id`,
   ).pipe(Effect.map((rows) => rows.map((r) => ({ accountId: r.account_id, bytes: r.bytes }))));
+  const Budget = Schema.Struct({
+    total_bytes: Schema.Number,
+    evicted_at: Schema.NullOr(Schema.Number),
+  });
+  const Candidate = Schema.Struct({
+    id: Schema.String,
+    account_id: Schema.String,
+    date: Schema.Number,
+    body_bytes: Schema.Number,
+    is_starred: Schema.BooleanFromBit,
+    labels_json: Schema.fromJsonString(Schema.Array(Schema.String)),
+    opened_at: Schema.Number,
+  });
+  const evictBodyBudget = Effect.fn("Store.evictBodyBudget")(function* (
+    maxBytes: number,
+    force = false,
+  ) {
+    // Zero means no budget. Retention windows still govern the daily expiry pass.
+    if (maxBytes === 0) return 0;
+    const now = yield* Clock.currentTimeMillis;
+    return yield* sql
+      .withTransaction(
+        Effect.gen(function* () {
+          const budget = Option.getOrThrow(
+            yield* first(Budget)(
+              sql`SELECT total_bytes,evicted_at FROM body_cache_budget WHERE id=1`,
+            ),
+          );
+          if (!force && budget.evicted_at !== null && budget.evicted_at > now - 3_600_000) return 0;
+          const custom = yield* cacheWindows;
+          const effective = new Map<string, ReturnType<typeof DEFAULT_CACHE_WINDOWS.slice>>();
+          let remaining = budget.total_bytes;
+          let count = 0;
+          let cursor: { time: number; id: string } | undefined;
+          while (remaining > maxBytes) {
+            const rows = yield* all(
+              Candidate,
+            )(sql`SELECT id,account_id,date,body_bytes,is_starred,labels_json,COALESCE(body_opened_at,date) AS opened_at FROM messages
+          WHERE body_cached=1 AND body_bytes>0 AND is_starred=0
+            AND NOT EXISTS(SELECT 1 FROM drafts WHERE drafts.account_id=messages.account_id AND drafts.remote_message_id=messages.provider_id)
+            ${cursor ? sql`AND (COALESCE(body_opened_at,date) > ${cursor.time} OR (COALESCE(body_opened_at,date)=${cursor.time} AND id>${cursor.id}))` : sql.literal("")}
+          ORDER BY COALESCE(body_opened_at,date),id LIMIT 100`);
+            if (!rows.length) break;
+            const ids: string[] = [];
+            for (const row of rows) {
+              if (remaining <= maxBytes) break;
+              let windows = effective.get(row.account_id);
+              if (!windows) {
+                const accountWindows = custom.filter(
+                  (window) => window.accountId === row.account_id,
+                );
+                windows = [
+                  ...DEFAULT_CACHE_WINDOWS.filter(
+                    (window) => !accountWindows.some((entry) => entry.label === window.label),
+                  ),
+                  ...accountWindows,
+                ];
+                effective.set(row.account_id, windows);
+              }
+              if (
+                keepBody(
+                  { date: row.date, labels: row.labels_json, isStarred: row.is_starred },
+                  windows,
+                  now,
+                )
+              )
+                continue;
+              ids.push(row.id);
+              remaining -= row.body_bytes;
+            }
+            if (ids.length) {
+              yield* run(
+                sql`UPDATE messages SET body_text='',body_html='',body_cached=0 WHERE id IN ${sql.in(ids)}`,
+              );
+              count += ids.length;
+            }
+            const last = rows.at(-1);
+            if (last) cursor = { time: last.opened_at, id: last.id };
+          }
+          yield* run(sql`UPDATE body_cache_budget SET evicted_at=${now} WHERE id=1`);
+          return count;
+        }),
+      )
+      .pipe(Effect.orDie);
+  });
+  const cacheDatabaseSize = Effect.gen(function* () {
+    const pageSize = yield* first(Schema.Struct({ page_size: Schema.Number }))(
+      sql`PRAGMA page_size`,
+    );
+    const pageCount = yield* first(Schema.Struct({ page_count: Schema.Number }))(
+      sql`PRAGMA page_count`,
+    );
+    const freePages = yield* first(Schema.Struct({ freelist_count: Schema.Number }))(
+      sql`PRAGMA freelist_count`,
+    );
+    const bytes = Option.getOrThrow(pageSize).page_size;
+    return {
+      totalBytes: bytes * Option.getOrThrow(pageCount).page_count,
+      reusableBytes: bytes * Option.getOrThrow(freePages).freelist_count,
+    };
+  });
   const clearBodies = (accountId: string) =>
     run(
       sql`UPDATE messages SET body_text='',body_html='',body_cached=0,body_opened_at=NULL WHERE account_id=${accountId} AND NOT EXISTS (SELECT 1 FROM json_each(messages.labels_json) WHERE value='DRAFT')`,
     );
   return {
+    evictBodyBudget,
+    cacheDatabaseSize,
     bodySizes,
     clearBodies,
     cacheWindows,

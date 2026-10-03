@@ -4,7 +4,7 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { moveSourceLabel } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Group, Panel } from "react-resizable-panels";
 import type { MailOp } from "../../shared/api";
 import { useAppPanels, usePanelLayout } from "./app/use-app-panels";
@@ -99,6 +99,17 @@ export function App({ composeId }: { composeId?: string }) {
     searchRef,
   } = panels;
 
+  const [optionalAccountId, setOptionalAccountId] = useState<string | null>(null);
+  useEffect(() => {
+    const open = (event: Event) => {
+      if (event instanceof CustomEvent && typeof event.detail === "string") {
+        setOptionalAccountId(event.detail);
+        setDialog("settings");
+      }
+    };
+    window.addEventListener("openmail:optional-services", open);
+    return () => window.removeEventListener("openmail:optional-services", open);
+  }, [setDialog]);
   const [toast, setToast] = useState<ToastState | null>(null);
   const hideToast = useCallback(() => setToast(null), [setToast]);
   const say = useCallback(
@@ -791,7 +802,12 @@ export function App({ composeId }: { composeId?: string }) {
       {dialog === "settings" && (
         <Settings
           accounts={accountList}
-          onClose={() => setDialog(null)}
+          initialTab={optionalAccountId ? "accounts" : "general"}
+          optionalAccountId={optionalAccountId}
+          onClose={() => {
+            setDialog(null);
+            setOptionalAccountId(null);
+          }}
           onAddAccount={() => setDialog("add")}
         />
       )}

@@ -1,3 +1,4 @@
+import type { AuthorizationFeature } from "@openmail/core/schema";
 /**
  * Changes, as Effects over the `MailClient`. Each one invalidates the
  * reactivity keys of what it changes, so the query atoms that show that data
@@ -75,7 +76,7 @@ export const decideProposal = (id: number, approve: boolean) =>
   withMail((call) => call("DecideProposal", { id, approve })).pipe(Reactivity.mutation(MAIL_KEYS));
 
 /** Signs in again with the account's provider. OAuth only; IMAP goes through Connect. */
-export const reauthAccount = (accountId: string, feature?: "permanentDelete") =>
+export const reauthAccount = (accountId: string, feature?: AuthorizationFeature) =>
   withMail((call) => call("Reauth", { accountId, ...(feature ? { feature } : {}) })).pipe(
     Reactivity.mutation(MAIL_KEYS),
   );

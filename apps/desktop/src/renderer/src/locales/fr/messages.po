@@ -782,6 +782,10 @@ msgstr "IA intégrée"
 msgid "Bulleted list"
 msgstr "Liste à puces"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Calendar"
+msgstr "Calendrier"
+
 #: src/renderer/src/errors.ts
 msgid "Calendar access is unavailable for this account"
 msgstr "L’accès au calendrier n’est pas disponible pour ce compte"
@@ -1117,9 +1121,17 @@ msgstr "Confirmer la suppression"
 msgid "Confirm rule changes?"
 msgstr "Confirmer les modifications des règles ?"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect"
+msgstr "Connecter"
+
 #: src/renderer/src/App.tsx
 msgid "Connect an account to send feedback"
 msgstr "Connectez un compte pour envoyer des commentaires"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect this service in Settings → Accounts → Optional services."
+msgstr "Connectez ce service dans Réglages → Comptes → Services facultatifs."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
@@ -1128,6 +1140,10 @@ msgstr "Groupe de contacts"
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Échec de l’actualisation des contacts. Les suggestions mises en cache restent disponibles."
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Contacts"
+msgstr "Contacts"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access allowed."
@@ -1223,6 +1239,10 @@ msgstr "Copier dans les dossiers…"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Copy to local signature"
 msgstr "Copier dans la signature locale"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy webmail link"
+msgstr "Copier le lien du webmail"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1449,6 +1469,10 @@ msgstr "Fond sombre"
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Liste pointillée"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Database pages"
+msgstr "Pages de la base de données"
 
 #: src/renderer/src/recovery-labels.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
@@ -1942,6 +1966,7 @@ msgid "Find in message"
 msgstr "Rechercher dans le message"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
 msgstr "Terminez de vous connecter dans votre navigateur"
@@ -2106,10 +2131,18 @@ msgstr "Gmail par défaut"
 msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
 msgstr "Les libellés et étoiles des brouillons Gmail restent sur ce Mac. Gmail n’autorise que le libellé Brouillon sur les brouillons du serveur."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Gmail Settings"
+msgstr "Réglages Gmail"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Go to folder"
 msgstr "Aller au dossier"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Granted"
+msgstr "Autorisé"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Group accounts and choose a profile in the window toolbar."
@@ -2585,6 +2618,10 @@ msgstr "Boîte aux lettres"
 msgid "Mailboxes"
 msgstr "Boîtes aux lettres"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "MailboxSettings"
+msgstr "Réglages de la boîte mail"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Définir OpenMail par défaut"
@@ -2757,6 +2794,13 @@ msgstr "Visibilité de la liste de messages"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Ordre des messages dans une conversation"
+
+#. Storage budget for downloaded email message text.
+#. Storage budget for downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text cache limit"
+msgstr "Limite du cache des textes de messages"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
@@ -3163,6 +3207,10 @@ msgstr "Aucun courrier non lu dans la boîte de réception"
 msgid "None"
 msgstr "Aucun"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Not granted"
+msgstr "Non autorisé"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Not requested"
 msgstr "Non demandé"
@@ -3365,6 +3413,10 @@ msgstr "Opérations des dernières 24 heures. Restaure les libellés, dossiers e
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Optional"
 msgstr "Facultatif"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Optional services"
+msgstr "Services facultatifs"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -3903,9 +3955,17 @@ msgstr "Reprendre"
 msgid "Resume syncing"
 msgstr "Reprendre la synchronisation"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
+msgstr "Les durées de conservation sont prioritaires. Les messages suivis, les textes de messages conservés, les brouillons et les messages de la boîte d’envoi restent même au-delà de la limite. Zéro désactive le quota."
+
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Réessayer"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Reusable database space"
+msgstr "Espace réutilisable de la base de données"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -4984,6 +5044,14 @@ msgstr "Service d’authentification de confiance (facultatif)"
 msgid "Tuesday"
 msgstr "Mardi"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turn off"
+msgstr "Désactiver"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turned off"
+msgstr "Désactivé"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
@@ -5205,6 +5273,10 @@ msgstr "En attente de l’autorisation d’accès aux contacts. Répondez à la 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "En attente de connexion…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Webmail link copied"
+msgstr "Lien du webmail copié"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Wednesday"

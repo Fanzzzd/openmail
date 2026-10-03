@@ -1,3 +1,4 @@
+import { ServiceHint } from "./OptionalServices";
 import { Button } from "@base-ui/react/button";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -298,12 +299,13 @@ function Invitation({
           {resultError(i18n, result)}
         </p>
       )}
+      <ServiceHint accountId={message.accountId} service="calendar" />
       {missing && (
         <Button
           className={formButton}
           disabled={signIn.waiting}
           onClick={async () => {
-            await reauth();
+            await reauth("calendar");
           }}
         >
           <Trans>Sign in again</Trans>

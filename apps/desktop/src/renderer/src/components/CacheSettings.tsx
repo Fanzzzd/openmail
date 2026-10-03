@@ -14,6 +14,9 @@ import { Select } from "./ui/Select";
 const sizesAtom = MailClient.query("CacheSize", undefined, {
   reactivityKeys: [Keys.cache, Keys.prefs],
 });
+const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
+  reactivityKeys: [Keys.cache, Keys.prefs, Keys.threads],
+});
 const clearAtom = MailClient.mutation("ClearCache");
 
 /** Local subsection: does not change the Settings layout shared with slice 4. */
@@ -22,6 +25,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
   const states = AsyncResult.getOrElse(useAtomValue(backfillStateAtom), () => []);
   const windows = AsyncResult.getOrElse(useAtomValue(cacheWindowsAtom), () => []);
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
+  const databaseSize = AsyncResult.getOrElse(useAtomValue(databaseSizeAtom), () => null);
   const sizes = AsyncResult.getOrElse(useAtomValue(sizesAtom), () => []);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const [clearResult, clear] = useAtom(clearAtom);
@@ -50,6 +54,44 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         <Trans>
           Older mail downloads in the background. Headers stay searchable when bodies expire.
           Opening a message downloads its body again.
+        </Trans>
+      </p>
+      <div className="flex items-center justify-between gap-3">
+        <span>
+          <Trans
+            context="cached message text"
+            comment="Storage budget for downloaded email message text."
+          >
+            Message text cache limit
+          </Trans>
+        </span>
+        <Select
+          aria-label={t({
+            message: "Message text cache limit",
+            context: "cached message text",
+            comment: "Storage budget for downloaded email message text.",
+          })}
+          value={String(prefs.bodyCacheBytes)}
+          options={[
+            { value: "0", label: t`Disabled` },
+            ...[128, 512, 1024, 2048].map((mb) => ({
+              value: String(mb * 1024 ** 2),
+              label: formatBytes(mb * 1024 ** 2, i18n.locale),
+            })),
+          ]}
+          disabled={limitResult.waiting}
+          onValueChange={(value) =>
+            setLimit({
+              payload: { patch: { bodyCacheBytes: Number(value) } },
+              reactivityKeys: [Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
+            })
+          }
+        />
+      </div>
+      <p className="text-xs text-a11y-muted">
+        <Trans>
+          Retention windows take precedence. Starred messages, retained message texts, drafts and
+          outbox messages are kept even when the limit is exceeded. Zero disables the budget.
         </Trans>
       </p>
       <div className="flex items-center justify-between gap-3">
@@ -93,6 +135,11 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           <Trans>Clear all caches</Trans>
         </button>
       </div>
+      <p className="text-xs text-a11y-muted">
+        <Trans>Database pages</Trans>: {formatBytes(databaseSize?.totalBytes ?? 0, i18n.locale)} ·{" "}
+        <Trans>Reusable database space</Trans>:{" "}
+        {formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}
+      </p>
       <p className="text-a11y-muted">
         <Trans>
           Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening

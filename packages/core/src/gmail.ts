@@ -1,3 +1,4 @@
+import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { messageSecurity } from "./message-security.js";
@@ -54,14 +55,7 @@ const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 // Permanent deletion is an optional incremental grant, never requested at account add time.
 // Accounts added under the old read-only scope get a 403 on their first write
 // and are asked to sign in again.
-const SCOPES = [
-  "https://www.googleapis.com/auth/gmail.modify",
-  "https://www.googleapis.com/auth/gmail.send",
-  "https://www.googleapis.com/auth/gmail.settings.basic",
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/contacts.readonly",
-  "https://www.googleapis.com/auth/contacts.other.readonly",
-];
+const SCOPES = BASE_SCOPES.gmail;
 
 /** First sync pulls this window, spam and trash included; older mail arrives later through backfill. */
 const INITIAL_QUERY = "newer_than:90d";
@@ -374,13 +368,22 @@ export const makeGmail: Effect.Effect<
       tokenUrl: TOKEN_URL,
       clientId: google.clientId,
       clientSecret: google.clientSecret,
-      scopes:
-        input.feature === "permanentDelete" ? [...SCOPES, GMAIL_PERMANENT_DELETE_SCOPE] : SCOPES,
+      scopes: [
+        ...new Set([
+          ...SCOPES,
+          ...(input.grantedScopes ?? []),
+          ...(input.feature === "permanentDelete"
+            ? [GMAIL_PERMANENT_DELETE_SCOPE]
+            : input.feature
+              ? OPTIONAL_SCOPES.gmail[input.feature]
+              : []),
+        ]),
+      ],
       // offline + consent: Google only returns a refresh token on explicit consent.
       extraParams: {
         access_type: "offline",
         prompt: "consent",
-        ...(input.feature === "permanentDelete" ? { include_granted_scopes: "true" } : {}),
+        include_granted_scopes: "true",
         ...(input.loginHint ? { login_hint: input.loginHint } : {}),
       },
     });

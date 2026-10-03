@@ -1,3 +1,5 @@
+import { makeOptionalServiceMailbox } from "./mailbox-services.js";
+import { scopedAdapter, serviceGranted, type AuthorizationFeature } from "./optional-services.js";
 import { readOnlyAdapter, READ_ONLY_MESSAGE } from "./read-only.js";
 import { inspectAttachment } from "./attachment-import.js";
 import { eventFromInvite, makeFeatureMailbox } from "./mailbox-features.js";
@@ -247,6 +249,7 @@ export const MailboxLive = (
       const inlineMediaFromRaw = (...args: Parameters<typeof unboundInlineMediaFromRaw>) =>
         unboundInlineMediaFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
       const store = yield* Store;
+      for (const account of yield* store.listAccounts) yield* store.grantedScopes(account.id);
       const backgroundReady = options.backgroundReady ?? Effect.void;
       const readOnly =
         (yield* Config.String("OPENMAIL_READ_ONLY").pipe(Config.withDefault("0"), Effect.orDie)) ===
@@ -255,10 +258,10 @@ export const MailboxLive = (
       const adapters = new Map<Provider, import("./services.js").ProviderAdapter>();
       const providers = Providers.of({
         get: (provider) => {
-          if (!readOnly) return rawProviders.get(provider);
           const cached = adapters.get(provider);
           if (cached) return cached;
-          const adapter = readOnlyAdapter(rawProviders.get(provider));
+          const scoped = scopedAdapter(rawProviders.get(provider), store);
+          const adapter = readOnly ? readOnlyAdapter(scoped) : scoped;
           adapters.set(provider, adapter);
           return adapter;
         },
@@ -2023,7 +2026,7 @@ export const MailboxLive = (
                           .sendAs(a)
                           .pipe(
                             Effect.flatMap((aliases) =>
-                              store.transaction(store.replaceSendAs(account.id, aliases)),
+                              store.transaction(store.replaceSendAs(a.id, aliases)),
                             ),
                             // Settings permission is optional for existing mail accounts.
                             Effect.catch(() => Effect.void),
@@ -2176,7 +2179,43 @@ export const MailboxLive = (
         input: ConnectInput,
         expect?: string,
       ) {
-        const connected = yield* providers.get(input.provider).connect(input);
+        const accounts = yield* store.listAccounts;
+        const hinted =
+          input.provider === "imap"
+            ? undefined
+            : accounts.find(
+                (account) =>
+                  account.provider === input.provider &&
+                  account.email.toLowerCase() === (input.loginHint ?? expect)?.toLowerCase(),
+              );
+        const scopes = hinted
+          ? yield* store.grantedScopes(hinted.id)
+          : input.provider === "imap"
+            ? []
+            : (input.grantedScopes ?? []);
+        let connected = yield* providers
+          .get(input.provider)
+          .connect(
+            input.provider === "imap" || scopes.length === 0
+              ? input
+              : { ...input, grantedScopes: scopes },
+          );
+        // Re-add without a login hint discovers the identity before requesting its saved grant.
+        const existing = accounts.find(
+          (account) =>
+            account.provider === input.provider &&
+            account.email.toLowerCase() === connected.email.toLowerCase(),
+        );
+        if (!hinted && existing && input.provider !== "imap" && input.grantedScopes === undefined) {
+          const previous = yield* store.grantedScopes(existing.id);
+          connected = yield* providers
+            .get(input.provider)
+            .connect({ ...input, loginHint: existing.email, grantedScopes: previous });
+          if (connected.email.toLowerCase() !== existing.email.toLowerCase())
+            return yield* new InvalidInput({
+              message: `Signed in as ${connected.email}, expected ${existing.email}.`,
+            });
+        }
         if (expect && connected.email.toLowerCase() !== expect.toLowerCase()) {
           return yield* new InvalidInput({
             message: `Signed in as ${connected.email}, expected ${expect}.`,
@@ -2184,7 +2223,8 @@ export const MailboxLive = (
         }
         const account = yield* store.upsertAccount(input.provider, connected.email);
         yield* secrets.set(account.id, connected.secret);
-        if (connected.scopes) yield* store.setGrantedScopes(account.id, connected.scopes);
+        if (input.provider !== "imap")
+          yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
         if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
         yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
         yield* store.setNeedsReauth(account.id, false);
@@ -2207,10 +2247,10 @@ export const MailboxLive = (
 
       const reauth = Effect.fn("Mailbox.reauth")(function* (
         accountId: string,
-        feature?: "permanentDelete",
+        feature?: AuthorizationFeature,
       ) {
         const account = yield* store.getAccount(accountId);
-        if (feature && account.provider !== "gmail")
+        if (feature === "permanentDelete" && account.provider !== "gmail")
           return yield* new InvalidInput({
             message: "Only Gmail requires an extra permanent deletion permission.",
           });
@@ -2219,25 +2259,49 @@ export const MailboxLive = (
             message: "IMAP accounts sign in again by adding the address with a new password.",
           });
         }
+        const grantedScopes = yield* store.grantedScopes(accountId);
         const result = yield* connect(
           account.provider === "gmail"
-            ? { provider: "gmail", loginHint: account.email, ...(feature ? { feature } : {}) }
-            : { provider: "outlook", loginHint: account.email },
+            ? {
+                provider: "gmail",
+                loginHint: account.email,
+                grantedScopes,
+                ...(feature ? { feature } : {}),
+              }
+            : {
+                provider: "outlook",
+                loginHint: account.email,
+                grantedScopes,
+                ...(feature && feature !== "permanentDelete" ? { feature } : {}),
+              },
           account.email,
         );
         if (
           feature &&
-          !(yield* store.grantedScopes(accountId)).includes(GMAIL_PERMANENT_DELETE_SCOPE)
+          !(feature === "permanentDelete"
+            ? (yield* store.grantedScopes(accountId)).includes(GMAIL_PERMANENT_DELETE_SCOPE)
+            : serviceGranted(account.provider, feature, yield* store.grantedScopes(accountId)))
         )
           return yield* new FeatureScopeMissing({
             accountId,
             feature,
-            message: "Google did not grant permission to permanently delete mail.",
+            message: "The provider did not grant the requested permission.",
           });
+        if (feature && feature !== "permanentDelete")
+          yield* store.setServiceEnabled(accountId, feature, true);
+        if (feature === "contacts")
+          yield* features
+            .refreshContacts(accountId, true, true)
+            .pipe(Effect.catch(() => Effect.void));
+        yield* changed;
         return result;
       });
 
       if (options.autoSync !== undefined) {
+        yield* Effect.gen(function* () {
+          yield* store.evictBodyBudget((yield* store.prefs).bodyCacheBytes);
+        }).pipe(Effect.repeat(Schedule.spaced("1 hour")), Effect.forkScoped);
+
         // Start after the first normal sync. A single account/page per tick
         // prevents large accounts from starving smaller ones.
         let nextAccount = 0;
@@ -2499,6 +2563,7 @@ export const MailboxLive = (
         ...folderMailbox,
         ...features,
         ...cache,
+        cacheDatabaseSize: store.cacheDatabaseSize,
         cacheSize: Effect.gen(function* () {
           const bodies = yield* store.bodySizes;
           return yield* Effect.forEach(yield* store.listAccounts, (a) =>
@@ -2577,6 +2642,7 @@ export const MailboxLive = (
         rememberNotificationActions: (id, actions) =>
           store.rememberNotificationActions(id, actions),
         notificationActions: (id) => store.notificationActions(id),
+        ...makeOptionalServiceMailbox(store, changed, features.refreshContacts),
         accounts: store.listAccounts,
         setAccountSettings: (id, input) =>
           Effect.gen(function* () {
@@ -2748,10 +2814,16 @@ export const MailboxLive = (
         prefs: store.prefs,
         setPrefs: (patch) =>
           Effect.gen(function* () {
+            const previous = yield* store.prefs;
             const resetState =
-              patch.updateChannel !== undefined &&
-              patch.updateChannel !== (yield* store.prefs).updateChannel;
+              patch.updateChannel !== undefined && patch.updateChannel !== previous.updateChannel;
             return yield* mutate(store.setPrefs(patch)).pipe(
+              Effect.tap(() =>
+                patch.bodyCacheBytes !== undefined &&
+                patch.bodyCacheBytes !== previous.bodyCacheBytes
+                  ? store.evictBodyBudget(patch.bodyCacheBytes, true)
+                  : Effect.void,
+              ),
               Effect.tap(() =>
                 patch.attachmentCacheBytes !== undefined && diskAttachments
                   ? cacheIO(() => diskAttachments.trim(patch.attachmentCacheBytes ?? 0), undefined)

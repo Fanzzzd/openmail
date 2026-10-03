@@ -786,6 +786,10 @@ msgstr "Built-in AI"
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Calendar"
+msgstr "Calendar"
+
 #: src/renderer/src/errors.ts
 msgid "Calendar access is unavailable for this account"
 msgstr "Calendar access is unavailable for this account"
@@ -1121,9 +1125,17 @@ msgstr "Confirm Remove"
 msgid "Confirm rule changes?"
 msgstr "Confirm rule changes?"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect"
+msgstr "Connect"
+
 #: src/renderer/src/App.tsx
 msgid "Connect an account to send feedback"
 msgstr "Connect an account to send feedback"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connect this service in Settings → Accounts → Optional services."
+msgstr "Connect this service in Settings → Accounts → Optional services."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
@@ -1132,6 +1144,10 @@ msgstr "Contact group"
 #: src/renderer/src/components/ContactSettings.tsx
 msgid "Contact refresh failed. Cached suggestions remain available."
 msgstr "Contact refresh failed. Cached suggestions remain available."
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Contacts"
+msgstr "Contacts"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access allowed."
@@ -1227,6 +1243,10 @@ msgstr "Copy to folders…"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Copy to local signature"
 msgstr "Copy to local signature"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Copy webmail link"
+msgstr "Copy webmail link"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Could not check for updates. Try again later."
@@ -1453,6 +1473,10 @@ msgstr "Dark background"
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Dashed list"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Database pages"
+msgstr "Database pages"
 
 #: src/renderer/src/recovery-labels.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
@@ -1946,6 +1970,7 @@ msgid "Find in message"
 msgstr "Find in message"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Finish signing in in your browser"
 msgstr "Finish signing in in your browser"
@@ -2110,10 +2135,18 @@ msgstr "Gmail default"
 msgid "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
 msgstr "Gmail draft labels and stars stay on this Mac. Gmail only allows the Draft label on server drafts."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Gmail Settings"
+msgstr "Gmail Settings"
+
 #: src/renderer/src/components/GoToFolder.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Go to folder"
 msgstr "Go to folder"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Granted"
+msgstr "Granted"
 
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Group accounts and choose a profile in the window toolbar."
@@ -2589,6 +2622,10 @@ msgstr "Mailbox"
 msgid "Mailboxes"
 msgstr "Mailboxes"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "MailboxSettings"
+msgstr "MailboxSettings"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Make OpenMail default"
 msgstr "Make OpenMail default"
@@ -2761,6 +2798,13 @@ msgstr "Message list visibility"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Message order in a conversation"
 msgstr "Message order in a conversation"
+
+#. Storage budget for downloaded email message text.
+#. Storage budget for downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text cache limit"
+msgstr "Message text cache limit"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
@@ -3167,6 +3211,10 @@ msgstr "No unread mail in the inbox"
 msgid "None"
 msgstr "None"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Not granted"
+msgstr "Not granted"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Not requested"
 msgstr "Not requested"
@@ -3369,6 +3417,10 @@ msgstr "Operations from the last 24 hours. Restores labels, folders and flags af
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Optional"
 msgstr "Optional"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Optional services"
+msgstr "Optional services"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Order"
@@ -3907,9 +3959,17 @@ msgstr "Resume"
 msgid "Resume syncing"
 msgstr "Resume syncing"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
+msgstr "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
+
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Retry"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Reusable database space"
+msgstr "Reusable database space"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -4988,6 +5048,14 @@ msgstr "Trusted authentication service (optional)"
 msgid "Tuesday"
 msgstr "Tuesday"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turn off"
+msgstr "Turn off"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turned off"
+msgstr "Turned off"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
@@ -5209,6 +5277,10 @@ msgstr "Waiting for Contacts permission. Respond to the system prompt."
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "Waiting for sign-in…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Webmail link copied"
+msgstr "Webmail link copied"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Wednesday"

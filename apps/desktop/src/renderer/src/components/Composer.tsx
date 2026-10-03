@@ -1,3 +1,4 @@
+import { ServiceHint } from "./OptionalServices";
 import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
@@ -334,6 +335,7 @@ export function Composer({
                 </output>
               )}
             </div>
+            <ServiceHint accountId={draft.accountId} service="contacts" />
             <div className={row}>
               <span className={label}>
                 <Trans>To</Trans>

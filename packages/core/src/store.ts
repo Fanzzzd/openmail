@@ -1,3 +1,4 @@
+import { makeServiceStore } from "./store-services.js";
 import {
   MessageSecurity,
   NotificationActions,
@@ -1866,10 +1867,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       moveAccount,
       setImapSettings,
       setNeedsReauth,
-      grantedScopes: (id) =>
-        first(Schema.Struct({ scopes_json: Schema.fromJsonString(Schema.Array(Schema.String)) }))(
-          sql`SELECT scopes_json FROM account_oauth_scopes WHERE account_id=${id}`,
-        ).pipe(Effect.map((row) => (Option.isSome(row) ? row.value.scopes_json : []))),
+      ...makeServiceStore(sql),
       setGrantedScopes: (id, scopes) =>
         run(sql`INSERT INTO account_oauth_scopes (account_id, scopes_json)
         VALUES (${id}, ${JSON.stringify([...new Set(scopes)])}) ON CONFLICT(account_id) DO UPDATE SET scopes_json=excluded.scopes_json`),

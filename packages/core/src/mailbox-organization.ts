@@ -295,7 +295,7 @@ export function makeOrganizationMailbox(
     const { account, adapter } = yield* owner(accountId);
     if (account.provider !== "gmail") return;
     const aliases = yield* adapter.sendAs(account);
-    yield* store.transaction(store.replaceSendAs(accountId, aliases));
+    yield* store.transaction(store.replaceSendAs(account.id, aliases));
     yield* changed;
   });
   const previews = new Map<

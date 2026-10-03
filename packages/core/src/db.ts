@@ -833,6 +833,28 @@ export const MIGRATIONS: readonly string[] = [
    CREATE VIRTUAL TABLE derived_word_positions USING fts5vocab(derived_words, 'instance');`,
   // Migration 32: provider authentication results and safe list-unsubscribe target.
   `ALTER TABLE messages ADD COLUMN security_json TEXT;`,
+  // Migration 33: local optional-service switches, never credentials.
+  `CREATE TABLE account_optional_services (
+    account_id TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    disabled_json TEXT NOT NULL DEFAULT '[]'
+  );`,
+  // Migration 34: body sizes, a running byte total and hourly budget maintenance.
+  `ALTER TABLE messages ADD COLUMN body_bytes INTEGER NOT NULL DEFAULT 0;
+   UPDATE messages SET body_bytes=length(CAST(body_text AS BLOB))+length(CAST(body_html AS BLOB));
+   CREATE TABLE body_cache_budget (id INTEGER PRIMARY KEY CHECK(id=1), total_bytes INTEGER NOT NULL, evicted_at INTEGER);
+   INSERT INTO body_cache_budget SELECT 1, COALESCE(SUM(body_bytes),0), NULL FROM messages;
+   CREATE INDEX messages_body_lru ON messages(COALESCE(body_opened_at,date),id) WHERE body_cached=1 AND body_bytes>0;
+   CREATE TRIGGER messages_body_bytes_ai AFTER INSERT ON messages BEGIN
+     UPDATE messages SET body_bytes=length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=new.id;
+     UPDATE body_cache_budget SET total_bytes=total_bytes+length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=1;
+   END;
+   CREATE TRIGGER messages_body_bytes_au AFTER UPDATE OF body_text,body_html ON messages WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html BEGIN
+     UPDATE messages SET body_bytes=length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=new.id;
+     UPDATE body_cache_budget SET total_bytes=total_bytes+length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB))-old.body_bytes WHERE id=1;
+   END;
+   CREATE TRIGGER messages_body_bytes_ad AFTER DELETE ON messages BEGIN
+     UPDATE body_cache_budget SET total_bytes=total_bytes-old.body_bytes WHERE id=1;
+   END;`,
 ];
 
 /**

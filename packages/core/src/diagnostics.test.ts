@@ -456,6 +456,7 @@ it("enumerates every migrated plain table as retained state or disposable cache"
   const db = new DatabaseSync(":memory:");
   for (const script of MIGRATIONS) db.exec(script);
   const cache = new Set([
+    "body_cache_budget",
     "messages",
     "labels",
     "derived",

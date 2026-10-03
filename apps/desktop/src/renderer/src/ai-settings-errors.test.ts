@@ -61,6 +61,12 @@ it("redacted errors keep their fixed localized category rather than a generic fa
   expect(
     errorText(
       i18n,
+      new FeatureScopeMissing({ accountId: "fixture", feature: "settings", message: "denied" }),
+    ),
+  ).toBe("Sign in again to enable filters and automatic replies.");
+  expect(
+    errorText(
+      i18n,
       new SettingsScopeMissing({ accountId: "fixture", message: "the operation failed." }),
     ),
   ).toBe("Sign in again to enable filters and automatic replies.");

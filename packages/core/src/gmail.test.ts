@@ -708,7 +708,7 @@ it.effect("Gmail alias selection becomes the MIME From header", () =>
   }),
 );
 
-it.effect("Gmail consent requests settings.basic alongside existing mail scopes", () => {
+it.effect("Gmail sign-in requests base mail scopes only", () => {
   const http = fakeHttp({
     "GET /profile": { json: { emailAddress: account.email, historyId: "1" } },
   });
@@ -722,7 +722,7 @@ it.effect("Gmail consent requests settings.basic alongside existing mail scopes"
           oauth: {
             authorize: (req) =>
               Effect.sync(() => {
-                assert.ok(
+                assert.isFalse(
                   req.scopes.includes("https://www.googleapis.com/auth/gmail.settings.basic"),
                 );
                 assert.strictEqual(req.scopes[0], "https://www.googleapis.com/auth/gmail.modify");
@@ -730,17 +730,13 @@ it.effect("Gmail consent requests settings.basic alongside existing mail scopes"
                 assert.deepStrictEqual(req.scopes, [
                   "https://www.googleapis.com/auth/gmail.modify",
                   "https://www.googleapis.com/auth/gmail.send",
-                  "https://www.googleapis.com/auth/gmail.settings.basic",
-                  "https://www.googleapis.com/auth/calendar.events",
-                  "https://www.googleapis.com/auth/contacts.readonly",
-                  "https://www.googleapis.com/auth/contacts.other.readonly",
                 ]);
                 for (const scope of [
                   "calendar.events",
                   "contacts.readonly",
                   "contacts.other.readonly",
                 ])
-                  assert.ok(req.scopes.includes(`https://www.googleapis.com/auth/${scope}`));
+                  assert.isFalse(req.scopes.includes(`https://www.googleapis.com/auth/${scope}`));
                 return {
                   accessToken: "access-token",
                   refreshToken: Option.some("refresh-token"),
@@ -760,10 +756,6 @@ it.effect(
     const scopes = [
       "https://www.googleapis.com/auth/gmail.modify",
       "https://www.googleapis.com/auth/gmail.send",
-      "https://www.googleapis.com/auth/gmail.settings.basic",
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/contacts.readonly",
-      "https://www.googleapis.com/auth/contacts.other.readonly",
       "https://mail.google.com/",
     ];
     const http = fakeHttp({

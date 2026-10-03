@@ -705,6 +705,20 @@ export function ThreadView({
               {t`Open in New Window`}
             </MenuItem>
           )}
+          {canOpenWeb && (
+            <MenuItem
+              onClick={() =>
+                run(
+                  withMail((call) => call("CopyMessageLink", { id: selectedId, kind: "web" })).pipe(
+                    Effect.matchCause({
+                      onSuccess: () => notify({ text: t`Webmail link copied` }),
+                      onFailure: (cause) => notify({ text: causeText(i18n, cause), tone: "error" }),
+                    }),
+                  ),
+                )
+              }
+            >{t`Copy webmail link`}</MenuItem>
+          )}
           <MenuItem
             onClick={() =>
               run(

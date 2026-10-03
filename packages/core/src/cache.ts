@@ -52,11 +52,16 @@ export const DEFAULT_CACHE_WINDOWS = [
 
 /** Specific labels override ALL. For multi-label mail, the longest window wins. */
 export function keepBody(
-  message: Pick<import("./domain.js").IncomingMessage, "date" | "labels">,
+  message: Pick<import("./domain.js").IncomingMessage, "date" | "labels"> &
+    Partial<Pick<import("./domain.js").IncomingMessage, "isStarred">>,
   windows: readonly Pick<CacheWindow, "label" | "days">[],
   now: number,
 ): boolean {
-  if (message.labels.includes("DRAFT")) return true;
+  if (
+    message.isStarred ||
+    message.labels.some((label) => ["DRAFT", "STARRED", "OUTBOX"].includes(label))
+  )
+    return true;
   const specific = windows.filter((w) => w.label !== "ALL" && message.labels.includes(w.label));
   const applicable = specific.length ? specific : windows.filter((w) => w.label === "ALL");
   return (
@@ -64,3 +69,10 @@ export function keepBody(
     applicable.some((w) => w.days === null || message.date >= now - w.days * 86_400_000)
   );
 }
+
+/** Logical SQLite pages, including headers, indexes and reusable pages; excludes the WAL file. */
+export const CacheDatabaseSize = Schema.Struct({
+  totalBytes: Schema.Number,
+  reusableBytes: Schema.Number,
+});
+export type CacheDatabaseSize = typeof CacheDatabaseSize.Type;

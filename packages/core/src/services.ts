@@ -1,3 +1,4 @@
+import type { OptionalService, AuthorizationFeature } from "./optional-services.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { WordIndexState } from "./store-word-index.js";
 import type {
@@ -225,6 +226,8 @@ export class Store extends Context.Service<
     setAccountProfile(id: string, profileId: string | null): Effect.Effect<void>;
     setImapSettings(id: string, settings: ImapSettings): Effect.Effect<void>;
     setNeedsReauth(id: string, value: boolean): Effect.Effect<void>;
+    disabledServices(id: string): Effect.Effect<readonly OptionalService[]>;
+    setServiceEnabled(id: string, service: OptionalService, enabled: boolean): Effect.Effect<void>;
     grantedScopes(id: string): Effect.Effect<readonly string[]>;
     setGrantedScopes(id: string, scopes: readonly string[]): Effect.Effect<void>;
     setSyncError(id: string, error: string | null): Effect.Effect<void>;
@@ -306,11 +309,13 @@ export class Store extends Context.Service<
       conversations?: boolean,
     ): Effect.Effect<Record<string, number>>;
 
+    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").CacheDatabaseSize>;
     readonly bodySizes: Effect.Effect<{ accountId: string; bytes: number }[]>;
     clearBodies(accountId: string): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void>;
     /** Evicts bodies through UPDATE triggers, preserving rowids and header FTS. */
+    evictBodyBudget(maxBytes: number, force?: boolean): Effect.Effect<number>;
     evictBodies(accountId: string, now: number, force?: boolean): Effect.Effect<number>;
     touchBody(id: string, now: number): Effect.Effect<void>;
     backfillCandidates(
@@ -577,9 +582,15 @@ export type ConnectInput =
   | {
       readonly provider: "gmail";
       readonly loginHint?: string;
-      readonly feature?: "permanentDelete";
+      readonly feature?: AuthorizationFeature;
+      readonly grantedScopes?: readonly string[];
     }
-  | { readonly provider: "outlook"; readonly loginHint?: string }
+  | {
+      readonly provider: "outlook";
+      readonly loginHint?: string;
+      readonly feature?: OptionalService;
+      readonly grantedScopes?: readonly string[];
+    }
   | { readonly provider: "imap"; readonly input: ImapConnectInput };
 
 /** What a successful sign-in hands back. The secret goes to the keychain, the rest to the store. */

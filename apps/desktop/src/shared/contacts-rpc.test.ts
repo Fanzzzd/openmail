@@ -1,3 +1,4 @@
+import { OPTIONAL_SCOPES } from "../../../../packages/core/src/optional-services.js";
 import { Effect, Layer, Queue } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import { RpcClient, RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
@@ -64,6 +65,7 @@ for (const denied of [
         const store = yield* Store;
         const mailbox = yield* Mailbox;
         yield* store.upsertAccount(provider, "fake@example.com");
+        yield* store.setGrantedScopes(accountId, OPTIONAL_SCOPES[provider].contacts);
         const requests = yield* Queue.unbounded<RpcMessage.FromClientEncoded>();
         const responses = yield* Queue.unbounded<RpcMessage.FromServerEncoded>();
         const disconnects = yield* Queue.unbounded<number>();

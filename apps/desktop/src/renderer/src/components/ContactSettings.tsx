@@ -1,3 +1,4 @@
+import { ServiceHint } from "./OptionalServices";
 import { Button } from "@base-ui/react/button";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -19,6 +20,7 @@ export function ContactSettings({ account }: { account: Account }) {
   const count = i18n.number(status?.count ?? 0);
   return (
     <section className="space-y-2 border-t border-black/10 pt-4 dark:border-white/10">
+      <ServiceHint accountId={account.id} service="contacts" />
       <h3 className="font-semibold">
         <Trans>Server contacts</Trans>
       </h3>
@@ -62,7 +64,7 @@ export function ContactSettings({ account }: { account: Account }) {
           <Button
             className={formButton}
             disabled={signIn.waiting || result.waiting}
-            onClick={() => reauth()}
+            onClick={() => reauth("contacts")}
           >
             <Trans>Sign in again</Trans>
           </Button>

@@ -10,7 +10,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 3. **Redirect URI**：平台选 **Public client/native (mobile & desktop)**，值填 `http://localhost`。
    - Azure 的文本框不接受 `http://127.0.0.1`，但 `http://localhost` 对 loopback 是任意端口通配，登录时用哪个端口都能回调。
 4. 注册后，在 **Overview** 页记下 **Application (client) ID**。
-5. 进入 **API permissions → Add a permission → Microsoft Graph → Delegated**，加上 `Mail.ReadWrite`、`Mail.Send`、`MailboxSettings.ReadWrite`、`Calendars.ReadWrite`、`Contacts.Read`、`People.Read`、`User.Read`、`offline_access`。个人账户不需要管理员同意。
+5. 进入 **API permissions → Add a permission → Microsoft Graph → Delegated**，加上必需的 `Mail.ReadWrite`、`Mail.Send`、`User.Read`、`offline_access`、`MailboxSettings.ReadWrite`。新账户只请求这组基础权限。`MailboxSettings.ReadWrite` 是 masterCategories 分类管理所需权限，分类属于基础邮件标签功能。可选服务按下面的表添加；个人账户不需要管理员同意。
 6. 进入 **Authentication**，确认 **Allow public client flows** 打开（公共客户端用 PKCE，不用密钥）。
 7. 在 openmail 引导页填入 client ID，或用 CLI：
 
@@ -21,6 +21,30 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 
 公共客户端没有 secret。client ID 存在 `config.json`（权限 600），refresh token 存在系统钥匙串。
 
+## 可选服务
+
+在 **Settings → Accounts → Optional services** 逐项连接。授权只使用自己注册的 client ID 和 Microsoft 官方 `consumers` 同意页；请求保留已知授权并添加本次服务 scope。新授权按 token 响应记录。完全没有 scope 记录的旧 Outlook 账户升级时按旧版完整权限登记，保留联系人和别名缓存；已记录的空授权或部分授权不会扩权。启动不清缓存，实际 403 仍按局部能力错误处理。普通重新登录和重新添加已有账户重列该账户已保存的 scopes；未指定地址重新添加时，先识别账户，再为已有账户补发保留权限的官方授权。
+
+停用只控制本机使用，不撤销 Microsoft 授权：
+
+| 开关            | 停用后的行为                                               | 清除的缓存                                     |
+| --------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| Contacts        | 停止服务器联系人刷新；本地往来地址仍可补全                 | 服务器联系人、分组、照片和对应的服务器补全条目 |
+| Calendar        | 停止服务器事件查询、创建和邀请响应                         | 无                                             |
+| MailboxSettings | 停止服务器规则和自动回复修改；分类管理与已有设置读取仍可用 | 无                                             |
+
+`MailboxSettings.ReadWrite` 保留在基础 scopes，因为列出、注册 masterCategories 需要该权限；MailboxSettings 开关只控制可选设置修改。[依据](https://learn.microsoft.com/en-us/graph/api/outlookuser-list-mastercategories?view=graph-rest-1.0)
+
+| 服务            | 在 API permissions → Microsoft Graph → Delegated 添加的权限 |
+| --------------- | ----------------------------------------------------------- |
+| Contacts        | `Contacts.Read`、`People.Read`                              |
+| Calendar        | `Calendars.ReadWrite`                                       |
+| MailboxSettings | `MailboxSettings.ReadWrite`，已包含在基础权限中             |
+
+`Contacts.Read` 可单独读取已保存联系人，`People.Read` 添加人员建议。未授权或停用时，对应功能提示连接服务，邮件继续同步。尚未实测真实同意页和部分授权结果。
+
+依据：[Microsoft 增量同意与 scopes](https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc)。
+
 新增能力使用 Microsoft Graph v1.0 的委托权限：
 
 | 端点与操作                                                                                                                             | OAuth scope                             |
@@ -30,7 +54,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 | `/me/contacts`，读取 `displayName,emailAddresses`                                                                                      | `Contacts.Read`                         |
 | `/me/people`，读取 `displayName,scoredEmailAddresses`                                                                                  | `People.Read`                           |
 
-已有授权缺少新增 scope 时，只在对应能力提示重新登录，不停邮件同步。联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。日历响应只由用户点击触发。所有授权和续期仍走 `https://login.microsoftonline.com/consumers`，不改用公司租户。
+已有授权缺少新增 scope 时，在对应能力提示连接可选服务，不停邮件同步。联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。日历响应只由用户点击触发。所有授权和续期仍走 `https://login.microsoftonline.com/consumers`，不改用公司租户。
 
 依据：[接受事件](https://learn.microsoft.com/en-us/graph/api/event-accept?view=graph-rest-1.0)、[关联会议消息](https://learn.microsoft.com/en-us/graph/api/eventmessage-get?view=graph-rest-1.0)、[Contacts](https://learn.microsoft.com/en-us/graph/api/user-list-contacts?view=graph-rest-1.0)、[People](https://learn.microsoft.com/en-us/graph/api/user-list-people?view=graph-rest-1.0)。
 
@@ -51,6 +75,6 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 6. **Allow public client flows** 保持开启，Delegated permissions 沿用本页列表。PKCE 不需要开启 implicit grant。回调或环境变量变化后重新生成并安装开发构建；Expo Go 不适用。
 7. 点击添加 Outlook 账户，打开 Microsoft 官方个人账户授权页。AuthSession 验证 state，core 使用相同 redirect URI 和 PKCE verifier 交换 token，refresh token 只进 expo-secure-store。
 
-本切片未实测真实授权。公司/学校 M365 租户仍不支持。桌面回环 URI 和 scopes 未修改。
+本切片未实测真实授权。公司/学校 M365 租户仍不支持。桌面回环 URI 保持不变，普通登录只请求基础邮件 scopes。
 
 依据：[Microsoft 手机平台配置](https://learn.microsoft.com/en-us/entra/identity-platform/scenario-mobile-app-configuration)、[Android redirect URI](https://learn.microsoft.com/en-us/entra/msal/android/frequently-asked-questions)、[Expo 原生回调](https://docs.expo.dev/guides/authentication/)。
