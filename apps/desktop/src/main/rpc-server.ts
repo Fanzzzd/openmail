@@ -1,3 +1,6 @@
+import { openExternal } from "./external";
+import { trustedSender } from "./security";
+import { decodeRpcFrame, publicRpcResponse } from "./rpc-security";
 import { mailboxHandlers } from "../shared/mailbox-handlers";
 import { desktopAppleContacts } from "./apple-contacts";
 import { currentUpdateState } from "./update-state";
@@ -15,14 +18,13 @@ import { notificationPermission, openNotificationSettings } from "./notification
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
 import { IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
 import { Effect, FiberSet, Layer, Queue } from "effect";
-import { type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
+import { RpcSerialization, RpcServer } from "effect/rpc";
 import {
   BrowserWindow,
   clipboard,
   ipcMain,
   type IpcMainEvent,
   webContents,
-  shell,
   session,
 } from "electron";
 
@@ -69,7 +71,10 @@ const ElectronProtocol = Layer.effect(
         const parser = serialization.makeUnsafe();
         const run = yield* FiberSet.makeRuntime();
 
-        const onFrame = (event: IpcMainEvent, frame: string) => {
+        const onFrame = (event: IpcMainEvent, frame: unknown) => {
+          if (!trustedSender(event)) return;
+          const messages = decodeRpcFrame(frame);
+          if (!messages) return;
           const client = event.sender;
           if (!clients.has(client.id)) {
             clients.add(client.id);
@@ -79,11 +84,9 @@ const ElectronProtocol = Layer.effect(
             });
           }
           run(
-            Effect.forEach(
-              parser.decode(frame) as ReadonlyArray<RpcMessage.FromClientEncoded>,
-              (message) => writeRequest(client.id, message),
-              { discard: true },
-            ),
+            Effect.forEach(messages, (message) => writeRequest(client.id, message), {
+              discard: true,
+            }),
           );
         };
         ipcMain.on(RPC_CHANNEL, onFrame);
@@ -93,9 +96,14 @@ const ElectronProtocol = Layer.effect(
           disconnects,
           send: (clientId, response) =>
             Effect.sync(() => {
-              const frame = parser.encode(response);
+              const frame = parser.encode(publicRpcResponse(response));
               const target = webContents.fromId(clientId);
-              if (typeof frame === "string" && target && !target.isDestroyed()) {
+              if (
+                typeof frame === "string" &&
+                target &&
+                !target.isDestroyed() &&
+                trustedSender({ sender: target, senderFrame: target.mainFrame })
+              ) {
                 target.send(RPC_CHANNEL, frame);
               }
             }),
@@ -104,7 +112,7 @@ const ElectronProtocol = Layer.effect(
           initialMessage: Effect.succeedNone,
           supportsAck: true,
           supportsTransferables: false,
-          supportsSpanPropagation: true,
+          supportsSpanPropagation: false,
           supportsNotifications: true,
           codecFor: serialization.codecFor,
         };
@@ -142,9 +150,7 @@ const Handlers = MailRpcs.toLayer(
       ContactPhoto: ({ accountId, address }) => apple.photo(accountId, address),
       SaveMessage: ({ id }, { client }) => saveMessage(m, windowOf(client.id), id),
       OpenMessageWeb: ({ id }) =>
-        m
-          .messageWebUrl(id)
-          .pipe(Effect.flatMap((url) => Effect.promise(() => shell.openExternal(url)))),
+        m.messageWebUrl(id).pipe(Effect.flatMap((url) => Effect.promise(() => openExternal(url)))),
       SearchSender: ({ address }) => desktop.search(senderSearchQuery(address)),
       AttachmentCapabilities: () => Effect.succeed({ share: process.platform === "darwin" }),
       ReleaseAttachmentDrag: (request, { client }) =>

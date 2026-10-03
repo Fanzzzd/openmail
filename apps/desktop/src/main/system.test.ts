@@ -4,6 +4,11 @@ import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
 import type { DesktopLabels } from "../shared/desktop-labels";
 import { afterEach, beforeEach, expect, it, vi, type Mock } from "vitest";
 
+vi.hoisted(() => {
+  vi.resetModules();
+  vi.doUnmock("./windows");
+});
+
 vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));
 vi.mock("electron", async () => {
   const { EventEmitter } = await import("node:events");
@@ -40,7 +45,8 @@ vi.mock("electron", async () => {
       this.query = options.query;
       return Promise.resolve();
     }
-    loadURL() {
+    loadURL(raw: string) {
+      this.query = Object.fromEntries(new URL(raw).searchParams);
       return Promise.resolve();
     }
     show() {
@@ -153,7 +159,7 @@ vi.mock("electron", async () => {
 import { Mailbox, messageLink } from "@openmail/core";
 import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
 import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
-import { Desktop, DesktopLive, receiveAppUrl } from "./system";
+import { Desktop, DesktopLive, receiveAppUrl, receiveOpenFile } from "./system";
 import { createMainWindow, openComposeWindow, openThreadWindow } from "./windows";
 
 // Expose test-only observations without narrowing Electron's production API with a cast.
@@ -1297,5 +1303,25 @@ it("resume uses fallback inbox polling while IDLE reconnect owns its catch-up", 
         expect(calls).toEqual({ full: 0, inbox: 1, paused: false });
       }).pipe(Effect.provide(localizedDesktopLayer(mailbox))),
     ),
+  );
+});
+
+it("cold launch retains a 257th Dock file so the reader reports tooMany", async () => {
+  for (let i = 0; i < 300; i++) receiveOpenFile(`/tmp/openmail-cold-file-${i}`);
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const desktop = yield* Desktop;
+      const main = observations.testState.windows[0];
+      if (!main) throw new Error("Missing main window");
+      const event = yield* desktop.events(main.webContents.id).pipe(
+        Stream.filter((event) => event._tag === "FileError"),
+        Stream.runHead,
+        Effect.timeout("2 seconds"),
+      );
+      expect(event).toMatchObject({
+        _tag: "Some",
+        value: { _tag: "FileError", reason: "tooMany" },
+      });
+    }).pipe(Effect.scoped, Effect.provide(desktopLayer(fakeServer("me@gmail.com", [])))),
   );
 });

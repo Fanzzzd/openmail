@@ -1,5 +1,5 @@
 import { Deferred, Effect, Stream } from "effect";
-import { ProviderError, PermanentError } from "@openmail/core/portable";
+import { AuthError, ProviderError, PermanentError } from "@openmail/core/portable";
 import { afterEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
@@ -136,6 +136,67 @@ function writeBody(text: string) {
   body.innerHTML = `<div>${text}</div>`;
   fireEvent.input(body);
 }
+
+it.each([
+  {
+    kind: "offline",
+    error: new ProviderError({ message: "Bearer secret /private/provider.txt", status: 503 }),
+    expected: "Can't reach the mail server right now.",
+  },
+  {
+    kind: "auth",
+    error: new AuthError({ message: "Bearer secret /private/keychain.txt" }),
+    expected: "The server rejected the sign-in.",
+  },
+])(
+  "$kind send failure keeps an actionable error through the production RPC boundary",
+  async ({ error, expected }) => {
+    current = await flow();
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    clickButton("New message");
+    await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+    edit("To", "carol@example.com");
+    edit("Subject", "Error recovery");
+    writeBody("Keep this draft");
+    // The core API produces these typed failures; exercise the real transport and UI recovery.
+    const perform = h.m.perform.bind(h.m);
+    vi.spyOn(h.m, "perform").mockImplementation((command, actor) =>
+      command.kind === "send" ? Effect.fail(error) : perform(command, actor),
+    );
+    clickButton("Send");
+    await eventually(() =>
+      expect(
+        screen.getAllByText(new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).length,
+      ).toBeTruthy(),
+    );
+    expect(h.requests.some((request) => request.tag === "Send")).toBe(true);
+    expect(document.body.textContent).not.toContain("Bearer secret");
+    expect(document.body.textContent).not.toContain("/private/");
+    expect(screen.getByRole("textbox", { name: "Body" }).textContent).toContain("Keep this draft");
+    expect(h.server.sent).toHaveLength(0);
+  },
+);
+
+it("AI key validation keeps its specific message through the production RPC boundary", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  await h.event({ _tag: "Command", command: "settings" });
+  await eventually(() => expect(screen.getByRole("tab", { name: "AI Access" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("tab", { name: "AI Access" }));
+  await eventually(() =>
+    expect(screen.getByLabelText("Anthropic API key", { exact: true })).toBeTruthy(),
+  );
+  edit("Anthropic API key", "x".repeat(4097));
+  clickButton("Save key");
+  await eventually(() =>
+    expect(h.requests.some((request) => request.tag === "SetAiKey")).toBe(true),
+  );
+  await eventually(() => expect(screen.getByText("Enter a single API key.")).toBeTruthy());
+  expect(h.requests.some((request) => request.tag === "SetAiKey")).toBe(true);
+  expect((await h.run(h.m.aiSettings)).keyConfigured).toBe(false);
+});
 
 it("new compose autosaves, holds send, Cmd+Z reopens it, and the second send delivers once", async () => {
   current = await flow({ prefs: { undoSendSeconds: 5 } });

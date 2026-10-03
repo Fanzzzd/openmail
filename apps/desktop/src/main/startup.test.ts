@@ -48,6 +48,10 @@ vi.mock("@openmail/core", () => ({
     return Layer.empty;
   },
 }));
+vi.mock("./security-bootstrap", () => ({
+  registerSecuritySchemes: vi.fn(),
+  prepareSessionSecurity: vi.fn(),
+}));
 vi.mock("./attachment-temp", () => ({ cleanupAttachmentTemps: native.cleanup }));
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
@@ -175,14 +179,14 @@ it("startup defects remain visible on stderr while the file log receives only a 
   expect(native.localLog).toHaveBeenCalledWith("startup-failed");
   expect(native.localLog.mock.calls[0]).toEqual(["startup-failed"]);
 });
-it("the diagnostics logger merges with the existing Effect logger", async () => {
+it("the diagnostics logger replaces the raw Effect logger", async () => {
   native.warnStart = true;
   const existing = vi.spyOn(Logger.defaultLogger, "log").mockImplementation(() => {
     /* Capture console output in this regression. */
   });
   await import("./index");
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled());
-  expect(existing).toHaveBeenCalled();
+  expect(existing).not.toHaveBeenCalled();
   expect(native.diagnosticLog).toHaveBeenCalled();
   (await import("electron")).app.emit("will-quit", { preventDefault: vi.fn() });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));

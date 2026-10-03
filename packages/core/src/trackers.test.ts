@@ -124,3 +124,74 @@ describe("prepareMessageHtml", () => {
     assert.isTrue(out.hasRemote);
   });
 });
+
+it("resolves mail base URLs before stripping base tags, including CSS and srcset", () => {
+  const result = prepareMessageHtml(
+    `<base href="https://shop.example/mail/"><a href="../offer?q=1&amp;x=2">Offer</a><img src="hero.png"><img srcset="small.png 1x, ../large.png 2x"><style>.hero {background:url(bg.png)}</style>`,
+  );
+  assert.notMatch(result.html, /<base\b/i);
+  assert.include(result.html, 'href="https://shop.example/offer?q=1&amp;x=2"');
+  assert.include(result.html, 'src="https://shop.example/mail/hero.png"');
+  assert.include(
+    result.html,
+    'srcset="https://shop.example/mail/small.png 1x, https://shop.example/large.png 2x"',
+  );
+  assert.include(result.html, "url(https://shop.example/mail/bg.png)");
+  assert.isTrue(result.hasRemote);
+});
+
+it("upgrades HTTP resources to HTTPS while leaving HTTP navigation links available", () => {
+  const result = prepareMessageHtml(
+    '<base href="http://shop.example/mail/"><img src="hero.png"><a href="offer">Offer</a>',
+  );
+  assert.include(result.html, 'src="https://shop.example/mail/hero.png"');
+  assert.include(result.html, 'href="http://shop.example/mail/offer"');
+});
+
+it("uses the first web base, ignores unsafe bases and rechecks relative trackers and pixels", () => {
+  const html =
+    '<BASE HREF="https://safe.example/mail/?a=1&amp;b=2"><base href="https://evil.example/"><a href="?offer=1&amp;id=2">Offer</a><img src="../pixel" width="1" height="1"><img src="//mailtrack.io/open"><svg><image xlink:href="http://safe.example/image.svg"></image></svg>';
+  const result = prepareMessageHtml(html);
+  assert.include(result.html, 'href="https://safe.example/mail/?offer=1&amp;id=2"');
+  assert.notInclude(result.html, "evil.example");
+  assert.notInclude(result.html, "mailtrack.io");
+  assert.include(result.html, 'xlink:href="https://safe.example/image.svg"');
+  assert.strictEqual(result.pixels, 1);
+  assert.deepEqual(result.trackers, ["Mailtrack"]);
+  for (const base of [
+    "file:///private/",
+    "javascript:alert(1)",
+    "data:text/html,hello",
+    "/relative/",
+  ]) {
+    const blocked = prepareMessageHtml(
+      `<base href="${base}"><a href="offer">Offer</a><img src="logo.png">`,
+    );
+    assert.notInclude(blocked.html, "<base");
+    assert.include(blocked.html, 'href="offer"');
+    assert.include(blocked.html, 'src="logo.png"');
+    assert.isFalse(blocked.hasRemote);
+  }
+});
+
+it("upgrades HTTP image alternatives and CSS while preserving cid and data images", () => {
+  const result = prepareMessageHtml(
+    '<img src="http://cdn.example/hero.png" srcset="http://cdn.example/small.png 1x, //cdn.example/big.png 2x"><div style="background:url(http://cdn.example/bg.png)"></div><img src="cid:bad%zz"><img src="data:image/png;base64,AAAA">',
+  );
+  assert.notInclude(result.html, "http:");
+  assert.include(
+    result.html,
+    'srcset="https://cdn.example/small.png 1x, https://cdn.example/big.png 2x"',
+  );
+  assert.include(result.html, "background:url(https://cdn.example/bg.png)");
+  assert.include(result.html, 'src="cid:bad%zz"');
+  assert.include(result.html, 'src="data:image/png;base64,AAAA"');
+});
+
+it("decodes attribute entities before resolving CSS and upgrades the default HTTP port", () => {
+  const result = prepareMessageHtml(
+    '<base href="http://cdn.example:80/mail/"><div style="background:url(&quot;hero.png?x=1&amp;y=2&quot;)"></div>',
+  );
+  assert.include(result.html, "url(&quot;https://cdn.example/mail/hero.png?x=1&amp;y=2&quot;)");
+  assert.notInclude(result.html, ":80");
+});

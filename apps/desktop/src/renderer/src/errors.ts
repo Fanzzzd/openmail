@@ -20,6 +20,16 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Save an Anthropic API key in AI settings.": msg`Save an Anthropic API key in AI settings.`,
+  "AI input could not be encoded.": msg`AI input could not be encoded.`,
+  "AI input budget exceeded. Ask about fewer messages.": msg`AI input budget exceeded. Ask about fewer messages.`,
+  "AI request failed. Check your key and try again.": msg`AI request failed. Check your key and try again.`,
+  "AI stream ended before completion.": msg`AI stream ended before completion.`,
+  "AI model is unavailable.": msg`AI model is unavailable.`,
+  "AI request timed out.": msg`AI request timed out.`,
+  "The thread changed. Summarize it again.": msg`The thread changed. Summarize it again.`,
+  "Invalid AI compose request.": msg`Invalid AI compose request.`,
+
   "Enter a single API key.": msg`Enter a single API key.`,
   "Invalid AI account settings.": msg`Invalid AI account settings.`,
   "Could not save the API key in the system keychain.": msg`Could not save the API key in the system keychain.`,
@@ -67,10 +77,11 @@ const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Outlook automatic replies do not support a custom subject": msg`Outlook automatic replies do not support a custom subject`,
   "Choose a verified send-as address for this account": msg`Choose a verified send-as address for this account`,
 };
+const OPERATION_FAILED = msg`the operation failed.`;
 const DEVICE_REASONS: Record<string, MessageDescriptor> = {
   "Contacts operation failed.": msg`Contacts operation failed.`,
   "no printers are available.": msg`no printers are available.`,
-  "the operation failed.": msg`the operation failed.`,
+  "the operation failed.": OPERATION_FAILED,
 };
 const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 
@@ -87,7 +98,7 @@ export function errorText(i18n: I18n, error: AppError): string {
           ? i18n._(msg`Sign in again to access your calendar.`)
           : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
-    AuthError: (e) => i18n._(msg`The server rejected the sign-in. ${e.message}`),
+    AuthError: () => i18n._(msg`The server rejected the sign-in.`),
     ClientNotConfigured: (e) => {
       const client = CLIENTS[e.provider];
       return i18n._(msg`The ${client} OAuth client is not set up yet.`);
@@ -97,11 +108,15 @@ export function errorText(i18n: I18n, error: AppError): string {
       const reason = DEVICE_REASONS[e.message];
       return reason ? i18n._(reason) : e.message;
     },
-    PermanentError: (e) => i18n._(msg`The server refused this action: ${e.message}`),
-    ProviderError: (e) => i18n._(msg`Can't reach the mail server right now: ${e.message}`),
+    PermanentError: () => i18n._(msg`The server refused this action.`),
+    ProviderError: () => i18n._(msg`Can't reach the mail server right now.`),
     InvalidInput: (e) => {
       const message = INPUT_ERRORS[e.message];
-      return message ? i18n._(message) : e.message;
+      return message
+        ? i18n._(message)
+        : e.message === "the operation failed."
+          ? i18n._(msg`Something went wrong. Please try again.`)
+          : e.message;
     },
     RpcClientError: () => i18n._(msg`Lost the connection to the background process.`),
   });

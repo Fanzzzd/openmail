@@ -13,9 +13,12 @@ import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./emai
 // gets here (`prepareMessageHtml`), so allowing images never loads them.
 // `allow-same-origin` only lets this component measure the document and
 // listen for shortcut keys; without `allow-scripts` the mail cannot use it.
+// The resource policy is also the baseline checked by the mobile reader.
 const BLOCKED = "default-src 'none'; img-src data: cid:; style-src 'unsafe-inline'; font-src data:";
 const ALLOWED =
-  "default-src 'none'; img-src data: cid: https: http:; style-src 'unsafe-inline' https:; font-src data: https:";
+  "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline' https:; font-src data: https:";
+const FRAME_RESTRICTIONS =
+  "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'";
 
 const BASE_CSS = `
   html, body { margin: 0; padding: 0; }
@@ -94,7 +97,7 @@ export function EmailFrame({
 
   const css = `${BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
   const doc = `<!doctype html><html><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}">
+<meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
 <base target="_blank"><style>${css}</style></head><body>${html}</body></html>`;
 
   useEffect(

@@ -32,7 +32,7 @@ function hasHeaderControl(value: string): boolean {
 
 /** Accept only the fields a person can review in Composer. Never accept sender or attachments. */
 export function parseAppLink(raw: string): AppLink | null {
-  if (raw.length > 100_000) return null;
+  if (raw.length > 100_000 || hasHeaderControl(raw)) return null;
   try {
     const url = new URL(raw);
     if (url.protocol === "openmail:") {
@@ -44,6 +44,7 @@ export function parseAppLink(raw: string): AppLink | null {
         url.hash
       )
         return null;
+      if (/(?:^|\/)(?:\.|%2e){1,2}(?=\/|$|[?#])/i.test(raw)) return null;
       const encoded = url.pathname.slice(1);
       if (!encoded || encoded.includes("/")) return null;
       const id = decodeURIComponent(encoded);
@@ -62,6 +63,8 @@ export function parseAppLink(raw: string): AppLink | null {
     if (url.protocol !== "mailto:" || url.host || url.hash) return null;
     // URLSearchParams treats '+' as space. RFC 6068 uses percent encoding instead.
     const fields = new URLSearchParams(url.search.replace(/\+/g, "%2B"));
+    if (/%(?![0-9a-f]{2})/i.test(url.search)) return null;
+    if ([...fields].some(([, value]) => value.includes("\uFFFD"))) return null;
     const values = (key: string) =>
       [...fields].filter(([k]) => k.toLowerCase() === key).map(([, v]) => v);
     const to = [decodeURIComponent(url.pathname), ...values("to")].filter(Boolean).join(", ");

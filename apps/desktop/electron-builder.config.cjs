@@ -38,6 +38,7 @@ module.exports = {
   ],
   npmRebuild: false,
   asar: true,
+  afterPack: require("./build/security-fuses.cjs").afterPack,
   asarUnpack: [
     "**/*.node",
     "**/*.dylib",

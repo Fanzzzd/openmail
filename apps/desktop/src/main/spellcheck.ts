@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   Menu,
+  session,
   type MenuItemConstructorOptions,
   type WebContents,
   type MenuItem,
@@ -14,7 +15,7 @@ let current: Pick<Prefs, "spellcheck" | "spellcheckLanguages"> = {
   spellcheckLanguages: [],
 };
 const apply = (contents: WebContents) => {
-  if (!("session" in contents)) return;
+  if (!("session" in contents) || contents.session !== session.defaultSession) return;
   const ses = contents.session;
   ses.setSpellCheckerEnabled(current.spellcheck);
   if (process.platform !== "darwin") {

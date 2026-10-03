@@ -1,3 +1,5 @@
+import { registerSecuritySchemes, prepareSessionSecurity } from "./security-bootstrap";
+import { openExternal } from "./external";
 import { createShutdownHandler } from "./quit";
 import { prepareUpdateQuit } from "./update-install";
 import { cleanupAttachmentTemps } from "./attachment-temp";
@@ -5,7 +7,7 @@ import { NodeMailbox, dataDir, NodeSystem, unavailableVision, type Vision } from
 import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, powerMonitor, shell } from "electron";
+import { app, BrowserWindow, powerMonitor } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
 
@@ -15,6 +17,8 @@ import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system";
 import { DEV_ICON, focusMainWindow } from "./windows";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./reliability";
+
+registerSecuritySchemes();
 
 const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
 if (isolatedData) app.setPath("userData", resolve(isolatedData));
@@ -66,6 +70,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
           Layer.unwrap(
             Effect.gen(function* () {
               yield* ready;
+              prepareSessionSecurity();
               const directory = isolatedData
                 ? resolve(isolatedData)
                 : yield* dataDir.pipe(Effect.provide(NodeSystem));
@@ -129,7 +134,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 Effect.forkScoped,
               );
               return NodeMailbox({
-                openUrl: (url) => shell.openExternal(url),
+                openUrl: openExternal,
                 autoSync: "2 minutes",
                 inferenceProcess: desktopInferenceProcess,
                 dataDir: directory,
@@ -151,7 +156,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
         Layer.merge(setup),
       ),
     ).pipe(
-      Effect.provide(Logger.layer([diagnosticsLogger], { mergeWithExisting: true })),
+      Effect.provide(Logger.layer([diagnosticsLogger])),
       // A failed start (the database locked by a process still quitting, say)
       // would otherwise leave a process with no window and nothing logged.
       // Quitting interrupts the program; that is not a failure.

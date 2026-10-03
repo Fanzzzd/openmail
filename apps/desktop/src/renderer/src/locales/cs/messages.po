@@ -376,6 +376,18 @@ msgstr "AI se připojuje k openmailu přes MCP, například Claude Code. To rozh
 msgid "AI draft"
 msgstr "Koncept od AI"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "Překročen limit vstupu AI. Zeptejte se na méně zpráv."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "Vstup pro AI se nepodařilo zakódovat."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "Model AI není dostupný."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "Oprávnění AI ke změně pošty"
@@ -383,6 +395,18 @@ msgstr "Oprávnění AI ke změně pošty"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "Požadavek AI selhal. Zkontrolujte oprávnění účtu a klíč API a zkuste to znovu."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "Požadavek AI selhal. Zkontrolujte klíč a zkuste to znovu."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "Vypršel časový limit požadavku AI."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "Odpověď AI byla přerušena před dokončením."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -816,10 +840,9 @@ msgstr "Koncept nelze otevřít: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Zprávu nelze otevřít: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "Momentálně se nemohu spojit s poštovním serverem: {0}"
+msgid "Can't reach the mail server right now."
+msgstr "K poštovnímu serveru se nyní nelze připojit."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2219,6 +2242,10 @@ msgstr "Interní odpověď"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Neplatné nastavení účtu pro AI."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "Neplatný požadavek na psaní pomocí AI."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3838,6 +3865,10 @@ msgstr "Uložit {0}"
 msgid "Save all…"
 msgstr "Uložit vše…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Uložte klíč API Anthropic v nastavení AI."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Uložit jako PDF…"
@@ -4593,19 +4624,21 @@ msgstr "Zbytek je zde vynechán. Kopírovat získá celou zprávu."
 msgid "The selected message is no longer available."
 msgstr "Vybraná zpráva již není dostupná."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "Server odmítl tuto akci: {0}"
+msgid "The server refused this action."
+msgstr "Server odmítl tuto akci."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "Server odmítl přihlášení. {0}"
+msgid "The server rejected the sign-in."
+msgstr "Server odmítl přihlášení."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Server odmítl přihlášení. Zkontrolujte e-mailovou adresu a ujistěte se, že jste zadali heslo pro konkrétní aplikaci nebo autorizační kód, nikoli heslo pro web."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "Konverzace se změnila. Vytvořte shrnutí znovu."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

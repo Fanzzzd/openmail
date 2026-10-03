@@ -1,3 +1,4 @@
+import { validOpenFile } from "./security-policy";
 import { nativeTabMenu } from "./window-keys";
 import { readDockFiles, dockFileReason } from "./dock-files";
 import {
@@ -64,8 +65,9 @@ const allClosed = () => {
 const startupFiles: string[] = [];
 let fileHandler: ((file: string) => void) | undefined;
 export function receiveOpenFile(file: string) {
+  if (!validOpenFile(file)) return;
   if (fileHandler) fileHandler(file);
-  else startupFiles.push(file);
+  else if (startupFiles.length < 257) startupFiles.push(file);
 }
 
 const startupLinks: AppLink[] = [];
@@ -75,7 +77,7 @@ export function receiveAppUrl(raw: string) {
   const link = parseAppLink(raw);
   if (!link) return;
   if (linkHandler) linkHandler(link);
-  else startupLinks.push(link);
+  else if (startupLinks.length < 256) startupLinks.push(link);
 }
 
 export class Desktop extends Context.Service<
@@ -158,7 +160,8 @@ export const DesktopLive = Layer.effect(
     let fileTimer: ReturnType<typeof setTimeout> | undefined;
     const files: string[] = [];
     fileHandler = (file) => {
-      files.push(file);
+      // Retain one overflow sentinel so readDockFiles reports tooMany without unbounded storage.
+      if (files.length <= 256) files.push(file);
       clearTimeout(fileTimer);
       fileTimer = setTimeout(() => {
         const batch = files.splice(0);

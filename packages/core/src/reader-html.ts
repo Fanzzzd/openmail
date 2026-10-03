@@ -4,6 +4,7 @@
  * boundary. No Node dependencies; exported through `@openmail/core/schema`.
  */
 import { trackerFor } from "./trackers.js";
+import { Parser } from "htmlparser2";
 
 export interface PreparedHtml {
   html: string;
@@ -45,49 +46,120 @@ function styleDimension(style: string | undefined, name: string): string | undef
   return match?.[1];
 }
 
+const attributeText = (value: string) => {
+  if (!value.includes("&")) return value;
+  let decoded = value;
+  new Parser({
+    onopentag: (_name, attrs) => {
+      decoded = attrs.value ?? value;
+    },
+  }).end(`<a value="${value.replaceAll('"', "&quot;")}">`);
+  return decoded;
+};
+const attributeUrl = (value: string) => value.replaceAll("&", "&amp;");
+
 export function prepareMessageHtml(html: string, options: PrepareOptions = {}): PreparedHtml {
   const trackers: string[] = [];
   let pixels = 0;
   let hasRemote = false;
+
+  // Read the first HTML base href with entity decoding. Only an absolute web
+  // URL can supply a base; all base elements are removed before rendering.
+  let base: string | undefined;
+  let sawBase = false;
+  new Parser({
+    onopentag: (name, attrs) => {
+      if (name !== "base" || sawBase || attrs.href === undefined) return;
+      sawBase = true;
+      try {
+        const url = new URL(attrs.href);
+        if (url.protocol === "https:" || url.protocol === "http:") {
+          url.username = "";
+          url.password = "";
+          base = url.href;
+        }
+      } catch {
+        /* An invalid base must not redirect relative resources to an app URL. */
+      }
+    },
+  }).end(html);
+
+  const absolute = (value: string, attribute = false) => {
+    const decoded = attribute ? attributeText(value) : value;
+    try {
+      return base ? new URL(decoded, base).href : decoded;
+    } catch {
+      return decoded;
+    }
+  };
 
   const note = (name: string) => {
     if (!trackers.includes(name)) trackers.push(name);
   };
 
   /** A resource URL as it should load: removed for trackers, inlined for cid:, else unchanged. */
-  const resource = (url: string): string => {
-    const trimmed = url.trim();
+  const resource = (url: string, attribute = false): string => {
+    const trimmed = absolute(url, attribute).trim();
     if (/^cid:/i.test(trimmed)) {
-      const id = decodeURIComponent(trimmed.slice(4)).replace(/^<|>$/g, "");
-      return options.inline?.[id] ?? url;
+      try {
+        const id = decodeURIComponent(trimmed.slice(4)).replace(/^<|>$/g, "");
+        return options.inline?.[id] ?? url;
+      } catch {
+        return url;
+      }
     }
     const tracker = trackerFor(trimmed);
     if (tracker) {
       note(tracker);
       return EMPTY;
     }
-    if (isRemote(trimmed)) hasRemote = true;
-    return url;
+    let next = trimmed;
+    if (isRemote(trimmed)) {
+      hasRemote = true;
+      // The app has a secure origin. Opted-in resources use HTTPS rather than
+      // relying on Chromium's mixed-content exceptions for HTTP images.
+      try {
+        const remote = new URL(trimmed.startsWith("//") ? `https:${trimmed}` : trimmed);
+        remote.protocol = "https:";
+        next = remote.href;
+      } catch {
+        return url;
+      }
+    }
+    if (next === (attribute ? attributeText(url) : url)) return url;
+    return attribute ? attributeUrl(next) : next;
   };
 
-  const css = (text: string) =>
-    text.replace(CSS_URL, (whole, quote: string, url: string) => {
+  const css = (text: string, attribute = false) => {
+    const source = attribute ? attributeText(text) : text;
+    const result = source.replace(CSS_URL, (whole, quote: string, url: string) => {
       const next = resource(url);
-      return next === url ? whole : `url(${quote}${next}${quote})`;
+      if (next === url) return whole;
+      const quoted = quote || (/['"()\s]/u.test(next) ? '"' : "");
+      const escaped = quoted
+        ? next.replaceAll("\\", "\\\\").replaceAll(quoted, `\\${quoted}`)
+        : next;
+      return `url(${quoted}${escaped}${quoted})`;
     });
+    if (source === result) return text;
+    return attribute ? attributeUrl(result) : result;
+  };
 
   const srcset = (value: string) =>
     value
       .split(",")
       .map((candidate) => candidate.trim())
-      .filter((candidate) => {
-        const url = candidate.split(/\s+/)[0] ?? "";
-        return resource(url) === url;
+      .flatMap((candidate) => {
+        const match = /^(\S+)(.*)$/.exec(candidate);
+        const url = match?.[1] ?? "";
+        const next = resource(url, true);
+        return next === EMPTY ? [] : [`${next}${match?.[2] ?? ""}`];
       })
       .join(", ");
 
   const rewriteTag = (whole: string, name: string, attrs: string, selfClose: string) => {
     const tag = name.toLowerCase();
+    if (tag === "base") return "";
     const parsed: [string, string | undefined][] = [];
     for (const m of attrs.matchAll(ATTR)) {
       parsed.push([m[1] ?? "", m[2] === undefined ? undefined : unquote(m[2])]);
@@ -98,7 +170,7 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
     // An image of one pixel or less from an unlisted remote host is an open
     // pixel too.
     if (tag === "img") {
-      const src = get("src") ?? "";
+      const src = absolute(get("src") ?? "", true);
       const tracker = trackerFor(src);
       if (tracker) {
         note(tracker);
@@ -117,10 +189,13 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
       if (value === undefined) return [key, value];
       const k = key.toLowerCase();
       let next = value;
-      if (RESOURCE_ATTRS.has(k)) next = resource(value);
+      if (RESOURCE_ATTRS.has(k)) next = resource(value, true);
       else if (k === "srcset") next = srcset(value);
-      else if (k === "style") next = css(value);
-      else if (k === "href" && tag === "link") next = resource(value);
+      else if (k === "style") next = css(value, true);
+      else if ((k === "href" || k === "xlink:href") && (tag === "link" || tag === "image"))
+        next = resource(value, true);
+      else if ((k === "href" || k === "xlink:href") && base)
+        next = attributeUrl(absolute(value, true));
       return [key, next];
     });
     if (out.every(([, value], i) => value === parsed[i]?.[1])) return whole;

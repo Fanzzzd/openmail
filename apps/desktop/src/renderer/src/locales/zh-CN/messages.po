@@ -386,6 +386,18 @@ msgstr "AI 通过 MCP 连接 openmail，比如 Claude Code。这里决定它能�
 msgid "AI draft"
 msgstr "AI 草稿"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "AI 输入超限。请减少提问涉及的消息数量。"
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "无法编码 AI 输入。"
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "AI 模型不可用。"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "AI 改动邮件的权限"
@@ -393,6 +405,18 @@ msgstr "AI 改动邮件的权限"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "AI 请求失败。请检查账户授权和 API 密钥后重试。"
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "AI 请求失败。请检查密钥后重试。"
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "AI 请求超时。"
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "AI 响应在完成前中断。"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -826,10 +850,9 @@ msgstr "打不开草稿：{reason}"
 msgid "Can't open the message: {reason}"
 msgstr "无法打开邮件：{reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "暂时连不上邮件服务器：{0}"
+msgid "Can't reach the mail server right now."
+msgstr "暂时无法连接邮件服务器。"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2229,6 +2252,10 @@ msgstr "内部回复"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "AI 账户设置无效。"
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "AI 撰写请求无效。"
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3848,6 +3875,10 @@ msgstr "保存 {0}"
 msgid "Save all…"
 msgstr "全部保存…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "请在 AI 设置中保存 Anthropic API 密钥。"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "保存为 PDF…"
@@ -4603,19 +4634,21 @@ msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 msgid "The selected message is no longer available."
 msgstr "所选邮件已不存在。"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "服务器拒绝了这个操作：{0}"
+msgid "The server refused this action."
+msgstr "服务器拒绝了此操作。"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "服务器拒绝了登录。{0}"
+msgid "The server rejected the sign-in."
+msgstr "服务器拒绝了登录。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应用专用密码或授权码，不是网页登录密码。"
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "会话已变更。请重新生成摘要。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

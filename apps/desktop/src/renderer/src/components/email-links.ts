@@ -1,14 +1,7 @@
 /** The parent reads DOM events directly. No script or postMessage runs in the mail. */
+import { externalUrl } from "../../../shared/external-url";
 export function linkTargetUrl(value: string | null, base: string): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value, base);
-    url.username = "";
-    url.password = "";
-    return ["https:", "http:", "mailto:"].includes(url.protocol) ? url.href : null;
-  } catch {
-    return null;
-  }
+  return externalUrl(value, base);
 }
 
 export function listenForLinkHints(

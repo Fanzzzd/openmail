@@ -376,6 +376,18 @@ msgstr "AI maakt verbinding met openmail via MCP, bijvoorbeeld Claude Code. Deze
 msgid "AI draft"
 msgstr "AI-concept"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "De limiet voor AI-invoer is overschreden. Stel een vraag over minder berichten."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "De AI-invoer kon niet worden gecodeerd."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "Het AI-model is niet beschikbaar."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "AI-toestemming om e-mail te wijzigen"
@@ -383,6 +395,18 @@ msgstr "AI-toestemming om e-mail te wijzigen"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "AI-verzoek mislukt. Controleer de accountrechten en je API-sleutel en probeer opnieuw."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "De AI-aanvraag is mislukt. Controleer je sleutel en probeer het opnieuw."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "De AI-aanvraag heeft de tijdslimiet overschreden."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "De AI-respons is onderbroken voordat deze was voltooid."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -816,10 +840,9 @@ msgstr "Kan het concept niet openen: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Kan het bericht niet openen: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "Kan de mailserver momenteel niet bereiken: {0}"
+msgid "Can't reach the mail server right now."
+msgstr "De mailserver is momenteel niet bereikbaar."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2219,6 +2242,10 @@ msgstr "Intern antwoord"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Ongeldige AI-accountinstellingen."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "Ongeldige aanvraag voor schrijven met AI."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3838,6 +3865,10 @@ msgstr "Bewaar {0}"
 msgid "Save all…"
 msgstr "Bewaar alles…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Sla een Anthropic API-sleutel op in de AI-instellingen."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Opslaan als PDF…"
@@ -4593,19 +4624,21 @@ msgstr "De rest wordt hier weggelaten. Kopiëren krijgt het hele bericht."
 msgid "The selected message is no longer available."
 msgstr "Het geselecteerde bericht is niet langer beschikbaar."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "De server heeft deze actie geweigerd: {0}"
+msgid "The server refused this action."
+msgstr "De server heeft deze actie geweigerd."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "De server heeft de aanmelding afgewezen. {0}"
+msgid "The server rejected the sign-in."
+msgstr "De server heeft het aanmelden geweigerd."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "De server heeft de aanmelding afgewezen. Controleer het e-mailadres en zorg ervoor dat u een app-specifiek wachtwoord of autorisatiecode heeft ingevoerd, en niet uw webwachtwoord."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "Het gesprek is gewijzigd. Vat het opnieuw samen."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

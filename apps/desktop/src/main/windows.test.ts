@@ -6,7 +6,11 @@ import { windowStateFile } from "./window-state";
 import { EventEmitter } from "node:events";
 import { expect, it, vi } from "vitest";
 
-const created = vi.hoisted(() => new Array<unknown>());
+const created = vi.hoisted(() => {
+  vi.resetModules();
+  vi.doUnmock("./windows");
+  return new Array<unknown>();
+});
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
     isPackaged: true,
@@ -23,6 +27,7 @@ vi.mock("electron", () => ({
     addTabbedWindow = vi.fn();
     show = vi.fn();
     focus = vi.fn();
+    setTitle = vi.fn();
     getNormalBounds() {
       return {
         x: this.options.x ?? 0,
@@ -86,6 +91,38 @@ it("blocks subframe navigation without opening unrequested pages externally", ()
   expect(main.preventDefault).toHaveBeenCalledOnce();
 });
 
+it("locks navigation, redirects, webviews and title changes for every app window kind", () => {
+  for (const make of [
+    () => createMainWindow(),
+    () => openComposeWindow("security-draft"),
+    () => openThreadWindow("security-thread"),
+    () => openMessageWindow("security-message"),
+  ]) {
+    const win = make();
+    expect(created.at(-1)).toMatchObject({
+      title: "OpenMail",
+      webPreferences: {
+        contextIsolation: true,
+        sandbox: true,
+        nodeIntegration: false,
+        nodeIntegrationInWorker: false,
+        nodeIntegrationInSubFrames: false,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        experimentalFeatures: false,
+        webviewTag: false,
+        spellcheck: true,
+      },
+    });
+    for (const name of ["will-navigate", "will-redirect", "will-attach-webview"]) {
+      const event = { preventDefault: vi.fn() };
+      win.webContents.emit(name, event);
+      expect(event.preventDefault).toHaveBeenCalledOnce();
+    }
+    win.emit("closed");
+  }
+});
+
 it("retains the existing external popup route and never creates a popup window", () => {
   const win = new BrowserWindow({ show: false });
   lockNavigation(win);
@@ -103,7 +140,7 @@ it("retains the existing external popup route and never creates a popup window",
       }),
     ).toEqual({ action: "deny" });
     if (url.startsWith("javascript:")) expect(vi.mocked(shell).openExternal.mock.calls).toEqual([]);
-    else expect(vi.mocked(shell).openExternal.mock.calls).toEqual([[url]]);
+    else expect(vi.mocked(shell).openExternal.mock.calls).toEqual([[new URL(url).href]]);
   }
 });
 
@@ -123,11 +160,19 @@ it("allows local reader documents to load while blocking navigation of the main 
 it("single-message windows force single scope independently of conversation settings", () => {
   const id = "gmail:me@example.com/older";
   const single = openMessageWindow(id);
-  expect(vi.mocked(single).loadFile.mock.calls[0]?.[1]).toEqual({
+  expect({
+    query: Object.fromEntries(
+      new URL(vi.mocked(single).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
+    ),
+  }).toEqual({
     query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id, single: "1" },
   });
   const thread = openThreadWindow(id);
-  expect(vi.mocked(thread).loadFile.mock.calls[0]?.[1]).toEqual({
+  expect({
+    query: Object.fromEntries(
+      new URL(vi.mocked(thread).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
+    ),
+  }).toEqual({
     query: { systemLanguages: JSON.stringify(["en", "en"]), thread: id },
   });
 });
@@ -143,9 +188,9 @@ it("compose windows share the locked sandbox and request a renderer draft close 
       preload: expect.stringContaining("preload/index.cjs"),
     },
   });
-  expect(vi.mocked(win).loadFile.mock.calls[0]?.[1]).toEqual({
-    query: { systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-20" },
-  });
+  expect(
+    Object.fromEntries(new URL(vi.mocked(win).loadURL.mock.calls[0]?.[0] ?? "").searchParams),
+  ).toEqual({ systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-20" });
   expect(vi.mocked(win.webContents).setWindowOpenHandler.mock.calls).toHaveLength(1);
   const recipients = { to: "Alice <unfinished", cc: "Bob,", bcc: "private" };
   retainComposeRecipients(win, recipients);
@@ -180,16 +225,28 @@ it("restores each window kind and does not lose the set while quitting", async (
     windows.configureWindowRecovery(file, () => false);
     windows.restoreWindows();
     const restored = BrowserWindow.getAllWindows().slice(-3);
-    expect(vi.mocked(restored[0]!).loadFile.mock.calls[0]?.[1]).toEqual({
+    expect({
+      query: Object.fromEntries(
+        new URL(vi.mocked(restored[0]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
+      ),
+    }).toEqual({
       query: {
         systemLanguages: JSON.stringify(["en", "en"]),
         selection: JSON.stringify(selection),
       },
     });
-    expect(vi.mocked(restored[1]!).loadFile.mock.calls[0]?.[1]).toEqual({
+    expect({
+      query: Object.fromEntries(
+        new URL(vi.mocked(restored[1]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
+      ),
+    }).toEqual({
       query: { systemLanguages: JSON.stringify(["en", "en"]), thread: "message-1", single: "1" },
     });
-    expect(vi.mocked(restored[2]!).loadFile.mock.calls[0]?.[1]).toEqual({
+    expect({
+      query: Object.fromEntries(
+        new URL(vi.mocked(restored[2]!).loadURL.mock.calls[0]?.[0] ?? "").searchParams,
+      ),
+    }).toEqual({
       query: { systemLanguages: JSON.stringify(["en", "en"]), compose: "draft-1" },
     });
     app.emit("before-quit", { defaultPrevented: false });
@@ -213,4 +270,24 @@ it("only main windows opt into native macOS tabs, and the tab button creates ano
   } else expect(created.at(-2)).not.toHaveProperty("tabbingIdentifier");
   main.emit("closed");
   reader.emit("closed");
+});
+
+it("sanitizes reader window titles and keeps main and compose titles fixed", () => {
+  const subject = `Subject\n\u0000\u007f\u0080${"📬".repeat(250)}`;
+  for (const [kind, win] of [
+    ["main", createMainWindow()],
+    ["compose", openComposeWindow("title-draft")],
+    ["thread", openThreadWindow("title-thread")],
+    ["message", openMessageWindow("title-message")],
+  ] as const) {
+    const title = vi.spyOn(win, "setTitle");
+    const event = { preventDefault: vi.fn() };
+    win.emit("page-title-updated", event, subject);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
+    if (kind === "thread" || kind === "message") {
+      expect(title).toHaveBeenCalledWith(`Subject${"📬".repeat(193)}`);
+      win.emit("page-title-updated", event, "\n\u0000");
+      expect(title).toHaveBeenLastCalledWith("OpenMail");
+    } else expect(title).not.toHaveBeenCalled();
+  }
 });

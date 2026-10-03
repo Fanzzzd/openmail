@@ -376,6 +376,18 @@ msgstr "AI подключается к openmail через MCP, например
 msgid "AI draft"
 msgstr "Черновик ИИ"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "Превышен лимит входных данных ИИ. Задайте вопрос о меньшем числе сообщений."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "Не удалось закодировать входные данные для ИИ."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "Модель ИИ недоступна."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "Разрешение ИИ на смену почты"
@@ -383,6 +395,18 @@ msgstr "Разрешение ИИ на смену почты"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "Запрос ИИ не выполнен. Проверьте разрешения учётной записи и ключ API, затем повторите попытку."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "Запрос к ИИ не выполнен. Проверьте ключ и повторите попытку."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "Истекло время ожидания запроса к ИИ."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "Ответ ИИ прервался до завершения."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -816,10 +840,9 @@ msgstr "Не могу открыть черновик: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Не могу открыть сообщение: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "Сейчас не могу связаться с почтовым сервером: {0}."
+msgid "Can't reach the mail server right now."
+msgstr "Сейчас не удаётся подключиться к почтовому серверу."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2219,6 +2242,10 @@ msgstr "Внутренний ответ"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Некорректные настройки учётной записи для ИИ."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "Недопустимый запрос на написание с помощью ИИ."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3838,6 +3865,10 @@ msgstr "Сохранить {0}"
 msgid "Save all…"
 msgstr "Сохранить всё…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Сохраните ключ API Anthropic в настройках ИИ."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Сохранить как PDF…"
@@ -4593,19 +4624,21 @@ msgstr "Остальное здесь оставлено. Копия получ�
 msgid "The selected message is no longer available."
 msgstr "Выбранное сообщение больше недоступно."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "Сервер отклонил это действие: {0}."
+msgid "The server refused this action."
+msgstr "Сервер отклонил это действие."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "Сервер отклонил вход. {0}"
+msgid "The server rejected the sign-in."
+msgstr "Сервер отклонил вход."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Сервер отклонил вход. Проверьте адрес электронной почты и убедитесь, что вы ввели пароль или код авторизации для конкретного приложения, а не свой веб-пароль."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "Переписка изменилась. Создайте сводку заново."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

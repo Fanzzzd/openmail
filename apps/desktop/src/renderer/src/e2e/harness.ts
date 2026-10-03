@@ -1,3 +1,4 @@
+import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc-security";
 import { RegistryContext } from "@effect/atom-react";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
@@ -37,9 +38,11 @@ import { TipProvider } from "../components/ui/Tip";
 
 const unsupported = () => Effect.die(new Error("Unexpected desktop operation in flow test"));
 
+// Capture the real timer before tests replace debounce/undo timers.
+const schedulerTimeout = globalThis.setTimeout;
 const pause = (ms: number) =>
   new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
+    schedulerTimeout(resolve, ms);
   });
 
 /** Wait on real scheduler turns even when the UI's debounce/undo timers are virtual. */
@@ -97,6 +100,7 @@ export interface FlowHarness {
   store: Store["Service"];
   run<A, E>(effect: Effect.Effect<A, E>): Promise<A>;
   requests: RpcMessage.RequestEncoded[];
+  responses: RpcMessage.FromServerEncoded[];
   account: Account;
   notifications: NotificationBatch[];
   id(id: string): string;
@@ -170,6 +174,7 @@ export async function flow(
   );
   await run(Deferred.await(notificationReady));
   const requests: RpcMessage.RequestEncoded[] = [];
+  const responses: RpcMessage.FromServerEncoded[] = [];
   const listeners = new Set<(frame: string) => void>();
   const bridge: RpcBridge = {
     send: () => {
@@ -270,25 +275,34 @@ export async function flow(
           const dispatch = yield* FiberSet.makeRuntime();
           bridge.send = (frame) => {
             // IO boundary, identical JSON frame encoding to the preload transport.
-            const decoded = parser.decode(frame) as ReadonlyArray<RpcMessage.FromClientEncoded>;
+            const decoded = decodeRpcFrame(frame);
+            if (!decoded) return;
             for (const message of decoded) if (message._tag === "Request") requests.push(message);
-            dispatch(
-              Effect.forEach(decoded, (message) => writeRequest(1, message), { discard: true }),
+            // Electron IPC delivers on a later turn, including short-lived key clients.
+            queueMicrotask(() =>
+              dispatch(
+                Effect.forEach(decoded, (message) => writeRequest(1, message), { discard: true }),
+              ),
             );
           };
           return {
             disconnects: yield* Queue.make<number>(),
             send: (_id, response) =>
               Effect.sync(() => {
-                const frame = parser.encode(response);
-                if (typeof frame === "string") for (const listener of listeners) listener(frame);
+                const publicResponse = publicRpcResponse(response);
+                responses.push(publicResponse);
+                const frame = parser.encode(publicResponse);
+                if (typeof frame === "string")
+                  queueMicrotask(() => {
+                    for (const listener of listeners) listener(frame);
+                  });
               }),
             end: () => Effect.void,
             clientIds: Effect.succeed(new Set([1])),
             initialMessage: Effect.succeedNone,
             supportsAck: true,
             supportsTransferables: false,
-            supportsSpanPropagation: true,
+            supportsSpanPropagation: false,
             supportsNotifications: true,
             codecFor: serialization.codecFor,
           };
@@ -320,6 +334,7 @@ export async function flow(
     store,
     run,
     requests,
+    responses,
     account,
     notifications,
     id: (id: string) => `${account.id}/${id}`,
@@ -339,11 +354,11 @@ export async function flow(
     async dispose() {
       cleanup();
       registry.dispose();
+      vi.useRealTimers();
       await Effect.runPromise(Fiber.interrupt(notificationFiber));
       await rpcRuntime.dispose();
       await Effect.runPromise(PubSub.shutdown(desktop));
       await mailboxRuntime.dispose();
-      vi.useRealTimers();
       vi.restoreAllMocks();
     },
   };

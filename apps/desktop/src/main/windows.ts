@@ -6,10 +6,15 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { app, BrowserWindow, nativeTheme, shell, screen } from "electron";
+import { app, BrowserWindow, nativeTheme, screen } from "electron";
 import { randomUUID } from "node:crypto";
 import type { ComposeRecipients, SavedWindow, WindowSelection } from "../shared/window-state";
 import { visibleBounds, windowStateFile } from "./window-state";
+
+import { openExternal } from "./external";
+import { externalUrl } from "../shared/external-url";
+import { APP_PAGE, developmentPage, readerWindowTitle, WINDOW_SECURITY } from "./security-policy";
+import { trustRenderer } from "./security";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MAC = process.platform === "darwin";
@@ -18,14 +23,24 @@ const MAC = process.platform === "darwin";
 export const DEV_ICON = app.isPackaged ? undefined : path.join(here, "../../build/icon.png");
 
 /** Mail links open in the system browser; nothing navigates the app's own windows. */
-export function lockNavigation(win: BrowserWindow) {
+export function lockNavigation(win: BrowserWindow, kind: SavedWindow["kind"] = "main") {
+  win.on("page-title-updated", (event, title) => {
+    event.preventDefault();
+    if (kind === "thread" || kind === "message") win.setTitle(readerWindowTitle(title));
+  });
   // The message iframe is sandboxed with `allow-popups` and a `_blank` base
   // target, so every link click lands here.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^(https?|mailto):/i.test(url)) void shell.openExternal(url);
+    const target = externalUrl(url);
+    if (target)
+      void openExternal(target).catch(() => {
+        /* Browser launch failure is non-fatal. */
+      });
     return { action: "deny" };
   });
   win.webContents.on("will-navigate", (event) => event.preventDefault());
+  win.webContents.on("will-redirect", (event) => event.preventDefault());
+  win.webContents.on("will-attach-webview", (event) => event.preventDefault());
   // Allow the local reader document to initialize, never remote content in any frame.
   win.webContents.on("will-frame-navigate", (event) => {
     if (!event.isMainFrame && (event.url === "about:srcdoc" || event.url === "about:blank")) return;
@@ -210,11 +225,16 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
         }),
     webPreferences: {
       preload: path.join(here, "../preload/index.cjs"),
-      sandbox: true,
-      contextIsolation: true,
+      ...WINDOW_SECURITY,
     },
   });
-  lockNavigation(win);
+  trustRenderer(
+    win.webContents,
+    options.kind ?? "main",
+    app.isPackaged,
+    process.env.ELECTRON_RENDERER_URL,
+  );
+  lockNavigation(win, options.kind ?? "main");
   if (MAC && (options.kind === undefined || options.kind === "main")) {
     win.on("new-window-for-tab", () => {
       if (!win.isDestroyed()) win.addTabbedWindow(createMainWindow());
@@ -282,13 +302,11 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
     ...options.query,
     ...(restored?.selection ? { selection: JSON.stringify(restored.selection) } : {}),
   };
-  if (process.env.ELECTRON_RENDERER_URL) {
-    const url = new URL(process.env.ELECTRON_RENDERER_URL);
-    url.search = new URLSearchParams(query).toString();
-    void win.loadURL(url.toString());
-  } else {
-    void win.loadFile(path.join(here, "../renderer/index.html"), { query });
-  }
+  const url = new URL(
+    developmentPage(app.isPackaged, process.env.ELECTRON_RENDERER_URL) ?? APP_PAGE,
+  );
+  url.search = new URLSearchParams(query).toString();
+  void win.loadURL(url.href);
   win.once("ready-to-show", () => {
     if (restored?.maximized) win.maximize();
     win.show();
@@ -353,10 +371,7 @@ export function openMessageWindow(messageId: string): BrowserWindow {
 
 /** The window a renderer (RPC client id = webContents id) lives in. */
 export function windowOf(webContentsId: number): BrowserWindow | null {
-  return (
-    BrowserWindow.getAllWindows().find((w) => w.webContents.id === webContentsId) ??
-    BrowserWindow.getFocusedWindow()
-  );
+  return BrowserWindow.getAllWindows().find((w) => w.webContents.id === webContentsId) ?? null;
 }
 
 export function openComposeWindow(

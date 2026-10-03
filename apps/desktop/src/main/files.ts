@@ -1,3 +1,5 @@
+import { configurePermissions } from "./security";
+import { WINDOW_SECURITY } from "./security-policy";
 import { quarantine } from "./file-quarantine";
 /**
  * What the reader does with files: saving and opening attachments, printing
@@ -7,6 +9,7 @@ import { quarantine } from "./file-quarantine";
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   type Mailbox,
@@ -234,10 +237,13 @@ export const openAttachment: (
  * A session for print windows that loads nothing but the local file it is
  * given, on top of the document's own CSP and JavaScript being off.
  */
+const printFiles = new Set<string>();
 function printSession() {
   const ses = session.fromPartition("openmail-print");
+  configurePermissions(ses);
+  ses.setSpellCheckerEnabled(false);
   ses.webRequest.onBeforeRequest((details, callback) => {
-    callback({ cancel: !/^(file|data):/i.test(details.url) });
+    callback({ cancel: !printFiles.has(details.url) && !details.url.startsWith("data:") });
   });
   return ses;
 }
@@ -307,21 +313,26 @@ export const printThread: (
     catch: failed,
   });
 
+  printFiles.add(pathToFileURL(file).href);
   printSessionCache ??= printSession();
   const win = new BrowserWindow({
     show: false,
     width: 800,
     height: 1000,
-    title: subject,
+    title: "OpenMail",
     webPreferences: {
+      ...WINDOW_SECURITY,
       javascript: false,
-      sandbox: true,
-      contextIsolation: true,
+      spellcheck: false,
       session: printSessionCache,
     },
   });
+  win.webContents.on("page-title-updated", (event) => event.preventDefault());
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("will-navigate", (event) => event.preventDefault());
+  win.webContents.on("will-redirect", (event) => event.preventDefault());
+  win.webContents.on("will-frame-navigate", (event) => event.preventDefault());
+  win.webContents.on("will-attach-webview", (event) => event.preventDefault());
 
   return yield* Effect.gen(function* () {
     yield* Effect.tryPromise({
@@ -347,6 +358,7 @@ export const printThread: (
     Effect.ensuring(
       Effect.promise(async () => {
         if (!win.isDestroyed()) win.destroy();
+        printFiles.delete(pathToFileURL(file).href);
         await rm(file, { force: true });
       }),
     ),

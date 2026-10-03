@@ -21,21 +21,34 @@ const ElectronProtocol = Layer.effect(
         const parser = serialization.makeUnsafe();
         const run = yield* FiberSet.makeRuntime();
         const bridge = window.openmailRpc;
-        // One renderer is one client; responses carry their request id, so
-        // every local client may see every frame.
+        // Route by request owner even before a short-lived client's receive
+        // loop starts. Protocol.make buffers early replies for that client.
+        const owners = new Map<string | number, number>();
         const off = bridge.onFrame((frame) =>
           run(
             Effect.forEach(
               parser.decode(frame) as ReadonlyArray<RpcMessage.FromServerEncoded>,
-              (response) => Effect.forEach(clientIds, (id) => writeResponse(id, response)),
+              (response) => {
+                if (response._tag === "Exit" || response._tag === "Chunk") {
+                  const owner = owners.get(response.requestId);
+                  if (owner === undefined) return Effect.void;
+                  if (response._tag === "Exit") owners.delete(response.requestId);
+                  return writeResponse(owner, response);
+                }
+                if (response._tag === "Defect" || response._tag === "ClientProtocolError")
+                  owners.clear();
+                return Effect.forEach(clientIds, (id) => writeResponse(id, response));
+              },
               { discard: true },
             ),
           ),
         );
         yield* Effect.addFinalizer(() => Effect.sync(off));
         return {
-          send: (_clientId, request) =>
+          send: (clientId, request) =>
             Effect.sync(() => {
+              if (request._tag === "Request") owners.set(request.id, clientId);
+              else if (request._tag === "Interrupt") owners.delete(request.requestId);
               const frame = parser.encode(request);
               // layerJson always encodes to strings.
               if (typeof frame === "string") bridge.send(frame);

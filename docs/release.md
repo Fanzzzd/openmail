@@ -11,6 +11,8 @@ pnpm --filter @openmail/desktop dist
 
 产物在 `apps/desktop/release/`，arm64、x64 各有 DMG 和 ZIP。命令固定 `--publish never`，不会创建 release、推标签或上传产物。本地包只用 ad-hoc 签名修复 Electron 的 seal，不需要 Apple Developer 账号，不启用自动更新。
 
+本地包也启用 CookieEncryption。macOS 首次启动或 ad-hoc 重签名后可能询问 cookie 加密密钥的钥匙串访问权限，反复构建可能重复提示；该项与 OpenMail 保存的 OAuth/API key 不同。发布时验证提示和签名行为，说明见 [桌面安全](security.md)。不要通过关闭 fuse 消除提示，已有 cookie 存储可能因此失效。
+
 `node:sqlite` 随 Electron 发行。`@napi-rs/keyring` 的两种 macOS N-API 预编译包由 `pnpm-workspace.yaml` 的 `supportedArchitectures` 安装，无需 ABI 重编。`.node`、`.dylib`、keyring、sqlite-vec 都在 ASAR 外；已合入媒体二期，保留 sqlite-vec、ONNX 和图像解码库的解包规则。正式签名包仍需验证原生库加载；Vision helper 为 arm64/x64 通用二进制。
 
 隔离启动：

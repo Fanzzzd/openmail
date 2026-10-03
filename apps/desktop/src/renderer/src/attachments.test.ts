@@ -181,6 +181,15 @@ it("multi-selection saves, copies and drags exact paths; embedded mail uses the 
     const frame = dom.element.querySelector("iframe");
     expect(frame?.getAttribute("sandbox")).not.toContain("allow-scripts");
     const html = frame?.getAttribute("srcDoc") ?? frame?.getAttribute("srcdoc") ?? "";
+    for (const directive of [
+      "script-src 'none'",
+      "object-src 'none'",
+      "frame-src 'none'",
+      "connect-src 'none'",
+      "base-uri 'none'",
+      "form-action 'none'",
+    ])
+      expect(html).toContain(directive);
     expect(html).toContain("Embedded body");
     expect(html).toContain("img-src data: cid:");
     expect(html).not.toContain("img-src data: cid: https:");

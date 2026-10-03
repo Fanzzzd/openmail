@@ -376,6 +376,18 @@ msgstr "AI se conecta a openmail a través de MCP, por ejemplo Claude Code. Esto
 msgid "AI draft"
 msgstr "Borrador de IA"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "Se superó el límite de entrada de IA. Pregunta sobre menos mensajes."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "No se pudo codificar la entrada de IA."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "El modelo de IA no está disponible."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "Permiso de IA para cambiar el correo"
@@ -383,6 +395,18 @@ msgstr "Permiso de IA para cambiar el correo"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "La solicitud de IA falló. Comprueba los permisos de la cuenta y tu clave API e inténtalo de nuevo."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "La solicitud de IA falló. Comprueba la clave y vuelve a intentarlo."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "La solicitud de IA agotó el tiempo de espera."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "La respuesta de IA se interrumpió antes de completarse."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -816,10 +840,9 @@ msgstr "No se puede abrir el borrador: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "No se puede abrir el mensaje: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "No puedo comunicarme con el servidor de correo en este momento: {0}"
+msgid "Can't reach the mail server right now."
+msgstr "No se puede conectar con el servidor de correo en este momento."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2219,6 +2242,10 @@ msgstr "Respuesta interna"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Los ajustes de IA de la cuenta no son válidos."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "La solicitud de redacción de IA no es válida."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3838,6 +3865,10 @@ msgstr "Guardar {0}"
 msgid "Save all…"
 msgstr "Guardar todo…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Guarda una clave API de Anthropic en los ajustes de IA."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Guardar como PDF…"
@@ -4593,19 +4624,21 @@ msgstr "El resto queda aquí. La copia recibe el mensaje completo."
 msgid "The selected message is no longer available."
 msgstr "El mensaje seleccionado ya no está disponible."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "El servidor rechazó esta acción: {0}"
+msgid "The server refused this action."
+msgstr "El servidor rechazó esta acción."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "El servidor rechazó el inicio de sesión. {0}"
+msgid "The server rejected the sign-in."
+msgstr "El servidor rechazó el inicio de sesión."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "El servidor rechazó el inicio de sesión. Verifique la dirección de correo electrónico y asegúrese de haber ingresado una contraseña o código de autorización específico de la aplicación, no su contraseña web."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "La conversación cambió. Vuelve a resumirla."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

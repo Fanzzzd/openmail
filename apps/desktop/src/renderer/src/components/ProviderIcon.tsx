@@ -20,7 +20,8 @@ export type ProviderIconName =
   | "fastmail"
   | "imap";
 
-type Svg = ComponentType<SVGProps<SVGSVGElement>>;
+// Provider marks receive only presentation props, without forwarding refs.
+type Svg = ComponentType<Pick<SVGProps<SVGSVGElement>, "className" | "aria-label">>;
 
 // Brand marks from Iconify packages; sources and licenses in docs/design/icons.md.
 // Labels are brand names; only the ones with a translated product name go

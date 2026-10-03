@@ -5,7 +5,10 @@ import { RPC_CHANNEL, type RpcBridge } from "../shared/channel";
 // The renderer speaks Effect RPC; the preload only moves its JSON frames.
 // Nothing else crosses into the page.
 const bridge: RpcBridge = {
-  send: (frame) => ipcRenderer.send(RPC_CHANNEL, frame),
+  send: (frame) => {
+    if (typeof frame === "string" && frame.length <= 64 * 1024 * 1024)
+      ipcRenderer.send(RPC_CHANNEL, frame);
+  },
   onFrame: (listener) => {
     const handler = (_: IpcRendererEvent, frame: string) => listener(frame);
     ipcRenderer.on(RPC_CHANNEL, handler);
@@ -15,4 +18,4 @@ const bridge: RpcBridge = {
   },
 };
 
-contextBridge.exposeInMainWorld("openmailRpc", bridge);
+if (process.isMainFrame) contextBridge.exposeInMainWorld("openmailRpc", bridge);

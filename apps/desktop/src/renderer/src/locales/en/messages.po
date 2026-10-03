@@ -380,6 +380,18 @@ msgstr "AI connects to openmail over MCP, for example Claude Code. This decides 
 msgid "AI draft"
 msgstr "AI draft"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "AI input budget exceeded. Ask about fewer messages."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "AI input could not be encoded."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "AI model is unavailable."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "AI permission to change mail"
@@ -387,6 +399,18 @@ msgstr "AI permission to change mail"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "AI request failed. Check account permissions and your API key, then try again."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "AI request failed. Check your key and try again."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "AI request timed out."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "AI stream ended before completion."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -820,10 +844,9 @@ msgstr "Can't open the draft: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Can't open the message: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "Can't reach the mail server right now: {0}"
+msgid "Can't reach the mail server right now."
+msgstr "Can't reach the mail server right now."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2223,6 +2246,10 @@ msgstr "Internal reply"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Invalid AI account settings."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "Invalid AI compose request."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3842,6 +3869,10 @@ msgstr "Save {0}"
 msgid "Save all…"
 msgstr "Save all…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Save an Anthropic API key in AI settings."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Save as PDF…"
@@ -4597,19 +4628,21 @@ msgstr "The rest is left out here. Copy gets the whole message."
 msgid "The selected message is no longer available."
 msgstr "The selected message is no longer available."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "The server refused this action: {0}"
+msgid "The server refused this action."
+msgstr "The server refused this action."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "The server rejected the sign-in. {0}"
+msgid "The server rejected the sign-in."
+msgstr "The server rejected the sign-in."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "The thread changed. Summarize it again."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"

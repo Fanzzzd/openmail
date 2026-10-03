@@ -16,6 +16,17 @@ export default defineConfig({
   },
   renderer: {
     plugins: [
+      {
+        name: "openmail-development-csp",
+        apply: "serve",
+        transformIndexHtml: (html) =>
+          html
+            .replace("script-src 'self'", "script-src 'self' 'unsafe-inline'")
+            .replace(
+              "connect-src 'none'",
+              "connect-src 'self' ws://localhost:* ws://127.0.0.1:* ws://[::1]:*",
+            ),
+      },
       // The Lingui macro must run before the React Compiler, so the compiler
       // sees the plain `i18n._` calls the macros turn into.
       react({

@@ -376,6 +376,18 @@ msgstr "AI stellt über MCP eine Verbindung zu Openmail her, zum Beispiel Claude
 msgid "AI draft"
 msgstr "KI-Entwurf"
 
+#: src/renderer/src/errors.ts
+msgid "AI input budget exceeded. Ask about fewer messages."
+msgstr "Das KI-Eingabelimit wurde überschritten. Fragen Sie zu weniger Nachrichten."
+
+#: src/renderer/src/errors.ts
+msgid "AI input could not be encoded."
+msgstr "Die KI-Eingabe konnte nicht kodiert werden."
+
+#: src/renderer/src/errors.ts
+msgid "AI model is unavailable."
+msgstr "Das KI-Modell ist nicht verfügbar."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI permission to change mail"
 msgstr "KI-Erlaubnis zum Ändern von E-Mails"
@@ -383,6 +395,18 @@ msgstr "KI-Erlaubnis zum Ändern von E-Mails"
 #: src/renderer/src/components/AiPanel.tsx
 msgid "AI request failed. Check account permissions and your API key, then try again."
 msgstr "KI-Anfrage fehlgeschlagen. Account-Berechtigungen und API-Schlüssel prüfen und erneut versuchen."
+
+#: src/renderer/src/errors.ts
+msgid "AI request failed. Check your key and try again."
+msgstr "Die KI-Anfrage ist fehlgeschlagen. Prüfen Sie Ihren Schlüssel und versuchen Sie es erneut."
+
+#: src/renderer/src/errors.ts
+msgid "AI request timed out."
+msgstr "Die KI-Anfrage hat das Zeitlimit überschritten."
+
+#: src/renderer/src/errors.ts
+msgid "AI stream ended before completion."
+msgstr "Die KI-Antwort wurde vor dem Abschluss unterbrochen."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "AI suggestion"
@@ -816,10 +840,9 @@ msgstr "Der Entwurf kann nicht geöffnet werden: {reason}"
 msgid "Can't open the message: {reason}"
 msgstr "Die Nachricht kann nicht geöffnet werden: {reason}"
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "Can't reach the mail server right now: {0}"
-msgstr "Der Mailserver kann derzeit nicht erreicht werden: {0}"
+msgid "Can't reach the mail server right now."
+msgstr "Der Mailserver ist derzeit nicht erreichbar."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/AiPanel.tsx
@@ -2219,6 +2242,10 @@ msgstr "Interne Antwort"
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
 msgstr "Ungültige KI-Account-Einstellungen."
+
+#: src/renderer/src/errors.ts
+msgid "Invalid AI compose request."
+msgstr "Ungültige KI-Schreibanfrage."
 
 #: src/renderer/src/errors.ts
 msgid "Invalid calendar event time"
@@ -3838,6 +3865,10 @@ msgstr "Speichern {0}"
 msgid "Save all…"
 msgstr "Alle sichern…"
 
+#: src/renderer/src/errors.ts
+msgid "Save an Anthropic API key in AI settings."
+msgstr "Speichern Sie einen Anthropic-API-Schlüssel in den KI-Einstellungen."
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Save as PDF…"
 msgstr "Als PDF speichern…"
@@ -4593,19 +4624,21 @@ msgstr "Der Rest bleibt hier außen vor. Durch Kopieren wird die gesamte Nachric
 msgid "The selected message is no longer available."
 msgstr "Die ausgewählte Nachricht ist nicht mehr verfügbar."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server refused this action: {0}"
-msgstr "Der Server hat diese Aktion abgelehnt: {0}"
+msgid "The server refused this action."
+msgstr "Der Server hat diese Aktion abgelehnt."
 
-#. placeholder {0}: e.message
 #: src/renderer/src/errors.ts
-msgid "The server rejected the sign-in. {0}"
-msgstr "Der Server hat die Anmeldung abgelehnt. {0}"
+msgid "The server rejected the sign-in."
+msgstr "Der Server hat die Anmeldung abgelehnt."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "The server rejected the sign-in. Check the email address, and make sure you entered an app-specific password or authorization code, not your web password."
 msgstr "Der Server hat die Anmeldung abgelehnt. Überprüfen Sie die E-Mail-Adresse und stellen Sie sicher, dass Sie ein App-spezifisches Passwort oder einen Autorisierungscode eingegeben haben, nicht Ihr Web-Passwort."
+
+#: src/renderer/src/errors.ts
+msgid "The thread changed. Summarize it again."
+msgstr "Die Konversation hat sich geändert. Fassen Sie sie erneut zusammen."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
