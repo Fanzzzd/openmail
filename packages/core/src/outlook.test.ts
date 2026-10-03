@@ -2816,7 +2816,7 @@ for (const reply of [false, true])
           "GET /me/mailFolders/sentitems/messages": (url) => {
             assert.match(
               url.searchParams.get("$filter") ?? "",
-              /^internetMessageId eq '<.+@openmail.local>'$/,
+              /^internetMessageId eq '<.+@outlook.com>'$/,
             );
             return { json: { value: [{ id: "sent" }] } };
           },
@@ -2849,7 +2849,7 @@ for (const reply of [false, true])
         )(http.calls.find((c) => c.method === (reply ? "PATCH" : "POST"))?.body);
         assert.match(
           fields.internetMessageId ?? fields.message?.internetMessageId ?? "",
-          /^<.+@openmail.local>$/,
+          /^<.+@outlook.com>$/,
         );
       }),
   );
@@ -3290,5 +3290,70 @@ it.effect("outlook interruption aborts the GET and never retries or returns Auth
     );
     assert.isTrue(signal?.aborted);
     assert.strictEqual(attempts, 1);
+  }),
+);
+
+for (const reply of [false, true])
+  it.effect(
+    `slice55: ${reply ? "reply" : "new"} sending never queues behind four throttled Graph requests`,
+    () =>
+      Effect.gen(function* () {
+        let pulls = 0;
+        const http = fakeHttp({
+          "PATCH /me/messages/m": () => {
+            pulls++;
+            return { status: 429, headers: { "Retry-After": "30" } };
+          },
+          "POST /me/sendMail": { status: 202 },
+          "POST /me/messages/orig/createReply": { json: { id: "prepared" } },
+          "PATCH /me/messages/prepared": { json: {} },
+          "POST /me/messages/prepared/send": { status: 202 },
+        });
+        yield* run(http, (a) =>
+          Effect.gen(function* () {
+            const stalled = yield* Effect.forEach([1, 2, 3, 4], () =>
+              a
+                .push(account, "m", { kind: "read", value: true })
+                .pipe(Effect.result, Effect.forkChild),
+            );
+            while ((() => pulls < 4)()) yield* Effect.yieldNow;
+            const send = yield* a
+              .send(
+                account,
+                { ...draftMessage, attachments: [], mode: reply ? "reply" : "new" },
+                reply ? Option.some({ providerId: "orig", threadId: "thread" }) : Option.none(),
+              )
+              .pipe(Effect.forkChild);
+            yield* TestClock.adjust("1 second");
+            assert.strictEqual(
+              http.calls.filter((c) => /\/(send|sendMail)$/.test(c.url.pathname)).length,
+              1,
+            );
+            yield* Fiber.join(send);
+            yield* Effect.forEach(stalled, Fiber.interrupt);
+          }),
+        );
+      }),
+  );
+
+it.effect("slice55: Graph sends use the sender domain and no custom trace header", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "POST /me/sendMail": { status: 202 } });
+    yield* run(http, (a) => a.send(account, { ...draftMessage, attachments: [] }, Option.none()));
+    const sent = Schema.decodeUnknownSync(
+      Schema.Struct({
+        message: Schema.Struct({
+          internetMessageId: Schema.String,
+          internetMessageHeaders: Schema.optional(
+            Schema.Array(Schema.Struct({ name: Schema.String })),
+          ),
+        }),
+      }),
+    )(http.calls[0]?.body);
+    assert.match(sent.message.internetMessageId, /^<[a-f0-9-]+@outlook\.com>$/);
+    assert.isFalse(
+      sent.message.internetMessageHeaders?.some((h) => h.name.toLowerCase() === "x-openmail-id") ??
+        false,
+    );
   }),
 );

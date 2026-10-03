@@ -115,3 +115,29 @@ it("find navigation and quote toggles never rerun quote detection for the same d
     dom.dispose();
   }
 });
+
+it("slice55-fix: a vanished message clears cached reader content even in the same conversation", () => {
+  const dom = testDom();
+  let ids: string[] = [];
+  function Reader({ missing }: { missing: boolean }) {
+    const messages = useReaderMessages(
+      "same-thread",
+      missing ? undefined : [message("old")],
+      missing,
+    );
+    useEffect(() => {
+      ids = messages?.map((m) => m.id) ?? [];
+    }, [messages]);
+    return null;
+  }
+  try {
+    dom.render(createElement(Reader, { missing: false }));
+    expect(ids).toEqual(["old"]);
+    dom.render(createElement(Reader, { missing: true }));
+    expect(ids).toEqual([]);
+    dom.render(createElement(Reader, { missing: true }));
+    expect(ids).toEqual([]);
+  } finally {
+    dom.dispose();
+  }
+});

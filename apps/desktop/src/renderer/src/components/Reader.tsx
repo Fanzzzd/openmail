@@ -69,7 +69,7 @@ import {
 } from "react";
 
 import type { Message, DerivedChunk } from "../../../shared/api";
-import { causeText } from "../errors";
+import { messageMissing, causeText } from "../errors";
 import { displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
 import {
@@ -159,8 +159,13 @@ export function Reader({
     },
     () => headerRef.current?.clientWidth ?? 0,
   );
-  const thread = AsyncResult.value(useAtomValue(threadAtom(messageId)));
-  const messages = useReaderMessages(threadKey, thread._tag === "Some" ? thread.value : undefined);
+  const result = useAtomValue(threadAtom(messageId));
+  const thread = AsyncResult.value(result);
+  const messages = useReaderMessages(
+    threadKey,
+    thread._tag === "Some" ? thread.value : undefined,
+    messageMissing(result),
+  );
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const grouping = prefs.threadGrouping;
 

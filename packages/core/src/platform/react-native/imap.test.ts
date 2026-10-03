@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { Effect, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
+import { Effect, Fiber, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
 import {
   type MailSocket,
   MailTransport,
@@ -102,6 +102,9 @@ function server(
     validity?: string;
     appendReject?: boolean;
     source?: Uint8Array;
+    uidNext?: number;
+    stallStore?: () => void;
+    stallStoreAt?: number;
   } = {},
 ) {
   const commands: string[] = [];
@@ -111,6 +114,8 @@ function server(
   let seen = false;
   let starred = false;
   let exists = true;
+  let deleted = false;
+  let stores = 0;
   const transport = Layer.succeed(MailTransport, {
     connect: async ({ host, tls, signal }) => {
       const smtp = host.startsWith("smtp");
@@ -179,13 +184,21 @@ function server(
             done();
           } else if (command.startsWith("EXAMINE") || command.startsWith("SELECT")) {
             current.enqueue(`* OK [UIDVALIDITY ${options.validity ?? "9"}] valid\r\n`);
+            if (options.uidNext !== undefined)
+              current.enqueue(`* OK [UIDNEXT ${options.uidNext}] next\r\n`);
             done();
           } else if (command.startsWith("UID SEARCH")) {
-            current.enqueue(`* SEARCH${exists ? " 1" : ""}\r\n`);
+            current.enqueue(
+              `* SEARCH${exists && !(deleted && command.includes("UNDELETED")) ? " 1" : ""}\r\n`,
+            );
             done();
           } else if (command.startsWith("UID FETCH")) {
             if (exists) {
-              const flags = [seen ? "\\Seen" : "", starred ? "\\Flagged" : ""]
+              const flags = [
+                seen ? "\\Seen" : "",
+                starred ? "\\Flagged" : "",
+                deleted ? "\\Deleted" : "",
+              ]
                 .filter(Boolean)
                 .join(" ");
               if (command.includes("BODY.PEEK")) {
@@ -201,6 +214,11 @@ function server(
             }
             done();
           } else if (command.startsWith("UID STORE")) {
+            if (options.stallStore && ++stores === (options.stallStoreAt ?? 1)) {
+              options.stallStore();
+              return;
+            }
+            if (command.includes("\\Deleted")) deleted = command.includes("+FLAGS");
             if (command.includes("\\Seen")) seen = command.includes("+FLAGS");
             if (command.includes("\\Flagged")) starred = command.includes("+FLAGS");
             done();
@@ -775,6 +793,186 @@ it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before f
       }),
     );
     expect(test.commands.some((command) => /UID SEARCH|UID FETCH/.test(command))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice55: concurrent commands on one IMAP wire are serialized", async () => {
+  const writes: string[] = [];
+  let firstTag = "";
+  const socket = new ScriptSocket((bytes, current) => {
+    const line = Buffer.from(bytes).toString().trim();
+    writes.push(line);
+    const tag = line.split(" ")[0]!;
+    if (!firstTag) firstTag = tag;
+    else current.enqueue(`${tag} OK second\r\n`);
+  });
+  const client = new ImapWire(new MailWire(socket));
+  const first = client.command("NOOP");
+  const second = client.command("NOOP");
+  await Promise.resolve();
+  await Promise.resolve();
+  const overlapping = writes.length;
+  socket.enqueue(`${firstTag} OK first\r\n`);
+  // A broken wire races its readers; close it after recording the actual overlap.
+  if (overlapping > 1) socket.close();
+  await Promise.allSettled([first, second]);
+  expect(overlapping).toBe(1);
+  expect(writes).toHaveLength(2);
+});
+
+it("slice55: In-Reply-To with multiple ids uses only the first parent", async () => {
+  const parsed = await parseMobileMime(
+    Buffer.from("Message-ID: <child@x>\r\nIn-Reply-To: <one@x> <two@x>\r\n\r\nbody"),
+  );
+  expect(
+    mobileIncoming(parsed, { path: "INBOX", name: "INBOX", label: "INBOX" }, "9", 1, [], 10)
+      .parentRfcMessageId,
+  ).toBe("one@x");
+});
+
+it("slice55: interrupted pooled mobile pushes evict and close the socket", async () => {
+  let began: () => void = () => {
+    // The Promise constructor installs the resolver before any command starts.
+  };
+  const started = new Promise<void>((resolve) => {
+    began = resolve;
+  });
+  const test = server({ stallStore: () => began(), stallStoreAt: 2 });
+  try {
+    const account = await test.runtime.runPromise(
+      Effect.gen(function* () {
+        return yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+      }),
+    );
+    const adapter = await test.runtime.runPromise(Effect.map(Providers, (p) => p.get("imap")));
+    await test.runtime.runPromise(
+      adapter.push(account, "9:1:INBOX", { kind: "read", value: false }),
+    );
+    const fiber = test.runtime.runFork(
+      adapter.push(account, "9:1:INBOX", { kind: "read", value: true }),
+    );
+    await started;
+    const interruptedSocket = test.sockets.at(-1)!;
+    const before = test.sockets.length;
+    await test.runtime.runPromise(Fiber.interrupt(fiber));
+    expect(interruptedSocket.closed).toBe(true);
+    await test.runtime.runPromise(
+      adapter.push(account, "9:1:INBOX", { kind: "star", value: true }),
+    );
+    expect(test.sockets.length).toBe(before + 1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice55: mobile sync omits Deleted copies on a server without MOVE or UIDPLUS", async () => {
+  const test = server({ noMove: true, noUidplus: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        yield* adapter.push(account, "9:1:INBOX", {
+          kind: "move",
+          labelId: "Projects",
+          removeLabelId: "INBOX",
+        });
+        const cursor = Option.some(
+          JSON.stringify({
+            folders: {
+              INBOX: { uidValidity: "9", lastUid: 1, uids: "1", unread: "1", starred: "" },
+            },
+          }),
+        );
+        const changes = yield* Stream.runCollect(adapter.pull(account, cursor, "inbox"));
+        expect(changes.some((c) => c._tag === "Delete" && c.providerId === "9:1:INBOX")).toBe(true);
+        expect(
+          changes.some(
+            (c) =>
+              (c._tag === "Upsert" || c._tag === "Remap") && c.message.providerId === "9:1:INBOX",
+          ),
+        ).toBe(false);
+      }),
+    );
+    expect(test.commands.some((c) => /UID EXPUNGE/.test(c))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice55: mobile UIDNEXT regression invalidates old mappings before any refetch", async () => {
+  const test = server({ uidNext: 2 });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const cursor = Option.some(
+          JSON.stringify({
+            folders: {
+              INBOX: { uidValidity: "9", lastUid: 100, uids: "1", unread: "1", starred: "" },
+            },
+          }),
+        );
+        const changes = yield* Stream.runCollect(
+          (yield* Providers).get("imap").pull(account, cursor, "inbox"),
+        );
+        const invalidate = changes.findIndex((c) => c._tag === "InvalidateFolder");
+        expect(invalidate).toBeGreaterThanOrEqual(0);
+        expect(changes.findIndex((c) => c._tag === "Upsert")).toBeGreaterThan(invalidate);
+        expect(changes.some((c) => c._tag === "Remap")).toBe(false);
+      }),
+    );
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice55-fix: mobile pushes refuse regressed UIDNEXT before STORE or COPY", async () => {
+  const test = server({ uidNext: 2 });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const cursor = JSON.stringify({
+          folders: {
+            INBOX: { uidValidity: "9", lastUid: 100, uids: "1", unread: "1", starred: "" },
+          },
+        });
+        test.commands.length = 0;
+        for (const effect of [
+          adapter.push(account, "9:1:INBOX", { kind: "star", value: true }, cursor),
+          adapter.pushBatch?.(
+            account,
+            ["9:1:INBOX"],
+            { kind: "move", labelId: "Projects", removeLabelId: "INBOX" },
+            cursor,
+          ),
+        ]) {
+          if (!effect) throw new Error("Missing batch push");
+          const result = yield* effect.pipe(Effect.result);
+          expect(result._tag).toBe("Failure");
+          if (result._tag === "Failure") expect(result.failure._tag).toBe("PermanentError");
+        }
+      }),
+    );
+    expect(test.commands.some((command) => /UID STORE|UID COPY|UID MOVE/.test(command))).toBe(
+      false,
+    );
   } finally {
     await test.runtime.dispose();
   }

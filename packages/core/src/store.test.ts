@@ -1120,11 +1120,11 @@ it.effect("slice49-fix: remapping a duplicate target preserves source identity a
       const account = yield* store.upsertAccount("imap", "me@example.com");
       yield* store.upsertMessage(
         account.id,
-        message({ providerId: "7:1:INBOX", threadId: "source" }),
+        message({ providerId: "7:1:INBOX", threadId: "source", rfcMessageId: "<same@x>" }),
       );
       yield* store.upsertMessage(
         account.id,
-        message({ providerId: "8:2:INBOX", threadId: "target" }),
+        message({ providerId: "8:2:INBOX", threadId: "target", rfcMessageId: "<same@x>" }),
       );
       const source = `${account.id}/7:1:INBOX`,
         target = `${account.id}/8:2:INBOX`;
@@ -1222,4 +1222,195 @@ it.effect("slice49-fix: database failures during remap roll back without a defec
       assert.strictEqual((yield* store.messageRef(`${account.id}/old`)).providerId, "old");
     }),
   ),
+);
+
+it.effect("slice55: remapping never deletes an unrelated target", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:2:INBOX", rfcMessageId: "<x@x>" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "8:5:INBOX", rfcMessageId: "<y@x>" }),
+      );
+      yield* store.enqueueOp(account.id, "8:5:INBOX", { kind: "star", value: true });
+      yield* store.remapProviderIds(account.id, [{ from: "7:2:INBOX", to: "8:5:INBOX" }]);
+      assert.strictEqual(
+        (yield* store.getMessage(`${account.id}/8:5:INBOX`)).rfcMessageId,
+        "<y@x>",
+      );
+      assert.strictEqual((yield* store.listPendingOps)[0]?.op.kind, "reconcile");
+      assert.notStrictEqual((yield* store.listPendingOps)[0]?.providerId, "8:5:INBOX");
+    }),
+  ),
+);
+
+it.effect("slice55: an upsert cannot overwrite a local id left behind by a move", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:2:INBOX", rfcMessageId: "<x@x>" }),
+      );
+      yield* store.remapProviderIds(account.id, [{ from: "7:2:INBOX", to: "8:5:Archive" }]);
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:2:INBOX", rfcMessageId: "<y@x>" }),
+      );
+      assert.strictEqual(
+        (yield* store.getMessage(`${account.id}/7:2:INBOX`)).rfcMessageId,
+        "<x@x>",
+      );
+      const fresh = yield* store.messageIdForProvider(account.id, "7:2:INBOX");
+      assert.ok(fresh);
+      assert.notStrictEqual(fresh, `${account.id}/7:2:INBOX`);
+      assert.strictEqual((yield* store.getMessage(fresh)).rfcMessageId, "<y@x>");
+    }),
+  ),
+);
+
+it.effect("slice55: IMAP folder matching uses the complete path after the UID", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "6:99:Parent:INBOX", rfcMessageId: "<one@x>" }),
+      );
+      assert.strictEqual(
+        yield* store.findMessageByRfcId(account.id, "<one@x>", { path: "INBOX", uidValidity: "6" }),
+        null,
+      );
+      yield* store.deleteImapFolder(account.id, { path: "INBOX", uidValidity: "6" }, []);
+      assert.ok(yield* store.messageIdForProvider(account.id, "6:99:Parent:INBOX"));
+    }),
+  ),
+);
+
+it.effect(
+  "slice55-fix: invalidated local ids are never reused and stale local work is discarded",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        const account = yield* store.upsertAccount("imap", "me@example.com");
+        const old = `${account.id}/7:1:INBOX`;
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<x@x>" }),
+        );
+        yield* store.snooze(old, 999999);
+        yield* store.enqueueOp(account.id, "7:1:INBOX", {
+          kind: "deleteDraft",
+          remote: { draftId: "7:1:INBOX", messageId: "7:1:INBOX" },
+        });
+        yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+        );
+        const fresh = yield* store.messageIdForProvider(account.id, "7:1:INBOX");
+        assert.notStrictEqual(fresh, old);
+        assert.isFalse(yield* store.hasMessage(old));
+        assert.strictEqual((yield* sql`SELECT * FROM thread_reminders`).length, 0);
+        assert.isTrue(
+          (yield* store.listPendingOps).every(
+            (op) => op.op.kind === "reconcile" && op.providerId.startsWith("unmapped:"),
+          ),
+        );
+        // A second invalidation creates a new generation, even when the UID and Message-ID recur.
+        yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+        );
+        assert.notStrictEqual(yield* store.messageIdForProvider(account.id, "7:1:INBOX"), fresh);
+      }),
+    ),
+);
+
+it.effect("slice55-fix: an unrelated remap target always has a cleanup reconciliation", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", rfcMessageId: "<x@x>" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "8:2:Archive", rfcMessageId: "<y@x>" }),
+      );
+      yield* store.remapProviderIds(account.id, [{ from: "7:1:INBOX", to: "8:2:Archive" }]);
+      const detached = (yield* store.messageRef(`${account.id}/8:2:Archive`)).providerId;
+      assert.ok(
+        (yield* store.listPendingOps).some(
+          (op) => op.providerId === detached && op.op.kind === "reconcile",
+        ),
+      );
+    }),
+  ),
+);
+
+it.effect("slice55-fix: folder epochs survive reopening the database", () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const dir = yield* Effect.acquireRelease(
+      fs.makeTempDirectory({ prefix: "openmail-epoch-" }),
+      (dir) => fs.remove(dir, { recursive: true }).pipe(Effect.orDie),
+    );
+    const file = path.join(dir, "mail.db");
+    const platform = () =>
+      databaseLayer(file).pipe(Layer.provide(NodeFileSystem.layer), Layer.provide(NodePath.layer));
+    const before = yield* withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("imap", "me@example.com");
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<x@x>" }),
+        );
+        yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+        );
+        return {
+          accountId: account.id,
+          local: yield* store.messageIdForProvider(account.id, "7:1:INBOX"),
+        };
+      }),
+      platform(),
+    );
+    yield* withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        assert.isFalse(yield* store.hasMessage(`${before.accountId}/7:1:INBOX`));
+        assert.strictEqual(
+          yield* store.messageIdForProvider(before.accountId, "7:1:INBOX"),
+          before.local,
+        );
+        yield* store.invalidateImapFolder(before.accountId, { path: "INBOX", uidValidity: "7" });
+        yield* store.upsertMessage(
+          before.accountId,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+        );
+        assert.notStrictEqual(
+          yield* store.messageIdForProvider(before.accountId, "7:1:INBOX"),
+          before.local,
+        );
+      }),
+      platform(),
+    );
+  }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );

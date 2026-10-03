@@ -16,6 +16,7 @@ export function retryProvider<A, E, R>(
   enabled = true,
 ): Effect.Effect<A, E, R> {
   return Effect.gen(function* () {
+    let waited = 0;
     for (let attempt = 0; ; attempt++) {
       const result = yield* Effect.result(effect);
       if (result._tag === "Success") return result.success;
@@ -31,8 +32,10 @@ export function retryProvider<A, E, R>(
           : undefined,
         now,
       );
-      if (wait > 60000) return yield* Effect.fail(result.failure);
-      yield* Effect.sleep(Math.max(500 * 2 ** attempt, wait));
+      const delay = Math.max(500 * 2 ** attempt, wait);
+      if (waited + delay > 60000) return yield* Effect.fail(result.failure);
+      waited += delay;
+      yield* Effect.sleep(delay);
     }
   });
 }

@@ -38,13 +38,19 @@ export function readerMessageId(
 export function useReaderMessages(
   threadKey: string | null,
   loaded: readonly Message[] | undefined,
+  unavailable = false,
 ) {
   const [cache, setCache] = useState({ threadKey, messages: loaded });
-  if (cache.threadKey !== threadKey || (loaded && cache.messages !== loaded)) {
-    setCache({ threadKey, messages: loaded });
-    return loaded;
+  const messages = unavailable ? undefined : loaded;
+  if (
+    cache.threadKey !== threadKey ||
+    (unavailable && cache.messages !== undefined) ||
+    (messages && cache.messages !== messages)
+  ) {
+    setCache({ threadKey, messages });
+    return messages;
   }
-  return loaded ?? cache.messages;
+  return unavailable ? messages : (messages ?? cache.messages);
 }
 
 /** A missing selected message must never silently redirect a reply to its sibling. */

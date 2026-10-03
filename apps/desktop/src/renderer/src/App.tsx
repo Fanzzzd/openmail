@@ -46,7 +46,7 @@ import { Toast, type ToastState } from "./components/Toast";
 import { Alert, alertButton, AlertCancel, alertDanger, alertPrimary } from "./components/ui/Dialog";
 import { SearchField } from "./components/ui/SearchField";
 import { UndoHistory } from "./components/UndoHistory";
-import { causeText } from "./errors";
+import { messageMissing, causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { useDesktopLabels } from "./state/desktop";
 import { liveUpdatesAtom } from "./state/events";
@@ -184,8 +184,10 @@ export function App({ composeId }: { composeId?: string }) {
   const labelMap = labelsById(labels);
 
   const [readerSelection, setReaderSelection] = useState<ReaderSelection | null>(null);
-  const openThread = AsyncResult.value(useAtomValue(threadAtom(selectedId)));
-  const messages = openThread._tag === "Some" ? openThread.value : undefined;
+  const threadResult = useAtomValue(threadAtom(selectedId));
+  const openThread = AsyncResult.value(threadResult);
+  const messages =
+    !messageMissing(threadResult) && openThread._tag === "Some" ? openThread.value : undefined;
   const currentReaderThreadKey = readerThreadKey(selected ?? messages?.[0]);
   const proposals = AsyncResult.getOrElse(useAtomValue(proposalsAtom), () => []);
   const signatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);

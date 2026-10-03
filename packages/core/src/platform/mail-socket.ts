@@ -220,6 +220,29 @@ export class ImapCommandError extends Error {
 }
 export class ImapWire {
   private tag = 0;
+  private commands: Promise<null> = Promise.resolve(null);
+  private stopped = false;
+  private signal: AbortSignal | undefined;
+  /** Bind each lease, including a reused connection, to its caller's cancellation. */
+  async run<A>(signal: AbortSignal, work: (signal: AbortSignal) => Promise<A>): Promise<A> {
+    const abort = () => {
+      this.stopped = true;
+      this.wire.socket.close();
+    };
+    this.signal = signal;
+    signal.addEventListener("abort", abort, { once: true });
+    try {
+      signal.throwIfAborted();
+      return await work(signal);
+    } finally {
+      signal.removeEventListener("abort", abort);
+      if (this.signal === signal) this.signal = undefined;
+    }
+  }
+  private checkActive() {
+    this.signal?.throwIfAborted();
+    if (this.stopped) throw new Error("IMAP connection closed");
+  }
   capabilities = new Set<string>();
   constructor(readonly wire: MailWire) {}
   async response(maxBytes = 26 * 1024 * 1024): Promise<ImapResponse> {
@@ -249,7 +272,16 @@ export class ImapWire {
     if (/^\* BYE\b/i.test(text)) throw new ProviderError({ message: "IMAP connection ended" });
     return { text, values: tokenize(text, literals), byteLength };
   }
-  async command(command: string, literal?: Uint8Array): Promise<ImapResponse[]> {
+  command(command: string, literal?: Uint8Array): Promise<ImapResponse[]> {
+    const result = this.commands.then(() => this.execute(command, literal));
+    this.commands = result.then(
+      () => null,
+      () => null,
+    );
+    return result;
+  }
+  private async execute(command: string, literal?: Uint8Array): Promise<ImapResponse[]> {
+    this.checkActive();
     const tag = `M${++this.tag}`;
     await this.wire.write(`${tag} ${command}`);
     const responses: ImapResponse[] = [];
@@ -257,6 +289,7 @@ export class ImapWire {
     let bytes = 0;
     let textBytes = 0;
     for (;;) {
+      this.checkActive();
       const response = await this.response(26 * 1024 * 1024 - bytes);
       bytes += response.byteLength;
       textBytes += Buffer.byteLength(response.text);
@@ -264,6 +297,7 @@ export class ImapWire {
         throw new ProviderError({ message: "IMAP command response too large" });
       if (response.text.startsWith("+")) {
         if (!literal || sent) throw new ProviderError({ message: "Unexpected IMAP continuation" });
+        this.checkActive();
         await writeMailChunks(this.wire.socket, literal);
         await this.wire.write("");
         sent = true;

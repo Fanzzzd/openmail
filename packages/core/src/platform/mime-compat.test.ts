@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { nodeMailCodec } from "./node/mail-codec.js";
 import { parseMobileMime } from "./react-native/mail-codec.js";
+import { normalizeMimeCharsets } from "./mime-compat.js";
 import { Buffer } from "./bytes.js";
 
 const tlv = (tag: number, bytes: Uint8Array) =>
@@ -114,4 +115,15 @@ it("slice49-fix: signed body decoding keeps the outer envelope and authenticatio
   expect(mail.text?.trim()).toBe("Signed body");
   expect(mail.subject).toBe("Outer subject");
   expect(mail.from?.value[0]?.address).toBe("outer@example.test");
+});
+
+it("slice55: headerless MIME text is never interpreted as a header block", () => {
+  for (const source of [
+    "plain body\r\nContent-Type: text/plain; charset=gb2312\r\n\r\ntail",
+    "\r\nContent-Type: text/plain; charset=gb2312\r\n\r\ntail",
+    "body =?utf-8?b?Q2F0?=\r\n\r\ntail",
+  ]) {
+    const bytes = Buffer.from(source, "latin1");
+    expect(Buffer.from(normalizeMimeCharsets(bytes)).toString("latin1")).toBe(source);
+  }
 });

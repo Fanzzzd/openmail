@@ -517,7 +517,7 @@ export class Mailbox extends Context.Service<
     fetchOlder(query: ThreadQuery): Effect.Effect<import("./cache.js").OlderResult, PerformError>;
 
     // Sync
-    /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */
+    /** Syncs provider changes and the queue. IMAP validates UIDs before pushing; concurrent calls join. */
     sync(accountId?: string): Effect.Effect<SyncResult[]>;
     /** Desktop's lightweight inbox poll; CLI/MCP do not start a timer. */
     pollInbox(

@@ -263,6 +263,10 @@ export class Store extends Context.Service<
     ): Effect.Effect<void>;
     messageIdForProvider(accountId: string, providerId: string): Effect.Effect<string | null>;
     readonly checkpoint: Effect.Effect<void>;
+    invalidateImapFolder(
+      accountId: string,
+      previous: ImapFolderIdentity,
+    ): Effect.Effect<readonly string[]>;
     deleteImapFolder(
       accountId: string,
       previous: ImapFolderIdentity,
@@ -544,6 +548,7 @@ export interface ImapFolderIdentity {
   readonly uidValidity: string;
 }
 export type Change =
+  | { readonly _tag: "InvalidateFolder"; readonly previous: ImapFolderIdentity }
   | {
       readonly _tag: "RebuildFolder";
       readonly previous: ImapFolderIdentity;
@@ -718,6 +723,8 @@ export interface ProviderAdapter {
     account: Account,
     providerId: string,
     op: MailOp,
+    /** Latest persisted IMAP folder state, also available before the adapter's first pull. */
+    cursor?: string,
   ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
   /** Folder/label operations; callers cap each request at 1000 IDs. */
   pushBatch?(
@@ -725,6 +732,8 @@ export interface ProviderAdapter {
     account: Account,
     providerIds: readonly string[],
     op: MailOp,
+    /** Latest persisted IMAP folder state, also available before the adapter's first pull. */
+    cursor?: string,
   ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The

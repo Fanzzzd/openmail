@@ -24,6 +24,7 @@ interface Change {
   op: MailOp;
 }
 interface UndoBatch {
+  messageIds: readonly string[];
   changes: readonly Change[];
   reminders: ReminderSnapshot[];
   localChanges?: readonly Change[];
@@ -256,7 +257,11 @@ export const makeBatchMailbox = (
                     expected,
                     localExpected: expected,
                   });
-                return { changes: inverses, reminders: [...reminders.values()] };
+                return {
+                  messageIds: [...ids],
+                  changes: inverses,
+                  reminders: [...reminders.values()],
+                };
               }),
             );
             if (op.kind !== "copy") history.set(undoId, back);
@@ -284,6 +289,7 @@ export const makeBatchMailbox = (
             const back = yield* store.transaction(
               Effect.gen(function* () {
                 const localChanges: Change[] = [];
+                const messageIds = new Set<string>();
                 const reminders: ReminderSnapshot[] = [];
                 const seen = new Set<string>();
                 const expected: (typeof UndoState.Type)[] = [];
@@ -295,6 +301,7 @@ export const makeBatchMailbox = (
                   const reminder = yield* store.reminderSnapshot(id);
                   if (Option.isSome(reminder)) reminders.push(reminder.value);
                   const members = yield* store.getThread(id);
+                  for (const member of members) messageIds.add(member.id);
                   yield* store.snooze(id, due);
                   for (const member of members)
                     if (
@@ -334,7 +341,7 @@ export const makeBatchMailbox = (
                   expected,
                   localExpected,
                 });
-                return { changes: [], localChanges, reminders };
+                return { messageIds: [...messageIds], changes: [], localChanges, reminders };
               }),
             );
             history.set(undoId, back);
@@ -355,7 +362,12 @@ export const makeBatchMailbox = (
             const back: UndoBatch | undefined =
               (journal ? live : undefined) ??
               (journal
-                ? { changes: journal.changes, localChanges: journal.localChanges, reminders: [] }
+                ? {
+                    messageIds: journal.localExpected.map((state) => state.id),
+                    changes: journal.changes,
+                    localChanges: journal.localChanges,
+                    reminders: [],
+                  }
                 : undefined);
             if (!back)
               return yield* new InvalidInput({
@@ -482,6 +494,16 @@ export const makeBatchMailbox = (
         );
       });
     return {
+      forgetMessages: (ids: readonly string[]) =>
+        Effect.gen(function* () {
+          const removed = new Set(ids);
+          for (const [id, batch] of history) {
+            if (batch.messageIds.some((messageId) => removed.has(messageId))) {
+              yield* store.deleteUndoJournal(id);
+              history.delete(id);
+            }
+          }
+        }),
       modifyWithUndo,
       undoBatch,
       markUnreadFrom,

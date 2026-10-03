@@ -11,7 +11,7 @@ import { applyOpToLabels, invalidCategoryFolderOp } from "./mail-ops.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, ModelUnavailable } from "./model.js";
 import { modelContext } from "./model-view.js";
-import { decodeProviderId } from "./imap-cursor.js";
+import { decodeProviderId, readCursor } from "./imap-cursor.js";
 import { ImapIdle } from "./imap-idle.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtime.js";
 import { MailCodec } from "./platform/mail-codec.js";
@@ -328,6 +328,15 @@ export const MailboxLive = (
 
       /** One flush at a time in this process; claims keep other processes off the same op. */
       const flushLock = yield* Semaphore.make(1);
+      const imapPullLocks = new Map<string, Semaphore.Semaphore>();
+      const imapPullLock = (accountId: string) => {
+        let lock = imapPullLocks.get(accountId);
+        if (!lock) {
+          lock = Semaphore.makeUnsafe(1);
+          imapPullLocks.set(accountId, lock);
+        }
+        return lock;
+      };
 
       /**
        * A message ready for the provider: Markdown rendered, and for a forward
@@ -476,6 +485,14 @@ export const MailboxLive = (
             ),
             Effect.catchTag("PermanentError", () => store.deleteMessage(account.id, providerId)),
           );
+      const imapPushCursor = (account: Account): Effect.Effect<string | undefined> =>
+        account.provider === "imap"
+          ? Effect.gen(function* () {
+              const full = readCursor(yield* store.getSyncCursor(account.id));
+              const inbox = readCursor(yield* store.getInboxCursor(account.id));
+              return JSON.stringify({ folders: { ...full.folders, ...inbox.folders } });
+            })
+          : Effect.succeed(undefined);
       const pushOp = (account: Account, pending: PendingOp) => {
         const { op } = pending;
         switch (op.kind) {
@@ -486,7 +503,11 @@ export const MailboxLive = (
           case "reconcile":
             return refreshMessage(account, pending.providerId);
           default:
-            return providers.get(account.provider).push(account, pending.providerId, op);
+            return imapPushCursor(account).pipe(
+              Effect.flatMap((cursor) =>
+                providers.get(account.provider).push(account, pending.providerId, op, cursor),
+              ),
+            );
         }
       };
 
@@ -511,182 +532,206 @@ export const MailboxLive = (
           detail: { providerId: item.providerId, op: item.op, error },
         });
       });
-      const flush = Effect.fn("Mailbox.flush")(function* () {
-        const result = { done: 0, failed: 0, reauth: new Array<string>() };
-        const blocked = new Set<string>();
-        const queued = yield* store.listPendingOps;
-        if (readOnly) {
-          for (const item of queued)
-            if (item.op.kind === "saveDraft")
-              yield* store.setDraftSyncError(item.op.draftId, READ_ONLY_MESSAGE);
-          return { ...result, failed: queued.length };
-        }
-        const settle = (
-          account: Account,
-          items: readonly PendingOp[],
-          push: Effect.Effect<
-            void | readonly import("./services.js").ProviderIdMapping[],
-            import("./errors.js").ProviderFailure
-          >,
-        ) =>
-          push.pipe(
-            Effect.tap((mappings) =>
-              mappings
-                ? store.remapProviderIds(account.id, mappings).pipe(
-                    Effect.andThen(
-                      Effect.sync(() => {
-                        for (let i = 0; i < queued.length; i++) {
-                          const next = queued[i]!;
-                          if (next.accountId !== account.id) continue;
-                          const mapping = mappings.find((entry) => entry.from === next.providerId);
-                          if (mapping) queued[i] = { ...next, providerId: mapping.to };
-                        }
-                      }),
-                    ),
-                  )
-                : Effect.void,
-            ),
-            Effect.andThen(
-              Effect.forEach(items, (item) => store.removePendingOp(item.id), { discard: true }),
-            ),
-            Effect.andThen(
+      const flush = Effect.fn("Mailbox.flush")(
+        function* (accountIds?: readonly string[], skipImap = false) {
+          const result = { done: 0, failed: 0, reauth: new Array<string>() };
+          const blocked = new Set<string>();
+          const queued = yield* store.listPendingOps;
+          if (readOnly) {
+            for (const item of queued)
+              if (item.op.kind === "saveDraft")
+                yield* store.setDraftSyncError(item.op.draftId, READ_ONLY_MESSAGE);
+            return { ...result, failed: queued.length };
+          }
+          const refreshQueued = store.listPendingOps.pipe(
+            Effect.tap((updated) =>
               Effect.sync(() => {
-                result.done += items.length;
+                const byId = new Map(updated.map((item) => [item.id, item]));
+                for (let i = 0; i < queued.length; i++) {
+                  const next = byId.get(queued[i]!.id);
+                  if (next) queued[i] = next;
+                }
               }),
             ),
-            Effect.catchTags({
-              AuthError: (error) =>
-                Effect.gen(function* () {
-                  for (const item of items)
-                    if (item.op.kind === "saveDraft")
-                      yield* store.setDraftSyncError(item.op.draftId, error.message);
-                  yield* store.setNeedsReauth(account.id, true);
-                  yield* Effect.forEach(items, (item) => store.releasePendingOp(item.id), {
-                    discard: true,
-                  });
-                  result.reauth.push(account.id);
-                }),
-              PermanentError: (error) =>
-                Effect.gen(function* () {
-                  for (const item of items)
-                    if (item.op.kind === "saveDraft")
-                      yield* store.setDraftSyncError(item.op.draftId, error.message);
-                  yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
-                    discard: true,
-                  });
-                  for (const item of items) yield* reconcileDropped(account, item, error.message);
-                  result.failed += items.length;
-                }),
-              ProviderError: (error) =>
-                Effect.gen(function* () {
-                  for (const item of items) {
-                    if (item.op.kind === "saveDraft")
-                      yield* store.setDraftSyncError(item.op.draftId, error.message);
-                    blocked.add(`${item.accountId}/${item.providerId}`);
-                    yield* item.attempts + 1 >= (item.op.kind === "reconcile" ? 3 : MAX_ATTEMPTS)
-                      ? store.removePendingOp(item.id)
-                      : store.failPendingOp(item.id, error.message);
-                    if (item.attempts + 1 >= MAX_ATTEMPTS && item.op.kind !== "reconcile")
-                      yield* reconcileDropped(account, item, error.message);
-                    if (item.op.kind !== "reconcile") result.failed++;
-                  }
-                }),
-            }),
+            Effect.asVoid,
           );
-        for (let index = 0; index < queued.length; index++) {
-          const pending = queued[index];
-          if (!pending) continue;
-          if (options.localDraftQueue && pending.op.kind === "saveDraft") continue;
-          const key = `${pending.accountId}/${pending.providerId}`;
-          if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
-          const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
-          if (Option.isNone(account)) {
-            yield* store.removePendingOp(pending.id);
-            continue;
-          }
-          if (account.value.enabled === false) continue;
-          if (account.value.needsReauth) {
-            result.reauth.push(account.value.id);
-            continue;
-          }
-          if (!(yield* store.claimPendingOp(pending.id))) {
-            blocked.add(key);
-            continue;
-          }
-          const adapter = providers.get(account.value.provider);
-          const op = pending.op;
-          const batch: PendingOp[] = [pending];
-          if (
-            adapter.pushBatch &&
-            op.kind !== "saveDraft" &&
-            op.kind !== "deleteDraft" &&
-            op.kind !== "reconcile" &&
-            op.kind !== "trash" &&
-            op.kind !== "inbox"
-          ) {
-            const signature = JSON.stringify(op);
-            for (const next of queued.slice(index + 1, index + 1000)) {
-              if (
-                next.accountId !== pending.accountId ||
-                JSON.stringify(next.op) !== signature ||
-                (account.value.provider === "imap" &&
-                  !Option.getOrElse(
-                    Option.zipWith(
-                      decodeProviderId(pending.providerId),
-                      decodeProviderId(next.providerId),
-                      (first, other) =>
-                        first.path === other.path && first.uidValidity === other.uidValidity,
-                    ),
-                    () => false,
-                  )) ||
-                blocked.has(`${next.accountId}/${next.providerId}`)
-              )
-                break;
-              if (!(yield* store.claimPendingOp(next.id))) {
-                blocked.add(`${next.accountId}/${next.providerId}`);
-                break;
-              }
-              batch.push(next);
-            }
-            index += batch.length - 1;
-            if (batch.length > 1) {
-              // A stale provider ID must not cause other messages to be dropped.
-              const bulk = adapter
-                .pushBatch(
-                  account.value,
-                  batch.map((item) => item.providerId),
-                  op,
-                )
-                .pipe(
-                  Effect.catchTag("PermanentError", () =>
-                    Effect.gen(function* () {
-                      for (const item of batch) {
-                        if (
-                          result.reauth.includes(item.accountId) ||
-                          blocked.has(`${item.accountId}/${item.providerId}`)
-                        ) {
-                          yield* store.releasePendingOp(item.id);
-                          continue;
-                        }
-                        yield* settle(account.value, [item], pushOp(account.value, item));
-                      }
-                    }).pipe(Effect.as("fallback" as const)),
-                  ),
-                );
-              const sent = yield* bulk.pipe(Effect.result);
-              if (sent._tag === "Success" && sent.success === "fallback") continue;
-              yield* settle(
-                account.value,
-                batch,
-                sent._tag === "Failure" ? Effect.fail(sent.failure) : Effect.void,
-              );
+          const settle = (
+            account: Account,
+            items: readonly PendingOp[],
+            push: Effect.Effect<
+              void | readonly import("./services.js").ProviderIdMapping[],
+              import("./errors.js").ProviderFailure
+            >,
+          ) =>
+            push.pipe(
+              Effect.tap((mappings) =>
+                mappings
+                  ? store.remapProviderIds(account.id, mappings).pipe(Effect.andThen(refreshQueued))
+                  : Effect.void,
+              ),
+              Effect.andThen(
+                Effect.forEach(items, (item) => store.removePendingOp(item.id), { discard: true }),
+              ),
+              Effect.andThen(
+                Effect.sync(() => {
+                  result.done += items.length;
+                }),
+              ),
+              Effect.catchTags({
+                AuthError: (error) =>
+                  Effect.gen(function* () {
+                    for (const item of items)
+                      if (item.op.kind === "saveDraft")
+                        yield* store.setDraftSyncError(item.op.draftId, error.message);
+                    yield* store.setNeedsReauth(account.id, true);
+                    yield* Effect.forEach(items, (item) => store.releasePendingOp(item.id), {
+                      discard: true,
+                    });
+                    result.reauth.push(account.id);
+                  }),
+                PermanentError: (error) =>
+                  Effect.gen(function* () {
+                    for (const item of items)
+                      if (item.op.kind === "saveDraft")
+                        yield* store.setDraftSyncError(item.op.draftId, error.message);
+                    yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
+                      discard: true,
+                    });
+                    if (error.imapReset) {
+                      yield* store.invalidateImapFolder(account.id, error.imapReset);
+                      yield* refreshQueued;
+                    } else {
+                      for (const item of items)
+                        yield* reconcileDropped(account, item, error.message);
+                    }
+                    result.failed += items.length;
+                  }),
+                ProviderError: (error) =>
+                  Effect.gen(function* () {
+                    for (const item of items) {
+                      if (item.op.kind === "saveDraft")
+                        yield* store.setDraftSyncError(item.op.draftId, error.message);
+                      blocked.add(`${item.accountId}/${item.providerId}`);
+                      yield* item.attempts + 1 >= (item.op.kind === "reconcile" ? 3 : MAX_ATTEMPTS)
+                        ? store.removePendingOp(item.id)
+                        : store.failPendingOp(item.id, error.message);
+                      if (item.attempts + 1 >= MAX_ATTEMPTS && item.op.kind !== "reconcile")
+                        yield* reconcileDropped(account, item, error.message);
+                      if (item.op.kind !== "reconcile") result.failed++;
+                    }
+                  }),
+              }),
+            );
+          for (let index = 0; index < queued.length; index++) {
+            const pending = queued[index];
+            if (!pending || (accountIds && !accountIds.includes(pending.accountId))) continue;
+            if (options.localDraftQueue && pending.op.kind === "saveDraft") continue;
+            const key = `${pending.accountId}/${pending.providerId}`;
+            if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
+            const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
+            if (Option.isNone(account)) {
+              yield* store.removePendingOp(pending.id);
               continue;
             }
+            if (account.value.enabled === false || (skipImap && account.value.provider === "imap"))
+              continue;
+            if (account.value.needsReauth) {
+              result.reauth.push(account.value.id);
+              continue;
+            }
+            const owner = account.value;
+            const pushOne = Effect.gen(function* () {
+              if (!(yield* store.claimPendingOp(pending.id))) {
+                blocked.add(key);
+                return;
+              }
+              const adapter = providers.get(owner.provider);
+              const op = pending.op;
+              const batch: PendingOp[] = [pending];
+              if (
+                adapter.pushBatch &&
+                op.kind !== "saveDraft" &&
+                op.kind !== "deleteDraft" &&
+                op.kind !== "reconcile" &&
+                op.kind !== "trash" &&
+                op.kind !== "inbox"
+              ) {
+                const signature = JSON.stringify(op);
+                for (const next of queued.slice(index + 1, index + 1000)) {
+                  if (
+                    next.accountId !== pending.accountId ||
+                    JSON.stringify(next.op) !== signature ||
+                    (owner.provider === "imap" &&
+                      !Option.getOrElse(
+                        Option.zipWith(
+                          decodeProviderId(pending.providerId),
+                          decodeProviderId(next.providerId),
+                          (first, other) =>
+                            first.path === other.path && first.uidValidity === other.uidValidity,
+                        ),
+                        () => false,
+                      )) ||
+                    blocked.has(`${next.accountId}/${next.providerId}`)
+                  )
+                    break;
+                  if (!(yield* store.claimPendingOp(next.id))) {
+                    blocked.add(`${next.accountId}/${next.providerId}`);
+                    break;
+                  }
+                  batch.push(next);
+                }
+                index += batch.length - 1;
+                if (batch.length > 1) {
+                  // A stale provider ID must not cause other messages to be dropped.
+                  const pushBatch = adapter.pushBatch;
+                  const bulk = imapPushCursor(owner)
+                    .pipe(
+                      Effect.flatMap((cursor) =>
+                        pushBatch(
+                          owner,
+                          batch.map((item) => item.providerId),
+                          op,
+                          cursor,
+                        ),
+                      ),
+                    )
+                    .pipe(
+                      Effect.catchTag("PermanentError", () =>
+                        Effect.gen(function* () {
+                          for (const item of batch) {
+                            if (
+                              result.reauth.includes(item.accountId) ||
+                              blocked.has(`${item.accountId}/${item.providerId}`)
+                            ) {
+                              yield* store.releasePendingOp(item.id);
+                              continue;
+                            }
+                            yield* settle(owner, [item], pushOp(owner, item));
+                          }
+                        }).pipe(Effect.as("fallback" as const)),
+                      ),
+                    );
+                  const sent = yield* bulk.pipe(Effect.result);
+                  if (sent._tag === "Failure")
+                    yield* settle(owner, batch, Effect.fail(sent.failure));
+                  else {
+                    if (sent.success === "fallback") return;
+                    yield* settle(owner, batch, Effect.succeed(sent.success));
+                  }
+                  return;
+                }
+              }
+              yield* settle(owner, [pending], pushOp(owner, pending));
+            });
+            yield* owner.provider === "imap"
+              ? imapPullLock(owner.id).withPermitsIfAvailable(1)(pushOne)
+              : pushOne;
           }
-          yield* settle(account.value, [pending], pushOp(account.value, pending));
-        }
-        return result;
-      }, flushLock.withPermits(1));
+          return result;
+        },
+        (effect, _accountIds?: readonly string[], _skipImap?: boolean) =>
+          flushLock.withPermits(1)(effect),
+      );
 
       /** Flushes without making the caller wait for the network. */
       const flushNow = flush().pipe(
@@ -1684,8 +1729,9 @@ export const MailboxLive = (
         counts: { changed: number; deleted: number },
         notificationsReady: boolean,
         scope?: "inbox",
-      ) =>
-        Effect.fnUntraced(function* (batch: readonly Change[]) {
+      ) => {
+        const remapped = new Set<string>();
+        return Effect.fnUntraced(function* (batch: readonly Change[]) {
           account = yield* store.getAccount(account.id).pipe(Effect.orDie);
           if (account.enabled === false) return;
           const prefs = yield* store.prefs;
@@ -1703,23 +1749,30 @@ export const MailboxLive = (
                 counts.changed++;
                 writes.push(
                   Effect.gen(function* () {
-                    if (change._tag === "Remap" && change.message.rfcMessageId) {
+                    if (
+                      change._tag === "Remap" &&
+                      change.message.rfcMessageId &&
+                      !(yield* store.messageIdForProvider(account.id, change.message.providerId))
+                    ) {
                       const local = yield* store.findMessageByRfcId(
                         account.id,
                         change.message.rfcMessageId,
                         change.previous,
                       );
-                      if (local) {
+                      if (local && !remapped.has(local)) {
+                        remapped.add(local);
                         const ref = yield* store.messageRef(local).pipe(Effect.orDie);
                         yield* store.remapProviderIds(account.id, [
                           { from: ref.providerId, to: change.message.providerId },
                         ]);
                       }
                     }
-                    const id =
-                      (yield* store.messageIdForProvider(account.id, change.message.providerId)) ??
-                      `${account.id}/${change.message.providerId}`;
-                    const known = yield* store.hasMessage(id);
+                    const existingId = yield* store.messageIdForProvider(
+                      account.id,
+                      change.message.providerId,
+                    );
+                    const id = existingId ?? `${account.id}/${change.message.providerId}`;
+                    const known = existingId !== null;
                     // IMAP moves assign a new folder/UID while preserving the mail itself.
                     const identity =
                       account.provider === "imap"
@@ -1748,6 +1801,8 @@ export const MailboxLive = (
                         : (pendingById.get(change.message.providerId) ?? []);
                     const incoming = withPendingOps(change.message, remappedOps, account.provider);
                     yield* store.upsertMessage(account.id, incoming);
+                    const storedId =
+                      (yield* store.messageIdForProvider(account.id, incoming.providerId)) ?? id;
                     if (
                       first &&
                       !known &&
@@ -1758,16 +1813,16 @@ export const MailboxLive = (
                     ) {
                       const message = {
                         ...change.message,
-                        id,
+                        id: storedId,
                         accountId: account.id,
                         hasAttachments: change.message.attachments.length > 0,
                       };
                       if (notificationEligible(account, message, prefs))
                         yield* store.enqueueNotification(
-                          id,
+                          storedId,
                           !profileNotificationsActive(account, prefs, now),
                         );
-                      newIds.push(id);
+                      newIds.push(storedId);
                     }
                   }),
                 );
@@ -1866,6 +1921,27 @@ export const MailboxLive = (
                   }),
                 );
                 break;
+              case "InvalidateFolder":
+                writes.push(
+                  store.invalidateImapFolder(account.id, change.previous).pipe(
+                    Effect.tap(batchMailbox.forgetMessages),
+                    Effect.asVoid,
+                    Effect.tap(() =>
+                      Effect.sync(() => {
+                        for (const id of pendingById.keys()) {
+                          const ref = decodeProviderId(id);
+                          if (
+                            Option.isSome(ref) &&
+                            ref.value.path === change.previous.path &&
+                            ref.value.uidValidity === change.previous.uidValidity
+                          )
+                            pendingById.delete(id);
+                        }
+                      }),
+                    ),
+                  ),
+                );
+                break;
               case "RebuildFolder":
                 writes.push(store.deleteImapFolder(account.id, change.previous, change.keep));
                 break;
@@ -1889,7 +1965,15 @@ export const MailboxLive = (
                 writes.push(
                   scope
                     ? store.saveInboxCursor(account.id, change.cursor)
-                    : store.saveSyncCursor(account.id, change.cursor),
+                    : store
+                        .saveSyncCursor(account.id, change.cursor)
+                        .pipe(
+                          Effect.andThen(
+                            account.provider === "imap"
+                              ? store.saveInboxCursor(account.id, change.cursor)
+                              : Effect.void,
+                          ),
+                        ),
                 );
                 break;
               case "Progress":
@@ -1938,6 +2022,7 @@ export const MailboxLive = (
           );
           if (newIds.length) yield* emit({ _tag: "NewMail", accountId: account.id, ids: newIds });
         });
+      };
 
       const pullAccount = Effect.fn("Mailbox.pullAccount")(function* (
         account: Account,
@@ -2053,8 +2138,9 @@ export const MailboxLive = (
         yield* Ref.update(state, (s) => ({ ...s, running: true }));
         yield* emit({ _tag: "SyncState", state: yield* Ref.get(state) });
         yield* organization.wakeSnoozed();
-        // Queued local changes go out first so the pull does not undo them.
-        yield* flush();
+        // IMAP must check UID namespaces before replaying persisted operations.
+        // Other providers retain stable identities and can push first.
+        yield* flush(undefined, true);
         const accounts = accountId
           ? [yield* store.getAccount(accountId).pipe(Effect.orDie)]
           : yield* store.listAccounts;
@@ -2062,7 +2148,10 @@ export const MailboxLive = (
         // One failing account does not stop the rest.
         for (const account of accounts) {
           if (account.enabled === false) continue;
-          const result: SyncResult = yield* pullAccount(account);
+          const result: SyncResult = yield* account.provider === "imap"
+            ? pullAccount(account).pipe(imapPullLock(account.id).withPermits(1))
+            : pullAccount(account);
+          if (account.provider === "imap" && !result.error) yield* flush([account.id]);
           results.push(result);
           if (!result.error) polling.delete(account.id);
           if (!account.needsReauth)
@@ -2115,7 +2204,7 @@ export const MailboxLive = (
       ) {
         if (syncPaused) return [];
         const task = Effect.gen(function* () {
-          if (accountIds === undefined) yield* flush();
+          if (accountIds === undefined) yield* flush(undefined, true);
           const accounts = yield* store.listAccounts;
           const now = yield* Clock.currentTimeMillis;
           const results: SyncResult[] = [];
@@ -2131,7 +2220,12 @@ export const MailboxLive = (
             )
               continue;
             const before = yield* store.getInboxError(account.id);
-            const pulled: SyncResult = yield* pullAccount(account, "inbox", incrementalOnly);
+            const pulled: SyncResult = yield* account.provider === "imap"
+              ? pullAccount(account, "inbox", incrementalOnly).pipe(
+                  imapPullLock(account.id).withPermits(1),
+                )
+              : pullAccount(account, "inbox", incrementalOnly);
+            if (account.provider === "imap" && !pulled.error) yield* flush([account.id]);
             results.push(pulled);
             const error = yield* store.getInboxError(account.id);
             anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;

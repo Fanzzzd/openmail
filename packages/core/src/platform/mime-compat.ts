@@ -10,6 +10,15 @@ export function normalizeMimeCharsets(raw: Uint8Array, depth = 0): Uint8Array {
   const source = Buffer.from(raw).toString("latin1");
   const split = /\r?\n\r?\n/.exec(source);
   if (!split) return raw;
+  // A MIME entity starts with headers or an immediate blank line. Body text may contain colons.
+  const headerLines = source.slice(0, split.index).split(/\r?\n/);
+  if (
+    !headerLines[0] ||
+    !headerLines.every(
+      (line, index) => /^[!-9;-~]+:/.test(line) || (index > 0 && /^[ \t]/.test(line)),
+    )
+  )
+    return raw;
   const originalHeaders = source.slice(0, split.index).replace(/\r?\n[ \t]+/g, " ");
   if (
     /^content-disposition:\s*attachment\b/im.test(originalHeaders) ||

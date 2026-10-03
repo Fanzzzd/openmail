@@ -2268,10 +2268,7 @@ for (const delivered of [true, false])
       const sent = yield* Schema.decodeUnknownEffect(Schema.Struct({ raw: Schema.String }))(
         http.calls[0]?.body,
       );
-      assert.match(
-        Buffer.from(sent.raw, "base64url").toString(),
-        /Message-ID: <.+@openmail.local>/i,
-      );
+      assert.match(Buffer.from(sent.raw, "base64url").toString(), /Message-ID: <.+@gmail.com>/i);
     }),
   );
 
@@ -2435,7 +2432,7 @@ it.effect("slice49-fix: a late Sent copy is polled without repeating the send", 
       "GET /messages": (url) => ({
         json: {
           messages:
-            (url.searchParams.get("q") ?? "").includes("rfc822msgid") && ++lookup >= 6
+            (url.searchParams.get("q") ?? "").includes("@gmail.com") && ++lookup >= 6
               ? [{ id: "delayed" }]
               : [],
         },
@@ -2456,37 +2453,45 @@ it.effect("slice49-fix: a late Sent copy is polled without repeating the send", 
   }),
 );
 
-it.effect("slice49-fix: a rewritten Gmail Message-ID is matched by our MIME trace header", () =>
-  Effect.gen(function* () {
-    const http = fakeHttp({
-      "POST /messages/send": { status: 503 },
-      "GET /messages": (url) => ({
-        json: {
-          messages: (url.searchParams.get("q") ?? "").includes("rfc822msgid")
-            ? []
-            : [{ id: "rewritten" }],
+it.effect(
+  "slice55: ambiguous Gmail sends search their random Message-ID token in recent Sent",
+  () =>
+    Effect.gen(function* () {
+      let token = "";
+      const http = fakeHttp({
+        "POST /messages/send": () => {
+          const sent = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
+            http.calls.find((call) => call.method === "POST")?.body,
+          );
+          const mime = Buffer.from(sent.raw, "base64url").toString();
+          assert.notInclude(mime, "X-OpenMail-Id:");
+          const id = /^Message-ID: <([a-f0-9-]+)@gmail.com>$/im.exec(mime.replaceAll("\r", ""));
+          assert.ok(id);
+          token = id[1]!;
+          return { status: 503 };
         },
-      }),
-      "GET /messages/rewritten": () => {
-        const sent = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
-          http.calls.find((call) => call.method === "POST")?.body,
-        );
-        const trace = /^X-OpenMail-Id: (.+)$/im
-          .exec(Buffer.from(sent.raw, "base64url").toString())?.[1]
-          ?.trim();
-        return {
-          json: { payload: { headers: [{ name: "X-OpenMail-Id", value: trace ?? "missing" }] } },
-        };
-      },
-    });
-    const result = yield* run(http, (a) =>
-      a.send(account, outgoing, Option.none()).pipe(Effect.result),
-    );
-    assert.strictEqual(result._tag, "Success");
-    assert.ok(
-      http.calls.some((call) => call.url.searchParams.get("metadataHeaders") === "X-OpenMail-Id"),
-    );
-  }),
+        "GET /messages": (url) => {
+          const q = url.searchParams.get("q") ?? "";
+          if (q.includes("@gmail.com")) return { json: { messages: [] } };
+          assert.include(q, "in:sent");
+          assert.notInclude(q, "rfc822msgid:");
+          assert.match(q, /after:-?\d+/);
+          return { json: { messages: [{ id: "rewritten" }] } };
+        },
+        "GET /messages/rewritten": () => ({
+          json: {
+            payload: { headers: [{ name: "Message-ID", value: `<${token}@rewritten.gmail.com>` }] },
+          },
+        }),
+      });
+      const result = yield* run(http, (a) =>
+        a.send(account, outgoing, Option.none()).pipe(Effect.result),
+      );
+      assert.strictEqual(result._tag, "Success");
+      assert.ok(
+        http.calls.some((call) => call.url.searchParams.get("metadataHeaders") === "Message-ID"),
+      );
+    }),
 );
 
 it.effect("slice49-fix: a Retry-After over sixty seconds returns to the next sync", () =>

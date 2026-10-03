@@ -29,6 +29,8 @@ import {
   readCursor,
   uidSet,
   parseUidSet,
+  type FolderCursor,
+  type ImapCursor,
 } from "../../imap-cursor.js";
 import type { Account, ImapSettings, IncomingMessage } from "../../domain.js";
 import { htmlToText } from "../../mime.js";
@@ -177,7 +179,10 @@ export function mobileIncoming(
     providerId,
     threadId: root ?? providerId,
     ...(!stringHeader("references") && parsed.inReplyTo
-      ? { parentRfcMessageId: parsed.inReplyTo }
+      ? {
+          parentRfcMessageId:
+            parsed.inReplyTo.match(/<([^<>\s]+)>/)?.[1] ?? parsed.inReplyTo.split(/\s+/)[0],
+        }
       : {}),
     subject: parsed.subject ?? "",
     from: mimeAddresses(parsed.from)[0] ?? { name: "", address: "" },
@@ -284,14 +289,29 @@ const applyPush = async (
   client: ImapWire,
   ids: readonly string[],
   op: import("../../domain.js").MailOp,
+  expected?: FolderCursor,
 ) => {
   const first = ids[0];
   if (!first) return [];
   const ref = refOf(first);
   const uids = ids.map((id) => refOf(id).uid);
   const range = uidSet(uids);
-  await client.select(ref.path, ref.uidValidity, false);
-  const present = await client.search(`UID ${range}`);
+  const validity = await client.select(ref.path, undefined, false);
+  const regressed =
+    expected?.uidValidity === ref.uidValidity &&
+    validity === ref.uidValidity &&
+    client.uidNext !== undefined &&
+    client.uidNext < expected.lastUid + 1;
+  if (
+    validity !== ref.uidValidity ||
+    (expected && expected.uidValidity !== ref.uidValidity) ||
+    regressed
+  )
+    throw new PermanentError({
+      message: "Folder was rebuilt; sync before changing this message",
+      ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
+    });
+  const present = await client.search(`UNDELETED UID ${range}`);
   if (uids.some((uid) => !present.includes(uid)))
     throw new PermanentError({ message: "Message is gone" });
   if (op.kind === "read" || op.kind === "star" || op.kind === "important") {
@@ -379,6 +399,10 @@ export const makeMobileImap = Effect.gen(function* () {
   const secrets = yield* Secrets;
   const codec = yield* MailCodec;
   const observedSent = new Set<string>();
+  const namespaces = new Map<string, ImapCursor>();
+  const pushState = (account: Account, path: string, cursor?: string) =>
+    readCursor(Option.fromNullishOr(cursor)).folders[path] ??
+    namespaces.get(account.id)?.folders[path];
   const credentials = (account: Account) =>
     Effect.gen(function* () {
       if (!account.imap) return yield* new PermanentError({ message: "Missing IMAP settings" });
@@ -400,41 +424,43 @@ export const makeMobileImap = Effect.gen(function* () {
       signal,
     });
     const client = new ImapWire(new MailWire(socket));
-    try {
-      const greeting = await client.response();
-      if (!/^\* (OK|PREAUTH)\b/i.test(greeting.text))
-        throw new ProviderError({ message: "Invalid IMAP greeting" });
-      await client.capability();
-      if (settings.imapPort !== 993) {
-        if (!client.capabilities.has("STARTTLS"))
-          throw new ProviderError({ message: "IMAP requires STARTTLS" });
-        await client.command("STARTTLS");
-        await client.wire.upgrade();
+    return client.run(signal, async () => {
+      try {
+        const greeting = await client.response();
+        if (!/^\* (OK|PREAUTH)\b/i.test(greeting.text))
+          throw new ProviderError({ message: "Invalid IMAP greeting" });
         await client.capability();
-      }
-      if (!/^\* PREAUTH\b/i.test(greeting.text)) {
-        try {
-          if (Array.from(pass).some((character) => character.charCodeAt(0) > 127)) {
-            const literal = Buffer.from(pass, "utf8");
-            await client.command(
-              `LOGIN ${mailQuote(settings.username)} {${literal.length}}`,
-              literal,
-            );
-          } else await client.command(`LOGIN ${mailQuote(settings.username)} ${mailQuote(pass)}`);
-        } catch (error) {
-          if (error instanceof ImapCommandError && error.status === "NO")
-            throw new AuthError({ accountId, message: "IMAP login rejected" });
-          throw error;
+        if (settings.imapPort !== 993) {
+          if (!client.capabilities.has("STARTTLS"))
+            throw new ProviderError({ message: "IMAP requires STARTTLS" });
+          await client.command("STARTTLS");
+          await client.wire.upgrade();
+          await client.capability();
         }
+        if (!/^\* PREAUTH\b/i.test(greeting.text)) {
+          try {
+            if (Array.from(pass).some((character) => character.charCodeAt(0) > 127)) {
+              const literal = Buffer.from(pass, "utf8");
+              await client.command(
+                `LOGIN ${mailQuote(settings.username)} {${literal.length}}`,
+                literal,
+              );
+            } else await client.command(`LOGIN ${mailQuote(settings.username)} ${mailQuote(pass)}`);
+          } catch (error) {
+            if (error instanceof ImapCommandError && error.status === "NO")
+              throw new AuthError({ accountId, message: "IMAP login rejected" });
+            throw error;
+          }
+        }
+        await client.capability();
+        if (client.capabilities.has("ID"))
+          await client.command('ID ("name" "openmail" "version" "0.1.0" "vendor" "openmail")');
+        return client;
+      } catch (error) {
+        socket.close();
+        throw error;
       }
-      await client.capability();
-      if (client.capabilities.has("ID"))
-        await client.command('ID ("name" "openmail" "version" "0.1.0" "vendor" "openmail")');
-      return client;
-    } catch (error) {
-      socket.close();
-      throw error;
-    }
+    });
   };
   const session = <A>(
     account: Account,
@@ -451,7 +477,7 @@ export const makeMobileImap = Effect.gen(function* () {
           try: async (signal) => {
             const client = await open(settings, pass, account.id, signal);
             try {
-              return await work(client, settings, pass, signal);
+              return await client.run(signal, () => work(client, settings, pass, signal));
             } finally {
               client.wire.socket.close();
             }
@@ -462,6 +488,7 @@ export const makeMobileImap = Effect.gen(function* () {
     );
   const incoming = async (client: ImapWire, path: Folder, validity: string, uid: number) => {
     const row = await fetchRawIn(client, encodeProviderId(path.path, validity, uid));
+    if (row.flags.includes("\\Deleted")) throw new PermanentError({ message: "Message is gone" });
     if (!(row.raw instanceof Uint8Array))
       throw new PermanentError({ message: "Missing mail source" });
     return mobileIncoming(await codec.parse(row.raw), path, validity, uid, row.flags, row.size);
@@ -490,7 +517,10 @@ export const makeMobileImap = Effect.gen(function* () {
         for (const pool of pushClients.values()) pool.client.wire.socket.close();
       }),
     );
-  const pushSession = <A>(account: Account, work: (client: ImapWire) => Promise<A>) => {
+  const pushSession = <A>(
+    account: Account,
+    work: (client: ImapWire, signal: AbortSignal) => Promise<A>,
+  ) => {
     let lock = pushLocks.get(account.id);
     if (!lock) {
       lock = Semaphore.makeUnsafe(1);
@@ -510,26 +540,33 @@ export const makeMobileImap = Effect.gen(function* () {
             if (pool) {
               try {
                 await Effect.runPromise(
-                  Effect.tryPromise(() => pool!.client.command("NOOP")).pipe(
-                    Effect.timeout("5 seconds"),
-                  ),
+                  Effect.tryPromise((noopSignal) =>
+                    pool!.client.run(noopSignal, () => pool!.client.command("NOOP")),
+                  ).pipe(Effect.timeout("5 seconds")),
                   { signal },
                 );
               } catch {
                 pool.client.wire.socket.close();
                 pushClients.delete(account.id);
                 pool = undefined;
+                signal.throwIfAborted();
               }
             }
             const client = pool?.client ?? (await open(settings, pass, account.id, signal));
             if (Option.isSome(owner)) pushClients.set(account.id, { client, key });
+            const abort = () => {
+              client.wire.socket.close();
+              if (pushClients.get(account.id)?.client === client) pushClients.delete(account.id);
+            };
+            signal.addEventListener("abort", abort, { once: true });
             try {
-              return await work(client);
+              return await client.run(signal, () => work(client, signal));
             } catch (error) {
               client.wire.socket.close();
               pushClients.delete(account.id);
               throw error;
             } finally {
+              signal.removeEventListener("abort", abort);
               if (Option.isNone(owner)) client.wire.socket.close();
             }
           },
@@ -550,25 +587,32 @@ export const makeMobileImap = Effect.gen(function* () {
         }).pipe(pushLocks.get(accountId)?.withPermits(1) ?? ((effect) => effect)),
       { discard: true },
     );
-  const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op) =>
+  const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op, cursor) =>
     pushSession(account, async (client) => {
-      const groups = new Map<string, string[]>();
+      const groups = new Map<string, [string, ...string[]]>();
       for (const id of ids) {
         const ref = refOf(id);
         const key = `${ref.uidValidity}:${ref.path}`;
-        const group = groups.get(key) ?? [];
-        group.push(id);
-        groups.set(key, group);
+        const group = groups.get(key);
+        if (group) group.push(id);
+        else groups.set(key, [id]);
       }
       const mappings: import("../../services.js").ProviderIdMapping[] = [];
       for (const group of groups.values()) {
-        const moved = await applyPush(client, group, op);
+        const moved = await applyPush(
+          client,
+          group,
+          op,
+          pushState(account, refOf(group[0]).path, cursor),
+        );
         mappings.push(...moved);
       }
       return mappings;
     });
-  const push: ProviderAdapter["push"] = (account, id, op) =>
-    pushSession(account, (client) => applyPush(client, [id], op));
+  const push: ProviderAdapter["push"] = (account, id, op, cursor) =>
+    pushSession(account, (client) =>
+      applyPush(client, [id], op, pushState(account, refOf(id).path, cursor)),
+    );
   const PageCursor = Schema.fromJsonString(
     Schema.Struct({ path: Schema.String, validity: Schema.String, upper: Schema.Int }),
   );
@@ -606,10 +650,14 @@ export const makeMobileImap = Effect.gen(function* () {
       Stream.callback<Change, ProviderFailure>(
         (queue) =>
           session(account, async (client, _settings, _pass, signal) => {
-            const emit = (change: Change) =>
-              Effect.runPromise(Queue.offer(queue, change), { signal });
+            const emit = (change: Change) => {
+              if (change._tag === "Cursor")
+                namespaces.set(account.id, readCursor(Option.some(change.cursor)));
+              return Effect.runPromise(Queue.offer(queue, change), { signal });
+            };
             const now = await Effect.runPromise(Clock.currentTimeMillis);
             const previous = readCursor(cursor);
+            namespaces.set(account.id, previous);
             const next = readCursor(cursor);
             const list = await folders(client);
             await emit({
@@ -621,7 +669,10 @@ export const makeMobileImap = Effect.gen(function* () {
               const validity = await client.select(path.path);
               const old = previous.folders[path.path];
               const regressed =
-                !!old && client.uidNext !== undefined && client.uidNext < old.lastUid + 1;
+                !!old &&
+                old.uidValidity === validity &&
+                client.uidNext !== undefined &&
+                client.uidNext < old.lastUid + 1;
               const rebuilt = old && old.uidValidity !== validity ? old : undefined;
               if (incrementalOnly && (!old || old.uidValidity !== validity || regressed))
                 throw new ProviderError({
@@ -631,6 +682,7 @@ export const makeMobileImap = Effect.gen(function* () {
                 await emit({ _tag: "BackfillReset" });
               }
               const previousFolder = { path: path.path, uidValidity: old?.uidValidity ?? validity };
+              if (regressed) await emit({ _tag: "InvalidateFolder", previous: previousFolder });
               const state =
                 old?.uidValidity === validity && !regressed
                   ? FolderState.from(old)
@@ -651,6 +703,7 @@ export const makeMobileImap = Effect.gen(function* () {
                   `UID FETCH ${uidSet(known.slice(i, i + 500))} (UID FLAGS)`,
                 );
                 for (const row of fetchFields(rows)) {
+                  if (row.flags.includes("\\Deleted")) continue;
                   present.add(row.uid);
                   current.set(row.uid, flagsOf(row.flags));
                 }
@@ -661,20 +714,31 @@ export const makeMobileImap = Effect.gen(function* () {
               for (const change of state.reconcile(path.path, present, current)) await emit(change);
               const since = new Date(now - 90 * 86400000);
               const date = `${since.getUTCDate()}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][since.getUTCMonth()]}-${since.getUTCFullYear()}`;
-              const found = await client.search(
+              const criteria =
                 rebuilt || regressed
                   ? `SINCE ${date}`
                   : state.lastUid || incrementalOnly
                     ? `UID ${state.lastUid + 1}:*`
-                    : `SINCE ${date}`,
-              );
+                    : `SINCE ${date}`;
+              const found = await client.search(`UNDELETED ${criteria}`);
               if (regressed) state.lastUid = 0;
               const pending = found.filter((uid) => uid > state.lastUid).toSorted((a, b) => a - b);
               const newest = old && !rebuilt && !regressed ? pending : pending.slice(-1000);
               for (const [index, uid] of newest.entries()) {
-                const message = await incoming(client, path, validity, uid);
+                const row = await fetchRawIn(client, encodeProviderId(path.path, validity, uid));
+                if (row.flags.includes("\\Deleted")) continue;
+                if (!(row.raw instanceof Uint8Array))
+                  throw new PermanentError({ message: "Missing mail source" });
+                const message = mobileIncoming(
+                  await codec.parse(row.raw),
+                  path,
+                  validity,
+                  uid,
+                  row.flags,
+                  row.size,
+                );
                 await emit(
-                  rebuilt || regressed
+                  rebuilt
                     ? { _tag: "Remap", message, previous: previousFolder }
                     : { _tag: "Upsert", message },
                 );
@@ -686,7 +750,7 @@ export const makeMobileImap = Effect.gen(function* () {
                 }
                 await emit({ _tag: "Progress", fetched: index + 1, total: newest.length });
               }
-              if (rebuilt || regressed)
+              if (rebuilt)
                 await emit({
                   _tag: "RebuildFolder",
                   previous: previousFolder,
@@ -841,6 +905,7 @@ export const makeMobileImap = Effect.gen(function* () {
           const after =
             saved?.path === path.path ? saved.upper : options?.newestFirst ? 0x100000000 : 0;
           const criteria = [
+            "UNDELETED",
             options?.unreadOnly ? "UNSEEN" : "ALL",
             scope.mailbox === "starred" ? "FLAGGED" : "",
             `UID ${options?.newestFirst ? `1:${Math.max(1, after - 1)}` : `${after + 1}:*`}`,
@@ -871,7 +936,7 @@ export const makeMobileImap = Effect.gen(function* () {
             if (upper < 1) continue;
             const before = new Date(state.before);
             const date = `${before.getUTCDate()}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][before.getUTCMonth()]}-${before.getUTCFullYear()}`;
-            const uids = (await client.search(`UID 1:${upper} BEFORE ${date}`))
+            const uids = (await client.search(`UNDELETED UID 1:${upper} BEFORE ${date}`))
               .filter((uid) => uid <= upper)
               .toSorted((a, b) => b - a)
               .slice(0, 50);
@@ -896,7 +961,7 @@ export const makeMobileImap = Effect.gen(function* () {
         let truncated = false;
         for (const path of list.filter((f) => !scope || f.label === scope)) {
           const validity = await client.select(path.path);
-          const uids = (await client.search("ALL")).toSorted((a, b) => b - a);
+          const uids = (await client.search("UNDELETED")).toSorted((a, b) => b - a);
           for (const uid of uids) {
             if (scanned++ >= 1000 || results.length >= (query.limit ?? 200)) {
               truncated = true;

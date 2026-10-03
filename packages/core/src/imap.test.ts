@@ -616,7 +616,9 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     });
     assert.strictEqual(page.messages.length, 1);
     assert.strictEqual(page.messages[0]?.attachments[0]?.filename, "report.pdf");
-    assert.deepStrictEqual(search.mock.calls, [[{ from: "alice", seen: false }, { uid: true }]]);
+    assert.deepStrictEqual(search.mock.calls, [
+      [{ from: "alice", seen: false, deleted: false }, { uid: true }],
+    ]);
     assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
     open.mockClear();
     search.mockClear();
@@ -632,7 +634,7 @@ it.effect("IMAP SEARCH scopes folders and postfilters filenames from fetched MIM
     assert.strictEqual(suggestedFolder.messages.length, 1);
     assert.deepStrictEqual(open.mock.calls, [["INBOX", { readOnly: true }]]);
     assert.deepStrictEqual(search.mock.calls, [
-      [{ since: "2026-09-01", before: "2026-10-01" }, { uid: true }],
+      [{ since: "2026-09-01", before: "2026-10-01", deleted: false }, { uid: true }],
     ]);
   }).pipe(
     Effect.provide(
@@ -1715,3 +1717,116 @@ it.effect("slice49-fix: stale pooled sessions are checked and replaced before pu
     }),
   ),
 );
+
+it.effect(
+  "slice55: unchanged UIDVALIDITY regression invalidates before refetch, without remaps",
+  () =>
+    slice49Imap((a) =>
+      Effect.gen(function* () {
+        const changes = yield* Stream.runCollect(
+          a.pull(account, slice49Cursor({ lastUid: 100 }), "inbox"),
+        );
+        assert.isFalse(changes.some((c) => c._tag === "Remap"));
+        const invalidate = changes.findIndex((c) => c._tag === "InvalidateFolder");
+        assert.isAtLeast(invalidate, 0);
+        assert.isAbove(
+          changes.findIndex((c) => c._tag === "Upsert"),
+          invalidate,
+        );
+      }),
+    ),
+);
+
+it.effect("slice55: sync treats Deleted UIDs as absent", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      vi.spyOn(client, "fetchAll").mockResolvedValue([
+        { seq: 1, uid: 1, flags: new Set(["\\Deleted"]) },
+      ]);
+      const changes = yield* Stream.runCollect(a.pull(account, slice49Cursor(), "inbox"));
+      assert.ok(changes.some((c) => c._tag === "Delete" && c.providerId === "7:1:INBOX"));
+      assert.isFalse(changes.some((c) => c._tag === "Flags" && c.providerId === "7:1:INBOX"));
+    }),
+  ),
+);
+
+it.effect("slice55: interrupted pooled move closes and evicts its connection", () =>
+  slice49Imap((a, client, opens) =>
+    Effect.gen(function* () {
+      client.capabilities.set("MOVE", true);
+      const closed = vi.spyOn(client, "close").mockImplementation(() => {
+        // Record the closure without an actual network connection.
+      });
+      vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+      let started = false;
+      vi.spyOn(client, "messageMove").mockImplementationOnce(() => {
+        started = true;
+        return new Promise(() => {
+          // The server never acknowledges this move; only interruption releases the caller.
+        });
+      });
+      const fiber = yield* a.push(account, "7:1:INBOX", { kind: "archive" }).pipe(Effect.forkChild);
+      while ((() => !started)()) yield* Effect.yieldNow;
+      yield* Fiber.interrupt(fiber);
+      assert.isAbove(closed.mock.calls.length, 0);
+      yield* a.push(account, "7:1:INBOX", { kind: "read", value: true });
+      assert.strictEqual(opens(), 2);
+    }),
+  ),
+);
+
+it.effect("slice55: UIDVALIDITY changing during a regressed pull still remaps old identities", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      const mailbox = {
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set<string>(),
+        uidValidity: 7n,
+        uidNext: 3,
+        exists: 2,
+      };
+      vi.spyOn(client, "mailboxOpen")
+        .mockResolvedValueOnce(mailbox)
+        .mockResolvedValue({ ...mailbox, uidValidity: 8n });
+      const changes = yield* Stream.runCollect(
+        a.pull(account, slice49Cursor({ lastUid: 100 }), "inbox"),
+      );
+      assert.isFalse(changes.some((c) => c._tag === "InvalidateFolder"));
+      assert.ok(
+        changes.some(
+          (c) =>
+            c._tag === "Remap" &&
+            c.previous.uidValidity === "7" &&
+            c.message.providerId.startsWith("8:"),
+        ),
+      );
+    }),
+  ),
+);
+
+for (const batched of [false, true])
+  it.effect(
+    `slice55-fix: ${batched ? "batch" : "single"} push refuses a UIDNEXT regression before mutating`,
+    () =>
+      slice49Imap((a, client) =>
+        Effect.gen(function* () {
+          const flags = vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+          const cursor = slice49Cursor({ lastUid: 100 });
+          assert.ok(Option.isSome(cursor));
+          const result = yield* (
+            batched && a.pushBatch
+              ? a.pushBatch(
+                  account,
+                  ["7:1:INBOX", "7:2:INBOX"],
+                  { kind: "star", value: true },
+                  cursor.value,
+                )
+              : a.push(account, "7:1:INBOX", { kind: "star", value: true }, cursor.value)
+          ).pipe(Effect.result);
+          assert.strictEqual(result._tag, "Failure");
+          if (result._tag === "Failure") assert.strictEqual(result.failure._tag, "PermanentError");
+          assert.strictEqual(flags.mock.calls.length, 0);
+        }),
+      ),
+  );

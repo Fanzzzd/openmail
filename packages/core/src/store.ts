@@ -30,6 +30,7 @@ import {
   type ThreadSummary,
 } from "./domain.js";
 import { cleanDisplayName } from "./message-security.js";
+import { decodeProviderId } from "./imap-cursor.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { categoryKey } from "./categories.js";
 import { makeAiStore } from "./store-ai.js";
@@ -303,6 +304,8 @@ const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name
 const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 
+const imapEpochKey = (account: string, folder: import("./services.js").ImapFolderIdentity) =>
+  `imap-epoch:${JSON.stringify([account, folder.path, folder.uidValidity])}`;
 export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.effect(
   Store,
   Effect.gen(function* () {
@@ -376,6 +379,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
                 yield* run(
                   sql`DELETE FROM undo_batches WHERE EXISTS (SELECT 1 FROM json_each(payload,'$.expected') e WHERE json_extract(e.value,'$.accountId')=${id})`,
                 );
+                const epochs = `imap-epoch:${JSON.stringify([id]).slice(0, -1)},`;
+                yield* run(sql`DELETE FROM prefs WHERE substr(key,1,${epochs.length})=${epochs}`);
                 yield* run(sql`DELETE FROM accounts WHERE id=${id}`);
               }),
             )
@@ -522,8 +527,55 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     // Messages
 
-    const imapFolder = (folder: import("./services.js").ImapFolderIdentity) =>
-      sql`m.provider_id>=${`${folder.uidValidity}:`} AND m.provider_id<${`${folder.uidValidity};`} AND substr(m.provider_id,-${folder.path.length + 1})=${`:${folder.path}`}`;
+    const imapFolder = (
+      folder: import("./services.js").ImapFolderIdentity,
+      column = sql.literal("m.provider_id"),
+    ) =>
+      sql`${column}>=${`${folder.uidValidity}:`} AND ${column}<${`${folder.uidValidity};`} AND substr(${column}, instr(${column}, ':') + instr(substr(${column}, instr(${column}, ':') + 1), ':') + 1)=${folder.path}`;
+    const invalidateImapFolder = (
+      account: string,
+      previous: import("./services.js").ImapFolderIdentity,
+    ) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            const ids = (yield* all(MessageId)(
+              sql`SELECT m.id FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+            )).map((row) => row.id);
+            const now = yield* Clock.currentTimeMillis;
+            // Persist the generation before deleting rows; stale handles must never name refetched mail.
+            yield* run(
+              sql`INSERT INTO prefs(key,value_json) VALUES(${imapEpochKey(account, previous)},${JSON.stringify(crypto.randomUUID())}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+            );
+            yield* run(
+              sql`DELETE FROM undo_batches WHERE EXISTS(SELECT 1 FROM json_tree(payload) e WHERE e.key='id' AND e.value IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
+            );
+            yield* run(
+              sql`UPDATE proposals SET status='rejected',decided_at=${now} WHERE status='pending' AND (EXISTS(SELECT 1 FROM json_each(command_json,'$.threads') t WHERE t.value IN (SELECT value FROM json_each(${JSON.stringify(ids)}))) OR json_extract(command_json,'$.message.inReplyTo') IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
+            );
+            // The server reused UIDs without changing UIDVALIDITY. None of the old references are safe.
+            yield* run(
+              sql`UPDATE pending_ops AS m SET provider_id='unmapped:' || provider_id || ':' || id, op_json=${JSON.stringify({ kind: "reconcile" })}, claimed_at=NULL, attempts=0, last_error='IMAP UID namespace reset' WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+            );
+            yield* run(
+              sql`DELETE FROM snoozed_messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+            );
+            yield* run(
+              sql`DELETE FROM thread_reminders WHERE account_id=${account} AND NOT EXISTS(SELECT 1 FROM snoozed_messages s WHERE s.account_id=thread_reminders.account_id AND s.thread_id=thread_reminders.thread_id)`,
+            );
+            yield* run(
+              sql`UPDATE drafts SET remote_message_id=NULL, remote_draft_id=NULL WHERE account_id=${account} AND (${imapFolder(previous, sql.literal("remote_message_id"))} OR ${imapFolder(previous, sql.literal("remote_draft_id"))})`,
+            );
+            yield* media.deleteVectorsForMessages(
+              sql`m.account_id=${account} AND ${imapFolder(previous)}`,
+            );
+            yield* run(
+              sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+            );
+            return ids;
+          }),
+        )
+        .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
     let lastTruncate = yield* Clock.currentTimeMillis;
     const messageIdForProvider = (account: string, providerId: string) =>
       first(MessageId)(
@@ -540,12 +592,33 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
               if (mapping.from === mapping.to) continue;
               const source = yield* messageIdForProvider(account, mapping.from);
               if (source) {
+                const sameMessage = sql`m.rfc_message_id IS NOT NULL AND m.rfc_message_id=(SELECT rfc_message_id FROM messages WHERE id=${source})`;
                 yield* media.deleteVectorsForMessages(
-                  sql`m.account_id=${account} AND m.provider_id=${mapping.to} AND m.id<>${source}`,
+                  sql`m.account_id=${account} AND m.provider_id=${mapping.to} AND m.id<>${source} AND ${sameMessage}`,
                 );
                 yield* run(
-                  sql`DELETE FROM messages WHERE account_id=${account} AND provider_id=${mapping.to} AND id<>${source}`,
+                  sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND m.provider_id=${mapping.to} AND m.id<>${source} AND ${sameMessage}`,
                 );
+                // Keep an unrelated cached target, but never bind its queued mutations to the moved mail.
+                if (yield* messageIdForProvider(account, mapping.to)) {
+                  const detached = `unmapped:${crypto.randomUUID()}`;
+                  yield* run(
+                    sql`UPDATE pending_ops SET provider_id=${detached}, op_json=${JSON.stringify({ kind: "reconcile" })}, claimed_at=NULL WHERE account_id=${account} AND provider_id=${mapping.to}`,
+                  );
+                  yield* run(
+                    sql`UPDATE messages SET provider_id=${detached} WHERE account_id=${account} AND provider_id=${mapping.to} AND id<>${source}`,
+                  );
+                  const now = yield* Clock.currentTimeMillis;
+                  yield* run(
+                    sql`INSERT INTO pending_ops(account_id,provider_id,op_json,created_at) SELECT ${account},${detached},${JSON.stringify({ kind: "reconcile" })},${now} WHERE NOT EXISTS(SELECT 1 FROM pending_ops WHERE account_id=${account} AND provider_id=${detached})`,
+                  );
+                  yield* run(
+                    sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.to}`,
+                  );
+                  yield* run(
+                    sql`UPDATE drafts SET remote_message_id=NULL,remote_draft_id=NULL WHERE account_id=${account} AND remote_message_id=${mapping.to}`,
+                  );
+                }
                 yield* run(sql`UPDATE messages SET provider_id=${mapping.to} WHERE id=${source}`);
               }
               yield* run(
@@ -589,9 +662,25 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const reminder = yield* first(Reminder)(
         sql`SELECT r.due_at, r.woken_at, s.wake_pending FROM thread_reminders r JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id WHERE s.account_id=${account} AND s.provider_id=${incoming.providerId}`,
       );
-      const localId =
-        (yield* messageIdForProvider(account, incoming.providerId)) ??
-        `${account}/${incoming.providerId}`;
+      let localId = yield* messageIdForProvider(account, incoming.providerId);
+      if (localId === null) {
+        const ref = decodeProviderId(incoming.providerId);
+        const epoch = Option.isSome(ref)
+          ? yield* first(Schema.Struct({ epoch: Schema.fromJsonString(Schema.String) }))(
+              sql`SELECT value_json AS epoch FROM prefs WHERE key=${imapEpochKey(account, ref.value)}`,
+            )
+          : Option.none();
+        const candidate = Option.isSome(epoch)
+          ? `${account}/epoch:${epoch.value.epoch}/${incoming.providerId}`
+          : `${account}/${incoming.providerId}`;
+        const existing = yield* first(Schema.Struct({ provider_id: Schema.String }))(
+          sql`SELECT provider_id FROM messages WHERE id=${candidate}`,
+        );
+        localId =
+          Option.isSome(existing) && existing.value.provider_id !== incoming.providerId
+            ? `${account}/local:${crypto.randomUUID()}`
+            : candidate;
+      }
       let m = incoming;
       if (incoming.parentRfcMessageId) {
         const parent = yield* first(Schema.Struct({ thread_id: Schema.String }))(
@@ -1915,6 +2004,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
               ),
             ),
           ),
+      invalidateImapFolder,
       messageRef,
       messageIdForProvider,
       remapProviderIds,

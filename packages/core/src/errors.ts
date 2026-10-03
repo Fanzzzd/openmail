@@ -13,6 +13,7 @@ export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
 /** A request the provider will never accept (unknown id, message gone). Not retried. */
 export class PermanentError extends Schema.TaggedError<PermanentError>()("PermanentError", {
   message: Schema.String,
+  imapReset: Schema.optionalKey(Schema.Struct({ path: Schema.String, uidValidity: Schema.String })),
 }) {}
 
 /**

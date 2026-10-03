@@ -670,14 +670,10 @@ export const makeGmail: Effect.Effect<
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
       const traceId = crypto.randomUUID();
-      const messageId = `<${traceId}@openmail.local>`;
+      const sender = message.from ?? { name: "", address: account.email };
+      const messageId = `<${traceId}@${sender.address.split("@").at(-1)}>`;
       const started = yield* Clock.currentTimeMillis;
-      const raw = yield* buildMime(
-        message.from ?? { name: "", address: account.email },
-        message,
-        threading,
-        { messageId, openmailId: traceId },
-      );
+      const raw = yield* buildMime(sender, message, threading, { messageId });
       if (raw.byteLength > GMAIL_MIME_LIMIT)
         yield* new PermanentError({
           message:
@@ -697,21 +693,22 @@ export const makeGmail: Effect.Effect<
                   maxResults: "1",
                 });
                 if (found.messages?.length) return true;
-                // Gmail documents raw MIME and rfc822msgid searches, not preservation of a client ID.
+                // Inspect a bounded Sent window: Gmail does not promise ID preservation or partial-ID search.
                 const recent = yield* get(account.id, MessageList, "/messages", {
-                  q: `in:sent after:${Math.floor(started / 1000) - 60} subject:${JSON.stringify(message.subject)}`,
+                  q: `in:sent after:${Math.floor(started / 1000) - 60} before:${Math.floor(started / 1000) + 120}`,
                   maxResults: "20",
                 });
                 for (const candidate of recent.messages ?? []) {
                   const metadata = yield* get(
                     account.id,
                     Metadata,
-                    `/messages/${encodeURIComponent(candidate.id)}?format=metadata&metadataHeaders=X-OpenMail-Id`,
+                    `/messages/${encodeURIComponent(candidate.id)}?format=metadata&metadataHeaders=Message-ID`,
                   );
                   if (
                     metadata.payload.headers?.some(
                       (header) =>
-                        header.name.toLowerCase() === "x-openmail-id" && header.value === traceId,
+                        header.name.toLowerCase() === "message-id" &&
+                        /^<([^<>@\s]+)@[^<>\s]+>$/.exec(header.value.trim())?.[1] === traceId,
                     )
                   )
                     return true;

@@ -19,7 +19,7 @@ import {
   type DeleteFolder,
   type PermanentDeleteBatch,
 } from "./folder-actions.js";
-import { Clock, Data, Effect, Option, Queue, Schema, Semaphore, Stream } from "effect";
+import { Clock, Context, Data, Effect, Option, Queue, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { attachmentProblem, attachmentProblemMessage } from "./attachment-policy.js";
 
@@ -107,6 +107,10 @@ const SELECT =
 const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
 const PAGE_SIZE = 50;
 const CONCURRENCY = 4;
+// Draft preparation and delivery confirmation belong to the send lane, too.
+const SendRequest = Context.Reference<boolean>("openmail/OutlookSendRequest", {
+  defaultValue: () => false,
+});
 const EXPAND_ATTACHMENTS = "$expand=attachments($select=name,contentType,size,isInline)";
 
 /** sendMail and attachment POSTs carry files inline; Graph caps a request at 4 MB. */
@@ -397,33 +401,45 @@ export const makeOutlook: Effect.Effect<
     return lock;
   };
 
+  const sendLocks = new Map<string, Semaphore.Semaphore>();
+  const sendLock = (accountId: string) => {
+    let lock = sendLocks.get(accountId);
+    if (!lock) {
+      lock = Semaphore.makeUnsafe(1);
+      sendLocks.set(accountId, lock);
+    }
+    return lock;
+  };
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    permissions
-      .run(
-        accountId,
-        request,
-        accessToken(accountId).pipe(
-          Effect.flatMap((token) => execute(token, request)),
-          // The provider can reject an access token before it expires. Drop it,
-          // refresh, and retry once; only a failed refresh means signing in again.
-          Effect.catchIf(
-            (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
-            () =>
-              Effect.sync(() => tokens.delete(accountId)).pipe(
-                Effect.andThen(accessToken(accountId)),
-                Effect.flatMap((token) => execute(token, request)),
-              ),
+    Effect.gen(function* () {
+      const sending = yield* SendRequest;
+      return yield* permissions
+        .run(
+          accountId,
+          request,
+          accessToken(accountId).pipe(
+            Effect.flatMap((token) => execute(token, request)),
+            // The provider can reject an access token before it expires. Drop it,
+            // refresh, and retry once; only a failed refresh means signing in again.
+            Effect.catchIf(
+              (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+              () =>
+                Effect.sync(() => tokens.delete(accountId)).pipe(
+                  Effect.andThen(accessToken(accountId)),
+                  Effect.flatMap((token) => execute(token, request)),
+                ),
+            ),
+            Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
+            Effect.tapError((e) =>
+              e._tag === "ApiError" && e.status === 401
+                ? Effect.sync(() => tokens.delete(accountId))
+                : Effect.void,
+            ),
           ),
-          Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
-          Effect.tapError((e) =>
-            e._tag === "ApiError" && e.status === 401
-              ? Effect.sync(() => tokens.delete(accountId))
-              : Effect.void,
-          ),
-        ),
-      )
-      .pipe(requestLock(accountId).withPermits(1));
+        )
+        .pipe((sending ? sendLock(accountId) : requestLock(accountId)).withPermits(1));
+    });
 
   const headersDenied = new Set<string>();
   /** `path` is a path under GRAPH, or a full https URL (delta and next links are absolute). */
@@ -1031,7 +1047,7 @@ export const makeOutlook: Effect.Effect<
       original: Option.Option<{ providerId: string; threadId: string }>,
     ) {
       yield* checkAttachmentSize(message);
-      const messageId = `<${crypto.randomUUID()}@openmail.local>`;
+      const messageId = `<${crypto.randomUUID()}@${account.email.split("@").at(-1)}>`;
       const fields = { ...graphFields(message), internetMessageId: messageId };
       const attachments = message.attachments.map(fileAttachment);
       const mode = message.mode ?? "new";
@@ -1149,7 +1165,7 @@ export const makeOutlook: Effect.Effect<
       }
     },
     (effect, account) =>
-      Effect.mapError(effect, (error) =>
+      Effect.mapError(effect.pipe(Effect.provideService(SendRequest, true)), (error) =>
         error._tag === "SendUncertain" ? error : writeFailure(account.id)(error),
       ),
   );

@@ -161,3 +161,11 @@ export function settingsScopeMissing<A, E extends AppError>(
   const error = Cause.findErrorOption(result.cause);
   return error._tag === "Some" && error.value._tag === "SettingsScopeMissing";
 }
+
+export function messageMissing<A, E extends AppError>(
+  result: AsyncResult.AsyncResult<A, E>,
+): boolean {
+  if (result._tag !== "Failure") return false;
+  const error = Cause.findErrorOption(result.cause);
+  return error._tag === "Some" && error.value._tag === "NotFound" && error.value.what === "message";
+}
