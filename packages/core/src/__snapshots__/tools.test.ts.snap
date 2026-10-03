@@ -1987,6 +1987,16 @@ exports[`tool input and output schemas are stable 1`] = `
                 "date": {
                   "type": "string",
                 },
+                "flags": {
+                  "items": {
+                    "enum": [
+                      "hidden-text-removed",
+                      "plain-differs",
+                    ],
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "from": {
                   "type": "string",
                 },

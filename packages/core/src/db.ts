@@ -831,6 +831,8 @@ export const MIGRATIONS: readonly string[] = [
   `ALTER TABLE messages ADD COLUMN headers_json TEXT;
    CREATE VIRTUAL TABLE messages_word_positions USING fts5vocab(messages_words, 'instance');
    CREATE VIRTUAL TABLE derived_word_positions USING fts5vocab(derived_words, 'instance');`,
+  // Migration 32: provider authentication results and safe list-unsubscribe target.
+  `ALTER TABLE messages ADD COLUMN security_json TEXT;`,
 ];
 
 /**

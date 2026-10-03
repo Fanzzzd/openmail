@@ -1,26 +1,5 @@
-import { PlatformCrypto } from "./platform/crypto.js";
-import { categoryKey } from "./categories.js";
-import { makeAiStore } from "./store-ai.js";
-import { makeWordIndexStore } from "./store-word-index.js";
-import { makeInviteStatusStore } from "./store-invite-status.js";
-import { attachmentFilename } from "./attachment-filename.js";
-import { applyOpToLabels } from "./mail-ops.js";
-export { applyOpToLabels, folderTarget } from "./mail-ops.js";
-import { makeSemanticStore } from "./store-semantic.js";
-import { DatabaseCapabilities } from "./db.js";
-import { makeMediaStore } from "./store-media.js";
-import { DerivedChunk } from "./media.js";
-/**
- * The Store service over SQLite. The only module that runs SQL. Rows are
- * decoded with schemas built from the domain types (this is the IO boundary);
- * SQL and decode failures die, since they mean a bug or a corrupt file.
- */
-import { Clock, Effect, Layer, Option, Schema } from "effect";
-import { SqlClient } from "effect/sql";
-import { isSqlError } from "effect/sql/SqlError";
-import type { Fragment } from "effect/sql/Statement";
-
 import {
+  MessageSecurity,
   NotificationActions,
   type Account,
   type AccountSettings,
@@ -49,6 +28,29 @@ import {
   type ThreadQuery,
   type ThreadSummary,
 } from "./domain.js";
+import { cleanDisplayName } from "./message-security.js";
+import { PlatformCrypto } from "./platform/crypto.js";
+import { categoryKey } from "./categories.js";
+import { makeAiStore } from "./store-ai.js";
+import { makeWordIndexStore } from "./store-word-index.js";
+import { makeInviteStatusStore } from "./store-invite-status.js";
+import { attachmentFilename } from "./attachment-filename.js";
+import { applyOpToLabels } from "./mail-ops.js";
+export { applyOpToLabels, folderTarget } from "./mail-ops.js";
+import { makeSemanticStore } from "./store-semantic.js";
+import { DatabaseCapabilities } from "./db.js";
+import { makeMediaStore } from "./store-media.js";
+import { DerivedChunk } from "./media.js";
+/**
+ * The Store service over SQLite. The only module that runs SQL. Rows are
+ * decoded with schemas built from the domain types (this is the IO boundary);
+ * SQL and decode failures die, since they mean a bug or a corrupt file.
+ */
+import { Clock, Effect, Layer, Option, Schema } from "effect";
+import { SqlClient } from "effect/sql";
+import { isSqlError } from "effect/sql/SqlError";
+import type { Fragment } from "effect/sql/Statement";
+
 import { InvalidInput, NotFound } from "./errors.js";
 import { type PendingOp, Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
@@ -128,6 +130,7 @@ const MessageRow = Schema.Struct({
   reply_to_json: Schema.NullOr(Schema.fromJsonString(Schema.Array(Address))),
   body_text: Schema.String,
   body_html: Schema.String,
+  security_json: Schema.NullOr(Schema.fromJsonString(MessageSecurity)),
   web_link: Schema.NullOr(Schema.String),
   draft_id: Schema.NullOr(Schema.String),
   calendar_hint: Schema.NullOr(Schema.BooleanFromBit),
@@ -230,7 +233,7 @@ function toSummary(r: typeof SummaryRow.Type): MessageSummary {
     accountId: r.account_id,
     threadId: r.thread_id,
     subject: r.subject,
-    from: { name: r.from_name, address: r.from_addr },
+    from: { name: cleanDisplayName(r.from_name), address: r.from_addr },
     date: r.date,
     snippet: r.snippet,
     labels: r.labels_json,
@@ -252,6 +255,7 @@ function toMessage(r: typeof MessageRow.Type): Message {
     ...(r.reply_to_json === null ? {} : { replyTo: r.reply_to_json }),
     bodyText: r.body_text,
     bodyHtml: r.body_html,
+    ...(r.security_json === null ? {} : { security: r.security_json }),
     ...(r.web_link === null ? {} : { webLink: r.web_link }),
     bodyCached: r.body_cached,
     attachments: r.attachments_json,
@@ -388,7 +392,21 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       id: string,
       input: AccountSettings,
     ) {
-      yield* getAccount(id);
+      const account = yield* getAccount(id);
+      if (input.imapAuthservId !== undefined) {
+        if (!account.imap)
+          return yield* new InvalidInput({
+            message: "Authentication service trust is only available for IMAP accounts",
+          });
+        const authservId = input.imapAuthservId?.toLowerCase() ?? null;
+        if ((account.imap.authservId ?? null) !== authservId) {
+          yield* run(
+            sql`UPDATE accounts SET settings_json=${JSON.stringify({ ...account.imap, authservId })} WHERE id=${id}`,
+          );
+          // Existing results must not survive a change to the trust boundary.
+          yield* run(sql`UPDATE messages SET security_json=NULL WHERE account_id=${id}`);
+        }
+      }
       yield* run(
         sql`UPDATE accounts SET enabled=${input.enabled ? 1 : 0}, description=${input.description.trim()}, color=${input.color} WHERE id=${id}`,
       );
@@ -396,6 +414,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         yield* run(
           sql`DELETE FROM pending_notifications WHERE message_id IN (SELECT id FROM messages WHERE account_id=${id})`,
         );
+      return yield* Effect.void;
     });
     const moveAccount = Effect.fn("Store.moveAccount")(function* (
       id: string,
@@ -574,14 +593,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, reply_to_json, date, snippet, body_text, body_html, labels_json,
-            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link, bcc_json, rfc_message_id, message_size, headers_json)
+            attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link, bcc_json, rfc_message_id, message_size, headers_json, security_json)
           VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
-            ${m.subject}, ${m.from.name}, ${m.from.address}, ${JSON.stringify(m.to)},
+            ${m.subject}, ${cleanDisplayName(m.from.name)}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${JSON.stringify(m.replyTo ?? [])}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
-            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)}, ${m.webLink ?? null}, ${JSON.stringify(m.bcc ?? [])}, ${m.rfcMessageId ?? null}, ${m.size ?? null}, ${m.headers ? JSON.stringify(m.headers) : null})
+            ${m.isStarred ? 1 : 0}, ${m.hasCalendar || m.bodyText.trimStart().startsWith("BEGIN:VCALENDAR") || m.attachments.some((a) => a.mimeType === "text/calendar" || /\.ics$/i.test(a.filename)) ? 1 : 0}, ${m.bodyCached === false ? 0 : 1}, ${Math.max(m.date, Option.isSome(reminder) ? (reminder.value.woken_at ?? 0) : 0)}, ${m.webLink ?? null}, ${JSON.stringify(m.bcc ?? [])}, ${m.rfcMessageId ?? null}, ${m.size ?? null}, ${m.headers ? JSON.stringify(m.headers) : null}, ${m.security ? JSON.stringify(m.security) : null})
           ON CONFLICT(id) DO UPDATE SET
             headers_json=COALESCE(excluded.headers_json,messages.headers_json),
+            security_json=COALESCE(excluded.security_json,messages.security_json),
             bcc_json=excluded.bcc_json, rfc_message_id=COALESCE(excluded.rfc_message_id,messages.rfc_message_id), message_size=COALESCE(excluded.message_size,messages.message_size),
             thread_id = excluded.thread_id, subject = excluded.subject,
             from_name = excluded.from_name, from_addr = excluded.from_addr,
@@ -591,7 +611,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             attachments_json = excluded.attachments_json, is_unread = excluded.is_unread,
             is_starred = excluded.is_starred, calendar_hint = excluded.calendar_hint, body_cached = excluded.body_cached, list_date = excluded.list_date,
             web_link = COALESCE(excluded.web_link, messages.web_link)
-          WHERE messages.thread_id IS NOT excluded.thread_id OR messages.subject IS NOT excluded.subject
+          WHERE messages.security_json IS NOT COALESCE(excluded.security_json,messages.security_json) OR messages.thread_id IS NOT excluded.thread_id OR messages.subject IS NOT excluded.subject
             OR messages.from_name IS NOT excluded.from_name OR messages.from_addr IS NOT excluded.from_addr
             OR messages.to_json IS NOT excluded.to_json OR messages.cc_json IS NOT excluded.cc_json
             OR messages.reply_to_json IS NOT excluded.reply_to_json OR messages.bcc_json IS NOT excluded.bcc_json

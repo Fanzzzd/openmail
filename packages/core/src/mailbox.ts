@@ -115,6 +115,9 @@ export const ModelThread = Schema.Struct({
       cc: Schema.Array(Schema.String),
       date: Schema.String,
       text: Schema.String,
+      flags: Schema.optionalKey(
+        Schema.Array(Schema.Literals(["hidden-text-removed", "plain-differs"])),
+      ),
       attachments: Schema.Array(Schema.String),
     }),
   ),
@@ -192,6 +195,14 @@ export class Mailbox extends Context.Service<
       microsoftConfigured: boolean;
     }>;
     setClient(patch: ClientConfig): Effect.Effect<void>;
+
+    importCalendarAttachment(
+      messageId: string,
+      path: readonly number[],
+      key: string,
+      actor: Actor,
+    ): Effect.Effect<void, PerformError>;
+    unsubscribe(messageId: string, actor: Actor): Effect.Effect<void, PerformError>;
 
     // Calendar invites, fetched from the original MIME including inline parts and .ics files.
     calendarEvents(messageId: string, key: string): Effect.Effect<CalendarEvent[], PerformError>;

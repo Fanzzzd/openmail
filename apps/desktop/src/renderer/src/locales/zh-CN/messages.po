@@ -310,11 +310,13 @@ msgstr "加星标"
 msgid "Add this event to your calendar?"
 msgstr "将此事件加入日历？"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Add to calendar"
 msgstr "加入日历"
 
 #: src/renderer/src/components/AppleContactActions.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Add to Contacts"
 msgstr "添加到通讯录"
 
@@ -863,6 +865,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -870,6 +873,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
@@ -1037,6 +1041,7 @@ msgid "Click in this window, then choose a device to take a photo, scan a docume
 msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
@@ -1162,6 +1167,7 @@ msgstr "通讯录操作失败。"
 msgid "Content matches"
 msgstr "内容命中"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "继续"
@@ -1238,6 +1244,10 @@ msgstr "无法在此 Mac 上检查语法。"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Could not import this attachment."
+msgstr "无法导入此附件。"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Could not load Apple Contacts. Try refreshing."
@@ -2456,6 +2466,10 @@ msgstr "最新版本"
 msgid "Layout"
 msgstr "布局"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
+msgstr "除非邮件管理员提供可信的 authserv-id，否则请留空。IMAP 服务器名称不是信任设置。"
+
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
 msgstr "向左长滑"
@@ -2525,6 +2539,7 @@ msgstr "读取设置…"
 msgid "Loading the original from the server…"
 msgstr "正在从服务器读取原始邮件…"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "加载中…"
@@ -3278,6 +3293,10 @@ msgstr "在 Outlook 中打开"
 msgid "Open in web mail"
 msgstr "在网页版邮箱中打开"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open link"
+msgstr "打开链接"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open macOS notification settings"
 msgstr "打开 macOS 通知设置"
@@ -3297,6 +3316,10 @@ msgstr "打开系统设置"
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "请先在日历中添加此邀请，再响应"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open this link?"
+msgstr "打开此链接？"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
@@ -3731,6 +3754,10 @@ msgstr "从 openmail 移除这个账户和它的本地邮件。服务器上的�
 msgid "Remove token"
 msgstr "移除令牌"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove tracking parameters from links"
+msgstr "移除链接中的跟踪参数"
+
 #: src/renderer/src/App.tsx
 msgid "Removed star"
 msgstr "已去掉星标"
@@ -3838,6 +3865,10 @@ msgstr "重置本地缓存"
 msgid "Reset toolbar"
 msgstr "重置工具栏"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Respond to this invitation from the message."
+msgstr "请在消息中回应此邀请。"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "恢复"
@@ -3875,13 +3906,25 @@ msgstr "还原"
 msgid "Review AI suggestions"
 msgstr "查看 AI 建议"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Review an unsubscribe email before sending?"
+msgstr "发送前检查退订邮件？"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "检查并发送"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the contacts before adding them."
+msgstr "添加前检查联系人。"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Review the event details before confirming."
 msgstr "确认前请核对事件详情。"
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the events before adding them."
+msgstr "添加前检查事件。"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
@@ -4118,6 +4161,10 @@ msgstr "发送"
 msgid "Send Again"
 msgstr "再次发送"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Send an unsubscribe request to this address?"
+msgstr "向此地址发送退订请求？"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Send and archive"
@@ -4154,6 +4201,10 @@ msgstr "发送会话链接到…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "发送网页版邮件链接到…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Sender authentication failed (DMARC)"
+msgstr "发件人认证失败（DMARC）"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"
@@ -4682,6 +4733,10 @@ msgstr "数据库完整性检查（quick_check）失败，或文件无法访问�
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "The displayed link may hide its destination. Check the real domain before opening."
+msgstr "显示的链接可能隐藏了目标。打开前请检查真实域名。"
+
 #: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "结束时间须晚于开始时间"
@@ -4725,6 +4780,10 @@ msgstr "其余部分这里没有显示。复制会得到整封邮件。"
 #: src/renderer/src/errors.ts
 msgid "The selected message is no longer available."
 msgstr "所选邮件已不存在。"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "The sender name contains a different email address."
+msgstr "发件人名称含有不同的邮件地址。"
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."
@@ -4903,6 +4962,10 @@ msgstr "已删除"
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "应用在前台或接电时生成整理建议。建议须经你确认。接受“需要回复”会为邮件加星标。"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Trusted authentication service (optional)"
+msgstr "可信认证服务（可选）"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "星期二"
@@ -4987,6 +5050,18 @@ msgstr "去掉星标"
 #: src/renderer/src/components/Reader.tsx
 msgid "Unstar message"
 msgstr "取消此邮件星标"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe"
+msgstr "退订"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe failed. Try again later."
+msgstr "退订失败，请稍后重试。"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe?"
+msgstr "确认退订？"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"

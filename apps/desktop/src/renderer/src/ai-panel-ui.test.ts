@@ -67,7 +67,7 @@ vi.mock("./state/queries", () => ({ labelsAtom: () => "Labels" }));
 vi.mock("./components/ui/Dialog", () => ({
   Dialog: ({ children }: { children: ReactNode }) => createElement("section", null, children),
 }));
-import { Assistant, ThreadSummary } from "./components/AiPanel";
+import { AiOutput, Assistant, ThreadSummary } from "./components/AiPanel";
 import { ComposerAi } from "./components/ComposerAi";
 import { TriageChip } from "./components/TriageChip";
 
@@ -288,3 +288,31 @@ for (const hours of [1, 2]) {
     }
   });
 }
+
+it("AI answers render URLs and phone numbers as plain text", () => {
+  const dom = testDom();
+  try {
+    const text =
+      'Visit https://evil.example/pay or call +1 555 010 1234. <a href="https://evil.example">Pay</a>';
+    dom.render(
+      localize(
+        createElement(AiOutput, {
+          result: {
+            text,
+            sources: [],
+            model: "",
+            truncated: false,
+            status: "done",
+            start: vi.fn(),
+            cancel: vi.fn(),
+          },
+          openSource: vi.fn(),
+        }),
+      ),
+    );
+    expect(dom.element.textContent).toContain(text);
+    expect(dom.element.querySelectorAll("a")).toHaveLength(0);
+  } finally {
+    dom.dispose();
+  }
+});

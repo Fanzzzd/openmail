@@ -1,3 +1,5 @@
+import { cleanDisplayName } from "./message-security.js";
+import { messageModelText } from "./visible-text.js";
 import type { Address, Message } from "./domain.js";
 import type { ModelThread } from "./mailbox.js";
 
@@ -30,7 +32,7 @@ export function ownText(body: string): string {
     .trim();
 }
 
-const who = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address);
+const who = (a: Address) => (a.name ? `${cleanDisplayName(a.name)} <${a.address}>` : a.address);
 
 /**
  * A thread as plain text within `maxChars` of bodies. Newer messages get
@@ -38,7 +40,8 @@ const who = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address);
  * `truncated` says how many characters were dropped.
  */
 export function toModelThread(messages: readonly Message[], maxChars: number): ModelThread {
-  const texts = messages.map((m) => ownText(m.bodyText));
+  const bodies = messages.map((m) => messageModelText(m.bodyText, m.bodyHtml));
+  const texts = bodies.map((body) => ownText(body.text));
   let budget = maxChars;
   let truncated = 0;
   const kept = texts.toReversed().map((text) => {
@@ -62,6 +65,7 @@ export function toModelThread(messages: readonly Message[], maxChars: number): M
       cc: m.cc.map(who),
       date: new Date(m.date).toISOString(),
       text: kept[i] ?? "",
+      ...(bodies[i]?.flags.length ? { flags: bodies[i].flags } : {}),
       attachments: m.attachments.map((a) => a.filename),
     })),
     truncated,

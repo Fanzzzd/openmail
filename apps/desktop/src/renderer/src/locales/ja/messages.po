@@ -300,11 +300,13 @@ msgstr "スターを付ける"
 msgid "Add this event to your calendar?"
 msgstr "このイベントをカレンダーに追加しますか?"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Add to calendar"
 msgstr "カレンダーに追加"
 
 #: src/renderer/src/components/AppleContactActions.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Add to Contacts"
 msgstr "連絡先に追加"
 
@@ -853,6 +855,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -860,6 +863,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
@@ -1027,6 +1031,7 @@ msgid "Click in this window, then choose a device to take a photo, scan a docume
 msgstr "このウインドウをクリックし、デバイスを選択して写真の撮影、書類のスキャン、スケッチの追加を行います。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
@@ -1152,6 +1157,7 @@ msgstr "連絡先の操作に失敗しました。"
 msgid "Content matches"
 msgstr "コンテンツの一致"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "続ける"
@@ -1228,6 +1234,10 @@ msgstr "このMacで文法をチェックできませんでした。"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "winmail.datをデコードできませんでした。元のファイルを保存できます。"
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Could not import this attachment."
+msgstr "この添付ファイルをインポートできませんでした。"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Could not load Apple Contacts. Try refreshing."
@@ -2446,6 +2456,10 @@ msgstr "最新"
 msgid "Layout"
 msgstr "レイアウト"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
+msgstr "メール管理者から信頼できる authserv-id が提供されていない場合は空欄にしてください。IMAP サーバー名は信頼設定ではありません。"
+
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
 msgstr "左ロングスワイプ"
@@ -2515,6 +2529,7 @@ msgstr "設定を読み込み中…"
 msgid "Loading the original from the server…"
 msgstr "サーバーからオリジナルをロードしています…"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "読み込み中…"
@@ -3268,6 +3283,10 @@ msgstr "Outlook で開く"
 msgid "Open in web mail"
 msgstr "Webメールで開く"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open link"
+msgstr "リンクを開く"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open macOS notification settings"
 msgstr "macOS の通知設定を開く"
@@ -3287,6 +3306,10 @@ msgstr "システム設定を開く"
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "返信する前にカレンダーでこの招待状を開いて追加してください"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open this link?"
+msgstr "このリンクを開きますか？"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
@@ -3721,6 +3744,10 @@ msgstr "このアカウントとそのローカルメールを openmail から�
 msgid "Remove token"
 msgstr "トークンを削除する"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove tracking parameters from links"
+msgstr "リンクから追跡パラメータを削除"
+
 #: src/renderer/src/App.tsx
 msgid "Removed star"
 msgstr "スターを外しました"
@@ -3828,6 +3855,10 @@ msgstr "ローカルキャッシュをリセットする"
 msgid "Reset toolbar"
 msgstr "ツールバーをリセット"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Respond to this invitation from the message."
+msgstr "この招待にはメッセージから返答してください。"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "復元する"
@@ -3865,13 +3896,25 @@ msgstr "変更を元に戻す"
 msgid "Review AI suggestions"
 msgstr "AIの提案を確認"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Review an unsubscribe email before sending?"
+msgstr "送信前に購読解除メールを確認しますか？"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "レビューして送信"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the contacts before adding them."
+msgstr "追加する前に連絡先を確認してください。"
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Review the event details before confirming."
 msgstr "確認する前にイベントの詳細を確認してください。"
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the events before adding them."
+msgstr "追加する前に予定を確認してください。"
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
@@ -4108,6 +4151,10 @@ msgstr "送信"
 msgid "Send Again"
 msgstr "再送信"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Send an unsubscribe request to this address?"
+msgstr "このアドレスに購読解除リクエストを送信しますか？"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Send and archive"
@@ -4144,6 +4191,10 @@ msgstr "スレッドのリンクを送信…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Webメールのリンクを送信…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Sender authentication failed (DMARC)"
+msgstr "送信者の認証に失敗しました（DMARC）"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"
@@ -4672,6 +4723,10 @@ msgstr "データベースの整合性チェック (quick_check) が失敗した
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "データベースは保存されていました。 OpenMail を終了し、ローカル バックアップを復元するか、サポートに連絡してください。"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "The displayed link may hide its destination. Check the real domain before opening."
+msgstr "表示されたリンクは実際の接続先を隠している可能性があります。開く前に実際のドメインを確認してください。"
+
 #: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "終わりは始まりの後にあるはずだ"
@@ -4715,6 +4770,10 @@ msgstr "残りはここでは省略します。コピーするとメッセージ
 #: src/renderer/src/errors.ts
 msgid "The selected message is no longer available."
 msgstr "選択したメッセージは利用できなくなりました。"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "The sender name contains a different email address."
+msgstr "送信者名に別のメールアドレスが含まれています。"
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."
@@ -4893,6 +4952,10 @@ msgstr "ゴミ箱"
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "アプリが前面にある場合、または電源に接続されている場合に整理方法を提案します。提案の適用には承認が必要です。「返信が必要」を承認するとスターが付きます。"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Trusted authentication service (optional)"
+msgstr "信頼する認証サービス（任意）"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "火曜日"
@@ -4977,6 +5040,18 @@ msgstr "スターを外す"
 #: src/renderer/src/components/Reader.tsx
 msgid "Unstar message"
 msgstr "メッセージのスターを外す"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe"
+msgstr "購読解除"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe failed. Try again later."
+msgstr "購読解除に失敗しました。後で再試行してください。"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe?"
+msgstr "購読を解除しますか？"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"

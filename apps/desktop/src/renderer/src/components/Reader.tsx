@@ -1,3 +1,4 @@
+import { UnsubscribeButton } from "./UnsubscribeButton";
 import { MailClient } from "../rpc";
 import { AppleContactActions } from "./AppleContactActions";
 import { InviteBanner, RawMessageDialog } from "./LazyDialogs";
@@ -14,6 +15,8 @@ import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
+  cleanDisplayName,
+  senderSpoofed,
   addressDomain,
   DEFAULT_PREFS,
   imagesAllowed,
@@ -904,7 +907,7 @@ function MessageHead({
           <DropdownMenu
             trigger={
               <button type="button" className="text-left hover:text-blue-600">
-                {senderLabel(m.from, known)}
+                {senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known)}
               </button>
             }
           >
@@ -915,9 +918,22 @@ function MessageHead({
             <AppleContactActions address={m.from} />
           </DropdownMenu>
         ) : (
-          senderLabel(m.from, known)
+          senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known)
         )}
       </span>
+      <span className="text-[12px] break-all">{m.from.address}</span>
+      {m.security?.dmarc === "fail" && (
+        <span
+          role="alert"
+          className="text-a11y-danger"
+        >{t`Sender authentication failed (DMARC)`}</span>
+      )}
+      {senderSpoofed(m.from) && (
+        <span
+          role="alert"
+          className="text-a11y-danger"
+        >{t`The sender name contains a different email address.`}</span>
+      )}
       {m.isStarred && (
         <Star className="size-3.5 shrink-0 self-center fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />
       )}
@@ -994,7 +1010,8 @@ function Expanded({
   const domain = addressDomain(address);
   const bySender = senders.includes(address);
   const byDomain = domain !== "" && senders.includes(domain);
-  const allowed = loadedOnce || imagesAllowed(address, senders);
+  const authenticated = m.security?.dmarc === "pass";
+  const allowed = loadedOnce || (authenticated && imagesAllowed(address, senders));
   const hasCid = /\bcid:/i.test(m.bodyHtml);
   const inline = AsyncResult.getOrElse(
     useAtomValue(allowed && hasCid ? inlineImagesAtom(m.id) : noInline),
@@ -1137,7 +1154,7 @@ function Expanded({
           <MenuItem icon={FileDown} onClick={() => onPrint(true)}>
             {t`Save message as PDF…`}
           </MenuItem>
-          {address && (
+          {address && authenticated && (
             <>
               <MenuSeparator />
               <MenuItem icon={Images} onClick={() => allow(address, !bySender)}>
@@ -1157,6 +1174,7 @@ function Expanded({
         </DropdownMenu>
       </div>
 
+      <UnsubscribeButton message={m} />
       <MeetingLinks sources={[m.bodyText, m.bodyHtml]} />
       <InviteBanner message={m} />
 
@@ -1185,7 +1203,7 @@ function Expanded({
                 >
                   <Trans>Load images</Trans>
                 </button>
-                {address && (
+                {address && authenticated && (
                   <button
                     type="button"
                     onClick={() => allow(address, true)}

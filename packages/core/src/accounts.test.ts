@@ -403,3 +403,57 @@ it.effect(
       );
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
 );
+
+it.effect(
+  "IMAP authserv trust is explicit, survives settings saves, and clears cached results when changed",
+  () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@fastmail.com");
+      yield* store.setImapSettings(account.id, {
+        preset: "fastmail",
+        username: account.email,
+        imapHost: "imap.fastmail.com",
+        imapPort: 993,
+        smtpHost: "smtp.fastmail.com",
+        smtpPort: 465,
+        smtpSecure: true,
+      });
+      assert.strictEqual((yield* store.getAccount(account.id)).imap?.authservId, undefined);
+      const settings = { enabled: true, description: "Fastmail", color: null };
+      yield* store.setAccountSettings(account.id, {
+        ...settings,
+        imapAuthservId: "mx1.messagingengine.com",
+      });
+      assert.strictEqual(
+        (yield* store.getAccount(account.id)).imap?.authservId,
+        "mx1.messagingengine.com",
+      );
+      const messageId = `${account.id}/m1`;
+      yield* store.upsertMessage(account.id, {
+        ...incoming("m1"),
+        security: { dmarc: "pass", spf: "pass", dkim: "pass" },
+      });
+      yield* store.setAccountSettings(account.id, settings);
+      assert.strictEqual(
+        (yield* store.getAccount(account.id)).imap?.authservId,
+        "mx1.messagingengine.com",
+      );
+      assert.strictEqual((yield* store.getMessage(messageId)).security?.dmarc, "pass");
+      yield* store.setAccountSettings(account.id, {
+        ...settings,
+        imapAuthservId: "mx1.messagingengine.com",
+      });
+      assert.strictEqual((yield* store.getMessage(messageId)).security?.dmarc, "pass");
+      yield* store.setAccountSettings(account.id, { ...settings, imapAuthservId: null });
+      assert.strictEqual((yield* store.getMessage(messageId)).security, undefined);
+      assert.strictEqual((yield* store.getAccount(account.id)).imap?.authservId, null);
+      assert.strictEqual(
+        Schema.decodeUnknownOption(AccountSettings)({
+          ...settings,
+          imapAuthservId: "mx.google.com; dmarc=pass",
+        })._tag,
+        "None",
+      );
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
+);

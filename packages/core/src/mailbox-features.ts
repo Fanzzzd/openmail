@@ -28,7 +28,7 @@ import {
 import type { Mailbox } from "./mailbox.js";
 import type { Providers, Store } from "./services.js";
 
-function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
+export function eventFromInvite(invite: CalendarInvite): CalendarEvent | null {
   if (!invite.start || invite.cancelled) return null;
   const start = invite.start;
   let end = invite.end;

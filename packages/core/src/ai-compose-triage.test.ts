@@ -32,7 +32,7 @@ const incoming = (
   date: 1000,
   snippet: "private snippet",
   bodyText: "Please reply Friday\n> quoted secret\n-- \nsignature secret",
-  bodyHtml: '<img src="https://private.example/image">',
+  bodyHtml: '<p>Please reply Friday</p><img src="https://private.example/image">',
   labels: ["INBOX", "UNREAD"],
   attachments: [{ filename: "secret.pdf", mimeType: "application/pdf", size: 50 }],
   isUnread: true,

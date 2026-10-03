@@ -263,20 +263,18 @@ it.effect(
   { timeout: 15000 },
 );
 
-it.effect(
-  "delegated Sender or From matching the organizer does not raise an IMAP spoof warning",
-  () =>
-    Effect.gen(function* () {
-      for (const headers of [
-        "From: alice@example.com\r\nSender: delegate@example.com",
-        "From: delegate@example.com\r\nSender: ALICE@example.com",
-      ]) {
-        const raw = Buffer.from(
-          `${headers}\r\nMIME-Version: 1.0\r\nContent-Type: text/calendar; method=REQUEST\r\n\r\n${calendar("DTSTART:20260701T090000Z")}`,
-        );
-        const [invite] = yield* invitesFromRaw(raw);
-        assert.ok(invite);
-        assert.strictEqual(invite.invite.organizerMismatch, false);
-      }
-    }),
+it.effect("only the MIME From can suppress an organizer mismatch warning", () =>
+  Effect.gen(function* () {
+    for (const headers of [
+      "From: alice@example.com\r\nSender: delegate@example.com",
+      "From: delegate@example.com\r\nSender: ALICE@example.com",
+    ]) {
+      const raw = Buffer.from(
+        `${headers}\r\nMIME-Version: 1.0\r\nContent-Type: text/calendar; method=REQUEST\r\n\r\n${calendar("DTSTART:20260701T090000Z")}`,
+      );
+      const [invite] = yield* invitesFromRaw(raw);
+      assert.ok(invite);
+      assert.strictEqual(invite.invite.organizerMismatch, headers.startsWith("From: delegate"));
+    }
+  }),
 );

@@ -1,3 +1,4 @@
+import { messageSecurity } from "./message-security.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
@@ -1073,6 +1074,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     snippet: decodeEntities(raw.snippet ?? ""),
     bodyText: text || htmlToText(html),
     bodyHtml: html,
+    security: messageSecurity(raw.payload.headers ?? [], "gmail"),
     ...(calendarParts.length ? { hasCalendar: true } : {}),
     labels,
     attachments,

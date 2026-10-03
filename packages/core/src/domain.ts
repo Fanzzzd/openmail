@@ -22,6 +22,8 @@ export const ImapSettings = Schema.Struct({
   smtpPort: Schema.Int,
   /** true: implicit TLS (993/465). false: STARTTLS. */
   smtpSecure: Schema.Boolean,
+  /** Explicit trust configuration; no IMAP host or preset implies an authserv-id. */
+  authservId: Schema.optionalKey(Schema.NullOr(Schema.String)),
 });
 export type ImapSettings = typeof ImapSettings.Type;
 
@@ -47,6 +49,14 @@ export type Account = typeof Account.Type;
 
 export const AccountSettings = Schema.Struct({
   enabled: Schema.Boolean,
+  imapAuthservId: Schema.optionalKey(
+    Schema.NullOr(
+      Schema.String.check(
+        Schema.isMaxLength(253),
+        Schema.isPattern(/^[a-zA-Z0-9](?:[a-zA-Z0-9.-]*[a-zA-Z0-9])?$/),
+      ),
+    ),
+  ),
   description: Schema.String.check(Schema.isMaxLength(200)),
   color: Schema.NullOr(Schema.String.check(Schema.isPattern(/^#[0-9a-fA-F]{6}$/))),
 });
@@ -157,6 +167,19 @@ export const ThreadSummary = Schema.Struct({
 });
 export type ThreadSummary = typeof ThreadSummary.Type;
 
+export const MessageSecurity = Schema.Struct({
+  dmarc: Schema.Literals(["pass", "fail", "unknown"]),
+  spf: Schema.Literals(["pass", "fail", "unknown"]),
+  dkim: Schema.Literals(["pass", "fail", "unknown"]),
+  unsubscribe: Schema.optionalKey(
+    Schema.Union([
+      Schema.Struct({ kind: Schema.Literal("mailto"), url: Schema.String }),
+      Schema.Struct({ kind: Schema.Literal("post"), url: Schema.String }),
+    ]),
+  ),
+});
+export type MessageSecurity = typeof MessageSecurity.Type;
+
 export const Message = Schema.Struct({
   ...summaryFields,
   to: Schema.Array(Address),
@@ -171,6 +194,7 @@ export const Message = Schema.Struct({
   replyTo: Schema.optionalKey(Schema.Array(Address)),
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  security: Schema.optionalKey(MessageSecurity),
   webLink: Schema.optionalKey(Schema.String),
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
@@ -204,6 +228,7 @@ export const IncomingMessage = Schema.Struct({
   snippet: Schema.String,
   bodyText: Schema.String,
   bodyHtml: Schema.String,
+  security: Schema.optionalKey(MessageSecurity),
   webLink: Schema.optionalKey(Schema.String),
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
@@ -631,6 +656,7 @@ export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
 
 export const Prefs = Schema.Struct({
   remoteImages: Schema.optionalKey(Schema.Boolean),
+  cleanLinks: Schema.optionalKey(Schema.Boolean),
   spellcheck: Schema.Boolean,
   spellcheckLanguages: Schema.Array(Schema.String),
   defaultProfilesPrompted: Schema.Boolean,
@@ -706,6 +732,7 @@ export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
   remoteImages: false,
+  cleanLinks: true,
   spellcheck: true,
   spellcheckLanguages: [],
   defaultProfilesPrompted: false,

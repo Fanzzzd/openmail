@@ -25,6 +25,7 @@ export function AccountControls({
   const { t, i18n } = useLingui();
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
   const [description, setDescription] = useState(account.description ?? "");
+  const [authservId, setAuthservId] = useState(account.imap?.authservId ?? "");
   const [color, setColor] = useState(account.color ?? "#3b82f6");
   const [customColor, setCustomColor] = useState(!!account.color);
   const [result, save] = useAtom(setAccountSettingsAtom(account.id));
@@ -73,11 +74,36 @@ export function AccountControls({
           />
         )}
       </label>
+      {account.imap && (
+        <div className="w-full space-y-1">
+          <label htmlFor={`imap-authserv-${account.id}`} className="flex items-center gap-2">
+            <Trans>Trusted authentication service (optional)</Trans>
+            <input
+              id={`imap-authserv-${account.id}`}
+              value={authservId}
+              maxLength={253}
+              onChange={(event) => setAuthservId(event.target.value)}
+              className="rounded border border-black/10 bg-transparent px-2 py-1 dark:border-white/15"
+            />
+          </label>
+          <p className="text-xs text-a11y-muted">
+            <Trans>
+              Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP
+              server name is not a trust setting.
+            </Trans>
+          </p>
+        </div>
+      )}
       <button
         type="button"
         disabled={result.waiting}
         onClick={() =>
-          saveSettings({ kind: "appearance", description, color: customColor ? color : null })
+          saveSettings({
+            kind: "appearance",
+            description,
+            color: customColor ? color : null,
+            ...(account.imap ? { imapAuthservId: authservId.trim() || null } : {}),
+          })
         }
         className="rounded px-2 py-1 text-a11y-accent disabled:opacity-40"
       >

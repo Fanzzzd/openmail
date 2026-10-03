@@ -1,3 +1,6 @@
+import { linkHint, linkIdentity, linkNeedsConfirmation } from "@openmail/core/schema";
+import { useRunMail, withMail } from "../state/mail";
+import { Dialog } from "./ui/Dialog";
 import type { QuoteHistory } from "@openmail/core/schema";
 import { listenForMessageActivation } from "./message-activation";
 import { useLingui } from "@lingui/react/macro";
@@ -71,6 +74,10 @@ export function EmailFrame({
   onMatches,
 }: Props) {
   const { t } = useLingui();
+  const run = useRunMail();
+  const [pendingLink, setPendingLink] = useState<string | null>(null);
+  const openLink = (url: string) => run(withMail((call) => call("OpenMailLink", { url })));
+
   const [frameDocument, setFrameDocument] = useState<Document | null>(null);
   const quotes = useBodyQuotes(frameDocument, previous);
   const hasQuotes = !!quotes?.length;
@@ -97,6 +104,7 @@ export function EmailFrame({
 
   const css = `${BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
   const doc = `<!doctype html><html><head><meta charset="utf-8">
+<meta http-equiv="x-dns-prefetch-control" content="off">
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
 <base target="_blank"><style>${css}</style></head><body>${html}</body></html>`;
 
@@ -135,6 +143,23 @@ export function EmailFrame({
     };
     frameDoc.addEventListener("keydown", keydown);
     const stopActivation = listenForMessageActivation(frameDoc, () => activate.current());
+    const click = (event: MouseEvent) => {
+      event.preventDefault();
+      const element =
+        event.target instanceof (frameDoc.defaultView?.Element ?? Element) ? event.target : null;
+      const anchor = element?.closest("a,area");
+      if (!anchor || !event.isTrusted || (event.type === "auxclick" && event.button !== 1)) return;
+      const url = frameLinkTarget(frameDoc, event);
+      if (!url) return;
+      const label =
+        anchor instanceof (frameDoc.defaultView?.HTMLElement ?? HTMLElement)
+          ? anchor.innerText || anchor.getAttribute("alt") || ""
+          : anchor.textContent;
+      if (linkNeedsConfirmation(url, label)) setPendingLink(url);
+      else openLink(url);
+    };
+    frameDoc.addEventListener("click", click);
+    frameDoc.addEventListener("auxclick", click);
     const stopHints = listenForLinkHints(
       frameDoc,
       (event) => frameLinkTarget(frameDoc, event),
@@ -142,6 +167,8 @@ export function EmailFrame({
     );
     dispose.current = () => {
       stopHints();
+      frameDoc.removeEventListener("click", click);
+      frameDoc.removeEventListener("auxclick", click);
       frameDoc.removeEventListener("keydown", keydown);
       stopActivation();
     };
@@ -159,11 +186,32 @@ export function EmailFrame({
       <iframe
         title="message"
         onLoad={onLoad}
-        sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        sandbox="allow-same-origin"
         srcDoc={doc}
         style={{ height }}
         className="block w-full border-0"
       />
+      {pendingLink && (
+        <Dialog
+          aria-label={t`Open this link?`}
+          onClose={() => setPendingLink(null)}
+          className="w-[min(90vw,480px)] space-y-4 p-5"
+        >
+          <p>{t`The displayed link may hide its destination. Check the real domain before opening.`}</p>
+          <p className="font-mono break-all">{linkIdentity(pendingLink)?.domain}</p>
+          <p className="font-mono break-all">{linkHint(pendingLink)}</p>
+          <div className="flex justify-end gap-4">
+            <button type="button" onClick={() => setPendingLink(null)}>{t`Cancel`}</button>
+            <button
+              type="button"
+              onClick={() => {
+                openLink(pendingLink);
+                setPendingLink(null);
+              }}
+            >{t`Open link`}</button>
+          </div>
+        </Dialog>
+      )}
       {hasQuotes && (
         <button
           type="button"
@@ -175,7 +223,7 @@ export function EmailFrame({
       )}
       {link && (
         <output className="pointer-events-none fixed right-3 bottom-3 left-3 z-50 w-fit max-w-[calc(100%-1.5rem)] rounded border border-black/10 bg-neutral-100 px-2 py-1 font-mono text-[12px] break-all text-neutral-800 shadow dark:border-white/15 dark:bg-neutral-800 dark:text-neutral-100">
-          {link}
+          {linkHint(link)}
         </output>
       )}
     </div>

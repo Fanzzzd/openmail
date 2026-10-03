@@ -330,7 +330,7 @@ function AccountRow({
         <Trans>Remove</Trans>
       </button>
       <AccountControls
-        key={`${a.id}:${a.description}:${a.color}`}
+        key={`${a.id}:${a.description}:${a.color}:${a.imap?.authservId}`}
         account={a}
         accounts={accounts}
         move={move}

@@ -5,7 +5,12 @@ export function accountSettingsInput(
   account: Account,
   change:
     | { kind: "toggle"; enabled: boolean }
-    | { kind: "appearance"; description: string; color: string | null },
+    | {
+        kind: "appearance";
+        description: string;
+        color: string | null;
+        imapAuthservId?: string | null;
+      },
 ): AccountSettings {
   return change.kind === "toggle"
     ? {
@@ -13,7 +18,14 @@ export function accountSettingsInput(
         description: account.description ?? "",
         color: account.color ?? null,
       }
-    : { enabled: account.enabled !== false, description: change.description, color: change.color };
+    : {
+        enabled: account.enabled !== false,
+        description: change.description,
+        color: change.color,
+        ...(account.imap && change.imapAuthservId !== undefined
+          ? { imapAuthservId: change.imapAuthservId }
+          : {}),
+      };
 }
 
 /** Guard rapid clicks before the mutation's pending state reaches React. */

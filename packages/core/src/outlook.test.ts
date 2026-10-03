@@ -245,6 +245,8 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
     // The stale link was not followed after the reset.
     assert.ok(!http.calls.some((c) => c.url.href.includes("old-link")));
     assert.ok(http.calls.every((c) => c.prefer === 'IdType="ImmutableId"'));
+    for (const call of http.calls.filter((c) => c.url.pathname.endsWith("/messages/delta")))
+      assert.ok(!(call.url.searchParams.get("$select") ?? "").includes("internetMessageHeaders"));
   }),
 );
 

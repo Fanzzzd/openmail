@@ -79,10 +79,6 @@ const ContentType = Schema.Struct({
     method: Schema.optionalKey(Schema.String),
   }),
 });
-const SenderHeader = Schema.Struct({
-  value: Schema.Array(Schema.Struct({ address: Schema.optionalKey(Schema.String) })),
-});
-
 /** Malformed events do not hide valid siblings. Parsing never performs a response. */
 export function parseCalendar(
   source: string,
@@ -184,12 +180,8 @@ export const invitesFromRaw = (raw: Uint8Array, includePublished = false) =>
   parseMime(raw, { skipImageLinks: true }).pipe(
     Effect.mapError(() => new ProviderError({ message: "Cannot read calendar invitation" })),
     Effect.map((mail): ParsedInvite[] => {
-      const sender = Schema.decodeUnknownOption(SenderHeader)(mail.headers.get("sender"));
       const sourceAddresses = new Set(
-        [
-          ...(mail.from?.value ?? []),
-          ...(sender._tag === "Some" ? sender.value.value : []),
-        ].flatMap((a) => (a.address ? [a.address.toLowerCase()] : [])),
+        [...(mail.from?.value ?? [])].flatMap((a) => (a.address ? [a.address.toLowerCase()] : [])),
       );
       const unique = new Map<string, ParsedInvite>();
       const add = (source: string, method = "") => {

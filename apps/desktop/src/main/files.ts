@@ -1,3 +1,4 @@
+import { attachmentImportKind } from "@openmail/core/schema";
 import { configurePermissions } from "./security";
 import { WINDOW_SECURITY } from "./security-policy";
 import { quarantine } from "./file-quarantine";
@@ -211,7 +212,7 @@ export const openAttachment: (
 ): Effect.fn.Return<void, FileError> {
   const content = yield* m.attachment(messageId, index);
   const name = safeFilename(content.filename);
-  if (EXECUTABLE.test(name)) {
+  if (EXECUTABLE.test(name) || attachmentImportKind(content) !== null) {
     // Fails here; nothing below runs.
     yield* new DeviceError({
       message: `${name} can run code. Save it and open it yourself if you trust it.`,

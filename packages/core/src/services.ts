@@ -204,7 +204,10 @@ export class Store extends Context.Service<
     readonly media: ReturnType<typeof makeMediaStore>;
 
     // Accounts
-    setAccountSettings(id: string, input: AccountSettings): Effect.Effect<void, NotFound>;
+    setAccountSettings(
+      id: string,
+      input: AccountSettings,
+    ): Effect.Effect<void, NotFound | InvalidInput>;
     moveAccount(id: string, input: AccountPlacement): Effect.Effect<void, NotFound | InvalidInput>;
     rememberNotificationActions(
       id: string,

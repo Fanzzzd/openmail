@@ -1,8 +1,5 @@
-import { constVoid } from "effect/Function";
-import { plural } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { Effect } from "effect";
 import {
+  attachmentImportKind,
   attachmentFilename,
   DEFAULT_PREFS,
   EMPTY_QUOTE_HISTORY,
@@ -10,6 +7,11 @@ import {
   type EmbeddedMessage,
   type ReaderAttachment,
 } from "@openmail/core/schema";
+import { AttachmentImportDialog } from "./AttachmentImportDialog";
+import { constVoid } from "effect/Function";
+import { plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { Effect } from "effect";
 import { useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import {
@@ -110,6 +112,7 @@ export function AttachmentList({
   const pending = useRef<{ key: string; token: symbol } | null>(null);
   const expires = useRef(0);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [imported, setImported] = useState<ReaderAttachment | null>(null);
   const [embedded, setEmbedded] = useState<ReaderAttachment | null>(null);
   const [share, setShare] = useState(false);
   const [ready, setReady] = useState("");
@@ -189,6 +192,13 @@ export function AttachmentList({
   };
   const action = (kind: AttachmentAction, targets: readonly ReaderAttachment[]) => {
     if (!targets.length) return;
+    if (kind === "open" || kind === "preview") {
+      const special = targets.find((file) => attachmentImportKind(file) !== null);
+      if (special) {
+        setImported(special);
+        return;
+      }
+    }
     run(
       withMail((call) =>
         call("AttachmentAction", {
@@ -246,6 +256,14 @@ export function AttachmentList({
   };
   return (
     <div className="pt-3">
+      {imported && (
+        <AttachmentImportDialog
+          key={pathKey(imported.path)}
+          messageId={messageId}
+          file={imported}
+          onClose={() => setImported(null)}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-2">
         {files.map((file) => {
           const Icon = iconFor(file.mimeType, file.filename);

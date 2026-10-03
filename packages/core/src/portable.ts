@@ -116,3 +116,4 @@ export { stripMobileForms } from "./platform/react-native/reader-html.js";
 
 export * from "./platform/mail-socket.js";
 export { makeMobileImap } from "./platform/react-native/imap.js";
+export * from "./attachment-import.js";

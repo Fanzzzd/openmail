@@ -443,6 +443,7 @@ export function makeComposeStore(
         ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
         remoteImages: pref(Schema.Boolean, stored.get("remoteImages"), false),
+        cleanLinks: pref(Schema.Boolean, stored.get("cleanLinks"), true),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         replyFrom: pref(f.replyFrom, stored.get("replyFrom"), d.replyFrom),
         quoteSelection: pref(f.quoteSelection, stored.get("quoteSelection"), d.quoteSelection),

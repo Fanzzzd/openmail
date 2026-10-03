@@ -13,6 +13,7 @@ import { ComposeRecipients, WindowSelection } from "./window-state";
  * what crosses the boundary and errors arrive with their tag intact.
  */
 import {
+  AttachmentInspection,
   AttachmentPath,
   ReaderAttachment,
   EmbeddedMessage,
@@ -296,6 +297,15 @@ export class MailRpcs extends RpcGroup.make(
   /** Adds or removes an address or a domain on the remote image allowlist. */
   Rpc.make("SetImageSender", { payload: { entry: Schema.String, allowed: Schema.Boolean } }),
   Rpc.make("AttachmentCapabilities", { success: Schema.Struct({ share: Schema.Boolean }) }),
+  Rpc.make("ImportCalendarAttachment", {
+    payload: { messageId: Schema.String, path: AttachmentPath, key: Schema.String },
+    error,
+  }),
+  Rpc.make("InspectAttachment", {
+    payload: { messageId: Schema.String, path: AttachmentPath },
+    success: AttachmentInspection,
+    error,
+  }),
   Rpc.make("ReaderAttachments", {
     payload: { messageId: Schema.String },
     success: Schema.Array(ReaderAttachment),
@@ -636,6 +646,11 @@ export class MailRpcs extends RpcGroup.make(
   // Desktop system integration. No provider or database access in these handlers.
   Rpc.make("NativeEdit", { payload: { action: Schema.Literals(["undo", "selectAll"]) } }),
   Rpc.make("NewWindow"),
+  Rpc.make("Unsubscribe", { payload: { messageId: Schema.String }, error }),
+  Rpc.make("OpenMailLink", {
+    payload: { url: Schema.String.check(Schema.isMaxLength(100_000)) },
+    error,
+  }),
   Rpc.make("ComposeNew"),
   Rpc.make("OpenSettings"),
   Rpc.make("SwitchWindow", {

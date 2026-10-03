@@ -123,7 +123,7 @@ it("locks navigation, redirects, webviews and title changes for every app window
   }
 });
 
-it("retains the existing external popup route and never creates a popup window", () => {
+it("denies popup links so they cannot bypass reader confirmation", () => {
   const win = new BrowserWindow({ show: false });
   lockNavigation(win);
   const handler = vi.mocked(win.webContents).setWindowOpenHandler.mock.calls[0]?.[0];
@@ -139,8 +139,7 @@ it("retains the existing external popup route and never creates a popup window",
         referrer: { url: "", policy: "default" },
       }),
     ).toEqual({ action: "deny" });
-    if (url.startsWith("javascript:")) expect(vi.mocked(shell).openExternal.mock.calls).toEqual([]);
-    else expect(vi.mocked(shell).openExternal.mock.calls).toEqual([[new URL(url).href]]);
+    expect(vi.mocked(shell).openExternal.mock.calls).toEqual([]);
   }
 });
 

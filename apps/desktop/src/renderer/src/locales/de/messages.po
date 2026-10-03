@@ -300,11 +300,13 @@ msgstr "Stern hinzufügen"
 msgid "Add this event to your calendar?"
 msgstr "Diese Veranstaltung zu Ihrem Kalender hinzufügen?"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Add to calendar"
 msgstr "Zum Kalender hinzufügen"
 
 #: src/renderer/src/components/AppleContactActions.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Add to Contacts"
 msgstr "Zu Kontakte hinzufügen"
 
@@ -853,6 +855,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -860,6 +863,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
@@ -1027,6 +1031,7 @@ msgid "Click in this window, then choose a device to take a photo, scan a docume
 msgstr "Klicke in dieses Fenster und wähle ein Gerät, um ein Foto aufzunehmen, ein Dokument zu scannen oder eine Skizze hinzuzufügen."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
@@ -1152,6 +1157,7 @@ msgstr "Der Kontaktvorgang ist fehlgeschlagen."
 msgid "Content matches"
 msgstr "Inhaltsübereinstimmungen"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
 #: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "Fortfahren"
@@ -1228,6 +1234,10 @@ msgstr "Die Grammatik konnte auf diesem Mac nicht geprüft werden."
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Winmail.dat konnte nicht dekodiert werden. Sie können die Originaldatei speichern."
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Could not import this attachment."
+msgstr "Dieser Anhang konnte nicht importiert werden."
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Could not load Apple Contacts. Try refreshing."
@@ -2446,6 +2456,10 @@ msgstr "Letzte"
 msgid "Layout"
 msgstr "Layout"
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Leave blank unless your mail administrator provides a trusted authserv-id. The IMAP server name is not a trust setting."
+msgstr "Leer lassen, sofern Ihr Mailadministrator keine vertrauenswürdige authserv-id angibt. Der IMAP-Servername legt kein Vertrauen fest."
+
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Left long swipe"
 msgstr "Langes Wischen nach links"
@@ -2515,6 +2529,7 @@ msgstr "Einstellungen werden geladen…"
 msgid "Loading the original from the server…"
 msgstr "Laden des Originals vom Server…"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Laden…"
@@ -3268,6 +3283,10 @@ msgstr "In Outlook öffnen"
 msgid "Open in web mail"
 msgstr "In Webmail öffnen"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open link"
+msgstr "Link öffnen"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Open macOS notification settings"
 msgstr "macOS-Mitteilungseinstellungen öffnen"
@@ -3287,6 +3306,10 @@ msgstr "Systemeinstellungen öffnen"
 #: src/renderer/src/errors.ts
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Diese Einladung vor dem Antworten im Kalender öffnen und hinzufügen"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Open this link?"
+msgstr "Diesen Link öffnen?"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open With…"
@@ -3721,6 +3744,10 @@ msgstr "Diesen Account und seine lokal gespeicherten Nachrichten aus openmail en
 msgid "Remove token"
 msgstr "Token entfernen"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remove tracking parameters from links"
+msgstr "Tracking-Parameter aus Links entfernen"
+
 #: src/renderer/src/App.tsx
 msgid "Removed star"
 msgstr "Stern entfernt"
@@ -3828,6 +3855,10 @@ msgstr "Lokalen Cache zurücksetzen"
 msgid "Reset toolbar"
 msgstr "Symbolleiste zurücksetzen"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Respond to this invitation from the message."
+msgstr "Beantworten Sie diese Einladung in der Nachricht."
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Wiederherstellen"
@@ -3865,13 +3896,25 @@ msgstr "Zurücksetzen"
 msgid "Review AI suggestions"
 msgstr "KI-Vorschläge prüfen"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Review an unsubscribe email before sending?"
+msgstr "Abmelde-E-Mail vor dem Senden prüfen?"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Review and Send"
 msgstr "Überprüfen und senden"
 
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the contacts before adding them."
+msgstr "Prüfen Sie die Kontakte vor dem Hinzufügen."
+
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Review the event details before confirming."
 msgstr "Überprüfen Sie die Veranstaltungsdetails, bevor Sie sie bestätigen."
+
+#: src/renderer/src/components/AttachmentImportDialog.tsx
+msgid "Review the events before adding them."
+msgstr "Prüfen Sie die Termine vor dem Hinzufügen."
 
 #: src/renderer/src/components/Feedback.tsx
 msgid "Review the local diagnostics below. Nothing is uploaded. Continue opens an email draft that you review and send from your own account."
@@ -4108,6 +4151,10 @@ msgstr "Senden"
 msgid "Send Again"
 msgstr "Erneut senden"
 
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Send an unsubscribe request to this address?"
+msgstr "Eine Abmeldeanfrage an diese Adresse senden?"
+
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Send and archive"
@@ -4144,6 +4191,10 @@ msgstr "Konversationslink senden an…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Send web mail link to…"
 msgstr "Webmail-Link senden an…"
+
+#: src/renderer/src/components/Reader.tsx
+msgid "Sender authentication failed (DMARC)"
+msgstr "Absenderauthentifizierung fehlgeschlagen (DMARC)"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"
@@ -4672,6 +4723,10 @@ msgstr "Die Datenbankintegritätsprüfung (quick_check) ist fehlgeschlagen oder 
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Die Datenbank wurde beibehalten. Beenden Sie OpenMail und stellen Sie ein lokales Backup wieder her oder wenden Sie sich an den Support."
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "The displayed link may hide its destination. Check the real domain before opening."
+msgstr "Der angezeigte Link kann sein Ziel verbergen. Prüfen Sie vor dem Öffnen die tatsächliche Domain."
+
 #: src/renderer/src/errors.ts
 msgid "The end must be after the start"
 msgstr "Das Ende muss nach dem Anfang liegen"
@@ -4715,6 +4770,10 @@ msgstr "Der Rest bleibt hier außen vor. Durch Kopieren wird die gesamte Nachric
 #: src/renderer/src/errors.ts
 msgid "The selected message is no longer available."
 msgstr "Die ausgewählte Nachricht ist nicht mehr verfügbar."
+
+#: src/renderer/src/components/Reader.tsx
+msgid "The sender name contains a different email address."
+msgstr "Der Absendername enthält eine andere E-Mail-Adresse."
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."
@@ -4893,6 +4952,10 @@ msgstr "Papierkorb"
 msgid "Triage runs while the app is in the foreground or on AC power. Suggestions require your approval. Reply needed adds a star when accepted."
 msgstr "Sortiervorschläge werden erstellt, wenn die App im Vordergrund ist oder das Gerät am Stromnetz hängt. Vorschläge erfordern Ihre Zustimmung. Wenn Sie Antwort erforderlich akzeptieren, wird ein Stern hinzugefügt."
 
+#: src/renderer/src/components/AccountControls.tsx
+msgid "Trusted authentication service (optional)"
+msgstr "Vertrauenswürdiger Authentifizierungsdienst (optional)"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Dienstag"
@@ -4977,6 +5040,18 @@ msgstr "Stern entfernen"
 #: src/renderer/src/components/Reader.tsx
 msgid "Unstar message"
 msgstr "Stern von Nachricht entfernen"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe"
+msgstr "Abmelden"
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe failed. Try again later."
+msgstr "Abmeldung fehlgeschlagen. Versuchen Sie es später erneut."
+
+#: src/renderer/src/components/UnsubscribeButton.tsx
+msgid "Unsubscribe?"
+msgstr "Abmelden?"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"

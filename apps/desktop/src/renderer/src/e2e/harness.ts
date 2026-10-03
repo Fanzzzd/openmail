@@ -266,6 +266,10 @@ export async function flow(
       SuggestContacts: ({ query, exclude, accountIds }) =>
         m.suggestContacts(query, { exclude, accountIds }),
       ContactAlternatives: ({ address }) => m.contactAlternatives(address),
+      ImportCalendarAttachment: unsupported,
+      InspectAttachment: unsupported,
+      Unsubscribe: unsupported,
+      OpenMailLink: unsupported,
       ComposeNew: () =>
         PubSub.publish(desktop, { _tag: "Command", command: "compose" }).pipe(Effect.asVoid),
       ComposeMessage: (input) =>

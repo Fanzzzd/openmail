@@ -247,7 +247,7 @@ function Invitation({
           </div>
         )}
       </dl>
-      {provider === "imap" && invite.organizerMismatch && (
+      {invite.organizerMismatch && (
         <p role="alert" className="text-orange-700 dark:text-orange-400">
           <Trans>
             The organizer differs from the message sender. Check the response recipient before

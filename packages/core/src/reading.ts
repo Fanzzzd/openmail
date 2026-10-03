@@ -1,3 +1,4 @@
+import { cleanDisplayName } from "./message-security.js";
 /**
  * Reading rules shared by every surface: when an open thread counts as read,
  * which senders may load remote images, how a thread is ordered, and how raw
@@ -10,9 +11,10 @@ import type { Address, MarkReadDelay, Provider } from "./domain.js";
 
 /** Only contacts, the account itself, and people previously mailed count as known. */
 export function senderLabel(sender: Address, known: boolean): string {
-  return sender.name && !known && sender.name !== sender.address
-    ? `${sender.name} <${sender.address}>`
-    : sender.name || sender.address;
+  const name = cleanDisplayName(sender.name);
+  return name && !known && name !== sender.address
+    ? `${name} <${sender.address}>`
+    : name || sender.address;
 }
 
 export function threadExpansion(ids: readonly string[], expanded: boolean): Set<string> {

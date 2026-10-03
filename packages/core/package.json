@@ -38,6 +38,8 @@
     "@napi-rs/keyring": "^2.1.0",
     "@noble/hashes": "^2.4.0",
     "buffer": "^6.0.3",
+    "color-string": "2.1.4",
+    "css-select": "7.0.0",
     "effect": "4.0.0-rc.118",
     "htmlparser2": "^10.1.0",
     "ical.js": "^2.2.1",
@@ -48,14 +50,17 @@
     "onnxruntime-node": "1.30.0",
     "pdfjs-dist": "6.3.289",
     "postal-mime": "4.0.2",
+    "punycode.js": "2.3.1",
     "semver": "^7.8.5",
-    "sqlite-vec": "0.1.9"
+    "sqlite-vec": "0.1.9",
+    "tldts": "7.4.16"
   },
   "devDependencies": {
     "@effect/vitest": "4.0.0-rc.118",
     "@types/mailparser": "^3.4.6",
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^22.20.4",
+    "@types/punycode.js": "npm:@types/punycode@2.1.4",
     "@types/semver": "^7.8.0",
     "typescript": "catalog:",
     "vitest": "^5.0.2"

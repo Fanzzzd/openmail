@@ -54,3 +54,10 @@ export * from "./ai.js";
 export * from "./update-state.js";
 export * from "./compose-ai.js";
 export * from "./apple-contacts.js";
+
+export * from "./message-security.js";
+export * from "./visible-text.js";
+
+export * from "./link-security.js";
+
+export * from "./attachment-import.js";

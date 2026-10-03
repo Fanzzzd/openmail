@@ -735,7 +735,8 @@ const compactThread = (row: ThreadSummary): ThreadSummary => ({
   ...row,
   subject: shortText(row.subject),
   from: { ...row.from, name: shortText(row.from.name) },
-  snippet: shortText(row.snippet),
+  // Provider previews can include invisible HTML or a conflicting plain alternative.
+  snippet: "",
   participants: row.participants.slice(0, 10).map((a) => ({ ...a, name: shortText(a.name) })),
   labels: row.labels.slice(0, 30),
   ...(row.attachmentNames

@@ -1,3 +1,4 @@
+import { cleanDisplayName, messageSecurity } from "./message-security.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { categoryKey, mergeCategoryNames } from "./categories.js";
@@ -99,7 +100,9 @@ const SKIPPED = [
 
 const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients,internetMessageHeaders";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients";
+// Header selection is supported on ordinary message GETs, not requested from delta.
+const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
 const PAGE_SIZE = 50;
 const CONCURRENCY = 6;
 
@@ -718,7 +721,7 @@ export const makeOutlook: Effect.Effect<
                           : yield* get(
                               account.id,
                               GraphMessage,
-                              `/me/messages/${encodeURIComponent(item.id)}?$select=${SELECT}`,
+                              `/me/messages/${encodeURIComponent(item.id)}?$select=${MESSAGE_SELECT}`,
                             ).pipe(
                               Effect.map(Option.some),
                               Effect.catchIf(is404, () => Effect.succeed(Option.none())),
@@ -1238,7 +1241,7 @@ export const makeOutlook: Effect.Effect<
       const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
       const kql = graphSearch(query);
       const params = new URLSearchParams({
-        $select: `${SELECT},parentFolderId`,
+        $select: `${MESSAGE_SELECT},parentFolderId`,
         $top: "100",
       });
       const messageId = parseSearchQuery(query).criteria?.rfcMessageId;
@@ -1333,7 +1336,7 @@ export const makeOutlook: Effect.Effect<
       const raw = yield* get(
         account.id,
         GraphMessage,
-        `/me/messages/${encodeURIComponent(id)}?$select=${SELECT},parentFolderId`,
+        `/me/messages/${encodeURIComponent(id)}?$select=${MESSAGE_SELECT},parentFolderId`,
       );
       const label = yield* messageLabel(account, raw);
       const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, id) : [];
@@ -1637,7 +1640,10 @@ const checkAttachmentSize = (message: OutgoingMessage) => {
 };
 
 function address(a: GraphAddress | null | undefined): Address {
-  return { name: a?.emailAddress?.name ?? "", address: a?.emailAddress?.address ?? "" };
+  return {
+    name: cleanDisplayName(a?.emailAddress?.name ?? ""),
+    address: a?.emailAddress?.address ?? "",
+  };
 }
 
 export function parseGraphMessage(
@@ -1673,6 +1679,8 @@ export function parseGraphMessage(
     snippet: raw.bodyPreview ?? "",
     bodyText: text,
     bodyHtml: html,
+    // Graph header order is not used to establish authentication trust.
+    security: messageSecurity([], "outlook"),
     ...(/eventMessage/i.test(raw["@odata.type"] ?? "") ? { hasCalendar: true } : {}),
     labels,
     attachments,

@@ -1,4 +1,7 @@
 import { readOnlyAdapter, READ_ONLY_MESSAGE } from "./read-only.js";
+import { inspectAttachment } from "./attachment-import.js";
+import { eventFromInvite, makeFeatureMailbox } from "./mailbox-features.js";
+import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
 import { Buffer } from "./platform/bytes.js";
 import { destination as outlookDestination } from "./outlook.js";
@@ -116,7 +119,6 @@ import {
   Store,
   type StoredDraft,
 } from "./services.js";
-import { makeFeatureMailbox } from "./mailbox-features.js";
 import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
@@ -228,6 +230,7 @@ export const MailboxLive = (
       const codec = yield* MailCodec;
       const files = yield* AttachmentFiles;
       const network = yield* ImageNetwork;
+      const unsubscribeNetwork = yield* UnsubscribeNetwork;
       const verifier = yield* AppVerifier;
       const parseRawDraft = (...args: Parameters<typeof unboundParseRawDraft>) =>
         unboundParseRawDraft(...args).pipe(Effect.provideService(MailCodec, codec));
@@ -2165,6 +2168,67 @@ export const MailboxLive = (
           }
         }).pipe(outboxLock.withPermits(1));
       mailbox = Mailbox.of({
+        importCalendarAttachment: (messageId, path, key, actor) =>
+          Effect.gen(function* () {
+            if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
+            if (actor.kind !== "user" || actor.surface !== "app")
+              return yield* new InvalidInput({
+                message: "Calendar import requires confirmation in the app",
+              });
+            const message = yield* store.getMessage(messageId);
+            const account = yield* store.getAccount(message.accountId);
+            const adapter = providers.get(account.provider);
+            if (
+              account.enabled === false ||
+              account.provider === "imap" ||
+              !adapter.createCalendarEvent
+            )
+              return yield* new InvalidInput({
+                message: "Calendar access is unavailable for this account",
+              });
+            const inspection = inspectAttachment(yield* mailbox.attachmentPart(messageId, path));
+            const invite =
+              inspection?.kind === "calendar"
+                ? inspection.invites.find((i) => i.key === key && i.method === "PUBLISH")
+                : undefined;
+            const event = invite ? eventFromInvite(invite) : null;
+            if (!event)
+              return yield* new InvalidInput({ message: "This event cannot be imported" });
+            yield* adapter.createCalendarEvent(account, event);
+            yield* store.audit({
+              actor,
+              accountId: account.id,
+              action: "calendar_import",
+              detail: { messageId, key },
+            });
+            yield* changed;
+            return yield* Effect.void;
+          }),
+        unsubscribe: (messageId, actor) =>
+          Effect.gen(function* () {
+            if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
+            if (actor.kind !== "user" || actor.surface !== "app")
+              return yield* new InvalidInput({
+                message: "Unsubscribe requires confirmation in the app",
+              });
+            const message = yield* store.getMessage(messageId);
+            const target = message.security?.unsubscribe;
+            if (target?.kind !== "post")
+              return yield* new InvalidInput({
+                message: "No verified one-click unsubscribe target",
+              });
+            const account = yield* store.getAccount(message.accountId);
+            if (account.enabled === false)
+              return yield* new InvalidInput({ message: "Enable this account to unsubscribe" });
+            yield* unsubscribeNetwork.post(target.url);
+            yield* store.audit({
+              actor,
+              accountId: account.id,
+              action: "unsubscribe",
+              detail: { messageId },
+            });
+            return yield* Effect.void;
+          }),
         queuedSends: store.queuedSends,
         queueSend,
         cancelQueuedSend,

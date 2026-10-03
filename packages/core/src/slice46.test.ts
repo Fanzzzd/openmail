@@ -77,6 +77,15 @@ it.effect(
           .pipe(Effect.result))._tag,
         "Failure",
       );
+      for (const action of [
+        mailbox.unsubscribe(`${account.id}/one`, actor),
+        mailbox.importCalendarAttachment(`${account.id}/one`, [0], "event", actor),
+      ]) {
+        const result = yield* action.pipe(Effect.result);
+        assert.strictEqual(result._tag, "Failure");
+        if (result._tag === "Failure")
+          assert.strictEqual(result.failure.message, READ_ONLY_MESSAGE);
+      }
       yield* store.putQueuedSend({
         id: "old-send",
         accountId: account.id,

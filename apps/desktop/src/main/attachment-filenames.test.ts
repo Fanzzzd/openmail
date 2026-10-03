@@ -25,6 +25,9 @@ it("blocks macOS launchers and configuration files alongside executables", () =>
     "jar",
     "exe",
     "sh",
+    ..."html htm xhtml svg shtml mht mhtml iso img cdr sparseimage sparsebundle vhd docm xlsm pptm dotm xlam jnlp desktop appimage deb rpm run bundle plugin kext xpc ics vcf".split(
+      " ",
+    ),
   ])
     expect(EXECUTABLE.test(`file.${ext}`)).toBe(true);
 });

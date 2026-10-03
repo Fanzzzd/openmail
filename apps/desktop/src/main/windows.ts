@@ -11,8 +11,6 @@ import { randomUUID } from "node:crypto";
 import type { ComposeRecipients, SavedWindow, WindowSelection } from "../shared/window-state";
 import { visibleBounds, windowStateFile } from "./window-state";
 
-import { openExternal } from "./external";
-import { externalUrl } from "../shared/external-url";
 import { APP_PAGE, developmentPage, readerWindowTitle, WINDOW_SECURITY } from "./security-policy";
 import { trustRenderer } from "./security";
 
@@ -28,16 +26,8 @@ export function lockNavigation(win: BrowserWindow, kind: SavedWindow["kind"] = "
     event.preventDefault();
     if (kind === "thread" || kind === "message") win.setTitle(readerWindowTitle(title));
   });
-  // The message iframe is sandboxed with `allow-popups` and a `_blank` base
-  // target, so every link click lands here.
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    const target = externalUrl(url);
-    if (target)
-      void openExternal(target).catch(() => {
-        /* Browser launch failure is non-fatal. */
-      });
-    return { action: "deny" };
-  });
+  // Reader links are intercepted by the parent and reviewed through OpenMailLink.
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("will-navigate", (event) => event.preventDefault());
   win.webContents.on("will-redirect", (event) => event.preventDefault());
   win.webContents.on("will-attach-webview", (event) => event.preventDefault());

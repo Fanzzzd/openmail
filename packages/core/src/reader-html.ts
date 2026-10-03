@@ -58,6 +58,55 @@ const attributeText = (value: string) => {
 };
 const attributeUrl = (value: string) => value.replaceAll("&", "&amp;");
 
+/** CSS escapes are decoded before deciding whether a URL or declaration is concealed. */
+export function decodeCssEscapes(value: string): string {
+  return value.replace(/\\([0-9a-f]{1,6}\s?|.)/gi, (_whole, escaped: string) => {
+    const hex = /^[0-9a-f]{1,6}\s?$/i.test(escaped) ? parseInt(escaped.trim(), 16) : null;
+    return hex === null
+      ? escaped
+      : hex > 0 && hex <= 0x10ffff
+        ? String.fromCodePoint(hex)
+        : "\uFFFD";
+  });
+}
+
+/** Strings at the top level of image-set are resources; nested type() strings are MIME types. */
+function rewriteImageSets(text: string, resource: (value: string) => string): string {
+  let out = "";
+  let cursor = 0;
+  for (const match of text.matchAll(/(?:-webkit-)?image-set\s*\(/gi)) {
+    if (match.index < cursor) continue;
+    let i = match.index + match[0].length;
+    out += text.slice(cursor, i);
+    let depth = 1;
+    while (i < text.length && depth > 0) {
+      const character = text[i];
+      if (character === '"' || character === "'") {
+        const start = ++i;
+        while (i < text.length && text[i] !== character) {
+          if (text[i] === "\\") i++;
+          i++;
+        }
+        const value = text.slice(start, i);
+        const next = depth === 1 ? resource(value) : value;
+        out +=
+          character +
+          (next === value
+            ? value
+            : next.replaceAll("\\", "\\\\").replaceAll(character, `\\${character}`));
+        if (i < text.length) out += character;
+      } else {
+        if (character === "(") depth++;
+        if (character === ")") depth--;
+        out += character;
+      }
+      i++;
+    }
+    cursor = i;
+  }
+  return out + text.slice(cursor);
+}
+
 export function prepareMessageHtml(html: string, options: PrepareOptions = {}): PreparedHtml {
   const trackers: string[] = [];
   let pixels = 0;
@@ -99,7 +148,8 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
 
   /** A resource URL as it should load: removed for trackers, inlined for cid:, else unchanged. */
   const resource = (url: string, attribute = false): string => {
-    const trimmed = absolute(url, attribute).trim();
+    const decodedCss = attribute ? url : decodeCssEscapes(url);
+    const trimmed = absolute(decodedCss, attribute).trim();
     if (/^cid:/i.test(trimmed)) {
       try {
         const id = decodeURIComponent(trimmed.slice(4)).replace(/^<|>$/g, "");
@@ -132,15 +182,23 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
 
   const css = (text: string, attribute = false) => {
     const source = attribute ? attributeText(text) : text;
-    const result = source.replace(CSS_URL, (whole, quote: string, url: string) => {
-      const next = resource(url);
-      if (next === url) return whole;
-      const quoted = quote || (/['"()\s]/u.test(next) ? '"' : "");
-      const escaped = quoted
-        ? next.replaceAll("\\", "\\\\").replaceAll(quoted, `\\${quoted}`)
-        : next;
-      return `url(${quoted}${escaped}${quoted})`;
-    });
+    const imported = source.replace(
+      /(@import\s+)(['"])(.*?)\2/gi,
+      (_whole, prefix: string, quote: string, url: string) =>
+        `${prefix}${quote}${resource(url)}${quote}`,
+    );
+    const result = rewriteImageSets(imported, resource).replace(
+      CSS_URL,
+      (whole, quote: string, url: string) => {
+        const next = resource(url);
+        if (next === url) return whole;
+        const quoted = quote || (/['"()\s]/u.test(next) ? '"' : "");
+        const escaped = quoted
+          ? next.replaceAll("\\", "\\\\").replaceAll(quoted, `\\${quoted}`)
+          : next;
+        return `url(${quoted}${escaped}${quoted})`;
+      },
+    );
     if (source === result) return text;
     return attribute ? attributeUrl(result) : result;
   };
@@ -165,6 +223,14 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
       parsed.push([m[1] ?? "", m[2] === undefined ? undefined : unquote(m[2])]);
     }
     const get = (key: string) => parsed.find(([k]) => k.toLowerCase() === key)?.[1];
+
+    if (
+      tag === "link" &&
+      attributeText(get("rel") ?? "")
+        .trim()
+        .toLowerCase() !== "stylesheet"
+    )
+      return "";
 
     // Tracker images go away whole, so no broken-image icon is left behind.
     // An image of one pixel or less from an unlisted remote host is an open

@@ -133,7 +133,7 @@ export const CalendarInvite = Schema.Struct({
   /** RFC 5545 rules/dates, rendered without expanding an unbounded series. */
   recurrence: Schema.Array(Schema.String),
   recurrenceId: Schema.NullOr(CalendarTime),
-  /** Derived from the MIME From and Sender, never from the invitation's own claim. */
+  /** Derived from the MIME From, never from the invitation's own claim. */
   organizerMismatch: Schema.optionalKey(Schema.Boolean),
   /** IMAP identity matched against addresses the user has already configured. */
   responseAddress: Schema.optionalKey(Address),

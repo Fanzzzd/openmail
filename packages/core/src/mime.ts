@@ -1,3 +1,4 @@
+import { visibleHtmlText } from "./visible-text.js";
 import { Buffer } from "./platform/bytes.js";
 import { Result } from "effect";
 
@@ -60,7 +61,8 @@ function parseAddress(raw: string): Address {
     name: match[1]!
       .trim()
       .replace(/^"|"$/g, "")
-      .replace(/\\(["\\])/g, "$1"),
+      .replace(/\\(["\\])/g, "$1")
+      .replace(/\p{Cf}/gu, ""),
     address: match[2]!.trim(),
   };
 }
@@ -71,19 +73,7 @@ export function charsetOf(contentType: string | undefined): string | undefined {
 
 /** Last-resort plain text for HTML-only mail, so search and the CLI still see the words. */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, "")
-    .replace(/<br\s*\/?>|<\/(p|div|tr|li|h\d)>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return visibleHtmlText(html).text;
 }
 
 const META_CHARSET = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';

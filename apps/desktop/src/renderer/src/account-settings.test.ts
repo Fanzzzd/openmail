@@ -55,3 +55,31 @@ it("rapid moves stay blocked until the first request finishes, including failed 
   await runAccountMove(lock, () => Promise.resolve());
   expect(lock.current).toBe(false);
 });
+
+it("IMAP trust edits are saved explicitly while toggles preserve the stored setting", () => {
+  const imap: Account = {
+    ...account,
+    provider: "imap",
+    imap: {
+      preset: "fastmail",
+      username: account.email,
+      imapHost: "imap.fastmail.com",
+      imapPort: 993,
+      smtpHost: "smtp.fastmail.com",
+      smtpPort: 465,
+      smtpSecure: true,
+      authservId: "mx1.messagingengine.com",
+    },
+  };
+  expect(accountSettingsInput(imap, { kind: "toggle", enabled: false })).not.toHaveProperty(
+    "imapAuthservId",
+  );
+  expect(
+    accountSettingsInput(imap, {
+      kind: "appearance",
+      description: "Mail",
+      color: null,
+      imapAuthservId: null,
+    }).imapAuthservId,
+  ).toBe(null);
+});

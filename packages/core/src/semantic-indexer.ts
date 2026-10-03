@@ -1,3 +1,4 @@
+import { messageModelText } from "./visible-text.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
 import type { IndexerInput } from "./indexer.js";
@@ -67,7 +68,10 @@ export const makeSemanticIndexer = Effect.fn("makeSemanticIndexer")(function* (
           const process = Effect.gen(function* () {
             const message = yield* input.message(job.value.message_id);
             const items: VectorItem[] = [];
-            for (const chunk of textChunks(message.bodyText, 256))
+            for (const chunk of textChunks(
+              messageModelText(message.bodyText, message.bodyHtml).text,
+              256,
+            ))
               yield* passage(
                 {
                   messageId: message.id,

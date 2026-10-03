@@ -41,24 +41,29 @@ export function decide(command: Command, actor: Actor, mode: AgentWriteMode): De
       };
     return { status: "proposed" };
   }
-  if (actor.surface === "rule" && actor.name === "openmail-assistant") {
-    return command.kind === "removeAccount"
-      ? { status: "denied", reason: "Agents cannot remove accounts." }
-      : { status: "proposed" };
+  switch (actor.surface) {
+    case "rule":
+    case "assistant":
+      break;
+    default:
+      return { status: "denied", reason: "Unknown agent surface." };
   }
   switch (command.kind) {
+    case "modify":
+      if (!["archive", "read", "star", "label", "trash", "inbox", "move"].includes(command.op.kind))
+        return { status: "denied", reason: "Unsupported agent operation." };
+      break;
+    case "snooze":
     case "send":
     case "draft":
-      return { status: "proposed" };
-    case "removeAccount":
-      return { status: "denied", reason: "Agents cannot remove accounts." };
+      break;
     default:
-      if (mode === "allow") return { status: "applied" };
-      if (mode === "propose") return { status: "proposed" };
-      return {
-        status: "denied",
-        reason:
-          "Changing mail is turned off for agents. The person can turn it on in openmail under Settings > AI 权限.",
-      };
+      return { status: "denied", reason: "Unsupported agent command." };
   }
+  if (actor.surface === "assistant" || actor.name === "openmail-assistant")
+    return { status: "proposed" };
+  if (command.kind === "send" || command.kind === "draft") return { status: "proposed" };
+  if (mode === "allow") return { status: "applied" };
+  if (mode === "propose") return { status: "proposed" };
+  return { status: "denied", reason: "Changing mail is turned off for agents." };
 }

@@ -483,6 +483,8 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "messages_word_positions",
     "derived_word_positions",
     "messages_words",
+    "messages_word_positions",
+    "derived_word_positions",
     "derived_words",
     "search_word_index",
     "search_word_rows",

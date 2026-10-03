@@ -1,3 +1,4 @@
+import { messageSecurity } from "../../message-security.js";
 import { MailCodec } from "../mail-codec.js";
 import {
   encodeProviderId,
@@ -331,6 +332,7 @@ export function toIncoming(
   parsed: ParsedMail,
   meta: {
     providerId: string;
+    authservId?: string | null;
     label: string;
     flags: Set<string> | undefined;
     internalDate?: Date | string | undefined;
@@ -366,6 +368,14 @@ export function toIncoming(
     snippet: text.replace(/\s+/g, " ").trim().slice(0, 200),
     bodyText: text,
     bodyHtml: html,
+    security: messageSecurity(
+      parsed.headerLines.map((h) => ({
+        name: h.key,
+        value: h.line.slice(h.line.indexOf(":") + 1).trim(),
+      })),
+      "imap",
+      meta.authservId,
+    ),
     ...(parsed.attachments.some(
       (a) => a.contentType === "text/calendar" || /\.ics$/i.test(a.filename ?? ""),
     )
@@ -442,6 +452,7 @@ export const fetchMessages = Effect.fnUntraced(function* (
             uid: m.uid,
             flags: flagsOf(m.flags),
             message: toIncoming(parsed, {
+              authservId: s.settings.authservId,
               providerId: encodeProviderId(folder.path, uidValidity, m.uid),
               label: folder.label,
               flags: m.flags,

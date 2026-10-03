@@ -27,6 +27,14 @@ export function ReadingSettings() {
 
   return (
     <div className="space-y-6">
+      <label htmlFor="clean-mail-links" className="flex items-center gap-2">
+        <Checkbox
+          id="clean-mail-links"
+          checked={prefs?.cleanLinks !== false}
+          onCheckedChange={(cleanLinks) => setPrefs({ cleanLinks })}
+        />
+        <Trans>Remove tracking parameters from links</Trans>
+      </label>
       <label htmlFor="show-account-labels" className="flex items-center gap-2">
         <Checkbox
           id="show-account-labels"

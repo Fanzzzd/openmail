@@ -1,3 +1,4 @@
+import { attachmentImportKind } from "@openmail/core/schema";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -45,8 +46,12 @@ const prepared = new WeakMap<BrowserWindow, Map<string, Prepared>>();
 const slotOf = (request: { messageId: string; listId?: string }) =>
   request.listId ?? request.messageId;
 const countResult = (count: number): AttachmentActionResult => ({ count, failures: [] });
-const blocked = (parts: readonly { filename: string }[]) => {
-  const file = parts.find((part) => EXECUTABLE.test(safeFilename(part.filename)));
+const blocked = (parts: readonly { filename: string; mimeType?: string }[]) => {
+  const file = parts.find(
+    (part) =>
+      EXECUTABLE.test(safeFilename(part.filename)) ||
+      attachmentImportKind({ filename: part.filename, mimeType: part.mimeType ?? "" }) !== null,
+  );
   return file
     ? Effect.fail(
         new DeviceError({

@@ -7,12 +7,16 @@ import { databaseLayer, MIGRATIONS, splitStatements } from "../../../../dist/pla
 import { NodeSystem } from "../../../../dist/platform/node/platform-node.js";
 
 if (process.argv[3] === "hold") {
-  const checkpoint = splitStatements(MIGRATIONS.at(-1) ?? "")[0];
   // The saved method always receives its owning connection through .call.
   // oxlint-disable-next-line typescript/unbound-method
   const prepare = DatabaseSync.prototype.prepare;
+  const statement = splitStatements(MIGRATIONS.at(-1) ?? "")[0]
+    ?.trim()
+    .replace(/;$/, "");
+  let held = false;
   DatabaseSync.prototype.prepare = function (sql) {
-    if (sql === checkpoint) {
+    if (!held && statement && sql.trimStart().startsWith(statement)) {
+      held = true;
       writeSync(1, "migration-lock-held\n");
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 6500);
     }

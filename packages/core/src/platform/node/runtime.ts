@@ -1,3 +1,5 @@
+import { UnsubscribeNetwork } from "../../unsubscribe.js";
+import { postUnsubscribe } from "./unsubscribe.js";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
 import { PlatformCrypto } from "../crypto.js";
@@ -29,6 +31,7 @@ export const NodeRuntime = Layer.mergeAll(
   }),
   Layer.succeed(MailCodec, nodeMailCodec),
   Layer.succeed(AttachmentFiles, { open: (directory) => new PersistentAttachments(directory) }),
+  Layer.succeed(UnsubscribeNetwork, { post: postUnsubscribe }),
   Layer.succeed(ImageNetwork, { download: downloadRemoteImage }),
   Layer.succeed(PdfWorker, { extract: pdfText }),
   Layer.succeed(AppVerifier, { verify: isSignedMacApp }),

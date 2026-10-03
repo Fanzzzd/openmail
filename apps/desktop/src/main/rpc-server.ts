@@ -1,3 +1,6 @@
+import { inspectAttachment, InvalidInput, cleanLink, parseAppLink } from "@openmail/core/schema";
+import { externalUrl } from "../shared/external-url";
+import { receiveAppUrl, Desktop } from "./system";
 import { checkNativeGrammar, nativeComposeCapabilities, pickNativeImages } from "./native-compose";
 import { shareMessageLink } from "./share-message-link";
 import { openExternal } from "./external";
@@ -40,7 +43,6 @@ import {
   saveMessage,
 } from "./files";
 import { openMeeting } from "./meeting";
-import { Desktop } from "./system";
 import {
   createMainWindow,
   openThreadWindow,
@@ -152,8 +154,23 @@ const Handlers = MailRpcs.toLayer(
       ContactPhoto: ({ accountId, address }) => apple.photo(accountId, address),
       SaveMessage: ({ id }, { client }) => saveMessage(m, windowOf(client.id), id),
       OpenMessageWeb: ({ id }) =>
-        m.messageWebUrl(id).pipe(Effect.flatMap((url) => Effect.promise(() => openExternal(url)))),
+        Effect.gen(function* () {
+          const prefs = yield* m.prefs;
+          const url = yield* m.messageWebUrl(id);
+          yield* Effect.promise(() => openExternal(url, prefs.cleanLinks !== false));
+        }),
       SearchSender: ({ address }) => desktop.search(senderSearchQuery(address)),
+      ImportCalendarAttachment: ({ messageId, path, key }) =>
+        m.importCalendarAttachment(messageId, path, key, { kind: "user", surface: "app" }),
+      InspectAttachment: ({ messageId, path }) =>
+        m.attachmentPart(messageId, path).pipe(
+          Effect.flatMap((content) => {
+            const inspection = inspectAttachment(content);
+            return inspection
+              ? Effect.succeed(inspection)
+              : Effect.fail(new InvalidInput({ message: "This attachment cannot be imported" }));
+          }),
+        ),
       AttachmentCapabilities: () => Effect.succeed({ share: process.platform === "darwin" }),
       ReleaseAttachmentDrag: (request, { client }) =>
         releaseAttachmentDrag(windowOf(client.id), request),
@@ -174,7 +191,8 @@ const Handlers = MailRpcs.toLayer(
         Effect.sync(() => {
           openMessageWindow(id);
         }),
-      OpenMeeting: ({ url }) => openMeeting(url),
+      OpenMeeting: ({ url }) =>
+        m.prefs.pipe(Effect.flatMap((prefs) => openMeeting(url, prefs.cleanLinks !== false))),
       UpdateState: () => Effect.sync(currentUpdateState),
       CheckForUpdates: ({ download }) => checkForUpdateState(m, download),
       NativeComposeCapabilities: () => Effect.sync(() => nativeComposeCapabilities()),
@@ -201,6 +219,20 @@ const Handlers = MailRpcs.toLayer(
       ContactAlternatives: ({ address }) => apple.alternatives(address),
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
       ClipboardText: () => Effect.promise(() => clipboard.readText()),
+      Unsubscribe: ({ messageId }) => m.unsubscribe(messageId, { kind: "user", surface: "app" }),
+      OpenMailLink: ({ url }) =>
+        Effect.gen(function* () {
+          const target = externalUrl(url);
+          if (!target) return;
+          if (new URL(target).protocol === "mailto:") {
+            if (parseAppLink(target)?.kind === "compose") receiveAppUrl(target);
+            return;
+          }
+          const prefs = yield* m.prefs;
+          yield* Effect.promise(() =>
+            openExternal(cleanLink(target, prefs.cleanLinks !== false), false),
+          );
+        }),
       ComposeNew: () => desktop.compose(),
       ComposeMessage: (input) => desktop.composeMessage({ _tag: "ComposeMessage", ...input }),
       OpenSettings: () => desktop.openSettings(),

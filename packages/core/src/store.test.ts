@@ -971,3 +971,36 @@ it.effect(
       }
     }).pipe(Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
+
+it.effect("stores provider authentication without changing the FTS row identity", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const { id } = yield* store.upsertAccount("gmail", "me@example.com");
+      yield* store.upsertMessage(
+        id,
+        message({ from: { name: "Ali\u202ece", address: "alice@example.com" } }),
+      );
+      const messageId = `${id}/m1`;
+      const before = yield* sql`SELECT rowid FROM messages WHERE id=${messageId}`;
+      const security = { dmarc: "fail", spf: "pass", dkim: "fail" } as const;
+      const headers = [{ name: "List-Id", value: "Orders <orders.example.com>" }];
+      yield* store.upsertMessage(id, message({ security, headers }));
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).headers, headers);
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).security, security);
+      assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${messageId}`, before);
+      yield* store.upsertMessage(id, message({}));
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).security, security);
+      const pass = { dmarc: "pass", spf: "pass", dkim: "pass" } as const;
+      yield* store.upsertMessage(id, message({ security: pass }));
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).security, pass);
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).headers, headers);
+      const changedHeaders = [{ name: "List-Id", value: "Updates <updates.example.com>" }];
+      yield* store.upsertMessage(id, message({ headers: changedHeaders }));
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).headers, changedHeaders);
+      assert.deepStrictEqual((yield* store.getMessage(messageId)).security, pass);
+      assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${messageId}`, before);
+    }),
+  ),
+);
