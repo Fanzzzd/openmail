@@ -84,6 +84,7 @@ const DEVICE_REASONS: Record<string, MessageDescriptor> = {
   "no printers are available.": msg`no printers are available.`,
   "the operation failed.": OPERATION_FAILED,
 };
+export const OAUTH_CONFIGURATION_ERROR = msg`OAuth client not configured. Set it up before syncing.`;
 const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 
 /**
@@ -111,9 +112,11 @@ export function errorText(i18n: I18n, error: AppError): string {
     },
     PermanentError: () => i18n._(msg`The server refused this action.`),
     ProviderError: (e) =>
-      e.message === "Remote writes are disabled in this read-only session"
-        ? i18n._(msg`Remote writes are disabled in this read-only session`)
-        : i18n._(msg`Can't reach the mail server right now.`),
+      e.reason === "configuration"
+        ? i18n._(OAUTH_CONFIGURATION_ERROR)
+        : e.message === "Remote writes are disabled in this read-only session"
+          ? i18n._(msg`Remote writes are disabled in this read-only session`)
+          : i18n._(msg`Can't reach the mail server right now.`),
     InvalidInput: (e) => {
       const message = INPUT_ERRORS[e.message];
       return message

@@ -553,3 +553,22 @@ it.effect(
       ],
     ),
 );
+
+it.effect("draft status treats missing local drafts as absence and never imports message ids", () =>
+  withMail((mailbox, gmail) =>
+    Effect.gen(function* () {
+      const id = "draft:optional-status";
+      assert.strictEqual(yield* mailbox.draftStatus(id), null);
+      assert.strictEqual(yield* mailbox.draftStatus(`${GMAIL}/remote`), null);
+      assert.deepStrictEqual(gmail.bodyFetched, []);
+      assert.deepStrictEqual(gmail.draftLog, []);
+      const saved = yield* mailbox.saveDraft({ id, accountId: GMAIL, message: draftMessage() });
+      assert.deepStrictEqual(yield* mailbox.draftStatus(id), saved);
+      yield* mailbox.discardDraft(id);
+      assert.strictEqual(yield* mailbox.draftStatus(id), null);
+      const missing = yield* mailbox.openDraft(id).pipe(Effect.flip);
+      assert.strictEqual(missing._tag, "NotFound");
+      if (missing._tag === "NotFound") assert.strictEqual(missing.what, "draft");
+    }),
+  ),
+);

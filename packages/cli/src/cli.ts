@@ -23,15 +23,12 @@ import {
   Console,
   Data,
   Effect,
-  Fiber,
   Layer,
   Logger,
   Option,
   Redacted,
-  Ref,
   Runtime,
   Schema,
-  Stdio,
   Stream,
 } from "effect";
 import { Tool } from "effect/ai";
@@ -47,6 +44,7 @@ import {
   syncTable,
 } from "./format.js";
 import { runMcp } from "./mcp-server.js";
+import { withProgress } from "./sync-progress.js";
 import { CliBrowser } from "./open-url.js";
 
 const CLI: Actor = { kind: "user", surface: "cli" };
@@ -65,37 +63,6 @@ const jsonFlag = Flag.Boolean("json").pipe(
 
 const print = <A>(data: A, asJson: boolean, human: (data: A) => string) =>
   Console.log(asJson ? JSON.stringify(data, null, 2) : human(data));
-
-/** Writes `text` to stderr as is (no newline), for a progress line redrawn with `\r`. */
-const writeStderr = (text: string) =>
-  Effect.gen(function* () {
-    const stdio = yield* Stdio.Stdio;
-    yield* Stream.run(Stream.make(text), stdio.stderr());
-  }).pipe(Effect.ignore);
-
-/** Shows sync progress on stderr while `effect` runs. */
-const withProgress = <A, E, R>(effect: Effect.Effect<A, E, R>, show: boolean) =>
-  Effect.gen(function* () {
-    if (!show) return yield* effect;
-    const mailbox = yield* Mailbox;
-    const shown = yield* Ref.make(false);
-    const progress = yield* mailbox.events.pipe(
-      Stream.runForEach((e) =>
-        e._tag === "SyncProgress"
-          ? Ref.set(shown, true).pipe(
-              Effect.andThen(
-                writeStderr(`\r${e.progress.accountId} ${e.progress.fetched}/${e.progress.total}`),
-              ),
-            )
-          : Effect.void,
-      ),
-      Effect.forkChild,
-    );
-    const result = yield* effect;
-    yield* Fiber.interrupt(progress);
-    if (yield* Ref.get(shown)) yield* writeStderr("\n");
-    return result;
-  });
 
 // config
 
@@ -707,6 +674,7 @@ Command.run(openmail, { version: "0.1.0" }).pipe(
       NodeMailbox({
         browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
         backgroundFlush: false,
+        beforeCredentialRead: Console.error("Reading credentials from the keychain…"),
       }),
       NodeServices.layer,
     ),

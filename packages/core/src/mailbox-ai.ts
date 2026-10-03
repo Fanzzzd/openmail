@@ -270,8 +270,17 @@ export function makeAiMailbox(
       if (!settings.some((a) => a.accountId === accountId && a.autoTriage))
         yield* new InvalidInput({ message: "Automatic triage is disabled." });
     });
+  const enabled = (id: string, triage = false) =>
+    Effect.gen(function* () {
+      const messages = yield* store.getThread(id);
+      const settings = yield* store.ai.accounts;
+      return settings.some(
+        (a) => a.accountId === messages[0]?.accountId && a.allowed && (!triage || a.autoTriage),
+      );
+    });
   const aiTriage = (id: string) =>
     Effect.gen(function* () {
+      if (!(yield* enabled(id, true))) return null;
       const value = yield* input(id, "triage");
       yield* triageConsent(value.accountId);
       const row = yield* store.ai.triage(value.threadId);
@@ -690,7 +699,10 @@ export function makeAiMailbox(
       }),
     setAiModel: (name: import("./ai.js").AiModelName) =>
       Effect.andThen(cancel, Effect.andThen(store.ai.setModel(name), changed)).pipe(Effect.asVoid),
-    aiSummary: (id: string) => Effect.flatMap(input(id), cached),
+    aiSummary: (id: string) =>
+      Effect.flatMap(enabled(id), (allowed) =>
+        allowed ? Effect.flatMap(input(id), cached) : Effect.succeed(null),
+      ),
     summarize,
     askAi,
     composeAi,

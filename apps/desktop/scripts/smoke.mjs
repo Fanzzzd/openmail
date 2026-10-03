@@ -1,3 +1,4 @@
+import { smokeClickExpression, isBlockedSmokeImage } from "./smoke-ui.mjs";
 import { spawn } from "node:child_process";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,7 +12,8 @@ const { values } = parseArgs({
   options: {
     db: { type: "string" },
     port: { type: "string" },
-    timeout: { type: "string", default: "60000" },
+    timeout: { type: "string", default: "180000" },
+    keep: { type: "boolean", default: false },
   },
 });
 const timeout = Number(values.timeout);
@@ -35,9 +37,11 @@ await new Promise((resolve) => {
 });
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid --port");
 const directory = await mkdtemp(join(tmpdir(), "openmail-smoke-"));
+if (values.keep) process.stderr.write(`Smoke directory: ${directory}\n`);
 const report = {
   readOnly: true,
   copiedDatabase: !!values.db,
+  ...(values.keep ? { directory } : {}),
   steps: [],
   consoleErrors: [],
   exceptions: [],
@@ -45,7 +49,13 @@ const report = {
   failure: "",
 };
 let child, socket;
-const cleanup = createSmokeCleanup({ directory, child: () => child, socket: () => socket });
+let uiReady = false;
+const cleanup = createSmokeCleanup({
+  directory,
+  keepDirectory: values.keep,
+  child: () => child,
+  socket: () => socket,
+});
 const pending = new Map();
 let sequence = 0;
 const deadline = Date.now() + timeout;
@@ -53,15 +63,23 @@ const delay = () =>
   new Promise((resolve) => {
     setTimeout(resolve, 100);
   });
-async function until(action) {
+function step(value) {
+  report.steps.push(value);
+  process.stderr.write(`Smoke step: ${value.step} (${value.status})\n`);
+}
+async function until(action, condition = String(action).slice(0, 200)) {
   while (Date.now() < deadline) {
     if (child && (child.exitCode !== null || child.signalCode !== null))
       throw new Error(`Preview exited: ${child.exitCode ?? child.signalCode}`);
+    if (uiReady && (await dismissFirstRunPrompts())) {
+      await delay();
+      continue;
+    }
     const result = await action();
     if (result) return result;
     await delay();
   }
-  throw new Error("Smoke timeout");
+  throw new Error(`Smoke timeout while waiting for ${condition}`);
 }
 function send(method, params = {}) {
   const id = ++sequence;
@@ -95,12 +113,28 @@ async function evaluate(expression) {
   if (result.exceptionDetails) throw new Error("Smoke UI evaluation failed");
   return result.result?.value;
 }
+const dismissFirstRunPrompts = () =>
+  evaluate(`(() => {
+      const dialogs = [...document.querySelectorAll('[role="dialog"]')];
+      for (const dialog of dialogs) {
+        if (dialog.textContent.includes('Create Personal and Work profiles?')) {
+          const skip = [...dialog.querySelectorAll('button')].find(button => button.textContent.trim() === 'Skip');
+          if (skip && !skip.disabled) skip.click();
+          return true;
+        }
+      }
+      return false;
+    })()`);
 const present = (selector) => evaluate(`!!document.querySelector(${JSON.stringify(selector)})`);
-async function click(selector, ready) {
-  await until(() => evaluate(`!!document.querySelector(${JSON.stringify(selector)})`));
-  await evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
-  if (ready) await until(() => evaluate(`!!document.querySelector(${JSON.stringify(ready)})`));
+async function click(selector, ready, retry = false) {
+  await until(
+    () => evaluate(smokeClickExpression(selector, retry ? ready : undefined)),
+    ready && retry ? `click ${selector} and find ${ready}` : `click ${selector}`,
+  );
+  if (ready && !retry)
+    await until(() => present(ready), `find ${ready} after clicking ${selector}`);
 }
+
 try {
   const snapshot = prepareSmokeDatabase(values.db, directory);
   child = spawn(
@@ -110,8 +144,8 @@ try {
       "electron-vite",
       "preview",
       "--skipBuild",
-      `--remote-debugging-port=${port}`,
       "--",
+      `--remote-debugging-port=${port}`,
       `--user-data-dir=${directory}`,
       "--enable-automation",
     ],
@@ -186,22 +220,12 @@ try {
         .join(" ")
         .slice(0, 2000);
       if (text.startsWith("OPENMAIL_SMOKE_IPC:")) report.ipcRejections.push(text.slice(19));
-      else if (
-        !(
-          contexts.get(params.executionContextId) === "about:srcdoc" &&
-          /Refused to load.*image.*Content Security Policy/i.test(text)
-        )
-      )
+      else if (!isBlockedSmokeImage(contexts.get(params.executionContextId), text))
         report.consoleErrors.push(text);
     }
     if (message.method === "Log.entryAdded" && params.entry.level === "error") {
       const entry = params.entry;
-      if (
-        !(
-          entry.url === "about:srcdoc" &&
-          /Refused to load.*image.*Content Security Policy/i.test(entry.text)
-        )
-      )
+      if (!isBlockedSmokeImage(entry.url, entry.text))
         report.consoleErrors.push(entry.text.slice(0, 2000));
     }
   });
@@ -218,20 +242,23 @@ try {
   await send("Page.addScriptToEvaluateOnNewDocument", {
     source: `if (window.top === window && window.openmailRpc) window.openmailRpc.onFrame(frame => {
     try { const frames = JSON.parse(frame); for (const response of Array.isArray(frames) ? frames : [frames]) {
-      if (response._tag === 'Defect' || response._tag === 'ClientProtocolError' || (response._tag === 'Exit' && response.exit?._tag === 'Failure' && !response.exit.cause?.every(cause => cause._tag === 'Interrupt'))) console.error('OPENMAIL_SMOKE_IPC:' + response._tag);
+      if (response._tag === 'Defect' || response._tag === 'ClientProtocolError' || (response._tag === 'Exit' && response.exit?._tag === 'Failure' && !response.exit.cause?.every(cause => cause._tag === 'Interrupt'))) console.error('OPENMAIL_SMOKE_IPC:' + JSON.stringify(response).slice(0, 1000));
     }} catch { console.error('OPENMAIL_SMOKE_IPC:Invalid frame'); }
   });`,
   });
   await send("Page.reload");
   await until(() => evaluate('!!document.querySelector("aside")'));
-  report.steps.push({ step: "main-window", status: "passed" });
+  step({ step: "main-window", status: "passed" });
+  uiReady = true;
+  await until(async () => !(await dismissFirstRunPrompts()));
+  step({ step: "first-run-prompts", status: "passed" });
   if (snapshot.accounts) await until(() => present('[role="listbox"][aria-busy="false"]'));
   const first = await evaluate('!!document.querySelector("[data-id][role=option]")');
   if (first) {
-    await click('[data-id][role="option"]', 'article[aria-label="Selected message"]');
-    report.steps.push({ step: "first-thread", status: "passed" });
+    await click('[data-id][role="option"]', 'article[aria-label="Selected message"]', true);
+    step({ step: "first-thread", status: "passed" });
   } else
-    report.steps.push({
+    step({
       step: "first-thread",
       status: "skipped",
       reason: "No cached inbox threads",
@@ -239,7 +266,7 @@ try {
   const accounts = snapshot.accounts > 0;
   if (accounts) {
     await click('aside button[aria-label="New message"]', "[data-compose]");
-    report.steps.push({ step: "composer", status: "passed" });
+    step({ step: "composer", status: "passed" });
     await send("Input.dispatchKeyEvent", {
       type: "keyDown",
       key: "Escape",
@@ -253,12 +280,11 @@ try {
       windowsVirtualKeyCode: 27,
     });
     await until(() => evaluate('!document.querySelector("[data-compose]")'));
-  } else report.steps.push({ step: "composer", status: "skipped", reason: "No account" });
+  } else step({ step: "composer", status: "skipped", reason: "No account" });
   if (snapshot.accounts) {
     await click('aside button[aria-label="Settings"]', '[role="dialog"][aria-label="Settings"]');
-    report.steps.push({ step: "settings", status: "passed" });
-  } else
-    report.steps.push({ step: "settings", status: "skipped", reason: "Account setup is open" });
+    step({ step: "settings", status: "passed" });
+  } else step({ step: "settings", status: "skipped", reason: "Account setup is open" });
   await new Promise((resolve) => {
     setTimeout(resolve, 500);
   });
@@ -266,6 +292,7 @@ try {
   report.failure = error instanceof Error ? error.message : String(error);
 } finally {
   await cleanup();
+  if (values.keep) process.stderr.write(`Smoke directory kept: ${directory}\n`);
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   if (
     report.failure ||

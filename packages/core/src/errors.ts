@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
 /**
- * The provider rejected the stored credentials or lacks a scope. The account
+ * The provider rejected the stored credentials after token refresh. The account
  * is marked as needing a new sign-in and its queue pauses until then.
  */
 export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
@@ -22,6 +22,7 @@ export class PermanentError extends Schema.TaggedError<PermanentError>()("Perman
 export class ProviderError extends Schema.TaggedError<ProviderError>()("ProviderError", {
   message: Schema.String,
   status: Schema.optionalKey(Schema.Number),
+  reason: Schema.optionalKey(Schema.Literal("configuration")),
 }) {}
 
 /** No OAuth client is registered for this provider yet. The app shows the setup step. */

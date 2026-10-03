@@ -10,21 +10,31 @@ import { Secrets } from "../../services.js";
 const SERVICE = "openmail";
 export { MODEL_KEY } from "../../secrets.js";
 
-export const SecretsKeyring: Layer.Layer<Secrets> = Layer.succeed(
-  Secrets,
-  Secrets.of({
-    get: Effect.fn("Secrets.get")((key: string) =>
-      Effect.promise((signal) => new AsyncEntry(SERVICE, key).getPassword(signal)).pipe(
-        Effect.map(Option.fromNullishOr),
+export const makeSecretsKeyring = (
+  beforeRead: Effect.Effect<void> = Effect.void,
+): Layer.Layer<Secrets> =>
+  Layer.succeed(
+    Secrets,
+    Secrets.of({
+      get: Effect.fn("Secrets.get")((key: string) =>
+        beforeRead.pipe(
+          Effect.andThen(
+            Effect.promise((signal) => new AsyncEntry(SERVICE, key).getPassword(signal)),
+          ),
+          Effect.map(Option.fromNullishOr),
+          // Layer acquisition masks interruption; a native permission prompt must remain cancellable.
+          Effect.interruptible,
+        ),
       ),
-    ),
-    set: Effect.fn("Secrets.set")((key: string, value: string) =>
-      Effect.promise((signal) => new AsyncEntry(SERVICE, key).setPassword(value, signal)),
-    ),
-    remove: Effect.fn("Secrets.remove")((key: string) =>
-      Effect.asVoid(
-        Effect.promise((signal) => new AsyncEntry(SERVICE, key).deletePassword(signal)),
+      set: Effect.fn("Secrets.set")((key: string, value: string) =>
+        Effect.promise((signal) => new AsyncEntry(SERVICE, key).setPassword(value, signal)),
       ),
-    ),
-  }),
-);
+      remove: Effect.fn("Secrets.remove")((key: string) =>
+        Effect.asVoid(
+          Effect.promise((signal) => new AsyncEntry(SERVICE, key).deletePassword(signal)),
+        ),
+      ),
+    }),
+  );
+
+export const SecretsKeyring = makeSecretsKeyring();

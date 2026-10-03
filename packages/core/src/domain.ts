@@ -199,6 +199,8 @@ export const Message = Schema.Struct({
   /** Calendar MIME part or provider meeting message; absent on older cached mail. */
   hasCalendar: Schema.optionalKey(Schema.Boolean),
   bodyCached: Schema.optionalKey(Schema.Boolean),
+  /** Read-time cache fallback; never persisted or supplied by the provider. */
+  bodyRefresh: Schema.optionalKey(Schema.Literal("failed")),
   attachments: Schema.Array(Attachment),
   /**
    * The local draft this message is the provider's copy of. It outlives the

@@ -5,15 +5,17 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-for (const [signal, expected] of [
-  ["SIGINT", 130],
-  ["SIGTERM", 143],
-  ["SIGHUP", 129],
-  ["normal", 0],
-  ["normal", 37],
-  ["SIGTERM", 37],
+for (const [signal, expected, keep] of [
+  ["SIGINT", 130, false],
+  ["SIGTERM", 143, false],
+  ["SIGHUP", 129, false],
+  ["normal", 0, false],
+  ["normal", 37, false],
+  ["SIGTERM", 37, false],
+  ["normal", 0, true],
+  ["SIGTERM", 143, true],
 ] as const) {
-  it(`smoke ${signal} removes temp data, closes CDP, kills its child and preserves exit ${expected}`, async () => {
+  it(`smoke ${signal} ${keep ? "keeps" : "removes"} temp data, closes CDP, kills its child and preserves exit ${expected}`, async () => {
     const directory = await mkdtemp(join(tmpdir(), "openmail-signal-test-"));
     const worker = spawn(
       process.execPath,
@@ -22,6 +24,7 @@ for (const [signal, expected] of [
         directory,
         signal,
         expected === 37 ? "37" : "",
+        keep ? "keep" : "",
       ],
       { stdio: ["ignore", "pipe", "pipe"] },
     );
@@ -42,7 +45,9 @@ for (const [signal, expected] of [
       if (signal !== "normal") worker.kill(signal);
       expect(await finished, errors).toBe(expected);
       expect(output.match(/socket-closed/g)).toHaveLength(1);
-      await expect(access(directory)).rejects.toThrow();
+      await (keep
+        ? expect(access(directory)).resolves.toBeUndefined()
+        : expect(access(directory)).rejects.toThrow());
       const pid = Number(/child:(\d+)/.exec(output)?.[1]);
       expect(() => process.kill(pid, 0)).toThrow();
     } finally {

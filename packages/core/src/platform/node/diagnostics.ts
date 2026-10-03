@@ -1,3 +1,5 @@
+import { ProviderDiagnostic } from "../../provider-diagnostics.js";
+export { ProviderDiagnostic } from "../../provider-diagnostics.js";
 import {
   databaseQuickCheck,
   rebuildCorruptDatabase,
@@ -28,6 +30,9 @@ const DiagnosticEvent = Schema.Literals([
   "integrity-failed",
   "runtime-error",
   "runtime-warning",
+  "provider-failure",
+  "rpc-auth-failure",
+  "rpc-failure",
 ]);
 export type DiagnosticEvent = typeof DiagnosticEvent.Type;
 const Crash = Schema.Struct({
@@ -57,11 +62,34 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
     "account" in fields && typeof fields.account === "string"
       ? createHash("sha256").update(fields.account.toLowerCase()).digest("hex").slice(0, 16)
       : undefined;
+  const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(data);
+  const isRpcFailure = event === "rpc-failure" || event === "rpc-auth-failure";
+  const rpc =
+    isRpcFailure &&
+    "rpc" in fields &&
+    typeof fields.rpc === "string" &&
+    /^[A-Z][A-Za-z0-9]{0,127}$/.test(fields.rpc)
+      ? fields.rpc
+      : undefined;
+  if (isRpcFailure) return { at, event, ...(rpc === undefined ? {} : { rpc }) };
   return {
     at,
     event: decoded._tag === "Some" ? decoded.value : "runtime-error",
     ...(code === undefined ? {} : { code }),
     ...(account === undefined ? {} : { accountHash: account }),
+    ...(provider._tag === "Some"
+      ? {
+          _tag: provider.value._tag,
+          provider: provider.value.provider,
+          method: provider.value.method,
+          endpoint: provider.value.endpoint,
+          ...(provider.value.status === undefined ? {} : { status: provider.value.status }),
+          ...(provider.value.failure === undefined ? {} : { failure: provider.value.failure }),
+          accountHash: /^[a-f0-9]{16}$/.test(provider.value.accountHash)
+            ? provider.value.accountHash
+            : undefined,
+        }
+      : {}),
   };
 }
 

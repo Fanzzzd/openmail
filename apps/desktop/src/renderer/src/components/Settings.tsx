@@ -10,7 +10,7 @@ import { AsyncResult } from "effect/reactivity";
 import { useRef, useState } from "react";
 
 import type { Account, AgentWriteMode, Language } from "../../../shared/api";
-import { resultError } from "../errors";
+import { resultError, OAUTH_CONFIGURATION_ERROR } from "../errors";
 import { Keys, MAIL_KEYS } from "../state/keys";
 import {
   reauthAtom,
@@ -19,7 +19,13 @@ import {
   setPrefsAtom,
   moveAccountAtom,
 } from "../state/mutations";
-import { agentModeAtom, auditAtom, prefsAtom, profilesAtom } from "../state/queries";
+import {
+  agentModeAtom,
+  auditAtom,
+  prefsAtom,
+  profilesAtom,
+  clientSetupAtom,
+} from "../state/queries";
 import { runAccountMove } from "../account-settings";
 import { AccountControls } from "./AccountControls";
 import { accountName } from "../format";
@@ -283,15 +289,25 @@ function AccountRow({
   const [reauth, runReauth] = useAtom(reauthAtom(a.id));
   const [remove, runRemove] = useAtom(removeAccountAtom(a.id));
   const email = a.email;
+  const setup = AsyncResult.getOrElse(useAtomValue(clientSetupAtom), () => null);
+  const missingClient =
+    setup &&
+    ((a.provider === "gmail" && !setup.googleConfigured) ||
+      (a.provider === "outlook" && !setup.microsoftConfigured));
 
   const status =
     a.enabled === false
       ? { text: t`Disabled`, className: "text-a11y-muted" }
-      : a.needsReauth
-        ? { text: t`Needs sign-in`, className: "text-a11y-danger" }
-        : a.lastSyncError
-          ? { text: t`Last sync failed`, className: "text-orange-700 dark:text-orange-400" }
-          : { text: t`Syncing normally`, className: "text-a11y-muted" };
+      : missingClient
+        ? {
+            text: i18n._(OAUTH_CONFIGURATION_ERROR),
+            className: "text-orange-700 dark:text-orange-400",
+          }
+        : a.needsReauth
+          ? { text: t`Needs sign-in`, className: "text-a11y-danger" }
+          : a.lastSyncError
+            ? { text: t`Last sync failed`, className: "text-orange-700 dark:text-orange-400" }
+            : { text: t`Syncing normally`, className: "text-a11y-muted" };
 
   return (
     <li

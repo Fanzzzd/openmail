@@ -252,3 +252,82 @@ it("keeps the fixed read-only session error across RPC without exposing provider
     expect(JSON.stringify(publicRpcResponse(response))).toContain(message);
   }
 });
+
+it("logs the RPC tag for every failure and separates clients, terminal responses and disconnects", async () => {
+  const { createRpcFailureTracker } = await import("./rpc-security");
+  const recorded: string[] = [];
+  const tracker = createRpcFailureTracker((tag) => recorded.push(tag));
+  const request = (tag: string) =>
+    decodeRpcFrame(
+      JSON.stringify({
+        _tag: "Request",
+        id: "57",
+        tag,
+        payload: { token: "private-token", accountId: "private@example.com" },
+        headers: [],
+      }),
+    ) ?? [];
+  const failure = (tag: string): RpcMessage.FromServerEncoded => ({
+    _tag: "Exit",
+    requestId: "57",
+    exit: {
+      _tag: "Failure",
+      cause: [
+        {
+          _tag: "Fail",
+          error: {
+            _tag: tag,
+            message: "private-token",
+            accountId: "private@example.com",
+            feature: "contacts",
+          },
+        },
+      ],
+    },
+  });
+  tracker.request(1, request("RefreshContacts"));
+  tracker.request(2, request("ReaderAttachments"));
+  tracker.response(1, failure("FeatureScopeMissing"));
+  tracker.response(2, failure("AuthError"));
+  tracker.response(2, failure("AuthError"));
+  expect(recorded).toEqual(["RefreshContacts", "ReaderAttachments"]);
+  tracker.request(1, request("InlineImages"));
+  tracker.disconnect(1);
+  tracker.response(1, failure("AuthError"));
+  expect(recorded).toEqual(["RefreshContacts", "ReaderAttachments"]);
+  tracker.request(1, request("private-token"));
+  tracker.response(1, failure("AuthError"));
+  expect(recorded).toEqual(["RefreshContacts", "ReaderAttachments"]);
+});
+
+it("RPC diagnostics include NotFound, validation failures and defects without recording payloads or normal interruptions", async () => {
+  const { createRpcFailureTracker } = await import("./rpc-security");
+  const recorded: string[] = [];
+  const tracker = createRpcFailureTracker((tag) => recorded.push(tag));
+  const request = (id: number) =>
+    decodeRpcFrame(
+      JSON.stringify({
+        _tag: "Request",
+        id,
+        tag: "OpenDraft",
+        payload: { id: "draft:private-uuid", token: "private-token" },
+        headers: [],
+      }),
+    ) ?? [];
+  const causes = [
+    [
+      {
+        _tag: "Fail" as const,
+        error: { _tag: "NotFound", what: "message", id: "draft:private-uuid" },
+      },
+    ],
+    [{ _tag: "Fail" as const, error: { _tag: "InvalidInput", message: "private-token" } }],
+    [{ _tag: "Die" as const, defect: { message: "private-token", stack: "private stack" } }],
+    [{ _tag: "Interrupt" as const, fiberId: 123 }],
+  ];
+  for (const [id, cause] of causes.entries()) {
+    tracker.request(1, request(id));
+    tracker.response(1, { _tag: "Exit", requestId: id, exit: { _tag: "Failure", cause } });
+  }
+  expect(recorded).toEqual(["OpenDraft", "OpenDraft", "OpenDraft"]);
+});

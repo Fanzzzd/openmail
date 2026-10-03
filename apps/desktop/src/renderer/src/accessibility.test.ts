@@ -145,6 +145,7 @@ vi.mock("./state/mail", () => ({
     ),
   syncNow: Effect.void,
   openDraft: () => Effect.void,
+  draftStatus: () => Effect.succeed(null),
   openThreadWindow: () => Effect.void,
   openMessageWindow: () => Effect.void,
   printThread: () => Effect.void,
@@ -899,4 +900,56 @@ it("only announces entering and clearing sync failure, with a stable status role
   view.rerender(sidebar({ running: false, errors: [], lastFinishedAt: 361000 }));
   expect(status.textContent).toBe("Syncing normally");
   expect(within(footer).queryByRole("alert")).toBeNull();
+});
+
+it("a failed body refresh preserves the reader and cached preview with a non-blocking status", () => {
+  fixture.values.set("threadAtom", [
+    {
+      ...message,
+      bodyText: "",
+      bodyHtml: "",
+      bodyCached: false,
+      bodyRefresh: "failed",
+      snippet: "Cached preview while offline",
+    },
+  ]);
+  render(
+    localized(
+      h(Reader, {
+        renderToolbar: () => null,
+        messageId: message.id,
+        threadKey: message.threadId,
+        query: "",
+        onQuery: vi.fn(),
+        searchRef: createRef<HTMLInputElement>(),
+        onEditDraft: vi.fn(),
+        notify: vi.fn(),
+        onSelectMessage: vi.fn(),
+        onMarkUnread: vi.fn(),
+        onActionDone: vi.fn(),
+        onComposeMessage: vi.fn(),
+      }),
+    ),
+  );
+  expect(screen.getByRole("article", { name: "Selected message" }).textContent).toContain(
+    "Cached preview while offline",
+  );
+  expect(
+    screen.getByText("Message text could not be refreshed. Showing the cached version.").tagName,
+  ).toBe("OUTPUT");
+});
+
+it("existing accounts without an OAuth registration show the configuration state", () => {
+  fixture.values.set("clientSetupAtom", { googleConfigured: false, microsoftConfigured: false });
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "accounts",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  expect(screen.getByText("OAuth client not configured. Set it up before syncing.")).toBeTruthy();
 });

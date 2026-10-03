@@ -5,7 +5,7 @@ import { checkNativeGrammar, nativeComposeCapabilities, pickNativeImages } from 
 import { shareMessageLink } from "./share-message-link";
 import { openExternal } from "./external";
 import { trustedSender } from "./security";
-import { decodeRpcFrame, publicRpcResponse } from "./rpc-security";
+import { decodeRpcFrame, publicRpcResponse, createRpcFailureTracker } from "./rpc-security";
 import { mailboxHandlers } from "../shared/mailbox-handlers";
 import { desktopAppleContacts } from "./apple-contacts";
 import { currentUpdateState } from "./update-state";
@@ -17,7 +17,7 @@ import {
   releaseAttachmentDrag,
 } from "./attachment-actions";
 import { clipboardAttachments } from "./clipboard-attachments";
-import { diagnosticsPreview, hasCrashReport, dismissCrashReport } from "./reliability";
+import { diagnosticsPreview, hasCrashReport, dismissCrashReport, localLog } from "./reliability";
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
 import { becomeDefaultClient, defaultClientStatus } from "./default-client";
@@ -72,6 +72,10 @@ const ElectronProtocol = Layer.effect(
       Effect.fnUntraced(function* (writeRequest) {
         const disconnects = yield* Queue.make<number>();
         const clients = new Set<number>();
+        const failures = createRpcFailureTracker((tag) => {
+          localLog("rpc-failure", { rpc: tag });
+          process.stderr.write(`[rpc-failure] ${tag}\n`);
+        });
         const parser = serialization.makeUnsafe();
         const run = yield* FiberSet.makeRuntime();
 
@@ -84,9 +88,11 @@ const ElectronProtocol = Layer.effect(
             clients.add(client.id);
             client.once("destroyed", () => {
               clients.delete(client.id);
+              failures.disconnect(client.id);
               run(Queue.offer(disconnects, client.id));
             });
           }
+          failures.request(client.id, messages);
           run(
             Effect.forEach(messages, (message) => writeRequest(client.id, message), {
               discard: true,
@@ -100,6 +106,7 @@ const ElectronProtocol = Layer.effect(
           disconnects,
           send: (clientId, response) =>
             Effect.sync(() => {
+              failures.response(clientId, response);
               const frame = parser.encode(publicRpcResponse(response));
               const target = webContents.fromId(clientId);
               if (

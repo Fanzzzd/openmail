@@ -4,6 +4,7 @@ import { rm } from "node:fs/promises";
 /** One cleanup for normal completion, errors and termination signals. */
 export function createSmokeCleanup(options: {
   directory: string;
+  keepDirectory?: boolean;
   child: () => ChildProcess | undefined;
   socket: () => { close(): void } | undefined;
 }) {
@@ -58,7 +59,7 @@ export function createSmokeCleanup(options: {
       kill("SIGKILL");
       await exited;
     }
-    await rm(options.directory, { recursive: true, force: true });
+    if (!options.keepDirectory) await rm(options.directory, { recursive: true, force: true });
     for (const { signal, handler } of handlers) process.off(signal, handler);
   }
   function cleanup() {

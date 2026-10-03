@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
-import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { Cause, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
@@ -556,7 +556,7 @@ it.effect("ops map onto PATCH and move destinations", () =>
   }),
 );
 
-it.effect("403 is an AuthError on reads and writes; 404 on a write is permanent", () =>
+it.effect("403 is a permission failure on reads and writes; 404 on a write is permanent", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "PATCH /me/messages/denied": { status: 403, json: { error: { code: "ErrorAccessDenied" } } },
@@ -570,9 +570,9 @@ it.effect("403 is an AuthError on reads and writes; 404 on a write is permanent"
         Effect.flip(Stream.runDrain(a.pull(account, Option.none()))),
       ]),
     );
-    assert.strictEqual(write._tag, "AuthError");
+    assert.strictEqual(write._tag, "ProviderError");
     assert.strictEqual(gone._tag, "PermanentError");
-    assert.strictEqual(read._tag, "AuthError");
+    assert.strictEqual(read._tag, "ProviderError");
   }),
 );
 
@@ -594,6 +594,115 @@ it.effect("a rejected access token is refreshed and the request retried once", (
     assert.strictEqual(http.calls.filter((c) => c.url.pathname.endsWith("/never")).length, 2);
   }),
 );
+
+it.effect("raw MIME reads refresh a 401 once and classify a second 401 as AuthError", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const http = fakeHttp({
+      "GET /me/messages/raw/$value": () =>
+        ++calls === 1 ? { status: 401 } : { text: "readable MIME" },
+      "GET /me/messages/denied/$value": { status: 401 },
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        assert.strictEqual(
+          new TextDecoder().decode(yield* adapter.fetchRaw(account, "raw")),
+          "readable MIME",
+        );
+        assert.strictEqual(
+          (yield* adapter.fetchRaw(account, "denied").pipe(Effect.flip))._tag,
+          "AuthError",
+        );
+      }),
+    );
+    assert.strictEqual(calls, 2);
+  }),
+);
+
+it.effect(
+  "optional internetMessageHeaders denial falls back to mail reads and remembers the capability",
+  () => {
+    const http = fakeHttp({
+      "GET /me/messages/m1": (url) =>
+        url.searchParams.get("$select")?.includes("internetMessageHeaders")
+          ? { status: 403 }
+          : { json: { ...raw, id: "m1", hasAttachments: false, parentFolderId: "inbox" } },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        for (let i = 0; i < 2; i++)
+          assert.strictEqual((yield* adapter.fetchMessage(account, "m1")).providerId, "m1");
+        const reads = http.calls.filter((call) => call.url.pathname === "/v1.0/me/messages/m1");
+        assert.strictEqual(reads.length, 3);
+        assert.strictEqual(
+          reads.filter((call) =>
+            call.url.searchParams.get("$select")?.includes("internetMessageHeaders"),
+          ).length,
+          1,
+        );
+      }),
+    );
+  },
+);
+
+it.effect("optional Graph 403s stay disabled without invalidating the mail token", () => {
+  const http = fakeHttp({
+    "GET /me/mailboxSettings/automaticRepliesSetting": { status: 403 },
+    "GET /me/contacts": { status: 403 },
+    "GET /me/calendarView": { status: 403 },
+    "GET /me/messages/m1/$value": { text: "mail" },
+  });
+  let refreshes = 0;
+  return run(
+    http,
+    (adapter) =>
+      Effect.gen(function* () {
+        for (let i = 0; i < 2; i++) {
+          assert.strictEqual(
+            (yield* adapter.vacation(account).pipe(Effect.flip))._tag,
+            "SettingsScopeMissing",
+          );
+          assert.strictEqual(
+            (yield* adapter.contacts(account).pipe(Effect.flip))._tag,
+            "FeatureScopeMissing",
+          );
+          assert.strictEqual(
+            (yield* (
+              adapter.calendarEvents
+                ? adapter.calendarEvents(account, {
+                    key: "test",
+                    title: "test",
+                    start: { kind: "date", value: "2026-10-03" },
+                    end: { kind: "date", value: "2026-10-04" },
+                    location: "",
+                    description: "",
+                    recurrence: [],
+                  })
+                : Effect.die("missing calendar")
+            ).pipe(Effect.flip))._tag,
+            "FeatureScopeMissing",
+          );
+        }
+        yield* adapter.fetchRaw(account, "m1");
+        assert.strictEqual(refreshes, 1);
+        for (const path of ["/me/mailboxSettings", "/me/contacts", "/me/calendarView"])
+          assert.strictEqual(
+            http.calls.filter((call) => call.url.pathname.startsWith(`/v1.0${path}`)).length,
+            1,
+          );
+      }),
+    {
+      ...platformOptions,
+      oauth: {
+        refresh: () =>
+          Effect.sync(() => {
+            refreshes++;
+            return { accessToken: "fake", refreshToken: Option.none(), expiresIn: 3600 };
+          }),
+      },
+    },
+  );
+});
 
 it.effect("a rotated refresh token is saved to the keychain", () =>
   Effect.gen(function* () {
@@ -1239,7 +1348,7 @@ it.effect("an HTML body goes to Graph as a document that declares UTF-8", () =>
   }),
 );
 
-it.effect("a dropped connection is retried, not reported", () =>
+it.effect("a dropped connection never replays a write", () =>
   Effect.gen(function* () {
     let calls = 0;
     // Fails twice at the transport level, then answers.
@@ -1259,14 +1368,14 @@ it.effect("a dropped connection is retried, not reported", () =>
     const http = { layer: Layer.succeed(HttpClient.HttpClient)(client), calls: [] };
     yield* run(http, (adapter) =>
       Effect.gen(function* () {
-        const fiber = yield* adapter
+        const error = yield* adapter
           .push(account, "m1", { kind: "read", value: true })
-          .pipe(Effect.forkChild);
-        yield* TestClock.adjust("2 seconds");
-        yield* Fiber.join(fiber);
+          .pipe(Effect.flip);
+        assert.strictEqual(error._tag, "ProviderError");
+        if (error._tag === "ProviderError") assert.strictEqual(error.status, 0);
       }),
     );
-    assert.strictEqual(calls, 3);
+    assert.strictEqual(calls, 1);
   }),
 );
 
@@ -2684,4 +2793,123 @@ it.effect(
       }
       assert.isFalse(http.calls.some((call) => call.url.pathname.includes("mailFolders")));
     }),
+);
+
+it.effect("a missing OAuth client is configuration failure, never a status-zero AuthError", () => {
+  const http = fakeHttp({});
+  return makeOutlook.pipe(
+    Effect.flatMap((adapter) => adapter.fetchRaw(account, "fake").pipe(Effect.flip)),
+    Effect.map((error) => {
+      assert.strictEqual(error._tag, "ProviderError");
+      assert.strictEqual(http.calls.length, 0);
+    }),
+    Effect.provide(
+      Layer.mergeAll(
+        http.layer,
+        MemoryPlatform({ secrets: { [account.id]: "fake-refresh" }, config: {} }),
+      ),
+    ),
+  );
+});
+
+for (const failure of ["offline", "AbortError"]) {
+  it.effect(`outlook status-zero ${failure} GET retries once and remains ProviderError`, () =>
+    Effect.gen(function* () {
+      let calls = 0;
+      const client = HttpClient.make((request) =>
+        Effect.suspend(() => {
+          calls++;
+          return Effect.fail(
+            new HttpClientError.HttpClientError({
+              reason: new HttpClientError.TransportError({ request, description: failure }),
+            }),
+          );
+        }),
+      );
+      const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          const fiber = yield* adapter
+            .fetchRaw(account, "fake")
+            .pipe(Effect.flip, Effect.forkChild);
+          yield* TestClock.adjust("2 seconds");
+          const error = yield* Fiber.join(fiber);
+          assert.strictEqual(error._tag, "ProviderError");
+          if (error._tag === "ProviderError") assert.strictEqual(error.status, 0);
+        }),
+      );
+      assert.strictEqual(calls, 2);
+    }),
+  );
+}
+
+it.effect("outlook never retries a send on a dropped connection", () =>
+  Effect.gen(function* () {
+    let sends = 0;
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() => {
+        if (request.method === "GET")
+          return Effect.succeed(
+            HttpClientResponse.fromWeb(
+              request,
+              new Response(JSON.stringify({ value: [], id: "folder", payload: { headers: [] } })),
+            ),
+          );
+        sends++;
+        return Effect.fail(
+          new HttpClientError.HttpClientError({
+            reason: new HttpClientError.TransportError({ request, description: "offline" }),
+          }),
+        );
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    const error = yield* run(http, (adapter) =>
+      adapter
+        .send(
+          account,
+          {
+            to: [{ name: "Recipient", address: "recipient@example.com" }],
+            cc: [],
+            bcc: [],
+            subject: "Test",
+            text: "Text",
+            attachments: [],
+          },
+          Option.none(),
+        )
+        .pipe(Effect.flip),
+    );
+    assert.strictEqual(error._tag, "ProviderError");
+    assert.strictEqual(sends, 1);
+  }),
+);
+
+it.effect("outlook interruption aborts the GET and never retries or returns AuthError", () =>
+  Effect.gen(function* () {
+    const started = yield* Deferred.make<void>();
+    let signal: AbortSignal | undefined;
+    let attempts = 0;
+    const client = HttpClient.make((_request, _url, abort) =>
+      Effect.gen(function* () {
+        signal = abort;
+        attempts++;
+        yield* Deferred.succeed(started, undefined);
+        return yield* Effect.never;
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const fiber = yield* adapter.fetchRaw(account, "fake").pipe(Effect.forkChild);
+        yield* Deferred.await(started);
+        yield* Fiber.interrupt(fiber);
+        const exit = yield* Fiber.await(fiber);
+        assert.strictEqual(exit._tag, "Failure");
+        if (exit._tag === "Failure") assert.isTrue(Cause.hasInterruptsOnly(exit.cause));
+      }),
+    );
+    assert.isTrue(signal?.aborted);
+    assert.strictEqual(attempts, 1);
+  }),
 );

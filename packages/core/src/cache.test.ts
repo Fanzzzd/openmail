@@ -86,10 +86,7 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
             assert.strictEqual((yield* store.getMessage(id)).bodyCached, true);
             assert.isUndefined((yield* store.getMessage(id)).replyTo);
             server.failNext = new ProviderError({ message: "Offline", status: 503 });
-            assert.strictEqual(
-              (yield* Effect.flip(mailbox.readerThread(id)))._tag,
-              "ProviderError",
-            );
+            assert.strictEqual((yield* mailbox.readerThread(id))[0]?.bodyRefresh, "failed");
             assert.isUndefined((yield* store.getMessage(id)).replyTo);
             const [ready] = yield* mailbox.readerThread(id);
             assert.ok(ready);

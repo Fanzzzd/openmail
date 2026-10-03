@@ -1,9 +1,11 @@
+import { retryProviderRequest, isProviderSend } from "./provider-retry.js";
+import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { messageSecurity } from "./message-security.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { featureRequest } from "./provider-features.js";
-import { Clock, Data, Effect, Option, Schedule, Schema, Semaphore, Stream } from "effect";
+import { Clock, Data, Effect, Option, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
@@ -169,8 +171,6 @@ const isTransient = (e: ApiError) =>
   e.status >= 500 ||
   (e.status === 403 && /rateLimitExceeded/i.test(e.body));
 
-const RETRY = { schedule: Schedule.exponential("500 millis"), times: 4, while: isTransient };
-
 const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 
 /**
@@ -183,10 +183,10 @@ const readFailure =
   (e: ApiError | AuthError | ProviderError): AuthError | ProviderError => {
     if (e._tag !== "ApiError") return e;
     const message = `Gmail API ${e.status}: ${e.body}`;
-    if (e.status === 401 || (e.status === 403 && /insufficient|scope/i.test(e.body))) {
+    if (e.status === 401) {
       return new AuthError({ accountId, message });
     }
-    return new ProviderError({ message, ...(e.status ? { status: e.status } : {}) });
+    return new ProviderError({ message, status: e.status });
   };
 
 /** Writes Gmail will never accept (bad label id, message gone) are dropped. */
@@ -241,14 +241,23 @@ export const makeGmail: Effect.Effect<
         }
         const { google } = yield* config.read;
         if (!google) {
-          return yield* new AuthError({ accountId, message: "No Google OAuth client configured" });
+          return yield* new ProviderError({
+            message: "No Google OAuth client configured",
+            reason: "configuration",
+          });
         }
-        const res = yield* oauth.refresh(accountId, {
-          tokenUrl: TOKEN_URL,
-          clientId: google.clientId,
-          clientSecret: google.clientSecret,
-          refreshToken: refreshToken.value,
-        });
+        const res = yield* oauth
+          .refresh(accountId, {
+            tokenUrl: TOKEN_URL,
+            clientId: google.clientId,
+            clientSecret: google.clientSecret,
+            refreshToken: refreshToken.value,
+          })
+          .pipe(
+            Effect.tapError((error) =>
+              logProviderFailure("gmail", accountId, HttpClientRequest.post(TOKEN_URL), error),
+            ),
+          );
         tokens.set(accountId, { token: res.accessToken, expiresAt: now + res.expiresIn * 1000 });
         return res.accessToken;
       }),
@@ -271,26 +280,32 @@ export const makeGmail: Effect.Effect<
       Effect.catchTag("HttpClientError", (e) =>
         Effect.fail(new ApiError({ status: 0, body: e.message })),
       ),
-      Effect.retry(RETRY),
+      (effect) => retryProviderRequest(effect, request, isTransient),
     );
 
+  const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    accessToken(accountId).pipe(
-      Effect.flatMap((token) => execute(token, request)),
-      // The provider can reject an access token before it expires. Drop it,
-      // refresh, and retry once; only a failed refresh means signing in again.
-      Effect.catchIf(
-        (e) => e._tag === "ApiError" && e.status === 401,
-        () =>
-          Effect.sync(() => tokens.delete(accountId)).pipe(
-            Effect.andThen(accessToken(accountId)),
-            Effect.flatMap((token) => execute(token, request)),
-          ),
-      ),
-      Effect.tapError((e) =>
-        e._tag === "ApiError" && e.status === 401
-          ? Effect.sync(() => tokens.delete(accountId))
-          : Effect.void,
+    permissions.run(
+      accountId,
+      request,
+      accessToken(accountId).pipe(
+        Effect.flatMap((token) => execute(token, request)),
+        // The provider can reject an access token before it expires. Drop it,
+        // refresh, and retry once; only a failed refresh means signing in again.
+        Effect.catchIf(
+          (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+          () =>
+            Effect.sync(() => tokens.delete(accountId)).pipe(
+              Effect.andThen(accessToken(accountId)),
+              Effect.flatMap((token) => execute(token, request)),
+            ),
+        ),
+        Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
+        Effect.tapError((e) =>
+          e._tag === "ApiError" && e.status === 401
+            ? Effect.sync(() => tokens.delete(accountId))
+            : Effect.void,
+        ),
       ),
     );
 
@@ -354,12 +369,21 @@ export const makeGmail: Effect.Effect<
       });
     }
     const profile = yield* execute(res.accessToken, HttpClientRequest.get(`${API}/profile`)).pipe(
+      Effect.tapError((error) =>
+        logProviderFailure(
+          "gmail",
+          input.loginHint ?? "",
+          HttpClientRequest.get(`${API}/profile`),
+          error,
+        ),
+      ),
       Effect.flatMap(decode(Profile)),
       Effect.mapError(readFailure("")),
     );
     // A new sign-in may carry new scopes; cached tokens from the old grant
     // would keep failing until they expire.
     tokens.clear();
+    permissions.clear();
     settings.clearMissingScopes(`gmail:${profile.emailAddress.toLowerCase()}`);
     return {
       email: profile.emailAddress,

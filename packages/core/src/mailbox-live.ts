@@ -1037,6 +1037,12 @@ export const MailboxLive = (
         return { ...toDraft(draft, saveStatus.pending), syncRetrying: saveStatus.retrying };
       });
 
+      const draftStatus = (id: string) =>
+        Effect.gen(function* () {
+          const draft = yield* store.getDraft(id);
+          return Option.isSome(draft) ? yield* publicDraft(draft.value) : null;
+        });
+
       const persistDraft = Effect.fnUntraced(function* (input: DraftInput, enqueue: boolean) {
         const account = yield* store.getAccount(input.accountId);
         const draftOrganizationInput = input.message.draftOrganization;
@@ -1233,6 +1239,7 @@ export const MailboxLive = (
         }
         const local = yield* store.getDraft(id);
         if (Option.isSome(local)) return yield* publicDraft(local.value);
+        if (id.startsWith("draft:")) return yield* new NotFound({ what: "draft", id });
         const message = yield* store.getMessage(id);
         const { providerId } = yield* store.messageRef(id);
         const linked = yield* store.draftByRemoteMessage(message.accountId, providerId);
@@ -1996,7 +2003,7 @@ export const MailboxLive = (
         // New grants must not wait for the optional-feature retry interval.
         yield* FiberSet.run(
           background,
-          features.refreshContacts(account.id).pipe(Effect.catch(() => Effect.void)),
+          features.refreshContacts(account.id, true, true).pipe(Effect.catch(() => Effect.void)),
         );
         yield* changed;
         yield* Effect.forkDetach(sync());
@@ -2473,6 +2480,7 @@ export const MailboxLive = (
         setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),
 
         openDraft,
+        draftStatus,
         sendAgain,
         composeAttachments,
         pendingSendCount: Effect.sync(() => pendingSends),

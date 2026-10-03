@@ -65,3 +65,10 @@ it("redacted errors keep their fixed localized category rather than a generic fa
     ),
   ).toBe("Sign in again to enable filters and automatic replies.");
 });
+
+it("missing OAuth configuration survives redaction and gives a setup instruction", () => {
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  expect(errorText(i18n, new ProviderError({ message: "", reason: "configuration" }))).toBe(
+    "OAuth client not configured. Set it up before syncing.",
+  );
+});

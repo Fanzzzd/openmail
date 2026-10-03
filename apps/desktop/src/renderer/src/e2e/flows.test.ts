@@ -634,3 +634,30 @@ it("notification click followed by immediate search clears hidden selection befo
   expect(h.server.pushed).toHaveLength(pushes);
   expect((await h.run(h.store.getMessage(h.id("one")))).labels).toContain("INBOX");
 });
+
+it("opening and closing a never-saved composer emits no failed RPC or message lookup for its draft id", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const before = h.responses.length;
+  clickButton("New message");
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+  await eventually(() =>
+    expect(
+      h.requests.some((request) => request.tag === "OpenDraft" || request.tag === "DraftStatus"),
+    ).toBe(true),
+  );
+  key("Escape", {}, screen.getByRole("textbox", { name: "Subject" }));
+  await eventually(() => expect(screen.queryByRole("textbox", { name: "Subject" })).toBeNull());
+  const failures = h.responses
+    .slice(before)
+    .filter(
+      (response) =>
+        response._tag === "Exit" &&
+        response.exit._tag === "Failure" &&
+        response.exit.cause.some((cause) => cause._tag !== "Interrupt"),
+    );
+  expect(failures).toEqual([]);
+  expect(h.requests.filter((request) => request.tag === "OpenDraft")).toEqual([]);
+  expect(h.server.draftLog).toEqual([]);
+});

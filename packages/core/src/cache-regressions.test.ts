@@ -1,5 +1,5 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, Option } from "effect";
+import { Effect, Fiber, Layer, Option } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
@@ -372,6 +372,58 @@ it.effect(
           ) !== JSON.stringify(job),
         );
       }),
+    );
+  },
+);
+
+it.effect("reader retains legacy cached messages when a status-zero refetch fails", () => {
+  const server = fakeServer("cached@example.com", [mail("legacy")]);
+  return withMailbox(
+    server,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("outlook", server.email);
+      yield* store.upsertMessage(account.id, mail("legacy"));
+      const id = `${account.id}/legacy`;
+      yield* sql`UPDATE messages SET reply_to_json=NULL WHERE id=${id}`;
+      const [cached] = yield* (yield* Mailbox).readerThread(id);
+      assert.strictEqual(cached?.bodyText, "unique-body-term");
+      assert.strictEqual(cached?.bodyRefresh, "failed");
+      assert.isUndefined(cached?.replyTo);
+      assert.strictEqual((yield* store.getAccount(account.id)).needsReauth, false);
+    }),
+    (base) => ({
+      ...base,
+      fetchMessage: () => Effect.fail(new ProviderError({ status: 0, message: "offline" })),
+    }),
+  );
+});
+
+it.effect(
+  "reader bounds the entire refetch and returns cached messages when a provider never responds",
+  () => {
+    const server = fakeServer("cached@example.com", [
+      mail("legacy", { bodyCached: false, bodyText: "", bodyHtml: "" }),
+    ]);
+    return withMailbox(
+      server,
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("outlook", server.email);
+        yield* store.upsertMessage(
+          account.id,
+          mail("legacy", { bodyCached: false, bodyText: "", bodyHtml: "" }),
+        );
+        const fiber = yield* (yield* Mailbox)
+          .readerThread(`${account.id}/legacy`)
+          .pipe(Effect.forkChild);
+        yield* TestClock.adjust("5 seconds");
+        const [cached] = yield* Fiber.join(fiber);
+        assert.strictEqual(cached?.snippet, "preview");
+        assert.strictEqual(cached?.bodyRefresh, "failed");
+      }),
+      (base) => ({ ...base, fetchMessage: () => Effect.never }),
     );
   },
 );

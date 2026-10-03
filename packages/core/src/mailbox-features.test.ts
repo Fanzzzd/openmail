@@ -115,7 +115,7 @@ it.effect(
         message: "missing contacts scope",
       });
       const result = yield* m.refreshContacts(account.id).pipe(Effect.result);
-      assert.strictEqual(result._tag, "Failure");
+      assert.strictEqual(result._tag, "Success");
       assert.strictEqual((yield* m.contactSync)[0]?.scopeMissing, true);
       assert.strictEqual((yield* m.suggestContacts("updated")).length, 1);
       const mail = yield* m.sync();

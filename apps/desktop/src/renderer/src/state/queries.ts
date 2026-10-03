@@ -63,16 +63,19 @@ export const unreadInboxAtom = (accountIds: readonly string[]) =>
   );
 
 const noThread = Atom.make(AsyncResult.initial<readonly Message[], AppError>());
+const draftThread = Atom.make(AsyncResult.success<readonly Message[]>([]));
 
-/** The messages of the thread containing message `id`; stays `Initial` for null. */
+/** Null has no selection; local drafts belong to the draft store and have no message thread. */
 export const threadAtom = (id: string | null) =>
   id === null
     ? noThread
-    : MailClient.query(
-        "Thread",
-        { id },
-        { reactivityKeys: { [Keys.thread]: [id] }, ...readerContent },
-      );
+    : id.startsWith("draft:")
+      ? draftThread
+      : MailClient.query(
+          "Thread",
+          { id },
+          { reactivityKeys: { [Keys.thread]: [id] }, ...readerContent },
+        );
 
 /** Ticks every 10 s while something depends on it. */
 const every10s = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
@@ -135,7 +138,7 @@ export const contactAlternativesAtom = (address: string) =>
     { reactivityKeys: [Keys.contacts], ...cached },
   );
 export const draftStatusAtom = (id: string) =>
-  MailClient.query("OpenDraft", { id }, { reactivityKeys: [Keys.threads], ...cached });
+  MailClient.query("DraftStatus", { id }, { reactivityKeys: [Keys.threads], ...cached });
 export const hiddenContactsAtom = MailClient.query("HiddenContacts", undefined, {
   reactivityKeys: [Keys.contacts],
   ...cached,

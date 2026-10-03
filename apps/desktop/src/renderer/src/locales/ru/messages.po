@@ -2751,6 +2751,10 @@ msgstr "Видимость списка сообщений"
 msgid "Message order in a conversation"
 msgstr "Порядок сообщений в переписке"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Message text could not be refreshed. Showing the cached version."
+msgstr "Не удалось обновить текст сообщения. Показана кешированная версия."
+
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Message updated"
 msgstr "Сообщение обновлено"
@@ -3181,6 +3185,10 @@ msgstr "Уведомления для {0}"
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "Нумерованный список"
+
+#: src/renderer/src/errors.ts
+msgid "OAuth client not configured. Set it up before syncing."
+msgstr "Клиент OAuth не настроен. Настройте его перед синхронизацией."
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx

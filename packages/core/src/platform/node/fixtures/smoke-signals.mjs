@@ -7,6 +7,7 @@ const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {
 if (process.argv[4]) process.exitCode = Number(process.argv[4]);
 const cleanup = createSmokeCleanup({
   directory: process.argv[2],
+  keepDirectory: process.argv[5] === "keep",
   child: () => child,
   socket: () => ({ close: () => process.stdout.write("socket-closed\n") }),
 });

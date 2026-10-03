@@ -580,3 +580,37 @@ it.effect("automatic summaries require both account switches and an API key", ()
     );
   }),
 );
+
+it.effect(
+  "background AI reads return no result without consent; explicit requests still require it",
+  () => {
+    const requests: ModelRequest[] = [];
+    const server = fakeServer("me@gmail.com", [incoming("m1")]);
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      yield* m.connect({ provider: "gmail" });
+      yield* m.sync();
+      assert.strictEqual(yield* m.aiSummary(messageId), null);
+      assert.strictEqual(yield* m.aiTriage(messageId), null);
+      const failure = yield* Stream.runDrain(m.summarize(messageId)).pipe(Effect.flip);
+      assert.strictEqual(failure._tag, "InvalidInput");
+      yield* m.setAiAccount({ ...consent, autoTriage: false });
+      assert.strictEqual(yield* m.aiTriage(messageId), null);
+      yield* m.setAiAccount({ ...consent, allowed: false });
+      assert.strictEqual(yield* m.aiSummary(messageId), null);
+      assert.strictEqual(requests.length, 0);
+    }).pipe(
+      Effect.provide(
+        TestMailbox(
+          { gmail: server },
+          { backgroundFlush: false },
+          {},
+          FakeModelLayer((request) => {
+            requests.push(request);
+            return textStream("unexpected");
+          }),
+        ),
+      ),
+    );
+  },
+);

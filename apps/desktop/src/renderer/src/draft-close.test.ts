@@ -17,7 +17,7 @@ it("closing a blank never-stored draft does not save or delete anything", async 
           draft: initial,
           initial,
           empty: true,
-          lookup: mailbox.openDraft(initial.id),
+          lookup: mailbox.draftStatus(initial.id),
         });
         expect(action).toBe("close");
         expect(server.draftLog).toEqual([]);
@@ -46,7 +46,7 @@ it("clearing a stored draft asks; Cancel and Save retain it, and only explicit D
           draft: cleared,
           initial,
           empty: isEmpty(cleared),
-          lookup: mailbox.openDraft(draft.id),
+          lookup: mailbox.draftStatus(draft.id),
         });
         expect(action).toBe("prompt");
         // Cancel makes no mutation and leaves the stored content available.

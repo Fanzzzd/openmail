@@ -71,13 +71,14 @@ export function makeFeatureMailbox(
     unboundInvitesFromRaw(...args).pipe(Effect.provideService(MailCodec, codec));
   const contactsLock = Semaphore.makeUnsafe(1);
   const responseLock = Semaphore.makeUnsafe(1);
-  const refreshContacts = (accountId: string, force = true) =>
+  const refreshContacts = (accountId: string, force = true, retryPermission = false) =>
     contactsLock.withPermit(
       Effect.gen(function* () {
         const account = yield* store.getAccount(accountId);
         if (account.enabled === false || account.provider === "imap") return yield* Effect.void;
         const now = yield* Clock.currentTimeMillis;
         const previous = (yield* store.contactSync).find((s) => s.accountId === accountId);
+        if (previous?.scopeMissing && !retryPermission) return yield* Effect.void;
         const interval = previous?.error ? 3600000 : 6 * 3600000;
         if (!force && previous && now - previous.attemptedAt < interval) return yield* Effect.void;
         const provider = providers.get(account.provider);
@@ -96,6 +97,7 @@ export function makeFeatureMailbox(
             result.failure._tag === "FeatureScopeMissing",
           );
           yield* changed;
+          if (result.failure._tag === "FeatureScopeMissing") return yield* Effect.void;
           return yield* result.failure;
         }
         yield* store.replaceServerContacts(accountId, result.success.contacts, now);
@@ -184,6 +186,12 @@ export function makeFeatureMailbox(
           if (!(yield* store.prefs).contactPhotos) return null;
           const source = yield* store.contactPhotoSource(accountId, address);
           if (!source || !googleContactPhotoUrl(source.url)) return null;
+          if (
+            (yield* store.contactSync).some(
+              (status) => status.accountId === accountId && status.scopeMissing,
+            )
+          )
+            return null;
           if (source.dataUrl) return (yield* store.prefs).contactPhotos ? source.dataUrl : null;
           const image = yield* downloadImage(source.url, CONTACT_PHOTO_LIMIT);
           const dataUrl = `data:${image.mimeType};base64,${image.content}`;

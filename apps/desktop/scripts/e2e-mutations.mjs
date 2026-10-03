@@ -9,6 +9,13 @@ const desktop = fileURLToPath(new URL("..", import.meta.url));
 const shared = "src/shared/mailbox-handlers.ts";
 const renderer = "src/renderer/src/";
 const cases = [
+  [
+    "unsaved draft status",
+    "never-saved composer",
+    shared,
+    "DraftStatus: ({ id }) => m.draftStatus(id),",
+    "DraftStatus: ({ id }) => m.openDraft(id),",
+  ],
   ["sync", "first sync", shared, "Sync: () => m.sync(),", "Sync: () => Effect.succeed([]),"],
   [
     "read delay",
@@ -131,8 +138,8 @@ try {
       writeFileSync(path, original);
     }
   }
-  if (killed.size !== 24)
-    throw new Error(`Expected all 24 flows to fail at least once; got ${killed.size}`);
+  if (killed.size !== 25)
+    throw new Error(`Expected all 25 covered flows to fail at least once; got ${killed.size}`);
   process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
 } finally {
   rmSync(directory, { recursive: true, force: true });

@@ -140,25 +140,24 @@ export function AiOutput({
 }
 
 export function ThreadSummary({ id, accountId }: { id: string; accountId: string }) {
-  const run = useRunMail();
   const settings = AsyncResult.getOrElse(useAtomValue(aiSettingsAtom), () => null);
-  const allowed = settings?.accounts.some((a) => a.accountId === accountId && a.allowed);
+  if (!settings?.accounts.some((a) => a.accountId === accountId && a.allowed)) return null;
+  return <AllowedThreadSummary id={id} keyConfigured={settings.keyConfigured} />;
+}
+
+function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured: boolean }) {
+  const run = useRunMail();
   const cached = AsyncResult.getOrElse(
     useAtomValue(MailClient.query("AiSummary", { id }, { reactivityKeys: [Keys.ai, Keys.thread] })),
     () => null,
   );
   const result = useAiStream();
-  const { cancel } = result;
-  useEffect(() => {
-    if (!allowed) cancel();
-  }, [allowed, cancel]);
-  if (!allowed) return null;
   const model = cached?.model ?? "";
   return (
     <section className="mb-4 space-y-2 rounded border border-violet-500/20 p-3">
       <button
         type="button"
-        disabled={!settings?.keyConfigured || result.status === "running"}
+        disabled={!keyConfigured || result.status === "running"}
         onClick={() => result.start(withMail((call) => Effect.succeed(call("Summarize", { id }))))}
       >
         <Trans>Summarize</Trans>

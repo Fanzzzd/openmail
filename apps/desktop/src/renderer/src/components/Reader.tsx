@@ -1222,10 +1222,26 @@ function Expanded({
       )}
 
       <div className="pt-4">
-        {m.bodyCached === false ? (
-          <output className="block px-4 text-a11y-muted">
-            <Trans>The body is not cached. Try opening this message again when connected.</Trans>
+        {m.bodyRefresh === "failed" && (
+          <output className="mb-3 block text-a11y-muted">
+            <Trans>Message text could not be refreshed. Showing the cached version.</Trans>
           </output>
+        )}
+        {m.bodyCached === false ? (
+          <>
+            <PlainBody
+              text={m.bodyText || m.snippet}
+              previous={previous}
+              background={background}
+              zoom={zoom}
+              findQuery={findQuery}
+              findIndex={findIndex}
+              onMatches={onMatches}
+            />
+            <output className="block px-4 text-a11y-muted">
+              <Trans>The body is not cached. Try opening this message again when connected.</Trans>
+            </output>
+          </>
         ) : m.bodyHtml ? (
           <EmailFrame
             html={prepared.html}

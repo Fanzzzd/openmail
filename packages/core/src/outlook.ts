@@ -1,3 +1,5 @@
+import { retryProviderRequest, isProviderSend } from "./provider-retry.js";
+import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { cleanDisplayName, messageSecurity } from "./message-security.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
@@ -8,7 +10,7 @@ import {
   type DeleteFolder,
   type PermanentDeleteBatch,
 } from "./folder-actions.js";
-import { Clock, Data, Effect, Option, Queue, Schedule, Schema, Semaphore, Stream } from "effect";
+import { Clock, Data, Effect, Option, Queue, Schema, Semaphore, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 import { attachmentProblem, attachmentProblemMessage } from "./attachment-policy.js";
 
@@ -235,7 +237,6 @@ class ApiError extends Data.TaggedError("ApiError")<{ status: number; body: stri
 
 // 429 throttling and 5xx are transient; back off and retry.
 const isTransient = (e: ApiError) => e.status === 0 || e.status === 429 || e.status >= 500;
-const RETRY = { schedule: Schedule.exponential("500 millis"), times: 4, while: isTransient };
 
 const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 /** Graph expires delta links it no longer tracks (syncStateNotFound). */
@@ -251,8 +252,8 @@ const readFailure =
   (e: ApiError | AuthError | ProviderError): AuthError | ProviderError => {
     if (e._tag !== "ApiError") return e;
     const message = `Graph API ${e.status}: ${e.body}`;
-    if (e.status === 401 || e.status === 403) return new AuthError({ accountId, message });
-    return new ProviderError({ message, ...(e.status ? { status: e.status } : {}) });
+    if (e.status === 401) return new AuthError({ accountId, message });
+    return new ProviderError({ message, status: e.status });
   };
 
 /** Writes Graph will never accept (bad folder id, message gone) are dropped. */
@@ -307,16 +308,22 @@ export const makeOutlook: Effect.Effect<
         }
         const { microsoft } = yield* config.read;
         if (!microsoft) {
-          return yield* new AuthError({
-            accountId,
+          return yield* new ProviderError({
             message: "No Microsoft OAuth client configured",
+            reason: "configuration",
           });
         }
-        const res = yield* oauth.refresh(accountId, {
-          tokenUrl: TOKEN_URL,
-          clientId: microsoft.clientId,
-          refreshToken: refreshToken.value,
-        });
+        const res = yield* oauth
+          .refresh(accountId, {
+            tokenUrl: TOKEN_URL,
+            clientId: microsoft.clientId,
+            refreshToken: refreshToken.value,
+          })
+          .pipe(
+            Effect.tapError((error) =>
+              logProviderFailure("outlook", accountId, HttpClientRequest.post(TOKEN_URL), error),
+            ),
+          );
         if (Option.isSome(res.refreshToken)) yield* secrets.set(accountId, res.refreshToken.value);
         tokens.set(accountId, { token: res.accessToken, expiresAt: now + res.expiresIn * 1000 });
         return res.accessToken;
@@ -345,35 +352,75 @@ export const makeOutlook: Effect.Effect<
       Effect.catchTag("HttpClientError", (e) =>
         Effect.fail(new ApiError({ status: 0, body: e.message })),
       ),
-      Effect.retry(RETRY),
+      (effect) => retryProviderRequest(effect, request, isTransient),
     );
 
+  const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    accessToken(accountId).pipe(
-      Effect.flatMap((token) => execute(token, request)),
-      // The provider can reject an access token before it expires. Drop it,
-      // refresh, and retry once; only a failed refresh means signing in again.
-      Effect.catchIf(
-        (e) => e._tag === "ApiError" && e.status === 401,
-        () =>
-          Effect.sync(() => tokens.delete(accountId)).pipe(
-            Effect.andThen(accessToken(accountId)),
-            Effect.flatMap((token) => execute(token, request)),
-          ),
-      ),
-      Effect.tapError((e) =>
-        e._tag === "ApiError" && (e.status === 401 || e.status === 403)
-          ? Effect.sync(() => tokens.delete(accountId))
-          : Effect.void,
+    permissions.run(
+      accountId,
+      request,
+      accessToken(accountId).pipe(
+        Effect.flatMap((token) => execute(token, request)),
+        // The provider can reject an access token before it expires. Drop it,
+        // refresh, and retry once; only a failed refresh means signing in again.
+        Effect.catchIf(
+          (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+          () =>
+            Effect.sync(() => tokens.delete(accountId)).pipe(
+              Effect.andThen(accessToken(accountId)),
+              Effect.flatMap((token) => execute(token, request)),
+            ),
+        ),
+        Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
+        Effect.tapError((e) =>
+          e._tag === "ApiError" && e.status === 401
+            ? Effect.sync(() => tokens.delete(accountId))
+            : Effect.void,
+        ),
       ),
     );
 
+  const headersDenied = new Set<string>();
   /** `path` is a path under GRAPH, or a full https URL (delta and next links are absolute). */
   const get = <A>(accountId: string, schema: Schema.Decoder<A>, path: string) =>
-    api(
-      accountId,
-      HttpClientRequest.get(path.startsWith("https://") ? path : `${GRAPH}${path}`),
-    ).pipe(Effect.flatMap(decode(schema)));
+    Effect.suspend(() => {
+      const url = new URL(path.startsWith("https://") ? path : `${GRAPH}${path}`);
+      const selection = url.searchParams.get("$select");
+      const hasHeaders = selection?.split(",").includes("internetMessageHeaders") ?? false;
+      const withoutHeaders = () => {
+        url.searchParams.set(
+          "$select",
+          (selection ?? "")
+            .split(",")
+            .filter((field) => field !== "internetMessageHeaders")
+            .join(","),
+        );
+        return HttpClientRequest.get(url.toString());
+      };
+      return api(
+        accountId,
+        hasHeaders && headersDenied.has(accountId)
+          ? withoutHeaders()
+          : HttpClientRequest.get(url.toString()),
+      ).pipe(
+        Effect.catchIf(
+          (error) =>
+            hasHeaders &&
+            !headersDenied.has(accountId) &&
+            error._tag === "ApiError" &&
+            error.status === 403,
+          () => {
+            // Retry the same mail read without the optional header field. A mail denial still fails.
+            const request = withoutHeaders();
+            return api(accountId, request).pipe(
+              Effect.tap(() => Effect.sync(() => headersDenied.add(accountId))),
+            );
+          },
+        ),
+        Effect.flatMap(decode(schema)),
+      );
+    });
 
   const write = (
     accountId: string,
@@ -444,7 +491,7 @@ export const makeOutlook: Effect.Effect<
     });
 
   /** A GET whose body is not JSON (a message's MIME source). */
-  const getBytes = (accountId: string, path: string, maxBytes?: number) =>
+  const getBytesAttempt = (accountId: string, path: string, maxBytes?: number) =>
     accessToken(accountId).pipe(
       Effect.flatMap((token) =>
         Effect.gen(function* () {
@@ -478,11 +525,27 @@ export const makeOutlook: Effect.Effect<
           Effect.catchTag("HttpClientError", (e) =>
             Effect.fail(new ApiError({ status: 0, body: e.message })),
           ),
-          Effect.retry({
-            ...RETRY,
-            while: (error) => error._tag === "ApiError" && RETRY.while(error),
-          }),
+          (effect) =>
+            retryProviderRequest(
+              effect,
+              HttpClientRequest.get(`${GRAPH}${path}`),
+              (error) => error._tag === "ApiError" && isTransient(error),
+            ),
         ),
+      ),
+    );
+
+  const getBytes = (accountId: string, path: string, maxBytes?: number) =>
+    getBytesAttempt(accountId, path, maxBytes).pipe(
+      Effect.catchIf(
+        (error) => error._tag === "ApiError" && error.status === 401,
+        () =>
+          Effect.sync(() => tokens.delete(accountId)).pipe(
+            Effect.andThen(getBytesAttempt(accountId, path, maxBytes)),
+          ),
+      ),
+      Effect.tapError((error) =>
+        logProviderFailure("outlook", accountId, HttpClientRequest.get(`${GRAPH}${path}`), error),
       ),
     );
 
@@ -515,10 +578,23 @@ export const makeOutlook: Effect.Effect<
     const me = yield* execute(
       res.accessToken,
       HttpClientRequest.get(`${GRAPH}/me?$select=mail,userPrincipalName`),
-    ).pipe(Effect.flatMap(decode(Me)), Effect.mapError(readFailure("")));
+    ).pipe(
+      Effect.tapError((error) =>
+        logProviderFailure(
+          "outlook",
+          input.loginHint ?? "",
+          HttpClientRequest.get(`${GRAPH}/me`),
+          error,
+        ),
+      ),
+      Effect.flatMap(decode(Me)),
+      Effect.mapError(readFailure("")),
+    );
     // A new sign-in may carry new scopes; cached tokens from the old grant
     // would keep failing until they expire.
     tokens.clear();
+    permissions.clear();
+    headersDenied.clear();
     return { email: me.mail ?? me.userPrincipalName, secret: res.refreshToken.value };
   });
 

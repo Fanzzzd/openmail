@@ -22,7 +22,7 @@ import { appConfigFile } from "../../config.js";
 import { databaseLayer } from "./db.js";
 import { OAuthLoopback } from "./oauth.js";
 import { dataDir } from "./paths.js";
-import { SecretsKeyring } from "./secrets.js";
+import { makeSecretsKeyring } from "./secrets.js";
 import { type AppConfig, Browser, type OAuth, type Secrets } from "../../services.js";
 
 /** Everything below the Store and the providers: what a platform has to supply. */
@@ -52,6 +52,8 @@ export interface NodePlatformOptions {
   browser?: Layer.Layer<Browser>;
   /** Defaults to dataDir: shared by the app, the CLI and the MCP server. */
   dataDir?: string;
+  /** CLI notice before an OS keychain read, including during Layer acquisition. */
+  beforeCredentialRead?: Effect.Effect<void>;
 }
 
 /** The OS command that opens `url` in the default browser. */
@@ -138,7 +140,7 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
   );
   return Layer.mergeAll(
     storage,
-    SecretsKeyring,
+    makeSecretsKeyring(opts.beforeCredentialRead),
     OAuthLoopback.pipe(Layer.provide([browser, http])),
     browser,
     http,

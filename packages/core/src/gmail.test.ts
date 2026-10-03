@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
-import { Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { Cause, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
@@ -241,7 +241,7 @@ it.effect("Gmail batch label changes use one batchModify request", () =>
   }),
 );
 
-it.effect("write failures map to AuthError and PermanentError", () =>
+it.effect("write scope failures do not require mail reauthentication", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "POST /messages/scope/modify": {
@@ -256,7 +256,7 @@ it.effect("write failures map to AuthError and PermanentError", () =>
         Effect.flip(a.push(account, "gone", { kind: "archive" })),
       ]),
     );
-    assert.strictEqual(scope._tag, "AuthError");
+    assert.strictEqual(scope._tag, "ProviderError");
     assert.strictEqual(gone._tag, "PermanentError");
   }),
 );
@@ -486,10 +486,10 @@ it.effect(
 it.effect("a dropped connection is retried, not reported", () =>
   Effect.gen(function* () {
     let calls = 0;
-    // Fails twice at the transport level, then answers.
+    // Fails once at the transport level, then answers.
     const client = HttpClient.make((request) =>
       Effect.suspend(() =>
-        ++calls <= 2
+        ++calls <= 1
           ? Effect.fail(
               new HttpClientError.HttpClientError({
                 reason: new HttpClientError.TransportError({ request, description: "offline" }),
@@ -508,7 +508,7 @@ it.effect("a dropped connection is retried, not reported", () =>
         assert.strictEqual(Buffer.from(yield* Fiber.join(fiber)).toString(), "hi");
       }),
     );
-    assert.strictEqual(calls, 3);
+    assert.strictEqual(calls, 2);
   }),
 );
 
@@ -2223,4 +2223,123 @@ it.effect(
       }
       assert.isFalse(http.calls.some((call) => /messages|profile|labels/.test(call.url.pathname)));
     }),
+);
+
+it.effect("a missing OAuth client is configuration failure, never a status-zero AuthError", () => {
+  const http = fakeHttp({});
+  return makeGmail.pipe(
+    Effect.flatMap((adapter) => adapter.fetchRaw(account, "fake").pipe(Effect.flip)),
+    Effect.map((error) => {
+      assert.strictEqual(error._tag, "ProviderError");
+      assert.strictEqual(http.calls.length, 0);
+    }),
+    Effect.provide(
+      Layer.mergeAll(
+        http.layer,
+        MemoryPlatform({ secrets: { [account.id]: "fake-refresh" }, config: {} }),
+      ),
+    ),
+  );
+});
+
+for (const failure of ["offline", "AbortError"]) {
+  it.effect(`gmail status-zero ${failure} GET retries once and remains ProviderError`, () =>
+    Effect.gen(function* () {
+      let calls = 0;
+      const client = HttpClient.make((request) =>
+        Effect.suspend(() => {
+          calls++;
+          return Effect.fail(
+            new HttpClientError.HttpClientError({
+              reason: new HttpClientError.TransportError({ request, description: failure }),
+            }),
+          );
+        }),
+      );
+      const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          const fiber = yield* adapter
+            .fetchRaw(account, "fake")
+            .pipe(Effect.flip, Effect.forkChild);
+          yield* TestClock.adjust("2 seconds");
+          const error = yield* Fiber.join(fiber);
+          assert.strictEqual(error._tag, "ProviderError");
+          if (error._tag === "ProviderError") assert.strictEqual(error.status, 0);
+        }),
+      );
+      assert.strictEqual(calls, 2);
+    }),
+  );
+}
+
+it.effect("gmail never retries a send on a dropped connection", () =>
+  Effect.gen(function* () {
+    let sends = 0;
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() => {
+        if (request.method === "GET")
+          return Effect.succeed(
+            HttpClientResponse.fromWeb(
+              request,
+              new Response(JSON.stringify({ value: [], id: "folder", payload: { headers: [] } })),
+            ),
+          );
+        sends++;
+        return Effect.fail(
+          new HttpClientError.HttpClientError({
+            reason: new HttpClientError.TransportError({ request, description: "offline" }),
+          }),
+        );
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    const error = yield* run(http, (adapter) =>
+      adapter
+        .send(
+          account,
+          {
+            to: [{ name: "Recipient", address: "recipient@example.com" }],
+            cc: [],
+            bcc: [],
+            subject: "Test",
+            text: "Text",
+            attachments: [],
+          },
+          Option.none(),
+        )
+        .pipe(Effect.flip),
+    );
+    assert.strictEqual(error._tag, "ProviderError");
+    assert.strictEqual(sends, 1);
+  }),
+);
+
+it.effect("gmail interruption aborts the GET and never retries or returns AuthError", () =>
+  Effect.gen(function* () {
+    const started = yield* Deferred.make<void>();
+    let signal: AbortSignal | undefined;
+    let attempts = 0;
+    const client = HttpClient.make((_request, _url, abort) =>
+      Effect.gen(function* () {
+        signal = abort;
+        attempts++;
+        yield* Deferred.succeed(started, undefined);
+        return yield* Effect.never;
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const fiber = yield* adapter.fetchRaw(account, "fake").pipe(Effect.forkChild);
+        yield* Deferred.await(started);
+        yield* Fiber.interrupt(fiber);
+        const exit = yield* Fiber.await(fiber);
+        assert.strictEqual(exit._tag, "Failure");
+        if (exit._tag === "Failure") assert.isTrue(Cause.hasInterruptsOnly(exit.cause));
+      }),
+    );
+    assert.isTrue(signal?.aborted);
+    assert.strictEqual(attempts, 1);
+  }),
 );

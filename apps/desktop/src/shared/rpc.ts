@@ -595,6 +595,7 @@ export class MailRpcs extends RpcGroup.make(
     error,
   }),
   Rpc.make("OpenDraft", { payload: { id: Schema.String }, success: Draft, error }),
+  Rpc.make("DraftStatus", { payload: { id: Schema.String }, success: Schema.NullOr(Draft) }),
   Rpc.make("SaveDraft", { payload: { draft: DraftInput }, success: Draft, error }),
   Rpc.make("DiscardDraft", { payload: { id: Schema.String } }),
 

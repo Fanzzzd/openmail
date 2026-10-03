@@ -16,14 +16,18 @@ export function featureRequest<
     Effect.mapError((error) => {
       if (error._tag === "InvalidInput")
         return new InvalidInput({ message: error.message ?? "Invalid feature input" });
+      if (error._tag === "FeatureScopeMissing")
+        return new FeatureScopeMissing({
+          accountId: account.id,
+          feature,
+          message: error.message ?? `Sign in again to enable ${feature}`,
+        });
       if (
         error.status === 403 &&
         !/SERVICE_DISABLED|accessNotConfigured|has not been used|API.*disabled/i.test(
-          error.body ?? "",
-        ) &&
-        /insufficient|scope|permission|ErrorAccessDenied|Authorization_RequestDenied/i.test(
           error.body ?? error.message ?? "",
-        )
+        ) &&
+        !/rateLimitExceeded|dailyLimitExceeded/i.test(error.body ?? error.message ?? "")
       )
         return new FeatureScopeMissing({
           accountId: account.id,

@@ -187,38 +187,64 @@ export function makeCacheMailbox(
   ): Effect.fn.Return<import("./domain.js").Message[], PerformError> {
     const messages = yield* store.getThread(id);
     const now = yield* Clock.currentTimeMillis;
-    for (const message of messages) {
-      yield* store.touchBody(message.id, now);
-      if (message.bodyCached !== false && message.replyTo !== undefined) continue;
-      const hydrate = Effect.gen(function* () {
-        const ref = yield* store.messageRef(message.id);
-        const account = yield* store.getAccount(ref.accountId);
-        if (account.enabled === false) return;
-        const full = yield* providers.get(account.provider).fetchMessage(account, ref.providerId);
-        yield* store.transaction(
-          Effect.gen(function* () {
-            const current = yield* store.getMessage(message.id);
-            yield* store.upsertMessage(account.id, {
-              ...current,
-              providerId: ref.providerId,
-              from: full.from,
-              to: full.to,
-              cc: full.cc,
-              replyTo: full.replyTo ?? [],
-              bodyText: full.bodyText,
-              bodyHtml: full.bodyHtml,
-              bodyCached: true,
-            });
-          }),
-        );
-      });
-      // A reply cannot choose targets while its headers remain unknown.
-      // Known headers still allow offline reading if an evicted body fails to load.
-      yield* message.replyTo === undefined
-        ? hydrate
-        : hydrate.pipe(Effect.catch(() => Effect.void));
-    }
-    return yield* store.getThread(id);
+    const failed = new Set<string>();
+    const refills = Effect.forEach(
+      messages,
+      (message) =>
+        Effect.gen(function* () {
+          yield* store.touchBody(message.id, now);
+          if (message.bodyCached !== false && message.replyTo !== undefined) return;
+          const hydrate = Effect.gen(function* () {
+            const ref = yield* store.messageRef(message.id);
+            const account = yield* store.getAccount(ref.accountId);
+            if (account.enabled === false) return;
+            const full = yield* providers
+              .get(account.provider)
+              .fetchMessage(account, ref.providerId);
+            yield* store.transaction(
+              Effect.gen(function* () {
+                const current = yield* store.getMessage(message.id);
+                yield* store.upsertMessage(account.id, {
+                  ...current,
+                  providerId: ref.providerId,
+                  from: full.from,
+                  to: full.to,
+                  cc: full.cc,
+                  replyTo: full.replyTo ?? [],
+                  bodyText: full.bodyText,
+                  bodyHtml: full.bodyHtml,
+                  bodyCached: true,
+                });
+              }),
+            );
+          });
+          // Remote data is optional for reading. Keep unknown Reply-To distinct from an empty header.
+          yield* hydrate.pipe(
+            Effect.catch(() =>
+              Effect.sync(() => {
+                failed.add(message.id);
+              }),
+            ),
+          );
+        }),
+      { concurrency: 3, discard: true },
+    );
+    // Bound the whole thread, including slow providers, rather than waiting per cached message.
+    yield* refills.pipe(
+      Effect.timeout("5 seconds"),
+      Effect.catchTag("TimeoutError", () =>
+        Effect.sync(() => {
+          for (const message of messages)
+            if (message.bodyCached === false || message.replyTo === undefined)
+              failed.add(message.id);
+        }),
+      ),
+    );
+    return (yield* store.getThread(id)).map((message) =>
+      failed.has(message.id) && (message.bodyCached === false || message.replyTo === undefined)
+        ? { ...message, bodyRefresh: "failed" as const }
+        : message,
+    );
   });
   const backfillState: Effect.Effect<BackfillState[]> = Effect.gen(function* () {
     for (const a of yield* store.listAccounts) yield* store.getBackfillState(a.id);

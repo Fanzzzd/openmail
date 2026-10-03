@@ -18,7 +18,7 @@ import { loadOriginalAttachments, withOriginalAttachments } from "../compose-ori
 import { toDraftInput, type Draft } from "../draft";
 import { requestDraftClose } from "../draft-close";
 import { causeText } from "../errors";
-import { openDraft, useRunMail, withMail } from "../state/mail";
+import { draftStatus, useRunMail, withMail } from "../state/mail";
 import { saveDraftAtom } from "../state/mutations";
 import { draftStatusAtom } from "../state/queries";
 
@@ -142,7 +142,7 @@ export function useDraftLifecycle({
     if (closing || checkingClose || saveState.waiting) return;
     setCheckingClose(true);
     run(
-      requestDraftClose({ draft, initial, empty, lookup: openDraft(draft.id) }).pipe(
+      requestDraftClose({ draft, initial, empty, lookup: draftStatus(draft.id) }).pipe(
         Effect.matchCause({
           onSuccess: (action) => {
             setCheckingClose(false);

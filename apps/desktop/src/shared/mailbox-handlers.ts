@@ -115,6 +115,7 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     SendAgain: ({ id }) => m.sendAgain(id),
     RecoverDraft: ({ id, action, draft }) => m.recoverDraft(id, action, draft),
     OpenDraft: ({ id }) => m.openDraft(id),
+    DraftStatus: ({ id }) => m.draftStatus(id),
     SaveDraft: ({ draft }) => m.saveDraft(draft),
     DiscardDraft: ({ id }) => m.discardDraft(id),
 

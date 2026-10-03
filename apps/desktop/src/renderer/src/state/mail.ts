@@ -68,6 +68,9 @@ export const discardDraft = (id: string) =>
 /** A draft to edit: a local draft id, a draft message id, or "proposal:<id>". */
 export const openDraft = (id: string) => withMail((call) => call("OpenDraft", { id }));
 
+/** Optional local save state; reading a not-yet-stored draft is a successful absence. */
+export const draftStatus = (id: string) => withMail((call) => call("DraftStatus", { id }));
+
 export const decideProposal = (id: number, approve: boolean) =>
   withMail((call) => call("DecideProposal", { id, approve })).pipe(Reactivity.mutation(MAIL_KEYS));
 

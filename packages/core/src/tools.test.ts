@@ -145,6 +145,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     sendAgain: () => Effect.die("unused"),
     pendingSendCount: Effect.succeed(0),
     openDraft: () => notUsed("openDraft"),
+    draftStatus: () => notUsed("draftStatus"),
     saveDraft: () => notUsed("saveDraft"),
     discardDraft: () => notUsed("discardDraft"),
     indexingProgress: notUsed("indexingProgress"),

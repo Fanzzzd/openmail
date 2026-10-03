@@ -64,6 +64,7 @@ vi.mock("../state/mail", async () => {
   return {
     useRunMail: () => Effect.runFork,
     openDraft: () => Effect.fail(new NotFound({ what: "draft", id: "missing" })),
+    draftStatus: () => Effect.succeed(null),
     withMail: (
       f: (
         call: (tag: string, payload: unknown) => Effect.Effect<unknown, unknown>,

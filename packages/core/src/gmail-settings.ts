@@ -144,7 +144,6 @@ export function makeGmailSettings<
       Effect.mapError((e) => {
         if (
           e.status === 403 &&
-          (!e.body?.trim() || /insufficient|scope|permission|forbidden/i.test(e.body)) &&
           !/SERVICE_DISABLED|accessNotConfigured|rateLimitExceeded|dailyLimitExceeded/i.test(
             e.body ?? "",
           )

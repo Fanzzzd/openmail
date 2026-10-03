@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { DatabaseSync } from "node:sqlite";
@@ -18,9 +18,22 @@ it("smoke preparation upgrades only the copy, retains WAL messages and forces ma
       "INSERT INTO accounts(id,provider,email,created_at) VALUES('one','gmail','me@example.com',1)",
     );
     source.exec("INSERT INTO prefs(key,value_json) VALUES('markReadDelay','1')");
+    const config = join(root, "config.json");
+    const registration = JSON.stringify({
+      google: { clientId: "fake-client", clientSecret: "fake-secret" },
+      microsoft: { clientId: "fake-microsoft" },
+    });
+    writeFileSync(config, registration);
+    const configBefore = statSync(config);
     const before = readFileSync(file),
       wal = readFileSync(`${file}-wal`);
     expect(prepareSmokeDatabase(file, target).accounts).toBe(1);
+    expect(readFileSync(join(target, "config.json"), "utf8")).toBe(registration);
+    expect(statSync(join(target, "config.json")).mode & 0o777).toBe(0o600);
+    expect(readFileSync(config, "utf8")).toBe(registration);
+    expect(statSync(config).mtimeMs).toBe(configBefore.mtimeMs);
+    writeFileSync(join(target, "config.json"), "{}");
+    expect(readFileSync(config, "utf8")).toBe(registration);
     expect(readFileSync(file)).toEqual(before);
     expect(readFileSync(`${file}-wal`)).toEqual(wal);
     expect(source.prepare("PRAGMA user_version").get()?.["user_version"]).toBe(12);
@@ -55,6 +68,7 @@ it("smoke preparation without a source creates an isolated empty database", () =
   const target = mkdtempSync(join(tmpdir(), "openmail-smoke-empty-"));
   try {
     expect(prepareSmokeDatabase(undefined, target)).toEqual({ accounts: 0, messages: 0 });
+    expect(existsSync(join(target, "config.json"))).toBe(false);
   } finally {
     rmSync(target, { recursive: true, force: true });
   }

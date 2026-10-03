@@ -7,6 +7,7 @@ import { AsyncResult } from "effect/reactivity";
 import type { AiEvent, AiTriage, ComposeBody } from "@openmail/core/schema";
 import { testDom } from "./test-dom";
 
+const aiQueries = vi.hoisted(() => ({ tags: new Array<string>() }));
 const compose = vi.hoisted(() => ({ requests: new Array<unknown>(), truncated: false }));
 const triage = vi.hoisted((): { row: AiTriage | null; decisions: unknown[] } => ({
   row: null,
@@ -34,7 +35,13 @@ vi.mock("@effect/atom-react", async (original) => ({
     ),
 }));
 vi.mock("./rpc", () => ({
-  MailClient: { query: (tag: string) => tag, mutation: (tag: string) => tag },
+  MailClient: {
+    query: (tag: string) => {
+      aiQueries.tags.push(tag);
+      return tag;
+    },
+    mutation: (tag: string) => tag,
+  },
   submitAiKey: () => Effect.void,
 }));
 vi.mock("./state/mail", () => ({
@@ -312,6 +319,23 @@ it("AI answers render URLs and phone numbers as plain text", () => {
     );
     expect(dom.element.textContent).toContain(text);
     expect(dom.element.querySelectorAll("a")).toHaveLength(0);
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("unapproved reader never subscribes to summary or triage RPCs", () => {
+  const dom = testDom();
+  aiQueries.tags = [];
+  try {
+    dom.render(localize(createElement(ThreadSummary, { id: "other/m1", accountId: "other" })));
+    dom.render(
+      localize(
+        createElement(TriageChip, { id: "other/m1", accountId: "other", labels: ["INBOX"] }),
+      ),
+    );
+    expect(aiQueries.tags).not.toContain("AiSummary");
+    expect(aiQueries.tags).not.toContain("AiTriage");
   } finally {
     dom.dispose();
   }

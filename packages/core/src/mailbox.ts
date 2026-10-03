@@ -416,6 +416,8 @@ export class Mailbox extends Context.Service<
     /** Sends currently executing in core, including provider and cleanup work. */
     readonly pendingSendCount: Effect.Effect<number>;
     openDraft(id: string): Effect.Effect<Draft, PerformError>;
+    /** Optional local save status; null for a new or removed draft. No message import. */
+    draftStatus(id: string): Effect.Effect<Draft | null>;
     /** Saves locally right away; the provider's copy follows through the change queue. */
     saveDraft(input: DraftInput): Effect.Effect<Draft, NotFound | InvalidInput>;
     recoverDraft(

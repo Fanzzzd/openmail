@@ -8,7 +8,7 @@ export function requestDraftClose<R>(options: {
   draft: Draft;
   initial: Draft;
   empty: boolean;
-  lookup: Effect.Effect<StoredDraft, AppError, R>;
+  lookup: Effect.Effect<StoredDraft | null, AppError, R>;
 }) {
   return options.lookup.pipe(
     Effect.catchTag("NotFound", () => Effect.succeed(null)),

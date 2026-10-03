@@ -2761,6 +2761,10 @@ msgstr "邮件列表标签可见性"
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Message text could not be refreshed. Showing the cached version."
+msgstr "消息文本无法刷新。正在显示缓存版本。"
+
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Message updated"
 msgstr "邮件已更新"
@@ -3191,6 +3195,10 @@ msgstr "{0} 的通知"
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "编号列表"
+
+#: src/renderer/src/errors.ts
+msgid "OAuth client not configured. Set it up before syncing."
+msgstr "未配置 OAuth 客户端。请先配置再同步。"
 
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx

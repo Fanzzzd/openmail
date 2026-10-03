@@ -220,3 +220,27 @@ it("reports a preserved backup and exits before core can create an empty databas
   );
   expect(native.configured).not.toHaveBeenCalled();
 });
+
+it("records only redacted provider failure fields from the core logger", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.logWarning({
+      _tag: "ProviderDiagnostic",
+      provider: "outlook",
+      method: "GET",
+      endpoint: "/me/mailboxSettings",
+      status: 403,
+      accountHash: "0123456789abcdef",
+      body: "private message",
+      token: "secret token",
+      account: "private@example.com",
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"provider-failure"');
+  expect(preview).toContain('"endpoint":"/me/mailboxSettings"');
+  expect(preview).toContain('"status":403');
+  expect(preview).not.toMatch(/private|secret|token/);
+});

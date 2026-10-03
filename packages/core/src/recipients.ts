@@ -38,10 +38,11 @@ export function isEmailAddress(address: string): boolean {
 
 /** Reply targets, deduplicated across To/Cc and excluding the replying account's identities. */
 export function replyRecipients(
-  message: Pick<Message, "from" | "to" | "cc" | "replyTo">,
+  message: Pick<Message, "from" | "to" | "cc" | "replyTo" | "bodyRefresh">,
   ownAddresses: readonly string[],
   replyAll: boolean,
 ): { to: Address[]; cc: Address[] } {
+  if (message.bodyRefresh === "failed" && message.replyTo === undefined) return { to: [], cc: [] };
   const own = new Set(ownAddresses.map(addressKey));
   const sentByMe = own.has(addressKey(message.from.address));
   const targets = sentByMe

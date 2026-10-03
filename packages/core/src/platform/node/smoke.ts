@@ -1,9 +1,9 @@
 import { copyFileSync, existsSync, statSync, chmodSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { MIGRATIONS } from "../../db.js";
 import { DatabaseSync } from "node:sqlite";
 
-/** Copy a quiescent database and its WAL. Never open or write the source database. */
+/** Copy a quiescent database, WAL and adjacent OAuth client config without modifying sources. */
 export function prepareSmokeDatabase(
   source: string | undefined,
   directory: string,
@@ -12,21 +12,37 @@ export function prepareSmokeDatabase(
   const target = join(directory, "mail.db");
   if (source && resolve(source) === resolve(target))
     throw new Error("Smoke database must be a separate copy");
-  const files = source ? [source, `${source}-wal`].filter(existsSync) : [];
-  const before = files.map((file) => statSync(file));
-  for (const [index, file] of files.entries()) {
-    copyFileSync(file, index === 0 ? target : `${target}-wal`);
-    chmodSync(index === 0 ? target : `${target}-wal`, 0o600);
+  const sourceConfig = source ? join(dirname(source), "config.json") : undefined;
+  if (
+    sourceConfig &&
+    existsSync(sourceConfig) &&
+    resolve(sourceConfig) === resolve(join(directory, "config.json"))
+  )
+    throw new Error("Smoke configuration must be a separate copy");
+  const files = source
+    ? [
+        { source, target },
+        { source: `${source}-wal`, target: `${target}-wal` },
+        ...(sourceConfig ? [{ source: sourceConfig, target: join(directory, "config.json") }] : []),
+      ].filter((file) => existsSync(file.source))
+    : [];
+  const before = files.map((file) => statSync(file.source));
+  for (const file of files) {
+    copyFileSync(file.source, file.target);
+    chmodSync(file.target, 0o600);
   }
   if (
     files.some((file, index) => {
-      const after = statSync(file);
+      const after = statSync(file.source);
       const prior = before[index];
       return !prior || after.size !== prior.size || after.mtimeMs !== prior.mtimeMs;
     }) ||
-    (source && existsSync(`${source}-wal`) !== files.includes(`${source}-wal`))
+    (source &&
+      existsSync(`${source}-wal`) !== files.some((file) => file.source === `${source}-wal`)) ||
+    (sourceConfig &&
+      existsSync(sourceConfig) !== files.some((file) => file.source === sourceConfig))
   )
-    throw new Error("Database changed during copy. Close its writers and retry.");
+    throw new Error("Smoke inputs changed during copy. Close their writers and retry.");
   const db = new DatabaseSync(target);
   try {
     const row = db.prepare("PRAGMA user_version").get();

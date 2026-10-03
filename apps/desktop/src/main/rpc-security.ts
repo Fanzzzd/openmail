@@ -83,3 +83,34 @@ export function publicRpcResponse(
     },
   };
 }
+
+/** Track only validated request tags, never payloads, credentials or account identifiers. */
+export function createRpcFailureTracker(record: (tag: string) => void) {
+  const clients = new Map<number, Map<string, string>>();
+  return {
+    request(client: number, messages: readonly RpcMessage.FromClientEncoded[]) {
+      let tags = clients.get(client);
+      for (const message of messages) {
+        if (message._tag !== "Request" || !MailRpcs.requests.has(message.tag)) continue;
+        if (!tags) {
+          tags = new Map();
+          clients.set(client, tags);
+        }
+        tags.set(String(message.id), message.tag);
+      }
+    },
+    response(client: number, response: RpcMessage.FromServerEncoded) {
+      if (response._tag !== "Exit") return;
+      const tags = clients.get(client);
+      const tag = tags?.get(String(response.requestId));
+      tags?.delete(String(response.requestId));
+      if (!tags?.size) clients.delete(client);
+      if (!tag || response.exit._tag !== "Failure") return;
+      if (response.exit.cause.some((cause) => cause._tag === "Fail" || cause._tag === "Die"))
+        record(tag);
+    },
+    disconnect(client: number) {
+      clients.delete(client);
+    },
+  };
+}

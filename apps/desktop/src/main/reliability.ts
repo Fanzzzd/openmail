@@ -1,6 +1,7 @@
 import { requestRecoveryRelaunch } from "./recovery-actions";
 import { nativeRecoveryLabels } from "./native-i18n";
 import {
+  ProviderDiagnostic,
   checkLocalDatabase,
   createLocalDiagnostics,
   resetLocalCache,
@@ -9,7 +10,7 @@ import {
   prepareDatabaseStartup,
 } from "@openmail/core";
 import { app, dialog } from "electron";
-import { Logger } from "effect";
+import { Logger, Schema } from "effect";
 import { join } from "node:path";
 import { configureWindowRecovery } from "./windows";
 
@@ -21,6 +22,16 @@ export const localLog = (
   data?: unknown,
 ) => diagnostics?.record(event, data);
 export const diagnosticsLogger = Logger.make((options) => {
+  const messages: readonly unknown[] = Array.isArray(options.message)
+    ? options.message
+    : [options.message];
+  for (const message of messages) {
+    const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);
+    if (provider._tag === "Some") {
+      localLog("provider-failure", provider.value);
+      process.stderr.write(`[provider-failure] ${JSON.stringify(provider.value)}\n`);
+    }
+  }
   if (options.logLevel === "Error" || options.logLevel === "Fatal") localLog("runtime-error");
   else if (options.logLevel === "Warn") localLog("runtime-warning");
 });

@@ -163,3 +163,18 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
     );
   });
 }
+
+it("a readable cached message with failed header refresh never guesses reply targets", () => {
+  assert.deepStrictEqual(
+    replyRecipients({ from: sender, to: [me], cc: [], bodyRefresh: "failed" }, own, false),
+    { to: [], cc: [] },
+  );
+  assert.deepStrictEqual(
+    replyRecipients(
+      { from: sender, to: [me], cc: [], replyTo: [], bodyRefresh: "failed" },
+      own,
+      false,
+    ).to,
+    [sender],
+  );
+});

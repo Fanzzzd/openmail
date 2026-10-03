@@ -126,11 +126,14 @@ it.effect(
         });
         yield* m.refreshContacts(id).pipe(Effect.result);
         assert.strictEqual((yield* m.contactGroups("Team")).length, 1);
+        assert.strictEqual(yield* m.contactPhoto(id, alice.address), null);
+        assert.strictEqual(downloads.length, 1);
         delete server.featureFailure;
         server.contactPhotos = [
           { address: alice.address, url: "https://lh3.googleusercontent.com/2.png" },
         ];
         server.contactGroups = [];
+        yield* m.reauth(id);
         yield* m.refreshContacts(id);
         assert.deepStrictEqual(yield* m.contactGroups("Team"), []);
         yield* m.contactPhoto(id, alice.address);

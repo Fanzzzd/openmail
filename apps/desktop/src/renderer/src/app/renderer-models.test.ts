@@ -119,6 +119,7 @@ vi.mock("../state/mail", async () => {
       }),
     discardDraft: () => Effect.void,
     openDraft: () => Effect.succeed(null),
+    draftStatus: () => Effect.succeed(null),
     openThreadWindow: () => Effect.void,
     syncNow: Effect.void,
   };
