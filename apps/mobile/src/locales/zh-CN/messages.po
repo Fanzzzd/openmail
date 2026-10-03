@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "添加 Outlook 账户"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android 决定刷新时间，更新并非实时。需要非计费网络和充足电量。重启后请打开应用恢复刷新。"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "应用专用密码"
@@ -78,6 +83,16 @@ msgstr "添加照片"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "附件在发送前被拒绝。请移除禁止或过大的附件。"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "后台与通知"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "后台刷新"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "操作失败，请重试。"
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "连接失败。请检查服务器和应用专用密码。"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "无法启用后台或通知设置。请检查系统权限后重试。"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "转发"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "锁屏时隐藏内容"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "IMAP 端口"
@@ -270,6 +295,11 @@ msgstr "IMAP 服务器"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "收件箱"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS 决定刷新时间，更新并非实时。低电量模式或受限网络下暂停刷新。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "默认加载远程图片"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "加载中…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "仅使用本地通知，不显示消息文本。"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "邮件"
 #: src/labels.ts
 msgid "Move to"
 msgstr "移动到"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "收件箱新邮件通知"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "新邮件"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "显示消息文本"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "开启后仅显示发件人；关闭后显示发件人和主题。"
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "显示服务器搜索结果。"
@@ -617,6 +668,11 @@ msgstr "撤销"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "撤销发送"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "收件箱未读徽标"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

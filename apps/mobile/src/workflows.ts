@@ -120,6 +120,7 @@ export function foregroundCoordinator(deps: {
   active: () => boolean;
   online: () => Promise<boolean>;
   sync: () => Promise<unknown>;
+  prepare?: () => Promise<void>;
   send: () => Promise<unknown>;
   badge?: () => Promise<unknown>;
 }) {
@@ -132,6 +133,8 @@ export function foregroundCoordinator(deps: {
       return pending;
     }
     pending = (async () => {
+      if (!deps.active()) return;
+      if (sync && deps.prepare) await deps.prepare();
       if (!deps.active() || !(await deps.online())) return;
       if (sync) await deps.sync();
       do {

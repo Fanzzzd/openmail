@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Outlook-Konto hinzufügen"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android bestimmt den Aktualisierungszeitpunkt. Aktualisierungen erfolgen nicht in Echtzeit. Ein nicht getaktetes Netzwerk und ausreichend Akkuladung sind erforderlich. Öffne die App nach einem Neustart, um fortzufahren."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "App-Passwort"
@@ -78,6 +83,16 @@ msgstr "Foto anhängen"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Anhänge vor dem Senden abgelehnt. Entfernen Sie blockierte oder zu große Anhänge."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Hintergrund und Benachrichtigungen"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Hintergrundaktualisierung"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Aktion fehlgeschlagen. Erneut versuchen."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Verbindung fehlgeschlagen. Prüfe die Server und das App-Passwort."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Hintergrund- oder Benachrichtigungseinstellungen konnten nicht aktiviert werden. Prüfe die Systemberechtigungen und versuche es erneut."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Weiterleiten"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Inhalt auf dem Sperrbildschirm ausblenden"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "IMAP-Port"
@@ -270,6 +295,11 @@ msgstr "IMAP-Server"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Posteingang"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS entscheidet, wann aktualisiert wird. Aktualisierungen erfolgen nicht in Echtzeit. Der Stromsparmodus und eingeschränkte Netzwerke pausieren die Aktualisierung."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Externe Bilder standardmäßig laden"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Laden…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Nur lokale Benachrichtigungen. Nachrichtentext wird nie angezeigt."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Nachrichten"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Verschieben nach"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Benachrichtigungen für neue Posteingangsnachrichten"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Neue E-Mail"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Nachrichtentext anzeigen"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Bei Aktivierung wird nur der Absender angezeigt. Sonst werden Absender und Betreff angezeigt."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Suchergebnisse des Servers werden angezeigt."
@@ -617,6 +668,11 @@ msgstr "Widerrufen"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Senden rückgängig machen"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Symbolzähler für ungelesene Posteingangsnachrichten"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

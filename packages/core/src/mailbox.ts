@@ -503,7 +503,10 @@ export class Mailbox extends Context.Service<
     /** Pushes queued changes, then pulls. One sync runs at a time; a second call joins it. */
     sync(accountId?: string): Effect.Effect<SyncResult[]>;
     /** Desktop's lightweight inbox poll; CLI/MCP do not start a timer. */
-    pollInbox(): Effect.Effect<SyncResult[]>;
+    pollInbox(
+      accountIds?: readonly string[],
+      incrementalOnly?: boolean,
+    ): Effect.Effect<SyncResult[]>;
     readonly syncState: Effect.Effect<SyncState>;
     readonly events: Stream.Stream<MailboxEvent>;
   }

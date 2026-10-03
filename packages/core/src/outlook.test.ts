@@ -2666,3 +2666,22 @@ it.effect("category registration failure never patches message categories", () =
     assert.ok(!http.calls.some((call) => call.method === "PATCH"));
   }),
 );
+
+it.effect(
+  "background Outlook pull refuses missing or expired delta without restarting a folder",
+  () =>
+    Effect.gen(function* () {
+      const expired = `${GRAPH}/expired-delta`;
+      const http = fakeHttp({ "GET /expired-delta": { status: 410 } });
+      for (const cursor of [
+        Option.none<string>(),
+        Option.some(JSON.stringify({ __idType: "immutable", inbox: expired })),
+      ]) {
+        const result = yield* run(http, (adapter) =>
+          Stream.runCollect(adapter.pull(account, cursor, "inbox", true)).pipe(Effect.result),
+        );
+        assert.strictEqual(result._tag, "Failure");
+      }
+      assert.isFalse(http.calls.some((call) => call.url.pathname.includes("mailFolders")));
+    }),
+);

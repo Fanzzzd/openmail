@@ -1,0 +1,181 @@
+diff --git a/android/src/main/java/expo/modules/backgroundtask/BackgroundTaskScheduler.kt b/android/src/main/java/expo/modules/backgroundtask/BackgroundTaskScheduler.kt
+index 74c5719139a2dd00300e36af02c9b2b685bf9519..cdb38f5397b0eb684686ca397e025276e218da2e 100644
+--- a/android/src/main/java/expo/modules/backgroundtask/BackgroundTaskScheduler.kt
++++ b/android/src/main/java/expo/modules/backgroundtask/BackgroundTaskScheduler.kt
+@@ -105,7 +105,8 @@ object BackgroundTaskScheduler {
+       .putString("appScopeKey", appScopeKey)
+       .build()
+     val constraints = Constraints.Builder()
+-      .setRequiredNetworkType(NetworkType.CONNECTED)
++      .setRequiredNetworkType(NetworkType.UNMETERED)
++      .setRequiresBatteryNotLow(true)
+       .build()
+ 
+     // Get Work manager
+@@ -127,7 +128,7 @@ object BackgroundTaskScheduler {
+       builder.setInitialDelay(Duration.ofMinutes(overriddenIntervalMinutes))
+ 
+       // Create work request
+-      val workRequest = builder.build()
++      val workRequest = builder.setConstraints(constraints).build()
+ 
+       // Enqueue the work
+       return try {
+@@ -152,7 +153,7 @@ object BackgroundTaskScheduler {
+       )
+ 
+       // Create work request
+-      val workRequest = builder.build()
++      val workRequest = builder.setConstraints(constraints).build()
+ 
+       // Enqueue the work
+       return try {
+diff --git a/ios/BackgorundTaskExceptions.swift b/ios/BackgorundTaskExceptions.swift
+index 3f046eb86d88c82522b76d24563b3a577aab28d4..c0431f8fbc0bb80bba94115e9831ce3168318c9d 100644
+--- a/ios/BackgorundTaskExceptions.swift
++++ b/ios/BackgorundTaskExceptions.swift
+@@ -3,7 +3,7 @@ import ExpoModulesCore
+ 
+ internal final class BackgroundTasksNotConfigured: Exception {
+   override var reason: String {
+-    "Background Task has not been configured. To enable it, add `process` to `UIBackgroundModes` in the application's Info.plist file"
++    "Background Task has not been configured. To enable it, add `fetch` to `UIBackgroundModes` in the application's Info.plist file"
+   }
+ }
+ 
+diff --git a/ios/BackgroundTaskConstants.swift b/ios/BackgroundTaskConstants.swift
+index 39478bb55f0d96e4208b5d4047cb85b7a7410b29..6271b29af0bab201633406d2b92bce0d0aae7968 100644
+--- a/ios/BackgroundTaskConstants.swift
++++ b/ios/BackgroundTaskConstants.swift
+@@ -2,7 +2,7 @@
+ import Foundation
+ 
+ public struct BackgroundTaskConstants {
+-  public static let BackgroundWorkerIdentifier = "com.expo.modules.backgroundtask.processing"
++  public static let BackgroundWorkerIdentifier = "com.openmail.mobile.refresh"
+   public static let EVENT_PERFORM_WORK = "onPerformWork"
+   public static let EVENT_WORK_DONE = "onWorkDone"
+ 
+diff --git a/ios/BackgroundTaskModule.swift b/ios/BackgroundTaskModule.swift
+index f0f4e414124b17a86f8e0a57dabf8f76afd6ce09..3e2e0888508ce356bc10b21f9afba3972b2912f4 100644
+--- a/ios/BackgroundTaskModule.swift
++++ b/ios/BackgroundTaskModule.swift
+@@ -38,7 +38,7 @@ public class BackgroundTaskModule: Module {
+         throw BackgroundTasksRestricted()
+       }
+ 
+-      if !taskManager.hasBackgroundModeEnabled("processing") {
++      if !taskManager.hasBackgroundModeEnabled("fetch") {
+         throw BackgroundTasksNotConfigured()
+       }
+ 
+@@ -56,7 +56,7 @@ public class BackgroundTaskModule: Module {
+         throw BackgroundTasksRestricted()
+       }
+ 
+-      if !taskManager.hasBackgroundModeEnabled("processing") {
++      if !taskManager.hasBackgroundModeEnabled("fetch") {
+         throw BackgroundTasksNotConfigured()
+       }
+ 
+@@ -72,9 +72,6 @@ public class BackgroundTaskModule: Module {
+   }
+ 
+   @objc func handleTasksExpiredNotification(_ notification: Notification) {
+-    guard let url = notification.userInfo?["url"] as? URL else {
+-      return
+-    }
+     self.sendEvent(onTasksExpired, [:])
+   }
+ }
+diff --git a/ios/BackgroundTaskScheduler.swift b/ios/BackgroundTaskScheduler.swift
+index 906678bacad15d4fa23ad5b61c279b0b2d8d334a..84c061037cc4eab388cb7e484296f45a7c7d9ef3 100644
+--- a/ios/BackgroundTaskScheduler.swift
++++ b/ios/BackgroundTaskScheduler.swift
+@@ -4,7 +4,7 @@ import Foundation
+ 
+ protocol BackgroundTaskScheduling: Sendable {
+   func cancel(taskRequestWithIdentifier identifier: String)
+-  func submit(_ request: BGProcessingTaskRequest) throws
++  func submit(_ request: BGAppRefreshTaskRequest) throws
+   func pendingTaskRequests() async -> [BGTaskRequest]
+ }
+ 
+@@ -13,7 +13,7 @@ private struct SystemBackgroundTaskScheduler: BackgroundTaskScheduling {
+     BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: identifier)
+   }
+ 
+-  func submit(_ request: BGProcessingTaskRequest) throws {
++  func submit(_ request: BGAppRefreshTaskRequest) throws {
+     try BGTaskScheduler.shared.submit(request)
+   }
+ 
+@@ -89,9 +89,7 @@ public class BackgroundTaskScheduler {
+ 
+       stopWorkerOnce()
+ 
+-      let request = BGProcessingTaskRequest(identifier: BackgroundTaskConstants.BackgroundWorkerIdentifier)
+-      request.requiresNetworkConnectivity = true
+-      request.requiresExternalPower = false
++      let request = BGAppRefreshTaskRequest(identifier: BackgroundTaskConstants.BackgroundWorkerIdentifier)
+       request.earliestBeginDate = Date().addingTimeInterval(intervalSeconds)
+ 
+       do {
+diff --git a/plugin/build/withBackgroundTask.js b/plugin/build/withBackgroundTask.js
+index 28063e40a47d91d56044bc180fed0c6609c5c9d3..87a192954a42baec01056a047ab85cb90ada23df 100644
+--- a/plugin/build/withBackgroundTask.js
++++ b/plugin/build/withBackgroundTask.js
+@@ -8,8 +8,8 @@ const withBackgroundTask = (config) => {
+         if (!Array.isArray(config.modResults.UIBackgroundModes)) {
+             config.modResults.UIBackgroundModes = [];
+         }
+-        if (!config.modResults.UIBackgroundModes.includes('processing')) {
+-            config.modResults.UIBackgroundModes.push('processing');
++        if (!config.modResults.UIBackgroundModes.includes('fetch')) {
++            config.modResults.UIBackgroundModes.push('fetch');
+         }
+         // With the new background task module we need to install the identifier in the Info.plist:
+         // BGTaskSchedulerPermittedIdentifiers should be an array of strings - we need to
+@@ -17,10 +17,10 @@ const withBackgroundTask = (config) => {
+         if (!Array.isArray(config.modResults.BGTaskSchedulerPermittedIdentifiers)) {
+             config.modResults.BGTaskSchedulerPermittedIdentifiers = [];
+         }
+-        if (!config.modResults.BGTaskSchedulerPermittedIdentifiers.includes('com.expo.modules.backgroundtask.processing')) {
++        if (!config.modResults.BGTaskSchedulerPermittedIdentifiers.includes('com.openmail.mobile.refresh')) {
+             config.modResults.BGTaskSchedulerPermittedIdentifiers = [
+                 ...(config.modResults.BGTaskSchedulerPermittedIdentifiers || []),
+-                'com.expo.modules.backgroundtask.processing',
++                'com.openmail.mobile.refresh',
+             ];
+         }
+         return config;
+diff --git a/plugin/src/withBackgroundTask.ts b/plugin/src/withBackgroundTask.ts
+index 947e97efcca6c450207f32905d820db118ee8e13..65b56e6168ae34c917d9a239fa5f9f55a79d024e 100644
+--- a/plugin/src/withBackgroundTask.ts
++++ b/plugin/src/withBackgroundTask.ts
+@@ -8,8 +8,8 @@ const withBackgroundTask: ConfigPlugin = (config) => {
+     if (!Array.isArray(config.modResults.UIBackgroundModes)) {
+       config.modResults.UIBackgroundModes = [];
+     }
+-    if (!config.modResults.UIBackgroundModes.includes('processing')) {
+-      config.modResults.UIBackgroundModes.push('processing');
++    if (!config.modResults.UIBackgroundModes.includes('fetch')) {
++      config.modResults.UIBackgroundModes.push('fetch');
+     }
+ 
+     // With the new background task module we need to install the identifier in the Info.plist:
+@@ -20,12 +20,12 @@ const withBackgroundTask: ConfigPlugin = (config) => {
+     }
+     if (
+       !(config.modResults.BGTaskSchedulerPermittedIdentifiers as string[]).includes(
+-        'com.expo.modules.backgroundtask.processing'
++        'com.openmail.mobile.refresh'
+       )
+     ) {
+       config.modResults.BGTaskSchedulerPermittedIdentifiers = [
+         ...((config.modResults.BGTaskSchedulerPermittedIdentifiers as string[]) || []),
+-        'com.expo.modules.backgroundtask.processing',
++        'com.openmail.mobile.refresh',
+       ];
+     }
+ 

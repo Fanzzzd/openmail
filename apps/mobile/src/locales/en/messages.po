@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Add Outlook account"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "App password"
@@ -78,6 +83,16 @@ msgstr "Attach photo"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Attachments rejected before sending. Remove blocked or oversized attachments."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Background and notifications"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Background refresh"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Could not apply action. Try again."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Could not connect. Check the servers and app password."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Could not enable background or notification settings. Check system permissions and try again."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Forward"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Hide content on lock screen"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "IMAP port"
@@ -270,6 +295,11 @@ msgstr "IMAP server"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Inbox"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Load remote images by default"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Loading…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Local notifications only. Message text is never shown."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Messages"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Move to"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "New Inbox mail notifications"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "New mail"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Show message text"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Show sender only when enabled. When disabled, show sender and subject."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Showing server search results."
@@ -617,6 +668,11 @@ msgstr "Undo"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Undo send"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Unread Inbox badge"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

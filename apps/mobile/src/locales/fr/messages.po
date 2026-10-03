@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Ajouter un compte Outlook"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android décide quand actualiser. Les mises à jour ne sont pas en temps réel. Un réseau non facturé au volume et une batterie suffisamment chargée sont nécessaires. Après un redémarrage, ouvrez l’application pour reprendre."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "Mot de passe d’application"
@@ -78,6 +83,16 @@ msgstr "Joindre une photo"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Pièces jointes refusées avant l’envoi. Retirez les pièces jointes bloquées ou trop volumineuses."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Arrière-plan et notifications"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Actualisation en arrière-plan"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "L’action a échoué. Réessayez."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Connexion impossible. Vérifiez les serveurs et le mot de passe d’application."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Impossible d’activer les réglages d’arrière-plan ou de notification. Vérifiez les autorisations système et réessayez."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Transférer"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Masquer le contenu sur l’écran verrouillé"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "Port IMAP"
@@ -270,6 +295,11 @@ msgstr "Serveur IMAP"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Boîte de réception"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS décide quand actualiser. Les mises à jour ne sont pas en temps réel. Le mode économie d’énergie et les réseaux restreints suspendent l’actualisation."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Charger les images distantes par défaut"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Chargement…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Notifications locales uniquement. Le texte du message ne s’affiche jamais."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Messages"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Déplacer vers"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Notifications des nouveaux messages reçus"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Nouveau message"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Afficher le texte du message"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Si activé, seul l’expéditeur s’affiche. Sinon, l’expéditeur et l’objet s’affichent."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Affichage des résultats de recherche du serveur."
@@ -617,6 +668,11 @@ msgstr "Annuler"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Annuler l’envoi"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Badge des messages reçus non lus"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

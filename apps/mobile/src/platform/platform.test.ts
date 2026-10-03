@@ -14,6 +14,7 @@ const native = vi.hoisted(() => ({
   remove: vi.fn(),
 }));
 vi.mock("react-native", () => ({
+  AppState: { currentState: "active" },
   Platform: {
     get OS() {
       return native.os;
@@ -22,7 +23,7 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("expo-constants", () => ({ default: { expoConfig: { extra: {} } } }));
 vi.mock("expo-secure-store", () => ({
-  WHEN_UNLOCKED_THIS_DEVICE_ONLY: "device-only",
+  AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: "after-first-unlock-device-only",
   getItemAsync: async (key: string, options: unknown) => {
     native.get(key, options);
     return native.vault.get(key) ?? null;
@@ -103,7 +104,7 @@ describe("Expo platform services with native mocks", () => {
       "refresh-private",
       {
         keychainService: "openmail.refresh-tokens",
-        keychainAccessible: "device-only",
+        keychainAccessible: "after-first-unlock-device-only",
       },
     );
     expect(secretKey("a:b")).not.toBe(secretKey("a_b"));

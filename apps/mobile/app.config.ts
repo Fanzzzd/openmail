@@ -25,7 +25,7 @@ const config: ExpoConfig = {
       "android.permission.CAMERA",
       "android.permission.RECORD_AUDIO",
       "android.permission.RECEIVE_BOOT_COMPLETED",
-      "android.permission.POST_NOTIFICATIONS",
+      "com.google.android.c2dm.permission.RECEIVE",
     ],
     intentFilters: mobileOAuth.microsoftAndroidRedirect
       ? [
@@ -45,6 +45,8 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    "expo-background-task",
+    "./plugins/local-notifications.cjs",
     "expo-secure-store",
     "expo-localization",
     "expo-web-browser",

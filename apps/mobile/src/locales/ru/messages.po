@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Добавить учётную запись Outlook"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android определяет время обновления. Обновления не происходят в реальном времени. Требуются сеть без тарификации трафика и достаточный заряд батареи. После перезагрузки откройте приложение для возобновления."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "Пароль приложения"
@@ -78,6 +83,16 @@ msgstr "Прикрепить фото"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Вложения отклонены до отправки. Удалите запрещённые или слишком большие вложения."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Фоновое обновление и уведомления"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Фоновое обновление"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Не удалось выполнить действие. Повтори�
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Не удалось подключиться. Проверьте серверы и пароль приложения."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Не удалось включить фоновое обновление или уведомления. Проверьте системные разрешения и повторите попытку."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Переслать"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Скрывать содержимое на экране блокировки"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "Порт IMAP"
@@ -270,6 +295,11 @@ msgstr "Сервер IMAP"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Входящие"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS решает, когда обновлять почту. Обновления не происходят в реальном времени. Режим энергосбережения и ограниченные сети приостанавливают обновление."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "По умолчанию загружать внешние изображ
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Загрузка…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Только локальные уведомления. Текст сообщения никогда не отображается."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Сообщения"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Переместить в"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Уведомления о новых письмах во входящих"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Новое письмо"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Показать текст сообщения"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Если включено, отображается только отправитель. Если выключено, отправитель и тема."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Показаны результаты поиска на сервере."
@@ -617,6 +668,11 @@ msgstr "Отменить"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Отмена отправки"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Значок непрочитанных входящих"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

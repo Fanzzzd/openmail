@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Přidat účet Outlook"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android řídí čas obnovování. Aktualizace neprobíhají v reálném čase. Je vyžadována neúčtovaná síť a dostatek baterie. Po restartu otevřete aplikaci pro obnovení."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "Heslo aplikace"
@@ -78,6 +83,16 @@ msgstr "Přiložit fotografii"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Přílohy byly odmítnuty před odesláním. Odeberte blokované nebo příliš velké přílohy."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Pozadí a oznámení"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Obnovování na pozadí"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Akci se nepodařilo provést. Zkuste to znovu."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Připojení se nezdařilo. Zkontrolujte servery a heslo aplikace."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Nelze zapnout nastavení pozadí nebo oznámení. Zkontrolujte systémová oprávnění a zkuste to znovu."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Přeposlat"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Skrýt obsah na zamčené obrazovce"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "Port IMAP"
@@ -270,6 +295,11 @@ msgstr "Server IMAP"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Doručená pošta"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS rozhoduje, kdy obnovit poštu. Aktualizace neprobíhají v reálném čase. Úsporný režim a omezené sítě obnovování pozastaví."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Ve výchozím stavu načítat vzdálené obrázky"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Načítání…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Pouze místní oznámení. Text zprávy se nikdy nezobrazuje."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Zprávy"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Přesunout do"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Oznámení o nové poště v doručené poště"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Nová pošta"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Zobrazit text zprávy"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Při zapnutí se zobrazí pouze odesílatel. Při vypnutí odesílatel a předmět."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Zobrazují se výsledky hledání na serveru."
@@ -617,6 +668,11 @@ msgstr "Vrátit zpět"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Vrátit odeslání"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Odznak nepřečtené doručené pošty"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

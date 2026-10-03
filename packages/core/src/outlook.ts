@@ -646,6 +646,7 @@ export const makeOutlook: Effect.Effect<
     account: Account,
     cursor: Option.Option<string>,
     scope?: "inbox",
+    incrementalOnly = false,
   ): Stream.Stream<Change, ProviderFailure> =>
     Stream.callback<Change, ProviderFailure>(
       (queue) =>
@@ -684,6 +685,8 @@ export const makeOutlook: Effect.Effect<
           let fetched = 0;
           for (const folder of folders) {
             const known = previous[folder.key];
+            if (incrementalOnly && known === undefined)
+              yield* new ProviderError({ message: "Foreground sync required to renew the cursor" });
             const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
             const first = yield* get(account.id, DeltaPage, known ?? initial).pipe(
               Effect.map(Option.some),
@@ -692,7 +695,7 @@ export const makeOutlook: Effect.Effect<
                 () => Effect.succeed(Option.none()),
               ),
               Effect.catchIf(
-                (e) => known !== undefined && is410(e),
+                (e) => !incrementalOnly && known !== undefined && is410(e),
                 () =>
                   Effect.gen(function* () {
                     const fresh = yield* get(account.id, DeltaPage, initial);

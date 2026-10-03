@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Outlook アカウントを追加"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "更新のタイミングは Android が決定します。リアルタイムではありません。従量制でないネットワークと十分なバッテリー残量が必要です。再起動後はアプリを開くと再開します。"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "アプリ用パスワード"
@@ -78,6 +83,16 @@ msgstr "写真を添付"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "送信前に添付ファイルが拒否されました。禁止されたファイルやサイズが大きすぎるファイルを削除してください。"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "バックグラウンドと通知"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "バックグラウンド更新"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "操作できませんでした。再試行してください。"
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "接続できませんでした。サーバーとアプリ用パスワードを確認してください。"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "バックグラウンドまたは通知の設定を有効にできませんでした。システムの権限を確認して再試行してください。"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "転送"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "ロック画面で内容を非表示"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "IMAP ポート"
@@ -270,6 +295,11 @@ msgstr "IMAP サーバー"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "受信"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "更新のタイミングは iOS が決定します。リアルタイムではありません。低電力モードや制限されたネットワークでは更新を停止します。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "リモート画像を既定で読み込む"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "読み込み中…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "ローカル通知のみ使用します。メッセージ本文は表示しません。"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "メッセージ"
 #: src/labels.ts
 msgid "Move to"
 msgstr "移動先"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "受信トレイの新着メール通知"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "新着メール"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "メッセージ本文を表示"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "有効時は差出人のみ表示します。無効時は差出人と件名を表示します。"
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "サーバーの検索結果を表示します。"
@@ -617,6 +668,11 @@ msgstr "取り消す"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "送信を取り消す"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "受信トレイの未読バッジ"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

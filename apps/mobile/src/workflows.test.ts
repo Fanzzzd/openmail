@@ -210,3 +210,30 @@ it("offers only actual Outlook folder destinations", async () => {
     "folder:custom",
   ]);
 });
+
+it("prepares foreground credentials offline before connectivity checks and skips preparation while backgrounded", async () => {
+  const calls: string[] = [];
+  let active = true;
+  const work = foregroundCoordinator({
+    active: () => active,
+    online: async () => {
+      calls.push("online");
+      return false;
+    },
+    prepare: async () => {
+      calls.push("migrate");
+    },
+    sync: async () => {
+      calls.push("sync");
+    },
+    send: async () => {
+      calls.push("send");
+    },
+  });
+  await work(true);
+  expect(calls).toEqual(["migrate", "online"]);
+  active = false;
+  calls.length = 0;
+  await work(true);
+  expect(calls).toEqual([]);
+});

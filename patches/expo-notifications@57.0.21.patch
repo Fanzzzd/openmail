@@ -1,0 +1,68 @@
+diff --git a/android/src/main/AndroidManifest.xml b/android/src/main/AndroidManifest.xml
+index 777403d2c1ce4d4e5b10b1988fac1166274cec99..dc5bdf752345e3f0de715a15427903c218f010d4 100644
+--- a/android/src/main/AndroidManifest.xml
++++ b/android/src/main/AndroidManifest.xml
+@@ -1,15 +1,8 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+-  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+ 
+   <application>
+-    <service
+-      android:name=".service.ExpoFirebaseMessagingService"
+-      android:exported="false">
+-      <intent-filter android:priority="-1">
+-        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+-      </intent-filter>
+-    </service>
++
+ 
+     <receiver
+       android:name=".service.NotificationsService"
+@@ -18,12 +11,7 @@
+       <intent-filter android:priority="-1">
+         <action android:name="expo.modules.notifications.NOTIFICATION_EVENT" />
+ 
+-        <action android:name="android.intent.action.BOOT_COMPLETED" />
+-        <action android:name="android.intent.action.REBOOT" />
+-        <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+-        <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+ 
+-        <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+       </intent-filter>
+     </receiver>
+ 
+diff --git a/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt b/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
+index 610d3039cefd589647538ad8ba14587d29fab338..c1a860d60c19989779671b12e999ffb1bcb56c05 100644
+--- a/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
++++ b/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
+@@ -97,6 +97,16 @@ open class ExpoNotificationBuilder(
+ 
+     val content = notificationContent
+ 
++    content.body?.optString("openmailAccount")?.takeIf { it.isNotEmpty() }?.let { builder.setGroup(it) }
++    // Local mail never reveals sender or subject through the public lock-screen version.
++    content.body?.optString("openmailPublicTitle")?.takeIf { it.isNotEmpty() }?.let { title ->
++      builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
++      builder.setPublicVersion(createBuilder()
++        .setSmallIcon(icon)
++        .setContentTitle(title)
++        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
++        .build())
++    }
+     builder.setAutoCancel(content.isAutoDismiss)
+     builder.setOngoing(content.isSticky)
+ 
+diff --git a/ios/ExpoNotifications/Notifications/NotificationRecords.swift b/ios/ExpoNotifications/Notifications/NotificationRecords.swift
+index 58f69014923a0d32119b992fbdcaccaed1928121..888b3f3441a95e1ce4b1e44d06b73ccae3bb2b3f 100644
+--- a/ios/ExpoNotifications/Notifications/NotificationRecords.swift
++++ b/ios/ExpoNotifications/Notifications/NotificationRecords.swift
+@@ -361,6 +361,8 @@ public struct NotificationContentRecord: Record {
+       content.userInfo = userInfo
+     }
+ 
++    content.threadIdentifier = data?["openmailThread"] as? String ?? ""
++
+     if let categoryIdentifier = categoryIdentifier {
+       content.categoryIdentifier = categoryIdentifier
+     }

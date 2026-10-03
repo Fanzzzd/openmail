@@ -654,6 +654,7 @@ export interface ProviderAdapter {
     account: Account,
     cursor: Option.Option<string>,
     scope?: "inbox",
+    incrementalOnly?: boolean,
   ): Stream.Stream<Change, ProviderFailure>;
   push(account: Account, providerId: string, op: MailOp): Effect.Effect<void, ProviderFailure>;
   /** Gmail label operations; callers cap each request at 1000 IDs. */

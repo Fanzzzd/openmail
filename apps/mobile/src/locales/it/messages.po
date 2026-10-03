@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Aggiungi account Outlook"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android decide quando aggiornare. Gli aggiornamenti non sono in tempo reale. Sono necessari una rete non a consumo e batteria sufficiente. Dopo un riavvio, apri l’app per riprendere."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "Password per app"
@@ -78,6 +83,16 @@ msgstr "Allega foto"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Allegati rifiutati prima dell’invio. Rimuovi gli allegati bloccati o troppo grandi."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Background e notifiche"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Aggiornamento in background"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Impossibile eseguire l’azione. Riprova."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Connessione non riuscita. Controlla i server e la password per app."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Impossibile attivare le impostazioni di background o notifica. Controlla le autorizzazioni di sistema e riprova."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Inoltra"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Nascondi contenuto sulla schermata di blocco"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "Porta IMAP"
@@ -270,6 +295,11 @@ msgstr "Server IMAP"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Posta in arrivo"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS decide quando aggiornare. Gli aggiornamenti non sono in tempo reale. Il risparmio energetico e le reti limitate sospendono l’aggiornamento."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Carica le immagini remote per impostazione predefinita"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Caricamento…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Solo notifiche locali. Il testo del messaggio non viene mai mostrato."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Messaggi"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Sposta in"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Notifiche dei nuovi messaggi in arrivo"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Nuova posta"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Mostra testo del messaggio"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Se attivo, mostra solo il mittente. Altrimenti mostra mittente e oggetto."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Risultati della ricerca sul server visualizzati."
@@ -617,6 +668,11 @@ msgstr "Annulla"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Annulla invio"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Badge dei messaggi in arrivo non letti"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

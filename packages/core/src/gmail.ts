@@ -457,6 +457,7 @@ export const makeGmail: Effect.Effect<
     account: Account,
     cursor: Option.Option<string>,
     scope?: "inbox",
+    incrementalOnly = false,
   ): Stream.Stream<Change, ProviderFailure> =>
     Stream.unwrap(
       Effect.gen(function* () {
@@ -464,6 +465,10 @@ export const makeGmail: Effect.Effect<
         const incremental = Option.isSome(cursor)
           ? yield* readHistory(account.id, cursor.value, scope)
           : Option.none();
+        if (incrementalOnly && Option.isNone(incremental))
+          return yield* new ProviderError({
+            message: "Foreground sync required to renew the cursor",
+          });
         const plan = Option.isSome(incremental)
           ? incremental.value
           : yield* fullSyncPlan(account.id, scope);

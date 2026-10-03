@@ -57,11 +57,17 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 - 设置包含账户添加、重新登录、启用／停用、移除，四种滑动动作、撤销发送时间、远程图片默认值和语言。远程图片默认阻断；主动开启后仅允许图片 HTTPS，脚本、表单、字体与导航限制继续生效。
 - Lingui 包含 en、zh-CN、cs、nl、fr、de、it、ja、ru、es。相同文案复用桌面译文，消息文本字段保留提取注释。修改后执行 `pnpm --filter @openmail/mobile i18n:extract`、补齐译文，再执行 `i18n:compile`。测试检查目录同步与漏译。
 
-## 前台同步与原生权限
+## 前后台同步与原生权限（slice 51）
 
-初次进入前台、从后台返回和下拉刷新运行 core 同步。没有轮询、后台 fetch、推送注册或定时通知。发送延迟只在前台处理；应用进入后台后不启动新的发送，已开始的传输可能继续完成。发送撤销 toast 与整理撤销 toast 分开；无 core undoId 的整理操作不显示撤销，新的提示清除上次撤销失败状态。
+初次进入前台、从后台返回和下拉刷新运行 core 同步。后台刷新默认关闭，设置中可开启；expo-background-task 通过 iOS BGAppRefreshTask／Android WorkManager 调度，最小间隔 15 分钟只是调度提示，执行时间由 OS 决定，并非实时。后台共享 portable Mailbox 的 Inbox 增量命令，约 25 秒总预算，逐账户分配时间；未完成首次同步、缺失或过期游标、IMAP UIDVALIDITY 变化均留待前台处理，不全量同步、不回填、不发送或推送整理队列。自定义 `index.js` 先导入后台任务，再导入 Router；headless 启动不依赖路由加载。iOS 检查 NWPath 的 constrained／expensive 和低电量模式；Android worker 要求 unmetered network、battery-not-low，并检查省电模式，只有非计费网络才运行。Android 重启后不会重新调度，须打开应用恢复，因为 RECEIVE_BOOT_COMPLETED 被显式屏蔽。无轮询或推送中转。
 
-手机端暂不更新 app icon 徽标，已移除仅为徽标引入的 expo-notifications，避免 APNs entitlement、FCM service 和启动广播。image-picker plugin 关闭 cameraPermission 与 microphonePermission；Android 显式屏蔽 CAMERA、RECORD_AUDIO、RECEIVE_BOOT_COMPLETED、POST_NOTIFICATIONS。测试检查 Expo introspect 后的 manifest、entitlements、plist 和实际 autolinking，不启动 bundler。依据：[DocumentPicker](https://docs.expo.dev/versions/latest/sdk/document-picker/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)、[ImageManipulator](https://docs.expo.dev/versions/latest/sdk/imagemanipulator/)。
+本地新邮件通知按账户选择开启，默认关闭。前后台消费 core 的 NewMail 事件：首次同步、早于上次同步的邮件及已见过的移动邮件不提醒；稳定消息 ID 在现有 prefs 中保留 30 天去重，按记录时间和账户清理；旧布尔记录首次清理时获得一次 30 天保留期，已移除账户的记录删除。常规 compose.prefs 读取排除整个 mobile-background 前缀，先认领再提交 OS，进程在两者之间退出可能漏一次提醒，不重复。前台可见 Inbox 静默；同账户／会话复用通知 ID，iOS 按会话分组，Android 按账户分组。点击通知沿现有 `/reader` 路由打开会话。只显示发件人和主题，不显示消息文本；默认开启隐藏内容，通知中仅包含发件人，包括解锁后的通知，关闭后显示主题。发件人／主题先清除 C0/C1 和双向文本控制符、折叠空白，再限制为 80／120 个字符；发件人为空时回退地址，再回退本地化“新邮件”。Android 改用新 PRIVATE 通道并删除旧 PUBLIC 通道，公开锁屏版本只显示本地化“新邮件”。系统权限只在通知或徽标 opt-in 时请求，不请求远程 push token。已展示的通知由系统管理。
+
+app icon 未读 Inbox 徽标默认关闭，沿用 core 本地未读数和会话分组偏好，未缓存邮件不计入。系统／Android launcher 可能不支持或限制徽标。徽标更新失败不撤回已保存设置，后续刷新再尝试。发送延迟只在前台处理，进入后台后不启动新的发送；已开始的传输可能继续完成。发送撤销 toast 与整理撤销 toast 分开。
+
+Expo 的默认 background-task iOS 实现使用 BGProcessingTask，本项目依赖补丁改为 BGAppRefreshTaskRequest，plist 仅添加 `UIBackgroundModes=fetch` 与 `com.openmail.mobile.refresh` permitted identifier。notifications 补丁移除 Firebase messaging service 和启动广播，补齐两端原生分组；本地 config plugin 仅允许 POST_NOTIFICATIONS，并阻止 APNs entitlement、Firebase 服务及自动初始化。Android 继续屏蔽 RECEIVE_BOOT_COMPLETED、C2DM RECEIVE、CAMERA、RECORD_AUDIO；image-picker 关闭相机和麦克风权限。测试检查 Expo introspect、实际 autolinking 和已安装依赖源码；尚未验证真机任务唤醒、系统中止、通知点击、锁屏或徽标。
+
+依据：[BackgroundTask](https://docs.expo.dev/versions/v57.0.0/sdk/background-task/)、[Notifications](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)。
 
 ## 能力（slice 47）
 
@@ -75,6 +81,8 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 | 图片与链接      | 仅含 cid: 的 HTML 查询 core 图片，按消息 ID 复用下载结果，邮箱刷新保留阅读视图。远程图片默认阻断，可逐封加载，CSP 仅允许 HTTPS；WebView JS 始终关闭。移除 form、全部 meta http-equiv 和非 stylesheet link；iOS 只打开用户点击链接，Android 兼容省略 isTopFrame 的 release 事件，明确子框架仍拒绝；先显示 ASCII 域名及解码后的国际化域名供确认，CSP 禁止框架。                                                       |
 | 联系人          | 撰写 To／Cc／Bcc 自动补全查询共享联系人表及本地邮件历史；已有 slice 44 路径保留。                                                                                                                                                                                                                                                                                                                                   |
 | 邮箱列表        | 账户内标签／文件夹的嵌套名称与共享未读数；未缓存邮件不计入本地未读数。                                                                                                                                                                                                                                                                                                                                              |
+| 后台刷新        | 默认关闭；OS 控制时间，约 25 秒 Inbox 增量预算，低电量／受限网络暂停，不保证实时。                                                                                                                                                                                                                                                                                                                                  |
+| 通知与徽标      | 本地通知按账户 opt-in，默认仅显示发件人；未读 Inbox 徽标单独 opt-in。无远程推送。                                                                                                                                                                                                                                                                                                                                   |
 | 仍不支持        | PDF 文本提取、固定地址图片下载、推理和数据库恢复。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。                                                                                                                                                                                                                                                                         |
 
 原生库需重新生成开发构建。自动测试使用分片协议流、SQLite 与原生 API mocks，没有连接真实邮箱；不能证明各服务商兼容性、真机 TLS、分享面板预览或 Metro 打包。依赖依据：[TCP/TLS API](https://github.com/Rapsssito/react-native-tcp-socket)、[Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)。
@@ -91,7 +99,7 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 
 iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数据库前同步设置并确认 `URLResourceValues.isExcludedFromBackup`；只允许三个固定 mail 目录。模块缺失或备份排除失败就停止数据库启动。需要重新生成开发构建以链接该模块；autolinking 与 Swift 语法已检查，尚未用真机验证属性继承、目录迁移和原生模块调用。Android 继续设置 `android.allowBackup=false`。阅读器使用 incognito WebView。
 
-SecureStore 当前使用 `WHEN_UNLOCKED_THIS_DEVICE_ONLY`，锁屏或安全存储不可用时，读取返回可重试的 `ProviderError`，不把它当作凭证撤销，不删除 token，错误不包含原生异常或密钥内容。解锁后重试。后台刷新落地时，必须改用 `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`，并继续处理重启后首次解锁前的读取失败；该可访问性设置只在 iOS 生效。
+新建 SecureStore 项使用 `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`。已有项不会因 SecItemUpdate 自动改变可访问性；在 iOS 前台解锁后、联网检查和同步前，逐个迁移账户秘密及 core 的模型／更新密钥：先写并验证临时副本，再删除旧项、以新属性重建并验证，最后记录完成标记并清理副本。同键读写串行，失败或进程退出后可从安全副本读取，下次前台重试；不在 headless 任务中迁移。未完成迁移的旧项在锁屏时仍可能不可读。锁屏或安全存储不可用时，读取返回可重试的 `ProviderError`，不把它当作凭证撤销，不删除 token，错误不包含原生异常或密钥内容。解锁后重试。后台在首次解锁后可读凭证，继续处理重启后首次解锁前的读取失败；该可访问性设置只在 iOS 生效。
 
 阅读器在渲染前移除全部 meta http-equiv 和非 stylesheet link，阻止自动刷新与资源预取。iOS 只将 navigationType=click 的顶层链接交给系统，Android 必须先确认真实域名与完整 URL。远程图片 CSP 只允许 HTTPS。阅读器的 CSP 在桌面资源限制上增加 `form-action 'none'` 和 `base-uri 'none'`，渲染前移除 form 子树，防止 Android POST 绕过导航回调。WebView 始终拒绝导航；通过上述点击／确认流程且不含 URL 用户名/密码的 http、https、mailto 链接才交给系统浏览器或邮件应用。OAuth 回调经 `+native-intent.tsx` 路由到账户页，code/state 仍由 AuthSession 监听和校验。
 

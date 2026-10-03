@@ -3,6 +3,8 @@
 export * from "./compose-text.js";
 export * from "./compose-body.js";
 export * from "./mobile-outbox.js";
+export * from "./mobile-background.js";
+export { MODEL_KEY } from "./secrets.js";
 export * from "./mobile-compose.js";
 export * from "./domain.js";
 export * from "./errors.js";

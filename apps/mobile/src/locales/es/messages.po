@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Añadir cuenta de Outlook"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android controla cuándo actualizar. Las actualizaciones no son en tiempo real. Se requieren una red sin medición y suficiente batería. Tras reiniciar, abre la aplicación para reanudar."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "Contraseña de aplicación"
@@ -78,6 +83,16 @@ msgstr "Adjuntar foto"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Adjuntos rechazados antes de enviar. Elimina los adjuntos bloqueados o demasiado grandes."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Segundo plano y notificaciones"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Actualización en segundo plano"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "No se pudo realizar la acción. Inténtalo de nuevo."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "No se pudo conectar. Revisa los servidores y la contraseña de aplicación."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "No se pudieron activar los ajustes de segundo plano o notificaciones. Comprueba los permisos del sistema e inténtalo de nuevo."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Reenviar"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Ocultar contenido en la pantalla bloqueada"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "Puerto IMAP"
@@ -270,6 +295,11 @@ msgstr "Servidor IMAP"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Bandeja de entrada"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS decide cuándo actualizar. Las actualizaciones no son en tiempo real. El modo de bajo consumo y las redes restringidas pausan la actualización."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Cargar imágenes remotas por defecto"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Cargando…"
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Solo notificaciones locales. Nunca se muestra el texto del mensaje."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Mensajes"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Mover a"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Notificaciones de correo nuevo en la bandeja de entrada"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Correo nuevo"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Mostrar texto del mensaje"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Si está activado, solo se muestra el remitente. Si está desactivado, se muestran el remitente y el asunto."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Se muestran los resultados de búsqueda del servidor."
@@ -617,6 +668,11 @@ msgstr "Deshacer"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Deshacer envío"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Indicador de correo no leído en la bandeja de entrada"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

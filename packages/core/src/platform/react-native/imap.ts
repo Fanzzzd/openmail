@@ -485,7 +485,7 @@ export const makeMobileImap = Effect.gen(function* () {
         ),
       );
     },
-    pull: (account, cursor, scope) =>
+    pull: (account, cursor, scope, incrementalOnly = false) =>
       Stream.callback<Change, ProviderFailure>(
         (queue) =>
           session(account, async (client, _settings, _pass, signal) => {
@@ -498,10 +498,14 @@ export const makeMobileImap = Effect.gen(function* () {
               _tag: "Labels",
               labels: list.map((f) => ({ id: f.label, name: f.name, color: null })),
             });
-            const selected = scope ? list.filter((f) => f.label === scope) : list;
+            const selected = scope ? list.filter((f) => f.label === "INBOX") : list;
             for (const path of selected) {
               const validity = await client.select(path.path);
               const old = previous.folders[path.path];
+              if (incrementalOnly && (!old || old.uidValidity !== validity))
+                throw new ProviderError({
+                  message: "Foreground sync required to renew the cursor",
+                });
               if (!old || old.uidValidity !== validity) {
                 await emit({ _tag: "BackfillReset" });
                 if (old) await emit({ _tag: "DeleteLabel", label: path.label });
@@ -526,7 +530,7 @@ export const makeMobileImap = Effect.gen(function* () {
               const since = new Date(Date.now() - 90 * 86400000);
               const date = `${since.getUTCDate()}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][since.getUTCMonth()]}-${since.getUTCFullYear()}`;
               const found = await client.search(
-                state.lastUid ? `UID ${state.lastUid + 1}:*` : `SINCE ${date}`,
+                state.lastUid || incrementalOnly ? `UID ${state.lastUid + 1}:*` : `SINCE ${date}`,
               );
               const pending = found.filter((uid) => uid > state.lastUid).toSorted((a, b) => a - b);
               const newest = old?.uidValidity === validity ? pending : pending.slice(-1000);

@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { Effect, Layer, Logger, ManagedRuntime, Option } from "effect";
+import { Effect, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
 import {
   type MailSocket,
   MailTransport,
@@ -609,4 +609,34 @@ it("SMTP DATA writes a large body in bounded chunks and waits for the final acce
   expect(delivered).not.toContain("Bcc:");
   expect(delivered).toContain("\r\n..dot\r\n");
   expect(accepted).toBe(true);
+});
+
+it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before fetching history", async () => {
+  const test = server({ validity: "10" });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        yield* mailbox.sync();
+        test.commands.length = 0;
+        const adapter = (yield* Providers).get("imap");
+        const stale = JSON.stringify({
+          folders: { INBOX: { uidValidity: "9", lastUid: 1, uids: "1", unread: "1", starred: "" } },
+        });
+        for (const cursor of [Option.none<string>(), Option.some(stale)]) {
+          const result = yield* Stream.runCollect(
+            adapter.pull(account, cursor, "inbox", true),
+          ).pipe(Effect.result);
+          expect(result._tag).toBe("Failure");
+        }
+      }),
+    );
+    expect(test.commands.some((command) => /UID SEARCH|UID FETCH/.test(command))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
 });

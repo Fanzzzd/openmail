@@ -1,5 +1,6 @@
 import {
   MailboxLive,
+  MobileBackgroundStorageLive,
   StoreLive,
   mobileOAuthLayer,
   mobileProvidersLayer,
@@ -39,7 +40,8 @@ export function mobileMailboxLayer() {
   const services = Layer.mergeAll(StoreLive, mobileProvidersLayer).pipe(
     Layer.provideMerge(platform),
   );
-  return MailboxLive({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }).pipe(
-    Layer.provide(services),
-  );
+  return Layer.mergeAll(
+    MailboxLive({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }),
+    MobileBackgroundStorageLive,
+  ).pipe(Layer.provide(services));
 }

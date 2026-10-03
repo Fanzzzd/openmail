@@ -14,6 +14,7 @@ import { useMailbox, useMailboxQuery } from "../src/mailbox";
 import { Button } from "../src/controls";
 import { actionLabels } from "../src/labels";
 import { languageNames } from "../src/lifecycle";
+import { BackgroundSettings } from "../src/background-settings";
 import { styles } from "../src/styles";
 export default function Settings() {
   const runtime = useMailbox();
@@ -117,6 +118,7 @@ export default function Settings() {
             />
           </View>
         ))}
+      {accounts.kind === "ready" && <BackgroundSettings accounts={accounts.value} />}
       {prefs.kind === "ready" && (
         <>
           <Text style={styles.title}>

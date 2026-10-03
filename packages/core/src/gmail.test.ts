@@ -2209,3 +2209,18 @@ it.effect(
       assert.strictEqual(saved.action.important, false);
     }),
 );
+
+it.effect(
+  "background Gmail pull refuses missing and expired history without listing or full sync",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({ "GET /history": { status: 404 } });
+      for (const cursor of [Option.none<string>(), Option.some("expired")]) {
+        const result = yield* run(http, (adapter) =>
+          Stream.runCollect(adapter.pull(account, cursor, "inbox", true)).pipe(Effect.result),
+        );
+        assert.strictEqual(result._tag, "Failure");
+      }
+      assert.isFalse(http.calls.some((call) => /messages|profile|labels/.test(call.url.pathname)));
+    }),
+);

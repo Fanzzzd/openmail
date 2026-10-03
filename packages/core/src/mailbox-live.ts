@@ -1739,6 +1739,7 @@ export const MailboxLive = (
       const pullAccount = Effect.fn("Mailbox.pullAccount")(function* (
         account: Account,
         scope?: "inbox",
+        incrementalOnly = false,
       ) {
         const counts = { changed: 0, deleted: 0 };
         account = yield* store.getAccount(account.id).pipe(Effect.orDie);
@@ -1786,7 +1787,7 @@ export const MailboxLive = (
               if (currentAccount.enabled === false) return;
               yield* providers
                 .get(account.provider)
-                .pull(currentAccount, cursor, scope)
+                .pull(currentAccount, cursor, scope, incrementalOnly)
                 .pipe(
                   Stream.groupedWithin(WRITE_BATCH, Duration.millis(250)),
                   Stream.takeWhileEffect(() =>
@@ -1904,7 +1905,10 @@ export const MailboxLive = (
         Duration.fromInputUnsafe(options.inboxPoll ?? "45 seconds"),
       );
       const onBattery = () => options.pollOnBattery?.() ?? options.media?.onBattery() ?? false;
-      const pollInbox = Effect.fn("Mailbox.pollInbox")(function* (accountIds?: readonly string[]) {
+      const pollInbox = Effect.fn("Mailbox.pollInbox")(function* (
+        accountIds?: readonly string[],
+        incrementalOnly = false,
+      ) {
         if (syncPaused) return [];
         const task = Effect.gen(function* () {
           if (accountIds === undefined) yield* flush();
@@ -1923,7 +1927,7 @@ export const MailboxLive = (
             )
               continue;
             const before = yield* store.getInboxError(account.id);
-            const pulled: SyncResult = yield* pullAccount(account, "inbox");
+            const pulled: SyncResult = yield* pullAccount(account, "inbox", incrementalOnly);
             results.push(pulled);
             const error = yield* store.getInboxError(account.id);
             anyChange ||= pulled.changed + pulled.deleted > 0 || before !== error;

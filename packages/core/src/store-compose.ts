@@ -315,7 +315,7 @@ export function makeComposeStore(
   // Preferences
 
   const prefs = all(PrefRow)(
-    sql`SELECT key, value_json FROM prefs WHERE key NOT LIKE 'mobile-outbox:%'`,
+    sql`SELECT key, value_json FROM prefs WHERE key NOT LIKE 'mobile-outbox:%' AND key NOT LIKE 'mobile-background:%'`,
   ).pipe(
     Effect.map((rows): Prefs => {
       const stored = new Map(rows.map((r) => [r.key, r.value_json]));

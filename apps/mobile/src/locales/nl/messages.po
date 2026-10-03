@@ -54,6 +54,11 @@ msgid "Add Outlook account"
 msgstr "Outlook-account toevoegen"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+msgstr "Android bepaalt wanneer wordt ververst. Updates zijn niet in realtime. Een netwerk zonder datalimiet en voldoende batterij zijn vereist. Open de app na een herstart om te hervatten."
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "App password"
 msgstr "App-wachtwoord"
@@ -78,6 +83,16 @@ msgstr "Foto bijvoegen"
 #: app/compose.tsx
 msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
 msgstr "Bijlagen geweigerd vóór verzending. Verwijder geblokkeerde of te grote bijlagen."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background and notifications"
+msgstr "Achtergrond en meldingen"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Background refresh"
+msgstr "Verversen op de achtergrond"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -154,6 +169,11 @@ msgstr "Actie mislukt. Probeer het opnieuw."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Verbinding mislukt. Controleer de servers en het app-wachtwoord."
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Could not enable background or notification settings. Check system permissions and try again."
+msgstr "Kan achtergrond- of meldingsinstellingen niet inschakelen. Controleer de systeemrechten en probeer opnieuw."
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -257,6 +277,11 @@ msgid "Forward"
 msgstr "Stuur door"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Hide content on lock screen"
+msgstr "Inhoud verbergen op vergrendelscherm"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "IMAP port"
 msgstr "IMAP-poort"
@@ -270,6 +295,11 @@ msgstr "IMAP-server"
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Postvak IN"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "iOS decides when to refresh. Updates are not real-time. Low power and restricted networks pause refresh."
+msgstr "iOS bepaalt wanneer wordt ververst. Updates zijn niet in realtime. Bij energiebesparing en beperkte netwerken wordt verversen gepauzeerd."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -305,6 +335,12 @@ msgstr "Externe afbeeldingen standaard laden"
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Laden..."
+
+#. Message text means the body of an email.
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Local notifications only. Message text is never shown."
+msgstr "Alleen lokale meldingen. Berichttekst wordt nooit getoond."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -346,6 +382,16 @@ msgstr "Berichten"
 #: src/labels.ts
 msgid "Move to"
 msgstr "Verplaatsen naar"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "New Inbox mail notifications"
+msgstr "Meldingen voor nieuwe inboxberichten"
+
+#. js-lingui-explicit-id
+#: src/background.ts
+msgid "New mail"
+msgstr "Nieuwe e-mail"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -528,6 +574,11 @@ msgid "Show message text"
 msgstr "Berichttekst tonen"
 
 #. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Show sender only when enabled. When disabled, show sender and subject."
+msgstr "Bij inschakelen wordt alleen de afzender getoond. Bij uitschakelen de afzender en het onderwerp."
+
+#. js-lingui-explicit-id
 #: app/threads.tsx
 msgid "Showing server search results."
 msgstr "Zoekresultaten van de server worden weergegeven."
@@ -617,6 +668,11 @@ msgstr "Herstel"
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Verzenden ongedaan maken"
+
+#. js-lingui-explicit-id
+#: src/background-settings.tsx
+msgid "Unread Inbox badge"
+msgstr "Badge voor ongelezen inboxberichten"
 
 #. js-lingui-explicit-id
 #: src/labels.ts
