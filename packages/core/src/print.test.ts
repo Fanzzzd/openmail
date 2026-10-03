@@ -62,3 +62,17 @@ it("removes frames, plugins, base and meta refresh", () => {
   );
   assert.strictEqual(out, "<p>ok</p>");
 });
+
+it("print/PDF HTML removes entity-obfuscated script URLs and blocked resource sources", () => {
+  const bodyHtml =
+    '<a href="java&#x09;script:alert(1)" onClick = "alert(1)">text</a><img src="https://evil.test/pixel">';
+  const html = printableThread({
+    subject: "Reproduction",
+    headings,
+    formatDate: () => "date",
+    messages: [message({ bodyHtml })],
+  });
+  assert.include(html, '<div class="body"><a>text</a><img></div>');
+  assert.notInclude(html, "evil.test");
+  assert.notInclude(html, "alert(1)");
+});

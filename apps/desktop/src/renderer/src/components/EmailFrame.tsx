@@ -7,8 +7,9 @@ import { useLingui } from "@lingui/react/macro";
 import { constVoid } from "effect/Function";
 import { useBodyQuotes } from "./body-quotes";
 import { presentBody } from "./body-text";
-import { type SyntheticEvent, useEffect, useRef, useState } from "react";
+import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
+import { sanitizeReaderHtml } from "./reader-html";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
@@ -108,10 +109,11 @@ export function EmailFrame({
   });
 
   const css = `${BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
+  const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
-<base target="_blank"><style>${css}</style></head><body dir="auto">${html}</body></html>`;
+<base target="_blank"><style>${css}</style></head><body dir="auto">${safeHtml}</body></html>`;
 
   useEffect(
     () => () => {

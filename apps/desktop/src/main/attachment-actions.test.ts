@@ -160,6 +160,43 @@ const withFiles = async (
   );
 };
 
+it("dot-only attachment filenames save inside the folder chosen by the current UI", async () => {
+  const output = await mkdtemp(path.join(folder, "dot-save-"));
+  vi.mocked(dialog).showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [output] });
+  await withFiles(
+    (m, id, parent) =>
+      Effect.gen(function* () {
+        expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
+        expect(
+          yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "save" }),
+        ).toEqual({ count: 1, failures: [] });
+      }),
+    " .. ",
+  );
+  expect(await readdir(output)).toEqual(["attachment"]);
+  expect(await readFile(path.join(output, "attachment"), "utf8")).toBe("sh");
+});
+
+it("dot-only attachment filenames produce a private temp file before drag-out", async () => {
+  await withFiles(
+    (m, id, parent) =>
+      Effect.gen(function* () {
+        expect((yield* m.attachmentPart(id, [2])).filename).toBe(" .. ");
+        yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[2]] });
+        expect(
+          yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "drag" }),
+        ).toEqual({ count: 1, failures: [] });
+        const drag: unknown = native.drag.mock.calls[0]?.[0];
+        if (!drag || typeof drag !== "object" || !("file" in drag) || typeof drag.file !== "string")
+          throw new Error("No drag-out file");
+        expect(path.basename(drag.file)).toBe("attachment");
+        expect(path.dirname(drag.file)).toContain("openmail-attachments-");
+        expect(yield* Effect.promise(() => readFile(drag.file, "utf8"))).toBe("sh");
+      }),
+    " .. ",
+  );
+});
+
 it("Quick Look previews a private 0600 file; non-macOS and preview errors open the default app", async () => {
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {

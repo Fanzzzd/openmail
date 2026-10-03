@@ -1992,6 +1992,7 @@ exports[`tool input and output schemas are stable 1`] = `
                     "enum": [
                       "hidden-text-removed",
                       "plain-differs",
+                      "budget-exceeded",
                     ],
                     "type": "string",
                   },

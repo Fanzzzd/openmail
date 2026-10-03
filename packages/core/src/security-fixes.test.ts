@@ -90,11 +90,11 @@ for (const tag of ["title", "desc", "video", "audio", "canvas", "datalist"]) {
     );
   });
 }
-it("keeps only details summaries", () => {
+it("includes static details bodies shown by the reader", () => {
   expect(
     visibleHtmlText("<details><summary>Visible</summary><p>Injected instructions</p></details>")
       .text,
-  ).toBe("Visible");
+  ).toBe("Visible\nInjected instructions");
 });
 for (const style of [
   "color:hsl(0,0%,100%)",

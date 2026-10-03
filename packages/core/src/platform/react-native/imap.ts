@@ -221,20 +221,11 @@ export async function smtpSession(
   });
   const wire = new MailWire(socket);
   const reply = async (expected: number[]) => {
-    const lines: string[] = [];
-    for (let i = 0; i < 100; i++) {
-      const line = await wire.line();
-      if (!/^\d{3}[- ]/.test(line)) throw new ProviderError({ message: "Invalid SMTP response" });
-      lines.push(line);
-      if (line[3] === " ") {
-        const code = Number(line.slice(0, 3));
-        if (code === 535 || code === 534)
-          throw new AuthError({ accountId, message: "SMTP login rejected" });
-        if (!expected.includes(code)) throw new ProviderError({ message: "SMTP command rejected" });
-        return lines;
-      }
-    }
-    throw new ProviderError({ message: "SMTP response too large" });
+    const { code, lines } = await wire.smtpReply();
+    if (code === 535 || code === 534)
+      throw new AuthError({ accountId, message: "SMTP login rejected" });
+    if (!expected.includes(code)) throw new ProviderError({ message: "SMTP command rejected" });
+    return lines;
   };
   const command = async (value: string, expected: number[]) => {
     await wire.write(value);

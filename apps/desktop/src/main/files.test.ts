@@ -52,6 +52,58 @@ const serverForTest = () =>
     { ...first, providerId: "two", subject: "../../Second: message" },
   ]);
 
+it("dot-only attachment filenames cannot change the legacy save dialog directory", async () => {
+  const server = fakeServer("me@gmail.com", [
+    { ...first, attachments: [{ filename: " .. ", mimeType: "text/plain", size: 1 }] },
+  ]);
+  vi.mocked(app).getPath.mockReturnValue(folder);
+  vi.mocked(dialog).showSaveDialog.mockResolvedValue({ canceled: true, filePath: "" });
+  try {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.sync();
+        expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(false);
+      }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
+    );
+    expect(vi.mocked(dialog).showSaveDialog.mock.calls[0]?.[0]).toMatchObject({
+      defaultPath: path.join(folder, "attachment"),
+    });
+  } finally {
+    vi.mocked(app).getPath.mockReturnValue("/tmp");
+  }
+});
+
+it("dot-only attachment filenames use a file in the configured save folder", async () => {
+  const part = { filename: " .. ", mimeType: "text/plain", content: "YQ==" };
+  const server = fakeServer("me@gmail.com", [{ ...first, attachments: [{ ...part, size: 1 }] }]);
+  server.raw.set(
+    "one",
+    await Effect.runPromise(
+      buildMime(first.from, {
+        to: [],
+        cc: [],
+        bcc: [],
+        subject: "",
+        text: "",
+        attachments: [part],
+      }),
+    ),
+  );
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const account = yield* mailbox.connect({ provider: "gmail" });
+      yield* mailbox.sync();
+      yield* mailbox.setPrefs({ attachmentSaveFolder: { kind: "custom", path: folder } });
+      expect(yield* saveAttachment(mailbox, null, `${account.id}/one`, 0)).toBe(true);
+    }).pipe(Effect.provide(TestMailbox({ gmail: server }))),
+  );
+  expect(await readdir(folder)).toEqual(["attachment"]);
+  expect(await readFile(path.join(folder, "attachment"), "utf8")).toBe("a");
+});
+
 it("saves the chosen message byte-for-byte, including non-UTF8 MIME", async () => {
   const server = serverForTest();
   const raw = Buffer.concat([

@@ -1,4 +1,5 @@
 import { Context } from "effect";
+import { ProviderError, InvalidInput } from "../errors.js";
 import { Buffer } from "./bytes.js";
 
 /** TCP/TLS only. Protocol commands and credentials stay in core. */
@@ -34,13 +35,13 @@ export class MailWire {
   constructor(readonly socket: MailSocket) {}
   async bytes(size: number): Promise<Uint8Array> {
     if (!Number.isSafeInteger(size) || size < 0 || size > 25 * 1024 * 1024)
-      throw new Error("Mail response exceeds 25 MiB");
+      throw new ProviderError({ message: "Mail response exceeds 25 MiB" });
     while (this.length < size) await this.more();
     const value = new Uint8Array(size);
     let written = 0;
     while (written < size) {
       const chunk = this.chunks[this.head];
-      if (!chunk) throw new Error("Missing buffered mail bytes");
+      if (!chunk) throw new ProviderError({ message: "Missing buffered mail bytes" });
       const count = Math.min(size - written, chunk.length - this.offset);
       value.set(chunk.subarray(this.offset, this.offset + count), written);
       written += count;
@@ -62,9 +63,10 @@ export class MailWire {
   }
   private async more() {
     const next = await this.socket.read();
-    if (!next.length) throw new Error("Mail connection closed");
+    if (!next.length) throw new ProviderError({ message: "Mail connection closed" });
     this.length += next.length;
-    if (this.length > 26 * 1024 * 1024) throw new Error("Mail response too large");
+    if (this.length > 26 * 1024 * 1024)
+      throw new ProviderError({ message: "Mail response too large" });
     this.chunks.push(next);
   }
   async line(): Promise<string> {
@@ -86,24 +88,41 @@ export class MailWire {
           await this.bytes(2);
           return line;
         }
-        if (scanned > 256 * 1024) throw new Error("Mail response line too large");
+        if (scanned > 256 * 1024)
+          throw new ProviderError({ message: "Mail response line too large" });
         carriageReturn = byte === 13;
       }
       index++;
       offset = 0;
     }
   }
+  /** Parse a complete SMTP reply; every continuation uses the first status code. */
+  async smtpReply(): Promise<{ code: number; lines: string[] }> {
+    const lines: string[] = [];
+    let firstCode: number | undefined;
+    for (let i = 0; i < 100; i++) {
+      const line = await this.line();
+      if (!/^\d{3}[- ]/.test(line)) throw new ProviderError({ message: "Invalid SMTP response" });
+      const code = Number(line.slice(0, 3));
+      if (firstCode !== undefined && code !== firstCode)
+        throw new ProviderError({ message: "Inconsistent SMTP response code" });
+      firstCode = code;
+      lines.push(line);
+      if (line[3] === " ") return { code, lines };
+    }
+    throw new ProviderError({ message: "SMTP response too large" });
+  }
   write(line: string) {
     return writeMailChunks(this.socket, Buffer.from(`${line}\r\n`, "utf8"));
   }
   async upgrade() {
-    if (this.length) throw new Error("Unexpected data before TLS");
+    if (this.length) throw new ProviderError({ message: "Unexpected data before TLS" });
     await this.socket.startTLS();
   }
 }
 
 export const mailQuote = (value: string) => {
-  if (/[\r\n\0]/.test(value)) throw new Error("Invalid mail command value");
+  if (/[\r\n\0]/.test(value)) throw new InvalidInput({ message: "Invalid mail command value" });
   return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 };
 
@@ -137,9 +156,14 @@ export interface ImapResponse {
   byteLength: number;
 }
 function tokenize(text: string, literals: Uint8Array[]): ImapValue[] {
+  if (/[\0\r\n]/.test(text))
+    throw new ProviderError({ message: "Invalid IMAP response characters" });
+  const status = /^(\*|[^\s]+) (OK|NO|BAD|PREAUTH|BYE)(?: (.*))?$/i.exec(text);
+  if (status) return [status[1] ?? "", status[2] ?? "", status[3] ?? ""];
+  if (/^\+(?: |$)/.test(text)) return ["+", text.slice(1).trimStart()];
   let position = 0;
   const list = (depth: number): ImapValue[] => {
-    if (depth > 32) throw new Error("IMAP nesting too deep");
+    if (depth > 32) throw new ProviderError({ message: "IMAP nesting too deep" });
     const out: ImapValue[] = [];
     while (position < text.length) {
       const char = text[position];
@@ -148,6 +172,8 @@ function tokenize(text: string, literals: Uint8Array[]): ImapValue[] {
         continue;
       }
       if (char === ")") {
+        if (depth === 0)
+          throw new ProviderError({ message: "Unexpected IMAP closing parenthesis" });
         position++;
         return out;
       }
@@ -168,7 +194,7 @@ function tokenize(text: string, literals: Uint8Array[]): ImapValue[] {
           }
           value += c === "\\" ? (text[position++] ?? "") : c;
         }
-        if (!closed) throw new Error("Invalid IMAP quoted string");
+        if (!closed) throw new ProviderError({ message: "Invalid IMAP quoted string" });
         out.push(value);
         continue;
       }
@@ -178,10 +204,11 @@ function tokenize(text: string, literals: Uint8Array[]): ImapValue[] {
       const literal = /^\{(\d+)\}$/.exec(atom);
       if (literal) {
         const bytes = literals.shift();
-        if (!bytes) throw new Error("Missing IMAP literal");
+        if (!bytes) throw new ProviderError({ message: "Missing IMAP literal" });
         out.push(bytes);
       } else out.push(atom);
     }
+    if (depth > 0) throw new ProviderError({ message: "Unterminated IMAP list" });
     return out;
   };
   return list(0);
@@ -200,22 +227,26 @@ export class ImapWire {
     const literals: Uint8Array[] = [];
     let total = 0;
     let byteLength = Buffer.byteLength(text) + 2;
-    if (byteLength > maxBytes) throw new Error("IMAP command response too large");
+    if (byteLength > maxBytes)
+      throw new ProviderError({ message: "IMAP command response too large" });
     for (;;) {
-      const match = /\{(\d+)\}$/.exec(text);
+      const respText = /^(?:\*|[^\s]+) (?:OK|NO|BAD|PREAUTH|BYE)\b|^\+(?: |$)/i.test(text);
+      const match = respText ? null : /\{(\d+)\}$/.exec(text);
       if (!match) break;
       const size = Number(match[1]);
       total += size;
       if (total > 25 * 1024 * 1024 || literals.length >= 256)
-        throw new Error("IMAP response too large");
-      if (size + byteLength > maxBytes) throw new Error("IMAP command response too large");
+        throw new ProviderError({ message: "IMAP response too large" });
+      if (size + byteLength > maxBytes)
+        throw new ProviderError({ message: "IMAP command response too large" });
       literals.push(await this.wire.bytes(size));
       const continuation = await this.wire.line();
       byteLength += size + Buffer.byteLength(continuation) + 2;
-      if (byteLength > maxBytes) throw new Error("IMAP command response too large");
+      if (byteLength > maxBytes)
+        throw new ProviderError({ message: "IMAP command response too large" });
       text += ` ${continuation}`;
     }
-    if (/^\* BYE\b/i.test(text)) throw new Error("IMAP connection ended");
+    if (/^\* BYE\b/i.test(text)) throw new ProviderError({ message: "IMAP connection ended" });
     return { text, values: tokenize(text, literals), byteLength };
   }
   async command(command: string, literal?: Uint8Array): Promise<ImapResponse[]> {
@@ -230,9 +261,9 @@ export class ImapWire {
       bytes += response.byteLength;
       textBytes += Buffer.byteLength(response.text);
       if (textBytes > 4 * 1024 * 1024 || responses.length > 50000)
-        throw new Error("IMAP command response too large");
+        throw new ProviderError({ message: "IMAP command response too large" });
       if (response.text.startsWith("+")) {
-        if (!literal || sent) throw new Error("Unexpected IMAP continuation");
+        if (!literal || sent) throw new ProviderError({ message: "Unexpected IMAP continuation" });
         await writeMailChunks(this.wire.socket, literal);
         await this.wire.write("");
         sent = true;
@@ -267,7 +298,7 @@ export class ImapWire {
       .find(Boolean);
     const found = responses.map((r) => /\[UIDVALIDITY (\d+)\]/i.exec(r.text)?.[1]).find(Boolean);
     if (!found || (validity !== undefined && validity !== found))
-      throw new Error("IMAP UIDVALIDITY changed");
+      throw new ProviderError({ message: "IMAP UIDVALIDITY changed" });
     return found;
   }
   async search(criteria: string): Promise<number[]> {

@@ -1,9 +1,15 @@
 import colorString from "color-string";
-import { is as matchesSelector } from "css-select";
-import { DomUtils, ElementType, parseDocument } from "htmlparser2";
+import { compile } from "css-select";
+import { ElementType, parseDocument } from "htmlparser2";
 import { decodeCssEscapes, prepareMessageHtml } from "./reader-html.js";
+import { parse, ident } from "./css-tree-browser.js";
+import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
+import type { ModelThread } from "./mailbox.js";
 
-export type ModelTextFlag = "hidden-text-removed" | "plain-differs";
+export type ModelTextFlag = NonNullable<ModelThread["messages"][number]["flags"]>[number];
+type VisibleText =
+  | { text: string; hidden: boolean }
+  | { text: string; hidden: false; flags: readonly ["budget-exceeded"] };
 const BLOCK = /^(p|div|br|tr|li|h[1-6]|section|article|blockquote|table)$/;
 const OMIT = new Set([
   "head",
@@ -147,22 +153,150 @@ const hiddenStyle = (css: Map<string, string>) =>
 
 const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
-/** Walk the exact resource-prepared reader HTML. Never expose invisible descendants to a model. */
-export function visibleHtmlText(html: string): { text: string; hidden: boolean } {
+const normalizeHtmlText = (text: string) =>
+  text
+    .replace(/[\t \u00a0]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+
+/** Filter hidden text within a bounded CSS inspection; exhaustion is explicit. */
+export function visibleHtmlText(html: string): VisibleText {
   const dom = parseDocument(prepareMessageHtml(html).html);
-  const rules: { selector: string; style: string }[] = [];
-  const collect = (parent: Pick<typeof dom, "children">): void => {
-    for (const node of parent.children) {
-      if ("name" in node && node.name === "style") {
-        for (const match of DomUtils.textContent(node)
-          .replace(/\/\*[\s\S]*?\*\//g, "")
-          .matchAll(/([^{}]+)\{([^{}]*)\}/g))
-          for (const selector of (match[1] ?? "").split(","))
-            rules.push({ selector: selector.trim(), style: match[2] ?? "" });
-      } else if ("children" in node) collect(node);
-    }
+  type HtmlNode = (typeof dom.children)[number];
+  const elements: HtmlNode[] = [];
+  const classes = new Map<string, HtmlNode[]>();
+  const ids = new Map<string, HtmlNode[]>();
+  const tags = new Map<string, HtmlNode[]>();
+  const stylesheets: string[] = [];
+  const index = (map: Map<string, HtmlNode[]>, key: string, node: HtmlNode) => {
+    const nodes = map.get(key);
+    if (nodes) nodes.push(node);
+    else map.set(key, [node]);
   };
-  collect(dom);
+  const indexedNodes = dom.children.toReversed();
+  while (indexedNodes.length) {
+    const node = indexedNodes.pop();
+    if (!node) continue;
+    if ("name" in node && "attribs" in node) {
+      elements.push(node);
+      index(tags, node.name, node);
+      if (node.attribs.id) index(ids, node.attribs.id, node);
+      for (const name of new Set((node.attribs.class ?? "").split(/\s+/).filter(Boolean)))
+        index(classes, name, node);
+      if (node.name === "style") {
+        stylesheets.push(
+          node.children
+            .flatMap((child) => (child.type === ElementType.Text ? [child.data] : []))
+            .join(""),
+        );
+        continue;
+      }
+    }
+    if ("children" in node)
+      for (const child of node.children.toReversed()) indexedNodes.push(child);
+  }
+  // Index only the last compound selector; pseudo-class arguments and ancestor
+  // selectors remain the compiler's job. Impossible classes/ids/tags cost no budget.
+  const candidates = (selector: string): HtmlNode[] => {
+    const ast = parse(selector, { context: "selector" });
+    if (ast.type !== "Selector") return elements;
+    let selected: HtmlNode[] | undefined;
+    for (const token of ast.children) {
+      if (token.type === "Combinator") selected = undefined;
+      else {
+        const name =
+          "name" in token && typeof token.name === "string" ? ident.decode(token.name) : "";
+        const nodes =
+          token.type === "ClassSelector"
+            ? (classes.get(name) ?? [])
+            : token.type === "IdSelector"
+              ? (ids.get(name) ?? [])
+              : token.type === "TypeSelector" && name !== "*" && !name.includes("|")
+                ? (tags.get(name.toLowerCase()) ?? [])
+                : undefined;
+        if (nodes && (!selected || nodes.length < selected.length)) selected = nodes;
+      }
+    }
+    return selected ?? elements;
+  };
+  const styles = new Map<HtmlNode, string[]>();
+  let ruleBudget = 5120;
+  let matchesRemaining = 2_500_000;
+  const collect = (): boolean => {
+    for (const stylesheet of stylesheets) {
+      for (const rule of stylesheet
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/<!--|-->/g, "")
+        .matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        for (const selector of (rule[1] ?? "").split(",")) {
+          const decoded = decodeCssEscapes(selector.trim());
+          // Empty/invalid selectors are ignored, rather than charged as matches.
+          if (!decoded) continue;
+          if (decoded.length > 20_480) return true;
+          try {
+            const targets = candidates(decoded);
+            if (!targets.length) continue;
+            const match = compile(decoded);
+            const matched: HtmlNode[] = [];
+            for (const node of targets) {
+              if (--matchesRemaining < 0) return true;
+              if (match(node)) matched.push(node);
+            }
+            if (!matched.length) continue;
+            if (--ruleBudget < 0) return true;
+            for (const node of matched) {
+              const previous = styles.get(node);
+              if (previous) previous.push(rule[2] ?? "");
+              else styles.set(node, [rule[2] ?? ""]);
+            }
+          } catch {
+            /* Invalid selectors do not match. */
+          }
+        }
+      }
+    }
+    return false;
+  };
+  const fallback = (): VisibleText => {
+    type Frame = { kind: "node"; node: HtmlNode } | { kind: "line" };
+    const pending: Frame[] = dom.children.toReversed().map((node) => ({ kind: "node", node }));
+    const out: string[] = [];
+    while (pending.length) {
+      const frame = pending.pop();
+      if (!frame) continue;
+      if (frame.kind === "line") {
+        out.push("\n");
+        continue;
+      }
+      const node = frame.node;
+      if (node.type === ElementType.Text) {
+        out.push(node.data);
+        continue;
+      }
+      if (!("name" in node) || OMIT.has(node.name)) continue;
+      if (BLOCK.test(node.name)) {
+        out.push("\n");
+        pending.push({ kind: "line" });
+      }
+      if ("children" in node)
+        for (const child of node.children.toReversed()) pending.push({ kind: "node", node: child });
+    }
+    return { text: normalizeHtmlText(out.join("")), hidden: false, flags: ["budget-exceeded"] };
+  };
+  if (collect()) return fallback();
+  // htmlparser2's textContent recursively walks descendants. Hidden sender
+  // subtrees can be arbitrarily deep, so inspect text with an explicit stack.
+  const hasText = (node: (typeof dom.children)[number]): boolean => {
+    const pending = [node];
+    while (pending.length) {
+      const current = pending.pop();
+      if (!current) continue;
+      if (current.type === ElementType.Text && current.data.trim()) return true;
+      if ("children" in current) for (const child of current.children) pending.push(child);
+    }
+    return false;
+  };
   let hidden = false;
   const out: string[] = [];
   const walk = (
@@ -173,7 +307,13 @@ export function visibleHtmlText(html: string): { text: string; hidden: boolean }
       size: "14px",
       opacity: 1,
     },
+    depth = 0,
   ): void => {
+    if (depth >= MAX_HTML_DEPTH)
+      parent.children = flattenHtmlChildren(
+        parent.children,
+        (node) => "name" in node && OMIT.has(node.name),
+      );
     for (const node of parent.children) {
       if (node.type === ElementType.Text) {
         if (invisibleInk(inherited.color, inherited.background, inherited.opacity)) {
@@ -185,19 +325,12 @@ export function visibleHtmlText(html: string): { text: string; hidden: boolean }
       }
       if (!("name" in node) || !("attribs" in node)) continue;
       if (OMIT.has(node.name)) {
-        if (!["head", "style"].includes(node.name) && DomUtils.textContent(node).trim())
-          hidden = true;
+        if (!["head", "style"].includes(node.name) && hasText(node)) hidden = true;
         continue;
       }
       const attrs = node.attribs;
-      const matching = rules.filter(({ selector }) => {
-        try {
-          return matchesSelector(node, decodeCssEscapes(selector));
-        } catch {
-          return false;
-        }
-      });
-      const css = declarations([...matching.map((r) => r.style), attrs.style ?? ""].join(";"));
+      const matching = styles.get(node) ?? [];
+      const css = declarations([...matching, attrs.style ?? ""].join(";"));
       const ink = css.get("color") ?? attrs.color ?? inherited.color;
       const foreground = /^(inherit|unset)$/.test(ink) ? inherited.color : ink;
       const backdrop = backgroundColor(
@@ -217,7 +350,7 @@ export function visibleHtmlText(html: string): { text: string; hidden: boolean }
             small(css.get("width")) ||
             small(css.get("max-width"))));
       const invisible =
-        matching.some((rule) => hiddenStyle(declarations(rule.style))) ||
+        matching.some((rule) => hiddenStyle(declarations(rule))) ||
         "hidden" in attrs ||
         attrs["aria-hidden"]?.toLowerCase() === "true" ||
         css.get("display") === "none" ||
@@ -228,33 +361,17 @@ export function visibleHtmlText(html: string): { text: string; hidden: boolean }
         hiddenStyle(css) ||
         /opacity\(\s*(?:0(?:\.0+)?|0?\.1|[0-9]|10)%?\s*\)/.test(css.get("filter") ?? "");
       if (invisible) {
-        if (DomUtils.textContent(node).trim()) hidden = true;
+        if (hasText(node)) hidden = true;
         continue;
       }
       if (BLOCK.test(node.name)) out.push("\n");
-      if (node.name === "details") {
-        const summaries = node.children.filter(
-          (child) => "name" in child && child.name === "summary",
-        );
-        if (
-          node.children.some(
-            (child) => !summaries.includes(child) && DomUtils.textContent(child).trim(),
-          )
-        )
-          hidden = true;
-        walk({ children: summaries }, { color: foreground, background, size, opacity });
-      } else walk(node, { color: foreground, background, size, opacity });
+      walk(node, { color: foreground, background, size, opacity }, depth + 1);
       if (BLOCK.test(node.name)) out.push("\n");
     }
   };
   walk(dom);
   return {
-    text: out
-      .join("")
-      .replace(/[\t \u00a0]+/g, " ")
-      .replace(/ *\n */g, "\n")
-      .replace(/\n{2,}/g, "\n")
-      .trim(),
+    text: normalizeHtmlText(out.join("")),
     hidden,
   };
 }
@@ -278,6 +395,7 @@ export function messageModelText(
   return {
     text: visible.text,
     flags: [
+      ...("flags" in visible ? visible.flags : []),
       ...(visible.hidden ? ["hidden-text-removed" as const] : []),
       ...(differs ? ["plain-differs" as const] : []),
     ],

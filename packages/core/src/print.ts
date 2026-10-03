@@ -6,6 +6,7 @@
  */
 import type { Address, Message } from "./domain.js";
 import { prepareMessageHtml } from "./reader-html.js";
+import { sanitizeReaderHtml } from "./reader-sanitize.js";
 
 export interface PrintHeadings {
   from: string;
@@ -52,11 +53,7 @@ const person = (a: Address) => (a.name ? `${a.name} <${a.address}>` : a.address)
 
 /** Removes active content. Rendering has JavaScript off too; this keeps the document inert anyway. */
 export function stripActiveContent(html: string): string {
-  return html
-    .replace(/<(script|iframe|object|embed|applet|frameset|noscript)\b[\s\S]*?<\/\1\s*>/gi, "")
-    .replace(/<(script|iframe|object|embed|applet|frame|base|meta|link)\b[^>]*>/gi, "")
-    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/(href|src|action)\s*=\s*(["']?)\s*javascript:[^"'>\s]*\2/gi, '$1="#"');
+  return sanitizeReaderHtml(html);
 }
 
 export function printableThread(input: PrintInput): string {

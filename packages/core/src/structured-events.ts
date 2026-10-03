@@ -193,7 +193,8 @@ export function structuredMailEvents(
       const current = pending.pop();
       if (!current) break;
       if ("data" in current) collected += current.data;
-      else if ("children" in current) pending.push(...current.children.toReversed());
+      else if ("children" in current)
+        for (const child of current.children.toReversed()) pending.push(child);
     }
     return collected.slice(0, 100_000);
   };
@@ -202,15 +203,15 @@ export function structuredMailEvents(
     const item: Record<string, unknown> = {
       "@type": node.attribs.itemtype?.split(/\s+/).map(typeName) ?? [],
     };
-    const visit = (child: Node): void => {
-      if (--budget < 0 || !("attribs" in child)) return;
+    const visit = (child: Node, childDepth = 0): void => {
+      if (--budget < 0 || childDepth > 64 || !("attribs" in child)) return;
       const props = child.attribs.itemprop?.split(/\s+/) ?? [];
       const scoped = child.attribs.itemscope !== undefined;
       const value = scoped
         ? micro(child, depth + 1)
         : (child.attribs.content ?? child.attribs.datetime ?? child.attribs.href ?? content(child));
       for (const prop of props) item[prop] = value;
-      if (!scoped) for (const nested of child.children) visit(nested);
+      if (!scoped) for (const nested of child.children) visit(nested, childDepth + 1);
     };
     for (const child of node.children) visit(child);
     return item;

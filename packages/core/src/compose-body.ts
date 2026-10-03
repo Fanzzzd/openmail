@@ -290,7 +290,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
       if (DROP_CONTENT.has(node.name)) continue;
       const { name, attribs } = node;
       if (name === "html" || name === "body") {
-        result.push(...visit(node.children, pre, depth + 1));
+        for (const child of visit(node.children, pre, depth + 1)) result.push(child);
         continue;
       }
       const block = BLOCKS.has(name) || LISTS.has(name) || name === "table";
@@ -313,24 +313,20 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
               : undefined);
       if (name === "a") {
         const href = composeLink(attribs.href ?? "");
-        result.push(
-          ...(href
-            ? [
-                {
-                  kind: "tag",
-                  name: "a",
-                  attrs: {
-                    href,
-                    ...richAttrs(name, attribs),
-                    ...(/^[a-f0-9-]{36}$/.test(attribs["data-compose-mention"] ?? "")
-                      ? { "data-compose-mention": attribs["data-compose-mention"] ?? "" }
-                      : {}),
-                  },
-                  children,
-                } satisfies SafeNode,
-              ]
-            : children),
-        );
+        if (href)
+          result.push({
+            kind: "tag",
+            name: "a",
+            attrs: {
+              href,
+              ...richAttrs(name, attribs),
+              ...(/^[a-f0-9-]{36}$/.test(attribs["data-compose-mention"] ?? "")
+                ? { "data-compose-mention": attribs["data-compose-mention"] ?? "" }
+                : {}),
+            },
+            children,
+          } satisfies SafeNode);
+        else for (const child of children) result.push(child);
       } else if (!preserveRemote && name === "img" && /^cid:[\w.@+-]+$/i.test(attribs.src ?? "")) {
         result.push({
           kind: "tag",
@@ -344,7 +340,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
         });
       } else if (tag) {
         if (name === "span" && !preserveRemote && !Object.keys(richAttrs(name, attribs)).length) {
-          result.push(...children);
+          for (const child of children) result.push(child);
           continue;
         }
         result.push({
@@ -353,7 +349,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
           attrs: preserveRemote ? transportAttrs(name, attribs) : richAttrs(name, attribs),
           children,
         });
-      } else result.push(...children);
+      } else for (const child of children) result.push(child);
     }
     return result;
   };

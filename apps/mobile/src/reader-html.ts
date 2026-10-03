@@ -1,5 +1,5 @@
 import { toUnicode } from "punycode/";
-import { prepareMessageHtml, stripMobileForms } from "@openmail/core/portable";
+import { prepareMessageHtml, stripMobileForms, sanitizeReaderHtml } from "@openmail/core/portable";
 
 // Desktop resource policy plus explicit form/base restrictions for Android WebView.
 export const READER_CSP =
@@ -10,7 +10,7 @@ export function readerDocument(
   inline: Readonly<Record<string, string>> = {},
 ): string {
   const prepared = prepareMessageHtml(stripMobileForms(html), { inline });
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${remoteImages ? READER_CSP.replace("img-src data: cid:", "img-src data: cid: https:") : READER_CSP}"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:16px -apple-system,sans-serif;color:#16181d;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style></head><body>${prepared.html}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${remoteImages ? READER_CSP.replace("img-src data: cid:", "img-src data: cid: https:") : READER_CSP}"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:16px -apple-system,sans-serif;color:#16181d;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style></head><body>${sanitizeReaderHtml(prepared.html, remoteImages)}</body></html>`;
 }
 /** Validate links at the WebView boundary. Never hand credential-bearing URLs to another app. */
 export function externalReaderLink(raw: string): string | null {

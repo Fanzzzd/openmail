@@ -10,7 +10,8 @@ export function safeFilename(name: string): string {
     .basename(name.replaceAll("\\", "/"))
     .replace(/[/:]/g, "_")
     .replaceAll(/./gsu, (c) => (c.charCodeAt(0) < 32 ? "_" : c))
+    .trim()
     .replace(/^\.+/, "")
     .trim();
-  return attachmentFilename(base || "attachment");
+  return attachmentFilename(base || "attachment").trim();
 }
