@@ -1,3 +1,4 @@
+import { graphPageLink } from "./graph-pagination.js";
 import { Effect, Schema } from "effect";
 import type { Account, Address } from "./domain.js";
 import type { CalendarInvite, InviteResponse } from "./calendar.js";
@@ -38,13 +39,10 @@ const Event = Schema.Struct({
 const Related = Schema.Struct({ event: Schema.optionalKey(Schema.NullOr(Event)) });
 const Events = Schema.Struct({ value: Schema.Array(Event) });
 
-/** Only Microsoft's own /me pagination links may receive the bearer token. */
-function nextPath(url: string, source: string): string {
-  const parsed = new URL(url, "https://graph.microsoft.com/v1.0/");
-  if (parsed.origin !== "https://graph.microsoft.com" || parsed.pathname !== `/v1.0/me/${source}`)
-    throw new InvalidInput({ message: "Invalid contact pagination link" });
-  return `${parsed.pathname.slice("/v1.0".length)}${parsed.search}`;
-}
+const ContactFolders = Schema.Struct({
+  value: Schema.Array(Schema.Struct({ id: Schema.String })),
+  "@odata.nextLink": Schema.optionalKey(Schema.String),
+});
 
 export function makeOutlookFeatures<
   E extends {
@@ -69,47 +67,86 @@ export function makeOutlookFeatures<
         "contacts",
         Effect.gen(function* () {
           const contacts: Address[] = [];
-          for (const source of ["contacts", "people"] as const) {
-            const select =
-              source === "contacts"
-                ? "id,displayName,emailAddresses,companyName"
-                : "id,displayName,scoredEmailAddresses";
-            let path = `/me/${source}?$select=${select}&$top=250`;
-            const seen = new Set<string>();
-            while (path) {
-              if (seen.has(path))
-                return yield* new InvalidInput({ message: "Contact pagination repeated a page" });
-              seen.add(path);
-              const page =
-                source === "contacts"
-                  ? yield* get(account.id, Contacts, path)
-                  : yield* get(account.id, People, path);
-              for (const person of page.value) {
-                const emails =
-                  "emailAddresses" in person
-                    ? person.emailAddresses
-                    : "scoredEmailAddresses" in person
-                      ? person.scoredEmailAddresses
-                      : [];
-                for (const email of emails ?? [])
+          const contactIds = new Set<string>();
+          const readPages = <A>(
+            schema: Schema.Decoder<{
+              readonly value: readonly A[];
+              readonly "@odata.nextLink"?: string;
+            }>,
+            base: string,
+            query: string,
+          ) =>
+            Effect.gen(function* () {
+              const values: A[] = [];
+              let path = `${base}?${query}`;
+              const seen = new Set<string>();
+              while (path) {
+                if (seen.has(path))
+                  return yield* new InvalidInput({ message: "Contact pagination repeated a page" });
+                seen.add(path);
+                const page = yield* get(account.id, schema, path);
+                values.push(...page.value);
+                const next = page["@odata.nextLink"];
+                path = next
+                  ? yield* Effect.try({
+                      try: () => graphPageLink(next, base),
+                      catch: () => new InvalidInput({ message: "Invalid contact pagination link" }),
+                    })
+                  : "";
+              }
+              return values;
+            });
+          const readContacts = (base: string) =>
+            Effect.gen(function* () {
+              const page = yield* readPages(
+                Contacts,
+                base,
+                "$select=id,displayName,emailAddresses,companyName&$top=250",
+              );
+              for (const person of page) {
+                if (person.id && contactIds.has(person.id)) continue;
+                if (person.id) contactIds.add(person.id);
+                for (const email of person.emailAddresses ?? [])
                   if (email.address)
                     contacts.push({
                       address: email.address,
                       name: person.displayName ?? email.name ?? "",
-                      ...("companyName" in person && person.companyName
-                        ? { company: person.companyName }
-                        : {}),
-                      ...(person.id ? { contactKey: `${source}:${person.id}` } : {}),
+                      ...(person.companyName ? { company: person.companyName } : {}),
+                      ...(person.id ? { contactKey: `contacts:${person.id}` } : {}),
                     });
               }
-              path = page["@odata.nextLink"]
-                ? yield* Effect.try({
-                    try: () => nextPath(page["@odata.nextLink"] ?? "", source),
-                    catch: () => new InvalidInput({ message: "Invalid contact pagination link" }),
-                  })
-                : "";
-            }
+            });
+          yield* readContacts("/me/contacts");
+          const pending = yield* readPages(
+            ContactFolders,
+            "/me/contactFolders",
+            "$select=id&$top=100",
+          );
+          const folders = new Set<string>();
+          for (let index = 0; index < pending.length; index++) {
+            const folder = pending[index];
+            if (!folder || folders.has(folder.id)) continue;
+            folders.add(folder.id);
+            const base = `/me/contactFolders/${encodeURIComponent(folder.id)}`;
+            yield* readContacts(`${base}/contacts`);
+            pending.push(
+              ...(yield* readPages(ContactFolders, `${base}/childFolders`, "$select=id&$top=100")),
+            );
           }
+          // People is a relevance-ranked suggestion feed, limited to the first 250, not a contact inventory.
+          const people = yield* get(
+            account.id,
+            People,
+            "/me/people?$select=id,displayName,scoredEmailAddresses&$top=250",
+          );
+          for (const person of people.value.slice(0, 250))
+            for (const email of person.scoredEmailAddresses ?? [])
+              if (email.address)
+                contacts.push({
+                  address: email.address,
+                  name: person.displayName ?? email.name ?? "",
+                  ...(person.id ? { contactKey: `people:${person.id}` } : {}),
+                });
           return mergeContacts(contacts);
         }),
       ),

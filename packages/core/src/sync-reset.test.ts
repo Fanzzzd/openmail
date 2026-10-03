@@ -11,7 +11,7 @@ import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider, fakeServer } from "./platform/node/fake-provider.js";
 import { Providers, Store, type ProviderAdapter } from "./services.js";
 import { StoreLive } from "./store.js";
-import { makeResetGuard, needsResetVerification } from "./sync-reset.js";
+import { makeResetGuard } from "./sync-reset.js";
 import { parseGmailBatch } from "./provider-batch.js";
 
 const mail = (providerId: string): IncomingMessage => ({
@@ -363,12 +363,6 @@ it.effect(
   },
 );
 
-it("slice56: deletion threshold uses the larger of 50 rows and 20 percent", () => {
-  assert.isFalse(needsResetVerification(100, 50));
-  assert.isTrue(needsResetVerification(100, 51));
-  assert.isFalse(needsResetVerification(1000, 200));
-  assert.isTrue(needsResetVerification(1000, 201));
-});
 it("slice56: Gmail multipart responses map by Content-ID rather than position", () => {
   assert.deepStrictEqual(
     parseGmailBatch(
@@ -737,6 +731,79 @@ it.effect(
         assert.deepStrictEqual(result, [
           { kind: "present", id: "m1", providerId: "m1", labels: [] },
         ]);
+      }),
+      http.layer,
+    );
+  },
+);
+
+for (const kind of ["Reset", "DeleteLabel", "RebuildFolder"] as const) {
+  it.effect(`slice62: a single missing row in ${kind} is verified before deletion`, () => {
+    const verified: string[] = [];
+    const adapter: ProviderAdapter = {
+      ...makeFakeProvider(fakeServer("me@example.test")),
+      verifyResetCandidates: (_account, candidates) =>
+        Effect.sync(() => {
+          verified.push(...candidates.map((candidate) => candidate.providerId));
+          return candidates.map((candidate) => ({
+            kind: "present" as const,
+            id: candidate.providerId,
+            providerId: candidate.providerId,
+            labels: candidate.labels,
+          }));
+        }),
+    };
+    return runtime(
+      "imap",
+      Effect.succeed(adapter),
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("imap", "me@example.test");
+        yield* store.upsertMessage(account.id, mail("7:1:INBOX"));
+        const counts = { changed: 0, deleted: 0 };
+        const guard = makeResetGuard(store, adapter, account, counts, { remaining: 500 });
+        yield* guard.reset(
+          kind === "Reset"
+            ? { _tag: "Reset", keep: [] }
+            : kind === "DeleteLabel"
+              ? { _tag: "DeleteLabel", label: "INBOX" }
+              : { _tag: "RebuildFolder", previous: { path: "INBOX", uidValidity: "7" }, keep: [] },
+        );
+        assert.strictEqual(counts.deleted, 0);
+        assert.strictEqual((yield* store.pendingResetCandidates(account.id)).length, 1);
+        yield* guard.verify();
+        assert.deepStrictEqual(verified, ["7:1:INBOX"]);
+        assert.strictEqual(
+          (yield* store.getMessage(`${account.id}/7:1:INBOX`)).bodyText,
+          "full cached body",
+        );
+      }),
+    );
+  });
+}
+
+it.effect(
+  "slice62: Gmail recovery verifies a single missing message at the 90-day window edge",
+  () => {
+    const now = 100 * 86400000;
+    const http = httpProvider("gmail", "present", false, { now });
+    return runtime(
+      "gmail",
+      makeGmail,
+      Effect.gen(function* () {
+        yield* TestClock.setTime(now);
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "me@example.test");
+        for (let index = 0; index < 10; index++)
+          yield* store.upsertMessage(account.id, { ...mail(`m${index}`), date: now });
+        yield* store.upsertMessage(account.id, { ...mail("edge"), date: now - 90 * 86400000 + 1 });
+        yield* store.saveSyncCursor(account.id, "expired");
+        yield* (yield* Mailbox).sync(account.id);
+        assert.deepStrictEqual(http.verifiedIds, ["edge"]);
+        assert.strictEqual(
+          (yield* store.getMessage(`${account.id}/edge`)).bodyText,
+          "full cached body",
+        );
       }),
       http.layer,
     );

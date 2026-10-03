@@ -306,3 +306,13 @@ it.effect(
       );
     }),
 );
+
+it.effect("slice62: Graph calendar pagination accepts calendar key segments unchanged", () =>
+  Effect.gen(function* () {
+    const next =
+      "https://graph.microsoft.com/v1.0/me/calendars('default')/calendarView?$skiptoken=a%2Fb";
+    const f = fake("outlook", [{ value: [], "@odata.nextLink": next }, { value: [] }]);
+    yield* f.adapter.calendarEvents(account, event);
+    assert.strictEqual(f.reads[1], next);
+  }),
+);

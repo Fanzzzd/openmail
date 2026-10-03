@@ -466,7 +466,7 @@ it.effect("a move between folders is kept, and a vanished folder drops its label
     assert.ok(upsert?._tag === "Upsert");
     assert.strictEqual(upsert.message.providerId, "moved");
     assert.ok(upsert.message.labels.includes("id-c1"));
-    assert.deepStrictEqual(changes[3], { _tag: "DeleteLabel", label: "id-old" });
+    assert.deepStrictEqual(changes[3], { _tag: "DeleteLabel", label: "id-old", partial: true });
     // Stored delta links are followed as they are.
     assert.ok(http.calls.some((c) => c.url.searchParams.get("$deltatoken") === "id-c1"));
   }),
@@ -1704,7 +1704,7 @@ it.effect(
 );
 
 it.effect(
-  "Graph contacts and people pagination merge saved names and reject external next links",
+  "Graph contacts paginate, people suggestions stay bounded, and foreign links are rejected",
   () =>
     Effect.gen(function* () {
       const http = fakeHttp({
@@ -1725,6 +1725,7 @@ it.effect(
                   "@odata.nextLink": `${GRAPH}/me/contacts?$skiptoken=second`,
                 },
               },
+        "GET /me/contactFolders": { json: { value: [] } },
         "GET /me/people": (url) =>
           url.searchParams.has("$skiptoken")
             ? { json: { value: [{ scoredEmailAddresses: [{ address: "last@example.com" }] }] } }
@@ -1743,7 +1744,6 @@ it.effect(
       assert.deepStrictEqual(yield* run(http, (a) => a.contacts(account)), [
         { name: "Saved", address: "one@example.com" },
         { name: "Second", address: "second@example.com" },
-        { name: "", address: "last@example.com" },
       ]);
       assert.strictEqual(http.calls.length, 4);
       const bad = fakeHttp({
@@ -3643,3 +3643,177 @@ for (const firstStatus of [200, 403]) {
     },
   );
 }
+
+for (const status of [200, 403, 404] as const) {
+  it.effect(
+    `slice62: an unlisted Graph folder is removed only after GET confirms 404 (${status})`,
+    () => {
+      const link = `${GRAPH}/me/mailFolders/id-old/messages/delta?token=old`;
+      const http = fakeHttp({
+        ...mailbox({}),
+        "GET /me/mailFolders/id-old": {
+          status,
+          json: status === 200 ? { id: "id-old" } : undefined,
+        },
+      });
+      return run(http, (adapter) =>
+        Effect.gen(function* () {
+          const changes = yield* Stream.runCollect(
+            adapter.pull(
+              account,
+              Option.some(JSON.stringify({ __idType: "immutable", "id-old": link })),
+            ),
+          );
+          assert.strictEqual(
+            changes.some((change) => change._tag === "DeleteLabel" && change.label === "id-old"),
+            status === 404,
+          );
+          const cursor = changes.findLast((change) => change._tag === "Cursor");
+          assert.ok(cursor?._tag === "Cursor");
+          const saved = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.String))(
+            JSON.parse(cursor.cursor),
+          );
+          assert.strictEqual(saved["id-old"], status === 404 ? undefined : link);
+          assert.isTrue(
+            http.calls.some((call) => call.url.pathname === "/v1.0/me/mailFolders/id-old"),
+          );
+        }),
+      );
+    },
+  );
+}
+
+it.effect("slice62: Graph message and child-folder pages accept key segments unchanged", () => {
+  const messagesNext = `${GRAPH}/me/mailfolders('actual-trash-id')/messages?$skiptoken=a%2Fb%2B%3D`;
+  const childrenNext = `${GRAPH}/me/mailfolders('trash-root')/childfolders?$skiptoken=child%2Fnext`;
+  const http = fakeHttp({
+    "GET /me/mailFolders/deleteditems/messages": {
+      json: { value: [{ id: "first" }], "@odata.nextLink": messagesNext },
+    },
+    "GET /me/mailfolders('actual-trash-id')/messages": { json: { value: [{ id: "second" }] } },
+    "GET /me/mailFolders/deleteditems": { json: { id: "trash-root" } },
+    "GET /me/mailFolders/trash-root/childFolders": {
+      json: { value: [], "@odata.nextLink": childrenNext },
+    },
+    "GET /me/mailfolders('trash-root')/childfolders": { json: { value: [{ id: "child" }] } },
+    "GET /me/mailFolders/child/childFolders": { json: { value: [] } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const first = yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null);
+      assert.deepStrictEqual(
+        (yield* adapter.listFolderMessages(account, { mailbox: "trash" }, first.next)).ids,
+        ["second"],
+      );
+      assert.deepStrictEqual(yield* adapter.checkPermanentDelete(account, "trash"), [
+        "TRASH",
+        "trash-root",
+        "child",
+      ]);
+      for (const next of [messagesNext, childrenNext])
+        assert.isTrue(http.calls.some((call) => call.url.href === next));
+    }),
+  );
+});
+
+it.effect(
+  "slice62: Graph contacts include paged root and nested folders, dedupe ids and bound people",
+  () => {
+    const contact = (id: string, address: string) => ({
+      id,
+      displayName: id,
+      emailAddresses: [{ address }],
+    });
+    const next = `${GRAPH}/me/contactfolders('root')/contacts?$skiptoken=a%2Fb`;
+    const http = fakeHttp({
+      "GET /me/contacts": { json: { value: [contact("saved", "saved@example.com")] } },
+      "GET /me/contactFolders": (url) => ({
+        json: url.searchParams.has("$skiptoken")
+          ? { value: [{ id: "other" }] }
+          : {
+              value: [{ id: "root" }],
+              "@odata.nextLink": `${GRAPH}/me/contactfolders?$skiptoken=2`,
+            },
+      }),
+      "GET /me/contactfolders": { json: { value: [{ id: "other" }] } },
+      "GET /me/contactFolders/root/contacts": {
+        json: { value: [contact("saved", "duplicate@example.com")], "@odata.nextLink": next },
+      },
+      "GET /me/contactfolders('root')/contacts": {
+        json: { value: [contact("root", "root@example.com")] },
+      },
+      "GET /me/contactFolders/root/childFolders": {
+        json: {
+          value: [{ id: "child" }],
+          "@odata.nextLink": `${GRAPH}/me/contactfolders('root')/childfolders?$skiptoken=2`,
+        },
+      },
+      "GET /me/contactfolders('root')/childfolders": {
+        json: { value: [{ id: "child" }, { id: "nested" }] },
+      },
+      "GET /me/contactFolders/other/contacts": {
+        json: { value: [contact("other", "other@example.com")] },
+      },
+      "GET /me/contactFolders/other/childFolders": { json: { value: [] } },
+      "GET /me/contactFolders/child/contacts": {
+        json: { value: [contact("child", "child@example.com")] },
+      },
+      "GET /me/contactFolders/child/childFolders": { json: { value: [{ id: "nested" }] } },
+      "GET /me/contactFolders/nested/contacts": {
+        json: { value: [contact("nested", "nested@example.com")] },
+      },
+      "GET /me/contactFolders/nested/childFolders": { json: { value: [] } },
+      "GET /me/people": (url) => ({
+        json: url.searchParams.has("$skip")
+          ? { value: [] }
+          : {
+              value: [{ id: "recent", scoredEmailAddresses: [{ address: "recent@example.com" }] }],
+              "@odata.nextLink": `${GRAPH}/me/people?$skip=250`,
+            },
+      }),
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        const contacts = yield* adapter.contacts(account);
+        assert.deepStrictEqual(
+          contacts.map((item) => item.address).toSorted(),
+          ["saved", "root", "other", "child", "nested", "recent"]
+            .map((id) => `${id}@example.com`)
+            .toSorted(),
+        );
+        assert.strictEqual(
+          http.calls.filter((call) => call.url.pathname.endsWith("/child/contacts")).length,
+          1,
+        );
+        assert.strictEqual(
+          http.calls.filter((call) => call.url.pathname.endsWith("/people")).length,
+          1,
+        );
+        assert.isTrue(http.calls.some((call) => call.url.href === next));
+      }),
+    );
+  },
+);
+
+it.effect("slice62: empty Graph Trash walks key-segment child pages", () => {
+  const next = `${GRAPH}/me/mailfolders('deleteditems')/childfolders?$skiptoken=next%2Fpage`;
+  const http = fakeHttp({
+    "GET /me/mailFolders/deleteditems/messages": { json: { value: [] } },
+    "GET /me/mailFolders/deleteditems/childFolders": {
+      json: { value: [], "@odata.nextLink": next },
+    },
+    "GET /me/mailfolders('deleteditems')/childfolders": { json: { value: [{ id: "child" }] } },
+    "GET /me/mailFolders/child/messages": { json: { value: [{ id: "nested-mail" }] } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      assert.deepStrictEqual(
+        yield* adapter.listFolderMessages(account, { mailbox: "trash" }, null, {
+          includeChildren: true,
+        }),
+        { ids: ["nested-mail"], next: null },
+      );
+      assert.isTrue(http.calls.some((call) => call.url.href === next));
+    }),
+  );
+});

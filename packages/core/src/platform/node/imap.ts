@@ -208,6 +208,34 @@ function call<A>(s: Session, f: (client: ImapFlow, signal: AbortSignal) => Promi
   });
 }
 
+/** ImapFlow swallows command/socket errors into false or undefined, never an empty UID set. */
+const searchUids = Effect.fnUntraced(function* (
+  s: Session,
+  query: Parameters<ImapFlow["search"]>[0],
+) {
+  const found = yield* call(s, (client) => client.search(query, { uid: true }));
+  if (found === false || found === undefined)
+    return yield* new ProviderError({ message: `${s.settings.imapHost}: IMAP UID SEARCH failed` });
+  return found;
+});
+
+/** LIST omission alone can mean a hidden/unselectable folder or an incomplete listing. */
+const confirmFolderGone = Effect.fnUntraced(function* (s: Session, path: string) {
+  const absent = yield* call(s, async (client) => {
+    try {
+      await client.status(path, { uidValidity: true });
+      return false;
+    } catch (error) {
+      // ImapFlow emits NotFound only after STATUS NO plus an empty exact-path LIST.
+      if (Predicate.isObject(error) && "code" in error && error.code === "NotFound") return true;
+      throw error;
+    }
+  });
+  if (!absent) return false;
+  const listed = yield* call(s, (client) => client.list({ listOnly: true }));
+  return !listed.some((folder) => folder.path === path);
+});
+
 export function smtpTransport(settings: ImapSettings, password: string) {
   return Effect.acquireRelease(
     Effect.sync(() =>
@@ -570,19 +598,15 @@ const runPull = Effect.fnUntraced(function* (
     let newUids: number[];
     if (!old || regressed || old.uidValidity !== String(mailbox.uidValidity)) {
       const since = new Date(now - INITIAL_DAYS * 86_400_000);
-      const found = mailbox.exists
-        ? yield* call(s, (c) => c.search({ since, deleted: false }, { uid: true }))
-        : [];
-      newUids = (found || []).toSorted((a, b) => b - a).slice(0, FOLDER_LIMIT);
+      const found = mailbox.exists ? yield* searchUids(s, { since, deleted: false }) : [];
+      newUids = found.toSorted((a, b) => b - a).slice(0, FOLDER_LIMIT);
     } else {
       const { lastUid } = old;
       const found =
         mailbox.exists && mailbox.uidNext > lastUid + 1
-          ? yield* call(s, (c) =>
-              c.search({ uid: `${lastUid + 1}:*`, deleted: false }, { uid: true }),
-            )
+          ? yield* searchUids(s, { uid: `${lastUid + 1}:*`, deleted: false })
           : [];
-      newUids = (found || []).filter((u) => u > lastUid);
+      newUids = found.filter((u) => u > lastUid);
     }
     plans.push({
       folder,
@@ -609,20 +633,22 @@ const runPull = Effect.fnUntraced(function* (
     if (rebuilt) regressed = false;
     if (old?.uidValidity === uidValidity && mailbox.uidNext < old.lastUid + 1 && !regressed) {
       regressed = true;
-      const found = yield* call(s, (c) =>
-        c.search({ since: new Date(now - INITIAL_DAYS * 86400000), deleted: false }, { uid: true }),
-      );
-      newUids = (found || [])
+      const found = yield* searchUids(s, {
+        since: new Date(now - INITIAL_DAYS * 86400000),
+        deleted: false,
+      });
+      newUids = found
         .toSorted((a, b) => b - a)
         .slice(0, FOLDER_LIMIT)
         .toSorted((a, b) => a - b);
       uidNext = mailbox.uidNext;
     }
     if (uidValidity !== plan.validity) {
-      const found = yield* call(s, (c) =>
-        c.search({ since: new Date(now - INITIAL_DAYS * 86400000), deleted: false }, { uid: true }),
-      );
-      newUids = (found || [])
+      const found = yield* searchUids(s, {
+        since: new Date(now - INITIAL_DAYS * 86400000),
+        deleted: false,
+      });
+      newUids = found
         .toSorted((a, b) => b - a)
         .slice(0, FOLDER_LIMIT)
         .toSorted((a, b) => a - b);
@@ -657,10 +683,8 @@ const runPull = Effect.fnUntraced(function* (
         const range = uidSet(known.slice(i, i + FLAG_BATCH));
         if (since !== undefined) {
           // CONDSTORE: only messages whose flags changed; existence via SEARCH.
-          const exists = yield* call(s, (c) =>
-            c.search({ uid: range, deleted: false }, { uid: true }),
-          );
-          for (const u of exists || []) present.add(u);
+          const exists = yield* searchUids(s, { uid: range, deleted: false });
+          for (const u of exists) present.add(u);
           if (highest !== undefined && highest > since) {
             const changed = yield* call(s, (c) =>
               c.fetchAll(range, { uid: true, flags: true }, { uid: true, changedSince: since }),
@@ -689,7 +713,13 @@ const runPull = Effect.fnUntraced(function* (
         change._tag === "Delete" ? [change.providerId] : [],
       );
       if (candidates.length)
-        yield* emit({ _tag: "RebuildFolder", previous: previousFolder, keep: [], candidates });
+        yield* emit({
+          _tag: "RebuildFolder",
+          previous: previousFolder,
+          keep: [],
+          candidates,
+          partial: true,
+        });
       for (const change of changes) if (change._tag !== "Delete") yield* emit(change);
     }
 
@@ -730,6 +760,13 @@ const runPull = Effect.fnUntraced(function* (
       continue;
     }
 
+    const gone = yield* confirmFolderGone(s, path).pipe(
+      Effect.catchTag("ProviderError", () => Effect.succeed(false)),
+    );
+    if (!gone) {
+      next.folders[path] = state;
+      continue;
+    }
     yield* emit({
       _tag: "RebuildFolder",
       previous: { path, uidValidity: state.uidValidity },
@@ -811,10 +848,8 @@ const applyOp = Effect.fnUntraced(function* (
       ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
     });
   }
-  const found = yield* call(s, (c) =>
-    c.search({ uid: uidSet(uids), deleted: false }, { uid: true }),
-  );
-  if (!found || uids.some((uid) => !found.includes(uid))) {
+  const found = yield* searchUids(s, { uid: uidSet(uids), deleted: false });
+  if (uids.some((uid) => !found.includes(uid))) {
     yield* new PermanentError({ message: `Message ${ref.uid} is no longer in ${ref.path}` });
   }
   const uid = uidSet(uids);
@@ -946,10 +981,8 @@ const saveSent = Effect.fnUntraced(function* (
     for (let attempt = 0; attempt < (serverSaves ? 4 : 1); attempt++) {
       if (attempt) yield* Effect.sleep("4 seconds");
       yield* call(s, (c) => c.mailboxOpen(sent, { readOnly: true }));
-      const found = yield* call(s, (c) =>
-        c.search({ header: { "message-id": messageId } }, { uid: true }),
-      );
-      if (found && found.length) {
+      const found = yield* searchUids(s, { header: { "message-id": messageId } });
+      if (found.length) {
         observed.add(s.accountId);
         return;
       }
@@ -1027,9 +1060,7 @@ const appendDraft = Effect.fnUntraced(function* (
     const mailbox = yield* call(s, (c) => c.mailboxOpen(drafts, { readOnly: true }));
     uidValidity = mailbox.uidValidity;
     const messageId = parseHeaders(raw).get("message-id");
-    const found = messageId
-      ? yield* call(s, (c) => c.search({ header: { "message-id": messageId } }, { uid: true }))
-      : false;
+    const found = messageId ? yield* searchUids(s, { header: { "message-id": messageId } }) : false;
     uid = found && found.length ? Math.max(...found) : undefined;
   }
   if (previous) yield* deleteMessage(s, previous);
@@ -1441,10 +1472,8 @@ export const makeImapWith = (
         let scanned = 0;
         foldersLoop: for (const folder of selected) {
           const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
-          const found = yield* call(s, (c) =>
-            c.search({ ...imapSearch(query), deleted: false }, { uid: true }),
-          );
-          const uids = (found || []).toSorted((a, b) => b - a);
+          const found = yield* searchUids(s, { ...imapSearch(query), deleted: false });
+          const uids = found.toSorted((a, b) => b - a);
           for (let start = 0; start < uids.length; start += FETCH_BATCH) {
             const batch = yield* fetchMessages(
               s,
@@ -1497,13 +1526,12 @@ export const makeImapWith = (
           if (upper < 1) continue;
           // Scan a bounded range even when UIDs have large gaps. No full-folder UID list.
           const lower = Math.max(1, upper - 4999);
-          const found = yield* call(s, (c) =>
-            c.search(
-              { uid: `${lower}:${upper}`, before: new Date(state.before), deleted: false },
-              { uid: true },
-            ),
-          );
-          const uids = (found || [])
+          const found = yield* searchUids(s, {
+            uid: `${lower}:${upper}`,
+            before: new Date(state.before),
+            deleted: false,
+          });
+          const uids = found
             .filter((uid) => uid >= lower && uid <= upper)
             .toSorted((a, b) => b - a)
             .slice(0, 50);
@@ -1548,7 +1576,6 @@ export const makeImapWith = (
       Effect.gen(function* () {
         const { s } = yield* session(account);
         const folders = mapFolders(yield* call(s, (client) => client.list()));
-        if (!folders.length) return [];
         const results: ResetVerification[] = [];
         const groups = new Map<string, typeof candidates>();
         for (const candidate of candidates) {
@@ -1558,6 +1585,7 @@ export const makeImapWith = (
         }
         for (const [path, group] of groups) {
           const original = folders.find((folder) => folder.path === path);
+          if (!original && !(yield* confirmFolderGone(s, path))) continue;
           let validity: string | undefined;
           let present = new Set<number>();
           if (original) {
@@ -1574,10 +1602,7 @@ export const makeImapWith = (
                 : [];
             });
             if (uids.length) {
-              const found = yield* call(s, (client) =>
-                client.search({ uid: uidSet(uids), deleted: false }, { uid: true }),
-              );
-              if (!found) return results; // A failed search is not proof of absence.
+              const found = yield* searchUids(s, { uid: uidSet(uids), deleted: false });
               present = new Set(found);
             }
           }
@@ -1601,7 +1626,7 @@ export const makeImapWith = (
               continue;
             }
             if (!candidate.rfcMessageId) {
-              if (!candidate.resetProviderId && validity === ref.value.uidValidity)
+              if (!candidate.resetProviderId && (!original || validity === ref.value.uidValidity))
                 results.push({ kind: "gone", id: candidate.providerId });
               continue; // UIDVALIDITY changes without Message-ID cannot establish absence.
             }
@@ -1610,13 +1635,10 @@ export const makeImapWith = (
               const mailbox = yield* call(s, (client) =>
                 client.mailboxOpen(folder.path, { readOnly: true }),
               );
-              const found = yield* call(s, (client) =>
-                client.search(
-                  { header: { "message-id": candidate.rfcMessageId ?? "" }, deleted: false },
-                  { uid: true },
-                ),
-              );
-              if (!found) return results;
+              const found = yield* searchUids(s, {
+                header: { "message-id": candidate.rfcMessageId },
+                deleted: false,
+              });
               for (const uid of found)
                 matches.push({
                   kind: "present",
@@ -1686,18 +1708,11 @@ export const makeImapWith = (
             ...(scope.mailbox === "starred" ? { starredOnly: true } : {}),
             ...(scope.mailbox === "important" ? { criteria: { important: true } } : {}),
           });
-          const found = yield* call(s, (c) =>
-            c.search(
-              {
-                ...query,
-                deleted: false,
-                uid: options?.newestFirst ? `1:${Math.max(1, after - 1)}` : `${after + 1}:*`,
-              },
-              { uid: true },
-            ),
-          );
-          if (found === false || found === undefined)
-            return yield* new PermanentError({ message: "IMAP folder search failed." });
+          const found = yield* searchUids(s, {
+            ...query,
+            deleted: false,
+            uid: options?.newestFirst ? `1:${Math.max(1, after - 1)}` : `${after + 1}:*`,
+          });
           const uids = found
             .filter((uid) => (options?.newestFirst ? uid < after : uid > after))
             .toSorted((a, b) => (options?.newestFirst ? b - a : a - b));

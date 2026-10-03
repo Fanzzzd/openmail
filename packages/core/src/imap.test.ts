@@ -1873,3 +1873,185 @@ it.effect("IMAP sync health uses STATUS without opening, listing or fetching the
     ),
   ),
 );
+
+for (const result of [false, undefined] as const) {
+  for (const mode of [
+    "initial",
+    "incremental",
+    "regressed",
+    "rebuilt",
+    "condstore",
+    "search",
+    "backfill",
+    "push",
+    "sent",
+  ] as const) {
+    it.effect(
+      `slice62: failed IMAP SEARCH (${result}) stops ${mode} without deletion or progress`,
+      () =>
+        slice49Imap((adapter, client) =>
+          Effect.gen(function* () {
+            vi.spyOn(client, "search").mockResolvedValue(result);
+            const append = vi.spyOn(client, "append").mockResolvedValue(false);
+            const emitted: import("./services.js").Change[] = [];
+            let operation;
+            if (mode === "search") operation = adapter.search(account, { search: "test" });
+            else if (mode === "backfill")
+              operation = adapter.backfill(account, { cursor: null, before: 1000 });
+            else if (mode === "push")
+              operation = adapter.push(account, "7:1:INBOX", { kind: "read", value: true });
+            else if (mode === "sent") {
+              vi.spyOn(client, "list").mockResolvedValue([
+                {
+                  path: "Sent",
+                  pathAsListed: "Sent",
+                  name: "Sent",
+                  parent: [],
+                  parentPath: "",
+                  delimiter: "/",
+                  flags: new Set<string>(),
+                  listed: true,
+                  subscribed: true,
+                  specialUse: "\\Sent",
+                },
+              ]);
+              assert.ok(account.imap);
+              operation = adapter.send(
+                {
+                  ...account,
+                  imap: { ...account.imap, preset: "custom", smtpHost: "fake.invalid" },
+                },
+                {
+                  to: [{ name: "Bob", address: "bob@example.com" }],
+                  cc: [],
+                  bcc: [],
+                  subject: "Test",
+                  text: "body",
+                  attachments: [],
+                },
+                Option.none(),
+              );
+            } else {
+              if (mode === "condstore") {
+                client.enabled.add("CONDSTORE");
+                vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+                  path: "INBOX",
+                  delimiter: "/",
+                  flags: new Set<string>(),
+                  uidValidity: 7n,
+                  uidNext: 3,
+                  exists: 2,
+                  highestModseq: 10n,
+                });
+              }
+              const cursor =
+                mode === "initial"
+                  ? Option.none()
+                  : slice49Cursor({
+                      lastUid: mode === "incremental" ? 1 : mode === "regressed" ? 100 : 2,
+                      uidValidity: mode === "rebuilt" ? "6" : "7",
+                      modseq: "10",
+                    });
+              operation = adapter
+                .pull(account, cursor, "inbox")
+                .pipe(Stream.runForEach((change) => Effect.sync(() => emitted.push(change))));
+            }
+            const exit = yield* Effect.exit(operation);
+            assert.deepStrictEqual(
+              errorTag(exit),
+              mode === "sent" ? Option.none() : Option.some("ProviderError"),
+            );
+            assert.isFalse(
+              emitted.some((change) =>
+                ["RebuildFolder", "Delete", "Cursor", "Progress"].includes(change._tag),
+              ),
+            );
+            assert.strictEqual(append.mock.calls.length, 0);
+          }),
+        ),
+    );
+  }
+}
+
+it.effect("slice62: IMAP reconcile missing UIDs always produces a partial rebuild", () =>
+  slice49Imap((adapter, client) =>
+    Effect.gen(function* () {
+      vi.spyOn(client, "fetchAll").mockResolvedValue([]);
+      const changes = yield* Stream.runCollect(
+        adapter.pull(account, slice49Cursor({ lastUid: 2 }), "inbox"),
+      );
+      const rebuild = changes.find((change) => change._tag === "RebuildFolder");
+      assert.ok(rebuild?._tag === "RebuildFolder");
+      assert.isTrue(rebuild.partial);
+    }),
+  ),
+);
+
+it.effect(
+  "slice62: a folder omitted by LIST but confirmed by STATUS keeps its cursor and mail",
+  () =>
+    slice49Imap((adapter, client) =>
+      Effect.gen(function* () {
+        vi.spyOn(client, "list").mockResolvedValue([]);
+        vi.spyOn(client, "status").mockResolvedValue({ path: "INBOX", uidValidity: 7n });
+        const changes = yield* Stream.runCollect(
+          adapter.pull(account, slice49Cursor({ lastUid: 2 })),
+        );
+        assert.isFalse(
+          changes.some(
+            (change) => change._tag === "RebuildFolder" || change._tag === "DeleteLabel",
+          ),
+        );
+        const cursor = changes.findLast((change) => change._tag === "Cursor");
+        assert.ok(cursor?._tag === "Cursor");
+        assert.strictEqual(readCursor(Option.some(cursor.cursor)).folders.INBOX?.lastUid, 2);
+      }),
+    ),
+);
+
+for (const outcome of ["gone", "failed", "denied", "relisted"] as const) {
+  it.effect(
+    `slice62: IMAP folder removal requires confirmed NotFound and LIST absence (${outcome})`,
+    () =>
+      slice49Imap((adapter, client) =>
+        Effect.gen(function* () {
+          const list = vi.spyOn(client, "list").mockResolvedValue([]);
+          if (outcome === "relisted")
+            list.mockResolvedValueOnce([]).mockResolvedValue([
+              {
+                path: "INBOX",
+                pathAsListed: "INBOX",
+                name: "INBOX",
+                parent: [],
+                parentPath: "",
+                delimiter: "/",
+                flags: new Set<string>(),
+                listed: true,
+                subscribed: true,
+              },
+            ]);
+          const status = vi.spyOn(client, "status");
+          if (outcome === "failed") status.mockResolvedValue(false);
+          else
+            status.mockRejectedValue(
+              Object.assign(new Error("STATUS failed"), {
+                code: outcome === "denied" ? "AccessDenied" : "NotFound",
+              }),
+            );
+          const changes = yield* Stream.runCollect(
+            adapter.pull(account, slice49Cursor({ lastUid: 2 })),
+          );
+          assert.strictEqual(
+            changes.some((change) => change._tag === "RebuildFolder"),
+            outcome === "gone",
+          );
+          const cursor = changes.findLast((change) => change._tag === "Cursor");
+          assert.ok(cursor?._tag === "Cursor");
+          assert.strictEqual(
+            readCursor(Option.some(cursor.cursor)).folders.INBOX?.lastUid,
+            outcome === "gone" ? undefined : 2,
+          );
+        }),
+      ),
+  );
+}

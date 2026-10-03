@@ -27,8 +27,6 @@ const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
 export const RESET_VERIFICATION_LIMIT = 500;
 export const STALE_SWEEP_LIMIT = 500;
-export const needsResetVerification = (local: number, candidates: number) =>
-  candidates > Math.max(50, local * 0.2);
 
 export const SyncResetDiagnostic = Schema.Struct({
   _tag: Schema.Literal("SyncResetDiagnostic"),
@@ -197,10 +195,6 @@ export function makeResetGuard(
   const reset = Effect.fnUntraced(function* (change: ResetChange) {
     const snapshot = yield* store.resetCandidates(account.id, change);
     const pending = yield* store.pendingResetCandidates(account.id);
-    const guarded =
-      change.partial === true ||
-      needsResetVerification(snapshot.local, snapshot.candidates.length) ||
-      pending.length > 0;
     const folder =
       change._tag === "DeleteLabel"
         ? change.label
@@ -215,26 +209,19 @@ export function makeResetGuard(
       candidates: snapshot.candidates.length,
       verified: 0,
       incomplete: 0,
-      deferred: guarded ? snapshot.candidates.length : 0,
+      deferred: snapshot.candidates.length,
     });
     yield* store.transaction(
       Effect.gen(function* () {
-        if (guarded) {
-          const keep = new Set(change.keep ?? []);
-          const merged = new Map(
-            pending
-              .filter((item) => !keep.has(item.providerId))
-              .map((item) => [item.providerId, item]),
-          );
-          for (const candidate of snapshot.candidates) merged.set(candidate.providerId, candidate);
-          yield* store.saveResetCandidates(account.id, [...merged.values()]);
-        } else {
-          for (const candidate of snapshot.candidates) {
-            yield* store.deleteMessage(account.id, candidate.providerId);
-            yield* store.dropSyncedDrafts(account.id, candidate.providerId);
-            counts.deleted++;
-          }
-        }
+        // Every keep-set omission is a candidate, irrespective of count or listing completeness.
+        const keep = new Set(change.keep ?? []);
+        const merged = new Map(
+          pending
+            .filter((item) => !keep.has(item.providerId))
+            .map((item) => [item.providerId, item]),
+        );
+        for (const candidate of snapshot.candidates) merged.set(candidate.providerId, candidate);
+        yield* store.saveResetCandidates(account.id, [...merged.values()]);
         if (change._tag === "Reset") yield* store.resetBackfill(account.id);
       }),
     );

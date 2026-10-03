@@ -1,3 +1,4 @@
+import { graphPageLink } from "./graph-pagination.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { WINDOWS_ZONES } from "./windows-zones.js";
 import { Effect, Schema, Result, Semaphore } from "effect";
@@ -200,13 +201,10 @@ export function makeProviderCalendar<
               }
               const next = page["@odata.nextLink"];
               if (!next) break;
-              const url = new URL(next);
-              if (
-                url.origin !== "https://graph.microsoft.com" ||
-                url.pathname !== "/v1.0/me/calendarView"
-              )
-                return yield* new InvalidInput({ message: "Invalid calendar pagination link" });
-              path = `${url.pathname.slice(5)}${url.search}`;
+              path = yield* Effect.try({
+                try: () => graphPageLink(next, "/me/calendarView"),
+                catch: () => new InvalidInput({ message: "Invalid calendar pagination link" }),
+              });
             }
           }
           return events;

@@ -1,5 +1,5 @@
 import { makeSyncHealthStore } from "./store-sync-health.js";
-import { logSyncReset, needsResetVerification } from "./sync-reset.js";
+import { logSyncReset } from "./sync-reset.js";
 import { makeServiceStore } from "./store-services.js";
 import {
   MessageSecurity,
@@ -554,7 +554,6 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
               previous,
               keep: [],
             });
-            const guarded = needsResetVerification(snapshot.local, snapshot.candidates.length);
             const generation = crypto.randomUUID();
             const now = yield* Clock.currentTimeMillis;
             yield* logSyncReset(yield* getAccount(account).pipe(Effect.orDie), previous.path, {
@@ -565,7 +564,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
               candidates: snapshot.candidates.length,
               verified: 0,
               incomplete: 0,
-              deferred: guarded ? snapshot.candidates.length : 0,
+              deferred: snapshot.candidates.length,
             });
             // Persist the generation before deleting rows; stale handles must never name refetched mail.
             yield* run(
@@ -590,32 +589,21 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             yield* run(
               sql`UPDATE drafts SET remote_message_id=NULL, remote_draft_id=NULL WHERE account_id=${account} AND (${imapFolder(previous, sql.literal("remote_message_id"))} OR ${imapFolder(previous, sql.literal("remote_draft_id"))})`,
             );
-            if (guarded) {
-              const pending = yield* syncResets.pendingResetCandidates(account);
-              const originals = new Set(
-                snapshot.candidates.map((candidate) => candidate.providerId),
-              );
-              const detached = snapshot.candidates.map((candidate) => ({
-                ...candidate,
-                resetProviderId: candidate.providerId,
-                providerId: `unmapped:${candidate.providerId}:reset:${generation}`,
-              }));
-              for (const candidate of detached)
-                yield* run(
-                  sql`UPDATE messages SET provider_id=${candidate.providerId} WHERE account_id=${account} AND provider_id=${candidate.resetProviderId}`,
-                );
-              yield* syncResets.saveResetCandidates(account, [
-                ...pending.filter((candidate) => !originals.has(candidate.providerId)),
-                ...detached,
-              ]);
-            } else {
-              yield* media.deleteVectorsForMessages(
-                sql`m.account_id=${account} AND ${imapFolder(previous)}`,
-              );
+            const pending = yield* syncResets.pendingResetCandidates(account);
+            const originals = new Set(snapshot.candidates.map((candidate) => candidate.providerId));
+            const detached = snapshot.candidates.map((candidate) => ({
+              ...candidate,
+              resetProviderId: candidate.providerId,
+              providerId: `unmapped:${candidate.providerId}:reset:${generation}`,
+            }));
+            for (const candidate of detached)
               yield* run(
-                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+                sql`UPDATE messages SET provider_id=${candidate.providerId} WHERE account_id=${account} AND provider_id=${candidate.resetProviderId}`,
               );
-            }
+            yield* syncResets.saveResetCandidates(account, [
+              ...pending.filter((candidate) => !originals.has(candidate.providerId)),
+              ...detached,
+            ]);
             return ids;
           }),
         )

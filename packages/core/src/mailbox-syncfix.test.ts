@@ -248,7 +248,8 @@ it.effect(
         assert.deepStrictEqual(server.pushed, []);
         assert.deepStrictEqual(yield* store.listProposals("pending"), []);
         assert.deepStrictEqual(yield* mailbox.undoHistory, []);
-        assert.isFalse(yield* store.hasMessage(old));
+        assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
+        assert.strictEqual((yield* store.getMessage(old)).rfcMessageId, "<x@x>");
       }),
     );
   },
@@ -341,7 +342,8 @@ it.effect(
           { kind: "modify", threads: [old], op: { kind: "star", value: true } },
           { kind: "user", surface: "app" },
         );
-        assert.isFalse(yield* store.hasMessage(old));
+        assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
+        assert.strictEqual((yield* store.getMessage(old)).rfcMessageId, "<x@x>");
         yield* store.upsertMessage(account.id, message("7:1:INBOX", "<y@x>"));
         assert.notStrictEqual(yield* store.messageIdForProvider(account.id, "7:1:INBOX"), old);
       }),

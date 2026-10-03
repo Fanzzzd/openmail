@@ -352,3 +352,22 @@ it.effect("slice56: IMAP rebuilt window never includes old headers in deletion c
     );
   }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
 );
+
+it.effect(
+  "slice62: namespace invalidation quarantines even one cached message for verification",
+  () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.test");
+      yield* store.upsertMessage(account.id, message(1));
+      yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+      const pending = yield* store.pendingResetCandidates(account.id);
+      assert.strictEqual(pending.length, 1);
+      assert.strictEqual(pending[0]?.resetProviderId, "7:1:INBOX");
+      assert.isNull(yield* store.messageIdForProvider(account.id, "7:1:INBOX"));
+      assert.strictEqual(
+        yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+        1,
+      );
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

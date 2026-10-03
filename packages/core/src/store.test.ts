@@ -1319,7 +1319,7 @@ it.effect(
         );
         const fresh = yield* store.messageIdForProvider(account.id, "7:1:INBOX");
         assert.notStrictEqual(fresh, old);
-        assert.isFalse(yield* store.hasMessage(old));
+        assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
         assert.strictEqual((yield* sql`SELECT * FROM thread_reminders`).length, 0);
         assert.isTrue(
           (yield* store.listPendingOps).every(
@@ -1395,7 +1395,11 @@ it.effect("slice55-fix: folder epochs survive reopening the database", () =>
     yield* withStore(
       Effect.gen(function* () {
         const store = yield* Store;
-        assert.isFalse(yield* store.hasMessage(`${before.accountId}/7:1:INBOX`));
+        assert.isTrue(
+          (yield* store.messageRef(`${before.accountId}/7:1:INBOX`)).providerId.startsWith(
+            "unmapped:",
+          ),
+        );
         assert.strictEqual(
           yield* store.messageIdForProvider(before.accountId, "7:1:INBOX"),
           before.local,

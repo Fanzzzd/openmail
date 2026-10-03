@@ -1,3 +1,4 @@
+import { graphPageLink } from "./graph-pagination.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse } from "./provider-batch.js";
 import { logSyncReset, type ResetVerification } from "./sync-reset.js";
@@ -560,18 +561,13 @@ export const makeOutlook: Effect.Effect<
           const children: typeof Page.Type = yield* get(account.id, Page, path);
           pending.push(...children.value.map((child) => child.id));
           const next = children["@odata.nextLink"];
-          if (next) {
-            const url = yield* Effect.try({
-              try: () => new URL(next),
-              catch: () =>
-                new PermanentError({ message: "Invalid deleted folder pagination link." }),
-            });
-            if (url.origin !== "https://graph.microsoft.com" || url.pathname !== `/v1.0${base}`)
-              return yield* new PermanentError({
-                message: "Invalid deleted folder pagination link.",
-              });
-            path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
-          } else path = null;
+          path = next
+            ? yield* Effect.try({
+                try: () => graphPageLink(next, base),
+                catch: () =>
+                  new PermanentError({ message: "Invalid deleted folder pagination link." }),
+              })
+            : null;
         }
       }
       return ids;
@@ -790,7 +786,13 @@ export const makeOutlook: Effect.Effect<
             if (f.childFolderCount > 0)
               yield* walk(`/me/mailFolders/${encodeURIComponent(f.id)}/childFolders`, name);
           }
-          url = page["@odata.nextLink"];
+          const next = page["@odata.nextLink"];
+          url = next
+            ? yield* Effect.try({
+                try: () => graphPageLink(next, path),
+                catch: () => new ProviderError({ message: "Invalid mail folder pagination link" }),
+              })
+            : undefined;
         }
       });
     yield* walk("/me/mailFolders", "");
@@ -1010,9 +1012,24 @@ export const makeOutlook: Effect.Effect<
           if (!scope && ambiguous.length)
             yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: ambiguous });
           const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
-          for (const key of Object.keys(previous))
-            if (key !== ID_TYPE_KEY && key !== WINDOW_KEY && !wellKnown.has(key) && !(key in next))
-              yield* Queue.offer(queue, { _tag: "DeleteLabel", label: key });
+          for (const key of Object.keys(previous)) {
+            if (key === ID_TYPE_KEY || key === WINDOW_KEY || wellKnown.has(key) || key in next)
+              continue;
+            // Visible folder lists omit hidden folders. Only a direct 404 establishes removal.
+            const gone = yield* get(
+              account.id,
+              WithId,
+              `/me/mailFolders/${encodeURIComponent(key)}?$select=id`,
+            ).pipe(
+              Effect.map(() => false),
+              Effect.catch((error) => Effect.succeed(is404(error))),
+            );
+            if (gone) yield* Queue.offer(queue, { _tag: "DeleteLabel", label: key, partial: true });
+            else {
+              const saved = previous[key];
+              if (saved !== undefined) next[key] = saved;
+            }
+          }
           yield* Queue.offer(queue, { _tag: "Cursor", cursor: JSON.stringify(next) });
           yield* Queue.end(queue);
         }).pipe(
@@ -1847,21 +1864,13 @@ export const makeOutlook: Effect.Effect<
               const children: typeof Page.Type = yield* get(account.id, Page, path);
               pending.push(...children.value.map((child) => child.id));
               const next = children["@odata.nextLink"];
-              if (next) {
-                const url = yield* Effect.try({
-                  try: () => new URL(next),
-                  catch: () =>
-                    new PermanentError({ message: "Invalid deleted folder pagination link." }),
-                });
-                if (
-                  url.origin !== "https://graph.microsoft.com" ||
-                  url.pathname !== `/v1.0${base}/childFolders`
-                )
-                  return yield* new PermanentError({
-                    message: "Invalid deleted folder pagination link.",
-                  });
-                path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
-              } else path = null;
+              path = next
+                ? yield* Effect.try({
+                    try: () => graphPageLink(next, `${base}/childFolders`),
+                    catch: () =>
+                      new PermanentError({ message: "Invalid deleted folder pagination link." }),
+                  })
+                : null;
             }
           }
           return { ids: [], next: null };
@@ -1902,13 +1911,10 @@ export const makeOutlook: Effect.Effect<
         if (filters.length) params.set("$filter", filters.join(" and "));
         let path = `${base}?${params.toString()}`;
         if (cursor !== null) {
-          const url = yield* Effect.try({
-            try: () => new URL(cursor, `${GRAPH}/`),
+          path = yield* Effect.try({
+            try: () => graphPageLink(cursor, base),
             catch: () => new PermanentError({ message: "Invalid folder pagination link." }),
           });
-          if (url.origin !== "https://graph.microsoft.com" || url.pathname !== `/v1.0${base}`)
-            return yield* new PermanentError({ message: "Invalid folder pagination link." });
-          path = `${url.pathname.slice("/v1.0".length)}${url.search}`;
         }
         const page = yield* get(
           account.id,
