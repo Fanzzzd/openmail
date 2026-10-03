@@ -7,6 +7,8 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "test": "turbo test",
+    "test:perf": "pnpm --filter @openmail/core test:perf",
+    "perf:cost": "pnpm --filter @openmail/core perf:cost",
     "check": "oxlint && oxfmt --check .",
     "cli": "node packages/cli/dist/cli.js"
   },

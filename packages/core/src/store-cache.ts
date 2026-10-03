@@ -195,7 +195,7 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
             )(sql`SELECT id,account_id,date,body_bytes,is_starred,labels_json,COALESCE(body_opened_at,date) AS opened_at FROM messages
           WHERE body_cached=1 AND body_bytes>0 AND is_starred=0
             AND NOT EXISTS(SELECT 1 FROM drafts WHERE drafts.account_id=messages.account_id AND drafts.remote_message_id=messages.provider_id)
-            ${cursor ? sql`AND (COALESCE(body_opened_at,date) > ${cursor.time} OR (COALESCE(body_opened_at,date)=${cursor.time} AND id>${cursor.id}))` : sql.literal("")}
+            ${cursor ? sql`AND COALESCE(body_opened_at,date)>=${cursor.time} AND (COALESCE(body_opened_at,date),id)>(${cursor.time},${cursor.id})` : sql.literal("")}
           ORDER BY COALESCE(body_opened_at,date),id LIMIT 100`);
             if (!rows.length) break;
             const ids: string[] = [];

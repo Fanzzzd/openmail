@@ -855,6 +855,16 @@ export const MIGRATIONS: readonly string[] = [
    CREATE TRIGGER messages_body_bytes_ad AFTER DELETE ON messages BEGIN
      UPDATE body_cache_budget SET total_bytes=total_bytes-old.body_bytes WHERE id=1;
    END;`,
+  // Migration 35: sync diagnostics, bounded stale pages and body-size reporting.
+  `DROP INDEX messages_provider;
+   CREATE INDEX messages_provider ON messages(account_id,provider_id,date DESC,id);
+   CREATE INDEX messages_imap_scope ON messages(account_id,
+     substr(provider_id, instr(provider_id, ':') + instr(substr(provider_id, instr(provider_id, ':') + 1), ':') + 1),
+     provider_id,date);
+   CREATE INDEX drafts_stale_ids ON drafts(account_id,remote_message_id) WHERE remote_message_id IS NOT NULL AND local_only=0 AND sync_error IS NULL;
+   CREATE INDEX messages_body_sizes ON messages(account_id,body_bytes);
+   DROP INDEX messages_list_date_id;
+   CREATE INDEX messages_list_date_id ON messages(list_date DESC,id DESC,account_id,thread_id,is_unread,is_starred,labels_json);`,
 ];
 
 /**

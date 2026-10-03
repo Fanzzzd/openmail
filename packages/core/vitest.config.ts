@@ -7,5 +7,7 @@ export default defineConfig({
     ...lowMemoryTests,
     environment: "node",
     include: ["src/**/*.test.ts"],
+    exclude:
+      process.env.OPENMAIL_PERF === "1" ? [] : ["src/platform/node/performance-large.test.ts"],
   },
 });

@@ -58,26 +58,59 @@ export function makeSyncResetStore(
       const path = sql.literal(
         "substr(m.provider_id, instr(m.provider_id, ':') + instr(substr(m.provider_id, instr(m.provider_id, ':') + 1), ':') + 1)",
       );
-      const within = imap
-        ? sql`${path} IN ${sql.in(scopes)}`
-        : sql`EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value IN ${sql.in(scopes)})`;
-      return all(
-        Schema.Struct({
-          ...ResetCandidate.fields,
-          draftOnly: Schema.BooleanFromBit,
-          labels: Schema.fromJsonString(Schema.Array(Schema.String)),
-        }),
-      )(sql`
-        WITH candidates AS (
-          SELECT m.provider_id AS providerId,m.rfc_message_id AS rfcMessageId,m.labels_json AS labels,0 AS draftOnly
-          FROM messages m WHERE m.account_id=${account} AND ${within}
-          UNION ALL
-          SELECT DISTINCT d.remote_message_id AS providerId,NULL AS rfcMessageId,'["DRAFT"]' AS labels,1 AS draftOnly
-          FROM drafts d WHERE d.account_id=${account} AND d.remote_message_id IS NOT NULL AND d.local_only=0 AND d.sync_error IS NULL
-            AND ${scopes.includes("DRAFT") && !imap ? sql.literal("1") : sql.literal("0")}
-            AND NOT EXISTS(SELECT 1 FROM messages m WHERE m.account_id=d.account_id AND m.provider_id=d.remote_message_id)
-        ) SELECT providerId,rfcMessageId,json(labels) AS labels,draftOnly FROM candidates
-        ORDER BY providerId>${after} DESC,providerId LIMIT ${limit}`);
+      const Candidate = Schema.Struct({
+        ...ResetCandidate.fields,
+        draftOnly: Schema.BooleanFromBit,
+        labels: Schema.fromJsonString(Schema.Array(Schema.String)),
+      });
+      // The old boolean ORDER BY sorted the entire account on every page.
+      // Seek each indexed source, merge its bounded page, then wrap only if needed.
+      const page = (wrap: boolean, size: number) =>
+        Effect.gen(function* () {
+          const messageScopes = imap
+            ? [...new Set(scopes)].map((scope) => sql`${path}=${scope}`)
+            : [
+                sql`EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value IN ${sql.in(scopes)})`,
+              ];
+          const rows: (typeof Candidate.Type)[] = [];
+          for (const within of messageScopes) {
+            rows.push(
+              ...(yield* all(Candidate)(sql`
+            SELECT m.provider_id AS providerId,m.rfc_message_id AS rfcMessageId,m.labels_json AS labels,0 AS draftOnly
+            FROM messages m WHERE m.account_id=${account} AND ${within}
+              AND ${wrap ? sql`m.provider_id<=${after}` : sql`m.provider_id>${after}`}
+            ORDER BY m.provider_id LIMIT ${size}`)),
+            );
+          }
+          if (scopes.includes("DRAFT") && !imap)
+            rows.push(
+              ...(yield* all(Candidate)(sql`
+            SELECT DISTINCT d.remote_message_id AS providerId,NULL AS rfcMessageId,'["DRAFT"]' AS labels,1 AS draftOnly
+            FROM drafts d WHERE d.account_id=${account} AND d.remote_message_id IS NOT NULL AND d.local_only=0 AND d.sync_error IS NULL
+              AND ${wrap ? sql`d.remote_message_id<=${after}` : sql`d.remote_message_id>${after}`}
+              AND NOT EXISTS(SELECT 1 FROM messages m WHERE m.account_id=d.account_id AND m.provider_id=d.remote_message_id)
+            ORDER BY d.remote_message_id LIMIT ${size}`)),
+            );
+          // SQLite BINARY compares UTF-8 bytes, including supplementary characters.
+          const encoder = new TextEncoder();
+          return rows
+            .map((row) => ({ row, key: encoder.encode(row.providerId) }))
+            .toSorted((a, b) => {
+              for (let i = 0; i < Math.min(a.key.length, b.key.length); i++) {
+                const difference = (a.key[i] ?? 0) - (b.key[i] ?? 0);
+                if (difference) return difference;
+              }
+              return a.key.length - b.key.length;
+            })
+            .slice(0, size)
+            .map(({ row }) => row);
+        });
+      return Effect.gen(function* () {
+        if (!scopes.length || limit === 0) return [];
+        const rows = yield* page(false, limit);
+        if (rows.length < limit) rows.push(...(yield* page(true, limit - rows.length)));
+        return rows;
+      });
     },
     saveResetCandidates: (account: string, candidates: readonly ResetCandidate[]) =>
       candidates.length

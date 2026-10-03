@@ -1208,14 +1208,39 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           ? sql.literal("messages m INDEXED BY messages_list_date_id")
           : sql.literal("messages m");
     const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
-      const rows = yield* all(ThreadRow)(sql`
-        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter({ ...q, rowBoundText: true })}),
-        page AS (
-          SELECT c.* FROM (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)} WHERE ${listFilter(q)}) c
-          WHERE ${q.before === undefined ? sql.literal("1") : sql`(c.date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (c.date = ${q.before} AND c.id < ${q.beforeId})`})`}
-            AND NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=c.account_id AND n.thread_id=c.thread_id
-              AND (n.date > c.date OR (n.date=c.date AND n.id>c.id)))
+      const materialize = !!q.criteria?.proximity || /\bAROUND\s+\d+\b/.test(q.search ?? "");
+      // Proximity positions are computed once; only compact matching metadata is materialized.
+      const grouped = sql`
+        WITH matches AS MATERIALIZED (
+          SELECT m.id,m.account_id,m.thread_id,m.list_date AS date,m.is_unread,m.is_starred
+          FROM messages m INDEXED BY messages_list_date_id WHERE ${listFilter({ ...q, rowBoundText: false })}
+        ), heads AS (
+          SELECT account_id,thread_id,MAX(date) AS date,MAX(is_unread) AS any_unread,MAX(is_starred) AS any_starred
+          FROM matches GROUP BY account_id,thread_id
+        ), resolved AS (
+          SELECT h.*,(SELECT MAX(c.id) FROM matches c WHERE c.account_id=h.account_id AND c.thread_id=h.thread_id AND c.date=h.date) AS id FROM heads h
+        ), page AS (
+          SELECT * FROM resolved c WHERE ${q.before === undefined ? sql.literal("1") : sql`(c.date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (c.date = ${q.before} AND c.id < ${q.beforeId})`})`}
           ORDER BY c.date DESC,c.id DESC LIMIT ${limit}
+        )
+        SELECT ${sql.literal(SUMMARY_COLUMNS)},c.any_unread,c.any_starred,
+          (SELECT COUNT(*) FROM messages t WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id) AS thread_count,
+          (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
+            FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
+              WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
+        FROM page c JOIN messages m ON m.id=c.id ORDER BY c.date DESC,c.id DESC`;
+      const rows = yield* all(ThreadRow)(
+        materialize
+          ? grouped
+          : sql`
+        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter({ ...q, rowBoundText: false })}),
+        page AS (
+          SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
+          WHERE NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
+              AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))
+            AND ${listFilter(q)}
+            AND ${q.before === undefined ? sql.literal("1") : sql`(m.list_date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (m.list_date = ${q.before} AND m.id < ${q.beforeId})`})`}
+          ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         )
         SELECT c.*,
           (SELECT MAX(v.is_unread) FROM candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id) AS any_unread,
@@ -1224,7 +1249,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
             FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
               WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
-        FROM page c ORDER BY c.date DESC,c.id DESC`);
+        FROM page c ORDER BY c.date DESC,c.id DESC`,
+      );
       return rows.map((r): ThreadSummary => ({
         ...toSummary(r),
         ...(r.attachments_json.length

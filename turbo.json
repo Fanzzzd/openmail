@@ -11,7 +11,12 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "env": ["OPENMAIL_LOW_MEMORY_TESTS", "VITEST_MAX_WORKERS"]
+      "env": [
+        "OPENMAIL_LOW_MEMORY_TESTS",
+        "VITEST_MAX_WORKERS",
+        "OPENMAIL_PERF",
+        "OPENMAIL_PERF_REPORT"
+      ]
     },
     "dev": {
       "dependsOn": ["^build"],

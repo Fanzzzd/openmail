@@ -1,6 +1,83 @@
 # 性能
 
-本页保留 slice 36 在本机的测量，使用 Node v24.21.0 和 `node:sqlite`。测量未启动 Electron、开发应用、安装包、模型下载或真实账户。后续切片未在本页重新测量，以下数字不代表当前构建的冷启动或端到端时延。
+本页分别记录 slice 61 的本地性能预算和 slice 36 的历史测量。两次测量均使用 Node v24.21.0 和 `node:sqlite`，未启动 Electron、模型下载或真实账户。以下数字不代表冷启动或端到端时延。
+
+## Slice 61：10 万封邮件预算
+
+运行真实迁移和 `Store.upsertMessage`，临时数据库包含 100,000 封邮件、3 个账户、200 个标签／文件夹、20,000 个会话，其中 100 个长会话各有 204 封邮件。消息文本含 CJK 和引用历史，HTML 使用仓库中的 newsletter、Outlook Word fixture；独立解析测试输入为 200 KiB UTF-8，含内联 CSS、隐藏内容和 JSON-LD 事件。数据库生成在系统临时目录，Layer 关闭后删除。SQLite 页缓存 8 MiB，Node 堆上限 192 MiB；Effect 时钟固定为 2026-10-03，缓存窗口不受测试运行日期影响。
+
+```sh
+OPENMAIL_PERF=1 pnpm test:perf
+# 可指定完整 SQL、查询计划和测量结果的输出位置：
+OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-slice61-performance.json pnpm test:perf
+```
+
+大数据套件是 `packages/core/src/platform/node/performance-large.test.ts`，默认 `pnpm test` 排除它。默认套件中的 `performance-plans.test.ts` 只写 120 封邮件，采集真实 Store 查询，检查索引使用、分页回绕、孤立草稿去重和 Unicode ID 顺序。MCP 测量调用真实 Toolkit handler 与 Mailbox，provider 使用进程内 fake，不发网络请求。
+
+每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留最大值。fixture 生成、查询计划采集及索引完整性检查不计入时延。
+
+2026-10-04 本机最终验证基于包含 slice 62 的 main `44538b8`，31 项均低于预算。实测列按路径列中各项的顺序排列。
+
+| 路径                                   |               实测 ms | 预算 ms |
+| -------------------------------------- | --------------------: | ------: |
+| provider ID 不命中查找                 |                  0.01 |       5 |
+| sync-health 标签本地计数／观察标签     |         99.01 / 10.78 |     150 |
+| sync-health IMAP 本地计数              |                  0.57 |     100 |
+| stale sweep 标签／IMAP 的 100 条候选页 |           0.66 / 0.34 |     100 |
+| stale sweep claim 与游标保存           |                  0.11 |      25 |
+| reset 账户七日窗口                     |                  4.83 |     200 |
+| reset 标签／IMAP 三十日窗口            |           6.16 / 0.73 |     150 |
+| reset 候选持久化                       |                  0.07 |      50 |
+| 未读账户／标签徽标                     |          7.79 / 12.95 |     100 |
+| list_threads 首页 50 个会话            |                 27.49 |      75 |
+| 常见词／CJK／运算符搜索，50 个会话     | 65.01 / 81.15 / 20.85 |     150 |
+| AROUND 搜索，50 个会话                 |                489.70 |     500 |
+| getThread，204 封长会话                |                  2.70 |     100 |
+| 长会话模型文本                         |                 92.26 |     500 |
+| 200 KiB HTML 可见文本                  |                 17.69 |     150 |
+| 200 KiB HTML 清洗                      |                 11.35 |     200 |
+| 200 KiB 结构化事件检测                 |                  2.64 |     100 |
+| MCP list_threads／search               |        31.16 / 106.16 |     200 |
+| remap 100 个身份                       |                 20.41 |     250 |
+| invalidate IMAP 文件夹                 |                130.08 |     500 |
+| 各账户消息文本字节数                   |                  3.93 |     150 |
+| 消息文本预算全保护扫描                 |                523.71 |    5000 |
+| 消息文本预算淘汰 1 MiB                 |                 29.09 |     500 |
+| 消息文本预算小时门控                   |                  0.14 |      25 |
+
+预算淘汰测试将 INBOX 保留窗口设为 30 天，并断言实际淘汰了消息文本。小时门控测试在一次检查后再次调用；两者均回滚。完整预算扫描仍允许保留星标、草稿和无限窗口内的消息文本。
+
+迁移 35 在 main 只有迁移 34 时追加，前 34 条未改。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。AROUND 一次生成匹配元数据，再分组读取选中的摘要。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
+
+保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
+
+最终 fixture 生成用时 40.61 秒，测试进程末次采样 RSS 401.4 MiB、已用 JS 堆 68.5 MiB；这些值含 Vitest 和 SQLite，不是 Electron 内存。首轮已记录的常见词、CJK 和 AROUND 热查询中位数分别为 533.24、1032.39、873.68 ms；首轮在缓存扫描阶段达到 20 分钟上限，没有完整 JSON。最终完整报告写到 `/tmp/openmail-slice61-performance.json`，包含每项的 SQL、查询计划、中位数、最大值和预算。
+
+## 迁移 35：写入与磁盘成本
+
+基准固定为迁移 34 的 main `dfe3a46`，使用同一份 100,000 封 fixture 的副本比较修订后的迁移 35。两侧的 `upsertMessage`、`applyLocalOp` 和 provider ID 查找实现相同，脚本逐一比对 TypeScript AST。仅 schema／索引不同；Node 层不启用向量清理，不发网络请求。
+
+```sh
+pnpm --filter @openmail/core build
+OPENMAIL_PERF=1 OPENMAIL_PERF_BASELINE_REF=dfe3a46 pnpm perf:cost
+```
+
+脚本先用真实 `Store.upsertMessage` 生成迁移 34 数据库。生成期间的临时 provider 查找索引随后删除，两侧统一执行 VACUUM、ANALYZE 和 truncate checkpoint；FTS 完整性检查确保 rowid 对齐。每个写入样本都从同一份 10 万封快照复制，完成一次真实事务提交，计时包含 commit 与自动 checkpoint；不使用回滚代替提交。每项先热身一次，再取五次中位数。未变 upsert 分散取样，并断言 `total_changes()=0`；标签修改也分散在三个账户中。
+
+SQLite 使用生产设置：WAL、FULL 同步、1000 页自动 checkpoint、8 MiB WAL 保留上限，页缓存为 8 MiB。空间按逻辑文件长度统计 DB+WAL，分别记录迁移提交后、显式 truncate 后和每种写入后的状态；不把自动 checkpoint 后仍保留的 WAL 文件忽略。脚本在写入回退超过 25% 或任一相同阶段的 DB+WAL 增长超过 15% 时失败。
+
+| 测量项                  | main／迁移 34 | 修订后迁移 35 |   变化 |
+| ----------------------- | ------------: | ------------: | -----: |
+| 同步写入 1,000 封新邮件 |     307.45 ms |     327.61 ms | +6.56% |
+| 1,000 封未变 upsert     |      38.50 ms |      40.21 ms | +4.44% |
+| 100 封邮件标签修改      |      56.53 ms |      52.97 ms | -6.30% |
+| 10 万封库升级迁移 35    |             — |     450.06 ms |      — |
+| 迁移提交后 DB+WAL       |    480.20 MiB |    527.15 MiB | +9.78% |
+| 显式 truncate 后 DB+WAL |    480.20 MiB |    499.15 MiB | +3.95% |
+
+原提交 `f6071e7` 在相同生产设置下，标签修改为 52.08 → 77.02 ms，回退 47.90%；迁移提交后 DB+WAL 为 480.20 → 596.10 MiB，增长 24.14%。因此删除 `messages_sync_metadata` 和 `messages_thread_summary`，IMAP 索引仅保留账户、路径表达式、provider ID 和日期；账户日期索引保持迁移 34 的定义。AROUND 复用全局日期覆盖索引。复测 31 项读取预算均通过，其中 AROUND 中位数为 489.70 ms，预算为 500 ms。只在全局日期索引中新增 `labels_json`；前 34 条迁移不变，尚未合并的迁移 35 随此次提交修订。
+
+最终三种写入后的 DB+WAL 增长分别为 4.01%、3.95%、4.00%，均低于 15%。升级取三份独立副本的中位数，最大值为 498.15 ms。标签修改的负变化属于本机样本波动，不作为性能改进承诺。完整样本、DB/WAL 分项及索引页大小见 `/tmp/openmail-slice61-cost.json`；索引缩减后仍须通过上节的 31 项读取预算。
 
 ## 条件与复现
 
