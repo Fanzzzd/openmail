@@ -518,7 +518,7 @@ const Row = memo(function Row({
   swipeActions: Prefs["swipeActions"];
   onSwipe: (thread: ThreadSummary, action: SwipeAction) => void;
 }) {
-  const { i18n } = useLingui();
+  const { i18n, t } = useLingui();
   const row = useRef<HTMLButtonElement>(null);
   const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
   const muted = accent ? "text-white" : "text-a11y-muted";
@@ -583,6 +583,13 @@ const Row = memo(function Row({
             : undefined,
         }}
         tabIndex={tabbable ? 0 : -1}
+        aria-label={[
+          senders(m),
+          m.subject || t`(No subject)`,
+          shortDate(m.date, i18n),
+          ...(m.isUnread ? [t`Unread`] : []),
+          ...(m.isStarred ? [t`Starred`] : []),
+        ].join(", ")}
         aria-selected={selected}
         aria-setsize={total}
         aria-posinset={position}

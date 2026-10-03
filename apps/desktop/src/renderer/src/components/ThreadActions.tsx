@@ -575,7 +575,13 @@ function LabelPicker({
           }}
         />
       )}
-      <PickerPopover open={open} onOpenChange={onOpenChange} trigger={trigger} tip={tip}>
+      <PickerPopover
+        aria-label={folders ? t`Move to folder` : t`Labels`}
+        open={open}
+        onOpenChange={onOpenChange}
+        trigger={trigger}
+        tip={tip}
+      >
         <Autocomplete.Root
           inline
           open

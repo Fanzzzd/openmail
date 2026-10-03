@@ -1,7 +1,7 @@
 import { useAtom } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { parseSnoozeTime, snoozeTimes, type BatchResult } from "@openmail/core/schema";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { resultError } from "../errors";
 import { MAIL_KEYS } from "../state/keys";
 import { snoozeAtom } from "../state/mutations";
@@ -18,6 +18,7 @@ export function SnoozeDialog({
   onStart: () => (result: BatchResult | null) => void;
 }) {
   const { t, i18n } = useLingui();
+  const timeDescription = useId();
   const [custom, setCustom] = useState("");
   const [phrase, setPhrase] = useState("");
   const [now] = useState(() => Date.now());
@@ -62,6 +63,8 @@ export function SnoozeDialog({
           <span>{t`Reminder time`}</span>
           <input
             type="text"
+            aria-invalid={Boolean(phrase && due === null)}
+            aria-describedby={phrase ? timeDescription : undefined}
             className={formInput}
             value={phrase}
             onChange={(e) => {
@@ -72,7 +75,7 @@ export function SnoozeDialog({
           />
         </label>
         {phrase && (
-          <p aria-live="polite">
+          <p id={timeDescription} aria-live="polite">
             {due === null
               ? t`Enter a future reminder time`
               : new Date(due).toLocaleString(i18n.locale)}

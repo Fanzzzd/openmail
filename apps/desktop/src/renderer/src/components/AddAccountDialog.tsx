@@ -109,8 +109,9 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
               <button
                 key={item.id}
                 type="button"
+                aria-label={tileLabel(i18n, item.label)}
                 onClick={() => setChoice(item.id)}
-                className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:ring-white/10 dark:hover:bg-white/5"
+                className="flex flex-col items-center gap-2 rounded-xl px-1 py-4 ring-1 ring-black/[0.06] transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-a11y-focus dark:ring-white/10 dark:hover:bg-white/5"
               >
                 <ProviderIcon provider={item.icon} className="size-8" />
                 <span className="text-[12px] text-neutral-700 dark:text-neutral-300">

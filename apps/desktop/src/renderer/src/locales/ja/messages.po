@@ -855,9 +855,9 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "このウインドウをクリックし、デバイスを選択して写
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "閉じる"
 
@@ -2718,6 +2719,7 @@ msgstr "会議が更新されました"
 msgid "Mention suggestions"
 msgstr "メンション候補"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Outlook で開く"
 msgid "Open in web mail"
 msgstr "Webメールで開く"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "リンクを開く"
 
@@ -3320,7 +3322,7 @@ msgstr "システム設定を開く"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "返信する前にカレンダーでこの招待状を開いて追加してください"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "このリンクを開きますか？"
 
@@ -3760,6 +3762,10 @@ msgstr "トークンを削除する"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "リンクから追跡パラメータを削除"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "{recipient} を削除しました"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "データベースの整合性チェック (quick_check) が失敗した
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "データベースは保存されていました。 OpenMail を終了し、ローカル バックアップを復元するか、サポートに連絡してください。"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "表示されたリンクは実際の接続先を隠している可能性があります。開く前に実際のドメインを確認してください。"
 

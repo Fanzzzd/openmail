@@ -855,9 +855,9 @@ msgstr "Al momento non è possibile raggiungere il server di posta."
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "Fai clic in questa finestra, poi scegli un dispositivo per scattare una 
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Chiudi"
 
@@ -2718,6 +2719,7 @@ msgstr "Incontro aggiornato"
 msgid "Mention suggestions"
 msgstr "Suggerimenti per le menzioni"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Apri in Outlook"
 msgid "Open in web mail"
 msgstr "Apri nella posta elettronica"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Apri collegamento"
 
@@ -3320,7 +3322,7 @@ msgstr "Apri impostazioni di sistema"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Apri questo invito nel tuo calendario per aggiungerlo prima di rispondere"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "Aprire questo collegamento?"
 
@@ -3760,6 +3762,10 @@ msgstr "Rimuovi gettone"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Rimuovi i parametri di tracciamento dai collegamenti"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "{recipient} rimosso"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "Il controllo dell’integrità del database (quick_check) non è riuscit
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Il database è stato mantenuto. Esci da OpenMail e ripristina un backup locale o contatta l’assistenza."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Il collegamento visualizzato può nascondere la destinazione. Controlla il dominio reale prima di aprirlo."
 

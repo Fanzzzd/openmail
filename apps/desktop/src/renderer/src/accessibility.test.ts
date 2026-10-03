@@ -4,16 +4,19 @@ import { act, createElement as h, createRef, useState, type ReactNode } from "re
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
+import { moderateAllowlist } from "./accessibility-allowlist";
 import { setupI18n, i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { AsyncResult } from "effect/reactivity";
 import { Effect } from "effect";
 import {
   DEFAULT_PREFS,
+  EMPTY_QUOTE_HISTORY,
   type Account,
   type Message,
   type Proposal,
   type ThreadSummary,
+  type CalendarInvite,
 } from "@openmail/core/schema";
 import { emptyDraft } from "./draft";
 
@@ -132,15 +135,17 @@ vi.mock("./state/mail", () => ({
   withMail: (body: (call: (tag: string, payload?: unknown) => unknown) => unknown) =>
     body((tag) =>
       Effect.succeed(
-        tag === "NotificationActionCapabilities"
-          ? { buttons: true, selection: true }
-          : tag === "NotificationPermission"
-            ? "authorized"
-            : tag === "AttachmentCapabilities"
-              ? { share: true }
-              : tag === "AttachmentAction"
-                ? { count: 1, failures: [] }
-                : undefined,
+        tag === "ReaderAttachments"
+          ? (fixture.values.get("ReaderAttachments") ?? [])
+          : tag === "NotificationActionCapabilities"
+            ? { buttons: true, selection: true }
+            : tag === "NotificationPermission"
+              ? "authorized"
+              : tag === "AttachmentCapabilities"
+                ? { share: true }
+                : tag === "AttachmentAction"
+                  ? { count: 1, failures: [] }
+                  : undefined,
       ),
     ),
   syncNow: Effect.void,
@@ -151,7 +156,7 @@ vi.mock("./state/mail", () => ({
   printThread: () => Effect.void,
 }));
 import { MessageList } from "./components/MessageList";
-import { Reader } from "./components/Reader";
+import { Reader, ThreadView } from "./components/Reader";
 import { ThreadActions } from "./components/ThreadActions";
 import { Sidebar } from "./components/Sidebar";
 import { Composer } from "./components/Composer";
@@ -166,6 +171,13 @@ import { AttachmentList } from "./components/Attachments";
 import { useNarrowLayout } from "./responsive-layout";
 import { ComposeFormatBar } from "./components/ComposeFormatBar";
 import { RecipientField } from "./components/RecipientField";
+import { GoToFolder } from "./components/GoToFolder";
+import { PickerPopover } from "./components/ui/Picker";
+import { LinkConfirmDialog } from "./components/LinkConfirmDialog";
+import { EmailFrame } from "./components/EmailFrame";
+import { AddAccountDialog } from "./components/AddAccountDialog";
+import { SnoozeDialog } from "./components/SnoozeDialog";
+import { LabelEditor } from "./components/OrganizationSettings";
 
 const account: Account = {
   id: "gmail:me",
@@ -206,6 +218,7 @@ const proposal: Proposal = {
 };
 const localized = (node: ReactNode) =>
   h(I18nProvider, { i18n: setupI18n({ locale: "en", messages: { en: {} } }) }, node);
+const auditedFixtures = new Set<string>();
 const audit = async () => {
   // jsdom has no layout/canvas. Contrast is verified separately against theme tokens.
   let violations: axe.Result[] = [];
@@ -217,17 +230,19 @@ const audit = async () => {
   });
   expect(
     violations
-      .filter(
-        (issue) =>
-          issue.impact === "serious" ||
-          issue.impact === "critical" ||
-          (issue.impact === "moderate" &&
-            (issue.id === "region" ||
-              issue.id === "heading-order" ||
-              issue.id.startsWith("landmark-"))),
-      )
+      .filter((issue) => issue.impact === "serious" || issue.impact === "critical")
       .map((issue) => ({ id: issue.id, nodes: issue.nodes.map((node) => node.html) })),
   ).toEqual([]);
+  const fixtureName = expect.getState().currentTestName;
+  if (!fixtureName) throw new Error("Accessibility audit requires a named fixture");
+  auditedFixtures.add(fixtureName);
+  const allowed = moderateAllowlist.filter((entry) => entry.fixture === fixtureName);
+  for (const entry of allowed) expect(entry.reason.trim()).not.toBe("");
+  expect(
+    violations
+      .filter((issue) => issue.impact === "moderate")
+      .map((issue) => ({ rule: issue.id, targets: issue.nodes.map((node) => node.target) })),
+  ).toEqual(allowed.map(({ rule, targets }) => ({ rule, targets })));
 };
 
 beforeEach(() => {
@@ -304,7 +319,11 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
         }),
         h(MessageList, {
           title: "Inbox",
-          threads: [thread],
+          threads: [
+            { ...thread, isUnread: true, isStarred: true },
+            { ...thread, id: "second", subject: "Second message", isUnread: true },
+            { ...thread, id: "third", subject: "Third message", isStarred: true },
+          ],
           loading: false,
           exhausted: true,
           showAccount: false,
@@ -382,13 +401,27 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
     ),
   );
   expect(screen.getByRole("navigation", { name: "Mailboxes" })).toBeTruthy();
-  expect(screen.getByRole("option").getAttribute("aria-posinset")).toBe("1");
-  expect(screen.getByRole("option").getAttribute("aria-setsize")).toBe("1");
+  const options = screen.getAllByRole("option");
+  expect(screen.getByRole("listbox").getAttribute("aria-multiselectable")).toBe("true");
+  expect(options[0]?.getAttribute("aria-posinset")).toBe("1");
+  expect(options[0]?.getAttribute("aria-setsize")).toBe("3");
+  expect(options[0]?.getAttribute("aria-label")).toMatch(
+    /^Alice, Meeting agenda, .+, Unread, Starred$/,
+  );
+  expect(options[0]?.getAttribute("aria-label")).not.toContain(message.snippet);
+  expect(options.map((option) => option.getAttribute("aria-selected"))).toEqual([
+    "true",
+    "false",
+    "false",
+  ]);
   expect(screen.getByRole("heading", { level: 3, name: message.subject })).toBeTruthy();
   await audit();
-  fireEvent.keyDown(screen.getByRole("option"), { key: "F10", shiftKey: true });
+  options[0]?.focus();
+  fireEvent.keyDown(options[0] ?? document.body, { key: "F10", shiftKey: true });
   await waitFor(() => expect(screen.getByRole("menu")).toBeTruthy());
   await audit();
+  fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+  await waitFor(() => expect(document.activeElement).toBe(options[0]));
 });
 
 for (const standalone of [false, true]) {
@@ -397,7 +430,16 @@ for (const standalone of [false, true]) {
       localized(
         h(Composer, {
           standalone,
-          draft: { ...emptyDraft(account.id), to: "alice@example.com" },
+          draft: {
+            ...emptyDraft(account.id),
+            to: "alice@example.com",
+            cc: "bob@example.com",
+            bcc: "carol@example.com",
+            attachments: [
+              { filename: "agenda.pdf", mimeType: "application/pdf", content: "YWdlbmRh" },
+              { filename: "notes.txt", mimeType: "text/plain", content: "bm90ZXM=" },
+            ],
+          },
           accounts: [account],
           signatureFor: vi.fn(),
           onClose: vi.fn(),
@@ -407,6 +449,8 @@ for (const standalone of [false, true]) {
       ),
     );
     expect(screen.getByRole("dialog").hasAttribute("data-full-window")).toBe(standalone);
+    expect(screen.getByRole("button", { name: "Remove agenda.pdf" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Move notes.txt earlier" }).tabIndex).toBe(0);
     await audit();
   });
 }
@@ -760,6 +804,7 @@ it("keeps the wide layout at 110% zoom and stacks only below 640 CSS pixels", ()
 });
 
 afterAll(() => {
+  for (const entry of moderateAllowlist) expect(auditedFixtures.has(entry.fixture)).toBe(true);
   for (const module of [
     "@effect/atom-react",
     "./rpc",
@@ -953,3 +998,359 @@ it("existing accounts without an OAuth registration show the configuration state
   );
   expect(screen.getByText("OAuth client not configured. Set it up before syncing.")).toBeTruthy();
 });
+
+it("audits reader attachments, invitation and sender authentication warnings", async () => {
+  const file = { filename: "agenda.pdf", mimeType: "application/pdf", size: 128 };
+  fixture.values.set("ReaderAttachments", [
+    { ...file, path: [0], embedded: false, decodeError: false },
+  ]);
+  fixture.values.set("invitationsAtom", [
+    {
+      key: "invite",
+      uid: "invite",
+      sequence: 0,
+      method: "REQUEST",
+      cancelled: false,
+      title: "Planning",
+      start: { kind: "date", value: "2026-10-05" },
+      end: { kind: "date", value: "2026-10-06" },
+      location: "Office",
+      organizer: message.from,
+      attendees: [{ name: "Me", address: account.email, status: "NEEDS-ACTION", optional: false }],
+      recurrence: [],
+      recurrenceId: null,
+      organizerMismatch: true,
+    } satisfies CalendarInvite,
+  ]);
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h("h1", null, "Mail"),
+        h(ThreadView, {
+          messages: [
+            {
+              ...message,
+              hasCalendar: true,
+              attachments: [file],
+              security: { dmarc: "fail", spf: "fail", dkim: "fail" },
+            },
+          ],
+          selectedId: message.id,
+          single: false,
+          notify: vi.fn(),
+        }),
+      ),
+    ),
+  );
+  await screen.findByRole("region", { name: "Calendar invitation" });
+  expect(screen.getByText("Sender authentication failed (DMARC)")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Actions for agenda.pdf" })).toBeTruthy();
+  expect(
+    screen
+      .getAllByRole("alert")
+      .map((alert) => alert.textContent)
+      .join(" "),
+  ).toContain("organizer differs");
+  await audit();
+});
+
+it("announces selected messages without repeating message text on background refresh", () => {
+  const props = { messages: [message], selectedId: message.id, single: false, notify: vi.fn() };
+  const view = render(localized(h(ThreadView, props)));
+  const status = screen.getByText("Selected message: Alice, Meeting agenda");
+  expect(status.getAttribute("aria-live")).toBe("polite");
+  view.rerender(
+    localized(
+      h(ThreadView, { ...props, messages: [{ ...message, bodyText: "Refreshed message text" }] }),
+    ),
+  );
+  expect(status.textContent).toBe("Selected message: Alice, Meeting agenda");
+  const next = {
+    ...message,
+    id: "next",
+    threadId: "next",
+    subject: "Next subject",
+    from: { name: "Bob", address: "bob@example.com" },
+  };
+  view.rerender(localized(h(ThreadView, { ...props, messages: [next], selectedId: next.id })));
+  expect(status.textContent).toBe("Selected message: Bob, Next subject");
+});
+
+it("audits the folder command palette and selects a result with the keyboard", async () => {
+  const user = userEvent.setup();
+  const onView = vi.fn();
+  const onClose = vi.fn();
+  render(
+    localized(
+      h(GoToFolder, {
+        labels: [],
+        accounts: [account],
+        view: { space: "all", mailbox: "inbox" },
+        onView,
+        onClose,
+      }),
+    ),
+  );
+  const input = screen.getByRole("combobox", { name: "Go to folder" });
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  await user.type(input, "Sent");
+  await audit();
+  await user.keyboard("{Enter}");
+  expect(onView).toHaveBeenCalledWith({ space: "all", mailbox: "sent" });
+  expect(onClose).toHaveBeenCalled();
+});
+
+it("traps picker focus, audits its controls and returns focus on Escape", async () => {
+  const user = userEvent.setup();
+  function Harness() {
+    const [open, setOpen] = useState(false);
+    return localized(
+      h(
+        "main",
+        null,
+        h(PickerPopover, {
+          "aria-label": "Pick label",
+          open,
+          onOpenChange: setOpen,
+          trigger: h("button", null, "Pick label"),
+          children: [
+            h("input", { key: "query", "aria-label": "Find label" }),
+            h("button", { key: "label" }, "Work"),
+          ],
+        }),
+        h("button", null, "Outside"),
+      ),
+    );
+  }
+  render(h(Harness));
+  const opener = screen.getByRole("button", { name: "Pick label" });
+  await user.click(opener);
+  const input = screen.getByRole("textbox", { name: "Find label" });
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  await audit();
+  await user.tab({ shift: true });
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close" })),
+  );
+  await user.tab();
+  await waitFor(() => expect(document.activeElement).toBe(input));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(opener));
+});
+
+it("audits link confirmation, defaults to Cancel and restores the source link", async () => {
+  const user = userEvent.setup();
+  const onOpen = vi.fn();
+  const linkRef = createRef<HTMLAnchorElement>();
+  function Harness() {
+    const [open, setOpen] = useState(false);
+    return localized(
+      h(
+        "main",
+        null,
+        h(
+          "a",
+          {
+            ref: linkRef,
+            href: "https://example.com",
+            onClick: (event) => {
+              event.preventDefault();
+              setOpen(true);
+            },
+          },
+          "Displayed link",
+        ),
+        open &&
+          h(LinkConfirmDialog, {
+            url: "https://example.com/real",
+            onOpen,
+            onClose: () => setOpen(false),
+            returnFocus: () => linkRef.current,
+          }),
+      ),
+    );
+  }
+  render(h(Harness));
+  await user.tab();
+  await user.keyboard("{Enter}");
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" })),
+  );
+  await audit();
+  await user.tab({ shift: true });
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Open link" })),
+  );
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(linkRef.current));
+  expect(onOpen).not.toHaveBeenCalled();
+});
+
+it("sets automatic direction for plain and HTML message text without enabling scripts", () => {
+  const plain = render(
+    localized(
+      h(ThreadView, {
+        messages: [{ ...message, bodyText: "مرحبا بالعالم" }],
+        selectedId: message.id,
+        single: true,
+        notify: vi.fn(),
+      }),
+    ),
+  );
+  expect(plain.container.querySelector("pre")?.dir).toBe("auto");
+  cleanup();
+  const html = render(
+    localized(
+      h(
+        "main",
+        null,
+        h(EmailFrame, {
+          html: "<p>مرحبا بالعالم</p>",
+          remote: false,
+          background: "light",
+          zoom: 100,
+          onActivate: vi.fn(),
+          previous: EMPTY_QUOTE_HISTORY,
+          findQuery: "",
+          findIndex: 0,
+          onMatches: undefined,
+        }),
+      ),
+    ),
+  );
+  const iframe = html.container.querySelector("iframe");
+  expect(iframe?.title).toBe("Message");
+  expect(iframe?.getAttribute("sandbox")).toBe("allow-same-origin");
+  expect(iframe?.srcdoc).toContain('<html lang="en">');
+  expect(iframe?.srcdoc).toContain('<body dir="auto">');
+  expect(iframe?.srcdoc).toContain("prefers-reduced-motion: reduce");
+});
+
+it("removes recipient chips using Delete and announces the removed address", async () => {
+  const user = userEvent.setup();
+  function Harness() {
+    const [value, setValue] = useState("alice@example.com");
+    return localized(
+      h(
+        "main",
+        null,
+        h(RecipientField, {
+          label: "To",
+          value,
+          onChange: setValue,
+          from: account.email,
+          showFullAddresses: true,
+        }),
+      ),
+    );
+  }
+  render(h(Harness));
+  const input = screen.getByRole("combobox", { name: "To" });
+  input.focus();
+  await user.keyboard("{ArrowLeft}{Delete}");
+  expect(screen.queryByRole("button", { name: "Remove alice@example.com" })).toBeNull();
+  expect(screen.getByRole("status").textContent).toBe("Removed alice@example.com");
+  await audit();
+});
+
+it("audits the snooze form and associates invalid reminder input with its error", async () => {
+  render(
+    localized(h(SnoozeDialog, { threads: [message.id], onClose: vi.fn(), onStart: () => vi.fn() })),
+  );
+  const input = screen.getByRole("textbox", { name: "Reminder time" });
+  fireEvent.change(input, { target: { value: "invalid reminder" } });
+  expect(input.getAttribute("aria-invalid")).toBe("true");
+  expect(document.getElementById(input.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+    "Enter a future reminder time",
+  );
+  await audit();
+});
+
+it("audits a label editor with a server error", async () => {
+  render(
+    localized(
+      h(LabelEditor, {
+        label: "new",
+        labels: [],
+        busy: false,
+        error: "Server unavailable",
+        onClose: vi.fn(),
+        onSave: vi.fn(),
+      }),
+    ),
+  );
+  const input = screen.getByRole("textbox", { name: "Name" });
+  expect(document.getElementById(input.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+    "Server unavailable",
+  );
+  await audit();
+});
+
+it("audits composer send validation and associates the error with recipient fields", async () => {
+  render(
+    localized(
+      h(Composer, {
+        draft: emptyDraft(account.id),
+        accounts: [account],
+        signatureFor: vi.fn(),
+        onClose: vi.fn(),
+        onDiscard: vi.fn(),
+        onSend: vi.fn(),
+      }),
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  const alert = screen.getByRole("alert");
+  expect(alert.textContent).not.toBe("");
+  const recipients = screen.getByRole("combobox", { name: "To" });
+  expect(recipients.getAttribute("aria-describedby")).toBe(alert.id);
+  await audit();
+});
+
+it("audits the composer attachment menu and send confirmation using the keyboard", async () => {
+  const user = userEvent.setup();
+  fixture.values.set("nativeCompose", { photos: true, continuity: true, grammar: false });
+  render(
+    localized(
+      h(Composer, {
+        draft: {
+          ...emptyDraft(account.id),
+          to: "alice@example.com",
+          body: { kind: "plain", text: "Hello" },
+        },
+        accounts: [account],
+        signatureFor: vi.fn(),
+        onClose: vi.fn(),
+        onDiscard: vi.fn(),
+        onSend: vi.fn(),
+      }),
+    ),
+  );
+  await audit();
+  const attach = screen.getByRole("button", { name: "Attach files" });
+  attach.focus();
+  await user.keyboard("{Enter}");
+  await screen.findByRole("menuitem", { name: "Photos" });
+  await audit();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(attach));
+  screen.getByRole("button", { name: "Send" }).focus();
+  await user.keyboard("{Enter}");
+  await screen.findByRole("alertdialog");
+  await audit();
+  await user.keyboard("{Escape}");
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Send" })),
+  );
+});
+
+for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
+  it(`audits the add-account ${choice ?? "provider chooser"} dialog`, async () => {
+    fixture.values.set("clientSetupAtom", { googleConfigured: false, microsoftConfigured: false });
+    render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+    if (choice) fireEvent.click(screen.getByRole("button", { name: choice }));
+    await audit();
+  });
+}

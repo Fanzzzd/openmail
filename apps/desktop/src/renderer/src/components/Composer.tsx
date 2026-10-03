@@ -8,7 +8,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { FileText, Paperclip, Trash2, X } from "lucide-react";
-import { useRef, useState, type ReactElement, type RefObject } from "react";
+import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
 import type { Account, OutgoingMessage, Template } from "../../../shared/api";
 import { type ComposeElement } from "../compose-editor-dom";
 import { inheritsOriginals } from "../compose-originals";
@@ -70,6 +70,7 @@ export function Composer({
   onDiscard,
   onSend,
 }: Props) {
+  const errorId = useId();
   const messages = useComposeMessages();
   const { t, i18n } = useLingui();
   const { draft, setDraft, prefs } = useComposeDraft(initial);
@@ -339,6 +340,7 @@ export function Composer({
               </span>
               <RecipientField
                 onDragChip={() => setShowBcc(true)}
+                aria-describedby={error ? errorId : undefined}
                 fieldName="to"
                 onMove={(index, target) => moveChip("to", target, index)}
                 onDropRecipient={(chip) => dropChip("to", chip)}
@@ -366,6 +368,7 @@ export function Composer({
                     <Trans>Cc</Trans>
                   </span>
                   <RecipientField
+                    aria-describedby={error ? errorId : undefined}
                     fieldName="cc"
                     onMove={(index, target) => moveChip("cc", target, index)}
                     onDropRecipient={(chip) => dropChip("cc", chip)}
@@ -382,6 +385,7 @@ export function Composer({
                     <Trans>Bcc</Trans>
                   </span>
                   <RecipientField
+                    aria-describedby={error ? errorId : undefined}
                     fieldName="bcc"
                     onMove={(index, target) => moveChip("bcc", target, index)}
                     onDropRecipient={(chip) => dropChip("bcc", chip)}
@@ -400,6 +404,7 @@ export function Composer({
               </span>
               <input
                 aria-label={t`Subject`}
+                aria-describedby={error ? errorId : undefined}
                 value={draft.subject}
                 onChange={(e) => set({ subject: e.target.value })}
                 className={field}
@@ -734,7 +739,13 @@ export function Composer({
                   </button>
                 }
               />
-              <span className="min-w-0 flex-1 truncate text-[12px] text-a11y-danger">{error}</span>
+              <span
+                id={errorId}
+                role="alert"
+                className="min-w-0 flex-1 text-[12px] text-a11y-danger"
+              >
+                {error}
+              </span>
               <Tip label={t`Discard draft`} side="top">
                 <button
                   type="button"
@@ -926,6 +937,7 @@ function TemplatePicker({
 
   return (
     <PickerPopover
+      aria-label={t`Templates`}
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next);

@@ -1,6 +1,6 @@
-import { linkHint, linkIdentity, linkNeedsConfirmation } from "@openmail/core/schema";
+import { linkHint, linkNeedsConfirmation } from "@openmail/core/schema";
 import { useRunMail, withMail } from "../state/mail";
-import { Dialog } from "./ui/Dialog";
+import { LinkConfirmDialog } from "./LinkConfirmDialog";
 import type { QuoteHistory } from "@openmail/core/schema";
 import { listenForMessageActivation } from "./message-activation";
 import { useLingui } from "@lingui/react/macro";
@@ -32,6 +32,10 @@ const BASE_CSS = `
   table { max-width: 100%; }
   pre { white-space: pre-wrap; }
   a { color: #2563eb; }
+  a:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
 `;
 
 // Dark background for mail designed for white: invert the page, then invert
@@ -73,7 +77,8 @@ export function EmailFrame({
   findIndex,
   onMatches,
 }: Props) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
+  const confirmedAnchor = useRef<HTMLElement | null>(null);
   const run = useRunMail();
   const [pendingLink, setPendingLink] = useState<string | null>(null);
   const openLink = (url: string) => run(withMail((call) => call("OpenMailLink", { url })));
@@ -103,10 +108,10 @@ export function EmailFrame({
   });
 
   const css = `${BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
-  const doc = `<!doctype html><html><head><meta charset="utf-8">
+  const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
-<base target="_blank"><style>${css}</style></head><body>${html}</body></html>`;
+<base target="_blank"><style>${css}</style></head><body dir="auto">${html}</body></html>`;
 
   useEffect(
     () => () => {
@@ -155,8 +160,11 @@ export function EmailFrame({
         anchor instanceof (frameDoc.defaultView?.HTMLElement ?? HTMLElement)
           ? anchor.innerText || anchor.getAttribute("alt") || ""
           : anchor.textContent;
-      if (linkNeedsConfirmation(url, label)) setPendingLink(url);
-      else openLink(url);
+      if (linkNeedsConfirmation(url, label)) {
+        confirmedAnchor.current =
+          anchor instanceof (frameDoc.defaultView?.HTMLElement ?? HTMLElement) ? anchor : null;
+        setPendingLink(url);
+      } else openLink(url);
     };
     frameDoc.addEventListener("click", click);
     frameDoc.addEventListener("auxclick", click);
@@ -184,7 +192,7 @@ export function EmailFrame({
       }`}
     >
       <iframe
-        title="message"
+        title={t`Message`}
         onLoad={onLoad}
         sandbox="allow-same-origin"
         srcDoc={doc}
@@ -192,25 +200,12 @@ export function EmailFrame({
         className="block w-full border-0"
       />
       {pendingLink && (
-        <Dialog
-          aria-label={t`Open this link?`}
+        <LinkConfirmDialog
+          url={pendingLink}
           onClose={() => setPendingLink(null)}
-          className="w-[min(90vw,480px)] space-y-4 p-5"
-        >
-          <p>{t`The displayed link may hide its destination. Check the real domain before opening.`}</p>
-          <p className="font-mono break-all">{linkIdentity(pendingLink)?.domain}</p>
-          <p className="font-mono break-all">{linkHint(pendingLink)}</p>
-          <div className="flex justify-end gap-4">
-            <button type="button" onClick={() => setPendingLink(null)}>{t`Cancel`}</button>
-            <button
-              type="button"
-              onClick={() => {
-                openLink(pendingLink);
-                setPendingLink(null);
-              }}
-            >{t`Open link`}</button>
-          </div>
-        </Dialog>
+          onOpen={openLink}
+          returnFocus={() => confirmedAnchor.current}
+        />
       )}
       {hasQuotes && (
         <button

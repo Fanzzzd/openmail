@@ -855,9 +855,9 @@ msgstr "Le serveur de messagerie est momentanément inaccessible."
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "Cliquez dans cette fenêtre, puis choisissez un appareil pour prendre un
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Fermer"
 
@@ -2718,6 +2719,7 @@ msgstr "Réunion mise à jour"
 msgid "Mention suggestions"
 msgstr "Suggestions de mentions"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Ouvrir dans Outlook"
 msgid "Open in web mail"
 msgstr "Ouvrir dans la messagerie Web"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Ouvrir le lien"
 
@@ -3320,7 +3322,7 @@ msgstr "Ouvrir les réglages système"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Ouvrez cette invitation dans votre calendrier pour l’ajouter avant de répondre"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "Ouvrir ce lien ?"
 
@@ -3760,6 +3762,10 @@ msgstr "Supprimer le jeton"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Supprimer les paramètres de suivi des liens"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "{recipient} supprimé"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "La vérification de l’intégrité de la base de données (quick_check)
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "La base de données a été conservée. Quittez OpenMail et restaurez une sauvegarde locale ou contactez le support."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Le lien affiché peut masquer sa destination. Vérifiez le domaine réel avant de l’ouvrir."
 

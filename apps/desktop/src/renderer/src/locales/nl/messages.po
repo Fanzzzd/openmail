@@ -855,9 +855,9 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "Klik in dit venster en kies een apparaat om een foto te maken, een docum
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Sluit"
 
@@ -2718,6 +2719,7 @@ msgstr "Vergadering bijgewerkt"
 msgid "Mention suggestions"
 msgstr "Suggesties voor vermeldingen"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Openen in Outlook"
 msgid "Open in web mail"
 msgstr "Openen in webmail"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Link openen"
 
@@ -3320,7 +3322,7 @@ msgstr "Systeeminstellingen openen"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Open deze uitnodiging in uw agenda om deze toe te voegen voordat u reageert"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "Deze link openen?"
 
@@ -3760,6 +3762,10 @@ msgstr "Token verwijderen"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Trackingparameters uit links verwijderen"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "{recipient} verwijderd"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "De database-integriteitscontrole (quick_check) is mislukt of het bestand
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "De database werd bewaard. Sluit OpenMail af en herstel een lokale back-up of neem contact op met de ondersteuning."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "De weergegeven link kan de bestemming verbergen. Controleer het echte domein voordat u de link opent."
 

@@ -8,7 +8,7 @@ export function SyncStatusAnnouncement({ failed }: { failed: boolean }) {
   if (failed && state !== "failed") setState("failed");
   else if (!failed && state === "failed") setState("cleared");
   return (
-    <output aria-atomic="true" className="sr-only">
+    <output aria-live="polite" aria-atomic="true" className="sr-only">
       {state === "failed" ? t`Sync failed` : state === "cleared" ? t`Syncing normally` : ""}
     </output>
   );

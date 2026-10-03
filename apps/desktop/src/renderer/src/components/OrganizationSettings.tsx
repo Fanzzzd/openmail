@@ -3,7 +3,7 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CATEGORIES, type LabelChange } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Account, Label } from "../../../shared/api";
 import { resultError } from "../errors";
 import { Keys } from "../state/keys";
@@ -293,6 +293,7 @@ export function LabelEditor({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const errorId = useId();
   const [name, setName] = useState(label === "new" ? "" : label.name);
   const [parent, setParent] = useState("");
   return (
@@ -312,6 +313,7 @@ export function LabelEditor({
           <span>{t`Name`}</span>
           <input
             autoFocus
+            aria-describedby={error ? errorId : undefined}
             className={formInput}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -330,7 +332,7 @@ export function LabelEditor({
           />
         )}
         {error && (
-          <p role="alert" className="text-a11y-danger">
+          <p id={errorId} role="alert" className="text-a11y-danger">
             {error}
           </p>
         )}

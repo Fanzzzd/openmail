@@ -865,9 +865,9 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1051,6 +1051,7 @@ msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -2728,6 +2729,7 @@ msgstr "会议已更新"
 msgid "Mention suggestions"
 msgstr "提及建议"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3306,7 +3308,7 @@ msgstr "在 Outlook 中打开"
 msgid "Open in web mail"
 msgstr "在网页版邮箱中打开"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "打开链接"
 
@@ -3330,7 +3332,7 @@ msgstr "打开系统设置"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "请先在日历中添加此邀请，再响应"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "打开此链接？"
 
@@ -3770,6 +3772,10 @@ msgstr "移除令牌"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "移除链接中的跟踪参数"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "已移除 {recipient}"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4746,7 +4752,7 @@ msgstr "数据库完整性检查（quick_check）失败，或文件无法访问�
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "显示的链接可能隐藏了目标。打开前请检查真实域名。"
 

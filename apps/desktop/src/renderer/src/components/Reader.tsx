@@ -654,6 +654,7 @@ export function ThreadView({
       }}
       className="selectable flex-1 overflow-y-auto px-7 pb-10 outline-none"
     >
+      <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
       {newest && (
         <TriageChip
           id={newest.id}
@@ -1280,6 +1281,7 @@ function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixel
   const list = [...trackers, ...(pixels > 0 ? [unknown] : [])];
   return (
     <PickerPopover
+      aria-label={plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
       open={open}
       onOpenChange={setOpen}
       className="w-56"
@@ -1339,6 +1341,7 @@ function PlainBody({
     <>
       <pre
         ref={root}
+        dir="auto"
         className={`rounded-lg p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
         style={{ fontSize: (14 * zoom) / 100 }}
       />
@@ -1353,4 +1356,17 @@ function PlainBody({
       )}
     </>
   );
+}
+
+/** Mount the live region empty before announcing a newly opened thread. */
+function SelectedMessageAnnouncement({ message }: { message: Message | undefined }) {
+  const { t } = useLingui();
+  const text = message
+    ? `${t`Selected message`}: ${displayName(message.from)}, ${message.subject || t`(No subject)`}`
+    : "";
+  const region = useRef<HTMLOutputElement>(null);
+  useEffect(() => {
+    if (region.current) region.current.textContent = text;
+  }, [text]);
+  return <output ref={region} aria-live="polite" aria-atomic="true" className="sr-only" />;
 }

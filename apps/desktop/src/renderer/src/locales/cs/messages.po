@@ -855,9 +855,9 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, sk
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Zavřít"
 
@@ -2718,6 +2719,7 @@ msgstr "Schůzka aktualizována"
 msgid "Mention suggestions"
 msgstr "Návrhy zmínek"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Otevřete v aplikaci Outlook"
 msgid "Open in web mail"
 msgstr "Otevřít ve webové poště"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Otevřít odkaz"
 
@@ -3320,7 +3322,7 @@ msgstr "Otevřít nastavení systému"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Než odpovíte, otevřete si tuto pozvánku ve svém kalendáři a přidejte ji"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "Otevřít tento odkaz?"
 
@@ -3760,6 +3762,10 @@ msgstr "Odebrat token"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Odstranit sledovací parametry z odkazů"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "Odebráno: {recipient}"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedost
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Databáze byla zachována. Ukončete OpenMail a obnovte místní zálohu nebo kontaktujte podporu."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Zobrazený odkaz může skrývat svůj cíl. Před otevřením zkontrolujte skutečnou doménu."
 

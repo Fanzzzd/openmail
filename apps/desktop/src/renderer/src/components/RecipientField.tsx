@@ -36,6 +36,7 @@ interface Props {
   value: string;
   onChange: (value: string) => void;
   inputRef?: Ref<HTMLInputElement>;
+  "aria-describedby"?: string;
   /** The address the message is sent from; the only own address not suggested. */
   from: string | undefined;
   showFullAddresses: boolean;
@@ -65,6 +66,7 @@ export function RecipientField({
   value,
   onChange,
   inputRef,
+  "aria-describedby": describedBy,
   from,
   showFullAddresses,
   fieldName,
@@ -75,6 +77,7 @@ export function RecipientField({
   const { t } = useLingui();
   const fieldRef = useRef<HTMLDivElement>(null);
   const [copyError, setCopyError] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | undefined>();
@@ -146,6 +149,8 @@ export function RecipientField({
           if (added) pick(added);
           return;
         }
+        const recipient = chips.find((chip) => !next.includes(chip));
+        if (recipient) setAnnouncement(t`Removed ${recipient}`);
         emit(serialize(next, inputText));
       }}
       inputValue={inputText}
@@ -243,6 +248,7 @@ export function RecipientField({
         <Combobox.Input
           ref={inputRef}
           aria-label={label}
+          aria-describedby={describedBy}
           onKeyDown={(e) => {
             if (e.metaKey || e.ctrlKey || e.altKey) return;
             if (e.key === "Escape" && !listed) {
@@ -261,6 +267,9 @@ export function RecipientField({
           className="h-[22px] min-w-24 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted"
         />
       </Combobox.Chips>
+      <output aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </output>
       {copyError && <output role="alert">{t`Couldn't copy address`}</output>}
       <Combobox.Portal>
         <Combobox.Positioner

@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react/macro";
 import { Popover } from "@base-ui/react/popover";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
@@ -8,6 +9,7 @@ type Side = ComponentProps<typeof Popover.Positioner>["side"];
 type FinalFocus = ComponentProps<typeof Popover.Popup>["finalFocus"];
 
 interface PopoverProps {
+  "aria-label": string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** The button that opens it, rendered by Popover.Trigger. */
@@ -25,6 +27,7 @@ interface PopoverProps {
  * clicks close it; focus starts in its first field.
  */
 export function PickerPopover({
+  "aria-label": label,
   open,
   onOpenChange,
   trigger,
@@ -34,8 +37,9 @@ export function PickerPopover({
   className = "w-60",
   children,
 }: PopoverProps) {
+  const { t } = useLingui();
   return (
-    <Popover.Root open={open} onOpenChange={(next) => onOpenChange(next)}>
+    <Popover.Root modal="trap-focus" open={open} onOpenChange={(next) => onOpenChange(next)}>
       {tip ? (
         <Tip label={tip.label} shortcut={tip.shortcut} side={side}>
           <Popover.Trigger render={trigger} />
@@ -46,10 +50,12 @@ export function PickerPopover({
       <Popover.Portal>
         <Popover.Positioner side={side} align="start" sideOffset={6} className="z-[60]">
           <Popover.Popup
+            aria-label={label}
             finalFocus={finalFocus}
             className={`focus-within:ring-2 focus-within:ring-a11y-focus flex flex-col overflow-hidden ${popupSurface} ${popupMotion} ${className}`}
           >
             {children}
+            <Popover.Close className="sr-only focus:not-sr-only focus:p-2">{t`Close`}</Popover.Close>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

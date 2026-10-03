@@ -855,9 +855,9 @@ msgstr "Сейчас не удаётся подключиться к почто�
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Feedback.tsx
 #: src/renderer/src/components/FolderActions.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1041,6 +1041,7 @@ msgstr "Нажмите в этом окне, затем выберите уст�
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Закрыть"
 
@@ -2718,6 +2719,7 @@ msgstr "Встреча обновлена"
 msgid "Mention suggestions"
 msgstr "Подсказки упоминаний"
 
+#: src/renderer/src/components/EmailFrame.tsx
 #: src/renderer/src/components/Reader.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/state/desktop.ts
@@ -3296,7 +3298,7 @@ msgstr "Открыть в Outlook"
 msgid "Open in web mail"
 msgstr "Открыть в веб-почте"
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open link"
 msgstr "Открыть ссылку"
 
@@ -3320,7 +3322,7 @@ msgstr "Открыть настройки системы"
 msgid "Open this invitation in your calendar to add it before responding"
 msgstr "Откройте это приглашение в своем календаре, чтобы добавить его, прежде чем отвечать."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "Open this link?"
 msgstr "Открыть эту ссылку?"
 
@@ -3760,6 +3762,10 @@ msgstr "Удалить токен"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Remove tracking parameters from links"
 msgstr "Удалять параметры отслеживания из ссылок"
+
+#: src/renderer/src/components/RecipientField.tsx
+msgid "Removed {recipient}"
+msgstr "{recipient} удалён"
 
 #: src/renderer/src/App.tsx
 msgid "Removed star"
@@ -4736,7 +4742,7 @@ msgstr "Проверка целостности базы данных (quick_che
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "База данных сохранилась. Закройте OpenMail и восстановите локальную резервную копию или обратитесь в службу поддержки."
 
-#: src/renderer/src/components/EmailFrame.tsx
+#: src/renderer/src/components/LinkConfirmDialog.tsx
 msgid "The displayed link may hide its destination. Check the real domain before opening."
 msgstr "Отображаемая ссылка может скрывать адрес назначения. Проверьте настоящий домен перед открытием."
 

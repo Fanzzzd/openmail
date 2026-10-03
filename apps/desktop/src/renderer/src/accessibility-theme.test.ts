@@ -1,4 +1,5 @@
 import Color from "colorjs.io";
+import { formButton } from "./components/ui/form-styles";
 import { builtStyles } from "./test-styles";
 import { labelChipColors } from "./label-colors";
 import { readFileSync } from "node:fs";
@@ -38,6 +39,14 @@ for (const [index, theme] of ["light", "dark"].entries()) {
         ).toBeGreaterThanOrEqual(token === "focus" || token === "border" ? 3 : 4.5);
       }
     }
+    for (const foreground of ["text", "muted"]) {
+      const value = tokens.get(foreground);
+      if (!value) throw new Error(`Missing ${theme} ${foreground}`);
+      expect(
+        contrast(value, index === 0 ? "#ededed" : "#303030"),
+        `${theme} ${foreground} on selected row`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
     // Accent menus and action buttons use opaque white text on blue-600.
     expect(contrast("#ffffff", "#2563eb")).toBeGreaterThanOrEqual(4.5);
     expect(contrast("#ffffff", "#dc2626")).toBeGreaterThanOrEqual(4.5);
@@ -59,6 +68,13 @@ it("checks hard-coded text and icon utility colors from the shipped CSS", () => 
   styles.walkDecls(/^--color-/, (decl) => {
     tokens.set(decl.prop, decl.value);
   });
+  const buttonBackground = formButton.match(/\bbg-([\w-]+)\b/)?.[1];
+  const buttonColor = tokens.get(`--color-${buttonBackground}`);
+  if (!buttonColor) throw new Error("Missing built form button background");
+  expect(
+    new Color("#ffffff").contrast(buttonColor, "WCAG21"),
+    "form button text",
+  ).toBeGreaterThanOrEqual(4.5);
   const textCases: readonly [string, string][] = [
     ["orange-700", "#ffffff"],
     ["orange-400", "#262626"],
