@@ -46,6 +46,7 @@ const report = {
   consoleErrors: [],
   exceptions: [],
   ipcRejections: [],
+  syncHealth: [],
   failure: "",
 };
 let child, socket;
@@ -285,6 +286,8 @@ try {
     await click('aside button[aria-label="Settings"]', '[role="dialog"][aria-label="Settings"]');
     step({ step: "settings", status: "passed" });
   } else step({ step: "settings", status: "skipped", reason: "Account setup is open" });
+  report.syncHealth = await evaluate("window.openmailSyncHealth()");
+  step({ step: "sync-health", status: "passed" });
   await new Promise((resolve) => {
     setTimeout(resolve, 500);
   });

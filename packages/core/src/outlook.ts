@@ -1632,6 +1632,23 @@ export const makeOutlook: Effect.Effect<
     changeLabel,
     connect,
     pull,
+    folderStatus: (account, scope) => {
+      const id = WELL_KNOWN.find((folder) => folder.label === scope)?.name ?? scope;
+      return get(
+        account.id,
+        Schema.Struct({ totalItemCount: Schema.Int, unreadItemCount: Schema.Int }),
+        `/me/mailFolders/${encodeURIComponent(id)}?$select=totalItemCount,unreadItemCount`,
+      ).pipe(
+        Effect.map((row) => ({
+          total: row.totalItemCount,
+          unread: row.unreadItemCount,
+          threads: null,
+          uidNext: null,
+          uidValidity: null,
+        })),
+        Effect.mapError(readFailure(account.id)),
+      );
+    },
     listFolderMessages: (account, folder, cursor, options) =>
       Effect.gen(function* () {
         if (

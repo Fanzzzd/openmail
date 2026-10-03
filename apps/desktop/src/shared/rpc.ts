@@ -89,6 +89,7 @@ import {
   NamedSignature,
   NamedSignatureInput,
   SignatureDefault,
+  SyncHealth,
   SyncResult,
   SyncState,
   Template,
@@ -200,6 +201,7 @@ export class MailRpcs extends RpcGroup.make(
     payload: { accountId: Schema.String, service: OptionalService, enabled: Schema.Boolean },
     error,
   }),
+  Rpc.make("SyncHealth", { payload: { accountId: Schema.String }, success: SyncHealth, error }),
   Rpc.make("Accounts", { success: Schema.Array(Account) }),
   /** Opens the consent page (OAuth) or checks the password (IMAP), then starts a sync. */
   Rpc.make("Connect", { payload: { input: ConnectInput }, success: Account, error }),

@@ -28,6 +28,7 @@ import {
   clientSetupAtom,
 } from "../state/queries";
 import { runAccountMove } from "../account-settings";
+import { SyncHealthCheck } from "./SyncHealth";
 import { AccountControls } from "./AccountControls";
 import { accountName } from "../format";
 import { InteractionSettings, LabsSettings } from "./InteractionSettings";
@@ -370,6 +371,7 @@ function AccountRow({
         moving={moving}
       />
       <OptionalServices account={a} focus={optionalFocus} />
+      <SyncHealthCheck accountId={a.id} />
       <Alert
         open={confirming}
         onOpenChange={setConfirming}

@@ -191,6 +191,7 @@ export class Mailbox extends Context.Service<
       service: OptionalService,
       enabled: boolean,
     ): Effect.Effect<void, NotFound | InvalidInput>;
+    syncHealth(accountId: string): Effect.Effect<import("./sync-health.js").SyncHealth, NotFound>;
     readonly accounts: Effect.Effect<Account[]>;
     /** Signs in (OAuth consent page or IMAP password) and starts a sync. Re-adding an account signs it in again. */
     connect(input: ConnectInput): Effect.Effect<Account, SignInError>;

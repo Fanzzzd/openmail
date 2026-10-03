@@ -120,3 +120,5 @@ export * from "./platform/mail-socket.js";
 export { makeMobileImap } from "./platform/react-native/imap.js";
 export * from "./attachment-import.js";
 export * from "./reader-sanitize.js";
+
+export * from "./sync-health.js";

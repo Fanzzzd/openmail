@@ -1016,6 +1016,25 @@ export const makeGmail: Effect.Effect<
     }).pipe(Effect.mapError(readFailure(account.id)));
 
   return {
+    folderStatus: (account, scope) =>
+      get(
+        account.id,
+        Schema.Struct({
+          messagesTotal: Schema.Int,
+          messagesUnread: Schema.Int,
+          threadsTotal: Schema.Int,
+        }),
+        `/labels/${encodeURIComponent(scope)}`,
+      ).pipe(
+        Effect.map((row) => ({
+          total: row.messagesTotal,
+          unread: row.messagesUnread,
+          threads: row.threadsTotal,
+          uidNext: null,
+          uidValidity: null,
+        })),
+        Effect.mapError(readFailure(account.id)),
+      ),
     backfill,
     fetchMessage: (account, id) =>
       fetchMessage(account.id, id).pipe(

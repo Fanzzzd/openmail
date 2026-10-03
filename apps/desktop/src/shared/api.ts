@@ -34,6 +34,7 @@ export type {
   SignatureDefault,
   SignatureKind,
   SyncProgress,
+  SyncHealth,
   SyncState,
   Template,
   TemplateInput,

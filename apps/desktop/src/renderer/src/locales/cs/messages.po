@@ -23,6 +23,12 @@ msgstr "(bez příjemců)"
 msgid "(No subject)"
 msgstr "(Bez předmětu)"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} days, up to {1} messages"
+msgstr "{0} dní, nejvýše {1} zpráv"
+
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
 #. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
@@ -35,6 +41,11 @@ msgstr "{0} vloženo · {1} ve frontě · {2} běží · {3} se nezdařilo"
 #: src/renderer/src/components/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "{0} další nenačteno"
+
+#. placeholder {0}: Math.floor(report.cursorAgeMs / 1000)
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} seconds"
+msgstr "{0} sekund"
 
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
@@ -120,6 +131,10 @@ msgstr "{seconds, plural, one {# sekunda} few {# sekundy} many {# sekundy} other
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{value} days"
+msgstr "{value} dní"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"
@@ -459,6 +474,7 @@ msgid "All day"
 msgstr "Celý den"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "All mail"
 msgstr "Všechna pošta"
 
@@ -940,6 +956,10 @@ msgstr "Zkontrolovat gramatiku na tomto Macu"
 msgid "Check spelling while typing"
 msgstr "Kontrolovat pravopis při psaní"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Check sync health"
+msgstr "Zkontrolovat stav synchronizace"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Kontrolují se aktualizace…"
@@ -947,6 +967,10 @@ msgstr "Kontrolují se aktualizace…"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Checking grammar…"
 msgstr "Kontrola gramatiky…"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Checking sync health…"
+msgstr "Kontrola synchronizace…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1197,6 +1221,7 @@ msgstr "Konverzace"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "Copied"
 msgstr "Zkopírováno"
 
@@ -1222,6 +1247,10 @@ msgstr "Zkopírujte odkaz do zprávy"
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to thread"
 msgstr "Kopírovat odkaz na konverzaci"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Copy redacted report"
+msgstr "Kopírovat anonymizovanou zprávu"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
@@ -1251,6 +1280,10 @@ msgstr "Nelze zkontrolovat aktualizace. Zkuste to znovu později."
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "Na tomto Macu se nepodařilo zkontrolovat gramatiku."
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Could not check sync health."
+msgstr "Stav synchronizace se nepodařilo zkontrolovat."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
@@ -1395,6 +1428,10 @@ msgstr "Nelze odeslat: {reason}"
 msgid "Couldn't sync"
 msgstr "Synchronizace se nezdařila"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
+msgstr "Počty porovnávají zprávy. Shodné počty neověřují obsah zpráv. Doba uchování se týká textu zpráv; hlavičky zůstávají v mezipaměti."
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "Vytvořit"
@@ -1440,6 +1477,11 @@ msgstr "Vytvoří samostatnou kopii v každé vybrané složce. Originál zůsta
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "Aktuální složka"
+
+#. placeholder {0}: report.pendingOps
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Cursor age: {age}. Pending operations: {0}."
+msgstr "Stáří kurzoru: {age}. Čekající operace: {0}."
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
@@ -1995,6 +2037,10 @@ msgstr "Akce složky"
 msgid "Folder colors are stored on this computer only."
 msgstr "Barvy složek jsou uloženy pouze v tomto počítači."
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Folder or label"
+msgstr "Složka nebo štítek"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Folder path"
 msgstr "Cesta ke složce"
@@ -2267,6 +2313,10 @@ msgstr "Za 3 hodiny"
 #: src/renderer/src/components/MessageList.tsx
 msgid "In Inbox"
 msgstr "Ve složce Doručená pošta"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "In sync"
+msgstr "Synchronizováno"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -2581,6 +2631,18 @@ msgstr "Místní mezipaměť"
 msgid "Local draft labels"
 msgstr "Místní štítky konceptů"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: missing"
+msgstr "Místně méně: chybějící zprávy"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: sync window"
+msgstr "Místně méně: rozsah synchronizace"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has more: stale"
+msgstr "Místně více: zastaralé zprávy"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "Místní náhled: {count} zpráv"
@@ -2588,6 +2650,10 @@ msgstr "Místní náhled: {count} zpráv"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "Místní podpisy zůstávají na tomto Macu. Výchozí podpisy Gmailu se čtou z Gmailu."
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local total / unread / threads"
+msgstr "Místně: celkem / nepřečtené / konverzace"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2802,6 +2868,12 @@ msgctxt "cached message text"
 msgid "Message text cache limit"
 msgstr "Limit mezipaměti textů zpráv"
 
+#. Retention window for downloaded email message text, not headers.
+#: src/renderer/src/components/SyncHealth.tsx
+msgctxt "cached message text"
+msgid "Message text cache window"
+msgstr "Doba uchování textu zpráv v mezipaměti"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Text zprávy se nepodařilo obnovit. Zobrazuje se verze z mezipaměti."
@@ -2998,6 +3070,10 @@ msgstr "Jméno, třeba Práce"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "Vyžaduje přihlášení"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Never synced"
+msgstr "Dosud nesynchronizováno"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "New draft"
@@ -3536,6 +3612,10 @@ msgstr "Pauza"
 msgid "Pause indexing"
 msgstr "Pozastavit indexování"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Pending operations"
+msgstr "Čekající operace"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
@@ -3712,6 +3792,10 @@ msgstr "Vytváření opakované události není pro tento účet dostupné"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Opakující se setkání"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Redacted report"
+msgstr "Anonymizovaná zpráva"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4328,6 +4412,14 @@ msgstr "Pro Gmail a Outlook jsou k dispozici serverové filtry a automatické od
 msgid "Server preview: {count} messages"
 msgstr "Náhled serveru: {count} zpráv"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server total / unread / threads"
+msgstr "Server: celkem / nepřečtené / konverzace"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server unavailable"
+msgstr "Server není dostupný"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -4721,10 +4813,18 @@ msgstr "Synchronizace se nezdařila"
 msgid "Sync failed ({count})"
 msgstr "Synchronizace se nezdařila ({count})"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync health"
+msgstr "Stav synchronizace"
+
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "Synchronizovat nyní"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync window"
+msgstr "Rozsah synchronizace"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -5253,6 +5353,10 @@ msgstr "Použijte místní čas tohoto Macu. Mimo aktivní hodiny oznámení če
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
 msgstr "Uživatelské jméno (výchozí na e-mailovou adresu)"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Verdict"
+msgstr "Výsledek"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"

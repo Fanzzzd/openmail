@@ -17,6 +17,7 @@ import {
   ProposalMailToolkit,
   NodeMailbox,
   PROFILE_COLORS,
+  redactSyncHealth,
 } from "@openmail/core";
 import {
   Config,
@@ -291,6 +292,38 @@ const profiles = Command.make("profiles").pipe(
 );
 
 // mail
+const health = Command.make(
+  "health",
+  {
+    account: Flag.String("account").pipe(Flag.optional),
+    json: jsonFlag,
+  },
+  Effect.fn(function* ({ account, json }) {
+    yield* Console.error("Reading credentials from the keychain…");
+    const mailbox = yield* Mailbox;
+    const ids = Option.isSome(account)
+      ? [account.value]
+      : (yield* mailbox.accounts).map((item) => item.id);
+    const reports = yield* Effect.forEach(ids, (id) =>
+      mailbox.syncHealth(id).pipe(Effect.map(redactSyncHealth)),
+    );
+    yield* print(reports, json, (items) =>
+      items
+        .map((report) =>
+          [
+            `${report.provider} ${report.accountDomainHash}`,
+            `Cursor age: ${report.cursorAgeMs === null ? "never synced" : `${report.cursorAgeMs} ms`}; pending operations: ${report.pendingOps}`,
+            "Folder\tServer total/unread/threads\tLocal total/unread/threads\tBody cache days\tHeader window\tPending\tVerdict",
+            ...report.folders.map(
+              (folder) =>
+                `${folder.scope}\t${folder.server.kind === "available" ? `${folder.server.total}/${folder.server.unread}/${folder.server.threads ?? "—"}` : "unavailable"}\t${folder.local.total}/${folder.local.unread}/${folder.local.threads}\t${folder.bodyCacheWindowDays ?? "all"}\t${folder.headerWindow ? `${folder.headerWindow.days} days, ${folder.headerWindow.messageLimit} messages` : "all"}\t${folder.pendingOps}\t${folder.verdict}`,
+            ),
+          ].join("\n"),
+        )
+        .join("\n\n"),
+    );
+  }),
+).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
 
 const sync = Command.make(
   "sync",
@@ -624,6 +657,7 @@ const openmail = Command.make("openmail").pipe(
     accounts,
     profiles,
     sync,
+    health,
     list,
     search,
     show,

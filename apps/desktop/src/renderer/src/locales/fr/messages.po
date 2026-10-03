@@ -23,6 +23,12 @@ msgstr "(sans destinataires)"
 msgid "(No subject)"
 msgstr "(Sans objet)"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} days, up to {1} messages"
+msgstr "{0} jours, jusqu’à {1} messages"
+
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
 #. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
@@ -35,6 +41,11 @@ msgstr "{0} intégré · {1} en file d’attente · {2} en cours d’exécution 
 #: src/renderer/src/components/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "{0} autre non chargé"
+
+#. placeholder {0}: Math.floor(report.cursorAgeMs / 1000)
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} seconds"
+msgstr "{0} secondes"
 
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
@@ -120,6 +131,10 @@ msgstr "{seconds, plural, one {# seconde} other {# secondes}}"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{value} days"
+msgstr "{value} jours"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"
@@ -459,6 +474,7 @@ msgid "All day"
 msgstr "Toute la journée"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "All mail"
 msgstr "Tous les messages"
 
@@ -940,6 +956,10 @@ msgstr "Vérifier la grammaire sur ce Mac"
 msgid "Check spelling while typing"
 msgstr "Vérifier l’orthographe pendant la saisie"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Check sync health"
+msgstr "Vérifier la synchronisation"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Recherche de mises à jour…"
@@ -947,6 +967,10 @@ msgstr "Recherche de mises à jour…"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Checking grammar…"
 msgstr "Vérification de la grammaire…"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Checking sync health…"
+msgstr "Vérification de la synchronisation…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1197,6 +1221,7 @@ msgstr "Conversations"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "Copied"
 msgstr "Copié"
 
@@ -1222,6 +1247,10 @@ msgstr "Copier le lien vers le message"
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to thread"
 msgstr "Copier le lien vers la conversation"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Copy redacted report"
+msgstr "Copier le rapport anonymisé"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
@@ -1251,6 +1280,10 @@ msgstr "Impossible de vérifier les mises à jour. Réessayez plus tard."
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "Impossible de vérifier la grammaire sur ce Mac."
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Could not check sync health."
+msgstr "Impossible de vérifier la synchronisation."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
@@ -1395,6 +1428,10 @@ msgstr "Impossible d’envoyer : {reason}"
 msgid "Couldn't sync"
 msgstr "Impossible de synchroniser"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
+msgstr "Les nombres comparent les messages. Des nombres identiques ne vérifient pas leur contenu. La durée de cache concerne le texte des messages ; les en-têtes restent en cache."
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "Créer"
@@ -1440,6 +1477,11 @@ msgstr "Crée une copie distincte dans chaque dossier sélectionné. L’origina
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "Dossier actuel"
+
+#. placeholder {0}: report.pendingOps
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Cursor age: {age}. Pending operations: {0}."
+msgstr "Ancienneté du curseur : {age}. Opérations en attente : {0}."
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
@@ -1995,6 +2037,10 @@ msgstr "Actions sur les dossiers"
 msgid "Folder colors are stored on this computer only."
 msgstr "Les couleurs des dossiers sont stockées sur cet ordinateur uniquement."
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Folder or label"
+msgstr "Dossier ou libellé"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Folder path"
 msgstr "Chemin du dossier"
@@ -2267,6 +2313,10 @@ msgstr "Dans 3 heures"
 #: src/renderer/src/components/MessageList.tsx
 msgid "In Inbox"
 msgstr "Dans la boîte de réception"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "In sync"
+msgstr "Synchronisé"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -2581,6 +2631,18 @@ msgstr "Cache local"
 msgid "Local draft labels"
 msgstr "Libellés locaux des brouillons"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: missing"
+msgstr "Moins en local : manquants"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: sync window"
+msgstr "Moins en local : période de synchronisation"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has more: stale"
+msgstr "Plus en local : obsolètes"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "Aperçu local : {count} messages"
@@ -2588,6 +2650,10 @@ msgstr "Aperçu local : {count} messages"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "Les signatures locales restent sur ce Mac. Les signatures par défaut de Gmail sont lues à partir de Gmail."
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local total / unread / threads"
+msgstr "Local : total / non lus / conversations"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2802,6 +2868,12 @@ msgctxt "cached message text"
 msgid "Message text cache limit"
 msgstr "Limite du cache des textes de messages"
 
+#. Retention window for downloaded email message text, not headers.
+#: src/renderer/src/components/SyncHealth.tsx
+msgctxt "cached message text"
+msgid "Message text cache window"
+msgstr "Durée de conservation du texte des messages"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Le texte du message n’a pas pu être actualisé. La version en cache est affichée."
@@ -2998,6 +3070,10 @@ msgstr "Nom, comme Travail"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "Nécessite une connexion"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Never synced"
+msgstr "Jamais synchronisé"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "New draft"
@@ -3536,6 +3612,10 @@ msgstr "Pause"
 msgid "Pause indexing"
 msgstr "Suspendre l’indexation"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Pending operations"
+msgstr "Opérations en attente"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
@@ -3712,6 +3792,10 @@ msgstr "La création d’événements récurrents n’est pas disponible pour ce
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "Réunion récurrente"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Redacted report"
+msgstr "Rapport anonymisé"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4328,6 +4412,14 @@ msgstr "Des filtres de serveur et des réponses automatiques sont disponibles po
 msgid "Server preview: {count} messages"
 msgstr "Aperçu du serveur : messages {count}"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server total / unread / threads"
+msgstr "Serveur : total / non lus / conversations"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server unavailable"
+msgstr "Serveur indisponible"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -4721,10 +4813,18 @@ msgstr "La synchronisation a échoué"
 msgid "Sync failed ({count})"
 msgstr "Échec de la synchronisation ({count})"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync health"
+msgstr "État de la synchronisation"
+
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "Synchronisez maintenant"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync window"
+msgstr "Période de synchronisation"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -5253,6 +5353,10 @@ msgstr "Utilisez l’heure locale de ce Mac. En dehors des heures d’activité,
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
 msgstr "Nom d’utilisateur (par défaut, l’adresse e-mail)"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Verdict"
+msgstr "Résultat"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"

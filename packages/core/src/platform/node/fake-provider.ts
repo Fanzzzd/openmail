@@ -1,3 +1,4 @@
+import { decodeProviderId as importedDecodeProviderId } from "../../imap-cursor.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "../../optional-services.js";
 import {
   calendarTimestamp,
@@ -201,6 +202,27 @@ export function makeFakeProvider(
       ),
     );
   return {
+    folderStatus: (account, scope) =>
+      Effect.andThen(
+        failOnce,
+        Effect.sync(() => {
+          const messages = [...server.messages.values()].filter((message) =>
+            account.provider === "imap"
+              ? Option.getOrUndefined(importedDecodeProviderId(message.providerId))?.path === scope
+              : message.labels.includes(scope),
+          );
+          return {
+            total: messages.length,
+            unread: messages.filter((message) => message.isUnread).length,
+            threads:
+              account.provider === "gmail"
+                ? new Set(messages.map((message) => message.threadId)).size
+                : null,
+            uidNext: account.provider === "imap" ? messages.length + 1 : null,
+            uidValidity: account.provider === "imap" ? "1" : null,
+          };
+        }),
+      ),
     listFolderMessages: (_account, folder, cursor, listOptions) =>
       Effect.andThen(
         Effect.andThen(

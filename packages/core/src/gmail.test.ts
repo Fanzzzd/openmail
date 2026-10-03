@@ -2730,3 +2730,27 @@ it.effect("gmail interruption aborts the GET and never retries or returns AuthEr
     assert.strictEqual(attempts, 1);
   }),
 );
+
+it.effect("Gmail sync health only GETs label message/unread/thread counts", () => {
+  const http = fakeHttp({
+    "GET /labels/Label_private": {
+      json: { messagesTotal: 12, messagesUnread: 3, threadsTotal: 8 },
+    },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const status = yield* adapter.folderStatus(account, "Label_private");
+      assert.deepStrictEqual(status, {
+        total: 12,
+        unread: 3,
+        threads: 8,
+        uidNext: null,
+        uidValidity: null,
+      });
+      const calls = http.calls.filter((call) => call.url.hostname === "gmail.googleapis.com");
+      assert.strictEqual(calls.length, 1);
+      assert.strictEqual(calls[0]?.method, "GET");
+      assert.strictEqual(calls[0]?.url.pathname, "/gmail/v1/users/me/labels/Label_private");
+    }),
+  );
+});

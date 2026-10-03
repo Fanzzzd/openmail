@@ -13,6 +13,7 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     OptionalServices: ({ accountId }) => m.optionalServices(accountId),
     SetServiceEnabled: ({ accountId, service, enabled }) =>
       m.setServiceEnabled(accountId, service, enabled),
+    SyncHealth: ({ accountId }) => m.syncHealth(accountId),
     Accounts: () => m.accounts,
     SetAccountSettings: ({ accountId, input }) => m.setAccountSettings(accountId, input),
     MoveAccount: ({ accountId, input }) => m.moveAccount(accountId, input),

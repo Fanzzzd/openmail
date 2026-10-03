@@ -108,3 +108,5 @@ export { prepareSmokeDatabase } from "./smoke.js";
 export { createSmokeCleanup } from "./smoke-cleanup.js";
 
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
+
+export * from "../../sync-health.js";

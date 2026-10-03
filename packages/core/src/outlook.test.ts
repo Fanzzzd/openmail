@@ -3357,3 +3357,28 @@ it.effect("slice55: Graph sends use the sender domain and no custom trace header
     );
   }),
 );
+
+it.effect("Outlook sync health GETs the exact system/custom folder count selection", () => {
+  const http = fakeHttp({
+    "GET /me/mailFolders/inbox": { json: { totalItemCount: 12, unreadItemCount: 3 } },
+    "GET /me/mailFolders/folder-id": { json: { totalItemCount: 4, unreadItemCount: 0 } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      assert.deepStrictEqual(yield* adapter.folderStatus(account, "INBOX"), {
+        total: 12,
+        unread: 3,
+        threads: null,
+        uidNext: null,
+        uidValidity: null,
+      });
+      assert.strictEqual((yield* adapter.folderStatus(account, "folder-id")).total, 4);
+      const calls = http.calls.filter((call) => call.url.hostname === "graph.microsoft.com");
+      assert.strictEqual(calls.length, 2);
+      for (const call of calls) {
+        assert.strictEqual(call.method, "GET");
+        assert.strictEqual(call.url.searchParams.get("$select"), "totalItemCount,unreadItemCount");
+      }
+    }),
+  );
+});

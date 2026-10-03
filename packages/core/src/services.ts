@@ -9,6 +9,7 @@ import type {
   PermanentDeleteBatch,
 } from "./folder-actions.js";
 import type { DerivedChunk } from "./media.js";
+import type { makeSyncHealthStore } from "./store-sync-health.js";
 import type { makeSemanticStore } from "./store-semantic.js";
 import type { makeMediaStore } from "./store-media.js";
 /**
@@ -218,6 +219,8 @@ export class Store extends Context.Service<
     notificationActions(
       id: string,
     ): Effect.Effect<import("./domain.js").Prefs["notificationActions"]>;
+    readonly syncHealthLabels: ReturnType<typeof makeSyncHealthStore>["syncHealthLabels"];
+    readonly syncHealthLocal: ReturnType<typeof makeSyncHealthStore>["syncHealthLocal"];
     readonly listAccounts: Effect.Effect<Account[]>;
     getAccount(id: string): Effect.Effect<Account, NotFound>;
     /** Inserts or returns the existing account `${provider}:${email}`. */
@@ -617,6 +620,11 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  /** GET/IMAP STATUS only. No listing, synchronization or remote mutation. */
+  folderStatus(
+    account: Account,
+    scope: string,
+  ): Effect.Effect<import("./sync-health.js").FolderStatus, ProviderFailure>;
   /** Close local pooled resources on account changes or app background. */
   closeSessions?(accountId?: string): Effect.Effect<void>;
   watchInbox?(

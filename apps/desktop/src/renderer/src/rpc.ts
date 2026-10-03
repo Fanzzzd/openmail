@@ -1,3 +1,4 @@
+import { redactSyncHealth, type SyncHealth } from "@openmail/core/schema";
 import { Effect, FiberSet, Layer } from "effect";
 import { AtomRpc } from "effect/reactivity";
 import { type RpcMessage, RpcClient, RpcSerialization } from "effect/rpc";
@@ -8,6 +9,7 @@ import { MailRpcs } from "../../shared/rpc";
 declare global {
   interface Window {
     openmailRpc: RpcBridge;
+    openmailSyncHealth: () => Promise<readonly SyncHealth[]>;
   }
 }
 
@@ -78,3 +80,20 @@ export const submitAiKey = (key: string) =>
     const client = yield* RpcClient.make(MailRpcs);
     yield* client.SetAiKey({ key });
   }).pipe(Effect.provide(ElectronProtocol), Effect.scoped);
+
+/** Smoke reads through the app's RPC client, including its codecs and permission checks. */
+export const readSyncHealth = () =>
+  Effect.runPromise(
+    Effect.gen(function* () {
+      const client = yield* RpcClient.make(MailRpcs);
+      const accounts = yield* client.Accounts();
+      return yield* Effect.forEach(
+        accounts,
+        (account) =>
+          client.SyncHealth({ accountId: account.id }).pipe(Effect.map(redactSyncHealth)),
+        { concurrency: 1 },
+      );
+    }).pipe(Effect.provide(ElectronProtocol), Effect.scoped),
+  );
+
+if (typeof window !== "undefined") window.openmailSyncHealth = readSyncHealth;

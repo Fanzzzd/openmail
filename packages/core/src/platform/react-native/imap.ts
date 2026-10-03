@@ -1,3 +1,4 @@
+import { FolderStatus } from "../../sync-health.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
@@ -619,6 +620,28 @@ export const makeMobileImap = Effect.gen(function* () {
   const pageCursor = Schema.decodeUnknownSync(PageCursor);
 
   const adapter: ProviderAdapter = {
+    folderStatus: (account, path) =>
+      session(account, async (client) => {
+        const rows = await client.command(
+          `STATUS ${mailQuote(encodeFolder(path))} (MESSAGES UNSEEN UIDNEXT UIDVALIDITY)`,
+        );
+        const row = rows.find((response) => text(response.values[1]).toUpperCase() === "STATUS");
+        const values = array(row?.values[3]);
+        const read = (key: string) => {
+          const index = values.findIndex((value) => text(value).toUpperCase() === key);
+          const value = index < 0 ? undefined : values[index + 1];
+          if (typeof value !== "string" || !/^\d+$/.test(value))
+            throw new ProviderError({ message: "Incomplete IMAP STATUS" });
+          return value;
+        };
+        return Schema.decodeUnknownSync(FolderStatus)({
+          total: Number(read("MESSAGES")),
+          unread: Number(read("UNSEEN")),
+          threads: null,
+          uidNext: Number(read("UIDNEXT")),
+          uidValidity: read("UIDVALIDITY"),
+        });
+      }),
     connect: (input) => {
       if (input.provider !== "imap")
         return Effect.fail(new InvalidInput({ message: "Expected IMAP sign-in" }));

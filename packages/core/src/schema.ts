@@ -64,3 +64,5 @@ export * from "./link-security.js";
 export * from "./attachment-import.js";
 
 export * from "./optional-services.js";
+
+export * from "./sync-health.js";

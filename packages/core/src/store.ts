@@ -1,3 +1,4 @@
+import { makeSyncHealthStore } from "./store-sync-health.js";
 import { makeServiceStore } from "./store-services.js";
 import {
   MessageSecurity,
@@ -1947,6 +1948,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       restoreReminder,
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
+      ...makeSyncHealthStore(sql),
       listAccounts,
       getAccount,
       upsertAccount,

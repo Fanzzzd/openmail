@@ -33,6 +33,12 @@ msgstr "（未填收件人）"
 msgid "(No subject)"
 msgstr "（无主题）"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} days, up to {1} messages"
+msgstr "{0} 天，最多 {1} 封邮件"
+
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
 #. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
@@ -45,6 +51,11 @@ msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
 #: src/renderer/src/components/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "另有 {0} 项未加载"
+
+#. placeholder {0}: Math.floor(report.cursorAgeMs / 1000)
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} seconds"
+msgstr "{0} 秒"
 
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
@@ -130,6 +141,10 @@ msgstr "{seconds, plural, other {# 秒}}"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{value} days"
+msgstr "{value} 天"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"
@@ -469,6 +484,7 @@ msgid "All day"
 msgstr "全天"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "All mail"
 msgstr "全部保留"
 
@@ -950,6 +966,10 @@ msgstr "在此 Mac 上检查语法"
 msgid "Check spelling while typing"
 msgstr "输入时检查拼写"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Check sync health"
+msgstr "检查同步状态"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
@@ -957,6 +977,10 @@ msgstr "正在检查更新…"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Checking grammar…"
 msgstr "正在检查语法…"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Checking sync health…"
+msgstr "正在检查同步状态…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1207,6 +1231,7 @@ msgstr "会话"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "Copied"
 msgstr "已复制"
 
@@ -1232,6 +1257,10 @@ msgstr "复制邮件链接"
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to thread"
 msgstr "复制会话链接"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Copy redacted report"
+msgstr "复制脱敏报告"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
@@ -1261,6 +1290,10 @@ msgstr "无法检查更新，请稍后重试。"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "无法在此 Mac 上检查语法。"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Could not check sync health."
+msgstr "无法检查同步状态。"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
@@ -1405,6 +1438,10 @@ msgstr "发送失败：{reason}"
 msgid "Couldn't sync"
 msgstr "无法同步"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
+msgstr "计数按邮件比较。数量相同不代表内容一致。缓存窗口限制消息文本保留时间，邮件头仍保留。"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "创建"
@@ -1450,6 +1487,11 @@ msgstr "保留原件，在每个所选文件夹创建副本。复制无法撤销
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "当前文件夹"
+
+#. placeholder {0}: report.pendingOps
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Cursor age: {age}. Pending operations: {0}."
+msgstr "游标年龄：{age}。待处理操作：{0}。"
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
@@ -2005,6 +2047,10 @@ msgstr "文件夹操作"
 msgid "Folder colors are stored on this computer only."
 msgstr "文件夹颜色仅保存在这台电脑上。"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Folder or label"
+msgstr "文件夹或标签"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Folder path"
 msgstr "文件夹路径"
@@ -2277,6 +2323,10 @@ msgstr "3 小时后"
 #: src/renderer/src/components/MessageList.tsx
 msgid "In Inbox"
 msgstr "在收件箱中"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "In sync"
+msgstr "已同步"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -2591,6 +2641,18 @@ msgstr "本机缓存"
 msgid "Local draft labels"
 msgstr "本机草稿标签"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: missing"
+msgstr "本地较少：缺失"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: sync window"
+msgstr "本地较少：同步窗口"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has more: stale"
+msgstr "本地较多：过时"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "本地预览：{count} 封邮件"
@@ -2598,6 +2660,10 @@ msgstr "本地预览：{count} 封邮件"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local total / unread / threads"
+msgstr "本地总数 / 未读 / 会话"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2812,6 +2878,12 @@ msgctxt "cached message text"
 msgid "Message text cache limit"
 msgstr "消息文本缓存上限"
 
+#. Retention window for downloaded email message text, not headers.
+#: src/renderer/src/components/SyncHealth.tsx
+msgctxt "cached message text"
+msgid "Message text cache window"
+msgstr "消息文本缓存窗口"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "消息文本无法刷新。正在显示缓存版本。"
@@ -3008,6 +3080,10 @@ msgstr "名称，比如 工作"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "需要重新登录"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Never synced"
+msgstr "从未同步"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "New draft"
@@ -3546,6 +3622,10 @@ msgstr "暂停"
 msgid "Pause indexing"
 msgstr "暂停索引"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Pending operations"
+msgstr "待处理操作"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
@@ -3722,6 +3802,10 @@ msgstr "此账户暂不支持创建重复日程"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "重复会议"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Redacted report"
+msgstr "脱敏报告"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4338,6 +4422,14 @@ msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 msgid "Server preview: {count} messages"
 msgstr "服务器预览：{count} 封邮件"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server total / unread / threads"
+msgstr "服务器总数 / 未读 / 会话"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server unavailable"
+msgstr "服务器不可用"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -4731,10 +4823,18 @@ msgstr "同步失败"
 msgid "Sync failed ({count})"
 msgstr "同步失败（{count}）"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync health"
+msgstr "同步状态"
+
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "立即同步"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync window"
+msgstr "同步窗口"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -5263,6 +5363,10 @@ msgstr "按本机时间。非活跃时段暂停通知，Dock 不计该空间；�
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
 msgstr "用户名（不填就用邮箱地址）"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Verdict"
+msgstr "判断"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"

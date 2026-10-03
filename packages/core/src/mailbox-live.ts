@@ -125,6 +125,7 @@ import {
 } from "./services.js";
 import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
+import { makeSyncHealth } from "./sync-health.js";
 import { makeCacheMailbox } from "./mailbox-cache.js";
 import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
@@ -2657,6 +2658,7 @@ export const MailboxLive = (
         ...folderMailbox,
         ...features,
         ...cache,
+        syncHealth: makeSyncHealth(store, providers),
         cacheDatabaseSize: store.cacheDatabaseSize,
         cacheSize: Effect.gen(function* () {
           const bodies = yield* store.bodySizes;

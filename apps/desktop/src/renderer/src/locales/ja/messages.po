@@ -23,6 +23,12 @@ msgstr "（宛先なし）"
 msgid "(No subject)"
 msgstr "（件名なし）"
 
+#. placeholder {0}: folder.headerWindow.days
+#. placeholder {1}: folder.headerWindow.messageLimit
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} days, up to {1} messages"
+msgstr "{0} 日、最大 {1} 件のメッセージ"
+
 #. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
 #. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
 #. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
@@ -35,6 +41,11 @@ msgstr "{0} が埋め込まれました · {1} がキューに登録されまし
 #: src/renderer/src/components/BatchActions.tsx
 msgid "{0} more not loaded"
 msgstr "{0} 個以上が読み込まれていません"
+
+#. placeholder {0}: Math.floor(report.cursorAgeMs / 1000)
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{0} seconds"
+msgstr "{0} 秒"
 
 #. placeholder {0}: a.email
 #: src/renderer/src/components/Sidebar.tsx
@@ -120,6 +131,10 @@ msgstr "{seconds, plural, other {#秒}}"
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "{value} days"
+msgstr "{value} 日"
 
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "1 week, tomorrow 9am, next monday"
@@ -459,6 +474,7 @@ msgid "All day"
 msgstr "終日"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "All mail"
 msgstr "すべてのメール"
 
@@ -940,6 +956,10 @@ msgstr "このMacで文法をチェック"
 msgid "Check spelling while typing"
 msgstr "入力中にスペルをチェック"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Check sync health"
+msgstr "同期状態を確認"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "アップデートを確認中…"
@@ -947,6 +967,10 @@ msgstr "アップデートを確認中…"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Checking grammar…"
 msgstr "文法をチェック中…"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Checking sync health…"
+msgstr "同期状態を確認中…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1197,6 +1221,7 @@ msgstr "スレッド"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/RawMessage.tsx
+#: src/renderer/src/components/SyncHealth.tsx
 msgid "Copied"
 msgstr "コピーされました"
 
@@ -1222,6 +1247,10 @@ msgstr "メッセージへのリンクをコピーする"
 #: src/renderer/src/components/Reader.tsx
 msgid "Copy link to thread"
 msgstr "スレッドへのリンクをコピー"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Copy redacted report"
+msgstr "匿名化レポートをコピー"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Copy selected"
@@ -1251,6 +1280,10 @@ msgstr "アップデートを確認できませんでした。後でもう一度
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "このMacで文法をチェックできませんでした。"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Could not check sync health."
+msgstr "同期状態を確認できませんでした。"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
@@ -1395,6 +1428,10 @@ msgstr "送信できませんでした: {reason}"
 msgid "Couldn't sync"
 msgstr "同期できませんでした"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Counts compare messages. Matching counts do not verify message contents. Cache windows retain message text; headers remain cached."
+msgstr "件数はメッセージ単位で比較します。件数の一致は内容の一致を保証しません。キャッシュ期間はメッセージ本文に適用され、ヘッダーは保持されます。"
+
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Create"
 msgstr "作成"
@@ -1440,6 +1477,11 @@ msgstr "選択した各フォルダに個別のコピーを作成します。元
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Current folder"
 msgstr "現在のフォルダ"
+
+#. placeholder {0}: report.pendingOps
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Cursor age: {age}. Pending operations: {0}."
+msgstr "カーソルの経過時間：{age}。保留中の操作：{0}。"
 
 #: src/renderer/src/components/AccountControls.tsx
 msgid "Custom colour"
@@ -1995,6 +2037,10 @@ msgstr "フォルダアクション"
 msgid "Folder colors are stored on this computer only."
 msgstr "フォルダの色はこのコンピューターにのみ保存されます。"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Folder or label"
+msgstr "フォルダーまたはラベル"
+
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Folder path"
 msgstr "フォルダパス"
@@ -2267,6 +2313,10 @@ msgstr "3時間後"
 #: src/renderer/src/components/MessageList.tsx
 msgid "In Inbox"
 msgstr "受信内"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "In sync"
+msgstr "同期済み"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
@@ -2581,6 +2631,18 @@ msgstr "ローカルキャッシュ"
 msgid "Local draft labels"
 msgstr "下書きのローカルラベル"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: missing"
+msgstr "ローカルが少ない：欠落"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has fewer: sync window"
+msgstr "ローカルが少ない：同期期間"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local has more: stale"
+msgstr "ローカルが多い：古い状態"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Local preview: {count} messages"
 msgstr "ローカル プレビュー: {count} メッセージ"
@@ -2588,6 +2650,10 @@ msgstr "ローカル プレビュー: {count} メッセージ"
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "ローカル署名はこの Mac に残ります。 Gmail のデフォルトの署名は Gmail から読み取られます。"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Local total / unread / threads"
+msgstr "ローカル：合計 / 未読 / スレッド"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/InviteBanner.tsx
@@ -2802,6 +2868,12 @@ msgctxt "cached message text"
 msgid "Message text cache limit"
 msgstr "メッセージ本文のキャッシュ上限"
 
+#. Retention window for downloaded email message text, not headers.
+#: src/renderer/src/components/SyncHealth.tsx
+msgctxt "cached message text"
+msgid "Message text cache window"
+msgstr "メッセージ本文のキャッシュ期間"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "メッセージ本文を更新できませんでした。キャッシュされた内容を表示しています。"
@@ -2998,6 +3070,10 @@ msgstr "名前、仕事など"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "サインインが必要です"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Never synced"
+msgstr "未同期"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "New draft"
@@ -3536,6 +3612,10 @@ msgstr "一時停止"
 msgid "Pause indexing"
 msgstr "インデックス作成を一時停止する"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Pending operations"
+msgstr "保留中の操作"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
@@ -3712,6 +3792,10 @@ msgstr "このアカウントでは定期的なイベントの作成を利用で
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Recurring meeting"
 msgstr "定期的な会議"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Redacted report"
+msgstr "匿名化レポート"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4328,6 +4412,14 @@ msgstr "サーバー フィルターと自動返信は、Gmail と Outlook で�
 msgid "Server preview: {count} messages"
 msgstr "サーバー プレビュー: {count} メッセージ"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server total / unread / threads"
+msgstr "サーバー：合計 / 未読 / スレッド"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Server unavailable"
+msgstr "サーバーに接続できません"
+
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -4721,10 +4813,18 @@ msgstr "同期に失敗しました"
 msgid "Sync failed ({count})"
 msgstr "同期に失敗しました ({count})"
 
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync health"
+msgstr "同期状態"
+
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
 msgstr "今すぐ同期する"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Sync window"
+msgstr "同期期間"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Synced {time}"
@@ -5253,6 +5353,10 @@ msgstr "この Mac の現地時間を使用します。アクティブな時間�
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"
 msgstr "ユーザー名 (デフォルトはメールアドレス)"
+
+#: src/renderer/src/components/SyncHealth.tsx
+msgid "Verdict"
+msgstr "判定"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"

@@ -1830,3 +1830,44 @@ for (const batched of [false, true])
         }),
       ),
   );
+
+it.effect("IMAP sync health uses STATUS without opening, listing or fetching the folder", () =>
+  Effect.gen(function* () {
+    const settings = account.imap;
+    assert.ok(settings);
+    const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+    const status = vi.spyOn(client, "status").mockResolvedValue({
+      path: "INBOX",
+      messages: 12,
+      unseen: 3,
+      uidNext: 100,
+      uidValidity: 99n,
+    });
+    const open = vi.spyOn(client, "mailboxOpen");
+    const list = vi.spyOn(client, "list");
+    const adapter = yield* makeImapWith(() =>
+      Effect.succeed({ accountId: account.id, settings, client }),
+    );
+    assert.deepStrictEqual(yield* adapter.folderStatus(account, "INBOX"), {
+      total: 12,
+      unread: 3,
+      threads: null,
+      uidNext: 100,
+      uidValidity: "99",
+    });
+    assert.deepStrictEqual(status.mock.calls, [
+      ["INBOX", { messages: true, unseen: true, uidNext: true, uidValidity: true }],
+    ]);
+    assert.strictEqual(open.mock.calls.length, 0);
+    assert.strictEqual(list.mock.calls.length, 0);
+  }).pipe(
+    Effect.provideService(
+      Secrets,
+      Secrets.of({
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  ),
+);

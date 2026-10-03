@@ -1676,6 +1676,28 @@ export const makeImapWith = (
             catch: (error) => failure(account.id, settings.imapHost, error),
           });
         }).pipe(Effect.scoped),
+      folderStatus: (account, path) =>
+        Effect.gen(function* () {
+          const { s } = yield* session(account);
+          const status = yield* call(s, (client) =>
+            client.status(path, { messages: true, unseen: true, uidNext: true, uidValidity: true }),
+          );
+          if (
+            !status ||
+            status.messages === undefined ||
+            status.unseen === undefined ||
+            status.uidNext === undefined ||
+            status.uidValidity === undefined
+          )
+            return yield* new ProviderError({ message: "Incomplete IMAP STATUS" });
+          return {
+            total: status.messages,
+            unread: status.unseen,
+            threads: null,
+            uidNext: status.uidNext,
+            uidValidity: String(status.uidValidity),
+          };
+        }).pipe(Effect.scoped),
       listFolderMessages,
       checkPermanentDelete: (account, folder) =>
         Effect.gen(function* () {
