@@ -102,12 +102,18 @@ export function ForegroundLifecycle() {
     if (prefs.kind === "ready") activateLanguage(prefs.value.language);
   }, [prefs]);
   useEffect(() => {
-    void work(true).catch(() => null);
+    const active = (foreground: boolean) =>
+      foreground
+        ? work(true).catch(() => null)
+        : runtime
+            .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.closeSessions()))
+            .catch(() => null);
+    void active(isForeground());
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") void work(true).catch(() => null);
+      void active(state === "active");
     });
     return () => subscription.remove();
-  }, [work]);
+  }, [work, runtime]);
   useEffect(() => {
     if (revision >= 0) void work(false).catch(() => null);
   }, [revision, work]);

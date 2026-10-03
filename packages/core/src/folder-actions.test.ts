@@ -994,3 +994,53 @@ it.effect(
       assert.isTrue(server.messages.has("inbox"));
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
 );
+
+for (const reconcile of [false, true])
+  it.effect(`slice49-fix: folder mark-read uses remapped IDs, reconcile=${reconcile}`, () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("outlook", "me@example.com");
+      const server = fakeServer(account.email, [message("new", ["TRASH", "UNREAD"])]);
+      yield* store.upsertMessage(account.id, message("old", ["TRASH", "UNREAD"]));
+      yield* store.remapProviderIds(account.id, [{ from: "old", to: "new" }]);
+      if (reconcile) yield* store.enqueueOp(account.id, "unrelated", { kind: "reconcile" });
+      const mailbox = makeFolderMailbox(
+        store,
+        Providers.of({ get: () => makeFakeProvider(server) }),
+        Effect.void,
+        (effect) => effect,
+      );
+      assert.strictEqual(yield* mailbox.markFolderRead({ mailbox: "trash" }), 1);
+      assert.isFalse((yield* store.getMessage(`${account.id}/old`)).isUnread);
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
+  );
+
+it.effect("slice49-fix: empty-folder checks remapped local location before deleting", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("outlook", "me@example.com");
+    const server = fakeServer(account.email, [message("new", ["TRASH"])]);
+    yield* store.upsertMessage(account.id, message("old", ["INBOX"]));
+    yield* store.remapProviderIds(account.id, [{ from: "old", to: "new" }]);
+    const fake = makeFakeProvider(server);
+    let pages = 0;
+    const mailbox = makeFolderMailbox(
+      store,
+      Providers.of({
+        get: () => ({
+          ...fake,
+          listFolderMessages: (...args) =>
+            Effect.suspend(() =>
+              pages++ === 0
+                ? fake.listFolderMessages(...args)
+                : Effect.succeed({ ids: [], next: null }),
+            ),
+        }),
+      }),
+      Effect.void,
+      (effect) => effect,
+    );
+    assert.strictEqual(yield* mailbox.emptyFolder({ mailbox: "trash" }, true), 0);
+    assert.deepStrictEqual(server.deleted, []);
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
+);

@@ -890,6 +890,7 @@ export const migrate = Effect.gen(function* () {
   // app, the CLI and a restarting app can share the file; wait for a lock
   // instead of failing at once.
   yield* sql`PRAGMA busy_timeout = 5000`;
+  yield* sql`PRAGMA journal_size_limit = 8388608`;
   yield* sql`PRAGMA foreign_keys = ON`;
   const step = sql.withTransaction(
     Effect.gen(function* () {

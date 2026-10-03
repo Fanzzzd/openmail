@@ -57,6 +57,7 @@ import type {
   NotFound,
   PermanentError,
   ProviderError,
+  SendUncertain,
   SettingsScopeMissing,
 } from "./errors.js";
 import type { CalendarEvent, CalendarInvite, InviteResponse } from "./calendar.js";
@@ -151,7 +152,8 @@ export type PerformError =
   | PermanentError
   | ProviderError
   | SettingsScopeMissing
-  | FeatureScopeMissing;
+  | FeatureScopeMissing
+  | SendUncertain;
 
 export class Mailbox extends Context.Service<
   Mailbox,
@@ -400,7 +402,11 @@ export class Mailbox extends Context.Service<
     setAgentWriteMode(mode: AgentWriteMode): Effect.Effect<void>;
 
     readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
-    queueSend(input: DraftInput, due: number): Effect.Effect<void, NotFound | InvalidInput>;
+    queueSend(
+      input: DraftInput,
+      due: number,
+      confirmResend?: boolean,
+    ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain>;
     cancelQueuedSend(id: string): Effect.Effect<boolean>;
     flushQueuedSends(canSend?: () => boolean): Effect.Effect<void>;
 
@@ -493,6 +499,7 @@ export class Mailbox extends Context.Service<
       accept: boolean,
       names: { personal: string; work: string },
     ): Effect.Effect<void>;
+    closeSessions(): Effect.Effect<void>;
     setSyncPaused(paused: boolean): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void, NotFound>;

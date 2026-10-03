@@ -7,6 +7,7 @@ export const READ_ONLY_MESSAGE = "Remote writes are disabled in this read-only s
 export const refused = () => Effect.fail(new ProviderError({ message: READ_ONLY_MESSAGE }));
 
 export const READ_ONLY_METHODS = Object.freeze([
+  "closeSessions",
   "fetchMessage",
   "fetchRaw",
   "fetchAttachment",

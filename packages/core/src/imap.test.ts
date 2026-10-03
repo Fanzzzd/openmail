@@ -2,8 +2,9 @@ import { MailCodec } from "./platform/mail-codec.js";
 import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it, layer } from "@effect/vitest";
 
-import { Effect, Exit, Layer, Option, Stream } from "effect";
+import { Clock, Effect, Exit, Fiber, Layer, Option, Stream } from "effect";
 import { vi } from "vitest";
+import { TestClock } from "effect/testing";
 import { ImapFlow, type ListResponse } from "imapflow";
 import { simpleParser } from "mailparser";
 import { createServer } from "node:net";
@@ -1208,6 +1209,7 @@ it.effect(
         uid: 1,
         flags: new Set(["\\Draft", "\\Seen", "\\Flagged", "Other"]),
       });
+      client.capabilities.set("UIDPLUS", true);
       vi.spyOn(client, "messageDelete").mockResolvedValue(true);
       const append = vi
         .spyOn(client, "append")
@@ -1320,4 +1322,396 @@ it.effect(
         }),
       ),
     ),
+);
+
+function slice49Imap<A, E>(
+  work: (
+    adapter: import("./services.js").ProviderAdapter,
+    client: ImapFlow,
+    opens: () => number,
+  ) => Effect.Effect<A, E>,
+) {
+  return Effect.scoped(
+    Effect.gen(function* () {
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      client.usable = true;
+      vi.spyOn(client, "noop").mockResolvedValue(undefined);
+      vi.spyOn(client, "list").mockResolvedValue(
+        ["INBOX", "Archive"].map((path) => ({
+          path,
+          pathAsListed: path,
+          name: path,
+          parent: [],
+          parentPath: "",
+          delimiter: "/",
+          flags: new Set<string>(),
+          listed: true,
+          subscribed: true,
+          specialUse: path === "INBOX" ? "\\Inbox" : "\\Archive",
+        })),
+      );
+      vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set<string>(),
+        uidValidity: 7n,
+        uidNext: 3,
+        exists: 2,
+      });
+      vi.spyOn(client, "search").mockResolvedValue([1, 2]);
+      vi.spyOn(client, "fetchAll").mockResolvedValue(
+        [1, 2].map((uid) => ({ seq: uid, uid, flags: new Set<string>(), size: 100 })),
+      );
+      vi.spyOn(client, "fetch").mockImplementation(async function* (range) {
+        for (const uid of typeof range === "string"
+          ? parseUidSet(range)
+          : Array.isArray(range)
+            ? range
+            : [])
+          yield {
+            seq: uid,
+            uid,
+            flags: new Set<string>(),
+            source: Buffer.from(`Message-ID: <m${uid}@x>\r\nSubject: test\r\n\r\nbody`),
+          };
+      });
+      let opens = 0;
+      assert.ok(account.imap);
+      const settings = account.imap;
+      const adapter = yield* makeImapWith(
+        () =>
+          Effect.acquireRelease(
+            Effect.sync(() => {
+              opens++;
+              return { accountId: account.id, settings, client };
+            }),
+            () => Effect.void,
+          ),
+        () =>
+          Effect.sync(() => {
+            const transport = createTransport({ host: "fake.invalid", port: 25 });
+            vi.spyOn(transport, "sendMail").mockImplementation(() =>
+              Promise.resolve({
+                envelope: { from: "me@example.com", to: ["bob@example.com"] },
+                accepted: ["bob@example.com"],
+                rejected: [],
+                pending: [],
+                response: "250 accepted",
+                messageId: "sent",
+                envelopeTime: 0,
+                messageTime: 0,
+                messageSize: 100,
+              }),
+            );
+            return transport;
+          }),
+      );
+      return yield* work(adapter, client, () => opens);
+    }),
+  ).pipe(
+    Effect.provide(
+      Layer.succeed(Secrets, {
+        get: () => Effect.succeed(Option.some("fake")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+  );
+}
+const slice49Cursor = (extra: Partial<import("./imap-cursor.js").FolderCursor> = {}) =>
+  Option.some(
+    JSON.stringify({
+      folders: {
+        INBOX: { uidValidity: "7", lastUid: 1, uids: "1", unread: "1", starred: "", ...extra },
+      },
+    }),
+  );
+
+it.effect("slice49: IMAP does not advance past the pass-one UIDNEXT snapshot", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      vi.spyOn(client, "mailboxOpen")
+        .mockResolvedValueOnce({
+          path: "INBOX",
+          delimiter: "/",
+          flags: new Set<string>(),
+          uidValidity: 7n,
+          uidNext: 3,
+          exists: 2,
+        })
+        .mockResolvedValue({
+          path: "INBOX",
+          delimiter: "/",
+          flags: new Set<string>(),
+          uidValidity: 7n,
+          uidNext: 4,
+          exists: 3,
+        });
+      const changes = yield* Stream.runCollect(a.pull(account, slice49Cursor(), "inbox"));
+      const cursor = changes.findLast((c) => c._tag === "Cursor");
+      assert.ok(cursor?._tag === "Cursor");
+      assert.strictEqual(readCursor(Option.some(cursor.cursor)).folders.INBOX?.lastUid, 2);
+    }),
+  ),
+);
+
+it.effect("slice49: a regressed UIDNEXT does a full UID and flag rescan", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      const changes = yield* Stream.runCollect(
+        a.pull(account, slice49Cursor({ lastUid: 100 }), "inbox"),
+      );
+      assert.ok(vi.spyOn(client, "search").mock.calls.some(([query]) => query.since));
+      assert.ok(
+        changes.some(
+          (c) =>
+            (c._tag === "Upsert" || c._tag === "Remap") && c.message.providerId === "7:2:INBOX",
+        ),
+      );
+      const cursor = changes.findLast((c) => c._tag === "Cursor");
+      assert.ok(cursor?._tag === "Cursor");
+      assert.strictEqual(readCursor(Option.some(cursor.cursor)).folders.INBOX?.lastUid, 2);
+    }),
+  ),
+);
+
+it.effect("slice49: lowered HIGHESTMODSEQ fetches all flags and resets the cursor", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      client.enabled.add("CONDSTORE");
+      vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set<string>(),
+        uidValidity: 7n,
+        uidNext: 2,
+        exists: 1,
+        highestModseq: 5n,
+      });
+      vi.spyOn(client, "fetchAll").mockResolvedValue([
+        { seq: 1, uid: 1, flags: new Set(["\\Seen"]) },
+      ]);
+      const changes = yield* Stream.runCollect(
+        a.pull(account, slice49Cursor({ modseq: "10" }), "inbox"),
+      );
+      assert.ok(changes.some((c) => c._tag === "Flags" && !c.isUnread));
+      assert.isUndefined(vi.spyOn(client, "fetchAll").mock.calls[0]?.[2]?.changedSince);
+      const cursor = changes.findLast((c) => c._tag === "Cursor");
+      assert.ok(cursor?._tag === "Cursor");
+      assert.strictEqual(readCursor(Option.some(cursor.cursor)).folders.INBOX?.modseq, "5");
+    }),
+  ),
+);
+
+it.effect("slice49: UIDVALIDITY reset remaps before deleting old provider IDs", () =>
+  slice49Imap((a) =>
+    Effect.gen(function* () {
+      const changes = yield* Stream.runCollect(
+        a.pull(account, slice49Cursor({ uidValidity: "6" }), "inbox"),
+      );
+      const remap = changes.find((c) => c._tag === "Remap");
+      assert.ok(remap?._tag === "Remap");
+      assert.deepStrictEqual(remap.previous, { path: "INBOX", uidValidity: "6" });
+      assert.isAbove(
+        changes.findIndex((c) => c._tag === "RebuildFolder"),
+        changes.findIndex((c) => c._tag === "Remap"),
+      );
+    }),
+  ),
+);
+
+it.effect("slice49: non-CONDSTORE polling skips a recent full flag scan", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      const clock = yield* Clock.currentTimeMillis;
+      vi.spyOn(client, "mailboxOpen").mockResolvedValue({
+        path: "INBOX",
+        delimiter: "/",
+        flags: new Set<string>(),
+        uidValidity: 7n,
+        uidNext: 2,
+        exists: 1,
+      });
+      yield* Stream.runCollect(a.pull(account, slice49Cursor({ flagScanAt: clock }), "inbox"));
+      assert.strictEqual(vi.spyOn(client, "fetchAll").mock.calls.length, 0);
+    }),
+  ),
+);
+
+it.effect("slice49: pooled pushes compact folder UID sets and return COPYUID mappings", () =>
+  slice49Imap((a, client, opens) =>
+    Effect.gen(function* () {
+      client.capabilities.set("UIDPLUS", true);
+      vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+      vi.spyOn(client, "messageMove").mockResolvedValue({
+        path: "INBOX",
+        destination: "Archive",
+        uidValidity: 8n,
+        uidMap: new Map([
+          [1, 11],
+          [2, 12],
+        ]),
+      });
+      assert.ok(a.pushBatch);
+      yield* a.pushBatch(account, ["7:1:INBOX", "7:2:INBOX"], { kind: "read", value: true });
+      const moved = yield* a.pushBatch(account, ["7:1:INBOX", "7:2:INBOX"], { kind: "archive" });
+      assert.strictEqual(opens(), 1);
+      assert.deepStrictEqual(vi.spyOn(client, "messageFlagsAdd").mock.calls[0], [
+        "1:2",
+        ["\\Seen"],
+        { uid: true },
+      ]);
+      assert.deepStrictEqual(moved, [
+        { from: "7:1:INBOX", to: "8:11:Archive" },
+        { from: "7:2:INBOX", to: "8:12:Archive" },
+      ]);
+    }),
+  ),
+);
+
+it.effect("slice49: no UIDPLUS moves and draft deletion mark Deleted without EXPUNGE", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      const copy = vi
+        .spyOn(client, "messageCopy")
+        .mockResolvedValue({ path: "INBOX", destination: "Archive" });
+      const move = vi.spyOn(client, "messageMove");
+      const deletion = vi.spyOn(client, "messageDelete");
+      const flags = vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+      yield* a.push(account, "7:1:INBOX", { kind: "archive" });
+      yield* a.deleteDraft(account, { draftId: null, messageId: "7:1:INBOX" });
+      assert.strictEqual(copy.mock.calls.length, 1);
+      assert.strictEqual(move.mock.calls.length, 0);
+      assert.strictEqual(deletion.mock.calls.length, 0);
+      assert.ok(flags.mock.calls.every((call) => call[1][0] === "\\Deleted"));
+    }),
+  ),
+);
+
+it.effect(
+  "slice49: custom SMTP sent-copy inference waits twelve seconds and remembers server copies",
+  () =>
+    slice49Imap((a, client) =>
+      Effect.gen(function* () {
+        assert.ok(account.imap);
+        vi.spyOn(client, "list").mockResolvedValue([
+          {
+            path: "Sent",
+            pathAsListed: "Sent",
+            name: "Sent",
+            parent: [],
+            parentPath: "",
+            delimiter: "/",
+            flags: new Set<string>(),
+            listed: true,
+            subscribed: true,
+            specialUse: "\\Sent",
+          },
+        ]);
+        const search = vi.spyOn(client, "search");
+        search
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([])
+          .mockResolvedValue([1]);
+        const append = vi.spyOn(client, "append");
+        const message = {
+          to: [{ name: "", address: "bob@example.com" }],
+          cc: [],
+          bcc: [],
+          subject: "Sent copy",
+          text: "hello",
+          attachments: [],
+        };
+        const first = yield* a
+          .send(
+            {
+              ...account,
+              imap: { ...account.imap, preset: "custom", smtpHost: "smtp.office365.com" },
+            },
+            message,
+            Option.none(),
+          )
+          .pipe(Effect.forkChild);
+        while (!search.mock.calls.length) yield* Effect.yieldNow;
+        yield* TestClock.adjust("12 seconds");
+        yield* Fiber.join(first);
+        assert.strictEqual(search.mock.calls.length, 4);
+        assert.strictEqual(append.mock.calls.length, 0);
+        search.mockClear();
+        search
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([])
+          .mockResolvedValue([1]);
+        const second = yield* a
+          .send(
+            {
+              ...account,
+              imap: { ...account.imap, preset: "custom", smtpHost: "smtp.unknown.example" },
+            },
+            message,
+            Option.none(),
+          )
+          .pipe(Effect.forkChild);
+        while (!search.mock.calls.length) yield* Effect.yieldNow;
+        yield* TestClock.adjust("12 seconds");
+        yield* Fiber.join(second);
+        assert.strictEqual(search.mock.calls.length, 4);
+        assert.strictEqual(append.mock.calls.length, 0);
+      }),
+    ),
+);
+
+it("slice49-fix: descending COPYUID ranges retain server order", () => {
+  assert.deepStrictEqual(parseUidSet("4:2,9"), [4, 3, 2, 9]);
+});
+it("slice49-fix: a nonlocal In-Reply-To is the fallback thread key", () => {
+  assert.strictEqual(threadIdOf({ messageId: "<child@x>", inReplyTo: "<parent@x>" }), "parent@x");
+});
+
+it.effect("slice49-fix: rebuilds keep the initial window instead of fetching every UID", () =>
+  slice49Imap((a, client) =>
+    Effect.gen(function* () {
+      const search = vi
+        .spyOn(client, "search")
+        .mockResolvedValue(Array.from({ length: 2000 }, (_, i) => i + 1));
+      vi.spyOn(client, "fetchAll").mockImplementation(async (range) =>
+        (typeof range === "string" ? parseUidSet(range) : []).map((uid) => ({
+          seq: uid,
+          uid,
+          flags: new Set<string>(),
+          size: 100,
+        })),
+      );
+      const changes = yield* Stream.runCollect(
+        a.pull(account, slice49Cursor({ uidValidity: "6" }), "inbox"),
+      );
+      assert.ok(search.mock.calls.some(([query]) => query.since));
+      assert.strictEqual(changes.filter((change) => change._tag === "Remap").length, 1000);
+    }),
+  ),
+);
+
+it.effect("slice49-fix: stale pooled sessions are checked and replaced before pushing", () =>
+  slice49Imap((a, client, opens) =>
+    Effect.gen(function* () {
+      vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
+      yield* a.push(account, "7:1:INBOX", { kind: "read", value: true });
+      vi.spyOn(client, "noop").mockRejectedValueOnce(new Error("socket closed"));
+      yield* a.push(account, "7:1:INBOX", { kind: "star", value: true });
+      assert.strictEqual(opens(), 2);
+      assert.ok(account.imap);
+      yield* a.push(
+        { ...account, imap: { ...account.imap, imapHost: "changed.example.test" } },
+        "7:1:INBOX",
+        { kind: "read", value: true },
+      );
+      assert.strictEqual(opens(), 3);
+      if (!a.closeSessions) throw new Error("Missing session lifecycle");
+      yield* a.closeSessions(account.id);
+      yield* a.push(account, "7:1:INBOX", { kind: "read", value: true });
+      assert.strictEqual(opens(), 4);
+    }),
+  ),
 );

@@ -100,6 +100,13 @@ export function errorText(i18n: I18n, error: AppError): string {
           ? i18n._(msg`Sign in again to access your calendar.`)
           : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
+    SendUncertain: () =>
+      i18n._(
+        msg({
+          message: "This message may have been sent. Check Sent before sending it again.",
+          comment: "Sent means the Sent mailbox.",
+        }),
+      ),
     AuthError: () => i18n._(msg`The server rejected the sign-in.`),
     ClientNotConfigured: (e) => {
       const client = CLIENTS[e.provider];

@@ -2130,6 +2130,11 @@ msgstr "Tiene archivo adjunto"
 msgid "Has words"
 msgstr "Contiene las palabras"
 
+#. Sent means the Sent mailbox.
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "¿Has revisado «Enviado» y confirmado que este mensaje no se envió?"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "Encabezados"
@@ -4844,6 +4849,11 @@ msgstr "Esta reunión ha sido cancelada."
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Este enlace de reunión no es compatible."
+
+#. Sent means the Sent mailbox.
+#: src/renderer/src/errors.ts
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Es posible que este mensaje ya se haya enviado. Revisa «Enviado» antes de volver a enviarlo."
 
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."

@@ -22,6 +22,11 @@ export interface MimePart {
   readonly headers: Map<string, unknown>;
 }
 export interface MimeMessage {
+  readonly headerLines?: readonly { readonly key: string; readonly line: string }[];
+  readonly messageId?: string;
+  openmailId?: string;
+  readonly references?: string | readonly string[];
+  readonly priority?: string;
   readonly attachments: readonly MimePart[];
   readonly headers: Map<string, unknown>;
   readonly subject?: string;
@@ -43,6 +48,7 @@ export interface MimeParseOptions {
 }
 export interface Threading {
   readonly messageId?: string;
+  openmailId?: string;
   readonly references?: string;
 }
 export interface MailCodecPort {
@@ -51,7 +57,7 @@ export interface MailCodecPort {
     from: Address,
     message: OutgoingMessage,
     threading?: Threading,
-    options?: { draft?: boolean },
+    options?: { draft?: boolean; messageId?: string; openmailId?: string },
   ) => Effect.Effect<Uint8Array, PermanentError>;
 }
 export class MailCodec extends Context.Service<MailCodec, MailCodecPort>()("openmail/MailCodec") {}

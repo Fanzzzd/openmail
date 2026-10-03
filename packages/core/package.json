@@ -34,6 +34,7 @@
     "@effect/ai-anthropic": "4.0.0-rc.118",
     "@effect/platform-node": "4.0.0-rc.118",
     "@effect/sql-sqlite-node": "4.0.0-rc.118",
+    "@exodus/bytes": "1.16.0",
     "@huggingface/transformers": "4.3.0",
     "@napi-rs/keyring": "^2.1.0",
     "@noble/hashes": "^2.4.0",

@@ -29,6 +29,7 @@ export const buildMobileMime = (
   from: Address,
   message: OutgoingMessage,
   threading: Threading = {},
+  options: { draft?: boolean; messageId?: string; openmailId?: string } = {},
 ) =>
   Effect.flatMap(PlatformCrypto, (crypto) =>
     Effect.try({
@@ -43,7 +44,8 @@ export const buildMobileMime = (
           `Bcc: ${prepared.bcc.map(address).join(", ")}`,
           `Subject: ${encoded(headerSafe(prepared.subject))}`,
           `Date: ${new Date().toUTCString()}`,
-          `Message-ID: <${crypto.randomUUID()}@${headerSafe(from.address.split("@")[1] ?? "openmail.local")}>`,
+          `Message-ID: ${headerSafe(options.messageId ?? `<${crypto.randomUUID()}@${from.address.split("@")[1] ?? "openmail.local"}>`)}`,
+          ...(options.openmailId ? [`X-OpenMail-Id: ${headerSafe(options.openmailId)}`] : []),
           "MIME-Version: 1.0",
           `Content-Type: multipart/mixed; boundary="${mixed}"`,
         ];

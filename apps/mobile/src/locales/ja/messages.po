@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "転送"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "「送信済み」を確認し、このメッセージが送信されていないことを確認しましたか？"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "ロック画面で内容を非表示"
@@ -638,6 +643,11 @@ msgstr "スワイプアクション"
 #: app/settings.tsx
 msgid "System language"
 msgstr "システムの言語"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "このメッセージは送信された可能性があります。再送する前に「送信済み」を確認してください。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

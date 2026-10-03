@@ -1,6 +1,9 @@
-import { retryProviderRequest, isProviderSend } from "./provider-retry.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
+import { confirmDelivery } from "./provider-send.js";
 import { messageSecurity } from "./message-security.js";
+import { retryProviderRequest, isProviderSend, retryAfterMillis } from "./provider-retry.js";
+import { PlatformCrypto } from "./platform/crypto.js";
+import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
@@ -161,7 +164,12 @@ const RawMessage = Schema.Struct({ raw: Schema.String });
 const AttachmentBody = Schema.Struct({ data: Schema.String });
 
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
-class ApiError extends Data.TaggedError("ApiError")<{ status: number; body: string }> {}
+class ApiError extends Data.TaggedError("ApiError")<{
+  status: number;
+  body: string;
+  retryAfter?: string;
+  deferred?: boolean;
+}> {}
 
 // 429 and 5xx are quota and transient errors. Gmail also reports per-user
 // quota as 403 rateLimitExceeded, which clears the same way.
@@ -186,7 +194,11 @@ const readFailure =
     if (e.status === 401) {
       return new AuthError({ accountId, message });
     }
-    return new ProviderError({ message, status: e.status });
+    return new ProviderError({
+      message,
+      status: e.status,
+      ...(e.deferred ? { deferred: true } : {}),
+    });
   };
 
 /** Writes Gmail will never accept (bad label id, message gone) are dropped. */
@@ -214,6 +226,7 @@ export const makeGmail: Effect.Effect<
   HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
 > = Effect.gen(function* () {
   const codec = yield* MailCodec;
+  const crypto = yield* PlatformCrypto;
   const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
     unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
   const http = yield* HttpClient.HttpClient;
@@ -265,22 +278,31 @@ export const makeGmail: Effect.Effect<
 
   /** Sends one request with retries; resolves to the parsed JSON body, or null when empty. */
   const execute = (token: string, request: HttpClientRequest.HttpClientRequest) =>
-    Effect.gen(function* () {
-      const res = yield* http.execute(HttpClientRequest.bearerToken(request, token));
-      const text = yield* res.text;
-      if (res.status < 200 || res.status >= 300) {
-        return yield* new ApiError({ status: res.status, body: text });
-      }
-      if (!text) return null;
-      return yield* Effect.try({
-        try: (): unknown => JSON.parse(text),
-        catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
-      });
-    }).pipe(
-      Effect.catchTag("HttpClientError", (e) =>
-        Effect.fail(new ApiError({ status: 0, body: e.message })),
+    retryProviderRequest(
+      Effect.gen(function* () {
+        const res = yield* http.execute(HttpClientRequest.bearerToken(request, token));
+        const text = yield* res.text;
+        if (res.status < 200 || res.status >= 300) {
+          return yield* new ApiError({
+            status: res.status,
+            body: text,
+            deferred:
+              retryAfterMillis(res.headers["retry-after"], yield* Clock.currentTimeMillis) > 60000,
+            ...(res.headers["retry-after"] ? { retryAfter: res.headers["retry-after"] } : {}),
+          });
+        }
+        if (!text) return null;
+        return yield* Effect.try({
+          try: (): unknown => JSON.parse(text),
+          catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
+        });
+      }).pipe(
+        Effect.catchTag("HttpClientError", (e) =>
+          Effect.fail(new ApiError({ status: 0, body: e.message })),
+        ),
       ),
-      (effect) => retryProviderRequest(effect, request, isTransient),
+      request,
+      isTransient,
     );
 
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
@@ -412,6 +434,7 @@ export const makeGmail: Effect.Effect<
   const readHistory = Effect.fnUntraced(
     function* (accountId: string, cursor: string, scope?: "inbox") {
       const changed = new Set<string>();
+      const added = new Set<string>();
       const deleted = new Set<string>();
       let pageToken: string | undefined;
       let latest = cursor;
@@ -423,6 +446,7 @@ export const makeGmail: Effect.Effect<
           ...(pageToken ? { pageToken } : {}),
         });
         for (const h of page.history ?? []) {
+          for (const e of h.messagesAdded ?? []) added.add(e.message.id);
           for (const e of [
             ...(h.messagesAdded ?? []),
             ...(h.labelsAdded ?? []),
@@ -436,7 +460,12 @@ export const makeGmail: Effect.Effect<
         pageToken = page.nextPageToken;
       } while (pageToken);
       for (const id of deleted) changed.delete(id);
-      return Option.some({ changedIds: [...changed], deletedIds: [...deleted], cursor: latest });
+      return Option.some({
+        changedIds: [...changed],
+        addedIds: added,
+        deletedIds: [...deleted],
+        cursor: latest,
+      });
     },
     Effect.catchIf(
       (e) => e._tag === "ApiError" && e.status === 404,
@@ -444,7 +473,12 @@ export const makeGmail: Effect.Effect<
     ),
   );
 
-  const fullSyncPlan = Effect.fnUntraced(function* (accountId: string, scope?: "inbox") {
+  const fullSyncPlan = Effect.fnUntraced(function* (
+    accountId: string,
+    scope?: "inbox",
+    recovering = false,
+  ) {
+    const since = (yield* Clock.currentTimeMillis) - 90 * 86400000;
     // Take the cursor before listing so nothing that arrives mid-sync is lost;
     // the next incremental run re-fetches any overlap idempotently.
     const { historyId } = yield* get(accountId, Profile, "/profile");
@@ -459,9 +493,11 @@ export const makeGmail: Effect.Effect<
       });
       ids.push(...(page.messages ?? []).map((m) => m.id));
       pageToken = page.nextPageToken;
-    } while (pageToken && ids.length < INITIAL_LIMIT);
+    } while (pageToken && ids.length < (recovering ? Infinity : INITIAL_LIMIT));
     return {
-      changedIds: ids.slice(0, INITIAL_LIMIT),
+      changedIds: recovering ? ids : ids.slice(0, INITIAL_LIMIT),
+      addedIds: new Set(ids),
+      since,
       deletedIds: [] as string[],
       cursor: historyId,
     };
@@ -470,7 +506,23 @@ export const makeGmail: Effect.Effect<
   /** None when the message was deleted between listing and fetching. */
   const fetchMessage = (accountId: string, id: string) =>
     get(accountId, GmailMessage, `/messages/${encodeURIComponent(id)}`, { format: "full" }).pipe(
-      Effect.map((raw) => Option.some(parseGmailMessage(raw))),
+      Effect.flatMap((raw) => {
+        const message = parseGmailMessage(raw);
+        if (!hasSignedContainer(message, raw.payload.mimeType))
+          return Effect.succeed(Option.some(message));
+        return get(accountId, RawMessage, `/messages/${encodeURIComponent(id)}`, {
+          format: "raw",
+        }).pipe(
+          Effect.flatMap((source) =>
+            Effect.tryPromise({
+              try: () => codec.parse(Buffer.from(source.raw, "base64")),
+              catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
+            }),
+          ),
+          Effect.map((parsed) => Option.some(withDecodedBody(message, parsed))),
+          Effect.catch(() => Effect.succeed(Option.some(message))),
+        );
+      }),
       Effect.catchIf(
         (e) => e._tag === "ApiError" && e.status === 404,
         () => Effect.succeed(Option.none<IncomingMessage>()),
@@ -493,19 +545,41 @@ export const makeGmail: Effect.Effect<
           return yield* new ProviderError({
             message: "Foreground sync required to renew the cursor",
           });
-        const plan = Option.isSome(incremental)
-          ? incremental.value
-          : yield* fullSyncPlan(account.id, scope);
+        const full = Option.isNone(incremental)
+          ? yield* fullSyncPlan(account.id, scope, Option.isSome(cursor))
+          : undefined;
+        const plan = Option.isSome(incremental) ? incremental.value : full!;
         const total = plan.changedIds.length;
 
         const fetched = Stream.fromIterable(plan.changedIds).pipe(
           Stream.mapEffect(
             (id, i) =>
-              fetchMessage(account.id, id).pipe(
-                Effect.map((m): Change[] => [
-                  Option.isSome(m)
-                    ? { _tag: "Upsert", message: m.value }
-                    : { _tag: "Delete", providerId: id },
+              (plan.addedIds.has(id)
+                ? fetchMessage(account.id, id).pipe(
+                    Effect.map((m): Change =>
+                      Option.isSome(m)
+                        ? { _tag: "Upsert", message: m.value }
+                        : { _tag: "Delete", providerId: id },
+                    ),
+                  )
+                : get(
+                    account.id,
+                    Schema.Struct({ id: Schema.String, labelIds: Schema.Array(Schema.String) }),
+                    `/messages/${encodeURIComponent(id)}`,
+                    { format: "minimal", fields: "id,labelIds" },
+                  ).pipe(
+                    Effect.map((m): Change => ({
+                      _tag: "MessageLabels",
+                      providerId: m.id,
+                      labels: m.labelIds,
+                    })),
+                    Effect.catchIf(is404, () =>
+                      Effect.succeed<Change>({ _tag: "Delete", providerId: id }),
+                    ),
+                  )
+              ).pipe(
+                Effect.map((change): Change[] => [
+                  change,
                   { _tag: "Progress", fetched: i + 1, total },
                 ]),
               ),
@@ -523,6 +597,13 @@ export const makeGmail: Effect.Effect<
         return Stream.fromIterable(scope ? [] : [head]).pipe(
           Stream.concat(fetched),
           Stream.concat(Stream.fromIterable(deletes)),
+          Stream.concat(
+            Stream.fromIterable(
+              !scope && Option.isSome(cursor) && Option.isNone(incremental) && full
+                ? [{ _tag: "Reset" as const, keep: plan.changedIds, since: full.since }]
+                : [],
+            ),
+          ),
           Stream.concat(Stream.succeed(tail)),
         );
       }).pipe(Effect.withSpan("Gmail.pull")),
@@ -585,10 +666,14 @@ export const makeGmail: Effect.Effect<
         // Forwards start a new thread; replies stay in the original one.
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
+      const traceId = crypto.randomUUID();
+      const messageId = `<${traceId}@openmail.local>`;
+      const started = yield* Clock.currentTimeMillis;
       const raw = yield* buildMime(
         message.from ?? { name: "", address: account.email },
         message,
         threading,
+        { messageId, openmailId: traceId },
       );
       if (raw.byteLength > GMAIL_MIME_LIMIT)
         yield* new PermanentError({
@@ -598,9 +683,46 @@ export const makeGmail: Effect.Effect<
       yield* post(account.id, "/messages/send", {
         raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
         ...(threadId ? { threadId } : {}),
-      });
+      }).pipe(
+        Effect.catchIf(
+          (error) => error._tag === "ApiError" && (error.status === 0 || error.status >= 500),
+          () =>
+            confirmDelivery(
+              Effect.gen(function* () {
+                const found = yield* get(account.id, MessageList, "/messages", {
+                  q: `in:sent rfc822msgid:${messageId}`,
+                  maxResults: "1",
+                });
+                if (found.messages?.length) return true;
+                // Gmail documents raw MIME and rfc822msgid searches, not preservation of a client ID.
+                const recent = yield* get(account.id, MessageList, "/messages", {
+                  q: `in:sent after:${Math.floor(started / 1000) - 60} subject:${JSON.stringify(message.subject)}`,
+                  maxResults: "20",
+                });
+                for (const candidate of recent.messages ?? []) {
+                  const metadata = yield* get(
+                    account.id,
+                    Metadata,
+                    `/messages/${encodeURIComponent(candidate.id)}?format=metadata&metadataHeaders=X-OpenMail-Id`,
+                  );
+                  if (
+                    metadata.payload.headers?.some(
+                      (header) =>
+                        header.name.toLowerCase() === "x-openmail-id" && header.value === traceId,
+                    )
+                  )
+                    return true;
+                }
+                return false;
+              }),
+            ),
+        ),
+      );
     },
-    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+    (effect, account) =>
+      Effect.mapError(effect, (error) =>
+        error._tag === "SendUncertain" ? error : writeFailure(account.id)(error),
+      ),
   );
 
   /**
@@ -657,15 +779,29 @@ export const makeGmail: Effect.Effect<
       };
       const create = post(account.id, "/drafts", body);
       const existing = yield* draftIdOf(account.id, draft.remote);
+      const current = Option.isSome(existing)
+        ? yield* get(account.id, GmailDraft, `/drafts/${encodeURIComponent(existing.value)}`).pipe(
+            Effect.map(Option.some),
+            Effect.catchIf(is404, () => Effect.succeed(Option.none())),
+          )
+        : Option.none();
+      const conflict =
+        Option.isSome(current) &&
+        !!draft.remote?.messageId &&
+        current.value.message.id !== draft.remote.messageId;
       const saved = yield* (
-        Option.isSome(existing)
+        Option.isSome(existing) && !conflict
           ? // Deleted in another client meanwhile: the person is still writing it.
             put(account.id, `/drafts/${encodeURIComponent(existing.value)}`, body).pipe(
               Effect.catchIf(is404, () => create),
             )
           : create
       ).pipe(Effect.flatMap(decode(GmailDraft)));
-      return { draftId: saved.id, messageId: saved.message.id } satisfies DraftRemote;
+      return {
+        draftId: saved.id,
+        messageId: saved.message.id,
+        ...(conflict ? { conflict: true } : {}),
+      } satisfies DraftRemote;
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -720,6 +856,17 @@ export const makeGmail: Effect.Effect<
       );
       const part = pickAttachment(attachmentParts(message.payload), (p) => p.filename ?? "", ref);
       if (!part) {
+        const bytes = yield* fetchRaw(account, providerId);
+        const parsed = yield* Effect.tryPromise({
+          try: () => codec.parse(bytes),
+          catch: () => new ProviderError({ message: "Cannot parse attachment MIME" }),
+        });
+        const rawAttachment = pickAttachment(
+          parsed.attachments.filter((candidate) => !candidate.related),
+          (candidate) => candidate.filename ?? "attachment",
+          ref,
+        );
+        if (rawAttachment) return new Uint8Array(rawAttachment.content);
         return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
       }
       // Small parts come inline; bigger ones through the attachments endpoint.
@@ -1084,7 +1231,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
 
   const labels = raw.labelIds ?? [];
   const from = parseAddressList(headers.get("from"))[0] ?? { name: "", address: "" };
-  return {
+  return withUuAttachments({
     providerId: raw.id,
     threadId: raw.threadId,
     subject: decodeHeader(headers.get("subject") ?? ""),
@@ -1109,7 +1256,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     attachments,
     isUnread: labels.includes("UNREAD"),
     isStarred: labels.includes("STARRED"),
-  };
+  });
 }
 
 // Gmail's snippet is HTML-escaped.

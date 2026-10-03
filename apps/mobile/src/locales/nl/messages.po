@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "Stuur door"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Hebt u „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "Inhoud verbergen op vergrendelscherm"
@@ -638,6 +643,11 @@ msgstr "Veeg acties"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Systeemtaal"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Dit bericht is mogelijk al verzonden. Controleer „Verstuurd“ voordat u het opnieuw verzendt."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

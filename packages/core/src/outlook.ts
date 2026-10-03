@@ -1,6 +1,14 @@
-import { retryProviderRequest, isProviderSend } from "./provider-retry.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
+import { confirmDelivery } from "./provider-send.js";
 import { cleanDisplayName, messageSecurity } from "./message-security.js";
+import { retryProviderRequest, isProviderSend, retryAfterMillis } from "./provider-retry.js";
+import { PlatformCrypto } from "./platform/crypto.js";
+import {
+  hasSignedContainer,
+  withDecodedBody,
+  withUuAttachments,
+  MAX_MIME_BYTES,
+} from "./platform/mime-compat.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { categoryKey, mergeCategoryNames } from "./categories.js";
@@ -106,7 +114,8 @@ const SELECT =
 // Header selection is supported on ordinary message GETs, not requested from delta.
 const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
 const PAGE_SIZE = 50;
-const CONCURRENCY = 6;
+const CONCURRENCY = 4;
+const EXPAND_ATTACHMENTS = "$expand=attachments($select=name,contentType,size,isInline)";
 
 /** sendMail and attachment POSTs carry files inline; Graph caps a request at 4 MB. */
 const REQUEST_LIMIT = 4 * 1024 * 1024;
@@ -124,7 +133,14 @@ const GraphAddress = Schema.Struct({
 });
 type GraphAddress = typeof GraphAddress.Type;
 
+const GraphAttachment = Schema.Struct({
+  name: Schema.String,
+  contentType: Schema.String,
+  size: Schema.Number,
+  isInline: Schema.optionalKey(Schema.Boolean),
+});
 const GraphMessage = Schema.Struct({
+  attachments: Schema.optionalKey(Schema.Array(GraphAttachment)),
   "@odata.type": Schema.optionalKey(Schema.String),
   id: Schema.String,
   conversationId: Schema.String,
@@ -233,7 +249,12 @@ interface SyncFolder {
 }
 
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
-class ApiError extends Data.TaggedError("ApiError")<{ status: number; body: string }> {}
+class ApiError extends Data.TaggedError("ApiError")<{
+  status: number;
+  body: string;
+  retryAfter?: string;
+  deferred?: boolean;
+}> {}
 
 // 429 throttling and 5xx are transient; back off and retry.
 const isTransient = (e: ApiError) => e.status === 0 || e.status === 429 || e.status >= 500;
@@ -253,7 +274,11 @@ const readFailure =
     if (e._tag !== "ApiError") return e;
     const message = `Graph API ${e.status}: ${e.body}`;
     if (e.status === 401) return new AuthError({ accountId, message });
-    return new ProviderError({ message, status: e.status });
+    return new ProviderError({
+      message,
+      status: e.status,
+      ...(e.deferred ? { deferred: true } : {}),
+    });
   };
 
 /** Writes Graph will never accept (bad folder id, message gone) are dropped. */
@@ -275,12 +300,18 @@ const decode =
       ),
     );
 
+const expandedAttachments = (raw: GraphMessage): Attachment[] | undefined =>
+  raw.attachments
+    ?.filter((a) => !a.isInline)
+    .map((a) => ({ filename: a.name, mimeType: a.contentType, size: a.size }));
+
 export const makeOutlook: Effect.Effect<
   ProviderAdapter,
   never,
   HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
 > = Effect.gen(function* () {
   const codec = yield* MailCodec;
+  const crypto = yield* PlatformCrypto;
   const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
     unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
   const http = yield* HttpClient.HttpClient;
@@ -332,54 +363,75 @@ export const makeOutlook: Effect.Effect<
 
   /** Sends one request with retries; resolves to the parsed JSON body, or null for 202/204. */
   const execute = (token: string, request: HttpClientRequest.HttpClientRequest) =>
-    Effect.gen(function* () {
-      const res = yield* http.execute(
-        request.pipe(
-          HttpClientRequest.bearerToken(token),
-          HttpClientRequest.setHeader("prefer", request.headers.prefer ?? PREFER.prefer),
+    retryProviderRequest(
+      Effect.gen(function* () {
+        const res = yield* http.execute(
+          request.pipe(
+            HttpClientRequest.bearerToken(token),
+            HttpClientRequest.setHeader("prefer", request.headers.prefer ?? PREFER.prefer),
+          ),
+        );
+        const text = yield* res.text;
+        if (res.status < 200 || res.status >= 300) {
+          return yield* new ApiError({
+            status: res.status,
+            body: text,
+            deferred:
+              retryAfterMillis(res.headers["retry-after"], yield* Clock.currentTimeMillis) > 60000,
+            ...(res.headers["retry-after"] ? { retryAfter: res.headers["retry-after"] } : {}),
+          });
+        }
+        if (!text) return null;
+        return yield* Effect.try({
+          try: (): unknown => JSON.parse(text),
+          catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
+        });
+      }).pipe(
+        Effect.catchTag("HttpClientError", (e) =>
+          Effect.fail(new ApiError({ status: 0, body: e.message })),
         ),
-      );
-      const text = yield* res.text;
-      if (res.status < 200 || res.status >= 300) {
-        return yield* new ApiError({ status: res.status, body: text });
-      }
-      if (!text) return null;
-      return yield* Effect.try({
-        try: (): unknown => JSON.parse(text),
-        catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
-      });
-    }).pipe(
-      Effect.catchTag("HttpClientError", (e) =>
-        Effect.fail(new ApiError({ status: 0, body: e.message })),
       ),
-      (effect) => retryProviderRequest(effect, request, isTransient),
+      request,
+      isTransient,
     );
+
+  const requestLocks = new Map<string, Semaphore.Semaphore>();
+  const requestLock = (accountId: string) => {
+    let lock = requestLocks.get(accountId);
+    if (!lock) {
+      lock = Semaphore.makeUnsafe(CONCURRENCY);
+      requestLocks.set(accountId, lock);
+    }
+    return lock;
+  };
 
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    permissions.run(
-      accountId,
-      request,
-      accessToken(accountId).pipe(
-        Effect.flatMap((token) => execute(token, request)),
-        // The provider can reject an access token before it expires. Drop it,
-        // refresh, and retry once; only a failed refresh means signing in again.
-        Effect.catchIf(
-          (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
-          () =>
-            Effect.sync(() => tokens.delete(accountId)).pipe(
-              Effect.andThen(accessToken(accountId)),
-              Effect.flatMap((token) => execute(token, request)),
-            ),
+    permissions
+      .run(
+        accountId,
+        request,
+        accessToken(accountId).pipe(
+          Effect.flatMap((token) => execute(token, request)),
+          // The provider can reject an access token before it expires. Drop it,
+          // refresh, and retry once; only a failed refresh means signing in again.
+          Effect.catchIf(
+            (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+            () =>
+              Effect.sync(() => tokens.delete(accountId)).pipe(
+                Effect.andThen(accessToken(accountId)),
+                Effect.flatMap((token) => execute(token, request)),
+              ),
+          ),
+          Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
+          Effect.tapError((e) =>
+            e._tag === "ApiError" && e.status === 401
+              ? Effect.sync(() => tokens.delete(accountId))
+              : Effect.void,
+          ),
         ),
-        Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
-        Effect.tapError((e) =>
-          e._tag === "ApiError" && e.status === 401
-            ? Effect.sync(() => tokens.delete(accountId))
-            : Effect.void,
-        ),
-      ),
-    );
+      )
+      .pipe(requestLock(accountId).withPermits(1));
 
   const headersDenied = new Set<string>();
   /** `path` is a path under GRAPH, or a full https URL (delta and next links are absolute). */
@@ -494,44 +546,46 @@ export const makeOutlook: Effect.Effect<
   const getBytesAttempt = (accountId: string, path: string, maxBytes?: number) =>
     accessToken(accountId).pipe(
       Effect.flatMap((token) =>
-        Effect.gen(function* () {
-          const res = yield* http.execute(
-            HttpClientRequest.get(`${GRAPH}${path}`).pipe(
-              HttpClientRequest.bearerToken(token),
-              HttpClientRequest.setHeaders(PREFER),
+        retryProviderRequest(
+          Effect.gen(function* () {
+            const res = yield* http.execute(
+              HttpClientRequest.get(`${GRAPH}${path}`).pipe(
+                HttpClientRequest.bearerToken(token),
+                HttpClientRequest.setHeaders(PREFER),
+              ),
+            );
+            if (res.status < 200 || res.status >= 300) {
+              return yield* new ApiError({
+                status: res.status,
+                body: yield* res.text,
+                ...(res.headers["retry-after"] ? { retryAfter: res.headers["retry-after"] } : {}),
+              });
+            }
+            if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
+            if (Number(res.headers["content-length"]) > maxBytes)
+              return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+            const parts: Uint8Array[] = [];
+            let total = 0;
+            yield* res.stream.pipe(
+              Stream.runForEach((part) =>
+                Effect.gen(function* () {
+                  total += part.length;
+                  if (total > maxBytes)
+                    return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+                  parts.push(part);
+                  return yield* Effect.void;
+                }),
+              ),
+            );
+            return new Uint8Array(Buffer.concat(parts));
+          }).pipe(
+            Effect.catchTag("HttpClientError", (e) =>
+              Effect.fail(new ApiError({ status: 0, body: e.message })),
             ),
-          );
-          if (res.status < 200 || res.status >= 300) {
-            return yield* new ApiError({ status: res.status, body: yield* res.text });
-          }
-          if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
-          if (Number(res.headers["content-length"]) > maxBytes)
-            return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-          const parts: Uint8Array[] = [];
-          let total = 0;
-          yield* res.stream.pipe(
-            Stream.runForEach((part) =>
-              Effect.gen(function* () {
-                total += part.length;
-                if (total > maxBytes)
-                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                parts.push(part);
-                return yield* Effect.void;
-              }),
-            ),
-          );
-          return new Uint8Array(Buffer.concat(parts));
-        }).pipe(
-          Effect.catchTag("HttpClientError", (e) =>
-            Effect.fail(new ApiError({ status: 0, body: e.message })),
           ),
-          (effect) =>
-            retryProviderRequest(
-              effect,
-              HttpClientRequest.get(`${GRAPH}${path}`),
-              (error) => error._tag === "ApiError" && isTransient(error),
-            ),
-        ),
+          HttpClientRequest.get(`${GRAPH}${path}`),
+          (error) => error._tag === "ApiError" && isTransient(error),
+        ).pipe(requestLock(accountId).withPermits(1)),
       ),
     );
 
@@ -718,6 +772,28 @@ export const makeOutlook: Effect.Effect<
       ),
     );
 
+  const incomingGraph = (
+    account: Account,
+    raw: GraphMessage,
+    label: string,
+    attachments: readonly Attachment[],
+  ) => {
+    const message = parseGraphMessage(raw, label, attachments);
+    if (!hasSignedContainer(message)) return Effect.succeed(message);
+    return fetchRaw(account, raw.id, MAX_MIME_BYTES).pipe(
+      Effect.catchTag("PermanentError", (error) =>
+        Effect.fail(new ProviderError({ message: error.message })),
+      ),
+      Effect.flatMap((source) =>
+        Effect.tryPromise({
+          try: () => codec.parse(source),
+          catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
+        }),
+      ),
+      Effect.map((parsed) => withDecodedBody(message, parsed)),
+      Effect.catch(() => Effect.succeed(message)),
+    );
+  };
   const pull = (
     account: Account,
     cursor: Option.Option<string>,
@@ -763,7 +839,7 @@ export const makeOutlook: Effect.Effect<
             const known = previous[folder.key];
             if (incrementalOnly && known === undefined)
               yield* new ProviderError({ message: "Foreground sync required to renew the cursor" });
-            const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&$top=${PAGE_SIZE}`;
+            const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&${EXPAND_ATTACHMENTS}&$top=${PAGE_SIZE}`;
             const first = yield* get(account.id, DeltaPage, known ?? initial).pipe(
               Effect.map(Option.some),
               Effect.catchIf(
@@ -800,20 +876,20 @@ export const makeOutlook: Effect.Effect<
                           : yield* get(
                               account.id,
                               GraphMessage,
-                              `/me/messages/${encodeURIComponent(item.id)}?$select=${MESSAGE_SELECT}`,
+                              `/me/messages/${encodeURIComponent(item.id)}?$select=${MESSAGE_SELECT}&${EXPAND_ATTACHMENTS}`,
                             ).pipe(
                               Effect.map(Option.some),
                               Effect.catchIf(is404, () => Effect.succeed(Option.none())),
                             );
                       if (Option.isNone(message)) return null;
                       const raw = message.value;
-                      const attachments = raw.hasAttachments
-                        ? yield* fetchAttachments(account.id, raw.id)
-                        : [];
+                      const attachments =
+                        expandedAttachments(raw) ??
+                        (raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : []);
                       kept.add(raw.id);
                       return {
                         _tag: "Upsert",
-                        message: parseGraphMessage(raw, folder.label, attachments),
+                        message: yield* incomingGraph(account, raw, folder.label, attachments),
                       } satisfies Change;
                     }),
                   { concurrency: CONCURRENCY },
@@ -929,6 +1005,23 @@ export const makeOutlook: Effect.Effect<
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
+  const deliveryLookup = (accountId: string, messageId: string, folder = "sentitems") =>
+    get(
+      accountId,
+      Schema.Struct({ value: Schema.Array(WithId) }),
+      `/me/mailFolders/${folder}/messages?${new URLSearchParams({ $filter: `internetMessageId eq '${messageId.replaceAll("'", "''")}'`, $select: "id", $top: "1" }).toString()}`,
+    );
+  const deliver = (accountId: string, messageId: string, effect: ReturnType<typeof api>) =>
+    effect.pipe(
+      Effect.catchIf(
+        (error) => error._tag === "ApiError" && (error.status === 0 || error.status >= 500),
+        () =>
+          confirmDelivery(
+            deliveryLookup(accountId, messageId).pipe(Effect.map((found) => !!found.value.length)),
+          ).pipe(Effect.as(null)),
+      ),
+    );
+
   const send = Effect.fn("Outlook.send")(
     function* (
       account: Account,
@@ -936,7 +1029,8 @@ export const makeOutlook: Effect.Effect<
       original: Option.Option<{ providerId: string; threadId: string }>,
     ) {
       yield* checkAttachmentSize(message);
-      const fields = graphFields(message);
+      const messageId = `<${crypto.randomUUID()}@openmail.local>`;
+      const fields = { ...graphFields(message), internetMessageId: messageId };
       const attachments = message.attachments.map(fileAttachment);
       const mode = message.mode ?? "new";
       if ((Option.isNone(original) || mode === "new") && forwardsMessage(message)) {
@@ -944,20 +1038,33 @@ export const makeOutlook: Effect.Effect<
         // takes: as a JSON fileAttachment Exchange re-encodes the .eml as an
         // opaque base64 file, and Gmail previews it as text in a guessed
         // charset. In MIME it is a real message/rfc822 part.
-        const mime = yield* buildMime({ name: "", address: account.email }, message);
+        const mime = yield* buildMime(
+          { name: "", address: account.email },
+          message,
+          {},
+          { messageId },
+        );
         const body = mime.toString("base64");
         yield* checkRequestSize(body);
-        yield* api(
+        yield* deliver(
           account.id,
-          HttpClientRequest.post(`${GRAPH}/me/sendMail`).pipe(
-            HttpClientRequest.bodyText(body, "text/plain"),
+          messageId,
+          api(
+            account.id,
+            HttpClientRequest.post(`${GRAPH}/me/sendMail`).pipe(
+              HttpClientRequest.bodyText(body, "text/plain"),
+            ),
           ),
         );
       } else if (Option.isNone(original) || mode === "new") {
-        yield* write(account.id, "POST", "/me/sendMail", {
-          message: { ...fields, attachments },
-          saveToSentItems: true,
-        });
+        yield* deliver(
+          account.id,
+          messageId,
+          write(account.id, "POST", "/me/sendMail", {
+            message: { ...fields, attachments },
+            saveToSentItems: true,
+          }),
+        );
       } else {
         // Replies and forwards go through a draft so Outlook sets the threading
         // headers and conversation itself.
@@ -970,33 +1077,79 @@ export const makeOutlook: Effect.Effect<
           account.id,
           "POST",
           `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
-        ).pipe(Effect.flatMap(decode(WithId)));
-        yield* write(account.id, "PATCH", `/me/messages/${encodeURIComponent(draft.id)}`, fields);
-        if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
-          const inherited = yield* get(
-            account.id,
-            AttachmentIds,
-            `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
-          );
-          for (const attachment of inherited.value)
+          { message: { internetMessageId: messageId } },
+        ).pipe(
+          Effect.flatMap(decode(WithId)),
+          Effect.catchIf(
+            (error) => error._tag === "ApiError" && (error.status === 0 || error.status >= 500),
+            (error) => {
+              const cleanup = deliveryLookup(account.id, messageId, "drafts").pipe(
+                Effect.flatMap((found) =>
+                  Effect.forEach(
+                    found.value,
+                    (orphan) =>
+                      write(account.id, "DELETE", `/me/messages/${encodeURIComponent(orphan.id)}`),
+                    { discard: true },
+                  ).pipe(Effect.as(found.value.length > 0)),
+                ),
+              );
+              return confirmDelivery(cleanup).pipe(
+                Effect.result,
+                Effect.asVoid,
+                Effect.andThen(Effect.fail(error)),
+              );
+            },
+          ),
+        );
+        const path = `/me/messages/${encodeURIComponent(draft.id)}`;
+        let sendAttempted = false;
+        yield* Effect.gen(function* () {
+          yield* write(account.id, "PATCH", path, fields);
+          if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
+            const inherited = yield* get(
+              account.id,
+              AttachmentIds,
+              `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
+            );
+            for (const attachment of inherited.value)
+              yield* write(
+                account.id,
+                "DELETE",
+                `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
+              );
+          }
+          for (const attachment of attachments) {
             yield* write(
               account.id,
-              "DELETE",
-              `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
+              "POST",
+              `/me/messages/${encodeURIComponent(draft.id)}/attachments`,
+              attachment,
             );
-        }
-        for (const attachment of attachments) {
-          yield* write(
-            account.id,
-            "POST",
-            `/me/messages/${encodeURIComponent(draft.id)}/attachments`,
-            attachment,
-          );
-        }
-        yield* write(account.id, "POST", `/me/messages/${encodeURIComponent(draft.id)}/send`);
+          }
+          sendAttempted = true;
+          yield* deliver(account.id, messageId, write(account.id, "POST", `${path}/send`));
+        }).pipe(
+          Effect.onError(() =>
+            (sendAttempted
+              ? get(
+                  account.id,
+                  Schema.Struct({ isDraft: Schema.Boolean }),
+                  `${path}?$select=isDraft`,
+                ).pipe(
+                  Effect.flatMap((current) =>
+                    current.isDraft ? write(account.id, "DELETE", path) : Effect.void,
+                  ),
+                )
+              : write(account.id, "DELETE", path)
+            ).pipe(Effect.catch(() => Effect.void)),
+          ),
+        );
       }
     },
-    (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
+    (effect, account) =>
+      Effect.mapError(effect, (error) =>
+        error._tag === "SendUncertain" ? error : writeFailure(account.id)(error),
+      ),
   );
 
   /**
@@ -1231,6 +1384,17 @@ export const makeOutlook: Effect.Effect<
         ref,
       );
       if (!found) {
+        const bytes = yield* fetchRaw(account, providerId);
+        const parsed = yield* Effect.tryPromise({
+          try: () => codec.parse(bytes),
+          catch: () => new ProviderError({ message: "Cannot parse attachment MIME" }),
+        });
+        const attachment = pickAttachment(
+          parsed.attachments.filter((part) => !part.related),
+          (part) => part.filename ?? "attachment",
+          ref,
+        );
+        if (attachment) return new Uint8Array(attachment.content);
         return yield* new PermanentError({ message: `No attachment ${ref.filename}` });
       }
       // $value is the file for file attachments and MIME for attached messages.
@@ -1321,6 +1485,7 @@ export const makeOutlook: Effect.Effect<
       const kql = graphSearch(query);
       const params = new URLSearchParams({
         $select: `${MESSAGE_SELECT},parentFolderId`,
+        $expand: "attachments($select=name,contentType,size,isInline)",
         $top: "100",
       });
       const messageId = parseSearchQuery(query).criteria?.rfcMessageId;
@@ -1353,8 +1518,10 @@ export const makeOutlook: Effect.Effect<
             system.find((f) => f.id === raw.parentFolderId)?.label ??
             folders.find((f) => f.id === raw.parentFolderId)?.id;
           if (!label) continue;
-          const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : [];
-          const message = parseGraphMessage(raw, label, attachments);
+          const attachments =
+            expandedAttachments(raw) ??
+            (raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : []);
+          const message = yield* incomingGraph(account, raw, label, attachments);
           if (matchesSearch(message, query, folderNames)) messages.push(message);
           if (messages.length >= limit) break;
         }
@@ -1415,11 +1582,13 @@ export const makeOutlook: Effect.Effect<
       const raw = yield* get(
         account.id,
         GraphMessage,
-        `/me/messages/${encodeURIComponent(id)}?$select=${MESSAGE_SELECT},parentFolderId`,
+        `/me/messages/${encodeURIComponent(id)}?$select=${MESSAGE_SELECT},parentFolderId&${EXPAND_ATTACHMENTS}`,
       );
       const label = yield* messageLabel(account, raw);
-      const attachments = raw.hasAttachments ? yield* fetchAttachments(account.id, id) : [];
-      return parseGraphMessage(raw, label, attachments);
+      const attachments =
+        expandedAttachments(raw) ??
+        (raw.hasAttachments ? yield* fetchAttachments(account.id, id) : []);
+      return yield* incomingGraph(account, raw, label, attachments);
     }).pipe(Effect.mapError(writeFailure(account.id)));
 
   return {
@@ -1742,7 +1911,7 @@ export function parseGraphMessage(
   if (isUnread) labels.push("UNREAD");
   if (isStarred) labels.push("STARRED");
 
-  return {
+  return withUuAttachments({
     providerId: raw.id,
     threadId: raw.conversationId,
     ...(raw.webLink ? { webLink: raw.webLink } : {}),
@@ -1765,5 +1934,5 @@ export function parseGraphMessage(
     attachments,
     isUnread,
     isStarred,
-  };
+  });
 }

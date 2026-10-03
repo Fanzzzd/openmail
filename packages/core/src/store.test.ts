@@ -1004,3 +1004,222 @@ it.effect("stores provider authentication without changing the FTS row identity"
     }),
   ),
 );
+
+it.effect(
+  "slice49: provider remaps preserve local rowids, derived data, snoozes and queued ops",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        const account = yield* store.upsertAccount("imap", "me@example.com");
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "7:1:INBOX", rfcMessageId: "<one@x>" }),
+        );
+        const local = `${account.id}/7:1:INBOX`;
+        yield* store.snooze(local, 999999);
+        yield* store.enqueueOp(account.id, "7:1:INBOX", { kind: "star", value: true });
+        yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES (${local},'cached OCR','{}')`;
+        const before = yield* sql`SELECT rowid FROM messages WHERE id=${local}`;
+        yield* store.remapProviderIds(account.id, [{ from: "7:1:INBOX", to: "8:9:INBOX" }]);
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: "8:9:INBOX", rfcMessageId: "<one@x>" }),
+        );
+        yield* store.deleteMessage(account.id, "7:1:INBOX");
+        assert.strictEqual((yield* store.messageRef(local)).providerId, "8:9:INBOX");
+        assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${local}`, before);
+        assert.strictEqual((yield* store.listPendingOps)[0]?.providerId, "8:9:INBOX");
+        assert.strictEqual(
+          (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${local}`)[0]?.text,
+          "cached OCR",
+        );
+        assert.ok((yield* store.getMessage(local)).labels.includes("SNOOZED"));
+        assert.strictEqual(
+          (yield* sql`SELECT provider_id FROM snoozed_messages`)[0]?.provider_id,
+          "8:9:INBOX",
+        );
+        assert.strictEqual((yield* store.listThreads({ search: "产能" }))[0]?.id, local);
+      }),
+    ),
+);
+
+it.effect("slice49: replies without References inherit a parent's thread via Message-ID", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "parent", threadId: "root@x", rfcMessageId: "<parent@x>" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({
+          providerId: "child",
+          threadId: "child@x",
+          parentRfcMessageId: "<parent@x>",
+          rfcMessageId: "<child@x>",
+        }),
+      );
+      assert.strictEqual((yield* store.getMessage(`${account.id}/child`)).threadId, "root@x");
+      yield* store.upsertMessage(
+        account.id,
+        message({
+          providerId: "unrelated",
+          threadId: "unrelated@x",
+          parentRfcMessageId: "<missing@x>",
+        }),
+      );
+      assert.strictEqual(
+        (yield* store.getMessage(`${account.id}/unrelated`)).threadId,
+        "unrelated@x",
+      );
+    }),
+  ),
+);
+
+it.effect("slice49: expired-history window sweeping preserves older cached mail", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.com");
+      for (const providerId of ["kept", "gone", "old"])
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId, date: providerId === "old" ? 1 : 100 }),
+        );
+      yield* store.deleteAccountMessages(account.id, ["kept"], 50);
+      assert.deepStrictEqual(
+        (yield* store.listThreads({ flat: true }))
+          .map((m) => m.id.split("/").at(-1))
+          .toSorted((a, b) => (a ?? "").localeCompare(b ?? "")),
+        ["kept", "old"],
+      );
+    }),
+  ),
+);
+
+it.effect("slice49: SQLite limits journal size and permits an idle truncate checkpoint", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      assert.strictEqual((yield* sql`PRAGMA journal_size_limit`)[0]?.journal_size_limit, 8388608);
+      yield* store.checkpoint;
+    }),
+  ),
+);
+
+it.effect("slice49-fix: remapping a duplicate target preserves source identity and snooze", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", threadId: "source" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "8:2:INBOX", threadId: "target" }),
+      );
+      const source = `${account.id}/7:1:INBOX`,
+        target = `${account.id}/8:2:INBOX`;
+      yield* store.snooze(source, 10000);
+      yield* store.snooze(target, 10000);
+      yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES (${target},'duplicate OCR','{}')`;
+      yield* store.remapProviderIds(account.id, [{ from: "7:1:INBOX", to: "8:2:INBOX" }]);
+      assert.strictEqual(yield* store.messageIdForProvider(account.id, "8:2:INBOX"), source);
+      assert.strictEqual((yield* sql`SELECT id FROM messages`).length, 1);
+      assert.strictEqual((yield* sql`SELECT provider_id FROM snoozed_messages`).length, 1);
+      assert.strictEqual((yield* sql`SELECT text FROM derived_chunks`).length, 0);
+    }),
+  ),
+);
+
+it.effect("slice49-fix: re-upsert retains an inherited thread when the parent is unavailable", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(account.id, message({ threadId: "root@x" }));
+      yield* store.upsertMessage(
+        account.id,
+        message({ threadId: "parent@x", parentRfcMessageId: "<parent@x>" }),
+      );
+      assert.strictEqual((yield* store.getMessage(`${account.id}/m1`)).threadId, "root@x");
+    }),
+  ),
+);
+
+it.effect("slice49-fix: folder-prefix lookup includes untracked backfilled rows", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "6:99:INBOX", rfcMessageId: "<backfilled@x>" }),
+      );
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "6:2:Sent", rfcMessageId: "<backfilled@x>" }),
+      );
+      assert.strictEqual(
+        yield* store.findMessageByRfcId(account.id, "backfilled@x", {
+          path: "INBOX",
+          uidValidity: "6",
+        }),
+        `${account.id}/6:99:INBOX`,
+      );
+      yield* store.deleteImapFolder(account.id, { path: "INBOX", uidValidity: "6" }, []);
+      assert.strictEqual(yield* store.messageIdForProvider(account.id, "6:99:INBOX"), null);
+      assert.strictEqual(
+        yield* store.messageIdForProvider(account.id, "6:2:Sent"),
+        `${account.id}/6:2:Sent`,
+      );
+    }),
+  ),
+);
+
+it.effect("slice49-fix: routine checkpoints retain the reusable WAL instead of truncating it", () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const dir = yield* Effect.acquireRelease(
+      fs.makeTempDirectory({ prefix: "openmail-checkpoint-" }),
+      (dir) => fs.remove(dir, { recursive: true }).pipe(Effect.orDie),
+    );
+    const file = path.join(dir, "mail.db");
+    yield* withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "me@example.com");
+        yield* store.upsertMessage(account.id, message({}));
+        yield* store.checkpoint;
+        assert.isAbove(Number((yield* fs.stat(`${file}-wal`)).size), 0);
+      }),
+      databaseLayer(file).pipe(Layer.provide(NodeFileSystem.layer), Layer.provide(NodePath.layer)),
+    );
+  }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);
+
+it.effect("slice49-fix: database failures during remap roll back without a defect", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(account.id, message({ providerId: "old" }));
+      yield* sql`CREATE TRIGGER reject_remap BEFORE UPDATE OF provider_id ON messages BEGIN SELECT RAISE(ABORT,'simulated remap failure'); END`;
+      const result = yield* store
+        .remapProviderIds(account.id, [{ from: "old", to: "new" }])
+        .pipe(Effect.exit);
+      assert.isTrue(Exit.isSuccess(result));
+      assert.strictEqual((yield* store.messageRef(`${account.id}/old`)).providerId, "old");
+    }),
+  ),
+);

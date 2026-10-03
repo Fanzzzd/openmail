@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
-import { Cause, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
@@ -34,7 +34,7 @@ interface Call {
 
 const parseJson = (text: string): unknown => JSON.parse(text);
 
-type Reply = { status?: number; json?: unknown; text?: string };
+type Reply = { headers?: Record<string, string>; status?: number; json?: unknown; text?: string };
 
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under
@@ -63,6 +63,7 @@ function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
         request,
         new Response(reply.text ?? (reply.json === undefined ? null : JSON.stringify(reply.json)), {
           status: reply.status ?? 200,
+          headers: reply.headers,
         }),
       );
     }),
@@ -2776,6 +2777,376 @@ it.effect("category registration failure never patches message categories", () =
   }),
 );
 
+it.effect("slice49: Graph expanded attachment metadata avoids per-message requests", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      ...mailbox({}),
+      [`GET /me/messages/${raw.id}`]: {
+        json: {
+          ...raw,
+          parentFolderId: "id-inbox",
+          attachments: [
+            { name: "report.pdf", contentType: "application/pdf", size: 4, isInline: false },
+          ],
+        },
+      },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, raw.id));
+    assert.deepStrictEqual(m.attachments, [
+      { filename: "report.pdf", mimeType: "application/pdf", size: 4 },
+    ]);
+    assert.isFalse(http.calls.some((c) => c.url.pathname.endsWith("/attachments")));
+    assert.strictEqual(
+      http.calls.find((c) => c.url.pathname.endsWith(raw.id))?.url.searchParams.get("$expand"),
+      "attachments($select=name,contentType,size,isInline)",
+    );
+  }),
+);
+
+for (const reply of [false, true])
+  it.effect(
+    `slice49: Graph ambiguous ${reply ? "reply" : "new"} send checks Sent without duplicate POST`,
+    () =>
+      Effect.gen(function* () {
+        const http = fakeHttp({
+          "POST /me/sendMail": { status: 503, json: { error: "ambiguous" } },
+          "POST /me/messages/orig/createReply": { json: { id: "prepared" } },
+          "PATCH /me/messages/prepared": { json: {} },
+          "POST /me/messages/prepared/send": { status: 503, json: { error: "ambiguous" } },
+          "GET /me/mailFolders/sentitems/messages": (url) => {
+            assert.match(
+              url.searchParams.get("$filter") ?? "",
+              /^internetMessageId eq '<.+@openmail.local>'$/,
+            );
+            return { json: { value: [{ id: "sent" }] } };
+          },
+        });
+        const result = yield* run(http, (a) =>
+          Effect.gen(function* () {
+            const fiber = yield* a
+              .send(
+                account,
+                { ...draftMessage, attachments: [], mode: reply ? "reply" : "new" },
+                reply ? Option.some({ providerId: "orig", threadId: "thread" }) : Option.none(),
+              )
+              .pipe(Effect.result, Effect.forkChild);
+            yield* TestClock.adjust("35 seconds");
+            return yield* Fiber.join(fiber);
+          }),
+        );
+        assert.strictEqual(result._tag, "Success");
+        assert.strictEqual(
+          http.calls.filter((c) => c.method === "POST" && /\/(send|sendMail)$/.test(c.url.pathname))
+            .length,
+          1,
+        );
+        assert.isFalse(http.calls.some((c) => c.method === "DELETE"));
+        const fields = yield* Schema.decodeUnknownEffect(
+          Schema.Struct({
+            internetMessageId: Schema.optionalKey(Schema.String),
+            message: Schema.optionalKey(Schema.Struct({ internetMessageId: Schema.String })),
+          }),
+        )(http.calls.find((c) => c.method === (reply ? "PATCH" : "POST"))?.body);
+        assert.match(
+          fields.internetMessageId ?? fields.message?.internetMessageId ?? "",
+          /^<.+@openmail.local>$/,
+        );
+      }),
+  );
+
+it.effect("slice49: reply preparation failure deletes its orphan draft without sending", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /me/messages/orig/createReply": { json: { id: "prepared" } },
+      "PATCH /me/messages/prepared": { status: 400 },
+      "DELETE /me/messages/prepared": { status: 204 },
+    });
+    yield* run(http, (a) =>
+      Effect.flip(
+        a.send(
+          account,
+          { ...draftMessage, attachments: [], mode: "reply" },
+          Option.some({ providerId: "orig", threadId: "t" }),
+        ),
+      ),
+    );
+    assert.strictEqual(http.calls.filter((c) => c.method === "DELETE").length, 1);
+    assert.isFalse(http.calls.some((c) => c.url.pathname.endsWith("/send")));
+  }),
+);
+
+for (const date of [false, true])
+  it.effect(`slice49: Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      let requests = 0;
+      const http = fakeHttp({
+        "PATCH /me/messages/m": () =>
+          ++requests === 1
+            ? {
+                status: 429,
+                headers: { "Retry-After": date ? new Date(now + 5000).toUTCString() : "5" },
+              }
+            : { json: {} },
+      });
+      yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const fiber = yield* a
+            .push(account, "m", { kind: "read", value: true })
+            .pipe(Effect.forkChild);
+          yield* TestClock.adjust("2 seconds");
+          assert.strictEqual(requests, 1);
+          yield* TestClock.adjust("3 seconds");
+          yield* Fiber.join(fiber);
+          assert.strictEqual(requests, 2);
+        }),
+      );
+    }),
+  );
+
+it.effect("slice49: Graph shares at most four requests per account across concurrent work", () =>
+  Effect.gen(function* () {
+    let active = 0,
+      peak = 0;
+    const client = HttpClient.make((request) =>
+      Effect.gen(function* () {
+        active++;
+        peak = Math.max(peak, active);
+        yield* Effect.sleep("1 second");
+        active--;
+        return HttpClientResponse.fromWeb(request, new Response(null, { status: 204 }));
+      }),
+    );
+    yield* makeOutlook.pipe(
+      Effect.flatMap((a) =>
+        Effect.gen(function* () {
+          const fiber = yield* Effect.all(
+            Array.from({ length: 12 }, (_, i) =>
+              a.push(account, `m${i}`, { kind: "read", value: true }),
+            ),
+            { concurrency: "unbounded" },
+          ).pipe(Effect.forkChild);
+          yield* TestClock.adjust("4 seconds");
+          yield* Fiber.join(fiber);
+          assert.strictEqual(peak, 4);
+        }),
+      ),
+      Effect.provide(
+        Layer.mergeAll(
+          Layer.succeed(HttpClient.HttpClient, client),
+          MemoryPlatform(platformOptions),
+        ),
+      ),
+    );
+  }),
+);
+
+it.effect("slice49: send transport timeout checks Sent and never replays POST", () =>
+  Effect.gen(function* () {
+    let posts = 0,
+      sentChecks = 0;
+    const client = HttpClient.make((request, url) =>
+      Effect.suspend(() => {
+        if (url.pathname.endsWith("/sendMail")) {
+          posts++;
+          return Effect.fail(
+            new HttpClientError.HttpClientError({
+              reason: new HttpClientError.TransportError({
+                request,
+                description: "timeout after submission",
+              }),
+            }),
+          );
+        }
+        sentChecks++;
+        return Effect.succeed(
+          HttpClientResponse.fromWeb(
+            request,
+            new Response(JSON.stringify({ messages: [], value: [] })),
+          ),
+        );
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const fiber = yield* a
+          .send(account, { ...draftMessage, attachments: [] }, Option.none())
+          .pipe(Effect.result, Effect.forkChild);
+        yield* TestClock.adjust("35 seconds");
+        assert.strictEqual((yield* Fiber.join(fiber))._tag, "Failure");
+      }),
+    );
+    assert.strictEqual(posts, 1);
+    assert.isAtLeast(sentChecks, 6);
+  }),
+);
+
+it.effect("slice49: Graph JSON signed containers use raw MIME for the body", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages/signed": {
+        json: {
+          ...raw,
+          id: "signed",
+          parentFolderId: "id-inbox",
+          internetMessageHeaders: [
+            { name: "Content-Type", value: "application/pkcs7-mime; smime-type=signed-data" },
+          ],
+          body: { contentType: "text", content: "" },
+          attachments: [{ name: "smime.p7m", contentType: "application/pkcs7-mime", size: 100 }],
+        },
+      },
+      "GET /me/messages/signed/attachments": { json: { value: [{ size: 100 }] } },
+      "GET /me/messages/signed/$value": {
+        text: "Content-Type: application/pkcs7-mime; smime-type=signed-data; name=smime.p7m\r\nContent-Transfer-Encoding: base64\r\n\r\nMFEGCSqGSIb3DQEHAqBEMEICAQExADA7BgkqhkiG9w0BBwGgLgQsQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluDQoNCnNpZ25lZCBKU09OIGJvZHk=",
+      },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, "signed"));
+    assert.strictEqual(m.bodyText.trim(), "signed JSON body");
+    assert.deepStrictEqual(
+      m.attachments.map((part) => part.filename),
+      ["smime.p7m"],
+    );
+  }),
+);
+it.effect("slice49: Graph JSON uuencode attachments are listed and fetched from raw MIME", () =>
+  Effect.gen(function* () {
+    const text = "hello\r\nbegin 644 file.txt\r\n#0V%T\r\n`\r\nend\r\n";
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages/uu": {
+        json: {
+          ...raw,
+          id: "uu",
+          parentFolderId: "id-inbox",
+          body: { contentType: "text", content: text },
+          attachments: [],
+        },
+      },
+      "GET /me/messages/uu/attachments": { json: { value: [] } },
+      "GET /me/messages/uu/$value": { text: `Content-Type: text/plain\r\n\r\n${text}` },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const m = yield* a.fetchMessage(account, "uu");
+        assert.strictEqual(m.attachments[0]?.filename, "file.txt");
+        assert.strictEqual(
+          Buffer.from(
+            yield* a.fetchAttachment(account, "uu", {
+              index: 0,
+              filename: "file.txt",
+              occurrence: 0,
+            }),
+          ).toString(),
+          "Cat",
+        );
+      }),
+    );
+  }),
+);
+
+it.effect("slice49-fix: ambiguous reply creation cleans its orphan without sending", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /me/messages/orig/createReply": { status: 503 },
+      "GET /me/mailFolders/drafts/messages": { json: { value: [{ id: "orphan" }] } },
+      "DELETE /me/messages/orphan": { status: 204 },
+    });
+    const result = yield* run(http, (a) =>
+      a
+        .send(
+          account,
+          { ...draftMessage, attachments: [], mode: "reply" },
+          Option.some({ providerId: "orig", threadId: "thread" }),
+        )
+        .pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.ok(
+      http.calls.some((call) => call.method === "DELETE" && call.url.pathname.endsWith("/orphan")),
+    );
+    assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/send")));
+    assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 1);
+  }),
+);
+
+it.effect("slice49-fix: Graph Retry-After dates over sixty seconds release the request", () =>
+  Effect.gen(function* () {
+    const now = yield* Clock.currentTimeMillis;
+    let calls = 0;
+    const http = fakeHttp({
+      "PATCH /me/messages/m": () =>
+        ++calls === 1
+          ? { status: 429, headers: { "Retry-After": new Date(now + 61000).toUTCString() } }
+          : { status: 204 },
+    });
+    const result = yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const fiber = yield* a
+          .push(account, "m", { kind: "read", value: true })
+          .pipe(Effect.result, Effect.forkChild);
+        yield* TestClock.adjust("62 seconds");
+        return yield* Fiber.join(fiber);
+      }),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(calls, 1);
+  }),
+);
+
+it.effect("slice49-fix: oversized opaque Graph MIME falls back without blocking the message", () =>
+  Effect.gen(function* () {
+    const opaque = {
+      ...raw,
+      id: "opaque",
+      parentFolderId: "id-inbox",
+      body: { contentType: "text", content: "Original message" },
+      internetMessageHeaders: [
+        { name: "Content-Type", value: "application/pkcs7-mime; smime-type=signed-data" },
+      ],
+      attachments: [{ name: "smime.p7m", contentType: "application/pkcs7-mime", size: 100 }],
+    };
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages/opaque": { json: opaque },
+      "GET /me/messages/opaque/attachments": { json: { value: [{ size: 100 }] } },
+      "GET /me/messages/opaque/$value": {
+        text: "Content-Type: text/plain\r\n\r\nOversized decoded body",
+        headers: { "Content-Length": String(26 * 1024 * 1024) },
+      },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, "opaque"));
+    assert.strictEqual(m.bodyText, "Original message");
+    assert.strictEqual(m.attachments[0]?.filename, "smime.p7m");
+  }),
+);
+
+it.effect("slice49-fix: Graph signed files preserve the outer JSON message body", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages/invoice": {
+        json: {
+          ...raw,
+          id: "invoice",
+          parentFolderId: "id-inbox",
+          body: { contentType: "text", content: "Invoice enclosed" },
+          internetMessageHeaders: [{ name: "Content-Type", value: "multipart/mixed; boundary=x" }],
+          attachments: [
+            { name: "invoice.pdf.p7m", contentType: "application/pkcs7-mime", size: 100 },
+          ],
+        },
+      },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, "invoice"));
+    assert.strictEqual(m.bodyText, "Invoice enclosed");
+    assert.strictEqual(m.attachments[0]?.filename, "invoice.pdf.p7m");
+    assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/$value")));
+  }),
+);
+
 it.effect(
   "background Outlook pull refuses missing or expired delta without restarting a folder",
   () =>
@@ -2846,15 +3217,18 @@ for (const failure of ["offline", "AbortError"]) {
 it.effect("outlook never retries a send on a dropped connection", () =>
   Effect.gen(function* () {
     let sends = 0;
+    let lookups = 0;
     const client = HttpClient.make((request) =>
       Effect.suspend(() => {
-        if (request.method === "GET")
+        if (request.method === "GET") {
+          lookups++;
           return Effect.succeed(
             HttpClientResponse.fromWeb(
               request,
               new Response(JSON.stringify({ value: [], id: "folder", payload: { headers: [] } })),
             ),
           );
+        }
         sends++;
         return Effect.fail(
           new HttpClientError.HttpClientError({
@@ -2865,22 +3239,27 @@ it.effect("outlook never retries a send on a dropped connection", () =>
     );
     const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
     const error = yield* run(http, (adapter) =>
-      adapter
-        .send(
-          account,
-          {
-            to: [{ name: "Recipient", address: "recipient@example.com" }],
-            cc: [],
-            bcc: [],
-            subject: "Test",
-            text: "Text",
-            attachments: [],
-          },
-          Option.none(),
-        )
-        .pipe(Effect.flip),
+      Effect.gen(function* () {
+        const fiber = yield* adapter
+          .send(
+            account,
+            {
+              to: [{ name: "Recipient", address: "recipient@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Test",
+              text: "Text",
+              attachments: [],
+            },
+            Option.none(),
+          )
+          .pipe(Effect.flip, Effect.forkChild);
+        while ((() => lookups === 0)()) yield* Effect.yieldNow;
+        yield* TestClock.adjust("35 seconds");
+        return yield* Fiber.join(fiber);
+      }),
     );
-    assert.strictEqual(error._tag, "ProviderError");
+    assert.strictEqual(error._tag, "SendUncertain");
     assert.strictEqual(sends, 1);
   }),
 );

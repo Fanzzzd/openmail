@@ -54,6 +54,7 @@ import type {
   ProviderError,
   SettingsScopeMissing,
   ProviderFailure,
+  SendUncertain,
 } from "./errors.js";
 import type {
   InviteResponseRecord,
@@ -248,7 +249,22 @@ export class Store extends Context.Service<
       label: string,
       keep?: readonly string[],
     ): Effect.Effect<void>;
-    deleteAccountMessages(accountId: string, keep?: readonly string[]): Effect.Effect<void>;
+    deleteAccountMessages(
+      accountId: string,
+      keep?: readonly string[],
+      since?: number,
+    ): Effect.Effect<void>;
+    remapProviderIds(
+      accountId: string,
+      mappings: readonly ProviderIdMapping[],
+    ): Effect.Effect<void>;
+    messageIdForProvider(accountId: string, providerId: string): Effect.Effect<string | null>;
+    readonly checkpoint: Effect.Effect<void>;
+    deleteImapFolder(
+      accountId: string,
+      previous: ImapFolderIdentity,
+      keep: readonly string[],
+    ): Effect.Effect<void>;
     /** Threads collapsed to their newest message, or full-text results when `search` is set. */
     readonly wordIndexReady: Effect.Effect<WordIndexState>;
     backfillWordIndex(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
@@ -270,7 +286,11 @@ export class Store extends Context.Service<
       uid: string,
       messageId: string,
     ): Effect.Effect<readonly string[]>;
-    findMessageByRfcId(accountId: string, messageId: string): Effect.Effect<string | null>;
+    findMessageByRfcId(
+      accountId: string,
+      messageId: string,
+      folder?: ImapFolderIdentity,
+    ): Effect.Effect<string | null>;
     getMessage(id: string): Effect.Effect<Message, NotFound>;
     /** Every message of the thread `id` belongs to, oldest first. */
     getThread(id: string): Effect.Effect<Message[], NotFound>;
@@ -340,6 +360,8 @@ export class Store extends Context.Service<
       typeof import("./undo-journal.js").makeUndoStore
     >["deleteUndoJournal"];
 
+    sendUncertain(id: string): Effect.Effect<boolean>;
+    setSendUncertain(id: string, value: boolean): Effect.Effect<void>;
     readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
     putQueuedSend(item: import("./mobile-outbox.js").QueuedSend): Effect.Effect<void>;
     deleteQueuedSend(id: string): Effect.Effect<void>;
@@ -508,7 +530,30 @@ export class Store extends Context.Service<
  * to the store as it arrives; a `Cursor` is a checkpoint: everything before
  * it has landed, so a sync cut short resumes from there.
  */
+export interface ProviderIdMapping {
+  readonly from: string;
+  readonly to: string;
+}
+export interface ImapFolderIdentity {
+  readonly path: string;
+  readonly uidValidity: string;
+}
 export type Change =
+  | {
+      readonly _tag: "RebuildFolder";
+      readonly previous: ImapFolderIdentity;
+      readonly keep: readonly string[];
+    }
+  | {
+      readonly _tag: "Remap";
+      readonly message: IncomingMessage;
+      readonly previous: ImapFolderIdentity;
+    }
+  | {
+      readonly _tag: "MessageLabels";
+      readonly providerId: string;
+      readonly labels: readonly string[];
+    }
   | { readonly _tag: "Upsert"; readonly message: IncomingMessage }
   | { readonly _tag: "Delete"; readonly providerId: string }
   /** Only the read and starred state changed; cheaper than an Upsert of the whole message. */
@@ -521,7 +566,7 @@ export type Change =
   /** Drop local messages carrying this label, preserving IDs delivered by a completed restart. */
   | { readonly _tag: "DeleteLabel"; readonly label: string; readonly keep?: readonly string[] }
   /** Drop local account messages, preserving IDs delivered by a completed reset. */
-  | { readonly _tag: "Reset"; readonly keep?: readonly string[] }
+  | { readonly _tag: "Reset"; readonly keep?: readonly string[]; readonly since?: number }
   | { readonly _tag: "BackfillReset" }
   | { readonly _tag: "Labels"; readonly labels: readonly Omit<Label, "accountId">[] }
   | { readonly _tag: "Progress"; readonly fetched: number; readonly total: number }
@@ -556,6 +601,8 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  /** Close local pooled resources on account changes or app background. */
+  closeSessions?(accountId?: string): Effect.Effect<void>;
   watchInbox?(
     this: void,
     account: Account,
@@ -656,14 +703,18 @@ export interface ProviderAdapter {
     scope?: "inbox",
     incrementalOnly?: boolean,
   ): Stream.Stream<Change, ProviderFailure>;
-  push(account: Account, providerId: string, op: MailOp): Effect.Effect<void, ProviderFailure>;
-  /** Gmail label operations; callers cap each request at 1000 IDs. */
+  push(
+    account: Account,
+    providerId: string,
+    op: MailOp,
+  ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
+  /** Folder/label operations; callers cap each request at 1000 IDs. */
   pushBatch?(
     this: void,
     account: Account,
     providerIds: readonly string[],
     op: MailOp,
-  ): Effect.Effect<void, ProviderFailure>;
+  ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The
    * adapter fetches its threading headers from the provider.
@@ -672,7 +723,7 @@ export interface ProviderAdapter {
     account: Account,
     message: OutgoingMessage,
     original: Option.Option<{ providerId: string; threadId: string }>,
-  ): Effect.Effect<void, ProviderFailure>;
+  ): Effect.Effect<void, ProviderFailure | SendUncertain>;
   /**
    * Creates the provider's copy of a draft (`remote` null) or replaces it.
    * Returns where it lives now; Gmail and IMAP give it a new message id on

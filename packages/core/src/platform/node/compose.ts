@@ -11,7 +11,8 @@ const format = (a: Address) => (a.name ? { name: a.name, address: a.address } : 
 
 /** Threading headers of the message being replied to or forwarded. */
 export interface Threading {
-  readonly messageId?: string | undefined;
+  readonly messageId?: string;
+  openmailId?: string | undefined;
   readonly references?: string | undefined;
 }
 
@@ -27,7 +28,7 @@ export const buildMime = Effect.fnUntraced(function* (
   from: Address,
   message: OutgoingMessage,
   threading: Threading = {},
-  options: { draft?: boolean } = {},
+  options: { draft?: boolean; messageId?: string; openmailId?: string } = {},
 ): Effect.fn.Return<Buffer, PermanentError> {
   const replying = message.mode === "reply" || message.mode === "replyAll";
   const references = [threading.references, threading.messageId].filter(Boolean).join(" ");
@@ -37,15 +38,17 @@ export const buildMime = Effect.fnUntraced(function* (
     cc: message.cc.map(format),
     bcc: message.bcc.map(format),
     subject: message.subject,
-    ...(options.draft && message.markdown
-      ? {
-          headers: {
+    ...(options.messageId ? { messageId: options.messageId } : {}),
+    headers: {
+      ...(options.openmailId ? { "X-OpenMail-Id": options.openmailId } : {}),
+      ...(options.draft && message.markdown
+        ? {
             "X-Openmail-Markdown": "1",
             "X-Openmail-Markdown-Body-SHA256": markdownDraftSource(message.text).bodyFingerprint,
             "X-Openmail-Markdown-Source-SHA256": draftTextFingerprint(message.text),
-          },
-        }
-      : {}),
+          }
+        : {}),
+    },
     text: message.text,
     ...(message.html ? { html: htmlDocument(composeTransportHtml(message) ?? "") } : {}),
     ...(message.calendar ? { icalEvent: message.calendar } : {}),

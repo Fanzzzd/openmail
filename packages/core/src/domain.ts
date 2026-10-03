@@ -213,6 +213,7 @@ export type Message = typeof Message.Type;
 
 /** A message as a provider hands it over, keyed by the provider's own id. */
 export const IncomingMessage = Schema.Struct({
+  parentRfcMessageId: Schema.optionalKey(Schema.String),
   providerId: Schema.String,
   threadId: Schema.String,
   subject: Schema.String,
@@ -509,6 +510,7 @@ export type DraftInput = typeof DraftInput.Type;
 
 /** Where the provider keeps a draft. Gmail has a draft id; Outlook and IMAP only a message id. */
 export const DraftRemote = Schema.Struct({
+  conflict: Schema.optionalKey(Schema.Boolean),
   draftId: Schema.NullOr(Schema.String),
   messageId: Schema.NullOr(Schema.String),
 });
@@ -522,7 +524,11 @@ export const DraftOp = Schema.Union([
 ]);
 export type DraftOp = typeof DraftOp.Type;
 
-export const QueuedOp = Schema.Union([MailOp, DraftOp]);
+export const QueuedOp = Schema.Union([
+  MailOp,
+  DraftOp,
+  Schema.Struct({ kind: Schema.Literal("reconcile") }),
+]);
 export type QueuedOp = typeof QueuedOp.Type;
 
 // Compose settings
@@ -835,6 +841,7 @@ export const Command = Schema.Union([
   }),
   Schema.Struct({
     kind: Schema.Literal("send"),
+    confirmResend: Schema.optionalKey(Schema.Boolean),
     accountId: Schema.String,
     message: OutgoingMessage,
     /** The saved draft this sends. It is removed locally and on the provider once sent. */

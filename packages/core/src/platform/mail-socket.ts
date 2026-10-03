@@ -252,10 +252,19 @@ export class ImapWire {
       ),
     );
   }
+  uidNext: number | undefined;
+  highestModseq: string | undefined;
   async select(path: string, validity?: string, readOnly = true) {
     const responses = await this.command(
       `${readOnly ? "EXAMINE" : "SELECT"} ${mailQuote(encodeFolder(path))}`,
     );
+    this.uidNext = responses
+      .map((r) => /\[UIDNEXT (\d+)\]/i.exec(r.text)?.[1])
+      .filter(Boolean)
+      .map(Number)[0];
+    this.highestModseq = responses
+      .map((r) => /\[HIGHESTMODSEQ (\d+)\]/i.exec(r.text)?.[1])
+      .find(Boolean);
     const found = responses.map((r) => /\[UIDVALIDITY (\d+)\]/i.exec(r.text)?.[1]).find(Boolean);
     if (!found || (validity !== undefined && validity !== found))
       throw new Error("IMAP UIDVALIDITY changed");

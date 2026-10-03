@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "Переслать"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Вы проверили «Отправленные» и убедились, что это сообщение не отправлено?"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "Скрывать содержимое на экране блокировки"
@@ -638,6 +643,11 @@ msgstr "Действия смахивания"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Язык системы"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Возможно, это сообщение уже отправлено. Проверьте «Отправленные», прежде чем отправлять его снова."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

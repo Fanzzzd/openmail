@@ -1,3 +1,4 @@
+import { compatibleMime, normalizeMimeCharsets } from "../mime-compat.js";
 import PostalMime, { type Address } from "postal-mime";
 import { Layer } from "effect";
 import { buildMobileMime } from "./compose.js";
@@ -7,9 +8,9 @@ const addresses = (value: readonly Address[]): MimeAddresses => ({
   value,
   text: value.map((address) => address.address ?? address.name).join(", "),
 });
-export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
+async function parsePortableMime(raw: Uint8Array): Promise<MimeMessage> {
   if (raw.byteLength > 25 * 1024 * 1024) throw new Error("Mobile MIME exceeds 25 MiB");
-  const email = await PostalMime.parse(raw, {
+  const email = await PostalMime.parse(normalizeMimeCharsets(raw), {
     attachmentEncoding: "arraybuffer",
     forceRfc822Attachments: true,
     maxNestingDepth: 32,
@@ -50,6 +51,9 @@ export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
       };
     }),
   };
+}
+export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
+  return compatibleMime(await parsePortableMime(raw), parsePortableMime, raw);
 }
 /** Portable reader and send MIME, with the shared compose transport sanitizer. */
 export const mobileMailCodecLayer = Layer.succeed(MailCodec, {

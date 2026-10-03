@@ -1,31 +1,51 @@
 import { visibleHtmlText } from "./visible-text.js";
 import { Buffer } from "./platform/bytes.js";
 import { Result } from "effect";
+import { TextDecoder } from "./platform/text-decoder.js";
 
 import type { Address } from "./domain.js";
 import { isEmailAddress, splitAddresses } from "./recipients.js";
 
 /** Decodes RFC 2047 encoded-words (`=?GBK?B?...?=`) that providers leave in headers. */
 export function decodeHeader(value: string): string {
-  return value
-    .replace(/\?=\s+=\?/g, "?==?")
-    .replace(
-      /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g,
-      (_whole, charset: string, enc: string, text: string) => {
-        const bytes =
-          enc.toUpperCase() === "B"
-            ? Buffer.from(text, "base64")
-            : Buffer.from(
-                text
-                  .replaceAll("_", " ")
-                  .replace(/=([0-9A-Fa-f]{2})/g, (_, hex: string) =>
-                    String.fromCharCode(parseInt(hex, 16)),
-                  ),
-                "latin1",
-              );
-        return decodeBytes(bytes, charset);
-      },
-    );
+  const word = /=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g;
+  const matches = [...value.matchAll(word)];
+  let out = "";
+  let end = 0;
+  for (let i = 0; i < matches.length; i++) {
+    const first = matches[i]!;
+    const gap = value.slice(end, first.index);
+    out += i && /^\s*$/.test(gap) ? "" : gap;
+    const charset = first[1]!;
+    const chunks: Uint8Array[] = [];
+    for (;;) {
+      const match = matches[i]!;
+      const text = match[3]!;
+      chunks.push(
+        match[2]!.toUpperCase() === "B"
+          ? Buffer.from(text, "base64")
+          : Buffer.from(
+              text
+                .replaceAll("_", " ")
+                .replace(/=([0-9A-Fa-f]{2})/g, (_, hex: string) =>
+                  String.fromCharCode(parseInt(hex, 16)),
+                ),
+              "latin1",
+            ),
+      );
+      end = match.index + match[0].length;
+      const next = matches[i + 1];
+      if (
+        !next ||
+        next[1]!.toLowerCase() !== charset.toLowerCase() ||
+        !/^\s*$/.test(value.slice(end, next.index))
+      )
+        break;
+      i++;
+    }
+    out += decodeBytes(Buffer.concat(chunks), charset);
+  }
+  return out + value.slice(end);
 }
 
 /**

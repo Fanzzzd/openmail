@@ -449,10 +449,9 @@ export const makeBatchMailbox = (
                 }
                 for (const reminder of back.reminders) {
                   const members = (yield* Effect.forEach(reminder.members, (member) =>
-                    store.messageRef(`${reminder.accountId}/${member.providerId}`).pipe(
-                      Effect.option,
-                      Effect.map((ref) => (Option.isSome(ref) ? [member] : [])),
-                    ),
+                    store
+                      .messageIdForProvider(reminder.accountId, member.providerId)
+                      .pipe(Effect.map((id) => (id ? [member] : []))),
                   )).flat();
                   if (members.length) yield* store.restoreReminder({ ...reminder, members });
                 }

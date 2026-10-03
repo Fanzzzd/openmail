@@ -2130,6 +2130,11 @@ msgstr "Obsahuje přílohu"
 msgid "Has words"
 msgstr "Obsahuje slova"
 
+#. Sent means the Sent mailbox.
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Zkontrolovali jste složku „Odeslané“ a ověřili, že tato zpráva nebyla odeslána?"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "Záhlaví zprávy"
@@ -4844,6 +4849,11 @@ msgstr "Tato schůzka byla zrušena"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Tento odkaz na schůzku není podporován."
+
+#. Sent means the Sent mailbox.
+#: src/renderer/src/errors.ts
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Tato zpráva již mohla být odeslána. Před dalším odesláním zkontrolujte složku „Odeslané“."
 
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."

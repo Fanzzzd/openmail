@@ -198,6 +198,7 @@ export function makeComposeStore(
     run(sql`UPDATE drafts SET pushed_organization = ${key} WHERE id = ${id}`);
 
   const deleteDraft = Effect.fn("Store.deleteDraft")(function* (id: string) {
+    yield* run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`);
     yield* run(sql`DELETE FROM drafts WHERE id = ${id}`);
     // A push already running (claimed) finds the draft gone and removes its copy.
     yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);

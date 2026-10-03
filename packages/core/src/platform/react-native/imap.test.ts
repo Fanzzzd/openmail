@@ -8,11 +8,11 @@ import {
   encodeFolder,
   decodeFolder,
 } from "../mail-socket.js";
-import { fetchFields, makeMobileImap, smtpSession } from "./imap.js";
-import { mobileMailCodecLayer } from "./mail-codec.js";
+import { fetchFields, makeMobileImap, mobileIncoming, smtpSession } from "./imap.js";
+import { parseMobileMime, mobileMailCodecLayer } from "./mail-codec.js";
 import { MemoryPlatform } from "../node/platform-memory.js";
 import { StoreLive } from "../../store.js";
-import { Providers, Secrets } from "../../services.js";
+import { Providers, Secrets, Store } from "../../services.js";
 import { MailboxLive } from "../../mailbox-live.js";
 import { Mailbox } from "../../mailbox.js";
 import { Buffer } from "../bytes.js";
@@ -93,6 +93,10 @@ class ScriptSocket implements MailSocket {
 function server(
   options: {
     tls?: boolean;
+    noMove?: boolean;
+    noUidplus?: boolean;
+    copyUid?: boolean;
+    copyUidResponse?: string;
     authReject?: boolean;
     noStarttls?: boolean;
     validity?: string;
@@ -158,7 +162,7 @@ function server(
           const done = () => current.enqueue(`${tag} OK done\r\n`);
           if (command === "CAPABILITY") {
             current.enqueue(
-              `* CAPABILITY IMAP4rev1 UIDPLUS MOVE ID ${options.noStarttls ? "" : "STARTTLS"}\r\n`,
+              `* CAPABILITY IMAP4rev1 ${options.noUidplus ? "" : "UIDPLUS"} ${options.noMove ? "" : "MOVE"} ID ${options.noStarttls ? "" : "STARTTLS"}\r\n`,
             );
             done();
           } else if (command === "STARTTLS") done();
@@ -200,6 +204,10 @@ function server(
             if (command.includes("\\Seen")) seen = command.includes("+FLAGS");
             if (command.includes("\\Flagged")) starred = command.includes("+FLAGS");
             done();
+          } else if (command.startsWith("UID COPY")) {
+            current.enqueue(
+              `${tag} OK${options.copyUidResponse ? ` [COPYUID ${options.copyUidResponse}]` : options.copyUid ? " [COPYUID 11 1 4]" : ""} copied\r\n`,
+            );
           } else if (command.startsWith("UID MOVE")) {
             exists = false;
             done();
@@ -609,6 +617,137 @@ it("SMTP DATA writes a large body in bounded chunks and waits for the final acce
   expect(delivered).not.toContain("Bcc:");
   expect(delivered).toContain("\r\n..dot\r\n");
   expect(accepted).toBe(true);
+});
+
+it("slice49: mobile pushes reuse one connection and preserve COPYUID without unsafe EXPUNGE", async () => {
+  const test = server({ noMove: true, noUidplus: true, copyUid: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const provider = (yield* Providers).get("imap");
+        const before = test.sockets.length;
+        yield* provider.push(account, "9:1:INBOX", { kind: "read", value: true });
+        const moved = yield* provider.push(account, "9:1:INBOX", {
+          kind: "move",
+          labelId: "Projects",
+          removeLabelId: "INBOX",
+        });
+        expect(test.sockets.length - before).toBe(1);
+        expect(moved).toEqual([{ from: "9:1:INBOX", to: "11:4:Projects" }]);
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("UID COPY"))).toBe(true);
+    expect(test.commands.some((c) => /EXPUNGE/.test(c))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice49: mobile custom Office365 SMTP infers the server's Sent copy", async () => {
+  const test = server();
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        if (!account.imap) throw new Error("Missing settings");
+        const provider = (yield* Providers).get("imap");
+        yield* provider.send(
+          {
+            ...account,
+            imap: { ...account.imap, preset: "custom", smtpHost: "smtp.office365.com" },
+          },
+          {
+            to: [{ name: "", address: "bob@example.test" }],
+            cc: [],
+            bcc: [],
+            subject: "Test",
+            text: "hello",
+            attachments: [],
+          },
+          Option.none(),
+        );
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("HEADER Message-ID"))).toBe(true);
+    expect(test.commands.some((c) => c.includes("APPEND"))).toBe(false);
+    expect(test.delivered).toHaveLength(1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice49-fix: a successful mobile move tolerates malformed COPYUID metadata", async () => {
+  const test = server({ noMove: true, noUidplus: true, copyUidResponse: "11 1 4:3" });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const provider = (yield* Providers).get("imap");
+        yield* provider.push(account, "9:1:INBOX", {
+          kind: "move",
+          labelId: "Projects",
+          removeLabelId: "INBOX",
+        });
+      }),
+    );
+    expect(test.commands.some((command) => command.includes("UID COPY"))).toBe(true);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice49-fix: mobile rebuilds remap rows that backfill did not put in the cursor", async () => {
+  const test = server();
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const store = yield* Store;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const cached = mobileIncoming(
+          yield* Effect.promise(() => parseMobileMime(raw)),
+          { path: "INBOX", label: "INBOX", name: "Inbox" },
+          "6",
+          99,
+          [],
+          raw.length,
+        );
+        yield* store.upsertMessage(account.id, cached);
+        yield* store.saveSyncCursor(
+          account.id,
+          JSON.stringify({
+            folders: {
+              INBOX: { uidValidity: "6", lastUid: 99, uids: "1", unread: "1", starred: "" },
+            },
+          }),
+        );
+        yield* mailbox.sync();
+        expect((yield* store.messageRef(`${account.id}/6:99:INBOX`)).providerId).toBe("9:1:INBOX");
+        expect(yield* store.messageIdForProvider(account.id, "9:1:INBOX")).toBe(
+          `${account.id}/6:99:INBOX`,
+        );
+      }),
+    );
+    expect(test.commands.some((command) => command.includes("UID SEARCH ALL"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
 });
 
 it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before fetching history", async () => {

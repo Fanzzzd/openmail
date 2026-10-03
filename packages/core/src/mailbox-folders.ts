@@ -70,7 +70,11 @@ export function makeFolderMailbox(
     );
   const ready = (accountIds: readonly string[]) =>
     Effect.gen(function* () {
-      if ((yield* store.listPendingOps).some((op) => accountIds.includes(op.accountId)))
+      if (
+        (yield* store.listPendingOps).some(
+          (op) => op.op.kind !== "reconcile" && accountIds.includes(op.accountId),
+        )
+      )
         yield* new InvalidInput({
           message: "Wait for pending changes to sync before changing the folder.",
         });
@@ -140,7 +144,7 @@ export function makeFolderMailbox(
             const eligible = (yield* Effect.forEach(batch, (id) =>
               Effect.gen(function* () {
                 if (
-                  (yield* store.hasMessage(`${account.id}/${id}`)) &&
+                  (yield* store.messageIdForProvider(account.id, id)) &&
                   !(yield* store.messageLabels(account.id, id)).some((label) =>
                     folderLabels.includes(label),
                   )
@@ -275,9 +279,20 @@ export function makeFolderMailbox(
                 providers.get(account.provider).markReadBatch(account, batch),
               );
               yield* store.transaction(
-                Effect.forEach(batch, (id) => store.applyLocalOp(`${account.id}/${id}`, op), {
-                  discard: true,
-                }),
+                Effect.forEach(
+                  batch,
+                  (id) =>
+                    store
+                      .messageIdForProvider(account.id, id)
+                      .pipe(
+                        Effect.flatMap((local) =>
+                          local ? store.applyLocalOp(local, op) : Effect.void,
+                        ),
+                      ),
+                  {
+                    discard: true,
+                  },
+                ),
               );
               yield* audit(account.id, "markFolderRead", batch.length);
               yield* changed;

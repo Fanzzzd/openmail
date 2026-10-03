@@ -28,14 +28,22 @@ export function uidSet(uids: Iterable<number>): string {
 }
 
 /** Inverse of `uidSet`. */
-export function parseUidSet(set: string): number[] {
+export function parseUidSet(set: string, limit = 1000000): number[] {
   const out: number[] = [];
   for (const part of set.split(",")) {
     if (!part) continue;
     const [a, b] = part.split(":").map(Number);
-    if (a === undefined || !Number.isFinite(a)) continue;
-    const end = b !== undefined && Number.isFinite(b) ? b : a;
-    for (let n = a; n <= end; n++) out.push(n);
+    if (
+      a === undefined ||
+      !Number.isSafeInteger(a) ||
+      a < 1 ||
+      (b !== undefined && (!Number.isSafeInteger(b) || b < 1))
+    )
+      return [];
+    const end = b ?? a;
+    if (out.length + Math.abs(end - a) + 1 > limit) return [];
+    const step = end >= a ? 1 : -1;
+    for (let n = a; step > 0 ? n <= end : n >= end; n += step) out.push(n);
   }
   return out;
 }
@@ -53,6 +61,8 @@ export interface FolderCursor {
   lastUid: number;
   /** HIGHESTMODSEQ at the last sync, when the server has CONDSTORE. */
   modseq?: string;
+  /** Last complete flag scan on servers without CONDSTORE. */
+  flagScanAt?: number;
   /** UIDs reported to the store, as an IMAP sequence set. */
   uids: string;
   /** The subset of `uids` without \Seen. */
@@ -96,6 +106,9 @@ export function readCursor(raw: Option.Option<string>): ImapCursor {
       folders[path] = {
         uidValidity: f.uidValidity,
         lastUid: f.lastUid,
+        ...("flagScanAt" in f && Predicate.isNumber(f.flagScanAt)
+          ? { flagScanAt: f.flagScanAt }
+          : {}),
         uids: f.uids,
         unread: text("unread") ?? "",
         starred: text("starred") ?? "",
@@ -113,6 +126,7 @@ export function readCursor(raw: Option.Option<string>): ImapCursor {
  */
 export class FolderState {
   readonly flags = new Map<number, Flags>();
+  flagScanAt: number | undefined;
   constructor(
     readonly uidValidity: string,
     public lastUid: number,
@@ -121,6 +135,7 @@ export class FolderState {
 
   static from(c: FolderCursor): FolderState {
     const state = new FolderState(c.uidValidity, c.lastUid, c.modseq);
+    state.flagScanAt = c.flagScanAt;
     const unread = new Set(parseUidSet(c.unread));
     const starred = new Set(parseUidSet(c.starred));
     for (const uid of parseUidSet(c.uids)) {
@@ -167,6 +182,7 @@ export class FolderState {
     const uids = [...this.flags.keys()];
     return {
       uidValidity: this.uidValidity,
+      ...(this.flagScanAt === undefined ? {} : { flagScanAt: this.flagScanAt }),
       lastUid: this.lastUid,
       ...(this.modseq ? { modseq: this.modseq } : {}),
       uids: uidSet(uids),

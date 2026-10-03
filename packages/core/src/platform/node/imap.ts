@@ -1,5 +1,7 @@
 import { messageSecurity } from "../../message-security.js";
-import { MailCodec } from "../mail-codec.js";
+import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
+import { nodeMailCodec } from "./mail-codec.js";
+import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
   encodeProviderId,
   decodeProviderId,
@@ -21,9 +23,20 @@ export {
 } from "../../imap-cursor.js";
 import { watchImapInbox, IDLE_RENEW_MS } from "./imap-idle.js";
 import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../../folder-actions.js";
-import { Clock, Effect, Option, Predicate, Queue, Schema, Stream } from "effect";
+import {
+  Clock,
+  Effect,
+  Exit,
+  Option,
+  Predicate,
+  Queue,
+  Schema,
+  Scope,
+  Semaphore,
+  Stream,
+} from "effect";
 import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapflow";
-import { type AddressObject, type ParsedMail, simpleParser } from "mailparser";
+import { type AddressObject } from "mailparser";
 import { createTransport } from "nodemailer";
 
 import { attachmentFromRaw, MEDIA_RAW_TOO_LARGE } from "../../attachments.js";
@@ -45,7 +58,6 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "../../errors.js";
-import { IMAP_PRESETS } from "../../imap-presets.js";
 import { htmlToText } from "../../mime.js";
 import {
   type Change,
@@ -89,7 +101,6 @@ const VIRTUAL = new Set(["\\All", "\\Flagged"]);
 // Settings
 
 export { resolveImapSettings } from "../../imap-settings.js";
-import { resolveImapSettings } from "../../imap-settings.js";
 
 // Errors
 
@@ -329,7 +340,7 @@ export function folderLabels(label: string, flags: Set<string> | undefined): str
 }
 
 export function toIncoming(
-  parsed: ParsedMail,
+  parsed: MimeMessage,
   meta: {
     providerId: string;
     authservId?: string | null;
@@ -349,12 +360,15 @@ export function toIncoming(
   return {
     providerId: meta.providerId,
     threadId: threadIdOf(parsed) ?? meta.providerId,
+    ...(!messageIds(parsed.references).length && parsed.inReplyTo
+      ? { parentRfcMessageId: messageIds(parsed.inReplyTo)[0] }
+      : {}),
     subject: parsed.subject ?? "",
-    from: addresses(parsed.from)[0] ?? { name: "", address: "" },
-    to: addresses(parsed.to),
-    cc: addresses(parsed.cc),
-    bcc: addresses(parsed.bcc),
-    headers: parsed.headerLines.map((h) => ({
+    from: mimeAddresses(parsed.from)[0] ?? { name: "", address: "" },
+    to: mimeAddresses(parsed.to),
+    cc: mimeAddresses(parsed.cc),
+    bcc: mimeAddresses(parsed.bcc),
+    headers: (parsed.headerLines ?? []).map((h) => ({
       name: h.key.toLowerCase(),
       value: h.line
         .slice(h.line.indexOf(":") + 1)
@@ -363,13 +377,13 @@ export function toIncoming(
     })),
     ...(parsed.messageId ? { rfcMessageId: parsed.messageId } : {}),
     ...(meta.size !== undefined ? { size: meta.size } : {}),
-    replyTo: addresses(parsed.replyTo),
+    replyTo: mimeAddresses(parsed.replyTo),
     date: Number.isFinite(received) ? received : (parsed.date?.getTime() ?? 0),
     snippet: text.replace(/\s+/g, " ").trim().slice(0, 200),
     bodyText: text,
     bodyHtml: html,
     security: messageSecurity(
-      parsed.headerLines.map((h) => ({
+      (parsed.headerLines ?? []).map((h) => ({
         name: h.key,
         value: h.line.slice(h.line.indexOf(":") + 1).trim(),
       })),
@@ -444,7 +458,7 @@ export const fetchMessages = Effect.fnUntraced(function* (
           const source = m.source;
           if (!source) return;
           const parsed = yield* Effect.tryPromise({
-            try: () => simpleParser(source, { skipImageLinks: true }),
+            try: () => nodeMailCodec.parse(new Uint8Array(source), { skipImageLinks: true }),
             catch: (error) =>
               new ProviderError({ message: `Cannot parse message ${m.uid}: ${describe(error)}` }),
           });
@@ -531,7 +545,13 @@ const runPull = Effect.fnUntraced(function* (
   });
 
   // Pass 1: new UIDs per folder, so progress has a total.
-  const plans: { folder: SyncFolder; newUids: number[] }[] = [];
+  const plans: {
+    folder: SyncFolder;
+    newUids: number[];
+    uidNext: number;
+    validity: string;
+    regressed: boolean;
+  }[] = [];
   for (const folder of folders) {
     const opened = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true })).pipe(
       Effect.map(Option.some),
@@ -541,8 +561,10 @@ const runPull = Effect.fnUntraced(function* (
     if (Option.isNone(opened)) continue;
     const mailbox = opened.value;
     const old = prev.folders[folder.path];
+    const regressed =
+      !!old && old.uidValidity === String(mailbox.uidValidity) && mailbox.uidNext < old.lastUid + 1;
     let newUids: number[];
-    if (!old || old.uidValidity !== String(mailbox.uidValidity)) {
+    if (!old || regressed || old.uidValidity !== String(mailbox.uidValidity)) {
       const since = new Date(now - INITIAL_DAYS * 86_400_000);
       const found = mailbox.exists ? yield* call(s, (c) => c.search({ since }, { uid: true })) : [];
       newUids = (found || []).toSorted((a, b) => b - a).slice(0, FOLDER_LIMIT);
@@ -554,22 +576,52 @@ const runPull = Effect.fnUntraced(function* (
           : [];
       newUids = (found || []).filter((u) => u > lastUid);
     }
-    plans.push({ folder, newUids });
+    plans.push({
+      folder,
+      newUids: newUids.toSorted((a, b) => a - b),
+      uidNext: mailbox.uidNext,
+      validity: String(mailbox.uidValidity),
+      regressed,
+    });
   }
   const total = plans.reduce((n, p) => n + p.newUids.length, 0);
   let fetched = 0;
 
   // Pass 2: per folder, deletions and flag changes, then new mail, then a checkpoint.
-  for (const { folder, newUids } of plans) {
+  for (const plan of plans) {
+    const { folder } = plan;
+    let { regressed } = plan;
+    let { newUids, uidNext } = plan;
     const mailbox = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
     const uidValidity = String(mailbox.uidValidity);
     const highest = mailbox.highestModseq;
     let old = prev.folders[folder.path];
     if (!old || old.uidValidity !== uidValidity) yield* emit({ _tag: "BackfillReset" });
-    if (old && old.uidValidity !== uidValidity) {
-      yield* dropFolder(folder.path, old);
-      old = undefined;
+    const rebuilt = old && old.uidValidity !== uidValidity ? old : undefined;
+    if (old?.uidValidity === uidValidity && mailbox.uidNext < old.lastUid + 1 && !regressed) {
+      regressed = true;
+      const found = yield* call(s, (c) =>
+        c.search({ since: new Date(now - INITIAL_DAYS * 86400000) }, { uid: true }),
+      );
+      newUids = (found || [])
+        .toSorted((a, b) => b - a)
+        .slice(0, FOLDER_LIMIT)
+        .toSorted((a, b) => a - b);
+      uidNext = mailbox.uidNext;
     }
+    if (uidValidity !== plan.validity) {
+      const found = yield* call(s, (c) =>
+        c.search({ since: new Date(now - INITIAL_DAYS * 86400000) }, { uid: true }),
+      );
+      newUids = (found || [])
+        .toSorted((a, b) => b - a)
+        .slice(0, FOLDER_LIMIT)
+        .toSorted((a, b) => a - b);
+      uidNext = mailbox.uidNext;
+    }
+    if (rebuilt || regressed) old = undefined;
+    const previousFolder = { path: folder.path, uidValidity: rebuilt?.uidValidity ?? uidValidity };
+    if (regressed) yield* emit({ _tag: "BackfillReset" });
     const state = old ? FolderState.from(old) : new FolderState(uidValidity, 0, undefined);
 
     if (old) {
@@ -577,7 +629,18 @@ const runPull = Effect.fnUntraced(function* (
       const present = new Set<number>();
       const current = new Map<number, Flags>();
       const since =
-        condstore && old.modseq && highest !== undefined ? BigInt(old.modseq) : undefined;
+        condstore &&
+        old.modseq &&
+        highest !== undefined &&
+        highest >= BigInt(old.modseq) &&
+        !regressed
+          ? BigInt(old.modseq)
+          : undefined;
+      const scan =
+        condstore ||
+        regressed ||
+        state.flagScanAt === undefined ||
+        now - state.flagScanAt >= 10 * 60 * 1000;
       for (let i = 0; i < known.length; i += FLAG_BATCH) {
         const range = uidSet(known.slice(i, i + FLAG_BATCH));
         if (since !== undefined) {
@@ -590,7 +653,7 @@ const runPull = Effect.fnUntraced(function* (
             );
             for (const m of changed) current.set(m.uid, flagsOf(m.flags));
           }
-        } else {
+        } else if (scan) {
           const all = yield* call(s, (c) =>
             c.fetchAll(range, { uid: true, flags: true }, { uid: true }),
           );
@@ -600,20 +663,33 @@ const runPull = Effect.fnUntraced(function* (
           }
         }
       }
+      if (!scan) {
+        for (const uid of known) present.add(uid);
+      } else state.flagScanAt = now;
       for (const change of state.reconcile(folder.path, present, current)) yield* emit(change);
     }
 
     for (let i = 0; i < newUids.length; i += FETCH_BATCH) {
       const batch = newUids.slice(i, i + FETCH_BATCH);
       for (const m of yield* fetchMessages(s, folder, uidValidity, batch)) {
-        yield* emit({ _tag: "Upsert", message: m.message });
+        yield* emit(
+          rebuilt || regressed
+            ? { _tag: "Remap", message: m.message, previous: previousFolder }
+            : { _tag: "Upsert", message: m.message },
+        );
         state.flags.set(m.uid, m.flags);
       }
       fetched += batch.length;
       yield* emit({ _tag: "Progress", fetched, total });
     }
 
-    state.lastUid = Math.max(state.lastUid, mailbox.uidNext - 1, ...newUids);
+    if (rebuilt || regressed)
+      yield* emit({
+        _tag: "RebuildFolder",
+        previous: previousFolder,
+        keep: newUids.map((uid) => encodeProviderId(folder.path, uidValidity, uid)),
+      });
+    state.lastUid = Math.max(regressed ? 0 : state.lastUid, uidNext - 1, ...newUids);
     state.modseq = highest !== undefined ? String(highest) : undefined;
     next.folders[folder.path] = state.toCursor();
     yield* checkpoint();
@@ -649,16 +725,36 @@ const ensureFolder = Effect.fnUntraced(function* (
   return (yield* call(s, (c) => c.mailboxCreate(name))).path;
 });
 
-const moveTo = Effect.fnUntraced(function* (s: Session, uid: number, from: string, to: string) {
-  if (from === to) return;
-  const moved = yield* call(s, (c) => c.messageMove(String(uid), to, { uid: true }));
-  if (!moved) yield* new ProviderError({ message: `Moving the message to ${to} failed` });
+const moveTo = Effect.fnUntraced(function* (
+  s: Session,
+  uids: readonly number[],
+  from: string,
+  validity: string,
+  to: string,
+) {
+  if (from === to) return [];
+  const range = uidSet(uids);
+  const moved = yield* call(s, async (c) => {
+    if (c.capabilities.has("MOVE") || c.capabilities.has("UIDPLUS"))
+      return c.messageMove(range, to, { uid: true });
+    const copied = await c.messageCopy(range, to, { uid: true });
+    if (copied) await c.messageFlagsAdd(range, ["\\Deleted"], { uid: true });
+    return copied;
+  });
+  if (!moved) return yield* new ProviderError({ message: `Moving the message to ${to} failed` });
+  return moved.uidValidity !== undefined && moved.uidMap
+    ? [...moved.uidMap].map(([oldUid, newUid]) => ({
+        from: encodeProviderId(from, validity, oldUid),
+        to: encodeProviderId(to, moved.uidValidity!, newUid),
+      }))
+    : [];
 });
 
 const applyOp = Effect.fnUntraced(function* (
   s: Session,
   ref: { path: string; uidValidity: string; uid: number },
   op: MailOp,
+  uids: readonly number[] = [ref.uid],
 ) {
   const list = yield* call(s, (c) => c.list());
   const mailbox = yield* Effect.tryPromise({
@@ -673,11 +769,11 @@ const applyOp = Effect.fnUntraced(function* (
       message: `Folder ${ref.path} was rebuilt; the message id is stale`,
     });
   }
-  const found = yield* call(s, (c) => c.search({ uid: String(ref.uid) }, { uid: true }));
-  if (!found || !found.includes(ref.uid)) {
+  const found = yield* call(s, (c) => c.search({ uid: uidSet(uids) }, { uid: true }));
+  if (!found || uids.some((uid) => !found.includes(uid))) {
     yield* new PermanentError({ message: `Message ${ref.uid} is no longer in ${ref.path}` });
   }
-  const uid = String(ref.uid);
+  const uid = uidSet(uids);
   const flag = (name: string, on: boolean) =>
     call(s, (c) =>
       on
@@ -686,7 +782,7 @@ const applyOp = Effect.fnUntraced(function* (
     );
   if (op.kind === "categories") {
     yield* new PermanentError({ message: "Categories are available for Outlook accounts." });
-    return;
+    return [];
   }
   if (op.kind === "copy") {
     for (const destination of new Set(op.labelIds)) {
@@ -700,12 +796,12 @@ const applyOp = Effect.fnUntraced(function* (
       );
       if (!copied) yield* new ProviderError({ message: `Copying to ${destination} failed` });
     }
-    return;
+    return [];
   }
-  if (op.kind === "important") return;
+  if (op.kind === "important") return [];
   if (op.kind === "read" || op.kind === "star") {
     yield* flag(op.kind === "read" ? "\\Seen" : "\\Flagged", op.value);
-    return;
+    return [];
   }
   if (
     (op.kind === "move" || (op.kind === "label" && op.value)) &&
@@ -730,7 +826,7 @@ const applyOp = Effect.fnUntraced(function* (
                   ref.path === op.labelId
                   ? "INBOX"
                   : ref.path;
-  yield* moveTo(s, ref.uid, ref.path, target);
+  return yield* moveTo(s, uids, ref.path, ref.uidValidity, target);
 });
 
 // Send
@@ -793,18 +889,26 @@ const threadingOf = (s: Session, providerId: string) =>
  * Files the sent message in Sent. Servers that save SMTP mail themselves get
  * a few seconds to do it first, so Sent never holds two copies.
  */
-const saveSent = Effect.fnUntraced(function* (s: Session, raw: Buffer, serverSaves: boolean) {
+const saveSent = Effect.fnUntraced(function* (
+  s: Session,
+  raw: Buffer,
+  serverSaves: boolean,
+  observed: Set<string>,
+) {
   const list = yield* call(s, (c) => c.list());
   const sent = yield* ensureFolder(s, list, "\\Sent", "Sent");
   const messageId = parseHeaders(raw).get("message-id");
   if (messageId) {
     for (let attempt = 0; attempt < (serverSaves ? 4 : 1); attempt++) {
-      if (attempt) yield* Effect.sleep("1500 millis");
+      if (attempt) yield* Effect.sleep("4 seconds");
       yield* call(s, (c) => c.mailboxOpen(sent, { readOnly: true }));
       const found = yield* call(s, (c) =>
         c.search({ header: { "message-id": messageId } }, { uid: true }),
       );
-      if (found && found.length) return;
+      if (found && found.length) {
+        observed.add(s.accountId);
+        return;
+      }
     }
   }
   yield* call(s, (c) => c.append(sent, raw, ["\\Seen"]));
@@ -830,7 +934,11 @@ const deleteMessage = Effect.fnUntraced(function* (s: Session, providerId: strin
     Effect.catchTag("PermanentError", () => Effect.succeed(false)),
   );
   if (!same) return;
-  yield* call(s, (c) => c.messageDelete(String(ref.value.uid), { uid: true }));
+  yield* call(s, (c) =>
+    c.capabilities.has("UIDPLUS")
+      ? c.messageDelete(String(ref.value.uid), { uid: true })
+      : c.messageFlagsAdd(String(ref.value.uid), ["\\Deleted"], { uid: true }),
+  );
 });
 
 /**
@@ -923,6 +1031,7 @@ export const makeImapWith = (
   Effect.gen(function* () {
     const codec = yield* MailCodec;
     const secrets = yield* Secrets;
+    const observedSent = new Set<string>();
 
     const session = (account: Account) =>
       Effect.gen(function* () {
@@ -946,17 +1055,120 @@ export const makeImapWith = (
         { bufferSize: 64, strategy: "suspend" },
       );
 
+    const owner = yield* Effect.serviceOption(Scope.Scope);
+    const pools = new Map<string, { scope: Scope.Closeable; session: Session; key: string }>();
+    const locks = new Map<string, Semaphore.Semaphore>();
+    if (Option.isSome(owner))
+      yield* Scope.addFinalizer(
+        owner.value,
+        Effect.suspend(() =>
+          Effect.forEach(
+            pools.values(),
+            (pool) =>
+              Effect.sync(() => pool.session.client.close()).pipe(
+                Effect.andThen(Scope.close(pool.scope, Exit.void)),
+              ),
+            {
+              discard: true,
+            },
+          ),
+        ),
+      );
+    const pushSession = <A, E>(account: Account, work: (s: Session) => Effect.Effect<A, E>) => {
+      let lock = locks.get(account.id);
+      if (!lock) {
+        lock = Semaphore.makeUnsafe(1);
+        locks.set(account.id, lock);
+      }
+      return Effect.gen(function* () {
+        if (Option.isNone(owner))
+          return yield* session(account).pipe(
+            Effect.flatMap(({ s }) => work(s)),
+            Effect.scoped,
+          );
+        const settings = yield* settingsOf(account);
+        const key = imapSettingsKey(settings);
+        let pool = pools.get(account.id);
+        if (pool?.key === key && pool.session.client.usable) {
+          const alive = yield* call(pool.session, (client) => client.noop()).pipe(
+            Effect.timeout("5 seconds"),
+            Effect.result,
+          );
+          if (alive._tag === "Failure") {
+            const stale = pool;
+            yield* Effect.sync(() => stale.session.client.close());
+            yield* Scope.close(stale.scope, Exit.void);
+            pools.delete(account.id);
+            pool = undefined;
+          }
+        }
+        if (!pool || pool.key !== key || !pool.session.client.usable) {
+          if (pool) {
+            const stale = pool;
+            yield* Effect.sync(() => stale.session.client.close());
+            yield* Scope.close(stale.scope, Exit.void);
+          }
+          const scope = yield* Scope.make();
+          const opened = yield* session(account).pipe(
+            Effect.provideService(Scope.Scope, scope),
+            Effect.onError(() => Scope.close(scope, Exit.void)),
+          );
+          pool = { scope, session: opened.s, key };
+          pools.set(account.id, pool);
+        }
+        return yield* work(pool.session);
+      }).pipe(lock.withPermits(1));
+    };
+    const closeSessions: NonNullable<ProviderAdapter["closeSessions"]> = (id) =>
+      Effect.forEach(
+        id ? [id] : [...pools.keys()],
+        (accountId) =>
+          Effect.gen(function* () {
+            const pool = pools.get(accountId);
+            if (pool) {
+              pools.delete(accountId);
+              yield* Effect.sync(() => pool.session.client.close());
+              yield* Scope.close(pool.scope, Exit.void);
+            }
+          }).pipe(locks.get(accountId)?.withPermits(1) ?? ((effect) => effect)),
+        { discard: true },
+      );
+    const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op) =>
+      pushSession(account, (s) =>
+        Effect.gen(function* () {
+          const groups = new Map<string, { path: string; uidValidity: string; uid: number }[]>();
+          for (const id of ids) {
+            const decoded = decodeProviderId(id);
+            if (Option.isNone(decoded))
+              return yield* new PermanentError({ message: `Not an IMAP message id: ${id}` });
+            const ref = decoded.value;
+            const key = `${ref.uidValidity}:${ref.path}`;
+            const refs = groups.get(key) ?? [];
+            refs.push(ref);
+            groups.set(key, refs);
+          }
+          const mappings: import("../../services.js").ProviderIdMapping[] = [];
+          for (const refs of groups.values()) {
+            const first = refs[0];
+            if (!first) continue;
+            const moved = yield* applyOp(
+              s,
+              first,
+              op,
+              refs.map((ref) => ref.uid),
+            );
+            mappings.push(...moved);
+          }
+          return mappings;
+        }),
+      );
     const push: ProviderAdapter["push"] = (account, providerId, op) =>
       op.kind === "important"
         ? Effect.void
         : Option.match(decodeProviderId(providerId), {
             onNone: () =>
               Effect.fail(new PermanentError({ message: `Not an IMAP message id: ${providerId}` })),
-            onSome: (ref) =>
-              session(account).pipe(
-                Effect.flatMap(({ s }) => applyOp(s, ref, op)),
-                Effect.scoped,
-              ),
+            onSome: (ref) => pushSession(account, (s) => applyOp(s, ref, op)),
           });
 
     const send: ProviderAdapter["send"] = (account, message: OutgoingMessage, original) =>
@@ -998,8 +1210,8 @@ export const makeImapWith = (
         });
 
         // The mail is out; a failed Sent copy must not make the caller send it again.
-        const serverSaves = IMAP_PRESETS[settings.preset]?.serverSavesSent ?? false;
-        yield* saveSent(s, raw, serverSaves).pipe(
+        const serverSaves = serverSavesSent(settings) || observedSent.has(account.id);
+        yield* saveSent(s, raw, serverSaves, observedSent).pipe(
           Effect.catch((error) =>
             Effect.logWarning(`Could not file the sent message: ${error.message}`),
           ),
@@ -1431,6 +1643,8 @@ export const makeImapWith = (
       connect,
       pull,
       push,
+      pushBatch,
+      closeSessions,
       send,
       saveDraft,
       getDraftOrganization: (account, id) =>

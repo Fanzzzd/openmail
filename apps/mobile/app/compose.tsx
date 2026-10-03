@@ -50,6 +50,7 @@ export default function Compose() {
   const lastEdit = useRef<OutgoingMessage | null>(null);
   const [id] = useState(() => params.draftId ?? `draft:${randomUUID()}`);
   const [provider, setProvider] = useState<Provider | null>(null);
+  const [uncertain, setUncertain] = useState(false);
   const [rejected, setRejected] = useState(false);
   const [draft, setDraft] = useState<{
     id: string;
@@ -241,7 +242,7 @@ export default function Compose() {
       setBusy(false);
     }
   };
-  const send = async () => {
+  const send = async (confirmResend = false) => {
     if (!draft || !provider || !currentMessage || busy) return;
     if (mobileAttachmentProblem(provider, currentMessage.attachments)) {
       setRejected(true);
@@ -257,14 +258,19 @@ export default function Compose() {
       await writer.flush();
       const prefs = await runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs));
       const due = Date.now() + prefs.undoSendSeconds * 1000;
-      await runtime.runPromise(
+      const queued = await runtime.runPromise(
         Effect.flatMap(Mailbox, (mailbox) =>
           mailbox.queueSend(
             { id: draft.id, accountId: draft.accountId, message: currentMessage },
             due,
+            confirmResend,
           ),
-        ),
+        ).pipe(Effect.result),
       );
+      if (queued._tag === "Failure") {
+        if (queued.failure._tag === "SendUncertain") setUncertain(true);
+        throw new Error("Could not queue the message");
+      }
       notice({
         kind: "undo",
         text: i18n._({ id: "Queued to send", message: "Queued to send" }),
@@ -304,10 +310,19 @@ export default function Compose() {
     }
   };
   const confirmSend = () =>
-    Alert.alert(i18n._({ id: "Send message?", message: "Send message?" }), to, [
-      { text: i18n._({ id: "Cancel", message: "Cancel" }), style: "cancel" },
-      { text: i18n._({ id: "Send", message: "Send" }), onPress: () => void send() },
-    ]);
+    Alert.alert(
+      uncertain
+        ? i18n._({
+            id: "Have you checked Sent and confirmed that this message was not sent?",
+            message: "Have you checked Sent and confirmed that this message was not sent?",
+          })
+        : i18n._({ id: "Send message?", message: "Send message?" }),
+      to,
+      [
+        { text: i18n._({ id: "Cancel", message: "Cancel" }), style: "cancel" },
+        { text: i18n._({ id: "Send", message: "Send" }), onPress: () => void send(uncertain) },
+      ],
+    );
   return (
     <ScrollView style={styles.screen} keyboardShouldPersistTaps="handled">
       {!draft && !failed && <ActivityIndicator />}
@@ -517,6 +532,14 @@ export default function Compose() {
             </Text>
           )}
         </>
+      )}
+      {uncertain && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {i18n._({
+            id: "This message may have been sent. Check Sent before sending it again.",
+            message: "This message may have been sent. Check Sent before sending it again.",
+          })}
+        </Text>
       )}
       {rejected && (
         <Text accessibilityRole="alert" style={styles.error}>

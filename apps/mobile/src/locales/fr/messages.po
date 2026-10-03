@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "Transférer"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Avez-vous vérifié « Envoyés » et confirmé que ce message n’a pas été envoyé ?"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "Masquer le contenu sur l’écran verrouillé"
@@ -638,6 +643,11 @@ msgstr "Actions de balayage"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Langue du système"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Ce message a peut-être été envoyé. Vérifiez « Envoyés » avant de l’envoyer à nouveau."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

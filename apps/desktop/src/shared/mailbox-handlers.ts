@@ -99,13 +99,14 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     ModifyWithUndo: ({ threads, op, flat }) => m.modifyWithUndo(threads, op, flat),
     UndoHistory: () => m.undoHistory,
     UndoBatch: ({ undoId }) => m.undoBatch(undoId),
-    Send: ({ accountId, message, draftId, archive }) =>
+    Send: ({ accountId, message, draftId, archive, confirmResend }) =>
       m.perform(
         {
           kind: "send",
           accountId,
           message,
           ...(draftId === undefined ? {} : { draftId }),
+          ...(confirmResend ? { confirmResend: true } : {}),
           ...(archive === undefined ? {} : { archive }),
         },
         USER,

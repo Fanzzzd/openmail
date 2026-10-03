@@ -541,6 +541,7 @@ export class MailRpcs extends RpcGroup.make(
       message: OutgoingMessage,
       /** The saved draft being sent; it is removed once the message is out. */
       draftId: Schema.optionalKey(Schema.String),
+      confirmResend: Schema.optionalKey(Schema.Boolean),
       /** Send and archive: archive the replied-to thread afterwards. */
       archive: Schema.optionalKey(Schema.Boolean),
     },

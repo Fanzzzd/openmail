@@ -53,3 +53,9 @@ describe("mime", () => {
     );
   });
 });
+
+it("slice49: joins split RFC 2047 byte sequences before decoding GBK and UTF-8", () => {
+  assert.strictEqual(decodeHeader("=?GBK?B?1g==?= =?gbk?B?0A==?="), "中");
+  assert.strictEqual(decodeHeader("=?UTF-8?B?5A==?=\r\n =?UTF-8?Q?=B8=AD?="), "中");
+  assert.strictEqual(decodeHeader("prefix =?UTF-8?B?5Lit?= suffix"), "prefix 中 suffix");
+});

@@ -9,6 +9,7 @@ import { applyOpToLabels, invalidCategoryFolderOp } from "./mail-ops.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, ModelUnavailable } from "./model.js";
 import { modelContext } from "./model-view.js";
+import { decodeProviderId } from "./imap-cursor.js";
 import { ImapIdle } from "./imap-idle.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtime.js";
 import { MailCodec } from "./platform/mail-codec.js";
@@ -94,6 +95,7 @@ import {
 } from "./drafts.js";
 import {
   AuthError,
+  SendUncertain,
   FeatureScopeMissing,
   InvalidInput,
   NotFound,
@@ -154,8 +156,14 @@ const DEFAULT_SUGGESTIONS = 8;
  * the sync counts as failed. The adapters already retry each request for
  * about 8 s; this covers an outage that outlasts that.
  */
-const isTransientPull = (e: { readonly _tag: string; readonly status?: number | undefined }) =>
-  e._tag === "ProviderError" && (e.status === undefined || e.status === 429 || e.status >= 500);
+const isTransientPull = (e: {
+  readonly _tag: string;
+  readonly status?: number | undefined;
+  readonly deferred?: boolean;
+}) =>
+  e._tag === "ProviderError" &&
+  !e.deferred &&
+  (e.status === undefined || e.status === 429 || e.status >= 500);
 const PULL_RETRY = {
   schedule: Schedule.exponential("5 seconds"),
   times: 2,
@@ -402,7 +410,19 @@ export const MailboxLive = (
             );
           return;
         }
-        const old = draft.remote?.messageId;
+        if (remote.conflict) {
+          yield* store.setDraftSyncError(
+            draftId,
+            "The remote draft changed in another client. Both versions were kept.",
+          );
+          yield* store.audit({
+            actor: { kind: "user", surface: "app" },
+            accountId: account.id,
+            action: "draft-conflict",
+            detail: { draftId, previous: draft.remote, remote },
+          });
+        }
+        const old = remote.conflict ? null : draft.remote?.messageId;
         if (old && old !== remote.messageId) yield* store.deleteMessage(account.id, old);
         let organizationApplied = organizationChanged;
         if (
@@ -429,6 +449,30 @@ export const MailboxLive = (
         if (old !== remote.messageId || organizationApplied) yield* changed;
       });
 
+      const refreshMessage = (account: Account, providerId: string) =>
+        providers
+          .get(account.provider)
+          .fetchMessage(account, providerId)
+          .pipe(
+            Effect.flatMap((message) =>
+              Effect.gen(function* () {
+                const pending = (yield* store.pendingOpsForMessages(account.id, [
+                  providerId,
+                ])).flatMap((item) =>
+                  item.op.kind === "saveDraft" ||
+                  item.op.kind === "deleteDraft" ||
+                  item.op.kind === "reconcile"
+                    ? []
+                    : [item.op],
+                );
+                yield* store.upsertMessage(
+                  account.id,
+                  withPendingOps(message, pending, account.provider),
+                );
+              }),
+            ),
+            Effect.catchTag("PermanentError", () => store.deleteMessage(account.id, providerId)),
+          );
       const pushOp = (account: Account, pending: PendingOp) => {
         const { op } = pending;
         switch (op.kind) {
@@ -436,11 +480,34 @@ export const MailboxLive = (
             return pushDraft(account, op.draftId);
           case "deleteDraft":
             return providers.get(account.provider).deleteDraft(account, op.remote);
+          case "reconcile":
+            return refreshMessage(account, pending.providerId);
           default:
             return providers.get(account.provider).push(account, pending.providerId, op);
         }
       };
 
+      const reconcileDropped = Effect.fnUntraced(function* (
+        account: Account,
+        item: PendingOp,
+        error: string,
+      ) {
+        if (
+          item.op.kind === "saveDraft" ||
+          item.op.kind === "deleteDraft" ||
+          item.op.kind === "reconcile"
+        )
+          return;
+        yield* refreshMessage(account, item.providerId).pipe(
+          Effect.catch(() => store.enqueueOp(account.id, item.providerId, { kind: "reconcile" })),
+        );
+        yield* store.audit({
+          actor: { kind: "user", surface: "app" },
+          accountId: account.id,
+          action: "sync-failed",
+          detail: { providerId: item.providerId, op: item.op, error },
+        });
+      });
       const flush = Effect.fn("Mailbox.flush")(function* () {
         const result = { done: 0, failed: 0, reauth: new Array<string>() };
         const blocked = new Set<string>();
@@ -454,9 +521,28 @@ export const MailboxLive = (
         const settle = (
           account: Account,
           items: readonly PendingOp[],
-          push: Effect.Effect<void, import("./errors.js").ProviderFailure>,
+          push: Effect.Effect<
+            void | readonly import("./services.js").ProviderIdMapping[],
+            import("./errors.js").ProviderFailure
+          >,
         ) =>
           push.pipe(
+            Effect.tap((mappings) =>
+              mappings
+                ? store.remapProviderIds(account.id, mappings).pipe(
+                    Effect.andThen(
+                      Effect.sync(() => {
+                        for (let i = 0; i < queued.length; i++) {
+                          const next = queued[i]!;
+                          if (next.accountId !== account.id) continue;
+                          const mapping = mappings.find((entry) => entry.from === next.providerId);
+                          if (mapping) queued[i] = { ...next, providerId: mapping.to };
+                        }
+                      }),
+                    ),
+                  )
+                : Effect.void,
+            ),
             Effect.andThen(
               Effect.forEach(items, (item) => store.removePendingOp(item.id), { discard: true }),
             ),
@@ -485,6 +571,7 @@ export const MailboxLive = (
                   yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
                     discard: true,
                   });
+                  for (const item of items) yield* reconcileDropped(account, item, error.message);
                   result.failed += items.length;
                 }),
               ProviderError: (error) =>
@@ -493,10 +580,12 @@ export const MailboxLive = (
                     if (item.op.kind === "saveDraft")
                       yield* store.setDraftSyncError(item.op.draftId, error.message);
                     blocked.add(`${item.accountId}/${item.providerId}`);
-                    yield* item.attempts + 1 >= MAX_ATTEMPTS
+                    yield* item.attempts + 1 >= (item.op.kind === "reconcile" ? 3 : MAX_ATTEMPTS)
                       ? store.removePendingOp(item.id)
                       : store.failPendingOp(item.id, error.message);
-                    result.failed++;
+                    if (item.attempts + 1 >= MAX_ATTEMPTS && item.op.kind !== "reconcile")
+                      yield* reconcileDropped(account, item, error.message);
+                    if (item.op.kind !== "reconcile") result.failed++;
                   }
                 }),
             }),
@@ -528,6 +617,7 @@ export const MailboxLive = (
             adapter.pushBatch &&
             op.kind !== "saveDraft" &&
             op.kind !== "deleteDraft" &&
+            op.kind !== "reconcile" &&
             op.kind !== "trash" &&
             op.kind !== "inbox"
           ) {
@@ -536,6 +626,16 @@ export const MailboxLive = (
               if (
                 next.accountId !== pending.accountId ||
                 JSON.stringify(next.op) !== signature ||
+                (account.value.provider === "imap" &&
+                  !Option.getOrElse(
+                    Option.zipWith(
+                      decodeProviderId(pending.providerId),
+                      decodeProviderId(next.providerId),
+                      (first, other) =>
+                        first.path === other.path && first.uidValidity === other.uidValidity,
+                    ),
+                    () => false,
+                  )) ||
                 blocked.has(`${next.accountId}/${next.providerId}`)
               )
                 break;
@@ -729,6 +829,13 @@ export const MailboxLive = (
       ) {
         if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         const { accountId, message } = command;
+        if (command.draftId && (yield* store.sendUncertain(command.draftId))) {
+          if (!command.confirmResend || actor.kind !== "user" || actor.surface !== "app")
+            return yield* new SendUncertain({
+              message: "This message may have been sent. Check Sent before sending it again.",
+            });
+          yield* store.setSendUncertain(command.draftId, false);
+        }
         if (message.to.length + message.cc.length + message.bcc.length === 0) {
           yield* new InvalidInput({ message: "A message needs at least one recipient." });
         }
@@ -773,6 +880,9 @@ export const MailboxLive = (
             Effect.tapError((error) =>
               Effect.all([
                 error._tag === "AuthError" ? store.setNeedsReauth(accountId, true) : Effect.void,
+                error._tag === "SendUncertain" && command.draftId
+                  ? store.setSendUncertain(command.draftId, true)
+                  : Effect.void,
                 store.audit({
                   actor,
                   accountId,
@@ -846,6 +956,11 @@ export const MailboxLive = (
             if (diskAttachments)
               yield* cacheIO(() => diskAttachments.clear(command.accountId), undefined);
             attachmentCache.clear();
+            const removedAccount = yield* store.getAccount(command.accountId);
+            yield* (
+              providers.get(removedAccount.provider).closeSessions?.(command.accountId) ??
+                Effect.void
+            );
             yield* store.removeAccount(command.accountId);
             yield* secrets.remove(command.accountId);
             yield* store.audit({
@@ -1580,11 +1695,27 @@ export const MailboxLive = (
             if (scope && ["Delete", "DeleteLabel", "Reset", "Labels"].includes(change._tag))
               continue;
             switch (change._tag) {
+              case "Remap":
               case "Upsert":
                 counts.changed++;
                 writes.push(
                   Effect.gen(function* () {
-                    const id = `${account.id}/${change.message.providerId}`;
+                    if (change._tag === "Remap" && change.message.rfcMessageId) {
+                      const local = yield* store.findMessageByRfcId(
+                        account.id,
+                        change.message.rfcMessageId,
+                        change.previous,
+                      );
+                      if (local) {
+                        const ref = yield* store.messageRef(local).pipe(Effect.orDie);
+                        yield* store.remapProviderIds(account.id, [
+                          { from: ref.providerId, to: change.message.providerId },
+                        ]);
+                      }
+                    }
+                    const id =
+                      (yield* store.messageIdForProvider(account.id, change.message.providerId)) ??
+                      `${account.id}/${change.message.providerId}`;
                     const known = yield* store.hasMessage(id);
                     // IMAP moves assign a new folder/UID while preserving the mail itself.
                     const identity =
@@ -1600,11 +1731,19 @@ export const MailboxLive = (
                           )
                         : change.message.providerId;
                     const first = yield* store.observeIncoming(account.id, identity);
-                    const incoming = withPendingOps(
-                      change.message,
-                      pendingById.get(change.message.providerId) ?? [],
-                      account.provider,
-                    );
+                    const remappedOps =
+                      change._tag === "Remap"
+                        ? (yield* store.pendingOpsForMessages(account.id, [
+                            change.message.providerId,
+                          ])).flatMap((pending) =>
+                            pending.op.kind === "saveDraft" ||
+                            pending.op.kind === "deleteDraft" ||
+                            pending.op.kind === "reconcile"
+                              ? []
+                              : [pending.op],
+                          )
+                        : (pendingById.get(change.message.providerId) ?? []);
+                    const incoming = withPendingOps(change.message, remappedOps, account.provider);
                     yield* store.upsertMessage(account.id, incoming);
                     if (
                       first &&
@@ -1642,13 +1781,60 @@ export const MailboxLive = (
                   store.dropSyncedDrafts(account.id, change.providerId),
                 );
                 break;
+              case "MessageLabels":
+                counts.changed++;
+                if (!(yield* store.messageIdForProvider(account.id, change.providerId))) {
+                  const fetched = yield* providers
+                    .get(account.provider)
+                    .fetchMessage(account, change.providerId)
+                    .pipe(
+                      Effect.map(Option.some),
+                      Effect.catchTag("PermanentError", () => Effect.succeed(Option.none())),
+                    );
+                  if (Option.isSome(fetched))
+                    writes.push(
+                      Effect.gen(function* () {
+                        yield* store.upsertMessage(
+                          account.id,
+                          withPendingOps(
+                            fetched.value,
+                            pendingById.get(change.providerId) ?? [],
+                            account.provider,
+                          ),
+                        );
+                      }),
+                    );
+                  break;
+                }
+                writes.push(
+                  Effect.gen(function* () {
+                    const id = yield* store.messageIdForProvider(account.id, change.providerId);
+                    if (!id) return;
+                    const message = yield* store.getMessage(id).pipe(Effect.orDie);
+                    yield* store.upsertMessage(
+                      account.id,
+                      withPendingOps(
+                        {
+                          ...message,
+                          providerId: change.providerId,
+                          labels: [...change.labels],
+                          isUnread: change.labels.includes("UNREAD"),
+                          isStarred: change.labels.includes("STARRED"),
+                        },
+                        pendingById.get(change.providerId) ?? [],
+                        account.provider,
+                      ),
+                    );
+                  }),
+                );
+                break;
               case "Flags":
                 counts.changed++;
                 writes.push(
                   Effect.gen(function* () {
-                    const cached = yield* store
-                      .getMessage(`${account.id}/${change.providerId}`)
-                      .pipe(Effect.option);
+                    const id = yield* store.messageIdForProvider(account.id, change.providerId);
+                    if (!id) return;
+                    const cached = yield* store.getMessage(id).pipe(Effect.option);
                     if (Option.isNone(cached)) return;
                     const message = cached.value;
                     const labels = applyOpToLabels(
@@ -1677,6 +1863,9 @@ export const MailboxLive = (
                   }),
                 );
                 break;
+              case "RebuildFolder":
+                writes.push(store.deleteImapFolder(account.id, change.previous, change.keep));
+                break;
               case "DeleteLabel":
                 writes.push(store.deleteMessagesWithLabel(account.id, change.label, change.keep));
                 break;
@@ -1685,10 +1874,9 @@ export const MailboxLive = (
                 break;
               case "Reset":
                 writes.push(
-                  store.deleteAccountMessages(account.id, change.keep),
+                  store.deleteAccountMessages(account.id, change.keep, change.since),
                   store.resetBackfill(account.id),
-                  // Their copies come back under new ids and open as drafts again.
-                  store.dropSyncedDrafts(account.id),
+                  change.since === undefined ? store.dropSyncedDrafts(account.id) : Effect.void,
                 );
                 break;
               case "Labels":
@@ -1723,16 +1911,21 @@ export const MailboxLive = (
               const ids = [
                 ...new Set(
                   batch.flatMap((change) =>
-                    change._tag === "Upsert"
+                    change._tag === "Upsert" || change._tag === "Remap"
                       ? [change.message.providerId]
-                      : change._tag === "Flags"
+                      : change._tag === "Flags" || change._tag === "MessageLabels"
                         ? [change.providerId]
                         : [],
                   ),
                 ),
               ];
               for (const pending of yield* store.pendingOpsForMessages(account.id, ids)) {
-                if (pending.op.kind === "saveDraft" || pending.op.kind === "deleteDraft") continue;
+                if (
+                  pending.op.kind === "saveDraft" ||
+                  pending.op.kind === "deleteDraft" ||
+                  pending.op.kind === "reconcile"
+                )
+                  continue;
                 const ops = pendingById.get(pending.providerId) ?? [];
                 ops.push(pending.op);
                 pendingById.set(pending.providerId, ops);
@@ -1884,6 +2077,7 @@ export const MailboxLive = (
         yield* Ref.set(state, next);
         yield* emit({ _tag: "SyncState", state: next });
         yield* changed;
+        yield* store.checkpoint;
         return results;
       });
 
@@ -1992,6 +2186,7 @@ export const MailboxLive = (
         yield* secrets.set(account.id, connected.secret);
         if (connected.scopes) yield* store.setGrantedScopes(account.id, connected.scopes);
         if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
+        yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
         yield* store.setNeedsReauth(account.id, false);
         yield* store.setSyncError(account.id, null);
         yield* store.audit({
@@ -2105,7 +2300,11 @@ export const MailboxLive = (
             : Effect.void,
         ).pipe(Effect.forkScoped);
       const outboxLock = yield* Semaphore.make(1);
-      const queueSend = Effect.fn("Mailbox.queueSend")(function* (input: DraftInput, due: number) {
+      const queueSend = Effect.fn("Mailbox.queueSend")(function* (
+        input: DraftInput,
+        due: number,
+        confirmResend = false,
+      ) {
         if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         if (
           !Number.isFinite(due) ||
@@ -2120,6 +2319,15 @@ export const MailboxLive = (
         const account = yield* store.getAccount(input.accountId);
         if (mobileAttachmentProblem(account.provider, input.message.attachments))
           return yield* new InvalidInput({ message: "Attachments rejected before sending" });
+        if (yield* store.sendUncertain(input.id)) {
+          if (!confirmResend)
+            return yield* new SendUncertain({
+              message: "This message may have been sent. Check Sent before sending it again.",
+            });
+          const queued = (yield* store.queuedSends).find((item) => item.id === input.id);
+          if (queued?.status === "failed") yield* store.deleteQueuedSend(input.id);
+          yield* store.setSendUncertain(input.id, false);
+        }
         if ((yield* store.queuedSends).some((item) => item.id === input.id))
           return yield* new InvalidInput({ message: "This draft already has a queued send" });
         yield* store.transaction(
@@ -2245,10 +2453,22 @@ export const MailboxLive = (
         cancelQueuedSend,
         flushQueuedSends,
         ...ai,
+        closeSessions: () =>
+          Effect.gen(function* () {
+            for (const provider of new Set(
+              (yield* store.listAccounts).map((account) => account.provider),
+            ))
+              yield* providers.get(provider).closeSessions?.() ?? Effect.void;
+          }),
         setSyncPaused: (paused) =>
-          Effect.sync(() => {
+          Effect.gen(function* () {
             syncPaused = paused;
             idle?.pause(paused);
+            if (paused)
+              for (const provider of new Set(
+                (yield* store.listAccounts).map((account) => account.provider),
+              ))
+                yield* providers.get(provider).closeSessions?.() ?? Effect.void;
           }),
         updateTokenConfigured: secrets.get(UPDATE_TOKEN_KEY).pipe(Effect.map(Option.isSome)),
         setUpdateToken: (token) =>
@@ -2366,6 +2586,7 @@ export const MailboxLive = (
             const previous = yield* store.getAccount(id);
             // Local edits and the enabled flag never wait for provider work.
             yield* store.setAccountSettings(id, settings);
+            yield* providers.get(previous.provider).closeSessions?.(id) ?? Effect.void;
             idle?.reconcile(yield* store.listAccounts);
             const resumed = previous.enabled === false && settings.enabled;
 
@@ -2446,7 +2667,10 @@ export const MailboxLive = (
             );
             if (!message) return yield* new NotFound({ what: "message", id });
             yield* store.upsertMessage(account.id, message);
-            return `${account.id}/${message.providerId}`;
+            return (
+              (yield* store.messageIdForProvider(account.id, message.providerId)) ??
+              `${account.id}/${message.providerId}`
+            );
           }),
         thread,
         threadForModel: (id, maxChars = DEFAULT_MODEL_CHARS) =>

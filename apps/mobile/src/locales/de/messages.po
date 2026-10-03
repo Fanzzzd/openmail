@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "Weiterleiten"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Haben Sie „Gesendet“ geprüft und bestätigt, dass diese Nachricht nicht gesendet wurde?"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "Inhalt auf dem Sperrbildschirm ausblenden"
@@ -638,6 +643,11 @@ msgstr "Wischaktionen"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Systemsprache"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Diese Nachricht wurde möglicherweise bereits gesendet. Prüfen Sie „Gesendet“, bevor Sie sie erneut senden."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

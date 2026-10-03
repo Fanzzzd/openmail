@@ -50,7 +50,7 @@ export const undoBatch = (undoId: string, threads: readonly string[]) =>
 export const sendMessage = (
   accountId: string,
   message: OutgoingMessage,
-  options: { draftId?: string; archive?: boolean } = {},
+  options: { draftId?: string; archive?: boolean; confirmResend?: boolean } = {},
 ) =>
   withMail((call) => call("Send", { accountId, message, ...options })).pipe(
     Reactivity.mutation(MAIL_KEYS),

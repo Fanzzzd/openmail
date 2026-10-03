@@ -3,7 +3,7 @@ import { Effect, Fiber } from "effect";
 import { TestClock } from "effect/testing";
 
 import type { Actor, IncomingMessage } from "./domain.js";
-import { AuthError, ProviderError } from "./errors.js";
+import { AuthError, PermanentError, ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
 import { toModelThread } from "./model-view.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
@@ -328,6 +328,37 @@ it.effect("the remote image allowlist stores addresses and domains in lower case
       assert.deepStrictEqual(yield* m.imageSenders, ["example.org", "news@shop.com"]);
       yield* m.setImageSender("EXAMPLE.org", false);
       assert.deepStrictEqual(yield* m.imageSenders, ["news@shop.com"]);
+    }),
+  ),
+);
+
+for (const gone of [false, true])
+  it.effect(`slice49: dropped optimistic ops restore server truth, gone=${gone}`, () =>
+    withGmail([incoming("m1")], (m, server) =>
+      Effect.gen(function* () {
+        server.failNext = new PermanentError({ message: "Refused" });
+        if (gone) server.messages.delete("m1");
+        yield* m.perform(
+          { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
+          user,
+        );
+        assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, gone ? 0 : 1);
+        assert.ok((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
+      }),
+    ),
+  );
+
+it.effect("slice49: five provider push failures restore optimistic state and record failure", () =>
+  withGmail([incoming("m1")], (m, server) =>
+    Effect.gen(function* () {
+      server.beforePush = Effect.fail(new ProviderError({ message: "Refused repeatedly" }));
+      yield* m.perform(
+        { kind: "modify", threads: ["gmail:me@gmail.com/m1"], op: { kind: "archive" } },
+        user,
+      );
+      for (let attempt = 0; attempt < 4; attempt++) yield* m.sync();
+      assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
+      assert.ok((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
     }),
   ),
 );

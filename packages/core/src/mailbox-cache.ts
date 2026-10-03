@@ -51,10 +51,11 @@ export function makeCacheMailbox(
                   for (const message of page.messages) {
                     if (!allowed.has(message.providerId)) continue;
                     // Historical overlap must not overwrite cached headers or queued local edits.
-                    const existing = yield* store
-                      .messageRef(`${accountId}/${message.providerId}`)
-                      .pipe(Effect.option);
-                    if (Option.isSome(existing)) continue;
+                    const existing = yield* store.messageIdForProvider(
+                      accountId,
+                      message.providerId,
+                    );
+                    if (existing) continue;
                     const cached = keepBody(message, windows, now);
                     yield* store.upsertMessage(
                       accountId,

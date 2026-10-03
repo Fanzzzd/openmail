@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "Přeposlat"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Zkontrolovali jste složku „Odeslané“ a ověřili, že tato zpráva nebyla odeslána?"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "Skrýt obsah na zamčené obrazovce"
@@ -638,6 +643,11 @@ msgstr "Akce přejetí prstem"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Jazyk systému"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Tato zpráva již mohla být odeslána. Před dalším odesláním zkontrolujte složku „Odeslané“."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

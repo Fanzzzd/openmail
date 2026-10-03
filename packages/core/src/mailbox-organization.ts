@@ -145,7 +145,13 @@ export function makeOrganizationMailbox(
           }
         }),
       );
-      ids.push(...page.messages.map((m) => `${account.id}/${m.providerId}`));
+      ids.push(
+        ...(yield* Effect.forEach(page.messages, (m) =>
+          store
+            .messageIdForProvider(account.id, m.providerId)
+            .pipe(Effect.map((id) => id ?? `${account.id}/${m.providerId}`)),
+        )),
+      );
     }
     const local = yield* store.listThreads({ ...query, limit: query.limit ?? 200 });
     const remote = yield* store.listThreads({
@@ -363,7 +369,11 @@ export function makeOrganizationMailbox(
       mailbox: "all",
       accountIds: [accountId],
       flat: true,
-      messageIds: eligible.slice(0, 200).map((m) => `${accountId}/${m.providerId}`),
+      messageIds: yield* Effect.forEach(eligible.slice(0, 200), (m) =>
+        store
+          .messageIdForProvider(accountId, m.providerId)
+          .pipe(Effect.map((id) => id ?? `${accountId}/${m.providerId}`)),
+      ),
       limit: 200,
     })).filter(eligibleForFilter);
     const token = crypto.randomUUID();
@@ -670,9 +680,11 @@ export function makeOrganizationMailbox(
         return (yield* store.listThreads({
           mailbox: "all",
           flat: true,
-          messageIds: page.messages
-            .filter(eligibleForFilter)
-            .map((m) => `${accountId}/${m.providerId}`),
+          messageIds: yield* Effect.forEach(page.messages.filter(eligibleForFilter), (m) =>
+            store
+              .messageIdForProvider(accountId, m.providerId)
+              .pipe(Effect.map((id) => id ?? `${accountId}/${m.providerId}`)),
+          ),
           limit: 200,
         })).filter(eligibleForFilter);
       }),

@@ -2130,6 +2130,11 @@ msgstr "Есть вложение"
 msgid "Has words"
 msgstr "Содержит слова"
 
+#. Sent means the Sent mailbox.
+#: src/renderer/src/compose/use-compose-delivery.ts
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "Вы проверили «Отправленные» и убедились, что это сообщение не отправлено?"
+
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Headers"
 msgstr "Заголовки сообщения"
@@ -4844,6 +4849,11 @@ msgstr "Эта встреча отменена"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Эта ссылка на собрание не поддерживается."
+
+#. Sent means the Sent mailbox.
+#: src/renderer/src/errors.ts
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "Возможно, это сообщение уже отправлено. Проверьте «Отправленные», прежде чем отправлять его снова."
 
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 msgid "This permission lets openmail permanently delete mail in this Gmail account. Google will ask for your consent. After granting it, confirm the deletion again."

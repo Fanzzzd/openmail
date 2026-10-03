@@ -1,3 +1,4 @@
+import { sha256Hex } from "./platform/crypto.js";
 import { Effect } from "effect";
 import { InvalidInput } from "./errors.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
@@ -45,3 +46,16 @@ export const resolveImapSettings = Effect.fnUntraced(function* (
     smtpSecure: input.smtpSecure ?? preset?.smtpSecure ?? smtpPort === 465,
   };
 });
+
+/** SMTP providers that file sent copies even for manually configured accounts. */
+export function serverSavesSent(settings: ImapSettings): boolean {
+  return (
+    IMAP_PRESETS[settings.preset]?.serverSavesSent === true ||
+    /^(?:smtp\.gmail\.com|smtp\.office365\.com|smtp(?:-mail)?\.outlook\.com)$/i.test(
+      settings.smtpHost,
+    )
+  );
+}
+
+export const imapSettingsKey = (settings: ImapSettings) =>
+  sha256Hex(JSON.stringify(Object.entries(settings).toSorted(([a], [b]) => a.localeCompare(b))));

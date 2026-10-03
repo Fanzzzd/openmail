@@ -1,6 +1,7 @@
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { holdSend } from "@openmail/core/schema";
-import { Effect, Fiber } from "effect";
+import { Cause, Effect, Fiber } from "effect";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import type { OutgoingMessage } from "../../../shared/api";
 import type { AppMessages } from "../App";
@@ -33,6 +34,7 @@ export function useComposeDelivery({
 }) {
   const { prefs } = navigation;
   const { i18n } = useLingui();
+  const uncertain = useRef(new Set<string>());
   const pendingSends = useRef(new Map<string, (() => void) | null>());
   const reportSendState = () =>
     run(
@@ -53,6 +55,19 @@ export function useComposeDelivery({
    * reaches the main process. Undo, from the toast or ⌘Z, reopens the draft.
    */
   const send = (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => {
+    const confirmResend = uncertain.current.has(draft.id);
+    if (
+      confirmResend &&
+      !window.confirm(
+        i18n._(
+          msg({
+            message: "Have you checked Sent and confirmed that this message was not sent?",
+            comment: "Sent means the Sent mailbox.",
+          }),
+        ),
+      )
+    )
+      return;
     setCompose(null);
     const reopen = () => setCompose(draft);
     pendingSends.current.set(draft.id, null);
@@ -64,6 +79,7 @@ export function useComposeDelivery({
           Effect.andThen(
             sendMessage(draft.accountId, message, {
               draftId: draft.id,
+              ...(confirmResend ? { confirmResend: true } : {}),
               ...(options.archive ? { archive: true } : {}),
             }),
           ),
@@ -75,12 +91,16 @@ export function useComposeDelivery({
           ),
           Effect.matchCause({
             onSuccess: () => {
+              uncertain.current.delete(draft.id);
               say({ text: options.archive ? messages.sentAndArchived : messages.sent });
               if (composeId) finishCompose();
               // The archived thread leaves the list; move on as E does.
               if (options.archive) navigation.archiveSentReply(draft.inReplyTo);
             },
             onFailure: (cause) => {
+              const error = Cause.findErrorOption(cause);
+              if (error._tag === "Some" && error.value._tag === "SendUncertain")
+                uncertain.current.add(draft.id);
               const reason = causeText(i18n, cause);
               say({ text: messages.couldntSend(reason), tone: "error" });
               reopen();

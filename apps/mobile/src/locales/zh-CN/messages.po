@@ -277,6 +277,11 @@ msgid "Forward"
 msgstr "转发"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Have you checked Sent and confirmed that this message was not sent?"
+msgstr "是否已检查“已发送”，并确认这封邮件尚未发送？"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Hide content on lock screen"
 msgstr "锁屏时隐藏内容"
@@ -638,6 +643,11 @@ msgstr "滑动操作"
 #: app/settings.tsx
 msgid "System language"
 msgstr "系统语言"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "This message may have been sent. Check Sent before sending it again."
+msgstr "这封邮件可能已经发送。再次发送前，请检查“已发送”。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

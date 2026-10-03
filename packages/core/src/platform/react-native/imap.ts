@@ -1,4 +1,4 @@
-import { Effect, Option, Queue, Schema, Stream } from "effect";
+import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
 import {
@@ -21,16 +21,16 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "../../errors.js";
-import { resolveImapSettings } from "../../imap-settings.js";
+import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
   encodeProviderId,
   decodeProviderId,
   FolderState,
   readCursor,
   uidSet,
+  parseUidSet,
 } from "../../imap-cursor.js";
 import type { Account, ImapSettings, IncomingMessage } from "../../domain.js";
-import { IMAP_PRESETS } from "../../imap-presets.js";
 import { htmlToText } from "../../mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
 
@@ -176,6 +176,9 @@ export function mobileIncoming(
   return {
     providerId,
     threadId: root ?? providerId,
+    ...(!stringHeader("references") && parsed.inReplyTo
+      ? { parentRfcMessageId: parsed.inReplyTo }
+      : {}),
     subject: parsed.subject ?? "",
     from: mimeAddresses(parsed.from)[0] ?? { name: "", address: "" },
     to: mimeAddresses(parsed.to),
@@ -286,10 +289,105 @@ export async function smtpSession(
   }
 }
 
+const applyPush = async (
+  client: ImapWire,
+  ids: readonly string[],
+  op: import("../../domain.js").MailOp,
+) => {
+  const first = ids[0];
+  if (!first) return [];
+  const ref = refOf(first);
+  const uids = ids.map((id) => refOf(id).uid);
+  const range = uidSet(uids);
+  await client.select(ref.path, ref.uidValidity, false);
+  const present = await client.search(`UID ${range}`);
+  if (uids.some((uid) => !present.includes(uid)))
+    throw new PermanentError({ message: "Message is gone" });
+  if (op.kind === "read" || op.kind === "star" || op.kind === "important") {
+    const flag = op.kind === "read" ? "\\Seen" : op.kind === "star" ? "\\Flagged" : "$Important";
+    await client.command(`UID STORE ${range} ${op.value ? "+" : "-"}FLAGS.SILENT (${flag})`);
+    return [];
+  }
+  if (op.kind === "categories") throw new PermanentError({ message: "Categories require Outlook" });
+  const list = await folders(client);
+  if (op.kind === "copy") {
+    for (const target of new Set(op.labelIds)) {
+      if (!list.some((f) => f.path === target))
+        throw new PermanentError({ message: "Destination folder is gone" });
+      if (target !== ref.path)
+        await client.command(`UID COPY ${range} ${mailQuote(encodeFolder(target))}`);
+    }
+    return [];
+  }
+  const label =
+    op.kind === "archive"
+      ? "ARCHIVE"
+      : op.kind === "trash"
+        ? "TRASH"
+        : op.kind === "spam"
+          ? "SPAM"
+          : "INBOX";
+  let target =
+    op.kind === "move"
+      ? op.labelId
+      : op.kind === "label"
+        ? op.value
+          ? op.labelId
+          : ref.path === op.labelId
+            ? "INBOX"
+            : ref.path
+        : list.find((f) => f.label === label)?.path;
+  if (!target && ["archive", "trash", "spam"].includes(op.kind)) {
+    target = label === "ARCHIVE" ? "Archive" : label === "TRASH" ? "Trash" : "Junk";
+    await client.command(`CREATE ${mailQuote(encodeFolder(target))}`);
+    list.push({ path: target, label, name: target });
+  }
+  if (!target) throw new PermanentError({ message: "Destination folder is unavailable" });
+  if (target === ref.path) return [];
+  if (!list.some((f) => f.path === target))
+    throw new PermanentError({ message: "Destination folder is gone" });
+  let copied: ImapResponse[];
+  if (client.capabilities.has("MOVE"))
+    copied = await client.command(`UID MOVE ${range} ${mailQuote(encodeFolder(target))}`);
+  else {
+    copied = await client.command(`UID COPY ${range} ${mailQuote(encodeFolder(target))}`);
+    await client.command(`UID STORE ${range} +FLAGS.SILENT (\\Deleted)`);
+    if (client.capabilities.has("UIDPLUS")) await client.command(`UID EXPUNGE ${range}`);
+  }
+  const response = copied
+    .map((r) => /\[COPYUID (\d+) ([\d:,]+) ([\d:,]+)\]/i.exec(r.text))
+    .find(Boolean);
+  if (response) {
+    const source = parseUidSet(response[2]!, uids.length);
+    const destination = parseUidSet(response[3]!, uids.length);
+    if (
+      !source.length ||
+      source.length !== destination.length ||
+      source.some((uid) => !Number.isSafeInteger(uid) || uid < 1) ||
+      destination.some((uid) => !Number.isSafeInteger(uid) || uid < 1)
+    ) {
+      await Effect.runPromise(
+        Effect.logWarning("IMAP move completed without a usable COPYUID mapping"),
+      );
+      return [];
+    }
+    return source.map((uid, index) => ({
+      from: encodeProviderId(ref.path, ref.uidValidity, uid),
+      to: encodeProviderId(target, response[1]!, destination[index]!),
+    }));
+  }
+  if (copied.some((row) => /COPYUID/i.test(row.text)))
+    await Effect.runPromise(
+      Effect.logWarning("IMAP move completed without a usable COPYUID mapping"),
+    );
+  return [];
+};
+
 export const makeMobileImap = Effect.gen(function* () {
   const transport = yield* MailTransport;
   const secrets = yield* Secrets;
   const codec = yield* MailCodec;
+  const observedSent = new Set<string>();
   const credentials = (account: Account) =>
     Effect.gen(function* () {
       if (!account.imap) return yield* new PermanentError({ message: "Missing IMAP settings" });
@@ -391,67 +489,95 @@ export const makeMobileImap = Effect.gen(function* () {
       if (!path) throw new PermanentError({ message: "Folder is gone" });
       return incoming(client, path, ref.uidValidity, ref.uid);
     });
-  const push: ProviderAdapter["push"] = (account, id, op) =>
-    session(account, async (client) => {
-      const ref = refOf(id);
-      await client.select(ref.path, ref.uidValidity, false);
-      if (!(await client.search(`UID ${ref.uid}`)).includes(ref.uid))
-        throw new PermanentError({ message: "Message is gone" });
-      if (op.kind === "read" || op.kind === "star" || op.kind === "important") {
-        const flag =
-          op.kind === "read" ? "\\Seen" : op.kind === "star" ? "\\Flagged" : "$Important";
-        await client.command(`UID STORE ${ref.uid} ${op.value ? "+" : "-"}FLAGS.SILENT (${flag})`);
-        return;
+  const owner = yield* Effect.serviceOption(Scope.Scope);
+  const pushClients = new Map<string, { client: ImapWire; key: string }>();
+  const pushLocks = new Map<string, Semaphore.Semaphore>();
+  if (Option.isSome(owner))
+    yield* Scope.addFinalizer(
+      owner.value,
+      Effect.sync(() => {
+        for (const pool of pushClients.values()) pool.client.wire.socket.close();
+      }),
+    );
+  const pushSession = <A>(account: Account, work: (client: ImapWire) => Promise<A>) => {
+    let lock = pushLocks.get(account.id);
+    if (!lock) {
+      lock = Semaphore.makeUnsafe(1);
+      pushLocks.set(account.id, lock);
+    }
+    return credentials(account).pipe(
+      Effect.flatMap(({ settings, pass }) =>
+        Effect.tryPromise({
+          try: async (signal) => {
+            const key = imapSettingsKey(settings);
+            let pool = pushClients.get(account.id);
+            if (pool && pool.key !== key) {
+              pool.client.wire.socket.close();
+              pushClients.delete(account.id);
+              pool = undefined;
+            }
+            if (pool) {
+              try {
+                await Effect.runPromise(
+                  Effect.tryPromise(() => pool!.client.command("NOOP")).pipe(
+                    Effect.timeout("5 seconds"),
+                  ),
+                  { signal },
+                );
+              } catch {
+                pool.client.wire.socket.close();
+                pushClients.delete(account.id);
+                pool = undefined;
+              }
+            }
+            const client = pool?.client ?? (await open(settings, pass, account.id, signal));
+            if (Option.isSome(owner)) pushClients.set(account.id, { client, key });
+            try {
+              return await work(client);
+            } catch (error) {
+              client.wire.socket.close();
+              pushClients.delete(account.id);
+              throw error;
+            } finally {
+              if (Option.isNone(owner)) client.wire.socket.close();
+            }
+          },
+          catch: failure,
+        }),
+      ),
+      lock.withPermits(1),
+    );
+  };
+  const closeSessions: NonNullable<ProviderAdapter["closeSessions"]> = (id) =>
+    Effect.forEach(
+      id ? [id] : [...pushClients.keys()],
+      (accountId) =>
+        Effect.sync(() => {
+          const pool = pushClients.get(accountId);
+          pool?.client.wire.socket.close();
+          pushClients.delete(accountId);
+        }).pipe(pushLocks.get(accountId)?.withPermits(1) ?? ((effect) => effect)),
+      { discard: true },
+    );
+  const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op) =>
+    pushSession(account, async (client) => {
+      const groups = new Map<string, string[]>();
+      for (const id of ids) {
+        const ref = refOf(id);
+        const key = `${ref.uidValidity}:${ref.path}`;
+        const group = groups.get(key) ?? [];
+        group.push(id);
+        groups.set(key, group);
       }
-      if (op.kind === "categories")
-        throw new PermanentError({ message: "Categories require Outlook" });
-      const list = await folders(client);
-      if (op.kind === "copy") {
-        for (const target of new Set(op.labelIds)) {
-          if (!list.some((f) => f.path === target))
-            throw new PermanentError({ message: "Destination folder is gone" });
-          if (target !== ref.path)
-            await client.command(`UID COPY ${ref.uid} ${mailQuote(encodeFolder(target))}`);
-        }
-        return;
+      const mappings: import("../../services.js").ProviderIdMapping[] = [];
+      for (const group of groups.values()) {
+        const moved = await applyPush(client, group, op);
+        mappings.push(...moved);
       }
-      const label =
-        op.kind === "archive"
-          ? "ARCHIVE"
-          : op.kind === "trash"
-            ? "TRASH"
-            : op.kind === "spam"
-              ? "SPAM"
-              : "INBOX";
-      let target =
-        op.kind === "move"
-          ? op.labelId
-          : op.kind === "label"
-            ? op.value
-              ? op.labelId
-              : ref.path === op.labelId
-                ? "INBOX"
-                : ref.path
-            : list.find((f) => f.label === label)?.path;
-      if (!target && ["archive", "trash", "spam"].includes(op.kind)) {
-        target = label === "ARCHIVE" ? "Archive" : label === "TRASH" ? "Trash" : "Junk";
-        await client.command(`CREATE ${mailQuote(encodeFolder(target))}`);
-        list.push({ path: target, label, name: target });
-      }
-      if (!target) throw new PermanentError({ message: "Destination folder is unavailable" });
-      if (target === ref.path) return;
-      if (!list.some((f) => f.path === target))
-        throw new PermanentError({ message: "Destination folder is gone" });
-      if (client.capabilities.has("MOVE"))
-        await client.command(`UID MOVE ${ref.uid} ${mailQuote(encodeFolder(target))}`);
-      else {
-        if (!client.capabilities.has("UIDPLUS"))
-          throw new PermanentError({ message: "Safe moves require MOVE or UIDPLUS" });
-        await client.command(`UID COPY ${ref.uid} ${mailQuote(encodeFolder(target))}`);
-        await client.command(`UID STORE ${ref.uid} +FLAGS.SILENT (\\Deleted)`);
-        await client.command(`UID EXPUNGE ${ref.uid}`);
-      }
+      return mappings;
     });
+  const push: ProviderAdapter["push"] = (account, id, op) =>
+    pushSession(account, (client) => applyPush(client, [id], op));
   const PageCursor = Schema.fromJsonString(
     Schema.Struct({ path: Schema.String, validity: Schema.String, upper: Schema.Int }),
   );
@@ -491,6 +617,7 @@ export const makeMobileImap = Effect.gen(function* () {
           session(account, async (client, _settings, _pass, signal) => {
             const emit = (change: Change) =>
               Effect.runPromise(Queue.offer(queue, change), { signal });
+            const now = await Effect.runPromise(Clock.currentTimeMillis);
             const previous = readCursor(cursor);
             const next = readCursor(cursor);
             const list = await folders(client);
@@ -502,22 +629,33 @@ export const makeMobileImap = Effect.gen(function* () {
             for (const path of selected) {
               const validity = await client.select(path.path);
               const old = previous.folders[path.path];
-              if (incrementalOnly && (!old || old.uidValidity !== validity))
+              const regressed =
+                !!old && client.uidNext !== undefined && client.uidNext < old.lastUid + 1;
+              const rebuilt = old && old.uidValidity !== validity ? old : undefined;
+              if (incrementalOnly && (!old || old.uidValidity !== validity || regressed))
                 throw new ProviderError({
                   message: "Foreground sync required to renew the cursor",
                 });
-              if (!old || old.uidValidity !== validity) {
+              if (!old || old.uidValidity !== validity || regressed) {
                 await emit({ _tag: "BackfillReset" });
-                if (old) await emit({ _tag: "DeleteLabel", label: path.label });
               }
+              const previousFolder = { path: path.path, uidValidity: old?.uidValidity ?? validity };
               const state =
-                old?.uidValidity === validity
+                old?.uidValidity === validity && !regressed
                   ? FolderState.from(old)
                   : new FolderState(validity, 0, undefined);
               const known = [...state.flags.keys()];
               const present = new Set<number>();
               const current = new Map<number, ReturnType<typeof flagsOf>>();
-              for (let i = 0; i < known.length; i += 500) {
+              const scan =
+                client.capabilities.has("CONDSTORE") ||
+                regressed ||
+                state.flagScanAt === undefined ||
+                now - state.flagScanAt >= 10 * 60 * 1000 ||
+                (old?.modseq !== undefined &&
+                  client.highestModseq !== undefined &&
+                  BigInt(client.highestModseq) < BigInt(old.modseq));
+              for (let i = 0; i < (scan ? known.length : 0); i += 500) {
                 const rows = await client.command(
                   `UID FETCH ${uidSet(known.slice(i, i + 500))} (UID FLAGS)`,
                 );
@@ -526,25 +664,43 @@ export const makeMobileImap = Effect.gen(function* () {
                   current.set(row.uid, flagsOf(row.flags));
                 }
               }
+              if (!scan) for (const uid of known) present.add(uid);
+              if (scan) state.flagScanAt = now;
+              state.modseq = client.highestModseq;
               for (const change of state.reconcile(path.path, present, current)) await emit(change);
-              const since = new Date(Date.now() - 90 * 86400000);
+              const since = new Date(now - 90 * 86400000);
               const date = `${since.getUTCDate()}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][since.getUTCMonth()]}-${since.getUTCFullYear()}`;
               const found = await client.search(
-                state.lastUid || incrementalOnly ? `UID ${state.lastUid + 1}:*` : `SINCE ${date}`,
+                rebuilt || regressed
+                  ? `SINCE ${date}`
+                  : state.lastUid || incrementalOnly
+                    ? `UID ${state.lastUid + 1}:*`
+                    : `SINCE ${date}`,
               );
+              if (regressed) state.lastUid = 0;
               const pending = found.filter((uid) => uid > state.lastUid).toSorted((a, b) => a - b);
-              const newest = old?.uidValidity === validity ? pending : pending.slice(-1000);
+              const newest = old && !rebuilt && !regressed ? pending : pending.slice(-1000);
               for (const [index, uid] of newest.entries()) {
                 const message = await incoming(client, path, validity, uid);
-                await emit({ _tag: "Upsert", message });
+                await emit(
+                  rebuilt || regressed
+                    ? { _tag: "Remap", message, previous: previousFolder }
+                    : { _tag: "Upsert", message },
+                );
                 state.flags.set(uid, { unread: message.isUnread, starred: message.isStarred });
                 state.lastUid = Math.max(state.lastUid, uid);
-                if ((index + 1) % 25 === 0) {
+                if (!rebuilt && !regressed && (index + 1) % 25 === 0) {
                   next.folders[path.path] = state.toCursor();
                   await emit({ _tag: "Cursor", cursor: JSON.stringify(next) });
                 }
                 await emit({ _tag: "Progress", fetched: index + 1, total: newest.length });
               }
+              if (rebuilt || regressed)
+                await emit({
+                  _tag: "RebuildFolder",
+                  previous: previousFolder,
+                  keep: newest.map((uid) => encodeProviderId(path.path, validity, uid)),
+                });
               state.lastUid = Math.max(state.lastUid, ...newest);
               next.folders[path.path] = state.toCursor();
               await emit({ _tag: "Cursor", cursor: JSON.stringify(next) });
@@ -568,6 +724,8 @@ export const makeMobileImap = Effect.gen(function* () {
         { bufferSize: 64, strategy: "suspend" },
       ),
     push,
+    pushBatch,
+    closeSessions,
     fetchRaw,
     fetchMessage,
     fetchAttachment: (account, id, ref) =>
@@ -622,14 +780,17 @@ export const makeMobileImap = Effect.gen(function* () {
         yield* session(account, async (client) => {
           const sent = (await folders(client)).find((f) => f.label === "SENT");
           if (!sent) throw new ProviderError({ message: "Sent folder unavailable" });
-          if (IMAP_PRESETS[settings.preset]?.serverSavesSent) {
+          if (serverSavesSent(settings) || observedSent.has(account.id)) {
             const parsed = await codec.parse(raw);
             const id = parsed.headers.get("message-id");
             if (typeof id === "string") {
               await client.select(sent.path);
-              for (let attempt = 0; attempt < 3; attempt++) {
-                if ((await client.search(`HEADER Message-ID ${mailQuote(id)}`)).length) return;
-                await Effect.runPromise(Effect.sleep("500 millis"));
+              for (let attempt = 0; attempt < 4; attempt++) {
+                if (attempt) await Effect.runPromise(Effect.sleep("4 seconds"));
+                if ((await client.search(`HEADER Message-ID ${mailQuote(id)}`)).length) {
+                  observedSent.add(account.id);
+                  return;
+                }
               }
             }
           }

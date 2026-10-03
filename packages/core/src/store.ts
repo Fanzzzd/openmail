@@ -46,7 +46,7 @@ import { DerivedChunk } from "./media.js";
  * decoded with schemas built from the domain types (this is the IO boundary);
  * SQL and decode failures die, since they mean a bug or a corrupt file.
  */
-import { Clock, Effect, Layer, Option, Schema } from "effect";
+import { Cause, Clock, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
 import type { Fragment } from "effect/sql/Statement";
@@ -521,6 +521,57 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     // Messages
 
+    const imapFolder = (folder: import("./services.js").ImapFolderIdentity) =>
+      sql`m.provider_id>=${`${folder.uidValidity}:`} AND m.provider_id<${`${folder.uidValidity};`} AND substr(m.provider_id,-${folder.path.length + 1})=${`:${folder.path}`}`;
+    let lastTruncate = yield* Clock.currentTimeMillis;
+    const messageIdForProvider = (account: string, providerId: string) =>
+      first(MessageId)(
+        sql`SELECT id FROM messages WHERE account_id=${account} AND provider_id=${providerId} ORDER BY date DESC,id LIMIT 1`,
+      ).pipe(Effect.map((row) => (Option.isSome(row) ? row.value.id : null)));
+    const remapProviderIds = (
+      account: string,
+      mappings: readonly import("./services.js").ProviderIdMapping[],
+    ) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            for (const mapping of mappings) {
+              if (mapping.from === mapping.to) continue;
+              const source = yield* messageIdForProvider(account, mapping.from);
+              if (source) {
+                yield* media.deleteVectorsForMessages(
+                  sql`m.account_id=${account} AND m.provider_id=${mapping.to} AND m.id<>${source}`,
+                );
+                yield* run(
+                  sql`DELETE FROM messages WHERE account_id=${account} AND provider_id=${mapping.to} AND id<>${source}`,
+                );
+                yield* run(sql`UPDATE messages SET provider_id=${mapping.to} WHERE id=${source}`);
+              }
+              yield* run(
+                sql`UPDATE pending_ops SET provider_id=${mapping.to} WHERE account_id=${account} AND provider_id=${mapping.from}`,
+              );
+              yield* run(
+                sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.to} AND EXISTS(SELECT 1 FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.from})`,
+              );
+              yield* run(
+                sql`INSERT OR IGNORE INTO snoozed_messages(account_id,thread_id,provider_id,wake_pending) SELECT account_id,thread_id,${mapping.to},wake_pending FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.from}`,
+              );
+              yield* run(
+                sql`DELETE FROM snoozed_messages WHERE account_id=${account} AND provider_id=${mapping.from}`,
+              );
+              yield* run(
+                sql`UPDATE drafts SET remote_message_id=${mapping.to}, remote_draft_id=CASE WHEN remote_draft_id=${mapping.from} THEN ${mapping.to} ELSE remote_draft_id END WHERE account_id=${account} AND remote_message_id=${mapping.from}`,
+              );
+            }
+          }),
+        )
+        .pipe(
+          Effect.catchCause((cause) =>
+            Cause.hasInterrupts(cause)
+              ? Effect.interrupt
+              : Effect.logWarning("Could not reconcile IMAP message identities"),
+          ),
+        );
     const Reminder = Schema.Struct({
       due_at: Schema.NullOr(Schema.Number),
       woken_at: Schema.NullOr(Schema.Number),
@@ -537,7 +588,22 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       const reminder = yield* first(Reminder)(
         sql`SELECT r.due_at, r.woken_at, s.wake_pending FROM thread_reminders r JOIN snoozed_messages s ON s.account_id=r.account_id AND s.thread_id=r.thread_id WHERE s.account_id=${account} AND s.provider_id=${incoming.providerId}`,
       );
+      const localId =
+        (yield* messageIdForProvider(account, incoming.providerId)) ??
+        `${account}/${incoming.providerId}`;
       let m = incoming;
+      if (incoming.parentRfcMessageId) {
+        const parent = yield* first(Schema.Struct({ thread_id: Schema.String }))(
+          sql`SELECT thread_id FROM messages WHERE account_id=${account} AND trim(rfc_message_id, '<>')=${incoming.parentRfcMessageId.replace(/^<|>$/g, "")} ORDER BY date DESC LIMIT 1`,
+        );
+        if (Option.isSome(parent)) m = { ...m, threadId: parent.value.thread_id };
+        else {
+          const existing = yield* first(Schema.Struct({ thread_id: Schema.String }))(
+            sql`SELECT thread_id FROM messages WHERE id=${localId}`,
+          );
+          if (Option.isSome(existing)) m = { ...m, threadId: existing.value.thread_id };
+        }
+      }
       if (incoming.labels.includes("DRAFT")) {
         const owner = yield* getAccount(account).pipe(Effect.orDie);
         if (owner.provider === "gmail") {
@@ -586,7 +652,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           };
         }
       }
-      yield* media.deleteVectorsForMessages(sql`m.id=${`${account}/${m.providerId}`} AND
+      yield* media.deleteVectorsForMessages(sql`m.id=${localId} AND
         (m.body_text!=${m.bodyText} OR m.body_html!=${m.bodyHtml} OR m.attachments_json!=${JSON.stringify(m.attachments)})`);
       yield* (
         // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
@@ -594,7 +660,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         run(sql`INSERT INTO messages (id, account_id, provider_id, thread_id, subject, from_name,
             from_addr, to_json, cc_json, reply_to_json, date, snippet, body_text, body_html, labels_json,
             attachments_json, is_unread, is_starred, calendar_hint, body_cached, list_date, web_link, bcc_json, rfc_message_id, message_size, headers_json, security_json)
-          VALUES (${`${account}/${m.providerId}`}, ${account}, ${m.providerId}, ${m.threadId},
+          VALUES (${localId}, ${account}, ${m.providerId}, ${m.threadId},
             ${m.subject}, ${cleanDisplayName(m.from.name)}, ${m.from.address}, ${JSON.stringify(m.to)},
             ${JSON.stringify(m.cc)}, ${JSON.stringify(m.replyTo ?? [])}, ${m.date}, ${m.snippet}, ${m.bodyText}, ${m.bodyHtml},
             ${JSON.stringify(m.labels)}, ${JSON.stringify(m.attachments)}, ${m.isUnread ? 1 : 0},
@@ -635,9 +701,13 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const deleteMessage = Effect.fn("Store.deleteMessage")((account: string, providerId: string) =>
       media
-        .deleteVectorsForMessages(sql`m.id=${`${account}/${providerId}`}`)
+        .deleteVectorsForMessages(sql`m.account_id=${account} AND m.provider_id=${providerId}`)
         .pipe(
-          Effect.andThen(run(sql`DELETE FROM messages WHERE id=${`${account}/${providerId}`}`)),
+          Effect.andThen(
+            run(
+              sql`DELETE FROM messages WHERE account_id=${account} AND provider_id=${providerId}`,
+            ),
+          ),
         ),
     );
     const outsideKeep = (keep?: readonly string[]) =>
@@ -659,13 +729,15 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
           ),
     );
     const deleteAccountMessages = Effect.fn("Store.deleteAccountMessages")(
-      (account: string, keep?: readonly string[]) =>
+      (account: string, keep?: readonly string[], since?: number) =>
         media
-          .deleteVectorsForMessages(sql`m.account_id=${account} AND ${outsideKeep(keep)}`)
+          .deleteVectorsForMessages(
+            sql`m.account_id=${account} AND ${outsideKeep(keep)} AND (${since ?? null} IS NULL OR m.date>=${since ?? null})`,
+          )
           .pipe(
             Effect.andThen(
               run(
-                sql`DELETE FROM messages AS m WHERE account_id=${account} AND ${outsideKeep(keep)}`,
+                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${outsideKeep(keep)} AND (${since ?? null} IS NULL OR m.date>=${since ?? null})`,
               ),
             ),
           ),
@@ -1294,7 +1366,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       else labels.delete("STARRED");
       yield* run(sql`UPDATE messages SET labels_json = ${JSON.stringify([...labels])},
           is_unread = ${isUnread ? 1 : 0}, is_starred = ${flags.isStarred ? 1 : 0}
-        WHERE id = ${`${account}/${providerId}`}`);
+        WHERE account_id=${account} AND provider_id=${providerId}`);
     });
 
     /**
@@ -1605,15 +1677,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const snooze = Effect.fn("Store.snooze")(function* (id: string, due: number) {
       const message = yield* getMessage(id);
-      const previous = yield* all(Schema.Struct({ provider_id: Schema.String }))(
-        sql`SELECT provider_id FROM snoozed_messages WHERE account_id=${message.accountId} AND thread_id=${message.threadId}`,
+      const previous = yield* all(Schema.Struct({ id: Schema.String }))(
+        sql`SELECT m.id FROM snoozed_messages s JOIN messages m ON m.account_id=s.account_id AND m.provider_id=s.provider_id WHERE s.account_id=${message.accountId} AND s.thread_id=${message.threadId}`,
       );
       const targets = (yield* getThread(id)).filter(
         (member) =>
           !member.labels.some((l) => ["DRAFT", "TRASH", "SPAM"].includes(l)) &&
           (member.labels.includes("INBOX") ||
-            (member.labels.includes("SNOOZED") &&
-              previous.some((p) => member.id === `${message.accountId}/${p.provider_id}`))),
+            (member.labels.includes("SNOOZED") && previous.some((p) => member.id === p.id))),
       );
       if (!targets.length)
         yield* new InvalidInput({ message: "Only inbox messages can be snoozed" });
@@ -1830,11 +1901,45 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ...wordIndex,
       ...makeInviteStatusStore(sql),
       getThread,
-      findMessageByRfcId: (ownerId, messageId) =>
+      findMessageByRfcId: (ownerId, messageId, folder) =>
         first(MessageId)(
-          sql`SELECT id FROM messages WHERE account_id=${ownerId} AND account_id IN (SELECT id FROM accounts WHERE enabled=1) AND trim(rfc_message_id, '<>')=${messageId.replace(/^<|>$/g, "")} ORDER BY date DESC LIMIT 1`,
+          sql`SELECT id FROM messages AS m WHERE m.account_id=${ownerId} AND m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND trim(m.rfc_message_id, '<>')=${messageId.replace(/^<|>$/g, "")} ${folder ? sql`AND ${imapFolder(folder)}` : sql.literal("")} ORDER BY date DESC,id LIMIT 1`,
         ).pipe(Effect.map((row) => (Option.isSome(row) ? row.value.id : null))),
+      deleteImapFolder: (account, previous, keep) =>
+        media
+          .deleteVectorsForMessages(
+            sql`m.account_id=${account} AND ${imapFolder(previous)} AND ${outsideKeep(keep)}`,
+          )
+          .pipe(
+            Effect.andThen(
+              run(
+                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)} AND ${outsideKeep(keep)}`,
+              ),
+            ),
+          ),
       messageRef,
+      messageIdForProvider,
+      remapProviderIds,
+      checkpoint: run(sql`PRAGMA wal_checkpoint(PASSIVE)`).pipe(
+        Effect.andThen(
+          Effect.gen(function* () {
+            const now = yield* Clock.currentTimeMillis;
+            if (now - lastTruncate >= 24 * 60 * 60 * 1000) {
+              const pages = yield* all(
+                Schema.Struct({
+                  busy: Schema.Number,
+                  log: Schema.Number,
+                  checkpointed: Schema.Number,
+                }),
+              )(sql`PRAGMA wal_checkpoint(PASSIVE)`);
+              if (pages.every((page) => page.busy === 0 && page.log === page.checkpointed)) {
+                yield* run(sql`PRAGMA wal_checkpoint(TRUNCATE)`);
+                lastTruncate = now;
+              }
+            }
+          }),
+        ),
+      ),
       threadMessageIds,
       messageLabels,
       applyLocalOp,
@@ -1867,6 +1972,16 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       deleteDraft: compose.deleteDraft,
       enqueueDraftSave: compose.enqueueDraftSave,
       dropSyncedDrafts: compose.dropSyncedDrafts,
+      sendUncertain: (id) =>
+        first(Schema.Struct({ key: Schema.String }))(
+          sql`SELECT key FROM prefs WHERE key=${`send-uncertain:${id}`}`,
+        ).pipe(Effect.map(Option.isSome)),
+      setSendUncertain: (id, value) =>
+        value
+          ? run(
+              sql`INSERT INTO prefs(key,value_json) VALUES(${`send-uncertain:${id}`},'true') ON CONFLICT(key) DO NOTHING`,
+            )
+          : run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`),
       queuedSends: compose.queuedSends,
       putQueuedSend: compose.putQueuedSend,
       deleteQueuedSend: compose.deleteQueuedSend,

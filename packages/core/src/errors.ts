@@ -23,6 +23,7 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
   message: Schema.String,
   status: Schema.optionalKey(Schema.Number),
   reason: Schema.optionalKey(Schema.Literal("configuration")),
+  deferred: Schema.optionalKey(Schema.Boolean),
 }) {}
 
 /** No OAuth client is registered for this provider yet. The app shows the setup step. */
@@ -76,6 +77,11 @@ export class FeatureScopeMissing extends Schema.TaggedError<FeatureScopeMissing>
   },
 ) {}
 
+/** Submission completed ambiguously; a person must check Sent before retrying. */
+export class SendUncertain extends Schema.TaggedError<SendUncertain>()("SendUncertain", {
+  message: Schema.String,
+}) {}
+
 /** What a provider call can fail with. */
 export type ProviderFailure = AuthError | PermanentError | ProviderError;
 
@@ -84,6 +90,7 @@ export const MailError = Schema.Union([
   AuthError,
   PermanentError,
   ProviderError,
+  SendUncertain,
   ClientNotConfigured,
   NotFound,
   InvalidInput,

@@ -1,7 +1,9 @@
+import { MailCodec } from "./platform/mail-codec.js";
+import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
-import { Cause, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 
@@ -21,7 +23,7 @@ interface Call {
 
 const parseJson = (text: string): unknown => JSON.parse(text);
 
-type Reply = { status?: number; json?: unknown };
+type Reply = { headers?: Record<string, string>; status?: number; json?: unknown };
 
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under the
@@ -43,6 +45,7 @@ function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
         request,
         new Response(reply.json === undefined ? null : JSON.stringify(reply.json), {
           status: reply.status ?? 200,
+          headers: reply.headers,
         }),
       );
     }),
@@ -189,7 +192,7 @@ it.effect("a history cursor Gmail no longer has falls back to a full sync", () =
       "GET /messages/m1": { json: message("m1", ["SPAM"]) },
     });
     const changes = yield* run(http, (a) => Stream.runCollect(a.pull(account, Option.some("1"))));
-    assert.deepStrictEqual(tags(changes), ["Labels", "Upsert", "Progress", "Cursor"]);
+    assert.deepStrictEqual(tags(changes), ["Labels", "Upsert", "Progress", "Reset", "Cursor"]);
     assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "900" });
   }),
 );
@@ -2210,6 +2213,385 @@ it.effect(
     }),
 );
 
+it.effect("slice49: label-only history reads minimal and additions read full", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": { json: { labels: [] } },
+      "GET /history": {
+        json: {
+          historyId: "2",
+          history: [
+            {
+              labelsAdded: [{ message: { id: "labels" } }],
+              messagesAdded: [{ message: { id: "added" } }],
+            },
+          ],
+        },
+      },
+      "GET /messages/labels": { json: { id: "labels", labelIds: ["INBOX", "STARRED"] } },
+      "GET /messages/added": { json: message("added", ["INBOX"]) },
+    });
+    const changes = yield* run(http, (a) => Stream.runCollect(a.pull(account, Option.some("1"))));
+    assert.ok(changes.some((c) => c._tag === "MessageLabels"));
+    assert.strictEqual(
+      http.calls
+        .find((c) => c.url.pathname.endsWith("/labels") && c.url.searchParams.has("format"))
+        ?.url.searchParams.get("format"),
+      "minimal",
+    );
+    assert.strictEqual(
+      http.calls.find((c) => c.url.pathname.endsWith("/added"))?.url.searchParams.get("format"),
+      "full",
+    );
+  }),
+);
+
+for (const delivered of [true, false])
+  it.effect(`slice49: Gmail ambiguous send ${delivered} checks Sent once without resending`, () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "POST /messages/send": { status: 503, json: { error: "ambiguous" } },
+        "GET /messages": (url) => {
+          assert.include(url.searchParams.get("q") ?? "", "in:sent");
+          return { json: { messages: delivered ? [{ id: "sent" }] : [] } };
+        },
+      });
+      const result = yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const fiber = yield* a
+            .send(account, outgoing, Option.none())
+            .pipe(Effect.result, Effect.forkChild);
+          while (
+            !http.calls.some(
+              (call) => call.method === "GET" && call.url.pathname.endsWith("/messages"),
+            )
+          )
+            yield* Effect.yieldNow;
+          yield* TestClock.adjust("35 seconds");
+          return yield* Fiber.join(fiber);
+        }),
+      );
+      assert.strictEqual(result._tag, delivered ? "Success" : "Failure");
+      assert.strictEqual(http.calls.filter((c) => c.method === "POST").length, 1);
+      const sent = yield* Schema.decodeUnknownEffect(Schema.Struct({ raw: Schema.String }))(
+        http.calls[0]?.body,
+      );
+      assert.match(
+        Buffer.from(sent.raw, "base64url").toString(),
+        /Message-ID: <.+@openmail.local>/i,
+      );
+    }),
+  );
+
+it.effect("slice49: a changed remote Gmail draft creates a second copy", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /drafts/d1": { json: { id: "d1", message: { id: "other-edit" } } },
+      "POST /drafts": { json: { id: "d2", message: { id: "ours" } } },
+      "PUT /drafts/d1": { json: { id: "d1", message: { id: "overwritten" } } },
+    });
+    const saved = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        remote: { draftId: "d1", messageId: "before" },
+        message: outgoing,
+        original: Option.none(),
+        replaceAttachments: false,
+      }),
+    );
+    assert.strictEqual(saved.messageId, "ours");
+    assert.strictEqual(saved.conflict, true);
+    assert.isFalse(http.calls.some((c) => c.method === "PUT"));
+  }),
+);
+
+for (const date of [false, true])
+  it.effect(`slice49: Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      let requests = 0;
+      const http = fakeHttp({
+        "POST /messages/m/modify": () =>
+          ++requests === 1
+            ? {
+                status: 429,
+                headers: { "Retry-After": date ? new Date(now + 5000).toUTCString() : "5" },
+              }
+            : { json: {} },
+      });
+      yield* run(http, (a) =>
+        Effect.gen(function* () {
+          const fiber = yield* a
+            .push(account, "m", { kind: "read", value: true })
+            .pipe(Effect.forkChild);
+          yield* TestClock.adjust("2 seconds");
+          assert.strictEqual(requests, 1);
+          yield* TestClock.adjust("3 seconds");
+          yield* Fiber.join(fiber);
+          assert.strictEqual(requests, 2);
+        }),
+      );
+    }),
+  );
+
+it.effect("slice49: send transport timeout checks Sent and never replays POST", () =>
+  Effect.gen(function* () {
+    let posts = 0,
+      sentChecks = 0;
+    const client = HttpClient.make((request, url) =>
+      Effect.suspend(() => {
+        if (url.pathname.endsWith("/messages/send")) {
+          posts++;
+          return Effect.fail(
+            new HttpClientError.HttpClientError({
+              reason: new HttpClientError.TransportError({
+                request,
+                description: "timeout after submission",
+              }),
+            }),
+          );
+        }
+        sentChecks++;
+        return Effect.succeed(
+          HttpClientResponse.fromWeb(
+            request,
+            new Response(JSON.stringify({ messages: [], value: [] })),
+          ),
+        );
+      }),
+    );
+    const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const fiber = yield* a
+          .send(account, outgoing, Option.none())
+          .pipe(Effect.result, Effect.forkChild);
+        while ((() => sentChecks === 0)()) yield* Effect.yieldNow;
+        yield* TestClock.adjust("35 seconds");
+        assert.strictEqual((yield* Fiber.join(fiber))._tag, "Failure");
+      }),
+    );
+    assert.strictEqual(posts, 1);
+    assert.isAtLeast(sentChecks, 6);
+  }),
+);
+
+it.effect("slice49: Gmail JSON signed containers use raw MIME for the body", () =>
+  Effect.gen(function* () {
+    const signedRaw =
+      "Content-Type: application/pkcs7-mime; smime-type=signed-data; name=smime.p7m\r\nContent-Transfer-Encoding: base64\r\n\r\nMFEGCSqGSIb3DQEHAqBEMEICAQExADA7BgkqhkiG9w0BBwGgLgQsQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluDQoNCnNpZ25lZCBKU09OIGJvZHk=";
+    const http = fakeHttp({
+      "GET /messages/signed": (url) =>
+        url.searchParams.get("format") === "raw"
+          ? { json: { raw: b64(signedRaw) } }
+          : {
+              json: {
+                ...message("signed", ["INBOX"]),
+                payload: {
+                  mimeType: "application/pkcs7-mime",
+                  filename: "smime.p7m",
+                  body: { size: 100 },
+                },
+              },
+            },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, "signed"));
+    assert.strictEqual(m.bodyText.trim(), "signed JSON body");
+    assert.deepStrictEqual(
+      m.attachments.map((part) => part.filename),
+      ["smime.p7m"],
+    );
+  }),
+);
+it.effect("slice49: Gmail JSON uuencode attachments are listed and fetched from raw MIME", () =>
+  Effect.gen(function* () {
+    const text = "hello\r\nbegin 644 file.txt\r\n#0V%T\r\n`\r\nend\r\n";
+    const http = fakeHttp({
+      "GET /messages/uu": (url) =>
+        url.searchParams.get("format") === "raw"
+          ? { json: { raw: b64(`Content-Type: text/plain\r\n\r\n${text}`) } }
+          : {
+              json: {
+                ...message("uu", ["INBOX"]),
+                payload: { mimeType: "text/plain", body: { size: text.length, data: b64(text) } },
+              },
+            },
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const m = yield* a.fetchMessage(account, "uu");
+        assert.strictEqual(m.attachments[0]?.filename, "file.txt");
+        assert.strictEqual(
+          Buffer.from(
+            yield* a.fetchAttachment(account, "uu", {
+              index: 0,
+              filename: "file.txt",
+              occurrence: 0,
+            }),
+          ).toString(),
+          "Cat",
+        );
+      }),
+    );
+  }),
+);
+
+it.effect("slice49-fix: a late Sent copy is polled without repeating the send", () =>
+  Effect.gen(function* () {
+    let lookup = 0;
+    const http = fakeHttp({
+      "POST /messages/send": { status: 503 },
+      "GET /messages": (url) => ({
+        json: {
+          messages:
+            (url.searchParams.get("q") ?? "").includes("rfc822msgid") && ++lookup >= 6
+              ? [{ id: "delayed" }]
+              : [],
+        },
+      }),
+    });
+    yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const fiber = yield* a
+          .send(account, outgoing, Option.none())
+          .pipe(Effect.result, Effect.forkChild);
+        while ((() => lookup === 0)()) yield* Effect.yieldNow;
+        yield* TestClock.adjust("35 seconds");
+        assert.strictEqual((yield* Fiber.join(fiber))._tag, "Success");
+      }),
+    );
+    assert.strictEqual(http.calls.filter((c) => c.method === "POST").length, 1);
+    assert.strictEqual(lookup, 6);
+  }),
+);
+
+it.effect("slice49-fix: a rewritten Gmail Message-ID is matched by our MIME trace header", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /messages/send": { status: 503 },
+      "GET /messages": (url) => ({
+        json: {
+          messages: (url.searchParams.get("q") ?? "").includes("rfc822msgid")
+            ? []
+            : [{ id: "rewritten" }],
+        },
+      }),
+      "GET /messages/rewritten": () => {
+        const sent = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
+          http.calls.find((call) => call.method === "POST")?.body,
+        );
+        const trace = /^X-OpenMail-Id: (.+)$/im
+          .exec(Buffer.from(sent.raw, "base64url").toString())?.[1]
+          ?.trim();
+        return {
+          json: { payload: { headers: [{ name: "X-OpenMail-Id", value: trace ?? "missing" }] } },
+        };
+      },
+    });
+    const result = yield* run(http, (a) =>
+      a.send(account, outgoing, Option.none()).pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Success");
+    assert.ok(
+      http.calls.some((call) => call.url.searchParams.get("metadataHeaders") === "X-OpenMail-Id"),
+    );
+  }),
+);
+
+it.effect("slice49-fix: a Retry-After over sixty seconds returns to the next sync", () =>
+  Effect.gen(function* () {
+    let calls = 0;
+    const http = fakeHttp({
+      "POST /messages/m/modify": () =>
+        ++calls === 1 ? { status: 429, headers: { "Retry-After": "61" } } : { json: {} },
+    });
+    const result = yield* run(http, (a) =>
+      Effect.gen(function* () {
+        const fiber = yield* a
+          .push(account, "m", { kind: "read", value: true })
+          .pipe(Effect.result, Effect.forkChild);
+        yield* TestClock.adjust("62 seconds");
+        return yield* Fiber.join(fiber);
+      }),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(calls, 1);
+    if (result._tag === "Failure") {
+      assert.strictEqual(result.failure._tag, "ProviderError");
+      if (result.failure._tag === "ProviderError")
+        assert.strictEqual(result.failure.deferred, true);
+    }
+  }),
+);
+
+it.effect("slice49-fix: MIME parse failures preserve opaque mail and advance history", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": { json: { labels: [] } },
+      "GET /profile": { json: { emailAddress: account.email, historyId: "safe-cursor" } },
+      "GET /messages": { json: { messages: [{ id: "opaque" }] } },
+      "GET /messages/opaque": (url) =>
+        url.searchParams.get("format") === "raw"
+          ? { json: { raw: b64("malformed MIME") } }
+          : {
+              json: {
+                ...message("opaque", ["INBOX"]),
+                payload: {
+                  mimeType: "application/pkcs7-mime",
+                  filename: "smime.p7m",
+                  body: { size: 100 },
+                },
+              },
+            },
+    });
+    const broken = {
+      ...nodeMailCodec,
+      parse: async () => {
+        throw new Error("malformed MIME");
+      },
+    };
+    const changes = yield* makeGmail.pipe(
+      Effect.provideService(MailCodec, broken),
+      Effect.flatMap((a) => Stream.runCollect(a.pull(account, Option.none()))),
+      Effect.provide(Layer.mergeAll(http.layer, platform)),
+    );
+    const upsert = changes.find((change) => change._tag === "Upsert");
+    assert.ok(upsert?._tag === "Upsert");
+    assert.strictEqual(upsert.message.attachments[0]?.filename, "smime.p7m");
+    assert.deepStrictEqual(changes.at(-1), { _tag: "Cursor", cursor: "safe-cursor" });
+  }),
+);
+
+it.effect("slice49-fix: signed attachments do not trigger Gmail body replacement", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /messages/invoice": (url) => {
+        assert.strictEqual(url.searchParams.get("format"), "full");
+        return {
+          json: {
+            ...message("invoice", ["INBOX"]),
+            payload: {
+              mimeType: "multipart/mixed",
+              body: { size: 0 },
+              parts: [
+                { mimeType: "text/plain", body: { size: 16, data: b64("Invoice enclosed") } },
+                {
+                  mimeType: "application/pkcs7-mime",
+                  filename: "invoice.pdf.p7m",
+                  body: { size: 100 },
+                },
+              ],
+            },
+          },
+        };
+      },
+    });
+    const m = yield* run(http, (a) => a.fetchMessage(account, "invoice"));
+    assert.strictEqual(m.bodyText, "Invoice enclosed");
+    assert.strictEqual(m.attachments[0]?.filename, "invoice.pdf.p7m");
+    assert.strictEqual(http.calls.length, 1);
+  }),
+);
+
 it.effect(
   "background Gmail pull refuses missing and expired history without listing or full sync",
   () =>
@@ -2276,15 +2658,18 @@ for (const failure of ["offline", "AbortError"]) {
 it.effect("gmail never retries a send on a dropped connection", () =>
   Effect.gen(function* () {
     let sends = 0;
+    let lookups = 0;
     const client = HttpClient.make((request) =>
       Effect.suspend(() => {
-        if (request.method === "GET")
+        if (request.method === "GET") {
+          lookups++;
           return Effect.succeed(
             HttpClientResponse.fromWeb(
               request,
               new Response(JSON.stringify({ value: [], id: "folder", payload: { headers: [] } })),
             ),
           );
+        }
         sends++;
         return Effect.fail(
           new HttpClientError.HttpClientError({
@@ -2295,22 +2680,27 @@ it.effect("gmail never retries a send on a dropped connection", () =>
     );
     const http = { layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] };
     const error = yield* run(http, (adapter) =>
-      adapter
-        .send(
-          account,
-          {
-            to: [{ name: "Recipient", address: "recipient@example.com" }],
-            cc: [],
-            bcc: [],
-            subject: "Test",
-            text: "Text",
-            attachments: [],
-          },
-          Option.none(),
-        )
-        .pipe(Effect.flip),
+      Effect.gen(function* () {
+        const fiber = yield* adapter
+          .send(
+            account,
+            {
+              to: [{ name: "Recipient", address: "recipient@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Test",
+              text: "Text",
+              attachments: [],
+            },
+            Option.none(),
+          )
+          .pipe(Effect.flip, Effect.forkChild);
+        while ((() => lookups === 0)()) yield* Effect.yieldNow;
+        yield* TestClock.adjust("35 seconds");
+        return yield* Fiber.join(fiber);
+      }),
     );
-    assert.strictEqual(error._tag, "ProviderError");
+    assert.strictEqual(error._tag, "SendUncertain");
     assert.strictEqual(sends, 1);
   }),
 );
