@@ -1,16 +1,22 @@
 const { createRequire } = require("node:module");
 const path = require("node:path");
 
-/** Preserve electron-builder's options for every binary except the Contacts CLI. */
+/** Native helpers have individual entitlements; never inherit Electron's JIT permissions. */
 function contactsSigningOptions(options) {
-  const helper = path.join(options.app, "Contents/Resources/native/contacts");
+  const entitlements = new Map(
+    ["contacts", "grammar"].map((name) => [
+      path.join(options.app, `Contents/Resources/native/${name}`),
+      path.join(__dirname, `entitlements.${name}.plist`),
+    ]),
+  );
+  const photos = path.join(options.app, "Contents/Resources/native/OpenMailPhotos.app");
+  for (const file of [photos, path.join(photos, "Contents/MacOS/photos")])
+    entitlements.set(file, path.join(__dirname, "entitlements.photos.plist"));
   return {
     ...options,
     optionsForFile: (file) => ({
       ...options.optionsForFile(file),
-      ...(file === helper
-        ? { entitlements: path.join(__dirname, "entitlements.contacts.plist") }
-        : {}),
+      ...(entitlements.has(file) ? { entitlements: entitlements.get(file) } : {}),
     }),
   };
 }

@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 mkdirSync("out/native", { recursive: true });
 const run = (command, args) => {
@@ -9,6 +9,45 @@ const run = (command, args) => {
   if (result.status !== 0) process.exit(result.status ?? 1);
 };
 if (process.platform === "darwin") {
+  for (const [source, name] of [
+    ["PhotosCLI.swift", "photos"],
+    ["GrammarCLI.swift", "grammar"],
+  ]) {
+    for (const arch of ["arm64", "x86_64"])
+      run("swiftc", [
+        "-O",
+        "-target",
+        `${arch}-apple-macos13.0`,
+        `native/${source}`,
+        "-o",
+        `out/native/${name}-${arch}`,
+      ]);
+    const bundle = "out/native/OpenMailPhotos.app";
+    const output = name === "photos" ? `${bundle}/Contents/MacOS/photos` : `out/native/${name}`;
+    if (name === "photos") {
+      mkdirSync(`${bundle}/Contents/MacOS`, { recursive: true });
+      copyFileSync("build/Info.photos.plist", `${bundle}/Contents/Info.plist`);
+    }
+    run("lipo", [
+      "-create",
+      `out/native/${name}-arm64`,
+      `out/native/${name}-x86_64`,
+      "-output",
+      output,
+    ]);
+    run("codesign", [
+      "--force",
+      "--sign",
+      "-",
+      "--options",
+      "runtime",
+      "--identifier",
+      `app.openmail.desktop.${name}`,
+      "--entitlements",
+      `build/entitlements.${name}.plist`,
+      name === "photos" ? bundle : output,
+    ]);
+  }
   const require = createRequire(import.meta.url);
   const headers = join(dirname(require.resolve("node-api-headers/package.json")), "include");
   run("clang++", [

@@ -47,6 +47,9 @@ export const NativeAction = Schema.Literals([
   "saveMessage",
   "searchSender",
   "openMessageWeb",
+  "shareMessageLink",
+  "shareThreadLink",
+  "shareWebLink",
   "expandAll",
   "collapseAll",
   "sync",
@@ -71,6 +74,7 @@ export const NativeMenuState = Schema.Struct({
   selected: Schema.Boolean,
   composing: Schema.Boolean,
   gmail: Schema.Boolean,
+  web: Schema.optionalKey(Schema.Boolean),
   mailbox: Schema.optionalKey(Schema.Boolean),
 });
 export type NativeMenuState = typeof NativeMenuState.Type;
@@ -101,6 +105,9 @@ export const NATIVE_MENUS = [
       "saveMessage",
       "searchSender",
       "openMessageWeb",
+      "shareMessageLink",
+      "shareThreadLink",
+      "shareWebLink",
       "expandAll",
       "collapseAll",
       "send",
@@ -161,9 +168,27 @@ export function nativeActionEnabled(action: NativeAction, state: NativeMenuState
   if (nativeActionUsesEditor(action)) return state.composing;
   if (NATIVE_MENUS[1]?.actions.some((a) => a === action))
     return !state.composing && state.mailbox !== false;
-  return state.selected && !state.composing && (action !== "important" || state.gmail);
+  return (
+    state.selected &&
+    !state.composing &&
+    (action !== "important" || state.gmail) &&
+    (action !== "shareWebLink" || state.web === true)
+  );
 }
 /** Dispatch through existing handlers, including Composer and Reader, using the selected keymap. */
 export function nativeActionStroke(set: ShortcutSet, action: ShortcutAction) {
   return KEYMAP[set][action][0];
+}
+
+export function nativeShareKind(action: NativeAction) {
+  switch (action) {
+    case "shareMessageLink":
+      return "message";
+    case "shareThreadLink":
+      return "thread";
+    case "shareWebLink":
+      return "web";
+    default:
+      return null;
+  }
 }

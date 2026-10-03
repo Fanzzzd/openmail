@@ -1,3 +1,4 @@
+import type { NativePicker } from "../../../shared/native-compose";
 import { useLingui } from "@lingui/react/macro";
 import {
   attachmentBytes,
@@ -150,6 +151,49 @@ export function useComposeEditor({
     } finally {
       setAdding(false);
     }
+  };
+
+  const pickNativeImages = (kind: NativePicker) => {
+    if (adding) return;
+    setAdding(true);
+    run(
+      withMail((call) =>
+        call("PickNativeImages", {
+          kind,
+          labels: {
+            title: kind === "photos" ? t`Photos` : t`Import from iPhone or iPad`,
+            instruction: t`Click in this window, then choose a device to take a photo, scan a document or add a sketch.`,
+            cancel: t`Cancel`,
+          },
+        }),
+      ).pipe(
+        Effect.matchCause({
+          onSuccess: ({ files, status }) => {
+            const all = [...draft.attachments, ...files];
+            const problem = account ? attachmentProblem(account.provider, all) : undefined;
+            if (problem) showAttachmentProblem(problem);
+            else if (
+              all.reduce((sum, file) => sum + attachmentBytes(file.content), 0) >
+              30 * 1024 * 1024
+            )
+              setError(messages.attachmentsExceedThe30MBComposeLimit);
+            else {
+              if (files.length) appendAttachments(files, false);
+              setError(
+                status === "tooLarge"
+                  ? t`Images that exceed the 30 MB attachment limit were skipped.`
+                  : null,
+              );
+            }
+            setAdding(false);
+          },
+          onFailure: () => {
+            setAdding(false);
+            setError(t`Could not open the system picker.`);
+          },
+        }),
+      ),
+    );
   };
 
   const toggleOriginalAttachments = () => {
@@ -383,6 +427,7 @@ export function useComposeEditor({
     toRef,
     initialFocus,
     appendAttachments,
+    pickNativeImages,
     addFiles,
     toggleOriginalAttachments,
     loadImageUrl,

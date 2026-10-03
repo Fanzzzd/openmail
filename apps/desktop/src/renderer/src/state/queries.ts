@@ -253,3 +253,9 @@ export const appleContactIdentifierAtom = (address: string) =>
     { address },
     { reactivityKeys: [Keys.contacts, Keys.prefs], ...cached },
   );
+
+export const nativeComposeCapabilitiesAtom = MailClient.query(
+  "NativeComposeCapabilities",
+  undefined,
+  cached,
+);

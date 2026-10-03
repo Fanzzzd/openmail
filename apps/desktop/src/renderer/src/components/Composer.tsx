@@ -1,3 +1,4 @@
+import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -22,7 +23,7 @@ import { formatBytes } from "../format";
 import { Keys } from "../state/keys";
 import { useRunMail } from "../state/mail";
 import { saveTemplateAtom, setPrefsAtom } from "../state/mutations";
-import { templatesAtom, threadAtom } from "../state/queries";
+import { nativeComposeCapabilitiesAtom, templatesAtom, threadAtom } from "../state/queries";
 import { useShortcutText } from "../use-shortcut-text";
 import { ComposeEditor } from "./ComposeEditor";
 import { ComposerAi } from "./ComposerAi";
@@ -73,6 +74,10 @@ export function Composer({
   const { t, i18n } = useLingui();
   const { draft, setDraft, prefs } = useComposeDraft(initial);
   const shortcut = useShortcutText();
+  const nativeCapabilities = AsyncResult.getOrElse(
+    useAtomValue(nativeComposeCapabilitiesAtom),
+    () => ({ photos: false, continuity: false, grammar: false }),
+  );
   const setPrefs = useAtomSet(setPrefsAtom);
   const set = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -166,6 +171,7 @@ export function Composer({
     toRef,
     initialFocus,
     addFiles,
+    pickNativeImages,
     toggleOriginalAttachments,
     loadImageUrl,
     addImageFiles,
@@ -650,16 +656,43 @@ export function Composer({
                   </button>
                 </Tip>
               )}
-              <Tip label={t`Attach files`} side="top">
-                <button
-                  type="button"
-                  aria-label={t`Attach files`}
-                  onClick={() => fileRef.current?.click()}
-                  className={quiet}
+              {nativeCapabilities.photos || nativeCapabilities.continuity ? (
+                <DropdownMenu
+                  align="start"
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={t`Attach files`}
+                      disabled={adding}
+                      className={quiet}
+                    >
+                      <Paperclip className="size-4" />
+                    </button>
+                  }
                 >
-                  <Paperclip className="size-4" />
-                </button>
-              </Tip>
+                  <MenuItem onClick={() => fileRef.current?.click()}>{t`Attach files`}</MenuItem>
+                  {nativeCapabilities.photos && (
+                    <MenuItem onClick={() => pickNativeImages("photos")}>{t`Photos`}</MenuItem>
+                  )}
+                  {nativeCapabilities.continuity && (
+                    <MenuItem
+                      onClick={() => pickNativeImages("continuity")}
+                    >{t`Import from iPhone or iPad`}</MenuItem>
+                  )}
+                </DropdownMenu>
+              ) : (
+                <Tip label={t`Attach files`} side="top">
+                  <button
+                    type="button"
+                    aria-label={t`Attach files`}
+                    disabled={adding}
+                    onClick={() => fileRef.current?.click()}
+                    className={quiet}
+                  >
+                    <Paperclip className="size-4" />
+                  </button>
+                </Tip>
+              )}
               {account && (
                 <DraftOrganization
                   provider={account.provider}

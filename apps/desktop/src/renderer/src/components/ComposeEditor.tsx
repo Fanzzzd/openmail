@@ -1,3 +1,4 @@
+import { ComposeGrammar } from "./ComposeGrammar";
 import { KeyboardToolbar } from "./ui/KeyboardToolbar";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
@@ -822,6 +823,7 @@ export function ComposeEditor({
           >{t`Close find`}</button>
         </search>
       )}
+      <ComposeGrammar body={body} bodyRef={bodyRef} onChange={onChange} locked={locked} />
       {remoteUnsupported && (
         <div
           role="status"
@@ -915,6 +917,7 @@ export function ComposeEditor({
             bodyRef.current = element;
           }}
           dir="auto"
+          data-openmail-compose-body={!locked ? "true" : undefined}
           contentEditable={!locked}
           autoCorrect="on"
           suppressContentEditableWarning
@@ -965,6 +968,7 @@ export function ComposeEditor({
         />
       ) : (
         <textarea
+          data-openmail-compose-body="true"
           ref={(element) => {
             bodyRef.current = element;
           }}

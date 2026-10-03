@@ -23,11 +23,16 @@ const fixture = vi.hoisted(() => {
 });
 vi.mock("@effect/atom-react", async (original) => ({
   ...(await original<typeof import("@effect/atom-react")>()),
-  useAtomValue: (atom: string) => AsyncResult.success(fixture.values.get(atom) ?? []),
+  useAtomValue: (atom: string) =>
+    AsyncResult.success(
+      fixture.values.get(atom) ??
+        (atom === "nativeCompose" ? { photos: false, continuity: false, grammar: false } : []),
+    ),
   useAtom: () => [AsyncResult.initial(), fixture.decide],
   useAtomSet: () => fixture.decide,
 }));
 vi.mock("./state/queries", () => ({
+  nativeComposeCapabilitiesAtom: "nativeCompose",
   accountsAtom: "accountsAtom",
   profilesAtom: "profilesAtom",
   unreadCountsAtom: "unreadCountsAtom",

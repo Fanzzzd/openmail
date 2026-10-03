@@ -19,6 +19,9 @@ const shiftCmd = (value: string): KeyStroke => cmd(value, { shift: true });
 const controlCmd = (value: string): KeyStroke => cmd(value, { control: true });
 
 const common = {
+  shareMessageLink: [],
+  shareThreadLink: [],
+  shareWebLink: [],
   nextTab: [cmd("ArrowRight", { alt: true })],
   previousTab: [cmd("ArrowLeft", { alt: true })],
   nextWindow: [cmd("`"), { key: "Tab", control: true }],

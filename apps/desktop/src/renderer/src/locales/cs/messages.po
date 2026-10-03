@@ -856,6 +856,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
@@ -918,6 +919,10 @@ msgstr "Zkontrolovat aktualizace"
 msgid "Check for Updates…"
 msgstr "Zkontrolovat aktualizace…"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Check grammar on this Mac"
+msgstr "Zkontrolovat gramatiku na tomto Macu"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
@@ -926,6 +931,10 @@ msgstr "Kontrolovat pravopis při psaní"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Kontrolují se aktualizace…"
+
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Checking grammar…"
+msgstr "Kontrola gramatiky…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1009,7 +1018,12 @@ msgstr "Zrušit výběr"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "Vymazání odstraní stažené texty zpráv a přílohy. Záhlaví a koncepty zůstanou zachovány. Otevření obsahu mimo mezipaměť vyžaduje připojení."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
+msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, skenování dokumentu nebo přidání náčrtu."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -1203,6 +1217,10 @@ msgstr "Zkopírujte do místního podpisu"
 msgid "Could not check for updates. Try again later."
 msgstr "Nelze zkontrolovat aktualizace. Zkuste to znovu později."
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Could not check grammar on this Mac."
+msgstr "Na tomto Macu se nepodařilo zkontrolovat gramatiku."
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Nelze dekódovat winmail.dat. Můžete uložit původní soubor."
@@ -1242,6 +1260,10 @@ msgstr "Koncept se nepodařilo otevřít"
 #: src/renderer/src/App.tsx
 msgid "Could not open the feedback draft"
 msgstr "Koncept zpětné vazby se nepodařilo otevřít"
+
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Could not open the system picker."
+msgstr "Nepodařilo se otevřít systémový výběr."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -2128,6 +2150,10 @@ msgstr "Adresa URL obrázku"
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
 msgstr "Na tomto zařízení se zpracovávají obrázky a text PDF. Do cloudového modelu se neodesílá žádný obsah."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Images that exceed the 30 MB attachment limit were skipped."
+msgstr "Obrázky překračující limit příloh 30 MB byly přeskočeny."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAP účet"
@@ -2139,6 +2165,11 @@ msgstr "Klíčová slova IMAP oddělená čárkami"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP server"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Import from iPhone or iPad"
+msgstr "Importovat z iPhonu nebo iPadu"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Importance action"
@@ -2997,6 +3028,10 @@ msgstr "Žádné vlastní štítky"
 msgid "No external replies"
 msgstr "Žádné externí odpovědi"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "No grammar suggestions"
+msgstr "Žádné gramatické návrhy"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "Žádný štítek nebo složka"
@@ -3401,6 +3436,11 @@ msgstr "Trvale smazáno {count} zpráv"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Personal"
 msgstr "Osobní"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Photos"
+msgstr "Fotky"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -4053,9 +4093,24 @@ msgstr "Odeslání selhalo"
 msgid "Send Feedback…"
 msgstr "Odeslat zpětnou vazbu…"
 
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send message link to…"
+msgstr "Odeslat odkaz na zprávu do…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "Odeslat tuto zprávu bez předmětu?"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send thread link to…"
+msgstr "Odeslat odkaz na konverzaci do…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send web mail link to…"
+msgstr "Odeslat odkaz na webovou zprávu do…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"

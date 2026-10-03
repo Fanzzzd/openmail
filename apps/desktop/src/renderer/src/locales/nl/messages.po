@@ -856,6 +856,7 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
@@ -918,6 +919,10 @@ msgstr "Zoek naar updates"
 msgid "Check for Updates…"
 msgstr "Controleer op updates..."
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Check grammar on this Mac"
+msgstr "Grammatica op deze Mac controleren"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
@@ -926,6 +931,10 @@ msgstr "Controleer spelling tijdens typen"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Zoeken naar updates…"
+
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Checking grammar…"
+msgstr "Grammatica controleren…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1009,7 +1018,12 @@ msgstr "Wis selectie"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "Wissen verwijdert gedownloade berichtteksten en bijlagen. Berichtkoppen en concepten blijven behouden. Voor het openen van inhoud die niet in de cache staat, is verbinding nodig."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
+msgstr "Klik in dit venster en kies een apparaat om een foto te maken, een document te scannen of een schets toe te voegen."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -1203,6 +1217,10 @@ msgstr "Kopiëren naar lokale handtekening"
 msgid "Could not check for updates. Try again later."
 msgstr "Kan niet controleren op updates. Probeer het later opnieuw."
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Could not check grammar on this Mac."
+msgstr "De grammatica kon niet op deze Mac worden gecontroleerd."
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Kan winmail.dat niet decoderen. U kunt het originele bestand opslaan."
@@ -1242,6 +1260,10 @@ msgstr "Kan het concept niet openen"
 #: src/renderer/src/App.tsx
 msgid "Could not open the feedback draft"
 msgstr "Kan het feedbackconcept niet openen"
+
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Could not open the system picker."
+msgstr "De systeemkiezer kon niet worden geopend."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -2128,6 +2150,10 @@ msgstr "Afbeeldings-URL"
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
 msgstr "Afbeeldingen en PDF-tekst worden op dit apparaat verwerkt. Er wordt geen inhoud naar een cloudmodel verstuurd."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Images that exceed the 30 MB attachment limit were skipped."
+msgstr "Afbeeldingen die de bijlagelimiet van 30 MB overschrijden, zijn overgeslagen."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAP-account"
@@ -2139,6 +2165,11 @@ msgstr "IMAP-trefwoorden, gescheiden door komma’s"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP-server"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Import from iPhone or iPad"
+msgstr "Importeren vanaf iPhone of iPad"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Importance action"
@@ -2997,6 +3028,10 @@ msgstr "Geen aangepaste labels"
 msgid "No external replies"
 msgstr "Geen externe antwoorden"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "No grammar suggestions"
+msgstr "Geen grammaticasuggesties"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "Geen label of map"
@@ -3401,6 +3436,11 @@ msgstr "Permanent verwijderde {count} berichten"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Personal"
 msgstr "Privé"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Photos"
+msgstr "Foto’s"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -4053,9 +4093,24 @@ msgstr "Versturen mislukt"
 msgid "Send Feedback…"
 msgstr "Feedback verzenden…"
 
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send message link to…"
+msgstr "Berichtlink versturen naar…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "Dit bericht zonder onderwerp versturen?"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send thread link to…"
+msgstr "Gesprekslink versturen naar…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send web mail link to…"
+msgstr "Webmaillink versturen naar…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"

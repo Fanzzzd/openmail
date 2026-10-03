@@ -1,3 +1,5 @@
+import { nativeShareKind } from "../../../shared/native-actions";
+import { causeText } from "../errors";
 import { isTypingTarget } from "./use-mail-shortcuts";
 import { useLingui } from "@lingui/react/macro";
 import { attachmentProblem } from "@openmail/core/schema";
@@ -69,6 +71,7 @@ export function useNativeMenuBridge({
   const { i18n } = useLingui();
   const [desktopEvents, setDesktopEvents] = useState<readonly DesktopEvent[]>([]);
 
+  const provider = threadState?.provider;
   useEffect(() => {
     run(
       withMail((call) =>
@@ -76,18 +79,28 @@ export function useNativeMenuBridge({
           state: {
             selected: Boolean(selectedId) && !dialog,
             composing: Boolean(compose) && !dialog,
-            gmail: threadState?.provider === "gmail",
+            gmail: provider === "gmail",
+            ...(provider ? { web: provider === "gmail" || provider === "outlook" } : {}),
           },
         }),
       ),
     );
-  }, [run, selectedId, compose, dialog, threadState?.provider]);
+  }, [run, selectedId, compose, dialog, provider]);
 
   const receiveDesktop = (event: DesktopEvent) => {
     setDesktopEvents((events) => events.filter((item) => item !== event));
     switch (event._tag) {
       case "NativeAction": {
-        dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
+        const kind = nativeShareKind(event.action);
+        if (kind && selectedId)
+          run(
+            withMail((call) => call("ShareMessageLink", { id: selectedId, kind })).pipe(
+              Effect.catchCause((cause) =>
+                Effect.sync(() => say({ text: causeText(i18n, cause), tone: "error" })),
+              ),
+            ),
+          );
+        else dispatchNativeAction(prefs.shortcutSet, event.action, event.triggeredByAccelerator);
         break;
       }
       case "AccountInbox":

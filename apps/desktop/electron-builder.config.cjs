@@ -21,7 +21,15 @@ module.exports = {
     {
       from: "out/native",
       to: "native",
-      filter: ["vision", "attachment-apps", "contacts", "notification-permissions.node"],
+      filter: [
+        "vision",
+        "attachment-apps",
+        "contacts",
+        "OpenMailPhotos.app",
+        "OpenMailPhotos.app/**/*",
+        "grammar",
+        "notification-permissions.node",
+      ],
     },
   ],
   directories: { buildResources: "build", output: "release" },
@@ -70,7 +78,11 @@ module.exports = {
     // Ad-hoc signing repairs Electron's seal on Apple Silicon. It does not enable updates.
     identity: signed ? undefined : "-",
     hardenedRuntime: true,
-    binaries: ["Contents/Resources/native/contacts"],
+    binaries: [
+      "Contents/Resources/native/contacts",
+      "Contents/Resources/native/OpenMailPhotos.app/Contents/MacOS/photos",
+      "Contents/Resources/native/grammar",
+    ],
     sign: require("./build/sign-contacts.cjs").sign,
     entitlements: signed ? "build/entitlements.mac.plist" : "build/entitlements.mac.unsigned.plist",
     entitlementsInherit: signed

@@ -23,10 +23,17 @@ vi.mock("@effect/atom-react", () => ({
     atom === "status"
       ? AsyncResult.initial()
       : AsyncResult.success(
-          atom === "prefs" ? DEFAULT_PREFS : atom === "aliases" ? calls.aliases : [],
+          atom === "nativeCompose"
+            ? { photos: false, continuity: false, grammar: false }
+            : atom === "prefs"
+              ? DEFAULT_PREFS
+              : atom === "aliases"
+                ? calls.aliases
+                : [],
         ),
 }));
 vi.mock("./state/queries", () => ({
+  nativeComposeCapabilitiesAtom: "nativeCompose",
   prefsAtom: "prefs",
   sendAsAtom: "aliases",
   templatesAtom: "templates",

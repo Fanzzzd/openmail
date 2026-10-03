@@ -81,10 +81,23 @@ export function installSpellingMenu(
   const removers = new Set<() => void>();
   const wire = (win: BrowserWindow) => {
     apply(win.webContents);
-    const context = (_event: Electron.Event, params: Electron.ContextMenuParams) => {
+    const context = async (_event: Electron.Event, params: Electron.ContextMenuParams) => {
       if (!params.isEditable) return;
+      // Supplying a frame enables Apple's context-menu extensions. Keep them in the
+      // compose body, away from address/search fields and untrusted message frames.
+      const frame = params.frame;
+      const compose =
+        process.platform === "darwin" &&
+        frame === win.webContents.mainFrame &&
+        (await win.webContents
+          .executeJavaScript(
+            `Boolean(document.elementFromPoint(${params.x}, ${params.y})?.closest('[data-openmail-compose-body="true"]'))`,
+          )
+          .catch(() => false));
+      if (win.isDestroyed() || win.webContents.isDestroyed()) return;
       Menu.buildFromTemplate(spellingItems(win.webContents, params, labels(), save)).popup({
         window: win,
+        ...(compose ? { frame } : {}),
       });
     };
     win.webContents.on("context-menu", context);

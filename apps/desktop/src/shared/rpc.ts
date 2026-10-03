@@ -1,3 +1,10 @@
+import {
+  GrammarIssue,
+  GrammarText,
+  NativePicker,
+  NativePickerLabels,
+  NativePickerResult,
+} from "./native-compose";
 import { NativeMenuState } from "./native-actions";
 import { ComposeRecipients, WindowSelection } from "./window-state";
 /**
@@ -533,6 +540,27 @@ export class MailRpcs extends RpcGroup.make(
 
   // Drafts
   /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
+  Rpc.make("NativeComposeCapabilities", {
+    success: Schema.Struct({
+      photos: Schema.Boolean,
+      continuity: Schema.Boolean,
+      grammar: Schema.Boolean,
+    }),
+  }),
+  Rpc.make("PickNativeImages", {
+    payload: { kind: NativePicker, labels: NativePickerLabels },
+    success: NativePickerResult,
+    error,
+  }),
+  Rpc.make("CheckNativeGrammar", {
+    payload: { text: GrammarText },
+    success: Schema.Array(GrammarIssue),
+    error,
+  }),
+  Rpc.make("ShareMessageLink", {
+    payload: { id: Schema.String, kind: Schema.Literals(["message", "thread", "web"]) },
+    error,
+  }),
   Rpc.make("ClipboardAttachments", { success: Schema.Array(OutgoingAttachment), error }),
   Rpc.make("ComposeMessage", {
     payload: {

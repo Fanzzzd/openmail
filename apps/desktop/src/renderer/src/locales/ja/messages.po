@@ -856,6 +856,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
@@ -918,6 +919,10 @@ msgstr "アップデートを確認"
 msgid "Check for Updates…"
 msgstr "アップデートを確認してください…"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Check grammar on this Mac"
+msgstr "このMacで文法をチェック"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
@@ -926,6 +931,10 @@ msgstr "入力中にスペルをチェック"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "アップデートを確認中…"
+
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Checking grammar…"
+msgstr "文法をチェック中…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1009,7 +1018,12 @@ msgstr "選択を解除"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "ダウンロード済みの本文と添付ファイルを消去します。ヘッダと下書きは保持されます。キャッシュされていないコンテンツを開くには接続が必要です。"
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
+msgstr "このウインドウをクリックし、デバイスを選択して写真の撮影、書類のスキャン、スケッチの追加を行います。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -1203,6 +1217,10 @@ msgstr "ローカル署名にコピー"
 msgid "Could not check for updates. Try again later."
 msgstr "アップデートを確認できませんでした。後でもう一度試してください。"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Could not check grammar on this Mac."
+msgstr "このMacで文法をチェックできませんでした。"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "winmail.datをデコードできませんでした。元のファイルを保存できます。"
@@ -1242,6 +1260,10 @@ msgstr "下書きを開けませんでした"
 #: src/renderer/src/App.tsx
 msgid "Could not open the feedback draft"
 msgstr "フィードバックの下書きを開けませんでした"
+
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Could not open the system picker."
+msgstr "システムの選択画面を開けませんでした。"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -2128,6 +2150,10 @@ msgstr "画像URL"
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
 msgstr "画像と PDF テキストはこのデバイスで処理されます。コンテンツはクラウド モデルに送信されません。"
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Images that exceed the 30 MB attachment limit were skipped."
+msgstr "添付ファイルの上限30 MBを超える画像はスキップされました。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAPアカウント"
@@ -2139,6 +2165,11 @@ msgstr "IMAP キーワード (カンマ区切り)"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAPサーバー"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Import from iPhone or iPad"
+msgstr "iPhoneまたはiPadから読み込む"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Importance action"
@@ -2997,6 +3028,10 @@ msgstr "カスタムラベルなし"
 msgid "No external replies"
 msgstr "外部からの返信はありません"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "No grammar suggestions"
+msgstr "文法の提案はありません"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "ラベルもフォルダもありません"
@@ -3401,6 +3436,11 @@ msgstr "{count} メッセージが完全に削除されました"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Personal"
 msgstr "個人"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Photos"
+msgstr "写真"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -4053,9 +4093,24 @@ msgstr "送信できませんでした"
 msgid "Send Feedback…"
 msgstr "フィードバックを送信…"
 
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send message link to…"
+msgstr "メッセージのリンクを送信…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "件名なしでこのメッセージを送信しますか?"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send thread link to…"
+msgstr "スレッドのリンクを送信…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send web mail link to…"
+msgstr "Webメールのリンクを送信…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"

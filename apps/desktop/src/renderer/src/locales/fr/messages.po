@@ -856,6 +856,7 @@ msgstr "Le serveur de messagerie est momentanément inaccessible."
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
@@ -918,6 +919,10 @@ msgstr "Rechercher les mises à jour"
 msgid "Check for Updates…"
 msgstr "Vérifiez les mises à jour…"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Check grammar on this Mac"
+msgstr "Vérifier la grammaire sur ce Mac"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
@@ -926,6 +931,10 @@ msgstr "Vérifier l’orthographe pendant la saisie"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Recherche de mises à jour…"
+
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Checking grammar…"
+msgstr "Vérification de la grammaire…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1009,7 +1018,12 @@ msgstr "Effacer la sélection"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "Vider le cache supprime les textes des messages et les pièces jointes téléchargés. Les en-têtes et les brouillons sont conservés. Une connexion est nécessaire pour ouvrir du contenu hors cache."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
+msgstr "Cliquez dans cette fenêtre, puis choisissez un appareil pour prendre une photo, numériser un document ou ajouter un dessin."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -1203,6 +1217,10 @@ msgstr "Copier dans la signature locale"
 msgid "Could not check for updates. Try again later."
 msgstr "Impossible de vérifier les mises à jour. Réessayez plus tard."
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Could not check grammar on this Mac."
+msgstr "Impossible de vérifier la grammaire sur ce Mac."
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Impossible de décoder winmail.dat. Vous pouvez enregistrer le fichier original."
@@ -1242,6 +1260,10 @@ msgstr "Impossible d’ouvrir le brouillon"
 #: src/renderer/src/App.tsx
 msgid "Could not open the feedback draft"
 msgstr "Impossible d’ouvrir le brouillon de commentaires"
+
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Could not open the system picker."
+msgstr "Impossible d’ouvrir le sélecteur système."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -2128,6 +2150,10 @@ msgstr "URL de l’image"
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
 msgstr "Les images et le texte PDF sont traités sur cet appareil. Aucun contenu n’est envoyé vers un modèle cloud."
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Images that exceed the 30 MB attachment limit were skipped."
+msgstr "Les images dépassant la limite de 30 Mo pour les pièces jointes ont été ignorées."
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "Compte IMAP"
@@ -2139,6 +2165,11 @@ msgstr "Mots-clés IMAP, séparés par des virgules"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "serveur IMAP"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Import from iPhone or iPad"
+msgstr "Importer depuis un iPhone ou un iPad"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Importance action"
@@ -2997,6 +3028,10 @@ msgstr "Pas d’libellés personnalisées"
 msgid "No external replies"
 msgstr "Aucune réponse externe"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "No grammar suggestions"
+msgstr "Aucune suggestion grammaticale"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "Pas d’libellé ni de dossier"
@@ -3401,6 +3436,11 @@ msgstr "{count} messages supprimés définitivement"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Personal"
 msgstr "Personnel"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Photos"
+msgstr "Photos"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -4053,9 +4093,24 @@ msgstr "Échec de l’envoi"
 msgid "Send Feedback…"
 msgstr "Envoyer des commentaires…"
 
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send message link to…"
+msgstr "Envoyer le lien du message à…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "Envoyer ce message sans objet ?"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send thread link to…"
+msgstr "Envoyer le lien de la conversation à…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send web mail link to…"
+msgstr "Envoyer le lien du message web à…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"

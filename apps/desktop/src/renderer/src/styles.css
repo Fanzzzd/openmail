@@ -126,3 +126,8 @@ body {
     }
   }
 }
+
+::highlight(openmail-grammar) {
+  background-color: rgb(59 130 246 / 0.12);
+  text-decoration: underline wavy #3b82f6;
+}

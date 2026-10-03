@@ -1,3 +1,4 @@
+import type { NativePickerResult } from "../../../shared/native-compose";
 import { decodeRpcFrame, publicRpcResponse } from "../../../main/rpc-security";
 import { RegistryContext } from "@effect/atom-react";
 import { setupI18n } from "@lingui/core";
@@ -114,6 +115,10 @@ export async function flow(
     provider?: Provider;
     messages?: IncomingMessage[];
     prefs?: Partial<Prefs>;
+    native?: {
+      pick: () => NativePickerResult;
+      share: (request: { id: string; kind: "message" | "thread" | "web" }) => void;
+    };
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -227,6 +232,16 @@ export async function flow(
       DismissCrashReport: unsupported,
       FeedbackAddress: unsupported,
       NewWindow: unsupported,
+      NativeComposeCapabilities: () =>
+        Effect.succeed({
+          photos: Boolean(options.native),
+          continuity: Boolean(options.native),
+          grammar: false,
+        }),
+      PickNativeImages: () => (options.native ? Effect.sync(options.native.pick) : unsupported()),
+      CheckNativeGrammar: unsupported,
+      ShareMessageLink: (request) =>
+        options.native ? Effect.sync(() => options.native?.share(request)) : unsupported(),
       CopyMessageLink: unsupported,
       NativeEdit: unsupported,
       NotificationPermission: () => Effect.succeed("unsupported"),
@@ -242,7 +257,7 @@ export async function flow(
       AppleContactIdentifier: () => Effect.succeed(null),
       ContactGroups: ({ query, accountIds }) => m.contactGroups(query, accountIds),
       ContactPhoto: ({ accountId, address }) => m.contactPhoto(accountId, address),
-      AttachmentCapabilities: () => Effect.succeed({ share: false }),
+      AttachmentCapabilities: () => Effect.succeed({ share: Boolean(options.native) }),
       UpdateState: () => Effect.succeed({ status: "disabled" }),
       ClipboardAttachments: () => Effect.succeed([]),
       SetNativeMenuState: () => Effect.void,

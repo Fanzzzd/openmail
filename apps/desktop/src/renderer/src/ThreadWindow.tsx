@@ -1,3 +1,4 @@
+import { nativeShareKind } from "../../shared/native-actions";
 import { Settings, ShortcutHelp, AddAccountDialog } from "./components/LazyDialogs";
 import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
 import { useDesktopEvents, useDesktopLabels } from "./state/desktop";
@@ -228,6 +229,17 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       shouldDropNativeAction(event.action, event.triggeredByAccelerator)
     )
       return;
+    const kind = nativeShareKind(event.action);
+    if (kind) {
+      run(
+        withMail((call) => call("ShareMessageLink", { id: selectedMessage, kind })).pipe(
+          Effect.catchCause((cause) =>
+            Effect.sync(() => say({ text: causeText(i18n, cause), tone: "error" })),
+          ),
+        ),
+      );
+      return;
+    }
     if (
       event.action === "reply" ||
       event.action === "replyAll" ||
@@ -250,6 +262,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             composing: false,
             mailbox: false,
             gmail: account?.provider === "gmail",
+            web: account?.provider === "gmail" || account?.provider === "outlook",
           },
         }),
       ),

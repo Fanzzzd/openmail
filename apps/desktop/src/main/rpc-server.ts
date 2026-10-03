@@ -1,3 +1,5 @@
+import { checkNativeGrammar, nativeComposeCapabilities, pickNativeImages } from "./native-compose";
+import { shareMessageLink } from "./share-message-link";
 import { openExternal } from "./external";
 import { trustedSender } from "./security";
 import { decodeRpcFrame, publicRpcResponse } from "./rpc-security";
@@ -175,6 +177,11 @@ const Handlers = MailRpcs.toLayer(
       OpenMeeting: ({ url }) => openMeeting(url),
       UpdateState: () => Effect.sync(currentUpdateState),
       CheckForUpdates: ({ download }) => checkForUpdateState(m, download),
+      NativeComposeCapabilities: () => Effect.sync(() => nativeComposeCapabilities()),
+      PickNativeImages: ({ kind, labels }, { client }) =>
+        pickNativeImages(windowOf(client.id), kind, labels),
+      CheckNativeGrammar: ({ text }, { client }) => checkNativeGrammar(windowOf(client.id), text),
+      ShareMessageLink: (request, { client }) => shareMessageLink(m, windowOf(client.id), request),
       ClipboardAttachments: () => clipboardAttachments(),
       SetNativeMenuState: ({ state }, { client }) => desktop.setMenuState(client.id, state),
       SpellcheckLanguages: () =>

@@ -1,3 +1,4 @@
+import { MailClient } from "../rpc";
 import { AppleContactActions } from "./AppleContactActions";
 import { InviteBanner, RawMessageDialog } from "./LazyDialogs";
 import { ThreadSummary } from "./AiPanel";
@@ -385,6 +386,18 @@ export function ThreadView({
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const provider = accounts.find((account) => account.id === stored[0]?.accountId)?.provider;
   const webLabel = provider === "gmail" ? t`Open in Gmail` : t`Open in Outlook`;
+  const canShare = AsyncResult.getOrElse(
+    useAtomValue(MailClient.query("AttachmentCapabilities", undefined)),
+    () => ({ share: false }),
+  ).share;
+  const shareLink = (id: string, kind: "message" | "thread" | "web") =>
+    run(
+      withMail((call) => call("ShareMessageLink", { id, kind })).pipe(
+        Effect.catchCause((cause) =>
+          Effect.sync(() => notify({ text: causeText(i18n, cause), tone: "error" })),
+        ),
+      ),
+    );
   const canOpenWeb = provider === "gmail" || provider === "outlook";
   const searchSender = (m: Message) =>
     run(withMail((call) => call("SearchSender", { address: m.from.address })));
@@ -715,6 +728,21 @@ export function ThreadView({
               )
             }
           >{t`Copy link to thread`}</MenuItem>
+          {canShare && (
+            <>
+              <MenuItem
+                onClick={() => shareLink(selectedId, "message")}
+              >{t`Send message link to…`}</MenuItem>
+              <MenuItem
+                onClick={() => shareLink(selectedId, "thread")}
+              >{t`Send thread link to…`}</MenuItem>
+              {canOpenWeb && (
+                <MenuItem
+                  onClick={() => shareLink(selectedId, "web")}
+                >{t`Send web mail link to…`}</MenuItem>
+              )}
+            </>
+          )}
           <MenuItem
             icon={Printer}
             shortcut={shortcut("print")}
@@ -811,6 +839,7 @@ export function ThreadView({
               onMatches={activeId === m.id ? reportMatches : undefined}
               onSave={() => save(m.id)}
               onSearchSender={() => searchSender(m)}
+              onShare={canShare ? (kind) => shareLink(m.id, kind) : undefined}
               onOpenWeb={canOpenWeb ? () => openWeb(m.id) : undefined}
               webLabel={webLabel}
               zoom={zoom}
@@ -915,6 +944,7 @@ function Expanded({
   onSave,
   onSearchSender,
   onOpenWeb,
+  onShare,
   webLabel,
   active,
   onMessageOp,
@@ -938,6 +968,7 @@ function Expanded({
   onActivate: () => void;
   onSave: () => void;
   onSearchSender: () => void;
+  onShare: ((kind: "message" | "thread" | "web") => void) | undefined;
   onOpenWeb: (() => void) | undefined;
   webLabel: string;
   active: boolean;
@@ -1087,6 +1118,15 @@ function Expanded({
             onClick={onSearchSender}
             shortcut={shortcut("searchSender")}
           >{t`Search messages from this sender`}</MenuItem>
+          {onShare && (
+            <>
+              <MenuItem onClick={() => onShare("message")}>{t`Send message link to…`}</MenuItem>
+              <MenuItem onClick={() => onShare("thread")}>{t`Send thread link to…`}</MenuItem>
+              {onOpenWeb && (
+                <MenuItem onClick={() => onShare("web")}>{t`Send web mail link to…`}</MenuItem>
+              )}
+            </>
+          )}
           {onOpenWeb && (
             <MenuItem onClick={onOpenWeb} shortcut={shortcut("openMessageWeb")}>
               {webLabel}

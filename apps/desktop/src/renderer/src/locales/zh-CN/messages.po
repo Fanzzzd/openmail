@@ -866,6 +866,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
 #: src/renderer/src/state/desktop.ts
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Cancel"
@@ -928,6 +929,10 @@ msgstr "检查更新"
 msgid "Check for Updates…"
 msgstr "检查更新…"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Check grammar on this Mac"
+msgstr "在此 Mac 上检查语法"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Check spelling while typing"
@@ -936,6 +941,10 @@ msgstr "输入时检查拼写"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
+
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Checking grammar…"
+msgstr "正在检查语法…"
 
 #. editBody is the exact translated Edit body button label. Preserve it unchanged.
 #: src/renderer/src/components/Composer.tsx
@@ -1019,7 +1028,12 @@ msgstr "清除选择"
 msgid "Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening uncached content requires a connection."
 msgstr "清除已下载的正文和附件，保留邮件头和草稿。打开未缓存内容需要联网。"
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Click in this window, then choose a device to take a photo, scan a document or add a sketch."
+msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
+#: src/renderer/src/components/ComposeGrammar.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftOrganization.tsx
 #: src/renderer/src/components/MediaMatches.tsx
@@ -1213,6 +1227,10 @@ msgstr "复制为本地签名"
 msgid "Could not check for updates. Try again later."
 msgstr "无法检查更新，请稍后重试。"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "Could not check grammar on this Mac."
+msgstr "无法在此 Mac 上检查语法。"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
@@ -1252,6 +1270,10 @@ msgstr "无法打开草稿"
 #: src/renderer/src/App.tsx
 msgid "Could not open the feedback draft"
 msgstr "无法打开反馈草稿"
+
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Could not open the system picker."
+msgstr "无法打开系统选择器。"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -2138,6 +2160,10 @@ msgstr "图片网址"
 msgid "Images and PDF text are processed on this device. No content is sent to a cloud model."
 msgstr "图片和 PDF 文字只在本机处理，不发送给云端模型。"
 
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Images that exceed the 30 MB attachment limit were skipped."
+msgstr "已跳过超过 30 MB 附件限制的图片。"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP account"
 msgstr "IMAP 账户"
@@ -2149,6 +2175,11 @@ msgstr "IMAP 关键词，用逗号分隔"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "IMAP server"
 msgstr "IMAP 服务器"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Import from iPhone or iPad"
+msgstr "从 iPhone 或 iPad 导入"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Importance action"
@@ -3007,6 +3038,10 @@ msgstr "没有自定义标签"
 msgid "No external replies"
 msgstr "关闭外部回复"
 
+#: src/renderer/src/components/ComposeGrammar.tsx
+msgid "No grammar suggestions"
+msgstr "没有语法建议"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No label or folder"
 msgstr "不加标签或文件夹"
@@ -3411,6 +3446,11 @@ msgstr "已永久删除 {count} 封邮件"
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Personal"
 msgstr "个人"
+
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/compose/use-compose-editor.ts
+msgid "Photos"
+msgstr "照片"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Plain text"
@@ -4063,9 +4103,24 @@ msgstr "发送失败"
 msgid "Send Feedback…"
 msgstr "发送反馈…"
 
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send message link to…"
+msgstr "发送邮件链接到…"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Send this message without a subject?"
 msgstr "确认发送无主题邮件？"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send thread link to…"
+msgstr "发送会话链接到…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/shortcut-names.ts
+msgid "Send web mail link to…"
+msgstr "发送网页版邮件链接到…"
 
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Sender email"

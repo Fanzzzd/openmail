@@ -446,30 +446,32 @@ export const DesktopLive = Layer.effect(
                 label:
                   labels.menuLabels?.[group.name] ??
                   (group.name[0]?.toUpperCase() ?? "") + group.name.slice(1),
-                submenu: group.actions.map((action) => ({
-                  label:
-                    labels.menuLabels?.[action] ??
-                    (action[0]?.toUpperCase() ?? "") +
-                      action.slice(1).replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`),
-                  accelerator: shortcutAccelerator(prefs.shortcutSet, action),
-                  enabled: nativeActionEnabled(action, menuState),
-                  click: (
-                    _item: Electron.MenuItem,
-                    _window: Electron.BaseWindow | undefined,
-                    event: Electron.KeyboardEvent,
-                  ) => {
-                    const target = BrowserWindow.getFocusedWindow();
-                    if (target)
-                      deliver(
-                        {
-                          _tag: "NativeAction",
-                          action,
-                          triggeredByAccelerator: event.triggeredByAccelerator === true,
-                        },
-                        target,
-                      );
-                  },
-                })),
+                submenu: group.actions
+                  .filter((action) => process.platform === "darwin" || !action.startsWith("share"))
+                  .map((action) => ({
+                    label:
+                      labels.menuLabels?.[action] ??
+                      (action[0]?.toUpperCase() ?? "") +
+                        action.slice(1).replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`),
+                    accelerator: shortcutAccelerator(prefs.shortcutSet, action),
+                    enabled: nativeActionEnabled(action, menuState),
+                    click: (
+                      _item: Electron.MenuItem,
+                      _window: Electron.BaseWindow | undefined,
+                      event: Electron.KeyboardEvent,
+                    ) => {
+                      const target = BrowserWindow.getFocusedWindow();
+                      if (target)
+                        deliver(
+                          {
+                            _tag: "NativeAction",
+                            action,
+                            triggeredByAccelerator: event.triggeredByAccelerator === true,
+                          },
+                          target,
+                        );
+                    },
+                  })),
               })),
               {
                 label: labels.window,
