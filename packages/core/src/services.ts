@@ -250,6 +250,15 @@ export class Store extends Context.Service<
       providerId: string,
       flags: { isUnread: boolean; isStarred: boolean },
     ): Effect.Effect<void>;
+    readonly claimStaleSweep: ReturnType<
+      typeof import("./store-sync-reset.js").makeSyncResetStore
+    >["claimStaleSweep"];
+    readonly saveStaleSweepPosition: ReturnType<
+      typeof import("./store-sync-reset.js").makeSyncResetStore
+    >["saveStaleSweepPosition"];
+    readonly staleCandidates: ReturnType<
+      typeof import("./store-sync-reset.js").makeSyncResetStore
+    >["staleCandidates"];
     resetCandidates(
       accountId: string,
       change: import("./sync-reset.js").ResetChange,
@@ -585,6 +594,8 @@ export type Change =
       readonly providerId: string;
       readonly labels: readonly string[];
     }
+  /** Ambiguous provider locations must be resolved by the durable verification queue. */
+  | { readonly _tag: "VerifyCandidates"; readonly providerIds: readonly string[] }
   | { readonly _tag: "FetchLater"; readonly providerId: string }
   | { readonly _tag: "Upsert"; readonly message: IncomingMessage }
   | { readonly _tag: "Delete"; readonly providerId: string }
@@ -660,6 +671,9 @@ export interface ProviderAdapter {
     account: Account,
     candidates: readonly import("./sync-reset.js").ResetCandidate[],
   ): Effect.Effect<readonly import("./sync-reset.js").ResetVerification[], ProviderFailure>;
+
+  /** One bounded page, used only as positive evidence that a Gmail draft still exists. */
+  draftMessageIds?(account: Account): Effect.Effect<readonly string[], ProviderFailure>;
 
   /** Close local pooled resources on account changes or app background. */
   closeSessions?(accountId?: string): Effect.Effect<void>;

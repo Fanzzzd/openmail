@@ -384,7 +384,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
                 );
                 const epochs = `imap-epoch:${JSON.stringify([id]).slice(0, -1)},`;
                 yield* run(sql`DELETE FROM prefs WHERE substr(key,1,${epochs.length})=${epochs}`);
-                yield* run(sql`DELETE FROM prefs WHERE key=${`sync-reset:${id}`}`);
+                yield* run(
+                  sql`DELETE FROM prefs WHERE key IN (${`sync-reset:${id}`},${`sync-stale:${id}`})`,
+                );
                 yield* run(sql`DELETE FROM accounts WHERE id=${id}`);
               }),
             )

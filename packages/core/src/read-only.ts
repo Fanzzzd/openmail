@@ -12,6 +12,7 @@ export const READ_ONLY_METHODS = Object.freeze([
   "closeSessions",
   "fetchMessage",
   "verifyResetCandidates",
+  "draftMessageIds",
   "fetchRaw",
   "fetchAttachment",
   "pull",

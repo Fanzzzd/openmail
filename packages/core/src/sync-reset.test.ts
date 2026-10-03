@@ -44,7 +44,13 @@ function httpProvider(
   provider: "gmail" | "outlook",
   outcome: Outcome,
   partial = false,
-  options: { listed?: number; now?: number; missingCheckpoint?: boolean } = {},
+  options: {
+    listed?: number;
+    now?: number;
+    missingCheckpoint?: boolean;
+    verificationStatus?: number;
+    omitLabels?: boolean;
+  } = {},
 ) {
   const batches: number[] = [];
   const deltaUrls: URL[] = [];
@@ -80,12 +86,19 @@ function httpProvider(
           } else assert.strictEqual(path.searchParams.get("format"), "minimal");
           return {
             id: entry.id,
-            status: outcome === "gone" ? 404 : outcome === "deferred" ? 429 : 200,
+            status:
+              options.verificationStatus ??
+              (outcome === "gone" ? 404 : outcome === "deferred" ? 429 : 200),
             headers: outcome === "deferred" ? { "Retry-After": "120" } : {},
             body:
               provider === "outlook"
                 ? { id, parentFolderId: outcome === "moved" ? "folder-archive" : "folder-inbox" }
-                : { id, labelIds: outcome === "moved" ? ["UNREAD"] : ["INBOX", "UNREAD"] },
+                : {
+                    id,
+                    ...(options.omitLabels
+                      ? {}
+                      : { labelIds: outcome === "moved" ? ["UNREAD"] : ["INBOX", "UNREAD"] }),
+                  },
           };
         });
         if (provider === "outlook") body = { responses };
@@ -174,7 +187,7 @@ function runtime<A, E>(
     | import("./services.js").OAuth
     | import("./platform/mail-codec.js").MailCodec
   >,
-  body: Effect.Effect<A, E, Store | Mailbox>,
+  body: Effect.Effect<A, E, Store | Mailbox | Providers>,
   http: Layer.Layer<HttpClient.HttpClient> = Layer.succeed(HttpClient.HttpClient)(
     HttpClient.make(() => Effect.die("Unexpected HTTP request")),
   ),
@@ -223,7 +236,10 @@ for (const provider of ["outlook", "gmail"] as const)
             const result = yield* (yield* Mailbox).sync(account.id);
             assert.isUndefined(result[0]?.error);
             assert.strictEqual(http.expired(), 1);
-            assert.deepStrictEqual(http.batches, [20, 20, 20, 20, 10]);
+            assert.deepStrictEqual(
+              http.batches,
+              outcome === "deferred" ? [20] : [20, 20, 20, 20, 10],
+            );
             assert.strictEqual(
               yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
               outcome === "gone" ? 10 : 100,
@@ -561,3 +577,168 @@ it.effect("slice56: a Graph delta reaching the filtered 5,000 cap remains a part
     ),
   );
 });
+
+for (const provider of ["gmail", "outlook"] as const) {
+  it.effect(
+    `slice60: ${provider} stale verification respects batch Retry-After and the hourly cooldown`,
+    () => {
+      const http = httpProvider(provider, "deferred");
+      return runtime(
+        provider,
+        provider === "gmail" ? makeGmail : makeOutlook,
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount(provider, "me@example.test");
+          for (let n = 0; n < 21; n++) yield* store.upsertMessage(account.id, mail(`m${n}`));
+          const adapter = (yield* Providers).get(provider);
+          const health = () =>
+            Effect.succeed({
+              provider,
+              accountDomainHash: "hash",
+              checkedAt: 0,
+              cursorAgeMs: null,
+              pendingOps: 0,
+              folders: [
+                {
+                  scope: "INBOX",
+                  local: { total: 21, unread: 21, threads: 21 },
+                  server: {
+                    kind: "available" as const,
+                    total: 0,
+                    unread: 0,
+                    threads: null,
+                    uidNext: null,
+                    uidValidity: null,
+                  },
+                  bodyCacheWindowDays: null,
+                  headerWindow: null,
+                  cursorAgeMs: null,
+                  pendingOps: 0,
+                  verdict: "local has more — stale" as const,
+                },
+              ],
+            });
+          const guard = makeResetGuard(
+            store,
+            adapter,
+            account,
+            { changed: 0, deleted: 0 },
+            { remaining: 500 },
+          );
+          yield* guard.sweep(health);
+          assert.deepStrictEqual(http.batches, [20]);
+          // Retry-After 120 exceeds the request's 60-second wait budget: defer,
+          // and do not immediately send another request or remove the cached row.
+          assert.strictEqual(
+            yield* store.messageIdForProvider(account.id, "m1"),
+            `${account.id}/m1`,
+          );
+          yield* guard.sweep(health);
+          assert.deepStrictEqual(http.batches, [20]);
+          yield* TestClock.adjust("1 hour");
+          yield* guard.sweep(health);
+          // A new sync gets a new verification guard; no duplicate probes within one run.
+          const next = makeResetGuard(
+            store,
+            adapter,
+            account,
+            { changed: 0, deleted: 0 },
+            { remaining: 500 },
+          );
+          yield* TestClock.adjust("1 hour");
+          yield* next.sweep(health);
+          assert.deepStrictEqual(http.batches, [20, 20]);
+          assert.strictEqual(
+            yield* store.messageIdForProvider(account.id, "m1"),
+            `${account.id}/m1`,
+          );
+        }),
+        http.layer,
+      );
+    },
+  );
+}
+
+for (const provider of ["gmail", "outlook"] as const) {
+  for (const status of [400, 401, 403]) {
+    it.effect(`slice60-fix: ${provider} sweep inner ${status} keeps cached rows`, () => {
+      const http = httpProvider(provider, "present", false, { verificationStatus: status });
+      return runtime(
+        provider,
+        provider === "gmail" ? makeGmail : makeOutlook,
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount(provider, "me@example.test");
+          yield* store.upsertMessage(account.id, mail("m1"));
+          const budget = { remaining: 500 };
+          const guard = makeResetGuard(
+            store,
+            (yield* Providers).get(provider),
+            account,
+            { changed: 0, deleted: 0 },
+            budget,
+          );
+          yield* guard.sweep(() =>
+            Effect.succeed({
+              provider,
+              accountDomainHash: "hash",
+              checkedAt: 0,
+              cursorAgeMs: null,
+              pendingOps: 0,
+              folders: [
+                {
+                  scope: "INBOX",
+                  local: { total: 1, unread: 1, threads: 1 },
+                  server: {
+                    kind: "available" as const,
+                    total: 0,
+                    unread: 0,
+                    threads: null,
+                    uidNext: null,
+                    uidValidity: null,
+                  },
+                  bodyCacheWindowDays: null,
+                  headerWindow: null,
+                  cursorAgeMs: null,
+                  pendingOps: 0,
+                  verdict: "local has more — stale" as const,
+                },
+              ],
+            }),
+          );
+          assert.strictEqual(
+            (yield* store.getMessage(`${account.id}/m1`)).bodyText,
+            "full cached body",
+          );
+          assert.deepStrictEqual(http.batches, [1]);
+          assert.strictEqual(budget.remaining, 500);
+        }),
+        http.layer,
+      );
+    });
+  }
+}
+
+it.effect(
+  "slice60-fix: Gmail verification 200 without labelIds reports a present unlabeled message",
+  () => {
+    const http = httpProvider("gmail", "present", false, { omitLabels: true });
+    return runtime(
+      "gmail",
+      makeGmail,
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "me@example.test");
+        const adapter = (yield* Providers).get("gmail");
+        assert.ok(typeof adapter.verifyResetCandidates === "function");
+        const result = yield* adapter.verifyResetCandidates(account, [
+          { providerId: "m1", rfcMessageId: null, labels: ["CATEGORY_PERSONAL"] },
+        ]);
+        assert.deepStrictEqual(result, [
+          { kind: "present", id: "m1", providerId: "m1", labels: [] },
+        ]);
+      }),
+      http.layer,
+    );
+  },
+);

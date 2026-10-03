@@ -1761,7 +1761,10 @@ export const MailboxLive = (
           const pendingById = new Map<string, MailOp[]>();
           for (const change of batch) {
             // Polling only discovers arrivals/flags; full sync reconciles moves and resets.
-            if (scope && ["Delete", "DeleteLabel", "Reset", "Labels"].includes(change._tag))
+            if (
+              scope &&
+              ["Delete", "DeleteLabel", "Reset", "Labels", "VerifyCandidates"].includes(change._tag)
+            )
               continue;
             switch (change._tag) {
               case "FetchLater":
@@ -1868,6 +1871,8 @@ export const MailboxLive = (
                 break;
               case "MessageLabels":
                 counts.changed++;
+                if (!change.labels.includes("DRAFT"))
+                  writes.push(store.dropSyncedDrafts(account.id, change.providerId));
                 if (!(yield* store.messageIdForProvider(account.id, change.providerId))) {
                   const fetched = yield* providers
                     .get(account.provider)
@@ -1969,10 +1974,11 @@ export const MailboxLive = (
                   ),
                 );
                 break;
+              case "VerifyCandidates":
               case "RebuildFolder":
               case "DeleteLabel":
               case "Reset":
-                break; // Reset barriers run outside the write transaction.
+                break; // Verification and reset barriers run outside the write transaction.
               case "BackfillReset":
                 writes.push(store.resetBackfill(account.id));
                 break;
@@ -2062,14 +2068,17 @@ export const MailboxLive = (
             for (const change of batch) {
               if (
                 !scope &&
-                (change._tag === "Reset" ||
+                (change._tag === "VerifyCandidates" ||
+                  change._tag === "Reset" ||
                   change._tag === "DeleteLabel" ||
                   change._tag === "RebuildFolder")
               ) {
                 if (changes.length)
                   yield* applyChanges(current, counts, notificationsReady, scope)(changes);
                 changes = [];
-                yield* guard.reset(change);
+                yield* change._tag === "VerifyCandidates"
+                  ? guard.enqueue(change.providerIds)
+                  : guard.reset(change);
               } else changes.push(change);
             }
             if (changes.length)
@@ -2137,6 +2146,11 @@ export const MailboxLive = (
         return yield* pull.pipe(
           Effect.retry(scope ? { ...PULL_RETRY, times: 0 } : PULL_RETRY),
           Effect.andThen(scope ? Effect.void : guard.verify()),
+          Effect.andThen(
+            scope
+              ? Effect.void
+              : guard.sweep(() => makeSyncHealth(store, providers)(account.id).pipe(Effect.orDie)),
+          ),
           Effect.andThen(
             scope
               ? store.setInboxError(account.id, null)

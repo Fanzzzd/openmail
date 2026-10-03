@@ -3496,3 +3496,150 @@ for (const restart of [false, true]) {
       }),
   );
 }
+
+it.effect(
+  "Drafts delta update followed by removal deletes both cached message and editable draft",
+  () => {
+    const http = fakeHttp({
+      "POST /$batch": { json: { responses: [{ id: "0", status: 404 }] } },
+      ...mailbox({
+        drafts: (url) =>
+          url.searchParams.has("$skiptoken")
+            ? {
+                json: {
+                  value: [{ id: "remote", "@removed": { reason: "deleted" } }],
+                  "@odata.deltaLink": `${GRAPH}/me/mailFolders/drafts/messages/delta?$deltatoken=2`,
+                },
+              }
+            : {
+                json: {
+                  value: [{ ...raw, id: "remote", hasAttachments: false, isDraft: true }],
+                  "@odata.nextLink": `${GRAPH}/me/mailFolders/drafts/messages/delta?$skiptoken=next`,
+                },
+              },
+      }),
+    });
+    const services = Layer.mergeAll(
+      StoreLive,
+      Layer.effect(Providers, makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter })))),
+    ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+    return Effect.gen(function* () {
+      const store = yield* Store,
+        mailbox = yield* Mailbox;
+      const saved = yield* store.upsertAccount("outlook", account.email);
+      yield* store.saveSyncCursor(
+        saved.id,
+        JSON.stringify({
+          __idType: "immutable",
+          drafts: `${GRAPH}/me/mailFolders/drafts/messages/delta?$deltatoken=1`,
+        }),
+      );
+      yield* store.putDraft({
+        id: "editable",
+        accountId: saved.id,
+        message: { to: [], cc: [], bcc: [], subject: "Draft", text: "Text", attachments: [] },
+      });
+      yield* store.setDraftRemote("editable", { draftId: "remote", messageId: "remote" }, null);
+      yield* mailbox.sync(saved.id);
+      assert.strictEqual(yield* store.messageIdForProvider(saved.id, "remote"), null);
+      assert.isTrue(Option.isNone(yield* store.getDraft("editable")));
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(Layer.provideMerge(services)),
+      ),
+    );
+  },
+);
+
+for (const firstStatus of [200, 403]) {
+  it.effect(
+    `a move from later-processed Drafts to Inbox resolves via a durable conflict queue (${firstStatus})`,
+    () => {
+      let status = firstStatus;
+      let pulling = true;
+      const http = fakeHttp({
+        ...mailbox({
+          inbox: {
+            json: {
+              value: [{ ...raw, id: "moving", isDraft: false, hasAttachments: false }],
+              "@odata.deltaLink": `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=2`,
+            },
+          },
+          drafts: (url) =>
+            url.searchParams.has("$skiptoken")
+              ? {
+                  json: {
+                    value: [{ id: "moving", "@removed": { reason: "deleted" } }],
+                    "@odata.deltaLink": `${GRAPH}/me/mailFolders/drafts/messages/delta?$deltatoken=2`,
+                  },
+                }
+              : {
+                  json: {
+                    value: [{ ...raw, id: "moving", isDraft: true, hasAttachments: false }],
+                    "@odata.nextLink": `${GRAPH}/me/mailFolders/drafts/messages/delta?$skiptoken=next`,
+                  },
+                },
+        }),
+        "POST /$batch": () => {
+          assert.isFalse(
+            pulling,
+            "conflict verification must happen after pull, through the guard",
+          );
+          return {
+            json: {
+              responses: [{ id: "0", status, body: { id: "moving", parentFolderId: "id-inbox" } }],
+            },
+          };
+        },
+      });
+      const services = Layer.mergeAll(
+        StoreLive,
+        Layer.effect(
+          Providers,
+          makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter }))),
+        ),
+      ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+      return Effect.gen(function* () {
+        const store = yield* Store,
+          providers = yield* Providers,
+          mailbox = yield* Mailbox;
+        const saved = yield* store.upsertAccount("outlook", account.email);
+        const cursor = JSON.stringify({
+          __idType: "immutable",
+          inbox: `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=1`,
+          drafts: `${GRAPH}/me/mailFolders/drafts/messages/delta?$deltatoken=1`,
+        });
+        const changes = yield* Stream.runCollect(
+          providers.get("outlook").pull(saved, Option.some(cursor)),
+        );
+        assert.include(tags(changes), "VerifyCandidates");
+        assert.isFalse(http.calls.some((c) => c.url.pathname.endsWith("/$batch")));
+        pulling = false;
+        yield* store.saveSyncCursor(saved.id, cursor);
+        yield* mailbox.sync(saved.id);
+        if (status === 403) {
+          assert.deepStrictEqual(
+            (yield* store.pendingResetCandidates(saved.id)).map((c) => c.providerId),
+            ["moving"],
+          );
+          assert.strictEqual(
+            yield* store.messageIdForProvider(saved.id, "moving"),
+            `${saved.id}/moving`,
+          );
+          status = 200;
+          yield* mailbox.sync(saved.id);
+        }
+        const current = yield* store.getMessage(`${saved.id}/moving`);
+        assert.include(current.labels, "INBOX");
+        assert.notInclude(current.labels, "DRAFT");
+        assert.deepStrictEqual(yield* store.pendingResetCandidates(saved.id), []);
+      }).pipe(
+        Effect.provide(
+          MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+            Layer.provideMerge(services),
+          ),
+        ),
+      );
+    },
+  );
+}

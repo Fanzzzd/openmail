@@ -2754,3 +2754,60 @@ it.effect("Gmail sync health only GETs label message/unread/thread counts", () =
     }),
   );
 });
+
+it.effect("label-only category removal accepts minimal messages with no remaining labels", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": {
+        json: { labels: [{ id: "CATEGORY_PERSONAL", name: "Personal", type: "system" }] },
+      },
+      "GET /history": {
+        json: {
+          historyId: "2",
+          history: [
+            { labelsRemoved: [{ message: { id: "m1" }, labelIds: ["CATEGORY_PERSONAL"] }] },
+          ],
+        },
+      },
+      "GET /messages/m1": { json: { id: "m1" } },
+    });
+    const changes = yield* run(http, (adapter) =>
+      Stream.runCollect(adapter.pull(account, Option.some("1"))),
+    );
+    assert.deepStrictEqual(
+      changes.filter((c) => c._tag === "MessageLabels"),
+      [{ _tag: "MessageLabels", providerId: "m1", labels: [] }],
+    );
+    assert.strictEqual(
+      http.calls
+        .find((c) => c.url.pathname.endsWith("/messages/m1"))
+        ?.url.searchParams.get("format"),
+      "minimal",
+    );
+  }),
+);
+
+it.effect(
+  "stale draft discovery reads one bounded drafts.list page without treating later pages as missing",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /drafts": (url) => {
+          assert.strictEqual(url.searchParams.get("maxResults"), "500");
+          assert.isNull(url.searchParams.get("pageToken"));
+          return {
+            json: {
+              drafts: [{ id: "stable", message: { id: "new-version" } }],
+              nextPageToken: "more",
+            },
+          };
+        },
+      });
+      const ids = yield* run(http, (adapter) => {
+        if (!adapter.draftMessageIds) return Effect.die("Gmail draft listing is missing");
+        return adapter.draftMessageIds(account);
+      });
+      assert.deepStrictEqual(ids, ["new-version"]);
+      assert.strictEqual(http.calls.length, 1);
+    }),
+);

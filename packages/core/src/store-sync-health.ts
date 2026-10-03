@@ -19,9 +19,15 @@ export function makeSyncHealthStore(sql: SqlClient.SqlClient) {
     const within = imap
       ? sql`${path}=${scope}`
       : sql`EXISTS(SELECT 1 FROM json_each(m.labels_json) WHERE value=${scope})`;
+    const orphanDrafts =
+      !imap && scope === "DRAFT"
+        ? sql`(SELECT COUNT(DISTINCT d.remote_message_id) FROM drafts d
+          WHERE d.account_id=${accountId} AND d.remote_message_id IS NOT NULL AND d.local_only=0 AND d.sync_error IS NULL
+          AND NOT EXISTS(SELECT 1 FROM messages m WHERE m.account_id=d.account_id AND m.provider_id=d.remote_message_id))`
+        : sql.literal("0");
     return first(
       LocalHealth,
-    )(sql`SELECT COUNT(*) AS total, COALESCE(SUM(m.is_unread),0) AS unread, COUNT(DISTINCT m.thread_id) AS threads,
+    )(sql`SELECT COUNT(*) + ${orphanDrafts} AS total, COALESCE(SUM(m.is_unread),0) AS unread, COUNT(DISTINCT m.thread_id) + ${orphanDrafts} AS threads,
       MIN(json_extract(m.labels_json,'$[0]')) AS label,
       (SELECT COUNT(*) FROM pending_ops p WHERE p.account_id=${accountId} AND p.provider_id IN (SELECT m.provider_id FROM messages m WHERE m.account_id=${accountId} AND ${within})) AS pendingOps
       FROM messages m WHERE m.account_id=${accountId} AND ${within}`).pipe(

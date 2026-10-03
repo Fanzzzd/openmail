@@ -577,14 +577,17 @@ export const makeGmail: Effect.Effect<
                   )
                 : get(
                     account.id,
-                    Schema.Struct({ id: Schema.String, labelIds: Schema.Array(Schema.String) }),
+                    Schema.Struct({
+                      id: Schema.String,
+                      labelIds: Schema.optionalKey(Schema.Array(Schema.String)),
+                    }),
                     `/messages/${encodeURIComponent(id)}`,
                     { format: "minimal", fields: "id,labelIds" },
                   ).pipe(
                     Effect.map((m): Change => ({
                       _tag: "MessageLabels",
                       providerId: m.id,
-                      labels: m.labelIds,
+                      labels: m.labelIds ?? [],
                     })),
                     Effect.catchIf(is404, () =>
                       Effect.succeed<Change>({ _tag: "Delete", providerId: id }),
@@ -1075,22 +1078,28 @@ export const makeGmail: Effect.Effect<
               if (response.status === 404) out.push({ kind: "gone", id: candidate.providerId });
               else if (response.status === 200) {
                 const raw = yield* decode(
-                  Schema.Struct({ id: Schema.String, labelIds: Schema.Array(Schema.String) }),
+                  Schema.Struct({
+                    id: Schema.String,
+                    labelIds: Schema.optionalKey(Schema.Array(Schema.String)),
+                  }),
                 )(response.body);
                 if (raw.id === candidate.providerId)
                   out.push({
                     kind: "present",
                     id: candidate.providerId,
                     providerId: raw.id,
-                    labels: raw.labelIds,
+                    labels: raw.labelIds ?? [],
                   });
               }
             }
             return out;
           }),
           (error) => error._tag === "ApiError" && isTransient(error),
-        ).pipe(Effect.catch(() => Effect.succeed<ResetVerification[]>([])));
-        results.push(...verified);
+        ).pipe(Effect.result);
+        // An exhausted retry budget must defer the rest of the run, especially
+        // when Retry-After is longer than we can wait inside a single request.
+        if (verified._tag === "Failure") break;
+        results.push(...verified.success);
       }
       return results;
     }).pipe(Effect.mapError(readFailure(account.id)));
@@ -1116,6 +1125,11 @@ export const makeGmail: Effect.Effect<
         Effect.mapError(readFailure(account.id)),
       ),
     backfill,
+    draftMessageIds: (account) =>
+      get(account.id, DraftList, "/drafts", { maxResults: "500" }).pipe(
+        Effect.map((page) => (page.drafts ?? []).map((draft) => draft.message.id)),
+        Effect.mapError(readFailure(account.id)),
+      ),
     verifyResetCandidates,
     fetchMessage: (account, id) =>
       fetchMessage(account.id, id).pipe(

@@ -878,7 +878,8 @@ export const makeOutlook: Effect.Effect<
           // page, with backpressure from the bounded sync queue.
           const kept = new Set<string>();
           const restarted = new Set<string>();
-          const removed = new Set<string>();
+          const removed = new Map<string, Set<string>>();
+          const changedFolders = new Map<string, Set<string>>();
           const next: Record<string, string> = {
             [ID_TYPE_KEY]: "immutable",
             ...(stored[WINDOW_KEY] ? { [WINDOW_KEY]: stored[WINDOW_KEY] } : {}),
@@ -922,12 +923,19 @@ export const makeOutlook: Effect.Effect<
                   (item) =>
                     Effect.gen(function* () {
                       if ("@removed" in item) {
-                        if (!reset && !restarted.has(folder.label)) removed.add(item.id);
+                        if (!reset && !restarted.has(folder.label)) {
+                          const labels = removed.get(item.id) ?? new Set<string>();
+                          labels.add(folder.label);
+                          removed.set(item.id, labels);
+                        }
                         return null;
                       }
                       // Listing proves presence even when a later body GET returns 404.
                       listed.add(item.id);
                       kept.add(item.id);
+                      const labels = changedFolders.get(item.id) ?? new Set<string>();
+                      labels.add(folder.label);
+                      changedFolders.set(item.id, labels);
                       folderKept.add(item.id);
                       const message =
                         "conversationId" in item
@@ -981,16 +989,26 @@ export const makeOutlook: Effect.Effect<
               deferred: deferredFetches,
             });
           }
-          // Moves can appear as both removed and changed. A change in any folder
-          // wins; deletes and the checkpoint follow successful delivery of all pages.
+          // Changes from removed folders can overwrite a move observed earlier.
+          // Resolve overlaps after all pages, through the durable verification queue.
           yield* start;
           const keep = [...kept];
           if (reset) yield* Queue.offer(queue, { _tag: "Reset", keep, since, partial: true });
           else
             for (const label of restarted)
               yield* Queue.offer(queue, { _tag: "DeleteLabel", label, keep, since, partial: true });
-          for (const providerId of removed)
+          const ambiguous: string[] = [];
+          for (const [providerId, removedLabels] of removed) {
             if (!kept.has(providerId)) yield* Queue.offer(queue, { _tag: "Delete", providerId });
+            else if (
+              [...(changedFolders.get(providerId) ?? [])].some((label) => removedLabels.has(label))
+            )
+              ambiguous.push(providerId);
+          }
+          // Delta may repeat an identity across pages. An update does not prove
+          // presence after a removal from the same folder; verify its current location.
+          if (!scope && ambiguous.length)
+            yield* Queue.offer(queue, { _tag: "VerifyCandidates", providerIds: ambiguous });
           const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
           for (const key of Object.keys(previous))
             if (key !== ID_TYPE_KEY && key !== WINDOW_KEY && !wellKnown.has(key) && !(key in next))
@@ -1738,8 +1756,11 @@ export const makeOutlook: Effect.Effect<
             return out;
           }),
           (error) => error._tag === "ApiError" && isTransient(error),
-        ).pipe(Effect.catch(() => Effect.succeed<ResetVerification[]>([])));
-        results.push(...verified);
+        ).pipe(Effect.result);
+        // An exhausted retry budget must defer the rest of the run, especially
+        // when Retry-After is longer than we can wait inside a single request.
+        if (verified._tag === "Failure") break;
+        results.push(...verified.success);
       }
       return results;
     }).pipe(Effect.mapError(readFailure(account.id)));

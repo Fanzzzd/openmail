@@ -1,9 +1,10 @@
-import { Effect, Option, Schema } from "effect";
+import { Clock, Effect, Option, Schema } from "effect";
 import type { Account } from "./domain.js";
 import type { Change, ProviderAdapter, Store } from "./services.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { trackImapBackfill } from "./imap-cursor.js";
 import { applyOpToLabels } from "./mail-ops.js";
+import type { SyncHealth } from "./sync-health.js";
 
 export const ResetCandidate = Schema.Struct({
   providerId: Schema.String,
@@ -25,6 +26,7 @@ export type ResetVerification =
 const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
 export const RESET_VERIFICATION_LIMIT = 500;
+export const STALE_SWEEP_LIMIT = 500;
 export const needsResetVerification = (local: number, candidates: number) =>
   candidates > Math.max(50, local * 0.2);
 
@@ -65,11 +67,22 @@ export function makeResetGuard(
   counts: { changed: number; deleted: number },
   budget: { remaining: number },
 ) {
-  const verify = Effect.fnUntraced(function* () {
-    const pending = yield* store.pendingResetCandidates(account.id);
-    const selected = pending.slice(0, budget.remaining);
+  const attempted = new Set<string>();
+  const sweepBudget = { remaining: STALE_SWEEP_LIMIT };
+  let verificationDeferred = false;
+  const verify = Effect.fnUntraced(function* (candidates?: readonly ResetCandidate[]) {
+    const pending = candidates ?? (yield* store.pendingResetCandidates(account.id));
+    const activeBudget = candidates === undefined ? budget : sweepBudget;
+    const selected = pending.slice(
+      0,
+      Math.min(
+        activeBudget.remaining,
+        candidates === undefined ? RESET_VERIFICATION_LIMIT : STALE_SWEEP_LIMIT,
+      ),
+    );
     if (!selected.length || !adapter.verifyResetCandidates) return;
-    budget.remaining -= selected.length;
+    activeBudget.remaining -= selected.length;
+    for (const candidate of selected) attempted.add(candidate.providerId);
     const results = yield* adapter
       .verifyResetCandidates(account, selected)
       .pipe(Effect.catch(() => Effect.succeed<readonly ResetVerification[]>([])));
@@ -155,17 +168,21 @@ export function makeResetGuard(
             }
             counts.changed++;
           }
+          if (result.kind === "present" && !result.labels.includes("DRAFT"))
+            yield* store.dropSyncedDrafts(account.id, result.id);
           completed.add(result.id);
         }
         // Rotate uncertain ids so a permanently failing first page cannot starve later ids.
-        yield* store.saveResetCandidates(account.id, [
-          ...pending
-            .slice(selected.length)
-            .filter((candidate) => !completed.has(candidate.providerId)),
-          ...selected.filter((candidate) => !completed.has(candidate.providerId)),
-        ]);
+        if (candidates === undefined)
+          yield* store.saveResetCandidates(account.id, [
+            ...pending
+              .slice(selected.length)
+              .filter((candidate) => !completed.has(candidate.providerId)),
+            ...selected.filter((candidate) => !completed.has(candidate.providerId)),
+          ]);
       }),
     );
+    verificationDeferred ||= completed.size < selected.length;
     yield* logSyncReset(account, "account", {
       phase: "verification",
       listed: 0,
@@ -222,5 +239,74 @@ export function makeResetGuard(
       }),
     );
   });
-  return { reset, verify };
+  const sweep = Effect.fnUntraced(function* (health: () => Effect.Effect<SyncHealth>) {
+    if (!adapter.verifyResetCandidates || sweepBudget.remaining <= 0 || verificationDeferred)
+      return;
+    const now = yield* Clock.currentTimeMillis;
+    const state = yield* store.claimStaleSweep(account.id, now);
+    if (Option.isNone(state)) return;
+    const report = yield* health();
+    const scopes = report.folders
+      .filter(
+        (folder) => folder.server.kind === "available" && folder.local.total > folder.server.total,
+      )
+      .map((folder) => folder.scope);
+    if (!scopes.length) return;
+    const selected = yield* store.staleCandidates(
+      account.id,
+      scopes,
+      account.provider === "imap",
+      state.value.after,
+      sweepBudget.remaining,
+    );
+    // Counts identify suspect folders, not missing identities. Probe each bounded
+    // page; only an explicit absence or current server labels can change a row.
+    yield* store.saveStaleSweepPosition(account.id, selected.at(-1)?.providerId ?? "");
+    let knownDrafts = new Set<string>();
+    if (scopes.includes("DRAFT") && adapter.draftMessageIds) {
+      const page = yield* adapter.draftMessageIds(account).pipe(
+        Effect.map(Option.some),
+        Effect.catch(() => Effect.succeed(Option.none())),
+      );
+      // Do not follow a failed/throttled listing with another verification request.
+      if (Option.isNone(page)) return;
+      knownDrafts = new Set(page.value);
+    }
+    const queued = new Set(
+      (yield* store.pendingResetCandidates(account.id)).map((candidate) => candidate.providerId),
+    );
+    // A list page proves presence only. Missing ids (including later pages) still
+    // need minimal GET verification; never use drafts.list as a deletion keep set.
+    yield* verify(
+      selected.filter(
+        (candidate) =>
+          !attempted.has(candidate.providerId) &&
+          !queued.has(candidate.providerId) &&
+          (!candidate.draftOnly || !knownDrafts.has(candidate.providerId)),
+      ),
+    );
+  });
+  const enqueue = (providerIds: readonly string[]) =>
+    store.transaction(
+      Effect.gen(function* () {
+        const pending = new Map(
+          (yield* store.pendingResetCandidates(account.id)).map((candidate) => [
+            candidate.providerId,
+            candidate,
+          ]),
+        );
+        for (const providerId of providerIds) {
+          if (pending.has(providerId)) continue;
+          const id = yield* store.messageIdForProvider(account.id, providerId);
+          const local = id ? yield* store.getMessage(id).pipe(Effect.orDie) : null;
+          pending.set(providerId, {
+            providerId,
+            rfcMessageId: local?.rfcMessageId ?? null,
+            labels: local?.labels ?? [],
+          });
+        }
+        yield* store.saveResetCandidates(account.id, [...pending.values()]);
+      }),
+    );
+  return { reset, verify, sweep, enqueue };
 }
