@@ -67,15 +67,46 @@ function httpProvider(
         request.body._tag === "Uint8Array" ? new TextDecoder().decode(request.body.body) : "";
       if (url.pathname.endsWith("/token")) body = { access_token: "access", expires_in: 3600 };
       else if (url.pathname.endsWith("/$batch") || url.pathname.endsWith("/batch/gmail/v1")) {
-        batchCalls++;
         const entries =
           provider === "outlook"
             ? Schema.decodeUnknownSync(Schema.fromJsonString(Requests))(requestText).requests
             : [...requestText.matchAll(/Content-ID: <(\d+)>\r\n\r\nGET ([^ ]+) HTTP/g)].map(
                 (match) => ({ id: match[1] ?? "", url: match[2] ?? "", headers: { prefer: "" } }),
               );
-        batches.push(entries.length);
         assert.isAtMost(entries.length, 20);
+        const metadata = entries.every(
+          (entry) =>
+            new URL(entry.url, "https://example.test").searchParams.get("$select") ===
+            "internetMessageId,internetMessageHeaders",
+        );
+        if (metadata) {
+          return HttpClientResponse.fromWeb(
+            request,
+            new Response(
+              JSON.stringify({
+                responses: entries.map((entry) => {
+                  const id = decodeURIComponent(
+                    new URL(entry.url, "https://example.test").pathname.split("/").at(-1) ?? "",
+                  );
+                  assert.strictEqual(entry.headers.prefer, 'IdType="ImmutableId"');
+                  return {
+                    id: entry.id,
+                    status: 200,
+                    body: {
+                      internetMessageId: `<${id}@example.test>`,
+                      internetMessageHeaders: [
+                        { name: "Message-ID", value: `<${id}@example.test>` },
+                      ],
+                    },
+                  };
+                }),
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        batchCalls++;
+        batches.push(entries.length);
         const responses = entries.map((entry) => {
           const path = new URL(entry.url, "https://example.test");
           const id = decodeURIComponent(path.pathname.split("/").at(-1) ?? "");
@@ -236,6 +267,11 @@ for (const provider of ["outlook", "gmail"] as const)
             const result = yield* (yield* Mailbox).sync(account.id);
             assert.isUndefined(result[0]?.error);
             assert.strictEqual(http.expired(), 1);
+            if (outcome === "deferred")
+              assert.deepStrictEqual(yield* store.headerBackfillState(account.id), {
+                kind: "running",
+                after: null,
+              });
             assert.deepStrictEqual(
               http.batches,
               outcome === "deferred" ? [20] : [20, 20, 20, 20, 10],

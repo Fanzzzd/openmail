@@ -48,7 +48,7 @@ export function logSyncReset(
   folder: string,
   counts: Omit<SyncResetDiagnostic, "_tag" | "provider" | "accountHash" | "folderHash">,
 ) {
-  return Effect.logWarning({
+  return Effect.logInfo({
     _tag: "SyncResetDiagnostic",
     provider: account.provider,
     accountHash: sha256Hex(account.id.toLowerCase()).slice(0, 16),
@@ -256,7 +256,10 @@ export function makeResetGuard(
         Effect.catch(() => Effect.succeed(Option.none())),
       );
       // Do not follow a failed/throttled listing with another verification request.
-      if (Option.isNone(page)) return;
+      if (Option.isNone(page)) {
+        verificationDeferred = true;
+        return;
+      }
       knownDrafts = new Set(page.value);
     }
     const queued = new Set(
@@ -295,5 +298,5 @@ export function makeResetGuard(
         yield* store.saveResetCandidates(account.id, [...pending.values()]);
       }),
     );
-  return { reset, verify, sweep, enqueue };
+  return { reset, verify, sweep, enqueue, isDeferred: () => verificationDeferred };
 }

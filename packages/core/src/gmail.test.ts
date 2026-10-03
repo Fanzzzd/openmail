@@ -2811,3 +2811,66 @@ it.effect(
       assert.strictEqual(http.calls.length, 1);
     }),
 );
+
+it.effect(
+  "Gmail header backfill requests metadata only, preserves repeated fields and tolerates 404",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /messages/a": {
+          json: {
+            payload: {
+              headers: [
+                { name: "Message-ID", value: "<old@example.test>" },
+                { name: "Delivered-To", value: "one@example.test" },
+                { name: "Delivered-To", value: "two@example.test" },
+              ],
+            },
+          },
+        },
+        "GET /messages/no-id": { json: { payload: { headers: [] } } },
+      });
+      const results = yield* run(http, (adapter) => {
+        if (!adapter.fetchCachedHeaders) return Effect.die("Missing header reader");
+        return adapter.fetchCachedHeaders(account, ["a", "gone", "no-id"]);
+      });
+      assert.deepStrictEqual(results, [
+        {
+          kind: "headers",
+          id: "a",
+          rfcMessageId: "<old@example.test>",
+          headers: [
+            { name: "message-id", value: "<old@example.test>" },
+            { name: "delivered-to", value: "one@example.test" },
+            { name: "delivered-to", value: "two@example.test" },
+          ],
+        },
+        { kind: "unavailable", id: "gone" },
+        { kind: "headers", id: "no-id", rfcMessageId: null, headers: [] },
+      ]);
+      assert.isTrue(
+        http.calls.every(
+          (call) => call.method === "GET" && call.url.searchParams.get("format") === "metadata",
+        ),
+      );
+      assert.isTrue(
+        http.calls.every((call) =>
+          ["message-id", "list-id", "delivered-to"].every((header) =>
+            call.url.searchParams.getAll("metadataHeaders").includes(header),
+          ),
+        ),
+      );
+    }),
+);
+
+it.effect("Gmail header backfill stops sequential reads when Retry-After exceeds its budget", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ "GET /messages/a": { status: 429, headers: { "Retry-After": "61" } } });
+    const result = yield* run(http, (adapter) => {
+      if (!adapter.fetchCachedHeaders) return Effect.die("Missing header reader");
+      return adapter.fetchCachedHeaders(account, ["a", "b"]).pipe(Effect.result);
+    });
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(http.calls.length, 1);
+  }),
+);

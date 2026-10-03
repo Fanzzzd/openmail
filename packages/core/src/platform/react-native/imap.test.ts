@@ -1,3 +1,5 @@
+import { backfillCachedHeaders } from "../../header-backfill.js";
+import { readOnlyAdapter } from "../../read-only.js";
 import { makeResetGuard } from "../../sync-reset.js";
 import { expect, it, vi } from "vitest";
 import { Effect, Fiber, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
@@ -1824,6 +1826,78 @@ it("slice63-fix: a new queued move ignores an earlier operation's local COPY pro
       }),
     );
     expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(2);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("mobile IMAP header backfill uses folder-scoped PEEK fields, preserves flags and resumes its cache cursor", async () => {
+  const test = server({
+    source: Buffer.from(
+      "Message-ID: <one@example.test>\r\nList-ID: List\r\n folded\r\nDelivered-To: a\r\nDelivered-To: b\r\n\r\n",
+    ),
+  });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const store = yield* Store;
+        const account = yield* mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "app-password" },
+        });
+        yield* store.upsertMessage(account.id, {
+          providerId: "9:1:INBOX",
+          threadId: "old",
+          subject: "Old cache",
+          from: { name: "Alice", address: "a@example.test" },
+          to: [],
+          cc: [],
+          date: 1,
+          snippet: "cache",
+          bodyText: "body",
+          bodyHtml: "",
+          labels: ["INBOX", "UNREAD", "STARRED"],
+          isUnread: true,
+          isStarred: true,
+          attachments: [],
+        });
+        const adapter = (yield* Providers).get("imap");
+        const readonly = readOnlyAdapter(adapter);
+        expect(typeof readonly.fetchCachedHeaders).toBe("function");
+        const cached = yield* store.getMessage(`${account.id}/9:1:INBOX`);
+        yield* backfillCachedHeaders(store, readonly, account);
+        const patched = yield* store.getMessage(cached.id);
+        expect(patched.rfcMessageId).toBe("<one@example.test>");
+        expect(patched.headers).toEqual([
+          { name: "message-id", value: "<one@example.test>" },
+          { name: "list-id", value: "List folded" },
+          { name: "delivered-to", value: "a" },
+          { name: "delivered-to", value: "b" },
+        ]);
+        expect(patched.labels).toEqual(cached.labels);
+        expect(patched.isUnread).toBe(true);
+        expect(patched.isStarred).toBe(true);
+        expect(patched.bodyText).toBe("body");
+        expect((yield* store.headerBackfillState(account.id)).kind).toBe("done");
+        const count = test.commands.length;
+        yield* backfillCachedHeaders(store, readonly, account);
+        expect(test.commands.length).toBe(count);
+        if (!readonly.fetchCachedHeaders) throw new Error("Missing header reader");
+        const unavailable = yield* readonly.fetchCachedHeaders(account, [
+          "8:1:INBOX",
+          "quarantined",
+        ]);
+        expect(unavailable.every((row) => row.kind === "unavailable")).toBe(true);
+      }),
+    );
+    const fetches = test.commands.filter((command) => command.includes("UID FETCH"));
+    expect(fetches).toHaveLength(1);
+    expect(fetches[0]).toContain("BODY.PEEK[HEADER.FIELDS");
+    expect(fetches[0]).not.toContain("FLAGS");
+    expect(test.commands.some((command) => /UID STORE|SELECT |APPEND|EXPUNGE/.test(command))).toBe(
+      false,
+    );
   } finally {
     await test.runtime.dispose();
   }

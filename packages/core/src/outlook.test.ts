@@ -1,3 +1,4 @@
+import { backfillCachedHeaders } from "./header-backfill.js";
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
@@ -3860,3 +3861,257 @@ it.effect("slice63-review: a failed Graph change exposes a short reason instead 
     }),
   );
 });
+
+it.effect(
+  "Graph header backfill batches only GETs with explicit internetMessageHeaders selection",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "POST /$batch": {
+          json: {
+            responses: [
+              {
+                id: "0",
+                status: 200,
+                body: {
+                  internetMessageId: "<old@example.test>",
+                  internetMessageHeaders: [{ name: "List-ID", value: "list.example.test" }],
+                },
+              },
+              { id: "1", status: 404 },
+              { id: "2", status: 200, body: { internetMessageHeaders: [] } },
+            ],
+          },
+        },
+      });
+      const results = yield* run(http, (adapter) => {
+        if (!adapter.fetchCachedHeaders) return Effect.die("Missing header reader");
+        return adapter.fetchCachedHeaders(account, ["a/encoded", "gone", "no-id"]);
+      });
+      assert.deepStrictEqual(results, [
+        {
+          kind: "headers",
+          id: "a/encoded",
+          rfcMessageId: "<old@example.test>",
+          headers: [{ name: "list-id", value: "list.example.test" }],
+        },
+        { kind: "unavailable", id: "gone" },
+        { kind: "headers", id: "no-id", rfcMessageId: null, headers: [] },
+      ]);
+      const batch = Schema.decodeUnknownSync(
+        Schema.Struct({
+          requests: Schema.Array(
+            Schema.Struct({
+              method: Schema.String,
+              url: Schema.String,
+              headers: Schema.Struct({ prefer: Schema.String }),
+            }),
+          ),
+        }),
+      )(http.calls[0]?.body);
+      assert.strictEqual(batch.requests.length, 3);
+      for (const request of batch.requests) {
+        assert.strictEqual(request.method, "GET");
+        assert.strictEqual(
+          new URL(request.url, GRAPH).searchParams.get("$select"),
+          "internetMessageId,internetMessageHeaders",
+        );
+        assert.include(request.headers.prefer, 'IdType="ImmutableId"');
+      }
+      assert.include(batch.requests[0]?.url ?? "", "a%2Fencoded");
+    }),
+);
+
+it.effect("Graph header backfill honors inner Retry-After and rejects malformed headers", () =>
+  Effect.gen(function* () {
+    for (const reply of [
+      { json: { responses: [{ id: "0", status: 429, headers: { "Retry-After": "61" } }] } },
+      {
+        json: {
+          responses: [
+            {
+              id: "0",
+              status: 200,
+              body: {
+                internetMessageId: "<only@example.test>",
+                internetMessageHeaders: "malformed",
+              },
+            },
+          ],
+        },
+      },
+    ]) {
+      const http = fakeHttp({ "POST /$batch": reply });
+      const result = yield* run(http, (adapter) => {
+        if (!adapter.fetchCachedHeaders) return Effect.die("Missing header reader");
+        return adapter.fetchCachedHeaders(account, ["a"]).pipe(Effect.result);
+      });
+      assert.strictEqual(result._tag, "Failure");
+      assert.strictEqual(http.calls.length, 1);
+    }
+  }),
+);
+
+it.effect(
+  "Graph repairs 3840 legacy rows in eight 500-row passes, including absent headers and existing Message-IDs",
+  () =>
+    Effect.gen(function* () {
+      const requests: string[] = [];
+      const Requests = Schema.Struct({
+        requests: Schema.Array(
+          Schema.Struct({ id: Schema.String, method: Schema.Literal("GET"), url: Schema.String }),
+        ),
+      });
+      const http = fakeHttp({
+        "POST /$batch": (_url, call) => {
+          const batch = Schema.decodeUnknownSync(Requests)(call.body).requests;
+          assert.isAtMost(batch.length, 20);
+          return {
+            json: {
+              responses: batch.map((entry) => {
+                const id = decodeURIComponent(
+                  new URL(entry.url, GRAPH).pathname.split("/").at(-1) ?? "",
+                );
+                requests.push(id);
+                const n = Number(id.slice(1));
+                return {
+                  id: entry.id,
+                  status: 200,
+                  body: {
+                    ...(n % 10 === 1 ? {} : { internetMessageId: `<${id}@example.test>` }),
+                    ...(n % 3 === 0
+                      ? {}
+                      : {
+                          internetMessageHeaders: [{ name: "List-ID", value: "list.example.test" }],
+                        }),
+                  },
+                };
+              }),
+            },
+          };
+        },
+      });
+      const store = yield* Store;
+      const owner = yield* store.upsertAccount("outlook", account.email);
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let n = 0; n < 3840; n++)
+            yield* store.upsertMessage(owner.id, {
+              ...parseGraphMessage({ ...raw, id: `m${n}`, hasAttachments: false }, "INBOX", []),
+              date: n,
+              ...(n % 2 === 0 ? { rfcMessageId: `<m${n}@example.test>` } : {}),
+            });
+        }),
+      );
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          for (let pass = 0; pass < 8; pass++) {
+            const before = requests.length;
+            yield* backfillCachedHeaders(store, adapter, owner);
+            assert.strictEqual(requests.length - before, Math.min(500, 3840 - pass * 500));
+          }
+          assert.strictEqual((yield* store.headerBackfillState(owner.id)).kind, "done");
+          assert.strictEqual(new Set(requests).size, 3840);
+          yield* backfillCachedHeaders(store, adapter, owner);
+          assert.strictEqual(requests.length, 3840);
+          assert.strictEqual(http.calls.length, 192);
+          const noIdentity = yield* store.getMessage(`${owner.id}/m21`);
+          assert.isUndefined(noIdentity.rfcMessageId);
+          assert.deepStrictEqual(noIdentity.headers, []);
+          const empty = yield* store.getMessage(`${owner.id}/m3`);
+          assert.deepStrictEqual(empty.headers, []);
+          assert.strictEqual(empty.rfcMessageId, "<m3@example.test>");
+          assert.strictEqual(
+            (yield* store.getMessage(`${owner.id}/m0`)).rfcMessageId,
+            "<m0@example.test>",
+          );
+          assert.isTrue(empty.isUnread);
+          assert.isTrue(empty.isStarred);
+          assert.deepStrictEqual(empty.labels, ["INBOX", "UNREAD", "STARRED"]);
+        }),
+      );
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
+it.effect(
+  "Graph backfill preserves inner Retry-After across scheduled/manual passes and read requests",
+  () =>
+    Effect.gen(function* () {
+      let throttled = true;
+      // Route state changes after the server deadline; no real waiting or credentials.
+      const routed = fakeHttp({
+        "POST /$batch": () =>
+          throttled
+            ? { json: { responses: [{ id: "0", status: 429, headers: { "Retry-After": "120" } }] } }
+            : {
+                json: {
+                  responses: [
+                    { id: "0", status: 200, body: { internetMessageId: "<a@example.test>" } },
+                  ],
+                },
+              },
+        "GET /me/messages/a": {
+          json: { ...raw, id: "a", hasAttachments: false, parentFolderId: "inbox" },
+        },
+      });
+      const store = yield* Store;
+      const owner = yield* store.upsertAccount("outlook", account.email);
+      yield* store.upsertMessage(owner.id, {
+        ...parseGraphMessage({ ...raw, id: "a", hasAttachments: false }, "INBOX", []),
+        date: 1,
+      });
+      yield* run(routed, (adapter) =>
+        Effect.gen(function* () {
+          const first = yield* backfillCachedHeaders(store, adapter, owner).pipe(Effect.result);
+          assert.strictEqual(first._tag, "Failure");
+          assert.strictEqual(routed.calls.length, 1);
+          yield* TestClock.adjust("10 seconds");
+          yield* backfillCachedHeaders(store, adapter, owner);
+          const get = yield* adapter.fetchMessage(owner, "a").pipe(Effect.result);
+          assert.strictEqual(get._tag, "Failure");
+          assert.strictEqual(
+            routed.calls.length,
+            1,
+            "the account gate prevents unrelated reads from bypassing Retry-After",
+          );
+          yield* TestClock.adjust("109 seconds");
+          yield* backfillCachedHeaders(store, adapter, owner);
+          assert.strictEqual(routed.calls.length, 1);
+          throttled = false;
+          yield* TestClock.adjust("1 second");
+          yield* backfillCachedHeaders(store, adapter, owner);
+          assert.strictEqual(routed.calls.length, 2);
+          assert.strictEqual((yield* store.headerBackfillState(owner.id)).kind, "done");
+        }),
+      );
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
+it.effect("Graph header backfill accepts successful replies with omitted or null headers", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /$batch": {
+        json: {
+          responses: [
+            { id: "0", status: 200, body: { internetMessageId: "<one@example.test>" } },
+            {
+              id: "1",
+              status: 200,
+              body: { internetMessageId: "<two@example.test>", internetMessageHeaders: null },
+            },
+            { id: "2", status: 200, body: {} },
+          ],
+        },
+      },
+    });
+    const rows = yield* run(http, (adapter) => {
+      if (!adapter.fetchCachedHeaders) return Effect.die("Missing header reader");
+      return adapter.fetchCachedHeaders(account, ["one", "two", "three"]);
+    });
+    assert.deepStrictEqual(rows, [
+      { kind: "headers", id: "one", rfcMessageId: "<one@example.test>", headers: [] },
+      { kind: "headers", id: "two", rfcMessageId: "<two@example.test>", headers: [] },
+      { kind: "headers", id: "three", rfcMessageId: null, headers: [] },
+    ]);
+  }),
+);

@@ -25,6 +25,7 @@ export class ProviderError extends Schema.TaggedError<ProviderError>()("Provider
   status: Schema.optionalKey(Schema.Number),
   reason: Schema.optionalKey(Schema.Literal("configuration")),
   deferred: Schema.optionalKey(Schema.Boolean),
+  retryAfter: Schema.optionalKey(Schema.String),
 }) {}
 
 /** No OAuth client is registered for this provider yet. The app shows the setup step. */

@@ -2064,3 +2064,75 @@ for (const outcome of ["gone", "failed", "denied", "relisted"] as const) {
       ),
   );
 }
+
+it.effect(
+  "desktop IMAP header backfill groups folders, uses UID/PEEK headers and skips unsafe namespaces",
+  () =>
+    Effect.gen(function* () {
+      assert.ok(account.imap);
+      const client = new ImapFlow({ host: "fake.invalid", port: 993, logger: false });
+      const opened = vi.spyOn(client, "mailboxOpen").mockImplementation(async (path) => ({
+        path: String(path),
+        delimiter: "/",
+        flags: new Set<string>(),
+        uidValidity: 7n,
+        uidNext: 10,
+        exists: 2,
+      }));
+      const fetched = vi
+        .spyOn(client, "fetchAll")
+        .mockImplementation(async (range, query, options) => {
+          assert.deepStrictEqual(options, { uid: true });
+          assert.isUndefined(query.flags);
+          assert.isUndefined(query.source);
+          assert.isTrue(Array.isArray(query.headers));
+          return range === "1:2"
+            ? [
+                {
+                  seq: 1,
+                  uid: 1,
+                  headers: Buffer.from(
+                    "Message-ID: <one@example.test>\r\nList-ID: List\r\n folded\r\nDelivered-To: a\r\nDelivered-To: b\r\n",
+                  ),
+                },
+              ]
+            : [];
+        });
+      const settings = account.imap;
+      const adapter = yield* makeImapWith(() =>
+        Effect.succeed({ accountId: account.id, settings, client }),
+      );
+      assert.strictEqual(typeof adapter.fetchCachedHeaders, "function");
+      if (!adapter.fetchCachedHeaders) throw new Error("Missing header reader");
+      const results = yield* adapter.fetchCachedHeaders(account, [
+        "7:1:INBOX",
+        "7:2:INBOX",
+        "6:3:Archive",
+        "quarantined",
+      ]);
+      assert.deepStrictEqual(results, [
+        { kind: "unavailable", id: "quarantined" },
+        {
+          kind: "headers",
+          id: "7:1:INBOX",
+          rfcMessageId: "<one@example.test>",
+          headers: [
+            { name: "message-id", value: "<one@example.test>" },
+            { name: "list-id", value: "List folded" },
+            { name: "delivered-to", value: "a" },
+            { name: "delivered-to", value: "b" },
+          ],
+        },
+        { kind: "unavailable", id: "7:2:INBOX" },
+        { kind: "unavailable", id: "6:3:Archive" },
+      ]);
+      assert.strictEqual(fetched.mock.calls.length, 1);
+      assert.isTrue(opened.mock.calls.every((call) => call[1]?.readOnly === true));
+    }).pipe(
+      Effect.provideService(Secrets, {
+        get: () => Effect.succeed(Option.some("password")),
+        set: () => Effect.void,
+        remove: () => Effect.void,
+      }),
+    ),
+);

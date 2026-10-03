@@ -33,6 +33,10 @@ async function parsePortableMime(raw: Uint8Array): Promise<MimeMessage> {
     ...(email.inReplyTo ? { inReplyTo: email.inReplyTo } : {}),
     ...(email.date ? { date: new Date(email.date) } : {}),
     headers: new Map(email.headers.map((header) => [header.key, header.value])),
+    headerLines: email.headers.map((header) => ({
+      key: header.key,
+      line: `${header.key}: ${header.value}`,
+    })),
     attachments: email.attachments.map((part) => {
       if (typeof part.content === "string")
         throw new PermanentError({ message: "Unexpected mobile attachment encoding" });

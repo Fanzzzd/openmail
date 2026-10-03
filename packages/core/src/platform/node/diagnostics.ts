@@ -38,6 +38,40 @@ const DiagnosticEvent = Schema.Literals([
   "rpc-failure",
 ]);
 export type DiagnosticEvent = typeof DiagnosticEvent.Type;
+const RuntimeReason = Schema.Literals([
+  "header-backfill-failed",
+  "history-backfill-failed",
+  "sync-failed",
+  "sync-crashed",
+  "inbox-poll-failed",
+  "flush-failed",
+  "media-index-failed",
+  "attachment-cache-unavailable",
+  "attachment-cleanup-failed",
+  "unclassified",
+]);
+const runtimeReasons: Readonly<Record<string, typeof RuntimeReason.Type>> = {
+  "Header backfill failed": "header-backfill-failed",
+  "backfill failed": "history-backfill-failed",
+  "sync failed": "sync-failed",
+  "sync crashed": "sync-crashed",
+  "inbox poll failed": "inbox-poll-failed",
+  "flush failed": "flush-failed",
+  "Media indexing batch failed": "media-index-failed",
+  "Attachment cache unavailable": "attachment-cache-unavailable",
+  "Attachment drag cleanup failed": "attachment-cleanup-failed",
+  "Attachment temp cleanup failed": "attachment-cleanup-failed",
+  "Open With cleanup failed": "attachment-cleanup-failed",
+};
+/** Only exact fixed log messages can classify a runtime event; never serialize error text. */
+export function runtimeDiagnosticReason(messages: readonly unknown[]): typeof RuntimeReason.Type {
+  for (const message of messages) {
+    if (typeof message !== "string") continue;
+    const reason = Object.hasOwn(runtimeReasons, message) ? runtimeReasons[message] : undefined;
+    if (reason) return reason;
+  }
+  return "unclassified";
+}
 const Crash = Schema.Struct({
   at: Schema.Number,
   kind: Schema.Literals(["renderer-crash", "abnormal-exit"]),
@@ -67,6 +101,9 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       : undefined;
   const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(data);
   const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(data);
+  const reason = Schema.decodeUnknownOption(RuntimeReason)(
+    "reason" in fields ? fields.reason : undefined,
+  );
   if (event === "sync-reset" && reset._tag === "Some") {
     const value = reset.value;
     return {
@@ -101,6 +138,9 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
   return {
     at,
     event: decoded._tag === "Some" ? decoded.value : "runtime-error",
+    ...(event === "runtime-warning" || event === "runtime-error"
+      ? { reason: reason._tag === "Some" ? reason.value : "unclassified" }
+      : {}),
     ...(code === undefined ? {} : { code }),
     ...(account === undefined ? {} : { accountHash: account }),
     ...(provider._tag === "Some"

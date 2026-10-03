@@ -245,6 +245,18 @@ export class Store extends Context.Service<
 
     // Messages. Writes keep rowids stable for the FTS index (ON CONFLICT DO UPDATE).
     upsertMessage(accountId: string, m: IncomingMessage): Effect.Effect<void>;
+    readonly headerBackfillState: ReturnType<
+      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+    >["headerBackfillState"];
+    readonly saveHeaderBackfillState: ReturnType<
+      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+    >["saveHeaderBackfillState"];
+    readonly headerBackfillCandidates: ReturnType<
+      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+    >["headerBackfillCandidates"];
+    readonly updateCachedHeaders: ReturnType<
+      typeof import("./store-header-backfill.js").makeHeaderBackfillStore
+    >["updateCachedHeaders"];
     setMessageWebLink(id: string, url: string): Effect.Effect<void>;
     knownSenders(accountId: string, addresses: readonly string[]): Effect.Effect<string[]>;
     rememberMailedAddresses(accountId: string, addresses: readonly string[]): Effect.Effect<void>;
@@ -716,6 +728,11 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  /** Bounded metadata-only reads. Unavailable rows stay for normal verification. */
+  fetchCachedHeaders?(
+    account: Account,
+    ids: readonly string[],
+  ): Effect.Effect<readonly import("./header-backfill.js").CachedHeaders[], ProviderFailure>;
   /** GET/IMAP STATUS only. No listing, synchronization or remote mutation. */
   folderStatus(
     account: Account,

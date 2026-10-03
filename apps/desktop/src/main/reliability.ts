@@ -5,6 +5,7 @@ import {
   SyncResetDiagnostic,
   checkLocalDatabase,
   createLocalDiagnostics,
+  runtimeDiagnosticReason,
   resetLocalCache,
   DatabaseInUseError,
   InterruptedRecoveryError,
@@ -26,19 +27,25 @@ export const diagnosticsLogger = Logger.make((options) => {
   const messages: readonly unknown[] = Array.isArray(options.message)
     ? options.message
     : [options.message];
+  let classified = false;
   for (const message of messages) {
     const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(message);
     if (reset._tag === "Some") {
       localLog("sync-reset", reset.value);
+      classified = true;
     }
     const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);
     if (provider._tag === "Some") {
       localLog("provider-failure", provider.value);
+      classified = true;
       process.stderr.write(`[provider-failure] ${JSON.stringify(provider.value)}\n`);
     }
   }
-  if (options.logLevel === "Error" || options.logLevel === "Fatal") localLog("runtime-error");
-  else if (options.logLevel === "Warn") localLog("runtime-warning");
+  if (classified) return;
+  const reason = runtimeDiagnosticReason(messages);
+  if (options.logLevel === "Error" || options.logLevel === "Fatal")
+    localLog("runtime-error", { reason });
+  else if (options.logLevel === "Warn") localLog("runtime-warning", { reason });
 });
 export const diagnosticsPreview = (crashOnly: boolean) => diagnostics?.preview(crashOnly) ?? "";
 export const hasCrashReport = () => crashed;

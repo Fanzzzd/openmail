@@ -1,6 +1,7 @@
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import { scopedAdapter, serviceGranted, type AuthorizationFeature } from "./optional-services.js";
 import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
+import { backfillCachedHeaders } from "./header-backfill.js";
 import { readOnlyAdapter, READ_ONLY_MESSAGE } from "./read-only.js";
 import { inspectAttachment } from "./attachment-import.js";
 import { eventFromInvite, makeFeatureMailbox } from "./mailbox-features.js";
@@ -345,6 +346,24 @@ export const MailboxLive = (
           imapPullLocks.set(accountId, lock);
         }
         return lock;
+      };
+      const headerLocks = new Map<string, Semaphore.Semaphore>();
+      const maintainHeaders = (account: Account) => {
+        let lock = headerLocks.get(account.id);
+        if (!lock) {
+          lock = Semaphore.makeUnsafe(1);
+          headerLocks.set(account.id, lock);
+        }
+        return backfillCachedHeaders(store, providers.get(account.provider), account).pipe(
+          lock.withPermits(1),
+          Effect.catch((error) =>
+            error._tag === "AuthError"
+              ? store.setNeedsReauth(account.id, true)
+              : error._tag === "ProviderError" && (error.status === 429 || error.deferred)
+                ? Effect.logInfo("Header backfill deferred")
+                : Effect.logWarning("Header backfill failed"),
+          ),
+        );
       };
 
       /**
@@ -2336,7 +2355,7 @@ export const MailboxLive = (
               ? store.getAccount(account.id).pipe(
                   Effect.orDie,
                   Effect.flatMap((a) =>
-                    a.enabled === false
+                    a.enabled === false || guard.isDeferred()
                       ? Effect.void
                       : providers
                           .get("gmail")
@@ -2351,6 +2370,11 @@ export const MailboxLive = (
                   ),
                 )
               : Effect.void,
+          ),
+          Effect.andThen(
+            Effect.suspend(() =>
+              scope || guard.isDeferred() ? Effect.void : maintainHeaders(account),
+            ),
           ),
           // `counts` is filled while the stream runs, so read it afterwards.
           Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
@@ -2628,6 +2652,41 @@ export const MailboxLive = (
       });
 
       if (options.autoSync !== undefined) {
+        // Old cached metadata can progress even while Graph is rebuilding its delta snapshot.
+        // One account and at most 500 rows per maintenance pass; share the cursor lock with sync.
+        let nextHeadersAccount = 0;
+        yield* Effect.gen(function* () {
+          yield* backgroundReady;
+          yield* Effect.sleep("10 seconds");
+          if (syncPaused) return;
+          const now = yield* Clock.currentTimeMillis;
+          const accounts: Account[] = [];
+          for (const account of yield* store.listAccounts) {
+            if (account.enabled === false || account.needsReauth || account.lastSyncedAt === null)
+              continue;
+            const progress = yield* store.headerBackfillState(account.id);
+            if (progress.kind === "running" && (progress.retryAt ?? 0) <= now)
+              accounts.push(account);
+          }
+          const account = accounts[nextHeadersAccount % Math.max(1, accounts.length)];
+          nextHeadersAccount++;
+          if (!account) return;
+          yield* account.provider === "imap"
+            ? maintainHeaders(account).pipe(
+                imapPullLock(account.id).withPermitsIfAvailable(1),
+                Effect.asVoid,
+              )
+            : maintainHeaders(account);
+          yield* changed;
+        }).pipe(
+          Effect.catchCause((cause) =>
+            Cause.hasInterruptsOnly(cause)
+              ? Effect.failCause(cause)
+              : Effect.logWarning("Header backfill failed"),
+          ),
+          Effect.forever,
+          Effect.forkScoped,
+        );
         yield* Effect.gen(function* () {
           yield* store.evictBodyBudget((yield* store.prefs).bodyCacheBytes);
         }).pipe(Effect.repeat(Schedule.spaced("1 hour")), Effect.forkScoped);

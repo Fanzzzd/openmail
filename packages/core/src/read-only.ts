@@ -11,6 +11,7 @@ export const READ_ONLY_METHODS = Object.freeze([
   "folderStatus",
   "closeSessions",
   "fetchMessage",
+  "fetchCachedHeaders",
   "verifyResetCandidates",
   "draftMessageIds",
   "fetchRaw",

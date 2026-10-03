@@ -1,6 +1,7 @@
 import { graphPageLink } from "./graph-pagination.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse } from "./provider-batch.js";
+import type { CachedHeaders } from "./header-backfill.js";
 import { logSyncReset, type ResetVerification } from "./sync-reset.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
@@ -285,6 +286,7 @@ const readFailure =
       message,
       status: e.status,
       ...(e.deferred ? { deferred: true } : {}),
+      ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}),
     });
   };
 
@@ -460,6 +462,20 @@ export const makeOutlook: Effect.Effect<
     return lock;
   };
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
+  const readRetryAt = new Map<string, number>();
+  const requestToken = (accountId: string, sending: boolean) =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      const remaining = (readRetryAt.get(accountId) ?? 0) - now;
+      if (!sending && remaining > 0)
+        return yield* new ApiError({
+          status: 429,
+          body: "Account reads deferred",
+          deferred: true,
+          retryAfter: String(remaining / 1000),
+        });
+      return yield* accessToken(accountId);
+    });
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
     Effect.gen(function* () {
       const sending = yield* SendRequest;
@@ -467,7 +483,7 @@ export const makeOutlook: Effect.Effect<
         .run(
           accountId,
           request,
-          accessToken(accountId).pipe(
+          requestToken(accountId, sending).pipe(
             Effect.flatMap((token) => execute(token, request)),
             // The provider can reject an access token before it expires. Drop it,
             // refresh, and retry once; only a failed refresh means signing in again.
@@ -480,6 +496,19 @@ export const makeOutlook: Effect.Effect<
                 ),
             ),
             Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
+            Effect.tapError((e) =>
+              Effect.gen(function* () {
+                if (sending || e._tag !== "ApiError" || !e.retryAfter) return;
+                const now = yield* Clock.currentTimeMillis;
+                readRetryAt.set(
+                  accountId,
+                  Math.max(
+                    readRetryAt.get(accountId) ?? 0,
+                    now + retryAfterMillis(e.retryAfter, now),
+                  ),
+                );
+              }),
+            ),
             Effect.tapError((e) =>
               e._tag === "ApiError" && e.status === 401
                 ? Effect.sync(() => tokens.delete(accountId))
@@ -1774,6 +1803,7 @@ export const makeOutlook: Effect.Effect<
                   ),
                 ),
               );
+              readRetryAt.set(account.id, Math.max(readRetryAt.get(account.id) ?? 0, now + delay));
               return yield* new ApiError({
                 status: 429,
                 body: "Reset verification deferred",
@@ -1820,7 +1850,76 @@ export const makeOutlook: Effect.Effect<
       return results;
     }).pipe(Effect.mapError(readFailure(account.id)));
 
+  const fetchCachedHeaders: NonNullable<ProviderAdapter["fetchCachedHeaders"]> = (account, ids) =>
+    retryProvider(
+      Effect.gen(function* () {
+        const batch = yield* write(account.id, "POST", "/$batch", {
+          requests: ids.map((id, index) => ({
+            id: String(index),
+            method: "GET",
+            headers: PREFER,
+            url: `/me/messages/${encodeURIComponent(id)}?$select=internetMessageId,internetMessageHeaders`,
+          })),
+        }).pipe(Effect.flatMap(decode(BatchResponse)));
+        const throttled = batch.responses.filter(
+          (response) => response.status === 429 || response.status >= 500,
+        );
+        if (throttled.length) {
+          const now = yield* Clock.currentTimeMillis;
+          const delay = Math.max(
+            ...throttled.map((response) =>
+              retryAfterMillis(
+                response.headers?.["Retry-After"] ?? response.headers?.["retry-after"],
+                now,
+              ),
+            ),
+          );
+          readRetryAt.set(account.id, Math.max(readRetryAt.get(account.id) ?? 0, now + delay));
+          return yield* new ApiError({
+            status: 429,
+            body: "Header backfill deferred",
+            retryAfter: String(delay / 1000),
+          });
+        }
+        const out: CachedHeaders[] = [];
+        const MetadataHeaders = Schema.Struct({
+          internetMessageId: Schema.optionalKey(Schema.NullOr(Schema.String)),
+          internetMessageHeaders: Schema.optionalKey(
+            Schema.NullOr(
+              Schema.Array(Schema.Struct({ name: Schema.String, value: Schema.String })),
+            ),
+          ),
+        });
+        for (const response of batch.responses) {
+          const id = ids.find((_id, index) => String(index) === response.id);
+          if (id === undefined) continue;
+          if (response.status === 404 || response.status === 410)
+            out.push({ kind: "unavailable", id });
+          else if (response.status === 200) {
+            const raw = yield* decode(MetadataHeaders)(response.body);
+            const headers = (raw.internetMessageHeaders ?? []).map((h) => ({
+              name: h.name.toLowerCase(),
+              value: h.value,
+            }));
+            out.push({
+              kind: "headers",
+              id,
+              headers,
+              rfcMessageId:
+                raw.internetMessageId ||
+                headers.find((h) => h.name === "message-id")?.value ||
+                null,
+            });
+          } else
+            return yield* new ApiError({ status: response.status, body: "Header backfill failed" });
+        }
+        return out;
+      }),
+      (error) => error._tag === "ApiError" && isTransient(error),
+    ).pipe(Effect.mapError(readFailure(account.id)));
+
   return {
+    fetchCachedHeaders,
     backfill,
     fetchMessage,
     verifyResetCandidates,

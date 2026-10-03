@@ -3,6 +3,7 @@ import type { ResetVerification } from "../../sync-reset.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
+import { CACHED_HEADER_NAMES, cachedHeaders, type CachedHeaders } from "../../header-backfill.js";
 import {
   MailTransport,
   MailWire,
@@ -220,6 +221,10 @@ export function mobileIncoming(
     to: mimeAddresses(parsed.to),
     cc: mimeAddresses(parsed.cc),
     bcc: mimeAddresses(parsed.bcc),
+    headers: cachedHeaders(
+      providerId,
+      (parsed.headerLines ?? []).map((header) => header.line).join("\r\n"),
+    ).headers,
     replyTo: mimeAddresses(parsed.replyTo),
     ...(messageId ? { rfcMessageId: messageId } : {}),
     size,
@@ -671,6 +676,55 @@ export const makeMobileImap = Effect.gen(function* () {
         throw new PermanentError({ message: "Missing mail source" });
       return row.raw;
     });
+  const fetchCachedHeaders: NonNullable<ProviderAdapter["fetchCachedHeaders"]> = (account, ids) =>
+    session(account, async (client) => {
+      const groups = new Map<
+        string,
+        { path: string; validity: string; ids: Map<number, string> }
+      >();
+      const out: CachedHeaders[] = [];
+      for (const id of ids) {
+        const ref = decodeProviderId(id);
+        if (Option.isNone(ref)) {
+          out.push({ kind: "unavailable", id });
+          continue;
+        }
+        const key = JSON.stringify([ref.value.path, ref.value.uidValidity]);
+        const group = groups.get(key) ?? {
+          path: ref.value.path,
+          validity: ref.value.uidValidity,
+          ids: new Map<number, string>(),
+        };
+        group.ids.set(ref.value.uid, id);
+        groups.set(key, group);
+      }
+      for (const group of groups.values()) {
+        const validity = await client.select(group.path);
+        const known = namespaces.get(account.id)?.folders[group.path];
+        if (
+          validity !== group.validity ||
+          (known !== undefined &&
+            client.uidNext !== undefined &&
+            client.uidNext < known.lastUid + 1)
+        ) {
+          for (const id of group.ids.values()) out.push({ kind: "unavailable", id });
+          continue;
+        }
+        const rows = fetchFields(
+          await client.command(
+            `UID FETCH ${uidSet([...group.ids.keys()])} (UID BODY.PEEK[HEADER.FIELDS (${CACHED_HEADER_NAMES.join(" ")})])`,
+          ),
+        );
+        const byUid = new Map(rows.map((row) => [row.uid, row]));
+        for (const [uid, id] of group.ids) {
+          const row = byUid.get(uid);
+          if (!row) out.push({ kind: "unavailable", id });
+          else if (row.raw) out.push(cachedHeaders(id, Buffer.from(row.raw).toString("utf8")));
+        }
+      }
+      return out;
+    });
+
   const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
     account,
     candidates,
@@ -1082,6 +1136,7 @@ export const makeMobileImap = Effect.gen(function* () {
     closeSessions,
     fetchRaw,
     fetchMessage,
+    fetchCachedHeaders,
     verifyResetCandidates,
     fetchAttachment: (account, id, ref) =>
       fetchRaw(account, id).pipe(

@@ -275,3 +275,62 @@ it("slice56: smoke diagnostics retain sync reset counts and redact folder and ma
   expect(preview).toContain('"candidates":90');
   expect(preview).not.toMatch(/private|secret|token/);
 });
+
+it("sync reset progress does not produce a burst of duplicate runtime warnings, and runtime failures have safe reasons", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      for (let index = 0; index < 21; index++)
+        yield* Effect.logWarning({
+          _tag: "SyncResetDiagnostic",
+          provider: "outlook",
+          accountHash: "0123456789abcdef",
+          folderHash: "abcdef0123456789",
+          phase: "reset",
+          listed: 20,
+          kept: 20,
+          local: 20,
+          candidates: 0,
+          verified: 0,
+          incomplete: 0,
+          deferred: 0,
+        });
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  expect(recovery.diagnosticsPreview(false).match(/"event":"sync-reset"/g)).toHaveLength(21);
+  expect(recovery.diagnosticsPreview(false)).not.toContain('"event":"runtime-warning"');
+  await Effect.runPromise(
+    Effect.logWarning("backfill failed", new Error("private@example.test secret body")).pipe(
+      Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
+    ),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"reason":"history-backfill-failed"');
+  expect(preview).not.toMatch(/private|secret|body/);
+});
+
+it("runtime reason codes classify fixed failures without retaining arbitrary text or inherited object keys", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  for (const message of [
+    "Header backfill failed",
+    "constructor",
+    "__proto__",
+    "private@example.test secret body",
+  ]) {
+    await Effect.runPromise(
+      Effect.logWarning(message, { reason: "private@example.test", token: "secret" }).pipe(
+        Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
+      ),
+    );
+  }
+  recovery.localLog("runtime-warning", { reason: "private@example.test secret body" });
+  recovery.localLog("runtime-error", { reason: "header-backfill-failed", body: "private" });
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"reason":"header-backfill-failed"');
+  expect(preview.match(/"reason":"unclassified"/g)).toHaveLength(4);
+  expect(preview).not.toMatch(/private|secret|body|constructor|__proto__/);
+});

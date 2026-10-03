@@ -4,6 +4,7 @@ import { confirmDelivery } from "../../provider-send.js";
 import { MailCodec, mimeAddresses, type MailCodecPort, type MimeMessage } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
+import { CACHED_HEADER_NAMES, cachedHeaders, type CachedHeaders } from "../../header-backfill.js";
 import {
   encodeProviderId,
   decodeProviderId,
@@ -2175,6 +2176,57 @@ export const makeImapWith = (
         const message = fetched[0]?.message;
         return message ?? (yield* new PermanentError({ message: `Message ${providerId} is gone` }));
       }).pipe(Effect.scoped);
+    const fetchCachedHeaders: NonNullable<ProviderAdapter["fetchCachedHeaders"]> = (account, ids) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const groups = new Map<string, { validity: string; ids: Map<number, string> }>();
+        const out: CachedHeaders[] = [];
+        for (const id of ids) {
+          const ref = decodeProviderId(id);
+          if (Option.isNone(ref)) {
+            out.push({ kind: "unavailable", id });
+            continue;
+          }
+          const key = JSON.stringify([ref.value.path, ref.value.uidValidity]);
+          const group = groups.get(key) ?? {
+            validity: ref.value.uidValidity,
+            ids: new Map<number, string>(),
+          };
+          group.ids.set(ref.value.uid, id);
+          groups.set(key, group);
+        }
+        for (const group of groups.values()) {
+          const firstId = group.ids.values().next().value;
+          if (!firstId) continue;
+          const ref = decodeProviderId(firstId);
+          if (Option.isNone(ref)) continue;
+          const mailbox = yield* call(s, (c) => c.mailboxOpen(ref.value.path, { readOnly: true }));
+          const known = namespaces.get(account.id)?.folders[ref.value.path];
+          if (
+            String(mailbox.uidValidity) !== group.validity ||
+            (known !== undefined && mailbox.uidNext < known.lastUid + 1)
+          ) {
+            for (const id of group.ids.values()) out.push({ kind: "unavailable", id });
+            continue;
+          }
+          const rows = yield* call(s, (c) =>
+            c.fetchAll(
+              uidSet([...group.ids.keys()]),
+              { uid: true, headers: CACHED_HEADER_NAMES },
+              { uid: true },
+            ),
+          );
+          const byUid = new Map(rows.map((row) => [row.uid, row]));
+          for (const [uid, id] of group.ids) {
+            const row = byUid.get(uid);
+            if (!row) out.push({ kind: "unavailable", id });
+            else if (row.headers) out.push(cachedHeaders(id, row.headers.toString("utf8")));
+            // A returned UID without its requested literal is an incomplete reply.
+          }
+        }
+        return out;
+      }).pipe(Effect.scoped);
+
     const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
       account,
       candidates,
@@ -2456,6 +2508,7 @@ export const makeImapWith = (
       permanentlyDelete,
       backfill,
       fetchMessage,
+      fetchCachedHeaders,
       verifyResetCandidates,
       connect,
       pull,

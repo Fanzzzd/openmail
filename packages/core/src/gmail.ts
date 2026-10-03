@@ -1,6 +1,7 @@
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse, parseGmailBatch } from "./provider-batch.js";
 import type { ResetVerification } from "./sync-reset.js";
+import { CACHED_HEADER_NAMES, type CachedHeaders } from "./header-backfill.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { messageSecurity } from "./message-security.js";
@@ -199,6 +200,7 @@ const readFailure =
       message,
       status: e.status,
       ...(e.deferred ? { deferred: true } : {}),
+      ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}),
     });
   };
 
@@ -239,6 +241,15 @@ export const makeGmail: Effect.Effect<
   // eight fetches at once refreshes once.
   const tokens = new Map<string, { token: string; expiresAt: number }>();
   const refreshLock = yield* Semaphore.make(1);
+  const requestLocks = new Map<string, Semaphore.Semaphore>();
+  const requestLock = (accountId: string) => {
+    let lock = requestLocks.get(accountId);
+    if (!lock) {
+      lock = Semaphore.makeUnsafe(CONCURRENCY);
+      requestLocks.set(accountId, lock);
+    }
+    return lock;
+  };
 
   const accessToken = (accountId: string): Effect.Effect<string, AuthError | ProviderError> =>
     refreshLock.withPermits(1)(
@@ -311,29 +322,35 @@ export const makeGmail: Effect.Effect<
 
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    permissions.run(
-      accountId,
-      request,
-      accessToken(accountId).pipe(
-        Effect.flatMap((token) => execute(token, request)),
-        // The provider can reject an access token before it expires. Drop it,
-        // refresh, and retry once; only a failed refresh means signing in again.
-        Effect.catchIf(
-          (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
-          () =>
-            Effect.sync(() => tokens.delete(accountId)).pipe(
-              Effect.andThen(accessToken(accountId)),
-              Effect.flatMap((token) => execute(token, request)),
-            ),
+    permissions
+      .run(
+        accountId,
+        request,
+        accessToken(accountId).pipe(
+          Effect.flatMap((token) => execute(token, request)),
+          // The provider can reject an access token before it expires. Drop it,
+          // refresh, and retry once; only a failed refresh means signing in again.
+          Effect.catchIf(
+            (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+            () =>
+              Effect.sync(() => tokens.delete(accountId)).pipe(
+                Effect.andThen(accessToken(accountId)),
+                Effect.flatMap((token) => execute(token, request)),
+              ),
+          ),
+          Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
+          Effect.tapError((e) =>
+            e._tag === "ApiError" && e.status === 401
+              ? Effect.sync(() => tokens.delete(accountId))
+              : Effect.void,
+          ),
         ),
-        Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
-        Effect.tapError((e) =>
-          e._tag === "ApiError" && e.status === 401
-            ? Effect.sync(() => tokens.delete(accountId))
-            : Effect.void,
-        ),
-      ),
-    );
+      )
+      .pipe((requestEffect) =>
+        isProviderSend(request)
+          ? requestEffect
+          : requestLock(accountId).withPermits(1)(requestEffect),
+      );
 
   const get = <A>(
     accountId: string,
@@ -1104,7 +1121,37 @@ export const makeGmail: Effect.Effect<
       return results;
     }).pipe(Effect.mapError(readFailure(account.id)));
 
+  const fetchCachedHeaders: NonNullable<ProviderAdapter["fetchCachedHeaders"]> = (account, ids) =>
+    Effect.gen(function* () {
+      const out: CachedHeaders[] = [];
+      for (const id of ids) {
+        const metadata = yield* get(account.id, Metadata, `/messages/${encodeURIComponent(id)}`, {
+          format: "metadata",
+          metadataHeaders: CACHED_HEADER_NAMES,
+          fields: "payload/headers",
+        }).pipe(
+          Effect.map(Option.some),
+          Effect.catchIf(is404, () => Effect.succeed(Option.none())),
+        );
+        if (Option.isNone(metadata)) out.push({ kind: "unavailable", id });
+        else {
+          const headers = (metadata.value.payload.headers ?? []).map((h) => ({
+            name: h.name.toLowerCase(),
+            value: h.value,
+          }));
+          out.push({
+            kind: "headers",
+            id,
+            headers,
+            rfcMessageId: headers.find((h) => h.name === "message-id")?.value || null,
+          });
+        }
+      }
+      return out;
+    }).pipe(Effect.mapError(readFailure(account.id)));
+
   return {
+    fetchCachedHeaders,
     folderStatus: (account, scope) =>
       get(
         account.id,

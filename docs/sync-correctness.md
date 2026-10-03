@@ -68,6 +68,18 @@ Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移�
 
 实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
 
+## 旧缓存邮件头回填
+
+slice 66 在每账户完整拉取成功后，以及启用自动同步时的独立后台维护中回填 `rfc_message_id IS NULL OR headers_json IS NULL` 的旧行，按邮件日期、本地 ID 倒序，每批 20 行、每账户每轮最多 500 行。独立游标及完成时间保存在 `prefs` 的 `sync-headers:<account>`；每批补写与游标一起提交，重启后续跑。完成后停止请求。独立维护每十秒选择一个未完成账户，不等待 Graph delta 重建；与完整同步共用账户回填锁，IMAP 还须取得拉取锁，忙时跳过。无新增迁移。
+
+Gmail 按共享账户请求许可串行 GET metadata，用 `metadataHeaders` 指定身份、引用链、投递、邮件列表及安全等缓存字段，集合见 [header-backfill.ts](../packages/core/src/header-backfill.ts)。Graph `$batch` 每批最多 20 个 GET，显式 `$select=internetMessageId,internetMessageHeaders`，每轮最多 25 批，沿用 ImmutableId、拉取许可及内部请求的 Retry-After。Graph 成功响应省略或返回 null 邮件头时，缓存 `[]` 并推进游标，保留返回的 Message-ID；没有 Message-ID 也只扫描一次。请求失败的重试截止时间持久保存在回填状态，重启沿用；Graph 拉取请求共用账户限流截止时间，发送许可独立。[Graph 邮件头文档](https://learn.microsoft.com/en-us/graph/api/message-get?view=graph-rest-1.0#example-2-get-internet-message-headers)要求用 `$select` 获取邮件头。桌面和手机 IMAP 按文件夹分组，核对 UIDVALIDITY 和已知 UID 下界，只执行只读打开与 `UID FETCH BODY.PEEK[HEADER.FIELDS (...)]`，保留重复字段并展开折行。手机正常拉取也保存邮件头，避免继续产生缺头缓存。
+
+补写只 UPDATE 两个缺失字段，不覆盖已有值，不改 rowid、标签、标记、线程或正文；FTS、词索引和消息派生触发器不监听这两列。只读会话允许远端读取及同步缓存补写。404、410、缺失 UID 或不安全的 IMAP 身份只跳过，留给普通同步与存在性验证；不删除邮件。前置存在性验证已推迟时跳过同步尾部回填，独立维护也受账户 Retry-After 约束。回填请求失败、限流超出等待预算或缺失回复时停止本轮，保留未完成批次的游标；邮件头没有 Message-ID 也可完成扫描。自动同步维护只处理已有同步缓存的账户，手机 OS 增量后台任务不运行。
+
+实现见 [header-backfill.ts](../packages/core/src/header-backfill.ts)、[store-header-backfill.ts](../packages/core/src/store-header-backfill.ts)和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)。回归覆盖四种适配器的读取、重复与折行字段、命名空间保护、限流和只读规则；[持久化测试](../packages/core/src/platform/node/header-backfill.test.ts)覆盖各服务商的 500 行预算、数据库关闭重开续跑、完成后停止、账户隔离、标签／标记保持及 FTS 无额外写入；假 Graph 验证 3,840 行在八轮内完成，含缺头、缺 ID、原有 ID、重试截止时间和 delta 阻塞。
+
+同步重置计数由 `logSyncReset` 记录为 Info。桌面日志桥将已识别的 `sync-reset` 和 `provider-failure` 事件各记录一次，不再为其额外产生 `runtime-warning`。真正的运行时警告／错误只保存固定原因码，例如 `header-backfill-failed`、`history-backfill-failed`、`sync-failed`；未知来源记为 `unclassified`，不记录错误文本、邮件、路径或凭证。
+
 ## slice 56 根因证据
 
 协调器在只读真实数据副本上运行 sync-health，得到以下结果：
