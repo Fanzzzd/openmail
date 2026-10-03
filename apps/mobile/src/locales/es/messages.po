@@ -9,9 +9,25 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
+#: src/failed-op-notice.tsx
 #: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "(Sin asunto)"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {No se pudo guardar # cambio} other {No se pudieron guardar # cambios}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {# mensaje tuvo destinatarios rechazados} other {# mensajes tuvieron destinatarios rechazados}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# mensaje enviado falta en Enviados} other {# mensajes enviados faltan en Enviados}}"
 
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
@@ -116,6 +132,7 @@ msgstr "Aprobar"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
@@ -204,10 +221,20 @@ msgid "Cancel queued send"
 msgstr "Cancelar envío en cola"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Categories"
+msgstr "Categorías"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Cc"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Change"
+msgstr "Cambio"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -218,6 +245,11 @@ msgstr "Elegir fecha"
 #: src/thread-actions.tsx
 msgid "Choose time"
 msgstr "Elegir hora"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Close"
+msgstr "Cerrar"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -237,6 +269,11 @@ msgid "Conversation"
 msgstr "Conversación"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Copy"
+msgstr "Copiar"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
@@ -247,6 +284,11 @@ msgstr "No se pudo realizar la acción. Inténtalo de nuevo."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "No se pudo conectar. Revisa los servidores y la contraseña de aplicación."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "No se pudo cerrar este aviso. Inténtalo de nuevo."
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -280,6 +322,11 @@ msgid "Could not open the local mail database."
 msgstr "No se pudo abrir la base de datos local de correo."
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "No se pudo preparar el borrador para reenviar. Inténtalo de nuevo."
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -307,9 +354,24 @@ msgid "Delete"
 msgstr "Eliminar"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete draft"
+msgstr "Eliminar borrador"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete permanently"
+msgstr "Eliminar permanentemente"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
 msgstr "Envío incierto. Revisa Enviados antes de intentarlo de nuevo."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Details"
+msgstr "Detalles"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -320,6 +382,11 @@ msgstr "Desactivar cuenta"
 #: app/compose.tsx
 msgid "Discard"
 msgstr "Descartar"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Dismiss"
+msgstr "Cerrar"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -398,6 +465,11 @@ msgid "IMAP server"
 msgstr "Servidor IMAP"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Important"
+msgstr "Importante"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Bandeja de entrada"
@@ -411,6 +483,11 @@ msgstr "iOS decide cuándo actualizar. Las actualizaciones no son en tiempo real
 #: app/compose.tsx
 msgid "Italic"
 msgstr "Itálico"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Label"
+msgstr "Etiqueta"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -496,6 +573,21 @@ msgid "Move to"
 msgstr "Mover a"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to folder"
+msgstr "Mover a la carpeta"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Inbox"
+msgstr "Mover a la Bandeja de entrada"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Trash"
+msgstr "Mover a la papelera"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
 msgstr "Notificaciones de correo nuevo en la bandeja de entrada"
@@ -567,6 +659,11 @@ msgid "Outbox"
 msgstr "Bandeja de salida"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Partial delivery"
+msgstr "Entrega parcial"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Plain text"
 msgstr "Texto sin formato"
@@ -586,6 +683,11 @@ msgstr "Pregunta"
 #: app/settings.tsx
 msgid "Queued to send"
 msgstr "En cola para enviar"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Read status"
+msgstr "Estado de lectura"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -649,6 +751,21 @@ msgid "Reply all"
 msgstr "Responder a todos"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Report spam"
+msgstr "Marcar como correo no deseado"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Reenviar a los destinatarios rechazados"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Restore message state"
+msgstr "Restaurar el estado del mensaje"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -662,9 +779,19 @@ msgid "Rewrite"
 msgstr "Reescribir"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save draft"
+msgstr "Guardar borrador"
+
+#. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
 msgstr "Guardar clave"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save sent copy"
+msgstr "Guardar copia enviada"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -791,11 +918,17 @@ msgid "Snoozed"
 msgstr "Pospuesto"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Algunos destinatarios no recibieron este mensaje."
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Correo no deseado"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 msgid "Star"
 msgstr "Destacar"
@@ -819,6 +952,11 @@ msgstr "Acciones de deslizamiento"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Idioma del sistema"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "El mensaje se envió, pero falta su copia en Enviados."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -880,3 +1018,8 @@ msgstr "Dejar de destacar"
 #: app/imap-setup.tsx
 msgid "Username"
 msgstr "Nombre de usuario"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Se conservó el borrador. Revisa Enviados antes de volver a enviar."

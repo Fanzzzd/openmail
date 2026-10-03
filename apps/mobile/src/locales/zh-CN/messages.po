@@ -9,9 +9,25 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
+#: src/failed-op-notice.tsx
 #: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "（无主题）"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, other {# 项更改未能保存}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, other {# 封邮件有收件人被拒收}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少副本}}"
 
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
@@ -116,6 +132,7 @@ msgstr "批准"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
@@ -204,10 +221,20 @@ msgid "Cancel queued send"
 msgstr "取消待发送邮件"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Categories"
+msgstr "类别"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "抄送"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Change"
+msgstr "更改"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -218,6 +245,11 @@ msgstr "选择日期"
 #: src/thread-actions.tsx
 msgid "Choose time"
 msgstr "选择时间"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Close"
+msgstr "关闭"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -237,6 +269,11 @@ msgid "Conversation"
 msgstr "会话"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Copy"
+msgstr "复制"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
@@ -247,6 +284,11 @@ msgstr "操作失败，请重试。"
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "连接失败。请检查服务器和应用专用密码。"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "未能关闭此提示。请重试。"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -280,6 +322,11 @@ msgid "Could not open the local mail database."
 msgstr "无法打开本地邮件数据库。"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "未能准备重发草稿。请重试。"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -307,9 +354,24 @@ msgid "Delete"
 msgstr "删除"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete draft"
+msgstr "删除草稿"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete permanently"
+msgstr "永久删除"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
 msgstr "发送结果不确定。重试前请检查已发送。"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Details"
+msgstr "详情"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -320,6 +382,11 @@ msgstr "停用账户"
 #: app/compose.tsx
 msgid "Discard"
 msgstr "丢弃"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Dismiss"
+msgstr "忽略"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -398,6 +465,11 @@ msgid "IMAP server"
 msgstr "IMAP 服务器"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Important"
+msgstr "重要"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "收件箱"
@@ -411,6 +483,11 @@ msgstr "iOS 决定刷新时间，更新并非实时。低电量模式或受限�
 #: app/compose.tsx
 msgid "Italic"
 msgstr "斜体"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Label"
+msgstr "标签"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -496,6 +573,21 @@ msgid "Move to"
 msgstr "移动到"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to folder"
+msgstr "移到文件夹"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Inbox"
+msgstr "移回收件箱"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Trash"
+msgstr "移到废纸篓"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
 msgstr "收件箱新邮件通知"
@@ -567,6 +659,11 @@ msgid "Outbox"
 msgstr "发件箱"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Partial delivery"
+msgstr "部分投递"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Plain text"
 msgstr "纯文本"
@@ -586,6 +683,11 @@ msgstr "问题"
 #: app/settings.tsx
 msgid "Queued to send"
 msgstr "已加入发送队列"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Read status"
+msgstr "已读状态"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -649,6 +751,21 @@ msgid "Reply all"
 msgstr "回复全部"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Report spam"
+msgstr "报告垃圾邮件"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Resend to rejected recipients"
+msgstr "仅向被拒收的收件人重发"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Restore message state"
+msgstr "恢复邮件状态"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -662,9 +779,19 @@ msgid "Rewrite"
 msgstr "改写"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save draft"
+msgstr "保存草稿"
+
+#. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
 msgstr "保存密钥"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save sent copy"
+msgstr "保存已发送副本"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -791,11 +918,17 @@ msgid "Snoozed"
 msgstr "稍后提醒"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "部分收件人未收到此邮件。"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "垃圾邮件"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 msgid "Star"
 msgstr "星标"
@@ -819,6 +952,11 @@ msgstr "滑动操作"
 #: app/settings.tsx
 msgid "System language"
 msgstr "系统语言"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "邮件已发送，但“已发送”中缺少副本。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -880,3 +1018,8 @@ msgstr "去掉星标"
 #: app/imap-setup.tsx
 msgid "Username"
 msgstr "用户名"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "草稿已保留。再次发送前请检查“已发送”。"

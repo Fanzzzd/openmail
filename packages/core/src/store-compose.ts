@@ -185,39 +185,89 @@ export function makeComposeStore(
     remote: DraftRemote | null,
     pushedAttachments: string | null,
     accountId?: string,
+    claim?: { readonly id: number; readonly token: string },
   ) {
     const row = yield* first(IdRow)(sql`UPDATE drafts SET
         remote_draft_id = ${remote?.draftId ?? null},
         remote_message_id = ${remote?.messageId ?? null},
         pushed_attachments = ${pushedAttachments}, sync_error=CASE WHEN local_only=0 THEN NULL ELSE sync_error END
-      WHERE id = ${id} ${accountId === undefined ? sql.literal("") : sql`AND account_id=${accountId}`} RETURNING id`);
+      WHERE id = ${id} ${claim === undefined ? sql.literal("") : sql`AND EXISTS(SELECT 1 FROM pending_ops WHERE id=${claim.id} AND claim_token=${claim.token})`} ${accountId === undefined ? sql.literal("") : sql`AND account_id=${accountId}`} RETURNING id`);
     return Option.isSome(row);
   });
 
   const setDraftOrganizationKey = (id: string, key: string | null) =>
     run(sql`UPDATE drafts SET pushed_organization = ${key} WHERE id = ${id}`);
 
-  const deleteDraft = Effect.fn("Store.deleteDraft")(function* (id: string) {
-    yield* run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`);
-    yield* run(sql`DELETE FROM drafts WHERE id = ${id}`);
-    // A push already running (claimed) finds the draft gone and removes its copy.
-    yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+  const WaitingDraftSave = Schema.Struct({
+    account_id: Schema.String,
+    appended_message_id: Schema.NullOr(Schema.String),
+    progress_json: Schema.fromJsonString(Schema.Array(Schema.String)),
   });
-
-  const enqueueDraftSave = Effect.fn("Store.enqueueDraftSave")(function* (
-    accountId: string,
-    draftId: string,
+  const waitingDraftSaves = (id: string) =>
+    all(WaitingDraftSave)(
+      sql`SELECT account_id,appended_message_id,progress_json FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)} ORDER BY id DESC`,
+    );
+  const enqueueAppendedCleanup = Effect.fnUntraced(function* (
+    id: string,
+    rows: readonly (typeof WaitingDraftSave.Type)[],
+    keep?: { accountId: string; messageId: string | null },
   ) {
     const now = yield* Clock.currentTimeMillis;
-    const draft = yield* getDraft(draftId);
-    if (Option.isNone(draft) || draft.value.localOnly) return;
-    // A waiting push reads the latest content when it runs, so one is enough.
-    // It is replaced rather than kept so it carries the draft's current account.
-    yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(draftId)}`);
-    yield* run(sql`INSERT INTO pending_ops (account_id, provider_id, op_json, created_at)
-      VALUES (${accountId}, ${draftId}, ${JSON.stringify({ kind: "saveDraft", draftId })},
-        ${now})`);
+    const seen = new Set<string>();
+    for (const row of rows) {
+      const messageId = row.appended_message_id;
+      if (!messageId || (row.account_id === keep?.accountId && messageId === keep.messageId))
+        continue;
+      const key = JSON.stringify([row.account_id, messageId]);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const op = {
+        kind: "deleteDraft",
+        remote: { draftId: null, messageId: null, rfcMessageId: messageId },
+      };
+      yield* run(
+        sql`INSERT INTO pending_ops(account_id,provider_id,op_json,created_at) VALUES(${row.account_id},${id},${JSON.stringify(op)},${now})`,
+      );
+    }
   });
+  const deleteDraft = Effect.fn("Store.deleteDraft")((id: string) =>
+    sql
+      .withTransaction(
+        Effect.gen(function* () {
+          yield* enqueueAppendedCleanup(id, yield* waitingDraftSaves(id));
+          yield* run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`);
+          yield* run(sql`DELETE FROM drafts WHERE id=${id}`);
+          // A push already running finds the draft gone and cleans its newly created copy.
+          yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+        }),
+      )
+      .pipe(Effect.orDie),
+  );
+
+  const enqueueDraftSave = Effect.fn("Store.enqueueDraftSave")(
+    (accountId: string, draftId: string) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            const now = yield* Clock.currentTimeMillis;
+            const draft = yield* getDraft(draftId);
+            if (Option.isNone(draft) || draft.value.localOnly) return;
+            const waiting = yield* waitingDraftSaves(draftId);
+            const sameAccount = waiting.filter((row) => row.account_id === accountId);
+            const messageId =
+              sameAccount.find((row) => row.appended_message_id !== null)?.appended_message_id ??
+              null;
+            const progress = [...new Set(sameAccount.flatMap((row) => row.progress_json))];
+            yield* enqueueAppendedCleanup(draftId, waiting, { accountId, messageId });
+            yield* run(
+              sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(draftId)}`,
+            );
+            yield* run(sql`INSERT INTO pending_ops(account_id,provider_id,op_json,created_at,appended_message_id,progress_json)
+      VALUES(${accountId},${draftId},${JSON.stringify({ kind: "saveDraft", draftId })},${now},${messageId},${JSON.stringify(progress)})`);
+          }),
+        )
+        .pipe(Effect.orDie),
+  );
 
   const dropSyncedDrafts = Effect.fn("Store.dropSyncedDrafts")(
     (accountId: string, messageId?: string) =>
@@ -308,7 +358,10 @@ export function makeComposeStore(
           yield* run(
             sql`UPDATE drafts SET local_only=${Number(localOnly)},sync_error=NULL WHERE id=${id}`,
           );
-          yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+          if (localOnly) {
+            yield* enqueueAppendedCleanup(id, yield* waitingDraftSaves(id));
+            yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
+          }
         }),
       )
       .pipe(Effect.orDie);

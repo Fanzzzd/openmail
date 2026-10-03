@@ -9,9 +9,25 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
+#: src/failed-op-notice.tsx
 #: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "(Без темы)"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {Не удалось сохранить # изменение} few {Не удалось сохранить # изменения} many {Не удалось сохранить # изменений} other {Не удалось сохранить # изменения}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {В # сообщении были отклонённые получатели} few {В # сообщениях были отклонённые получатели} many {В # сообщениях были отклонённые получатели} other {В # сообщения были отклонённые получатели}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# отправленного сообщения нет в папке «Отправленные»} few {# отправленных сообщений нет в папке «Отправленные»} many {# отправленных сообщений нет в папке «Отправленные»} other {# отправленного сообщения нет в папке «Отправленные»}}"
 
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
@@ -116,6 +132,7 @@ msgstr "Одобрить"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
@@ -204,10 +221,20 @@ msgid "Cancel queued send"
 msgstr "Отменить отправку из очереди"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Categories"
+msgstr "Категории"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Копия"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Change"
+msgstr "Изменение"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -218,6 +245,11 @@ msgstr "Выбрать дату"
 #: src/thread-actions.tsx
 msgid "Choose time"
 msgstr "Выбрать время"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Close"
+msgstr "Закрыть"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -237,6 +269,11 @@ msgid "Conversation"
 msgstr "Переписка"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Copy"
+msgstr "Копировать"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
@@ -247,6 +284,11 @@ msgstr "Не удалось выполнить действие. Повтори�
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Не удалось подключиться. Проверьте серверы и пароль приложения."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Не удалось закрыть это уведомление. Попробуйте ещё раз."
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -280,6 +322,11 @@ msgid "Could not open the local mail database."
 msgstr "Не удалось открыть локальную базу данных почты."
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Не удалось подготовить черновик для повторной отправки. Попробуйте ещё раз."
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -307,9 +354,24 @@ msgid "Delete"
 msgstr "Удалить"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete draft"
+msgstr "Удалить черновик"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete permanently"
+msgstr "Удалить навсегда"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
 msgstr "Результат отправки неизвестен. Перед повтором проверьте отправленные."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Details"
+msgstr "Подробности"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -320,6 +382,11 @@ msgstr "Отключить аккаунт"
 #: app/compose.tsx
 msgid "Discard"
 msgstr "Удалить"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Dismiss"
+msgstr "Закрыть"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -398,6 +465,11 @@ msgid "IMAP server"
 msgstr "Сервер IMAP"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Important"
+msgstr "Важный"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Входящие"
@@ -411,6 +483,11 @@ msgstr "iOS решает, когда обновлять почту. Обновл
 #: app/compose.tsx
 msgid "Italic"
 msgstr "Курсив"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Label"
+msgstr "Ярлык"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -496,6 +573,21 @@ msgid "Move to"
 msgstr "Переместить в"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to folder"
+msgstr "Переместить в папку"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Inbox"
+msgstr "Переместить в папку «Входящие»"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Trash"
+msgstr "Отправить в корзину"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
 msgstr "Уведомления о новых письмах во входящих"
@@ -567,6 +659,11 @@ msgid "Outbox"
 msgstr "Исходящие"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Partial delivery"
+msgstr "Частичная доставка"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Plain text"
 msgstr "Обычный текст"
@@ -586,6 +683,11 @@ msgstr "Вопрос"
 #: app/settings.tsx
 msgid "Queued to send"
 msgstr "В очереди на отправку"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Read status"
+msgstr "Статус прочтения"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -649,6 +751,21 @@ msgid "Reply all"
 msgstr "Ответить всем"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Report spam"
+msgstr "Сообщить о спаме"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Отправить снова отклонённым получателям"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Restore message state"
+msgstr "Восстановить состояние сообщения"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -662,9 +779,19 @@ msgid "Rewrite"
 msgstr "Переписать"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save draft"
+msgstr "Сохранить черновик"
+
+#. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
 msgstr "Сохранить ключ"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save sent copy"
+msgstr "Сохранить отправленную копию"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -791,11 +918,17 @@ msgid "Snoozed"
 msgstr "Отложенные"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Некоторые получатели не получили это сообщение."
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Спам"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 msgid "Star"
 msgstr "Добавить звезду"
@@ -819,6 +952,11 @@ msgstr "Действия смахивания"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Язык системы"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "Сообщение отправлено, но его копии нет в папке «Отправленные»."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -880,3 +1018,8 @@ msgstr "Убрать звезду"
 #: app/imap-setup.tsx
 msgid "Username"
 msgstr "Имя пользователя"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Черновик сохранён. Проверьте папку «Отправленные», прежде чем отправлять снова."

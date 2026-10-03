@@ -288,15 +288,53 @@ const readFailure =
     });
   };
 
+const GraphFailureBody = Schema.fromJsonString(
+  Schema.Struct({
+    error: Schema.Struct({
+      message: Schema.optionalKey(Schema.String),
+      code: Schema.optionalKey(Schema.String),
+    }),
+  }),
+);
+const writeReason = (error: ApiError) => {
+  const decoded = Schema.decodeUnknownOption(GraphFailureBody)(error.body);
+  const message = Option.isSome(decoded) ? decoded.value.error.message : undefined;
+  if (message?.trim()) return message.replace(/\s+/g, " ").trim().slice(0, 300);
+  switch (error.status) {
+    case 403:
+      return "Access to this message was denied.";
+    case 404:
+      return "This message or folder no longer exists.";
+    case 409:
+      return "This change conflicts with the server state.";
+    case 413:
+      return "This message is too large.";
+    case 415:
+      return "The server does not support this message format.";
+    case 422:
+      return "The server could not accept this message content.";
+    default:
+      return "The server rejected this change.";
+  }
+};
+
 /** Writes Graph will never accept (bad folder id, message gone) are dropped. */
 const writeFailure =
   (accountId: string) =>
   (e: ApiError | ProviderFailure): ProviderFailure =>
-    e._tag === "ApiError" && (e.status === 400 || e.status === 404)
-      ? new PermanentError({ message: `Graph API ${e.status}: ${e.body}` })
+    e._tag === "ApiError" &&
+    ([400, 404, 409, 413, 415, 422].includes(e.status) ||
+      (e.status === 403 && /ErrorAccessDenied/.test(e.body)))
+      ? new PermanentError({ message: writeReason(e) })
       : e._tag === "PermanentError"
         ? e
-        : readFailure(accountId)(e);
+        : e._tag === "ApiError" && e.status !== 401
+          ? new ProviderError({
+              message: writeReason(e),
+              status: e.status,
+              ...(e.deferred ? { deferred: true } : {}),
+            })
+          : readFailure(accountId)(e);
 
 const decode =
   <A>(schema: Schema.Decoder<A>) =>

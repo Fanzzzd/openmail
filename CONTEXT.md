@@ -21,6 +21,7 @@ openmail 在本机缓存邮件。桌面、CLI 和 MCP 通过 core 共享数据�
 | 操作者 Actor         | 用户或代理的身份与入口，影响策略判断并进入审计                                            |
 | 提议 Proposal        | 等待用户审批的代理命令；MCP 与内置助手的写入均受提议流程约束                              |
 | 操作队列 pending_ops | 本地改动待推送服务商的持久队列，支持认领、重试和错误记录                                  |
+| 失败提示 FailedOp    | `failed_ops` 保存推送失败与发送警告，桌面和手机经 Mailbox 查询                            |
 | 重置验证队列         | `sync-reset:<account>` 保存在 prefs 的重置或 Outlook 冲突候选；未验证项保留，下次同步续验 |
 | 撤销记录 UndoJournal | `undo_batches` 保存可跨重启恢复的批量／单封操作逆向状态，撤销前校验后续改动               |
 | 派生数据             | 搜索文本／向量、AI 摘要及分拣建议；单独保存，不覆盖服务商邮件                             |

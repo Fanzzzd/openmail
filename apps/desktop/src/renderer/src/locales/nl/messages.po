@@ -16,6 +16,7 @@ msgstr "(geen geadresseerden)"
 
 #: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -59,6 +60,18 @@ msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} onge
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {# wijziging kon niet worden opgeslagen} other {# wijzigingen konden niet worden opgeslagen}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {# bericht had geweigerde ontvangers} other {# berichten hadden geweigerde ontvangers}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# verstuurd bericht ontbreekt in Verstuurd} other {# verstuurde berichten ontbreken in Verstuurd}}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
@@ -601,6 +614,7 @@ msgstr "Suggestie goedkeuren"
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -894,6 +908,10 @@ msgstr "Annuleer"
 msgid "Cannot build calendar response"
 msgstr "Kan geen agendareactie samenstellen"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Categories"
+msgstr "Categorieën"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Categories updated"
@@ -930,6 +948,10 @@ msgstr "Cc: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Kopie / Blinde kopie"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Change"
+msgstr "Wijziging"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change mode"
@@ -1231,6 +1253,7 @@ msgid "Copied to folders"
 msgstr "Gekopieerd naar mappen"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
@@ -1289,6 +1312,10 @@ msgstr "Synchronisatiestatus kon niet worden gecontroleerd."
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Kan winmail.dat niet decoderen. U kunt het originele bestand opslaan."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Deze melding kon niet worden gesloten. Probeer het opnieuw."
+
 #: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Could not import this attachment."
 msgstr "Deze bijlage kon niet worden geïmporteerd."
@@ -1332,6 +1359,10 @@ msgstr "Kan het feedbackconcept niet openen"
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Could not open the system picker."
 msgstr "De systeemkiezer kon niet worden geopend."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Het concept voor opnieuw versturen kon niet worden voorbereid. Probeer het opnieuw."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -1601,6 +1632,10 @@ msgstr "Verwijder {0}"
 msgid "Delete {0} conversations?"
 msgstr "{0} gesprekken verwijderen?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete draft"
+msgstr "Concept verwijderen"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
 msgstr "Filter verwijderen?"
@@ -1612,6 +1647,10 @@ msgstr "Actie van Delete-toets"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "Label of map verwijderen?"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete permanently"
+msgstr "Permanent verwijderen"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -1637,6 +1676,10 @@ msgstr "Dicht"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "Beschrijf wat er is gebeurd"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Details"
+msgstr "Details"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Detect calendar events in messages"
@@ -1665,6 +1708,7 @@ msgstr "Verwijder concept"
 msgid "Discard saved rule?"
 msgstr "Opgeslagen regel verwijderen?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
 msgid "Dismiss"
 msgstr "Afwijzen"
@@ -2227,6 +2271,10 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Verberg"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Hide details"
+msgstr "Details verbergen"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Hide format bar"
 msgstr "Opmaakbalk verbergen"
@@ -2295,6 +2343,7 @@ msgid "Importance action"
 msgstr "Belang actie"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -2468,6 +2517,7 @@ msgid "Keyboard shortcuts"
 msgstr "Sneltoetsen"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Label"
 msgstr "Label"
@@ -3004,6 +3054,7 @@ msgid "Move to Cc"
 msgstr "Verplaats naar Kopie"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
@@ -3013,6 +3064,7 @@ msgstr "Verplaats naar map"
 msgid "Move to folder…"
 msgstr "Verplaatsen naar map…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3029,6 +3081,7 @@ msgid "Move to top level"
 msgstr "Naar hoogste niveau verplaatsen"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Move to Trash"
@@ -3585,6 +3638,10 @@ msgstr "Pagina {0}"
 msgid "Parent folder"
 msgstr "Bovenliggende map"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Partial delivery"
+msgstr "Gedeeltelijke bezorging"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Wachtwoord"
@@ -3760,6 +3817,10 @@ msgstr "Citeer de geselecteerde tekst"
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "Alleen lezen"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Read status"
+msgstr "Leesstatus"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
@@ -3987,6 +4048,7 @@ msgid "Reply signature for {address}"
 msgstr "Antwoordhandtekening voor {address}"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3997,6 +4059,10 @@ msgstr "Meld ongewenste reclame"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "Gemeld als ongewenste reclame"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Opnieuw versturen naar geweigerde ontvangers"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Reset Favorites"
@@ -4017,6 +4083,10 @@ msgstr "Beantwoord deze uitnodiging vanuit het bericht."
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Herstellen"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Restore message state"
+msgstr "Berichtstatus herstellen"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Restore rule"
@@ -4152,6 +4222,7 @@ msgstr "Sla een Anthropic API-sleutel op in de AI-instellingen."
 msgid "Save as PDF…"
 msgstr "Opslaan als PDF…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "Bewaar concept"
@@ -4177,6 +4248,10 @@ msgstr "Regel opslaan"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save selected…"
 msgstr "Geselecteerde opslaan..."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Save sent copy"
+msgstr "Verstuurde kopie opslaan"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -4651,6 +4726,10 @@ msgstr "Software-updates"
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Sommige opmaak kan in deze modus niet behouden blijven. Linkadressen worden bewaard. U kunt de moduswijziging ongedaan maken."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Sommige ontvangers hebben dit bericht niet ontvangen."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Sommige serverpredikaten zijn weggelaten om overeenkomsten te behouden; lokale filters zijn nog steeds van toepassing:"
@@ -4692,6 +4771,7 @@ msgstr "Stabiel"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4929,6 +5009,10 @@ msgstr "Het menu bevat maximaal 50 ongelezen berichten in de huidige ruimte."
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "Het bericht vermeldt een bijlage, maar deze is niet toegevoegd."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "Het bericht is verstuurd, maar de kopie ontbreekt in Verstuurd."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."
@@ -5454,6 +5538,10 @@ msgstr "Je hebt de nieuwste versie."
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Uw wijzigingen worden op deze Mac opgeslagen. Probeer het opnieuw of bewaar een lokale kopie."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Je concept is bewaard. Controleer Verstuurd voordat je opnieuw verstuurt."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

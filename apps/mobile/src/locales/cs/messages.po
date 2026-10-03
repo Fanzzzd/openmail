@@ -9,9 +9,25 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
+#: src/failed-op-notice.tsx
 #: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "(Bez předmětu)"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {# změnu se nepodařilo uložit} few {# změny se nepodařilo uložit} other {# změn se nepodařilo uložit}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {# zpráva měla odmítnuté příjemce} few {# zprávy měly odmítnuté příjemce} other {# zpráv mělo odmítnuté příjemce}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# odeslaná zpráva chybí v odeslané poště} few {# odeslané zprávy chybí v odeslané poště} other {# odeslaných zpráv chybí v odeslané poště}}"
 
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
@@ -116,6 +132,7 @@ msgstr "Schválit"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
@@ -204,10 +221,20 @@ msgid "Cancel queued send"
 msgstr "Zrušit odeslání ve frontě"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Categories"
+msgstr "Kategorie"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Kopie"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Change"
+msgstr "Změna"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -218,6 +245,11 @@ msgstr "Vybrat datum"
 #: src/thread-actions.tsx
 msgid "Choose time"
 msgstr "Vybrat čas"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Close"
+msgstr "Zavřít"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -237,6 +269,11 @@ msgid "Conversation"
 msgstr "Konverzace"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Copy"
+msgstr "Kopírovat"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
@@ -247,6 +284,11 @@ msgstr "Akci se nepodařilo provést. Zkuste to znovu."
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "Připojení se nezdařilo. Zkontrolujte servery a heslo aplikace."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Oznámení se nepodařilo zavřít. Zkuste to znovu."
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -280,6 +322,11 @@ msgid "Could not open the local mail database."
 msgstr "Místní databázi pošty se nepodařilo otevřít."
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Koncept k opětovnému odeslání se nepodařilo připravit. Zkuste to znovu."
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -307,9 +354,24 @@ msgid "Delete"
 msgstr "Smazat"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete draft"
+msgstr "Smazat koncept"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete permanently"
+msgstr "Trvale smazat"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
 msgstr "Výsledek odeslání není jistý. Před dalším pokusem zkontrolujte odeslanou poštu."
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Details"
+msgstr "Podrobnosti"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -320,6 +382,11 @@ msgstr "Zakázat účet"
 #: app/compose.tsx
 msgid "Discard"
 msgstr "Zahodit"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Dismiss"
+msgstr "Zavřít"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -398,6 +465,11 @@ msgid "IMAP server"
 msgstr "Server IMAP"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Important"
+msgstr "Důležité"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "Doručená pošta"
@@ -411,6 +483,11 @@ msgstr "iOS rozhoduje, kdy obnovit poštu. Aktualizace neprobíhají v reálném
 #: app/compose.tsx
 msgid "Italic"
 msgstr "kurzíva"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Label"
+msgstr "Štítek"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -496,6 +573,21 @@ msgid "Move to"
 msgstr "Přesunout do"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to folder"
+msgstr "Přesunout do složky"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Inbox"
+msgstr "Přesunout do doručené pošty"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Trash"
+msgstr "Přesunout do koše"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
 msgstr "Oznámení o nové poště v doručené poště"
@@ -567,6 +659,11 @@ msgid "Outbox"
 msgstr "Pošta k odeslání"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Partial delivery"
+msgstr "Částečné doručení"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Plain text"
 msgstr "Prostý text"
@@ -586,6 +683,11 @@ msgstr "Otázka"
 #: app/settings.tsx
 msgid "Queued to send"
 msgstr "Zařazeno k odeslání"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Read status"
+msgstr "Stav přečtení"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -649,6 +751,21 @@ msgid "Reply all"
 msgstr "Odpovědět všem"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Report spam"
+msgstr "Nahlásit nevyžádanou poštu"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Znovu odeslat odmítnutým příjemcům"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Restore message state"
+msgstr "Obnovit stav zprávy"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -662,9 +779,19 @@ msgid "Rewrite"
 msgstr "Přeformulovat"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save draft"
+msgstr "Uložit koncept"
+
+#. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
 msgstr "Uložit klíč"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save sent copy"
+msgstr "Uložit odeslanou kopii"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -791,11 +918,17 @@ msgid "Snoozed"
 msgstr "Odložené"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Někteří příjemci tuto zprávu neobdrželi."
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Nevyžádaná pošta"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 msgid "Star"
 msgstr "Označit hvězdičkou"
@@ -819,6 +952,11 @@ msgstr "Akce přejetí prstem"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Jazyk systému"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "Zpráva byla odeslána, ale její kopie chybí v odeslané poště."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -880,3 +1018,8 @@ msgstr "Odebrat hvězdičku"
 #: app/imap-setup.tsx
 msgid "Username"
 msgstr "Uživatelské jméno"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Koncept byl zachován. Před dalším odesláním zkontrolujte odeslanou poštu."

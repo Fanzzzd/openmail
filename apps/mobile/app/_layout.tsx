@@ -1,6 +1,7 @@
 import { I18nProvider, useLingui } from "@lingui/react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ForegroundLifecycle } from "../src/lifecycle";
+import { FailedOpNotice } from "../src/failed-op-notice";
 import { UndoProvider } from "../src/undo";
 import { Stack } from "expo-router";
 import { MailboxProvider } from "../src/mailbox";
@@ -56,6 +57,7 @@ export default function Layout() {
         <MailboxProvider>
           <UndoProvider>
             <ForegroundLifecycle />
+            <FailedOpNotice />
             <Navigation />
           </UndoProvider>
         </MailboxProvider>

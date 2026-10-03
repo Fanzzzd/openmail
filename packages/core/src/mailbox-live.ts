@@ -103,6 +103,7 @@ import {
   InvalidInput,
   NotFound,
   PermanentError,
+  ProviderError,
 } from "./errors.js";
 import { mobileAttachmentProblem } from "./mobile-outbox.js";
 import { isEmailAddress } from "./recipients.js";
@@ -119,6 +120,8 @@ import {
   type Change,
   type ConnectInput,
   type PendingOp,
+  type ProviderPushContext,
+  type ProviderPushResult,
   Providers,
   Secrets,
   Store,
@@ -147,8 +150,12 @@ const isSpecialAgentLabel = (value: string) => {
   );
 };
 
-/** Ops that failed this many times are dropped; the next sync restores the provider's state. */
-const MAX_ATTEMPTS = 5;
+class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()("PendingOpClaimLost", {
+  message: Schema.String,
+}) {}
+
+/** Only a week-old mutation can expire; reconciliation waits for connectivity. */
+const MAX_OP_AGE = 7 * 86_400_000;
 /** Upserts from a pull land in transactions of this many, or every quarter second. */
 const WRITE_BATCH = 200;
 const DEFAULT_MODEL_CHARS = 12_000;
@@ -383,7 +390,12 @@ export const MailboxLive = (
       });
 
       /** Pushes a draft's current content. A draft discarded meanwhile loses its new copy too. */
-      const pushDraft = Effect.fnUntraced(function* (account: Account, draftId: string) {
+      const pushDraft = Effect.fnUntraced(function* (
+        account: Account,
+        draftId: string,
+        claim?: { readonly id: number; readonly token: string },
+        context?: ProviderPushContext,
+      ) {
         const stored = yield* store.getDraft(draftId);
         // Discarded, or moved to another account (a newer op pushes it there).
         if (
@@ -408,13 +420,26 @@ export const MailboxLive = (
         const organizationChanged =
           organizationKey !== null && organizationKey !== draft.pushedOrganization;
         const { draftOrganization, ...bodyMessage } = message;
-        const remote = yield* adapter.saveDraft(account, {
-          remote: draft.remote,
-          message: organizationChanged && account.provider !== "gmail" ? message : bodyMessage,
-          original,
-          replaceAttachments: key !== draft.pushedAttachments,
-        });
-        if (!(yield* store.setDraftRemote(draftId, remote, key, account.id))) {
+        const remote = yield* adapter.saveDraft(
+          account,
+          {
+            remote: draft.remote,
+            message: organizationChanged && account.provider !== "gmail" ? message : bodyMessage,
+            original,
+            replaceAttachments: key !== draft.pushedAttachments,
+          },
+          context,
+        );
+        if (!(yield* store.setDraftRemote(draftId, remote, key, account.id, claim))) {
+          if (claim && !(yield* store.ownsPendingOp(claim.id, claim.token))) {
+            const latest = yield* store.getDraft(draftId);
+            if (
+              remote.messageId ===
+              (Option.isSome(latest) ? latest.value.remote?.messageId : undefined)
+            )
+              return;
+            if (remote.messageId === draft.remote?.messageId) return;
+          }
           yield* adapter
             .deleteDraft(account, remote)
             .pipe(
@@ -424,6 +449,15 @@ export const MailboxLive = (
             );
           return;
         }
+        const cleanupIds = new Set([
+          ...(remote.cleanupMessageIds ?? []),
+          ...(remote.cleanupMessageId ? [remote.cleanupMessageId] : []),
+        ]);
+        for (const messageId of cleanupIds)
+          yield* store.enqueueOp(account.id, draftId, {
+            kind: "deleteDraft",
+            remote: { draftId: messageId, messageId },
+          });
         if (remote.conflict) {
           yield* store.setDraftSyncError(
             draftId,
@@ -495,11 +529,56 @@ export const MailboxLive = (
               return JSON.stringify({ folders: { ...full.folders, ...inbox.folders } });
             })
           : Effect.succeed(undefined);
-      const pushOp = (account: Account, pending: PendingOp) => {
+      const pushContext = (items: readonly PendingOp[], token: string): ProviderPushContext => ({
+        messageIds: new Map(
+          items.flatMap((item) =>
+            item.rfcMessageId ? [[item.providerId, item.rfcMessageId]] : [],
+          ),
+        ),
+        progress: new Set(items.flatMap((item) => item.progress)),
+        ...(items[0]?.appendedMessageId
+          ? { appendedDraftMessageId: items[0].appendedMessageId }
+          : {}),
+        beforeCopy: (destination, ids) =>
+          store.transaction(
+            Effect.forEach(
+              items.filter((item) => ids.includes(item.providerId)),
+              (item) =>
+                store.recordCopyProgress(item.id, token, destination, item.providerId, "issued"),
+              { discard: true },
+            ),
+          ),
+        afterCopy: (destination, ids) =>
+          store.transaction(
+            Effect.forEach(
+              items.filter((item) => ids.includes(item.providerId)),
+              (item) =>
+                store.recordCopyProgress(item.id, token, destination, item.providerId, "accepted"),
+              { discard: true },
+            ),
+          ),
+        clearCopy: (destination, ids) =>
+          store.transaction(
+            Effect.forEach(
+              items.filter((item) => ids.includes(item.providerId)),
+              (item) =>
+                store.recordCopyProgress(item.id, token, destination, item.providerId, "clear"),
+              { discard: true },
+            ),
+          ),
+        beforeAppendDraft: (messageId) =>
+          Effect.forEach(
+            items,
+            (item) => store.recordAppendedMessageId(item.id, token, messageId),
+            { discard: true },
+          ),
+      });
+      const pushOp = (account: Account, pending: PendingOp, token: string) => {
         const { op } = pending;
+        const context = pushContext([pending], token);
         switch (op.kind) {
           case "saveDraft":
-            return pushDraft(account, op.draftId);
+            return pushDraft(account, op.draftId, { id: pending.id, token }, context);
           case "deleteDraft":
             return providers.get(account.provider).deleteDraft(account, op.remote);
           case "reconcile":
@@ -507,7 +586,9 @@ export const MailboxLive = (
           default:
             return imapPushCursor(account).pipe(
               Effect.flatMap((cursor) =>
-                providers.get(account.provider).push(account, pending.providerId, op, cursor),
+                providers
+                  .get(account.provider)
+                  .push(account, pending.providerId, op, cursor, context),
               ),
             );
         }
@@ -557,72 +638,95 @@ export const MailboxLive = (
             ),
             Effect.asVoid,
           );
+          const claimToken = crypto.randomUUID();
+          const activeClaims = new Set<number>();
           const settle = (
             account: Account,
             items: readonly PendingOp[],
-            push: Effect.Effect<
-              void | readonly import("./services.js").ProviderIdMapping[],
-              import("./errors.js").ProviderFailure
-            >,
-          ) =>
+            push: Effect.Effect<ProviderPushResult, import("./errors.js").ProviderFailure>,
+          ): Effect.Effect<void> =>
             push.pipe(
-              Effect.tap((mappings) =>
-                mappings
-                  ? store.remapProviderIds(account.id, mappings).pipe(Effect.andThen(refreshQueued))
-                  : Effect.void,
-              ),
-              Effect.andThen(
-                Effect.forEach(items, (item) => store.removePendingOp(item.id), { discard: true }),
-              ),
-              Effect.andThen(
-                Effect.sync(() => {
-                  result.done += items.length;
-                }),
-              ),
-              Effect.catchTags({
-                AuthError: (error) =>
-                  Effect.gen(function* () {
-                    for (const item of items)
-                      if (item.op.kind === "saveDraft")
-                        yield* store.setDraftSyncError(item.op.draftId, error.message);
-                    yield* store.setNeedsReauth(account.id, true);
-                    yield* Effect.forEach(items, (item) => store.releasePendingOp(item.id), {
-                      discard: true,
-                    });
-                    result.reauth.push(account.id);
-                  }),
-                PermanentError: (error) =>
-                  Effect.gen(function* () {
-                    for (const item of items)
-                      if (item.op.kind === "saveDraft")
-                        yield* store.setDraftSyncError(item.op.draftId, error.message);
-                    yield* Effect.forEach(items, (item) => store.removePendingOp(item.id), {
-                      discard: true,
-                    });
-                    if (error.imapReset) {
-                      yield* store.invalidateImapFolder(account.id, error.imapReset);
-                      yield* refreshQueued;
-                    } else {
+              Effect.result,
+              Effect.flatMap((outcome) => {
+                const reconciliations: Array<{ item: PendingOp; error: string }> = [];
+                return store
+                  .transaction(
+                    Effect.gen(function* () {
+                      const owned: PendingOp[] = [];
                       for (const item of items)
-                        yield* reconcileDropped(account, item, error.message);
-                    }
-                    result.failed += items.length;
-                  }),
-                ProviderError: (error) =>
-                  Effect.gen(function* () {
-                    for (const item of items) {
-                      if (item.op.kind === "saveDraft")
-                        yield* store.setDraftSyncError(item.op.draftId, error.message);
-                      blocked.add(`${item.accountId}/${item.providerId}`);
-                      yield* item.attempts + 1 >= (item.op.kind === "reconcile" ? 3 : MAX_ATTEMPTS)
-                        ? store.removePendingOp(item.id)
-                        : store.failPendingOp(item.id, error.message);
-                      if (item.attempts + 1 >= MAX_ATTEMPTS && item.op.kind !== "reconcile")
-                        yield* reconcileDropped(account, item, error.message);
-                      if (item.op.kind !== "reconcile") result.failed++;
-                    }
-                  }),
+                        if (yield* store.ownsPendingOp(item.id, claimToken)) owned.push(item);
+                      if (owned.length !== items.length) return;
+                      if (outcome._tag === "Success") {
+                        const needsReconcile =
+                          outcome.success !== undefined && "reconcile" in outcome.success;
+                        if (outcome.success && !needsReconcile) {
+                          yield* store.remapProviderIds(account.id, outcome.success);
+                          yield* refreshQueued;
+                        }
+                        for (const item of owned) {
+                          yield* store.removePendingOp(item.id, claimToken);
+                          if (needsReconcile) {
+                            blocked.add(`${item.accountId}/${item.providerId}`);
+                            yield* store.enqueueOp(item.accountId, item.providerId, {
+                              kind: "reconcile",
+                            });
+                          }
+                        }
+                        result.done += owned.length;
+                        return;
+                      }
+                      const error = outcome.failure;
+                      if (error._tag === "AuthError") {
+                        yield* store.setNeedsReauth(account.id, true);
+                        result.reauth.push(account.id);
+                      }
+                      for (const item of owned) {
+                        if (item.op.kind === "saveDraft")
+                          yield* store.setDraftSyncError(item.op.draftId, error.message);
+                        if (error._tag === "AuthError") {
+                          yield* store.releasePendingOp(item.id, claimToken);
+                          continue;
+                        }
+                        blocked.add(`${item.accountId}/${item.providerId}`);
+                        const expired =
+                          item.op.kind !== "reconcile" &&
+                          (yield* Clock.currentTimeMillis) - item.createdAt >= MAX_OP_AGE;
+                        if (error._tag === "PermanentError" || expired) {
+                          yield* store.removePendingOp(item.id, claimToken);
+                          if (item.op.kind !== "reconcile")
+                            yield* store.recordFailedOp({
+                              accountId: account.id,
+                              providerId: item.providerId,
+                              kind: item.op.kind,
+                              reason: error.message,
+                            });
+                          if (error._tag === "PermanentError" && error.imapReset) {
+                            yield* store.invalidateImapFolder(account.id, error.imapReset);
+                            yield* refreshQueued;
+                          } else reconciliations.push({ item, error: error.message });
+                        } else yield* store.failPendingOp(item.id, error.message, claimToken);
+                        if (item.op.kind !== "reconcile") result.failed++;
+                      }
+                    }),
+                  )
+                  .pipe(
+                    Effect.tap(() =>
+                      Effect.sync(() => {
+                        for (const item of items) activeClaims.delete(item.id);
+                      }),
+                    ),
+                    Effect.andThen(() =>
+                      Effect.forEach(
+                        reconciliations,
+                        ({ item, error }) => reconcileDropped(account, item, error),
+                        { discard: true },
+                      ),
+                    ),
+                  );
               }),
+              Effect.catchTag("ProviderError", (error) =>
+                settle(account, items, Effect.fail(error)),
+              ),
             );
           for (let index = 0; index < queued.length; index++) {
             const pending = queued[index];
@@ -630,6 +734,10 @@ export const MailboxLive = (
             if (options.localDraftQueue && pending.op.kind === "saveDraft") continue;
             const key = `${pending.accountId}/${pending.providerId}`;
             if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
+            if (pending.retryAt > (yield* Clock.currentTimeMillis)) {
+              blocked.add(key);
+              continue;
+            }
             const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
             if (Option.isNone(account)) {
               yield* store.removePendingOp(pending.id);
@@ -642,11 +750,24 @@ export const MailboxLive = (
               continue;
             }
             const owner = account.value;
+            const leasedIds: number[] = [];
+            const heartbeat = Effect.gen(function* () {
+              for (;;) {
+                yield* Effect.sleep("30 seconds");
+                for (const id of leasedIds)
+                  if (activeClaims.has(id) && !(yield* store.renewPendingOp(id, claimToken)))
+                    return yield* new PendingOpClaimLost({
+                      message: "The queued operation is no longer owned by this worker",
+                    });
+              }
+            });
             const pushOne = Effect.gen(function* () {
-              if (!(yield* store.claimPendingOp(pending.id))) {
+              if (!(yield* store.claimPendingOp(pending.id, claimToken))) {
                 blocked.add(key);
                 return;
               }
+              leasedIds.push(pending.id);
+              activeClaims.add(pending.id);
               const adapter = providers.get(owner.provider);
               const op = pending.op;
               const batch: PendingOp[] = [pending];
@@ -673,13 +794,16 @@ export const MailboxLive = (
                         ),
                         () => false,
                       )) ||
+                    next.retryAt > (yield* Clock.currentTimeMillis) ||
                     blocked.has(`${next.accountId}/${next.providerId}`)
                   )
                     break;
-                  if (!(yield* store.claimPendingOp(next.id))) {
+                  if (!(yield* store.claimPendingOp(next.id, claimToken))) {
                     blocked.add(`${next.accountId}/${next.providerId}`);
                     break;
                   }
+                  leasedIds.push(next.id);
+                  activeClaims.add(next.id);
                   batch.push(next);
                 }
                 index += batch.length - 1;
@@ -694,6 +818,7 @@ export const MailboxLive = (
                           batch.map((item) => item.providerId),
                           op,
                           cursor,
+                          pushContext(batch, claimToken),
                         ),
                       ),
                     )
@@ -705,10 +830,11 @@ export const MailboxLive = (
                               result.reauth.includes(item.accountId) ||
                               blocked.has(`${item.accountId}/${item.providerId}`)
                             ) {
-                              yield* store.releasePendingOp(item.id);
+                              yield* store.releasePendingOp(item.id, claimToken);
+                              activeClaims.delete(item.id);
                               continue;
                             }
-                            yield* settle(owner, [item], pushOp(owner, item));
+                            yield* settle(owner, [item], pushOp(owner, item, claimToken));
                           }
                         }).pipe(Effect.as("fallback" as const)),
                       ),
@@ -723,8 +849,33 @@ export const MailboxLive = (
                   return;
                 }
               }
-              yield* settle(owner, [pending], pushOp(owner, pending));
-            });
+              yield* settle(owner, [pending], pushOp(owner, pending, claimToken));
+            }).pipe(
+              Effect.raceFirst(heartbeat),
+              Effect.catchTag("PendingOpClaimLost", (error) =>
+                Effect.gen(function* () {
+                  for (const id of leasedIds) {
+                    const item = queued.find((candidate) => candidate.id === id);
+                    if (item) blocked.add(`${item.accountId}/${item.providerId}`);
+                    if (yield* store.ownsPendingOp(id, claimToken))
+                      yield* store.failPendingOp(id, error.message, claimToken);
+                  }
+                  result.failed += leasedIds.length;
+                }),
+              ),
+              Effect.ensuring(
+                Effect.forEach(
+                  leasedIds,
+                  (id) =>
+                    store
+                      .releasePendingOp(id, claimToken)
+                      .pipe(Effect.tap(() => Effect.sync(() => activeClaims.delete(id)))),
+                  {
+                    discard: true,
+                  },
+                ),
+              ),
+            );
             yield* owner.provider === "imap"
               ? imapPullLock(owner.id).withPermitsIfAvailable(1)(pushOne)
               : pushOne;
@@ -941,7 +1092,7 @@ export const MailboxLive = (
           ...(message.forwardAsAttachment ? { forwardAsAttachment: true } : {}),
           ...(command.draftId ? { draftId: command.draftId } : {}),
         };
-        yield* providers
+        const delivery = yield* providers
           .get(account.provider)
           .send(account, prepared.message, prepared.original)
           .pipe(
@@ -960,6 +1111,27 @@ export const MailboxLive = (
               ]),
             ),
           );
+        if (delivery?.rejected?.length) {
+          yield* store.recordFailedOp({
+            accountId,
+            providerId: command.draftId ?? "",
+            kind: "sendPartial",
+            reason: delivery.rejected.join(", "),
+            subject: message.subject,
+            sender: message.from?.address ?? account.email,
+            rejected: delivery.rejected,
+          });
+          if (command.draftId) yield* store.setSendUncertain(command.draftId, true);
+        }
+        if (delivery?.sentCopyMissing)
+          yield* store.recordFailedOp({
+            accountId,
+            providerId: command.draftId ?? "",
+            kind: "sentCopyMissing",
+            reason: "SMTP accepted the message, but saving its Sent copy failed.",
+            subject: message.subject,
+            sender: message.from?.address ?? account.email,
+          });
         yield* store.audit({ actor, accountId, action: "send", detail });
         yield* store.rememberMailedAddresses(
           accountId,
@@ -970,7 +1142,7 @@ export const MailboxLive = (
         const draft = command.draftId
           ? yield* store.getDraft(command.draftId)
           : Option.none<StoredDraft>();
-        if (Option.isSome(draft)) {
+        if (Option.isSome(draft) && !delivery?.rejected?.length) {
           yield* store.transaction(removeDraft(draft.value));
           if (draft.value.proposalId !== null) yield* settleProposal(draft.value.proposalId, true);
         }
@@ -1756,7 +1928,7 @@ export const MailboxLive = (
           if (account.enabled === false) return;
           const prefs = yield* store.prefs;
           const now = new Date(yield* Clock.currentTimeMillis);
-          const writes: Effect.Effect<void>[] = [];
+          const writes: Effect.Effect<void, ProviderError>[] = [];
           const newIds: string[] = [];
           const pendingById = new Map<string, MailOp[]>();
           for (const change of batch) {
@@ -2924,6 +3096,44 @@ export const MailboxLive = (
         perform,
         decideProposal,
         proposals: store.listProposals("pending"),
+        prepareRejectedResend: (noticeId) =>
+          Effect.gen(function* () {
+            const { notice, rejected } = yield* store.getFailedOp(noticeId);
+            if (notice.kind !== "sendPartial" || !rejected.length)
+              return yield* new InvalidInput({
+                message: "This notice has no rejected recipients.",
+              });
+            const draft = yield* store.getDraft(notice.providerId);
+            if (Option.isNone(draft))
+              return yield* new NotFound({ what: "draft", id: notice.providerId });
+            if (draft.value.accountId !== notice.accountId)
+              return yield* new InvalidInput({
+                message: "This draft changed accounts. Open it to choose recipients.",
+              });
+            const addresses = new Set(rejected.map((address) => address.trim().toLowerCase()));
+            const keep = (recipients: OutgoingMessage["to"]) =>
+              recipients.filter((recipient) => addresses.has(recipient.address.toLowerCase()));
+            const message = {
+              ...draft.value.message,
+              to: keep(draft.value.message.to),
+              cc: keep(draft.value.message.cc),
+              bcc: keep(draft.value.message.bcc),
+            };
+            if (!message.to.length && !message.cc.length && !message.bcc.length)
+              return yield* new InvalidInput({
+                message: "The rejected recipients are no longer in this draft.",
+              });
+            const input = {
+              id: `draft:${crypto.randomUUID()}`,
+              accountId: notice.accountId,
+              message,
+            };
+            yield* store.putDraft(input);
+            yield* changed;
+            return input;
+          }),
+        listFailedOps: store.listFailedOps,
+        acknowledgeFailedOps: (ids) => mutate(store.acknowledgeFailedOps(ids)),
         audit: (limit) => store.listAudit(limit),
         agentWriteMode: store.agentWriteMode("*"),
         setAgentWriteMode: (mode) => mutate(store.setAgentWriteMode("*", mode)),

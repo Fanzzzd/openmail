@@ -163,6 +163,11 @@ export interface PendingOp {
   op: QueuedOp;
   attempts: number;
   lastError: string | null;
+  createdAt: number;
+  retryAt: number;
+  rfcMessageId: string | null;
+  progress: readonly string[];
+  appendedMessageId: string | null;
 }
 
 /** A draft as the store keeps it, with where the provider has its copy. */
@@ -286,7 +291,7 @@ export class Store extends Context.Service<
     remapProviderIds(
       accountId: string,
       mappings: readonly ProviderIdMapping[],
-    ): Effect.Effect<void>;
+    ): Effect.Effect<void, ProviderError>;
     messageIdForProvider(accountId: string, providerId: string): Effect.Effect<string | null>;
     readonly checkpoint: Effect.Effect<void>;
     invalidateImapFolder(
@@ -413,12 +418,41 @@ export class Store extends Context.Service<
      * Marks the op as being pushed. False when another process (app, CLI, MCP)
      * holds a live claim on it, so no op is pushed twice at once.
      */
-    claimPendingOp(id: number): Effect.Effect<boolean>;
+    claimPendingOp(id: number, token: string): Effect.Effect<boolean>;
     /** Gives the claim back without counting an attempt (the account needs a new sign-in). */
-    releasePendingOp(id: number): Effect.Effect<void>;
-    removePendingOp(id: number): Effect.Effect<void>;
+    releasePendingOp(id: number, token?: string): Effect.Effect<void>;
+    removePendingOp(id: number, token?: string): Effect.Effect<void>;
     /** Counts a failed attempt and releases the claim. */
-    failPendingOp(id: number, error: string): Effect.Effect<void>;
+    failPendingOp(id: number, error: string, token?: string): Effect.Effect<void>;
+
+    renewPendingOp(id: number, token: string): Effect.Effect<boolean>;
+    ownsPendingOp(id: number, token: string): Effect.Effect<boolean>;
+    readonly listFailedOps: Effect.Effect<readonly import("./domain.js").FailedOp[]>;
+    recordFailedOp(
+      entry: Pick<
+        import("./domain.js").FailedOp,
+        "accountId" | "providerId" | "kind" | "reason"
+      > & { subject?: string | null; sender?: string | null; rejected?: readonly string[] },
+    ): Effect.Effect<void>;
+    getFailedOp(
+      id: number,
+    ): Effect.Effect<
+      { notice: import("./domain.js").FailedOp; rejected: readonly string[] },
+      NotFound
+    >;
+    recordCopyProgress(
+      id: number,
+      token: string,
+      destination: string,
+      providerId: string,
+      phase: "issued" | "accepted" | "clear",
+    ): Effect.Effect<void, ProviderError>;
+    recordAppendedMessageId(
+      id: number,
+      token: string,
+      messageId: string,
+    ): Effect.Effect<void, ProviderError>;
+    acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;
 
     // Drafts
     getDraft(id: string): Effect.Effect<Option.Option<StoredDraft>>;
@@ -440,6 +474,7 @@ export class Store extends Context.Service<
       remote: DraftRemote | null,
       pushedAttachments: string | null,
       accountId?: string,
+      claim?: { readonly id: number; readonly token: string },
     ): Effect.Effect<boolean>;
     setDraftOrganizationKey(id: string, key: string | null): Effect.Effect<void>;
     draftSaveState(
@@ -559,6 +594,26 @@ export class Store extends Context.Service<
 >()("openmail/Store") {}
 
 // Providers
+
+export type ProviderPushResult = void | readonly ProviderIdMapping[] | { readonly reconcile: true };
+export interface ProviderPushContext {
+  readonly messageIds: ReadonlyMap<string, string>;
+  readonly progress?: ReadonlySet<string>;
+  readonly beforeCopy?: (
+    destination: string,
+    providerIds: readonly string[],
+  ) => Effect.Effect<void, ProviderError>;
+  readonly afterCopy?: (
+    destination: string,
+    providerIds: readonly string[],
+  ) => Effect.Effect<void, ProviderError>;
+  readonly clearCopy?: (
+    destination: string,
+    providerIds: readonly string[],
+  ) => Effect.Effect<void, ProviderError>;
+  readonly beforeAppendDraft?: (messageId: string) => Effect.Effect<void, ProviderError>;
+  readonly appendedDraftMessageId?: string;
+}
 
 /**
  * What a provider's pull yields, in order. The sync loop applies each change
@@ -783,7 +838,8 @@ export interface ProviderAdapter {
     op: MailOp,
     /** Latest persisted IMAP folder state, also available before the adapter's first pull. */
     cursor?: string,
-  ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
+    context?: ProviderPushContext,
+  ): Effect.Effect<ProviderPushResult, ProviderFailure>;
   /** Folder/label operations; callers cap each request at 1000 IDs. */
   pushBatch?(
     this: void,
@@ -792,7 +848,8 @@ export interface ProviderAdapter {
     op: MailOp,
     /** Latest persisted IMAP folder state, also available before the adapter's first pull. */
     cursor?: string,
-  ): Effect.Effect<void | readonly ProviderIdMapping[], ProviderFailure>;
+    context?: ProviderPushContext,
+  ): Effect.Effect<ProviderPushResult, ProviderFailure>;
   /**
    * `original` is the message replied to or forwarded, when there is one. The
    * adapter fetches its threading headers from the provider.
@@ -801,13 +858,20 @@ export interface ProviderAdapter {
     account: Account,
     message: OutgoingMessage,
     original: Option.Option<{ providerId: string; threadId: string }>,
-  ): Effect.Effect<void, ProviderFailure | SendUncertain>;
+  ): Effect.Effect<
+    void | { readonly rejected?: readonly string[]; readonly sentCopyMissing?: boolean },
+    ProviderFailure | SendUncertain
+  >;
   /**
    * Creates the provider's copy of a draft (`remote` null) or replaces it.
    * Returns where it lives now; Gmail and IMAP give it a new message id on
    * every save. A copy deleted on the server meanwhile is created again.
    */
-  saveDraft(account: Account, draft: DraftPush): Effect.Effect<DraftRemote, ProviderFailure>;
+  saveDraft(
+    account: Account,
+    draft: DraftPush,
+    context?: ProviderPushContext,
+  ): Effect.Effect<DraftRemote, ProviderFailure>;
   getDraftOrganization?(
     account: Account,
     id: string,

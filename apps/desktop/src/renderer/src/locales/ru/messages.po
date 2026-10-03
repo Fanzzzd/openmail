@@ -16,6 +16,7 @@ msgstr "(без получателей)"
 
 #: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -59,6 +60,18 @@ msgstr "{accountCount, plural, one {# учётная запись} few {# учё
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {Не удалось сохранить # изменение} few {Не удалось сохранить # изменения} many {Не удалось сохранить # изменений} other {Не удалось сохранить # изменения}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {В # сообщении были отклонённые получатели} few {В # сообщениях были отклонённые получатели} many {В # сообщениях были отклонённые получатели} other {В # сообщения были отклонённые получатели}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# отправленного сообщения нет в папке «Отправленные»} few {# отправленных сообщений нет в папке «Отправленные»} many {# отправленных сообщений нет в папке «Отправленные»} other {# отправленного сообщения нет в папке «Отправленные»}}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
@@ -601,6 +614,7 @@ msgstr "Одобрить предложение"
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -894,6 +908,10 @@ msgstr "Отменить"
 msgid "Cannot build calendar response"
 msgstr "Невозможно создать ответ календаря"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Categories"
+msgstr "Категории"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Categories updated"
@@ -930,6 +948,10 @@ msgstr "Копия: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Копия/Скрытая копия"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Change"
+msgstr "Изменение"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change mode"
@@ -1231,6 +1253,7 @@ msgid "Copied to folders"
 msgstr "Скопировано в папки"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
@@ -1289,6 +1312,10 @@ msgstr "Не удалось проверить синхронизацию."
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Не удалось декодировать winmail.dat. Вы можете сохранить исходный файл."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Не удалось закрыть это уведомление. Попробуйте ещё раз."
+
 #: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Could not import this attachment."
 msgstr "Не удалось импортировать это вложение."
@@ -1332,6 +1359,10 @@ msgstr "Не удалось открыть черновик отзыва."
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Could not open the system picker."
 msgstr "Не удалось открыть системное окно выбора."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Не удалось подготовить черновик для повторной отправки. Попробуйте ещё раз."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -1601,6 +1632,10 @@ msgstr "Удалить {0}"
 msgid "Delete {0} conversations?"
 msgstr "Удалить переписки {0}?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete draft"
+msgstr "Удалить черновик"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
 msgstr "Удалить фильтр?"
@@ -1612,6 +1647,10 @@ msgstr "Действие клавиши Delete"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "Удалить ярлык или папку?"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete permanently"
+msgstr "Удалить навсегда"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -1637,6 +1676,10 @@ msgstr "Плотный"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "Опишите, что произошло"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Details"
+msgstr "Подробности"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Detect calendar events in messages"
@@ -1665,6 +1708,7 @@ msgstr "Удалить черновик"
 msgid "Discard saved rule?"
 msgstr "Удалить сохраненное правило?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
 msgid "Dismiss"
 msgstr "Отклонить"
@@ -2227,6 +2271,10 @@ msgstr "Справка"
 msgid "Hide"
 msgstr "Скрыть"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Hide details"
+msgstr "Скрыть подробности"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Hide format bar"
 msgstr "Скрыть панель формата"
@@ -2295,6 +2343,7 @@ msgid "Importance action"
 msgstr "Важное действие"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -2468,6 +2517,7 @@ msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Label"
 msgstr "Ярлык"
@@ -3004,6 +3054,7 @@ msgid "Move to Cc"
 msgstr "Переместить в копию"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
@@ -3013,6 +3064,7 @@ msgstr "Переместить в папку"
 msgid "Move to folder…"
 msgstr "Переместить в папку…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3029,6 +3081,7 @@ msgid "Move to top level"
 msgstr "Переместить на верхний уровень"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Move to Trash"
@@ -3585,6 +3638,10 @@ msgstr "Страница {0}"
 msgid "Parent folder"
 msgstr "Родительская папка"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Partial delivery"
+msgstr "Частичная доставка"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Пароль"
@@ -3760,6 +3817,10 @@ msgstr "Цитировать выделенный текст"
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "Только чтение"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Read status"
+msgstr "Статус прочтения"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
@@ -3987,6 +4048,7 @@ msgid "Reply signature for {address}"
 msgstr "Ответная подпись для {address}"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3997,6 +4059,10 @@ msgstr "Сообщить о спаме"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "Помечено как спам"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Отправить снова отклонённым получателям"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Reset Favorites"
@@ -4017,6 +4083,10 @@ msgstr "Ответьте на это приглашение из сообщен�
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Восстановить"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Restore message state"
+msgstr "Восстановить состояние сообщения"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Restore rule"
@@ -4152,6 +4222,7 @@ msgstr "Сохраните ключ API Anthropic в настройках ИИ."
 msgid "Save as PDF…"
 msgstr "Сохранить как PDF…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "Сохранить черновик"
@@ -4177,6 +4248,10 @@ msgstr "Сохранить правило"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save selected…"
 msgstr "Сохранить выбранное…"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Save sent copy"
+msgstr "Сохранить отправленную копию"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -4651,6 +4726,10 @@ msgstr "Обновления ПО"
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "В этом режиме невозможно сохранить некоторое форматирование. Адреса ссылок сохраняются. Вы можете отменить изменение режима."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Некоторые получатели не получили это сообщение."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Некоторые предикаты сервера были опущены для сохранения совпадений; локальные фильтры по-прежнему применяются:"
@@ -4692,6 +4771,7 @@ msgstr "Стабильный"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4929,6 +5009,10 @@ msgstr "В меню отображается до 50 непрочитанных 
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "В сообщении упоминается вложение, но оно не добавляется."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "Сообщение отправлено, но его копии нет в папке «Отправленные»."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."
@@ -5454,6 +5538,10 @@ msgstr "Установлена последняя версия."
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Ваши изменения сохраняются на этом Mac. Попробуйте еще раз или сохраните локальную копию."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Черновик сохранён. Проверьте папку «Отправленные», прежде чем отправлять снова."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

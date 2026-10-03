@@ -567,14 +567,14 @@ it.effect("a queued op is pushed by one process at a time; claims expire", () =>
       yield* store.enqueueOp(id, "m1", { kind: "archive" });
       const [op] = yield* store.listPendingOps;
       assert.ok(op);
-      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+      assert.strictEqual(yield* store.claimPendingOp(op.id, "test-claim"), true);
       // Another process (the CLI next to the app) finds it taken.
-      assert.strictEqual(yield* store.claimPendingOp(op.id), false);
-      yield* store.releasePendingOp(op.id);
-      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+      assert.strictEqual(yield* store.claimPendingOp(op.id, "test-claim"), false);
+      yield* store.releasePendingOp(op.id, "test-claim");
+      assert.strictEqual(yield* store.claimPendingOp(op.id, "test-claim"), true);
       // A claim left by a process that died mid-push runs out after two minutes.
       yield* TestClock.adjust("3 minutes");
-      assert.strictEqual(yield* store.claimPendingOp(op.id), true);
+      assert.strictEqual(yield* store.claimPendingOp(op.id, "test-claim"), true);
     }),
   ),
 );
@@ -1207,7 +1207,7 @@ it.effect("slice49-fix: routine checkpoints retain the reusable WAL instead of t
   }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
 
-it.effect("slice49-fix: database failures during remap roll back without a defect", () =>
+it.effect("slice63: database failures during remap propagate and roll back", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1218,7 +1218,7 @@ it.effect("slice49-fix: database failures during remap roll back without a defec
       const result = yield* store
         .remapProviderIds(account.id, [{ from: "old", to: "new" }])
         .pipe(Effect.exit);
-      assert.isTrue(Exit.isSuccess(result));
+      assert.isTrue(Exit.isFailure(result));
       assert.strictEqual((yield* store.messageRef(`${account.id}/old`)).providerId, "old");
     }),
   ),
@@ -1417,4 +1417,133 @@ it.effect("slice55-fix: folder epochs survive reopening the database", () =>
       platform(),
     );
   }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
+);
+
+it.effect(
+  "slice63-final: coalescing a waiting draft save preserves its APPEND identity and copy progress",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("imap", "me@example.com");
+        const message = {
+          to: [],
+          cc: [],
+          bcc: [],
+          subject: "draft",
+          text: "original",
+          attachments: [],
+        };
+        yield* store.putDraft({ id: "draft:carry", accountId: account.id, message });
+        yield* store.enqueueDraftSave(account.id, "draft:carry");
+        const [first] = yield* store.listPendingOps;
+        assert.ok(first);
+        assert.isTrue(yield* store.claimPendingOp(first.id, "writer"));
+        yield* store.recordAppendedMessageId(first.id, "writer", "<appended@example.com>");
+        yield* store.recordCopyProgress(first.id, "writer", "Drafts", "draft:carry", "accepted");
+        yield* store.failPendingOp(first.id, "Lost APPEND acknowledgement", "writer");
+        yield* store.putDraft({
+          id: "draft:carry",
+          accountId: account.id,
+          message: { ...message, text: "edited" },
+        });
+        yield* store.enqueueDraftSave(account.id, "draft:carry");
+        const [replacement] = yield* store.listPendingOps;
+        assert.ok(replacement);
+        assert.notStrictEqual(replacement.id, first.id);
+        assert.strictEqual(replacement.appendedMessageId, "<appended@example.com>");
+        assert.strictEqual(replacement.progress.length, 2);
+      }),
+    ),
+);
+
+for (const action of ["discard", "local"] as const)
+  it.effect(`slice63-final: ${action} queues cleanup of an unacknowledged appended draft`, () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("imap", "me@example.com");
+        yield* store.putDraft({
+          id: "draft:cleanup",
+          accountId: account.id,
+          message: { to: [], cc: [], bcc: [], subject: "draft", text: "content", attachments: [] },
+        });
+        yield* store.enqueueDraftSave(account.id, "draft:cleanup");
+        const [op] = yield* store.listPendingOps;
+        assert.ok(op);
+        yield* store.claimPendingOp(op.id, "writer");
+        yield* store.recordAppendedMessageId(op.id, "writer", "<orphan@example.com>");
+        yield* store.failPendingOp(op.id, "Lost APPEND acknowledgement", "writer");
+        yield* action === "discard"
+          ? store.deleteDraft("draft:cleanup")
+          : store.setDraftLocalOnly("draft:cleanup", true);
+        const queued = yield* store.listPendingOps;
+        assert.strictEqual(queued.length, 1);
+        assert.ok(queued[0]?.op.kind === "deleteDraft");
+        assert.ok("rfcMessageId" in queued[0].op.remote);
+        assert.strictEqual(queued[0].op.remote.rfcMessageId, "<orphan@example.com>");
+      }),
+    ),
+  );
+
+it.effect("slice63-final: retry keeps APPEND progress until the next save is coalesced", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.putDraft({
+        id: "draft:retry",
+        accountId: account.id,
+        message: { to: [], cc: [], bcc: [], subject: "draft", text: "content", attachments: [] },
+      });
+      yield* store.enqueueDraftSave(account.id, "draft:retry");
+      const [op] = yield* store.listPendingOps;
+      assert.ok(op);
+      yield* store.claimPendingOp(op.id, "writer");
+      yield* store.recordAppendedMessageId(op.id, "writer", "<retry@example.com>");
+      yield* store.failPendingOp(op.id, "Lost APPEND acknowledgement", "writer");
+      yield* store.setDraftLocalOnly("draft:retry", false);
+      yield* store.enqueueDraftSave(account.id, "draft:retry");
+      assert.strictEqual(
+        (yield* store.listPendingOps)[0]?.appendedMessageId,
+        "<retry@example.com>",
+      );
+    }),
+  ),
+);
+
+it.effect(
+  "slice63-final: switching accounts cleans the original APPEND identity without reusing it",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const original = yield* store.upsertAccount("imap", "original@example.com");
+        const next = yield* store.upsertAccount("imap", "next@example.com");
+        const message = {
+          to: [],
+          cc: [],
+          bcc: [],
+          subject: "draft",
+          text: "content",
+          attachments: [],
+        };
+        yield* store.putDraft({ id: "draft:moved", accountId: original.id, message });
+        yield* store.enqueueDraftSave(original.id, "draft:moved");
+        const [op] = yield* store.listPendingOps;
+        assert.ok(op);
+        yield* store.claimPendingOp(op.id, "writer");
+        yield* store.recordAppendedMessageId(op.id, "writer", "<original@example.com>");
+        yield* store.failPendingOp(op.id, "Lost APPEND acknowledgement", "writer");
+        yield* store.putDraft({ id: "draft:moved", accountId: next.id, message });
+        yield* store.enqueueDraftSave(next.id, "draft:moved");
+        const queued = yield* store.listPendingOps;
+        const cleanup = queued.find((p) => p.accountId === original.id);
+        const save = queued.find((p) => p.accountId === next.id);
+        assert.ok(cleanup?.op.kind === "deleteDraft");
+        assert.strictEqual(cleanup.op.remote.rfcMessageId, "<original@example.com>");
+        assert.strictEqual(save?.appendedMessageId, null);
+        assert.deepStrictEqual(save?.progress, []);
+      }),
+    ),
 );

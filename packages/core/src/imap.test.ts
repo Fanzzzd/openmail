@@ -1544,8 +1544,10 @@ it.effect("slice49: pooled pushes compact folder UID sets and return COPYUID map
   slice49Imap((a, client, opens) =>
     Effect.gen(function* () {
       client.capabilities.set("UIDPLUS", true);
+      client.capabilities.set("MOVE", true);
       vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
-      vi.spyOn(client, "messageMove").mockResolvedValue({
+      vi.spyOn(client, "messageDelete").mockResolvedValue(true);
+      vi.spyOn(client, "messageCopy").mockResolvedValue({
         path: "INBOX",
         destination: "Archive",
         uidValidity: 8n,
@@ -1574,9 +1576,12 @@ it.effect("slice49: pooled pushes compact folder UID sets and return COPYUID map
 it.effect("slice49: no UIDPLUS moves and draft deletion mark Deleted without EXPUNGE", () =>
   slice49Imap((a, client) =>
     Effect.gen(function* () {
-      const copy = vi
-        .spyOn(client, "messageCopy")
-        .mockResolvedValue({ path: "INBOX", destination: "Archive" });
+      const copy = vi.spyOn(client, "messageCopy").mockResolvedValue({
+        path: "INBOX",
+        destination: "Archive",
+        uidValidity: 7n,
+        uidMap: new Map([[1, 9]]),
+      });
       const move = vi.spyOn(client, "messageMove");
       const deletion = vi.spyOn(client, "messageDelete");
       const flags = vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
@@ -1761,7 +1766,7 @@ it.effect("slice55: interrupted pooled move closes and evicts its connection", (
       });
       vi.spyOn(client, "messageFlagsAdd").mockResolvedValue(true);
       let started = false;
-      vi.spyOn(client, "messageMove").mockImplementationOnce(() => {
+      vi.spyOn(client, "messageCopy").mockImplementationOnce(() => {
         started = true;
         return new Promise(() => {
           // The server never acknowledges this move; only interruption releases the caller.
@@ -1956,7 +1961,11 @@ for (const result of [false, undefined] as const) {
                 .pull(account, cursor, "inbox")
                 .pipe(Stream.runForEach((change) => Effect.sync(() => emitted.push(change))));
             }
-            const exit = yield* Effect.exit(operation);
+            const exit = yield* Effect.exit<
+              unknown,
+              import("./errors.js").ProviderFailure | import("./errors.js").SendUncertain,
+              never
+            >(operation);
             assert.deepStrictEqual(
               errorTag(exit),
               mode === "sent" ? Option.none() : Option.some("ProviderError"),

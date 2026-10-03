@@ -69,6 +69,7 @@ import {
   Address,
   AgentWriteMode,
   AuditEntry,
+  FailedOp,
   Draft,
   DraftInput,
   ImapConnectInput,
@@ -651,6 +652,13 @@ export class MailRpcs extends RpcGroup.make(
   }),
   Rpc.make("HiddenContacts", { success: Schema.Array(Schema.String) }),
   Rpc.make("SetContactHidden", { payload: { address: Schema.String, hidden: Schema.Boolean } }),
+  Rpc.make("PrepareRejectedResend", {
+    payload: { noticeId: Schema.Int },
+    success: DraftInput,
+    error,
+  }),
+  Rpc.make("FailedOps", { success: Schema.Array(FailedOp), error }),
+  Rpc.make("AcknowledgeFailedOps", { payload: { ids: Schema.Array(Schema.Int) }, error }),
   Rpc.make("Audit", { payload: { limit: Schema.Int }, success: Schema.Array(AuditEntry) }),
   Rpc.make("Proposals", { success: Schema.Array(Proposal) }),
   Rpc.make("DecideProposal", {

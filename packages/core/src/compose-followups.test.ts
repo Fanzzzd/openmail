@@ -1,4 +1,5 @@
 import { assert, it } from "@effect/vitest";
+import { TestClock } from "effect/testing";
 import { Deferred, Effect, Fiber, Layer } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -175,6 +176,7 @@ it.effect("an existing remote draft is unsynced while its edited save is queued"
     });
     assert.strictEqual(edited.synced, false);
     assert.strictEqual((yield* mailbox.openDraft(draft.id)).synced, false);
+    yield* TestClock.adjust("5 seconds");
     yield* mailbox.sync();
     assert.strictEqual((yield* mailbox.openDraft(draft.id)).synced, true);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));

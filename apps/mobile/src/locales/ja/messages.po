@@ -9,9 +9,25 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
+#: src/failed-op-notice.tsx
 #: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "（件名なし）"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, other {# 件の変更を保存できませんでした}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, other {# 件のメッセージで一部の宛先が拒否されました}}"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, other {# 件の送信済みメッセージが送信済みにありません}}"
 
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
@@ -116,6 +132,7 @@ msgstr "承認"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
@@ -204,10 +221,20 @@ msgid "Cancel queued send"
 msgstr "送信待ちを取り消す"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Categories"
+msgstr "カテゴリ"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Cc"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Change"
+msgstr "変更"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -218,6 +245,11 @@ msgstr "日付を選択"
 #: src/thread-actions.tsx
 msgid "Choose time"
 msgstr "時刻を選択"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Close"
+msgstr "閉じる"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -237,6 +269,11 @@ msgid "Conversation"
 msgstr "スレッド"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Copy"
+msgstr "コピー"
+
+#. js-lingui-explicit-id
 #: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
@@ -247,6 +284,11 @@ msgstr "操作できませんでした。再試行してください。"
 #: app/imap-setup.tsx
 msgid "Could not connect. Check the servers and app password."
 msgstr "接続できませんでした。サーバーとアプリ用パスワードを確認してください。"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "この通知を閉じられませんでした。もう一度お試しください。"
 
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
@@ -280,6 +322,11 @@ msgid "Could not open the local mail database."
 msgstr "ローカルのメールデータベースを開けませんでした。"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "再送信用の下書きを準備できませんでした。もう一度お試しください。"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -307,9 +354,24 @@ msgid "Delete"
 msgstr "削除"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete draft"
+msgstr "下書きを削除"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Delete permanently"
+msgstr "完全に削除"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Delivery uncertain. Check Sent before trying again."
 msgstr "送信結果が不明です。再試行する前に送信済みを確認してください。"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Details"
+msgstr "詳細"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -320,6 +382,11 @@ msgstr "アカウントを無効にする"
 #: app/compose.tsx
 msgid "Discard"
 msgstr "破棄"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Dismiss"
+msgstr "閉じる"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -398,6 +465,11 @@ msgid "IMAP server"
 msgstr "IMAP サーバー"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Important"
+msgstr "重要"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Inbox"
 msgstr "受信"
@@ -411,6 +483,11 @@ msgstr "更新のタイミングは iOS が決定します。リアルタイム�
 #: app/compose.tsx
 msgid "Italic"
 msgstr "イタリック"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Label"
+msgstr "ラベル"
 
 #. js-lingui-explicit-id
 #: app/ai-proposals.tsx
@@ -496,6 +573,21 @@ msgid "Move to"
 msgstr "移動先"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to folder"
+msgstr "フォルダに移動"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Inbox"
+msgstr "受信に移動"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Move to Trash"
+msgstr "ゴミ箱に移動"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
 msgstr "受信トレイの新着メール通知"
@@ -567,6 +659,11 @@ msgid "Outbox"
 msgstr "送信トレイ"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Partial delivery"
+msgstr "一部のみ配信"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Plain text"
 msgstr "標準テキスト"
@@ -586,6 +683,11 @@ msgstr "質問"
 #: app/settings.tsx
 msgid "Queued to send"
 msgstr "送信待ちに追加しました"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Read status"
+msgstr "既読状態"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -649,6 +751,21 @@ msgid "Reply all"
 msgstr "全員に返信"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Report spam"
+msgstr "迷惑メールとして報告"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Resend to rejected recipients"
+msgstr "拒否された宛先に再送信"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Restore message state"
+msgstr "メッセージの状態を復元"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -662,9 +779,19 @@ msgid "Rewrite"
 msgstr "書き直す"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save draft"
+msgstr "下書きを保存"
+
+#. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Save key"
 msgstr "キーを保存"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Save sent copy"
+msgstr "送信済みのコピーを保存"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
@@ -791,11 +918,17 @@ msgid "Snoozed"
 msgstr "スヌーズ中"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "一部の宛先にメッセージが届きませんでした。"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "迷惑メール"
 
 #. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
 #: src/labels.ts
 msgid "Star"
 msgstr "スターを付ける"
@@ -819,6 +952,11 @@ msgstr "スワイプアクション"
 #: app/settings.tsx
 msgid "System language"
 msgstr "システムの言語"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "メッセージは送信されましたが、送信済みにコピーがありません。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -880,3 +1018,8 @@ msgstr "スターを外す"
 #: app/imap-setup.tsx
 msgid "Username"
 msgstr "ユーザー名"
+
+#. js-lingui-explicit-id
+#: src/failed-op-notice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "下書きは保存されています。再送信する前に送信済みを確認してください。"

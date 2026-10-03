@@ -1,5 +1,6 @@
 import { richComposeBody } from "./compose-body.js";
 import { assert, it } from "@effect/vitest";
+import { TestClock } from "effect/testing";
 import { Deferred, Effect, Fiber, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
@@ -379,20 +380,29 @@ it.effect(
 );
 
 it.effect(
-  "pending transient failures stay recoverable and become terminal only when attempts are exhausted",
+  "transient draft failures stay recoverable past five retries and expire after a week",
   () =>
-    fixture((m, _store, server) =>
-      Effect.gen(function* () {
-        for (let attempt = 1; attempt <= 5; attempt++) {
-          server.failNext = new ProviderError({ message: "Private network detail" });
-          yield* attempt === 1
-            ? m.saveDraft({ id: "draft:attempts", accountId, message })
-            : m.sync();
-          const draft = yield* m.openDraft("draft:attempts");
-          assert.strictEqual(draft.syncRetrying, attempt < 5);
-          assert.strictEqual(draft.syncError, "Private network detail");
-          assert.strictEqual(draft.message.text, message.text);
-        }
+    fixture(
+      (m) =>
+        Effect.gen(function* () {
+          for (let attempt = 1; attempt <= 8; attempt++) {
+            if (attempt > 1) yield* TestClock.adjust("1 hour");
+            yield* attempt === 1
+              ? m.saveDraft({ id: "draft:attempts", accountId, message })
+              : m.sync();
+            const draft = yield* m.openDraft("draft:attempts");
+            assert.strictEqual(draft.syncRetrying, true);
+            assert.strictEqual(draft.syncError, "Private network detail");
+            assert.strictEqual(draft.message.text, message.text);
+          }
+          yield* TestClock.adjust("8 days");
+          yield* m.sync();
+          assert.strictEqual((yield* m.openDraft("draft:attempts")).syncRetrying, false);
+          assert.strictEqual((yield* m.listFailedOps).length, 1);
+        }),
+      (adapter) => ({
+        ...adapter,
+        saveDraft: () => Effect.fail(new ProviderError({ message: "Private network detail" })),
       }),
     ),
 );

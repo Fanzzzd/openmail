@@ -18,7 +18,7 @@ pnpm exec oxfmt --check .
 
 ## 数据库
 
-锁定 `@op-engineering/op-sqlite` 18.2.5，发布包 `cpp/sqlite3.h` 中 SQLite 是 3.53.4。`package.json` 的 `op-sqlite.fts5=true` 开启编译选项，`iosSqlite=false` 使用打包版本。FTS5 trigram 最低需要 SQLite 3.34.0；启动时创建临时 trigram 表验证实际原生构建，再启用 WAL 并运行 core 迁移 1 至 35，见 [db.ts](../../packages/core/src/db.ts)。缺少 tokenizer 就停止启动。向量能力报告 `vectors=false`。
+锁定 `@op-engineering/op-sqlite` 18.2.5，发布包 `cpp/sqlite3.h` 中 SQLite 是 3.53.4。`package.json` 的 `op-sqlite.fts5=true` 开启编译选项，`iosSqlite=false` 使用打包版本。FTS5 trigram 最低需要 SQLite 3.34.0；启动时创建临时 trigram 表验证实际原生构建，再启用 WAL 并运行 core 的全部迁移，见 [db.ts](../../packages/core/src/db.ts)。缺少 tokenizer 就停止启动。向量能力报告 `vectors=false`。
 
 Effect `SqlClient` 使用同一连接、SQLite compiler、`BEGIN IMMEDIATE`、savepoints 和 semaphore。异步语句完成后才释放连接，避免取消请求时遗留写入。测试通过真实 Node SQLite 模拟 op-sqlite Promise/result API，覆盖迁移幂等、FTS 完整性、upsert rowid、分页、事务回滚、COMMIT 失败恢复及并发串行化。shim 不能证明原生 JSI、WAL、设备存储或锁行为，后续需用开发构建验证。
 
@@ -79,14 +79,16 @@ AI 默认关闭，逐账户确认后才向 Anthropic 发送可见消息文本。
 
 设置可编辑每个账户用于新邮件及回复／转发的默认签名，复用共享签名库和默认值表。新撰写会话插入纯文本签名，已有草稿保留已存内容。没有新增迁移。
 
+出站失败提示复用 core，显示操作、主题、发件人及原因；仅向拒收地址重发会打开新草稿。规则见[同步说明](../../docs/sync-correctness.md#出站操作队列)。
+
 ## 能力
 
 | 能力            | 当前实现与边界                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Gmail／Outlook  | 共享 core fetch provider、OAuth、同步、阅读、整理与确认发送；个人 Outlook 只用 consumers。                                                                                                                                                                                                                                                                                                                          |
 | IMAP／SMTP      | iCloud、Yahoo、QQ、163、Fastmail、Other 设置及密码更新。共享 Mailbox 命令接入 portable 协议，原生 TCP/TLS 使用 react-native-tcp-socket 6.4.3；应用密码只存 SecureStore。993／465 使用 TLS，其他端口强制 STARTTLS。依赖补丁补齐 Android 证书主机名校验及读取线程升级同步，并补齐两端 STARTTLS 握手完成事件。                                                                                                         |
-| IMAP 同步与整理 | 首次同步每文件夹最近 90 天内最多 1000 封；后续追踪 UIDVALIDITY、增量、已读、星标和删除。移动优先 MOVE，否则 COPY 加 `\Deleted`；有 UIDPLUS 才定向 expunge，缺少两者时不执行全局 EXPUNGE，服务器原件待其他客户端或服务器清除。支持历史分页和有上限的服务器搜索，无 IDLE、服务端草稿、永久删除、过滤器或自动回复。                                                                                                    |
-| IMAP 发送       | core MIME／SMTP，发送前沿用手机人工确认与撤销队列；Bcc 只进信封，不进入投递 MIME。SMTP DATA 和 IMAP APPEND 按 64 KiB 分块并等待写入。SMTP 接受后不因 Sent 归档失败重发；归档失败记录脱敏警告，已发送副本仍可能缺失。                                                                                                                                                                                                |
+| IMAP 同步与整理 | 首次同步每文件夹最近 90 天内最多 1000 封；后续追踪 UIDVALIDITY、增量、已读、星标和删除。支持历史分页和有上限的服务器搜索，无 IDLE、服务端草稿、永久删除、过滤器或自动回复。复制进度、UID 缺失与源副本处理见[同步说明](../../docs/sync-correctness.md#imap-复制移动与草稿)。                                                                                                                                         |
+| IMAP 发送       | core MIME／SMTP，发送前沿用人工确认与撤销队列；Bcc 只进信封。DATA 和 APPEND 按 64 KiB 分块并等待写入。不确定结果、重发保护及 Sent 副本缺失提示见[发送结果](../../docs/sync-correctness.md#发送结果)。                                                                                                                                                                                                               |
 | 阅读附件        | Gmail／Outlook／IMAP 经 core 下载；按账户与缓存键哈希写入 `Paths.cache/openmail-attachments`，遵循共享缓存容量和清理；本进程按最近访问驱逐，重启后以文件修改时间排序，系统也可驱逐。iOS 分享面板结束即删除副本。Android 在 URI 交接后保留副本，供接收应用延迟读取；启动及分享时按 24 小时和 64 MiB 总量驱逐，分享失败立即清理。iOS 的预览／打开选项由系统分享面板和已安装应用提供。IMAP 原始 MIME 单封上限 25 MiB。 |
 | 图片与链接      | 仅含 cid: 的 HTML 查询 core 图片，按消息 ID 复用下载结果，邮箱刷新保留阅读视图。远程图片默认阻断，可逐封加载，CSP 仅允许 HTTPS；WebView JS 始终关闭。移除 form、全部 meta http-equiv 和非 stylesheet link；iOS 只打开用户点击链接，Android 兼容省略 isTopFrame 的 release 事件，明确子框架仍拒绝；先显示 ASCII 域名及解码后的国际化域名供确认，CSP 禁止框架。                                                       |
 | 联系人          | 撰写 To／Cc／Bcc 自动补全查询共享联系人表及本地邮件历史；已有 slice 44 路径保留。                                                                                                                                                                                                                                                                                                                                   |

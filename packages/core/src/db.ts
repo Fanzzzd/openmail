@@ -865,6 +865,19 @@ export const MIGRATIONS: readonly string[] = [
    CREATE INDEX messages_body_sizes ON messages(account_id,body_bytes);
    DROP INDEX messages_list_date_id;
    CREATE INDEX messages_list_date_id ON messages(list_date DESC,id DESC,account_id,thread_id,is_unread,is_starred,labels_json);`,
+  // Migration 36: durable outbound retries, fenced leases and user-visible failures.
+  `ALTER TABLE pending_ops ADD COLUMN retry_at INTEGER NOT NULL DEFAULT 0;
+   ALTER TABLE pending_ops ADD COLUMN claim_token TEXT;
+   ALTER TABLE pending_ops ADD COLUMN rfc_message_id TEXT;
+   ALTER TABLE pending_ops ADD COLUMN progress_json TEXT NOT NULL DEFAULT '[]';
+   ALTER TABLE pending_ops ADD COLUMN appended_message_id TEXT;
+   UPDATE pending_ops SET rfc_message_id=(SELECT rfc_message_id FROM messages WHERE messages.account_id=pending_ops.account_id AND messages.provider_id=pending_ops.provider_id ORDER BY date DESC LIMIT 1);
+   CREATE TABLE failed_ops (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+     provider_id TEXT NOT NULL, at INTEGER NOT NULL, kind TEXT NOT NULL, reason TEXT NOT NULL,
+     subject TEXT, sender TEXT, rejected_json TEXT NOT NULL DEFAULT '[]'
+   );`,
 ];
 
 /**

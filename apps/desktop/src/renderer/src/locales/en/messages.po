@@ -20,6 +20,7 @@ msgstr "(no recipients)"
 
 #: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -63,6 +64,18 @@ msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} unre
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
@@ -605,6 +618,7 @@ msgstr "Approve suggestion"
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -898,6 +912,10 @@ msgstr "Cancel"
 msgid "Cannot build calendar response"
 msgstr "Cannot build calendar response"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Categories"
+msgstr "Categories"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Categories updated"
@@ -934,6 +952,10 @@ msgstr "Cc: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Cc/Bcc"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Change"
+msgstr "Change"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change mode"
@@ -1235,6 +1257,7 @@ msgid "Copied to folders"
 msgstr "Copied to folders"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
@@ -1293,6 +1316,10 @@ msgstr "Could not check sync health."
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Could not decode winmail.dat. You can save the original file."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Could not dismiss this notice. Try again."
+
 #: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Could not import this attachment."
 msgstr "Could not import this attachment."
@@ -1336,6 +1363,10 @@ msgstr "Could not open the feedback draft"
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Could not open the system picker."
 msgstr "Could not open the system picker."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Could not prepare the resend draft. Try again."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -1605,6 +1636,10 @@ msgstr "Delete {0}"
 msgid "Delete {0} conversations?"
 msgstr "Delete {0} conversations?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete draft"
+msgstr "Delete draft"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
 msgstr "Delete filter?"
@@ -1616,6 +1651,10 @@ msgstr "Delete key action"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "Delete label or folder?"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete permanently"
+msgstr "Delete permanently"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -1641,6 +1680,10 @@ msgstr "Dense"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "Describe what happened"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Details"
+msgstr "Details"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Detect calendar events in messages"
@@ -1669,6 +1712,7 @@ msgstr "Discard draft"
 msgid "Discard saved rule?"
 msgstr "Discard saved rule?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
 msgid "Dismiss"
 msgstr "Dismiss"
@@ -2231,6 +2275,10 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Hide"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Hide details"
+msgstr "Hide details"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Hide format bar"
 msgstr "Hide format bar"
@@ -2299,6 +2347,7 @@ msgid "Importance action"
 msgstr "Importance action"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -2472,6 +2521,7 @@ msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Label"
 msgstr "Label"
@@ -3008,6 +3058,7 @@ msgid "Move to Cc"
 msgstr "Move to Cc"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
@@ -3017,6 +3068,7 @@ msgstr "Move to folder"
 msgid "Move to folder…"
 msgstr "Move to folder…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3033,6 +3085,7 @@ msgid "Move to top level"
 msgstr "Move to top level"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Move to Trash"
@@ -3589,6 +3642,10 @@ msgstr "Page {0}"
 msgid "Parent folder"
 msgstr "Parent folder"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Partial delivery"
+msgstr "Partial delivery"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Password"
@@ -3764,6 +3821,10 @@ msgstr "Quote selected text"
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "Read only"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Read status"
+msgstr "Read status"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
@@ -3991,6 +4052,7 @@ msgid "Reply signature for {address}"
 msgstr "Reply signature for {address}"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4001,6 +4063,10 @@ msgstr "Report spam"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "Reported as spam"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Resend to rejected recipients"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Reset Favorites"
@@ -4021,6 +4087,10 @@ msgstr "Respond to this invitation from the message."
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Restore"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Restore message state"
+msgstr "Restore message state"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Restore rule"
@@ -4156,6 +4226,7 @@ msgstr "Save an Anthropic API key in AI settings."
 msgid "Save as PDF…"
 msgstr "Save as PDF…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "Save draft"
@@ -4181,6 +4252,10 @@ msgstr "Save rule"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save selected…"
 msgstr "Save selected…"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Save sent copy"
+msgstr "Save sent copy"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -4655,6 +4730,10 @@ msgstr "Software updates"
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Some recipients did not receive this message."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4696,6 +4775,7 @@ msgstr "Stable"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4933,6 +5013,10 @@ msgstr "The menu lists up to 50 unread messages in the current space."
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "The message mentions an attachment, but none is added."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "The message was sent, but its copy is missing from Sent."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."
@@ -5458,6 +5542,10 @@ msgstr "You are up to date."
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Your changes are saved on this Mac. Try again or keep a local copy."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Your draft was kept. Check Sent before sending again."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

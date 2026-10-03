@@ -18,7 +18,7 @@
 | 工程验证         | 性能查询计划与内存回归、无障碍与键盘回归、renderer 模块拆分、真实 App／RPC／Mailbox 邮件流程、解析器 fuzz 与 axe 检查、十种语言目录检查                              |
 | 平台与手机       | Node 平台拆分、portable 入口、Expo 项目、op-sqlite／SecureStore／AuthSession adapters、Gmail／Outlook／IMAP/SMTP、受限阅读、撰写与确认发送、后台刷新、本地通知和徽标 |
 
-当前新增能力的证据见 [只读与可选服务](architecture.md#只读会话)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#同步健康检查)和[测试入口](testing.md)。[db.ts](../packages/core/src/db.ts) 已有迁移 1 至 35；消息文本容量预算不等于整库空间上限。slice 61 已合入迁移 35 和 10 万封性能预算；测量条件、查询计划及写入成本见[性能](performance.md)。
+当前新增能力的证据见 [只读与可选服务](architecture.md#只读会话)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#同步健康检查)和[测试入口](testing.md)。[db.ts](../packages/core/src/db.ts) 已有迁移 1 至 36；消息文本容量预算不等于整库空间上限。迁移 36 与出站可靠性规则见[同步说明](sync-correctness.md#出站操作队列)。slice 61 已合入迁移 35 和 10 万封性能预算；测量条件、查询计划及写入成本见[性能](performance.md)。
 
 Gmail 与个人 Outlook 的基础读写、发信已有真实账户验证记录。后续能力的 fake provider、fake Model、临时数据库及 DOM 回归不能代替新增 scope、真实模型、原生权限和发行验收。验证入口见[测试](testing.md)，测量条件见[性能](performance.md)。
 

@@ -15,12 +15,20 @@ import {
   type ImapResponse,
   type ImapValue,
 } from "../mail-socket.js";
-import { Secrets, type ProviderAdapter, type Change } from "../../services.js";
+import {
+  Secrets,
+  type ProviderAdapter,
+  type Change,
+  type ProviderPushContext,
+  type ProviderPushResult,
+  type ProviderIdMapping,
+} from "../../services.js";
 import {
   AuthError,
   InvalidInput,
   PermanentError,
   ProviderError,
+  SendUncertain,
   type ProviderFailure,
 } from "../../errors.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
@@ -35,6 +43,7 @@ import {
   type ImapCursor,
 } from "../../imap-cursor.js";
 import type { Account, ImapSettings, IncomingMessage } from "../../domain.js";
+import { confirmDelivery } from "../../provider-send.js";
 import { htmlToText } from "../../mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
 
@@ -46,6 +55,22 @@ const SPECIAL: Record<string, string> = {
   "\\Trash": "TRASH",
   "\\Archive": "ARCHIVE",
 };
+const FOLDER_ALIASES: Record<string, readonly string[]> = {
+  SENT: ["sent", "sent items", "sent messages"],
+  DRAFT: ["draft", "drafts"],
+  SPAM: ["junk", "junk email", "spam"],
+  TRASH: ["trash", "deleted items", "deleted messages", "bin"],
+  ARCHIVE: ["archive", "archives"],
+};
+const folderLabel = (path: string) => {
+  const leaf = /^INBOX[./]/i.test(path) ? (path.split(/[./]/).at(-1) ?? path) : path;
+  return (
+    Object.entries(FOLDER_ALIASES).find(([, aliases]) =>
+      aliases.includes(leaf.toLowerCase()),
+    )?.[0] ?? path
+  );
+};
+const normalizedMessageId = (value: string) => value.replace(/[<>\s]/g, "");
 const address = (value: string) => {
   if (!/^[^\s<>\r\n\0]+@[^\s<>\r\n\0]+$/.test(value))
     throw new PermanentError({ message: "Invalid SMTP envelope address" });
@@ -91,7 +116,11 @@ const folders = async (client: ImapWire): Promise<Folder[]> => {
         path,
         name: delimiter && delimiter !== "NIL" ? path.split(delimiter).join("/") : path,
         label:
-          path.toUpperCase() === "INBOX" ? "INBOX" : special ? (SPECIAL[special] ?? path) : path,
+          path.toUpperCase() === "INBOX"
+            ? "INBOX"
+            : special
+              ? (SPECIAL[special] ?? path)
+              : folderLabel(path),
       },
     ];
   });
@@ -211,6 +240,11 @@ export function mobileIncoming(
   };
 }
 
+const uncertain = () =>
+  new SendUncertain({
+    message: "This message may have been sent. Check Sent before sending it again.",
+  });
+
 /** SMTP STARTTLS is mandatory on submission ports; no credentials precede TLS. */
 export async function smtpSession(
   transport: MailTransport["Service"],
@@ -227,11 +261,17 @@ export async function smtpSession(
     signal,
   });
   const wire = new MailWire(socket);
-  const reply = async (expected: number[]) => {
-    const { code, lines } = await wire.smtpReply();
+  const reply = async (expected: number[], final = false) => {
+    const { code, lines } = await wire.smtpReply().catch((error: unknown) => {
+      if (final) throw uncertain();
+      throw error;
+    });
     if (code === 535 || code === 534)
       throw new AuthError({ accountId, message: "SMTP login rejected" });
-    if (!expected.includes(code)) throw new ProviderError({ message: "SMTP command rejected" });
+    if (!expected.includes(code)) {
+      if (code >= 500) throw new PermanentError({ message: `SMTP rejected the message (${code})` });
+      throw new ProviderError({ message: `SMTP command rejected (${code})` });
+    }
     return lines;
   };
   const command = async (value: string, expected: number[]) => {
@@ -277,8 +317,16 @@ export async function smtpSession(
         })
         .join("\r\n");
       const data = `${headers}\r\n\r\n${raw.slice(end + 4)}`.replace(/(^|\r\n)\./g, "$1..");
-      await writeMailChunks(socket, Buffer.from(`${data.replace(/\r\n$/, "")}\r\n.\r\n`, "latin1"));
-      await reply([250]);
+      try {
+        await writeMailChunks(
+          socket,
+          Buffer.from(`${data.replace(/\r\n$/, "")}\r\n.\r\n`, "latin1"),
+        );
+      } catch {
+        throw uncertain();
+      }
+      // An explicit rejection is definite; only a missing final reply is ambiguous.
+      await reply([250], true);
     }
     // Delivery was acknowledged. A failed QUIT must not turn it into a failed send.
     await command("QUIT", [221]).catch(() => null);
@@ -291,8 +339,12 @@ const applyPush = async (
   client: ImapWire,
   ids: readonly string[],
   op: import("../../domain.js").MailOp,
+  messageIds: Map<string, string>,
+  copiedDestinations: Set<string>,
   expected?: FolderCursor,
-) => {
+  context?: ProviderPushContext,
+  signal?: AbortSignal,
+): Promise<ProviderPushResult> => {
   const first = ids[0];
   if (!first) return [];
   const ref = refOf(first);
@@ -313,8 +365,12 @@ const applyPush = async (
       message: "Folder was rebuilt; sync before changing this message",
       ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
     });
-  const present = await client.search(`UNDELETED UID ${range}`);
-  if (uids.some((uid) => !present.includes(uid)))
+  const moving = !["read", "star", "important", "categories", "copy"].includes(op.kind);
+  const present = await client.search(`${moving ? "" : "UNDELETED "}UID ${range}`);
+  if (
+    ["read", "star", "important", "categories"].includes(op.kind) &&
+    uids.some((uid) => !present.includes(uid))
+  )
     throw new PermanentError({ message: "Message is gone" });
   if (op.kind === "read" || op.kind === "star" || op.kind === "important") {
     const flag = op.kind === "read" ? "\\Seen" : op.kind === "star" ? "\\Flagged" : "$Important";
@@ -323,15 +379,6 @@ const applyPush = async (
   }
   if (op.kind === "categories") throw new PermanentError({ message: "Categories require Outlook" });
   const list = await folders(client);
-  if (op.kind === "copy") {
-    for (const target of new Set(op.labelIds)) {
-      if (!list.some((f) => f.path === target))
-        throw new PermanentError({ message: "Destination folder is gone" });
-      if (target !== ref.path)
-        await client.command(`UID COPY ${range} ${mailQuote(encodeFolder(target))}`);
-    }
-    return [];
-  }
   const label =
     op.kind === "archive"
       ? "ARCHIVE"
@@ -352,48 +399,151 @@ const applyPush = async (
         : list.find((f) => f.label === label)?.path;
   if (!target && ["archive", "trash", "spam"].includes(op.kind)) {
     target = label === "ARCHIVE" ? "Archive" : label === "TRASH" ? "Trash" : "Junk";
-    await client.command(`CREATE ${mailQuote(encodeFolder(target))}`);
+    try {
+      await client.command(`CREATE ${mailQuote(encodeFolder(target))}`);
+    } catch (error) {
+      if (
+        !(
+          error instanceof ImapCommandError &&
+          error.status === "NO" &&
+          error.responseCode === "ALREADYEXISTS"
+        )
+      )
+        throw error;
+    }
     list.push({ path: target, label, name: target });
   }
-  if (!target) throw new PermanentError({ message: "Destination folder is unavailable" });
-  if (target === ref.path) return [];
-  if (!list.some((f) => f.path === target))
-    throw new PermanentError({ message: "Destination folder is gone" });
-  let copied: ImapResponse[];
-  if (client.capabilities.has("MOVE"))
-    copied = await client.command(`UID MOVE ${range} ${mailQuote(encodeFolder(target))}`);
-  else {
-    copied = await client.command(`UID COPY ${range} ${mailQuote(encodeFolder(target))}`);
-    await client.command(`UID STORE ${range} +FLAGS.SILENT (\\Deleted)`);
-    if (client.capabilities.has("UIDPLUS")) await client.command(`UID EXPUNGE ${range}`);
-  }
-  const response = copied
-    .map((r) => /\[COPYUID (\d+) ([\d:,]+) ([\d:,]+)\]/i.exec(r.text))
-    .find(Boolean);
-  if (response) {
-    const source = parseUidSet(response[2]!, uids.length);
-    const destination = parseUidSet(response[3]!, uids.length);
-    if (
-      !source.length ||
-      source.length !== destination.length ||
-      source.some((uid) => !Number.isSafeInteger(uid) || uid < 1) ||
-      destination.some((uid) => !Number.isSafeInteger(uid) || uid < 1)
-    ) {
-      await Effect.runPromise(
-        Effect.logWarning("IMAP move completed without a usable COPYUID mapping"),
-      );
-      return [];
+  const targets = op.kind === "copy" ? [...new Set(op.labelIds)] : target ? [target] : [];
+  if (!targets.length && op.kind === "copy") return [];
+  if (!targets.length) throw new PermanentError({ message: "Destination folder is unavailable" });
+  const mappings: ProviderIdMapping[] = [];
+  let reconcile = false;
+  for (const destination of targets) {
+    if (destination === ref.path) continue;
+    if (!list.some((f) => f.path === destination))
+      throw new PermanentError({ message: "Destination folder is gone" });
+    for (const uid of uids) {
+      const id = encodeProviderId(ref.path, ref.uidValidity, uid);
+      const progressKey = JSON.stringify([id, destination]);
+      const acceptedKey = JSON.stringify([id, destination, "accepted"]);
+      const progress = context?.progress ?? copiedDestinations;
+      const issued = progress.has(progressKey);
+      const accepted = progress.has(acceptedKey);
+      if (!present.includes(uid) && !issued)
+        throw new PermanentError({ message: "Message is gone" });
+      let messageId = messageIds.get(id);
+      if (present.includes(uid)) {
+        await client.select(ref.path, ref.uidValidity, false);
+        const rows = fetchFields(
+          await client.command(`UID FETCH ${uid} (UID BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])`),
+        );
+        const raw = rows.find((row) => row.uid === uid)?.raw;
+        if (!(raw instanceof Uint8Array))
+          throw new ProviderError({
+            message: "Message headers are unavailable; sync before copying this message",
+          });
+        const actualMessageId = /^Message-ID:[ \t]*([^\r\n]+)$/im
+          .exec(
+            Buffer.from(raw)
+              .toString("utf8")
+              .replace(/\r?\n[ \t]+/g, " "),
+          )?.[1]
+          ?.trim();
+        if (
+          messageId &&
+          normalizedMessageId(messageId) !== normalizedMessageId(actualMessageId ?? "")
+        )
+          throw new PermanentError({
+            message: "Message identity changed; sync before changing this message",
+          });
+        messageId = actualMessageId;
+        if (messageId) messageIds.set(id, messageId);
+      }
+      let destinationRef: { uidValidity: string; uid: number } | undefined;
+      if (issued) {
+        if (messageId) {
+          const uidValidity = await client.select(destination);
+          const found = (
+            await client.search(
+              `UNDELETED HEADER Message-ID ${mailQuote(`<${normalizedMessageId(messageId)}>`)}`,
+            )
+          )[0];
+          if (found !== undefined) destinationRef = { uidValidity, uid: found };
+        }
+        if (!destinationRef && (messageId || !accepted))
+          throw new ProviderError({
+            message: "Copied message is not yet visible; sync before retrying this change",
+          });
+      } else {
+        await client.select(ref.path, ref.uidValidity, false);
+        if (context?.beforeCopy)
+          await Effect.runPromise(context.beforeCopy(destination, [id]), { signal });
+        copiedDestinations.add(progressKey);
+        let copied: ImapResponse[];
+        try {
+          copied = await client.command(`UID COPY ${uid} ${mailQuote(encodeFolder(destination))}`);
+        } catch (error) {
+          if (error instanceof ImapCommandError) {
+            if (context?.clearCopy)
+              await Effect.runPromise(context.clearCopy(destination, [id]), { signal });
+            copiedDestinations.delete(progressKey);
+            copiedDestinations.delete(acceptedKey);
+          }
+          throw error;
+        }
+        copiedDestinations.add(acceptedKey);
+        if (context?.afterCopy)
+          await Effect.runPromise(context.afterCopy(destination, [id]), { signal });
+        const response = copied
+          .map((row) => /\[COPYUID (\d+) ([\d:,]+) ([\d:,]+)\]/i.exec(row.text))
+          .find(Boolean);
+        const copiedValidity = response?.[1];
+        const sources = response?.[2] ? parseUidSet(response[2], 1) : [];
+        const destinations = response?.[3] ? parseUidSet(response[3], 1) : [];
+        if (
+          copiedValidity &&
+          sources.length === 1 &&
+          sources[0] === uid &&
+          destinations.length === 1 &&
+          destinations[0]
+        )
+          destinationRef = { uidValidity: copiedValidity, uid: destinations[0] };
+        else if (messageId) {
+          const uidValidity = await client.select(destination);
+          const found = (
+            await client.search(
+              `UNDELETED HEADER Message-ID ${mailQuote(`<${normalizedMessageId(messageId)}>`)}`,
+            )
+          )[0];
+          if (found !== undefined) destinationRef = { uidValidity, uid: found };
+        }
+      }
+      if (moving) {
+        if (!destinationRef && messageId)
+          throw new ProviderError({
+            message: "Moved message UID is unavailable; sync before retrying this change",
+          });
+        if (present.includes(uid)) {
+          await client.select(ref.path, ref.uidValidity, false);
+          await client.command(`UID STORE ${uid} +FLAGS.SILENT (\\Deleted)`);
+          if (client.capabilities.has("UIDPLUS")) await client.command(`UID EXPUNGE ${uid}`);
+        }
+        if (destinationRef)
+          mappings.push({
+            from: id,
+            to: encodeProviderId(destination, destinationRef.uidValidity, destinationRef.uid),
+          });
+        else reconcile = true;
+      }
     }
-    return source.map((uid, index) => ({
-      from: encodeProviderId(ref.path, ref.uidValidity, uid),
-      to: encodeProviderId(target, response[1]!, destination[index]!),
-    }));
   }
-  if (copied.some((row) => /COPYUID/i.test(row.text)))
-    await Effect.runPromise(
-      Effect.logWarning("IMAP move completed without a usable COPYUID mapping"),
-    );
-  return [];
+  if (op.kind === "copy")
+    for (const destination of targets)
+      for (const id of ids) {
+        copiedDestinations.delete(JSON.stringify([id, destination]));
+        copiedDestinations.delete(JSON.stringify([id, destination, "accepted"]));
+      }
+  return reconcile ? { reconcile: true } : mappings;
 };
 
 export const makeMobileImap = Effect.gen(function* () {
@@ -402,6 +552,25 @@ export const makeMobileImap = Effect.gen(function* () {
   const codec = yield* MailCodec;
   const observedSent = new Set<string>();
   const namespaces = new Map<string, ImapCursor>();
+  const pushMessageIds = new Map<string, Map<string, string>>();
+  const copiedDestinations = new Map<string, Set<string>>();
+  const copiedFor = (accountId: string) => {
+    let copies = copiedDestinations.get(accountId);
+    if (!copies) {
+      copies = new Set();
+      copiedDestinations.set(accountId, copies);
+    }
+    return copies;
+  };
+  const messageIdsFor = (accountId: string, queued?: ReadonlyMap<string, string>) => {
+    let ids = pushMessageIds.get(accountId);
+    if (!ids) {
+      ids = new Map();
+      pushMessageIds.set(accountId, ids);
+    }
+    for (const [id, messageId] of queued ?? []) ids.set(id, messageId);
+    return ids;
+  };
   const pushState = (account: Account, path: string, cursor?: string) =>
     readCursor(Option.fromNullishOr(cursor)).folders[path] ??
     namespaces.get(account.id)?.folders[path];
@@ -661,8 +830,14 @@ export const makeMobileImap = Effect.gen(function* () {
         }).pipe(pushLocks.get(accountId)?.withPermits(1) ?? ((effect) => effect)),
       { discard: true },
     );
-  const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op, cursor) =>
-    pushSession(account, async (client) => {
+  const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (
+    account,
+    ids,
+    op,
+    cursor,
+    context,
+  ) =>
+    pushSession(account, async (client, signal) => {
       const groups = new Map<string, [string, ...string[]]>();
       for (const id of ids) {
         const ref = refOf(id);
@@ -671,21 +846,36 @@ export const makeMobileImap = Effect.gen(function* () {
         if (group) group.push(id);
         else groups.set(key, [id]);
       }
-      const mappings: import("../../services.js").ProviderIdMapping[] = [];
+      const mappings: ProviderIdMapping[] = [];
+      let reconcile = false;
       for (const group of groups.values()) {
         const moved = await applyPush(
           client,
           group,
           op,
+          messageIdsFor(account.id, context?.messageIds),
+          copiedFor(account.id),
           pushState(account, refOf(group[0]).path, cursor),
+          context,
+          signal,
         );
-        mappings.push(...moved);
+        if (moved && "reconcile" in moved) reconcile = true;
+        else if (moved) mappings.push(...moved);
       }
-      return mappings;
+      return reconcile ? { reconcile: true } : mappings;
     });
-  const push: ProviderAdapter["push"] = (account, id, op, cursor) =>
-    pushSession(account, (client) =>
-      applyPush(client, [id], op, pushState(account, refOf(id).path, cursor)),
+  const push: ProviderAdapter["push"] = (account, id, op, cursor, context) =>
+    pushSession(account, (client, signal) =>
+      applyPush(
+        client,
+        [id],
+        op,
+        messageIdsFor(account.id, context?.messageIds),
+        copiedFor(account.id),
+        pushState(account, refOf(id).path, cursor),
+        context,
+        signal,
+      ),
     );
   const PageCursor = Schema.fromJsonString(
     Schema.Struct({ path: Schema.String, validity: Schema.String, upper: Schema.Int }),
@@ -939,36 +1129,61 @@ export const makeMobileImap = Effect.gen(function* () {
               to: recipients,
               raw,
             }),
-          catch: failure,
-        });
+          catch: (error) => (error instanceof SendUncertain ? error : failure(error)),
+        }).pipe(
+          Effect.catchIf(
+            (error) => error._tag === "SendUncertain",
+            () =>
+              confirmDelivery(
+                session(account, async (client) => {
+                  const sent = (await folders(client)).find((folder) => folder.label === "SENT");
+                  const parsed = await codec.parse(raw);
+                  const messageId = parsed.headers.get("message-id");
+                  if (!sent || typeof messageId !== "string") return false;
+                  await client.select(sent.path);
+                  const found =
+                    (await client.search(`UNDELETED HEADER Message-ID ${mailQuote(messageId)}`))
+                      .length > 0;
+                  if (found) observedSent.add(account.id);
+                  return found;
+                }),
+              ),
+          ),
+        );
         // Once SMTP accepts, filing errors cannot safely cause another delivery.
-        yield* session(account, async (client) => {
-          const sent = (await folders(client)).find((f) => f.label === "SENT");
-          if (!sent) throw new ProviderError({ message: "Sent folder unavailable" });
-          if (serverSavesSent(settings) || observedSent.has(account.id)) {
-            const parsed = await codec.parse(raw);
-            const id = parsed.headers.get("message-id");
-            if (typeof id === "string") {
-              await client.select(sent.path);
-              for (let attempt = 0; attempt < 4; attempt++) {
-                if (attempt) await Effect.runPromise(Effect.sleep("4 seconds"));
-                if ((await client.search(`HEADER Message-ID ${mailQuote(id)}`)).length) {
-                  observedSent.add(account.id);
-                  return;
+        const saveSent = (retry: boolean) =>
+          session(account, async (client) => {
+            const sent = (await folders(client)).find((f) => f.label === "SENT");
+            if (!sent) throw new ProviderError({ message: "Sent folder unavailable" });
+            if (retry || serverSavesSent(settings) || observedSent.has(account.id)) {
+              const parsed = await codec.parse(raw);
+              const id = parsed.headers.get("message-id");
+              if (typeof id === "string") {
+                await client.select(sent.path);
+                for (let attempt = 0; attempt < (retry ? 1 : 4); attempt++) {
+                  if (attempt) await Effect.runPromise(Effect.sleep("4 seconds"));
+                  if ((await client.search(`HEADER Message-ID ${mailQuote(id)}`)).length) {
+                    observedSent.add(account.id);
+                    return;
+                  }
                 }
               }
             }
-          }
-          await client.command(
-            `APPEND ${mailQuote(encodeFolder(sent.path))} (\\Seen) {${raw.byteLength}}`,
-            raw,
-          );
-        }).pipe(
+            await client.command(
+              `APPEND ${mailQuote(encodeFolder(sent.path))} (\\Seen) {${raw.byteLength}}`,
+              raw,
+            );
+          });
+        const filed = yield* saveSent(false).pipe(
+          Effect.catch(() => saveSent(true)),
+          Effect.as(true),
           Effect.catch(() =>
-            Effect.logWarning("SMTP delivery accepted, but the message was not saved to Sent"),
+            Effect.logWarning("SMTP delivery accepted, but the message was not saved to Sent").pipe(
+              Effect.as(false),
+            ),
           ),
         );
-        return yield* Effect.void;
+        return filed ? undefined : { sentCopyMissing: true };
       }),
     // Mobile deliberately keeps drafts local until explicit send.
     saveDraft: unsupported,

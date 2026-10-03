@@ -1,6 +1,7 @@
 import type { ResetVerification } from "../../sync-reset.js";
 import { messageSecurity } from "../../message-security.js";
-import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
+import { confirmDelivery } from "../../provider-send.js";
+import { MailCodec, mimeAddresses, type MailCodecPort, type MimeMessage } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
@@ -35,7 +36,12 @@ import {
   Semaphore,
   Stream,
 } from "effect";
-import { ImapFlow, type ListResponse, type MessageStructureObject } from "imapflow";
+import {
+  ImapFlow,
+  type ListResponse,
+  type MessageStructureObject,
+  type ResponseEvent,
+} from "imapflow";
 import { type AddressObject } from "mailparser";
 import { createTransport } from "nodemailer";
 
@@ -64,6 +70,7 @@ import {
   type ConnectInput,
   type DraftPush,
   type ProviderAdapter,
+  type ProviderPushContext,
   Secrets,
 } from "../../services.js";
 
@@ -236,7 +243,7 @@ const confirmFolderGone = Effect.fnUntraced(function* (s: Session, path: string)
   return !listed.some((folder) => folder.path === path);
 });
 
-export function smtpTransport(settings: ImapSettings, password: string) {
+export function smtpTransport(settings: ImapSettings, password: string, onDataSent?: () => void) {
   return Effect.acquireRelease(
     Effect.sync(() =>
       createTransport({
@@ -246,6 +253,24 @@ export function smtpTransport(settings: ImapSettings, password: string) {
         requireTLS: !settings.smtpSecure,
         auth: { user: settings.username, pass: password },
         connectionTimeout: 20_000,
+        // Nodemailer emits this after its dot-stuffed DATA stream, including the terminator, ends.
+        // Consume only the phase marker; never log protocol bodies or credentials.
+        logger: {
+          trace: ignore,
+          debug: ignore,
+          info: (data: unknown) => {
+            if (
+              Predicate.isObject(data) &&
+              "tnx" in data &&
+              data.tnx === "message" &&
+              "outByteCount" in data
+            )
+              onDataSent?.();
+          },
+          warn: ignore,
+          error: ignore,
+          fatal: ignore,
+        },
       }),
     ),
     (transport) => Effect.sync(() => transport.close()),
@@ -793,95 +818,184 @@ const ensureFolder = Effect.fnUntraced(function* (
   return (yield* call(s, (c) => c.mailboxCreate(name))).path;
 });
 
+/** Check the selected mailbox before ImapFlow silently drops unsupported flags. */
+const requireFlag = (flags: Set<string> | undefined, flag: string) =>
+  flags && !flags.has(flag) && !flags.has("\\*")
+    ? Effect.fail(new PermanentError({ message: `This IMAP folder does not allow ${flag}.` }))
+    : Effect.void;
+
+const checkedFlags = Effect.fnUntraced(function* (
+  s: Session,
+  range: string,
+  flag: string,
+  on: boolean,
+  permanentFlags?: Set<string>,
+) {
+  yield* requireFlag(permanentFlags, flag);
+  const changed = yield* call(s, (c) =>
+    on
+      ? c.messageFlagsAdd(range, [flag], { uid: true })
+      : c.messageFlagsRemove(range, [flag], { uid: true }),
+  );
+  if (!changed) yield* new ProviderError({ message: `Updating ${flag} failed` });
+});
+
+/** Server-side Message-ID lookup persists copy progress across sessions and restarts. */
+const destinationRefs = Effect.fnUntraced(function* (
+  s: Session,
+  from: string,
+  validity: string,
+  destination: string,
+  identities: ReadonlyMap<number, string>,
+  restoreSource = true,
+) {
+  const refs = new Map<number, string>();
+  if (!identities.size) return refs;
+  const mailbox = yield* call(s, (c) => c.mailboxOpen(destination, { readOnly: true }));
+  for (const [uid, messageId] of identities) {
+    const found = yield* searchUids(s, { header: { "message-id": messageId }, deleted: false });
+    if (found.length)
+      refs.set(uid, encodeProviderId(destination, mailbox.uidValidity, Math.max(...found)));
+  }
+  if (restoreSource) {
+    const source = yield* call(s, (c) => c.mailboxOpen(from));
+    if (String(source.uidValidity) !== validity)
+      yield* new PermanentError({ message: `Folder ${from} was rebuilt; the message id is stale` });
+  }
+  return refs;
+});
+
+const copyProgressKey = (providerId: string, destination: string, accepted = false) =>
+  JSON.stringify(accepted ? [providerId, destination, "accepted"] : [providerId, destination]);
+
+const hasCopyProgress = (
+  context: ProviderPushContext | undefined,
+  providerId: string,
+  destination: string,
+  accepted = false,
+) => context?.progress?.has(copyProgressKey(providerId, destination, accepted)) === true;
+
+/** Persist the issued/accepted boundaries around COPY before changing its source. */
+const issueCopy = Effect.fnUntraced(function* (
+  s: Session,
+  uids: readonly number[],
+  from: string,
+  validity: string,
+  to: string,
+  context?: ProviderPushContext,
+) {
+  const ids = uids.map((uid) => encodeProviderId(from, validity, uid));
+  if (context?.beforeCopy) yield* context.beforeCopy(to, ids);
+  const status = { refused: false };
+  const observe = (event: ResponseEvent) => {
+    if (event.response === "NO" || event.response === "BAD") status.refused = true;
+  };
+  const copied = yield* call(s, async (c) => {
+    c.on("response", observe);
+    try {
+      try {
+        return await c.messageCopy(uidSet(uids), to, { uid: true });
+      } catch (error) {
+        if (isRefusal(error)) status.refused = true;
+        throw error;
+      }
+    } finally {
+      c.off("response", observe);
+    }
+  }).pipe(
+    Effect.catch((error) =>
+      Effect.gen(function* () {
+        if (status.refused && context?.clearCopy) yield* context.clearCopy(to, ids);
+        return yield* error;
+      }),
+    ),
+  );
+  if (!copied) {
+    // ImapFlow also turns socket/parser failures into false; a live session alone cannot prove refusal.
+    if (status.refused && context?.clearCopy) yield* context.clearCopy(to, ids);
+    return yield* new ProviderError({ message: `Copying to ${to} failed` });
+  }
+  if (context?.afterCopy) yield* context.afterCopy(to, ids);
+  return copied;
+});
+
 const moveTo = Effect.fnUntraced(function* (
   s: Session,
   uids: readonly number[],
   from: string,
   validity: string,
   to: string,
+  identities: ReadonlyMap<number, string>,
+  permanentFlags?: Set<string>,
+  context?: ProviderPushContext,
 ) {
   if (from === to) return [];
+  yield* requireFlag(permanentFlags, "\\Deleted");
+  const replayIds = new Map(
+    [...identities].filter(([uid]) =>
+      hasCopyProgress(context, encodeProviderId(from, validity, uid), to),
+    ),
+  );
+  const resolved = yield* destinationRefs(s, from, validity, to, replayIds);
+  const acceptedWithoutId = new Set(
+    uids.filter(
+      (uid) =>
+        !identities.has(uid) &&
+        hasCopyProgress(context, encodeProviderId(from, validity, uid), to, true),
+    ),
+  );
+  const missing = uids.filter((uid) => !resolved.has(uid) && !acceptedWithoutId.has(uid));
+  if (
+    missing.some(
+      (uid) =>
+        !identities.has(uid) && hasCopyProgress(context, encodeProviderId(from, validity, uid), to),
+    )
+  )
+    return yield* new ProviderError({
+      message: `The copy to ${to} is unconfirmed; waiting for synchronization.`,
+    });
+  if (missing.length) {
+    const copied = yield* issueCopy(s, missing, from, validity, to, context);
+    if (copied.uidValidity !== undefined && copied.uidMap)
+      for (const [uid, newUid] of copied.uidMap)
+        resolved.set(uid, encodeProviderId(to, copied.uidValidity, newUid));
+    if (missing.some((uid) => !resolved.has(uid))) {
+      const copiedIds = new Map([...identities].filter(([uid]) => missing.includes(uid)));
+      for (const [uid, id] of yield* destinationRefs(s, from, validity, to, copiedIds))
+        resolved.set(uid, id);
+    }
+  }
+  if (uids.some((uid) => identities.has(uid) && !resolved.has(uid)))
+    return yield* new ProviderError({
+      message: `The copied message UID in ${to} is unavailable; waiting for synchronization.`,
+    });
   const range = uidSet(uids);
-  const moved = yield* call(s, async (c, signal) => {
-    if (c.capabilities.has("MOVE") || c.capabilities.has("UIDPLUS"))
-      return c.messageMove(range, to, { uid: true });
-    const copied = await c.messageCopy(range, to, { uid: true });
-    signal.throwIfAborted();
-    if (copied) await c.messageFlagsAdd(range, ["\\Deleted"], { uid: true });
-    return copied;
-  });
-  if (!moved) return yield* new ProviderError({ message: `Moving the message to ${to} failed` });
-  return moved.uidValidity !== undefined && moved.uidMap
-    ? [...moved.uidMap].map(([oldUid, newUid]) => ({
-        from: encodeProviderId(from, validity, oldUid),
-        to: encodeProviderId(to, moved.uidValidity!, newUid),
-      }))
-    : [];
+  if (s.client.capabilities.has("UIDPLUS")) {
+    const deleted = yield* call(s, (c) => c.messageDelete(range, { uid: true }));
+    if (!deleted)
+      yield* new ProviderError({ message: `Removing the original message from ${from} failed` });
+  } else yield* checkedFlags(s, range, "\\Deleted", true, permanentFlags);
+  if (uids.some((uid) => !resolved.has(uid))) return { reconcile: true } as const;
+  return [...resolved].map(([uid, id]) => ({
+    from: encodeProviderId(from, validity, uid),
+    to: id,
+  }));
 });
 
-const applyOp = Effect.fnUntraced(function* (
+const targetFor = Effect.fnUntraced(function* (
   s: Session,
-  ref: { path: string; uidValidity: string; uid: number },
+  list: readonly ListResponse[],
+  from: string,
   op: MailOp,
-  uids: readonly number[] = [ref.uid],
-  expected?: FolderCursor,
 ) {
-  const list = yield* call(s, (c) => c.list());
-  const mailbox = yield* Effect.tryPromise({
-    try: () => s.client.mailboxOpen(ref.path),
-    catch: (error): ProviderFailure =>
-      isRefusal(error)
-        ? new PermanentError({ message: `Folder ${ref.path} is gone: ${describe(error)}` })
-        : failure(s.accountId, s.settings.imapHost, error),
-  });
-  const regressed =
-    expected?.uidValidity === ref.uidValidity &&
-    String(mailbox.uidValidity) === ref.uidValidity &&
-    mailbox.uidNext < expected.lastUid + 1;
   if (
-    String(mailbox.uidValidity) !== ref.uidValidity ||
-    (expected && expected.uidValidity !== ref.uidValidity) ||
-    regressed
-  ) {
-    yield* new PermanentError({
-      message: `Folder ${ref.path} was rebuilt; the message id is stale`,
-      ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
-    });
-  }
-  const found = yield* searchUids(s, { uid: uidSet(uids), deleted: false });
-  if (uids.some((uid) => !found.includes(uid))) {
-    yield* new PermanentError({ message: `Message ${ref.uid} is no longer in ${ref.path}` });
-  }
-  const uid = uidSet(uids);
-  const flag = (name: string, on: boolean) =>
-    call(s, (c) =>
-      on
-        ? c.messageFlagsAdd(uid, [name], { uid: true })
-        : c.messageFlagsRemove(uid, [name], { uid: true }),
-    );
-  if (op.kind === "categories") {
-    yield* new PermanentError({ message: "Categories are available for Outlook accounts." });
-    return [];
-  }
-  if (op.kind === "copy") {
-    for (const destination of new Set(op.labelIds)) {
-      if (!list.some((folder) => folder.path === destination))
-        yield* new PermanentError({ message: `Folder ${destination} does not exist` });
-    }
-    for (const destination of new Set(op.labelIds)) {
-      if (destination === ref.path) continue;
-      const copied = yield* call(s, (client) =>
-        client.messageCopy(uid, destination, { uid: true }),
-      );
-      if (!copied) yield* new ProviderError({ message: `Copying to ${destination} failed` });
-    }
-    return [];
-  }
-  if (op.kind === "important") return [];
-  if (op.kind === "read" || op.kind === "star") {
-    yield* flag(op.kind === "read" ? "\\Seen" : "\\Flagged", op.value);
-    return [];
-  }
+    op.kind === "copy" ||
+    op.kind === "read" ||
+    op.kind === "star" ||
+    op.kind === "important" ||
+    op.kind === "categories"
+  )
+    return null;
   if (
     (op.kind === "move" || (op.kind === "label" && op.value)) &&
     !list.some((f) => f.path === op.labelId)
@@ -902,10 +1016,259 @@ const applyOp = Effect.fnUntraced(function* (
               : op.value
                 ? op.labelId
                 : // Removing a folder label only means something for the folder the message is in.
-                  ref.path === op.labelId
+                  from === op.labelId
                   ? "INBOX"
-                  : ref.path;
-  return yield* moveTo(s, uids, ref.path, ref.uidValidity, target);
+                  : from;
+  return target;
+});
+
+/** A COPY can be complete even if source deletion or the local remap was interrupted. */
+const resumeCopied = Effect.fnUntraced(function* (
+  s: Session,
+  ref: { path: string; uidValidity: string; uid: number },
+  uids: readonly number[],
+  op: MailOp,
+  list: readonly ListResponse[],
+  identities: ReadonlyMap<number, string>,
+  context?: ProviderPushContext,
+) {
+  if (!context?.progress?.size) return null;
+  const target = yield* targetFor(s, list, ref.path, op);
+  const destinations =
+    op.kind === "copy" ? [...new Set(op.labelIds)] : target === null ? [] : [target];
+  if (!destinations.length) return null;
+  // No issued marker means another client removed the source before this operation reached COPY.
+  if (
+    destinations.some(
+      (destination) =>
+        destination !== ref.path &&
+        uids.some(
+          (uid) =>
+            !hasCopyProgress(
+              context,
+              encodeProviderId(ref.path, ref.uidValidity, uid),
+              destination,
+            ),
+        ),
+    )
+  )
+    return null;
+  const mappings: import("../../services.js").ProviderIdMapping[] = [];
+  let reconcile = false;
+  for (const destination of destinations) {
+    if (destination === ref.path) continue;
+    const resolved = yield* destinationRefs(
+      s,
+      ref.path,
+      ref.uidValidity,
+      destination,
+      identities,
+      false,
+    );
+    for (const uid of uids) {
+      const id = resolved.get(uid);
+      if (!id) {
+        if (
+          !identities.has(uid) &&
+          hasCopyProgress(
+            context,
+            encodeProviderId(ref.path, ref.uidValidity, uid),
+            destination,
+            true,
+          )
+        ) {
+          reconcile = true;
+          continue;
+        }
+        yield* new ProviderError({
+          message: `Waiting for the copied message in ${destination} before completing the change.`,
+        });
+      } else if (op.kind !== "copy")
+        mappings.push({ from: encodeProviderId(ref.path, ref.uidValidity, uid), to: id });
+    }
+  }
+  return reconcile && op.kind !== "copy" ? ({ reconcile: true } as const) : mappings;
+});
+
+/** Refuse a reused UID before replacing the queued identity or touching its source. */
+const readSourceIdentities = Effect.fnUntraced(function* (
+  s: Session,
+  uids: readonly number[],
+  identities: Map<number, string>,
+) {
+  const messages = yield* call(s, (c) =>
+    c.fetchAll(uidSet(uids), { uid: true, envelope: true }, { uid: true }),
+  );
+  const actual = new Map(
+    messages.flatMap((message) =>
+      message.envelope?.messageId ? [[message.uid, message.envelope.messageId] as const] : [],
+    ),
+  );
+  for (const uid of uids) {
+    const expected = identities.get(uid);
+    const messageId = actual.get(uid);
+    if (expected && !messageId)
+      yield* new ProviderError({
+        message: "Message-ID is unavailable; sync before changing this message.",
+      });
+    if (
+      expected &&
+      messageId &&
+      expected.replace(/[<>\s]/g, "") !== messageId.replace(/[<>\s]/g, "")
+    )
+      yield* new PermanentError({
+        message: "Message identity changed; sync before changing this message.",
+      });
+    if (messageId) identities.set(uid, messageId);
+  }
+});
+
+const applyOp = Effect.fnUntraced(function* (
+  s: Session,
+  ref: { path: string; uidValidity: string; uid: number },
+  op: MailOp,
+  uids: readonly number[] = [ref.uid],
+  expected?: FolderCursor,
+  context?: ProviderPushContext,
+) {
+  const list = yield* call(s, (c) => c.list());
+  const identities = new Map<number, string>();
+  for (const uid of uids) {
+    const messageId = context?.messageIds.get(encodeProviderId(ref.path, ref.uidValidity, uid));
+    if (messageId) identities.set(uid, messageId);
+  }
+  const mailbox = yield* Effect.tryPromise({
+    try: () => s.client.mailboxOpen(ref.path),
+    catch: (error): ProviderFailure =>
+      isRefusal(error)
+        ? new PermanentError({ message: `Folder ${ref.path} is gone: ${describe(error)}` })
+        : failure(s.accountId, s.settings.imapHost, error),
+  }).pipe(Effect.result);
+  if (mailbox._tag === "Failure") {
+    if (mailbox.failure._tag === "PermanentError") {
+      const resumed = yield* resumeCopied(s, ref, uids, op, list, identities, context);
+      if (resumed !== null) return resumed;
+    }
+    return yield* mailbox.failure;
+  }
+  const selected = mailbox.success;
+  const regressed =
+    expected?.uidValidity === ref.uidValidity &&
+    String(selected.uidValidity) === ref.uidValidity &&
+    selected.uidNext < expected.lastUid + 1;
+  if (
+    String(selected.uidValidity) !== ref.uidValidity ||
+    (expected && expected.uidValidity !== ref.uidValidity) ||
+    regressed
+  ) {
+    yield* new PermanentError({
+      message: `Folder ${ref.path} was rebuilt; the message id is stale`,
+      ...(regressed ? { imapReset: { path: ref.path, uidValidity: ref.uidValidity } } : {}),
+    });
+  }
+  const found = yield* searchUids(s, { uid: uidSet(uids), deleted: false });
+  if (uids.some((uid) => !found.includes(uid))) {
+    const resumed = yield* resumeCopied(s, ref, uids, op, list, identities, context);
+    if (resumed !== null) {
+      const stillPresent = yield* call(s, (c) => c.mailboxOpen(ref.path)).pipe(
+        Effect.flatMap(() => searchUids(s, { uid: uidSet(uids) })),
+      );
+      if (stillPresent.length && op.kind !== "copy") {
+        yield* readSourceIdentities(s, stillPresent, identities);
+        yield* requireFlag(selected.permanentFlags, "\\Deleted");
+        if (s.client.capabilities.has("UIDPLUS")) {
+          const removed = yield* call(s, (c) =>
+            c.messageDelete(uidSet(stillPresent), { uid: true }),
+          );
+          if (!removed)
+            yield* new ProviderError({
+              message: `Removing the original message from ${ref.path} failed`,
+            });
+        } else
+          yield* checkedFlags(s, uidSet(stillPresent), "\\Deleted", true, selected.permanentFlags);
+      }
+      return resumed;
+    }
+    yield* new PermanentError({ message: `Message ${ref.uid} is no longer in ${ref.path}` });
+  }
+  const uid = uidSet(uids);
+  const flag = (name: string, on: boolean) =>
+    checkedFlags(s, uid, name, on, selected.permanentFlags);
+  if (
+    op.kind !== "read" &&
+    op.kind !== "star" &&
+    op.kind !== "important" &&
+    op.kind !== "categories"
+  ) {
+    yield* readSourceIdentities(s, uids, identities);
+  }
+  if (op.kind === "categories") {
+    yield* new PermanentError({ message: "Categories are available for Outlook accounts." });
+    return [];
+  }
+  if (op.kind === "copy") {
+    for (const destination of new Set(op.labelIds)) {
+      if (!list.some((folder) => folder.path === destination))
+        yield* new PermanentError({ message: `Folder ${destination} does not exist` });
+    }
+    for (const destination of new Set(op.labelIds)) {
+      if (destination === ref.path) continue;
+      const replayIds = new Map(
+        [...identities].filter(([sourceUid]) =>
+          hasCopyProgress(
+            context,
+            encodeProviderId(ref.path, ref.uidValidity, sourceUid),
+            destination,
+          ),
+        ),
+      );
+      const existing = yield* destinationRefs(s, ref.path, ref.uidValidity, destination, replayIds);
+      const missing = uids.filter(
+        (sourceUid) =>
+          !existing.has(sourceUid) &&
+          !hasCopyProgress(
+            context,
+            encodeProviderId(ref.path, ref.uidValidity, sourceUid),
+            destination,
+            true,
+          ),
+      );
+      if (!missing.length) continue;
+      if (
+        missing.some(
+          (sourceUid) =>
+            !identities.has(sourceUid) &&
+            hasCopyProgress(
+              context,
+              encodeProviderId(ref.path, ref.uidValidity, sourceUid),
+              destination,
+            ),
+        )
+      )
+        return yield* new ProviderError({
+          message: `The copy to ${destination} is unconfirmed; waiting for synchronization.`,
+        });
+      yield* issueCopy(s, missing, ref.path, ref.uidValidity, destination, context);
+    }
+    return [];
+  }
+  if (op.kind === "important") return [];
+  if (op.kind === "read" || op.kind === "star") {
+    yield* flag(op.kind === "read" ? "\\Seen" : "\\Flagged", op.value);
+    return [];
+  }
+  const target = yield* targetFor(s, list, ref.path, op);
+  if (target === null) return [];
+  return yield* moveTo(
+    s,
+    uids,
+    ref.path,
+    ref.uidValidity,
+    target,
+    identities,
+    selected.permanentFlags,
+    context,
+  );
 });
 
 // Send
@@ -988,7 +1351,8 @@ const saveSent = Effect.fnUntraced(function* (
       }
     }
   }
-  yield* call(s, (c) => c.append(sent, raw, ["\\Seen"]));
+  const appended = yield* call(s, (c) => c.append(sent, raw, ["\\Seen"]));
+  if (!appended) yield* new ProviderError({ message: "Appending the message to Sent failed" });
 });
 
 // Drafts
@@ -1001,7 +1365,7 @@ const openFolderOf = (s: Session, ref: { path: string; uidValidity: string }, re
       isRefusal(error)
         ? new PermanentError({ message: `Folder ${ref.path} is gone: ${describe(error)}` })
         : failure(s.accountId, s.settings.imapHost, error),
-  }).pipe(Effect.map((mailbox) => String(mailbox.uidValidity) === ref.uidValidity));
+  }).pipe(Effect.map((mailbox) => mailbox.uidValidity === BigInt(ref.uidValidity)));
 
 /** Deletes one message by provider id. One that is already gone counts as deleted. */
 const deleteMessage = Effect.fnUntraced(function* (s: Session, providerId: string) {
@@ -1011,12 +1375,75 @@ const deleteMessage = Effect.fnUntraced(function* (s: Session, providerId: strin
     Effect.catchTag("PermanentError", () => Effect.succeed(false)),
   );
   if (!same) return;
-  yield* call(s, (c) =>
+  const mailbox = yield* call(s, (c) => c.mailboxOpen(ref.value.path));
+  yield* requireFlag(mailbox.permanentFlags, "\\Deleted");
+  const deleted = yield* call(s, (c) =>
     c.capabilities.has("UIDPLUS")
       ? c.messageDelete(String(ref.value.uid), { uid: true })
       : c.messageFlagsAdd(String(ref.value.uid), ["\\Deleted"], { uid: true }),
   );
+  if (!deleted) yield* new ProviderError({ message: `Deleting message ${providerId} failed` });
 });
+
+/** UIDVALIDITY and UID are numbers; folder paths retain their exact case. */
+const canonicalImapId = (id: string) =>
+  Option.map(decodeProviderId(id), (ref) =>
+    encodeProviderId(ref.path, BigInt(ref.uidValidity), ref.uid),
+  );
+const sameImapId = (left: string, right: string) => {
+  const a = canonicalImapId(left),
+    b = canonicalImapId(right);
+  return Option.isSome(a) && Option.isSome(b) && a.value === b.value;
+};
+const preservedDraftFlags = (flags: Set<string> | undefined) =>
+  [...(flags ?? [])].filter(
+    (flag) => !["\\Deleted", "\\Recent", "\\Draft", "\\Seen"].includes(flag),
+  );
+
+/** Compare editable MIME content; Date, boundary and transport headers can change on retry. */
+const draftContent = (mime: MimeMessage) => ({
+  subject: mime.subject ?? "",
+  text: mime.text ?? "",
+  html: mime.html || "",
+  from: mimeAddresses(mime.from),
+  to: mimeAddresses(mime.to),
+  cc: mimeAddresses(mime.cc),
+  bcc: mimeAddresses(mime.bcc),
+  replyTo: mimeAddresses(mime.replyTo),
+  inReplyTo: mime.inReplyTo,
+  references: mime.references,
+  markdown: mime.headers.get("x-openmail-markdown"),
+  markdownSource: mime.headers.get("x-openmail-markdown-source-sha256"),
+});
+const sameDraftContent = async (
+  codec: MailCodecPort,
+  current: Uint8Array,
+  requested: Uint8Array,
+) => {
+  const options = { skipImageLinks: true, skipTextToHtml: true, skipHtmlToText: true };
+  const [old, next] = await Promise.all([
+    codec.parse(current, options),
+    codec.parse(requested, options),
+  ]);
+  if (
+    JSON.stringify(draftContent(old)) !== JSON.stringify(draftContent(next)) ||
+    old.attachments.length !== next.attachments.length
+  )
+    return false;
+  return old.attachments.every((part, index) => {
+    const other = next.attachments[index];
+    return (
+      other !== undefined &&
+      part.filename === other.filename &&
+      part.contentType === other.contentType &&
+      part.cid === other.cid &&
+      part.contentId === other.contentId &&
+      part.related === other.related &&
+      part.content.length === other.content.length &&
+      part.content.every((byte, offset) => byte === other.content[offset])
+    );
+  });
+};
 
 /**
  * Files the draft in Drafts with the \Draft flag and removes the copy it
@@ -1028,6 +1455,8 @@ const appendDraft = Effect.fnUntraced(function* (
   raw: Buffer,
   previous: string | null,
   organization: OutgoingMessage["draftOrganization"],
+  context: ProviderPushContext | undefined,
+  codec: MailCodecPort,
 ) {
   let preservedFlags: string[] = [];
   if (previous && organization === undefined) {
@@ -1036,36 +1465,102 @@ const appendDraft = Effect.fnUntraced(function* (
       const current = yield* call(s, (client) =>
         client.fetchOne(String(ref.value.uid), { flags: true }, { uid: true }),
       );
-      if (current)
-        preservedFlags = [...(current.flags ?? [])].filter(
-          (flag) =>
-            flag !== "\\Deleted" && flag !== "\\Recent" && flag !== "\\Draft" && flag !== "\\Seen",
-        );
+      if (current) preservedFlags = preservedDraftFlags(current.flags);
     }
   }
   const list = yield* call(s, (c) => c.list());
   const drafts = yield* ensureFolder(s, list, "\\Drafts", "Drafts");
-  const appended = yield* call(s, (c) =>
-    c.append(drafts, raw, [
-      "\\Draft",
-      "\\Seen",
-      ...(organization?.starred ? ["\\Flagged"] : []),
-      ...(organization?.labels ?? []),
-      ...preservedFlags,
-    ]),
-  );
-  let uid = appended ? appended.uid : undefined;
-  let uidValidity = appended ? appended.uidValidity : undefined;
-  if (uid === undefined || uidValidity === undefined) {
+  const messageId = parseHeaders(raw).get("message-id");
+  let uid: number | undefined;
+  let uidValidity: bigint | undefined;
+  const recoveredIds = new Set<string>();
+  const originalUids = new Set<number>();
+  if (context?.appendedDraftMessageId) {
     const mailbox = yield* call(s, (c) => c.mailboxOpen(drafts, { readOnly: true }));
-    uidValidity = mailbox.uidValidity;
-    const messageId = parseHeaders(raw).get("message-id");
-    const found = messageId ? yield* searchUids(s, { header: { "message-id": messageId } }) : false;
-    uid = found && found.length ? Math.max(...found) : undefined;
+    const found = yield* searchUids(s, {
+      header: { "message-id": context.appendedDraftMessageId },
+      deleted: false,
+    });
+    for (const recoveredUid of found) {
+      originalUids.add(recoveredUid);
+      recoveredIds.add(encodeProviderId(drafts, mailbox.uidValidity, recoveredUid));
+    }
+    if (found.length) {
+      const recoveredUid = Math.max(...found);
+      const current = yield* call(s, (c) =>
+        c.fetchOne(String(recoveredUid), { uid: true, source: true, flags: true }, { uid: true }),
+      );
+      if (!current || !current.source)
+        return yield* new ProviderError({ message: "Cannot verify the recovered draft content." });
+      if (organization === undefined) preservedFlags = preservedDraftFlags(current.flags);
+      const currentSource = current.source;
+      const unchanged = yield* Effect.tryPromise({
+        try: () => sameDraftContent(codec, currentSource, raw),
+        catch: (error) =>
+          new ProviderError({
+            message: `Cannot compare recovered draft content: ${describe(error)}`,
+          }),
+      });
+      const flags = new Set(preservedDraftFlags(current.flags));
+      const requestedFlags = new Set([
+        ...(organization?.starred ? ["\\Flagged"] : []),
+        ...(organization?.labels ?? []),
+      ]);
+      const organizationUnchanged =
+        organization === undefined ||
+        (flags.size === requestedFlags.size &&
+          [...flags].every((flag) => requestedFlags.has(flag)));
+      if (unchanged && organizationUnchanged) {
+        uid = recoveredUid;
+        uidValidity = mailbox.uidValidity;
+      }
+    }
   }
-  if (previous) yield* deleteMessage(s, previous);
-  const id = uid === undefined ? null : encodeProviderId(drafts, uidValidity, uid);
-  return { draftId: id, messageId: id } satisfies DraftRemote;
+  if (uid === undefined) {
+    if (context?.beforeAppendDraft && messageId) yield* context.beforeAppendDraft(messageId);
+    const appended = yield* call(s, (c) =>
+      c.append(drafts, raw, [
+        "\\Draft",
+        "\\Seen",
+        ...(organization?.starred ? ["\\Flagged"] : []),
+        ...(organization?.labels ?? []),
+        ...preservedFlags,
+      ]),
+    );
+    if (!appended) return yield* new ProviderError({ message: "Appending the draft failed" });
+    uid = appended.uid;
+    uidValidity = appended.uidValidity;
+    if (uid === undefined || uidValidity === undefined) {
+      const mailbox = yield* call(s, (c) => c.mailboxOpen(drafts, { readOnly: true }));
+      uidValidity = mailbox.uidValidity;
+      const found = messageId
+        ? yield* searchUids(s, { header: { "message-id": messageId }, deleted: false })
+        : [];
+      const created = found.filter((foundUid) => !originalUids.has(foundUid));
+      uid = created.length ? Math.max(...created) : undefined;
+    }
+  }
+  if (uid === undefined || uidValidity === undefined)
+    return yield* new ProviderError({
+      message: "The new draft UID is unknown; the previous draft was kept.",
+    });
+  const id = encodeProviderId(drafts, uidValidity, uid);
+  if (previous) recoveredIds.add(previous);
+  const cleaned = new Set<string>();
+  const failed: string[] = [];
+  for (const candidate of recoveredIds) {
+    const canonical = Option.getOrElse(canonicalImapId(candidate), () => candidate);
+    if (sameImapId(candidate, id) || cleaned.has(canonical)) continue;
+    cleaned.add(canonical);
+    const deleted = yield* deleteMessage(s, candidate).pipe(Effect.result);
+    if (deleted._tag === "Failure") failed.push(candidate);
+  }
+  return {
+    draftId: id,
+    messageId: id,
+    ...(failed.length === 1 ? { cleanupMessageId: failed[0] } : {}),
+    ...(failed.length > 1 ? { cleanupMessageIds: failed } : {}),
+  } satisfies DraftRemote;
 });
 
 const connect = Effect.fnUntraced(function* (input: ConnectInput) {
@@ -1236,7 +1731,13 @@ export const makeImapWith = (
           }).pipe(locks.get(accountId)?.withPermits(1) ?? ((effect) => effect)),
         { discard: true },
       );
-    const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (account, ids, op, cursor) =>
+    const pushBatch: NonNullable<ProviderAdapter["pushBatch"]> = (
+      account,
+      ids,
+      op,
+      cursor,
+      context?: ProviderPushContext,
+    ) =>
       pushSession(account, (s) =>
         Effect.gen(function* () {
           const groups = new Map<string, { path: string; uidValidity: string; uid: number }[]>();
@@ -1251,6 +1752,7 @@ export const makeImapWith = (
             groups.set(key, refs);
           }
           const mappings: import("../../services.js").ProviderIdMapping[] = [];
+          let reconcile = false;
           for (const refs of groups.values()) {
             const first = refs[0];
             if (!first) continue;
@@ -1260,13 +1762,21 @@ export const makeImapWith = (
               op,
               refs.map((ref) => ref.uid),
               pushState(account, first.path, cursor),
+              context,
             );
-            mappings.push(...moved);
+            if ("reconcile" in moved) reconcile = true;
+            else mappings.push(...moved);
           }
-          return mappings;
+          return reconcile ? ({ reconcile: true } as const) : mappings;
         }),
       );
-    const push: ProviderAdapter["push"] = (account, providerId, op, cursor) =>
+    const push: ProviderAdapter["push"] = (
+      account,
+      providerId,
+      op,
+      cursor,
+      context?: ProviderPushContext,
+    ) =>
       op.kind === "important"
         ? Effect.void
         : Option.match(decodeProviderId(providerId), {
@@ -1274,7 +1784,7 @@ export const makeImapWith = (
               Effect.fail(new PermanentError({ message: `Not an IMAP message id: ${providerId}` })),
             onSome: (ref) =>
               pushSession(account, (s) =>
-                applyOp(s, ref, op, [ref.uid], pushState(account, ref.path, cursor)),
+                applyOp(s, ref, op, [ref.uid], pushState(account, ref.path, cursor), context),
               ),
           });
 
@@ -1295,37 +1805,106 @@ export const makeImapWith = (
           ),
         );
 
-        const transport = yield* smtp(settings, pass);
+        const phase = { dataSent: false };
+        const transport = yield* smtp(settings, pass, () => {
+          phase.dataSent = true;
+        });
         const smtpRaw = stripBcc(raw);
-        yield* Effect.tryPromise({
+        const submission = yield* Effect.tryPromise({
           try: () =>
             transport.sendMail({
               envelope: { from: account.email, to: recipients, size: smtpRaw.length },
               raw: smtpRaw,
             }),
-          catch: (error) =>
+          catch: (error) => error,
+        }).pipe(Effect.result);
+        let confirmed = false;
+        const rejected: string[] = [];
+        if (submission._tag === "Failure") {
+          const error = submission.failure;
+          const responseCode =
             Predicate.isObject(error) &&
-            "code" in error &&
-            error.code === "EMESSAGE" &&
-            "command" in error &&
-            error.command === "MAIL FROM" &&
+            "responseCode" in error &&
+            typeof error.responseCode === "number"
+              ? error.responseCode
+              : undefined;
+          const code = Predicate.isObject(error) && "code" in error ? error.code : undefined;
+          const command =
+            Predicate.isObject(error) && "command" in error ? error.command : undefined;
+          if (isAuthFailure(error)) return yield* failure(account.id, settings.smtpHost, error);
+          if (responseCode !== undefined && responseCode >= 500)
+            return yield* new PermanentError({
+              message: `${settings.smtpHost}: ${describe(error)}`,
+            });
+          if (
+            code === "EMESSAGE" &&
+            command === "MAIL FROM" &&
             /size larger than allowed/i.test(describe(error))
-              ? new PermanentError({
-                  message: `SMTP SIZE limit: ${describe(error)}. Remove attachments before sending.`,
-                })
-              : failure(account.id, settings.smtpHost, error),
-        });
+          )
+            return yield* new PermanentError({
+              message: `SMTP SIZE limit: ${describe(error)}. Remove attachments before sending.`,
+            });
+          // CONN errors occur during greeting, authentication and DATA; only the tracked DATA phase is uncertain.
+          const uncertain =
+            phase.dataSent &&
+            responseCode === undefined &&
+            (code === "ETIMEDOUT" ||
+              code === "ESOCKET" ||
+              code === "ECONNECTION" ||
+              code === "ECONNRESET" ||
+              code === "EPIPE" ||
+              command === "DATA");
+          if (!uncertain) return yield* failure(account.id, settings.smtpHost, error);
+          const messageId = parseHeaders(raw).get("message-id");
+          yield* confirmDelivery(
+            Effect.gen(function* () {
+              if (!messageId) return false;
+              const fresh = yield* session(account);
+              const folders = yield* call(fresh.s, (c) => c.list());
+              const sent =
+                folders.find((folder) => folder.specialUse === "\\Sent")?.path ??
+                folders.find((folder) => folder.path === "Sent")?.path;
+              if (!sent) return false;
+              yield* call(fresh.s, (c) => c.mailboxOpen(sent, { readOnly: true }));
+              return (
+                (yield* searchUids(fresh.s, {
+                  header: { "message-id": messageId },
+                  deleted: false,
+                })).length > 0
+              );
+            }).pipe(Effect.scoped),
+          );
+          confirmed = true;
+          observedSent.add(account.id);
+        } else {
+          for (const address of submission.success.rejected) rejected.push(address);
+        }
 
-        // The mail is out; a failed Sent copy must not make the caller send it again.
-        const serverSaves = serverSavesSent(settings) || observedSent.has(account.id);
-        yield* saveSent(s, raw, serverSaves, observedSent).pipe(
-          Effect.catch((error) =>
-            Effect.logWarning(`Could not file the sent message: ${error.message}`),
-          ),
-        );
+        let sentCopyMissing = false;
+        if (!confirmed) {
+          const serverSaves = serverSavesSent(settings) || observedSent.has(account.id);
+          const saved = yield* saveSent(s, raw, serverSaves, observedSent).pipe(Effect.result);
+          if (saved._tag === "Failure") {
+            const retried = yield* Effect.gen(function* () {
+              const fresh = yield* session(account);
+              yield* saveSent(fresh.s, raw, serverSaves, observedSent);
+            }).pipe(Effect.scoped, Effect.result);
+            sentCopyMissing = retried._tag === "Failure";
+          }
+        }
+        return rejected.length || sentCopyMissing
+          ? {
+              ...(rejected.length ? { rejected } : {}),
+              ...(sentCopyMissing ? { sentCopyMissing: true } : {}),
+            }
+          : undefined;
       }).pipe(Effect.scoped);
 
-    const saveDraft: ProviderAdapter["saveDraft"] = (account, draft: DraftPush) =>
+    const saveDraft: ProviderAdapter["saveDraft"] = (
+      account,
+      draft: DraftPush,
+      context?: ProviderPushContext,
+    ) =>
       Effect.gen(function* () {
         const { s } = yield* session(account);
         const threading = Option.isSome(draft.original)
@@ -1335,7 +1914,12 @@ export const makeImapWith = (
           { name: "", address: account.email },
           draft.message,
           threading,
-          { draft: true },
+          {
+            draft: true,
+            ...(context?.appendedDraftMessageId
+              ? { messageId: context.appendedDraftMessageId }
+              : {}),
+          },
         ).pipe(
           Effect.mapError(
             (error) => new ProviderError({ message: `Cannot build the draft: ${describe(error)}` }),
@@ -1346,15 +1930,37 @@ export const makeImapWith = (
           raw,
           draft.remote?.messageId ?? null,
           draft.message.draftOrganization,
+          context,
+          codec,
         );
       }).pipe(Effect.scoped);
 
     const deleteDraft: ProviderAdapter["deleteDraft"] = (account, remote) =>
       Effect.gen(function* () {
         const id = remote.messageId ?? remote.draftId;
-        if (!id) return;
+        if (!id && !remote.rfcMessageId) return;
         const { s } = yield* session(account);
-        yield* deleteMessage(s, id);
+        if (id) yield* deleteMessage(s, id);
+        if (remote.rfcMessageId) {
+          const list = yield* call(s, (c) => c.list());
+          const drafts = list.filter(
+            (folder) =>
+              !folder.flags.has("\\Noselect") &&
+              (folder.specialUse === "\\Drafts" ||
+                folder.path
+                  .split(folder.delimiter || "/")
+                  .at(-1)
+                  ?.toLowerCase() === "drafts"),
+          );
+          for (const folder of drafts) {
+            const mailbox = yield* call(s, (c) => c.mailboxOpen(folder.path, { readOnly: true }));
+            const found = yield* searchUids(s, { header: { "message-id": remote.rfcMessageId } });
+            for (const uid of found) {
+              const matched = encodeProviderId(folder.path, mailbox.uidValidity, uid);
+              if (!id || !sameImapId(id, matched)) yield* deleteMessage(s, matched);
+            }
+          }
+        }
       }).pipe(Effect.scoped);
 
     const fetchRaw: ProviderAdapter["fetchRaw"] = (account, providerId, maxBytes) =>

@@ -16,6 +16,7 @@ msgstr "(bez příjemců)"
 
 #: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -59,6 +60,18 @@ msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} oth
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, one {# změnu se nepodařilo uložit} few {# změny se nepodařilo uložit} other {# změn se nepodařilo uložit}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, one {# zpráva měla odmítnuté příjemce} few {# zprávy měly odmítnuté příjemce} other {# zpráv mělo odmítnuté příjemce}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, one {# odeslaná zpráva chybí v odeslané poště} few {# odeslané zprávy chybí v odeslané poště} other {# odeslaných zpráv chybí v odeslané poště}}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
@@ -601,6 +614,7 @@ msgstr "Schválit návrh"
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -894,6 +908,10 @@ msgstr "Zrušit"
 msgid "Cannot build calendar response"
 msgstr "Nelze vytvořit odpověď kalendáře"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Categories"
+msgstr "Kategorie"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Categories updated"
@@ -930,6 +948,10 @@ msgstr "Kopie: {cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "Kopie / Skrytá kopie"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Change"
+msgstr "Změna"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change mode"
@@ -1231,6 +1253,7 @@ msgid "Copied to folders"
 msgstr "Zkopírováno do složek"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
@@ -1289,6 +1312,10 @@ msgstr "Stav synchronizace se nepodařilo zkontrolovat."
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "Nelze dekódovat winmail.dat. Můžete uložit původní soubor."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "Oznámení se nepodařilo zavřít. Zkuste to znovu."
+
 #: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Could not import this attachment."
 msgstr "Tuto přílohu se nepodařilo importovat."
@@ -1332,6 +1359,10 @@ msgstr "Koncept zpětné vazby se nepodařilo otevřít"
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Could not open the system picker."
 msgstr "Nepodařilo se otevřít systémový výběr."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "Koncept k opětovnému odeslání se nepodařilo připravit. Zkuste to znovu."
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -1601,6 +1632,10 @@ msgstr "Smazat {0}"
 msgid "Delete {0} conversations?"
 msgstr "Smazat {0} konverzace?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete draft"
+msgstr "Smazat koncept"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
 msgstr "Smazat filtr?"
@@ -1612,6 +1647,10 @@ msgstr "Akce klávesy Delete"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "Smazat štítek nebo složku?"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete permanently"
+msgstr "Trvale smazat"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -1637,6 +1676,10 @@ msgstr "Zhuštěné"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "Popište, co se stalo"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Details"
+msgstr "Podrobnosti"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Detect calendar events in messages"
@@ -1665,6 +1708,7 @@ msgstr "Zahodit koncept"
 msgid "Discard saved rule?"
 msgstr "Zahodit uložené pravidlo?"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
 msgid "Dismiss"
 msgstr "Zamítnout"
@@ -2227,6 +2271,10 @@ msgstr "Nápověda"
 msgid "Hide"
 msgstr "Skrýt"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Hide details"
+msgstr "Skrýt podrobnosti"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Hide format bar"
 msgstr "Skrýt formátovací lištu"
@@ -2295,6 +2343,7 @@ msgid "Importance action"
 msgstr "Důležitá akce"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -2468,6 +2517,7 @@ msgid "Keyboard shortcuts"
 msgstr "Klávesové zkratky"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Label"
 msgstr "Štítek"
@@ -3004,6 +3054,7 @@ msgid "Move to Cc"
 msgstr "Přesunout do kopie"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
@@ -3013,6 +3064,7 @@ msgstr "Přesunout do složky"
 msgid "Move to folder…"
 msgstr "Přesunout do složky…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3029,6 +3081,7 @@ msgid "Move to top level"
 msgstr "Přesunout na nejvyšší úroveň"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Move to Trash"
@@ -3585,6 +3638,10 @@ msgstr "Stránka {0}"
 msgid "Parent folder"
 msgstr "Nadřazená složka"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Partial delivery"
+msgstr "Částečné doručení"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "Heslo"
@@ -3760,6 +3817,10 @@ msgstr "Citovat vybraný text"
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "Pouze pro čtení"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Read status"
+msgstr "Stav přečtení"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
@@ -3987,6 +4048,7 @@ msgid "Reply signature for {address}"
 msgstr "Podpis odpovědi pro {address}"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3997,6 +4059,10 @@ msgstr "Nahlásit nevyžádanou poštu"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "Nahlášeno jako nevyžádaná pošta"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Resend to rejected recipients"
+msgstr "Znovu odeslat odmítnutým příjemcům"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Reset Favorites"
@@ -4017,6 +4083,10 @@ msgstr "Na tuto pozvánku odpovězte ve zprávě."
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "Obnovit"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Restore message state"
+msgstr "Obnovit stav zprávy"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Restore rule"
@@ -4152,6 +4222,7 @@ msgstr "Uložte klíč API Anthropic v nastavení AI."
 msgid "Save as PDF…"
 msgstr "Uložit jako PDF…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "Uložit koncept"
@@ -4177,6 +4248,10 @@ msgstr "Uložit pravidlo"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save selected…"
 msgstr "Uložit vybrané…"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Save sent copy"
+msgstr "Uložit odeslanou kopii"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -4651,6 +4726,10 @@ msgstr "Aktualizace softwaru"
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Některé formátování nelze v tomto režimu zachovat. Adresy odkazů jsou zachovány. Změnu režimu můžete vrátit zpět."
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "Někteří příjemci tuto zprávu neobdrželi."
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "Některé serverové predikáty byly vynechány, aby se zachovaly shody; místní filtry stále platí:"
@@ -4692,6 +4771,7 @@ msgstr "Stabilní"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4929,6 +5009,10 @@ msgstr "Nabídka obsahuje až 50 nepřečtených zpráv v aktuálním prostoru."
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "Zpráva zmiňuje přílohu, ale žádná není přidána."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "Zpráva byla odeslána, ale její kopie chybí v odeslané poště."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."
@@ -5454,6 +5538,10 @@ msgstr "Máte nejnovější verzi."
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "Vaše změny jsou uloženy na tomto Macu. Zkuste to znovu nebo si ponechte místní kopii."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "Koncept byl zachován. Před dalším odesláním zkontrolujte odeslanou poštu."
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

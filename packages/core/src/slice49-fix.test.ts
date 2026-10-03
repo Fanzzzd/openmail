@@ -106,7 +106,7 @@ it.effect("slice49-fix: uncertain drafts cannot resend until an app user confirm
   );
 });
 
-it.effect("slice49-fix: reconcile retries stop quietly after their own cap", () =>
+it.effect("slice63: reconcile remains queued while the provider is unreachable", () =>
   core(
     Effect.gen(function* () {
       const mailbox = yield* Mailbox;
@@ -114,7 +114,7 @@ it.effect("slice49-fix: reconcile retries stop quietly after their own cap", () 
       const account = yield* mailbox.connect({ provider: "gmail" });
       yield* store.enqueueOp(account.id, "missing", { kind: "reconcile" });
       for (let attempt = 0; attempt < 3; attempt++) yield* mailbox.sync();
-      assert.strictEqual((yield* store.listPendingOps).length, 0);
+      assert.strictEqual((yield* store.listPendingOps).length, 1);
       assert.isFalse((yield* mailbox.audit(30)).some((entry) => entry.action === "sync-failed"));
     }),
     { fetchMessage: () => Effect.fail(new ProviderError({ message: "Still offline" })) },

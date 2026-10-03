@@ -36,6 +36,17 @@ Apple Contacts 的假 helper、自检与实机边界只在 [Apple Contacts](appl
 
 CLI 同步进度和 SIGINT／SIGTERM 退出测试在 `packages/cli/src/sync-progress.test.ts`，只用 fake provider 和内存数据库。钥匙串等待中断测试在 `packages/core/src/platform/node/secrets.test.ts`，替换原生 keyring，不访问系统凭证。CLI 在读取凭证前输出提示；Layer 初始化期间的凭证等待也可中断。macOS 实际权限弹窗仍需人工验收。
 
+## 出站操作与发送回归
+
+[出站规则](sync-correctness.md#出站操作队列)用假 provider、协议响应及临时 SQLite 验证，SMTP 阶段另用本地假服务器；不向真实账户发送，不启动 Electron，不代替手机原生传输验收。
+
+- [slice63-queue.test.ts](../packages/core/src/slice63-queue.test.ts)：退避、过期、认领丢失、复制进度、重映射失败、草稿清理和仅向拒收地址重发。
+- [Node IMAP 回归](../packages/core/src/platform/node/imap-opqueue.test.ts)与[手机 IMAP 回归](../packages/core/src/platform/react-native/imap.test.ts)：复制恢复、缺失 UID／Message-ID、标记拒绝、特殊文件夹、SMTP 阶段和 Sent 保存失败。
+- [Outlook 回归](../packages/core/src/outlook.test.ts)：永久写入拒绝与简短原因。
+- [桌面失败提示](../apps/desktop/src/renderer/src/failed-op-notice.test.ts)与[手机失败提示](../apps/mobile/src/failed-op-notice.test.ts)：分类标题、操作与邮件详情、关闭提示及拒收重发入口；翻译检查沿用仓库命令。
+
+离线重试测试推进 TestClock 或虚拟 Date，等待 retry_at 后再推送，避免把立即重试写成要求。
+
 ## 完整邮件流程
 
 只跑完整邮件流程：

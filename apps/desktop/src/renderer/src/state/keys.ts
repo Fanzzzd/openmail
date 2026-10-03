@@ -24,6 +24,7 @@ export const Keys = {
   profiles: "profiles",
   proposals: "proposals",
   audit: "audit",
+  failedOps: "failed-ops",
   agentMode: "agent-mode",
   /** Which OAuth clients are configured. */
   setup: "setup",
@@ -61,6 +62,7 @@ export const MAIL_KEYS = [
   Keys.profiles,
   Keys.proposals,
   Keys.audit,
+  Keys.failedOps,
   Keys.agentMode,
   Keys.setup,
   Keys.prefs,

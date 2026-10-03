@@ -26,6 +26,7 @@ msgstr "（未填收件人）"
 
 #: src/renderer/src/components/AiPanel.tsx
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Proposals.tsx
@@ -69,6 +70,18 @@ msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
+msgstr "{count, plural, other {# 项更改未能保存}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# message had rejected recipients} other {# messages had rejected recipients}}"
+msgstr "{count, plural, other {# 封邮件有收件人被拒收}}"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
+msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少副本}}"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
@@ -611,6 +624,7 @@ msgstr "确认建议"
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -904,6 +918,10 @@ msgstr "取消"
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Categories"
+msgstr "类别"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Proposals.tsx
 msgid "Categories updated"
@@ -940,6 +958,10 @@ msgstr "抄送：{cc}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Cc/Bcc"
 msgstr "抄送/密送"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Change"
+msgstr "更改"
 
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change mode"
@@ -1241,6 +1263,7 @@ msgid "Copied to folders"
 msgstr "已复制到文件夹"
 
 #: src/renderer/src/components/Attachments.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MultiOrganization.tsx
 #: src/renderer/src/components/RawMessage.tsx
 msgid "Copy"
@@ -1299,6 +1322,10 @@ msgstr "无法检查同步状态。"
 msgid "Could not decode winmail.dat. You can save the original file."
 msgstr "无法解码 winmail.dat，可保存原文件。"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not dismiss this notice. Try again."
+msgstr "未能关闭此提示。请重试。"
+
 #: src/renderer/src/components/AttachmentImportDialog.tsx
 msgid "Could not import this attachment."
 msgstr "无法导入此附件。"
@@ -1342,6 +1369,10 @@ msgstr "无法打开反馈草稿"
 #: src/renderer/src/compose/use-compose-editor.ts
 msgid "Could not open the system picker."
 msgstr "无法打开系统选择器。"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Could not prepare the resend draft. Try again."
+msgstr "未能准备重发草稿。请重试。"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Could not read attached message."
@@ -1611,6 +1642,10 @@ msgstr "删除 {0}"
 msgid "Delete {0} conversations?"
 msgstr "删除 {0} 个会话？"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete draft"
+msgstr "删除草稿"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Delete filter?"
 msgstr "删除过滤器？"
@@ -1622,6 +1657,10 @@ msgstr "删除键动作"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Delete label or folder?"
 msgstr "删除标签或文件夹？"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Delete permanently"
+msgstr "永久删除"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Delete Space"
@@ -1647,6 +1686,10 @@ msgstr "密集"
 #: src/renderer/src/components/Feedback.tsx
 msgid "Describe what happened"
 msgstr "描述遇到的问题"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Details"
+msgstr "详情"
 
 #: src/renderer/src/components/InteractionSettings.tsx
 msgid "Detect calendar events in messages"
@@ -1675,6 +1718,7 @@ msgstr "丢弃草稿"
 msgid "Discard saved rule?"
 msgstr "丢弃保存的规则？"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
 msgid "Dismiss"
 msgstr "忽略"
@@ -2237,6 +2281,10 @@ msgstr "帮助"
 msgid "Hide"
 msgstr "隐藏"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Hide details"
+msgstr "隐藏详情"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Hide format bar"
 msgstr "隐藏格式栏"
@@ -2305,6 +2353,7 @@ msgid "Importance action"
 msgstr "重要性动作"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
@@ -2478,6 +2527,7 @@ msgid "Keyboard shortcuts"
 msgstr "快捷键帮助"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Label"
 msgstr "标签"
@@ -3014,6 +3064,7 @@ msgid "Move to Cc"
 msgstr "移到抄送"
 
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to folder"
@@ -3023,6 +3074,7 @@ msgstr "移到文件夹"
 msgid "Move to folder…"
 msgstr "移到文件夹…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3039,6 +3091,7 @@ msgid "Move to top level"
 msgstr "移到顶层"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "Move to Trash"
@@ -3595,6 +3648,10 @@ msgstr "第 {0} 页"
 msgid "Parent folder"
 msgstr "上级文件夹"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Partial delivery"
+msgstr "部分投递"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Password"
 msgstr "密码"
@@ -3770,6 +3827,10 @@ msgstr "引用选中文字"
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
 msgstr "只读"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Read status"
+msgstr "已读状态"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Reading"
@@ -3997,6 +4058,7 @@ msgid "Reply signature for {address}"
 msgstr "{address} 的回复签名"
 
 #: src/renderer/src/action-names.ts
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4007,6 +4069,10 @@ msgstr "报告垃圾邮件"
 #: src/renderer/src/App.tsx
 msgid "Reported as spam"
 msgstr "已报告为垃圾邮件"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Resend to rejected recipients"
+msgstr "仅向被拒收的收件人重发"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Reset Favorites"
@@ -4027,6 +4093,10 @@ msgstr "请在消息中回应此邀请。"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Restore"
 msgstr "恢复"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Restore message state"
+msgstr "恢复邮件状态"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Restore rule"
@@ -4162,6 +4232,7 @@ msgstr "请在 AI 设置中保存 Anthropic API 密钥。"
 msgid "Save as PDF…"
 msgstr "保存为 PDF…"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Save draft"
 msgstr "保存草稿"
@@ -4187,6 +4258,10 @@ msgstr "保存规则"
 #: src/renderer/src/components/Attachments.tsx
 msgid "Save selected…"
 msgstr "保存选中附件…"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Save sent copy"
+msgstr "保存已发送副本"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Save this draft before closing?"
@@ -4661,6 +4736,10 @@ msgstr "软件更新"
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
 
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Some recipients did not receive this message."
+msgstr "部分收件人未收到此邮件。"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
 msgstr "为保留匹配，服务器搜索省略了部分条件；本地仍会筛选："
@@ -4702,6 +4781,7 @@ msgstr "稳定版本"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/BatchActions.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -4939,6 +5019,10 @@ msgstr "菜单最多显示当前空间的 50 封未读邮件。"
 #: src/renderer/src/components/Composer.tsx
 msgid "The message mentions an attachment, but none is added."
 msgstr "正文提到了附件，但还没有添加。"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "The message was sent, but its copy is missing from Sent."
+msgstr "邮件已发送，但“已发送”中缺少副本。"
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."
@@ -5464,6 +5548,10 @@ msgstr "已是最新版本。"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
 msgstr "更改已保存在此 Mac，可重试或保留本地副本。"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+msgid "Your draft was kept. Check Sent before sending again."
+msgstr "草稿已保留。再次发送前请检查“已发送”。"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 msgid "Your overlapping events"

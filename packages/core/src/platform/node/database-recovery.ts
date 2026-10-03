@@ -29,6 +29,7 @@ export const RECOVERY_TABLES = [
   "proposals",
   "drafts",
   "pending_ops",
+  "failed_ops",
   "prefs",
   "signatures",
   "named_signatures",

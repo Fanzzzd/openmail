@@ -570,7 +570,7 @@ it.effect("ops map onto PATCH and move destinations", () =>
   }),
 );
 
-it.effect("403 is a permission failure on reads and writes; 404 on a write is permanent", () =>
+it.effect("403 access denial and 404 are permanent on writes; reads remain retryable", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "PATCH /me/messages/denied": { status: 403, json: { error: { code: "ErrorAccessDenied" } } },
@@ -584,7 +584,7 @@ it.effect("403 is a permission failure on reads and writes; 404 on a write is pe
         Effect.flip(Stream.runDrain(a.pull(account, Option.none()))),
       ]),
     );
-    assert.strictEqual(write._tag, "ProviderError");
+    assert.strictEqual(write._tag, "PermanentError");
     assert.strictEqual(gone._tag, "PermanentError");
     assert.strictEqual(read._tag, "ProviderError");
   }),
@@ -3814,6 +3814,49 @@ it.effect("slice62: empty Graph Trash walks key-segment child pages", () => {
         { ids: ["nested-mail"], next: null },
       );
       assert.isTrue(http.calls.some((call) => call.url.href === next));
+    }),
+  );
+});
+
+for (const status of [403, 409, 413, 415, 422])
+  it.effect(`slice63: Graph ${status} write rejection is permanent with a reason`, () => {
+    const http = fakeHttp({
+      "PATCH /me/messages/p": {
+        status,
+        json: {
+          error: {
+            code: status === 403 ? "ErrorAccessDenied" : "Rejected",
+            message: "The server rejected this change",
+          },
+        },
+      },
+    });
+    return run(http, (a) =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(a.push(account, "p", { kind: "read", value: true }));
+        assert.strictEqual(error._tag, "PermanentError");
+        assert.include(error.message, "The server rejected this change");
+      }),
+    );
+  });
+
+it.effect("slice63-review: a failed Graph change exposes a short reason instead of JSON", () => {
+  const http = fakeHttp({
+    "PATCH /me/messages/p": {
+      status: 403,
+      json: {
+        error: {
+          code: "ErrorAccessDenied",
+          message: "Access to this message is denied.",
+          innerError: { requestId: "internal-id" },
+        },
+      },
+    },
+  });
+  return run(http, (a) =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(a.push(account, "p", { kind: "read", value: true }));
+      assert.strictEqual(error.message, "Access to this message is denied.");
     }),
   );
 });

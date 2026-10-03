@@ -131,6 +131,7 @@ it.effect("offline wake does not lose unread or inbox state on stale sync", () =
           ?.isUnread,
         true,
       );
+      yield* TestClock.adjust("5 seconds");
       yield* m.sync();
       assert.strictEqual(server.pushed.length, 2);
       assert.strictEqual((yield* m.thread("gmail:me@gmail.com/m1"))[0]?.isUnread, true);

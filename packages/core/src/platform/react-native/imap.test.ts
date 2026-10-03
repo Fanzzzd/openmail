@@ -102,6 +102,14 @@ function server(
     noStarttls?: boolean;
     validity?: string;
     appendReject?: boolean;
+    appendFailures?: number;
+    smtpDataReply?: number | "disconnect";
+    rejectDeleteOnce?: boolean;
+    disconnectAfterDeleteOnce?: boolean;
+    folderRows?: string;
+    createAlreadyExists?: boolean;
+    unresolvedCopy?: boolean;
+    rejectCopyTargetOnce?: string;
     source?: Uint8Array;
     uidNext?: number;
     stallStore?: () => void;
@@ -118,6 +126,11 @@ function server(
   let exists = true;
   let deleted = false;
   let stores = 0;
+  let copies = 0;
+  let deleteRejected = false;
+  let deleteDisconnected = false;
+  let appends = 0;
+  let copyRejected = false;
   const transport = Layer.succeed(MailTransport, {
     connect: async ({ host, tls, signal }) => {
       const smtp = host.startsWith("smtp");
@@ -133,7 +146,8 @@ function server(
             if (data) {
               delivered.push(line);
               data = false;
-              current.enqueue("250 accepted\r\n");
+              if (options.smtpDataReply === "disconnect") current.close();
+              else current.enqueue(`${options.smtpDataReply ?? 250} accepted\r\n`);
             } else if (line.startsWith("EHLO"))
               current.enqueue(
                 `250-host\r\n${options.noStarttls ? "" : "250-STARTTLS\r\n"}250 AUTH PLAIN\r\n`,
@@ -182,7 +196,8 @@ function server(
           } else if (command.startsWith("ID ") || command === "NOOP") done();
           else if (command.startsWith("LIST")) {
             current.enqueue(
-              '* LIST (\\Inbox) "/" "INBOX"\r\n* LIST (\\Sent) "/" "Sent"\r\n* LIST () "/" "Projects"\r\n* LIST () "/" "Projects/Child"\r\n',
+              options.folderRows ??
+                '* LIST (\\Inbox) "/" "INBOX"\r\n* LIST (\\Sent) "/" "Sent"\r\n* LIST () "/" "Projects"\r\n* LIST () "/" "Projects/Child"\r\n',
             );
             done();
           } else if (command.startsWith("EXAMINE") || command.startsWith("SELECT")) {
@@ -192,7 +207,15 @@ function server(
               current.enqueue(`* OK [UIDNEXT ${options.uidNext}] next\r\n`);
             done();
           } else if (command.startsWith("UID SEARCH")) {
-            const found = options.resetSearch?.(command, selectedPath);
+            const found =
+              options.resetSearch?.(command, selectedPath) ??
+              (command.includes("HEADER Message-ID") &&
+              selectedPath !== "INBOX" &&
+              selectedPath !== "Sent"
+                ? copies && !options.unresolvedCopy
+                  ? [4]
+                  : []
+                : undefined);
             current.enqueue(
               `* SEARCH${found ? (found.length ? ` ${found.join(" ")}` : "") : exists && !(deleted && command.includes("UNDELETED")) ? " 1" : ""}\r\n`,
             );
@@ -223,19 +246,50 @@ function server(
               options.stallStore();
               return;
             }
+            if (command.includes("\\Deleted") && options.rejectDeleteOnce && !deleteRejected) {
+              deleteRejected = true;
+              current.enqueue(`${tag} NO temporarily unavailable\r\n`);
+              return;
+            }
             if (command.includes("\\Deleted")) deleted = command.includes("+FLAGS");
+            if (
+              command.includes("\\Deleted") &&
+              options.disconnectAfterDeleteOnce &&
+              !deleteDisconnected
+            ) {
+              deleteDisconnected = true;
+              current.close();
+              return;
+            }
             if (command.includes("\\Seen")) seen = command.includes("+FLAGS");
             if (command.includes("\\Flagged")) starred = command.includes("+FLAGS");
             done();
+          } else if (command.startsWith("CREATE")) {
+            if (options.createAlreadyExists)
+              current.enqueue(`${tag} NO [ALREADYEXISTS] exists\r\n`);
+            else done();
           } else if (command.startsWith("UID COPY")) {
+            if (
+              options.rejectCopyTargetOnce &&
+              command.includes(`"${options.rejectCopyTargetOnce}"`) &&
+              !copyRejected
+            ) {
+              copyRejected = true;
+              current.enqueue(`${tag} NO temporarily unavailable\r\n`);
+              return;
+            }
+            copies++;
             current.enqueue(
               `${tag} OK${options.copyUidResponse ? ` [COPYUID ${options.copyUidResponse}]` : options.copyUid ? " [COPYUID 11 1 4]" : ""} copied\r\n`,
             );
+          } else if (command.startsWith("UID EXPUNGE")) {
+            if (deleted) exists = false;
+            done();
           } else if (command.startsWith("UID MOVE")) {
             exists = false;
             done();
           } else if (command.startsWith("APPEND")) {
-            if (options.appendReject)
+            if (options.appendReject || ++appends <= (options.appendFailures ?? 0))
               current.enqueue(`${tag} NO server-supplied-secret@example.test\r\n`);
             else {
               appendTag = tag;
@@ -334,10 +388,11 @@ it("runs mobile IMAP through shared connect, sync, reader, contacts, flags, move
     );
     expect(test.commands.some((line) => line.includes("+FLAGS.SILENT (\\Seen)"))).toBe(true);
     expect(test.commands.some((line) => line.includes("+FLAGS.SILENT (\\Flagged)"))).toBe(true);
-    expect(test.commands.some((line) => line.includes('UID MOVE 1 "Projects/Child"'))).toBe(true);
+    expect(test.commands.some((line) => line.includes('UID COPY 1 "Projects/Child"'))).toBe(true);
     expect(test.commands).toContain("RCPT TO:<private@example.test>");
     expect(test.delivered[0]).not.toMatch(/^Bcc:/im);
     expect(test.delivered[0]).toContain("LmRvdApIZWxsbw==");
+    await test.runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.closeSessions()));
     expect(test.sockets.every((socket) => socket.closed)).toBe(true);
   } finally {
     await test.runtime.dispose();
@@ -528,7 +583,10 @@ it("unfolds References and appends the original Message-ID exactly once in reply
   }
 });
 it("logs a redacted Sent warning after acknowledged SMTP without resending", async () => {
-  const test = server({ appendReject: true });
+  const test = server({
+    appendReject: true,
+    resetSearch: (command) => (command.includes("HEADER Message-ID") ? [] : [1]),
+  });
   const warnings: unknown[] = [];
   const logger = Logger.make((options) => {
     warnings.push(options.message);
@@ -1168,3 +1226,605 @@ for (const outcome of ["present", "gone", "moved"] as const) {
     }
   });
 }
+
+const slice63Message = {
+  to: [{ name: "", address: "alice@example.test" }],
+  cc: [],
+  bcc: [],
+  subject: "Slice 63",
+  text: "Body",
+  attachments: [],
+};
+
+for (const response of ["disconnect", 554] as const) {
+  it(`slice63: SMTP DATA ${response} distinguishes uncertainty from definite rejection`, async () => {
+    const test = server({ smtpDataReply: response });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const account = yield* (yield* Mailbox).connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          const adapter = (yield* Providers).get("imap");
+          const result = yield* adapter
+            .send(account, slice63Message, Option.none())
+            .pipe(Effect.result);
+          expect(result._tag).toBe(response === "disconnect" ? "Success" : "Failure");
+          if (result._tag === "Failure") expect(result.failure._tag).toBe("PermanentError");
+        }),
+      );
+      expect(test.delivered).toHaveLength(1);
+      expect(test.commands.some((c) => c.includes("HEADER Message-ID"))).toBe(
+        response === "disconnect",
+      );
+      expect(test.commands.some((c) => c.includes("APPEND"))).toBe(false);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice63: mobile copy/move retries reuse the destination and resolve missing COPYUID", async () => {
+  const test = server({ noMove: true, noUidplus: true, rejectDeleteOnce: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const;
+        expect((yield* adapter.push(account, "9:1:INBOX", op).pipe(Effect.result))._tag).toBe(
+          "Failure",
+        );
+        expect(yield* adapter.push(account, "9:1:INBOX", op)).toEqual([
+          { from: "9:1:INBOX", to: "9:4:Projects" },
+        ]);
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+for (const existing of [true, false]) {
+  it(`slice63: mobile special folders ${existing ? "reuse path aliases" : "accept ALREADYEXISTS"}`, async () => {
+    const test = server({
+      noMove: true,
+      noUidplus: true,
+      folderRows: `* LIST () "/" "INBOX"\r\n* LIST () "/" "Sent"\r\n${existing ? '* LIST () "/" "Trash"\r\n' : ""}`,
+      createAlreadyExists: true,
+    });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const account = yield* (yield* Mailbox).connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          expect(
+            yield* (yield* Providers).get("imap").push(account, "9:1:INBOX", { kind: "trash" }),
+          ).toEqual([{ from: "9:1:INBOX", to: "9:4:Trash" }]);
+        }),
+      );
+      expect(test.commands.some((c) => c.includes("CREATE"))).toBe(!existing);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice63: mobile move holds queued operations when destination UID remains unresolved", async () => {
+  const test = server({ noMove: true, noUidplus: true, unresolvedCopy: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const result = yield* (yield* Providers)
+          .get("imap")
+          .push(account, "9:1:INBOX", { kind: "move", labelId: "Projects", removeLabelId: "INBOX" })
+          .pipe(Effect.result);
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") expect(result.failure._tag).toBe("ProviderError");
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("\\Deleted"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+for (const failures of [1, 2]) {
+  it(`slice63: mobile Sent APPEND retries once after ${failures} failure(s) and reports missing copy`, async () => {
+    const test = server({
+      appendFailures: failures,
+      resetSearch: (command) => (command.includes("HEADER Message-ID") ? [] : [1]),
+    });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const account = yield* (yield* Mailbox).connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          const result = yield* (yield* Providers)
+            .get("imap")
+            .send(account, slice63Message, Option.none());
+          expect(result).toEqual(failures === 2 ? { sentCopyMissing: true } : undefined);
+        }),
+      );
+      expect(test.commands.filter((c) => c.includes("APPEND"))).toHaveLength(2);
+      expect(test.delivered).toHaveLength(1);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice63: multi-destination mobile copy waits for completed destinations while SEARCH lags", async () => {
+  let visible = false;
+  const test = server({
+    noMove: true,
+    noUidplus: true,
+    rejectCopyTargetOnce: "Projects/Child",
+    resetSearch: (command, path) =>
+      command.includes("HEADER Message-ID") && path !== "INBOX" ? (visible ? [4] : []) : [1],
+  });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "copy", labelIds: ["Projects", "Projects/Child"] } as const;
+        expect((yield* adapter.push(account, "9:1:INBOX", op).pipe(Effect.result))._tag).toBe(
+          "Failure",
+        );
+        const waiting = yield* adapter.push(account, "9:1:INBOX", op).pipe(Effect.result);
+        expect(waiting._tag).toBe("Failure");
+        if (waiting._tag === "Failure") expect(waiting.failure._tag).toBe("ProviderError");
+        visible = true;
+        yield* adapter.push(account, "9:1:INBOX", op);
+      }),
+    );
+    expect(test.commands.filter((c) => c.endsWith('UID COPY 1 "Projects"'))).toHaveLength(1);
+    expect(test.commands.filter((c) => c.endsWith('UID COPY 1 "Projects/Child"'))).toHaveLength(2);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63: lost SMTP acknowledgement without a Sent match preserves SendUncertain", async () => {
+  const test = server({ smtpDataReply: "disconnect", resetSearch: () => [] });
+  try {
+    const account = await test.runtime.runPromise(
+      Effect.flatMap(Mailbox, (mailbox) =>
+        mailbox.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        }),
+      ),
+    );
+    const adapter = await test.runtime.runPromise(
+      Effect.map(Providers, (providers) => providers.get("imap")),
+    );
+    vi.useFakeTimers();
+    const sending = test.runtime.runPromise(
+      adapter.send(account, slice63Message, Option.none()).pipe(Effect.result),
+    );
+    await vi.advanceTimersByTimeAsync(35000);
+    const result = await sending;
+    expect(result._tag).toBe("Failure");
+    if (result._tag === "Failure") expect(result.failure._tag).toBe("SendUncertain");
+    expect(test.delivered).toHaveLength(1);
+    expect(test.commands.some((c) => c.includes("APPEND"))).toBe(false);
+  } finally {
+    vi.useRealTimers();
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63: advertised native MOVE keeps the source when COPYUID and destination lookup are unavailable", async () => {
+  const test = server({ unresolvedCopy: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const result = yield* adapter
+          .push(account, "9:1:INBOX", { kind: "move", labelId: "Projects", removeLabelId: "INBOX" })
+          .pipe(Effect.result);
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") expect(result.failure._tag).toBe("ProviderError");
+        expect(yield* adapter.fetchRaw(account, "9:1:INBOX")).toEqual(Uint8Array.from(raw));
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("UID MOVE"))).toBe(false);
+    expect(test.commands.some((c) => c.includes("UID COPY"))).toBe(true);
+    expect(test.commands.some((c) => c.includes("\\Deleted"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63: persisted Message-ID remaps an expunged source after mobile adapter restart", async () => {
+  const test = server();
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const;
+        const mapping = [{ from: "9:1:INBOX", to: "9:4:Projects" }];
+        expect(yield* adapter.push(account, "9:1:INBOX", op)).toEqual(mapping);
+        const restarted = yield* makeMobileImap.pipe(Effect.provide(mobileMailCodecLayer));
+        const context = {
+          messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]),
+          progress: new Set([
+            JSON.stringify(["9:1:INBOX", "Projects"]),
+            JSON.stringify(["9:1:INBOX", "Projects", "accepted"]),
+          ]),
+        };
+        expect(yield* restarted.push(account, "9:1:INBOX", op, undefined, context)).toEqual(
+          mapping,
+        );
+        if (!restarted.pushBatch) throw new Error("Missing batch push");
+        expect(yield* restarted.pushBatch(account, ["9:1:INBOX"], op, undefined, context)).toEqual(
+          mapping,
+        );
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+    expect(test.commands.filter((c) => c.includes("+FLAGS.SILENT (\\Deleted)"))).toHaveLength(1);
+    expect(test.commands.filter((c) => c.includes("UID EXPUNGE"))).toHaveLength(1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63: mobile move retries accepted Deleted flags after a lost acknowledgement", async () => {
+  const test = server({ disconnectAfterDeleteOnce: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const;
+        expect((yield* adapter.push(account, "9:1:INBOX", op).pipe(Effect.result))._tag).toBe(
+          "Failure",
+        );
+        const restarted = yield* makeMobileImap.pipe(Effect.provide(mobileMailCodecLayer));
+        expect(
+          yield* restarted.push(account, "9:1:INBOX", op, undefined, {
+            messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]),
+            progress: new Set([
+              JSON.stringify(["9:1:INBOX", "Projects"]),
+              JSON.stringify(["9:1:INBOX", "Projects", "accepted"]),
+            ]),
+          }),
+        ).toEqual([{ from: "9:1:INBOX", to: "9:4:Projects" }]);
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+    expect(test.commands.filter((c) => c.includes("+FLAGS.SILENT (\\Deleted)"))).toHaveLength(2);
+    expect(test.commands.filter((c) => c.includes("UID EXPUNGE"))).toHaveLength(1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+for (const operation of ["move", "copy"] as const) {
+  it(`slice63: queued identity refuses silently reused mobile UID before ${operation}`, async () => {
+    const test = server();
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const account = yield* (yield* Mailbox).connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          const adapter = (yield* Providers).get("imap");
+          const op =
+            operation === "move"
+              ? ({ kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const)
+              : ({ kind: "copy", labelIds: ["Projects"] } as const);
+          const result = yield* adapter
+            .push(account, "9:1:INBOX", op, undefined, {
+              messageIds: new Map([["9:1:INBOX", "<original@example.test>"]]),
+            })
+            .pipe(Effect.result);
+          expect(result._tag).toBe("Failure");
+          if (result._tag === "Failure") expect(result.failure._tag).toBe("PermanentError");
+        }),
+      );
+      expect(test.commands.some((c) => /UID COPY|UID STORE|UID EXPUNGE/.test(c))).toBe(false);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice63-fix: an externally removed source without persisted COPY progress fails permanently", async () => {
+  const test = server({ resetSearch: () => [] });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const result = yield* (yield* Providers)
+          .get("imap")
+          .push(
+            account,
+            "9:1:INBOX",
+            { kind: "move", labelId: "Projects", removeLabelId: "INBOX" },
+            undefined,
+            { messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]), progress: new Set() },
+          )
+          .pipe(Effect.result);
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") expect(result.failure._tag).toBe("PermanentError");
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("UID COPY"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63-fix: first COPY preserves a distinct source with the same Message-ID already in destination", async () => {
+  const test = server({ copyUid: true, resetSearch: () => [1] });
+  let marked = false;
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const result = yield* (yield* Providers)
+          .get("imap")
+          .push(
+            account,
+            "9:1:INBOX",
+            { kind: "move", labelId: "Projects", removeLabelId: "INBOX" },
+            undefined,
+            {
+              messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]),
+              progress: new Set(),
+              beforeCopy: (destination, ids) =>
+                Effect.sync(() => {
+                  expect(destination).toBe("Projects");
+                  expect(ids).toEqual(["9:1:INBOX"]);
+                  expect(test.commands.some((c) => c.includes("UID COPY"))).toBe(false);
+                  marked = true;
+                }),
+            },
+          );
+        expect(result).toEqual([{ from: "9:1:INBOX", to: "11:4:Projects" }]);
+      }),
+    );
+    expect(marked).toBe(true);
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+    expect(test.commands.some((c) => c.includes("HEADER Message-ID"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+for (const copyUid of [true, false]) {
+  it(`slice63-fix: mobile moves a source without Message-ID ${copyUid ? "with COPYUID" : "and requests reconcile"}`, async () => {
+    const source = Buffer.from(
+      Buffer.from(raw)
+        .toString("latin1")
+        .replace(/^Message-ID:[^\r\n]*\r?\n/im, ""),
+      "latin1",
+    );
+    const test = server({ source, copyUid, noUidplus: !copyUid });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const account = yield* (yield* Mailbox).connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          expect(
+            yield* (yield* Providers).get("imap").push(account, "9:1:INBOX", {
+              kind: "move",
+              labelId: "Projects",
+              removeLabelId: "INBOX",
+            }),
+          ).toEqual(copyUid ? [{ from: "9:1:INBOX", to: "11:4:Projects" }] : { reconcile: true });
+        }),
+      );
+      expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+      expect(test.commands.some((c) => c.includes("+FLAGS.SILENT (\\Deleted)"))).toBe(true);
+      expect(test.commands.some((c) => c.includes("UID EXPUNGE"))).toBe(copyUid);
+      expect(test.commands.some((c) => /(?:^| )EXPUNGE$/.test(c))).toBe(false);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice63-fix: mobile normalizes stored Message-ID brackets and whitespace before identity checks", async () => {
+  const test = server({ copyUid: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        expect(
+          yield* (yield* Providers)
+            .get("imap")
+            .push(
+              account,
+              "9:1:INBOX",
+              { kind: "move", labelId: "Projects", removeLabelId: "INBOX" },
+              undefined,
+              {
+                messageIds: new Map([["9:1:INBOX", "  one@example.test \t"]]),
+                progress: new Set(),
+              },
+            ),
+        ).toEqual([{ from: "9:1:INBOX", to: "11:4:Projects" }]);
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63-fix: Courier INBOX-prefixed special folders match their leaf aliases", async () => {
+  const test = server({
+    copyUid: true,
+    noUidplus: true,
+    folderRows:
+      '* LIST () "." "INBOX"\r\n* LIST () "." "INBOX.Sent"\r\n* LIST () "." "INBOX.Trash"\r\n',
+  });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        yield* adapter.send(account, slice63Message, Option.none());
+        expect(yield* adapter.push(account, "9:1:INBOX", { kind: "trash" })).toEqual([
+          { from: "9:1:INBOX", to: "11:4:INBOX.Trash" },
+        ]);
+      }),
+    );
+    expect(test.commands.some((c) => c.includes('APPEND "INBOX.Sent"'))).toBe(true);
+    expect(test.commands.some((c) => c.includes('UID COPY 1 "INBOX.Trash"'))).toBe(true);
+    expect(test.commands.some((c) => c.includes("CREATE"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63-fix: accepted COPY without Message-ID retries only Deleted after restart", async () => {
+  const source = Buffer.from(
+    Buffer.from(raw)
+      .toString("latin1")
+      .replace(/^Message-ID:[^\r\n]*\r?\n/im, ""),
+    "latin1",
+  );
+  const progress = new Set<string>();
+  const test = server({ source, noUidplus: true, disconnectAfterDeleteOnce: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const;
+        const context = {
+          messageIds: new Map<string, string>(),
+          progress,
+          beforeCopy: (destination: string, ids: readonly string[]) =>
+            Effect.sync(() => {
+              for (const id of ids) progress.add(JSON.stringify([id, destination]));
+            }),
+          afterCopy: (destination: string, ids: readonly string[]) =>
+            Effect.sync(() => {
+              for (const id of ids) progress.add(JSON.stringify([id, destination, "accepted"]));
+            }),
+        };
+        expect(
+          (yield* adapter.push(account, "9:1:INBOX", op, undefined, context).pipe(Effect.result))
+            ._tag,
+        ).toBe("Failure");
+        const restarted = yield* makeMobileImap.pipe(Effect.provide(mobileMailCodecLayer));
+        expect(yield* restarted.push(account, "9:1:INBOX", op, undefined, context)).toEqual({
+          reconcile: true,
+        });
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(1);
+    expect(test.commands.filter((c) => c.includes("+FLAGS.SILENT (\\Deleted)"))).toHaveLength(2);
+    expect(test.commands.some((c) => c.includes("UID EXPUNGE"))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63-fix: persisted COPY intent with source and destination absent waits without re-copying", async () => {
+  const test = server({ resetSearch: () => [] });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const result = yield* (yield* Providers)
+          .get("imap")
+          .push(
+            account,
+            "9:1:INBOX",
+            { kind: "move", labelId: "Projects", removeLabelId: "INBOX" },
+            undefined,
+            {
+              messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]),
+              progress: new Set([JSON.stringify(["9:1:INBOX", "Projects"])]),
+            },
+          )
+          .pipe(Effect.result);
+        expect(result._tag).toBe("Failure");
+        if (result._tag === "Failure") expect(result.failure._tag).toBe("ProviderError");
+      }),
+    );
+    expect(test.commands.some((c) => /UID COPY|UID STORE|UID EXPUNGE/.test(c))).toBe(false);
+  } finally {
+    await test.runtime.dispose();
+  }
+});
+
+it("slice63-fix: a new queued move ignores an earlier operation's local COPY progress", async () => {
+  const test = server({ noUidplus: true, copyUid: true });
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const op = { kind: "move", labelId: "Projects", removeLabelId: "INBOX" } as const;
+        yield* adapter.push(account, "9:1:INBOX", op);
+        yield* adapter.push(account, "9:1:INBOX", op, undefined, {
+          messageIds: new Map([["9:1:INBOX", "<one@example.test>"]]),
+          progress: new Set(),
+        });
+      }),
+    );
+    expect(test.commands.filter((c) => c.includes("UID COPY"))).toHaveLength(2);
+  } finally {
+    await test.runtime.dispose();
+  }
+});

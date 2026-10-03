@@ -510,6 +510,9 @@ export type DraftInput = typeof DraftInput.Type;
 
 /** Where the provider keeps a draft. Gmail has a draft id; Outlook and IMAP only a message id. */
 export const DraftRemote = Schema.Struct({
+  rfcMessageId: Schema.optionalKey(Schema.String),
+  cleanupMessageIds: Schema.optionalKey(Schema.Array(Schema.String)),
+  cleanupMessageId: Schema.optionalKey(Schema.String),
   conflict: Schema.optionalKey(Schema.Boolean),
   draftId: Schema.NullOr(Schema.String),
   messageId: Schema.NullOr(Schema.String),
@@ -945,3 +948,16 @@ export const SyncResult = Schema.Struct({
   needsReauth: Schema.optionalKey(Schema.Boolean),
 });
 export type SyncResult = typeof SyncResult.Type;
+
+/** Durable delivery and outbound-operation notices, until the user dismisses them. */
+export const FailedOp = Schema.Struct({
+  id: Schema.Number,
+  accountId: Schema.String,
+  providerId: Schema.String,
+  at: Schema.Number,
+  kind: Schema.String,
+  reason: Schema.String,
+  subject: Schema.NullOr(Schema.String),
+  sender: Schema.NullOr(Schema.String),
+});
+export type FailedOp = typeof FailedOp.Type;

@@ -4,7 +4,29 @@ UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效�
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
-缺少 MOVE 和 UIDPLUS 时，移动使用 COPY 加 `\Deleted`，不执行全局 EXPUNGE。两端同步、历史拉取与服务端搜索把 `\Deleted` 邮件视为不存在，避免恢复源文件夹副本。服务器仍保留已标记的原件，直到其他客户端或服务器清除。永久删除仍要求 UIDPLUS 定向清除。其他客户端撤销 `\Deleted` 后，已从本地删除的旧 UID 要到重置游标后的完整窗口重扫才会重新出现，普通增量拉取不会恢复它。无 CONDSTORE 时，已有 UID 的标记最多每 10 分钟完整扫描一次，因此删除与标记变化可能延迟约 10 分钟。
+## IMAP 复制、移动与草稿
+
+两端移动统一先 COPY、确认目标身份，再删除源副本。UIDPLUS 可定向清除源 UID；否则只加 `\Deleted`，不执行全局 EXPUNGE。两端同步、历史拉取与服务端搜索把 `\Deleted` 邮件视为不存在，避免恢复源文件夹副本。没有 UIDPLUS 时，服务器原件待其他客户端或服务器清除；永久删除仍要求 UIDPLUS。其他客户端撤销 `\Deleted` 后，旧 UID 要到重置游标后的完整窗口重扫才会重新出现。无 CONDSTORE 时，已有 UID 的标记最多每十分钟完整扫描一次。
+
+COPY 前按排队操作、源 provider ID 和目标文件夹持久记录 issued 进度，成功回复后记录 accepted。首次操作正常复制，即使目标已有相同 Message-ID；重试才按进度查询目标，查到后只重做源副本删除。明确拒绝会清除对应进度；丢失回复时保留。源、目标均不存在且没有进度时返回 PermanentError，终止操作并 reconcile；有进度但结果未确认时继续等待。批量操作逐封记录，不能把一封的进度当作另一封的进度。
+
+COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确认时保留源副本和队列；没有 Message-ID 且已确认 COPY 成功时完成源删除，排队 reconcile，并暂停本轮对旧 ID 的后续操作，由下一次拉取恢复缓存。重试前核对源邮件身份；比较时去掉尖括号和空白。手机特殊文件夹同时匹配路径末级名称，例如 `INBOX.Sent`；CREATE 的 `NO [ALREADYEXISTS]` 视为已存在。
+
+Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
+
+实现见 [Node IMAP](../packages/core/src/platform/node/imap.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
+
+## 出站操作队列
+
+`pending_ops` 在失败后保存 retry_at，首次等待五秒，随后指数退避，最长一小时；刷新跳过尚未到期的操作，也不越过同一邮件的前置失败操作。断网、传输失败、429／deferred 和 5xx 不按重试次数丢弃。PermanentError 立即终止；普通操作再次推送失败且排队满七天时过期。reconcile 在账户不可达时一直保留。AuthError 暂停账户、标记重新登录并释放认领，不增加失败次数；只读会话不推送队列。
+
+认领有效期两分钟，长推送每三十秒续租。每次认领有独立 token，结算及写入远端草稿关联时核对 token。续租或本地重映射失败只处理当前操作，无关操作及拉取继续；旧进程不能结算新进程认领的操作。迟到上传产生的独立草稿副本会清理，清理失败排队删除；当前草稿已引用的副本保留。
+
+迁移 36 增加重试时间、认领 token、Message-ID、复制进度和草稿 APPEND 身份；既有排队操作从缓存补全 Message-ID。推送中终止的非 reconcile 操作和发送警告进入 failed_ops，桌面与手机按类别显示计数、操作、主题、发件人及原因，直到用户关闭提示。Graph 写入的 400、404、409、413、415、422 和 `403 ErrorAccessDenied` 为永久错误，界面显示简短原因，不显示 Graph JSON。
+
+实现见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[store.ts](../packages/core/src/store.ts)、[db.ts](../packages/core/src/db.ts)和 [Outlook](../packages/core/src/outlook.ts)。
+
+## 发送结果
 
 每次 HTTP 请求的重试等待累计不超过 60 秒。Outlook 的发送、回复草稿准备与发送确认使用独立请求许可，不排在限流的拉取后面。IMAP 操作中断时关闭连接并从推送池移除；手机端同一连接的命令串行执行。
 
@@ -13,6 +35,12 @@ Gmail 和 Graph 的发送 POST 不自动重试。Message-ID 使用随机本地�
 Gmail 官方文档规定提交 RFC 2822 MIME，并支持 `rfc822msgid` 搜索，但没有承诺保留客户端设置的 Message-ID。core 先查询完整 ID；没有结果时，搜索提交前一分钟至提交后两分钟的 Sent 候选，读取 Message-ID metadata 并核对随机本地部分。不依赖未文档化的部分 ID 搜索。若服务端连本地部分也重写，无法确认发送，继续保留重发保护。自动测试覆盖 ID 保留、域名改写、延迟副本和未找到副本；没有用真实账户发送探测邮件。参见 [发送邮件](https://developers.google.com/workspace/gmail/api/guides/sending)、[消息列表查询](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list)、[Gmail 搜索条件](https://support.google.com/mail/answer/7190)。
 
 Graph 用 `internetMessageId` 查询 Sent。回复草稿创建结果不确定时，同样按提交时设置的 ID 查询 Drafts，并清理找到的孤立草稿；草稿准备失败也会清理，发送成功后不会删除 Sent 副本。参见 [创建回复草稿](https://learn.microsoft.com/en-us/graph/api/message-createreply?view=graph-rest-1.0)和 [更新草稿 Message-ID](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)。
+
+IMAP SMTP 在 DATA 终止符已发出后丢失回复时，按 Message-ID 查询 Sent；未确认则返回 SendUncertain，保留草稿和重发保护。DATA 前的连接拒绝、超时或 greeting 失败属于明确失败；收到 5xx 拒绝也属明确失败，认证错误仍提示重新登录。SMTP 接受后保存 Sent 副本失败会重连重试 APPEND 一次；再次失败时显示副本缺失提示，不重新发送邮件。
+
+Node SMTP 部分拒收会列出拒收地址，保留原草稿并启用重发保护。提示中的“仅向拒收收件人重发”创建新草稿，只保留拒收的 To／Cc／Bcc，保留消息文本及附件，不自动发送，也不修改原草稿。
+
+发送确认实现见 [provider-send.ts](../packages/core/src/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
 
 ## 重置删除保护
 

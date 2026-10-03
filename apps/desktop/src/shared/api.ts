@@ -10,6 +10,7 @@ export type {
   Address,
   AgentWriteMode,
   AuditEntry,
+  FailedOp,
   Draft as StoredDraft,
   DraftInput,
   ImapConnectInput,

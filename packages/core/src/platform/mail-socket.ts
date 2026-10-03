@@ -214,7 +214,10 @@ function tokenize(text: string, literals: Uint8Array[]): ImapValue[] {
   return list(0);
 }
 export class ImapCommandError extends Error {
-  constructor(readonly status: string) {
+  constructor(
+    readonly status: string,
+    readonly responseCode?: string,
+  ) {
     super("IMAP command rejected");
   }
 }
@@ -303,7 +306,10 @@ export class ImapWire {
         sent = true;
       } else if (response.text.startsWith(`${tag} `)) {
         if (!response.text.startsWith(`${tag} OK`))
-          throw new ImapCommandError(response.text.split(" ")[1] ?? "BAD");
+          throw new ImapCommandError(
+            response.text.split(" ")[1] ?? "BAD",
+            /\[([A-Z]+)(?:\s|\])/i.exec(response.text)?.[1]?.toUpperCase(),
+          );
         responses.push(response);
         return responses;
       } else responses.push(response);

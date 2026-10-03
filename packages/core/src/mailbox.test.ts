@@ -169,7 +169,7 @@ it.effect("an auth failure pauses the account and keeps the change queued", () =
   ),
 );
 
-it.effect("a transient push failure retries on the next sync", () =>
+it.effect("a transient push failure retries after backoff on the next sync", () =>
   withGmail([incoming("m1")], (m, server) =>
     Effect.gen(function* () {
       const [thread] = yield* m.threads({});
@@ -179,6 +179,7 @@ it.effect("a transient push failure retries on the next sync", () =>
         user,
       );
       assert.strictEqual(server.pushed.length, 0);
+      yield* TestClock.adjust("5 seconds");
       yield* m.sync();
       assert.strictEqual(server.pushed.length, 1);
     }),
@@ -349,7 +350,7 @@ for (const gone of [false, true])
     ),
   );
 
-it.effect("slice49: five provider push failures restore optimistic state and record failure", () =>
+it.effect("slice63: repeated transient push failures preserve optimistic state", () =>
   withGmail([incoming("m1")], (m, server) =>
     Effect.gen(function* () {
       server.beforePush = Effect.fail(new ProviderError({ message: "Refused repeatedly" }));
@@ -358,8 +359,8 @@ it.effect("slice49: five provider push failures restore optimistic state and rec
         user,
       );
       for (let attempt = 0; attempt < 4; attempt++) yield* m.sync();
-      assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 1);
-      assert.ok((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
+      assert.strictEqual((yield* m.threads({ mailbox: "inbox" })).length, 0);
+      assert.isFalse((yield* m.audit(10)).some((entry) => entry.action === "sync-failed"));
     }),
   ),
 );

@@ -386,6 +386,8 @@ it("offline archive survives conflicting server pull and retries the queue once"
   expect(document.querySelector(`[data-id="${h.id("one")}"]`)).toBeNull();
   expect(await h.run(h.store.listPendingOps)).toHaveLength(1);
   h.server.beforePush = undefined;
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(Date.now() + 5000);
   await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
   await eventually(async () => expect(await h.run(h.store.listPendingOps)).toHaveLength(0));
   expect(h.server.pushed).toEqual([{ providerId: "one", op: { kind: "archive" } }]);

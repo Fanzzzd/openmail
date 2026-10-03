@@ -410,6 +410,9 @@ export class Mailbox extends Context.Service<
       surface: "app" | "cli",
     ): Effect.Effect<Outcome, PerformError>;
     readonly proposals: Effect.Effect<Proposal[]>;
+    prepareRejectedResend(noticeId: number): Effect.Effect<DraftInput, NotFound | InvalidInput>;
+    readonly listFailedOps: Effect.Effect<readonly import("./domain.js").FailedOp[]>;
+    acknowledgeFailedOps(ids: readonly number[]): Effect.Effect<void>;
     audit(limit: number): Effect.Effect<AuditEntry[]>;
     /** Default write mode for agents without their own policy. */
     readonly agentWriteMode: Effect.Effect<AgentWriteMode>;

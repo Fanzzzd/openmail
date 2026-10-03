@@ -89,6 +89,11 @@ export const proposalsAtom = MailClient.query("Proposals", undefined, {
   ...always,
 }).pipe(Atom.makeRefreshOnSignal(every10s));
 
+export const failedOpsAtom = MailClient.query("FailedOps", undefined, {
+  reactivityKeys: [Keys.failedOps],
+  ...always,
+}).pipe(Atom.makeRefreshOnSignal(every10s));
+
 export const auditAtom = MailClient.query(
   "Audit",
   { limit: 200 },

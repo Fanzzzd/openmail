@@ -27,6 +27,7 @@ import {
   ShortcutHelp,
 } from "./components/LazyDialogs";
 import { PermanentDeletePermission } from "./components/PermanentDeletePermission";
+import { FailedOpNotice } from "./components/FailedOpNotice";
 import { UpdateNotice } from "./components/UpdateNotice";
 import { numberedFavorites } from "./favorite-navigation";
 import { supportsInInboxFilter } from "./folder-actions";
@@ -342,6 +343,7 @@ export function App({ composeId }: { composeId?: string }) {
         busy={Boolean(dialog || compose)}
       />
       <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
+      <FailedOpNotice onOpenDraft={openSavedDraft} />
       <UpdateNotice onSettings={() => setDialog("settings")} />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
         <Group

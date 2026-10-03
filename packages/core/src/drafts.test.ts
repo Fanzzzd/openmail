@@ -1,5 +1,6 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
+import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 
 import { buildMime } from "./platform/node/compose.js";
@@ -121,7 +122,7 @@ it.effect("a thread read before the draft was saved again still opens the draft"
   ),
 );
 
-it.effect("a draft saved offline stays local and goes out with the next sync", () =>
+it.effect("a draft saved offline stays local and goes out after backoff", () =>
   withMail((m, server) =>
     Effect.gen(function* () {
       server.failNext = new ProviderError({ message: "offline" });
@@ -134,6 +135,7 @@ it.effect("a draft saved offline stays local and goes out with the next sync", (
       assert.strictEqual(server.drafts.size, 0);
       assert.deepStrictEqual(yield* draftIds(m), ["draft:1"]);
 
+      yield* TestClock.adjust("5 seconds");
       yield* m.sync();
       assert.strictEqual(server.drafts.size, 1);
       assert.strictEqual((yield* m.openDraft("draft:1")).synced, true);
