@@ -244,3 +244,34 @@ it("records only redacted provider failure fields from the core logger", async (
   expect(preview).toContain('"status":403');
   expect(preview).not.toMatch(/private|secret|token/);
 });
+
+it("slice56: smoke diagnostics retain sync reset counts and redact folder and mail data", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.logWarning({
+      _tag: "SyncResetDiagnostic",
+      provider: "outlook",
+      accountHash: "0123456789abcdef",
+      folderHash: "abcdef0123456789",
+      phase: "reset",
+      listed: 10,
+      kept: 10,
+      local: 100,
+      candidates: 90,
+      verified: 0,
+      incomplete: 0,
+      deferred: 90,
+      body: "private message",
+      folder: "private folder",
+      account: "private@example.com",
+      token: "secret token",
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"event":"sync-reset"');
+  expect(preview).toContain('"local":100');
+  expect(preview).toContain('"candidates":90');
+  expect(preview).not.toMatch(/private|secret|token/);
+});

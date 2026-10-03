@@ -110,3 +110,4 @@ export { createSmokeCleanup } from "./smoke-cleanup.js";
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
 
 export * from "../../sync-health.js";
+export { SyncResetDiagnostic } from "../../sync-reset.js";

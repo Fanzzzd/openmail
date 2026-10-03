@@ -1,4 +1,5 @@
 import { FolderStatus } from "../../sync-health.js";
+import type { ResetVerification } from "../../sync-reset.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
 import { Buffer } from "../bytes.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
@@ -501,6 +502,78 @@ export const makeMobileImap = Effect.gen(function* () {
         throw new PermanentError({ message: "Missing mail source" });
       return row.raw;
     });
+  const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
+    account,
+    candidates,
+  ) =>
+    session(account, async (client) => {
+      const list = await folders(client);
+      if (!list.length) return [];
+      const results: ResetVerification[] = [];
+      const groups = new Map<string, typeof candidates>();
+      for (const candidate of candidates) {
+        const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+        if (Option.isSome(ref))
+          groups.set(ref.value.path, [...(groups.get(ref.value.path) ?? []), candidate]);
+      }
+      for (const [path, group] of groups) {
+        const original = list.find((folder) => folder.path === path);
+        const validity = original ? await client.select(path) : undefined;
+        const uids = group.flatMap((candidate) => {
+          const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+          return !candidate.resetProviderId &&
+            Option.isSome(ref) &&
+            ref.value.uidValidity === validity
+            ? [ref.value.uid]
+            : [];
+        });
+        const present = new Set(
+          uids.length ? await client.search(`UNDELETED UID ${uidSet(uids)}`) : [],
+        );
+        for (const candidate of group) {
+          const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+          if (Option.isNone(ref)) continue;
+          const retained = candidate.labels.filter((label) =>
+            ["UNREAD", "STARRED", "IMPORTANT"].includes(label),
+          );
+          if (
+            !candidate.resetProviderId &&
+            validity === ref.value.uidValidity &&
+            present.has(ref.value.uid)
+          ) {
+            results.push({
+              kind: "present",
+              id: candidate.providerId,
+              providerId: candidate.providerId,
+              labels: [original?.label ?? path, ...retained],
+            });
+            continue;
+          }
+          if (!candidate.rfcMessageId) {
+            if (!candidate.resetProviderId && validity === ref.value.uidValidity)
+              results.push({ kind: "gone", id: candidate.providerId });
+            continue;
+          }
+          const matches: ResetVerification[] = [];
+          for (const folder of list) {
+            const current = await client.select(folder.path);
+            for (const uid of await client.search(
+              `UNDELETED HEADER Message-ID ${mailQuote(candidate.rfcMessageId)}`,
+            ))
+              matches.push({
+                kind: "present",
+                id: candidate.providerId,
+                providerId: encodeProviderId(folder.path, current, uid),
+                labels: [folder.label, ...retained],
+              });
+          }
+          if (!matches.length) results.push({ kind: "gone", id: candidate.providerId });
+          else if (matches.length === 1 && matches[0]) results.push(matches[0]);
+        }
+      }
+      return results;
+    });
+
   const fetchMessage: ProviderAdapter["fetchMessage"] = (account, id) =>
     session(account, async (client) => {
       const ref = refOf(id);
@@ -734,7 +807,18 @@ export const makeMobileImap = Effect.gen(function* () {
               if (!scan) for (const uid of known) present.add(uid);
               if (scan) state.flagScanAt = now;
               state.modseq = client.highestModseq;
-              for (const change of state.reconcile(path.path, present, current)) await emit(change);
+              const changes = state.reconcile(path.path, present, current);
+              const candidates = changes.flatMap((change) =>
+                change._tag === "Delete" ? [change.providerId] : [],
+              );
+              if (candidates.length)
+                await emit({
+                  _tag: "RebuildFolder",
+                  previous: previousFolder,
+                  keep: [],
+                  candidates,
+                });
+              for (const change of changes) if (change._tag !== "Delete") await emit(change);
               const since = new Date(now - 90 * 86400000);
               const date = `${since.getUTCDate()}-${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][since.getUTCMonth()]}-${since.getUTCFullYear()}`;
               const criteria =
@@ -778,6 +862,8 @@ export const makeMobileImap = Effect.gen(function* () {
                   _tag: "RebuildFolder",
                   previous: previousFolder,
                   keep: newest.map((uid) => encodeProviderId(path.path, validity, uid)),
+                  since: new Date(since).setUTCHours(0, 0, 0, 0),
+                  partial: true,
                 });
               state.lastUid = Math.max(state.lastUid, ...newest);
               next.folders[path.path] = state.toCursor();
@@ -786,11 +872,11 @@ export const makeMobileImap = Effect.gen(function* () {
             if (!scope)
               for (const [path, old] of Object.entries(previous.folders)) {
                 if (list.some((f) => f.path === path)) continue;
-                for (const uid of FolderState.from(old).flags.keys())
-                  await emit({
-                    _tag: "Delete",
-                    providerId: encodeProviderId(path, old.uidValidity, uid),
-                  });
+                await emit({
+                  _tag: "RebuildFolder",
+                  previous: { path, uidValidity: old.uidValidity },
+                  keep: [],
+                });
                 await emit({ _tag: "DeleteLabel", label: path });
                 delete next.folders[path];
               }
@@ -806,6 +892,7 @@ export const makeMobileImap = Effect.gen(function* () {
     closeSessions,
     fetchRaw,
     fetchMessage,
+    verifyResetCandidates,
     fetchAttachment: (account, id, ref) =>
       fetchRaw(account, id).pipe(
         Effect.flatMap((raw) =>

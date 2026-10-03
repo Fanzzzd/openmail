@@ -1,4 +1,5 @@
 import { makeSyncHealthStore } from "./store-sync-health.js";
+import { logSyncReset, needsResetVerification } from "./sync-reset.js";
 import { makeServiceStore } from "./store-services.js";
 import {
   MessageSecurity,
@@ -34,6 +35,7 @@ import { cleanDisplayName } from "./message-security.js";
 import { decodeProviderId } from "./imap-cursor.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { categoryKey } from "./categories.js";
+import { makeSyncResetStore } from "./store-sync-reset.js";
 import { makeAiStore } from "./store-ai.js";
 import { makeWordIndexStore } from "./store-word-index.js";
 import { makeInviteStatusStore } from "./store-invite-status.js";
@@ -382,6 +384,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
                 );
                 const epochs = `imap-epoch:${JSON.stringify([id]).slice(0, -1)},`;
                 yield* run(sql`DELETE FROM prefs WHERE substr(key,1,${epochs.length})=${epochs}`);
+                yield* run(sql`DELETE FROM prefs WHERE key=${`sync-reset:${id}`}`);
                 yield* run(sql`DELETE FROM accounts WHERE id=${id}`);
               }),
             )
@@ -533,6 +536,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       column = sql.literal("m.provider_id"),
     ) =>
       sql`${column}>=${`${folder.uidValidity}:`} AND ${column}<${`${folder.uidValidity};`} AND substr(${column}, instr(${column}, ':') + instr(substr(${column}, instr(${column}, ':') + 1), ':') + 1)=${folder.path}`;
+    const syncResets = makeSyncResetStore(sql, hasLabel, imapFolder);
     const invalidateImapFolder = (
       account: string,
       previous: import("./services.js").ImapFolderIdentity,
@@ -543,10 +547,27 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             const ids = (yield* all(MessageId)(
               sql`SELECT m.id FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
             )).map((row) => row.id);
+            const snapshot = yield* syncResets.resetCandidates(account, {
+              _tag: "RebuildFolder",
+              previous,
+              keep: [],
+            });
+            const guarded = needsResetVerification(snapshot.local, snapshot.candidates.length);
+            const generation = crypto.randomUUID();
             const now = yield* Clock.currentTimeMillis;
+            yield* logSyncReset(yield* getAccount(account).pipe(Effect.orDie), previous.path, {
+              phase: "reset",
+              listed: 0,
+              kept: 0,
+              local: snapshot.local,
+              candidates: snapshot.candidates.length,
+              verified: 0,
+              incomplete: 0,
+              deferred: guarded ? snapshot.candidates.length : 0,
+            });
             // Persist the generation before deleting rows; stale handles must never name refetched mail.
             yield* run(
-              sql`INSERT INTO prefs(key,value_json) VALUES(${imapEpochKey(account, previous)},${JSON.stringify(crypto.randomUUID())}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+              sql`INSERT INTO prefs(key,value_json) VALUES(${imapEpochKey(account, previous)},${JSON.stringify(generation)}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
             );
             yield* run(
               sql`DELETE FROM undo_batches WHERE EXISTS(SELECT 1 FROM json_tree(payload) e WHERE e.key='id' AND e.value IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
@@ -567,12 +588,32 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
             yield* run(
               sql`UPDATE drafts SET remote_message_id=NULL, remote_draft_id=NULL WHERE account_id=${account} AND (${imapFolder(previous, sql.literal("remote_message_id"))} OR ${imapFolder(previous, sql.literal("remote_draft_id"))})`,
             );
-            yield* media.deleteVectorsForMessages(
-              sql`m.account_id=${account} AND ${imapFolder(previous)}`,
-            );
-            yield* run(
-              sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
-            );
+            if (guarded) {
+              const pending = yield* syncResets.pendingResetCandidates(account);
+              const originals = new Set(
+                snapshot.candidates.map((candidate) => candidate.providerId),
+              );
+              const detached = snapshot.candidates.map((candidate) => ({
+                ...candidate,
+                resetProviderId: candidate.providerId,
+                providerId: `unmapped:${candidate.providerId}:reset:${generation}`,
+              }));
+              for (const candidate of detached)
+                yield* run(
+                  sql`UPDATE messages SET provider_id=${candidate.providerId} WHERE account_id=${account} AND provider_id=${candidate.resetProviderId}`,
+                );
+              yield* syncResets.saveResetCandidates(account, [
+                ...pending.filter((candidate) => !originals.has(candidate.providerId)),
+                ...detached,
+              ]);
+            } else {
+              yield* media.deleteVectorsForMessages(
+                sql`m.account_id=${account} AND ${imapFolder(previous)}`,
+              );
+              yield* run(
+                sql`DELETE FROM messages AS m WHERE m.account_id=${account} AND ${imapFolder(previous)}`,
+              );
+            }
             return ids;
           }),
         )
@@ -1981,6 +2022,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       upsertMessage,
       setFlags,
       deleteMessage,
+      ...syncResets,
       deleteMessagesWithLabel,
       deleteAccountMessages,
       listThreads,

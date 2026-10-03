@@ -36,7 +36,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
     "local has fewer — missing",
     "local has more — stale",
   ] satisfies HealthVerdict[]) {
-    // Outlook's sync is complete; a body cache window must never excuse missing headers.
+    // Legacy Outlook cursors do not claim a header window; body windows never excuse header gaps.
     if (provider === "outlook" && verdict === "local has fewer — window") continue;
     it.effect(`${provider} health: ${verdict}, with no writes under OPENMAIL_READ_ONLY=1`, () => {
       const id = provider === "imap" ? "1:1:INBOX" : "one";

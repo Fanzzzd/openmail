@@ -1,3 +1,5 @@
+import { SyncResetDiagnostic } from "../../sync-reset.js";
+export { SyncResetDiagnostic } from "../../sync-reset.js";
 import { ProviderDiagnostic } from "../../provider-diagnostics.js";
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
 import {
@@ -31,6 +33,7 @@ const DiagnosticEvent = Schema.Literals([
   "runtime-error",
   "runtime-warning",
   "provider-failure",
+  "sync-reset",
   "rpc-auth-failure",
   "rpc-failure",
 ]);
@@ -63,6 +66,29 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       ? createHash("sha256").update(fields.account.toLowerCase()).digest("hex").slice(0, 16)
       : undefined;
   const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(data);
+  const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(data);
+  if (event === "sync-reset" && reset._tag === "Some") {
+    const value = reset.value;
+    return {
+      at,
+      event,
+      _tag: value._tag,
+      provider: value.provider,
+      phase: value.phase,
+      accountHash: /^[a-f0-9]{16}$/.test(value.accountHash) ? value.accountHash : undefined,
+      folderHash: /^[a-f0-9]{16}$/.test(value.folderHash) ? value.folderHash : undefined,
+      ...Object.fromEntries(
+        ["listed", "kept", "local", "candidates", "verified", "incomplete", "deferred"].flatMap(
+          (key) => {
+            const count = key in value ? Reflect.get(value, key) : undefined;
+            return typeof count === "number" && Number.isFinite(count) && count >= 0
+              ? [[key, Math.trunc(count)]]
+              : [];
+          },
+        ),
+      ),
+    };
+  }
   const isRpcFailure = event === "rpc-failure" || event === "rpc-auth-failure";
   const rpc =
     isRpcFailure &&

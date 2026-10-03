@@ -337,15 +337,14 @@ export class ImapWire {
   }
   async search(criteria: string): Promise<number[]> {
     const rows = await this.command(`UID SEARCH ${criteria}`);
-    return rows.flatMap((r) =>
-      /^\* SEARCH(?: |$)/i.test(r.text)
-        ? r.text
-            .slice(8)
-            .trim()
-            .split(/\s+/)
-            .map(Number)
-            .filter((n) => Number.isSafeInteger(n) && n > 0)
-        : [],
-    );
+    const replies = rows.filter((row) => /^\* SEARCH(?: |$)/i.test(row.text));
+    if (replies.length !== 1)
+      throw new ProviderError({ message: "Missing or ambiguous IMAP SEARCH response" });
+    const text = replies[0]?.text.slice(8).trim() ?? "";
+    if (!text) return [];
+    const uids = text.split(/\s+/).map(Number);
+    if (uids.some((uid) => !Number.isSafeInteger(uid) || uid < 1))
+      throw new ProviderError({ message: "Invalid IMAP SEARCH UID" });
+    return uids;
   }
 }

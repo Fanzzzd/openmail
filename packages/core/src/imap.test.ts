@@ -1744,7 +1744,9 @@ it.effect("slice55: sync treats Deleted UIDs as absent", () =>
         { seq: 1, uid: 1, flags: new Set(["\\Deleted"]) },
       ]);
       const changes = yield* Stream.runCollect(a.pull(account, slice49Cursor(), "inbox"));
-      assert.ok(changes.some((c) => c._tag === "Delete" && c.providerId === "7:1:INBOX"));
+      assert.ok(
+        changes.some((c) => c._tag === "RebuildFolder" && c.candidates?.includes("7:1:INBOX")),
+      );
       assert.isFalse(changes.some((c) => c._tag === "Flags" && c.providerId === "7:1:INBOX"));
     }),
   ),

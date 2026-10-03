@@ -102,6 +102,14 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
     const account = yield* store.getAccount(accountId);
     const now = yield* Clock.currentTimeMillis;
     const cursor = yield* store.getSyncCursor(accountId);
+    const outlookWindowed =
+      account.provider === "outlook" &&
+      Option.isSome(cursor) &&
+      Option.isSome(
+        Schema.decodeUnknownOption(
+          Schema.fromJsonString(Schema.Struct({ __windowDays: Schema.Literal("90") })),
+        )(cursor.value),
+      );
     const labels = yield* store.syncHealthLabels(accountId, account.provider === "gmail");
     const custom = (yield* store.cacheWindows).filter((entry) => entry.accountId === accountId);
     const windows = [
@@ -144,12 +152,17 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
           // Cache settings expire bodies only. Header gaps can be expected while the
           // provider's bounded initial snapshot still awaits historical backfill.
           const headerWindow =
-            account.provider !== "outlook" &&
+            (account.provider !== "outlook" || outlookWindowed) &&
             account.lastSyncedAt !== null &&
             backfill?.done !== true
               ? {
                   days: 90,
-                  messageLimit: account.provider === "gmail" ? 2000 : 1000,
+                  messageLimit:
+                    account.provider === "outlook"
+                      ? 5000
+                      : account.provider === "gmail"
+                        ? 2000
+                        : 1000,
                   before: backfill?.before ?? null,
                 }
               : null;

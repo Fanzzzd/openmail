@@ -1,8 +1,15 @@
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
+import { BatchResponse, parseGmailBatch } from "./provider-batch.js";
+import type { ResetVerification } from "./sync-reset.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { messageSecurity } from "./message-security.js";
-import { retryProviderRequest, isProviderSend, retryAfterMillis } from "./provider-retry.js";
+import {
+  retryProvider,
+  retryProviderRequest,
+  isProviderSend,
+  retryAfterMillis,
+} from "./provider-retry.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
 import { MailCodec } from "./platform/mail-codec.js";
@@ -287,7 +294,10 @@ export const makeGmail: Effect.Effect<
         }
         if (!text) return null;
         return yield* Effect.try({
-          try: (): unknown => JSON.parse(text),
+          try: (): unknown =>
+            request.url.includes("/batch/gmail/")
+              ? parseGmailBatch(text, res.headers["content-type"])
+              : JSON.parse(text),
           catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
         });
       }).pipe(
@@ -1015,6 +1025,76 @@ export const makeGmail: Effect.Effect<
       };
     }).pipe(Effect.mapError(readFailure(account.id)));
 
+  const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
+    account,
+    candidates,
+  ) =>
+    Effect.gen(function* () {
+      const results: ResetVerification[] = [];
+      for (let offset = 0; offset < candidates.length; offset += 20) {
+        const chunk = candidates.slice(offset, offset + 20);
+        const boundary = "openmail_reset_batch";
+        const parts = chunk
+          .map(
+            (candidate, index) =>
+              `--${boundary}\r\nContent-Type: application/http\r\nContent-ID: <${index}>\r\n\r\nGET /gmail/v1/users/me/messages/${encodeURIComponent(candidate.providerId)}?format=minimal&fields=id,labelIds HTTP/1.1\r\n\r\n`,
+          )
+          .join("");
+        const body = `${parts}--${boundary}--\r\n`;
+        const verified = yield* retryProvider(
+          Effect.gen(function* () {
+            const batch = yield* api(
+              account.id,
+              HttpClientRequest.post("https://gmail.googleapis.com/batch/gmail/v1").pipe(
+                HttpClientRequest.bodyText(body, `multipart/mixed; boundary=${boundary}`),
+              ),
+            ).pipe(Effect.flatMap(decode(BatchResponse)));
+            const throttled = batch.responses.filter(
+              (response) => response.status === 429 || response.status >= 500,
+            );
+            if (throttled.length) {
+              const now = yield* Clock.currentTimeMillis;
+              const delay = Math.max(
+                ...throttled.map((response) =>
+                  retryAfterMillis(
+                    response.headers?.["Retry-After"] ?? response.headers?.["retry-after"],
+                    now,
+                  ),
+                ),
+              );
+              return yield* new ApiError({
+                status: 429,
+                body: "Reset verification deferred",
+                retryAfter: String(delay / 1000),
+              });
+            }
+            const out: ResetVerification[] = [];
+            for (const response of batch.responses) {
+              const candidate = chunk.find((_item, index) => String(index) === response.id);
+              if (!candidate) continue;
+              if (response.status === 404) out.push({ kind: "gone", id: candidate.providerId });
+              else if (response.status === 200) {
+                const raw = yield* decode(
+                  Schema.Struct({ id: Schema.String, labelIds: Schema.Array(Schema.String) }),
+                )(response.body);
+                if (raw.id === candidate.providerId)
+                  out.push({
+                    kind: "present",
+                    id: candidate.providerId,
+                    providerId: raw.id,
+                    labels: raw.labelIds,
+                  });
+              }
+            }
+            return out;
+          }),
+          (error) => error._tag === "ApiError" && isTransient(error),
+        ).pipe(Effect.catch(() => Effect.succeed<ResetVerification[]>([])));
+        results.push(...verified);
+      }
+      return results;
+    }).pipe(Effect.mapError(readFailure(account.id)));
+
   return {
     folderStatus: (account, scope) =>
       get(
@@ -1036,6 +1116,7 @@ export const makeGmail: Effect.Effect<
         Effect.mapError(readFailure(account.id)),
       ),
     backfill,
+    verifyResetCandidates,
     fetchMessage: (account, id) =>
       fetchMessage(account.id, id).pipe(
         Effect.mapError(readFailure(account.id)),

@@ -250,6 +250,20 @@ export class Store extends Context.Service<
       providerId: string,
       flags: { isUnread: boolean; isStarred: boolean },
     ): Effect.Effect<void>;
+    resetCandidates(
+      accountId: string,
+      change: import("./sync-reset.js").ResetChange,
+    ): Effect.Effect<{
+      local: number;
+      candidates: readonly import("./sync-reset.js").ResetCandidate[];
+    }>;
+    pendingResetCandidates(
+      accountId: string,
+    ): Effect.Effect<readonly import("./sync-reset.js").ResetCandidate[]>;
+    saveResetCandidates(
+      accountId: string,
+      candidates: readonly import("./sync-reset.js").ResetCandidate[],
+    ): Effect.Effect<void>;
     deleteMessagesWithLabel(
       accountId: string,
       label: string,
@@ -556,6 +570,10 @@ export type Change =
       readonly _tag: "RebuildFolder";
       readonly previous: ImapFolderIdentity;
       readonly keep: readonly string[];
+      readonly since?: number;
+      readonly partial?: boolean;
+      /** A window sweep only reconciles explicitly scanned ids. */
+      readonly candidates?: readonly string[];
     }
   | {
       readonly _tag: "Remap";
@@ -567,6 +585,7 @@ export type Change =
       readonly providerId: string;
       readonly labels: readonly string[];
     }
+  | { readonly _tag: "FetchLater"; readonly providerId: string }
   | { readonly _tag: "Upsert"; readonly message: IncomingMessage }
   | { readonly _tag: "Delete"; readonly providerId: string }
   /** Only the read and starred state changed; cheaper than an Upsert of the whole message. */
@@ -577,9 +596,20 @@ export type Change =
       readonly isStarred: boolean;
     }
   /** Drop local messages carrying this label, preserving IDs delivered by a completed restart. */
-  | { readonly _tag: "DeleteLabel"; readonly label: string; readonly keep?: readonly string[] }
+  | {
+      readonly _tag: "DeleteLabel";
+      readonly label: string;
+      readonly keep?: readonly string[];
+      readonly since?: number;
+      readonly partial?: boolean;
+    }
   /** Drop local account messages, preserving IDs delivered by a completed reset. */
-  | { readonly _tag: "Reset"; readonly keep?: readonly string[]; readonly since?: number }
+  | {
+      readonly _tag: "Reset";
+      readonly keep?: readonly string[];
+      readonly since?: number;
+      readonly partial?: boolean;
+    }
   | { readonly _tag: "BackfillReset" }
   | { readonly _tag: "Labels"; readonly labels: readonly Omit<Label, "accountId">[] }
   | { readonly _tag: "Progress"; readonly fetched: number; readonly total: number }
@@ -625,6 +655,12 @@ export interface ProviderAdapter {
     account: Account,
     scope: string,
   ): Effect.Effect<import("./sync-health.js").FolderStatus, ProviderFailure>;
+  /** Omitted/failed results remain local and are retried on the next foreground sync. */
+  verifyResetCandidates?(
+    account: Account,
+    candidates: readonly import("./sync-reset.js").ResetCandidate[],
+  ): Effect.Effect<readonly import("./sync-reset.js").ResetVerification[], ProviderFailure>;
+
   /** Close local pooled resources on account changes or app background. */
   closeSessions?(accountId?: string): Effect.Effect<void>;
   watchInbox?(

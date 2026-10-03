@@ -1,8 +1,15 @@
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
+import { BatchResponse } from "./provider-batch.js";
+import { logSyncReset, type ResetVerification } from "./sync-reset.js";
 import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { cleanDisplayName, messageSecurity } from "./message-security.js";
-import { retryProviderRequest, isProviderSend, retryAfterMillis } from "./provider-retry.js";
+import {
+  retryProvider,
+  retryProviderRequest,
+  isProviderSend,
+  retryAfterMillis,
+} from "./provider-retry.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import {
   hasSignedContainer,
@@ -76,6 +83,7 @@ const SCOPES = BASE_SCOPES.outlook;
 const PREFER = { prefer: 'IdType="ImmutableId"' };
 /** Cursor key recording that stored ids are immutable. Older cursors trigger a clean resync. */
 const ID_TYPE_KEY = "__idType";
+const WINDOW_KEY = "__windowDays";
 
 // Folders synced, and the mailbox label each maps to. A Graph message lives in
 // exactly one folder, so its id is unique and needs no cross-folder dedup.
@@ -106,6 +114,8 @@ const SELECT =
 // Header selection is supported on ordinary message GETs, not requested from delta.
 const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
 const PAGE_SIZE = 50;
+const DELTA_PREFER = `${PREFER.prefer}, odata.maxpagesize=${PAGE_SIZE}`;
+const INITIAL_WINDOW_DAYS = 90;
 const CONCURRENCY = 4;
 // Draft preparation and delivery confirmation belong to the send lane, too.
 const SendRequest = Context.Reference<boolean>("openmail/OutlookSendRequest", {
@@ -438,14 +448,25 @@ export const makeOutlook: Effect.Effect<
             ),
           ),
         )
-        .pipe((sending ? sendLock(accountId) : requestLock(accountId)).withPermits(1));
+        .pipe(
+          (sending ? sendLock(accountId) : requestLock(accountId)).withPermits(
+            new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1,
+          ),
+        );
     });
 
   const headersDenied = new Set<string>();
   /** `path` is a path under GRAPH, or a full https URL (delta and next links are absolute). */
-  const get = <A>(accountId: string, schema: Schema.Decoder<A>, path: string) =>
+  const get = <A>(
+    accountId: string,
+    schema: Schema.Decoder<A>,
+    path: string,
+    prefer = PREFER.prefer,
+  ) =>
     Effect.suspend(() => {
       const url = new URL(path.startsWith("https://") ? path : `${GRAPH}${path}`);
+      const makeRequest = () =>
+        HttpClientRequest.get(url.toString()).pipe(HttpClientRequest.setHeader("prefer", prefer));
       const selection = url.searchParams.get("$select");
       const hasHeaders = selection?.split(",").includes("internetMessageHeaders") ?? false;
       const withoutHeaders = () => {
@@ -456,13 +477,11 @@ export const makeOutlook: Effect.Effect<
             .filter((field) => field !== "internetMessageHeaders")
             .join(","),
         );
-        return HttpClientRequest.get(url.toString());
+        return makeRequest();
       };
       return api(
         accountId,
-        hasHeaders && headersDenied.has(accountId)
-          ? withoutHeaders()
-          : HttpClientRequest.get(url.toString()),
+        hasHeaders && headersDenied.has(accountId) ? withoutHeaders() : makeRequest(),
       ).pipe(
         Effect.catchIf(
           (error) =>
@@ -480,6 +499,14 @@ export const makeOutlook: Effect.Effect<
         ),
         Effect.flatMap(decode(schema)),
       );
+    });
+
+  const getDelta = (accountId: string, path: string) =>
+    Effect.suspend(() => {
+      const url = new URL(path.startsWith("https://") ? path : `${GRAPH}${path}`);
+      // Old bookmarks can retain a round cap. Delta page size belongs in Prefer.
+      if (url.searchParams.has("$top")) url.searchParams.delete("$top");
+      return get(accountId, DeltaPage, url.toString(), DELTA_PREFER);
     });
 
   const write = (
@@ -827,6 +854,7 @@ export const makeOutlook: Effect.Effect<
           );
           const reset = stored[ID_TYPE_KEY] !== "immutable";
           const previous = reset ? {} : stored;
+          const since = (yield* Clock.currentTimeMillis) - INITIAL_WINDOW_DAYS * 86400000;
           const custom = scope ? [] : yield* listCustomFolders(account.id);
           const folders: SyncFolder[] = [
             ...WELL_KNOWN.filter((f) => !scope || f.name === "inbox").map((f) => ({
@@ -851,14 +879,18 @@ export const makeOutlook: Effect.Effect<
           const kept = new Set<string>();
           const restarted = new Set<string>();
           const removed = new Set<string>();
-          const next: Record<string, string> = { [ID_TYPE_KEY]: "immutable" };
+          const next: Record<string, string> = {
+            [ID_TYPE_KEY]: "immutable",
+            ...(stored[WINDOW_KEY] ? { [WINDOW_KEY]: stored[WINDOW_KEY] } : {}),
+          };
           let fetched = 0;
           for (const folder of folders) {
             const known = previous[folder.key];
             if (incrementalOnly && known === undefined)
               yield* new ProviderError({ message: "Foreground sync required to renew the cursor" });
-            const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&${EXPAND_ATTACHMENTS}&$top=${PAGE_SIZE}`;
-            const first = yield* get(account.id, DeltaPage, known ?? initial).pipe(
+            // Delta's filtered snapshot can cap at 5,000. Its keep set never covers older headers.
+            const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&${EXPAND_ATTACHMENTS}&$filter=${encodeURIComponent(`receivedDateTime ge ${new Date(since).toISOString()}`)}&$orderby=receivedDateTime%20desc`;
+            const first = yield* getDelta(account.id, known ?? initial).pipe(
               Effect.map(Option.some),
               Effect.catchIf(
                 (e) => known === undefined && is404(e),
@@ -868,7 +900,7 @@ export const makeOutlook: Effect.Effect<
                 (e) => !incrementalOnly && known !== undefined && is410(e),
                 () =>
                   Effect.gen(function* () {
-                    const fresh = yield* get(account.id, DeltaPage, initial);
+                    const fresh = yield* getDelta(account.id, initial);
                     yield* start;
                     restarted.add(folder.label);
                     return Option.some(fresh);
@@ -876,8 +908,13 @@ export const makeOutlook: Effect.Effect<
               ),
             );
             if (Option.isNone(first)) continue;
+            if (reset || known === undefined || restarted.has(folder.label))
+              next[WINDOW_KEY] = String(INITIAL_WINDOW_DAYS);
             yield* start;
             let page = first.value;
+            const listed = new Set<string>();
+            const folderKept = new Set<string>();
+            let deferredFetches = 0;
             for (;;) {
               const total = fetched + page.value.filter((item) => !("@removed" in item)).length;
               yield* Stream.fromIterable(page.value).pipe(
@@ -885,9 +922,13 @@ export const makeOutlook: Effect.Effect<
                   (item) =>
                     Effect.gen(function* () {
                       if ("@removed" in item) {
-                        removed.add(item.id);
+                        if (!reset && !restarted.has(folder.label)) removed.add(item.id);
                         return null;
                       }
+                      // Listing proves presence even when a later body GET returns 404.
+                      listed.add(item.id);
+                      kept.add(item.id);
+                      folderKept.add(item.id);
                       const message =
                         "conversationId" in item
                           ? Option.some(item)
@@ -899,7 +940,10 @@ export const makeOutlook: Effect.Effect<
                               Effect.map(Option.some),
                               Effect.catchIf(is404, () => Effect.succeed(Option.none())),
                             );
-                      if (Option.isNone(message)) return null;
+                      if (Option.isNone(message)) {
+                        deferredFetches++;
+                        return { _tag: "FetchLater", providerId: item.id } satisfies Change;
+                      }
                       const raw = message.value;
                       const attachments =
                         expandedAttachments(raw) ??
@@ -923,22 +967,33 @@ export const makeOutlook: Effect.Effect<
               if (page["@odata.deltaLink"]) next[folder.key] = page["@odata.deltaLink"];
               const url = page["@odata.nextLink"];
               if (!url) break;
-              page = yield* get(account.id, DeltaPage, url);
+              page = yield* getDelta(account.id, url);
             }
+            if (!next[folder.key] && known !== undefined) next[folder.key] = known;
+            yield* logSyncReset(account, folder.label, {
+              phase: "listing",
+              listed: listed.size,
+              kept: folderKept.size,
+              local: 0,
+              candidates: 0,
+              verified: 0,
+              incomplete: deferredFetches + (page["@odata.deltaLink"] ? 0 : 1),
+              deferred: deferredFetches,
+            });
           }
           // Moves can appear as both removed and changed. A change in any folder
           // wins; deletes and the checkpoint follow successful delivery of all pages.
           yield* start;
           const keep = [...kept];
-          if (reset) yield* Queue.offer(queue, { _tag: "Reset", keep });
+          if (reset) yield* Queue.offer(queue, { _tag: "Reset", keep, since, partial: true });
           else
             for (const label of restarted)
-              yield* Queue.offer(queue, { _tag: "DeleteLabel", label, keep });
+              yield* Queue.offer(queue, { _tag: "DeleteLabel", label, keep, since, partial: true });
           for (const providerId of removed)
             if (!kept.has(providerId)) yield* Queue.offer(queue, { _tag: "Delete", providerId });
           const wellKnown = new Set(WELL_KNOWN.map((f) => f.name));
           for (const key of Object.keys(previous))
-            if (key !== ID_TYPE_KEY && !wellKnown.has(key) && !(key in next))
+            if (key !== ID_TYPE_KEY && key !== WINDOW_KEY && !wellKnown.has(key) && !(key in next))
               yield* Queue.offer(queue, { _tag: "DeleteLabel", label: key });
           yield* Queue.offer(queue, { _tag: "Cursor", cursor: JSON.stringify(next) });
           yield* Queue.end(queue);
@@ -1609,9 +1664,90 @@ export const makeOutlook: Effect.Effect<
       return yield* incomingGraph(account, raw, label, attachments);
     }).pipe(Effect.mapError(writeFailure(account.id)));
 
+  const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
+    account,
+    candidates,
+  ) =>
+    Effect.gen(function* () {
+      const system = yield* Effect.forEach(WELL_KNOWN, (folder) =>
+        get(account.id, WithId, `/me/mailFolders/${folder.name}?$select=id`).pipe(
+          Effect.map((raw) => ({ id: raw.id, label: folder.label })),
+          Effect.catchIf(is404, () => Effect.succeed({ id: folder.name, label: folder.label })),
+        ),
+      );
+      const results: ResetVerification[] = [];
+      for (let offset = 0; offset < candidates.length; offset += 20) {
+        const chunk = candidates.slice(offset, offset + 20);
+        const verified = yield* retryProvider(
+          Effect.gen(function* () {
+            const batch = yield* write(account.id, "POST", "/$batch", {
+              requests: chunk.map((candidate, index) => ({
+                id: String(index),
+                method: "GET",
+                headers: PREFER,
+                url: `/me/messages/${encodeURIComponent(candidate.providerId)}?$select=id,parentFolderId`,
+              })),
+            }).pipe(Effect.flatMap(decode(BatchResponse)));
+            const throttled = batch.responses.filter(
+              (response) => response.status === 429 || response.status >= 500,
+            );
+            if (throttled.length) {
+              const now = yield* Clock.currentTimeMillis;
+              const delay = Math.max(
+                ...throttled.map((response) =>
+                  retryAfterMillis(
+                    response.headers?.["Retry-After"] ?? response.headers?.["retry-after"],
+                    now,
+                  ),
+                ),
+              );
+              return yield* new ApiError({
+                status: 429,
+                body: "Reset verification deferred",
+                retryAfter: String(delay / 1000),
+              });
+            }
+            const out: ResetVerification[] = [];
+            for (const response of batch.responses) {
+              const candidate = chunk.find((_item, index) => String(index) === response.id);
+              if (!candidate) continue;
+              if (response.status === 404) out.push({ kind: "gone", id: candidate.providerId });
+              else if (response.status === 200) {
+                const raw = yield* decode(
+                  Schema.Struct({ id: Schema.String, parentFolderId: Schema.String }),
+                )(response.body);
+                if (raw.id !== candidate.providerId) continue;
+                const label =
+                  system.find((folder) => folder.id === raw.parentFolderId)?.label ??
+                  raw.parentFolderId;
+                out.push({
+                  kind: "present",
+                  id: candidate.providerId,
+                  providerId: raw.id,
+                  labels: [
+                    label,
+                    ...candidate.labels.filter(
+                      (value) =>
+                        ["UNREAD", "STARRED", "IMPORTANT"].includes(value) ||
+                        value.startsWith("category:"),
+                    ),
+                  ],
+                });
+              }
+            }
+            return out;
+          }),
+          (error) => error._tag === "ApiError" && isTransient(error),
+        ).pipe(Effect.catch(() => Effect.succeed<ResetVerification[]>([])));
+        results.push(...verified);
+      }
+      return results;
+    }).pipe(Effect.mapError(readFailure(account.id)));
+
   return {
     backfill,
     fetchMessage,
+    verifyResetCandidates,
     ...settings,
     ...makeOutlookFeatures(get, write),
     ...makeProviderCalendar(

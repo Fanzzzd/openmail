@@ -1,3 +1,4 @@
+import { makeResetGuard } from "../../sync-reset.js";
 import { expect, it, vi } from "vitest";
 import { Effect, Fiber, Layer, Logger, ManagedRuntime, Option, Stream } from "effect";
 import {
@@ -105,6 +106,7 @@ function server(
     uidNext?: number;
     stallStore?: () => void;
     stallStoreAt?: number;
+    resetSearch?: (command: string, path: string) => readonly number[];
   } = {},
 ) {
   const commands: string[] = [];
@@ -122,6 +124,7 @@ function server(
       let data = false;
       let appendTag = "";
       let loginTag = "";
+      let selectedPath = "";
       const socket = new ScriptSocket(
         (bytes, current) => {
           const line = Buffer.from(bytes).toString("latin1").replace(/\r\n$/, "");
@@ -183,13 +186,15 @@ function server(
             );
             done();
           } else if (command.startsWith("EXAMINE") || command.startsWith("SELECT")) {
+            selectedPath = /"([^"\r\n]+)"/.exec(command)?.[1] ?? "";
             current.enqueue(`* OK [UIDVALIDITY ${options.validity ?? "9"}] valid\r\n`);
             if (options.uidNext !== undefined)
               current.enqueue(`* OK [UIDNEXT ${options.uidNext}] next\r\n`);
             done();
           } else if (command.startsWith("UID SEARCH")) {
+            const found = options.resetSearch?.(command, selectedPath);
             current.enqueue(
-              `* SEARCH${exists && !(deleted && command.includes("UNDELETED")) ? " 1" : ""}\r\n`,
+              `* SEARCH${found ? (found.length ? ` ${found.join(" ")}` : "") : exists && !(deleted && command.includes("UNDELETED")) ? " 1" : ""}\r\n`,
             );
             done();
           } else if (command.startsWith("UID FETCH")) {
@@ -893,7 +898,9 @@ it("slice55: mobile sync omits Deleted copies on a server without MOVE or UIDPLU
           }),
         );
         const changes = yield* Stream.runCollect(adapter.pull(account, cursor, "inbox"));
-        expect(changes.some((c) => c._tag === "Delete" && c.providerId === "9:1:INBOX")).toBe(true);
+        expect(
+          changes.some((c) => c._tag === "RebuildFolder" && c.candidates?.includes("9:1:INBOX")),
+        ).toBe(true);
         expect(
           changes.some(
             (c) =>
@@ -977,3 +984,187 @@ it("slice55-fix: mobile pushes refuse regressed UIDNEXT before STORE or COPY", a
     await test.runtime.dispose();
   }
 });
+
+for (const outcome of ["present", "gone", "moved"] as const) {
+  it(`slice56: mobile IMAP reset verifies ${outcome} by UID and Message-ID`, async () => {
+    const test = server({
+      resetSearch: (command, path) => {
+        if (command.includes("HEADER Message-ID")) {
+          const uid = Number(/m(\d+)@/.exec(command)?.[1]);
+          return (outcome === "present" && path === "INBOX") ||
+            (outcome === "moved" && path === "Projects")
+            ? [uid]
+            : [];
+        }
+        return outcome === "present" && path === "INBOX"
+          ? Array.from({ length: 90 }, (_value, index) => index + 11)
+          : [];
+      },
+    });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount("imap", "me@example.test");
+          const settings = {
+            preset: "custom",
+            username: "me@example.test",
+            imapHost: "imap.example.test",
+            imapPort: 993,
+            smtpHost: "smtp.example.test",
+            smtpPort: 465,
+            smtpSecure: true,
+          } as const;
+          yield* store.setImapSettings(account.id, settings);
+          yield* (yield* Secrets).set(account.id, "password");
+          for (let uid = 1; uid <= 100; uid++)
+            yield* store.upsertMessage(account.id, {
+              providerId: `9:${uid}:INBOX`,
+              rfcMessageId: `<m${uid}@example.test>`,
+              threadId: `m${uid}`,
+              subject: "Cached",
+              from: { name: "", address: "sender@example.test" },
+              to: [],
+              cc: [],
+              date: 1000,
+              snippet: "cached",
+              bodyText: "cached body",
+              bodyHtml: "",
+              labels: ["INBOX", "UNREAD"],
+              attachments: [],
+              isUnread: true,
+              isStarred: false,
+            });
+          const adapter = (yield* Providers).get("imap");
+          const guard = makeResetGuard(
+            store,
+            adapter,
+            { ...account, imap: settings },
+            { changed: 0, deleted: 0 },
+            { remaining: 500 },
+          );
+          yield* guard.reset({
+            _tag: "RebuildFolder",
+            previous: { path: "INBOX", uidValidity: "9" },
+            keep: Array.from({ length: 10 }, (_value, index) => `9:${index + 1}:INBOX`),
+          });
+          yield* guard.verify();
+          expect(
+            yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+          ).toBe(outcome === "gone" ? 10 : 100);
+          if (outcome === "moved") {
+            const id = yield* store.messageIdForProvider(account.id, "9:11:Projects");
+            if (!id) throw new Error("Missing moved message");
+            expect((yield* store.getMessage(id)).labels).toEqual(["Projects", "UNREAD"]);
+            expect((yield* store.getMessage(id)).bodyText).toBe("cached body");
+          }
+        }),
+      );
+      expect(test.commands.some((command) => command.includes("UID SEARCH UNDELETED UID"))).toBe(
+        true,
+      );
+      if (outcome !== "present")
+        expect(test.commands.some((command) => command.includes("HEADER Message-ID"))).toBe(true);
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
+
+it("slice56: successful IMAP command without a SEARCH reply is not proof of absence", async () => {
+  const socket = new ScriptSocket((bytes, current) => {
+    const tag = Buffer.from(bytes).toString("utf8").split(" ")[0];
+    current.enqueue(`${tag} OK completed\r\n`);
+  });
+  try {
+    await expect(new ImapWire(new MailWire(socket)).search("UID 1:100")).rejects.toThrow(
+      "SEARCH response",
+    );
+  } finally {
+    socket.close();
+  }
+});
+
+for (const outcome of ["present", "gone", "moved"] as const) {
+  it(`slice56: mobile invalidation verifies ${outcome} through Message-ID and preserves cached rows first`, async () => {
+    const test = server({
+      resetSearch: (command, path) => {
+        if (!command.includes("HEADER Message-ID")) throw new Error("Unsafe reused UID probe");
+        const uid = Number(/m(\d+)@/.exec(command)?.[1]);
+        return (outcome === "present" && path === "INBOX") ||
+          (outcome === "moved" && path === "Projects")
+          ? [uid + 100]
+          : [];
+      },
+    });
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount("imap", "me@example.test");
+          const settings = {
+            preset: "custom",
+            username: "me@example.test",
+            imapHost: "imap.example.test",
+            imapPort: 993,
+            smtpHost: "smtp.example.test",
+            smtpPort: 465,
+            smtpSecure: true,
+          } as const;
+          yield* store.setImapSettings(account.id, settings);
+          yield* (yield* Secrets).set(account.id, "password");
+          for (let uid = 1; uid <= 100; uid++)
+            yield* store.upsertMessage(account.id, {
+              providerId: `9:${uid}:INBOX`,
+              rfcMessageId: `<m${uid}@example.test>`,
+              threadId: `m${uid}`,
+              subject: "Cached",
+              from: { name: "", address: "sender@example.test" },
+              to: [],
+              cc: [],
+              date: 1000,
+              snippet: "cached",
+              bodyText: "cached body",
+              bodyHtml: "",
+              labels: ["INBOX", "UNREAD"],
+              attachments: [],
+              isUnread: true,
+              isStarred: false,
+            });
+          yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "9" });
+          expect(
+            yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+          ).toBe(100);
+          expect((yield* store.pendingResetCandidates(account.id)).length).toBe(100);
+          const adapter = (yield* Providers).get("imap");
+          yield* makeResetGuard(
+            store,
+            adapter,
+            { ...account, imap: settings },
+            { changed: 0, deleted: 0 },
+            { remaining: 500 },
+          ).verify();
+          expect(
+            yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+          ).toBe(outcome === "gone" ? 0 : 100);
+          expect((yield* store.pendingResetCandidates(account.id)).length).toBe(0);
+          if (outcome !== "gone") {
+            const id = yield* store.messageIdForProvider(
+              account.id,
+              `9:111:${outcome === "present" ? "INBOX" : "Projects"}`,
+            );
+            if (!id) throw new Error("Missing verified message");
+            expect(id).not.toBe(`${account.id}/9:11:INBOX`);
+            expect(yield* store.hasMessage(`${account.id}/9:11:INBOX`)).toBe(false);
+            expect((yield* store.getMessage(id)).bodyText).toBe("cached body");
+          }
+        }),
+      );
+      expect(test.commands.some((command) => command.includes("UNDELETED HEADER Message-ID"))).toBe(
+        true,
+      );
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}

@@ -1,5 +1,6 @@
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import { scopedAdapter, serviceGranted, type AuthorizationFeature } from "./optional-services.js";
+import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
 import { readOnlyAdapter, READ_ONLY_MESSAGE } from "./read-only.js";
 import { inspectAttachment } from "./attachment-import.js";
 import { eventFromInvite, makeFeatureMailbox } from "./mailbox-features.js";
@@ -1725,7 +1726,7 @@ export const MailboxLive = (
 
       // Pulling
 
-      const apply = (
+      const applyChanges = (
         account: Account,
         counts: { changed: number; deleted: number },
         notificationsReady: boolean,
@@ -1745,6 +1746,13 @@ export const MailboxLive = (
             if (scope && ["Delete", "DeleteLabel", "Reset", "Labels"].includes(change._tag))
               continue;
             switch (change._tag) {
+              case "FetchLater":
+                writes.push(
+                  store
+                    .enqueueOp(account.id, change.providerId, { kind: "reconcile" })
+                    .pipe(Effect.asVoid),
+                );
+                break;
               case "Remap":
               case "Upsert":
                 counts.changed++;
@@ -1944,20 +1952,11 @@ export const MailboxLive = (
                 );
                 break;
               case "RebuildFolder":
-                writes.push(store.deleteImapFolder(account.id, change.previous, change.keep));
-                break;
               case "DeleteLabel":
-                writes.push(store.deleteMessagesWithLabel(account.id, change.label, change.keep));
-                break;
+              case "Reset":
+                break; // Reset barriers run outside the write transaction.
               case "BackfillReset":
                 writes.push(store.resetBackfill(account.id));
-                break;
-              case "Reset":
-                writes.push(
-                  store.deleteAccountMessages(account.id, change.keep, change.since),
-                  store.resetBackfill(account.id),
-                  change.since === undefined ? store.dropSyncedDrafts(account.id) : Effect.void,
-                );
                 break;
               case "Labels":
                 writes.push(store.replaceLabels(account.id, change.labels));
@@ -2029,8 +2028,35 @@ export const MailboxLive = (
         account: Account,
         scope?: "inbox",
         incrementalOnly = false,
+        budget = { remaining: RESET_VERIFICATION_LIMIT },
       ) {
         const counts = { changed: 0, deleted: 0 };
+        const guard = makeResetGuard(
+          store,
+          providers.get(account.provider),
+          account,
+          counts,
+          budget,
+        );
+        const apply = (current: Account, notificationsReady: boolean) =>
+          Effect.fnUntraced(function* (batch: readonly Change[]) {
+            let changes: Change[] = [];
+            for (const change of batch) {
+              if (
+                !scope &&
+                (change._tag === "Reset" ||
+                  change._tag === "DeleteLabel" ||
+                  change._tag === "RebuildFolder")
+              ) {
+                if (changes.length)
+                  yield* applyChanges(current, counts, notificationsReady, scope)(changes);
+                changes = [];
+                yield* guard.reset(change);
+              } else changes.push(change);
+            }
+            if (changes.length)
+              yield* applyChanges(current, counts, notificationsReady, scope)(changes);
+          });
         account = yield* store.getAccount(account.id).pipe(Effect.orDie);
         if (account.enabled === false) return { accountId: account.id, ...counts };
         if (account.needsReauth) {
@@ -2085,13 +2111,14 @@ export const MailboxLive = (
                       Effect.map((a) => a.enabled !== false),
                     ),
                   ),
-                  Stream.runForEach(apply(currentAccount, counts, notificationsReady, scope)),
+                  Stream.runForEach(apply(currentAccount, notificationsReady)),
                 );
             }),
           ),
         );
         return yield* pull.pipe(
           Effect.retry(scope ? { ...PULL_RETRY, times: 0 } : PULL_RETRY),
+          Effect.andThen(scope ? Effect.void : guard.verify()),
           Effect.andThen(
             scope
               ? store.setInboxError(account.id, null)
@@ -2146,13 +2173,17 @@ export const MailboxLive = (
           ? [yield* store.getAccount(accountId).pipe(Effect.orDie)]
           : yield* store.listAccounts;
         const results: SyncResult[] = [];
+        const budget = { remaining: RESET_VERIFICATION_LIMIT };
         // One failing account does not stop the rest.
         for (const account of accounts) {
           if (account.enabled === false) continue;
           const result: SyncResult = yield* account.provider === "imap"
-            ? pullAccount(account).pipe(imapPullLock(account.id).withPermits(1))
-            : pullAccount(account);
+            ? pullAccount(account, undefined, false, budget).pipe(
+                imapPullLock(account.id).withPermits(1),
+              )
+            : pullAccount(account, undefined, false, budget);
           if (account.provider === "imap" && !result.error) yield* flush([account.id]);
+
           results.push(result);
           if (!result.error) polling.delete(account.id);
           if (!account.needsReauth)

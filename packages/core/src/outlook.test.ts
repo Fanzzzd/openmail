@@ -2,7 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
 
 import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
-import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
+import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
 
@@ -41,7 +41,7 @@ type Reply = { headers?: Record<string, string>; status?: number; json?: unknown
  * GRAPH. Function routes see the full URL (delta pages share a path).
  * Unknown routes answer 404, like a folder the mailbox does not have.
  */
-function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
+function fakeHttp(routes: Record<string, Reply | ((url: URL, call: Call) => Reply)>) {
   const calls: Call[] = [];
   const client = HttpClient.make((request, url) =>
     Effect.sync(() => {
@@ -49,16 +49,17 @@ function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
         request.body._tag === "Uint8Array" ? new TextDecoder().decode(request.body.body) : "";
       const contentType = request.body._tag === "Uint8Array" ? request.body.contentType : "";
       const body = contentType.startsWith("application/json") ? parseJson(text) : text || undefined;
-      calls.push({
+      const call: Call = {
         method: request.method,
         url,
         body,
         contentType,
         prefer: request.headers["prefer"],
-      });
+      };
+      calls.push(call);
       const path = url.pathname.replace("/v1.0", "");
       const route = routes[`${request.method} ${path}`];
-      const reply = typeof route === "function" ? route(url) : (route ?? { status: 404 });
+      const reply = typeof route === "function" ? route(url, call) : (route ?? { status: 404 });
       return HttpClientResponse.fromWeb(
         request,
         new Response(reply.text ?? (reply.json === undefined ? null : JSON.stringify(reply.json)), {
@@ -68,7 +69,7 @@ function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
       );
     }),
   );
-  return { layer: Layer.succeed(HttpClient.HttpClient)(client), calls };
+  return { client, layer: Layer.succeed(HttpClient.HttpClient)(client), calls };
 }
 
 const account: Account = {
@@ -88,7 +89,7 @@ const platformOptions: MemoryPlatformOptions = {
 };
 
 function run<A, E>(
-  http: ReturnType<typeof fakeHttp>,
+  http: Pick<ReturnType<typeof fakeHttp>, "layer" | "calls">,
   f: (adapter: ProviderAdapter) => Effect.Effect<A, E, Secrets>,
   options: MemoryPlatformOptions = platformOptions,
 ) {
@@ -203,14 +204,7 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
     const changes = yield* run(http, (a) =>
       Stream.runCollect(a.pull(account, Option.some(JSON.stringify({ inbox: "old-link" })))),
     );
-    assert.deepStrictEqual(tags(changes), [
-      "Labels",
-      "Upsert",
-      "Progress",
-      "Reset",
-      "Delete",
-      "Cursor",
-    ]);
+    assert.deepStrictEqual(tags(changes), ["Labels", "Upsert", "Progress", "Reset", "Cursor"]);
     assert.deepStrictEqual(changes[0], {
       _tag: "Labels",
       labels: [
@@ -225,9 +219,14 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
     assert.deepStrictEqual(upsert.message.attachments, [
       { filename: "quote.pdf", mimeType: "application/pdf", size: 100 },
     ]);
-    assert.deepStrictEqual(changes[4], { _tag: "Delete", providerId: "gone" });
+    assert.deepStrictEqual(changes[3], {
+      _tag: "Reset",
+      keep: ["AAMk123"],
+      since: (yield* Clock.currentTimeMillis) - 90 * 86400000,
+      partial: true,
+    });
 
-    const cursor = changes[5];
+    const cursor = changes[4];
     assert.ok(cursor?._tag === "Cursor");
     const next = Schema.decodeUnknownSync(
       Schema.fromJsonString(Schema.Record(Schema.String, Schema.String)),
@@ -241,11 +240,19 @@ it.effect("a cursor without the immutable-id marker resets, then syncs every fol
     assert.strictEqual(next["archive"], undefined);
     assert.deepStrictEqual(
       Object.keys(next).toSorted(),
-      ["__idType", ...WELL_KNOWN, "id-c1", "id-c2"].toSorted(),
+      ["__idType", "__windowDays", ...WELL_KNOWN, "id-c1", "id-c2"].toSorted(),
     );
     // The stale link was not followed after the reset.
     assert.ok(!http.calls.some((c) => c.url.href.includes("old-link")));
-    assert.ok(http.calls.every((c) => c.prefer === 'IdType="ImmutableId"'));
+    assert.ok(
+      http.calls.every(
+        (c) =>
+          c.prefer ===
+          (c.url.pathname.endsWith("/messages/delta")
+            ? 'IdType="ImmutableId", odata.maxpagesize=50'
+            : 'IdType="ImmutableId"'),
+      ),
+    );
     for (const call of http.calls.filter((c) => c.url.pathname.endsWith("/messages/delta")))
       assert.ok(!(call.url.searchParams.get("$select") ?? "").includes("internetMessageHeaders"));
   }),
@@ -497,7 +504,13 @@ it.effect("an expired delta link restarts that folder and drops its local copies
       "DeleteLabel",
       "Cursor",
     ]);
-    assert.deepStrictEqual(changes[3], { _tag: "DeleteLabel", label: "INBOX", keep: ["AAMk123"] });
+    assert.deepStrictEqual(changes[3], {
+      _tag: "DeleteLabel",
+      label: "INBOX",
+      keep: ["AAMk123"],
+      since: (yield* Clock.currentTimeMillis) - 90 * 86400000,
+      partial: true,
+    });
     const upsert = changes[1];
     assert.ok(upsert?._tag === "Upsert");
     assert.strictEqual(upsert.message.providerId, "AAMk123");
@@ -3382,3 +3395,104 @@ it.effect("Outlook sync health GETs the exact system/custom folder count selecti
     }),
   );
 });
+
+for (const restart of [false, true]) {
+  it.effect(
+    `slice56: delta page-size preference enumerates all messages after ${restart ? "410 restart" : "initial sync"}`,
+    () =>
+      Effect.gen(function* () {
+        const delta = `${GRAPH}/me/mailFolders/inbox/messages/delta`;
+        const complete = `${delta}?$deltatoken=complete`;
+        const all = Array.from({ length: 123 }, (_value, index) => ({
+          ...raw,
+          id: `paged-${index}`,
+          hasAttachments: false,
+        }));
+        const http = fakeHttp({
+          ...mailbox({}),
+          "GET /me/mailFolders/inbox/messages/delta": (url, call) => {
+            if (url.searchParams.get("$deltatoken") === "expired") return { status: 410 };
+            if (url.searchParams.get("$deltatoken") === "complete")
+              return { json: { value: [], "@odata.deltaLink": complete } };
+            const top = url.searchParams.get("$top");
+            if (top !== null)
+              return { json: { value: all.slice(0, Number(top)), "@odata.deltaLink": complete } };
+            const offset = Number(url.searchParams.get("$skiptoken") ?? 0);
+            const size = Number(
+              /odata.maxpagesize=(\d+)/.exec(call.prefer ?? "")?.[1] ?? all.length,
+            );
+            const next = offset + size;
+            return {
+              json: {
+                value: all.slice(offset, next),
+                ...(next < all.length
+                  ? { "@odata.nextLink": `${delta}?$skiptoken=${next}` }
+                  : { "@odata.deltaLink": complete }),
+              },
+            };
+          },
+        });
+        // Replay the old request shape: a deltaLink arrives after 50 despite 73 more messages.
+        const capped = yield* http.client.execute(
+          HttpClientRequest.get(`${delta}?$top=50`).pipe(
+            HttpClientRequest.setHeader("prefer", 'IdType="ImmutableId"'),
+          ),
+        );
+        const legacy = yield* Schema.decodeUnknownEffect(
+          Schema.Struct({
+            value: Schema.Array(Schema.Struct({ id: Schema.String })),
+            "@odata.deltaLink": Schema.String,
+            "@odata.nextLink": Schema.optionalKey(Schema.String),
+          }),
+        )(yield* capped.json);
+        assert.strictEqual(legacy.value.length, 50);
+        assert.strictEqual(legacy["@odata.nextLink"], undefined);
+        assert.strictEqual(legacy["@odata.deltaLink"], complete);
+        const before = http.calls.length;
+        yield* run(http, (adapter) =>
+          Effect.gen(function* () {
+            const cursor = restart
+              ? Option.some(
+                  JSON.stringify({
+                    __idType: "immutable",
+                    inbox: `${delta}?$deltatoken=expired&$top=50`,
+                  }),
+                )
+              : Option.none<string>();
+            const changes = yield* Stream.runCollect(adapter.pull(account, cursor));
+            const delivered = changes.flatMap((change) =>
+              change._tag === "Upsert" ? [change.message.providerId] : [],
+            );
+            assert.deepStrictEqual(
+              delivered,
+              all.map((message) => message.id),
+            );
+            const reset = changes.find(
+              (change) => change._tag === (restart ? "DeleteLabel" : "Reset"),
+            );
+            assert.ok(reset?._tag === "DeleteLabel" || reset?._tag === "Reset");
+            assert.deepStrictEqual(reset.keep, delivered);
+            const checkpoint = changes.at(-1);
+            assert.ok(checkpoint?._tag === "Cursor");
+            yield* Stream.runDrain(adapter.pull(account, Option.some(checkpoint.cursor), "inbox"));
+          }),
+        );
+        const calls = http.calls.slice(before);
+        const deltaCalls = calls.filter((call) => call.url.pathname.endsWith("/messages/delta"));
+        for (const call of deltaCalls) {
+          assert.isFalse(call.url.searchParams.has("$top"));
+          assert.strictEqual(call.prefer, 'IdType="ImmutableId", odata.maxpagesize=50');
+        }
+        const inbox = deltaCalls.filter((call) => call.url.pathname.includes("/inbox/"));
+        assert.strictEqual(inbox.length, restart ? 5 : 4);
+        assert.isTrue(inbox.some((call) => call.url.searchParams.has("$skiptoken")));
+        assert.isTrue(
+          inbox.some((call) => call.url.searchParams.get("$deltatoken") === "complete"),
+        );
+        const folders = calls.find((call) => call.url.pathname === "/v1.0/me/mailFolders");
+        assert.ok(folders);
+        assert.strictEqual(folders.url.searchParams.get("$top"), "100");
+        assert.strictEqual(folders.prefer, 'IdType="ImmutableId"');
+      }),
+  );
+}

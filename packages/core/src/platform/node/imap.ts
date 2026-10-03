@@ -1,3 +1,4 @@
+import type { ResetVerification } from "../../sync-reset.js";
 import { messageSecurity } from "../../message-security.js";
 import { MailCodec, mimeAddresses, type MimeMessage } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
@@ -6,7 +7,6 @@ import {
   encodeProviderId,
   decodeProviderId,
   uidSet,
-  parseUidSet,
   readCursor,
   FolderState,
   type ImapCursor,
@@ -547,11 +547,6 @@ const runPull = Effect.fnUntraced(function* (
       _tag: "Cursor",
       cursor: JSON.stringify({ folders: { ...prev.folders, ...next.folders } }),
     });
-  const dropFolder = Effect.fnUntraced(function* (path: string, state: FolderCursor) {
-    for (const uid of parseUidSet(state.uids)) {
-      yield* emit({ _tag: "Delete", providerId: encodeProviderId(path, state.uidValidity, uid) });
-    }
-  });
 
   // Pass 1: new UIDs per folder, so progress has a total.
   const plans: {
@@ -689,7 +684,13 @@ const runPull = Effect.fnUntraced(function* (
       if (!scan) {
         for (const uid of known) present.add(uid);
       } else state.flagScanAt = now;
-      for (const change of state.reconcile(folder.path, present, current)) yield* emit(change);
+      const changes = state.reconcile(folder.path, present, current);
+      const candidates = changes.flatMap((change) =>
+        change._tag === "Delete" ? [change.providerId] : [],
+      );
+      if (candidates.length)
+        yield* emit({ _tag: "RebuildFolder", previous: previousFolder, keep: [], candidates });
+      for (const change of changes) if (change._tag !== "Delete") yield* emit(change);
     }
 
     for (let i = 0; i < newUids.length; i += FETCH_BATCH) {
@@ -711,6 +712,8 @@ const runPull = Effect.fnUntraced(function* (
         _tag: "RebuildFolder",
         previous: previousFolder,
         keep: newUids.map((uid) => encodeProviderId(folder.path, uidValidity, uid)),
+        since: new Date(now - INITIAL_DAYS * 86400000).setUTCHours(0, 0, 0, 0),
+        partial: true,
       });
     state.lastUid = Math.max(regressed ? 0 : state.lastUid, uidNext - 1, ...newUids);
     state.modseq = highest !== undefined ? String(highest) : undefined;
@@ -726,7 +729,12 @@ const runPull = Effect.fnUntraced(function* (
       next.folders[path] = state;
       continue;
     }
-    yield* dropFolder(path, state);
+
+    yield* emit({
+      _tag: "RebuildFolder",
+      previous: { path, uidValidity: state.uidValidity },
+      keep: [],
+    });
     // A user folder's label is its path; this also clears copies the cursor never tracked.
     yield* emit({ _tag: "DeleteLabel", label: path });
   }
@@ -1533,6 +1541,97 @@ export const makeImapWith = (
         const message = fetched[0]?.message;
         return message ?? (yield* new PermanentError({ message: `Message ${providerId} is gone` }));
       }).pipe(Effect.scoped);
+    const verifyResetCandidates: NonNullable<ProviderAdapter["verifyResetCandidates"]> = (
+      account,
+      candidates,
+    ) =>
+      Effect.gen(function* () {
+        const { s } = yield* session(account);
+        const folders = mapFolders(yield* call(s, (client) => client.list()));
+        if (!folders.length) return [];
+        const results: ResetVerification[] = [];
+        const groups = new Map<string, typeof candidates>();
+        for (const candidate of candidates) {
+          const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+          if (Option.isNone(ref)) continue;
+          groups.set(ref.value.path, [...(groups.get(ref.value.path) ?? []), candidate]);
+        }
+        for (const [path, group] of groups) {
+          const original = folders.find((folder) => folder.path === path);
+          let validity: string | undefined;
+          let present = new Set<number>();
+          if (original) {
+            const mailbox = yield* call(s, (client) =>
+              client.mailboxOpen(path, { readOnly: true }),
+            );
+            validity = String(mailbox.uidValidity);
+            const uids = group.flatMap((candidate) => {
+              const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+              return !candidate.resetProviderId &&
+                Option.isSome(ref) &&
+                ref.value.uidValidity === validity
+                ? [ref.value.uid]
+                : [];
+            });
+            if (uids.length) {
+              const found = yield* call(s, (client) =>
+                client.search({ uid: uidSet(uids), deleted: false }, { uid: true }),
+              );
+              if (!found) return results; // A failed search is not proof of absence.
+              present = new Set(found);
+            }
+          }
+          for (const candidate of group) {
+            const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
+            if (Option.isNone(ref)) continue;
+            const retained = candidate.labels.filter((label) =>
+              ["UNREAD", "STARRED", "IMPORTANT"].includes(label),
+            );
+            if (
+              !candidate.resetProviderId &&
+              ref.value.uidValidity === validity &&
+              present.has(ref.value.uid)
+            ) {
+              results.push({
+                kind: "present",
+                id: candidate.providerId,
+                providerId: candidate.providerId,
+                labels: [original?.label ?? path, ...retained],
+              });
+              continue;
+            }
+            if (!candidate.rfcMessageId) {
+              if (!candidate.resetProviderId && validity === ref.value.uidValidity)
+                results.push({ kind: "gone", id: candidate.providerId });
+              continue; // UIDVALIDITY changes without Message-ID cannot establish absence.
+            }
+            const matches: ResetVerification[] = [];
+            for (const folder of folders) {
+              const mailbox = yield* call(s, (client) =>
+                client.mailboxOpen(folder.path, { readOnly: true }),
+              );
+              const found = yield* call(s, (client) =>
+                client.search(
+                  { header: { "message-id": candidate.rfcMessageId ?? "" }, deleted: false },
+                  { uid: true },
+                ),
+              );
+              if (!found) return results;
+              for (const uid of found)
+                matches.push({
+                  kind: "present",
+                  id: candidate.providerId,
+                  providerId: encodeProviderId(folder.path, String(mailbox.uidValidity), uid),
+                  labels: [folder.label, ...retained],
+                });
+            }
+            if (!matches.length) results.push({ kind: "gone", id: candidate.providerId });
+            else if (matches.length === 1 && matches[0]) results.push(matches[0]);
+          }
+        }
+        return results;
+      }).pipe(Effect.scoped);
+
     const FolderCursor = Schema.fromJsonString(
       Schema.Struct({
         path: Schema.String,
@@ -1736,6 +1835,7 @@ export const makeImapWith = (
       permanentlyDelete,
       backfill,
       fetchMessage,
+      verifyResetCandidates,
       connect,
       pull,
       push,

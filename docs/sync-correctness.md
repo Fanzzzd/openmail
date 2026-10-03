@@ -1,6 +1,6 @@
 # 同步与发送结果
 
-UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先清除该文件夹的缓存与远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，再重新拉取最近窗口。此情况不按 Message-ID 重映射。持久文件夹世代保证重新拉取的消息不会复用失效的本地 ID，旧撤销记录与待审批提议会失效，阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和后台轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束；UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。
+UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。大规模失效会隔离保留旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和后台轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
@@ -13,3 +13,27 @@ Gmail 和 Graph 的发送 POST 不自动重试。Message-ID 使用随机本地�
 Gmail 官方文档规定提交 RFC 2822 MIME，并支持 `rfc822msgid` 搜索，但没有承诺保留客户端设置的 Message-ID。core 先查询完整 ID；没有结果时，搜索提交前一分钟至提交后两分钟的 Sent 候选，读取 Message-ID metadata 并核对随机本地部分。不依赖未文档化的部分 ID 搜索。若服务端连本地部分也重写，无法确认发送，继续保留重发保护。自动测试覆盖 ID 保留、域名改写、延迟副本和未找到副本；没有用真实账户发送探测邮件。参见 [发送邮件](https://developers.google.com/workspace/gmail/api/guides/sending)、[消息列表查询](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list)、[Gmail 搜索条件](https://support.google.com/mail/answer/7190)。
 
 Graph 用 `internetMessageId` 查询 Sent。回复草稿创建结果不确定时，同样按提交时设置的 ID 查询 Drafts，并清理找到的孤立草稿；草稿准备失败也会清理，发送成功后不会删除 Sent 副本。参见 [创建回复草稿](https://learn.microsoft.com/en-us/graph/api/message-createreply?view=graph-rest-1.0)和 [更新草稿 Message-ID](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)。
+
+# 重置删除保护
+
+重置的 keep 集合只覆盖本轮列出的范围。Outlook 初始同步和 410 重启按最近 90 天的 `receivedDateTime` 过滤并倒序分页。delta URL 不带 `$top`；初始请求、nextLink、deltaLink 每次都发送 `Prefer: IdType="ImmutableId", odata.maxpagesize=50`，普通列表端点仍可用 `$top`。删除候选使用同一起点，窗外消息保留。过滤 delta 最多返回 5,000 条，不能据此证明缺失邮件已删除。窗口内所有缺失项都要验证；缺少最终 deltaLink 时保留旧游标，下一轮重新列举。[Graph delta 文档](https://learn.microsoft.com/en-us/graph/delta-query-messages)说明了过滤、排序、条数上限和续页链接。
+
+Gmail history-404 恢复列出最近 90 天，恢复分页不受初次同步的 2,000 条限制，Reset 仅覆盖相同日期范围。IMAP UIDVALIDITY 重建只检查 SINCE 日起的窗口；每个文件夹最多取最新 1,000 条，因此窗口内缺失项也须验证。已有 UID 的标记扫描仅清理明确扫描过的 ID。文件夹消失和 UID 复用分别校验原文件夹身份与 Message-ID，不用新 UID 的存在证明旧消息仍在。
+
+其他 keep 清理或窗口扫描若拟删除超过 `max(50, 范围内本地行数的 20%)`，先入持久验证队列。每次同步所有账户合计最多检查 500 个 ID，失败、限流或未验证项保留并续验。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。
+
+# Slice 56 根因证据
+
+协调器在只读真实数据副本上运行 sync-health，得到以下结果：
+
+| Outlook 文件夹 |              服务端消息 |                  本地消息 |
+| -------------- | ----------------------: | ------------------------: |
+| Inbox          | 28,666，其中未读 26,042 | 重启前 1,199，重列举约 91 |
+| Sent           |                      98 |                        65 |
+| Archive        |                     103 |                        52 |
+
+410 重启后的缺失不能解释为服务端 Inbox 缩小。已确认的客户端错误是：把未证明完整的 delta 列举当作整个文件夹的 keep 集合，清理约 1,100 条本地消息；源码还允许在没有 nextLink 或 deltaLink 时结束，并在缺少 conversationId 的单项 GET 返回 404 后漏记 listed ID。旧 Outlook 循环没有 90 天或 2,000 条截断，也没有日期过滤。当前实现明确限定日期范围，将每个列出的 ID 立即加入 keep，失败的完整读取稍后补取，并验证窗口内缺失项。
+
+协调器随后在只读真实数据副本上验证 `532b888`：Outlook 保留 1,479 条，没有大规模删除。新诊断显示，410 重启后 Inbox 的 listing 阶段 `listed:50, kept:50`，reset 阶段全局 keep 为 53，文件夹范围内本地有 512 条。50 与旧初始 delta URL 的 `$top=50` 一致；这次观测中 Graph 把 `$top` 用作本轮上限，在 50 条后直接返回 deltaLink，没有 nextLink，适配器因而停止枚举。
+
+根因修复将页大小移到 `odata.maxpagesize` 请求头，并从 delta 请求 URL 删除 `$top`，包括旧游标中的显式参数。回归假 Graph 在有 `$top` 时复现“50 条后结束”，改用请求头后按 50、50、23 分页交付全部 123 条；初始同步、410 重启、续页和下一轮增量都检查请求头与 ImmutableId 设置。窗口范围、5,000 条过滤上限的保护、逐项验证和持久续验继续生效。已有 28,666 条服务端计数、1,199 条窗内缓存与 91 条列举的回归仍通过 `syncHealth` 检查本地保留，并覆盖窗外邮件、UID 复用、移动和失败。

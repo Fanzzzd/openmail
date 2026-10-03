@@ -2,6 +2,7 @@ import { requestRecoveryRelaunch } from "./recovery-actions";
 import { nativeRecoveryLabels } from "./native-i18n";
 import {
   ProviderDiagnostic,
+  SyncResetDiagnostic,
   checkLocalDatabase,
   createLocalDiagnostics,
   resetLocalCache,
@@ -26,6 +27,10 @@ export const diagnosticsLogger = Logger.make((options) => {
     ? options.message
     : [options.message];
   for (const message of messages) {
+    const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(message);
+    if (reset._tag === "Some") {
+      localLog("sync-reset", reset.value);
+    }
     const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);
     if (provider._tag === "Some") {
       localLog("provider-failure", provider.value);
