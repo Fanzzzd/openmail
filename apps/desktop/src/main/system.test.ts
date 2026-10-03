@@ -1,4 +1,4 @@
-import { Effect, Fiber, Layer, Schema, Stream } from "effect";
+import { Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
 import type { DesktopLabels } from "../shared/desktop-labels";
@@ -762,6 +762,23 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
     Effect.scoped(
       Effect.gen(function* () {
         const desktop = yield* Desktop;
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.queueUndoSend(
+          {
+            id: "approved-quit-draft",
+            accountId: account.id,
+            message: {
+              to: [{ name: "", address: "bob@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Quit",
+              text: "Draft",
+              attachments: [],
+            },
+          },
+          Date.now() + 60000,
+        );
         const first = observations.testState.windows[0];
         if (!first) throw new Error("Missing main window");
         yield* desktop.events(first.webContents.id).pipe(
@@ -781,6 +798,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         expect(preventDefault).toHaveBeenCalledOnce();
         expect(dialog.showMessageBox).toHaveBeenCalled();
         expect(app.quit).not.toHaveBeenCalled();
+        expect(yield* mailbox.queuedSends).toHaveLength(1);
         vi.spyOn(dialog, "showMessageBox").mockResolvedValueOnce({
           response: 1,
           checkboxChecked: false,
@@ -788,6 +806,8 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
         app.emit("before-quit", { preventDefault });
         yield* settle;
         expect(app.quit).toHaveBeenCalledOnce();
+        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect((yield* mailbox.openDraft("approved-quit-draft")).message.subject).toBe("Quit");
         preventDefault.mockClear();
         app.emit("before-quit", { preventDefault });
         expect(preventDefault).not.toHaveBeenCalled();
@@ -806,17 +826,42 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         const desktop = yield* Desktop;
         const win = observations.testState.windows[0];
         if (!win) throw new Error("Missing main window");
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        yield* mailbox.queueUndoSend(
+          {
+            id: "window-close-draft",
+            accountId: account.id,
+            message: {
+              to: [{ name: "", address: "bob@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Close",
+              text: "Draft",
+              attachments: [],
+            },
+          },
+          Date.now() + 60000,
+          { archive: false, confirmResend: false, owner: String(win.webContents.id) },
+        );
         dialog.showMessageBox.mockClear();
         yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
         win.close();
         win.close();
         yield* settle;
         expect(win.isDestroyed()).toBe(false);
+        expect(yield* mailbox.queuedSends).toHaveLength(1);
         expect(dialog.showMessageBox).toHaveBeenCalledOnce();
-        dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
+        dialog.showMessageBox.mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              setTimeout(() => resolve({ response: 1 }), 50);
+            }),
+        );
         win.close();
-        yield* settle;
-        expect(win.isDestroyed()).toBe(true);
+        yield* Effect.promise(() => expect.poll(() => win.isDestroyed()).toBe(true));
+        expect(yield* mailbox.queuedSends).toEqual([]);
+        expect((yield* mailbox.openDraft("window-close-draft")).message.subject).toBe("Close");
         expect(dialog.showMessageBox).toHaveBeenCalledTimes(2);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
@@ -1242,16 +1287,21 @@ it("native menus relay accelerator origin to the focused renderer", async () => 
           composing: false,
           gmail: true,
         });
-        const received: import("../shared/desktop").DesktopEvent[] = [];
-        yield* desktop.events(main.webContents.id).pipe(
-          Stream.runForEach((event) =>
-            Effect.sync(() => {
-              received.push(event);
-            }),
+        const subscribed = yield* Deferred.make<void>();
+        const received = yield* desktop.events(main.webContents.id).pipe(
+          Stream.tap((event) =>
+            event._tag === "Search" && event.query === "subscription-ready"
+              ? Deferred.succeed(subscribed, undefined)
+              : Effect.void,
           ),
+          Stream.filter((event) => event._tag === "NativeAction"),
+          Stream.take(2),
+          Stream.runCollect,
           Effect.forkScoped,
         );
-        yield* settle;
+        // Search is buffered before subscription; menu actions are deliberately dropped.
+        yield* desktop.search("subscription-ready");
+        yield* Deferred.await(subscribed);
         const menu = observations.testState.menu.mock.calls.at(-1)?.[0];
         const items = menu?.find((m) => m.label === "Message")?.submenu;
         if (!Array.isArray(items)) throw new Error("Missing Message menu");
@@ -1259,8 +1309,7 @@ it("native menus relay accelerator origin to the focused renderer", async () => 
         if (!click) throw new Error("Missing Reply callback");
         Reflect.apply(click, undefined, [null, undefined, { triggeredByAccelerator: true }]);
         Reflect.apply(click, undefined, [null, undefined, { triggeredByAccelerator: false }]);
-        yield* settle;
-        expect(received).toEqual([
+        expect(yield* Fiber.join(received)).toEqual([
           { _tag: "NativeAction", action: "reply", triggeredByAccelerator: true },
           { _tag: "NativeAction", action: "reply", triggeredByAccelerator: false },
         ]);

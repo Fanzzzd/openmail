@@ -1,3 +1,4 @@
+import type { QueuedSend } from "./mobile-outbox.js";
 import type { OptionalService, AuthorizationFeature } from "./optional-services.js";
 import type { NamedSignature, NamedSignatureInput, SignatureDefault } from "./signatures.js";
 import type { WordIndexState } from "./store-word-index.js";
@@ -29,6 +30,7 @@ import type {
   Actor,
   Command,
   DraftRemote,
+  DraftCreateState,
   ImapSettings,
   IncomingMessage,
   Label,
@@ -414,8 +416,8 @@ export class Store extends Context.Service<
 
     sendUncertain(id: string): Effect.Effect<boolean>;
     setSendUncertain(id: string, value: boolean): Effect.Effect<void>;
-    readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
-    putQueuedSend(item: import("./mobile-outbox.js").QueuedSend): Effect.Effect<void>;
+    readonly queuedSends: Effect.Effect<QueuedSend[]>;
+    putQueuedSend(item: QueuedSend): Effect.Effect<void>;
     deleteQueuedSend(id: string): Effect.Effect<void>;
 
     // Outgoing change queue
@@ -494,6 +496,8 @@ export class Store extends Context.Service<
     ): Effect.Effect<{ readonly pending: boolean; readonly retrying: boolean }>;
     setDraftSyncError(id: string, error: string | null): Effect.Effect<void>;
     setDraftLocalOnly(id: string, localOnly: boolean): Effect.Effect<void>;
+    draftCreateState(id: string): Effect.Effect<Option.Option<DraftCreateState>>;
+    setDraftCreateState(id: string, state: DraftCreateState | null): Effect.Effect<void>;
     /** Deletes the draft and its queued saves that are not being pushed. */
     deleteDraft(id: string): Effect.Effect<void>;
     /** Queues a push of the draft unless one is already waiting. */
@@ -888,7 +892,8 @@ export interface ProviderAdapter {
     account: Account,
     draft: DraftPush,
     context?: ProviderPushContext,
-  ): Effect.Effect<DraftRemote, ProviderFailure>;
+  ): Effect.Effect<DraftSaveResult, ProviderFailure>;
+  draftVersion?(account: Account, providerId: string): Effect.Effect<DraftVersion, ProviderFailure>;
   getDraftOrganization?(
     account: Account,
     id: string,
@@ -920,7 +925,32 @@ export interface ProviderAdapter {
   ): Effect.Effect<Uint8Array, ProviderFailure>;
 }
 
+export interface DraftVersion {
+  readonly changeKey?: string;
+  readonly lastModifiedDateTime?: string;
+}
+
+export interface DraftSaveResult extends DraftRemote {
+  readonly cleanupMessageIds?: readonly string[];
+  readonly cleanupMessageId?: string;
+  readonly conflict?: boolean;
+  readonly saveError?: ProviderFailure;
+  readonly replacedMessageId?: string;
+}
+
 export interface DraftPush {
+  /** Durable creation journal supplied by the queue; callbacks finish before network writes. */
+  readonly creation: {
+    readonly begin: () => Effect.Effect<DraftCreateState, ProviderFailure>;
+    readonly attempted: (
+      messageId: string,
+      attempted?: boolean,
+    ) => Effect.Effect<void, ProviderFailure>;
+    readonly missing: () => Effect.Effect<boolean, ProviderFailure>;
+    /** Exclude copies already owned by any local composer in this account. */
+    readonly isLinked: (messageId: string) => Effect.Effect<boolean>;
+    readonly remember: (remote: DraftRemote) => Effect.Effect<void>;
+  };
   readonly remote: DraftRemote | null;
   /** Ready to send: Markdown rendered, a forwarded original attached. */
   readonly message: OutgoingMessage;

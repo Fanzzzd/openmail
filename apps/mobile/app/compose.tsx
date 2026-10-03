@@ -304,7 +304,7 @@ export default function Compose() {
         until: due,
         undo: async () => {
           const undone = await runtime.runPromise(
-            Effect.flatMap(Mailbox, (mailbox) => mailbox.cancelQueuedSend(draft.id)),
+            Effect.flatMap(Mailbox, (mailbox) => mailbox.cancelWaitingSend(draft.id)),
           );
           if (!undone) throw new Error("Send has started");
           router.push({

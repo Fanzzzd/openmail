@@ -3,6 +3,7 @@ const resources = new Set([
   "mailfolders",
   "childfolders",
   "messages",
+  "attachments",
   "contactfolders",
   "contacts",
   "people",
@@ -34,6 +35,7 @@ function resourcePath(path: string) {
 
 function resourceFamily(path: string): string | undefined {
   const canonical = resourcePath(path);
+  if (/^\/me\/messages\/[^/]+\/attachments$/.test(canonical)) return canonical;
   if (/^\/me\/mailfolders\/[^/]+(?:\/childfolders\/[^/]+)*\/messages$/.test(canonical))
     return "folder-messages";
   if (/^\/me\/mailfolders(?:\/[^/]+(?:\/childfolders\/[^/]+)*\/childfolders)?$/.test(canonical))

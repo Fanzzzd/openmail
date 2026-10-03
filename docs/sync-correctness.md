@@ -34,13 +34,31 @@ Gmail 和 Graph 的发送 POST 不自动重试。Message-ID 使用随机本地�
 
 Gmail 官方文档规定提交 RFC 2822 MIME，并支持 `rfc822msgid` 搜索，但没有承诺保留客户端设置的 Message-ID。core 先查询完整 ID；没有结果时，搜索提交前一分钟至提交后两分钟的 Sent 候选，读取 Message-ID metadata 并核对随机本地部分。不依赖未文档化的部分 ID 搜索。若服务端连本地部分也重写，无法确认发送，继续保留重发保护。自动测试覆盖 ID 保留、域名改写、延迟副本和未找到副本；没有用真实账户发送探测邮件。参见 [发送邮件](https://developers.google.com/workspace/gmail/api/guides/sending)、[消息列表查询](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list)、[Gmail 搜索条件](https://support.google.com/mail/answer/7190)。
 
-Graph 用 `internetMessageId` 查询 Sent。回复草稿创建结果不确定时，同样按提交时设置的 ID 查询 Drafts，并清理找到的孤立草稿；草稿准备失败也会清理，发送成功后不会删除 Sent 副本。参见 [创建回复草稿](https://learn.microsoft.com/en-us/graph/api/message-createreply?view=graph-rest-1.0)和 [更新草稿 Message-ID](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)。
+Graph 用 `internetMessageId` 查询 Sent。发送时的回复草稿创建结果不确定，只按提交时设置的 ID 查询 Drafts 并清理匹配的孤立草稿，不删除会话或创建时间匹配的候选。草稿准备失败也会清理已取得 ID 的草稿，发送成功后不会删除 Sent 副本。参见 [创建回复草稿](https://learn.microsoft.com/en-us/graph/api/message-createreply?view=graph-rest-1.0)和 [更新草稿 Message-ID](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)。
 
 IMAP SMTP 在 DATA 终止符已发出后丢失回复时，按 Message-ID 查询 Sent；未确认则返回 SendUncertain，保留草稿和重发保护。DATA 前的连接拒绝、超时或 greeting 失败属于明确失败；收到 5xx 拒绝也属明确失败，认证错误仍提示重新登录。SMTP 接受后保存 Sent 副本失败会重连重试 APPEND 一次；再次失败时显示副本缺失提示，不重新发送邮件。
 
 Node SMTP 部分拒收会列出拒收地址，保留原草稿并启用重发保护。提示中的“仅向拒收收件人重发”创建新草稿，只保留拒收的 To／Cc／Bcc，保留消息文本及附件，不自动发送，也不修改原草稿。
 
 发送确认实现见 [provider-send.ts](../packages/core/src/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
+
+## 草稿与其他写入
+
+创建草稿、附件、规则、标签／文件夹及会议响应的 POST 只对 429 自动重试，5xx 或响应丢失不重放。Gmail 的修改标签、trash、untrash POST 可重放；Calendar 的 `PATCH sendUpdates=all` 不重放通知。
+
+草稿创建前，core 在既有 prefs 中保存客户端 Message-ID、尝试时间与查询未命中次数。客户端能确认请求尚未发出的 DNS／连接失败可直接重试。其他未确认创建先按 Gmail `in:drafts rfc822msgid:` 或 Graph `internetMessageId` 查草稿；找到后应用当前编辑。查询至少三次未命中且尝试满两分钟，才重新创建；服务商改写 Message-ID 时仍可能留下重复副本。Graph 回复、回复全部及转发草稿创建后，在 isDraft 为 true 时 PATCH 客户端 Message-ID；创建响应丢失时，按原消息的 conversationId 与提交前五秒至提交后两分钟的创建时间查找，候选必须仍是草稿，且最后修改时间距创建不超过五秒；排除已关联本地草稿和正在发送的临时草稿。发送草稿的创建响应尚未返回时，不采用模板候选。多个候选或尚有续页时视为未命中，推进持久重试计数，不修改候选。丢弃或发送本地草稿时，若创建日志仍标为已尝试，则先在同一事务中按日志 Message-ID 排队清理服务器草稿，再清除日志；查不到副本时清理为空操作。创建日志与远端引用写入核对当前认领 token，旧 worker 不覆盖新 owner；拿到新 ID 便持久保存远端引用，后续 PATCH 或附件失败仍返回该 ID 和同步错误。Outlook 普通更新仅在初次 PATCH 返回 404 时重建；附件阶段的 404 不重建。forward 替换后的旧草稿删除失败，交给持久 `deleteDraft` 队列处理。
+
+Outlook 附件上传结果不确定时，读取全部附件页并核对文件名、内容字节及 Content-ID。恢复创建时只添加缺失附件。打开服务器草稿时即保存 changeKey 和 lastModifiedDateTime；远端版本只保存 changeKey 与服务端修改时间，不用本地时钟补值。更新前 GET 比较，只有版本不同且服务端修改时间晚于最后写入时，才另存本地版本并报告冲突。PATCH 后的部分失败会重读版本；读取失败则清除旧 changeKey，避免把本次写入当作其他客户端修改。Graph 的[消息更新文档](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)未承诺 If-Match，当前比较仍存在 GET 与 PATCH 之间的竞态。
+
+规则创建结果不确定时，重读并匹配条件、动作和排除条件。Gmail 更新规则必须先核对新规则；仍未确认时保留原规则恢复记录，不自动恢复或重放创建。会议响应重读 responseStatus 或自身 attendee 状态，匹配后才报告成功。标签／文件夹创建冲突按完整名称重读；Gmail 同时处理 400 和 409，只有找到同名用户标签才报告成功。Gmail 官方[标签说明](https://developers.google.com/workspace/gmail/api/guides/labels)明确保留名称冲突可返回 400，未规定重复自定义名称的状态码。
+
+Gmail 从 Trash 移动前先验证目标标签。untrash 后修改失败会恢复 Trash；恢复也失败则报告位置需要核对。
+
+## 持久发送意图
+
+桌面撤销窗口由 core 持久保存消息、截止时间、所属窗口与发送后归档选项，等待任务属于 Mailbox Layer。renderer 断开不取消发送；用户批准退出、重载或关闭撰写窗口时，取消对应 waiting 项并保留草稿。意外重启后的 waiting 项仅由桌面主进程恢复，CLI／MCP 不恢复或刷新这些发送。桌面意图超过截止时间两分钟时改为 retryable 并显示失败提示，保留草稿供用户重发；启动恢复及发送认领时均检查截止时间。撤销向 core 取消 waiting 意图，已经认领的发送不能撤销；成功撤销会中断 core 等待任务；完成的 core 等待任务自行移出 worker 表。窗口只取消属于自己的 waiting 意图；没有 owner 的意图只由全局退出处理。renderer 按每次发送的 token 清理待发状态；撤销进行中先等取消结果，只有成功取消才隐藏发送结果，取消失败仍显示实际成功或失败；服务端拒绝撤销时清除 toast 和 Undo 操作，保留待发状态直至发送结束。独立发送 ID 防止旧计时器发送同一草稿的新意图。同一草稿已有 waiting／sending 项时，直接发送会拒绝重复提交。
+
+outbox 在同一事务中重读 waiting、认领为 sending 并保存重发保护。锁只覆盖认领与结果事务，provider 发送期间可排队或撤销其他草稿。桌面普通发送也在调用 provider 前保存保护；全部收件人投递成功才清理保护，适配器返回 SendUncertain 才保留保护，其他错误包括发送前的请求失败均清除保护。SMTP 部分拒收沿用发送结果一节的保护，并保留 failed outbox 项。outbox 的明确失败标为 retryable，手机端“重试发送”打开保留草稿供用户检查；结果不确定或进程在发送中退出，保留保护，不能自动重发。启动时将中断的 sending 项改为 failed，用户确认后可重新排队。桌面发送失败及中断通过 failed_ops 显示提示，包括恢复任务和已断开的 renderer。上述状态复用 prefs，没有新增迁移。
 
 ## 重置删除保护
 

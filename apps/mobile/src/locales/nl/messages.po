@@ -777,6 +777,11 @@ msgid "Restore message state"
 msgstr "Berichtstatus herstellen"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Retry send"
+msgstr "Opnieuw verzenden"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -827,8 +832,14 @@ msgstr "Selecteren"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/failed-op-notice.tsx
 msgid "Send"
 msgstr "Verstuur"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Send failed. Review the draft and try again."
+msgstr "Verzenden mislukt. Controleer het concept en probeer het opnieuw."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

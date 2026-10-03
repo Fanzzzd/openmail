@@ -204,7 +204,7 @@ it("new compose autosaves, holds send, Cmd+Z reopens it, and the second send del
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   clickButton("New message");
   await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
   edit("To", "carol@example.com");
   edit("Subject", "Flow composed");
   writeBody("A new note");

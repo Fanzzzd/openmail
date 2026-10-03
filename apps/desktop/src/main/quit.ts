@@ -3,6 +3,7 @@ export function createQuitGuard(options: {
   pending: () => Promise<number>;
   confirm: () => Promise<boolean>;
   quit: () => void;
+  beforeQuit?: () => Promise<void>;
   fallbackPending: () => number;
   timeoutMs?: number;
 }) {
@@ -24,6 +25,7 @@ export function createQuitGuard(options: {
         ]).catch(() => options.fallbackPending());
         clearTimeout(timer);
         if (pending > 0 && !(await options.confirm().catch(() => false))) return false;
+        await options.beforeQuit?.();
         approved = true;
         options.quit();
         return true;

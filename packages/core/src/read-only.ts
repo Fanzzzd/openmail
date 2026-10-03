@@ -31,6 +31,7 @@ export const READ_ONLY_METHODS = Object.freeze([
   "sendAs",
   "getDraftOrganization",
   "draftMarkdownSource",
+  "draftVersion",
 ] satisfies (keyof ProviderAdapter)[]);
 
 /** Unknown methods fail closed, including methods added by future adapters. */

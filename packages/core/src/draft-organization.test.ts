@@ -311,6 +311,8 @@ for (const provider of ["outlook", "imap"] satisfies Provider[]) {
         );
         const accountId = `${provider}:${server.email}`;
         const original = { labels: ["Work"], starred: true };
+        // Connect starts a detached pull; finish it before asserting inline draft pushes.
+        yield* mailbox.sync(accountId);
         const saved = yield* mailbox.saveDraft({
           id: "draft:remote-edit",
           accountId,

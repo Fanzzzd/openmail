@@ -1,5 +1,7 @@
+import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
+import { uncertainWrite } from "./provider-retry.js";
 import { richComposeBody } from "./compose-body.js";
-import { Effect, Schema, Schedule } from "effect";
+import { Effect, Schema } from "effect";
 import { CATEGORIES, type Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
 import { escapeHtml } from "./print.js";
@@ -121,6 +123,20 @@ function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
   };
 }
 
+function normalizedGmailRule(rule: GmailRuleDefinition) {
+  return {
+    criteria: Object.fromEntries(
+      Object.entries(rule.criteria ?? {}).filter(
+        ([, value]) => value !== undefined && value !== "" && value !== false,
+      ),
+    ),
+    action: rule.action ?? {},
+  };
+}
+function sameGmailRule(left: GmailRuleDefinition, right: GmailRuleDefinition): boolean {
+  return sameProviderWrite(normalizedGmailRule(left), normalizedGmailRule(right));
+}
+
 /** settings errors stay separate from the authentication state used by mail sync. */
 export function makeGmailSettings<
   E extends {
@@ -156,58 +172,72 @@ export function makeGmailSettings<
           return new AuthError({ accountId: account.id, message: e.message ?? "Sign in again" });
         return new ProviderError({
           message: e.message ?? e.body ?? "Gmail settings request failed",
-          ...(e.status ? { status: e.status } : {}),
+          ...(e.status !== undefined ? { status: e.status } : {}),
         });
       }),
     );
-  const createFilter = (account: Account, input: FilterInput) => {
-    const a = input.action;
-    return wrap(
-      account,
-      write(account.id, "POST", "/settings/filters", {
-        criteria: {
-          from: input.criteria.from,
-          to: input.criteria.to,
-          subject: input.criteria.subject,
-          hasAttachment: input.criteria.hasAttachment,
-          query: input.criteria.hasWords
-            ? [input.criteria.query, input.criteria.hasWords]
-                .filter(Boolean)
-                .map((q) => `(${q})`)
-                .join(" ")
-            : input.criteria.query,
-          ...(input.criteria.notWords ? { negatedQuery: input.criteria.notWords } : {}),
-          ...(input.criteria.size !== undefined
-            ? { size: input.criteria.size, sizeComparison: input.criteria.sizeComparison }
-            : {}),
-        },
-        action: {
-          addLabelIds: [
-            ...(a.star ? ["STARRED"] : []),
-            ...(a.trash ? ["TRASH"] : []),
-            ...(a.label ? [a.label] : []),
-            ...(a.labels ?? []),
-            ...(a.important === true ? ["IMPORTANT"] : []),
-            ...(a.category ? [a.category] : []),
-          ],
-          removeLabelIds: [
-            ...(a.archive ? ["INBOX"] : []),
-            ...(a.markRead ? ["UNREAD"] : []),
-            ...(a.important === false ? ["IMPORTANT"] : []),
-          ],
-        },
-      }).pipe(
+  const listDefinitions = (account: Account) =>
+    get(
+      account.id,
+      Schema.NullOr(Schema.Struct({ filter: Schema.optionalKey(Schema.Array(GmailFilter)) })),
+      "/settings/filters",
+    );
+  const createDefinition = (account: Account, definition: GmailRuleDefinition) =>
+    reconcileProviderWrite(
+      write(account.id, "POST", "/settings/filters", definition).pipe(
         Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),
       ),
-    ).pipe(Effect.map(fromFilter));
+      listDefinitions(account).pipe(
+        Effect.map((page) => page?.filter?.find((rule) => sameGmailRule(rule, definition))),
+      ),
+    );
+  const createFilter = (account: Account, input: FilterInput) => {
+    const a = input.action;
+    const definition = {
+      criteria: {
+        from: input.criteria.from,
+        to: input.criteria.to,
+        subject: input.criteria.subject,
+        hasAttachment: input.criteria.hasAttachment,
+        query: input.criteria.hasWords
+          ? [input.criteria.query, input.criteria.hasWords]
+              .filter(Boolean)
+              .map((q) => `(${q})`)
+              .join(" ")
+          : input.criteria.query,
+        ...(input.criteria.notWords ? { negatedQuery: input.criteria.notWords } : {}),
+        ...(input.criteria.size !== undefined
+          ? { size: input.criteria.size, sizeComparison: input.criteria.sizeComparison }
+          : {}),
+      },
+      action: {
+        addLabelIds: [
+          ...(a.star ? ["STARRED"] : []),
+          ...(a.trash ? ["TRASH"] : []),
+          ...(a.label ? [a.label] : []),
+          ...(a.labels ?? []),
+          ...(a.important === true ? ["IMPORTANT"] : []),
+          ...(a.category ? [a.category] : []),
+        ],
+        removeLabelIds: [
+          ...(a.archive ? ["INBOX"] : []),
+          ...(a.markRead ? ["UNREAD"] : []),
+          ...(a.important === false ? ["IMPORTANT"] : []),
+        ],
+      },
+    };
+    return wrap(account, createDefinition(account, definition)).pipe(Effect.map(fromFilter));
   };
   const restoreFilter = (account: Account, definition: GmailRuleDefinition) =>
     wrap(
       account,
-      write(account.id, "POST", "/settings/filters", definition).pipe(
-        Effect.flatMap((raw) => Schema.decodeUnknownEffect(GmailFilter)(raw).pipe(Effect.orDie)),
-      ),
+      Effect.gen(function* () {
+        const page = yield* listDefinitions(account);
+        const existing = page?.filter?.find((rule) => sameGmailRule(rule, definition));
+        return existing ?? (yield* createDefinition(account, definition));
+      }),
     ).pipe(Effect.map(fromFilter));
+
   return {
     restoreFilter,
     updateFilter: (
@@ -231,11 +261,19 @@ export function makeGmailSettings<
         );
         const result = yield* createFilter(account, input).pipe(Effect.result);
         if (result._tag === "Success") return result.success;
+        if (result.failure._tag !== "ProviderError") return yield* Effect.fail(result.failure);
+        if (uncertainWrite(result.failure) || result.failure.status === undefined) {
+          // The re-read did not establish whether creation succeeded. Restoring
+          // here could install both old and new rules.
+          if (onRestoreFailure)
+            yield* onRestoreFailure({ criteria: original.criteria, action: original.action });
+          return yield* new ProviderError({
+            message:
+              "Rule update is uncertain. Reload the rule list before restoring the saved original rule.",
+          });
+        }
         const definition = { criteria: original.criteria, action: original.action };
-        const restored = yield* restoreFilter(account, definition).pipe(
-          Effect.retry({ schedule: Schedule.exponential("500 millis"), times: 2 }),
-          Effect.result,
-        );
+        const restored = yield* restoreFilter(account, definition).pipe(Effect.result);
         if (restored._tag === "Failure" && onRestoreFailure) yield* onRestoreFailure(definition);
         return yield* new ProviderError({
           message:

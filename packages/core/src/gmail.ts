@@ -1,3 +1,5 @@
+import { newMessageId } from "./message-id.js";
+import { PlatformCrypto } from "./platform/crypto.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse, parseGmailBatch } from "./provider-batch.js";
 import type { ResetVerification } from "./sync-reset.js";
@@ -10,8 +12,9 @@ import {
   retryProviderRequest,
   isProviderSend,
   retryAfterMillis,
+  uncertainWrite,
+  requestNotSent,
 } from "./provider-retry.js";
-import { PlatformCrypto } from "./platform/crypto.js";
 import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
@@ -47,6 +50,7 @@ import {
   type ConnectInput,
   type Connected,
   type DraftPush,
+  type DraftSaveResult,
   OAuth,
   type ProviderAdapter,
   Secrets,
@@ -171,6 +175,7 @@ class ApiError extends Data.TaggedError("ApiError")<{
   body: string;
   retryAfter?: string;
   deferred?: boolean;
+  requestNotSent?: boolean;
 }> {}
 
 // 429 and 5xx are quota and transient errors. Gmail also reports per-user
@@ -199,6 +204,7 @@ const readFailure =
     return new ProviderError({
       message,
       status: e.status,
+      ...(e.requestNotSent ? { reason: "connection" } : {}),
       ...(e.deferred ? { deferred: true } : {}),
       ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}),
     });
@@ -313,7 +319,13 @@ export const makeGmail: Effect.Effect<
         });
       }).pipe(
         Effect.catchTag("HttpClientError", (e) =>
-          Effect.fail(new ApiError({ status: 0, body: e.message })),
+          Effect.fail(
+            new ApiError({
+              status: 0,
+              body: e.message,
+              requestNotSent: requestNotSent(e.reason.cause),
+            }),
+          ),
         ),
       ),
       request,
@@ -649,6 +661,7 @@ export const makeGmail: Effect.Effect<
           message: "This organization action is unavailable for Gmail.",
         });
       const path = `/messages/${encodeURIComponent(providerId)}`;
+      let untrashed = false;
       if (op.kind === "trash") {
         yield* post(account.id, `${path}/trash`);
         return;
@@ -664,10 +677,37 @@ export const makeGmail: Effect.Effect<
           Schema.Struct({ labelIds: Schema.optionalKey(Schema.Array(Schema.String)) }),
           `${path}?format=minimal`,
         );
-        if (current.labelIds?.includes("TRASH")) yield* post(account.id, `${path}/untrash`);
+        if (current.labelIds?.includes("TRASH")) {
+          // Validate before changing Trash membership. System destinations are fixed.
+          if (
+            !/^(INBOX|ARCHIVE|SPAM|SENT|DRAFT|STARRED|IMPORTANT|CATEGORY_[A-Z]+)$/.test(op.labelId)
+          ) {
+            const labels = yield* fetchUserLabels(account.id);
+            if (!labels.some((label) => label.id === op.labelId))
+              yield* new PermanentError({
+                message: "The destination label no longer exists",
+              });
+          }
+          yield* post(account.id, `${path}/untrash`);
+          untrashed = true;
+        }
       }
       const { add, remove } = gmailDelta(op);
-      yield* post(account.id, `${path}/modify`, { addLabelIds: add, removeLabelIds: remove });
+      yield* post(account.id, `${path}/modify`, { addLabelIds: add, removeLabelIds: remove }).pipe(
+        Effect.catch((error) =>
+          Effect.gen(function* () {
+            if (untrashed) {
+              const restored = yield* post(account.id, `${path}/trash`).pipe(Effect.result);
+              if (restored._tag === "Failure")
+                return yield* new ProviderError({
+                  message:
+                    "Move failed after removing Trash. Restoring Trash also failed; check the message location.",
+                });
+            }
+            return yield* Effect.fail(error);
+          }),
+        ),
+      );
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -699,9 +739,11 @@ export const makeGmail: Effect.Effect<
         // Forwards start a new thread; replies stay in the original one.
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
-      const traceId = crypto.randomUUID();
       const sender = message.from ?? { name: "", address: account.email };
-      const messageId = `<${traceId}@${sender.address.split("@").at(-1)}>`;
+      const messageId = yield* newMessageId(sender.address).pipe(
+        Effect.provideService(PlatformCrypto, crypto),
+      );
+      const traceId = messageId.slice(1, messageId.indexOf("@"));
       const started = yield* Clock.currentTimeMillis;
       const raw = yield* buildMime(sender, message, threading, { messageId });
       if (raw.byteLength > GMAIL_MIME_LIMIT)
@@ -714,7 +756,7 @@ export const makeGmail: Effect.Effect<
         ...(threadId ? { threadId } : {}),
       }).pipe(
         Effect.catchIf(
-          (error) => error._tag === "ApiError" && (error.status === 0 || error.status >= 500),
+          (error) => error._tag === "ApiError" && uncertainWrite(error),
           () =>
             confirmDelivery(
               Effect.gen(function* () {
@@ -790,24 +832,88 @@ export const makeGmail: Effect.Effect<
         threading = yield* fetchThreading(account.id, original.value.providerId);
         if (message.mode !== "forward") threadId = original.value.threadId;
       }
-      const raw = yield* buildMime(
-        message.from ?? { name: "", address: account.email },
-        message,
-        threading,
-        { draft: true },
-      );
-      if (raw.byteLength > GMAIL_MIME_LIMIT)
-        return yield* new PermanentError({
-          message:
-            "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
+      const makeBody = (messageId?: string) =>
+        Effect.gen(function* () {
+          const raw = yield* buildMime(
+            message.from ?? { name: "", address: account.email },
+            message,
+            threading,
+            { draft: true, ...(messageId ? { messageId } : {}) },
+          );
+          if (raw.byteLength > GMAIL_MIME_LIMIT)
+            return yield* new PermanentError({
+              message:
+                "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
+            });
+          return {
+            message: {
+              raw: raw
+                .toString("base64")
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_")
+                .replace(/=+$/, ""),
+              ...(threadId ? { threadId } : {}),
+            },
+          };
         });
-      const body = {
-        message: {
-          raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
-          ...(threadId ? { threadId } : {}),
-        },
-      };
-      const create = post(account.id, "/drafts", body);
+      let saveError: ProviderFailure | undefined;
+      const create = Effect.gen(function* () {
+        const state = yield* draft.creation.begin();
+        const lookup = Effect.gen(function* () {
+          const found = yield* get(account.id, MessageList, "/messages", {
+            q: `in:drafts rfc822msgid:${state.messageId}`,
+            maxResults: "2",
+          });
+          const foundMessage = found.messages?.[0];
+          if (!foundMessage) return Option.none<typeof GmailDraft.Type>();
+          const id = yield* findDraftId(account.id, foundMessage.id);
+          return Option.map(id, (draftId) => ({ id: draftId, message: { id: foundMessage.id } }));
+        });
+        const createdBody = yield* makeBody(state.messageId);
+        if (state.attempted) {
+          const found = yield* lookup;
+          if (Option.isSome(found)) {
+            yield* draft.creation.remember({
+              draftId: found.value.id,
+              messageId: found.value.message.id,
+            });
+            return yield* put(
+              account.id,
+              `/drafts/${encodeURIComponent(found.value.id)}`,
+              createdBody,
+            ).pipe(
+              Effect.flatMap(decode(GmailDraft)),
+              Effect.catch((error) => {
+                saveError = writeFailure(account.id)(error);
+                return Effect.succeed(found.value);
+              }),
+            );
+          }
+          if (!(yield* draft.creation.missing()))
+            return yield* new ProviderError({
+              message:
+                "Draft creation is uncertain. Waiting for the provider copy before creating another draft.",
+            });
+        }
+        yield* draft.creation.attempted(state.messageId);
+        return yield* post(account.id, "/drafts", createdBody).pipe(
+          Effect.flatMap(decode(GmailDraft)),
+          Effect.catch((error) =>
+            Effect.gen(function* () {
+              if (error._tag === "ApiError" && uncertainWrite(error)) {
+                const found = yield* lookup;
+                if (Option.isSome(found)) return found.value;
+              } else if (error._tag === "ApiError")
+                yield* draft.creation.attempted(state.messageId, false);
+              return yield* Effect.fail(error);
+            }),
+          ),
+        );
+      }).pipe(
+        Effect.tap((saved) =>
+          draft.creation.remember({ draftId: saved.id, messageId: saved.message.id }),
+        ),
+      );
       const existing = yield* draftIdOf(account.id, draft.remote);
       const current = Option.isSome(existing)
         ? yield* get(account.id, GmailDraft, `/drafts/${encodeURIComponent(existing.value)}`).pipe(
@@ -819,30 +925,51 @@ export const makeGmail: Effect.Effect<
         Option.isSome(current) &&
         !!draft.remote?.messageId &&
         current.value.message.id !== draft.remote.messageId;
-      const saved = yield* (
-        Option.isSome(existing) && !conflict
-          ? // Deleted in another client meanwhile: the person is still writing it.
-            put(account.id, `/drafts/${encodeURIComponent(existing.value)}`, body).pipe(
-              Effect.catchIf(is404, () => create),
-            )
-          : create
-      ).pipe(Effect.flatMap(decode(GmailDraft)));
+      const saved = yield* Option.isSome(existing) && !conflict
+        ? // Deleted in another client meanwhile: the person is still writing it.
+          makeBody().pipe(
+            Effect.flatMap((body) =>
+              put(account.id, `/drafts/${encodeURIComponent(existing.value)}`, body),
+            ),
+            Effect.flatMap(decode(GmailDraft)),
+            Effect.catchIf(is404, () => create),
+          )
+        : create;
       return {
         draftId: saved.id,
         messageId: saved.message.id,
         ...(conflict ? { conflict: true } : {}),
-      } satisfies DraftRemote;
+        ...(saveError ? { saveError } : {}),
+      } satisfies DraftSaveResult;
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
 
   const deleteDraft = Effect.fn("Gmail.deleteDraft")(
     function* (account: Account, remote: DraftRemote) {
+      const remove = (id: string) =>
+        del(account.id, `/drafts/${encodeURIComponent(id)}`).pipe(
+          Effect.catchIf(is404, () => Effect.void),
+        );
       const id = yield* draftIdOf(account.id, remote);
-      if (Option.isNone(id)) return;
-      yield* del(account.id, `/drafts/${encodeURIComponent(id.value)}`).pipe(
-        Effect.catchIf(is404, () => Effect.void),
-      );
+      if (Option.isSome(id)) {
+        yield* remove(id.value);
+        return;
+      }
+      if (!remote.rfcMessageId) return;
+      let pageToken: string | undefined;
+      do {
+        const page = yield* get(account.id, MessageList, "/messages", {
+          q: `in:drafts rfc822msgid:${remote.rfcMessageId}`,
+          maxResults: "100",
+          ...(pageToken ? { pageToken } : {}),
+        });
+        for (const message of page.messages ?? []) {
+          const draftId = yield* findDraftId(account.id, message.id);
+          if (Option.isSome(draftId)) yield* remove(draftId.value);
+        }
+        pageToken = page.nextPageToken;
+      } while (pageToken);
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -947,11 +1074,26 @@ export const makeGmail: Effect.Effect<
       if (change.kind === "create") {
         const current = yield* fetchUserLabels(account.id);
         const parent = current.find((l) => l.id === change.parentId)?.name;
+        const name = parent ? `${parent}/${change.name}` : change.name;
+        if (current.some((label) => label.name.toLowerCase() === name.toLowerCase()))
+          return current;
         yield* post(account.id, "/labels", {
-          name: parent ? `${parent}/${change.name}` : change.name,
+          name,
           labelListVisibility: "labelShow",
           messageListVisibility: "show",
-        });
+        }).pipe(
+          Effect.catchIf(
+            (error) =>
+              error._tag === "ApiError" &&
+              (error.status === 400 || error.status === 409 || uncertainWrite(error)),
+            (error) =>
+              Effect.gen(function* () {
+                const labels = yield* fetchUserLabels(account.id);
+                if (!labels.some((label) => label.name.toLowerCase() === name.toLowerCase()))
+                  yield* Effect.fail(error);
+              }),
+          ),
+        );
       } else if (change.kind === "delete")
         yield* del(account.id, `/labels/${encodeURIComponent(change.id)}`);
       else if (change.kind === "parent") {

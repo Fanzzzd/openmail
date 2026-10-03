@@ -16,6 +16,7 @@ import {
   Address,
   DEFAULT_PREFS,
   type DraftRemote,
+  DraftCreateState,
   OutgoingMessage,
   Prefs,
   ToolbarAction,
@@ -44,6 +45,14 @@ const DraftRow = Schema.Struct({
   pushed_organization: Schema.NullOr(Schema.String),
   sync_error: Schema.NullOr(Schema.String),
   local_only: Schema.BooleanFromBit,
+  remote_json: Schema.NullOr(
+    Schema.fromJsonString(
+      Schema.Struct({
+        changeKey: Schema.optionalKey(Schema.String),
+        lastWrittenAt: Schema.optionalKey(Schema.Number),
+      }),
+    ),
+  ),
 });
 
 const LocalDraftRow = Schema.Struct({
@@ -76,7 +85,7 @@ function toStoredDraft(r: typeof DraftRow.Type): StoredDraft {
   const remote: DraftRemote | null =
     r.remote_draft_id === null && r.remote_message_id === null
       ? null
-      : { draftId: r.remote_draft_id, messageId: r.remote_message_id };
+      : { ...r.remote_json, draftId: r.remote_draft_id, messageId: r.remote_message_id };
   return {
     id: r.id,
     accountId: r.account_id,
@@ -138,7 +147,8 @@ export function makeComposeStore(
   crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
 ) {
   const DRAFT_COLUMNS = sql.literal(`d.id, d.account_id, d.message_json, d.updated_at,
-    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only`);
+    d.proposal_id, d.remote_draft_id, d.remote_message_id, d.pushed_attachments, d.pushed_organization, d.sync_error, d.local_only,
+    (SELECT value_json FROM prefs WHERE key='draft-remote:' || d.id) AS remote_json`);
 
   // A queued push of one draft, found by the draft id inside the op.
   const saveOpFor = (draftId: Fragment | string) =>
@@ -180,20 +190,41 @@ export function makeComposeStore(
     return saved.value;
   });
 
-  const setDraftRemote = Effect.fn("Store.setDraftRemote")(function* (
-    id: string,
-    remote: DraftRemote | null,
-    pushedAttachments: string | null,
-    accountId?: string,
-    claim?: { readonly id: number; readonly token: string },
-  ) {
-    const row = yield* first(IdRow)(sql`UPDATE drafts SET
+  const setDraftRemote = Effect.fn("Store.setDraftRemote")(
+    function* (
+      id: string,
+      remote: DraftRemote | null,
+      pushedAttachments: string | null,
+      accountId?: string,
+      claim?: { readonly id: number; readonly token: string },
+    ) {
+      const row = yield* first(IdRow)(sql`UPDATE drafts SET
         remote_draft_id = ${remote?.draftId ?? null},
         remote_message_id = ${remote?.messageId ?? null},
         pushed_attachments = ${pushedAttachments}, sync_error=CASE WHEN local_only=0 THEN NULL ELSE sync_error END
       WHERE id = ${id} ${claim === undefined ? sql.literal("") : sql`AND EXISTS(SELECT 1 FROM pending_ops WHERE id=${claim.id} AND claim_token=${claim.token})`} ${accountId === undefined ? sql.literal("") : sql`AND account_id=${accountId}`} RETURNING id`);
-    return Option.isSome(row);
-  });
+      if (Option.isSome(row)) {
+        yield* remote
+          ? run(
+              sql`INSERT INTO prefs(key,value_json) VALUES(${`draft-remote:${id}`},${JSON.stringify({ changeKey: remote.changeKey, lastWrittenAt: remote.lastWrittenAt })}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+            )
+          : run(sql`DELETE FROM prefs WHERE key=${`draft-remote:${id}`}`);
+      }
+      return Option.isSome(row);
+    },
+    (effect) => sql.withTransaction(effect).pipe(Effect.orDie),
+  );
+
+  const draftCreateState = (id: string) =>
+    first(Schema.Struct({ value_json: Schema.fromJsonString(DraftCreateState) }))(
+      sql`SELECT value_json FROM prefs WHERE key=${`draft-create:${id}`}`,
+    ).pipe(Effect.map(Option.map((row) => row.value_json)));
+  const setDraftCreateState = (id: string, state: DraftCreateState | null) =>
+    state
+      ? run(
+          sql`INSERT INTO prefs(key,value_json) VALUES(${`draft-create:${id}`},${JSON.stringify(state)}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+        )
+      : run(sql`DELETE FROM prefs WHERE key=${`draft-create:${id}`}`);
 
   const setDraftOrganizationKey = (id: string, key: string | null) =>
     run(sql`UPDATE drafts SET pushed_organization = ${key} WHERE id = ${id}`);
@@ -234,7 +265,27 @@ export function makeComposeStore(
     sql
       .withTransaction(
         Effect.gen(function* () {
-          yield* enqueueAppendedCleanup(id, yield* waitingDraftSaves(id));
+          const creation = yield* first(
+            Schema.Struct({
+              account_id: Schema.String,
+              state: Schema.fromJsonString(DraftCreateState),
+            }),
+          )(
+            sql`SELECT d.account_id,p.value_json AS state FROM drafts d JOIN prefs p ON p.key=${`draft-create:${id}`} WHERE d.id=${id}`,
+          );
+          const uncertain =
+            Option.isSome(creation) && creation.value.state.attempted
+              ? [
+                  {
+                    account_id: creation.value.account_id,
+                    appended_message_id: creation.value.state.messageId,
+                    progress_json: [],
+                  },
+                ]
+              : [];
+          yield* enqueueAppendedCleanup(id, [...(yield* waitingDraftSaves(id)), ...uncertain]);
+          yield* setDraftCreateState(id, null);
+          yield* run(sql`DELETE FROM prefs WHERE key=${`draft-remote:${id}`}`);
           yield* run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`);
           yield* run(sql`DELETE FROM drafts WHERE id=${id}`);
           // A push already running finds the draft gone and cleans its newly created copy.
@@ -360,6 +411,7 @@ export function makeComposeStore(
           );
           if (localOnly) {
             yield* enqueueAppendedCleanup(id, yield* waitingDraftSaves(id));
+            yield* run(sql`DELETE FROM prefs WHERE key=${`draft-remote:${id}`}`);
             yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
           }
         }),
@@ -795,6 +847,8 @@ export function makeComposeStore(
     draftByProposal,
     putDraft,
     setDraftRemote,
+    draftCreateState,
+    setDraftCreateState,
     setDraftOrganizationKey,
     draftSaveState,
     setDraftSyncError,

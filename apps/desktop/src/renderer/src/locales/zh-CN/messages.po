@@ -4457,6 +4457,7 @@ msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "语义搜索暂不可用，仍可全文搜索。"
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"

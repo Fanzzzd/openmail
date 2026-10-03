@@ -239,16 +239,39 @@ export default function Settings() {
             <Text style={styles.detail}>
               {item.status === "waiting"
                 ? i18n._({ id: "Queued to send", message: "Queued to send" })
-                : item.status === "rejected"
+                : item.status === "retryable"
                   ? i18n._({
-                      id: "Rejected before sending. Edit the draft and try again.",
-                      message: "Rejected before sending. Edit the draft and try again.",
+                      id: "Send failed. Review the draft and try again.",
+                      message: "Send failed. Review the draft and try again.",
                     })
-                  : i18n._({
-                      id: "Delivery uncertain. Check Sent before trying again.",
-                      message: "Delivery uncertain. Check Sent before trying again.",
-                    })}
+                  : item.status === "rejected"
+                    ? i18n._({
+                        id: "Rejected before sending. Edit the draft and try again.",
+                        message: "Rejected before sending. Edit the draft and try again.",
+                      })
+                    : i18n._({
+                        id: "Delivery uncertain. Check Sent before trying again.",
+                        message: "Delivery uncertain. Check Sent before trying again.",
+                      })}
             </Text>
+            {item.status === "retryable" && (
+              <Button
+                label={i18n._({ id: "Retry send", message: "Retry send" })}
+                onPress={() => {
+                  void runtime
+                    .runPromise(
+                      Effect.flatMap(Mailbox, (mailbox) => mailbox.cancelQueuedSend(item.id)),
+                    )
+                    .then(() => {
+                      return router.push({
+                        pathname: "/compose",
+                        params: { accountId: item.accountId, draftId: item.id },
+                      });
+                    })
+                    .catch(() => setFailed(true));
+                }}
+              />
+            )}
             <Button
               label={i18n._({ id: "Cancel queued send", message: "Cancel queued send" })}
               onPress={() => {

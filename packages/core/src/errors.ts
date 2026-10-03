@@ -23,7 +23,7 @@ export class PermanentError extends Schema.TaggedError<PermanentError>()("Perman
 export class ProviderError extends Schema.TaggedError<ProviderError>()("ProviderError", {
   message: Schema.String,
   status: Schema.optionalKey(Schema.Number),
-  reason: Schema.optionalKey(Schema.Literal("configuration")),
+  reason: Schema.optionalKey(Schema.Literals(["configuration", "connection"])),
   deferred: Schema.optionalKey(Schema.Boolean),
   retryAfter: Schema.optionalKey(Schema.String),
 }) {}

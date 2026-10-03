@@ -1,3 +1,4 @@
+import { draftCreation } from "./draft-create-fixture.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Fiber, Layer, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
@@ -235,6 +236,7 @@ it.effect("slice63 Node unknown appended draft UID preserves previous copy", () 
       vi.spyOn(c, "append").mockResolvedValue({ destination: "Drafts" });
       yield* Effect.flip(
         a.saveDraft(account, {
+          creation: draftCreation(),
           message,
           original: Option.none(),
           remote: previous,
@@ -250,6 +252,7 @@ it.effect("slice63 Node failed previous draft cleanup returns cleanup reference"
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsAdd").mockResolvedValue(false);
       const remote = yield* a.saveDraft(account, {
+        creation: draftCreation(),
         message,
         original: Option.none(),
         remote: previous,
@@ -779,6 +782,7 @@ it.effect(
           query.header && appended ? [9] : [],
         );
         const draft = {
+          creation: draftCreation(),
           message,
           original: Option.none(),
           remote: previous,
@@ -1044,6 +1048,7 @@ for (const previousId of ["7:9:Drafts", "7:009:Drafts", "007:009:Drafts"]) {
         const remote = yield* a.saveDraft(
           account,
           {
+            creation: draftCreation(),
             message,
             original: Option.none(),
             remote: { draftId: previousId, messageId: previousId },
@@ -1192,6 +1197,7 @@ it.effect("slice63 coordinator canonical UIDVALIDITY still cleans a different pr
       yield* a.saveDraft(
         account,
         {
+          creation: draftCreation(),
           message,
           original: Option.none(),
           remote: { draftId: "007:008:Drafts", messageId: "007:008:Drafts" },
@@ -1227,6 +1233,7 @@ it.effect("slice63 coordinator matching UID numbers in case-distinct folders sta
       yield* a.saveDraft(
         account,
         {
+          creation: draftCreation(),
           message,
           original: Option.none(),
           remote: { draftId: "7:9:drafts", messageId: "7:9:drafts" },

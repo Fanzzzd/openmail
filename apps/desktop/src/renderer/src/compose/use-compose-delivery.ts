@@ -1,7 +1,7 @@
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { holdSend } from "@openmail/core/schema";
-import { Cause, Effect, Fiber } from "effect";
+import { Cause, Deferred, Effect, Fiber } from "effect";
 import { useRef, type Dispatch, type SetStateAction } from "react";
 import type { OutgoingMessage } from "../../../shared/api";
 import type { AppMessages } from "../App";
@@ -35,25 +35,25 @@ export function useComposeDelivery({
   const { prefs } = navigation;
   const { i18n } = useLingui();
   const uncertain = useRef(new Set<string>());
-  const pendingSends = useRef(new Map<string, (() => void) | null>());
+  const pendingSends = useRef(new Map<string, { token: symbol; undo: (() => void) | null }>());
   const reportSendState = () =>
     run(
       withMail((call) =>
         call("SetSendState", {
           pending: pendingSends.current.size,
-          undoAvailable: [...pendingSends.current.values()].some((undo) => undo !== null),
+          undoAvailable: [...pendingSends.current.values()].some(
+            (pending) => pending.undo !== null,
+          ),
         }),
       ),
     );
   const undoSend = () =>
-    [...pendingSends.current.values()].filter((undo) => undo !== null).at(-1)?.();
+    [...pendingSends.current.values()]
+      .filter((pending) => pending.undo !== null)
+      .at(-1)
+      ?.undo?.();
 
-  /**
-   * Saves the draft (so quitting during the wait loses nothing), holds the
-   * message for the undo window from preferences, then sends it. The window
-   * is a timer (`holdSend`) that undo clears, so a message taken back never
-   * reaches the main process. Undo, from the toast or ⌘Z, reopens the draft.
-   */
+  /** Core persists the undo deadline and owns delivery across renderer restarts. */
   const send = (draft: Draft, message: OutgoingMessage, options: { archive: boolean }) => {
     const confirmResend = uncertain.current.has(draft.id);
     if (
@@ -70,27 +70,54 @@ export function useComposeDelivery({
       return;
     setCompose(null);
     const reopen = () => setCompose(draft);
-    pendingSends.current.set(draft.id, null);
+    const token = Symbol();
+    const clearPending = () => {
+      if (pendingSends.current.get(draft.id)?.token === token)
+        pendingSends.current.delete(draft.id);
+      reportSendState();
+    };
+    pendingSends.current.set(draft.id, { token, undo: null });
     reportSendState();
-    const saved = run(saveDraft(toDraftInput(draft)));
+    const delay = prefs.undoSendSeconds * 1000;
+    const due = Date.now() + delay;
+    let undone = false;
+    let undoInProgress = false;
+    const undoFinished = Deferred.makeUnsafe<void>();
+    const saved = run(
+      delay === 0
+        ? saveDraft(toDraftInput(draft)).pipe(Effect.asVoid)
+        : withMail((call) =>
+            call("QueueUndoSend", {
+              draft: { ...toDraftInput(draft), message },
+              due,
+              archive: options.archive,
+              confirmResend,
+            }),
+          ),
+    );
     const deliver = () =>
       run(
         Fiber.join(saved).pipe(
           Effect.andThen(
-            sendMessage(draft.accountId, message, {
-              draftId: draft.id,
-              ...(confirmResend ? { confirmResend: true } : {}),
-              ...(options.archive ? { archive: true } : {}),
-            }),
+            delay > 0
+              ? withMail((call) => call("AwaitUndoSend", { id: draft.id }))
+              : sendMessage(draft.accountId, message, {
+                  draftId: draft.id,
+                  ...(confirmResend ? { confirmResend: true } : {}),
+                  ...(options.archive ? { archive: true } : {}),
+                }),
+          ),
+          Effect.onExit(() =>
+            Effect.suspend(() => (undoInProgress ? Deferred.await(undoFinished) : Effect.void)),
           ),
           Effect.ensuring(
             Effect.sync(() => {
-              pendingSends.current.delete(draft.id);
-              reportSendState();
+              clearPending();
             }),
           ),
           Effect.matchCause({
             onSuccess: () => {
+              if (undone) return;
               uncertain.current.delete(draft.id);
               say({ text: options.archive ? messages.sentAndArchived : messages.sent });
               if (composeId) finishCompose();
@@ -98,6 +125,7 @@ export function useComposeDelivery({
               if (options.archive) navigation.archiveSentReply(draft.inReplyTo);
             },
             onFailure: (cause) => {
+              if (undone) return;
               const error = Cause.findErrorOption(cause);
               if (error._tag === "Some" && error.value._tag === "SendUncertain")
                 uncertain.current.add(draft.id);
@@ -108,29 +136,54 @@ export function useComposeDelivery({
           }),
         ),
       );
-    const delay = prefs.undoSendSeconds * 1000;
     if (delay === 0) {
       say({ text: messages.sending });
       deliver();
       return;
     }
     const held = holdSend(delay, () => {
-      pendingSends.current.set(draft.id, null);
+      if (pendingSends.current.get(draft.id)?.token === token)
+        pendingSends.current.set(draft.id, { token, undo: null });
       reportSendState();
       if (undoRef.current === undo) undoRef.current = null;
-      deliver();
     });
     const undo = () => {
       if (held.undo()) {
-        pendingSends.current.delete(draft.id);
-        reportSendState();
-        if (undoRef.current === undo) undoRef.current = null;
-        setToast(null);
-        reopen();
+        undoInProgress = true;
+        run(
+          Fiber.join(saved).pipe(
+            Effect.andThen(withMail((call) => call("CancelWaitingSend", { id: draft.id }))),
+            Effect.matchCause({
+              onSuccess: (cancelled) => {
+                undone = cancelled;
+                if (undoRef.current === undo) undoRef.current = null;
+                setToast(null);
+                if (!cancelled) {
+                  if (pendingSends.current.get(draft.id)?.token === token)
+                    pendingSends.current.set(draft.id, { token, undo: null });
+                  reportSendState();
+                  return;
+                }
+                clearPending();
+                reopen();
+              },
+              onFailure: (cause) => {
+                undone = false;
+                say({ text: messages.couldntSend(causeText(i18n, cause)), tone: "error" });
+              },
+            }),
+            Effect.ensuring(
+              Effect.sync(() => {
+                undoInProgress = false;
+              }).pipe(Effect.andThen(Deferred.succeed(undoFinished, undefined))),
+            ),
+          ),
+        );
       }
     };
+    deliver();
     undoRef.current = undo;
-    pendingSends.current.set(draft.id, undo);
+    pendingSends.current.set(draft.id, { token, undo });
     reportSendState();
     say({ text: messages.sending, duration: delay, action: { label: messages.undo, run: undo } });
   };

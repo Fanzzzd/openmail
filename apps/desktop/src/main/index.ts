@@ -136,6 +136,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
               return NodeMailbox({
                 openUrl: openExternal,
                 autoSync: "2 minutes",
+                resumeDesktopSends: true,
                 inferenceProcess: desktopInferenceProcess,
                 dataDir: directory,
                 inboxPoll: "45 seconds",

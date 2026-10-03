@@ -511,13 +511,20 @@ export type DraftInput = typeof DraftInput.Type;
 /** Where the provider keeps a draft. Gmail has a draft id; Outlook and IMAP only a message id. */
 export const DraftRemote = Schema.Struct({
   rfcMessageId: Schema.optionalKey(Schema.String),
-  cleanupMessageIds: Schema.optionalKey(Schema.Array(Schema.String)),
-  cleanupMessageId: Schema.optionalKey(Schema.String),
-  conflict: Schema.optionalKey(Schema.Boolean),
+  changeKey: Schema.optionalKey(Schema.String),
+  lastWrittenAt: Schema.optionalKey(Schema.Number),
   draftId: Schema.NullOr(Schema.String),
   messageId: Schema.NullOr(Schema.String),
 });
 export type DraftRemote = typeof DraftRemote.Type;
+
+export const DraftCreateState = Schema.Struct({
+  messageId: Schema.String,
+  attempted: Schema.Boolean,
+  attemptedAt: Schema.optionalKey(Schema.Number),
+  emptyLookups: Schema.optionalKey(Schema.Number),
+});
+export type DraftCreateState = typeof DraftCreateState.Type;
 
 /** Draft changes waiting in the queue next to MailOps. */
 export const DraftOp = Schema.Union([

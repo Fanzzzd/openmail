@@ -24,7 +24,11 @@ export const QueuedSend = Schema.Struct({
   accountId: Schema.String,
   message: OutgoingMessage,
   due: Schema.Finite,
-  status: Schema.Literals(["waiting", "sending", "failed", "rejected"]),
+  status: Schema.Literals(["waiting", "sending", "failed", "rejected", "retryable"]),
+  desktopUndo: Schema.optionalKey(Schema.Boolean),
+  desktopOwner: Schema.optionalKey(Schema.String),
+  archive: Schema.optionalKey(Schema.Boolean),
+  deliveryId: Schema.optionalKey(Schema.String),
 });
 export type QueuedSend = typeof QueuedSend.Type;
 const Row = Schema.Struct({ value_json: Schema.fromJsonString(QueuedSend) });

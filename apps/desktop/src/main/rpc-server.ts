@@ -267,8 +267,12 @@ const Handlers = MailRpcs.toLayer(
             return { draft, recipients: takeComposeRecipients(win) };
           }),
         ),
+      QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
+        m.queueUndoSend(draft, due, { archive, confirmResend, owner: String(client.id) }),
       CloseComposeWindow: (_, { client }) =>
-        Effect.sync(() => approveComposeClose(windowOf(client.id))),
+        m
+          .cancelDesktopUndoSends(String(client.id))
+          .pipe(Effect.andThen(Effect.sync(() => approveComposeClose(windowOf(client.id))))),
       SetWindowSelection: ({ selection }, { client }) =>
         Effect.sync(() => setWindowSelection(windowOf(client.id), selection)),
       Diagnostics: ({ crashOnly }) => Effect.sync(() => diagnosticsPreview(crashOnly)),

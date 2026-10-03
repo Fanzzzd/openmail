@@ -5,7 +5,7 @@ import { Store } from "./services.js";
 import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { buildMobileMime } from "./platform/react-native/compose.js";
 import { parseMobileMime } from "./platform/react-native/mail-codec.js";
-import { ProviderError } from "./errors.js";
+import { SendUncertain } from "./errors.js";
 import type { IncomingMessage, OutgoingMessage } from "./domain.js";
 const source: IncomingMessage = {
   providerId: "m",
@@ -71,7 +71,7 @@ for (const provider of ["gmail", "outlook"] as const) {
           yield* mailbox.queueSend(draft, Date.now() + 60000);
           yield* mailbox.flushQueuedSends();
           expect(server.sent).toHaveLength(0);
-          expect(yield* mailbox.cancelQueuedSend(draft.id)).toBe(true);
+          expect(yield* mailbox.cancelWaitingSend(draft.id)).toBe(true);
           yield* mailbox.queueSend(draft, 0);
           yield* mailbox.flushQueuedSends();
           yield* mailbox.flushQueuedSends();
@@ -103,7 +103,7 @@ it("retains uncertain deliveries for human review and never retries them automat
         const account = yield* mailbox.connect({ provider: "gmail" });
         const draft = { id: "draft:failed", accountId: account.id, message };
         yield* mailbox.queueSend(draft, 0);
-        server.failNext = new ProviderError({ message: "Network lost" });
+        server.sendFailure = new SendUncertain({ message: "Network lost after submission" });
         yield* mailbox.flushQueuedSends();
         expect((yield* mailbox.queuedSends)[0]?.status).toBe("failed");
         yield* mailbox.flushQueuedSends();
@@ -209,10 +209,19 @@ it("persists queued sends and interrupted claims across database reopening", asy
         expect(yield* mailbox.queuedSends).toHaveLength(2);
         yield* mailbox.flushQueuedSends();
         expect(server.sent).toHaveLength(1);
-        expect((yield* mailbox.queuedSends)[0]?.status).toBe("sending");
+        expect((yield* mailbox.queuedSends)[0]?.status).toBe("failed");
+        expect(yield* (yield* Store).sendUncertain("draft:interrupted")).toBe(true);
         yield* mailbox.flushQueuedSends();
         expect(server.sent).toHaveLength(1);
-        expect(yield* mailbox.cancelQueuedSend("draft:interrupted")).toBe(true);
+        const interrupted = (yield* mailbox.queuedSends)[0];
+        if (!interrupted) throw new Error("Missing interrupted send");
+        yield* mailbox.queueSend(
+          { id: interrupted.id, accountId: interrupted.accountId, message: interrupted.message },
+          Date.now() + 60000,
+          true,
+        );
+        expect((yield* mailbox.queuedSends)[0]?.status).toBe("waiting");
+        expect(yield* mailbox.cancelWaitingSend("draft:interrupted")).toBe(true);
         expect(
           (yield* mailbox.openDraft("draft:interrupted")).message.attachments[0]?.content,
         ).toBe("AQID");

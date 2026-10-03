@@ -26,6 +26,7 @@ function operationLabels(i18n: I18n): Readonly<Record<string, string>> {
     deleteDraft: i18n._({ id: "Delete draft", message: "Delete draft" }),
     delete: i18n._({ id: "Delete permanently", message: "Delete permanently" }),
     reconcile: i18n._({ id: "Restore message state", message: "Restore message state" }),
+    send: i18n._({ id: "Send", message: "Send" }),
     sendPartial: i18n._({ id: "Partial delivery", message: "Partial delivery" }),
     sentCopyMissing: i18n._({ id: "Save sent copy", message: "Save sent copy" }),
   };

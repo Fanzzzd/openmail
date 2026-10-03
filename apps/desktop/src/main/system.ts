@@ -652,10 +652,18 @@ export const DesktopLive = Layer.effect(
           cancelId: 0,
         })
         .then((result) => result.response === 1);
+    const cancelWaitingDesktopSends = (owner?: string) =>
+      new Promise<void>((resolve, reject) => {
+        run(
+          mailbox
+            .cancelDesktopUndoSends(owner)
+            .pipe(Effect.matchCause({ onSuccess: resolve, onFailure: reject })),
+        );
+      });
     setRendererReloadGuard(async (win) => {
       const id = win.webContents.id;
-      if (!sendStates.get(id)?.pending) return true;
-      if (!(await confirmPendingSend())) return false;
+      if (sendStates.get(id)?.pending && !(await confirmPendingSend())) return false;
+      await cancelWaitingDesktopSends(String(id));
       sendStates.remove(id);
       return true;
     });
@@ -666,6 +674,7 @@ export const DesktopLive = Layer.effect(
         pending: async () => sendStates.get(id)?.pending ?? 0,
         fallbackPending: () => sendStates.get(id)?.pending ?? 0,
         confirm: confirmPendingSend,
+        beforeQuit: () => cancelWaitingDesktopSends(String(id)),
         quit: () => {
           if (!win.isDestroyed()) {
             if (isComposeWindow(win)) approveComposeClose(win);
@@ -683,6 +692,7 @@ export const DesktopLive = Layer.effect(
         void closeGuard(event);
       });
       win.once("closed", () => {
+        run(mailbox.cancelDesktopUndoSends(String(id)));
         pending.delete(id);
         listeners.delete(id);
         spaces.delete(id);
@@ -719,6 +729,7 @@ export const DesktopLive = Layer.effect(
         }),
       fallbackPending: () => sendStates.total(),
       confirm: confirmPendingSend,
+      beforeQuit: cancelWaitingDesktopSends,
       quit: () => {
         quittingApproved = true;
         approveUpdateQuit(!relaunchPending);

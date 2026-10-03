@@ -1,3 +1,4 @@
+import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it } from "@effect/vitest";
@@ -14,6 +15,7 @@ import { ProviderError } from "./errors.js";
 import { type GmailRuleDefinition, EMPTY_FILTER } from "./organization.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import type { Change, ProviderAdapter } from "./services.js";
+import { isDefiniteSendFailure } from "./provider-send.js";
 
 interface Call {
   method: string;
@@ -77,6 +79,374 @@ function run<A, E>(
 }
 
 const b64 = (s: string) => Buffer.from(s).toString("base64url");
+
+for (const exists of [false, true]) {
+  it.effect(
+    `Gmail uncertain-draft cleanup finds the journal Message-ID (${exists ? "found" : "missing"})`,
+    () => {
+      const http = fakeHttp({
+        "GET /messages": (url) => {
+          assert.strictEqual(
+            url.searchParams.get("q"),
+            "in:drafts rfc822msgid:<orphan@example.test>",
+          );
+          return { json: { messages: exists ? [{ id: "orphan-message" }] : [] } };
+        },
+        "GET /drafts": {
+          json: { drafts: [{ id: "orphan-draft", message: { id: "orphan-message" } }] },
+        },
+        "DELETE /drafts/orphan-draft": { status: 204 },
+      });
+      return run(http, (adapter) =>
+        adapter.deleteDraft(account, {
+          draftId: null,
+          messageId: null,
+          rfcMessageId: "<orphan@example.test>",
+        }),
+      ).pipe(
+        Effect.tap(() =>
+          Effect.sync(() => {
+            assert.isTrue(
+              http.calls.some(
+                (call) => call.method === "GET" && call.url.pathname.endsWith("/messages"),
+              ),
+            );
+            assert.strictEqual(
+              http.calls.filter((call) => call.method === "DELETE").length,
+              exists ? 1 : 0,
+            );
+          }),
+        ),
+      );
+    },
+  );
+}
+
+it.effect("a Gmail threading 503 is definite before any send submission", () => {
+  const http = fakeHttp({
+    "GET /messages/source": { status: 503, headers: { "Retry-After": "120" } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const result = yield* adapter
+        .send(
+          account,
+          { ...outgoing, mode: "reply" },
+          Option.some({ providerId: "source", threadId: "conversation" }),
+        )
+        .pipe(Effect.result);
+      assert.isTrue(result._tag === "Failure" && isDefiniteSendFailure(result.failure));
+      assert.isFalse(http.calls.some((call) => call.method === "POST"));
+    }),
+  );
+});
+
+it.live("Gmail can retry draft creation after a DNS failure without a lookup", () =>
+  Effect.gen(function* () {
+    let attempted = false;
+    let posts = 0;
+    let lookups = 0;
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() => {
+        if (request.method === "POST") {
+          posts++;
+          if (posts === 1)
+            return Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({
+                  request,
+                  cause: new TypeError("fetch failed", { cause: { code: "ENOTFOUND" } }),
+                }),
+              }),
+            );
+          return Effect.succeed(
+            HttpClientResponse.fromWeb(
+              request,
+              new Response(JSON.stringify({ id: "draft", message: { id: "message" } })),
+            ),
+          );
+        }
+        lookups++;
+        return Effect.succeed(HttpClientResponse.fromWeb(request, new Response("{}")));
+      }),
+    );
+    yield* run({ layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] }, (adapter) =>
+      Effect.gen(function* () {
+        const push = {
+          remote: null,
+          message: outgoing,
+          original: Option.none(),
+          replaceAttachments: false,
+          creation: {
+            isLinked: () => Effect.succeed(false),
+            missing: () => Effect.succeed(false),
+            begin: () => Effect.succeed({ messageId: "<dns@example.test>", attempted }),
+            attempted: (_id: string, value = true) =>
+              Effect.sync(() => {
+                attempted = value;
+              }),
+            remember: () => Effect.void,
+          },
+        };
+        const first = yield* adapter.saveDraft(account, push).pipe(Effect.result);
+        assert.strictEqual(
+          first._tag === "Failure" &&
+            first.failure._tag === "ProviderError" &&
+            first.failure.reason,
+          "connection",
+        );
+        assert.isFalse(attempted);
+        assert.strictEqual((yield* adapter.saveDraft(account, push)).draftId, "draft");
+      }),
+    );
+    assert.strictEqual(posts, 2);
+    assert.strictEqual(lookups, 0);
+  }),
+);
+
+it.live("Gmail recreates a draft after the creation journal expires", () =>
+  Effect.gen(function* () {
+    let misses = 0;
+    const http = fakeHttp({
+      "GET /messages": { json: { messages: [] } },
+      "POST /drafts": { json: { id: "retry-draft", message: { id: "rewritten-message-id" } } },
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const push = {
+          remote: null,
+          message: outgoing,
+          original: Option.none(),
+          replaceAttachments: false,
+          creation: {
+            isLinked: () => Effect.succeed(false),
+            begin: () => Effect.succeed({ messageId: "<rewritten@example.test>", attempted: true }),
+            attempted: () => Effect.void,
+            missing: () => Effect.sync(() => ++misses >= 3),
+            remember: () => Effect.void,
+          },
+        };
+        for (let i = 0; i < 2; i++) {
+          const result = yield* adapter.saveDraft(account, push).pipe(Effect.result);
+          assert.strictEqual(result._tag === "Failure" && result.failure._tag, "ProviderError");
+          assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 0);
+        }
+        assert.strictEqual((yield* adapter.saveDraft(account, push)).draftId, "retry-draft");
+      }),
+    );
+    assert.strictEqual(misses, 3);
+    assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 1);
+  }),
+);
+
+it.live("Gmail uncertain draft creation is reconciled by the client Message-ID", () =>
+  Effect.gen(function* () {
+    let attempted = false;
+    const http = fakeHttp({
+      "POST /drafts": () => {
+        assert.isTrue(attempted);
+        return { status: 503 };
+      },
+      "GET /messages": (url) => {
+        assert.include(url.searchParams.get("q") ?? "", "rfc822msgid:<draft@example.com>");
+        return { json: { messages: [{ id: "remote-message" }] } };
+      },
+      "GET /drafts": {
+        json: { drafts: [{ id: "remote-draft", message: { id: "remote-message" } }] },
+      },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        message: outgoing,
+        remote: null,
+        original: Option.none(),
+        replaceAttachments: false,
+        creation: {
+          isLinked: () => Effect.succeed(false),
+          missing: () => Effect.succeed(false),
+          begin: () => Effect.succeed({ messageId: "<draft@example.com>", attempted: false }),
+          attempted: () =>
+            Effect.sync(() => {
+              attempted = true;
+            }),
+          remember: () => Effect.void,
+        },
+      }),
+    );
+    assert.strictEqual(remote.draftId, "remote-draft");
+    assert.strictEqual(http.calls.filter((c) => c.method === "POST").length, 1);
+    const body = Schema.decodeUnknownSync(
+      Schema.Struct({ message: Schema.Struct({ raw: Schema.String }) }),
+    )(http.calls.find((c) => c.method === "POST")?.body);
+    assert.include(
+      Buffer.from(body.message.raw, "base64url").toString(),
+      "Message-ID: <draft@example.com>",
+    );
+  }),
+);
+
+for (const status of [200, 400]) {
+  it.live(
+    `recovered Gmail creation applies current edits and retains its ID on update ${status}`,
+    () =>
+      Effect.gen(function* () {
+        const http = fakeHttp({
+          "GET /messages": { json: { messages: [{ id: "found-message" }] } },
+          "GET /drafts": {
+            json: { drafts: [{ id: "found-draft", message: { id: "found-message" } }] },
+          },
+          "PUT /drafts/found-draft": {
+            status,
+            json: { id: "found-draft", message: { id: "updated-message" } },
+          },
+        });
+        const remote = yield* run(http, (adapter) =>
+          adapter.saveDraft(account, {
+            remote: null,
+            message: { ...outgoing, text: "Latest edit" },
+            original: Option.none(),
+            replaceAttachments: false,
+            creation: {
+              isLinked: () => Effect.succeed(false),
+              missing: () => Effect.succeed(false),
+              begin: () => Effect.succeed({ messageId: "<attempt@example.com>", attempted: true }),
+              attempted: () => Effect.void,
+              remember: () => Effect.void,
+            },
+          }),
+        );
+        const writes = http.calls.filter((call) => call.method !== "GET");
+        assert.strictEqual(writes.length, 1);
+        assert.strictEqual(writes[0]?.method, "PUT");
+        const body = Schema.decodeUnknownSync(
+          Schema.Struct({ message: Schema.Struct({ raw: Schema.String }) }),
+        )(writes[0]?.body);
+        assert.include(Buffer.from(body.message.raw, "base64url").toString(), "Latest edit");
+        assert.strictEqual(remote.draftId, "found-draft");
+        assert.strictEqual(remote.messageId, status === 200 ? "updated-message" : "found-message");
+        assert.strictEqual(remote.saveError?._tag, status === 200 ? undefined : "PermanentError");
+      }),
+  );
+}
+
+it.live("an uncertain Gmail filter update matches the new rule before restoring", () =>
+  Effect.gen(function* () {
+    const original = {
+      id: "old",
+      criteria: { from: "alice" },
+      action: { removeLabelIds: ["UNREAD"] },
+    };
+    const found = { id: "new", criteria: { from: "bob" }, action: { removeLabelIds: ["UNREAD"] } };
+    let posts = 0;
+    const settings = makeGmailSettings(
+      (_id, schema, path) =>
+        Schema.decodeUnknownEffect(schema)(
+          path.endsWith("/old") ? original : { filter: [found] },
+        ).pipe(Effect.orDie),
+      (_id, method) =>
+        method === "DELETE"
+          ? Effect.void
+          : Effect.suspend(() => {
+              posts++;
+              return posts === 1
+                ? Effect.fail(new ProviderError({ message: "Lost response", status: 0 }))
+                : Effect.succeed({ ...original, id: "restored" });
+            }),
+    );
+    const result = yield* settings.updateFilter(account, "old", {
+      ...EMPTY_FILTER,
+      criteria: { ...EMPTY_FILTER.criteria, from: "bob" },
+      action: { ...EMPTY_FILTER.action, markRead: true },
+    });
+    assert.strictEqual(result.id, "new");
+    assert.strictEqual(posts, 1);
+  }),
+);
+
+it.live("uncertain Gmail calendar response re-reads the self attendee", () =>
+  Effect.gen(function* () {
+    const [parsed] = parseCalendar(
+      "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:uid@example.com\r\nDTSTART:20261001T090000Z\r\nORGANIZER:mailto:alice@example.com\r\nATTENDEE:mailto:me@gmail.com\r\nEND:VEVENT\r\nEND:VCALENDAR",
+    );
+    assert.ok(parsed);
+    const event = {
+      id: "e",
+      organizer: { email: "alice@example.com" },
+      attendees: [{ email: "me@gmail.com", self: true }],
+    };
+    let patches = 0;
+    const http = fakeHttp({
+      "GET /calendar/v3/calendars/primary/events": { json: { items: [event] } },
+      "PATCH /calendar/v3/calendars/primary/events/e": () => ({
+        status: patches++ === 0 ? 503 : 200,
+        json: {},
+      }),
+      "GET /calendar/v3/calendars/primary/events/e": {
+        json: {
+          ...event,
+          attendees: [{ email: "me@gmail.com", self: true, responseStatus: "accepted" }],
+        },
+      },
+    });
+    yield* run(http, (a) => a.respondInvite(account, "m", parsed.invite, "accepted"));
+    assert.strictEqual(http.calls.filter((c) => c.method === "PATCH").length, 1);
+  }),
+);
+
+it.live("invalid move destination never untrashes a Gmail message", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": { json: { labels: [] } },
+      "GET /messages/m": { json: { labelIds: ["TRASH"] } },
+      "POST /messages/m/untrash": { json: {} },
+      "POST /messages/m/modify": { status: 400 },
+    });
+    yield* run(http, (a) =>
+      a
+        .push(account, "m", { kind: "move", labelId: "missing", removeLabelId: null })
+        .pipe(Effect.result),
+    );
+    assert.isFalse(http.calls.some((c) => c.url.pathname.endsWith("/untrash")));
+  }),
+);
+
+it.live("failed Gmail move restores Trash after untrash", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /labels": {
+        json: { labels: [{ id: "Label_dest", name: "Destination", type: "user" }] },
+      },
+      "GET /messages/m": { json: { labelIds: ["TRASH"] } },
+      "POST /messages/m/untrash": { json: {} },
+      "POST /messages/m/modify": { status: 400 },
+      "POST /messages/m/trash": { json: {} },
+    });
+    yield* run(http, (a) =>
+      a
+        .push(account, "m", { kind: "move", labelId: "Label_dest", removeLabelId: null })
+        .pipe(Effect.result),
+    );
+    assert.isTrue(http.calls.some((c) => c.url.pathname.endsWith("/trash")));
+  }),
+);
+
+for (const status of [400, 409]) {
+  it.live(`Gmail label create ${status} resolves the existing name`, () =>
+    Effect.gen(function* () {
+      let lists = 0;
+      const http = fakeHttp({
+        "GET /labels": () => ({
+          json: { labels: lists++ ? [{ id: "Label_found", name: "Work", type: "user" }] : [] },
+        }),
+        "POST /labels": { status },
+      });
+      const labels = yield* run(http, (a) =>
+        a.changeLabel(account, { kind: "create", name: "Work" }),
+      );
+      assert.strictEqual(labels[0]?.id, "Label_found");
+    }),
+  );
+}
 
 it.effect("Gmail checks the built MIME length including a large body before posting", () =>
   Effect.gen(function* () {
@@ -386,6 +756,7 @@ it.effect("drafts are created, updated in place, recreated when gone and deleted
     });
     const reply = { ...outgoing, mode: "reply" as const };
     const push = (remote: { draftId: string | null; messageId: string | null } | null) => ({
+      creation: draftCreation(),
       remote,
       message: reply,
       original: Option.some({ providerId: "orig", threadId: "t-orig" }),
@@ -1758,6 +2129,7 @@ it.effect(
       );
       let posts = 0;
       const failure = fakeHttp({
+        "GET /settings/filters": { json: { filter: [] } },
         "GET /settings/filters/old": { json: original },
         "DELETE /settings/filters/old": { status: 204 },
         "POST /settings/filters": () =>
@@ -1804,6 +2176,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
   it.effect(`Gmail Move To from ${source} clears the system label in single and batch paths`, () =>
     Effect.gen(function* () {
       const http = fakeHttp({
+        "GET /labels": { json: { labels: [{ id: "Label_target", name: "Target", type: "user" }] } },
         "GET /messages/m1": { json: { labelIds: [source] } },
         "POST /messages/m1/untrash": { json: {} },
         "POST /messages/m1/modify": { json: {} },
@@ -1919,7 +2292,7 @@ it.effect("Gmail reparent rolls back already-renamed labels on a descendant fail
 
 for (const recoverySucceeds of [true, false]) {
   it.effect(
-    `Gmail restore retries with backoff and ${recoverySucceeds ? "recovers" : "retains an exact original backup"}`,
+    `Gmail uncertain restoration preserves a backup without replay even when ${recoverySucceeds ? "a later POST would succeed" : "all later POSTs would fail"}`,
     () =>
       Effect.gen(function* () {
         const original = {
@@ -1931,7 +2304,10 @@ for (const recoverySucceeds of [true, false]) {
         const attempted: unknown[] = [];
         const saved: GmailRuleDefinition[] = [];
         const settings = makeGmailSettings(
-          (_id, schema) => Schema.decodeUnknownEffect(schema)(original).pipe(Effect.orDie),
+          (_id, schema, path) =>
+            Schema.decodeUnknownEffect(schema)(
+              path.endsWith("/old") ? original : { filter: [] },
+            ).pipe(Effect.orDie),
           (_id, method, _path, body) =>
             Effect.suspend(() => {
               if (method === "DELETE") return Effect.void;
@@ -1939,7 +2315,9 @@ for (const recoverySucceeds of [true, false]) {
               attempted.push(body);
               return recoverySucceeds && posts === 3
                 ? Effect.succeed({ ...original, id: "restored" })
-                : Effect.fail(new ProviderError({ message: "offline" }));
+                : Effect.fail(
+                    new ProviderError({ message: "offline", status: posts === 1 ? 400 : 503 }),
+                  );
             }),
         );
         const request = yield* Effect.forkChild(
@@ -1963,11 +2341,8 @@ for (const recoverySucceeds of [true, false]) {
         const result = yield* Fiber.join(request);
         assert.strictEqual(result._tag, "Failure");
         const definition = { criteria: original.criteria, action: original.action };
-        assert.deepStrictEqual(
-          attempted.slice(1),
-          Array.from({ length: recoverySucceeds ? 2 : 3 }, () => definition),
-        );
-        assert.deepStrictEqual(saved, recoverySucceeds ? [] : [definition]);
+        assert.deepStrictEqual(attempted.slice(1), [definition]);
+        assert.deepStrictEqual(saved, [definition]);
       }),
   );
 }
@@ -2281,6 +2656,7 @@ it.effect("slice49: a changed remote Gmail draft creates a second copy", () =>
     });
     const saved = yield* run(http, (a) =>
       a.saveDraft(account, {
+        creation: draftCreation(),
         remote: { draftId: "d1", messageId: "before" },
         message: outgoing,
         original: Option.none(),

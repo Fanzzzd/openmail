@@ -1,3 +1,4 @@
+import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Option } from "effect";
 import { TestClock } from "effect/testing";
@@ -261,6 +262,7 @@ it.effect(
             server.drafts.set("web", {
               messageId: "x1",
               push: {
+                creation: draftCreation(),
                 remote: null,
                 message: reply,
                 original: Option.none(),

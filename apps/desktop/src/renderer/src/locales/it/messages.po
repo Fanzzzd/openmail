@@ -4447,6 +4447,7 @@ msgid "Semantic search is unavailable. Full-text search remains available."
 msgstr "La ricerca semantica non è disponibile. La ricerca nel testo completo rimane disponibile."
 
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Send"

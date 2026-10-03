@@ -566,6 +566,18 @@ export class MailRpcs extends RpcGroup.make(
     error,
   }),
 
+  Rpc.make("QueueUndoSend", {
+    payload: {
+      draft: DraftInput,
+      due: Schema.Finite,
+      archive: Schema.optionalKey(Schema.Boolean),
+      confirmResend: Schema.optionalKey(Schema.Boolean),
+    },
+    error,
+  }),
+  Rpc.make("AwaitUndoSend", { payload: { id: Schema.String }, success: Outcome, error }),
+  Rpc.make("CancelWaitingSend", { payload: { id: Schema.String }, success: Schema.Boolean }),
+
   // Drafts
   /** A local draft id, a draft message id from the Drafts list, or "proposal:<id>". */
   Rpc.make("NativeComposeCapabilities", {

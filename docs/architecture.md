@@ -28,6 +28,7 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 | `perform(command, actor)`                                          | 检查策略，返回 `applied`、`proposed` 或 `denied`            |
 | `modifyWithUndo`、`undoBatch`、`undoHistory`                       | 批量／单封修改和持久撤销                                    |
 | `saveDraft`、`openDraft`、`discardDraft`                           | 管理用户草稿；模型草稿使用 `perform` 的 draft 命令          |
+| `queueUndoSend`、`awaitUndoSend`、`cancelQueuedSend`               | 桌面持久撤销发送；等待与交付由 core 管理                    |
 | `sync(accountId?)`、`pollInbox`                                    | 完整同步和轻量收件箱轮询；CLI/MCP 不启动桌面轮询计时器      |
 | `listFailedOps`、`acknowledgeFailedOps`、`prepareRejectedResend`   | 查询、关闭失败提示及准备仅向拒收地址重发的新草稿            |
 | `syncHealth(accountId)`                                            | 只读服务商计数与本地投影，返回同步健康报告                  |
@@ -71,6 +72,8 @@ slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候�
 `drafts` 保存本地可编辑草稿，`messages` 保存服务商镜像。草稿本地 ID 为 `draft:<uuid>`；远端草稿／邮件 ID 单独记录，Gmail 和 IMAP 保存后更换服务器 ID 不会改变本地编辑身份。
 
 用户草稿先落本地，再用同一草稿的最新内容推送。队列认领避免桌面、CLI 和 MCP 同时创建服务器副本。打开其他客户端的草稿时通过 MailCodec 解析原始 MIME，保留 HTML、密送和附件；Markdown 来源另存。发送或丢弃清理本地草稿并处理服务器副本，本地未推送改动在拉取时优先保留。
+
+创建日志、远端版本冲突、部分保存失败和发送意图恢复的规则见[同步说明](sync-correctness.md#草稿与其他写入)。
 
 模型提议草稿带 `proposal_id`，MCP 与内置助手草稿先留本机。人在 app 中编辑、保存或发送；上传与批准的边界见[代理使用指南](agents.md)。
 

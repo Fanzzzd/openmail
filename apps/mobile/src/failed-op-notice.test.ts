@@ -12,6 +12,16 @@ const mailbox = vi.hoisted(() => ({
     value: {
       failures: [
         {
+          id: 5,
+          accountId: "account",
+          providerId: "queued",
+          at: 1000,
+          kind: "send",
+          subject: "Queued draft",
+          sender: null,
+          reason: "Send window expired",
+        },
+        {
           id: 3,
           accountId: "account",
           providerId: "draft",
@@ -82,6 +92,9 @@ it("shows persistent mobile failure and delivery warnings with address details a
     expect(element.textContent).toContain("Some recipients did not receive this message.");
     expect(element.textContent).toContain("Partial delivery");
     expect(element.textContent).toContain("Save sent copy");
+    expect(
+      [...element.querySelectorAll("span")].some((entry) => entry.textContent === "Send"),
+    ).toBe(true);
     expect(element.textContent).toContain("bad@example.test");
     expect(element.textContent).toContain("Your draft was kept. Check Sent before sending again.");
     expect(element.textContent).toContain(

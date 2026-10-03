@@ -777,6 +777,11 @@ msgid "Restore message state"
 msgstr "Obnovit stav zprávy"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Retry send"
+msgstr "Zkusit odeslat znovu"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 #: app/ai-proposals.tsx
 #: app/settings.tsx
@@ -827,8 +832,14 @@ msgstr "Vybrat"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/failed-op-notice.tsx
 msgid "Send"
 msgstr "Odeslat"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Send failed. Review the draft and try again."
+msgstr "Odeslání se nezdařilo. Zkontrolujte koncept a zkuste to znovu."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx

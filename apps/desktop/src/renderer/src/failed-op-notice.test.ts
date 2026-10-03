@@ -15,6 +15,16 @@ it("keeps failed changes visible until acknowledged and exposes provider and del
   const resend = vi.fn();
   const failures = [
     {
+      id: 24,
+      accountId: "account",
+      providerId: "queued",
+      at: 1000,
+      kind: "send",
+      subject: "Queued draft",
+      sender: null,
+      reason: "Send window expired",
+    },
+    {
       id: 21,
       accountId: "account",
       providerId: "uid:2",
@@ -61,13 +71,16 @@ it("keeps failed changes visible until acknowledged and exposes provider and del
   try {
     await act(async () => render(failures));
     expect(element.querySelector('[role="alert"]')?.textContent).toBe(
-      "1 change could not be saved1 message had rejected recipients1 sent message is missing from Sent",
+      "2 changes could not be saved1 message had rejected recipients1 sent message is missing from Sent",
     );
     const details = element.querySelector("button");
     if (!details) throw new Error("Missing details action");
     await act(async () => details.click());
     expect(element.textContent).toContain("Access denied");
     expect(element.textContent).toContain("Archive");
+    expect([...element.querySelectorAll("p")].some((entry) => entry.textContent === "Send")).toBe(
+      true,
+    );
     expect(element.textContent).toContain("Planning review");
     expect(element.textContent).toContain("Alice <alice@example.test>");
     expect(element.textContent).toContain("me@example.test");
@@ -96,8 +109,8 @@ it("keeps failed changes visible until acknowledged and exposes provider and del
     );
     if (!dismissButton) throw new Error("Missing dismiss action");
     await act(async () => dismissButton.click());
-    expect(dismiss).toHaveBeenCalledWith([21, 22, 23]);
-    expect(element.textContent).toContain("1 change could not be saved");
+    expect(dismiss).toHaveBeenCalledWith([24, 21, 22, 23]);
+    expect(element.textContent).toContain("2 changes could not be saved");
     await act(async () => render([]));
     expect(element.textContent).toBe("");
   } finally {

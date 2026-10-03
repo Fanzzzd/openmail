@@ -1,3 +1,7 @@
+import type { QueuedSend } from "./mobile-outbox.js";
+import { newMessageId } from "./message-id.js";
+import { draftVersionMetadata } from "./draft-version.js";
+import { isDefiniteSendFailure } from "./provider-send.js";
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import { scopedAdapter, serviceGranted, type AuthorizationFeature } from "./optional-services.js";
 import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
@@ -55,6 +59,7 @@ import {
   Duration,
   Effect,
   FiberSet,
+  Fiber,
   Layer,
   Option,
   PubSub,
@@ -108,7 +113,7 @@ import {
 } from "./errors.js";
 import { mobileAttachmentProblem } from "./mobile-outbox.js";
 import { isEmailAddress } from "./recipients.js";
-import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
+import { Mailbox, type MailboxEvent, type SyncState, type PerformError } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
 import {
   normalizeComposeMessage,
@@ -155,6 +160,12 @@ class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()("Pendi
   message: Schema.String,
 }) {}
 
+const WRITE_RECOVERY_WINDOW_MS = 2 * 60_000;
+const isWaitingSend = (item: QueuedSend) => item.status === "waiting";
+const desktopSendForOwner = (owner?: string) => (item: QueuedSend) =>
+  item.desktopUndo === true &&
+  isWaitingSend(item) &&
+  (owner === undefined || item.desktopOwner === owner);
 /** Only a week-old mutation can expire; reconciliation waits for connectivity. */
 const MAX_OP_AGE = 7 * 86_400_000;
 /** Upserts from a pull land in transactions of this many, or every quarter second. */
@@ -214,6 +225,8 @@ export interface MailboxOptions {
   backgroundFlush?: boolean;
   /** Mobile retains draft attachments locally until the person sends. */
   localDraftQueue?: boolean;
+  /** Only desktop main may resume persisted desktop sends. */
+  resumeDesktopSends?: boolean;
 }
 
 // Merge queued intent without running local-action reminder side effects.
@@ -246,6 +259,7 @@ export const MailboxLive = (
     Mailbox,
     Effect.gen(function* () {
       const crypto = yield* PlatformCrypto;
+      const mailboxScope = yield* Effect.scope;
       const newDraftId = () => `draft:${crypto.randomUUID()}`;
       const codec = yield* MailCodec;
       const files = yield* AttachmentFiles;
@@ -439,9 +453,86 @@ export const MailboxLive = (
         const organizationChanged =
           organizationKey !== null && organizationKey !== draft.pushedOrganization;
         const { draftOrganization, ...bodyMessage } = message;
+        const withDraftClaim = <A>(effect: Effect.Effect<A>) =>
+          store.transaction(
+            Effect.gen(function* () {
+              if (claim && !(yield* store.ownsPendingOp(claim.id, claim.token)))
+                return yield* new ProviderError({
+                  message: "The queued draft is no longer owned by this worker",
+                  deferred: true,
+                });
+              return yield* effect;
+            }),
+          );
         const remote = yield* adapter.saveDraft(
           account,
           {
+            creation: {
+              isLinked: (messageId) =>
+                Effect.map(store.draftByRemoteMessage(account.id, messageId), Option.isSome),
+              begin: () =>
+                withDraftClaim(
+                  Effect.gen(function* () {
+                    const creationState = yield* store.draftCreateState(draftId);
+                    if (Option.isSome(creationState)) return creationState.value;
+                    const sender = message.from?.address ?? account.email;
+                    const next = {
+                      messageId: yield* newMessageId(sender).pipe(
+                        Effect.provideService(PlatformCrypto, crypto),
+                      ),
+                      attempted: false,
+                    };
+                    yield* store.setDraftCreateState(draftId, next);
+                    return next;
+                  }),
+                ),
+              attempted: (messageId, attempted = true) =>
+                withDraftClaim(
+                  Effect.gen(function* () {
+                    const now = yield* Clock.currentTimeMillis;
+                    yield* store.setDraftCreateState(draftId, {
+                      messageId,
+                      attempted,
+                      attemptedAt: now,
+                      emptyLookups: 0,
+                    });
+                  }),
+                ),
+              missing: () =>
+                withDraftClaim(
+                  Effect.gen(function* () {
+                    const creationState = yield* store.draftCreateState(draftId);
+                    if (Option.isNone(creationState)) return true;
+                    const now = yield* Clock.currentTimeMillis;
+                    const attemptedAt = creationState.value.attemptedAt ?? now;
+                    const emptyLookups = (creationState.value.emptyLookups ?? 0) + 1;
+                    const retry =
+                      emptyLookups >= 3 && now - attemptedAt >= WRITE_RECOVERY_WINDOW_MS;
+                    yield* store.setDraftCreateState(draftId, {
+                      ...creationState.value,
+                      attemptedAt,
+                      emptyLookups,
+                      attempted: !retry,
+                    });
+                    return retry;
+                  }),
+                ),
+              remember: (created) =>
+                Effect.gen(function* () {
+                  if (!(yield* store.setDraftRemote(draftId, created, null, account.id, claim))) {
+                    const latest = yield* store.getDraft(draftId);
+                    if (
+                      created.messageId !== draft.remote?.messageId &&
+                      created.messageId !==
+                        (Option.isSome(latest) ? latest.value.remote?.messageId : undefined)
+                    )
+                      yield* store.enqueueOp(account.id, draftId, {
+                        kind: "deleteDraft",
+                        remote: created,
+                      });
+                  }
+                }),
+            },
             remote: draft.remote,
             message: organizationChanged && account.provider !== "gmail" ? message : bodyMessage,
             original,
@@ -449,7 +540,15 @@ export const MailboxLive = (
           },
           context,
         );
-        if (!(yield* store.setDraftRemote(draftId, remote, key, account.id, claim))) {
+        if (
+          !(yield* store.setDraftRemote(
+            draftId,
+            remote,
+            remote.saveError ? null : key,
+            account.id,
+            claim,
+          ))
+        ) {
           if (claim && !(yield* store.ownsPendingOp(claim.id, claim.token))) {
             const latest = yield* store.getDraft(draftId);
             if (
@@ -477,18 +576,13 @@ export const MailboxLive = (
             kind: "deleteDraft",
             remote: { draftId: messageId, messageId },
           });
-        if (remote.conflict) {
-          yield* store.setDraftSyncError(
-            draftId,
-            "The remote draft changed in another client. Both versions were kept.",
-          );
-          yield* store.audit({
-            actor: { kind: "user", surface: "app" },
-            accountId: account.id,
-            action: "draft-conflict",
-            detail: { draftId, previous: draft.remote, remote },
+        yield* store.setDraftCreateState(draftId, null);
+        if (remote.replacedMessageId)
+          yield* store.enqueueOp(account.id, remote.replacedMessageId, {
+            kind: "deleteDraft",
+            remote: { draftId: remote.replacedMessageId, messageId: remote.replacedMessageId },
           });
-        }
+        if (remote.saveError) yield* Effect.fail(remote.saveError);
         const old = remote.conflict ? null : draft.remote?.messageId;
         if (old && old !== remote.messageId) yield* store.deleteMessage(account.id, old);
         let organizationApplied = organizationChanged;
@@ -509,6 +603,39 @@ export const MailboxLive = (
                 ),
               ),
             );
+        }
+        if (
+          organizationChanged &&
+          organizationApplied &&
+          remote.messageId &&
+          adapter.draftVersion
+        ) {
+          const version = yield* adapter
+            .draftVersion(account, remote.messageId)
+            .pipe(Effect.option);
+          if (Option.isSome(version))
+            yield* store.setDraftRemote(
+              draftId,
+              {
+                ...remote,
+                ...draftVersionMetadata(version.value),
+              },
+              key,
+              account.id,
+              claim,
+            );
+        }
+        if (remote.conflict) {
+          yield* store.setDraftSyncError(
+            draftId,
+            "The remote draft changed in another client. Both versions were kept.",
+          );
+          yield* store.audit({
+            actor: { kind: "user", surface: "app" },
+            accountId: account.id,
+            action: "draft-conflict",
+            detail: { draftId, previous: draft.remote, remote },
+          });
         }
         // A label failure must not replay a successful MIME save through the op queue.
         // Record the attempted intent as well: a new UI change gets a new key.
@@ -1064,16 +1191,10 @@ export const MailboxLive = (
       const send = Effect.fn("Mailbox.send")(function* (
         command: Extract<Command, { kind: "send" }>,
         actor: Actor,
+        claimedSend = false,
       ) {
         if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         const { accountId, message } = command;
-        if (command.draftId && (yield* store.sendUncertain(command.draftId))) {
-          if (!command.confirmResend || actor.kind !== "user" || actor.surface !== "app")
-            return yield* new SendUncertain({
-              message: "This message may have been sent. Check Sent before sending it again.",
-            });
-          yield* store.setSendUncertain(command.draftId, false);
-        }
         if (message.to.length + message.cc.length + message.bcc.length === 0) {
           yield* new InvalidInput({ message: "A message needs at least one recipient." });
         }
@@ -1111,6 +1232,30 @@ export const MailboxLive = (
           ...(message.forwardAsAttachment ? { forwardAsAttachment: true } : {}),
           ...(command.draftId ? { draftId: command.draftId } : {}),
         };
+        if (command.draftId) {
+          const id = command.draftId;
+          yield* store.transaction(
+            Effect.gen(function* () {
+              if (
+                !claimedSend &&
+                (yield* store.sendUncertain(id)) &&
+                (!command.confirmResend || actor.kind !== "user" || actor.surface !== "app")
+              )
+                yield* new SendUncertain({
+                  message: "This message may have been sent. Check Sent before sending it again.",
+                });
+              if (
+                !claimedSend &&
+                (yield* store.queuedSends).some(
+                  (item) =>
+                    item.id === id && (item.status === "waiting" || item.status === "sending"),
+                )
+              )
+                yield* new InvalidInput({ message: "This draft already has a queued send" });
+              yield* store.setSendUncertain(id, true);
+            }),
+          );
+        }
         const delivery = yield* providers
           .get(account.provider)
           .send(account, prepared.message, prepared.original)
@@ -1118,8 +1263,8 @@ export const MailboxLive = (
             Effect.tapError((error) =>
               Effect.all([
                 error._tag === "AuthError" ? store.setNeedsReauth(accountId, true) : Effect.void,
-                error._tag === "SendUncertain" && command.draftId
-                  ? store.setSendUncertain(command.draftId, true)
+                command.draftId && isDefiniteSendFailure(error)
+                  ? store.setSendUncertain(command.draftId, false)
                   : Effect.void,
                 store.audit({
                   actor,
@@ -1161,9 +1306,16 @@ export const MailboxLive = (
         const draft = command.draftId
           ? yield* store.getDraft(command.draftId)
           : Option.none<StoredDraft>();
-        if (Option.isSome(draft) && !delivery?.rejected?.length) {
-          yield* store.transaction(removeDraft(draft.value));
-          if (draft.value.proposalId !== null) yield* settleProposal(draft.value.proposalId, true);
+        if (!delivery?.rejected?.length) {
+          if (Option.isSome(draft)) {
+            yield* store.transaction(removeDraft(draft.value));
+            if (draft.value.proposalId !== null)
+              yield* settleProposal(draft.value.proposalId, true);
+          }
+          if (command.draftId) {
+            yield* store.setSendUncertain(command.draftId, false);
+            yield* store.deleteQueuedSend(command.draftId);
+          }
         }
         let flushed: FlushResult | undefined;
         if (command.archive && message.inReplyTo) {
@@ -1568,6 +1720,11 @@ export const MailboxLive = (
               }
             : undefined);
         const thread = yield* store.getThread(message.id);
+        const version = adapter.draftVersion
+          ? yield* adapter
+              .draftVersion(account, providerId)
+              .pipe(Effect.catch(() => Effect.succeed(undefined)))
+          : undefined;
         return yield* store.transaction(
           Effect.gen(function* () {
             const draft = yield* store.putDraft({
@@ -1581,7 +1738,11 @@ export const MailboxLive = (
             yield* store.setDraftRemote(
               draft.id,
               // Gmail's draft id is looked up by message id when first needed.
-              { draftId: account.provider === "gmail" ? null : providerId, messageId: providerId },
+              {
+                draftId: account.provider === "gmail" ? null : providerId,
+                messageId: providerId,
+                ...(version ? draftVersionMetadata(version) : {}),
+              },
               attachmentsKey(parsed.attachments),
             );
             yield* store.setDraftOrganizationKey(draft.id, draftOrganizationKey(draftOrganization));
@@ -2757,10 +2918,15 @@ export const MailboxLive = (
             : Effect.void,
         ).pipe(Effect.forkScoped);
       const outboxLock = yield* Semaphore.make(1);
+      const undoSendWorkers = new Map<
+        string,
+        { worker: Fiber.Fiber<Outcome, PerformError>; token: symbol }
+      >();
       const queueSend = Effect.fn("Mailbox.queueSend")(function* (
         input: DraftInput,
         due: number,
         confirmResend = false,
+        delivery: { desktopUndo?: boolean; archive?: boolean; desktopOwner?: string } = {},
       ) {
         if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
         if (
@@ -2774,21 +2940,28 @@ export const MailboxLive = (
             message: "A queued message needs recipients and a valid send time",
           });
         const account = yield* store.getAccount(input.accountId);
-        if (mobileAttachmentProblem(account.provider, input.message.attachments))
+        if (
+          delivery.desktopUndo
+            ? attachmentProblem(account.provider, input.message.attachments)
+            : mobileAttachmentProblem(account.provider, input.message.attachments)
+        )
           return yield* new InvalidInput({ message: "Attachments rejected before sending" });
-        if (yield* store.sendUncertain(input.id)) {
-          if (!confirmResend)
-            return yield* new SendUncertain({
-              message: "This message may have been sent. Check Sent before sending it again.",
-            });
-          const queued = (yield* store.queuedSends).find((item) => item.id === input.id);
-          if (queued?.status === "failed") yield* store.deleteQueuedSend(input.id);
-          yield* store.setSendUncertain(input.id, false);
-        }
-        if ((yield* store.queuedSends).some((item) => item.id === input.id))
-          return yield* new InvalidInput({ message: "This draft already has a queued send" });
         yield* store.transaction(
           Effect.gen(function* () {
+            if (yield* store.sendUncertain(input.id)) {
+              if (!confirmResend)
+                yield* new SendUncertain({
+                  message: "This message may have been sent. Check Sent before sending it again.",
+                });
+              const queued = (yield* store.queuedSends).find((item) => item.id === input.id);
+              if (queued?.status === "failed") yield* store.deleteQueuedSend(input.id);
+              yield* store.setSendUncertain(input.id, false);
+            }
+            const previous = (yield* store.queuedSends).find((item) => item.id === input.id);
+            if (previous?.status === "retryable" || previous?.status === "rejected")
+              yield* store.deleteQueuedSend(input.id);
+            else if (previous)
+              yield* new InvalidInput({ message: "This draft already has a queued send" });
             const saved = yield* persistDraft(input, true);
             yield* store.putQueuedSend({
               id: input.id,
@@ -2796,53 +2969,259 @@ export const MailboxLive = (
               message: saved.message,
               due,
               status: "waiting",
+              deliveryId: crypto.randomUUID(),
+              ...delivery,
             });
           }),
         );
         return yield* changed;
-      }, outboxLock.withPermits(1));
-      const cancelQueuedSend = (id: string) =>
+      });
+      const takeUndoWorker = (id: string) => {
+        const entry = undoSendWorkers.get(id);
+        undoSendWorkers.delete(id);
+        return entry?.worker;
+      };
+      const cancelSendWhere = (id: string, canCancel: (item: QueuedSend) => boolean) =>
         Effect.gen(function* () {
-          const item = (yield* store.queuedSends).find((entry) => entry.id === id);
-          if (!item) return false;
-          yield* store.deleteQueuedSend(id);
+          const cancelled = yield* store
+            .transaction(
+              Effect.gen(function* () {
+                const item = (yield* store.queuedSends).find((entry) => entry.id === id);
+                if (!item || !canCancel(item)) return { cancelled: false, worker: undefined };
+                yield* store.deleteQueuedSend(id);
+                return { cancelled: true, worker: takeUndoWorker(id) };
+              }),
+            )
+            .pipe(outboxLock.withPermits(1));
+          if (cancelled.worker) yield* Fiber.interrupt(cancelled.worker);
+          if (cancelled.cancelled) yield* changed;
+          return cancelled.cancelled;
+        });
+      const cancelWaitingSend = (id: string) => cancelSendWhere(id, isWaitingSend);
+      const cancelQueuedSend = (id: string) =>
+        cancelSendWhere(id, (item) => item.status !== "sending");
+      const cancelDesktopUndoSends = (owner?: string) =>
+        Effect.gen(function* () {
+          const canCancel = desktopSendForOwner(owner);
+          yield* Effect.forEach(
+            (yield* store.queuedSends).filter(canCancel),
+            (item) => cancelSendWhere(item.id, canCancel),
+            { discard: true },
+          );
+        });
+      const recordSendFailure = (item: QueuedSend, reason: string) =>
+        store.recordFailedOp({
+          accountId: item.accountId,
+          providerId: item.id,
+          kind: "send",
+          reason,
+          subject: item.message.subject,
+          sender: item.message.from?.address ?? null,
+        });
+      const expireDesktopSend = (item: QueuedSend) =>
+        Effect.gen(function* () {
+          yield* store.putQueuedSend({ ...item, status: "retryable" });
+          yield* recordSendFailure(
+            item,
+            "The send window expired. Open the draft and send it again.",
+          );
+        });
+      const deliverQueuedSend = (
+        id: string,
+        deliveryId?: string,
+        canSend: () => boolean = () => true,
+      ) =>
+        Effect.gen(function* () {
+          if (!canSend()) return yield* new InvalidInput({ message: "Queued delivery is paused" });
+          const claimed = yield* store
+            .transaction(
+              Effect.gen(function* () {
+                const queued = (yield* store.queuedSends).find((entry) => entry.id === id);
+                if (
+                  queued?.status !== "waiting" ||
+                  (deliveryId !== undefined && queued.deliveryId !== deliveryId)
+                )
+                  return yield* new InvalidInput({
+                    message: "The queued send was cancelled or already started",
+                  });
+                if (
+                  queued.desktopUndo &&
+                  (yield* Clock.currentTimeMillis) - queued.due > WRITE_RECOVERY_WINDOW_MS
+                ) {
+                  yield* expireDesktopSend(queued);
+                  return Option.none<QueuedSend>();
+                }
+                yield* store.putQueuedSend({ ...queued, status: "sending" });
+                yield* store.setSendUncertain(queued.id, true);
+                return Option.some(queued);
+              }),
+            )
+            .pipe(outboxLock.withPermits(1));
+          if (Option.isNone(claimed)) {
+            yield* changed;
+            return yield* new InvalidInput({ message: "The send window expired" });
+          }
+          const item = claimed.value;
+          pendingSends++;
+          const delivered = yield* send(
+            {
+              kind: "send",
+              accountId: item.accountId,
+              draftId: item.id,
+              message: item.message,
+              ...(item.archive ? { archive: true } : {}),
+            },
+            { kind: "user", surface: "app" },
+            true,
+          ).pipe(
+            Effect.result,
+            Effect.ensuring(
+              Effect.sync(() => {
+                pendingSends--;
+              }),
+            ),
+          );
+          if (delivered._tag === "Success") {
+            yield* store
+              .transaction(
+                Effect.gen(function* () {
+                  const current = (yield* store.queuedSends).find((entry) => entry.id === item.id);
+                  if (current?.deliveryId !== item.deliveryId || current?.status !== "sending")
+                    return;
+                  yield* (yield* store.sendUncertain(item.id))
+                    ? store.putQueuedSend({ ...item, status: "failed" })
+                    : store.deleteQueuedSend(item.id);
+                }),
+              )
+              .pipe(outboxLock.withPermits(1));
+            yield* changed;
+            return {
+              status: "applied",
+              ...(delivered.success ? { flush: delivered.success } : {}),
+            } satisfies Outcome;
+          }
+          const error = delivered.failure;
+          const definite = isDefiniteSendFailure(error);
+          yield* store
+            .transaction(
+              Effect.gen(function* () {
+                const current = (yield* store.queuedSends).find((entry) => entry.id === item.id);
+                if (current?.deliveryId !== item.deliveryId || current?.status !== "sending")
+                  return;
+                yield* Effect.all([
+                  store.putQueuedSend({
+                    ...item,
+                    status:
+                      error._tag === "InvalidInput" || error._tag === "NotFound"
+                        ? "rejected"
+                        : definite
+                          ? "retryable"
+                          : "failed",
+                  }),
+                  store.setSendUncertain(item.id, !definite),
+                ]);
+                if (item.desktopUndo) yield* recordSendFailure(item, error.message);
+              }),
+            )
+            .pipe(outboxLock.withPermits(1));
           yield* changed;
-          return true;
+          return yield* Effect.fail(error);
+        });
+      const scheduleQueuedSend = (id: string, due: number, deliveryId?: string) =>
+        Effect.gen(function* () {
+          const token = Symbol();
+          const registered = yield* Deferred.make<void>();
+          const worker = yield* Effect.gen(function* () {
+            yield* Deferred.await(registered);
+            const now = yield* Clock.currentTimeMillis;
+            yield* Effect.sleep(Math.max(0, due - now));
+            return yield* deliverQueuedSend(id, deliveryId);
+          }).pipe(
+            Effect.ensuring(
+              Effect.sync(() => {
+                if (undoSendWorkers.get(id)?.token === token) undoSendWorkers.delete(id);
+              }),
+            ),
+            Effect.interruptible,
+            Effect.forkIn(mailboxScope),
+          );
+          undoSendWorkers.set(id, { worker, token });
+          yield* Deferred.succeed(registered, undefined);
+          return worker;
+        }).pipe(Effect.uninterruptible);
+      const queueUndoSend = (
+        input: DraftInput,
+        due: number,
+        {
+          archive = false,
+          confirmResend = false,
+          owner,
+        }: { archive?: boolean; confirmResend?: boolean; owner?: string } = {},
+      ) =>
+        Effect.gen(function* () {
+          yield* queueSend(input, due, confirmResend, {
+            desktopUndo: true,
+            archive,
+            ...(owner === undefined ? {} : { desktopOwner: owner }),
+          });
+          const item = (yield* store.queuedSends).find((entry) => entry.id === input.id);
+          yield* scheduleQueuedSend(input.id, due, item?.deliveryId);
         }).pipe(outboxLock.withPermits(1));
+      const awaitUndoSend = (id: string) =>
+        Effect.suspend(() => {
+          const worker = undoSendWorkers.get(id)?.worker;
+          return worker
+            ? Fiber.join(worker)
+            : Effect.fail(new InvalidInput({ message: "No pending undo send was found" }));
+        });
+      // Recover interrupted claims only in send-owning app layers; CLI/MCP never resume desktop intents.
+      if (!readOnly && (options.resumeDesktopSends || options.localDraftQueue))
+        for (const item of yield* store.queuedSends) {
+          if (item.status === "sending") {
+            yield* store.transaction(
+              Effect.all([
+                store.putQueuedSend({ ...item, status: "failed" }),
+                store.setSendUncertain(item.id, true),
+              ]),
+            );
+            if (item.desktopUndo)
+              yield* recordSendFailure(
+                item,
+                "Sending was interrupted. Check Sent before trying again.",
+              );
+          } else if (options.resumeDesktopSends && item.desktopUndo && item.status === "waiting") {
+            yield* (yield* Clock.currentTimeMillis) - item.due > WRITE_RECOVERY_WINDOW_MS
+              ? store.transaction(expireDesktopSend(item))
+              : scheduleQueuedSend(item.id, item.due, item.deliveryId);
+          }
+        }
       const flushQueuedSends = (canSend: () => boolean = () => true) =>
         Effect.gen(function* () {
           const now = yield* Clock.currentTimeMillis;
           if (readOnly) return;
           for (const item of yield* store.queuedSends) {
             if (!canSend()) break;
-            if (item.status !== "waiting" || item.due > now) continue;
+            if (
+              item.status !== "waiting" ||
+              item.due > now ||
+              (item.desktopUndo && !options.resumeDesktopSends)
+            )
+              continue;
             const account = yield* store.getAccount(item.accountId).pipe(Effect.option);
             if (
               Option.isNone(account) ||
-              mobileAttachmentProblem(account.value.provider, item.message.attachments)
+              (item.desktopUndo
+                ? attachmentProblem(account.value.provider, item.message.attachments)
+                : mobileAttachmentProblem(account.value.provider, item.message.attachments))
             ) {
               yield* store.putQueuedSend({ ...item, status: "rejected" });
               yield* changed;
               continue;
             }
-            yield* store.putQueuedSend({ ...item, status: "sending" });
-            const delivered = yield* perform(
-              { kind: "send", accountId: item.accountId, draftId: item.id, message: item.message },
-              { kind: "user", surface: "app" },
-            ).pipe(Effect.result);
-            yield* delivered._tag === "Success"
-              ? store.deleteQueuedSend(item.id)
-              : store.putQueuedSend({
-                  ...item,
-                  status:
-                    delivered.failure._tag === "InvalidInput" ||
-                    delivered.failure._tag === "NotFound"
-                      ? "rejected"
-                      : "failed",
-                });
+            yield* deliverQueuedSend(item.id, item.deliveryId, canSend).pipe(Effect.result);
             yield* changed;
           }
-        }).pipe(outboxLock.withPermits(1));
+        });
       mailbox = Mailbox.of({
         importCalendarAttachment: (messageId, path, key, actor) =>
           Effect.gen(function* () {
@@ -2906,8 +3285,13 @@ export const MailboxLive = (
             return yield* Effect.void;
           }),
         queuedSends: store.queuedSends,
-        queueSend,
+        queueSend: (input, due, confirmResend) =>
+          queueSend(input, due, confirmResend).pipe(outboxLock.withPermits(1)),
+        queueUndoSend,
+        awaitUndoSend,
+        cancelWaitingSend,
         cancelQueuedSend,
+        cancelDesktopUndoSends,
         flushQueuedSends,
         ...ai,
         closeSessions: () =>
@@ -3205,7 +3589,13 @@ export const MailboxLive = (
         draftStatus,
         sendAgain,
         composeAttachments,
-        pendingSendCount: Effect.sync(() => pendingSends),
+        pendingSendCount: store.queuedSends.pipe(
+          Effect.map(
+            (items) =>
+              pendingSends +
+              items.filter((item) => item.desktopUndo && item.status === "waiting").length,
+          ),
+        ),
         saveDraft,
         recoverDraft,
         discardDraft: (id) =>

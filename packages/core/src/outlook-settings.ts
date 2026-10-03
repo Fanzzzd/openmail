@@ -1,3 +1,4 @@
+import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
 import { Effect, Schema } from "effect";
 import type { Account } from "./domain.js";
 import { AuthError, PermanentError, ProviderError, SettingsScopeMissing } from "./errors.js";
@@ -338,7 +339,7 @@ export function makeOutlookSettings<
               "/me/mailFolders/archive?$select=id",
             )
           : null;
-        const raw = yield* write(account.id, "POST", "/me/mailFolders/inbox/messageRules", {
+        const definition = {
           displayName: input.name,
           sequence: Math.max(0, ...existing.value.map((r) => r.sequence)) + 1,
           isEnabled: true,
@@ -371,7 +372,34 @@ export function makeOutlookSettings<
               ? { moveToFolder: input.action.label ?? archive?.id }
               : {}),
           },
-        });
+        };
+        const raw = yield* reconcileProviderWrite(
+          write(account.id, "POST", "/me/mailFolders/inbox/messageRules", definition),
+          get(
+            account.id,
+            Schema.Struct({ value: Schema.Array(GraphRule) }),
+            "/me/mailFolders/inbox/messageRules",
+          ).pipe(
+            Effect.map((page) =>
+              page.value.find((rule) =>
+                sameProviderWrite(
+                  {
+                    displayName: rule.displayName,
+                    conditions: rule.conditions ?? {},
+                    exceptions: rule.exceptions ?? {},
+                    actions: rule.actions ?? {},
+                  },
+                  {
+                    displayName: definition.displayName,
+                    conditions: definition.conditions,
+                    exceptions: definition.exceptions ?? {},
+                    actions: definition.actions,
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
         return yield* parseRule(
           account,
           yield* Schema.decodeUnknownEffect(GraphRule)(raw).pipe(Effect.orDie),

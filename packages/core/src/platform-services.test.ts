@@ -95,7 +95,16 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
       hmac: hmacSha256Hex,
     }),
   );
-  const provider = makeFakeProvider(server);
+  let createdMessageId: string | undefined;
+  const provider = {
+    ...makeFakeProvider(server),
+    saveDraft: (_account: unknown, push: import("./services.js").DraftPush) =>
+      Effect.gen(function* () {
+        const state = yield* push.creation.begin();
+        createdMessageId = state.messageId;
+        return { draftId: "remote-draft", messageId: "remote-draft" };
+      }),
+  };
   const layer = MailboxLive({ backgroundFlush: false }).pipe(
     Layer.provide(
       Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => provider })).pipe(
@@ -119,6 +128,12 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
         mimeType: "image/png",
       });
       expect(image.contentId).toBe(`image-${uuid}@openmail`);
+      yield* mailbox.saveDraft({
+        id: draft.id,
+        accountId: account.id,
+        message: { ...draft.message, subject: "Edited" },
+      });
+      expect(createdMessageId).toBe(`<${uuid}@example.com>`);
     }).pipe(Effect.scoped),
   );
 });

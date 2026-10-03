@@ -198,6 +198,8 @@ export async function flow(
   const handlers = MailRpcs.toLayer(
     MailRpcs.of({
       ...coreHandlers,
+      QueueUndoSend: ({ draft, due, archive, confirmResend }, { client }) =>
+        m.queueUndoSend(draft, due, { archive, confirmResend, owner: String(client.id) }),
       Threads: (input) =>
         Effect.andThen(
           Effect.suspend(() => listWait),

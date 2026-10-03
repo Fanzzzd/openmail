@@ -64,7 +64,7 @@ for (const provider of ["gmail", "outlook"] as const) {
           expect(server.draftLog).toEqual([]);
           yield* mailbox.queueSend(draft, Date.now() + 60000);
           expect(server.sent).toEqual([]);
-          expect(yield* mailbox.cancelQueuedSend(draft.id)).toBe(true);
+          expect(yield* mailbox.cancelWaitingSend(draft.id)).toBe(true);
         }),
       );
     } finally {

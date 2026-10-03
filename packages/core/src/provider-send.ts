@@ -1,3 +1,4 @@
+import type { PerformError } from "./mailbox.js";
 import { Clock, Effect } from "effect";
 import { SendUncertain } from "./errors.js";
 
@@ -22,3 +23,9 @@ export const confirmDelivery = <E, R>(lookup: Effect.Effect<boolean, E, R>) =>
       message: "This message may have been sent. Check Sent before sending it again.",
     });
   });
+
+export function isDefiniteSendFailure(error: PerformError): boolean {
+  // Adapters convert unconfirmed submissions to SendUncertain. Other errors
+  // describe a rejected submission or preparation that failed before sending.
+  return error._tag !== "SendUncertain";
+}

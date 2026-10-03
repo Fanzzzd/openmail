@@ -1,4 +1,5 @@
 import { Effect, Result, Schema } from "effect";
+import { reconcileProviderWrite } from "./provider-write.js";
 import type { Account, Address } from "./domain.js";
 import type { CalendarInvite, CalendarTime, InviteResponse } from "./calendar.js";
 import { InvalidInput } from "./errors.js";
@@ -321,11 +322,25 @@ export function makeGmailFeatures<
             return yield* new InvalidInput({
               message: "This invitation cannot be answered by this account",
             });
+          if (me.responseStatus === response) return yield* Effect.void;
           // attendeesOmitted permits a self-only response without replacing other guests.
-          yield* patch(account.id, `${EVENTS}/${encodeURIComponent(event.id)}?sendUpdates=all`, {
-            attendeesOmitted: true,
-            attendees: [{ email: me.email, responseStatus: response }],
-          });
+          yield* reconcileProviderWrite(
+            patch(account.id, `${EVENTS}/${encodeURIComponent(event.id)}?sendUpdates=all`, {
+              attendeesOmitted: true,
+              attendees: [{ email: me.email, responseStatus: response }],
+            }),
+            get(account.id, Event, `${EVENTS}/${encodeURIComponent(event.id)}`).pipe(
+              Effect.map((current) =>
+                current.attendees?.some(
+                  (a) =>
+                    a.email.toLowerCase() === me.email.toLowerCase() &&
+                    a.responseStatus === response,
+                )
+                  ? current
+                  : undefined,
+              ),
+            ),
+          );
           return yield* Effect.void;
         }),
       ),

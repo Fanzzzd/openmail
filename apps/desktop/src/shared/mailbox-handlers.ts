@@ -117,6 +117,8 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
         USER,
       ),
 
+    AwaitUndoSend: ({ id }) => m.awaitUndoSend(id),
+    CancelWaitingSend: ({ id }) => m.cancelWaitingSend(id),
     ComposeAttachments: ({ id }) => m.composeAttachments(id),
     SendAgain: ({ id }) => m.sendAgain(id),
     RecoverDraft: ({ id, action, draft }) => m.recoverDraft(id, action, draft),

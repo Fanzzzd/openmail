@@ -56,16 +56,53 @@ export function retryProviderRequest<
   request: HttpClientRequest.HttpClientRequest,
   transient: (error: E) => boolean,
 ) {
-  if (
-    isProviderSend(request) ||
-    (request.method === "POST" &&
-      /\/(?:createReply|createReplyAll|createForward)$/.test(new URL(request.url).pathname))
-  )
-    return effect;
+  const url = new URL(request.url);
+  // Only explicitly idempotent POST actions can be replayed. Creates and
+  // calendar responses may already have succeeded when their response is lost.
+  const nonIdempotent =
+    (request.method === "POST" && !/\/(?:modify|batchModify|trash|untrash)$/.test(url.pathname)) ||
+    (request.method === "PATCH" && url.searchParams.get("sendUpdates") === "all");
   return Effect.suspend(() => {
     let transports = 0;
     return retryProvider(effect, (error) =>
-      error.status === 0 ? request.method === "GET" && transports++ < 1 : transient(error),
+      nonIdempotent
+        ? error.status === 429
+        : error.status === 0
+          ? request.method === "GET" && transports++ < 1
+          : transient(error),
     );
   });
+}
+
+export function uncertainWrite(error: {
+  readonly status?: number | undefined;
+  readonly requestNotSent?: boolean | undefined;
+}): boolean {
+  return (
+    (error.status === 0 && !error.requestNotSent) ||
+    (error.status !== undefined && error.status >= 500)
+  );
+}
+
+/** Only errors that establish failure before connecting are definite failures. */
+export function requestNotSent(cause: unknown): boolean {
+  let current = cause;
+  for (let depth = 0; depth < 6; depth++) {
+    if (typeof current !== "object" || current === null) return false;
+    if (
+      "code" in current &&
+      typeof current.code === "string" &&
+      [
+        "ENOTFOUND",
+        "EAI_AGAIN",
+        "ECONNREFUSED",
+        "ENETUNREACH",
+        "EHOSTUNREACH",
+        "UND_ERR_CONNECT_TIMEOUT",
+      ].includes(current.code)
+    )
+      return true;
+    current = "cause" in current ? current.cause : undefined;
+  }
+  return false;
 }

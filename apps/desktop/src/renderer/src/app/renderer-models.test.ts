@@ -38,6 +38,10 @@ const state = vi.hoisted(() => {
     wait: vi.fn<() => Promise<void>>(),
     delivered: vi.fn(),
     saveGate: vi.fn<() => Promise<void>>(),
+    cancelGate: vi.fn<() => Promise<void>>(),
+    cancelResult: vi.fn<() => "success" | "false" | "failure">(() => "success"),
+    deliveryFailure: false,
+    toastUpdates: vi.fn<(value: unknown) => void>(),
   };
 });
 vi.mock("@effect/atom-react", async () => {
@@ -86,25 +90,86 @@ vi.mock("../state/ui", () => ({
 }));
 vi.mock("../state/events", () => ({ syncStateAtom: "sync", syncProgressAtom: "progress" }));
 vi.mock("../state/mail", async () => {
-  const { Effect } = await import("effect");
-  const { InvalidInput } = await import("@openmail/core/schema");
+  const { Effect, Schema } = await import("effect");
+  const { InvalidInput, ProviderError, DraftInput } = await import("@openmail/core/schema");
+  const queuedSchema = Schema.Struct({
+    draft: DraftInput,
+    due: Schema.Number,
+    archive: Schema.Boolean,
+  });
+  const queued = new Map<string, typeof queuedSchema.Type>();
   return {
     useRunMail: () => Effect.runFork,
     withMail: (
       f: (
-        call: (tag: string, payload: unknown) => Effect.Effect<unknown>,
-      ) => Effect.Effect<unknown>,
+        call: (
+          tag: string,
+          payload: unknown,
+        ) => Effect.Effect<
+          unknown,
+          InstanceType<typeof InvalidInput> | InstanceType<typeof ProviderError>
+        >,
+      ) => Effect.Effect<
+        unknown,
+        InstanceType<typeof InvalidInput> | InstanceType<typeof ProviderError>
+      >,
     ) =>
-      f((tag, payload) =>
-        Effect.sync(() => {
+      f((tag, payload) => {
+        if (tag === "QueueUndoSend")
+          return Effect.promise(() => state.saveGate()).pipe(
+            Effect.andThen(
+              Effect.sync(() => {
+                state.calls.push({ tag, payload });
+                const item = Schema.decodeUnknownSync(queuedSchema)(payload);
+                queued.set(item.draft.id, item);
+              }),
+            ),
+          );
+        if (tag === "CancelWaitingSend")
+          return Effect.promise(() => state.cancelGate()).pipe(
+            Effect.andThen(
+              Effect.suspend(() => {
+                state.calls.push({ tag, payload });
+                const { id } = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
+                  payload,
+                );
+                if (state.cancelResult() === "failure")
+                  return Effect.fail(new InvalidInput({ message: "Cancel failed" }));
+                return Effect.succeed(state.cancelResult() === "success" && queued.delete(id));
+              }),
+            ),
+          );
+        if (tag === "AwaitUndoSend")
+          return Effect.gen(function* () {
+            const { id } = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(payload);
+            const item = queued.get(id);
+            if (!item) return yield* new InvalidInput({ message: "Cancelled" });
+            if (item.due > Date.now())
+              yield* Effect.promise(
+                () =>
+                  new Promise<void>((resolve) => {
+                    setTimeout(resolve, item.due - Date.now());
+                  }),
+              );
+            if (queued.get(id) !== item) return yield* new InvalidInput({ message: "Cancelled" });
+            queued.delete(id);
+            if (state.deliveryFailure)
+              return yield* new ProviderError({ message: "Delivery failed" });
+            state.delivered(item.draft.accountId, item.draft.message, {
+              draftId: id,
+              archive: item.archive,
+            });
+            return yield* Effect.void;
+          });
+        return Effect.sync(() => {
           state.calls.push({ tag, payload });
           if (tag === "ClaimInlineDraft") return true;
           if (tag === "Threads") return state.page;
           if (tag === "Thread") return [];
           if (tag === "Accounts") return state.accounts;
           return false;
-        }),
-      ),
+        });
+      }),
     modifyWithUndo: (ids: readonly string[], op: unknown, flat: boolean) => {
       state.operations(ids, op, flat);
       if (state.deferred)
@@ -178,7 +243,11 @@ function Harness() {
     say: notify,
   });
   const undoRef = useRef<(() => void) | null>(null);
-  const [, setToast] = useState<ToastState | null>(null);
+  const [, updateToast] = useState<ToastState | null>(null);
+  const setToast = (value: Parameters<typeof updateToast>[0]) => {
+    state.toastUpdates(value);
+    updateToast(value);
+  };
   const composition = useMailCompose({
     messages,
     panels,
@@ -291,6 +360,10 @@ beforeEach(() => {
   state.deferred = false;
   state.delivered.mockClear();
   state.saveGate.mockResolvedValue();
+  state.cancelGate.mockResolvedValue();
+  state.cancelResult.mockReturnValue("success");
+  state.deliveryFailure = false;
+  state.toastUpdates.mockClear();
   state.operations.mockClear();
   state.loadMore.mockClear();
   state.layout.mockClear();
@@ -478,6 +551,8 @@ it("delivery Undo cancels send, and send-and-archive waits for saving before adv
     await flush();
     expect(model.composition.compose).toEqual(draft);
     expect(model.composition.hasPendingSends()).toBe(false);
+    expect(state.calls.some((call) => call.tag === "QueueUndoSend")).toBe(true);
+    expect(state.calls.some((call) => call.tag === "CancelWaitingSend")).toBe(true);
     await act(() => vi.advanceTimersByTimeAsync(5000));
     expect(state.delivered).not.toHaveBeenCalled();
     let saved: () => void = vi.fn();
@@ -497,6 +572,113 @@ it("delivery Undo cancels send, and send-and-archive waits for saving before adv
       archive: true,
     });
     expect(model.navigation.selectedId).toBe("two");
+    expect(model.composition.hasPendingSends()).toBe(false);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("undo then resend retains the new pending send after the old window expires", async () => {
+  vi.useFakeTimers();
+  try {
+    state.prefs.mockReturnValue({ ...state.prefs(), undoSendSeconds: 5 });
+    mount();
+    const draft = { ...emptyDraft(account.id), to: "alice@example.com", subject: "Resent draft" };
+    const message = toDraftInput(draft).message;
+    act(() => model.composition.send(draft, message, { archive: false }));
+    await flush();
+    act(() => model.composition.undoSend());
+    await flush();
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    act(() => model.composition.send(draft, message, { archive: false }));
+    await flush();
+    await act(() => vi.advanceTimersByTimeAsync(4000));
+    await flush();
+    expect(state.delivered).not.toHaveBeenCalled();
+    expect(model.composition.hasPendingSends()).toBe(true);
+    expect(state.calls.filter((call) => call.tag === "SetSendState").at(-1)?.payload).toEqual({
+      pending: 1,
+      undoAvailable: true,
+    });
+    await act(() => vi.advanceTimersByTimeAsync(1000));
+    await flush();
+    expect(state.delivered).toHaveBeenCalledOnce();
+    expect(model.composition.hasPendingSends()).toBe(false);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+for (const cancellation of ["false", "failure"] as const) {
+  for (const deliveryFailure of [false, true]) {
+    it(`a ${cancellation} undo preserves the real ${deliveryFailure ? "failed" : "sent"} outcome`, async () => {
+      vi.useFakeTimers();
+      try {
+        state.prefs.mockReturnValue({ ...state.prefs(), undoSendSeconds: 5 });
+        state.cancelResult.mockReturnValue(cancellation);
+        state.deliveryFailure = deliveryFailure;
+        let finishCancel: () => void = () => {
+          throw new Error("Cancel was not started");
+        };
+        state.cancelGate.mockReturnValue(
+          new Promise<void>((resolve) => {
+            finishCancel = resolve;
+          }),
+        );
+        mount();
+        const draft = { ...emptyDraft(account.id), to: "alice@example.com" };
+        const message = toDraftInput(draft).message;
+        act(() => model.composition.send(draft, message, { archive: false }));
+        await flush();
+        act(() => model.composition.undoSend());
+        await act(() => vi.advanceTimersByTimeAsync(5000));
+        expect(notify).not.toHaveBeenCalledWith({ text: messages.sent });
+        finishCancel();
+        await flush();
+        await flush();
+        if (deliveryFailure) {
+          expect(notify.mock.lastCall?.[0]).toEqual({
+            text: messages.couldntSend("Can't reach the mail server right now."),
+            tone: "error",
+          });
+          expect(model.composition.compose).toEqual(draft);
+          const confirm = vi.fn(() => true);
+          vi.stubGlobal("confirm", confirm);
+          state.deliveryFailure = false;
+          act(() => model.composition.send(draft, message, { archive: false }));
+          await act(() => vi.advanceTimersByTimeAsync(5000));
+          expect(confirm).not.toHaveBeenCalled();
+        } else {
+          expect(notify.mock.lastCall?.[0]).toEqual({ text: messages.sent });
+          expect(model.composition.compose).toBeNull();
+        }
+        expect(model.composition.hasPendingSends()).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  }
+}
+
+it("a refused undo clears its toast and undo action while keeping the active send pending", async () => {
+  vi.useFakeTimers();
+  try {
+    state.prefs.mockReturnValue({ ...state.prefs(), undoSendSeconds: 5 });
+    state.cancelResult.mockReturnValue("false");
+    mount();
+    const draft = { ...emptyDraft(account.id), to: "alice@example.com" };
+    act(() => model.composition.send(draft, toDraftInput(draft).message, { archive: false }));
+    await flush();
+    act(() => model.composition.undoSend());
+    await flush();
+    expect(state.toastUpdates).toHaveBeenCalledWith(null);
+    expect(model.composition.hasPendingSends()).toBe(true);
+    expect(state.calls.filter((call) => call.tag === "SetSendState").at(-1)?.payload).toEqual({
+      pending: 1,
+      undoAvailable: false,
+    });
+    await act(() => vi.advanceTimersByTimeAsync(5000));
+    expect(state.delivered).toHaveBeenCalledOnce();
     expect(model.composition.hasPendingSends()).toBe(false);
   } finally {
     vi.useRealTimers();

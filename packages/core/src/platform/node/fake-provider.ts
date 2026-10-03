@@ -82,6 +82,8 @@ export interface FakeServer {
   draftLog: ({ kind: "save"; push: DraftPush } | { kind: "delete"; remote: DraftRemote })[];
   /** The next push, send, pull or draft call fails with this, once. */
   failNext?: ProviderFailure;
+  /** Submission uncertainty is a send-only adapter result. */
+  sendFailure?: ProviderFailure | import("../../errors.js").SendUncertain;
   /** A test-controlled network stall; local batch commits must not wait for it. */
   beforePush?: Effect.Effect<void, ProviderFailure>;
   settingsFailure?: SettingsScopeMissing;
@@ -560,7 +562,11 @@ export function makeFakeProvider(
       : {}),
     send: (_account, message, original) =>
       Effect.andThen(
-        failOnce,
+        Effect.suspend(() => {
+          const failure = server.sendFailure;
+          server.sendFailure = undefined;
+          return failure ? Effect.fail(failure) : failOnce;
+        }),
         Effect.sync(() => {
           server.sent.push({ message, original });
         }),

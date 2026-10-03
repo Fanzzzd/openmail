@@ -2257,6 +2257,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       draftByProposal: compose.draftByProposal,
       putDraft: compose.putDraft,
       setDraftRemote: compose.setDraftRemote,
+      draftCreateState: compose.draftCreateState,
+      setDraftCreateState: compose.setDraftCreateState,
       setDraftOrganizationKey: compose.setDraftOrganizationKey,
       draftSaveState: compose.draftSaveState,
       setDraftSyncError: compose.setDraftSyncError,

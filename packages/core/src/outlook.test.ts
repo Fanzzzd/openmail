@@ -1,5 +1,7 @@
+import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { assert, it } from "@effect/vitest";
+import { EMPTY_FILTER } from "./organization.js";
 import { parseCalendar } from "./invites.js";
 
 import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
@@ -22,6 +24,7 @@ import { type Change, type ProviderAdapter, Providers, Secrets, Store } from "./
 import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { StoreLive } from "./store.js";
+import { isDefiniteSendFailure } from "./provider-send.js";
 
 const GRAPH = "https://graph.microsoft.com/v1.0";
 
@@ -34,6 +37,1046 @@ interface Call {
 }
 
 const parseJson = (text: string): unknown => JSON.parse(text);
+
+it.effect(
+  "discarding an uncertain Outlook creation removes its actual server copy by journal identity",
+  () => {
+    let copyExists = false;
+    const http = fakeHttp({
+      "POST /me/messages": () => {
+        copyExists = true;
+        return { status: 503 };
+      },
+      "GET /me/mailFolders/drafts/messages": (url) => ({
+        json: {
+          value:
+            copyExists && (url.searchParams.get("$filter") ?? "").includes("isDraft eq true")
+              ? [{ id: "uncertain-copy" }]
+              : [],
+        },
+      }),
+      "DELETE /me/messages/uncertain-copy": () => {
+        copyExists = false;
+        return { status: 204 };
+      },
+    });
+    const services = Layer.mergeAll(
+      StoreLive,
+      Layer.effect(Providers, makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter })))),
+    ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const saved = yield* store.upsertAccount("outlook", account.email);
+      yield* mailbox.saveDraft({
+        id: "discard-uncertain",
+        accountId: saved.id,
+        message: { ...draftMessage, attachments: [] },
+      });
+      assert.isTrue(copyExists);
+      assert.isTrue(
+        Option.getOrThrow(yield* store.draftCreateState("discard-uncertain")).attempted,
+      );
+      yield* mailbox.discardDraft("discard-uncertain");
+      assert.isFalse(copyExists);
+      assert.isTrue(Option.isNone(yield* store.getDraft("discard-uncertain")));
+      assert.isTrue(Option.isNone(yield* store.draftCreateState("discard-uncertain")));
+      assert.strictEqual(http.calls.filter((call) => call.method === "DELETE").length, 1);
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(Layer.provideMerge(services)),
+      ),
+    );
+  },
+);
+
+for (const exists of [false, true]) {
+  it.effect(
+    `Outlook uncertain-draft cleanup finds the journal Message-ID (${exists ? "found" : "missing"})`,
+    () => {
+      const http = fakeHttp({
+        "GET /me/mailFolders/drafts/messages": (url) => {
+          assert.include(
+            url.searchParams.get("$filter") ?? "",
+            "internetMessageId eq '<orphan@example.test>'",
+          );
+          return { json: { value: exists ? [{ id: "orphan" }] : [] } };
+        },
+        "DELETE /me/messages/orphan": { status: 204 },
+      });
+      return run(http, (adapter) =>
+        adapter.deleteDraft(account, {
+          draftId: null,
+          messageId: null,
+          rfcMessageId: "<orphan@example.test>",
+        }),
+      ).pipe(
+        Effect.tap(() =>
+          Effect.sync(() => {
+            assert.isTrue(http.calls.some((call) => call.method === "GET"));
+            assert.strictEqual(
+              http.calls.filter((call) => call.method === "DELETE").length,
+              exists ? 1 : 0,
+            );
+          }),
+        ),
+      );
+    },
+  );
+}
+
+for (const attempted of [false, true]) {
+  it.live(
+    `an edited web reply is not adopted after an uncertain create (${attempted ? "retry" : "lost response"})`,
+    () => {
+      const now = Date.now();
+      const http = fakeHttp({
+        "POST /me/messages/source/createReply": { status: 503 },
+        "GET /me/messages/source": { json: { conversationId: "conversation" } },
+        "GET /me/mailFolders/drafts/messages": (url) => ({
+          json: {
+            value: (url.searchParams.get("$filter") ?? "").startsWith("internetMessageId")
+              ? []
+              : [
+                  {
+                    id: "edited-web-draft",
+                    conversationId: "conversation",
+                    createdDateTime: new Date(now + 1000).toISOString(),
+                    lastModifiedDateTime: new Date(now + 20000).toISOString(),
+                    isDraft: true,
+                  },
+                ],
+          },
+        }),
+        "PATCH /me/messages/edited-web-draft": { json: { id: "edited-web-draft" } },
+        "GET /me/messages/edited-web-draft/attachments": { json: { value: [] } },
+      });
+      return run(http, (adapter) =>
+        Effect.gen(function* () {
+          const result = yield* adapter
+            .saveDraft(account, {
+              creation: {
+                ...draftCreation(),
+                begin: () =>
+                  Effect.succeed({
+                    messageId: "<uncertain@example.test>",
+                    attempted,
+                    attemptedAt: now,
+                  }),
+              },
+              remote: null,
+              message: { ...draftMessage, mode: "reply", attachments: [] },
+              original: Option.some({ providerId: "source", threadId: "conversation" }),
+              replaceAttachments: false,
+            })
+            .pipe(Effect.result);
+          assert.strictEqual(result._tag, "Failure");
+          assert.isFalse(
+            http.calls.some((call) => call.method === "PATCH" || call.method === "DELETE"),
+          );
+        }),
+      );
+    },
+  );
+}
+
+for (const stage of ["create", "patch"] as const) {
+  it.effect(
+    `reply recovery excludes an untouched temporary draft belonging to an in-flight ${stage}`,
+    () =>
+      Effect.gen(function* () {
+        const patching = yield* Deferred.make<void>();
+        const release = yield* Deferred.make<void>();
+        let patches = 0;
+        const http = fakeHttp({
+          "POST /me/messages/source/createReply": { json: { id: "sending-template" } },
+          "PATCH /me/messages/sending-template": { json: { id: "sending-template" } },
+          "POST /me/messages/sending-template/send": { status: 202 },
+          "GET /me/messages/source": { json: { conversationId: "conversation" } },
+          "GET /me/mailFolders/drafts/messages": (url) => ({
+            json: {
+              value: (url.searchParams.get("$filter") ?? "").startsWith("internetMessageId")
+                ? []
+                : [
+                    {
+                      id: "sending-template",
+                      conversationId: "conversation",
+                      createdDateTime: new Date(0).toISOString(),
+                      lastModifiedDateTime: new Date(0).toISOString(),
+                      isDraft: true,
+                    },
+                  ],
+            },
+          }),
+          "GET /me/messages/sending-template/attachments": { json: { value: [] } },
+        });
+        let held = false;
+        const client = HttpClient.make((request) => {
+          if (request.method === "PATCH") patches++;
+          const hold =
+            !held &&
+            (stage === "create"
+              ? request.url.endsWith("/createReply")
+              : request.method === "PATCH");
+          if (!hold) return http.client.execute(request);
+          held = true;
+          return http.client.execute(request).pipe(
+            Effect.tap(() => Deferred.succeed(patching, undefined)),
+            Effect.tap(() => Deferred.await(release)),
+          );
+        });
+        yield* run({ ...http, layer: Layer.succeed(HttpClient.HttpClient, client) }, (adapter) =>
+          Effect.gen(function* () {
+            const message: OutgoingMessage = { ...draftMessage, mode: "reply", attachments: [] };
+            const original = Option.some({ providerId: "source", threadId: "conversation" });
+            const sending = yield* adapter.send(account, message, original).pipe(Effect.forkChild);
+            yield* Deferred.await(patching);
+            const recovered = yield* adapter
+              .saveDraft(account, {
+                creation: {
+                  ...draftCreation(),
+                  begin: () =>
+                    Effect.succeed({
+                      messageId: "<other@example.test>",
+                      attempted: true,
+                      attemptedAt: 0,
+                    }),
+                },
+                remote: null,
+                message,
+                original,
+                replaceAttachments: false,
+              })
+              .pipe(Effect.result);
+            assert.strictEqual(recovered._tag, "Failure");
+            yield* Deferred.succeed(release, undefined);
+            yield* Fiber.join(sending);
+            assert.strictEqual(patches, 1);
+          }).pipe(Effect.ensuring(Deferred.succeed(release, undefined))),
+        );
+      }),
+  );
+}
+
+it.effect(
+  "failed reply preparation never deletes an autosaved draft from the same conversation",
+  () =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      const http = fakeHttp({
+        "POST /me/messages/source/createReply": { status: 503 },
+        "GET /me/messages/source": { json: { conversationId: "conversation" } },
+        "GET /me/mailFolders/drafts/messages": (url) => ({
+          json: {
+            value: (url.searchParams.get("$filter") ?? "").startsWith("internetMessageId")
+              ? []
+              : [
+                  {
+                    id: "autosaved-R",
+                    conversationId: "conversation",
+                    createdDateTime: new Date(now).toISOString(),
+                    lastModifiedDateTime: new Date(now).toISOString(),
+                    isDraft: true,
+                  },
+                ],
+          },
+        }),
+        "DELETE /me/messages/autosaved-R": { status: 204 },
+      });
+      yield* run(http, (adapter) =>
+        Effect.gen(function* () {
+          const sending = yield* adapter
+            .send(
+              account,
+              { ...draftMessage, mode: "reply", attachments: [] },
+              Option.some({ providerId: "source", threadId: "conversation" }),
+            )
+            .pipe(Effect.result, Effect.forkChild);
+          yield* TestClock.adjust("35 seconds");
+          const result = yield* Fiber.join(sending);
+          assert.isTrue(result._tag === "Failure" && isDefiniteSendFailure(result.failure));
+          assert.isFalse(http.calls.some((call) => call.method === "DELETE"));
+          assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/send")));
+        }),
+      );
+    }),
+);
+
+it.effect(
+  "two reply composers recover their own copies without overwriting a locally linked draft",
+  () => {
+    const created: string[] = [];
+    const version = (id: string) => ({
+      id,
+      changeKey: id,
+      lastModifiedDateTime: new Date(0).toISOString(),
+    });
+    const http = fakeHttp({
+      "POST /me/messages/source/createReply": () => {
+        created.push(created.length === 0 ? "R" : "S");
+        return { status: 503 };
+      },
+      "GET /me/messages/source": { json: { conversationId: "conversation" } },
+      "GET /me/mailFolders/drafts/messages": (url) => ({
+        json: {
+          value: (url.searchParams.get("$filter") ?? "").startsWith("internetMessageId")
+            ? []
+            : created.map((id) => ({
+                id,
+                conversationId: "conversation",
+                createdDateTime: new Date(0).toISOString(),
+                lastModifiedDateTime: new Date(0).toISOString(),
+                isDraft: true,
+              })),
+        },
+      }),
+      "PATCH /me/messages/R": { json: version("R") },
+      "PATCH /me/messages/S": { json: version("S") },
+      "GET /me/messages/R": { json: version("R") },
+      "GET /me/messages/S": { json: version("S") },
+      "GET /me/messages/R/attachments": { json: { value: [] } },
+      "GET /me/messages/S/attachments": { json: { value: [] } },
+    });
+    const services = Layer.mergeAll(
+      StoreLive,
+      Layer.effect(Providers, makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter })))),
+    ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const saved = yield* store.upsertAccount("outlook", account.email);
+      yield* store.upsertMessage(saved.id, {
+        providerId: "source",
+        threadId: "conversation",
+        subject: "Source",
+        from: { name: "", address: account.email },
+        to: [],
+        cc: [],
+        date: 0,
+        snippet: "",
+        bodyText: "",
+        bodyHtml: "",
+        labels: ["INBOX"],
+        attachments: [],
+        isUnread: false,
+        isStarred: false,
+      });
+      const message: OutgoingMessage = {
+        ...draftMessage,
+        mode: "reply",
+        attachments: [],
+        inReplyTo: `${saved.id}/source`,
+      };
+      yield* mailbox.saveDraft({ id: "composer-R", accountId: saved.id, message });
+      assert.strictEqual(
+        Option.getOrThrow(yield* store.getDraft("composer-R")).remote?.messageId,
+        "R",
+      );
+      yield* mailbox.saveDraft({ id: "composer-S", accountId: saved.id, message });
+      assert.strictEqual(
+        Option.getOrThrow(yield* store.getDraft("composer-S")).remote?.messageId,
+        "S",
+      );
+      assert.strictEqual(
+        Option.getOrThrow(yield* store.getDraft("composer-R")).remote?.messageId,
+        "R",
+      );
+      assert.strictEqual(
+        http.calls.filter((call) => call.method === "PATCH" && call.url.pathname.endsWith("/R"))
+          .length,
+        1,
+      );
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(Layer.provideMerge(services)),
+      ),
+    );
+  },
+);
+
+it.effect("opening a server draft captures its server version before the first save", () => {
+  let version = 1;
+  const http = fakeHttp({
+    "GET /me/messages/server-draft": (url) => ({
+      json: url.searchParams.get("$select")?.includes("changeKey")
+        ? {
+            id: "server-draft",
+            changeKey: `k${version}`,
+            lastModifiedDateTime: new Date(version * 1000).toISOString(),
+          }
+        : { categories: [], flag: { flagStatus: "notFlagged" } },
+    }),
+    "POST /me/messages": {
+      json: {
+        id: "preserved-copy",
+        changeKey: "copy",
+        lastModifiedDateTime: new Date(3000).toISOString(),
+      },
+    },
+    "PATCH /me/messages/server-draft": { json: { id: "overwritten" } },
+  });
+  const services = Layer.mergeAll(
+    StoreLive,
+    Layer.effect(Providers, makeOutlook.pipe(Effect.map((adapter) => ({ get: () => adapter })))),
+  ).pipe(Layer.provideMerge(Layer.mergeAll(http.layer, MemoryPlatform(platformOptions))));
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const mailbox = yield* Mailbox;
+    const saved = yield* store.upsertAccount("outlook", account.email);
+    yield* store.upsertMessage(saved.id, {
+      providerId: "server-draft",
+      threadId: "conversation",
+      subject: "Server draft",
+      from: { name: "", address: account.email },
+      to: draftMessage.to,
+      cc: [],
+      date: 1000,
+      snippet: "Draft",
+      bodyText: "Draft",
+      bodyHtml: "",
+      labels: ["DRAFT"],
+      attachments: [],
+      isUnread: false,
+      isStarred: false,
+    });
+    const opened = yield* mailbox.openDraft(`${saved.id}/server-draft`);
+    const before = Option.getOrThrow(yield* store.getDraft(opened.id));
+    assert.strictEqual(before.remote?.changeKey, "k1");
+    assert.strictEqual(before.remote?.lastWrittenAt, 1000);
+    version = 2;
+    yield* mailbox.saveDraft({
+      id: opened.id,
+      accountId: saved.id,
+      message: { ...opened.message, text: "Our edit" },
+    });
+    const after = Option.getOrThrow(yield* store.getDraft(opened.id));
+    assert.strictEqual(after.remote?.messageId, "preserved-copy");
+    assert.include(after.syncError ?? "", "another client");
+    assert.isFalse(
+      http.calls.some(
+        (call) => call.method === "PATCH" && call.url.pathname.endsWith("/server-draft"),
+      ),
+    );
+  }).pipe(
+    Effect.provide(
+      MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(Layer.provideMerge(services)),
+    ),
+  );
+});
+
+for (const mode of ["reply", "replyAll", "forward"] as const) {
+  it.live(
+    `${mode} draft creation recovers a server-generated Message-ID by conversation and creation time`,
+    () =>
+      Effect.gen(function* () {
+        const attemptedAt = Date.now();
+        const action =
+          mode === "reply"
+            ? "createReply"
+            : mode === "replyAll"
+              ? "createReplyAll"
+              : "createForward";
+        let remoteExists = false;
+        const http = fakeHttp({
+          [`POST /me/messages/source/${action}`]: () => {
+            remoteExists = true;
+            return { status: 503 };
+          },
+          "GET /me/messages/source": { json: { conversationId: "conversation" } },
+          "GET /me/mailFolders/drafts/messages": (url) => {
+            const filter = url.searchParams.get("$filter") ?? "";
+            if (filter.startsWith("internetMessageId")) return { json: { value: [] } };
+            assert.include(filter, "conversationId eq 'conversation'");
+            assert.include(
+              filter,
+              `createdDateTime ge ${new Date(attemptedAt - 5000).toISOString()}`,
+            );
+            return {
+              json: {
+                value: remoteExists
+                  ? [
+                      {
+                        id: "older-composer",
+                        conversationId: "conversation",
+                        createdDateTime: new Date(attemptedAt - 6000).toISOString(),
+                        lastModifiedDateTime: new Date(attemptedAt - 6000).toISOString(),
+                        isDraft: true,
+                      },
+                      {
+                        id: "recovered",
+                        conversationId: "conversation",
+                        createdDateTime: new Date(attemptedAt).toISOString(),
+                        lastModifiedDateTime: new Date(attemptedAt).toISOString(),
+                        isDraft: true,
+                      },
+                    ]
+                  : [],
+              },
+            };
+          },
+          "PATCH /me/messages/recovered": {
+            json: {
+              id: "recovered",
+              changeKey: "patched",
+              lastModifiedDateTime: new Date(attemptedAt).toISOString(),
+            },
+          },
+          "GET /me/messages/recovered": {
+            json: {
+              id: "recovered",
+              changeKey: "patched",
+              lastModifiedDateTime: new Date(attemptedAt).toISOString(),
+            },
+          },
+          "GET /me/messages/recovered/attachments": { json: { value: [] } },
+        });
+        yield* run(http, (adapter) =>
+          Effect.gen(function* () {
+            const creation = {
+              ...draftCreation(),
+              begin: () =>
+                Effect.succeed({
+                  messageId: "<client@example.test>",
+                  attempted: false,
+                  attemptedAt,
+                }),
+            };
+            const push = {
+              remote: null,
+              message: { ...draftMessage, attachments: [], mode },
+              original: Option.some({ providerId: "source", threadId: "local-thread" }),
+              replaceAttachments: false,
+              creation,
+            };
+            const recovered = yield* adapter.saveDraft(account, push);
+            assert.strictEqual(recovered.messageId, "recovered");
+            yield* adapter.saveDraft(account, { ...push, remote: recovered });
+          }),
+        );
+        assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 1);
+        const patched = http.calls.find((call) => call.method === "PATCH");
+        const fields = Schema.decodeUnknownSync(
+          Schema.Struct({ internetMessageId: Schema.String }),
+        )(patched?.body);
+        assert.strictEqual(fields.internetMessageId, "<client@example.test>");
+      }),
+  );
+}
+
+it.live("ambiguous reply draft lookup preserves uncertainty without creating another copy", () =>
+  Effect.gen(function* () {
+    let misses = 0;
+    const now = Date.now();
+    const http = fakeHttp({
+      "GET /me/messages/source": { json: { conversationId: "conversation" } },
+      "GET /me/mailFolders/drafts/messages": (url) => ({
+        json: {
+          value: (url.searchParams.get("$filter") ?? "").startsWith("internetMessageId")
+            ? []
+            : ["first", "second"].map((id) => ({
+                id,
+                conversationId: "conversation",
+                createdDateTime: new Date(now).toISOString(),
+                lastModifiedDateTime: new Date(now).toISOString(),
+                isDraft: true,
+              })),
+        },
+      }),
+    });
+    const result = yield* run(http, (adapter) =>
+      adapter
+        .saveDraft(account, {
+          creation: {
+            ...draftCreation(),
+            begin: () =>
+              Effect.succeed({
+                messageId: "<unknown@example.test>",
+                attempted: true,
+                attemptedAt: now,
+              }),
+            missing: () =>
+              Effect.sync(() => {
+                misses++;
+                return false;
+              }),
+          },
+          remote: null,
+          message: { ...draftMessage, attachments: [], mode: "reply" },
+          original: Option.some({ providerId: "source", threadId: "conversation" }),
+          replaceAttachments: false,
+        })
+        .pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Failure");
+    assert.strictEqual(misses, 1);
+    assert.isFalse(http.calls.some((call) => call.method !== "GET"));
+  }),
+);
+
+it.live("Outlook can retry draft creation after a connect failure without a lookup", () =>
+  Effect.gen(function* () {
+    let attempted = false;
+    let posts = 0;
+    let lookups = 0;
+    const client = HttpClient.make((request) =>
+      Effect.suspend(() => {
+        if (request.method === "POST") {
+          posts++;
+          if (posts === 1)
+            return Effect.fail(
+              new HttpClientError.HttpClientError({
+                reason: new HttpClientError.TransportError({
+                  request,
+                  cause: new TypeError("fetch failed", { cause: { code: "ECONNREFUSED" } }),
+                }),
+              }),
+            );
+          return Effect.succeed(
+            HttpClientResponse.fromWeb(request, new Response(JSON.stringify({ id: "draft" }))),
+          );
+        }
+        lookups++;
+        return Effect.succeed(HttpClientResponse.fromWeb(request, new Response("{}")));
+      }),
+    );
+    yield* run({ layer: Layer.succeed(HttpClient.HttpClient, client), calls: [] }, (adapter) =>
+      Effect.gen(function* () {
+        const push = {
+          remote: null,
+          message: { ...draftMessage, attachments: [] },
+          original: Option.none(),
+          replaceAttachments: false,
+          creation: {
+            isLinked: () => Effect.succeed(false),
+            missing: () => Effect.succeed(false),
+            begin: () => Effect.succeed({ messageId: "<connect@example.test>", attempted }),
+            attempted: (_id: string, value = true) =>
+              Effect.sync(() => {
+                attempted = value;
+              }),
+            remember: () => Effect.void,
+          },
+        };
+        const first = yield* adapter.saveDraft(account, push).pipe(Effect.result);
+        assert.strictEqual(
+          first._tag === "Failure" &&
+            first.failure._tag === "ProviderError" &&
+            first.failure.reason,
+          "connection",
+        );
+        assert.isFalse(attempted);
+        assert.strictEqual((yield* adapter.saveDraft(account, push)).draftId, "draft");
+      }),
+    );
+    assert.strictEqual(posts, 2);
+    assert.strictEqual(lookups, 0);
+  }),
+);
+
+it.live("Outlook recreates a draft after the creation journal expires", () =>
+  Effect.gen(function* () {
+    let misses = 0;
+    const http = fakeHttp({
+      "GET /me/mailFolders/drafts/messages": { json: { value: [] } },
+      "POST /me/messages": { json: { id: "retry-draft" } },
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const push = {
+          remote: null,
+          message: { ...draftMessage, attachments: [] },
+          original: Option.none(),
+          replaceAttachments: false,
+          creation: {
+            isLinked: () => Effect.succeed(false),
+            begin: () => Effect.succeed({ messageId: "<client@example.test>", attempted: true }),
+            attempted: () => Effect.void,
+            missing: () => Effect.sync(() => ++misses >= 3),
+            remember: () => Effect.void,
+          },
+        };
+        for (let i = 0; i < 2; i++) {
+          const result = yield* adapter.saveDraft(account, push).pipe(Effect.result);
+          assert.strictEqual(result._tag === "Failure" && result.failure._tag, "ProviderError");
+          assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 0);
+        }
+        assert.strictEqual((yield* adapter.saveDraft(account, push)).draftId, "retry-draft");
+      }),
+    );
+    assert.strictEqual(misses, 3);
+    assert.strictEqual(http.calls.filter((call) => call.method === "POST").length, 1);
+  }),
+);
+
+it.live("retry after the second attachment fails keeps one Outlook draft", () =>
+  Effect.gen(function* () {
+    let version = 1;
+    let uploads = 0;
+    let remembered = { draftId: "draft", messageId: "draft", changeKey: "k1", lastWrittenAt: 1000 };
+    const metadata = () => ({
+      id: "draft",
+      changeKey: `k${version}`,
+      lastModifiedDateTime: new Date(version * 1000).toISOString(),
+    });
+    const http = fakeHttp({
+      "GET /me/messages/draft": () => ({ json: metadata() }),
+      "PATCH /me/messages/draft": () => {
+        version++;
+        return { json: metadata() };
+      },
+      "GET /me/messages/draft/attachments": () => ({
+        json: { value: uploads ? [{ id: "a", name: "a.txt", contentBytes: "aGk=" }] : [] },
+      }),
+      "DELETE /me/messages/draft/attachments/a": { status: 204 },
+      "POST /me/messages/draft/attachments": () => {
+        uploads++;
+        if (uploads === 2) return { status: 503 };
+        version++;
+        return { json: {} };
+      },
+      "POST /me/messages": { json: { id: "duplicate" } },
+    });
+    const message = {
+      ...draftMessage,
+      attachments: [
+        ...draftMessage.attachments,
+        { filename: "b.txt", mimeType: "text/plain", content: "Yg==" },
+      ],
+    };
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const creation = {
+          isLinked: () => Effect.succeed(false),
+          missing: () => Effect.succeed(false),
+          begin: () => Effect.succeed({ messageId: "<client@example.test>", attempted: false }),
+          attempted: () => Effect.void,
+          remember: (remote: import("./domain.js").DraftRemote) =>
+            Effect.sync(() => {
+              remembered = {
+                draftId: remote.draftId ?? "draft",
+                messageId: remote.messageId ?? "draft",
+                changeKey: remote.changeKey ?? "",
+                lastWrittenAt: remote.lastWrittenAt ?? 1000,
+              };
+            }),
+        };
+        const first = yield* adapter
+          .saveDraft(account, {
+            remote: remembered,
+            message,
+            original: Option.none(),
+            replaceAttachments: true,
+            creation,
+          })
+          .pipe(Effect.result);
+        const remote = first._tag === "Success" ? first.success : remembered;
+        assert.strictEqual(first._tag, "Success");
+        assert.strictEqual(
+          first._tag === "Success" &&
+            first.success.saveError?._tag === "ProviderError" &&
+            first.success.saveError.status,
+          503,
+        );
+        const retry = yield* adapter.saveDraft(account, {
+          remote,
+          message,
+          original: Option.none(),
+          replaceAttachments: true,
+          creation,
+        });
+        assert.isNotTrue(retry.conflict);
+        assert.strictEqual(retry.messageId, "draft");
+      }),
+    );
+    assert.strictEqual(
+      http.calls.filter(
+        (call) => call.method === "POST" && call.url.pathname.endsWith("/me/messages"),
+      ).length,
+      0,
+    );
+  }),
+);
+
+it.live("an uncertain Outlook attachment POST lists and matches the uploaded bytes", () =>
+  Effect.gen(function* () {
+    let posts = 0;
+    const http = fakeHttp({
+      "POST /me/messages/original/createReply": { json: { id: "created" } },
+      "PATCH /me/messages/created": { json: {} },
+      "POST /me/messages/created/attachments": () => ({
+        status: posts++ === 0 ? 503 : 200,
+        json: {},
+      }),
+      "GET /me/messages/created/attachments": {
+        json: { value: [{ id: "uploaded", name: "a.txt", contentBytes: "aGk=" }] },
+      },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        creation: draftCreation(),
+        remote: null,
+        message: { ...draftMessage, mode: "reply" },
+        original: Option.some({ providerId: "original", threadId: "t" }),
+        replaceAttachments: true,
+      }),
+    );
+    assert.strictEqual(remote.messageId, "created");
+    assert.isUndefined(remote.saveError);
+    assert.strictEqual(
+      http.calls.filter((c) => c.method === "POST" && c.url.pathname.endsWith("/attachments"))
+        .length,
+      1,
+    );
+  }),
+);
+
+it.live(
+  "a previously attempted Outlook create finds the draft and adds only missing attachments",
+  () =>
+    Effect.gen(function* () {
+      const http = fakeHttp({
+        "GET /me/mailFolders/drafts/messages": { json: { value: [{ id: "found" }] } },
+        "PATCH /me/messages/found": { json: {} },
+        "GET /me/messages/found/attachments": (url) => ({
+          json: url.searchParams.has("page")
+            ? { value: [{ id: "already-uploaded", name: "a.txt", contentBytes: "aGk=" }] }
+            : {
+                value: [],
+                "@odata.nextLink":
+                  "https://graph.microsoft.com/v1.0/me/messages/found/attachments?page=2",
+              },
+        }),
+        "POST /me/messages/found/attachments": { json: {} },
+        "POST /me/messages": { json: { id: "duplicate" } },
+      });
+      const remote = yield* run(http, (a) =>
+        a.saveDraft(account, {
+          remote: null,
+          message: {
+            ...draftMessage,
+            attachments: [
+              ...draftMessage.attachments,
+              { filename: "b.txt", mimeType: "text/plain", content: "Yg==" },
+            ],
+          },
+          original: Option.none(),
+          replaceAttachments: true,
+          creation: {
+            isLinked: () => Effect.succeed(false),
+            missing: () => Effect.succeed(false),
+            begin: () => Effect.succeed({ messageId: "<attempt@example.com>", attempted: true }),
+            attempted: () => Effect.void,
+            remember: () => Effect.void,
+          },
+        }),
+      );
+      assert.strictEqual(remote.messageId, "found");
+      const posts = http.calls.filter((call) => call.method === "POST");
+      assert.strictEqual(posts.length, 1);
+      assert.strictEqual(
+        Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String }))(posts[0]?.body).name,
+        "b.txt",
+      );
+    }),
+);
+
+it.live("forward replacement returns the new ID when deleting the old draft fails", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/old": { json: {} },
+      "POST /me/messages/original/createForward": { json: { id: "new" } },
+      "PATCH /me/messages/new": { json: {} },
+      "POST /me/messages/new/attachments": { json: {} },
+      "DELETE /me/messages/old": { status: 400 },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        creation: draftCreation(),
+        remote: { draftId: "old", messageId: "old" },
+        message: { ...draftMessage, mode: "forward" },
+        original: Option.some({ providerId: "original", threadId: "t" }),
+        replaceAttachments: true,
+      }),
+    );
+    assert.strictEqual(remote.messageId, "new");
+    assert.strictEqual(remote.replacedMessageId, "old");
+  }),
+);
+
+it.live("Outlook folder conflict resolves the existing folder in its parent", () =>
+  Effect.gen(function* () {
+    let posted = false;
+    const http = fakeHttp({
+      "GET /me/mailFolders": () => ({
+        json: {
+          value: posted
+            ? [{ id: "existing", displayName: "Work", childFolderCount: 0, totalItemCount: 0 }]
+            : [],
+        },
+      }),
+      "POST /me/mailFolders": () => {
+        posted = true;
+        return { status: 409 };
+      },
+    });
+    const labels = yield* run(http, (a) =>
+      a.changeLabel(account, { kind: "create", name: "Work" }),
+    );
+    assert.strictEqual(labels.find((label) => label.name === "Work")?.id, "existing");
+  }),
+);
+
+it.live("Outlook uncertain rule creation matches the complete definition", () =>
+  Effect.gen(function* () {
+    let posted = false;
+    const http = fakeHttp({
+      "GET /me/mailFolders/inbox/messageRules": () => ({
+        json: {
+          value: posted
+            ? [
+                {
+                  id: "found",
+                  displayName: "Rule",
+                  sequence: 1,
+                  conditions: { subjectContains: ["hello"] },
+                  actions: {},
+                },
+              ]
+            : [],
+        },
+      }),
+      "POST /me/mailFolders/inbox/messageRules": () => {
+        const status = posted ? 200 : 503;
+        posted = true;
+        return {
+          status,
+          json: {
+            id: "found",
+            displayName: "Rule",
+            conditions: { subjectContains: ["hello"] },
+            actions: {},
+          },
+        };
+      },
+    });
+    const rule = yield* run(http, (a) =>
+      a.createFilter(account, {
+        ...EMPTY_FILTER,
+        name: "Rule",
+        criteria: { ...EMPTY_FILTER.criteria, subject: "hello" },
+      }),
+    );
+    assert.strictEqual(rule.id, "found");
+    assert.strictEqual(http.calls.filter((c) => c.method === "POST").length, 1);
+  }),
+);
+
+for (const response of ["accepted", "tentative", "declined"] as const) {
+  it.live(`uncertain Outlook ${response} response is reconciled without another POST`, () =>
+    Effect.gen(function* () {
+      const [parsed] = parseCalendar(
+        "BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nBEGIN:VEVENT\r\nUID:uid\r\nDTSTART:20261001T090000Z\r\nORGANIZER:mailto:alice@example.com\r\nATTENDEE:mailto:me@outlook.com\r\nEND:VEVENT\r\nEND:VCALENDAR",
+      );
+      assert.ok(parsed);
+      const action =
+        response === "accepted"
+          ? "accept"
+          : response === "declined"
+            ? "decline"
+            : "tentativelyAccept";
+      let posts = 0;
+      const http = fakeHttp({
+        "GET /me/messages/m": {
+          json: {
+            event: { id: "e", organizer: { emailAddress: { address: "alice@example.com" } } },
+          },
+        },
+        [`POST /me/events/e/${action}`]: () => ({ status: posts++ === 0 ? 503 : 202 }),
+        "GET /me/events/e": {
+          json: {
+            id: "e",
+            responseStatus: {
+              response: response === "tentative" ? "tentativelyAccepted" : response,
+            },
+          },
+        },
+      });
+      yield* run(http, (a) => a.respondInvite(account, "m", parsed.invite, response));
+      assert.strictEqual(http.calls.filter((c) => c.method === "POST").length, 1);
+    }),
+  );
+}
+
+it.live("an attachment 404 after PATCH does not recreate an Outlook draft", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "PATCH /me/messages/d": { json: {} },
+      "GET /me/messages/d/attachments": { status: 404 },
+      "POST /me/messages": { json: { id: "duplicate" } },
+    });
+    yield* run(http, (a) =>
+      a
+        .saveDraft(account, {
+          creation: draftCreation(),
+          remote: { draftId: "d", messageId: "d" },
+          message: draftMessage,
+          original: Option.none(),
+          replaceAttachments: true,
+        })
+        .pipe(Effect.result),
+    );
+    assert.isFalse(
+      http.calls.some((c) => c.method === "POST" && c.url.pathname.endsWith("/me/messages")),
+    );
+  }),
+);
+
+it.live("a reply draft keeps its new ID when later PATCH fails", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "POST /me/messages/original/createReply": { json: { id: "created" } },
+      "PATCH /me/messages/created": { status: 400 },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        creation: draftCreation(),
+        remote: null,
+        message: { ...draftMessage, mode: "reply" },
+        original: Option.some({ providerId: "original", threadId: "t" }),
+        replaceAttachments: true,
+      }),
+    );
+    assert.strictEqual(remote.messageId, "created");
+  }),
+);
+
+it.live("Outlook checks changeKey before overwriting a draft", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      "GET /me/messages/d": {
+        json: {
+          id: "d",
+          changeKey: "other-client",
+          lastModifiedDateTime: new Date(2000).toISOString(),
+        },
+      },
+      "PATCH /me/messages/d": { json: { id: "d", changeKey: "overwritten" } },
+      "POST /me/messages": { json: { id: "preserved-copy", changeKey: "copy" } },
+    });
+    const remote = yield* run(http, (a) =>
+      a.saveDraft(account, {
+        creation: draftCreation(),
+        remote: { draftId: "d", messageId: "d", changeKey: "our-version", lastWrittenAt: 1000 },
+        message: draftMessage,
+        original: Option.none(),
+        replaceAttachments: false,
+      }),
+    );
+    assert.isTrue(remote.conflict);
+    assert.strictEqual(remote.messageId, "preserved-copy");
+    assert.isFalse(http.calls.some((c) => c.method === "PATCH"));
+  }),
+);
 
 type Reply = { headers?: Record<string, string>; status?: number; json?: unknown; text?: string };
 
@@ -925,6 +1968,7 @@ it.effect(
       });
       yield* run(http, (adapter) =>
         adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote: null,
           original: Option.some({ providerId: "orig", threadId: "thread" }),
           message: { ...draftMessage, mode: "forward", attachments: [] },
@@ -956,6 +2000,7 @@ it.effect(
       yield* run(http, (adapter) =>
         Effect.gen(function* () {
           yield* adapter.saveDraft(account, {
+            creation: draftCreation(),
             remote: { draftId: "old", messageId: "old" },
             original: Option.some({ providerId: "orig", threadId: "thread" }),
             message,
@@ -1005,6 +2050,7 @@ it.effect(
         "PATCH /me/messages/gone": { status: 404, json: { error: { code: "ErrorItemNotFound" } } },
       });
       const push = (remote: { draftId: string; messageId: string } | null, replace: boolean) => ({
+        creation: draftCreation(),
         remote,
         message: draftMessage,
         original: Option.none(),
@@ -1061,6 +2107,7 @@ it.effect("reply drafts start from createReply so Outlook threads them", () =>
     });
     const remote = yield* run(http, (a) =>
       a.saveDraft(account, {
+        creation: draftCreation(),
         remote: null,
         message: { ...draftMessage, mode: "replyAll" },
         original: Option.some({ providerId: "orig", threadId: "conv-1" }),
@@ -1095,6 +2142,7 @@ it.effect(
       });
       yield* run(http, (adapter) =>
         adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote: { draftId: "d1", messageId: "d1" },
           message: {
             ...draftMessage,
@@ -1170,6 +2218,7 @@ it.effect("Graph draft source properties survive create, update, import and remo
       Effect.gen(function* () {
         if (!adapter.draftMarkdownSource) throw new Error("Graph draft source API is missing");
         const remote = yield* adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote: null,
           message: {
             ...draftMessage,
@@ -1206,6 +2255,7 @@ it.effect("Graph draft source properties survive create, update, import and remo
         externalBody = undefined;
         const edited = "_edited_\n";
         yield* adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote,
           message: { ...imported, text: edited, html: renderMarkdown(edited) },
           original: Option.none(),
@@ -1216,6 +2266,7 @@ it.effect("Graph draft source properties survive create, update, import and remo
           markdownDraftSource(edited),
         );
         yield* adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote,
           message: { ...imported, text: "", html: renderMarkdown(""), markdown: true },
           original: Option.none(),
@@ -1226,6 +2277,7 @@ it.effect("Graph draft source properties survive create, update, import and remo
           markdownDraftSource(""),
         );
         yield* adapter.saveDraft(account, {
+          creation: draftCreation(),
           remote,
           message: { ...imported, text: "plain", markdown: false },
           original: Option.none(),
@@ -2491,6 +3543,7 @@ it.effect("composer draft labels/star patch categories and flag without moving o
     const http = fakeHttp({ "PATCH /me/messages/draft": { json: {} } });
     yield* run(http, (adapter) =>
       adapter.saveDraft(account, {
+        creation: draftCreation(),
         remote: { draftId: "draft", messageId: "draft" },
         original: Option.none(),
         replaceAttachments: false,
@@ -2517,6 +3570,7 @@ it.effect("body-only Outlook draft patches omit categories/flag and keep externa
     const http = fakeHttp({ "PATCH /me/messages/draft": { json: {} } });
     yield* run(http, (adapter) =>
       adapter.saveDraft(account, {
+        creation: draftCreation(),
         remote: { draftId: "draft", messageId: "draft" },
         original: Option.none(),
         replaceAttachments: false,

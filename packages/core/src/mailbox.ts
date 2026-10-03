@@ -1,3 +1,4 @@
+import type { QueuedSend } from "./mobile-outbox.js";
 import type { OptionalService, AuthorizationFeature, ServiceGrant } from "./optional-services.js";
 import type {
   AiSettings,
@@ -418,14 +419,28 @@ export class Mailbox extends Context.Service<
     readonly agentWriteMode: Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(mode: AgentWriteMode): Effect.Effect<void>;
 
-    readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
+    readonly queuedSends: Effect.Effect<QueuedSend[]>;
     queueSend(
       input: DraftInput,
       due: number,
       confirmResend?: boolean,
     ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain>;
+    cancelDesktopUndoSends(owner?: string): Effect.Effect<void>;
+    cancelWaitingSend(id: string): Effect.Effect<boolean>;
+    /** Remove a mobile failed/waiting intent while keeping its draft; an active send cannot be cancelled. */
     cancelQueuedSend(id: string): Effect.Effect<boolean>;
     flushQueuedSends(canSend?: () => boolean): Effect.Effect<void>;
+    /** Main/core owns the wait and send even if the calling renderer disconnects. */
+    queueUndoSend(
+      input: DraftInput,
+      due: number,
+      options?: {
+        readonly archive?: boolean;
+        readonly confirmResend?: boolean;
+        readonly owner?: string;
+      },
+    ): Effect.Effect<void, NotFound | InvalidInput | SendUncertain>;
+    awaitUndoSend(id: string): Effect.Effect<Outcome, PerformError>;
 
     // Drafts. The person's own drafts; agents write theirs through perform({ kind: "draft" }).
     /**

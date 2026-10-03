@@ -26,6 +26,7 @@ const OPERATION_LABELS: Readonly<Record<string, MessageDescriptor>> = {
   deleteDraft: msg`Delete draft`,
   delete: msg`Delete permanently`,
   reconcile: msg`Restore message state`,
+  send: msg`Send`,
   sendPartial: msg`Partial delivery`,
   sentCopyMissing: msg`Save sent copy`,
 };

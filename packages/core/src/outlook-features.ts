@@ -1,4 +1,5 @@
 import { graphPageLink } from "./graph-pagination.js";
+import { reconcileProviderWrite } from "./provider-write.js";
 import { Effect, Schema } from "effect";
 import type { Account, Address } from "./domain.js";
 import type { CalendarInvite, InviteResponse } from "./calendar.js";
@@ -35,6 +36,7 @@ const Event = Schema.Struct({
   isCancelled: Schema.optionalKey(Schema.Boolean),
   isOrganizer: Schema.optionalKey(Schema.Boolean),
   organizer: Schema.optionalKey(Schema.Struct({ emailAddress: Email })),
+  responseStatus: Schema.optionalKey(Schema.Struct({ response: Schema.String })),
 });
 const Related = Schema.Struct({ event: Schema.optionalKey(Schema.NullOr(Event)) });
 const Events = Schema.Struct({ value: Schema.Array(Event) });
@@ -185,7 +187,7 @@ export function makeOutlookFeatures<
             const page = yield* get(
               account.id,
               Events,
-              `/me/events?$filter=${filter}&$select=id,isCancelled,isOrganizer,organizer&$top=2`,
+              `/me/events?$filter=${filter}&$select=id,isCancelled,isOrganizer,organizer,responseStatus&$top=2`,
             );
             if (page.value.length === 1) event = page.value[0];
           }
@@ -208,9 +210,17 @@ export function makeOutlookFeatures<
             tentative: "tentativelyAccept",
             declined: "decline",
           }[response];
-          yield* write(account.id, "POST", `/me/events/${encodeURIComponent(event.id)}/${action}`, {
-            sendResponse: true,
-          });
+          const desired = response === "tentative" ? "tentativelyAccepted" : response;
+          if (event.responseStatus?.response === desired) return yield* Effect.void;
+          const path = `/me/events/${encodeURIComponent(event.id)}`;
+          yield* reconcileProviderWrite(
+            write(account.id, "POST", `${path}/${action}`, { sendResponse: true }),
+            get(account.id, Event, `${path}?$select=id,responseStatus`).pipe(
+              Effect.map((current) =>
+                current.responseStatus?.response === desired ? current : undefined,
+              ),
+            ),
+          );
           return yield* Effect.void;
         }),
       ),

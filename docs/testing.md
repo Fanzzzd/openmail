@@ -78,6 +78,8 @@ slice 60 的 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts) 检�
 
 slice 62 的 [imap.test.ts](../packages/core/src/imap.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts) 覆盖 SEARCH 失败与空集合的区别、小数量及空列表重置验证、遗漏文件夹和 UID 身份失效。[outlook.test.ts](../packages/core/src/outlook.test.ts)及 [provider-calendar.test.ts](../packages/core/src/provider-calendar.test.ts) 检查 Graph key-segment 续页、外域拒绝、嵌套联系人文件夹、去重和 People 上限。
 
+slice 64 的 [provider-retry.test.ts](../packages/core/src/provider-retry.test.ts)、[gmail.test.ts](../packages/core/src/gmail.test.ts)和 [outlook.test.ts](../packages/core/src/outlook.test.ts) 覆盖非幂等写入单次提交、丢失响应后的核对、草稿 ID 保留、附件续页、changeKey 冲突及 Trash 补偿。[undo-send-and-draft-create.test.ts](../packages/core/src/undo-send-and-draft-create.test.ts)与 [slice44-mobile.test.ts](../packages/core/src/slice44-mobile.test.ts) 检查创建日志、发送认领事务、明确失败重试、renderer 断开和数据库重开；同时覆盖与 slice 63 合并后的迟到草稿回调、失效认领、ID 重映射及部分拒收保护；桌面 [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) 检查撤销的 core RPC。行为规则只在[同步说明](sync-correctness.md#草稿与其他写入)维护。普通低内存测试即可运行，无须启动 Electron。
+
 ## 解析器 fuzz 与无障碍
 
 解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/components/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/attachment-filenames-fuzz.test.ts)。

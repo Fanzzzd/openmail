@@ -1,3 +1,4 @@
+import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it, layer } from "@effect/vitest";
@@ -1146,6 +1147,7 @@ it.effect("composer draft keywords and star use IMAP flags while staying in Draf
       Effect.succeed({ accountId: account.id, settings, client }),
     );
     const remote = yield* adapter.saveDraft(account, {
+      creation: draftCreation(),
       remote: null,
       original: Option.none(),
       replaceAttachments: true,
@@ -1222,6 +1224,7 @@ it.effect(
         Effect.succeed({ accountId: account.id, settings, client }),
       );
       yield* adapter.saveDraft(account, {
+        creation: draftCreation(),
         remote: { draftId: null, messageId: encodeProviderId("Drafts", "7", 1) },
         original: Option.none(),
         replaceAttachments: false,
