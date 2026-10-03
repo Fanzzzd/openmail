@@ -58,6 +58,14 @@ export default function Mailboxes() {
         }
       />
       <FlatList
+        ListHeaderComponent={
+          <Button
+            label={i18n._({ id: "Snoozed", message: "Snoozed" })}
+            onPress={() =>
+              router.push({ pathname: "/threads", params: { accountId, label: "snoozed" } })
+            }
+          />
+        }
         data={
           labels.kind === "ready"
             ? mailboxTree(labels.value.filter((item) => item.id !== "DRAFT"))

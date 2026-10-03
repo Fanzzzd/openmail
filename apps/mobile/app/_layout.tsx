@@ -13,6 +13,10 @@ function Navigation() {
       screenOptions={{ headerTintColor: "#1f4fd1", contentStyle: { backgroundColor: "#ffffff" } }}
     >
       <Stack.Screen
+        name="ai-proposals"
+        options={{ title: i18n._({ id: "Review proposals", message: "Review proposals" }) }}
+      />
+      <Stack.Screen
         name="compose"
         options={{ title: i18n._({ id: "Compose", message: "Compose" }), presentation: "modal" }}
       />

@@ -88,6 +88,7 @@ export function makeOrganizationMailbox(
   flushLater: Effect.Effect<void>,
   modifyWithUndo: Mailbox["Service"]["modifyWithUndo"],
   crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),
+  onWake: (ids: readonly string[], wokenAt: number) => Effect.Effect<unknown> = () => Effect.void,
 ) {
   const labelLock = Semaphore.makeUnsafe(1);
   const ruleLock = Semaphore.makeUnsafe(1);
@@ -287,6 +288,7 @@ export function makeOrganizationMailbox(
       }),
     );
     if (ids.length) {
+      yield* onWake(ids, now);
       yield* changed;
       yield* flushLater;
     }

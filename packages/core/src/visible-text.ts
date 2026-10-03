@@ -9,7 +9,7 @@ import type { ModelThread } from "./mailbox.js";
 export type ModelTextFlag = NonNullable<ModelThread["messages"][number]["flags"]>[number];
 type VisibleText =
   | { text: string; hidden: boolean }
-  | { text: string; hidden: false; flags: readonly ["budget-exceeded"] };
+  | { text: string; hidden: boolean; flags: readonly ["budget-exceeded"] };
 const BLOCK = /^(p|div|br|tr|li|h[1-6]|section|article|blockquote|table)$/;
 const OMIT = new Set([
   "head",
@@ -161,7 +161,10 @@ const normalizeHtmlText = (text: string) =>
     .trim();
 
 /** Filter hidden text within a bounded CSS inspection; exhaustion is explicit. */
-export function visibleHtmlText(html: string): VisibleText {
+export function visibleHtmlText(
+  html: string,
+  budgetFallback: "visible" | "index-full-text" = "visible",
+): VisibleText {
   const dom = parseDocument(prepareMessageHtml(html).html);
   type HtmlNode = (typeof dom.children)[number];
   const elements: HtmlNode[] = [];
@@ -262,6 +265,7 @@ export function visibleHtmlText(html: string): VisibleText {
     type Frame = { kind: "node"; node: HtmlNode } | { kind: "line" };
     const pending: Frame[] = dom.children.toReversed().map((node) => ({ kind: "node", node }));
     const out: string[] = [];
+    let removed = false;
     while (pending.length) {
       const frame = pending.pop();
       if (!frame) continue;
@@ -274,7 +278,18 @@ export function visibleHtmlText(html: string): VisibleText {
         out.push(node.data);
         continue;
       }
-      if (!("name" in node) || OMIT.has(node.name)) continue;
+      if (!("name" in node)) continue;
+      if (OMIT.has(node.name)) continue;
+      if (
+        budgetFallback === "visible" &&
+        "attribs" in node &&
+        ("hidden" in node.attribs ||
+          node.attribs["aria-hidden"]?.toLowerCase() === "true" ||
+          hiddenStyle(declarations(node.attribs.style ?? "")))
+      ) {
+        removed = true;
+        continue;
+      }
       if (BLOCK.test(node.name)) {
         out.push("\n");
         pending.push({ kind: "line" });
@@ -282,7 +297,7 @@ export function visibleHtmlText(html: string): VisibleText {
       if ("children" in node)
         for (const child of node.children.toReversed()) pending.push({ kind: "node", node: child });
     }
-    return { text: normalizeHtmlText(out.join("")), hidden: false, flags: ["budget-exceeded"] };
+    return { text: normalizeHtmlText(out.join("")), hidden: removed, flags: ["budget-exceeded"] };
   };
   if (collect()) return fallback();
   // htmlparser2's textContent recursively walks descendants. Hidden sender
@@ -382,6 +397,13 @@ export function messageModelText(
 ): { text: string; flags: ModelTextFlag[] } {
   if (!html.trim()) return { text: plain, flags: [] };
   const visible = visibleHtmlText(html);
+  if ("flags" in visible)
+    return {
+      // Providers can derive `plain` from this same HTML for HTML-only mail.
+      // Without provenance it is not a trustworthy text/plain alternative.
+      text: "[Message too complex for AI: message text omitted.]",
+      flags: [...visible.flags, ...(visible.hidden ? ["hidden-text-removed" as const] : [])],
+    };
   const a = normalize(plain),
     b = normalize(visible.text);
   const words = new Set(b.split(/\s+/));
@@ -395,7 +417,6 @@ export function messageModelText(
   return {
     text: visible.text,
     flags: [
-      ...("flags" in visible ? visible.flags : []),
       ...(visible.hidden ? ["hidden-text-removed" as const] : []),
       ...(differs ? ["plain-differs" as const] : []),
     ],

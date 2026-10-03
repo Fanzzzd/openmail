@@ -4,7 +4,7 @@ import { deviceOnline, isForeground } from "./device";
 import { Mailbox, type Language } from "@openmail/core/portable";
 import { Effect, Fiber } from "effect";
 import { useMailbox, useMailboxQuery, useMailboxRevision } from "./mailbox";
-import { foregroundCoordinator } from "./workflows";
+import { foregroundCoordinator, foregroundReminderTimer } from "./workflows";
 import * as Notifications from "expo-notifications";
 import { router, usePathname, useGlobalSearchParams } from "expo-router";
 import {
@@ -27,6 +27,7 @@ export function useForeground() {
       foregroundCoordinator({
         active: isForeground,
         online: deviceOnline,
+        wake: () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.wakeSnoozed())),
         prepare: async () => {
           const mailbox = await runtime.runPromise(Mailbox);
           const accounts = await runtime.runPromise(mailbox.accounts);
@@ -114,6 +115,11 @@ export function ForegroundLifecycle() {
     });
     return () => subscription.remove();
   }, [work, runtime]);
+  useEffect(() => {
+    return foregroundReminderTimer(isForeground, () =>
+      runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.wakeSnoozed())),
+    );
+  }, [runtime]);
   useEffect(() => {
     if (revision >= 0) void work(false).catch(() => null);
   }, [revision, work]);

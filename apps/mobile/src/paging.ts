@@ -6,7 +6,7 @@ export const pageQuery = (
   last?: ThreadSummary,
 ): ThreadQuery => ({
   accountIds: [accountId],
-  ...(label === "drafts" ? { mailbox: "drafts" as const } : { label }),
+  ...(label === "drafts" || label === "snoozed" ? { mailbox: label } : { label }),
   limit: PAGE_SIZE,
   ...(last ? { before: last.date, beforeId: last.id } : {}),
 });

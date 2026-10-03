@@ -93,7 +93,8 @@ export async function updateBadge(runtime: BackgroundRuntime) {
     : 0;
   await Notifications.setBadgeCountAsync(count);
 }
-export const deliverNewMail = (event: Extract<MailboxEvent, { _tag: "NewMail" }>) =>
+type NotificationEvent = Extract<MailboxEvent, { _tag: "NewMail" | "SnoozeDue" }>;
+export const deliverNewMail = (event: NotificationEvent) =>
   Effect.gen(function* () {
     const storage = yield* MobileBackgroundStorage;
     const mailbox = yield* Mailbox;
@@ -104,11 +105,22 @@ export const deliverNewMail = (event: Extract<MailboxEvent, { _tag: "NewMail" }>
     activateLanguage((yield* mailbox.prefs).language);
     const newMail = i18n._({ id: "New mail", message: "New mail" });
     yield* Effect.promise(configureLocalChannel);
+    const threads = new Set<string>();
     for (const id of event.ids) {
       const messages = yield* mailbox.thread(id).pipe(Effect.catch(() => Effect.succeed([])));
       const message = messages.find((item) => item.id === id);
       if (!message) continue;
-      const claimed = yield* storage.claim({ id, accountId: message.accountId });
+      if (event._tag === "SnoozeDue") {
+        if (threads.has(message.threadId)) continue;
+        threads.add(message.threadId);
+      }
+      const claimed = yield* storage.claim({
+        id:
+          event._tag === "SnoozeDue"
+            ? `${message.accountId}/snooze:${JSON.stringify([message.threadId, event.wokenAt])}`
+            : id,
+        accountId: message.accountId,
+      });
       if (!claimed || !shouldNotify({ message, preferences, foreground: isForeground(), visible }))
         continue;
       const request = mailNotification(message, preferences.hideContent, newMail);
@@ -124,7 +136,7 @@ export function notificationEvents(runtime: BackgroundRuntime) {
   return Effect.flatMap(Mailbox, (mailbox) =>
     Stream.runForEach(mailbox.events, (event) => {
       const action =
-        event._tag === "NewMail"
+        event._tag === "NewMail" || event._tag === "SnoozeDue"
           ? deliverNewMail(event)
           : event._tag === "Changed"
             ? Effect.promise(() => updateBadge(runtime))
@@ -166,15 +178,15 @@ export async function runBackgroundRefresh() {
       Effect.gen(function* () {
         const storage = yield* MobileBackgroundStorage;
         if (!(yield* storage.preferences).refresh || isForeground()) return;
-        if (!(yield* Effect.promise(networkAllowed))) return;
         const mailbox = yield* Mailbox;
-        const pending: Extract<MailboxEvent, { _tag: "NewMail" }>[] = [];
+        const pending: NotificationEvent[] = [];
         const events = yield* Stream.runForEach(mailbox.events, (event) =>
           Effect.sync(() => {
-            if (event._tag === "NewMail") pending.push(event);
+            if (event._tag === "NewMail" || event._tag === "SnoozeDue") pending.push(event);
           }),
         ).pipe(Effect.forkScoped);
         yield* Effect.yieldNow;
+        yield* mailbox.wakeSnoozed();
         const accounts = (yield* mailbox.accounts).filter(
           (account) =>
             account.enabled !== false && account.lastSyncedAt !== null && !account.needsReauth,

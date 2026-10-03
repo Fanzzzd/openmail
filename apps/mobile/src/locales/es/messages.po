@@ -53,10 +53,51 @@ msgstr "Añadir cuenta IMAP/SMTP"
 msgid "Add Outlook account"
 msgstr "Añadir cuenta de Outlook"
 
+#. Proposed replacement for the authored message text only.
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "After"
+msgstr "Después del cambio"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "AI"
+msgstr "IA"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "AI request failed. Check your settings and try again."
+msgstr "La solicitud de IA falló. Revisa los ajustes e inténtalo de nuevo."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow"
+msgstr "Permitir"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow Anthropic to receive this account's visible mail text for AI. Images and attachments stay on this device. Changes require your approval."
+msgstr "Permite que Anthropic reciba el texto visible de los mensajes de esta cuenta para la IA. Las imágenes y los adjuntos permanecen en este dispositivo. Los cambios requieren tu aprobación."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow mail text to Anthropic"
+msgstr "Permitir texto de mensajes a Anthropic"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
 msgstr "Android controla cuándo actualizar. Las actualizaciones no son en tiempo real. Se requieren una red sin medición y suficiente batería. Tras reiniciar, abre la aplicación para reanudar."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Anthropic API key"
+msgstr "Clave API de Anthropic"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "API key saved"
+msgstr "Clave API guardada"
 
 #. js-lingui-explicit-id
 #: app/imap-setup.tsx
@@ -64,10 +105,31 @@ msgid "App password"
 msgstr "Contraseña de aplicación"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Apply draft change"
+msgstr "Aplicar cambio al borrador"
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+msgid "Approve"
+msgstr "Aprobar"
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
 msgstr "Archivar"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Ask"
+msgstr "Preguntar"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Ask about this thread"
+msgstr "Preguntar sobre esta conversación"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -85,6 +147,11 @@ msgid "Attachments rejected before sending. Remove blocked or oversized attachme
 msgstr "Adjuntos rechazados antes de enviar. Elimina los adjuntos bloqueados o demasiado grandes."
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Automatic summaries"
+msgstr "Resúmenes automáticos"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Background and notifications"
 msgstr "Segundo plano y notificaciones"
@@ -95,9 +162,16 @@ msgid "Background refresh"
 msgstr "Actualización en segundo plano"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Bcc"
 msgstr "Cco"
+
+#. Authored message text before the AI edit; excludes signature and quoted history.
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Before"
+msgstr "Antes del cambio"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -118,6 +192,8 @@ msgstr "Lista con viñetas"
 #: app/compose.tsx
 #: app/reader.tsx
 #: app/threads.tsx
+#: src/ai-controls.tsx
+#: src/ai-settings.tsx
 #: src/labels.ts
 msgid "Cancel"
 msgstr "Cancelar"
@@ -128,6 +204,7 @@ msgid "Cancel queued send"
 msgstr "Cancelar envío en cola"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Cc"
@@ -160,6 +237,7 @@ msgid "Conversation"
 msgstr "Conversación"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
 msgid "Could not apply action. Try again."
@@ -181,11 +259,13 @@ msgid "Could not load attachments. Try again."
 msgstr "No se pudieron cargar los adjuntos. Inténtalo de nuevo."
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/imap-setup.tsx
 #: app/index.tsx
 #: app/mailboxes.tsx
 #: app/reader.tsx
 #: app/threads.tsx
+#: src/ai-settings.tsx
 msgid "Could not load mail. Try again."
 msgstr "No se pudo cargar el correo. Inténtalo de nuevo."
 
@@ -201,6 +281,7 @@ msgstr "No se pudo abrir la base de datos local de correo."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
+#: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
 msgstr "No se pudieron guardar los ajustes. Inténtalo de nuevo."
 
@@ -246,6 +327,16 @@ msgid "Done"
 msgstr "Aceptar"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+msgid "Draft"
+msgstr "Borrador"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Draft changed. Generate again."
+msgstr "El borrador cambió. Genera de nuevo."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Draft saved on this device"
 msgstr "Borrador guardado en este dispositivo"
@@ -272,9 +363,19 @@ msgid "Enter valid email addresses."
 msgstr "Introduce direcciones de correo válidas."
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Formal"
+msgstr "Formal"
+
+#. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Forward"
 msgstr "Reenviar"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Friendlier"
+msgstr "Más cordial"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -312,6 +413,7 @@ msgid "Italic"
 msgstr "Itálico"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: src/labels.ts
 msgid "Labels"
 msgstr "Etiquetas"
@@ -384,6 +486,11 @@ msgid "Messages"
 msgstr "Mensajes"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Model"
+msgstr "Modelo"
+
+#. js-lingui-explicit-id
 #: src/labels.ts
 msgid "Move to"
 msgstr "Mover a"
@@ -397,6 +504,11 @@ msgstr "Notificaciones de correo nuevo en la bandeja de entrada"
 #: src/background.ts
 msgid "New mail"
 msgstr "Correo nuevo"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "New messages"
+msgstr "Nuevos mensajes"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -465,6 +577,11 @@ msgid "Preview"
 msgstr "Vista previa"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Question"
+msgstr "Pregunta"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 #: app/settings.tsx
 msgid "Queued to send"
@@ -474,6 +591,12 @@ msgstr "En cola para enviar"
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Registra clientes OAuth móviles en la configuración para añadir cuentas."
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+#: src/ai-controls.tsx
+msgid "Reject"
+msgstr "Rechazar"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -501,9 +624,19 @@ msgid "Remove account"
 msgstr "Eliminar cuenta"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Remove key"
+msgstr "Eliminar clave"
+
+#. js-lingui-explicit-id
 #: src/thread-actions.tsx
 msgid "Remove label"
 msgstr "Quitar etiqueta"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Replies and forwards"
+msgstr "Responde y reenvía"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -514,6 +647,29 @@ msgstr "Responder"
 #: app/reader.tsx
 msgid "Reply all"
 msgstr "Responder a todos"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/ai-proposals.tsx
+#: app/settings.tsx
+#: src/ai-controls.tsx
+msgid "Review proposals"
+msgstr "Revisar propuestas"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Rewrite"
+msgstr "Reescribir"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Save key"
+msgstr "Guardar clave"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Save signature"
+msgstr "Guardar firma"
 
 #. js-lingui-explicit-id
 #: app/threads.tsx
@@ -568,6 +724,11 @@ msgid "Short swipe right"
 msgstr "Deslizamiento corto a la derecha"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Shorten"
+msgstr "Acortar"
+
+#. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Show HTML"
 msgstr "Mostrar HTML"
@@ -595,6 +756,11 @@ msgid "Sign in again"
 msgstr "Iniciar sesión nuevamente"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Signature"
+msgstr "Firma"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "SMTP port"
 msgstr "Puerto SMTP"
@@ -620,6 +786,11 @@ msgid "Snooze"
 msgstr "Posponer"
 
 #. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "Snoozed"
+msgstr "Pospuesto"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Correo no deseado"
@@ -633,6 +804,11 @@ msgstr "Destacar"
 #: app/compose.tsx
 msgid "Subject"
 msgstr "Asunto"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Summarize thread"
+msgstr "Resumir conversación"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -650,6 +826,7 @@ msgid "This message may have been sent. Check Sent before sending it again."
 msgstr "Es posible que este mensaje ya se haya enviado. Revisa «Enviado» antes de volver a enviarlo."
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "To"
 msgstr "Para"
@@ -675,6 +852,11 @@ msgid "Undo"
 msgstr "Deshacer"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Undo AI edit"
+msgstr "Deshacer edición de IA"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Deshacer envío"
@@ -683,6 +865,11 @@ msgstr "Deshacer envío"
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
 msgstr "Indicador de correo no leído en la bandeja de entrada"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Unsnooze"
+msgstr "Cancelar recordatorio"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

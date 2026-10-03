@@ -9,6 +9,7 @@ import {
   type Provider,
   type Address,
   type OutgoingMessage,
+  signatureDefault,
 } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { randomUUID } from "expo-crypto";
@@ -31,6 +32,9 @@ import {
 import { pickAttachments } from "../src/attachments";
 import { useUndo } from "../src/undo";
 import { styles } from "../src/styles";
+import { ComposeAi } from "../src/ai-controls";
+import { aiUndoBody, type AiEditUndo } from "../src/ai-edit";
+import { signedMobileMessage } from "../src/ai-workflows";
 
 const recipientsText = (addresses: readonly Address[]) =>
   addresses
@@ -62,6 +66,8 @@ export default function Compose() {
   const [bcc, setBcc] = useState("");
   const [field, setField] = useState<"to" | "cc" | "bcc">("to");
   const [contacts, setContacts] = useState<Address[]>([]);
+  const [aiUndo, setAiUndo] = useState<AiEditUndo | null>(null);
+  const [signature, setSignature] = useState<{ text: string | undefined } | null>(null);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [list, setList] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
@@ -105,10 +111,14 @@ export default function Compose() {
               params.mode === "reply" || params.mode === "replyAll" || params.mode === "forward"
                 ? params.mode
                 : "new";
-            const message = composeMessage(
-              mode,
-              original,
-              accounts.map((account) => account.email),
+            const message = yield* signedMobileMessage(
+              mailbox,
+              params.accountId,
+              composeMessage(
+                mode,
+                original,
+                accounts.map((account) => account.email),
+              ),
             );
             const attachments =
               mode === "forward" && original ? yield* mailbox.composeAttachments(original.id) : [];
@@ -127,8 +137,25 @@ export default function Compose() {
           setBcc(recipientsText(value.message.bcc));
         }
         return runtime
-          .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.accounts))
-          .then((accounts) => {
+          .runPromise(
+            Effect.flatMap(Mailbox, (mailbox) =>
+              Effect.gen(function* () {
+                const accounts = yield* mailbox.accounts;
+                const account = accounts.find((entry) => entry.id === value.accountId);
+                const selected = account
+                  ? signatureDefault(
+                      yield* mailbox.namedSignatures,
+                      yield* mailbox.signatureDefaults,
+                      value.message.from?.address ?? account.email,
+                      value.message.mode === "new" ? "new" : "reply",
+                    )
+                  : undefined;
+                return { accounts, signature: selected?.text };
+              }),
+            ),
+          )
+          .then(({ accounts, signature: selected }) => {
+            if (active) setSignature({ text: selected });
             if (active)
               setProvider(
                 accounts.find((account) => account.id === value.accountId)?.provider ?? null,
@@ -326,6 +353,44 @@ export default function Compose() {
   return (
     <ScrollView style={styles.screen} keyboardShouldPersistTaps="handled">
       {!draft && !failed && <ActivityIndicator />}
+      {draft && signature !== null && (
+        <ComposeAi
+          accountId={draft.accountId}
+          message={draft.message}
+          marks={marks}
+          list={list}
+          signature={signature.text}
+          accept={(body) => {
+            setAiUndo({
+              before: {
+                text: draft.message.text,
+                html: draft.message.html,
+                originalHtml: draft.message.originalHtml,
+                marks: [...marks],
+                list,
+              },
+              acceptedText: body.text,
+            });
+            setMarks([...body.marks]);
+            setList(body.list);
+            update({ text: body.text, html: body.html, originalHtml: undefined });
+          }}
+        />
+      )}
+      {draft && aiUndo && aiUndoBody(draft.message, aiUndo) && (
+        <Button
+          disabled={busy}
+          label={i18n._({ id: "Undo AI edit", message: "Undo AI edit" })}
+          onPress={() => {
+            const before = aiUndoBody(draft.message, aiUndo);
+            if (!before) return;
+            setMarks([...before.marks]);
+            setList(before.list);
+            update({ text: before.text, html: before.html, originalHtml: before.originalHtml });
+            setAiUndo(null);
+          }}
+        />
+      )}
       {draft && (
         <>
           <View style={styles.toolbar}>

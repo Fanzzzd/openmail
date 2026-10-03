@@ -86,6 +86,23 @@ export function ThreadMenu({
       [runtime, accountId],
     ),
   );
+  const snoozed = useMailboxQuery(
+    useCallback(
+      () =>
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) =>
+            Effect.forEach(ids, (id) => mailbox.thread(id)).pipe(
+              Effect.map((threads) =>
+                threads.some((messages) =>
+                  messages.some((message) => message.labels.includes("SNOOZED")),
+                ),
+              ),
+            ),
+          ),
+        ),
+      [runtime, ids],
+    ),
+  );
   const account =
     accounts.kind === "ready" ? accounts.value.find((entry) => entry.id === accountId) : undefined;
   const apply = async (op: MailOp | { kind: "snooze"; due: number }) => {
@@ -138,6 +155,13 @@ export function ThreadMenu({
             onPress={() => setPanel("labels")}
           />
           <Button label={names.snooze} onPress={() => setPanel("snooze")} />
+          {snoozed.kind === "ready" && snoozed.value && (
+            <Button
+              disabled={actions.busy}
+              label={i18n._({ id: "Unsnooze", message: "Unsnooze" })}
+              onPress={() => void apply({ kind: "inbox" })}
+            />
+          )}
         </>
       )}
       {panel === "labels" &&

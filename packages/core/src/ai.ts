@@ -43,6 +43,8 @@ export type AiEvent = typeof AiEvent.Type;
 export const AiQuestion = Schema.Struct({
   question: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4000)),
   accountIds: Schema.Array(Schema.String).check(Schema.isMinLength(1), Schema.isMaxLength(50)),
+  /** Optional thread context, filtered through the same visible-text pipeline as summaries. */
+  threadId: Schema.optionalKey(Schema.String),
 });
 export type AiQuestion = typeof AiQuestion.Type;
 export const AI_REWRITE_TONES = ["shorter", "friendlier", "formal", "proofread"] as const;

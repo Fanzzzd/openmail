@@ -53,10 +53,51 @@ msgstr "Add IMAP/SMTP account"
 msgid "Add Outlook account"
 msgstr "Add Outlook account"
 
+#. Proposed replacement for the authored message text only.
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "After"
+msgstr "After"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "AI"
+msgstr "AI"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "AI request failed. Check your settings and try again."
+msgstr "AI request failed. Check your settings and try again."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow"
+msgstr "Allow"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow Anthropic to receive this account's visible mail text for AI. Images and attachments stay on this device. Changes require your approval."
+msgstr "Allow Anthropic to receive this account's visible mail text for AI. Images and attachments stay on this device. Changes require your approval."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Allow mail text to Anthropic"
+msgstr "Allow mail text to Anthropic"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
 msgstr "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Anthropic API key"
+msgstr "Anthropic API key"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "API key saved"
+msgstr "API key saved"
 
 #. js-lingui-explicit-id
 #: app/imap-setup.tsx
@@ -64,10 +105,31 @@ msgid "App password"
 msgstr "App password"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Apply draft change"
+msgstr "Apply draft change"
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+msgid "Approve"
+msgstr "Approve"
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
 msgstr "Archive"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Ask"
+msgstr "Ask"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Ask about this thread"
+msgstr "Ask about this thread"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -85,6 +147,11 @@ msgid "Attachments rejected before sending. Remove blocked or oversized attachme
 msgstr "Attachments rejected before sending. Remove blocked or oversized attachments."
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Automatic summaries"
+msgstr "Automatic summaries"
+
+#. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Background and notifications"
 msgstr "Background and notifications"
@@ -95,9 +162,16 @@ msgid "Background refresh"
 msgstr "Background refresh"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Bcc"
 msgstr "Bcc"
+
+#. Authored message text before the AI edit; excludes signature and quoted history.
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Before"
+msgstr "Before"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -118,6 +192,8 @@ msgstr "Bulleted list"
 #: app/compose.tsx
 #: app/reader.tsx
 #: app/threads.tsx
+#: src/ai-controls.tsx
+#: src/ai-settings.tsx
 #: src/labels.ts
 msgid "Cancel"
 msgstr "Cancel"
@@ -128,6 +204,7 @@ msgid "Cancel queued send"
 msgstr "Cancel queued send"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "Cc"
 msgstr "Cc"
@@ -160,6 +237,7 @@ msgid "Conversation"
 msgstr "Conversation"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/threads.tsx
 #: src/thread-actions.tsx
 msgid "Could not apply action. Try again."
@@ -181,11 +259,13 @@ msgid "Could not load attachments. Try again."
 msgstr "Could not load attachments. Try again."
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/imap-setup.tsx
 #: app/index.tsx
 #: app/mailboxes.tsx
 #: app/reader.tsx
 #: app/threads.tsx
+#: src/ai-settings.tsx
 msgid "Could not load mail. Try again."
 msgstr "Could not load mail. Try again."
 
@@ -201,6 +281,7 @@ msgstr "Could not open the local mail database."
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
+#: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
 msgstr "Could not save settings. Try again."
 
@@ -246,6 +327,16 @@ msgid "Done"
 msgstr "Done"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+msgid "Draft"
+msgstr "Draft"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Draft changed. Generate again."
+msgstr "Draft changed. Generate again."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Draft saved on this device"
 msgstr "Draft saved on this device"
@@ -272,9 +363,19 @@ msgid "Enter valid email addresses."
 msgstr "Enter valid email addresses."
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Formal"
+msgstr "Formal"
+
+#. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Forward"
 msgstr "Forward"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Friendlier"
+msgstr "Friendlier"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -312,6 +413,7 @@ msgid "Italic"
 msgstr "Italic"
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: src/labels.ts
 msgid "Labels"
 msgstr "Labels"
@@ -384,6 +486,11 @@ msgid "Messages"
 msgstr "Messages"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Model"
+msgstr "Model"
+
+#. js-lingui-explicit-id
 #: src/labels.ts
 msgid "Move to"
 msgstr "Move to"
@@ -397,6 +504,11 @@ msgstr "New Inbox mail notifications"
 #: src/background.ts
 msgid "New mail"
 msgstr "New mail"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "New messages"
+msgstr "New messages"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
@@ -465,6 +577,11 @@ msgid "Preview"
 msgstr "Preview"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Question"
+msgstr "Question"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 #: app/settings.tsx
 msgid "Queued to send"
@@ -474,6 +591,12 @@ msgstr "Queued to send"
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Register mobile OAuth clients in app config to add accounts."
+
+#. js-lingui-explicit-id
+#: app/ai-proposals.tsx
+#: src/ai-controls.tsx
+msgid "Reject"
+msgstr "Reject"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -501,9 +624,19 @@ msgid "Remove account"
 msgstr "Remove account"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Remove key"
+msgstr "Remove key"
+
+#. js-lingui-explicit-id
 #: src/thread-actions.tsx
 msgid "Remove label"
 msgstr "Remove label"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Replies and forwards"
+msgstr "Replies and forwards"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -514,6 +647,29 @@ msgstr "Reply"
 #: app/reader.tsx
 msgid "Reply all"
 msgstr "Reply all"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/ai-proposals.tsx
+#: app/settings.tsx
+#: src/ai-controls.tsx
+msgid "Review proposals"
+msgstr "Review proposals"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Rewrite"
+msgstr "Rewrite"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Save key"
+msgstr "Save key"
+
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Save signature"
+msgstr "Save signature"
 
 #. js-lingui-explicit-id
 #: app/threads.tsx
@@ -568,6 +724,11 @@ msgid "Short swipe right"
 msgstr "Short swipe right"
 
 #. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Shorten"
+msgstr "Shorten"
+
+#. js-lingui-explicit-id
 #: app/reader.tsx
 msgid "Show HTML"
 msgstr "Show HTML"
@@ -595,6 +756,11 @@ msgid "Sign in again"
 msgstr "Sign in again"
 
 #. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "Signature"
+msgstr "Signature"
+
+#. js-lingui-explicit-id
 #: app/imap-setup.tsx
 msgid "SMTP port"
 msgstr "SMTP port"
@@ -620,6 +786,11 @@ msgid "Snooze"
 msgstr "Snooze"
 
 #. js-lingui-explicit-id
+#: app/mailboxes.tsx
+msgid "Snoozed"
+msgstr "Snoozed"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Spam"
@@ -633,6 +804,11 @@ msgstr "Star"
 #: app/compose.tsx
 msgid "Subject"
 msgstr "Subject"
+
+#. js-lingui-explicit-id
+#: src/ai-controls.tsx
+msgid "Summarize thread"
+msgstr "Summarize thread"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -650,6 +826,7 @@ msgid "This message may have been sent. Check Sent before sending it again."
 msgstr "This message may have been sent. Check Sent before sending it again."
 
 #. js-lingui-explicit-id
+#: app/ai-proposals.tsx
 #: app/compose.tsx
 msgid "To"
 msgstr "To"
@@ -675,6 +852,11 @@ msgid "Undo"
 msgstr "Undo"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Undo AI edit"
+msgstr "Undo AI edit"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Undo send"
 msgstr "Undo send"
@@ -683,6 +865,11 @@ msgstr "Undo send"
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
 msgstr "Unread Inbox badge"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Unsnooze"
+msgstr "Unsnooze"
 
 #. js-lingui-explicit-id
 #: src/labels.ts

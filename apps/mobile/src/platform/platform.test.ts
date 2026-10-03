@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { Crypto, Effect, Option } from "effect";
-import { Secrets } from "@openmail/core/portable";
+import { Secrets, MODEL_KEY } from "@openmail/core/portable";
 
 const native = vi.hoisted(() => ({
   vault: new Map<string, string>(),
@@ -86,6 +86,22 @@ const config: MobileConfig = {
 };
 
 describe("Expo platform services with native mocks", () => {
+  it("stores the Anthropic API key in device-only SecureStore and removes it on request", async () => {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const secrets = yield* Secrets;
+        yield* secrets.set(MODEL_KEY, "anthropic-private");
+        expect(native.vault.get(secretKey(MODEL_KEY))).toBe("anthropic-private");
+        expect(Option.getOrNull(yield* secrets.get(MODEL_KEY))).toBe("anthropic-private");
+        yield* secrets.remove(MODEL_KEY);
+        expect(Option.isNone(yield* secrets.get(MODEL_KEY))).toBe(true);
+      }).pipe(Effect.provide(secretsLayer)),
+    );
+    expect(native.set).toHaveBeenCalledWith(secretKey(MODEL_KEY), "anthropic-private", {
+      keychainService: "openmail.refresh-tokens",
+      keychainAccessible: "after-first-unlock-device-only",
+    });
+  });
   it("round-trips refresh tokens exclusively through device-only SecureStore", async () => {
     await Effect.runPromise(
       Effect.gen(function* () {

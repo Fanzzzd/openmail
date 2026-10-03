@@ -178,7 +178,7 @@ it("matching-budget exhaustion keeps the final paragraph for search indexing", (
   const css = "p{color:navy}".repeat(1300);
   const input = `<style>${css}</style>${"<p>Shipment reference</p>".repeat(2000)}<p hidden>Last searchable paragraph</p>`;
   const result = visibleHtmlText(input);
-  expect(result).toMatchObject({ hidden: false, flags: ["budget-exceeded"] });
-  expect(result.text.split("\n")).toHaveLength(2001);
+  expect(result).toMatchObject({ hidden: true, flags: ["budget-exceeded"] });
+  expect(result.text.split("\n")).toHaveLength(2000);
   expect(htmlToText(input)).toContain("Last searchable paragraph");
 });

@@ -1,5 +1,6 @@
 import {
   MailboxLive,
+  ModelAnthropic,
   MobileBackgroundStorageLive,
   StoreLive,
   mobileOAuthLayer,
@@ -37,7 +38,7 @@ export function mobileMailboxLayer() {
     FetchHttpClient.layer,
     mobileOAuthLayer(authSession(config)).pipe(Layer.provide(FetchHttpClient.layer)),
   );
-  const services = Layer.mergeAll(StoreLive, mobileProvidersLayer).pipe(
+  const services = Layer.mergeAll(StoreLive, mobileProvidersLayer, ModelAnthropic).pipe(
     Layer.provideMerge(platform),
   );
   return Layer.mergeAll(

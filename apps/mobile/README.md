@@ -69,6 +69,16 @@ Expo 的默认 background-task iOS 实现使用 BGProcessingTask，本项目依�
 
 依据：[BackgroundTask](https://docs.expo.dev/versions/v57.0.0/sdk/background-task/)、[Notifications](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)。
 
+## AI、稍后提醒与签名（slice 58）
+
+AI 默认关闭，逐账户确认后才向 Anthropic 发送可见消息文本。API 密钥仅经 SecureStore 保存，界面只查询是否已配置；模型沿用 core 的选项。会话摘要支持按需生成；自动摘要仅在开启该账户的自动选项后、打开会话时生成，不在后台刷新中调用 AI。询问会话会预先装入同一可见文本管线的上下文；助手可提议归档、Gmail 用户标签和纯文本草稿，用户在手机审批页查看全部会话、真实标签及完整草稿后批准或拒绝。即使共享写权限为直接整理，内置助手仍只创建提议。批准草稿后进入撰写页，发送仍须原有人工确认。
+
+改写、缩短、友好／正式语气只处理签名和引用之前的自写消息文本，显示改写前后内容，用户接受后才修改当前草稿。签名、引用和未改部分的格式保留；接受后消息文本未变化时可撤销 AI 编辑，恢复之前的消息文本与格式。生成后草稿有变化就须重新生成。退出页面、进入后台或关闭账户授权会中断请求。AI 输入移除隐藏文本；HTML 的 CSS 检查超预算时省略消息文本并附上“消息过于复杂，无法用于 AI”的标记，避免将由 HTML 派生的纯文本误当作安全备选。搜索仍保留全文。AI 输入不包含图片、附件或附件派生内容；输出用原生 Text 显示，不自动加载链接或图片。
+
+线程操作提供稍后提醒预设、日期／时间选择和取消提醒，Snoozed 邮箱查询共享提醒表。前台同步前、前台每 30 秒的本地计时器与已启用的后台刷新都唤醒到期提醒，前台离线时也生效；后台离线时也处理本地到期提醒，provider 写入仍留待前台同步。仅为开启该账户通知且有系统权限的账户提交本地提醒，沿用通知内容隐藏设置与会话分组；每次到期单独去重。OS 决定后台任务运行时间，不保证准点提醒。
+
+设置可编辑每个账户用于新邮件及回复／转发的默认签名，复用共享签名库和默认值表。新撰写会话插入纯文本签名，已有草稿保留已存内容。没有新增迁移。
+
 ## 能力（slice 47）
 
 | 能力            | 当前实现与边界                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -83,13 +93,16 @@ Expo 的默认 background-task iOS 实现使用 BGProcessingTask，本项目依�
 | 邮箱列表        | 账户内标签／文件夹的嵌套名称与共享未读数；未缓存邮件不计入本地未读数。                                                                                                                                                                                                                                                                                                                                              |
 | 后台刷新        | 默认关闭；OS 控制时间，约 25 秒 Inbox 增量预算，低电量／受限网络暂停，不保证实时。                                                                                                                                                                                                                                                                                                                                  |
 | 通知与徽标      | 本地通知按账户 opt-in，默认仅显示发件人；未读 Inbox 徽标单独 opt-in。无远程推送。                                                                                                                                                                                                                                                                                                                                   |
-| 仍不支持        | PDF 文本提取、固定地址图片下载、推理和数据库恢复。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。                                                                                                                                                                                                                                                                         |
+| AI              | 逐账户 opt-in 的 Anthropic 摘要、会话助手及撰写帮助；所有整理提议在 app 内审批，改写须接受。自动摘要仅在打开已授权且启用自动摘要的会话时运行；后台不调用 AI。                                                                                                                                                                                                                                                       |
+| 稍后提醒        | 预设、日期／时间选择、取消提醒及 Snoozed 邮箱；同步和后台刷新唤醒，账户通知 opt-in 后提交本地通知。OS 控制执行时间。                                                                                                                                                                                                                                                                                                |
+| 签名            | 共享签名库及每账户的新邮件／回复默认值，手机设置可编辑，撰写插入纯文本。                                                                                                                                                                                                                                                                                                                                            |
+| 仍不支持        | PDF 文本提取、固定地址图片下载、端侧推理和数据库恢复。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。                                                                                                                                                                                                                                                                     |
 
 原生库需重新生成开发构建。自动测试使用分片协议流、SQLite 与原生 API mocks，没有连接真实邮箱；不能证明各服务商兼容性、真机 TLS、分享面板预览或 Metro 打包。依赖依据：[TCP/TLS API](https://github.com/Rapsssito/react-native-tcp-socket)、[Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)。
 
 ## 尚需验证
 
-自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。真机仍需验证 SQLite／Metro、两家 OAuth、五家 IMAP／SMTP 及 Other 服务器、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、附件投递及前后台生命周期。推送须先决定中转服务。
+自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。slice 58 自动测试补充 AI 授权与隐藏文本过滤、提议审批、草稿接受、共享签名和后台提醒去重；未调用真实 Anthropic API。真机仍需验证 SQLite／Metro、两家 OAuth、五家 IMAP／SMTP 及 Other 服务器、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、AI 请求取消与审批界面、提醒到期通知、附件投递及前后台生命周期。推送须先决定中转服务。
 
 版本依据：[SDK 57](https://expo.dev/changelog/sdk-57)、[Expo monorepo](https://docs.expo.dev/guides/monorepos/)、[AuthSession](https://docs.expo.dev/guides/authentication/)。
 

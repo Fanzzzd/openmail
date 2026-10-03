@@ -96,6 +96,12 @@ export const MailboxEvent = Schema.Union([
   Schema.TaggedStruct("SyncProgress", { progress: SyncProgressSchema }),
   /** Newly observed unread inbox mail, after it is committed. First sync is silent. */
   Schema.TaggedStruct("NewMail", { accountId: Schema.String, ids: Schema.Array(Schema.String) }),
+  /** Due reminders restored to Inbox, after the local transaction commits. */
+  Schema.TaggedStruct("SnoozeDue", {
+    accountId: Schema.String,
+    ids: Schema.Array(Schema.String),
+    wokenAt: Schema.Number,
+  }),
   Schema.TaggedStruct("BackfillProgress", {}),
   Schema.TaggedStruct("UpdateSettingsChanged", { resetState: Schema.Boolean }),
   /** Local mail, accounts, proposals or settings changed; views should refetch. */

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Effect, Fiber, Layer, ManagedRuntime } from "effect";
 import {
   Mailbox,
   MobileBackgroundStorageLive,
@@ -98,6 +98,7 @@ vi.mock("./platform", () => ({
 import {
   attachBackgroundRuntime,
   deliverNewMail,
+  notificationEvents,
   runBackgroundRefresh,
   requestLocalPermission,
   setVisibleMailbox,
@@ -366,4 +367,92 @@ it("a badge failure cannot undo successfully saved settings", async () => {
   const { backgroundPreferences } = await import("./background");
   expect(await backgroundPreferences(runtime)).toEqual(prefs);
   expect(native.unregister).not.toHaveBeenCalled();
+});
+
+it("background wakes reminders locally while offline, respects account notification opt-in and never flushes provider writes", async () => {
+  const { mailbox, message } = await seed();
+  await runtime.runPromise(
+    Effect.flatMap(Store, (store) => store.snooze(message.id, Date.now() - 1000)),
+  );
+  expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("SNOOZED");
+  await runBackgroundRefresh();
+  expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("SNOOZED");
+  await saveBackgroundPreferences(runtime, {
+    ...DEFAULT_MOBILE_BACKGROUND,
+    refresh: true,
+    accounts: [message.accountId],
+  });
+  native.online = false;
+  const poll = vi.spyOn(mailbox, "pollInbox");
+  await runBackgroundRefresh();
+  const woken = (await runtime.runPromise(mailbox.thread(message.id)))[0];
+  expect(woken?.labels).toContain("INBOX");
+  expect(woken?.labels).not.toContain("SNOOZED");
+  expect(poll).not.toHaveBeenCalled();
+  expect(native.schedule).toHaveBeenCalledTimes(1);
+  expect(native.schedule).toHaveBeenLastCalledWith(
+    expect.objectContaining({ content: expect.not.objectContaining({ body: expect.any(String) }) }),
+  );
+  await runBackgroundRefresh();
+  expect(native.schedule).toHaveBeenCalledTimes(1);
+});
+it("each snooze wake has its own durable claim, distinct from new-mail claims", async () => {
+  const { message } = await seed();
+  await saveBackgroundPreferences(runtime, {
+    ...DEFAULT_MOBILE_BACKGROUND,
+    accounts: [message.accountId],
+  });
+  await runtime.runPromise(
+    deliverNewMail({ _tag: "NewMail", accountId: message.accountId, ids: [message.id] }),
+  );
+  const wake = {
+    _tag: "SnoozeDue",
+    accountId: message.accountId,
+    ids: [message.id],
+    wokenAt: Date.now(),
+  } as const;
+  await runtime.runPromise(deliverNewMail({ ...wake, ids: [...wake.ids] }));
+  await runtime.runPromise(deliverNewMail({ ...wake, ids: [...wake.ids] }));
+  expect(native.schedule).toHaveBeenCalledTimes(2);
+  await runtime.runPromise(
+    deliverNewMail({ ...wake, ids: [...wake.ids], wokenAt: wake.wokenAt + 1 }),
+  );
+  expect(native.schedule).toHaveBeenCalledTimes(3);
+  await saveBackgroundPreferences(runtime, DEFAULT_MOBILE_BACKGROUND);
+  await runtime.runPromise(
+    deliverNewMail({ ...wake, ids: [...wake.ids], wokenAt: wake.wokenAt + 2 }),
+  );
+  expect(native.schedule).toHaveBeenCalledTimes(3);
+});
+
+it("an open offline app wakes an actual snoozed thread on the foreground timer and notifies once", async () => {
+  const { foregroundReminderTimer } = await import("./workflows");
+  const { mailbox, message } = await seed();
+  native.state = "active";
+  native.online = false;
+  await saveBackgroundPreferences(runtime, {
+    ...DEFAULT_MOBILE_BACKGROUND,
+    accounts: [message.accountId],
+  });
+  await runtime.runPromise(
+    Effect.flatMap(Store, (store) => store.snooze(message.id, Date.now() - 1000)),
+  );
+  const listener = runtime.runFork(notificationEvents(runtime));
+  await runtime.runPromise(Effect.yieldNow);
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const stop = foregroundReminderTimer(
+    () => native.state === "active",
+    () => runtime.runPromise(mailbox.wakeSnoozed()),
+  );
+  try {
+    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.waitFor(() => expect(native.schedule).toHaveBeenCalledTimes(1));
+    expect((await runtime.runPromise(mailbox.thread(message.id)))[0]?.labels).toContain("INBOX");
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(native.schedule).toHaveBeenCalledTimes(1);
+  } finally {
+    stop();
+    await runtime.runPromise(Fiber.interrupt(listener));
+    vi.useRealTimers();
+  }
 });

@@ -3,6 +3,7 @@ import {
   replyRecipients,
   splitAddresses,
   isEmailAddress,
+  messageModelText,
   type ComposeMode,
   type Message,
   type OutgoingMessage,
@@ -53,8 +54,8 @@ export function composeMessage(
       ? `${mode === "forward" ? "Fwd: " : /^re:/i.test(original.subject) ? "" : "Re: "}${original.subject}`
       : "",
     text: original
-      ? `\n\n${original.bodyText
-          .split("\n")
+      ? `\n\n${messageModelText(original.bodyText, original.bodyHtml)
+          .text.split("\n")
           .map((line) => `> ${line}`)
           .join("\n")}`
       : "",
@@ -119,6 +120,7 @@ export function draftWriter(save: (message: OutgoingMessage) => Promise<unknown>
 export function foregroundCoordinator(deps: {
   active: () => boolean;
   online: () => Promise<boolean>;
+  wake?: () => Promise<unknown>;
   sync: () => Promise<unknown>;
   prepare?: () => Promise<void>;
   send: () => Promise<unknown>;
@@ -135,6 +137,7 @@ export function foregroundCoordinator(deps: {
     pending = (async () => {
       if (!deps.active()) return;
       if (sync && deps.prepare) await deps.prepare();
+      if (deps.active()) await deps.wake?.();
       if (!deps.active() || !(await deps.online())) return;
       if (sync) await deps.sync();
       do {
@@ -150,6 +153,14 @@ export function foregroundCoordinator(deps: {
 }
 export const unreadBadge = (counts: Record<string, number>) =>
   Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+/** Reminder work stays local and does not depend on connectivity or send deadlines. */
+export function foregroundReminderTimer(active: () => boolean, wake: () => Promise<unknown>) {
+  const timer = setInterval(() => {
+    if (active()) void wake().catch(() => null);
+  }, 30_000);
+  return () => clearInterval(timer);
+}
 
 export const labelDestinations = (provider: Provider, labels: readonly Label[]) =>
   labels.filter((label) =>

@@ -15,6 +15,7 @@ import { Button } from "../src/controls";
 import { actionLabels } from "../src/labels";
 import { languageNames } from "../src/lifecycle";
 import { BackgroundSettings } from "../src/background-settings";
+import { AiSettings, MobileSignatures } from "../src/ai-settings";
 import { styles } from "../src/styles";
 export default function Settings() {
   const runtime = useMailbox();
@@ -56,6 +57,7 @@ export default function Settings() {
         accounts.value.map((account) => (
           <View key={account.id} style={styles.row}>
             <Text style={styles.subject}>{account.email}</Text>
+            <MobileSignatures account={account} />
             <Button
               label={i18n._({ id: "Sign in again", message: "Sign in again" })}
               onPress={() => {
@@ -119,6 +121,11 @@ export default function Settings() {
           </View>
         ))}
       {accounts.kind === "ready" && <BackgroundSettings accounts={accounts.value} />}
+      {accounts.kind === "ready" && <AiSettings accounts={accounts.value} />}
+      <Button
+        label={i18n._({ id: "Review proposals", message: "Review proposals" })}
+        onPress={() => router.push("/ai-proposals")}
+      />
       {prefs.kind === "ready" && (
         <>
           <Text style={styles.title}>

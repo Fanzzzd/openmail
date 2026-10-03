@@ -792,6 +792,24 @@ export const MailboxLive = (
         flushLater,
         batchMailbox.modifyWithUndo,
         crypto,
+        (ids, wokenAt) =>
+          Effect.gen(function* () {
+            const groups = new Map<string, string[]>();
+            for (const id of ids) {
+              const ref = yield* store.messageRef(id).pipe(Effect.option);
+              if (Option.isNone(ref)) continue;
+              const group = groups.get(ref.value.accountId) ?? [];
+              group.push(id);
+              groups.set(ref.value.accountId, group);
+            }
+            for (const [accountId, due] of groups)
+              yield* emit({
+                _tag: "SnoozeDue",
+                accountId,
+                ids: due,
+                wokenAt,
+              });
+          }),
       );
 
       // Running commands

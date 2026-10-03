@@ -237,3 +237,50 @@ it("prepares foreground credentials offline before connectivity checks and skips
   await work(true);
   expect(calls).toEqual([]);
 });
+
+it("wakes foreground reminders even when offline, before checking connectivity", async () => {
+  const calls: string[] = [];
+  const work = foregroundCoordinator({
+    active: () => true,
+    wake: async () => {
+      calls.push("wake");
+    },
+    online: async () => {
+      calls.push("online");
+      return false;
+    },
+    sync: async () => {
+      calls.push("sync");
+    },
+    send: async () => {
+      calls.push("send");
+    },
+  });
+  await work(false);
+  expect(calls).toEqual(["wake", "online"]);
+});
+
+it("foreground reminders keep waking every 30 seconds offline, stop in the background and clean up their timer", async () => {
+  const { foregroundReminderTimer } = await import("./workflows");
+  vi.useFakeTimers();
+  let active = true;
+  const wake = vi.fn(async () => null);
+  const stop = foregroundReminderTimer(() => active, wake);
+  try {
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(wake).toHaveBeenCalledTimes(2);
+    active = false;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(wake).toHaveBeenCalledTimes(2);
+    active = true;
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(wake).toHaveBeenCalledTimes(3);
+    stop();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(wake).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    stop();
+    vi.useRealTimers();
+  }
+});

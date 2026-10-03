@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
+import { ThreadAi } from "../src/ai-controls";
 import { handleReaderNavigation, readerDocument, type ReaderLink } from "../src/reader-html";
 import { useMessageInlineImages } from "../src/inline-images";
 import { shareReceivedAttachment } from "../src/received-attachments";
@@ -247,6 +248,9 @@ export default function Reader() {
         ))}
       </View>
       {menu && <ThreadMenu ids={[messageId]} accountId={accountId} close={() => setMenu(false)} />}
+      {messages.kind === "ready" && (
+        <ThreadAi key={messageId} accountId={accountId} messageId={messageId} />
+      )}
       {messages.kind === "loading" && <ActivityIndicator />}
       {(failed || messages.kind === "failed") && (
         <Text accessibilityRole="alert" style={styles.error}>

@@ -93,7 +93,7 @@ export function charsetOf(contentType: string | undefined): string | undefined {
 
 /** Last-resort plain text for HTML-only mail, so search and the CLI still see the words. */
 export function htmlToText(html: string): string {
-  return visibleHtmlText(html).text;
+  return visibleHtmlText(html, "index-full-text").text;
 }
 
 const META_CHARSET = '<meta http-equiv="Content-Type" content="text/html; charset=utf-8">';

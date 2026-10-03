@@ -85,6 +85,7 @@ export * from "./signatures.js";
 
 export * from "./categories.js";
 export * from "./ai.js";
+export { messageModelText } from "./visible-text.js";
 export {
   Model,
   ModelAnthropic,
