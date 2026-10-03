@@ -65,4 +65,10 @@ Node 专用实现集中在 `packages/core/src/platform/node/`。手机从 `@open
 
 已接入 Expo、React Native、op-sqlite、SecureStore、系统浏览器 PKCE 授权、账户／邮箱／会话列表、分页、受限 HTML 阅读、下拉同步及十种语言。根 `build` 只编译语言目录和检查类型；自动测试使用 Node SQLite shim 与原生服务 mocks。
 
-完成真机基础验证后，补发送与附件界面、可移植 MIME composer、附件缓存、离线错误和前后台生命周期。IMAP/SMTP、PDF、固定地址图片网络、端侧推理及数据库恢复需要对应移动 adapter。后台刷新与推送须按上面的推送决策继续。手机完整能力表与配置只在[手机端说明](../apps/mobile/README.md)维护。
+### 手机邮件流程（slice 44 已完成）
+
+已接入整理与撤销、多选、四种可配置滑动、长按／VoiceOver 操作、回复／转发／富文本撰写、联系人建议、文件与照片附件、本地草稿队列、持久离线发送与撤销发送、Gmail 操作符搜索和服务器回退、前台／下拉同步、账户与阅读／语言设置。发送复用 core 的 user/app 命令；没有新增迁移、OAuth scopes、后台 fetch 或推送。
+
+自动测试覆盖屏幕逻辑、原生模块 mocks、两家 provider 的共享 core 命令、portable MIME、离线保留、失败后人工检查和数据库重开。未运行模拟器、Metro 或 EAS。仍需真机验证基础适配器、手势／无障碍、picker、附件投递及生命周期；阅读附件缓存、IMAP/SMTP、PDF、固定地址图片网络、端侧推理及数据库恢复待对应移动 adapter。后台刷新与推送按上面的推送决策继续。手机完整能力表、原生权限限制及配置只在[手机端说明](../apps/mobile/README.md)维护。
+
+slice 44 修正：草稿只在实际编辑后自动保存，提供草稿入口与丢弃；邮件数据库从 cache 整目录迁入持久存储并排除 iOS 备份；照片重编码去除 EXIF／GPS，清理 picker 临时文件；入队前执行共享附件策略与累计大小检查，区分发送前拒绝与投递不确定。撤销发送与整理提示分开，重开富文本草稿保留样式，Outlook 移动列表不含 category、Drafts 或 Sent。暂时移除 icon 徽标与通知模块，屏蔽相机、麦克风、启动广播及通知权限。

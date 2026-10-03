@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
+import { Button } from "../src/controls";
 import { styles } from "../src/styles";
 
 export default function Accounts() {
@@ -55,6 +56,10 @@ export default function Accounts() {
   };
   return (
     <View style={styles.screen}>
+      <Button
+        label={i18n._({ id: "Settings", message: "Settings" })}
+        onPress={() => router.push("/settings")}
+      />
       <FlatList
         data={accounts.kind === "ready" ? accounts.value : []}
         keyExtractor={(account) => account.id}

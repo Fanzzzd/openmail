@@ -21,6 +21,12 @@ const config: ExpoConfig = {
   android: {
     package: androidPackage,
     allowBackup: false,
+    blockedPermissions: [
+      "android.permission.CAMERA",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+      "android.permission.POST_NOTIFICATIONS",
+    ],
     intentFilters: mobileOAuth.microsoftAndroidRedirect
       ? [
           {
@@ -37,7 +43,13 @@ const config: ExpoConfig = {
         ]
       : [],
   },
-  plugins: ["expo-router", "expo-secure-store", "expo-localization", "expo-web-browser"],
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-localization",
+    "expo-web-browser",
+    ["expo-image-picker", { cameraPermission: false, microphonePermission: false }],
+  ],
   experiments: { autolinkingModuleResolution: true },
   extra: { mobileOAuth },
 };

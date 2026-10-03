@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { useMailbox, useMailboxQuery } from "../src/mailbox";
+import { Button } from "../src/controls";
 import { styles } from "../src/styles";
 import { mailboxName } from "../src/mailbox-name";
 
@@ -36,8 +37,18 @@ export default function Mailboxes() {
   };
   return (
     <View style={styles.screen}>
+      <Button
+        label={i18n._({ id: "Compose", message: "Compose" })}
+        onPress={() => router.push({ pathname: "/compose", params: { accountId, mode: "new" } })}
+      />
+      <Button
+        label={i18n._({ id: "Drafts", message: "Drafts" })}
+        onPress={() =>
+          router.push({ pathname: "/threads", params: { accountId, label: "drafts" } })
+        }
+      />
       <FlatList
-        data={labels.kind === "ready" ? labels.value : []}
+        data={labels.kind === "ready" ? labels.value.filter((item) => item.id !== "DRAFT") : []}
         keyExtractor={(label) => label.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
         renderItem={({ item }) => (

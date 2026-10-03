@@ -94,6 +94,8 @@ import {
   NotFound,
   PermanentError,
 } from "./errors.js";
+import { mobileAttachmentProblem } from "./mobile-outbox.js";
+import { isEmailAddress } from "./recipients.js";
 import { Mailbox, type MailboxEvent, type SyncState } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
 import {
@@ -186,6 +188,8 @@ export interface MailboxOptions {
    * returns after the push was tried.
    */
   backgroundFlush?: boolean;
+  /** Mobile retains draft attachments locally until the person sends. */
+  localDraftQueue?: boolean;
 }
 
 // Merge queued intent without running local-action reminder side effects.
@@ -475,6 +479,7 @@ export const MailboxLive = (
         for (let index = 0; index < queued.length; index++) {
           const pending = queued[index];
           if (!pending) continue;
+          if (options.localDraftQueue && pending.op.kind === "saveDraft") continue;
           const key = `${pending.accountId}/${pending.providerId}`;
           if (blocked.has(key) || result.reauth.includes(pending.accountId)) continue;
           const account = yield* store.getAccount(pending.accountId).pipe(Effect.option);
@@ -562,8 +567,9 @@ export const MailboxLive = (
         ),
         Effect.catchCause((cause) => Effect.logWarning("flush failed", cause)),
       );
-      const flushLater =
-        options.backgroundFlush === false
+      const flushLater = options.localDraftQueue
+        ? Effect.void
+        : options.backgroundFlush === false
           ? flushNow
           : FiberSet.run(background, flushNow).pipe(Effect.asVoid);
 
@@ -807,6 +813,8 @@ export const MailboxLive = (
           }
           case "removeAccount":
             yield* store.getAccount(command.accountId);
+            for (const item of yield* store.queuedSends)
+              if (item.accountId === command.accountId) yield* store.deleteQueuedSend(item.id);
             attachmentEpoch++;
             idle?.remove(command.accountId);
             if (diskAttachments)
@@ -2059,7 +2067,83 @@ export const MailboxLive = (
             ? Effect.andThen(ai.autoTriage(event.ids), ai.autoSummaries(event.ids))
             : Effect.void,
         ).pipe(Effect.forkScoped);
+      const outboxLock = yield* Semaphore.make(1);
+      const queueSend = Effect.fn("Mailbox.queueSend")(function* (input: DraftInput, due: number) {
+        if (
+          !Number.isFinite(due) ||
+          [...input.message.to, ...input.message.cc, ...input.message.bcc].some(
+            (recipient) => !isEmailAddress(recipient.address),
+          ) ||
+          input.message.to.length + input.message.cc.length + input.message.bcc.length === 0
+        )
+          return yield* new InvalidInput({
+            message: "A queued message needs recipients and a valid send time",
+          });
+        const account = yield* store.getAccount(input.accountId);
+        if (mobileAttachmentProblem(account.provider, input.message.attachments))
+          return yield* new InvalidInput({ message: "Attachments rejected before sending" });
+        if ((yield* store.queuedSends).some((item) => item.id === input.id))
+          return yield* new InvalidInput({ message: "This draft already has a queued send" });
+        yield* store.transaction(
+          Effect.gen(function* () {
+            const saved = yield* persistDraft(input, true);
+            yield* store.putQueuedSend({
+              id: input.id,
+              accountId: input.accountId,
+              message: saved.message,
+              due,
+              status: "waiting",
+            });
+          }),
+        );
+        return yield* changed;
+      }, outboxLock.withPermits(1));
+      const cancelQueuedSend = (id: string) =>
+        Effect.gen(function* () {
+          const item = (yield* store.queuedSends).find((entry) => entry.id === id);
+          if (!item) return false;
+          yield* store.deleteQueuedSend(id);
+          yield* changed;
+          return true;
+        }).pipe(outboxLock.withPermits(1));
+      const flushQueuedSends = (canSend: () => boolean = () => true) =>
+        Effect.gen(function* () {
+          const now = yield* Clock.currentTimeMillis;
+          for (const item of yield* store.queuedSends) {
+            if (!canSend()) break;
+            if (item.status !== "waiting" || item.due > now) continue;
+            const account = yield* store.getAccount(item.accountId).pipe(Effect.option);
+            if (
+              Option.isNone(account) ||
+              mobileAttachmentProblem(account.value.provider, item.message.attachments)
+            ) {
+              yield* store.putQueuedSend({ ...item, status: "rejected" });
+              yield* changed;
+              continue;
+            }
+            yield* store.putQueuedSend({ ...item, status: "sending" });
+            const delivered = yield* perform(
+              { kind: "send", accountId: item.accountId, draftId: item.id, message: item.message },
+              { kind: "user", surface: "app" },
+            ).pipe(Effect.result);
+            yield* delivered._tag === "Success"
+              ? store.deleteQueuedSend(item.id)
+              : store.putQueuedSend({
+                  ...item,
+                  status:
+                    delivered.failure._tag === "InvalidInput" ||
+                    delivered.failure._tag === "NotFound"
+                      ? "rejected"
+                      : "failed",
+                });
+            yield* changed;
+          }
+        }).pipe(outboxLock.withPermits(1));
       mailbox = Mailbox.of({
+        queuedSends: store.queuedSends,
+        queueSend,
+        cancelQueuedSend,
+        flushQueuedSends,
         ...ai,
         setSyncPaused: (paused) =>
           Effect.sync(() => {
@@ -2301,7 +2385,10 @@ export const MailboxLive = (
         pendingSendCount: Effect.sync(() => pendingSends),
         saveDraft,
         recoverDraft,
-        discardDraft,
+        discardDraft: (id) =>
+          store
+            .deleteQueuedSend(id)
+            .pipe(Effect.andThen(discardDraft(id)), outboxLock.withPermits(1)),
 
         indexingProgress: Effect.gen(function* () {
           const enabled = yield* store.semantics.enabled;

@@ -1,6 +1,6 @@
 import PostalMime, { type Address } from "postal-mime";
-import { Effect, Layer } from "effect";
-import { PermanentError } from "../../errors.js";
+import { Layer } from "effect";
+import { buildMobileMime } from "./compose.js";
 import { MailCodec, type MimeAddresses, type MimeMessage } from "../mail-codec.js";
 
 const addresses = (value: readonly Address[]): MimeAddresses => ({
@@ -50,9 +50,8 @@ export async function parseMobileMime(raw: Uint8Array): Promise<MimeMessage> {
     }),
   };
 }
-/** Reader MIME is portable. Sending stays disabled until a mobile composer exists. */
+/** Portable reader and send MIME, with the shared compose transport sanitizer. */
 export const mobileMailCodecLayer = Layer.succeed(MailCodec, {
   parse: parseMobileMime,
-  build: () =>
-    Effect.fail(new PermanentError({ message: "Composing MIME is unavailable on mobile" })),
+  build: buildMobileMime,
 });

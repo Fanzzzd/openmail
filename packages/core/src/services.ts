@@ -337,6 +337,10 @@ export class Store extends Context.Service<
       typeof import("./undo-journal.js").makeUndoStore
     >["deleteUndoJournal"];
 
+    readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
+    putQueuedSend(item: import("./mobile-outbox.js").QueuedSend): Effect.Effect<void>;
+    deleteQueuedSend(id: string): Effect.Effect<void>;
+
     // Outgoing change queue
     enqueueOp(accountId: string, providerId: string, op: QueuedOp): Effect.Effect<void>;
     readonly listPendingOps: Effect.Effect<PendingOp[]>;

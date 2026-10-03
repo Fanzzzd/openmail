@@ -1,3 +1,4 @@
+import { makeOutboxStore } from "./mobile-outbox.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { makeSignatureStore } from "./store-signatures.js";
 import { signatureDefault } from "./signatures.js";
@@ -313,7 +314,9 @@ export function makeComposeStore(
 
   // Preferences
 
-  const prefs = all(PrefRow)(sql`SELECT key, value_json FROM prefs`).pipe(
+  const prefs = all(PrefRow)(
+    sql`SELECT key, value_json FROM prefs WHERE key NOT LIKE 'mobile-outbox:%'`,
+  ).pipe(
     Effect.map((rows): Prefs => {
       const stored = new Map(rows.map((r) => [r.key, r.value_json]));
       const f = Prefs.fields;
@@ -439,6 +442,7 @@ export function makeComposeStore(
           d.specialFolderBadges,
         ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
+        remoteImages: pref(Schema.Boolean, stored.get("remoteImages"), false),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         replyFrom: pref(f.replyFrom, stored.get("replyFrom"), d.replyFrom),
         quoteSelection: pref(f.quoteSelection, stored.get("quoteSelection"), d.quoteSelection),
@@ -736,6 +740,7 @@ export function makeComposeStore(
     deleteDraft,
     enqueueDraftSave,
     dropSyncedDrafts,
+    ...makeOutboxStore(sql),
     prefs,
     setPrefs,
     signatures,

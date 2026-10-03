@@ -9,14 +9,28 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
-#: app/threads.tsx
+#: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "(Bez předmětu)"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "{seconds} seconds"
+msgstr "{seconds} sekund"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
+#: app/settings.tsx
 msgid "Accounts"
 msgstr "Účty"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+#: app/threads.tsx
+#: src/thread-actions.tsx
+#: src/thread-row.tsx
+msgid "Actions"
+msgstr "Akce"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -29,14 +43,90 @@ msgid "Add Outlook account"
 msgstr "Přidat účet Outlook"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
 msgstr "Archivovat"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attach file"
+msgstr "Přiložit soubor"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attach photo"
+msgstr "Přiložit fotografii"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
+msgstr "Přílohy byly odmítnuty před odesláním. Odeberte blokované nebo příliš velké přílohy."
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bcc"
+msgstr "Skrytá kopie"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Block remote images by default"
+msgstr "Ve výchozím stavu blokovat vzdálené obrázky"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bold"
+msgstr "Tučné"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bulleted list"
+msgstr "Seznam s odrážkami"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+#: app/threads.tsx
+#: src/labels.ts
+msgid "Cancel"
+msgstr "Zrušit"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Cancel queued send"
+msgstr "Zrušit odeslání ve frontě"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Cc"
+msgstr "Kopie"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Choose date"
+msgstr "Vybrat datum"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Choose time"
+msgstr "Vybrat čas"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/mailboxes.tsx
+#: app/threads.tsx
+msgid "Compose"
+msgstr "Nová zpráva"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
 msgstr "Konverzace"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+#: src/thread-actions.tsx
+msgid "Could not apply action. Try again."
+msgstr "Akci se nepodařilo provést. Zkuste to znovu."
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -52,9 +142,71 @@ msgid "Could not open the local mail database."
 msgstr "Místní databázi pošty se nepodařilo otevřít."
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Could not save settings. Try again."
+msgstr "Nastavení se nepodařilo uložit. Zkuste to znovu."
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Could not save, attach or queue mail. Try again."
+msgstr "Uložení, přiložení nebo zařazení zprávy do fronty selhalo. Zkuste to znovu."
+
+#. js-lingui-explicit-id
+#: src/undo.tsx
+msgid "Could not undo. Try again."
+msgstr "Akci se nepodařilo vrátit. Zkuste to znovu."
+
+#. Action that moves messages to the Trash mailbox, not the mailbox name.
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Delete"
+msgstr "Smazat"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Delivery uncertain. Check Sent before trying again."
+msgstr "Výsledek odeslání není jistý. Před dalším pokusem zkontrolujte odeslanou poštu."
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Disable account"
+msgstr "Zakázat účet"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Discard"
+msgstr "Zahodit"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Done"
+msgstr "Hotovo"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Draft saved on this device"
+msgstr "Koncept uložen v tomto zařízení"
+
+#. js-lingui-explicit-id
+#: app/mailboxes.tsx
 #: src/mailbox-name.ts
 msgid "Drafts"
 msgstr "Koncepty"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Enable account"
+msgstr "Povolit účet"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Enter valid email addresses."
+msgstr "Zadejte platné e-mailové adresy."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Forward"
+msgstr "Přeposlat"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -62,9 +214,44 @@ msgid "Inbox"
 msgstr "Doručená pošta"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Italic"
+msgstr "kurzíva"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Labels"
+msgstr "Štítky"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Language"
+msgstr "Jazyk"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Later today"
+msgstr "Později dnes"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Load remote images by default"
+msgstr "Ve výchozím stavu načítat vzdálené obrázky"
+
+#. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Načítání…"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Long swipe left"
+msgstr "Dlouhé přejetí doleva"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Long swipe right"
+msgstr "Dlouhé přejetí doprava"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -72,9 +259,35 @@ msgid "Mailboxes"
 msgstr "Schránky"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Mark as read"
+msgstr "Označit jako přečtené"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Mark as unread"
+msgstr "Označit jako nepřečtené"
+
+#. Plain message body text field.
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Message text"
+msgstr "Text zprávy"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Messages"
 msgstr "Zprávy"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Move to"
+msgstr "Přesunout do"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Next week"
+msgstr "Příští týden"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -98,14 +311,127 @@ msgid "No messages"
 msgstr "Žádné zprávy"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
+msgid "None"
+msgstr "Žádné"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Outbox"
+msgstr "Pošta k odeslání"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Plain text"
+msgstr "Prostý text"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Preview"
+msgstr "Náhled"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+#: app/settings.tsx
+msgid "Queued to send"
+msgstr "Zařazeno k odeslání"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Chcete-li přidat účty, zaregistrujte mobilní klienty OAuth v konfiguraci aplikace."
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Rejected before sending. Edit the draft and try again."
+msgstr "Odmítnuto před odesláním. Upravte koncept a zkuste to znovu."
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remote images"
+msgstr "Vzdálené obrázky"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remove"
+msgstr "Odebrat"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Remove {filename}"
+msgstr "Odebrat {filename}"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remove account"
+msgstr "Odebrat účet"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Remove label"
+msgstr "Odstraňte štítek"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Reply"
+msgstr "Odpovědět"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Reply all"
+msgstr "Odpovědět všem"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Search mail"
+msgstr "Hledat v poště"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Search server"
+msgstr "Hledat na serveru"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+#: src/labels.ts
+msgid "Select"
+msgstr "Vybrat"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Send"
+msgstr "Odeslat"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Send message?"
+msgstr "Odeslat zprávu?"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Sent"
 msgstr "Odeslané"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Server search may be incomplete or omit unsupported operators."
+msgstr "Hledání na serveru může být neúplné nebo vynechat nepodporované operátory."
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/index.tsx
+msgid "Settings"
+msgstr "Nastavení"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Short swipe left"
+msgstr "Krátké přejetí doleva"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Short swipe right"
+msgstr "Krátké přejetí doprava"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -119,14 +445,55 @@ msgid "Show message text"
 msgstr "Zobrazit text zprávy"
 
 #. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Showing server search results."
+msgstr "Zobrazují se výsledky hledání na serveru."
+
+#. js-lingui-explicit-id
 #: app/index.tsx
+#: app/settings.tsx
 msgid "Sign in again"
 msgstr "Znovu se přihlaste"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Snooze"
+msgstr "Odložit"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Nevyžádaná pošta"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Star"
+msgstr "Označit hvězdičkou"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Subject"
+msgstr "Předmět"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Swipe actions"
+msgstr "Akce přejetí prstem"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "System language"
+msgstr "Jazyk systému"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "To"
+msgstr "Komu"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Tomorrow"
+msgstr "Zítra"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -137,3 +504,18 @@ msgstr "Koš"
 #: app/threads.tsx
 msgid "Try again"
 msgstr "Zkusit znovu"
+
+#. js-lingui-explicit-id
+#: src/undo.tsx
+msgid "Undo"
+msgstr "Vrátit zpět"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Undo send"
+msgstr "Vrátit odeslání"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Unstar"
+msgstr "Odebrat hvězdičku"

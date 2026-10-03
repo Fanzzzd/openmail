@@ -21,6 +21,10 @@ const notUsed = (name: string) => Effect.die(`Mailbox.${name} is not used in thi
 
 function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
   const base: Service = {
+    queuedSends: notUsed("queuedSends"),
+    queueSend: () => notUsed("queueSend"),
+    cancelQueuedSend: () => notUsed("cancelQueuedSend"),
+    flushQueuedSends: () => notUsed("flushQueuedSends"),
     composeAi: () => Stream.never,
     aiTriage: () => Effect.never,
     decideAiTriage: () => Effect.never,

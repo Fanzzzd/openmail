@@ -15,3 +15,8 @@ const catalogs = { en, "zh-CN": zh, cs, nl, fr, de, it, ja, ru, es };
 const language = getLocales()[0].languageCode ?? "en";
 const locale = language === "zh" ? "zh-CN" : language in catalogs ? language : "en";
 export const i18n = setupI18n({ locale, messages: catalogs });
+
+export function activateLanguage(preferredLanguage: string) {
+  const target = preferredLanguage === "system" ? locale : preferredLanguage;
+  if (target in catalogs && i18n.locale !== target) i18n.activate(target);
+}

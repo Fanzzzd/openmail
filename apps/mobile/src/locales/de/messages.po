@@ -9,14 +9,28 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
-#: app/threads.tsx
+#: src/thread-row.tsx
 msgid "(No subject)"
 msgstr "(Ohne Betreff)"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "{seconds} seconds"
+msgstr "{seconds} Sekunden"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
+#: app/settings.tsx
 msgid "Accounts"
 msgstr "Accounts"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+#: app/threads.tsx
+#: src/thread-actions.tsx
+#: src/thread-row.tsx
+msgid "Actions"
+msgstr "Aktionen"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -29,14 +43,90 @@ msgid "Add Outlook account"
 msgstr "Outlook-Konto hinzufügen"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
 #: src/mailbox-name.ts
 msgid "Archive"
 msgstr "Archivieren"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attach file"
+msgstr "Datei anhängen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attach photo"
+msgstr "Foto anhängen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Attachments rejected before sending. Remove blocked or oversized attachments."
+msgstr "Anhänge vor dem Senden abgelehnt. Entfernen Sie blockierte oder zu große Anhänge."
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bcc"
+msgstr "Blindkopie"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Block remote images by default"
+msgstr "Externe Bilder standardmäßig blockieren"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bold"
+msgstr "Fett"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Bulleted list"
+msgstr "Liste mit Aufzählungszeichen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+#: app/threads.tsx
+#: src/labels.ts
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Cancel queued send"
+msgstr "Versand in Warteschlange abbrechen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Cc"
+msgstr "Kopie"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Choose date"
+msgstr "Datum wählen"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Choose time"
+msgstr "Uhrzeit wählen"
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/mailboxes.tsx
+#: app/threads.tsx
+msgid "Compose"
+msgstr "Neue Nachricht"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Conversation"
 msgstr "Konversation"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+#: src/thread-actions.tsx
+msgid "Could not apply action. Try again."
+msgstr "Aktion fehlgeschlagen. Erneut versuchen."
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -52,9 +142,71 @@ msgid "Could not open the local mail database."
 msgstr "Die lokale E-Mail-Datenbank konnte nicht geöffnet werden."
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Could not save settings. Try again."
+msgstr "Einstellungen konnten nicht gespeichert werden. Erneut versuchen."
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Could not save, attach or queue mail. Try again."
+msgstr "Speichern, Anhängen oder Einreihen der Nachricht fehlgeschlagen. Erneut versuchen."
+
+#. js-lingui-explicit-id
+#: src/undo.tsx
+msgid "Could not undo. Try again."
+msgstr "Rückgängig machen fehlgeschlagen. Erneut versuchen."
+
+#. Action that moves messages to the Trash mailbox, not the mailbox name.
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Delete"
+msgstr "Löschen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Delivery uncertain. Check Sent before trying again."
+msgstr "Versand unklar. Vor einem erneuten Versuch Gesendet prüfen."
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Disable account"
+msgstr "Konto deaktivieren"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Discard"
+msgstr "Verwerfen"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Done"
+msgstr "Fertig"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Draft saved on this device"
+msgstr "Entwurf auf diesem Gerät gespeichert"
+
+#. js-lingui-explicit-id
+#: app/mailboxes.tsx
 #: src/mailbox-name.ts
 msgid "Drafts"
 msgstr "Entwürfe"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Enable account"
+msgstr "Konto aktivieren"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Enter valid email addresses."
+msgstr "Gültige E-Mail-Adressen eingeben."
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Forward"
+msgstr "Weiterleiten"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -62,9 +214,44 @@ msgid "Inbox"
 msgstr "Posteingang"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Italic"
+msgstr "Kursiv"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Labels"
+msgstr "Labels"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Language"
+msgstr "Sprache"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Later today"
+msgstr "Später heute"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Load remote images by default"
+msgstr "Externe Bilder standardmäßig laden"
+
+#. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Loading…"
 msgstr "Laden…"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Long swipe left"
+msgstr "Langes Wischen nach links"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Long swipe right"
+msgstr "Langes Wischen nach rechts"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -72,9 +259,35 @@ msgid "Mailboxes"
 msgstr "Postfächer"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Mark as read"
+msgstr "Als gelesen markieren"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+#. Plain message body text field.
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Message text"
+msgstr "Nachrichtentext"
+
+#. js-lingui-explicit-id
 #: app/_layout.tsx
 msgid "Messages"
 msgstr "Nachrichten"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Move to"
+msgstr "Verschieben nach"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Next week"
+msgstr "Nächste Woche"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -98,14 +311,127 @@ msgid "No messages"
 msgstr "Keine Nachrichten"
 
 #. js-lingui-explicit-id
+#: src/labels.ts
+msgid "None"
+msgstr "Keine"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Outbox"
+msgstr "Postausgang"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Plain text"
+msgstr "Reiner Text"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Preview"
+msgstr "Vorschau"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+#: app/settings.tsx
+msgid "Queued to send"
+msgstr "Zum Senden eingereiht"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Zum Hinzufügen von Konten mobile OAuth-Clients in der App-Konfiguration registrieren."
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Rejected before sending. Edit the draft and try again."
+msgstr "Vor dem Senden abgelehnt. Bearbeiten Sie den Entwurf und versuchen Sie es erneut."
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remote images"
+msgstr "Externe Bilder"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remove"
+msgstr "Entfernen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Remove {filename}"
+msgstr "{filename} entfernen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Remove account"
+msgstr "Account entfernen"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Remove label"
+msgstr "Label entfernen"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Reply"
+msgstr "Antworten"
+
+#. js-lingui-explicit-id
+#: app/reader.tsx
+msgid "Reply all"
+msgstr "Allen antworten"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Search mail"
+msgstr "E-Mails durchsuchen"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Search server"
+msgstr "Auf dem Server suchen"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+#: src/labels.ts
+msgid "Select"
+msgstr "Auswählen"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Send"
+msgstr "Senden"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Send message?"
+msgstr "Nachricht senden?"
+
+#. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Sent"
 msgstr "Gesendet"
+
+#. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Server search may be incomplete or omit unsupported operators."
+msgstr "Die Serversuche kann unvollständig sein oder nicht unterstützte Operatoren auslassen."
+
+#. js-lingui-explicit-id
+#: app/_layout.tsx
+#: app/index.tsx
+msgid "Settings"
+msgstr "Einstellungen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Short swipe left"
+msgstr "Kurzes Wischen nach links"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Short swipe right"
+msgstr "Kurzes Wischen nach rechts"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
@@ -119,14 +445,55 @@ msgid "Show message text"
 msgstr "Nachrichtentext anzeigen"
 
 #. js-lingui-explicit-id
+#: app/threads.tsx
+msgid "Showing server search results."
+msgstr "Suchergebnisse des Servers werden angezeigt."
+
+#. js-lingui-explicit-id
 #: app/index.tsx
+#: app/settings.tsx
 msgid "Sign in again"
 msgstr "Erneut anmelden"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Snooze"
+msgstr "Zurückstellen"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
 msgid "Spam"
 msgstr "Werbung"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Star"
+msgstr "Mit Stern markieren"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Subject"
+msgstr "Betreff"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Swipe actions"
+msgstr "Wischaktionen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "System language"
+msgstr "Systemsprache"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "To"
+msgstr "An"
+
+#. js-lingui-explicit-id
+#: src/thread-actions.tsx
+msgid "Tomorrow"
+msgstr "Morgen"
 
 #. js-lingui-explicit-id
 #: src/mailbox-name.ts
@@ -137,3 +504,18 @@ msgstr "Papierkorb"
 #: app/threads.tsx
 msgid "Try again"
 msgstr "Erneut versuchen"
+
+#. js-lingui-explicit-id
+#: src/undo.tsx
+msgid "Undo"
+msgstr "Widerrufen"
+
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Undo send"
+msgstr "Senden rückgängig machen"
+
+#. js-lingui-explicit-id
+#: src/labels.ts
+msgid "Unstar"
+msgstr "Stern entfernen"

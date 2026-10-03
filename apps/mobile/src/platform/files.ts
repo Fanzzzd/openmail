@@ -1,20 +1,36 @@
 import { AppPaths } from "@openmail/core/portable";
 import { Effect, FileSystem, Layer, Path, PlatformError } from "effect";
 import { Directory, File, Paths } from "expo-file-system";
+import { excludeMailBackup } from "./backup";
 import { randomUUID } from "expo-crypto";
 
+const persistentDirectory = () => new Directory(Paths.document, "openmail-data");
 export const dataDirectory = () =>
-  decodeURIComponent(new Directory(Paths.cache, "openmail").uri.replace(/^file:\/\//, ""));
+  decodeURIComponent(persistentDirectory().uri.replace(/^file:\/\//, ""));
 
-/** Move pre-fix Documents data out of backups before opening any database connection. */
+/** Whole-directory moves preserve DB/WAL/SHM together before SQLite opens. */
 export function prepareMailDirectory(): string {
+  const target = persistentDirectory();
   const cache = new Directory(Paths.cache, "openmail");
   const legacy = new Directory(Paths.document, "openmail");
-  if (legacy.exists) {
-    if (cache.exists) legacy.moveSync(new Directory(cache, `legacy-${randomUUID()}`));
-    else legacy.moveSync(cache);
+  if (target.exists && !new File(target, "mail.db").exists && target.list().length === 0)
+    target.delete();
+  if (!target.exists) {
+    const source = cache.exists ? cache : legacy.exists ? legacy : null;
+    if (source) {
+      excludeMailBackup(source.uri);
+      source.moveSync(target);
+    } else target.create({ intermediates: true, idempotent: true });
   }
-  cache.create({ intermediates: true, idempotent: true });
+  excludeMailBackup(target.uri);
+  for (const origin of ["cache", "documents"] as const) {
+    // moveSync mutates its source handle; recreate it to check the original location.
+    const remaining = new Directory(origin === "cache" ? Paths.cache : Paths.document, "openmail");
+    if (remaining.exists) {
+      excludeMailBackup(remaining.uri);
+      remaining.moveSync(new Directory(target, `legacy-${origin}-${randomUUID()}`));
+    }
+  }
   return dataDirectory();
 }
 

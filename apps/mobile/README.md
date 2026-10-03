@@ -43,22 +43,39 @@ Effect `SqlClient` 使用同一连接、SQLite compiler、`BEGIN IMMEDIATE`、sa
 
 OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原生 scheme 回调。token 交换经 fetch HttpClient；错误正文不返回界面。Outlook 只用 `consumers`。Expo Go 无法提供自定义原生模块和这些回调，后续测试须创建开发构建；本切片没有运行真实授权、模拟器、Metro 或 EAS。
 
-## 当前界面与范围
+## 邮件操作（slice 44）
 
-- 账户列表，添加 Gmail/个人 Outlook 账户。配置缺失时禁用添加。
-- 邮箱列表、会话列表，keyset 使用 `before` 和 `beforeId`，下拉刷新经过 core 同步。
-- 会话阅读先显示消息文本；HTML WebView 关闭 JavaScript、DOM storage、文件访问、共享 cookie 和 WebView 导航，验证的链接交给系统应用；沿用桌面资源 CSP 并禁用表单和 base URL，远程资源默认阻断。
-- Lingui 包含 en、zh-CN、cs、nl、fr、de、it、ja、ru、es。相同文案复用桌面译文；新增消息文本按钮有提取注释。修改后执行 `pnpm --filter @openmail/mobile i18n:extract`、补齐译文，再执行 `i18n:compile`。测试检查目录同步与漏译。
+界面保持单列，按账户／邮箱、会话列表、阅读三层导航；撰写用独立 modal，设置从账户页进入。
 
-Gmail/Outlook 复用 core 的 fetch provider；IMAP/SMTP 明确返回不支持。PostalMime 解析原始 MIME，输入限制为 25 MiB，嵌套和 header 有额外限制。发送、附件磁盘缓存、PDF、固定地址图片下载、推理和数据库恢复未开放；缺少的能力提供明确失败适配器。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。没有自动轮询、推送、后台调度或发送界面。
+- 整理复用 `Mailbox.modifyWithUndo`、`snoozeWithUndo` 和 `undoBatch`：归档、垃圾桶、已读／未读、星标、Gmail 标签／Outlook 移动、稍后提醒。支持多选、长按菜单和 VoiceOver actions。左右短滑 60pt、长滑 180pt，在设置中分别配置；竖向滚动和拖回起点不执行操作。
+- 撰写支持新邮件、回复、全部回复和转发，收件人建议只查 core 的本地联系人。选中文本后可加粗、斜体，支持项目列表；未选中文本时应用到全文。重开草稿从清洗后的 HTML 恢复样式范围与列表，首次编辑保留格式。HTML 与消息文本经桌面同一 compose sanitizer 归一化。转发附件由 core 获取。
+- 文件来自 document picker，照片来自系统照片库；不请求相机权限。照片先解码并重编码为 JPEG，PNG 保留透明度并重编码为 PNG，去掉原文件的 EXIF／GPS 后再读取 base64；关闭 picker 的 exif 返回值不能代替文件重编码。文件只保存于设备数据库，读完、失败或超限后均在 finally 删除 picker 和重编码的缓存副本，不删除照片库原件。已有附件与新增附件合计上限 15 MiB；入队前复用 core 的 attachmentProblem 检查 Gmail 禁止附件及 Outlook 3 MiB 上限。旧队列里的验证失败显示“发送前被拒绝”，不标为投递不确定。portable MIME 仍有 25 MiB 总量限制。
+- 只有实际编辑后才每 600ms 自动保存，写入串行，离开时保存最后一次编辑；未完成的收件人输入也能保存。打开新邮件／回复／转发而未编辑不会创建草稿；邮箱页的草稿入口查询 core 的 drafts mailbox，撰写页可丢弃草稿及待发送意图。沿用 core 草稿队列，手机 Layer 的 `localDraftQueue` 阻止服务器草稿推送，附件在明确发送前不上传。数据库位于持久目录，系统清空缓存不会删除本地草稿或待发送邮件。
+- 发送先人工确认，再按共享偏好等待 0／5／10／20／30 秒。发送意图持久保存在既有 prefs 表的保留键中，无新增迁移；执行仍走 `Mailbox.perform` 的 user/app 命令和审计。撤销会保留草稿。离线时保持待发送，下次前台或下拉刷新再处理。
+- 传输失败或执行中进程退出后，发件箱保留待检查项，不自动重发。先检查已发送，再取消队列项并从草稿重试，避免不确定的投递结果产生重复邮件。
+- 搜索复用 Gmail 操作符 parser。本地无结果时回退到服务器，也可主动搜索服务器；显示回退提示及错误、截断或忽略操作符的提示。
+- 设置包含账户添加、重新登录、启用／停用、移除，四种滑动动作、撤销发送时间、远程图片默认值和语言。远程图片默认阻断；主动开启后仅允许图片 HTTP／HTTPS，脚本、表单、字体与导航限制继续生效。
+- Lingui 包含 en、zh-CN、cs、nl、fr、de、it、ja、ru、es。相同文案复用桌面译文，消息文本字段保留提取注释。修改后执行 `pnpm --filter @openmail/mobile i18n:extract`、补齐译文，再执行 `i18n:compile`。测试检查目录同步与漏译。
 
-下一步是真机验证 SQLite/Metro、两家 OAuth 和大邮箱分页，再补附件、写操作、离线错误与前后台生命周期。推送须先决定中转服务。
+## 前台同步与原生权限
+
+初次进入前台、从后台返回和下拉刷新运行 core 同步。没有轮询、后台 fetch、推送注册或定时通知。发送延迟只在前台处理；应用进入后台后不启动新的发送，已开始的传输可能继续完成。发送撤销 toast 与整理撤销 toast 分开；无 core undoId 的整理操作不显示撤销，新的提示清除上次撤销失败状态。
+
+手机端暂不更新 app icon 徽标，已移除仅为徽标引入的 expo-notifications，避免 APNs entitlement、FCM service 和启动广播。image-picker plugin 关闭 cameraPermission 与 microphonePermission；Android 显式屏蔽 CAMERA、RECORD_AUDIO、RECEIVE_BOOT_COMPLETED、POST_NOTIFICATIONS。测试检查 Expo introspect 后的 manifest、entitlements、plist 和实际 autolinking，不启动 bundler。依据：[DocumentPicker](https://docs.expo.dev/versions/latest/sdk/document-picker/)、[ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)、[ImageManipulator](https://docs.expo.dev/versions/latest/sdk/imagemanipulator/)。
+
+## 尚需验证
+
+Gmail/Outlook 复用 core 的 fetch provider；portable MIME 生成 UTF-8、Bcc、回复头、HTML／消息文本和二进制附件。IMAP/SMTP、阅读附件磁盘缓存、PDF、固定地址图片下载、推理和数据库恢复仍返回明确不支持。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。
+
+自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。真机仍需验证 SQLite／Metro、两家 OAuth、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、附件投递及前后台生命周期。推送须先决定中转服务。
 
 版本依据：[SDK 57](https://expo.dev/changelog/sdk-57)、[Expo monorepo](https://docs.expo.dev/guides/monorepos/)、[AuthSession](https://docs.expo.dev/guides/authentication/)。
 
 ## 备份与锁屏
 
-邮件数据库、WAL 和应用文件缓存位于 `Paths.cache/openmail`，不放在 Documents；iOS Caches 不进入 iCloud 或设备备份。启动时先把旧版 Documents/openmail 整目录移入 cache，包含 WAL；已有 cache 时保留旧数据到独立 legacy 子目录。系统可清空缓存，届时需要重新添加账户并同步邮件。Android 设置 `android.allowBackup=false`，禁用应用的 Auto Backup。阅读器使用 incognito WebView，避免持久保存邮件页面缓存。
+邮件数据库、WAL、SHM、本地草稿、发送意图与 core 文件保存在 `Paths.document/openmail-data`，不使用可被系统清空的 cache。启动时优先将旧 `Paths.cache/openmail` 整目录迁移，保留 DB／WAL／SHM；没有 cache 时迁移旧 Documents/openmail。已有持久数据库时不覆盖，把残留副本移入持久目录内独立的 legacy 子目录。空目标目录可在中断后继续迁移。
+
+iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数据库前同步设置并确认 `URLResourceValues.isExcludedFromBackup`；只允许三个固定 mail 目录。模块缺失或备份排除失败就停止数据库启动。需要重新生成开发构建以链接该模块；autolinking 与 Swift 语法已检查，尚未用真机验证属性继承、目录迁移和原生模块调用。Android 继续设置 `android.allowBackup=false`。阅读器使用 incognito WebView。
 
 SecureStore 当前使用 `WHEN_UNLOCKED_THIS_DEVICE_ONLY`，锁屏或安全存储不可用时，读取返回可重试的 `ProviderError`，不把它当作凭证撤销，不删除 token，错误不包含原生异常或密钥内容。解锁后重试。后台刷新落地时，必须改用 `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`，并继续处理重启后首次解锁前的读取失败；该可访问性设置只在 iOS 生效。
 

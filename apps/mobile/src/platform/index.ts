@@ -35,5 +35,7 @@ export function mobileMailboxLayer() {
   const services = Layer.mergeAll(StoreLive, mobileProvidersLayer).pipe(
     Layer.provideMerge(platform),
   );
-  return MailboxLive({ imapIdle: false, backgroundFlush: false }).pipe(Layer.provide(services));
+  return MailboxLive({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }).pipe(
+    Layer.provide(services),
+  );
 }

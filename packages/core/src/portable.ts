@@ -1,6 +1,9 @@
 // The public surface of @openmail/core. Callers use Mailbox; the services and
 // layers below it are exported for other platforms (mobile) and tests.
 export * from "./compose-text.js";
+export * from "./compose-body.js";
+export * from "./mobile-outbox.js";
+export * from "./mobile-compose.js";
 export * from "./domain.js";
 export * from "./errors.js";
 export * from "./print.js";

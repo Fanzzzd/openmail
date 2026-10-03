@@ -4,6 +4,7 @@ import { Effect, FileSystem } from "effect";
 const native = vi.hoisted(() => ({
   files: new Map<string, Uint8Array>(),
   directories: new Set<string>(),
+  exclude: vi.fn(),
 }));
 vi.mock("expo-file-system", () => ({
   Paths: { document: "file:///sandbox/documents", cache: "file:///sandbox/cache" },
@@ -31,7 +32,9 @@ vi.mock("expo-file-system", () => ({
       this.uri = target.uri;
     }
     list() {
-      return [];
+      return [...native.files.keys()]
+        .filter((path) => path.startsWith(`${this.uri}/`))
+        .map((uri) => ({ uri }));
     }
     delete() {
       native.directories.delete(this.uri);
@@ -39,8 +42,8 @@ vi.mock("expo-file-system", () => ({
   },
   File: class {
     uri: string;
-    constructor(uri: string) {
-      this.uri = uri;
+    constructor(...parts: (string | { uri: string })[]) {
+      this.uri = parts.map((part) => (typeof part === "string" ? part : part.uri)).join("/");
     }
     get exists() {
       return native.files.has(this.uri);
@@ -65,63 +68,104 @@ vi.mock("expo-file-system", () => ({
   },
 }));
 vi.mock("expo-crypto", () => ({ randomUUID: () => "unique-migration" }));
+vi.mock("expo", () => ({ requireNativeModule: () => ({ excludeFromBackup: native.exclude }) }));
+vi.mock("react-native", () => ({ Platform: { OS: "ios" } }));
 import { dataDirectory, fileUri, filesLayer, prepareMailDirectory } from "./files";
 
 it("maps Effect paths to Expo sandbox URIs and preserves file bytes", async () => {
-  expect(dataDirectory()).toBe("/sandbox/cache/openmail");
-  expect(fileUri("/sandbox/cache/openmail/a b.txt")).toBe(
-    "file:///sandbox/cache/openmail/a%20b.txt",
+  expect(dataDirectory()).toBe("/sandbox/documents/openmail-data");
+  expect(fileUri("/sandbox/documents/openmail-data/a b.txt")).toBe(
+    "file:///sandbox/documents/openmail-data/a%20b.txt",
   );
   await Effect.runPromise(
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      yield* fs.makeDirectory("/sandbox/cache/openmail", { recursive: true });
-      yield* fs.writeFile("/sandbox/cache/openmail/test.bin", new Uint8Array([0, 128, 255]));
-      expect(yield* fs.readFile("/sandbox/cache/openmail/test.bin")).toEqual(
+      yield* fs.makeDirectory("/sandbox/documents/openmail-data", { recursive: true });
+      yield* fs.writeFile(
+        "/sandbox/documents/openmail-data/test.bin",
         new Uint8Array([0, 128, 255]),
       );
-      yield* fs.writeFileString("/sandbox/cache/openmail/test.txt", "消息文本");
-      expect(yield* fs.readFileString("/sandbox/cache/openmail/test.txt")).toBe("消息文本");
-      yield* fs.remove("/sandbox/cache/openmail/test.bin");
-      expect(yield* fs.exists("/sandbox/cache/openmail/test.bin")).toBe(false);
+      expect(yield* fs.readFile("/sandbox/documents/openmail-data/test.bin")).toEqual(
+        new Uint8Array([0, 128, 255]),
+      );
+      yield* fs.writeFileString("/sandbox/documents/openmail-data/test.txt", "消息文本");
+      expect(yield* fs.readFileString("/sandbox/documents/openmail-data/test.txt")).toBe(
+        "消息文本",
+      );
+      yield* fs.remove("/sandbox/documents/openmail-data/test.bin");
+      expect(yield* fs.exists("/sandbox/documents/openmail-data/test.bin")).toBe(false);
     }).pipe(Effect.provide(filesLayer)),
   );
 });
 it("rejects paths outside the sandbox, including encoded traversal", () => {
   for (const path of [
     "/sandbox/cache/other",
-    "/sandbox/cache/openmail/../other",
-    "file:///sandbox/cache/openmail/%2e%2e/other",
-    "/sandbox/cache/openmail2/data",
+    "/sandbox/documents/openmail-data/../other",
+    "file:///sandbox/documents/openmail-data/%2e%2e/other",
+    "/sandbox/documents/openmail-data2/data",
   ]) {
     expect(() => fileUri(path)).toThrow("outside");
   }
 });
 
-it("moves legacy mail and WAL out of Documents before using the cache database", () => {
+const cache = "file:///sandbox/cache/openmail";
+const target = "file:///sandbox/documents/openmail-data";
+const legacy = "file:///sandbox/documents/openmail";
+function resetStorage() {
   native.files.clear();
   native.directories.clear();
-  native.directories.add("file:///sandbox/documents/openmail");
-  native.files.set("file:///sandbox/documents/openmail/mail.db", new Uint8Array([1]));
-  native.files.set("file:///sandbox/documents/openmail/mail.db-wal", new Uint8Array([2]));
-  expect(prepareMailDirectory()).toBe("/sandbox/cache/openmail");
-  expect(native.directories.has("file:///sandbox/documents/openmail")).toBe(false);
-  expect(native.files.get("file:///sandbox/cache/openmail/mail.db")).toEqual(new Uint8Array([1]));
-  expect(native.files.get("file:///sandbox/cache/openmail/mail.db-wal")).toEqual(
+  native.exclude.mockReset();
+}
+it("atomically moves the cache DB/WAL/SHM into persistent excluded storage", () => {
+  resetStorage();
+  native.directories.add(cache);
+  for (const [index, name] of ["mail.db", "mail.db-wal", "mail.db-shm"].entries())
+    native.files.set(`${cache}/${name}`, new Uint8Array([index]));
+  expect(prepareMailDirectory()).toBe("/sandbox/documents/openmail-data");
+  for (const [index, name] of ["mail.db", "mail.db-wal", "mail.db-shm"].entries())
+    expect(native.files.get(`${target}/${name}`)).toEqual(new Uint8Array([index]));
+  expect(native.directories.has(cache)).toBe(false);
+  expect(native.exclude.mock.calls).toEqual([[cache], [target]]);
+  expect(prepareMailDirectory()).toBe("/sandbox/documents/openmail-data");
+});
+it("keeps an established persistent DB and archives both older copies", () => {
+  resetStorage();
+  for (const uri of [target, cache, legacy]) native.directories.add(uri);
+  native.files.set(`${target}/mail.db`, new Uint8Array([3]));
+  native.files.set(`${cache}/mail.db`, new Uint8Array([2]));
+  native.files.set(`${legacy}/mail.db`, new Uint8Array([1]));
+  prepareMailDirectory();
+  expect(native.files.get(`${target}/mail.db`)).toEqual(new Uint8Array([3]));
+  expect(native.files.get(`${target}/legacy-cache-unique-migration/mail.db`)).toEqual(
     new Uint8Array([2]),
   );
+  expect(native.files.get(`${target}/legacy-documents-unique-migration/mail.db`)).toEqual(
+    new Uint8Array([1]),
+  );
 });
-it("keeps both copies in excluded cache storage when legacy Documents data also exists", () => {
-  native.files.clear();
-  native.directories.clear();
-  native.directories.add("file:///sandbox/documents/openmail");
-  native.directories.add("file:///sandbox/cache/openmail");
-  native.files.set("file:///sandbox/documents/openmail/mail.db", new Uint8Array([1]));
-  native.files.set("file:///sandbox/cache/openmail/mail.db", new Uint8Array([2]));
+it("recovers an empty target left by an interrupted first launch", () => {
+  resetStorage();
+  native.directories.add(target);
+  native.directories.add(cache);
+  native.files.set(`${cache}/mail.db`, new Uint8Array([9]));
   prepareMailDirectory();
-  expect(native.directories.has("file:///sandbox/documents/openmail")).toBe(false);
-  expect(native.files.get("file:///sandbox/cache/openmail/mail.db")).toEqual(new Uint8Array([2]));
-  expect(
-    native.files.get("file:///sandbox/cache/openmail/legacy-unique-migration/mail.db"),
-  ).toEqual(new Uint8Array([1]));
+  expect(native.files.get(`${target}/mail.db`)).toEqual(new Uint8Array([9]));
+});
+it("migrates an older Documents DB if no cache DB exists", () => {
+  resetStorage();
+  native.directories.add(legacy);
+  native.files.set(`${legacy}/mail.db`, new Uint8Array([8]));
+  prepareMailDirectory();
+  expect(native.files.get(`${target}/mail.db`)).toEqual(new Uint8Array([8]));
+  expect(native.exclude).toHaveBeenCalledWith(legacy);
+});
+it("stops before opening or moving data when backup exclusion fails", () => {
+  resetStorage();
+  native.directories.add(cache);
+  native.files.set(`${cache}/mail.db`, new Uint8Array([9]));
+  native.exclude.mockImplementation(() => {
+    throw new Error("Backup exclusion unavailable");
+  });
+  expect(() => prepareMailDirectory()).toThrow("Backup exclusion");
+  expect(native.files.has(`${cache}/mail.db`)).toBe(true);
 });

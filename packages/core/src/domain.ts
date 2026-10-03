@@ -612,6 +612,7 @@ export const AttachmentSaveFolder = Schema.Union([
 export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
 
 export const Prefs = Schema.Struct({
+  remoteImages: Schema.optionalKey(Schema.Boolean),
   spellcheck: Schema.Boolean,
   spellcheckLanguages: Schema.Array(Schema.String),
   defaultProfilesPrompted: Schema.Boolean,
@@ -686,6 +687,7 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
+  remoteImages: false,
   spellcheck: true,
   spellcheckLanguages: [],
   defaultProfilesPrompted: false,

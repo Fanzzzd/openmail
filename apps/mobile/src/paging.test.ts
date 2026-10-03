@@ -32,3 +32,10 @@ it("passes both cursor fields for tied dates and deduplicates overlapping pages"
     "c",
   ]);
 });
+it("routes local drafts through the shared drafts mailbox projection", () => {
+  expect(pageQuery("gmail:me", "drafts")).toEqual({
+    accountIds: ["gmail:me"],
+    mailbox: "drafts",
+    limit: 30,
+  });
+});

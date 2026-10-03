@@ -388,6 +388,11 @@ export class Mailbox extends Context.Service<
     readonly agentWriteMode: Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(mode: AgentWriteMode): Effect.Effect<void>;
 
+    readonly queuedSends: Effect.Effect<import("./mobile-outbox.js").QueuedSend[]>;
+    queueSend(input: DraftInput, due: number): Effect.Effect<void, NotFound | InvalidInput>;
+    cancelQueuedSend(id: string): Effect.Effect<boolean>;
+    flushQueuedSends(canSend?: () => boolean): Effect.Effect<void>;
+
     // Drafts. The person's own drafts; agents write theirs through perform({ kind: "draft" }).
     /**
      * The draft to edit, by local draft id, by the id of a draft message in

@@ -8,7 +8,7 @@ import {
 } from "@openmail/core/portable";
 import { Effect, Layer } from "effect";
 
-// Sending and media need mobile implementations before the UI can expose them.
+// MIME send is portable. Reader disk caching and media extraction remain unavailable.
 export const readerCapabilitiesLayer = Layer.mergeAll(
   mobileMailCodecLayer,
   Layer.succeed(PdfWorker, {

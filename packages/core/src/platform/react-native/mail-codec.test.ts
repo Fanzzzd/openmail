@@ -44,7 +44,7 @@ it("parses portable MIME body text, HTML, addresses and inline binary attachment
     content: new Uint8Array([1, 2, 3]),
   });
 });
-it("rejects oversized MIME and explicitly reports unsupported IMAP/SMTP and composing", async () => {
+it("rejects oversized MIME and explicitly reports unsupported IMAP/SMTP", async () => {
   await expect(parseMobileMime(new Uint8Array(25 * 1024 * 1024 + 1))).rejects.toThrow("25 MiB");
   const result = await Effect.runPromise(
     unsupportedMobileImap.connect({ provider: "outlook" }).pipe(Effect.result),

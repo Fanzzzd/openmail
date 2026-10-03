@@ -38,3 +38,20 @@ it("does not register a broad MSAL intent filter when Android OAuth is unconfigu
   expect(config.android?.intentFilters).toEqual([]);
   expect(config.android?.allowBackup).toBe(false);
 });
+
+it("blocks notification, boot, camera and microphone capabilities", async () => {
+  const { default: config } = await import("../app.config");
+  expect(config.android?.blockedPermissions).toEqual(
+    expect.arrayContaining([
+      "android.permission.CAMERA",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+      "android.permission.POST_NOTIFICATIONS",
+    ]),
+  );
+  expect(config.plugins).toContainEqual([
+    "expo-image-picker",
+    { cameraPermission: false, microphonePermission: false },
+  ]);
+  expect(config.plugins).not.toContain("expo-notifications");
+});

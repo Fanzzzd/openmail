@@ -1,8 +1,12 @@
 import type { ThreadQuery, ThreadSummary } from "@openmail/core/portable";
 export const PAGE_SIZE = 30;
-export const pageQuery = (accountId: string, label: string, last?: ThreadSummary): ThreadQuery => ({
+export const pageQuery = (
+  accountId: string,
+  label: string | undefined,
+  last?: ThreadSummary,
+): ThreadQuery => ({
   accountIds: [accountId],
-  label,
+  ...(label === "drafts" ? { mailbox: "drafts" as const } : { label }),
   limit: PAGE_SIZE,
   ...(last ? { before: last.date, beforeId: last.id } : {}),
 });

@@ -1,6 +1,30 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+  toolbar: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e4e9",
+  },
+  input: {
+    minHeight: 48,
+    padding: 16,
+    color: "#16181d",
+    fontSize: 17,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e4e9",
+  },
+  sheetBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "#00000066" },
+  sheet: { maxHeight: "85%", backgroundColor: "white", padding: 20 },
+  selected: { backgroundColor: "#eaf0ff" },
+  toast: {
+    backgroundColor: "#eef2ff",
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   screen: { flex: 1, backgroundColor: "#ffffff" },
   center: {
     flex: 1,
