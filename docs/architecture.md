@@ -13,7 +13,7 @@ core 负责邮件网络、数据库、策略和同步。桌面、CLI、MCP 与�
 | 模型与工具      | `model.ts` 提供 Model；`tools.ts` 提供 MailToolkit；`tool-pages.ts` 处理游标和预算                                                                                                                  |
 | 本机索引        | `indexer.ts`、`semantic-indexer.ts` 与 media／semantic Store 处理派生文本及向量                                                                                                                     |
 | Node 平台       | `platform/node/` 实现数据库、密钥、OAuth、IMAP/SMTP、MIME、文件、PDF 和推理 worker                                                                                                                  |
-| 手机平台        | `platform/react-native/` 提供结构化 SQL／OAuth／MIME adapters；Expo OS Layers 在 `apps/mobile/src/platform/`                                                                                        |
+| 手机平台        | `platform/react-native/` 提供 SQL／OAuth／MIME／IMAP/SMTP adapters；Expo OS Layers 在 `apps/mobile/src/platform/`                                                                                   |
 
 ## Mailbox 接口
 
@@ -29,6 +29,8 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 | `modifyWithUndo`、`undoBatch`、`undoHistory`                       | 批量／单封修改和持久撤销                                    |
 | `saveDraft`、`openDraft`、`discardDraft`                           | 管理用户草稿；模型草稿使用 `perform` 的 draft 命令          |
 | `sync(accountId?)`、`pollInbox`                                    | 完整同步和轻量收件箱轮询；CLI/MCP 不启动桌面轮询计时器      |
+| `syncHealth(accountId)`                                            | 只读服务商计数与本地投影，返回同步健康报告                  |
+| `optionalServices`、`reauth`、`setServiceEnabled`                  | 查询服务授权、走官方同意页及控制本机启停                    |
 | `events`                                                           | `Changed`、同步状态／进度、新邮件、回填进度和更新设置事件流 |
 
 其余账户、Profiles、设置、联系人、日历、缓存与 AI 方法以 `mailbox.ts` 为准。永久删除与清空文件夹走独立的确认接口，不放入模型工具的普通 MailOp。
@@ -41,11 +43,27 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 
 批量路径记录逐封逆向状态。`undo-journal.ts` 持久保存记录，重启后仍可查询；撤销前检查消息状态，防止覆盖后续操作。删除服务商规则的恢复记录另存，不混入邮件撤销。
 
+### 只读会话
+
+`OPENMAIL_READ_ONLY=1` 在 Layer 构建时读取。Node Providers 和 portable Mailbox 均包裹 [read-only.ts](../packages/core/src/read-only.ts) 的 adapter，只放行已列出的读取与连接方法；未知方法及 accessor 默认拒绝。邮件、文件夹、规则、自动回复、日历、草稿上传、发送和一键退订 POST 均受拦截。队列刷新跳过既有操作，延迟发送不执行，待处理项保留原状态。
+
+本地偏好、草稿、已读状态和提议仍可保存。该开关不隔离数据库，也不阻止网络读取、标准 Secrets 读取或 token 刷新，不扩大 OAuth scopes。组装与队列入口见 [Node Layers](../packages/core/src/platform/node/layers.ts) 和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)，回归见 [read-only.test.ts](../packages/core/src/read-only.test.ts)。使用数据库副本的运行方式只在[测试](testing.md#桌面生产构建-smoke)维护。
+
+### 可选服务
+
+[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，`scopedAdapter` 在 provider 调用前检查授权和本机开关。联系人、日历和服务商设置互不替代，缺权限不暂停邮件同步。只有显式停用联系人会清除服务器联系人、分组和照片，本地往来地址仍保留。授权兼容规则见 [store-services.ts](../packages/core/src/store-services.ts)，启停见 [mailbox-services.ts](../packages/core/src/mailbox-services.ts)。配置和 scope 表只在 [Google](setup-google.md#可选服务) 与 [Microsoft](setup-microsoft.md#可选服务)维护。
+
 ### Provider 与 Store
 
-`ProviderAdapter.pull` 返回 `Stream<Change>`，Mailbox 统一消费邮件、删除、标签与游标变更。适配器提供 push、send、草稿、附件、搜索、联系人与日历等方法。Gmail 和 Outlook 使用可移植 HTTP；IMAP/SMTP 在 Node adapter 中。
+`ProviderAdapter.pull` 返回 `Stream<Change>`，Mailbox 统一消费邮件、删除、标签与游标变更。适配器提供 push、send、草稿、附件、搜索、联系人与日历等方法。Gmail 和 Outlook 使用可移植 HTTP；IMAP/SMTP 分别由 [Node adapter](../packages/core/src/platform/node/imap.ts) 和[手机 adapter](../packages/core/src/platform/react-native/imap.ts)实现。
 
 Store 使用 Effect `SqlClient`。Node Layer 提供 `node:sqlite` 与可选 sqlite-vec；手机 Layer 提供 op-sqlite 并报告向量能力不可用。两端运行同一 `MIGRATIONS`。消息经 `upsertMessage` 更新，保留 rowid 与外部内容 FTS 的对应。词索引、trigram、徽标及联系人投影用于查询，性能证据见[性能](performance.md)。
+
+[db.ts](../packages/core/src/db.ts) 的迁移已到 35：31 保存邮件头与词位置视图，32 保存认证结果及安全退订目标，33 保存本机可选服务开关，34 增加消息文本字节数、运行总量和 LRU 索引；35 调整 provider ID 与列表日期覆盖索引，并增加 IMAP 路径、孤立远端草稿和消息文本字节数索引。前 34 条未改，下一可用迁移编号为 36。索引的读取收益、写入与空间成本只在[性能](performance.md#迁移-35写入与磁盘成本)维护。消息文本容量预算默认关闭，启用后每小时或额度变更时回收；保留期限、星标、草稿和发件箱优先，额度不保证覆盖受保护内容。它不限制整个数据库或所有附件占用，见 [store-cache.ts](../packages/core/src/store-cache.ts)。
+
+slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候选纳入持久验证队列，验证失败保留；实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)和 [store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)。slice 60 增加独立预算的过期缓存扫描与持久 Outlook 冲突验证，仍不按计数差直接删除。删除范围、扫描预算、Outlook delta 页大小、UID 身份隔离、发送结果与同步健康报告只在[同步说明](sync-correctness.md)维护。
+
+[graph-pagination.ts](../packages/core/src/graph-pagination.ts) 校验 Graph 列表续页链接：仅接受 `https://graph.microsoft.com/v1.0/me/` 下相同资源族，拒绝用户信息和 fragment；匹配资源时兼容 slash 与 OData key-segment、资源名大小写及 well-known 文件夹转实际 ID，请求保留服务端 URL 和不透明 query。邮件／文件夹、联系人与日历列表共用该规则，见 [Outlook](../packages/core/src/outlook.ts)、[outlook-features.ts](../packages/core/src/outlook-features.ts)和 [provider-calendar.ts](../packages/core/src/provider-calendar.ts)。联系人遍历范围只在 [Microsoft 配置](setup-microsoft.md#可选服务)维护。
 
 ## 草稿与附件
 
@@ -76,13 +94,15 @@ Store 使用 Effect `SqlClient`。Node Layer 提供 `node:sqlite` 与可选 sqli
 
 手机端复用迁移、查询、HTTP provider 与策略。op-sqlite、AuthSession、PostalMime adapters 不依赖 React Native；Expo 文件、加密和安全存储由 app Layers 接线。尚未开放的移动能力及原生验证限制见[手机端说明](../apps/mobile/README.md)。
 
+[手机平台组装](../apps/mobile/src/platform/index.ts)关闭 IMAP IDLE、后台队列推送和远端草稿上传。[background.ts](../apps/mobile/src/background.ts) 通过 OS 任务调用 `pollInbox(..., true)`，仅做有预算的 Inbox 增量拉取；本地通知及徽标按设置启用，无远程推送。原生 TCP/TLS 在 [transport.ts](../apps/mobile/src/platform/transport.ts) 接入 core 的传输端口。
+
 ## Model 端口
 
 `model.ts` 定义 Model 流式服务、`ModelAnthropic` 与 `FakeModelLayer`。第三方语言模型与本机向量推理 `ModelRuntime` 分开。模型选择以 `ai.ts` 为准。
 
 `mailbox-ai.ts` 维护账户文本授权、密钥、请求、摘要缓存与分拣。账户文本授权、自动摘要和自动分拣默认关闭；API 密钥经 Secrets 保存，界面只读取是否配置。关闭授权清理对应 AI 派生数据并取消请求。Apple Contacts 的进程内快照不进入这些路径，具体隔离见 [Apple Contacts](apple-contacts.md)。
 
-`model-view.ts` 生成纯文本上下文，去引用与标准签名，保留来源 ID。第三方请求不包含 HTML、图片、附件二进制或媒体派生内容；内置助手进一步移除附件名称与搜索结果中的消息片段，限定本次选中且授权的账户。邮件以转义 JSON 数据送入模型，工具权限由代码决定。
+[model-view.ts](../packages/core/src/model-view.ts) 和 [visible-text.ts](../packages/core/src/visible-text.ts) 生成模型消息文本；有 HTML 时优先提取可见文本，再去引用与标准签名，保留来源 ID。本机文本向量沿用该提取器。第三方请求不包含 HTML、图片、附件二进制或媒体派生内容；内置助手进一步移除附件名称与搜索结果中的消息片段，限定本次选中且授权的账户。邮件以转义 JSON 数据送入模型，工具权限由代码决定。隐藏内容、plain alternative 差异与 CSS 检查预算耗尽均有标记；静态提取的边界只在[安全说明](security.md)维护。
 
 摘要与分拣结果存在 `derived`，保存模型、提示词版本和输入哈希。读取缓存时重验；输入变化或授权撤销使结果失效。截断输出不缓存。单次请求最多 24,000 输入预算、1,024 输出 token、4 轮、12 次工具调用，60 秒总超时。
 

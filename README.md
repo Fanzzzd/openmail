@@ -1,6 +1,6 @@
 # openmail
 
-本地优先的邮件客户端。桌面界面、CLI 和 MCP 共用 core 与本机 SQLite 数据库。手机端已有 Expo 基础，尚需真机验证。
+本地优先的邮件客户端。桌面界面、CLI 和 MCP 共用 core 与本机 SQLite 数据库。手机端已有 Expo 邮件流程、IMAP/SMTP、后台刷新和本地通知，尚需真机验证。
 
 ## 当前功能
 
@@ -12,6 +12,8 @@
 - AI：账户授权默认关闭。开启后可用 Anthropic 流式摘要、邮件助手、撰写改写与翻译、收件箱分拣建议。MCP 默认读取；写工具只创建提议，发送须在 app 中确认。授权、数据范围和工具限制见[架构](docs/architecture.md#model-端口)与[代理使用指南](docs/agents.md)。
 
 代码已覆盖这些产品路径。真实账户、系统权限和签名成品的验收范围见[路线图](docs/roadmap.md#待用户完成)。功能对齐的剩余缺口见 [parity](docs/parity.md)。
+
+可选联系人、日历和服务商设置按账户连接或停用，权限分别见 [Google](docs/setup-google.md#可选服务) 与 [Microsoft](docs/setup-microsoft.md#可选服务)。邮件内容保护包括发件人认证、可疑链接确认和模型输入的隐藏文本过滤，规则与源码见[安全说明](docs/security.md)。数据库迁移已到 35，见[架构](docs/architecture.md#provider-与-store)。slice 56 已合入同步重置删除保护，范围与验证队列见[同步说明](docs/sync-correctness.md#重置删除保护)。
 
 ## 安装、构建与运行
 
@@ -43,6 +45,7 @@ pnpm --filter @openmail/desktop dist
 
 ```sh
 node packages/cli/dist/cli.js accounts list
+node packages/cli/dist/cli.js health --json
 node packages/cli/dist/cli.js sync
 node packages/cli/dist/cli.js list --mailbox inbox --unread --json
 node packages/cli/dist/cli.js search 'from:alice@example.com has:attachment' --server --json
@@ -64,13 +67,15 @@ node packages/cli/dist/cli.js tools --json
 
 `openmail mcp` 和 `openmail-mcp` 共用工具与权限。CLI 没有发送命令。接入方式、分页、预算、写提议与审批边界只在[代理使用指南](docs/agents.md)维护。
 
+设置 `OPENMAIL_READ_ONLY=1` 可运行禁止远程写入的会话；本地存储仍可写，网络读取和 token 刷新仍可发生。边界见[架构](docs/architecture.md#只读会话)。生产构建 smoke 的运行方式见[测试](docs/testing.md#桌面生产构建-smoke)，同步健康报告见[同步说明](docs/sync-correctness.md#同步健康检查)。
+
 桌面、CLI 和 MCP 默认数据目录为 `~/Library/Application Support/openmail`，可用 `OPENMAIL_HOME` 覆盖。`mail.db` 保存邮件和设置，`config.json` 保存 OAuth 客户端配置；refresh token、IMAP 密码与 AI API 密钥经 core 存入系统钥匙串。手机端使用设备自己的数据库和安全存储，目前没有跨设备本地状态同步。
 
 ## 手机端
 
-`apps/mobile` 使用 Expo、React Native 和 `@openmail/core/portable`。已接入 Gmail／个人 Outlook 授权、账户和邮箱列表、分页会话、受限 HTML 阅读、下拉同步，以及十种语言。测试通过 Node SQLite shim 和原生服务 mocks 验证核心路径。
+`apps/mobile` 使用 Expo、React Native 和 `@openmail/core/portable`。已接入 Gmail／个人 Outlook 授权、IMAP/SMTP、分页会话、受限 HTML 阅读、整理与撤销、撰写和确认发送，以及十种语言。测试通过 Node SQLite shim 和原生服务 mocks 验证核心路径。
 
-原生 SQLite、Metro 和 OAuth 仍需开发构建实测。当前没有发送界面、IMAP/SMTP、自动轮询、后台刷新或推送。配置、能力限制与后续步骤见[手机端说明](apps/mobile/README.md)。
+后台刷新、本地通知和徽标均默认关闭，OS 决定后台执行时间，无远程推送。原生 SQLite、Metro、OAuth、TLS 和通知仍需开发构建实测。实现见 [IMAP adapter](packages/core/src/platform/react-native/imap.ts)、[手机平台组装](apps/mobile/src/platform/index.ts)和[后台任务](apps/mobile/src/background.ts)。配置与限制只在[手机端说明](apps/mobile/README.md)维护。
 
 ## 文档与检查
 

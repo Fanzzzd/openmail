@@ -28,6 +28,10 @@ OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.
 
 人工命令的改动以 `user:cli` 进入审计。`proposals approve` 可批准普通规则的整理提议；MCP 与内置助手提议须在 app 中批准。CLI 没有 send 命令，发送须在 app 中审阅。
 
+只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#同步健康检查)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
+
+需要禁止远程写入时，在 CLI 或 MCP 启动前设置 `OPENMAIL_READ_ONLY=1`。该模式仍可读取网络及凭证、刷新 token 和写本地状态；`sync` 不推送既有队列。MCP 默认读取工具与此会话开关分别控制工具入口和远程写入，详细边界只在[架构](architecture.md#只读会话)维护。MCP 配置可加 `"env": { "OPENMAIL_READ_ONLY": "1" }`。
+
 ## 接入 Claude
 
 在仓库根目录执行以下命令，将当前构建接入 [Claude Code](https://code.claude.com/docs/en/mcp)：
@@ -78,7 +82,7 @@ openmail tool list_proposals --json
 | `list_threads`                        | 会话摘要；`id` 是代表消息 ID，用于读取及整理提议；`mailbox: "snoozed"` 查询稍后提醒                                      |
 | `search`                              | 本地全文及已启用的端侧索引命中；`server: true` 显式请求服务商搜索，返回 `ignored`、`errors`、`truncated`，须向用户说明   |
 | `semantic_search`                     | 已就绪本地文本向量索引中的最多五个命中，不下载模型                                                                       |
-| `read_thread`                         | 有消息 ID 的纯文本模型上下文，去引用和签名，不含 HTML、图片或附件派生文本                                                |
+| `read_thread`                         | 有消息 ID 的模型消息文本，过滤 HTML 隐藏文本、去引用和签名，不含 HTML、图片或附件派生文本                                |
 | `list_templates`、`read_template`     | 模板摘要、收件人和消息文本，不创建草稿                                                                                   |
 | `list_signatures`、`read_signature`   | 签名 ID、发件地址与纯文本，不返回 HTML                                                                                   |
 | `suggest_contacts`                    | 本地历史及缓存联系人的地址，可传给草稿的 `to`、`cc`、`bcc`                                                               |
@@ -92,6 +96,8 @@ openmail tool list_proposals --json
 `token_budget` 按结果 JSON 的 UTF-8 字节保守限制 token，默认 12000，范围 2000 至 24000。预算不足时返回较少完整行及游标；单行超预算则报错。摘要中的长文本、参与人等字段会缩短，ID 保留原值。模板、签名与提议文本用 `next_offset` 分段读取。附件派生长文本按行拆分，`text_offset` 标明原文位置。`read_thread` 用 `max_chars` 限制完整 JSON，可能省略较早消息，`truncated` 统计删减的消息文本字符。
 
 MCP 本地读取沿用既有授权行为，不依赖第三方 AI 的逐账户文本授权。`semantic_search` 必须显式提供 `account_id`，该账户须开启第三方 AI 文本授权，并已启用本地索引。内置助手仍限定所选且授权账户，移除搜索结果中的消息片段、附件名称和媒体派生命中，不允许服务端搜索。Apple Contacts 快照仅供桌面补全，不进入工具或 AI 上下文，见 [Apple Contacts](apple-contacts.md)。邮件和提议理由均是不可信数据，不应当作工具指令。权限、身份与输出预算回归见[测试](testing.md)。
+
+列表和搜索不返回服务商 snippet。`read_thread` 有 HTML 时优先可见文本；`flags` 可包含 `hidden-text-removed`、`plain-differs` 或 `budget-exceeded`，分别表示删过隐藏内容、plain alternative 有差异或 CSS 检查预算耗尽。预算耗尽时退回未做完整可见性判断的 HTML 文本，不应把它视为已验证输入。提取规则和限制只在[安全说明](security.md)维护，实现见 [model-view.ts](../packages/core/src/model-view.ts)、[visible-text.ts](../packages/core/src/visible-text.ts)和 [tool-pages.ts](../packages/core/src/tool-pages.ts)。
 
 ## 提议改动
 

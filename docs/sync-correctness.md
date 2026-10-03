@@ -1,6 +1,6 @@
 # 同步与发送结果
 
-UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。大规模失效会隔离保留旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和后台轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。
+UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
@@ -14,15 +14,19 @@ Gmail 官方文档规定提交 RFC 2822 MIME，并支持 `rfc822msgid` 搜索，
 
 Graph 用 `internetMessageId` 查询 Sent。回复草稿创建结果不确定时，同样按提交时设置的 ID 查询 Drafts，并清理找到的孤立草稿；草稿准备失败也会清理，发送成功后不会删除 Sent 副本。参见 [创建回复草稿](https://learn.microsoft.com/en-us/graph/api/message-createreply?view=graph-rest-1.0)和 [更新草稿 Message-ID](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)。
 
-# 重置删除保护
+## 重置删除保护
 
 重置的 keep 集合只覆盖本轮列出的范围。Outlook 初始同步和 410 重启按最近 90 天的 `receivedDateTime` 过滤并倒序分页。delta URL 不带 `$top`；初始请求、nextLink、deltaLink 每次都发送 `Prefer: IdType="ImmutableId", odata.maxpagesize=50`，普通列表端点仍可用 `$top`。删除候选使用同一起点，窗外消息保留。过滤 delta 最多返回 5,000 条，不能据此证明缺失邮件已删除。窗口内所有缺失项都要验证；缺少最终 deltaLink 时保留旧游标，下一轮重新列举。[Graph delta 文档](https://learn.microsoft.com/en-us/graph/delta-query-messages)说明了过滤、排序、条数上限和续页链接。
 
 Gmail history-404 恢复列出最近 90 天，恢复分页不受初次同步的 2,000 条限制，Reset 仅覆盖相同日期范围。IMAP UIDVALIDITY 重建只检查 SINCE 日起的窗口；每个文件夹最多取最新 1,000 条，因此窗口内缺失项也须验证。已有 UID 的标记扫描仅清理明确扫描过的 ID。文件夹消失和 UID 复用分别校验原文件夹身份与 Message-ID，不用新 UID 的存在证明旧消息仍在。
 
-其他 keep 清理或窗口扫描若拟删除超过 `max(50, 范围内本地行数的 20%)`，先入持久验证队列。持久队列的预算、续验与扫描规则见[过期缓存扫描](#过期缓存扫描)。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。
+slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中所有未列入 keep 的删除候选都先入持久验证队列，即使只缺一封也须验证；不因列表标记完整或为空直接删除。持久队列的预算、续验与扫描规则见[过期缓存扫描](#过期缓存扫描)。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。
 
-# 过期缓存扫描
+保护已随 slice 56 合入。验证队列使用既有 prefs 持久化，无新增迁移；本地队列未验证完时继续保留缓存。只读会话允许这些存在性探测，包括只含 GET 子请求的 Graph batch。实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)、[Gmail](../packages/core/src/gmail.ts)和 [read-only.ts](../packages/core/src/read-only.ts)。回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
+
+Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store.ts](../packages/core/src/store.ts)，回归见 [imap.test.ts](../packages/core/src/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
+
+## 过期缓存扫描
 
 完整同步后，stale sweep 每账户每小时最多运行一次。扫描时间和分页位置保存在 prefs，重启后沿用。只扫描服务端计数可用且 `local.total > server.total` 的文件夹；仅未读数过多不触发扫描，因为 Graph 与 IMAP 的位置验证不读取当前标记。
 
@@ -34,7 +38,9 @@ Drafts 孤立草稿只统计已有 `remote_message_id`、`local_only=0`、`sync_
 
 Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移除文件夹重叠，就先把 ID 保存到持久验证队列，再保存游标。拉取不内联验证；随后按共享预算核对当前位置。限流、权限错误和没有明确答案的 ID 留在队列，后续同步续验。这覆盖从后处理文件夹移动到 Inbox、旧文件夹更新覆盖了新位置的情况。
 
-# Slice 56 根因证据
+实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store-sync-health.ts](../packages/core/src/store-sync-health.ts)，回归见 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
+
+## slice 56 根因证据
 
 协调器在只读真实数据副本上运行 sync-health，得到以下结果：
 
@@ -49,3 +55,37 @@ Outlook 同轮出现同 ID 的更新和移除时，只要更新文件夹与移�
 协调器随后在只读真实数据副本上验证 `532b888`：Outlook 保留 1,479 条，没有大规模删除。新诊断显示，410 重启后 Inbox 的 listing 阶段 `listed:50, kept:50`，reset 阶段全局 keep 为 53，文件夹范围内本地有 512 条。50 与旧初始 delta URL 的 `$top=50` 一致；这次观测中 Graph 把 `$top` 用作本轮上限，在 50 条后直接返回 deltaLink，没有 nextLink，适配器因而停止枚举。
 
 根因修复将页大小移到 `odata.maxpagesize` 请求头，并从 delta 请求 URL 删除 `$top`，包括旧游标中的显式参数。回归假 Graph 在有 `$top` 时复现“50 条后结束”，改用请求头后按 50、50、23 分页交付全部 123 条；初始同步、410 重启、续页和下一轮增量都检查请求头与 ImmutableId 设置。窗口范围、5,000 条过滤上限的保护、逐项验证和持久续验继续生效。已有 28,666 条服务端计数、1,199 条窗内缓存与 91 条列举的回归仍通过 `syncHealth` 检查本地保留，并覆盖窗外邮件、UID 复用、移动和失败。
+
+重试与发送确认实现见 [provider-retry.ts](../packages/core/src/provider-retry.ts)、[Gmail](../packages/core/src/gmail.ts)、[Outlook](../packages/core/src/outlook.ts)和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)。UID 重置与发送回归见 [mailbox-syncfix.test.ts](../packages/core/src/mailbox-syncfix.test.ts)及 [store.test.ts](../packages/core/src/store.test.ts)。
+
+## 同步健康检查
+
+桌面在 Settings → Accounts 选择账户，点击 Check sync health，再用 Copy redacted report 导出报告。CLI 构建后运行：
+
+```sh
+node packages/cli/dist/cli.js health --json
+OPENMAIL_READ_ONLY=1 node packages/cli/dist/cli.js health --account 'gmail:me@example.com' --json
+```
+
+省略 `--account` 检查全部账户。`Mailbox.syncHealth` 只请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS，不拉取邮件、不修复数据、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#桌面生产构建-smoke)。
+
+| 报告项                           | 含义                                                                                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `local`、`server`                | 总数、未读数及可用的会话数；判断比较邮件总数和未读数，不比较会话数                                                                                                          |
+| `bodyCacheWindowDays`            | 消息文本保留天数；`null` 表示全部保留，邮件头不会因此过期                                                                                                                   |
+| `headerWindow`                   | 历史回填未完成时的初始邮件头范围：Gmail 90 天／最多 2000 封，IMAP 90 天／每文件夹最多 1000 封；带 `__windowDays="90"` 游标的 Outlook 为 90 天／最多 5000 封，旧游标不标窗口 |
+| `cursorAgeMs`                    | 有游标时距上次同步的毫秒数；`null` 表示无可用游标年龄                                                                                                                       |
+| `pendingOps`                     | 待推送操作数；本地离线改动可能造成计数差异                                                                                                                                  |
+| `accountDomainHash`、`checkedAt` | 账户邮箱域名的 SHA-256 与检查时间；散列不代表匿名化                                                                                                                         |
+
+Gmail／Outlook 的 Drafts 本地总数和会话数还包含符合上述[孤立远端草稿规则](#过期缓存扫描)的行，按远端消息 ID 去重；未读数仍只来自 messages。
+
+判断结果按以下规则解释：
+
+- 一致：邮件总数和未读数相等，不证明消息身份、标记或内容一致。
+- 本地较少，同步窗口：总数少于服务商，且仍有初始邮件头范围；可能只是等待回填。IMAP 若本地数低于游标已追踪 UID 数，仍判为缺失。
+- 本地较少，缺失：无上述窗口解释，或总数相等但未读数较少。
+- 本地较多，陈旧：总数或未读数超过服务商；完整同步可触发上述过期缓存扫描；健康检查本身不清理，计数差不能证明某个 ID 已删除。
+- 服务商不可用：请求失败或超时；不说明本地缓存损坏。
+
+CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/components/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。

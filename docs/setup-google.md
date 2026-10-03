@@ -61,9 +61,11 @@ Google 的[桌面 OAuth 文档](https://developers.google.com/identity/protocols
 
 过滤器列表可用已有 `gmail.modify` 或 `gmail.readonly` 读取，成功返回空列表时无需重新登录；创建或删除过滤器仍需 `gmail.settings.basic`。过滤器读取可用基础邮件权限；修改要求连接 Gmail Settings 服务；403 权限错误只提示连接该服务，不改变邮件同步状态。依据：[读取列表](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/list)、[创建过滤器](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.settings.filters/create)。
 
+代码依据：[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
+
 ## 永久删除权限
 
-Gmail 的 `gmail.modify` 不允许永久删除。需要从 app 永久删除或清空垃圾箱时，在自己项目的 **Data Access** 增加 `https://mail.google.com/`，再通过 app 的永久删除权限提示重新登录。core 只在该功能的授权流程额外请求这个 scope，并检查实际授予的权限；普通登录与收发仍只请求基础邮件 scopes。权限缺失不停止普通同步。CLI 的 `accounts reauth` 不请求这个额外 scope。
+Gmail 的 `gmail.modify` 不允许永久删除。需要从 app 永久删除或清空垃圾箱时，在自己项目的 **Data Access** 增加 `https://mail.google.com/`，再通过 app 的永久删除权限提示重新登录。core 只在该功能的授权流程额外请求这个 scope，并检查实际授予的权限；普通登录与收发仍只请求基础邮件 scopes。权限缺失不停止普通同步。CLI 的 `accounts reauth` 不新增这个额外 scope；已保存的永久删除权限仍随普通重新登录保留。
 
 依据：[Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes)。
 
@@ -78,6 +80,6 @@ Gmail 的 `gmail.modify` 不允许永久删除。需要从 app 永久删除或�
 5. 两个平台回调都按自己的 client ID 生成：`123.apps.googleusercontent.com` 对应 `com.googleusercontent.apps.123:/oauthredirect`。Expo 配置自动注册该 scheme。客户端 ID 变更后，重新生成并安装开发构建；Expo Go 不支持此回调。
 6. 用添加 Gmail 账户按钮打开官方授权页。AuthSession 发送 authorization code、PKCE S256 和 state，core 交换 token；手机客户端不发送 client secret。refresh token 仅进入 expo-secure-store。
 
-本切片已接好授权流程，未做真实登录。普通登录与桌面共用基础邮件 scopes；可选服务在桌面按账户连接。
+手机授权流程已接入，仍需真实账户验收。普通登录与桌面共用基础邮件 scopes；可选服务在桌面按账户连接。
 
 依据：[注册 Android/iOS 客户端及 Advanced Settings](https://support.google.com/googleapi/answer/6158849?hl=en)、[Google 自定义 URI 限制与启用选项](https://developers.googleblog.com/improving-user-safety-in-oauth-flows-through-new-oauth-custom-uri-scheme-restrictions/)、[原生 OAuth PKCE](https://developers.google.com/identity/protocols/oauth2/native-app)。

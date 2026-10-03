@@ -1,6 +1,6 @@
 # 测试
 
-自动测试覆盖 core、CLI、桌面和手机基础。它们使用 fake provider／Model、临时 SQLite 或内存数据库、DOM 和原生服务 mocks。完整邮件流程测试也在 jsdom 中运行；它们不启动 Electron、不读取真实邮箱或通讯录。真实账户、系统权限与签名包验收见[路线图](roadmap.md#待用户完成)。
+自动测试覆盖 core、CLI、桌面和手机邮件流程。它们使用 fake provider／Model、临时 SQLite 或内存数据库、DOM 和原生服务 mocks。完整邮件流程测试也在 jsdom 中运行；它们不启动 Electron、不读取真实邮箱或通讯录。真实账户、系统权限与签名包验收见[路线图](roadmap.md#待用户完成)。
 
 ## 仓库检查
 
@@ -28,6 +28,8 @@ pnpm exec oxfmt --check .
 | `apps/desktop/src/main/*.test.ts`、renderer 测试                                    | 窗口与菜单处理器、RPC、键盘／选择／焦点、无障碍、编辑器和 AI 差异；OS 行为由支架提供                       |
 | `packages/core/src/platform/react-native/*.test.ts`、`apps/mobile/src/**/*.test.ts` | Node SQLite shim、OAuth／MIME adapters、Expo 服务 mocks；不证明 JSI、设备锁、WAL、安全存储或真实浏览器回调 |
 
+slice 61 的 [performance-plans.test.ts](../packages/core/src/platform/node/performance-plans.test.ts) 用 120 封邮件检查真实 Store SQL 的索引、分页回绕和 Unicode ID 顺序，属于普通测试。10 万封的 [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts) 默认排除，须单独运行 `pnpm test:perf`；命令、报告、时延预算及迁移 35 的写入与磁盘成本只在[性能](performance.md)维护。
+
 Apple Contacts 的假 helper、自检与实机边界只在 [Apple Contacts](apple-contacts.md#验证边界)维护。性能数据、查询计划和复现脚本只在[性能](performance.md)维护。
 
 `models.integration.test.ts` 默认跳过。它须显式设置 `OPENMAIL_TEST_MODELS=1`，并已有 `spikes/media/models/` 中要求的 E5 和 MobileCLIP 文件，才会运行本机推理。第三方 AI 的常规回归使用 fake Model／fetch，不做真实 API 请求。
@@ -45,7 +47,7 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --co
 
 `apps/desktop/src/renderer/src/e2e/flows.test.ts` 用 jsdom、Testing Library 渲染真实 App，经 preload 同款 JSON RPC 和 `shared/mailbox-handlers.ts` 调用真实 Mailbox。`harness.ts` 为每项测试创建临时 `node:sqlite` 数据库，复用 Gmail、Outlook、IMAP fake。窗口、剪贴板等桌面能力由支架提供，通知点击从核心通知队列进入桌面事件流。
 
-主流程文件包含 28 项测试实例，覆盖首次同步、延迟已读、批量／单封撤销、草稿自动保存、撤销发送、回复／转发、附件提醒、服务器搜索、离线重试、草稿恢复、AI 关闭、提议审批、通知点击与键盘操作。耗时取决于机器，运行配置中的超时不代表产品响应时间。
+主流程覆盖首次同步、延迟已读、批量／单封撤销、草稿自动保存、撤销发送、回复／转发、附件提醒、服务器搜索、离线重试、草稿恢复、AI 关闭、提议审批、通知点击与键盘操作。耗时取决于机器，运行配置中的超时不代表产品响应时间。
 
 扩展时，在同一文件新增测试，通过 `flow()` 配置邮件、provider 和偏好；用 UI 操作触发行为，同时断言 `server` 调用记录和 `store` 状态。用 `eventually()` 等待 RPC，`advance()` 推进自动保存、已读和撤回计时。`server.failNext` 注入一次失败，`beforePush` 注入持续失败或 Deferred 阻塞。`holdLists()` 可阻塞列表 RPC，验证导航与搜索交错。`afterEach` 关闭 Registry、RPC、Mailbox 并删除临时数据库。
 
@@ -57,27 +59,64 @@ OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/desktop exec vitest run --co
 node apps/desktop/scripts/e2e-mutations.mjs
 ```
 
-脚本串行临时修改行为，要求所选测试全部失败，每轮恢复文件；覆盖 25 项主流程及相关回归。新增流程时同步扩展脚本的故障案例和总数。完成后再跑正常测试与仓库检查。
+脚本串行临时修改行为，要求所选测试全部失败，每轮恢复文件；覆盖主流程及相关回归。新增流程时同步扩展脚本的故障案例。完成后再跑正常测试与仓库检查。
+
+重置删除保护回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)：覆盖窗口外缓存保留、存在性验证失败与持久续验、IMAP UID 复用，以及 Outlook delta 初始／410 重启／续页／增量的 Prefer 页大小。规则只在[同步说明](sync-correctness.md#重置删除保护)维护。
+
+slice 60 的 [sync-stale.test.ts](../packages/core/src/sync-stale.test.ts) 检查扫描的每账户预算、小时冷却与重启续验、不可用计数、孤立远端草稿和待推送改动保护；[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)及 [outlook.test.ts](../packages/core/src/outlook.test.ts) 检查 Outlook 冲突的持久入队与游标保存顺序。
+
+slice 62 的 [imap.test.ts](../packages/core/src/imap.test.ts)、[sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts) 覆盖 SEARCH 失败与空集合的区别、小数量及空列表重置验证、遗漏文件夹和 UID 身份失效。[outlook.test.ts](../packages/core/src/outlook.test.ts)及 [provider-calendar.test.ts](../packages/core/src/provider-calendar.test.ts) 检查 Graph key-segment 续页、外域拒绝、嵌套联系人文件夹、去重和 People 上限。
+
+## 解析器 fuzz 与无障碍
+
+解析器属性测试使用固定 seed 的 fast-check 和恶意输入语料。覆盖 MIME／TNEF／兼容编码、HTML 清洗与重解析、可见文本、认证头、URL、搜索、日历、IMAP/SMTP 分片流和附件文件名。测试检查有界输出、幂等、协议分帧及清洗后没有活动内容，不能证明所有恶意输入都安全。入口见 core [parser-fuzz.test.ts](../packages/core/src/parser-fuzz.test.ts)、[parser-fuzz-corpus.ts](../packages/core/src/parser-fuzz-corpus.ts)、[mail-socket-fuzz.test.ts](../packages/core/src/platform/mail-socket-fuzz.test.ts)，以及桌面 [reader-html-fuzz.test.ts](../apps/desktop/src/renderer/src/components/reader-html-fuzz.test.ts)和[附件文件名测试](../apps/desktop/src/main/attachment-filenames-fuzz.test.ts)。
+
+只跑 fuzz：
+
+```sh
+pnpm --filter @openmail/core exec vitest run fuzz
+pnpm --filter @openmail/desktop exec vitest run fuzz
+```
+
+固定 seed 和轮数在各测试中维护。`OPENMAIL_LOW_MEMORY_TESTS=1` 会减少部分属性测试轮数；调查 fast-check 失败时保留输出中的 seed、path 和最小反例，用对应测试的参数重放。
+
+[accessibility.test.ts](../apps/desktop/src/renderer/src/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/accessibility-allowlist.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
+
+```sh
+pnpm --filter @openmail/desktop exec vitest run accessibility
+```
 
 ## 桌面生产构建 smoke
 
-协调者可在构建后运行开发 smoke harness：
+构建后在仓库根目录运行：
 
 ```sh
 pnpm build
 node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
 ```
 
-脚本会启动 Electron。本 slice 的自动验证不运行它。`--db` 可省略，届时使用空临时库，邮件与撰写步骤会注明跳过。`--timeout` 为总等待毫秒数，默认 180000；`--port` 可指定本地 CDP 端口，默认自动选取。`--keep` 保留临时副本和诊断文件，并在报告中输出目录；默认仍删除。
+脚本启动 Electron 生产构建，通过本地 CDP 检查主窗口、首个缓存会话、撰写、Settings 和同步健康报告。它不发送邮件。实现见 [smoke.mjs](../apps/desktop/scripts/smoke.mjs)、[smoke-ui.mjs](../apps/desktop/scripts/smoke-ui.mjs)和 core [smoke.ts](../packages/core/src/platform/node/smoke.ts)。
 
-提供数据库时先关闭其写入进程。core 只读取并复制原库、WAL 和同目录存在的 `config.json`，不打开原库连接；发现复制期间文件变化即停止。副本在临时目录升级，强制 `markReadDelay="manual"` 和英语界面，并关闭首次 Profiles 建议。OAuth client 配置只写入临时副本，源文件不变；脚本不复制钥匙串项。脚本通过 [electron-vite preview](https://electron-vite.org/guide/cli) 的 `--skipBuild` 和 `--user-data-dir` 打开副本，启用本地 CDP，通过 [Browser.getBrowserCommandLine](https://chromedevtools.github.io/devtools-protocol/tot/Browser/#method-getBrowserCommandLine) 核对临时 `user-data-dir` 后，等待主窗口、跳过首次 Profiles 建议并依次打开首个会话、撰写窗口、Settings，并输出 JSON。当前视图没有缓存会话时首个会话步骤注明跳过；没有账户时撰写与 Settings 步骤跳过，报告注明首次账户设置阻挡。首个会话点击会重新查询列表项并重试，直到阅读器出现或总超时到期；失败时报告点击和等待的选择器。正常完成或收到 SIGINT／SIGTERM／SIGHUP 时共用一次清理，终止预览进程，并按 `--keep` 决定是否删除临时目录；信号退出码分别为 130／143／129，已有退出码保持不变。
+提供 `--db` 前先关闭原库的写入进程。脚本只复制原库、存在的 WAL 和同目录 `config.json`，发现复制期间文件变化即停止；只打开临时副本并迁移到当前版本。副本强制手动已读、英语界面并关闭首次 Profiles 建议，原文件不变。钥匙串项不复制，仍沿用标准 Secrets 读取和 token 刷新。没有 `config.json` 时，副本可能提示配置 OAuth client；这不等于需要重新登录。
 
-`OPENMAIL_READ_ONLY=1` 在 core Layer 构建时读取，只允许明确列出的读取与连接方法，默认拒绝未知方法及 accessor；阻止 provider 邮件／文件夹／规则／假期回复／日历写入、草稿上传、发送和延迟发送。现有待处理操作与待发消息保持原状态；本地偏好、草稿、已读等写入仍可保存到副本。网络读取仍可发生，现有账户凭证仍由标准 Secrets 服务读取，网络认证沿用正常的 token 刷新路径。只读模式不扩大 OAuth scopes。
+`--db` 可省略，使用空临时库。`--timeout` 是总等待毫秒数，默认 180000；`--port` 指定本地 CDP 端口，默认自动选取。`--keep` 保留临时库和诊断文件，报告输出 `directory`；默认删除。启动设置 `OPENMAIL_READ_ONLY=1` 和临时 `OPENMAIL_HOME`，并核对 Electron 的 `user-data-dir`。只读会话仍允许本地写入和网络读取，详细边界只在[架构](architecture.md#只读会话)维护。
 
-脚本收集 renderer 控制台错误、异常和 RPC 拒绝；正常的请求中断不算拒绝。只忽略已确认来自 `about:srcdoc`、针对 `img-src data: cid:` 的 CSP 图片拦截，匹配 Chromium 的两种固定提示格式。出现其他错误、RPC 拒绝、步骤超时或预览退出时退出码为 1。报告和 stderr 可能含错误文本，分享前检查内容。协调者已运行生产构建 smoke；此 slice 只用 DOM、临时数据库和 fake provider 验证。联系人权限缺失只显示在 Contacts 设置，重新登录前停止远程刷新；主进程诊断为所有 renderer RPC 错误／缺陷记录 RPC 名称，不记录参数；正常中断不记录。
+stdout 输出 JSON，stderr 输出步骤和预览日志：
 
-服务商诊断的 `failure` 区分 `transport`、`http`、`credentials`、`configuration`，只有实际传输失败使用 status 0。源目录没有 `config.json` 时副本会出现 `configuration`，界面会提示配置 OAuth client，无需重新登录。读取旧邮件时远程正文／Reply-To 补全以整个会话五秒为上限，失败仍通过 Thread RPC 返回缓存及 `bodyRefresh="failed"`，不改变账户认证状态。未知 Reply-To 不自动填入猜测的回复收件人。
+| 字段                                           | 含义                                                                                         |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `readOnly`、`copiedDatabase`                   | 已启用只读会话，以及是否提供原库副本                                                         |
+| `steps`                                        | 每步 passed／skipped 及跳过原因；无缓存 Inbox 会话跳过阅读，无账户跳过撰写和 Settings        |
+| `syncHealth`                                   | 各账户脱敏同步健康报告；无账户为空，字段和判断见[同步说明](sync-correctness.md#同步健康检查) |
+| `consoleErrors`、`exceptions`、`ipcRejections` | renderer 错误、异常和 RPC 拒绝；正常中断不计拒绝                                             |
+| `failure`                                      | 步骤超时、预览退出或其他脚本失败原因；成功为空                                               |
 
-core 的 Node Layer 使用 Effect FetchHttpClient 和 Node 全局 fetch，没有注入 Electron net／session fetch。[Electron 文档](https://www.electronjs.org/docs/latest/api/net)区分 Node HTTP 与 Chromium 网络栈；因此 Chromium 网络服务重启不能据此解释 core 的 HTTP 错误。renderer 请求被取消时，Effect 会中断该请求的 fetch；只读 GET 的实际传输失败会等待 500 毫秒后重试一次，发送不重试。RPC／缓存／中断路径由 fake provider 与 fake fetch 验证；本 slice 不启动 Electron。
+步骤成功只证明所检查的窗口路径可用。`sync-health` passed 表示报告调用完成，服务商不可用或计数不一致仍需阅读 `syncHealth`；它不使脚本自动失败，也不修复同步。空库的跳过项不能算邮件流程验收。
 
-空白 Composer 的状态读取和关闭判断使用 `DraftStatus`：仅查询本地草稿，未保存或已删除时返回 `null`。`OpenDraft` 继续用于明确打开已有草稿或导入服务商草稿。完整流程测试覆盖空白 Composer 打开、关闭时无失败 RPC，也不查询该草稿 ID 的消息。
+只有来自 `about:srcdoc`、匹配固定 `img-src data: cid:` 提示的远程图片 CSP 拦截会被忽略。其他 console 错误、异常、RPC 拒绝或 `failure` 使退出码为 1。正常结束及 SIGINT／SIGTERM／SIGHUP 共用幂等清理，终止预览并按 `--keep` 删除或保留副本；信号退出码为 130／143／129，已有退出码不覆盖。回归见 [smoke.test.ts](../packages/core/src/platform/node/smoke.test.ts)、[smoke-cleanup.test.ts](../packages/core/src/platform/node/smoke-cleanup.test.ts)、[smoke-ui.test.ts](../apps/desktop/src/renderer/src/smoke-ui.test.ts)和 [rpc-key.test.ts](../apps/desktop/src/renderer/src/rpc-key.test.ts)。
+
+脱敏服务商诊断格式只在[安全说明](security.md#服务商诊断)维护。smoke 的原始 console、`failure` 和 stderr 不受该字段白名单约束，分享前检查内容。自动测试使用 DOM、临时库和 fake provider，不运行 Electron smoke，也不证明真实 OAuth、系统权限或签名成品。
+
+远程消息文本／Reply-To 补全以整个会话五秒为上限，失败仍返回缓存及 `bodyRefresh="failed"`，不改变账户认证状态；未知 Reply-To 不自动猜测回复收件人。Node Layer 使用 FetchHttpClient 与 Node fetch，renderer 取消请求会中断 fetch。只读 GET 的实际传输失败等待 500 毫秒后重试一次，发送不重试。实现与回归见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[provider-retry.ts](../packages/core/src/provider-retry.ts)和 [slice46.test.ts](../packages/core/src/slice46.test.ts)。
+
+空白 Composer 的 `DraftStatus` 只查询本地草稿，未保存或已删除时返回 `null`；`OpenDraft` 用于明确打开或导入已有草稿。完整流程测试覆盖空白 Composer 打开、关闭时无失败 RPC，也不查询该草稿 ID 的消息，见 [mailbox-handlers.ts](../apps/desktop/src/shared/mailbox-handlers.ts)和 [flows.test.ts](../apps/desktop/src/renderer/src/e2e/flows.test.ts)。

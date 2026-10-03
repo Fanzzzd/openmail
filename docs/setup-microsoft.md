@@ -41,7 +41,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 | Calendar        | `Calendars.ReadWrite`                                       |
 | MailboxSettings | `MailboxSettings.ReadWrite`，已包含在基础权限中             |
 
-`Contacts.Read` 可单独读取已保存联系人，`People.Read` 添加人员建议。未授权或停用时，对应功能提示连接服务，邮件继续同步。尚未实测真实同意页和部分授权结果。
+`Contacts.Read` 对应已保存联系人，`People.Read` 对应人员建议。当前刷新路径同时查询两类数据；某一请求缺权限会使本次刷新失败，已有缓存继续保留。未授权或停用时，对应功能提示连接服务，邮件继续同步。尚未实测真实同意页和部分授权结果。
 
 依据：[Microsoft 增量同意与 scopes](https://learn.microsoft.com/en-us/entra/identity-platform/scopes-oidc)。
 
@@ -51,12 +51,16 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
 | `/me/messages/{id}?$expand=microsoft.graph.eventMessage/event` 找关联事件；普通 `.ics` 附件按 `/me/events?$filter=iCalUId eq '…'` 查找 | `Mail.ReadWrite`、`Calendars.ReadWrite` |
 | `/me/events/{id}/accept`、`tentativelyAccept`、`decline`，POST `sendResponse: true`                                                    | `Calendars.ReadWrite`                   |
-| `/me/contacts`，读取 `displayName,emailAddresses`                                                                                      | `Contacts.Read`                         |
+| `/me/contacts` 及根／嵌套 `contactFolders` 的联系人，读取 `displayName,emailAddresses,companyName`                                     | `Contacts.Read`                         |
 | `/me/people`，读取 `displayName,scoredEmailAddresses`                                                                                  | `People.Read`                           |
+
+联系人刷新遍历默认联系人、全部根联系人文件夹及递归子文件夹，每个集合沿 nextLink 分页，按 contact ID 去重，再合并邮箱地址。`/me/people` 是相关性建议，只取首批最多 250 人，不作为完整联系人清单；不沿 People 的 nextLink 扩大范围。实现见 [outlook-features.ts](../packages/core/src/outlook-features.ts)，分页链接校验见[架构](architecture.md#provider-与-store)，回归见 [outlook.test.ts](../packages/core/src/outlook.test.ts)。
 
 已有授权缺少新增 scope 时，在对应能力提示连接可选服务，不停邮件同步。联系人每 6 小时刷新一次，失败后 1 小时再试，旧缓存继续补全。日历响应只由用户点击触发。所有授权和续期仍走 `https://login.microsoftonline.com/consumers`，不改用公司租户。
 
 依据：[接受事件](https://learn.microsoft.com/en-us/graph/api/event-accept?view=graph-rest-1.0)、[关联会议消息](https://learn.microsoft.com/en-us/graph/api/eventmessage-get?view=graph-rest-1.0)、[Contacts](https://learn.microsoft.com/en-us/graph/api/user-list-contacts?view=graph-rest-1.0)、[People](https://learn.microsoft.com/en-us/graph/api/user-list-people?view=graph-rest-1.0)。
+
+代码依据：[optional-services.ts](../packages/core/src/optional-services.ts) 定义基础及分服务 scopes，[store-services.ts](../packages/core/src/store-services.ts) 处理旧账户授权记录，[mailbox-services.ts](../packages/core/src/mailbox-services.ts) 执行本机启停；官方授权与 token 响应处理见 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node OAuth](../packages/core/src/platform/node/oauth.ts)和[手机 OAuth](../packages/core/src/platform/react-native/oauth.ts)。迁移 33 只保存本机开关，不存凭证。局部权限错误与脱敏日志见[安全说明](security.md#服务商诊断)。
 
 ## 手机端
 
@@ -75,6 +79,6 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 6. **Allow public client flows** 保持开启，Delegated permissions 沿用本页列表。PKCE 不需要开启 implicit grant。回调或环境变量变化后重新生成并安装开发构建；Expo Go 不适用。
 7. 点击添加 Outlook 账户，打开 Microsoft 官方个人账户授权页。AuthSession 验证 state，core 使用相同 redirect URI 和 PKCE verifier 交换 token，refresh token 只进 expo-secure-store。
 
-本切片未实测真实授权。公司/学校 M365 租户仍不支持。桌面回环 URI 保持不变，普通登录只请求基础邮件 scopes。
+手机授权仍需真实账户验收。公司/学校 M365 租户仍不支持。桌面回环 URI 保持不变，普通登录只请求基础邮件 scopes。
 
 依据：[Microsoft 手机平台配置](https://learn.microsoft.com/en-us/entra/identity-platform/scenario-mobile-app-configuration)、[Android redirect URI](https://learn.microsoft.com/en-us/entra/msal/android/frequently-asked-questions)、[Expo 原生回调](https://docs.expo.dev/guides/authentication/)。
