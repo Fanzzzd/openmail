@@ -8,5 +8,5 @@
     "types": ["unplugin-icons/types/react"],
     "noEmit": true
   },
-  "include": ["src/renderer/src", "src/shared"]
+  "include": ["src/renderer/src", "src/shared", "../../packages/core/src/css-tree-browser-api.d.ts"]
 }

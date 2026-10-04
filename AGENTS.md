@@ -25,7 +25,7 @@
 提交前跑：
 
 ```sh
-pnpm build && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
+pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
 ```
 
 lint 用 plany 同一套 oxlint 配置，type-aware。`no-unsafe-type-assertion` 的警告只允许出现在 IO 边界（SQLite 行、HTTP JSON）。

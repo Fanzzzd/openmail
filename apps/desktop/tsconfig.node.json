@@ -12,6 +12,7 @@
     "src/shared",
     "electron.vite.config.ts",
     "lingui.config.ts",
-    "src/renderer/src/po.d.ts"
+    "src/renderer/src/po.d.ts",
+    "../../packages/core/src/css-tree-browser-api.d.ts"
   ]
 }

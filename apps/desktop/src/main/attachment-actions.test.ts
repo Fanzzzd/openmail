@@ -187,11 +187,11 @@ it("dot-only attachment filenames produce a private temp file before drag-out", 
           yield* attachmentAction(m, parent, { messageId: id, paths: [[2]], action: "drag" }),
         ).toEqual({ count: 1, failures: [] });
         const drag: unknown = native.drag.mock.calls[0]?.[0];
-        if (!drag || typeof drag !== "object" || !("file" in drag) || typeof drag.file !== "string")
-          throw new Error("No drag-out file");
-        expect(path.basename(drag.file)).toBe("attachment");
-        expect(path.dirname(drag.file)).toContain("openmail-attachments-");
-        expect(yield* Effect.promise(() => readFile(drag.file, "utf8"))).toBe("sh");
+        const file = drag && typeof drag === "object" && "file" in drag ? drag.file : undefined;
+        if (typeof file !== "string") throw new Error("No drag-out file");
+        expect(path.basename(file)).toBe("attachment");
+        expect(path.dirname(file)).toContain("openmail-attachments-");
+        expect(yield* Effect.promise(() => readFile(file, "utf8"))).toBe("sh");
       }),
     " .. ",
   );

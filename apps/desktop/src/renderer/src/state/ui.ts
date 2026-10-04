@@ -57,7 +57,7 @@ export const messageBackgroundAtom = Atom.family((_messageId: string) =>
  * `readerThreadKey`, or by message id when conversations are off.
  */
 export const imagesLoadedAtom = Atom.family((_key: string) =>
-  Atom.make<ReadonlySet<string>>(new Set()).pipe(Atom.keepAlive),
+  Atom.make<ReadonlySet<string>>(new Set<string>()).pipe(Atom.keepAlive),
 );
 
 export const searchScopeAtom = Atom.make<"all" | "folder">("all").pipe(Atom.keepAlive);
