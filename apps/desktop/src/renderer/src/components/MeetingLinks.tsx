@@ -18,7 +18,7 @@ export function MeetingLinks({ sources }: { sources: readonly string[] }) {
           key={url}
           type="button"
           title={url}
-          className="rounded border border-blue-300 px-3 py-1 text-a11y-accent dark:text-blue-400"
+          className="max-w-full truncate rounded border border-blue-300 px-3 py-1 text-a11y-accent dark:text-blue-400"
           onClick={() =>
             run(
               withMail((call) => call("OpenMeeting", { url })).pipe(

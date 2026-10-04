@@ -563,6 +563,10 @@ export type MarkReadDelay = (typeof MARK_READ_DELAYS)[number];
 export const READER_ZOOMS = [80, 90, 100, 110, 125, 150, 175] as const;
 export type ReaderZoom = (typeof READER_ZOOMS)[number];
 
+/** When remote images load without asking: never, for authenticated known senders, or always. */
+export const REMOTE_IMAGE_MODES = ["ask", "known", "always"] as const;
+export type RemoteImageMode = (typeof REMOTE_IMAGE_MODES)[number];
+
 /**
  * The background messages open on. Many HTML mails assume white, so "light"
  * keeps them white in dark mode; "theme" follows the app's appearance.
@@ -666,7 +670,7 @@ export const AttachmentSaveFolder = Schema.Union([
 export type AttachmentSaveFolder = typeof AttachmentSaveFolder.Type;
 
 export const Prefs = Schema.Struct({
-  remoteImages: Schema.optionalKey(Schema.Boolean),
+  remoteImages: Schema.Literals(REMOTE_IMAGE_MODES),
   cleanLinks: Schema.optionalKey(Schema.Boolean),
   spellcheck: Schema.Boolean,
   spellcheckLanguages: Schema.Array(Schema.String),
@@ -746,7 +750,7 @@ export const Prefs = Schema.Struct({
 export type Prefs = typeof Prefs.Type;
 
 export const DEFAULT_PREFS: Prefs = {
-  remoteImages: false,
+  remoteImages: "ask",
   cleanLinks: true,
   spellcheck: true,
   spellcheckLanguages: [],

@@ -57,7 +57,7 @@ it("redacted errors keep their fixed localized category rather than a generic fa
         message: "the operation failed.",
       }),
     ),
-  ).toBe("Sign in again to access your calendar.");
+  ).toBe("Calendar access isn't granted for this account.");
   expect(
     errorText(
       i18n,

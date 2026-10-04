@@ -16,7 +16,7 @@ import {
   selectSearchDate,
   serializeSearchField,
 } from "@openmail/core/schema";
-import { Search, X } from "lucide-react";
+import { Folder, Mails, Search, X } from "lucide-react";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { searchScopeAtom } from "../../state/ui";
@@ -106,7 +106,7 @@ export function SearchField({
     return true;
   };
   return (
-    <div className="no-drag flex min-w-0 max-w-[520px] flex-1 items-center gap-2">
+    <div className="no-drag @container/search flex min-w-0 max-w-[520px] flex-1 items-center gap-2">
       <Combobox.Root<string, true>
         multiple
         value={chips}
@@ -131,17 +131,23 @@ export function SearchField({
         autoHighlight={false}
         onItemHighlighted={(item) => setHighlighted(item)}
       >
-        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex min-h-7 min-w-0 flex-1 flex-wrap items-center gap-1 rounded-md border border-black/10 px-2 dark:border-white/10">
-          <Search className="size-3.5 text-a11y-muted" />
+        {/* One line at any width: chips shrink and truncate before the field grows taller. */}
+        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-md border border-black/10 px-2 dark:border-white/10">
+          <Search className="size-3.5 shrink-0 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
-              className="flex max-w-48 items-center gap-1 rounded bg-blue-500/10 px-1 text-[12px]"
+              className="flex max-w-48 min-w-0 items-center gap-1 rounded bg-blue-500/10 px-1 text-[12px] whitespace-nowrap"
             >
               <DropdownMenu
                 align="start"
                 trigger={
-                  <button type="button" aria-label={t`Modify ${token}`} className="truncate">
+                  <button
+                    type="button"
+                    aria-label={t`Modify ${token}`}
+                    title={token}
+                    className="min-w-0 truncate"
+                  >
                     {token}
                   </button>
                 }
@@ -160,7 +166,7 @@ export function SearchField({
                   </MenuItem>
                 ))}
               </DropdownMenu>
-              <Combobox.ChipRemove aria-label={t`Remove ${token}`}>
+              <Combobox.ChipRemove aria-label={t`Remove ${token}`} className="shrink-0">
                 <X className="size-3" />
               </Combobox.ChipRemove>
             </Combobox.Chip>
@@ -175,8 +181,8 @@ export function SearchField({
             }}
             ref={fieldRef}
             aria-label={t`Search mail`}
-            placeholder={t`Search  /`}
-            className="h-6 min-w-16 flex-1 bg-transparent text-[13px] outline-none"
+            placeholder={chips.length ? undefined : t`Search  /`}
+            className="h-6 min-w-10 flex-1 bg-transparent text-[13px] text-ellipsis outline-none"
           />
         </Combobox.Chips>
         <Combobox.Portal>
@@ -216,9 +222,15 @@ export function SearchField({
         aria-label={t`Search scope`}
         value={scope}
         onValueChange={setScope}
+        className="shrink-0"
+        valueClassName="@max-[340px]/search:sr-only"
         options={[
-          { value: "all", label: t`All Mail` },
-          { value: "folder", label: t`Current folder` },
+          { value: "all", label: t`All Mail`, icon: <Mails className="size-3.5 shrink-0" /> },
+          {
+            value: "folder",
+            label: t`Current folder`,
+            icon: <Folder className="size-3.5 shrink-0" />,
+          },
         ]}
       />
     </div>

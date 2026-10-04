@@ -540,6 +540,11 @@ msgstr "已允许静默通知"
 msgid "Allowed temporarily"
 msgstr "已临时允许"
 
+#. Remote images setting: always load.
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always"
+msgstr "总是"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Always from this sender"
 msgstr "总是加载此发件人的图片"
@@ -826,9 +831,17 @@ msgstr "圆点列表"
 msgid "Calendar"
 msgstr "日历"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Calendar access is off for this account."
+msgstr "此账户的日历访问已关闭。"
+
 #: src/renderer/src/errors.ts
 msgid "Calendar access is unavailable for this account"
 msgstr "此账户无法访问日历"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar access isn't granted for this account."
+msgstr "此账户未授予日历访问权限。"
 
 #: src/renderer/src/errors.ts
 msgid "Calendar creation requires an in-app confirmation"
@@ -1185,6 +1198,10 @@ msgstr "连接"
 msgid "Connect an account to send feedback"
 msgstr "连接账户后即可发送反馈"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Connect Calendar"
+msgstr "连接日历"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "请在设置 → 账户 → 可选服务中连接此服务。"
@@ -1208,6 +1225,10 @@ msgstr "已允许访问通讯录。"
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access denied. Allow access in System Settings."
 msgstr "通讯录访问被拒绝。请在系统设置中允许访问。"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Contacts access is off for this account."
+msgstr "此账户的联系人访问已关闭。"
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access not granted. Turn this setting off and on to request access."
@@ -2160,6 +2181,10 @@ msgstr "发件人"
 msgid "From {from} to {to}"
 msgstr "从 {from} 发给 {to}"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "From people I know"
+msgstr "来自我认识的人"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "已更新发件人"
@@ -2669,6 +2694,11 @@ msgstr "正在加载图片…"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Loading older messages…"
 msgstr "正在加载更早的邮件…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "加载远程图片会让发件人知道你何时打开消息，以及你的 IP 地址。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
@@ -3611,6 +3641,11 @@ msgstr "其他 IMAP"
 msgid "Outdent list"
 msgstr "减少列表缩进"
 
+#. Always is the Remote images option label above.
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Outlook accounts, and IMAP accounts without a trusted authentication server, cannot confirm the sender, so only Always loads their images."
+msgstr "Outlook 账户和未配置可信认证服务器的 IMAP 账户无法确认发件人，因此只有“总是”会加载它们的图片。"
+
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook 自动回复不支持自定主题"
@@ -3682,6 +3717,10 @@ msgstr "暂停索引"
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Pending operations"
 msgstr "待处理操作"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
+msgstr "认识的人指你的联系人和你发过邮件的人，且消息需通过发件人认证。已知跟踪器始终拦截。"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
@@ -3889,9 +3928,13 @@ msgstr "提醒时间"
 msgid "Reminder time"
 msgstr "提醒时间"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remote images"
+msgstr "远程图片"
+
 #: src/renderer/src/components/Reader.tsx
-msgid "Remote images are blocked so the sender can't tell if you read this."
-msgstr "已阻止远程图片，防止发件人追踪是否已读。"
+msgid "Remote images blocked"
+msgstr "已拦截远程图片"
 
 #: src/renderer/src/errors.ts
 msgid "Remote writes are disabled in this read-only session"
@@ -4512,6 +4555,10 @@ msgstr "服务器不可用"
 msgid "Settings"
 msgstr "设置"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Settings access is off for this account."
+msgstr "此账户的设置访问已关闭。"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Share selected…"
 msgstr "分享选中附件…"
@@ -4618,17 +4665,13 @@ msgstr "展开引用"
 msgid "Show unread count in the menu bar"
 msgstr "在菜单栏显示未读数"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
-#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "重新登录"
-
-#: src/renderer/src/errors.ts
-msgid "Sign in again to access your calendar."
-msgstr "请重新登录以访问日历。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5237,6 +5280,10 @@ msgstr "可信认证服务（可选）"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "星期二"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turn it on in Settings"
+msgstr "在设置中开启"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"

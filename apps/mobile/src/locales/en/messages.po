@@ -100,6 +100,12 @@ msgstr "Allow Anthropic to receive this account's visible mail text for AI. Imag
 msgid "Allow mail text to Anthropic"
 msgstr "Allow mail text to Anthropic"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "Always"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "Ask about this thread"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "Ask each time"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "Attach file"
@@ -189,11 +200,6 @@ msgstr "Bcc"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "Before"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "Block remote images by default"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "Friendlier"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "From people I know"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "Have you checked Sent and confirmed that this message was not sent?"
@@ -512,8 +523,8 @@ msgstr "Load remote images"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "Load remote images by default"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Loading remote images lets the sender see when you open a message and your IP address."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

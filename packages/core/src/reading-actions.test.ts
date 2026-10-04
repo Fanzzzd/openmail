@@ -354,3 +354,17 @@ it.effect(
       }).pipe(Effect.provide(layer()));
     }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
 );
+
+it.effect("reads the older boolean remote image preference as a mode", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const sql = yield* SqlClient.SqlClient;
+    assert.strictEqual((yield* store.prefs).remoteImages, "ask");
+    yield* sql`INSERT INTO prefs(key,value_json) VALUES ('remoteImages','false')`;
+    assert.strictEqual((yield* store.prefs).remoteImages, "ask");
+    yield* sql`UPDATE prefs SET value_json='true' WHERE key='remoteImages'`;
+    assert.strictEqual((yield* store.prefs).remoteImages, "always");
+    yield* store.setPrefs({ remoteImages: "known" });
+    assert.strictEqual((yield* store.prefs).remoteImages, "known");
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);

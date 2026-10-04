@@ -16,6 +16,12 @@ const switchAtom = MailClient.mutation("SetServiceEnabled");
 export function openOptionalServices(accountId: string) {
   window.dispatchEvent(new CustomEvent("openmail:optional-services", { detail: accountId }));
 }
+/** The service's grant; undefined while loading and for IMAP, which has no optional services. */
+export function useServiceState(accountId: string, service: OptionalService) {
+  const snapshot = useAtomValue(optionalServicesAtom(accountId));
+  return AsyncResult.getOrElse(snapshot, () => []).find((grant) => grant.service === service)
+    ?.state;
+}
 export function ServiceHint({
   accountId,
   service,
@@ -23,14 +29,26 @@ export function ServiceHint({
   accountId: string;
   service: OptionalService;
 }) {
-  const snapshot = useAtomValue(optionalServicesAtom(accountId));
-  const grants = AsyncResult.getOrElse(snapshot, () => []);
-  if (
-    snapshot._tag !== "Success" ||
-    !grants.some((grant) => grant.service === service && grant.state !== "granted")
-  )
-    return null;
-  return (
+  const { t } = useLingui();
+  const state = useServiceState(accountId, service);
+  if (!state || state === "granted") return null;
+  const off = {
+    calendar: t`Calendar access is off for this account.`,
+    contacts: t`Contacts access is off for this account.`,
+    settings: t`Settings access is off for this account.`,
+  };
+  return state === "turnedOff" ? (
+    <p className="text-xs">
+      {off[service]}{" "}
+      <button
+        type="button"
+        className="text-a11y-accent"
+        onClick={() => openOptionalServices(accountId)}
+      >
+        <Trans>Turn it on in Settings</Trans>
+      </button>
+    </p>
+  ) : (
     <button
       type="button"
       className="text-xs text-a11y-accent"

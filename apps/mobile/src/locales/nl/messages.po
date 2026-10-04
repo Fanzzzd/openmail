@@ -100,6 +100,12 @@ msgstr "Sta Anthropic toe de zichtbare berichttekst van dit account voor AI te o
 msgid "Allow mail text to Anthropic"
 msgstr "Berichttekst toestaan voor Anthropic"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "Altijd"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "Vraag over dit gesprek"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "Vraag het elke keer"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "Bestand bijvoegen"
@@ -189,11 +200,6 @@ msgstr "Blinde kopie"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "Vóór de wijziging"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "Externe afbeeldingen standaard blokkeren"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "Vriendelijker"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "Van mensen die ik ken"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "Hebt u „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet is verzonden?"
@@ -512,8 +523,8 @@ msgstr "Externe afbeeldingen laden"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "Externe afbeeldingen standaard laden"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Als je externe afbeeldingen laadt, ziet de afzender wanneer je een bericht opent en wat je IP-adres is."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

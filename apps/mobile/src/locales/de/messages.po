@@ -100,6 +100,12 @@ msgstr "Erlaube Anthropic, den sichtbaren Nachrichtentext dieses Kontos für KI 
 msgid "Allow mail text to Anthropic"
 msgstr "Nachrichtentext für Anthropic erlauben"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "Immer"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "Frage zu dieser Unterhaltung"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "Jedes Mal fragen"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "Datei anhängen"
@@ -189,11 +200,6 @@ msgstr "Blindkopie"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "Vor der Änderung"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "Externe Bilder standardmäßig blockieren"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "Freundlicher"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "Von Personen, die ich kenne"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "Haben Sie „Gesendet“ geprüft und bestätigt, dass diese Nachricht nicht gesendet wurde?"
@@ -512,8 +523,8 @@ msgstr "Externe Bilder laden"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "Externe Bilder standardmäßig laden"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Wenn du entfernte Bilder lädst, sieht der Absender, wann du eine Nachricht öffnest, und deine IP-Adresse."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

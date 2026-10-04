@@ -7,7 +7,13 @@ import { cleanDisplayName } from "./message-security.js";
  */
 import { constVoid } from "effect/Function";
 
-import type { Address, MarkReadDelay, Provider } from "./domain.js";
+import type {
+  Address,
+  MarkReadDelay,
+  MessageSecurity,
+  Provider,
+  RemoteImageMode,
+} from "./domain.js";
 
 /** Only contacts, the account itself, and people previously mailed count as known. */
 export function senderLabel(sender: Address, known: boolean): string {
@@ -90,6 +96,31 @@ export function imagesAllowed(address: string, allowlist: readonly string[]): bo
     if (entry.includes("@")) return entry === from;
     return domain === entry || domain.endsWith(`.${entry}`);
   });
+}
+
+/**
+ * Whether a message loads remote images without asking.
+ * The allowlist and known senders count only with a DMARC pass, so a forged From
+ * unlocks nothing. Trackers stay stripped in every case.
+ */
+export function shouldLoadRemote(
+  message: {
+    readonly from: { readonly address: string };
+    readonly security?: Pick<MessageSecurity, "dmarc"> | undefined;
+  },
+  prefs: {
+    readonly remoteImages: RemoteImageMode;
+    readonly imageSenders: readonly string[];
+    /** The sender is a contact, the account itself, or someone the person mailed. */
+    readonly knownSender: boolean;
+  },
+): boolean {
+  if (prefs.remoteImages === "always") return true;
+  if (message.security?.dmarc !== "pass") return false;
+  return (
+    imagesAllowed(message.from.address, prefs.imageSenders) ||
+    (prefs.remoteImages === "known" && prefs.knownSender)
+  );
 }
 
 /** A thread's messages in the order the person chose. Stored threads are oldest first. */

@@ -6,26 +6,71 @@ import {
   formatCalendarRange,
   type CalendarEvent,
 } from "@openmail/core/schema";
+import { Cause } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import type { Message } from "../../../shared/api";
 import { calendarEventsAtom, detectedEventsAtom, prefsAtom, accountsAtom } from "../state/queries";
-import { createCalendarEventAtom } from "../state/mutations";
+import { createCalendarEventAtom, reauthAtom } from "../state/mutations";
 import { Keys } from "../state/keys";
-import { resultError } from "../errors";
+import { type AppError, resultError } from "../errors";
 import { Dialog, alertButton, alertPrimary } from "./ui/Dialog";
 import { formButton } from "./ui/form-styles";
 
+/** The failure of a calendar call, for CalendarAccessAction. */
+export function calendarFailure<A>(result: AsyncResult.AsyncResult<A, AppError>) {
+  if (result._tag !== "Failure") return null;
+  const error = Cause.findErrorOption(result.cause);
+  return error._tag === "Some" ? error.value : null;
+}
+
+/**
+ * The fix for a failed calendar call: a provider 403 asks for calendar consent,
+ * a rejected sign-in (401, invalid_grant) asks to sign in again.
+ */
+export function CalendarAccessAction({
+  accountId,
+  error,
+}: {
+  accountId: string;
+  error: AppError | null;
+}) {
+  const { i18n } = useLingui();
+  const [authorization, authorize] = useAtom(reauthAtom(accountId), { mode: "promiseExit" });
+  if (error?._tag !== "FeatureScopeMissing" && error?._tag !== "AuthError") return null;
+  const signIn = error._tag === "AuthError";
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <button
+        type="button"
+        className={formButton}
+        disabled={authorization.waiting}
+        onClick={() => authorize(signIn ? undefined : "calendar")}
+      >
+        {signIn ? <Trans>Sign in again</Trans> : <Trans>Connect Calendar</Trans>}
+      </button>
+      {resultError(i18n, authorization) && (
+        <p role="alert" className="text-orange-700 dark:text-orange-400">
+          {resultError(i18n, authorization)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function OverlappingEvents({
+  accountId,
   messageId,
   inviteKey,
 }: {
+  accountId: string;
   messageId: string;
   inviteKey: string;
 }) {
   const { i18n } = useLingui();
   const result = useAtomValue(calendarEventsAtom(messageId, inviteKey));
   const events = AsyncResult.getOrElse(result, () => []);
+  const failure = calendarFailure(result);
   return (
     <section className="space-y-1 border-t border-blue-200 pt-2 dark:border-blue-900">
       <h4 className="font-semibold">
@@ -36,9 +81,18 @@ export function OverlappingEvents({
           <Trans>Loading calendar…</Trans>
         </p>
       ) : result._tag === "Failure" ? (
-        <p role="alert">
-          <Trans>Could not load your calendar.</Trans> {resultError(i18n, result)}
-        </p>
+        <div className="space-y-1">
+          <p role="alert">
+            {failure?._tag === "FeatureScopeMissing" ? (
+              resultError(i18n, result)
+            ) : (
+              <>
+                <Trans>Could not load your calendar.</Trans> {resultError(i18n, result)}
+              </>
+            )}
+          </p>
+          <CalendarAccessAction accountId={accountId} error={failure} />
+        </div>
       ) : events.length ? (
         <ul>
           {events.map((event) => (

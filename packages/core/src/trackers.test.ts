@@ -107,6 +107,12 @@ describe("prepareMessageHtml", () => {
     assert.include(out.html, 'src="cid:missing@x"');
     assert.include(out.html, 'srcset="https://cdn.example.com/b.png 2x"');
     assert.deepStrictEqual(out.trackers, ["Mailtrack"]);
+    assert.isTrue(out.hasCid);
+  });
+
+  it("counts cid: as embedded only where a resource references it", () => {
+    assert.isFalse(prepareMessageHtml("<p>Reply with cid:logo in the text</p>").hasCid);
+    assert.isTrue(prepareMessageHtml(`<div style="background:url('cid:bg')">x</div>`).hasCid);
   });
 
   it("leaves links alone and reports no remote content for plain mail", () => {

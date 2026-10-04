@@ -45,16 +45,19 @@ export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);
 export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
 
 /**
- * Per-message choices that last for the session: the background picked with
- * the message's toggle (null follows the preference) and whether remote
- * images were loaded once.
+ * The background picked with a message's toggle for the session; null follows
+ * the preference.
  */
 export const messageBackgroundAtom = Atom.family((_messageId: string) =>
   Atom.make<"light" | "dark" | null>(null).pipe(Atom.keepAlive),
 );
 
-export const imagesLoadedAtom = Atom.family((_messageId: string) =>
-  Atom.make(false).pipe(Atom.keepAlive),
+/**
+ * Messages whose remote images were loaded by hand this session, keyed by
+ * `readerThreadKey`, or by message id when conversations are off.
+ */
+export const imagesLoadedAtom = Atom.family((_key: string) =>
+  Atom.make<ReadonlySet<string>>(new Set()).pipe(Atom.keepAlive),
 );
 
 export const searchScopeAtom = Atom.make<"all" | "folder">("all").pipe(Atom.keepAlive);

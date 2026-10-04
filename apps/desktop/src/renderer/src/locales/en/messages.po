@@ -534,6 +534,11 @@ msgstr "Allowed quietly"
 msgid "Allowed temporarily"
 msgstr "Allowed temporarily"
 
+#. Remote images setting: always load.
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Always"
+msgstr "Always"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Always from this sender"
 msgstr "Always from this sender"
@@ -820,9 +825,17 @@ msgstr "Bulleted list"
 msgid "Calendar"
 msgstr "Calendar"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Calendar access is off for this account."
+msgstr "Calendar access is off for this account."
+
 #: src/renderer/src/errors.ts
 msgid "Calendar access is unavailable for this account"
 msgstr "Calendar access is unavailable for this account"
+
+#: src/renderer/src/errors.ts
+msgid "Calendar access isn't granted for this account."
+msgstr "Calendar access isn't granted for this account."
 
 #: src/renderer/src/errors.ts
 msgid "Calendar creation requires an in-app confirmation"
@@ -1179,6 +1192,10 @@ msgstr "Connect"
 msgid "Connect an account to send feedback"
 msgstr "Connect an account to send feedback"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Connect Calendar"
+msgstr "Connect Calendar"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Connect this service in Settings → Accounts → Optional services."
@@ -1202,6 +1219,10 @@ msgstr "Contacts access allowed."
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access denied. Allow access in System Settings."
 msgstr "Contacts access denied. Allow access in System Settings."
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Contacts access is off for this account."
+msgstr "Contacts access is off for this account."
 
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Contacts access not granted. Turn this setting off and on to request access."
@@ -2154,6 +2175,10 @@ msgstr "From"
 msgid "From {from} to {to}"
 msgstr "From {from} to {to}"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "From people I know"
+msgstr "From people I know"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "From updated"
@@ -2663,6 +2688,11 @@ msgstr "Loading image…"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Loading older messages…"
 msgstr "Loading older messages…"
+
+#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Loading remote images lets the sender see when you open a message and your IP address."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Loading settings…"
@@ -3605,6 +3635,11 @@ msgstr "Other IMAP"
 msgid "Outdent list"
 msgstr "Outdent list"
 
+#. Always is the Remote images option label above.
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Outlook accounts, and IMAP accounts without a trusted authentication server, cannot confirm the sender, so only Always loads their images."
+msgstr "Outlook accounts, and IMAP accounts without a trusted authentication server, cannot confirm the sender, so only Always loads their images."
+
 #: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook automatic replies do not support a custom subject"
@@ -3676,6 +3711,10 @@ msgstr "Pause indexing"
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Pending operations"
 msgstr "Pending operations"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
+msgstr "People you know are your contacts and people you have sent mail to, when the message passes sender authentication. Known trackers stay blocked."
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/BatchActions.tsx
@@ -3883,9 +3922,13 @@ msgstr "Remind me"
 msgid "Reminder time"
 msgstr "Reminder time"
 
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Remote images"
+msgstr "Remote images"
+
 #: src/renderer/src/components/Reader.tsx
-msgid "Remote images are blocked so the sender can't tell if you read this."
-msgstr "Remote images are blocked so the sender can't tell if you read this."
+msgid "Remote images blocked"
+msgstr "Remote images blocked"
 
 #: src/renderer/src/errors.ts
 msgid "Remote writes are disabled in this read-only session"
@@ -4506,6 +4549,10 @@ msgstr "Server unavailable"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Settings access is off for this account."
+msgstr "Settings access is off for this account."
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Share selected…"
 msgstr "Share selected…"
@@ -4612,17 +4659,13 @@ msgstr "Show quoted text"
 msgid "Show unread count in the menu bar"
 msgstr "Show unread count in the menu bar"
 
+#: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
-#: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Sign in again"
-
-#: src/renderer/src/errors.ts
-msgid "Sign in again to access your calendar."
-msgstr "Sign in again to access your calendar."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5231,6 +5274,10 @@ msgstr "Trusted authentication service (optional)"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Tuesday"
+
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Turn it on in Settings"
+msgstr "Turn it on in Settings"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"

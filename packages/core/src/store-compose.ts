@@ -375,6 +375,12 @@ export function makeComposeStore(
       const stored = new Map(rows.map((r) => [r.key, r.value_json]));
       const f = Prefs.fields;
       const d = DEFAULT_PREFS;
+      // Older builds stored a boolean; true loaded remote images in every message.
+      const remoteImages = pref(
+        Schema.Union([f.remoteImages, Schema.Boolean]),
+        stored.get("remoteImages"),
+        d.remoteImages,
+      );
       const labs = pref(Schema.Record(Schema.String, Schema.Unknown), stored.get("labs"), {});
       const swipes = pref(
         Schema.Record(Schema.String, Schema.Unknown),
@@ -497,7 +503,7 @@ export function makeComposeStore(
           d.specialFolderBadges,
         ),
         showMore: pref(f.showMore, stored.get("showMore"), d.showMore),
-        remoteImages: pref(Schema.Boolean, stored.get("remoteImages"), false),
+        remoteImages: remoteImages === true ? "always" : remoteImages || "ask",
         cleanLinks: pref(Schema.Boolean, stored.get("cleanLinks"), true),
         undoSendSeconds: pref(f.undoSendSeconds, stored.get("undoSendSeconds"), d.undoSendSeconds),
         replyFrom: pref(f.replyFrom, stored.get("replyFrom"), d.replyFrom),

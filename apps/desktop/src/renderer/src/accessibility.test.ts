@@ -24,16 +24,24 @@ const fixture = vi.hoisted(() => {
   vi.resetModules();
   return { values: new Map<string, unknown>(), decide: vi.fn() };
 });
-vi.mock("@effect/atom-react", async (original) => ({
-  ...(await original<typeof import("@effect/atom-react")>()),
-  useAtomValue: (atom: string) =>
-    AsyncResult.success(
-      fixture.values.get(atom) ??
-        (atom === "nativeCompose" ? { photos: false, continuity: false, grammar: false } : []),
-    ),
-  useAtom: () => [AsyncResult.initial(), fixture.decide],
-  useAtomSet: () => fixture.decide,
-}));
+vi.mock("@effect/atom-react", async (original) => {
+  const actual = await original<typeof import("@effect/atom-react")>();
+  const { Atom } = await import("effect/reactivity");
+  return {
+    ...actual,
+    useAtomValue: (atom: string) =>
+      AsyncResult.success(
+        fixture.values.get(atom) ??
+          (atom === "nativeCompose" ? { photos: false, continuity: false, grammar: false } : []),
+      ),
+    // Mocked queries and mutations are strings; local UI atoms keep their real state.
+    useAtom: (atom: unknown) =>
+      Atom.isAtom(atom) && Atom.isWritable(atom)
+        ? actual.useAtom(atom)
+        : [AsyncResult.initial(), fixture.decide],
+    useAtomSet: () => fixture.decide,
+  };
+});
 vi.mock("./state/queries", () => ({
   nativeComposeCapabilitiesAtom: "nativeCompose",
   accountsAtom: "accountsAtom",

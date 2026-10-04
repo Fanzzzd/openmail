@@ -300,6 +300,38 @@ export function ReadingSettings() {
         </p>
       </section>
 
+      <section>
+        <h3 className={heading}>
+          <Trans>Remote images</Trans>
+        </h3>
+        <SegmentedControl
+          aria-label={t`Remote images`}
+          value={prefs?.remoteImages ?? null}
+          options={[
+            { value: "ask" as const, label: t`Ask each time` },
+            { value: "known" as const, label: t`From people I know` },
+            {
+              value: "always" as const,
+              label: t({ message: "Always", comment: "Remote images setting: always load." }),
+            },
+          ]}
+          onValueChange={(remoteImages) => setPrefs({ remoteImages })}
+        />
+        <p className={note}>
+          <Trans>
+            Loading remote images lets the sender see when you open a message and your IP address.
+          </Trans>{" "}
+          <Trans>
+            People you know are your contacts and people you have sent mail to, when the message
+            passes sender authentication. Known trackers stay blocked.
+          </Trans>{" "}
+          <Trans comment="Always is the Remote images option label above.">
+            Outlook accounts, and IMAP accounts without a trusted authentication server, cannot
+            confirm the sender, so only Always loads their images.
+          </Trans>
+        </p>
+      </section>
+
       <ImageSenders />
     </div>
   );

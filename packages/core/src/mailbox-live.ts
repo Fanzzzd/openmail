@@ -1809,11 +1809,15 @@ export const MailboxLive = (
         return { filename: listed.filename, mimeType: listed.mimeType, data };
       });
 
+      // The reader asks on every open; reuse the session cache instead of downloading again.
       const inlineImages = Effect.fn("Mailbox.inlineImages")(function* (messageId: string) {
+        const cached = attachmentCache.get(messageId, "inline-raw");
+        if (cached) return yield* inlineImagesFromRaw(cached);
         const { account, adapter, providerId } = yield* source(messageId);
-        return yield* adapter
-          .fetchRaw(account, providerId)
-          .pipe(Effect.flatMap(inlineImagesFromRaw));
+        const epoch = attachmentEpoch;
+        const raw = yield* adapter.fetchRaw(account, providerId);
+        if (epoch === attachmentEpoch) attachmentCache.set(messageId, "inline-raw", raw);
+        return yield* inlineImagesFromRaw(raw);
       });
 
       const localInline = Effect.fnUntraced(function* (id: string) {

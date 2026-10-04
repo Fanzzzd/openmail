@@ -2,7 +2,12 @@ import { assert, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { simpleParser } from "mailparser";
 import { buildMime } from "./platform/node/compose.js";
-import { formatCalendarRange, formatCalendarTime, shouldLoadInvitation } from "./calendar.js";
+import {
+  calendarRangeParts,
+  formatCalendarRange,
+  formatCalendarTime,
+  shouldLoadInvitation,
+} from "./calendar.js";
 import {
   inviteCanRespond,
   inviteReply,
@@ -178,6 +183,11 @@ it("all-day display uses the last inclusive day; invalid calendar dates are not 
   );
   assert.ok(days);
   assert.ok(formatCalendarRange(days.invite, "en-US").endsWith("Saturday, October 3, 2026"));
+  assert.deepStrictEqual(calendarRangeParts(day.invite, "en-US"), {
+    start: "Thursday, October 1, 2026",
+    end: null,
+  });
+  assert.strictEqual(calendarRangeParts(days.invite, "en-US").end, "Saturday, October 3, 2026");
   assert.deepStrictEqual(parseCalendar(calendar("DTSTART:20260231T090000Z")), []);
 });
 

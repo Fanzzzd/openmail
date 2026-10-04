@@ -154,6 +154,7 @@ const Handlers = MailRpcs.toLayer(
       RefreshAppleContacts: () => apple.refresh(),
       SetAppleContacts: ({ enabled }) => apple.setEnabled(enabled),
       AppleContactIdentifier: ({ address }) => apple.identifier(address),
+      KnownSenders: ({ accountId, addresses }) => apple.knownSenders(accountId, addresses),
       OpenAppleContact: ({ address }) => apple.open(address),
       AddAppleContact: ({ contact }) => apple.add(contact),
       OpenAppleContactsSettings: () => apple.openSettings(),

@@ -18,6 +18,8 @@ interface Props<T extends string> {
   "aria-label": string;
   disabled?: boolean;
   className?: string;
+  /** Classes for the current label in the button, e.g. to hide it in a narrow container. */
+  valueClassName?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export function Select<T extends string>({
   "aria-label": label,
   disabled,
   className = "",
+  valueClassName = "",
 }: Props<T>) {
   const current = options.find((o) => o.value === value);
   return (
@@ -47,7 +50,7 @@ export function Select<T extends string>({
         className={`group flex h-7 min-w-0 items-center gap-2 rounded-md px-1.5 -mx-1.5 text-left outline-offset-0 outline-a11y-focus not-data-disabled:hover:bg-black/[0.04] focus-visible:outline-[3px] data-popup-open:bg-black/[0.06] dark:not-data-disabled:hover:bg-white/5 dark:data-popup-open:bg-white/10 ${className}`}
       >
         {current?.icon}
-        <BaseSelect.Value className="min-w-0 truncate" />
+        <BaseSelect.Value className={`min-w-0 truncate ${valueClassName}`} />
         <BaseSelect.Icon className="shrink-0 text-a11y-muted group-data-disabled:hidden">
           <ChevronsUpDown className="size-3.5" />
         </BaseSelect.Icon>

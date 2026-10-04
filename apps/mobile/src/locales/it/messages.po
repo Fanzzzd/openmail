@@ -100,6 +100,12 @@ msgstr "Consenti ad Anthropic di ricevere il testo visibile dei messaggi di ques
 msgid "Allow mail text to Anthropic"
 msgstr "Consenti il testo dei messaggi ad Anthropic"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "Sempre"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "Chiedi informazioni su questa conversazione"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "Chiedi ogni volta"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "Allega file"
@@ -189,11 +200,6 @@ msgstr "Ccn"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "Prima della modifica"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "Blocca le immagini remote per impostazione predefinita"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "Più cordiale"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "Da persone che conosco"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "Hai controllato «Inviata» e verificato che questo messaggio non sia stato inviato?"
@@ -512,8 +523,8 @@ msgstr "Carica immagini remote"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "Carica le immagini remote per impostazione predefinita"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Caricare le immagini remote permette al mittente di sapere quando apri un messaggio e di vedere il tuo indirizzo IP."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

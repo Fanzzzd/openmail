@@ -5,6 +5,7 @@ import {
   imageSenderKey,
   markReadAfter,
   orderThread,
+  shouldLoadRemote,
   splitRawMessage,
 } from "./reading.js";
 
@@ -33,6 +34,35 @@ describe("markReadAfter", () => {
     cancel();
     vi.advanceTimersByTime(1);
     assert.deepStrictEqual(marked, ["a"]);
+  });
+});
+
+describe("shouldLoadRemote", () => {
+  const signed = { from: { address: "Friend@Example.org" }, security: { dmarc: "pass" as const } };
+  const forged = { from: { address: "friend@example.org" }, security: { dmarc: "fail" as const } };
+  const unchecked = { from: { address: "friend@example.org" } };
+  const prefs = { remoteImages: "ask" as const, imageSenders: [], knownSender: false };
+
+  it("asks by default, even for known senders", () => {
+    assert.isFalse(shouldLoadRemote(signed, { ...prefs, knownSender: true }));
+  });
+
+  it("loads for authenticated known senders only", () => {
+    const known = { ...prefs, remoteImages: "known" as const, knownSender: true };
+    assert.isTrue(shouldLoadRemote(signed, known));
+    assert.isFalse(shouldLoadRemote(forged, known));
+    assert.isFalse(shouldLoadRemote(unchecked, known));
+    assert.isFalse(shouldLoadRemote(signed, { ...known, knownSender: false }));
+  });
+
+  it("loads for an authenticated allowlist entry in any mode", () => {
+    const listed = { ...prefs, imageSenders: ["example.org"] };
+    assert.isTrue(shouldLoadRemote(signed, listed));
+    assert.isFalse(shouldLoadRemote(forged, listed));
+  });
+
+  it("always loads when set to always", () => {
+    assert.isTrue(shouldLoadRemote(forged, { ...prefs, remoteImages: "always" }));
   });
 });
 

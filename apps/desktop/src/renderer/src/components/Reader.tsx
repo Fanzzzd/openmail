@@ -6,7 +6,7 @@ import { ThreadSummary } from "./AiPanel";
 import { TriageChip } from "./TriageChip";
 import { ContactAvatar as Avatar } from "./ContactAvatar";
 import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
-import { readerMessageId, useReaderMessages } from "../reader-selection";
+import { readerMessageId, readerThreadKey, useReaderMessages } from "../reader-selection";
 import { readerSelectedText } from "../quote-selection";
 import { jumpReaderSelection } from "../jump-selection";
 import { readerFindAction } from "../reader-shortcuts";
@@ -19,7 +19,6 @@ import {
   senderSpoofed,
   addressDomain,
   DEFAULT_PREFS,
-  imagesAllowed,
   htmlToText,
   normalizeQuote,
   EMPTY_QUOTE_HISTORY,
@@ -29,8 +28,10 @@ import {
   splitRepeatedQuote,
   orderThread,
   prepareMessageHtml,
+  type PreparedHtml,
   READER_ZOOMS,
   senderLabel,
+  shouldLoadRemote,
   threadExpansion,
   type ReaderZoom,
 } from "@openmail/core/schema";
@@ -41,6 +42,8 @@ import {
   AppWindow,
   Code,
   ChevronDown,
+  ChevronsDownUp,
+  ChevronsUpDown,
   FileDown,
   ImageOff,
   Images,
@@ -390,6 +393,24 @@ export function ThreadView({
     useAtomValue(knownSendersAtom(stored[0]?.accountId ?? "", addresses)),
     (): readonly string[] => [],
   );
+  const imageSenders = AsyncResult.getOrElse(
+    useAtomValue(imageSendersAtom),
+    (): readonly string[] => [],
+  );
+  const isKnown = (m: Message) => known.includes(m.from.address.trim().toLowerCase());
+  const [imagesLoaded, setImagesLoaded] = useAtom(
+    imagesLoadedAtom((single ? selectedId : readerThreadKey(stored[0])) ?? selectedId),
+  );
+  // Only messages on screen at the click load; later arrivals ask again.
+  const loadImages = () =>
+    setImagesLoaded(new Set([...imagesLoaded, ...messages.map((m) => m.id)]));
+  const loadsRemote = (m: Message) =>
+    imagesLoaded.has(m.id) ||
+    shouldLoadRemote(m, {
+      remoteImages: prefs.remoteImages,
+      imageSenders,
+      knownSender: isKnown(m),
+    });
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
   const provider = accounts.find((account) => account.id === stored[0]?.accountId)?.provider;
   const webLabel = provider === "gmail" ? t`Open in Gmail` : t`Open in Outlook`;
@@ -439,6 +460,10 @@ export function ThreadView({
       ),
     );
   };
+  // One notice per conversation, on the first open message still blocking remote images.
+  const imageNoticeId = messages.find(
+    (m) => open.has(m.id) && m.bodyCached !== false && !loadsRemote(m) && preparedHtml(m).hasRemote,
+  )?.id;
   const toggle = (id: string) => {
     if (id === activeId && open.has(id)) setFinding(false);
     setOpen((prev) => {
@@ -562,7 +587,7 @@ export function ThreadView({
         break;
       case "loadRemoteContent":
         e.preventDefault();
-        registry.set(imagesLoadedAtom(active.id), true);
+        loadImages();
         break;
       case "toggleMessageBackground":
         e.preventDefault();
@@ -657,7 +682,7 @@ export function ThreadView({
         )
           event.currentTarget.focus({ preventScroll: true });
       }}
-      className="selectable flex-1 overflow-y-auto px-7 pb-10 outline-none"
+      className="selectable @container/thread flex-1 overflow-y-auto px-4 pb-10 outline-none @min-[520px]/thread:px-7"
     >
       <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
       {newest && (
@@ -675,11 +700,11 @@ export function ThreadView({
         />
       )}
       <div className="flex items-start gap-2 pt-2 pb-4">
-        <h2 className="min-w-0 flex-1 text-[24px] leading-tight font-bold">
+        <h2 className="min-w-0 flex-1 text-[24px] leading-tight font-bold break-words">
           {newest?.subject || t`(No subject)`}
         </h2>
         {messages.length > 1 && (
-          <div className="flex shrink-0 gap-2 pt-1 text-[12px] text-a11y-accent dark:text-blue-400">
+          <div className="hidden shrink-0 gap-2 pt-1 text-[12px] text-a11y-accent @min-[520px]/thread:flex dark:text-blue-400">
             <button
               type="button"
               onClick={() => expand(true)}
@@ -705,6 +730,27 @@ export function ThreadView({
             </button>
           }
         >
+          {messages.length > 1 && (
+            <>
+              <MenuItem
+                icon={ChevronsUpDown}
+                shortcut={shortcut("expandAll")}
+                disabled={messages.every((m) => open.has(m.id))}
+                onClick={() => expand(true)}
+              >
+                {t`Expand all`}
+              </MenuItem>
+              <MenuItem
+                icon={ChevronsDownUp}
+                shortcut={shortcut("collapseAll")}
+                disabled={open.size === 0}
+                onClick={() => expand(false)}
+              >
+                {t`Collapse all`}
+              </MenuItem>
+              <MenuSeparator />
+            </>
+          )}
           {canOpenWindow && (
             <MenuItem icon={AppWindow} onClick={() => run(openThreadWindow(selectedId))}>
               {t`Open in New Window`}
@@ -849,7 +895,7 @@ export function ThreadView({
             <Expanded
               key={m.id}
               message={m}
-              known={known.includes(m.from.address.trim().toLowerCase())}
+              known={isKnown(m)}
               onActivate={() => activate(m.id)}
               active={m.id === activeId}
               onMessageOp={(op) => messageAction(m.id, op)}
@@ -867,6 +913,10 @@ export function ThreadView({
               zoom={zoom}
               defaultBackground={prefs.messageBackground}
               onZoomKey={(e) => frameKeys(m.id, e)}
+              remote={loadsRemote(m)}
+              imageNotice={m.id === imageNoticeId}
+              onLoadImages={loadImages}
+              imageSenders={imageSenders}
               notify={notify}
               onShowOriginal={() => setRaw(m.id)}
               onPrint={(pdf) => print(m.id, pdf, m.id)}
@@ -888,14 +938,11 @@ export function ThreadView({
                 toggle(m.id);
               }}
               onFocus={() => activate(m.id)}
-              className={`flex w-full gap-3 py-3 text-left ${m.id === activeId ? "border-l-2 border-blue-400 pl-2" : ""}`}
+              className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? "border-l-2 border-blue-400 pl-2" : ""}`}
             >
               <Avatar message={m} />
               <span className="min-w-0 flex-1">
-                <MessageHead
-                  message={m}
-                  known={known.includes(m.from.address.trim().toLowerCase())}
-                />
+                <MessageHead message={m} known={isKnown(m)} />
                 <span className="mt-0.5 block truncate text-[13px] text-a11y-muted">
                   {m.snippet}
                 </span>
@@ -920,46 +967,74 @@ function MessageHead({
 }) {
   const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
+  const label = senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known);
+  // Names wrap between words; an unbroken run breaks only when it would overflow.
+  const name = (
+    <span data-sender-name className="line-clamp-2 break-words" title={label}>
+      {label}
+    </span>
+  );
   return (
-    <span className="flex items-baseline gap-2">
-      <span className="min-w-0 flex-1 break-all text-[14px] font-semibold">
-        {onSearchSender ? (
-          <DropdownMenu
-            trigger={
-              <button type="button" className="text-left hover:text-blue-600">
-                {senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known)}
-              </button>
-            }
+    <span className="block">
+      <span className="flex flex-col @min-[520px]/message:flex-row @min-[520px]/message:items-baseline @min-[520px]/message:gap-2">
+        <span className="min-w-0 text-[14px] font-semibold @min-[520px]/message:flex-1">
+          {onSearchSender ? (
+            <DropdownMenu
+              trigger={
+                <button type="button" className="block max-w-full text-left hover:text-blue-600">
+                  {name}
+                </button>
+              }
+            >
+              <MenuItem
+                onClick={onSearchSender}
+                shortcut={shortcut("searchSender")}
+              >{t`Search messages from this sender`}</MenuItem>
+              <AppleContactActions address={m.from} />
+            </DropdownMenu>
+          ) : (
+            name
+          )}
+        </span>
+        <span className="flex min-w-0 items-baseline gap-x-2 text-[12px] @max-[420px]/message:flex-wrap @min-[520px]/message:max-w-[65%]">
+          <span data-sender-address className="min-w-0 truncate" title={m.from.address}>
+            {m.from.address}
+          </span>
+          {m.isStarred && (
+            <Star className="size-3.5 shrink-0 self-center fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />
+          )}
+          <span
+            data-message-date
+            className="ml-auto shrink-0 text-a11y-muted @max-[420px]/message:ml-0 @max-[420px]/message:basis-full @min-[520px]/message:ml-0"
           >
-            <MenuItem
-              onClick={onSearchSender}
-              shortcut={shortcut("searchSender")}
-            >{t`Search messages from this sender`}</MenuItem>
-            <AppleContactActions address={m.from} />
-          </DropdownMenu>
-        ) : (
-          senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known)
-        )}
+            {threadDate(m.date, i18n)}
+          </span>
+        </span>
       </span>
-      <span className="text-[12px] break-all">{m.from.address}</span>
       {m.security?.dmarc === "fail" && (
         <span
           role="alert"
-          className="text-a11y-danger"
+          className="block text-[12px] text-a11y-danger"
         >{t`Sender authentication failed (DMARC)`}</span>
       )}
       {senderSpoofed(m.from) && (
         <span
           role="alert"
-          className="text-a11y-danger"
+          className="block text-[12px] text-a11y-danger"
         >{t`The sender name contains a different email address.`}</span>
       )}
-      {m.isStarred && (
-        <Star className="size-3.5 shrink-0 self-center fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />
-      )}
-      <span className="shrink-0 text-[12px] text-a11y-muted">{threadDate(m.date, i18n)}</span>
     </span>
   );
+}
+
+const prepared = new WeakMap<Message, PreparedHtml>();
+function preparedHtml(m: Message): PreparedHtml {
+  let value = prepared.get(m);
+  if (!value) {
+    value = prepareMessageHtml(m.bodyHtml);
+    prepared.set(m, value);
+  }
+  return value;
 }
 
 const noInline = Atom.make(AsyncResult.success<Record<string, string>>({}));
@@ -969,6 +1044,10 @@ function Expanded({
   zoom,
   defaultBackground,
   onZoomKey,
+  remote,
+  imageNotice,
+  onLoadImages,
+  imageSenders,
   notify,
   onShowOriginal,
   onPrint,
@@ -994,6 +1073,12 @@ function Expanded({
   zoom: ReaderZoom;
   defaultBackground: "light" | "theme";
   onZoomKey: (e: KeyboardEvent) => void;
+  /** Remote images may load. */
+  remote: boolean;
+  /** Show the conversation's remote image notice on this message. */
+  imageNotice: boolean;
+  onLoadImages: () => void;
+  imageSenders: readonly string[];
   notify: Notify;
   onShowOriginal: () => void;
   onPrint: (pdf: boolean) => void;
@@ -1019,27 +1104,21 @@ function Expanded({
   const shortcut = useShortcutText();
   const dark = useDarkMode();
   const [override, setOverride] = useAtom(messageBackgroundAtom(m.id));
-  const [loadedOnce, setLoadedOnce] = useAtom(imagesLoadedAtom(m.id));
-  const senders: readonly string[] = AsyncResult.getOrElse(
-    useAtomValue(imageSendersAtom),
-    (): readonly string[] => [],
-  );
   const setImageSender = useAtomSet(setImageSenderAtom);
 
   const address = m.from.address.toLowerCase();
   const domain = addressDomain(address);
-  const bySender = senders.includes(address);
-  const byDomain = domain !== "" && senders.includes(domain);
+  const bySender = imageSenders.includes(address);
+  const byDomain = domain !== "" && imageSenders.includes(domain);
   const authenticated = m.security?.dmarc === "pass";
-  const allowed = loadedOnce || (authenticated && imagesAllowed(address, senders));
-  const hasCid = /\bcid:/i.test(m.bodyHtml);
+  const plain = preparedHtml(m);
+  // Embedded parts come from the cached message or the provider, never the sender's server.
   const inline = AsyncResult.getOrElse(
-    useAtomValue(allowed && hasCid ? inlineImagesAtom(m.id) : noInline),
+    useAtomValue(plain.hasCid ? inlineImagesAtom(m.id) : noInline),
     () => ({}),
   );
-  const prepared = prepareMessageHtml(m.bodyHtml, { inline });
-  const needsImages = prepared.hasRemote || hasCid;
-  const trackerCount = prepared.trackers.length + prepared.pixels;
+  const html = plain.hasCid ? prepareMessageHtml(m.bodyHtml, { inline }) : plain;
+  const trackerCount = html.trackers.length + html.pixels;
 
   const background: MessageBackground =
     override ?? (defaultBackground === "theme" && dark ? "dark" : "light");
@@ -1054,6 +1133,7 @@ function Expanded({
   const separator = t({ message: ", ", comment: "Separator between list items" });
   const to = m.to.map(displayName).join(separator) || "—";
   const cc = m.cc.map(displayName).join(separator);
+  const tradeOff = t`Loading remote images lets the sender see when you open a message and your IP address.`;
   return (
     <article
       data-message-id={m.id}
@@ -1086,7 +1166,7 @@ function Expanded({
             <MessageHead message={m} known={known} onSearchSender={onSearchSender} />
             <span
               className="mt-0.5 block truncate text-[13px] text-a11y-muted"
-              title={m.from.address}
+              title={[...m.to, ...m.cc].map((a) => a.address).join(separator)}
             >
               <Trans>To: {to}</Trans>
               {m.cc.length > 0 && (
@@ -1200,43 +1280,40 @@ function Expanded({
 
       {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
 
-      {((needsImages && !allowed) || trackerCount > 0) && (
+      {(imageNotice || trackerCount > 0) && (
         <div
-          data-images-notice
-          className="mt-3 flex flex-col items-start gap-3 rounded-md bg-neutral-100 px-3 py-2 text-[12px] text-neutral-600 @min-[600px]/message:flex-row @min-[600px]/message:items-center dark:bg-white/5 dark:text-neutral-400"
+          data-images-notice={imageNotice || undefined}
+          className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${imageNotice ? "rounded-md bg-neutral-100 px-3 py-1.5 text-neutral-600 dark:bg-white/5 dark:text-neutral-400" : ""}`}
         >
-          {needsImages && !allowed && (
+          {imageNotice && (
             <>
-              <div className="flex min-w-0 flex-1 items-start gap-2">
-                <ImageOff className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  <Trans>
-                    Remote images are blocked so the sender can't tell if you read this.
-                  </Trans>
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-1.5">
+                <ImageOff className="size-3.5 shrink-0" />
+                <Trans>Remote images blocked</Trans>
+              </span>
+              <button
+                type="button"
+                onClick={onLoadImages}
+                title={tradeOff}
+                className="font-medium whitespace-nowrap text-a11y-accent hover:underline dark:text-blue-400"
+              >
+                <Trans>Load images</Trans>
+              </button>
+              {address && authenticated && (
                 <button
                   type="button"
-                  onClick={() => setLoadedOnce(true)}
-                  className="font-medium text-a11y-accent hover:underline dark:text-blue-400"
+                  onClick={() => allow(address, true)}
+                  className="font-medium whitespace-nowrap text-a11y-accent hover:underline dark:text-blue-400"
                 >
-                  <Trans>Load images</Trans>
+                  <Trans>Always from this sender</Trans>
                 </button>
-                {address && authenticated && (
-                  <button
-                    type="button"
-                    onClick={() => allow(address, true)}
-                    className="font-medium text-a11y-accent hover:underline dark:text-blue-400"
-                  >
-                    <Trans>Always from this sender</Trans>
-                  </button>
-                )}
-              </div>
+              )}
             </>
           )}
           {trackerCount > 0 && (
-            <TrackerBadge trackers={prepared.trackers} pixels={prepared.pixels} />
+            <span className={imageNotice ? "ml-auto flex" : "flex"}>
+              <TrackerBadge trackers={html.trackers} pixels={html.pixels} />
+            </span>
           )}
         </div>
       )}
@@ -1264,8 +1341,8 @@ function Expanded({
           </>
         ) : m.bodyHtml ? (
           <EmailFrame
-            html={prepared.html}
-            remote={allowed}
+            html={html.html}
+            remote={remote}
             background={background}
             zoom={zoom}
             onKeyDown={onZoomKey}

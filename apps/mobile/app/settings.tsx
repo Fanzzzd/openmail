@@ -7,6 +7,7 @@ import {
   SWIPE_ACTIONS,
   UNDO_SEND_SECONDS,
   LANGUAGES,
+  REMOTE_IMAGE_MODES,
   type Prefs,
 } from "@openmail/core/portable";
 import { Effect } from "effect";
@@ -187,20 +188,33 @@ export default function Settings() {
           <Text style={styles.title}>
             {i18n._({ id: "Remote images", message: "Remote images" })}
           </Text>
-          <Button
-            label={
-              prefs.value.remoteImages
-                ? i18n._({
-                    id: "Block remote images by default",
-                    message: "Block remote images by default",
-                  })
-                : i18n._({
-                    id: "Load remote images by default",
-                    message: "Load remote images by default",
-                  })
-            }
-            onPress={() => void update({ remoteImages: !prefs.value.remoteImages })}
-          />
+          <View style={styles.toolbar}>
+            {REMOTE_IMAGE_MODES.map((mode) => (
+              <Button
+                key={mode}
+                disabled={prefs.value.remoteImages === mode}
+                label={
+                  mode === "ask"
+                    ? i18n._({ id: "Ask each time", message: "Ask each time" })
+                    : mode === "known"
+                      ? i18n._({ id: "From people I know", message: "From people I know" })
+                      : i18n._({
+                          id: "Always",
+                          message: "Always",
+                          comment: "Remote images setting: always load.",
+                        })
+                }
+                onPress={() => void update({ remoteImages: mode })}
+              />
+            ))}
+          </View>
+          <Text style={styles.detail}>
+            {i18n._({
+              id: "Loading remote images lets the sender see when you open a message and your IP address.",
+              message:
+                "Loading remote images lets the sender see when you open a message and your IP address.",
+            })}
+          </Text>
           <Text style={styles.title}>{i18n._({ id: "Language", message: "Language" })}</Text>
           {LANGUAGES.map((language) => (
             <Button

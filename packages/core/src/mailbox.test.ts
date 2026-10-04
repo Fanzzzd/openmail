@@ -317,6 +317,8 @@ it.effect("reads original source, attachments and inline images from the provide
         const inline = yield* m.inlineImages(id);
         assert.deepStrictEqual(Object.keys(inline), ["logo@x"]);
         assert.match(inline["logo@x"] ?? "", /^data:image\/png;base64,/);
+        server.raw.delete("m1");
+        assert.deepStrictEqual(yield* m.inlineImages(id), inline);
       }),
   );
 });

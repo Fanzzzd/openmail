@@ -1,25 +1,29 @@
-import { ServiceHint } from "./OptionalServices";
+import { ServiceHint, useServiceState } from "./OptionalServices";
 import { Button } from "@base-ui/react/button";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   inviteCanRespond,
   shouldLoadInvitation,
-  formatCalendarRange,
+  calendarRangeParts,
   formatCalendarTime,
   type CalendarInvite,
   type InviteResponse,
   type Provider,
 } from "@openmail/core/schema";
-import { Cause } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import type { Message } from "../../../shared/api";
 import { resultError } from "../errors";
 import { Keys } from "../state/keys";
-import { reauthAtom, respondInviteAtom } from "../state/mutations";
+import { respondInviteAtom } from "../state/mutations";
 import { accountsAtom, invitationsAtom } from "../state/queries";
-import { DetectedCalendarEvents, OverlappingEvents } from "./CalendarEvents";
+import {
+  CalendarAccessAction,
+  calendarFailure,
+  DetectedCalendarEvents,
+  OverlappingEvents,
+} from "./CalendarEvents";
 import { MeetingLinks } from "./MeetingLinks";
 import { formButton } from "./ui/form-styles";
 
@@ -58,6 +62,19 @@ function LoadedInvites({ message }: { message: Message }) {
           provider={account?.provider ?? "imap"}
         />
       ))}
+    </>
+  );
+}
+
+/** Each side of the range stays whole when it fits, so a narrow card breaks at the arrow. */
+function CalendarRange({ range }: { range: Pick<CalendarInvite, "start" | "end"> }) {
+  const { i18n } = useLingui();
+  const { start, end } = calendarRangeParts(range, i18n.locale);
+  return end === null ? (
+    start
+  ) : (
+    <>
+      <span className="inline-block">{start} →</span> <span className="inline-block">{end}</span>
     </>
   );
 }
@@ -118,7 +135,6 @@ function Invitation({
 }) {
   const { t, i18n } = useLingui();
   const [result, respond] = useAtom(respondInviteAtom, { mode: "promiseExit" });
-  const [signIn, reauth] = useAtom(reauthAtom(message.accountId), { mode: "promiseExit" });
   const [sent, setSent] = useState<InviteResponse | null>(null);
   const attendeeAddress = invite.responseAddress?.address ?? email;
   const attendee = invite.attendees.find(
@@ -135,9 +151,10 @@ function Invitation({
       provider,
       invite.responseAddress ? [invite.responseAddress.address] : [],
     );
+  // A turned-off or ungranted calendar fails every call; ServiceHint explains instead.
+  const calendar = useServiceState(message.accountId, "calendar");
+  const calendarOff = calendar !== undefined && calendar !== "granted";
   const recipient = provider === "imap" ? invite.organizer?.address : null;
-  const error = result._tag === "Failure" ? Cause.findErrorOption(result.cause) : null;
-  const missing = error?._tag === "Some" && error.value._tag === "FeatureScopeMissing";
   const state = sent ?? attendee?.status.toLowerCase();
   const label =
     state === "accepted"
@@ -162,7 +179,7 @@ function Invitation({
       <h3 className="text-[14px] font-semibold">{invite.title || message.subject}</h3>
       {invite.start && (
         <p>
-          {formatCalendarRange(invite, i18n.locale)}
+          <CalendarRange range={invite} />
           {invite.start.kind === "date" && <> · {t`All day`}</>}
         </p>
       )}
@@ -172,10 +189,10 @@ function Invitation({
             <Trans>Meeting updated</Trans>
           </p>
           <p>
-            <Trans>Previous time:</Trans> {formatCalendarRange(invite.previous, i18n.locale)}
+            <Trans>Previous time:</Trans> <CalendarRange range={invite.previous} />
           </p>
           <p>
-            <Trans>New time:</Trans> {formatCalendarRange(invite, i18n.locale)}
+            <Trans>New time:</Trans> <CalendarRange range={invite} />
           </p>
           {invite.previous.location !== invite.location && (
             <p>
@@ -261,13 +278,18 @@ function Invitation({
       )}
       <Recurrence invite={invite} />
       {provider !== "imap" &&
+        !calendarOff &&
         invite.method === "REQUEST" &&
         !invite.cancelled &&
         invite.start &&
         !(invite.start.kind === "zoned" && invite.start.timestamp === null) && (
-          <OverlappingEvents messageId={message.id} inviteKey={invite.key} />
+          <OverlappingEvents
+            accountId={message.accountId}
+            messageId={message.id}
+            inviteKey={invite.key}
+          />
         )}
-      {canRespond && (
+      {canRespond && !calendarOff && (
         <div className="flex flex-wrap items-center gap-2">
           {(
             [
@@ -278,8 +300,8 @@ function Invitation({
           ).map(({ response, text }) => (
             <Button
               key={response}
-              className={`${formButton} max-w-full break-all text-left`}
-              disabled={result.waiting || signIn.waiting}
+              className={`${formButton} max-w-full min-w-24 break-words`}
+              disabled={result.waiting}
               onClick={async () => {
                 const exit = await respond({
                   payload: { messageId: message.id, key: invite.key, response },
@@ -300,22 +322,7 @@ function Invitation({
         </p>
       )}
       <ServiceHint accountId={message.accountId} service="calendar" />
-      {missing && (
-        <Button
-          className={formButton}
-          disabled={signIn.waiting}
-          onClick={async () => {
-            await reauth("calendar");
-          }}
-        >
-          <Trans>Sign in again</Trans>
-        </Button>
-      )}
-      {resultError(i18n, signIn) && (
-        <p role="alert" className="text-orange-700 dark:text-orange-400">
-          {resultError(i18n, signIn)}
-        </p>
-      )}
+      <CalendarAccessAction accountId={message.accountId} error={calendarFailure(result)} />
     </section>
   );
 }

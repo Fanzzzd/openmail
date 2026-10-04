@@ -215,7 +215,7 @@ export function MessageList({
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
           {searching ? <Trans>Search results</Trans> : title}
         </h1>
-        {folderActions}
+        <div className="flex shrink-0 items-center gap-2">{folderActions}</div>
       </header>
       <div className="flex shrink-0 flex-wrap items-center gap-1 px-3 pb-2">
         {!searching && (

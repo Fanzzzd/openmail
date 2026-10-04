@@ -19,19 +19,25 @@ const calls = vi.hoisted(() => {
     frameKey,
   };
 });
-vi.mock("@effect/atom-react", async (original) => ({
-  ...(await original<typeof import("@effect/atom-react")>()),
-  useAtom: () => [null, vi.fn()],
-  useAtomSet: () => vi.fn(),
-  useAtomValue: (atom: string) => {
-    if (atom === "apple-status") return AsyncResult.success({ status: "off", revision: 0 });
-    if (atom === "apple-id") return AsyncResult.success(null);
-    if (atom === "prefs")
-      return AsyncResult.success({ ...DEFAULT_PREFS, shortcutSet: "mimestream" });
-    if (atom === "accounts") return AsyncResult.success([{ id: "gmail:one", provider: "gmail" }]);
-    return AsyncResult.success([]);
-  },
-}));
+vi.mock("@effect/atom-react", async (original) => {
+  const actual = await original<typeof import("@effect/atom-react")>();
+  const { Atom } = await import("effect/reactivity");
+  return {
+    ...actual,
+    // Mocked queries are strings; local UI atoms keep their real state.
+    useAtom: (atom: unknown) =>
+      Atom.isAtom(atom) && Atom.isWritable(atom) ? actual.useAtom(atom) : [null, vi.fn()],
+    useAtomSet: () => vi.fn(),
+    useAtomValue: (atom: string) => {
+      if (atom === "apple-status") return AsyncResult.success({ status: "off", revision: 0 });
+      if (atom === "apple-id") return AsyncResult.success(null);
+      if (atom === "prefs")
+        return AsyncResult.success({ ...DEFAULT_PREFS, shortcutSet: "mimestream" });
+      if (atom === "accounts") return AsyncResult.success([{ id: "gmail:one", provider: "gmail" }]);
+      return AsyncResult.success([]);
+    },
+  };
+});
 vi.mock("./state/queries", () => ({
   appleContactsStatusAtom: "apple-status",
   appleContactIdentifierAtom: () => "apple-id",

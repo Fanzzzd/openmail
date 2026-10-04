@@ -1,4 +1,4 @@
-import { Mailbox, type Message } from "@openmail/core/portable";
+import { Mailbox, shouldLoadRemote, type Message } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useLingui } from "@lingui/react";
 import { router, useLocalSearchParams } from "expo-router";
@@ -189,9 +189,14 @@ export default function Reader() {
   const runtime = useMailbox();
   const { i18n } = useLingui();
   const [menu, setMenu] = useState(false);
-  const prefs = useMailboxQuery(
+  const imagePolicy = useMailboxQuery(
     useCallback(
-      () => runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.prefs)),
+      () =>
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) =>
+            Effect.all({ prefs: mailbox.prefs, imageSenders: mailbox.imageSenders }),
+          ),
+        ),
       [runtime],
     ),
     { keepPrevious: true },
@@ -201,8 +206,20 @@ export default function Reader() {
   const messages = useMailboxQuery(
     useCallback(
       () =>
-        runtime.runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.readerThread(messageId))),
-      [runtime, messageId],
+        runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) =>
+            Effect.flatMap(mailbox.readerThread(messageId), (thread) =>
+              Effect.map(
+                mailbox.knownSenders(
+                  accountId,
+                  thread.map((m) => m.from.address),
+                ),
+                (known) => ({ thread, known }),
+              ),
+            ),
+          ),
+        ),
+      [runtime, messageId, accountId],
     ),
     { keepPrevious: true },
   );
@@ -261,11 +278,20 @@ export default function Reader() {
         </Text>
       )}
       {messages.kind === "ready" &&
-        messages.value.map((message) => (
+        messages.value.thread.map((message) => (
           <ReaderMessage
             key={message.id}
             message={message}
-            remoteImages={prefs.kind === "ready" && prefs.value.remoteImages === true}
+            remoteImages={
+              imagePolicy.kind === "ready" &&
+              shouldLoadRemote(message, {
+                remoteImages: imagePolicy.value.prefs.remoteImages,
+                imageSenders: imagePolicy.value.imageSenders,
+                knownSender: messages.value.known.includes(
+                  message.from.address.trim().toLowerCase(),
+                ),
+              })
+            }
           />
         ))}
     </ScrollView>

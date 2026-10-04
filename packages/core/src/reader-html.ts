@@ -14,6 +14,8 @@ export interface PreparedHtml {
   pixels: number;
   /** Remote images or styles are left that the CSP blocks until images are allowed. */
   hasRemote: boolean;
+  /** Resources reference embedded parts by `cid:`. */
+  hasCid: boolean;
 }
 
 export interface PrepareOptions {
@@ -111,6 +113,7 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
   const trackers: string[] = [];
   let pixels = 0;
   let hasRemote = false;
+  let hasCid = false;
 
   // Read the first HTML base href with entity decoding. Only an absolute web
   // URL can supply a base; all base elements are removed before rendering.
@@ -151,6 +154,7 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
     const decodedCss = attribute ? url : decodeCssEscapes(url);
     const trimmed = absolute(decodedCss, attribute).trim();
     if (/^cid:/i.test(trimmed)) {
+      hasCid = true;
       try {
         const id = decodeURIComponent(trimmed.slice(4)).replace(/^<|>$/g, "");
         return options.inline?.[id] ?? url;
@@ -278,5 +282,5 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
     (_whole, open: string, body: string, close: string) => `${open}${css(body)}${close}`,
   );
   const result = withStyles.replace(TAG, rewriteTag);
-  return { html: result, trackers, pixels, hasRemote };
+  return { html: result, trackers, pixels, hasRemote, hasCid };
 }

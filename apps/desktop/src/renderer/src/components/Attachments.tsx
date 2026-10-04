@@ -270,7 +270,7 @@ export function AttachmentList({
           return (
             <span
               key={pathKey(file.path)}
-              className="flex h-8 max-w-80 items-center rounded-md border border-black/10 text-[13px] dark:border-white/10"
+              className="flex h-8 max-w-[min(20rem,100%)] items-center rounded-md border border-black/10 text-[13px] dark:border-white/10"
             >
               <input
                 type="checkbox"

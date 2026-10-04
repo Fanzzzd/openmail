@@ -100,6 +100,12 @@ msgstr "このアカウントの表示されるメッセージテキストを AI
 msgid "Allow mail text to Anthropic"
 msgstr "Anthropic へのメッセージテキスト送信を許可"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "常に"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "この会話について質問"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "毎回尋ねる"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "ファイルを添付"
@@ -189,11 +200,6 @@ msgstr "Bcc"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "変更前"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "リモート画像を既定でブロック"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "より親しみやすく"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "知り合いから"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "「送信済み」を確認し、このメッセージが送信されていないことを確認しましたか？"
@@ -512,8 +523,8 @@ msgstr "外部画像を読み込む"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "リモート画像を既定で読み込む"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "リモート画像を読み込むと、メッセージを開いた日時と IP アドレスが送信者に伝わります。"
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

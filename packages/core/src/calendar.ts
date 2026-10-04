@@ -174,22 +174,35 @@ export function formatCalendarTime(time: CalendarTime, locale: string): string {
 }
 
 /** DTEND on an all-day event is exclusive, unlike the last day shown to a person. */
-export function formatCalendarRange(
+/** The formatted start and end; end is null for a single time or a one-day event. */
+export function calendarRangeParts(
   invite: Pick<CalendarInvite, "start" | "end">,
   locale: string,
-): string {
-  if (!invite.start) return "";
-  if (!invite.end) return formatCalendarTime(invite.start, locale);
+): { start: string; end: string | null } {
+  if (!invite.start) return { start: "", end: null };
+  const start = formatCalendarTime(invite.start, locale);
+  if (!invite.end) return { start, end: null };
   if (invite.start.kind === "date" && invite.end.kind === "date") {
     const last = new Date(Date.parse(`${invite.end.value}T00:00:00Z`) - 86400000)
       .toISOString()
       .slice(0, 10);
-    const start = formatCalendarTime(invite.start, locale);
-    return last <= invite.start.value
-      ? start
-      : `${start} → ${formatCalendarTime({ kind: "date", value: last }, locale)}`;
+    return {
+      start,
+      end:
+        last <= invite.start.value
+          ? null
+          : formatCalendarTime({ kind: "date", value: last }, locale),
+    };
   }
-  return `${formatCalendarTime(invite.start, locale)} → ${formatCalendarTime(invite.end, locale)}`;
+  return { start, end: formatCalendarTime(invite.end, locale) };
+}
+
+export function formatCalendarRange(
+  invite: Pick<CalendarInvite, "start" | "end">,
+  locale: string,
+): string {
+  const { start, end } = calendarRangeParts(invite, locale);
+  return end === null ? start : `${start} → ${end}`;
 }
 
 /** Old NULL hints are not evidence of an invite. Do not fetch every cached message. */

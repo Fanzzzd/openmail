@@ -100,6 +100,12 @@ msgstr "允许 Anthropic 接收此账户的可见消息文本以用于 AI。图�
 msgid "Allow mail text to Anthropic"
 msgstr "允许向 Anthropic 发送消息文本"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "总是"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "询问此会话"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "每次询问"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "添加附件"
@@ -189,11 +200,6 @@ msgstr "密送"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "改写前"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "默认拦截远程图片"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "更友好"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "来自我认识的人"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "是否已检查“已发送”，并确认这封邮件尚未发送？"
@@ -512,8 +523,8 @@ msgstr "加载远程图片"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "默认加载远程图片"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "加载远程图片会让发件人知道你何时打开消息，以及你的 IP 地址。"
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx

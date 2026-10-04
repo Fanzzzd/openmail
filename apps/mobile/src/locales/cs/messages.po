@@ -100,6 +100,12 @@ msgstr "Povolte službě Anthropic přijímat viditelný text zpráv tohoto úč
 msgid "Allow mail text to Anthropic"
 msgstr "Povolit text zpráv pro Anthropic"
 
+#. Remote images setting: always load.
+#. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Always"
+msgstr "Vždy"
+
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Android controls refresh timing. Updates are not real-time. Requires an unmetered network and enough battery. After reboot, open the app to resume."
@@ -149,6 +155,11 @@ msgid "Ask about this thread"
 msgstr "Zeptat se na tuto konverzaci"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "Ask each time"
+msgstr "Pokaždé se ptejte"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Attach file"
 msgstr "Přiložit soubor"
@@ -189,11 +200,6 @@ msgstr "Skrytá kopie"
 #: src/ai-controls.tsx
 msgid "Before"
 msgstr "Před úpravou"
-
-#. js-lingui-explicit-id
-#: app/settings.tsx
-msgid "Block remote images by default"
-msgstr "Ve výchozím stavu blokovat vzdálené obrázky"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -445,6 +451,11 @@ msgid "Friendlier"
 msgstr "Přátelštější"
 
 #. js-lingui-explicit-id
+#: app/settings.tsx
+msgid "From people I know"
+msgstr "Od lidí, které znám"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Have you checked Sent and confirmed that this message was not sent?"
 msgstr "Zkontrolovali jste složku „Odeslané“ a ověřili, že tato zpráva nebyla odeslána?"
@@ -512,8 +523,8 @@ msgstr "Načíst vzdálené obrázky"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
-msgid "Load remote images by default"
-msgstr "Ve výchozím stavu načítat vzdálené obrázky"
+msgid "Loading remote images lets the sender see when you open a message and your IP address."
+msgstr "Načtení vzdálených obrázků prozradí odesílateli, kdy zprávu otevřete, a vaši IP adresu."
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
