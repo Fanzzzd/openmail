@@ -477,6 +477,7 @@ msgstr "Todo"
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "Todas las cuentas"
@@ -2786,6 +2787,7 @@ msgid "Mailbox"
 msgstr "Buzón"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Mailboxes"
 msgstr "Buzones"
 
@@ -3211,6 +3213,7 @@ msgstr "Nuevas notificaciones de correo"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
@@ -3696,6 +3699,7 @@ msgstr "La respuesta se truncó al alcanzar el límite de tokens. No se guardó 
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Overview"
 msgstr "Descripción general"
 
@@ -4842,6 +4846,7 @@ msgid "Something went wrong. Please try again."
 msgstr "Algo salió mal. Por favor inténtalo de nuevo."
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Spaces"
 msgstr "Espacios"
 

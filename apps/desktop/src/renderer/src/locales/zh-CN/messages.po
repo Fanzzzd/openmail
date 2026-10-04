@@ -487,6 +487,7 @@ msgstr "全部"
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "全部账户"
@@ -2796,6 +2797,7 @@ msgid "Mailbox"
 msgstr "邮箱"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Mailboxes"
 msgstr "邮箱"
 
@@ -3221,6 +3223,7 @@ msgstr "新邮件通知"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
@@ -3706,6 +3709,7 @@ msgstr "输出已达到 token 上限，内容被截断，未缓存。"
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Overview"
 msgstr "总览"
 
@@ -4852,6 +4856,7 @@ msgid "Something went wrong. Please try again."
 msgstr "出了点问题，请再试一次。"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Spaces"
 msgstr "空间"
 

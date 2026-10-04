@@ -4,6 +4,8 @@
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", system-ui, sans-serif;
+  /* MEDIUM_MIN in shared/layout.ts (696px), so max-sm: matches the narrow layout. */
+  --breakpoint-sm: 43.5rem;
 }
 
 @theme inline {

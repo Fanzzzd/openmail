@@ -481,6 +481,7 @@ msgstr "All"
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "All accounts"
@@ -2790,6 +2791,7 @@ msgid "Mailbox"
 msgstr "Mailbox"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Mailboxes"
 msgstr "Mailboxes"
 
@@ -3215,6 +3217,7 @@ msgstr "New mail notifications"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
@@ -3700,6 +3703,7 @@ msgstr "Output truncated at the token limit. It was not cached."
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Overview"
 msgstr "Overview"
 
@@ -4846,6 +4850,7 @@ msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Spaces"
 msgstr "Spaces"
 

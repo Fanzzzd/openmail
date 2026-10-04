@@ -43,6 +43,8 @@ import { Overview } from "./components/Overview";
 import { DefaultProfilesPrompt, ProfileSwitcher } from "./components/ProfileSettings";
 import { Reader, useThreadPrint } from "./components/Reader";
 import { Sidebar, SidebarToggle } from "./components/Sidebar";
+import { SidebarRail } from "./components/SidebarRail";
+import { railTrafficLightInset, trafficLightInset } from "./components/ui/styles";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
 import {
@@ -413,7 +415,18 @@ export function App({ composeId }: { composeId?: string }) {
       onSettings={fromDrawer(() => setDialog("settings"))}
     />
   );
-  const sidebarToggle = docked ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
+  // The medium layout docks the sidebar as a rail of icons, with the full sidebar in a drawer.
+  const rail = layout.mode === "medium" && hasAccounts;
+  const sidebarToggle =
+    docked || rail ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
+  const leadingInset = rail ? railTrafficLightInset : docked ? undefined : trafficLightInset;
+  /** A view or space picked in the rail hands focus to its list. */
+  const fromRail =
+    <A extends unknown[]>(action: (...args: A) => void) =>
+    (...args: A) => {
+      action(...args);
+      navigation.focusList(null);
+    };
   const mainPane = !hasAccounts ? (
     <main className="h-full w-full bg-white dark:bg-neutral-900">
       <div className="drag h-13" />
@@ -421,6 +434,7 @@ export function App({ composeId }: { composeId?: string }) {
   ) : (
     <Overview
       leading={sidebarToggle}
+      inset={leadingInset}
       accounts={accountList}
       profiles={profileList}
       unread={counts}
@@ -432,6 +446,7 @@ export function App({ composeId }: { composeId?: string }) {
   const listPane = (
     <MessageList
       leading={sidebarToggle}
+      inset={leadingInset}
       searchBar={
         !prefs.readingPaneVisible || narrow ? (
           <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
@@ -632,61 +647,75 @@ export function App({ composeId }: { composeId?: string }) {
           )}
         </div>
       ) : (
-        <Group
-          key={`${paneMode}:${docked}`}
-          className="min-h-0 flex-1"
-          defaultLayout={savedLayout.defaultLayout}
-          onLayoutChanged={savedLayout.onLayoutChanged}
-          resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
-        >
-          {docked && (
-            <Panel
-              id="sidebar"
-              data-mail-pane="sidebar"
-              defaultSize={232}
-              minSize={PANE_MIN.sidebar}
-              maxSize={380}
-              groupResizeBehavior="preserve-pixel-size"
-            >
-              {sidebar}
-            </Panel>
+        <div className="flex min-h-0 flex-1">
+          {rail && (
+            <SidebarRail
+              view={view}
+              accounts={accountList}
+              profiles={profileList}
+              unread={counts}
+              onView={fromRail((v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v))}
+              onSpace={fromRail(switchSpace)}
+              onOpenSidebar={paneNav.toggleSidebar}
+              onCompose={() => startCompose("new")}
+            />
           )}
-          {docked && <ResizeHandle />}
-          {paneMode !== "mail" ? (
-            <Panel id="main" minSize={360}>
-              {mainPane}
-            </Panel>
-          ) : (
-            <MailPanels
-              position={prefs.readingPanePosition}
-              readerVisible={prefs.readingPaneVisible}
-            >
+          <Group
+            key={`${paneMode}:${docked}`}
+            className="min-w-0 flex-1"
+            defaultLayout={savedLayout.defaultLayout}
+            onLayoutChanged={savedLayout.onLayoutChanged}
+            resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
+          >
+            {docked && (
               <Panel
-                id="list"
-                data-mail-pane="list"
-                defaultSize={380}
-                minSize={mailOrientation === "vertical" ? 120 : PANE_MIN.list}
-                maxSize={
-                  !prefs.readingPaneVisible || mailOrientation === "vertical" ? undefined : 720
-                }
+                id="sidebar"
+                data-mail-pane="sidebar"
+                defaultSize={232}
+                minSize={PANE_MIN.sidebar}
+                maxSize={380}
                 groupResizeBehavior="preserve-pixel-size"
               >
-                <div ref={listSlot} className="flex h-full" />
+                {sidebar}
               </Panel>
-              {prefs.readingPaneVisible && <ResizeHandle orientation={mailOrientation} />}
-              {prefs.readingPaneVisible && (
+            )}
+            {docked && <ResizeHandle />}
+            {paneMode !== "mail" ? (
+              <Panel id="main" minSize={360}>
+                {mainPane}
+              </Panel>
+            ) : (
+              <MailPanels
+                position={prefs.readingPanePosition}
+                readerVisible={prefs.readingPaneVisible}
+              >
                 <Panel
-                  id="reader"
-                  data-mail-pane="reader"
-                  tabIndex={-1}
-                  minSize={mailOrientation === "vertical" ? 150 : PANE_MIN.reader}
+                  id="list"
+                  data-mail-pane="list"
+                  defaultSize={380}
+                  minSize={mailOrientation === "vertical" ? 120 : PANE_MIN.list}
+                  maxSize={
+                    !prefs.readingPaneVisible || mailOrientation === "vertical" ? undefined : 720
+                  }
+                  groupResizeBehavior="preserve-pixel-size"
                 >
-                  <div ref={readerSlot} className="flex h-full" />
+                  <div ref={listSlot} className="flex h-full" />
                 </Panel>
-              )}
-            </MailPanels>
-          )}
-        </Group>
+                {prefs.readingPaneVisible && <ResizeHandle orientation={mailOrientation} />}
+                {prefs.readingPaneVisible && (
+                  <Panel
+                    id="reader"
+                    data-mail-pane="reader"
+                    tabIndex={-1}
+                    minSize={mailOrientation === "vertical" ? 150 : PANE_MIN.reader}
+                  >
+                    <div ref={readerSlot} className="flex h-full" />
+                  </Panel>
+                )}
+              </MailPanels>
+            )}
+          </Group>
+        </div>
       )}
       {/* The list and reader live outside the layout, so changing layouts keeps their state. */}
       {paneMode === "mail" && createPortal(listPane, listHost)}
@@ -902,10 +931,10 @@ function ReaderToolbar({
 }: {
   compact: boolean;
   batch: ComponentProps<typeof BatchActions> | null;
-  thread: Omit<ComponentProps<typeof ThreadActions>, "compact"> | null;
+  thread: Omit<ComponentProps<typeof ThreadActions>, "limit"> | null;
 }) {
   if (batch) return <BatchActions {...batch} />;
-  return thread && <ThreadActions {...thread} compact={compact} />;
+  return thread && <ThreadActions {...thread} limit={compact ? 2 : undefined} />;
 }
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {

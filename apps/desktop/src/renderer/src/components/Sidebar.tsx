@@ -99,7 +99,7 @@ import {
 type Icon = ComponentType<{ className?: string }>;
 
 // Each mailbox gets its own icon color, as in Mimestream's sidebar.
-const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [
+export const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [
   { id: "snoozed", icon: Clock, color: "text-violet-600 dark:text-violet-400" },
   { id: "inbox", icon: Inbox, color: "text-blue-600 dark:text-blue-400" },
   { id: "important", icon: Bookmark, color: "text-orange-600 dark:text-orange-400" },
@@ -120,6 +120,16 @@ const CATEGORY_ICONS: Record<string, Icon> = {
 };
 
 const NO_COUNTS: Readonly<Record<string, number>> = {};
+
+/** Unread counts by label in the accounts the view's mailboxes cover, for their badges. */
+export function useMailboxCounts(view: View, accounts: readonly Account[]) {
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
+  const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
+  return AsyncResult.getOrElse(
+    useAtomValue(unreadByLabelAtom(scope, undefined, prefs?.threadGrouping !== false)),
+    () => NO_COUNTS,
+  );
+}
 
 interface Props {
   view: View;
@@ -170,10 +180,7 @@ export function Sidebar({
 
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
-  const byLabel = AsyncResult.getOrElse(
-    useAtomValue(unreadByLabelAtom(scope, undefined, prefs?.threadGrouping !== false)),
-    () => NO_COUNTS,
-  );
+  const byLabel = useMailboxCounts(view, accounts);
   const inInbox = AsyncResult.getOrElse(
     useAtomValue(unreadByLabelAtom(scope, "INBOX", prefs?.threadGrouping !== false)),
     () => NO_COUNTS,
@@ -806,16 +813,24 @@ export function Sidebar({
 }
 
 /** Brings back the sidebar when it is hidden or, in a narrow window, opens it as a drawer. */
-export function SidebarToggle({ onClick }: { onClick: () => void }) {
+export function SidebarToggle({
+  onClick,
+  side = "bottom",
+  className = iconButton,
+}: {
+  onClick: () => void;
+  side?: "bottom" | "right";
+  className?: string;
+}) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
   return (
-    <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")}>
+    <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side={side}>
       <button
         type="button"
         aria-label={t`Show sidebar`}
         onClick={onClick}
-        className={`shrink-0 text-a11y-muted ${iconButton}`}
+        className={`shrink-0 text-a11y-muted ${className}`}
       >
         <PanelLeft className="size-4.5" />
       </button>

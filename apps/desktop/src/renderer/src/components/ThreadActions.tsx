@@ -25,7 +25,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { useRef, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { createLabelAndApplyAtom } from "../state/mutations";
 import { MAIL_KEYS } from "../state/keys";
@@ -36,6 +36,7 @@ import type { Label, MailOp, Mailbox, Provider } from "../../../shared/api";
 import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { useShortcutText } from "../use-shortcut-text";
+import { useElementWidth } from "../use-element-width";
 import { Tip } from "./ui/Tip";
 
 import { MultiOrganization } from "./MultiOrganization";
@@ -52,8 +53,12 @@ export interface ThreadState {
 }
 
 interface Props {
-  /** The reader collapses actions before there is too little room for search. */
-  compact?: boolean;
+  /**
+   * How many actions show as buttons; the rest stay in the actions menu. The
+   * reader collapses to two before search runs out of room. "fit" fills the
+   * toolbar's width and shows as many as fit there. Unset shows them all.
+   */
+  limit?: number | "fit" | undefined;
   currentLabel?: string | undefined;
   onCreate?: ((move: boolean) => void) | undefined;
   pickerMode?: "label" | "move";
@@ -100,7 +105,7 @@ const button =
  * buttons; tooltips carry the keyboard shortcut.
  */
 export function ThreadActions({
-  compact = false,
+  limit,
   currentLabel,
   pickerMode = "label",
   organizationTarget,
@@ -299,16 +304,30 @@ export function ThreadActions({
     ),
   };
   const ordered = [...new Set(prefs.toolbarActions)].filter((action) => controls[action]);
-  const visible = compact ? ordered.slice(0, 2) : ordered;
   const picker = pickerMode === "move" ? "move" : "label";
-  if (labelPicker && !visible.includes(picker)) visible.push(picker);
+  const fit = limit === "fit";
+  const root = useRef<HTMLDivElement>(null);
+  const width = useElementWidth(root);
+  const [widths, measure] = useMeasuredWidths(fit);
+  // An open picker needs its button as the anchor, in place of the last one that fits.
+  const visible = shownActions(
+    ordered,
+    fit ? fittingCount(ordered, widths, width) : limit,
+    labelPicker ? picker : undefined,
+  );
   return (
     <Toolbar.Root
+      ref={root}
       aria-label={t`Conversation actions`}
-      className="flex shrink-0 items-center gap-0.5"
+      className={`flex items-center gap-0.5 ${fit ? "min-w-0 flex-1" : "shrink-0"}`}
     >
       {visible.map((action) => (
-        <span key={action} className="contents">
+        <span
+          key={action}
+          ref={(element) => measure(action, element)}
+          data-toolbar-action={action}
+          className="flex shrink-0"
+        >
           {controls[action]}
         </span>
       ))}
@@ -337,6 +356,62 @@ export function ThreadActions({
   );
 }
 
+/** A toolbar icon button: 6 px padding around a 16 px icon, and the 2 px gap before the next. */
+const ACTION_WIDTH = 30;
+
+/**
+ * How many actions fit in `width` px beside the actions menu, by their
+ * measured widths or, for one not shown yet, an icon button's. A toolbar not
+ * measured yet (first paint, jsdom) shows them all.
+ */
+export function fittingCount(
+  ordered: readonly string[],
+  widths: Readonly<Record<string, number>>,
+  width: number,
+): number {
+  if (width === 0) return ordered.length;
+  let used = ACTION_WIDTH - 2;
+  let count = 0;
+  for (const action of ordered) {
+    used += (widths[action] ?? ACTION_WIDTH - 2) + 2;
+    if (used > width) break;
+    count++;
+  }
+  return count;
+}
+
+/**
+ * The rendered width of each action in the toolbar, kept from earlier renders
+ * so an action folded into the menu keeps its last width. The ref callback
+ * measures during commit, so a wider label folds before it can show cut off.
+ */
+function useMeasuredWidths(enabled: boolean) {
+  const [widths, setWidths] = useState<Readonly<Record<string, number>>>({});
+  const measure = (action: string, element: HTMLElement | null) => {
+    const width = enabled ? (element?.offsetWidth ?? 0) : 0;
+    if (width > 0 && widths[action] !== width)
+      setWidths((current) =>
+        current[action] === width ? current : { ...current, [action]: width },
+      );
+  };
+  return [widths, measure] as const;
+}
+
+/**
+ * The first `limit` actions, with `anchor` replacing the last of them when it
+ * is not among them. Only an anchor with no room at all goes past the limit.
+ */
+export function shownActions<A extends string>(
+  ordered: readonly A[],
+  limit: number | undefined,
+  anchor?: A,
+): A[] {
+  const count = Math.max(0, limit ?? ordered.length);
+  const shown = ordered.slice(0, count);
+  if (anchor && !shown.includes(anchor)) return [...shown.slice(0, Math.max(0, count - 1)), anchor];
+  return shown;
+}
+
 /**
  * The same actions as the toolbar, for a message row's context menu. Labels
  * toggle on Gmail; folder providers move the thread.
@@ -354,7 +429,7 @@ export function ThreadMenuItems({
   onSnooze,
   onPermanentDelete,
   onFilter,
-}: Omit<Props, "labelPicker" | "onLabelPicker" | "compact">) {
+}: Omit<Props, "labelPicker" | "onLabelPicker" | "limit">) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";

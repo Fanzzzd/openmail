@@ -36,6 +36,7 @@ import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
 import { MailRpcs } from "../../../shared/rpc";
 import { App } from "../App";
+import { ThreadWindow } from "../ThreadWindow";
 import { TipProvider } from "../components/ui/Tip";
 
 const unsupported = () => Effect.die(new Error("Unexpected desktop operation in flow test"));
@@ -121,6 +122,8 @@ export async function flow(
       pick: () => NativePickerResult;
       share: (request: { id: string; kind: "message" | "thread" | "web" }) => void;
     };
+    /** Renders the thread window for this message instead of the main window. */
+    thread?: string;
   } = {},
 ): Promise<FlowHarness> {
   const provider = options.provider ?? "gmail";
@@ -367,7 +370,13 @@ export async function flow(
       createElement(
         I18nProvider,
         { i18n },
-        createElement(TipProvider, null, createElement(App, { composeId })),
+        createElement(
+          TipProvider,
+          null,
+          options.thread
+            ? createElement(ThreadWindow, { id: `${account.id}/${options.thread}` })
+            : createElement(App, { composeId }),
+        ),
       ),
     ),
   );

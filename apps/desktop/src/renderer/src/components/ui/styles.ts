@@ -23,6 +23,8 @@ export const iconButton = "rounded-md p-1 hover:bg-black/5 dark:hover:bg-white/1
 
 /** Left padding that keeps a header at the window's leading edge clear of the traffic lights. */
 export const trafficLightInset = "pl-20";
+/** The same clearance for a header that starts after the 56 px sidebar rail: 56 + 24 = 80 px. */
+export const railTrafficLightInset = "pl-6";
 
 /** Keyboard shortcut next to a label. */
 export const kbdClass =

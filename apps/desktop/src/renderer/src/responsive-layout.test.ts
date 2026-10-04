@@ -1,16 +1,28 @@
 import { expect, it } from "vitest";
 import { MEDIUM_MIN, PANE_MIN, WIDE_MIN } from "../../shared/layout";
 import { isBackKey, layoutMode, visiblePanes } from "./responsive-layout";
+import { builtStyles } from "./test-styles";
 
 it("picks the layout from the panes' minimum widths", () => {
   expect(WIDE_MIN).toBe(960);
-  expect(MEDIUM_MIN).toBe(PANE_MIN.list + PANE_MIN.reader);
+  // The medium layout keeps the rail, the list and the reader at their minimum widths.
+  expect(MEDIUM_MIN).toBe(PANE_MIN.rail + PANE_MIN.list + PANE_MIN.reader);
+  expect(MEDIUM_MIN).toBe(696);
   expect(layoutMode(1600)).toBe("wide");
   expect(layoutMode(960)).toBe("wide");
   expect(layoutMode(959)).toBe("medium");
-  expect(layoutMode(640)).toBe("medium");
-  expect(layoutMode(639)).toBe("narrow");
+  expect(layoutMode(696)).toBe("medium");
+  expect(layoutMode(695)).toBe("narrow");
+  expect(layoutMode(640)).toBe("narrow");
   expect(layoutMode(480)).toBe("narrow");
+});
+
+it("applies max-sm: styles exactly below the medium layout", () => {
+  const media = new Set<string>();
+  builtStyles().walkRules(/max-sm\\:inset-0/, (rule) => {
+    if (rule.parent?.type === "atrule" && "params" in rule.parent) media.add(rule.parent.params);
+  });
+  expect([...media]).toEqual([`not all and (min-width: ${MEDIUM_MIN / 16}rem)`]);
 });
 
 it("shows both panes unless the window is narrow, and never a hidden reading pane", () => {

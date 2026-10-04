@@ -477,6 +477,7 @@ msgstr "Vše"
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "All accounts"
 msgstr "Všechny účty"
@@ -2786,6 +2787,7 @@ msgid "Mailbox"
 msgstr "Schránka"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Mailboxes"
 msgstr "Schránky"
 
@@ -3211,6 +3213,7 @@ msgstr "Upozornění na novou poštu"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/state/desktop.ts
 msgid "New message"
@@ -3696,6 +3699,7 @@ msgstr "Výstup byl zkrácen kvůli limitu tokenů. Nebyl uložen do mezipaměti
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/ProfileSettings.tsx
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Overview"
 msgstr "Přehled"
 
@@ -4842,6 +4846,7 @@ msgid "Something went wrong. Please try again."
 msgstr "Něco se pokazilo. Zkuste to prosím znovu."
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Spaces"
 msgstr "Prostory"
 

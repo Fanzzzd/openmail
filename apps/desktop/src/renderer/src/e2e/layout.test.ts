@@ -1,5 +1,7 @@
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { constVoid } from "effect/Function";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
+import { railTrafficLightInset, trafficLightInset } from "../components/ui/styles";
 import { clickButton, eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -31,6 +33,7 @@ const resize = (next: number) => {
 };
 
 const reader = () => screen.queryByRole("article", { name: "Selected message" });
+const rail = () => document.querySelector<HTMLElement>("[data-sidebar-rail]");
 
 it("a narrow window shows the list or the reader, and goes back with the button, Escape and Cmd+[", async () => {
   width = 520;
@@ -41,6 +44,7 @@ it("a narrow window shows the list or the reader, and goes back with the button,
   expect(screen.getByRole("combobox", { name: "Search mail" })).toBeTruthy();
   expect(reader()).toBeNull();
   expect(document.querySelector('[data-mail-pane="sidebar"]')).toBeNull();
+  expect(rail()).toBeNull();
 
   const open = async () => {
     fireEvent.click(row(h.id("one")));
@@ -79,10 +83,11 @@ it("the sidebar opens as a drawer below 960 px and closes when a mailbox is pick
   current = await flow();
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
-  expect(document.querySelector('[data-mail-pane="sidebar"]')).toBeNull();
+  // Only the rail is docked; the full sidebar lives in the drawer.
+  expect(document.querySelector('[data-mail-pane="sidebar"]')).toBe(rail());
   expect(document.querySelector('[data-mail-pane="reader"]')).not.toBeNull();
 
-  const toggle = screen.getByRole("button", { name: "Show sidebar" });
+  const toggle = within(rail()!).getByRole("button", { name: "Show sidebar" });
   toggle.focus();
   fireEvent.click(toggle);
   const drawer = await screen.findByRole("dialog", { name: "Sidebar" });
@@ -141,6 +146,172 @@ it("a wide window docks the sidebar and has no drawer toggle", async () => {
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   expect(document.querySelector('[data-mail-pane="sidebar"]')).not.toBeNull();
   expect(screen.queryByRole("button", { name: "Show sidebar" })).toBeNull();
+  expect(rail()).toBeNull();
+});
+
+it("a medium window docks an icon rail whose mailboxes and spaces hand focus to the list", async () => {
+  width = 800;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const strip = rail();
+  if (!strip) throw new Error("Missing sidebar rail");
+  // The rail holds the only drawer toggle, and the list header clears the traffic lights beside it.
+  expect(screen.getAllByRole("button", { name: "Show sidebar" })).toEqual([
+    within(strip).getByRole("button", { name: "Show sidebar" }),
+  ]);
+  const list = document.querySelector('[data-mail-pane="list"]');
+  expect(list?.querySelector("header")?.className).toContain(railTrafficLightInset);
+
+  // Icons are named by their mailbox and unread count; the open one is current.
+  const mailboxes = within(strip).getByRole("navigation", { name: "Mailboxes" });
+  const inbox = await within(mailboxes).findByRole("button", { name: "Inbox 2" });
+  expect(inbox.getAttribute("aria-current")).toBe("page");
+  expect(inbox.textContent).toContain("2");
+  expect(within(mailboxes).getByRole("button", { name: "Drafts" })).toBeTruthy();
+
+  fireEvent.click(within(mailboxes).getByRole("button", { name: "Starred" }));
+  await eventually(() =>
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Starred"),
+  );
+  expect(
+    within(mailboxes).getByRole("button", { name: "Starred" }).getAttribute("aria-current"),
+  ).toBe("page");
+  expect(inbox.getAttribute("aria-current")).toBeNull();
+  await eventually(() =>
+    expect(document.activeElement?.closest('[data-mail-pane="list"]')).not.toBeNull(),
+  );
+
+  const spaces = within(strip).getByRole("group", { name: "Spaces" });
+  fireEvent.click(within(spaces).getByRole("button", { name: "Overview" }));
+  await eventually(() =>
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Overview"),
+  );
+  expect(
+    within(spaces).getByRole("button", { name: "Overview" }).getAttribute("aria-current"),
+  ).toBe("true");
+  // Picking a mailbox from the overview opens it in All accounts.
+  fireEvent.click(within(mailboxes).getByRole("button", { name: "Inbox 2" }));
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  expect(
+    within(spaces)
+      .getByRole("button", { name: /^All accounts/ })
+      .getAttribute("aria-current"),
+  ).toBe("true");
+  await eventually(() =>
+    expect(document.activeElement?.closest('[data-mail-pane="list"]')).not.toBeNull(),
+  );
+
+  // The full sidebar replaces the rail when wide; a narrow window has neither.
+  resize(1200);
+  expect(rail()).toBeNull();
+  expect(document.querySelector('[data-mail-pane="sidebar"] aside')).not.toBeNull();
+  resize(600);
+  expect(rail()).toBeNull();
+  expect(document.querySelector('[data-mail-pane="sidebar"]')).toBeNull();
+  // The list header has the drawer toggle again.
+  expect(
+    screen.getByRole("button", { name: "Show sidebar" }).closest("[data-sidebar-rail]"),
+  ).toBeNull();
+});
+
+it("the thread window folds actions into the actions menu as it narrows and keeps their shortcuts", async () => {
+  let toolbarWidth = 0;
+  const observers = new Set<() => void>();
+  const SetupObserver = globalThis.ResizeObserver;
+  const clientWidth = Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth");
+  const offsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth");
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      changed: () => void;
+      constructor(callback: () => void) {
+        this.changed = callback;
+      }
+      observe() {
+        observers.add(this.changed);
+      }
+      unobserve = constVoid;
+      disconnect() {
+        observers.delete(this.changed);
+      }
+    },
+  );
+  // jsdom has no layout: the actions toolbar is toolbarWidth wide and each icon button 28 px.
+  Object.defineProperty(Element.prototype, "clientWidth", {
+    configurable: true,
+    get(this: Element) {
+      return this.getAttribute("aria-label") === "Conversation actions" &&
+        this.getAttribute("role") === "toolbar"
+        ? toolbarWidth
+        : 0;
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.dataset.toolbarAction ? 28 : 0;
+    },
+  });
+  const resizeToolbar = (next: number) => {
+    toolbarWidth = next;
+    act(() => {
+      for (const changed of observers) changed();
+    });
+  };
+  const shown = () =>
+    [...document.querySelectorAll<HTMLElement>("[data-toolbar-action]")].map(
+      (action) => action.dataset.toolbarAction,
+    );
+  try {
+    current = await flow({ thread: "one" });
+    const h = current;
+    await screen.findByRole("button", { name: "Archive" });
+    const header = document.querySelector("[data-thread-toolbar]");
+    expect(header?.className).toContain("drag");
+    expect(header?.className).toContain(trafficLightInset);
+    const all = shown();
+    expect(all).toEqual(["archive", "trash", "spam", "read", "star", "important", "move", "label"]);
+
+    // 4 buttons of 30 px and the 28 px menu button fit in 150 px; a fifth would not.
+    resizeToolbar(150);
+    expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
+    expect(screen.queryByRole("button", { name: "Star" })).toBeNull();
+    const menu = screen.getByRole("button", { name: "Conversation actions" });
+    expect(menu.closest('[role="toolbar"]')).not.toBeNull();
+    fireEvent.click(menu);
+    expect(await screen.findByRole("menuitem", { name: /^Star/ })).toBeTruthy();
+    key("Escape");
+    await eventually(() => expect(screen.queryByRole("menuitem", { name: /^Star/ })).toBeNull());
+
+    // Folded actions keep their shortcuts; the label picker takes the last button's place.
+    key("l", { metaKey: true }, document.body);
+    await screen.findByRole("combobox", { name: "Labels" });
+    expect(shown()).toEqual(["archive", "trash", "spam", "label"]);
+    key("Escape");
+    await eventually(() => expect(screen.queryByRole("combobox", { name: "Labels" })).toBeNull());
+    expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
+    key("l", { metaKey: true, shiftKey: true }, document.body);
+    await eventually(() =>
+      expect(
+        h.requests.some(
+          (request) =>
+            request.tag === "Modify" && JSON.stringify(request.payload).includes('"star"'),
+        ),
+      ).toBe(true),
+    );
+
+    // Only the menu button fits in 40 px; widening brings every action back.
+    resizeToolbar(40);
+    expect(shown()).toEqual([]);
+    expect(screen.getByRole("button", { name: "Conversation actions" })).toBeTruthy();
+    resizeToolbar(400);
+    expect(shown()).toEqual(all);
+  } finally {
+    vi.stubGlobal("ResizeObserver", SetupObserver);
+    if (clientWidth) Object.defineProperty(Element.prototype, "clientWidth", clientWidth);
+    if (offsetWidth) Object.defineProperty(HTMLElement.prototype, "offsetWidth", offsetWidth);
+  }
 });
 
 it("a narrow window shows dialogs as full-window sheets with a close button", async () => {

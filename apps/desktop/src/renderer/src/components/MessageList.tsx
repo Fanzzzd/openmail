@@ -35,7 +35,6 @@ import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
 import { ThreadMenuItems, type ThreadState } from "./ThreadActions";
-import { trafficLightInset } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
@@ -44,8 +43,10 @@ export type SelectionSource = "keyboard" | "mouse";
 interface Props {
   /** The search field, when the list has the window's search instead of the reader. */
   searchBar?: ReactNode;
-  /** Controls before everything else when the list is the window's leftmost pane, clear of the traffic lights. */
+  /** Controls before everything else when the list is the window's leftmost pane. */
   leading?: ReactNode;
+  /** Left padding that clears the traffic lights when the top row sits under them. */
+  inset?: string | undefined;
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
@@ -104,6 +105,7 @@ export function MessageList({
   title,
   searchBar,
   leading,
+  inset,
   threads,
   loading,
   loadingMore = false,
@@ -224,15 +226,13 @@ export function MessageList({
       className="flex h-full w-full flex-col bg-white dark:bg-neutral-900"
     >
       {searchBar && (
-        <div
-          className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${leading ? trafficLightInset : "pl-4"}`}
-        >
+        <div className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${inset ?? "pl-4"}`}>
           {leading}
           {searchBar}
         </div>
       )}
       <header
-        className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${leading && !searchBar ? trafficLightInset : "pl-5"}`}
+        className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${inset && !searchBar ? inset : "pl-5"}`}
       >
         {!searchBar && leading}
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">

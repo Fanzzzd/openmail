@@ -21,6 +21,7 @@ import { readerThreadKey } from "./reader-selection";
 import { useBatchUndo } from "./state/undo";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
+import { trafficLightInset } from "./components/ui/styles";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom } from "./state/events";
@@ -271,10 +272,14 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
 
   return (
     <div className="flex h-full flex-col bg-white text-[13px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
-      {/* Room on the left for the traffic lights. */}
-      <header className="drag flex h-13 shrink-0 items-center pr-4 pl-20">
+      {/* Room on the left for the traffic lights; actions that do not fit fold into the menu. */}
+      <header
+        data-thread-toolbar
+        className={`drag flex h-13 shrink-0 items-center pr-4 ${trafficLightInset}`}
+      >
         {state && (
           <ThreadActions
+            limit="fit"
             pickerMode={pickerMode}
             organizationTarget={
               account ? { accountId: account.id, threads: [id], flat: single } : undefined
