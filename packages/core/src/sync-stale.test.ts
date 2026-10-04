@@ -1,5 +1,5 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Fiber, Layer, Option, Stream } from "effect";
+import { Clock, Effect, Fiber, Layer, Logger, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import type { IncomingMessage, OutgoingMessage, Provider } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
@@ -521,5 +521,148 @@ it.effect("one account's 500-id stale sweep cannot starve another account's rese
       { account: second.id, count: 1 },
     ]);
     assert.deepStrictEqual(yield* store.pendingResetCandidates(second.id), []);
+  }).pipe(Effect.provide(runtime(adapter)));
+});
+
+for (const provider of ["gmail", "outlook"] satisfies Provider[]) {
+  it.effect(
+    `${provider} confirmed-present rows complete verification and skip unchanged hourly sweeps`,
+    () => {
+      const scope = provider === "gmail" ? "CATEGORY_PERSONAL" : "DRAFT";
+      const server = fakeServer("me@example.test", [message("m1", [scope])]);
+      let checked = 0;
+      const logs: unknown[] = [];
+      const adapter: ProviderAdapter = {
+        ...makeFakeProvider(server),
+        pull: () => Stream.succeed({ _tag: "Cursor", cursor: "1" }),
+        folderStatus: () =>
+          Effect.succeed({ total: 0, unread: 0, threads: 0, uidNext: null, uidValidity: null }),
+        verifyResetCandidates: (_account, candidates) =>
+          Effect.sync(() => {
+            checked += candidates.length;
+            return candidates.map((c) => ({
+              kind: "present" as const,
+              id: c.providerId,
+              providerId: c.providerId,
+              labels: [scope],
+            }));
+          }),
+      };
+      const logger = Logger.make((options) => {
+        logs.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+      });
+      return Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const account = yield* store.upsertAccount(provider, server.email);
+        yield* store.upsertMessage(account.id, message("m1", [scope]));
+        yield* mailbox.sync(account.id);
+        const diagnostic = logs.find(
+          (value) =>
+            typeof value === "object" &&
+            value !== null &&
+            "phase" in value &&
+            value.phase === "verification",
+        );
+        assert.ok(diagnostic && typeof diagnostic === "object" && "incomplete" in diagnostic);
+        assert.strictEqual(diagnostic.incomplete, 0);
+        yield* TestClock.adjust("1 hour");
+        yield* mailbox.sync(account.id);
+        assert.strictEqual(checked, 1);
+        yield* TestClock.adjust("24 hours");
+        yield* mailbox.sync(account.id);
+        assert.strictEqual(checked, 2);
+      }).pipe(Effect.provide(runtime(adapter)), Effect.provide(Logger.layer([logger])));
+    },
+  );
+}
+
+it.effect(
+  "verified fingerprints survive guard reconstruction and changed labels are rechecked",
+  () => {
+    let checked = 0;
+    const adapter: ProviderAdapter = {
+      ...makeFakeProvider(fakeServer("me@example.test")),
+      verifyResetCandidates: (_account, candidates) =>
+        Effect.sync(() => {
+          checked += candidates.length;
+          return candidates.map((candidate) => ({
+            kind: "present" as const,
+            id: candidate.providerId,
+            providerId: candidate.providerId,
+            labels: candidate.labels,
+          }));
+        }),
+    };
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.test");
+      yield* store.upsertMessage(account.id, message("m1", ["INBOX"]));
+      const sweep = () =>
+        makeResetGuard(
+          store,
+          adapter,
+          account,
+          { changed: 0, deleted: 0 },
+          { remaining: 500 },
+        ).sweep(() => staleHealth("gmail", "INBOX", 1));
+      yield* sweep();
+      yield* TestClock.adjust("1 hour");
+      yield* sweep();
+      assert.strictEqual(checked, 1);
+      yield* store.upsertMessage(account.id, {
+        ...message("m1", ["INBOX", "STARRED"]),
+        isStarred: true,
+      });
+      yield* TestClock.adjust("1 hour");
+      yield* sweep();
+      assert.strictEqual(checked, 2);
+      const state = yield* store.claimStaleSweep(
+        account.id,
+        (yield* Clock.currentTimeMillis) + 3_600_000,
+      );
+      assert.ok(Option.isSome(state));
+      assert.ok(Object.keys(state.value.verified ?? {}).every((key) => /^[a-f0-9]{16}$/.test(key)));
+    }).pipe(Effect.provide(runtime(adapter)));
+  },
+);
+
+it.effect("cached remote draft candidates do not trigger another drafts listing", () => {
+  let listings = 0;
+  let verifications = 0;
+  const adapter: ProviderAdapter = {
+    ...makeFakeProvider(fakeServer("me@example.test")),
+    draftMessageIds: () =>
+      Effect.sync(() => {
+        listings++;
+        return [];
+      }),
+    verifyResetCandidates: (_account, candidates) =>
+      Effect.sync(() => {
+        verifications++;
+        return candidates.map((candidate) => ({
+          kind: "present" as const,
+          id: candidate.providerId,
+          providerId: candidate.providerId,
+          labels: ["DRAFT"],
+        }));
+      }),
+  };
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "me@example.test");
+    yield* store.putDraft({ id: "orphan", accountId: account.id, message: draft });
+    yield* store.setDraftRemote("orphan", { draftId: "remote", messageId: "remote-message" }, null);
+    const sweep = () =>
+      makeResetGuard(store, adapter, account, { changed: 0, deleted: 0 }, { remaining: 500 }).sweep(
+        () => staleHealth("gmail", "DRAFT", 1),
+      );
+    yield* sweep();
+    assert.strictEqual(listings, 1);
+    assert.strictEqual(verifications, 1);
+    yield* TestClock.adjust("1 hour");
+    yield* sweep();
+    assert.strictEqual(listings, 1);
+    assert.strictEqual(verifications, 1);
   }).pipe(Effect.provide(runtime(adapter)));
 });

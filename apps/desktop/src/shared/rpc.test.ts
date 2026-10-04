@@ -104,3 +104,28 @@ it("Proposal schemas expose only proposal fields, without account metadata", () 
   const encoded = Schema.encodeSync(proposals.successSchema)([polluted]);
   expect(Schema.decodeUnknownSync(proposals.successSchema)(encoded)).toEqual([proposal]);
 });
+
+it("manual Sync and network RPCs clear backoff before pulling", async () => {
+  const { mailboxHandlers } = await import("./mailbox-handlers");
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const calls: string[] = [];
+      const handlers = mailboxHandlers({
+        ...mailbox,
+        resetConnectivity: () =>
+          Effect.sync(() => {
+            calls.push("reset");
+          }),
+        sync: () =>
+          Effect.sync(() => {
+            calls.push("sync");
+            return [];
+          }),
+      });
+      yield* handlers.Sync();
+      yield* handlers.NetworkChanged();
+      expect(calls).toEqual(["reset", "sync", "reset", "sync"]);
+    }).pipe(Effect.provide(TestMailbox())),
+  );
+});

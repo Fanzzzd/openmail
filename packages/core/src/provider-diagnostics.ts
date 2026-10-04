@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import type { HttpClientRequest } from "effect/http";
 import { sha256Hex } from "./platform/crypto.js";
 
@@ -27,6 +27,28 @@ const paths = [
   "/oauth/token",
   "/other",
 ] as const;
+export const GraphSearchErrorCode = Schema.Literals([
+  "ErrorInvalidProperty",
+  "ErrorInvalidUrlQuery",
+  "ErrorInvalidRequest",
+  "BadRequest",
+  "Request_BadRequest",
+  "SearchQueryError",
+  "InefficientFilter",
+  "ErrorAccessDenied",
+  "ErrorUnsupportedQuery",
+  "ErrorItemNotFound",
+  "InvalidAuthenticationToken",
+  "TooManyRequests",
+  "unknown",
+]);
+const GraphError = Schema.fromJsonString(
+  Schema.Struct({ error: Schema.Struct({ code: GraphSearchErrorCode }) }),
+);
+export function graphSearchErrorCode(body: string): typeof GraphSearchErrorCode.Type {
+  const result = Schema.decodeUnknownOption(GraphError)(body);
+  return Option.isSome(result) ? result.value.error.code : "unknown";
+}
 export const ProviderDiagnostic = Schema.Struct({
   _tag: Schema.Literal("ProviderDiagnostic"),
   provider: Schema.Literals(["gmail", "outlook"]),
@@ -47,6 +69,8 @@ export const ProviderDiagnostic = Schema.Struct({
   failure: Schema.optionalKey(
     Schema.Literals(["http", "transport", "credentials", "configuration", "other"]),
   ),
+  operation: Schema.optionalKey(Schema.Literal("search")),
+  errorCode: Schema.optionalKey(GraphSearchErrorCode),
   accountHash: Schema.String,
 });
 export type ProviderDiagnostic = typeof ProviderDiagnostic.Type;
@@ -96,13 +120,17 @@ export function logProviderFailure(
     readonly _tag?: string | undefined;
     readonly status?: number | undefined;
     readonly reason?: string | undefined;
+    readonly deferred?: boolean | undefined;
   },
+  search?: { readonly operation: "search"; readonly errorCode: typeof GraphSearchErrorCode.Type },
 ) {
+  if (error.deferred) return Effect.void;
   return Effect.logWarning({
     _tag: "ProviderDiagnostic",
     provider,
     method: request.method,
     endpoint: providerEndpoint(request.url),
+    ...search,
     ...(error.status === undefined ? {} : { status: error.status }),
     failure:
       error.reason === "configuration"

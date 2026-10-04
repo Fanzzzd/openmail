@@ -41,7 +41,9 @@ export const mobileOAuthLayer = (session: MobileAuthSession) =>
               ),
             )
             .pipe(
-              Effect.mapError(() => new ProviderError({ message: "Token endpoint unreachable" })),
+              Effect.mapError(
+                () => new ProviderError({ message: "Token endpoint unreachable", status: 0 }),
+              ),
             );
           if (response.status < 200 || response.status >= 300) {
             // Inspect only the machine error code. Never expose tokens or response bodies.

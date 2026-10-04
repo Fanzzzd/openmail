@@ -117,3 +117,79 @@ it("status zero means an actual transport failure; credentials and configuration
   for (const record of records.slice(1))
     expect(diagnosticRecord("provider-failure", record, 0)).not.toHaveProperty("status");
 });
+
+it("sync crash reasons survive export and exclude free text", () => {
+  const record = diagnosticRecord(
+    "runtime-error",
+    {
+      _tag: "SyncCrashDiagnostic",
+      reason: "sync-crashed",
+      phase: "verification",
+      causeKind: "defect",
+      message: "private message",
+      cause: new Error("private token"),
+      stack: "private stack",
+    },
+    0,
+  );
+  expect(record).toEqual({
+    at: 0,
+    event: "runtime-error",
+    reason: "sync-crashed",
+    phase: "verification",
+    causeKind: "defect",
+  });
+  expect(diagnosticRecord("runtime-error", record, 0)).toEqual(record);
+  expect(
+    JSON.stringify(
+      diagnosticRecord(
+        "runtime-error",
+        { reason: "sync-crashed", phase: "private", causeKind: "private" },
+        0,
+      ),
+    ),
+  ).not.toContain("private");
+});
+
+it("deferred attempts do not emit provider failures", () => {
+  const records: unknown[] = [];
+  const logger = Logger.make((options) => records.push(options.message));
+  Effect.runSync(
+    logProviderFailure(
+      "outlook",
+      "account",
+      HttpClientRequest.get("https://graph.microsoft.com/v1.0/me/messages"),
+      { _tag: "ProviderError", status: 0, deferred: true },
+    ).pipe(Effect.provide(Logger.layer([logger]))),
+  );
+  expect(records).toEqual([]);
+});
+
+it("Graph search codes survive export but unknown strings and content do not", async () => {
+  const { graphSearchErrorCode } = await import("./provider-diagnostics.js");
+  const records: unknown[] = [];
+  const logger = Logger.make((options) =>
+    records.push(...(Array.isArray(options.message) ? options.message : [options.message])),
+  );
+  for (const code of ["ErrorInvalidProperty", "private-token-error"])
+    Effect.runSync(
+      logProviderFailure(
+        "outlook",
+        "account",
+        HttpClientRequest.get("https://graph.microsoft.com/v1.0/me/messages?$search=private"),
+        { status: 400 },
+        {
+          operation: "search",
+          errorCode: graphSearchErrorCode(
+            JSON.stringify({ error: { code, message: "private message" } }),
+          ),
+        },
+      ).pipe(Effect.provide(Logger.layer([logger]))),
+    );
+  const exported = records.map((record) => diagnosticRecord("provider-failure", record, 0));
+  expect(exported).toMatchObject([
+    { operation: "search", errorCode: "ErrorInvalidProperty" },
+    { operation: "search", errorCode: "unknown" },
+  ]);
+  expect(JSON.stringify(exported)).not.toContain("private");
+});

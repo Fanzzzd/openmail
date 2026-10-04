@@ -275,6 +275,9 @@ export class Store extends Context.Service<
     readonly saveStaleSweepPosition: ReturnType<
       typeof import("./store-sync-reset.js").makeSyncResetStore
     >["saveStaleSweepPosition"];
+    readonly saveStaleSweepVerified: ReturnType<
+      typeof import("./store-sync-reset.js").makeSyncResetStore
+    >["saveStaleSweepVerified"];
     readonly staleCandidates: ReturnType<
       typeof import("./store-sync-reset.js").makeSyncResetStore
     >["staleCandidates"];
@@ -732,15 +735,21 @@ export interface ProviderSearchPage {
   readonly truncated: boolean;
 }
 export interface ProviderAdapter {
+  /** Clear only local outage backoff after wake or network change; retain server Retry-After. */
+  resetConnectivity?(): Effect.Effect<void>;
   /** Bounded metadata-only reads. Unavailable rows stay for normal verification. */
   fetchCachedHeaders?(
     account: Account,
     ids: readonly string[],
   ): Effect.Effect<readonly import("./header-backfill.js").CachedHeaders[], ProviderFailure>;
-  /** GET/IMAP STATUS only. No listing, synchronization or remote mutation. */
+  /** Counts only; an undercount can be checked against message-ID listings. */
   folderStatus(
     account: Account,
     scope: string,
+    recheck?: {
+      readonly localTotal: number;
+      readonly summary: import("./sync-health.js").FolderStatus;
+    },
   ): Effect.Effect<import("./sync-health.js").FolderStatus, ProviderFailure>;
   /** Omitted/failed results remain local and are retried on the next foreground sync. */
   verifyResetCandidates?(

@@ -1,3 +1,5 @@
+import { SyncCrashDiagnostic } from "../../sync-crash.js";
+export { SyncCrashDiagnostic } from "../../sync-crash.js";
 import { SyncResetDiagnostic } from "../../sync-reset.js";
 export { SyncResetDiagnostic } from "../../sync-reset.js";
 import { ProviderDiagnostic } from "../../provider-diagnostics.js";
@@ -53,8 +55,6 @@ const RuntimeReason = Schema.Literals([
 const runtimeReasons: Readonly<Record<string, typeof RuntimeReason.Type>> = {
   "Header backfill failed": "header-backfill-failed",
   "backfill failed": "history-backfill-failed",
-  "sync failed": "sync-failed",
-  "sync crashed": "sync-crashed",
   "inbox poll failed": "inbox-poll-failed",
   "flush failed": "flush-failed",
   "Media indexing batch failed": "media-index-failed",
@@ -101,6 +101,12 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       : undefined;
   const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(data);
   const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(data);
+  const crash = Schema.decodeUnknownOption(
+    Schema.Struct({
+      ...SyncCrashDiagnostic.fields,
+      _tag: Schema.optionalKey(SyncCrashDiagnostic.fields._tag),
+    }),
+  )(data);
   const reason = Schema.decodeUnknownOption(RuntimeReason)(
     "reason" in fields ? fields.reason : undefined,
   );
@@ -141,6 +147,9 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
     ...(event === "runtime-warning" || event === "runtime-error"
       ? { reason: reason._tag === "Some" ? reason.value : "unclassified" }
       : {}),
+    ...(crash._tag === "Some"
+      ? { phase: crash.value.phase, causeKind: crash.value.causeKind }
+      : {}),
     ...(code === undefined ? {} : { code }),
     ...(account === undefined ? {} : { accountHash: account }),
     ...(provider._tag === "Some"
@@ -149,6 +158,8 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
           provider: provider.value.provider,
           method: provider.value.method,
           endpoint: provider.value.endpoint,
+          ...(provider.value.operation ? { operation: provider.value.operation } : {}),
+          ...(provider.value.errorCode ? { errorCode: provider.value.errorCode } : {}),
           ...(provider.value.status === undefined ? {} : { status: provider.value.status }),
           ...(provider.value.failure === undefined ? {} : { failure: provider.value.failure }),
           accountHash: /^[a-f0-9]{16}$/.test(provider.value.accountHash)

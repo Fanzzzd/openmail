@@ -1,5 +1,7 @@
 import { newMessageId } from "./message-id.js";
 import { PlatformCrypto } from "./platform/crypto.js";
+import type { FolderStatus } from "./sync-health.js";
+import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse, parseGmailBatch } from "./provider-batch.js";
 import type { ResetVerification } from "./sync-reset.js";
@@ -73,6 +75,9 @@ const SCOPES = BASE_SCOPES.gmail;
 const INITIAL_QUERY = "newer_than:90d";
 const INITIAL_LIMIT = 2000;
 const CONCURRENCY = 8;
+const COUNT_RECHECK_PAGES = 2;
+const COUNT_RECHECK_PAGE_SIZE = 500;
+const COUNT_RECHECK_CAPACITY = COUNT_RECHECK_PAGES * COUNT_RECHECK_PAGE_SIZE;
 
 // Provider JSON. Only the fields openmail reads; extra fields are ignored.
 
@@ -245,6 +250,7 @@ export const makeGmail: Effect.Effect<
 
   // Access tokens last an hour. One refresh at a time, so a sync that starts
   // eight fetches at once refreshes once.
+  const connectivity = makeProviderConnectivity();
   const tokens = new Map<string, { token: string; expiresAt: number }>();
   const refreshLock = yield* Semaphore.make(1);
   const requestLocks = new Map<string, Semaphore.Semaphore>();
@@ -334,35 +340,43 @@ export const makeGmail: Effect.Effect<
 
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    permissions
-      .run(
-        accountId,
-        request,
-        accessToken(accountId).pipe(
-          Effect.flatMap((token) => execute(token, request)),
-          // The provider can reject an access token before it expires. Drop it,
-          // refresh, and retry once; only a failed refresh means signing in again.
-          Effect.catchIf(
-            (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
-            () =>
-              Effect.sync(() => tokens.delete(accountId)).pipe(
-                Effect.andThen(accessToken(accountId)),
-                Effect.flatMap((token) => execute(token, request)),
-              ),
+    Effect.flatMap(BackgroundRead, (background) =>
+      permissions
+        .run(
+          accountId,
+          request,
+          accessToken(accountId).pipe(
+            Effect.flatMap((token) => execute(token, request)),
+            // The provider can reject an access token before it expires. Drop it,
+            // refresh, and retry once; only a failed refresh means signing in again.
+            Effect.catchIf(
+              (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
+              () =>
+                Effect.sync(() => tokens.delete(accountId)).pipe(
+                  Effect.andThen(accessToken(accountId)),
+                  Effect.flatMap((token) => execute(token, request)),
+                ),
+            ),
+            Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
+            Effect.tapError((e) =>
+              e._tag === "ApiError" && e.status === 401
+                ? Effect.sync(() => tokens.delete(accountId))
+                : Effect.void,
+            ),
           ),
-          Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
-          Effect.tapError((e) =>
-            e._tag === "ApiError" && e.status === 401
-              ? Effect.sync(() => tokens.delete(accountId))
-              : Effect.void,
-          ),
-        ),
-      )
-      .pipe((requestEffect) =>
-        isProviderSend(request)
-          ? requestEffect
-          : requestLock(accountId).withPermits(1)(requestEffect),
-      );
+        )
+        .pipe((requestEffect) => {
+          const sending = isProviderSend(request);
+          const guarded = connectivity.run(
+            accountId,
+            requestEffect,
+            background &&
+              !sending &&
+              (request.method === "GET" || request.url.includes("/batch/gmail/")),
+          );
+          return sending ? guarded : requestLock(accountId).withPermits(1)(guarded);
+        }),
+    );
 
   const get = <A>(
     accountId: string,
@@ -448,6 +462,7 @@ export const makeGmail: Effect.Effect<
     // would keep failing until they expire.
     tokens.clear();
     permissions.clear();
+    yield* connectivity.reset;
     settings.clearMissingScopes(`gmail:${profile.emailAddress.toLowerCase()}`);
     return {
       email: profile.emailAddress,
@@ -1292,34 +1307,82 @@ export const makeGmail: Effect.Effect<
       return out;
     }).pipe(Effect.mapError(readFailure(account.id)));
 
+  const labelMessageCount = (accountId: string, scope: string, filter: "all" | "unread") =>
+    Effect.gen(function* () {
+      const ids = new Set<string>();
+      const pages = new Set<string>();
+      let pageToken: string | undefined;
+      for (let pageNumber = 0; pageNumber < COUNT_RECHECK_PAGES; pageNumber++) {
+        const page = yield* get(accountId, MessageList, "/messages", {
+          labelIds: filter === "unread" && scope !== "UNREAD" ? [scope, "UNREAD"] : [scope],
+          includeSpamTrash: "true",
+          maxResults: String(COUNT_RECHECK_PAGE_SIZE),
+          ...(pageToken ? { pageToken } : {}),
+        });
+        for (const message of page.messages ?? []) ids.add(message.id);
+        pageToken = page.nextPageToken;
+        if (!pageToken) return Option.some(ids.size);
+        if (pages.has(pageToken))
+          return yield* new ProviderError({ message: "Label count pagination repeated" });
+        pages.add(pageToken);
+      }
+      return Option.none<number>();
+    });
+  const folderStatus: ProviderAdapter["folderStatus"] = (account, scope, recheck) => {
+    const summary = recheck
+      ? Effect.succeed(recheck.summary)
+      : get(
+          account.id,
+          Schema.Struct({
+            messagesTotal: Schema.Int,
+            messagesUnread: Schema.Int,
+            threadsTotal: Schema.Int,
+          }),
+          `/labels/${encodeURIComponent(scope)}`,
+        ).pipe(
+          Effect.map((row): FolderStatus => ({
+            total: row.messagesTotal,
+            unread: row.messagesUnread,
+            threads: row.threadsTotal,
+            uidNext: null,
+            uidValidity: null,
+          })),
+        );
+    return summary.pipe(
+      Effect.flatMap((status) => {
+        if (
+          !recheck ||
+          status.total >= recheck.localTotal ||
+          status.total > COUNT_RECHECK_CAPACITY ||
+          (scope !== "DRAFT" && !scope.startsWith("CATEGORY_"))
+        )
+          return Effect.succeed(status);
+        return Effect.gen(function* () {
+          const total = yield* labelMessageCount(account.id, scope, "all");
+          if (Option.isNone(total)) return status;
+          const unread = yield* labelMessageCount(account.id, scope, "unread");
+          if (Option.isNone(unread)) return status;
+          return { ...status, total: total.value, unread: unread.value, threads: null };
+        }).pipe(Effect.catch(() => Effect.succeed(status)));
+      }),
+      Effect.mapError(readFailure(account.id)),
+      Effect.provideService(BackgroundRead, true),
+    );
+  };
   return {
-    fetchCachedHeaders,
-    folderStatus: (account, scope) =>
-      get(
-        account.id,
-        Schema.Struct({
-          messagesTotal: Schema.Int,
-          messagesUnread: Schema.Int,
-          threadsTotal: Schema.Int,
-        }),
-        `/labels/${encodeURIComponent(scope)}`,
-      ).pipe(
-        Effect.map((row) => ({
-          total: row.messagesTotal,
-          unread: row.messagesUnread,
-          threads: row.threadsTotal,
-          uidNext: null,
-          uidValidity: null,
-        })),
-        Effect.mapError(readFailure(account.id)),
-      ),
-    backfill,
+    resetConnectivity: () => connectivity.reset,
+    fetchCachedHeaders: (account, ids) =>
+      fetchCachedHeaders(account, ids).pipe(Effect.provideService(BackgroundRead, true)),
+    folderStatus,
+    backfill: (...args) => backfill(...args).pipe(Effect.provideService(BackgroundRead, true)),
     draftMessageIds: (account) =>
       get(account.id, DraftList, "/drafts", { maxResults: "500" }).pipe(
         Effect.map((page) => (page.drafts ?? []).map((draft) => draft.message.id)),
         Effect.mapError(readFailure(account.id)),
+        Effect.provideService(BackgroundRead, true),
       ),
-    verifyResetCandidates,
+    verifyResetCandidates: (account, candidates) =>
+      verifyResetCandidates(account, candidates).pipe(Effect.provideService(BackgroundRead, true)),
     fetchMessage: (account, id) =>
       fetchMessage(account.id, id).pipe(
         Effect.mapError(readFailure(account.id)),
@@ -1417,7 +1480,7 @@ export const makeGmail: Effect.Effect<
     search,
     changeLabel,
     connect,
-    pull,
+    pull: (...args) => pull(...args).pipe(Stream.provideService(BackgroundRead, true)),
     push,
     pushBatch: (account, ids, op) => {
       if (op.kind === "trash" || op.kind === "inbox" || op.kind === "move")

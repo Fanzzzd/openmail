@@ -56,7 +56,9 @@ interface Props {
   searching: boolean;
   searchingServer: boolean;
   searchTruncated: boolean;
-  searchErrors: readonly string[];
+  searchErrorAccounts: readonly string[];
+  searchReauthAccounts: readonly string[];
+  searchInputInvalid: boolean;
   searchIgnored: readonly string[];
   searchQuery?: ThreadQuery | undefined;
   filters: Filters;
@@ -111,7 +113,9 @@ export function MessageList({
   searching,
   searchingServer,
   searchTruncated,
-  searchErrors,
+  searchErrorAccounts,
+  searchReauthAccounts,
+  searchInputInvalid,
   searchIgnored,
   searchQuery,
   filters,
@@ -128,6 +132,10 @@ export function MessageList({
   rowActions,
 }: Props) {
   const { t } = useLingui();
+  const searchMessages = searchErrorAccounts.map(
+    (accountId) =>
+      `${accountId}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
+  );
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -297,13 +305,18 @@ export function MessageList({
           <Trans>Unknown message sizes are left unfiltered.</Trans>
         </output>
       )}
-      {searchErrors.length > 0 && (
+      {searchInputInvalid && (
+        <output role="alert" className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400">
+          <Trans>Simplify your search query.</Trans>
+        </output>
+      )}
+      {searchErrorAccounts.length > 0 && (
         <output
           role="alert"
-          title={searchErrors.join("\n")}
+          title={searchMessages.join("\n")}
           className="px-5 pb-2 text-[12px] text-orange-700 dark:text-orange-400"
         >
-          <Trans>Search could not finish:</Trans> {searchErrors.join("; ")}
+          <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
         </output>
       )}
       <ContextMenuRoot

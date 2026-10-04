@@ -28,7 +28,7 @@ Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PER
 
 ## 发送结果
 
-每次 HTTP 请求的重试等待累计不超过 60 秒。Outlook 的发送、回复草稿准备与发送确认使用独立请求许可，不排在限流的拉取后面。IMAP 操作中断时关闭连接并从推送池移除；手机端同一连接的命令串行执行。
+每次 HTTP 请求的重试等待累计不超过 60 秒。Graph 收到 429／5xx 的 Retry-After 时立即更新账户拉取截止时间，后续 JSON、MIME 和只读 batch 请求均检查该截止时间，不等当前请求重试耗尽才阻止其他请求。Outlook 的发送、回复草稿准备与发送确认使用独立请求许可，不排在限流的拉取后面。IMAP 操作中断时关闭连接并从推送池移除；手机端同一连接的命令串行执行。
 
 Gmail 和 Graph 的发送 POST 不自动重试。Message-ID 使用随机本地部分和发件人域名，不发送自定义追踪头。连接中断或服务端返回 5xx 后，core 在约 30 秒内以递增间隔查询“已发送”。查到副本才报告成功；仍无法确定时返回 `SendUncertain`，保留草稿，并在本地持久保存重发保护。再次发送同一草稿必须由 app 中的用户确认已检查“已发送”。此保护在重启后继续生效。
 
@@ -66,7 +66,7 @@ outbox 在同一事务中重读 waiting、认领为 sending 并保存重发保�
 
 Gmail history-404 恢复列出最近 90 天，恢复分页不受初次同步的 2,000 条限制，Reset 仅覆盖相同日期范围。IMAP UIDVALIDITY 重建只检查 SINCE 日起的窗口；每个文件夹最多取最新 1,000 条，因此窗口内缺失项也须验证。已有 UID 的标记扫描仅清理明确扫描过的 ID。文件夹消失和 UID 复用分别校验原文件夹身份与 Message-ID，不用新 UID 的存在证明旧消息仍在。
 
-slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中所有未列入 keep 的删除候选都先入持久验证队列，即使只缺一封也须验证；不因列表标记完整或为空直接删除。持久队列的预算、续验与扫描规则见[过期缓存扫描](#过期缓存扫描)。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。
+slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中所有未列入 keep 的删除候选都先入持久验证队列，即使只缺一封也须验证；不因列表标记完整或为空直接删除。持久队列的预算、续验与扫描规则见[过期缓存扫描](#过期缓存扫描)。Graph 每批最多 20 个只读请求，使用四个拉取许可，遵守内部请求的 Retry-After；发送许可保持独立。Gmail 用 minimal 批量读取，IMAP 用 UNDELETED UID SEARCH 和 Message-ID 搜索。确认消失才删除；找到同文件夹副本则保留，移到其他文件夹则更新归属。`sync-reset` 日志只记录账户、文件夹的哈希和计数。Outlook listing 仅在首次建游标、身份重置或 410 重启时记录；普通增量拉取不记为重置，空列表也保存最终 deltaLink。
 
 保护已随 slice 56 合入。验证队列使用既有 prefs 持久化，无新增迁移；本地队列未验证完时继续保留缓存。只读会话允许这些存在性探测，包括只含 GET 子请求的 Graph batch。实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)、[Gmail](../packages/core/src/gmail.ts)和 [read-only.ts](../packages/core/src/read-only.ts)。回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
 
@@ -74,11 +74,11 @@ Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 Provide
 
 ## 过期缓存扫描
 
-完整同步后，stale sweep 每账户每小时最多运行一次。扫描时间和分页位置保存在 prefs，重启后沿用。只扫描服务端计数可用且 `local.total > server.total` 的文件夹；仅未读数过多不触发扫描，因为 Graph 与 IMAP 的位置验证不读取当前标记。
+完整同步后，stale sweep 每账户每小时最多运行一次。扫描时间和分页位置保存在 prefs，重启后沿用。只扫描服务端计数可用且 `local.total > server.total` 的文件夹。先取得所有文件夹的摘要计数，再在账户十秒预算的剩余时间内做可选复核。复核只用于 Gmail 类别／Drafts 和 Outlook Drafts，每个复核最多一秒；普通 Inbox 不枚举 ID。Gmail 只分页读取 ID，显式 includeSpamTrash=true，总数和未读各最多两页；摘要总数超过两页可计数的 1,000 条时直接跳过复核，总数列举触顶后不再列未读。Graph 用文件夹 messages 的 `$count=true`，分别查询总数和未读数。触顶、超时或复核失败保留已取得的摘要计数及 available 状态，仍可扫描旧行；只有原始摘要读取失败才标为服务商不可用。复核后不再多出的文件夹不进入逐项验证；仅未读数过多不触发扫描，因为 Graph 与 IMAP 的位置验证不读取当前标记。
 
-扫描每账户每轮最多验证 500 个 ID，使用独立预算。重置和 Outlook 冲突验证仍共用每轮同步、所有账户合计 500 个 ID 的持久队列预算。扫描跳过队列中和本轮已验证的 ID，避免消耗重置预算或重复请求。失败和未验证行保留，扫描位置轮转，下一次满足小时频率时续验。网络请求沿用服务商的锁和重试规则；批次重试耗尽后停止剩余批次，不绕过 Retry-After。
+扫描每账户每轮最多验证 500 个 ID，使用独立预算。重置和 Outlook 冲突验证仍共用每轮同步、所有账户合计 500 个 ID 的持久队列预算。扫描跳过队列中和本轮已验证的 ID，避免消耗重置预算或重复请求。失败和未验证行保留，扫描位置轮转，下一次满足小时频率时续验。已明确验证的扫描行在同一 prefs 状态保存 provider ID、Message-ID 和标签的组合哈希前 16 位，24 小时内跳过未变化的行；标签或身份变化会重新验证，重置队列不受这份记录限制。`incomplete` 只统计本轮没有明确结果的候选，确认仍在原文件夹的行计为完成。网络请求沿用服务商的锁和重试规则；批次重试耗尽后停止剩余批次，不绕过 Retry-After。
 
-计数差只提供候选范围，清理复用上述服务器验证路径。验证结果先叠加待推送操作，保留本地未同步改动。Gmail drafts.list 只读取最多 500 条的一页，列出的 ID 可证明存在，未列出的 ID 仍须逐项验证。
+计数差只提供候选范围，清理复用上述服务器验证路径。验证结果先叠加待推送操作，保留本地未同步改动。Gmail drafts.list 只在有未缓存的孤立远端草稿候选时读取最多 500 条的一页，列出的 ID 可证明存在，未列出的 ID 仍须逐项验证；所有候选已缓存时不发起该请求。
 
 Drafts 孤立草稿只统计已有 `remote_message_id`、`local_only=0`、`sync_error IS NULL` 且没有对应消息行的草稿，按远端消息 ID 去重；扫描候选使用相同规则。本地未上传、local-only 和同步失败的草稿不计入孤立远端行。404 清理继续保护有待处理 saveDraft 的草稿，不删除尚未上传的编辑内容。
 
@@ -125,7 +125,7 @@ node packages/cli/dist/cli.js health --json
 OPENMAIL_READ_ONLY=1 node packages/cli/dist/cli.js health --account 'gmail:me@example.com' --json
 ```
 
-省略 `--account` 检查全部账户。`Mailbox.syncHealth` 只请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS，不拉取邮件、不修复数据、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#桌面生产构建-smoke)。
+省略 `--account` 检查全部账户。`Mailbox.syncHealth` 请求 Gmail 标签计数、Graph 文件夹计数或 IMAP STATUS；摘要计数低于本地时，只读查询消息集合复核，不读取消息文本、不修改服务商。约十秒网络预算、最多四个并发请求；失败的文件夹保留本地数并标为服务商不可用。smoke 同样输出该报告，运行方式见[测试](testing.md#桌面生产构建-smoke)。
 
 | 报告项                           | 含义                                                                                                                                                                        |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -147,3 +147,11 @@ Gmail／Outlook 的 Drafts 本地总数和会话数还包含符合上述[孤立�
 - 服务商不可用：请求失败或超时；不说明本地缓存损坏。
 
 CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签／文件夹改为 `folder:N`，只保留计数、固定状态、时间和域名散列，不含主题、消息文本或 token。实现见 [sync-health.ts](../packages/core/src/sync-health.ts)、[store-sync-health.ts](../packages/core/src/store-sync-health.ts)、[CLI](../packages/cli/src/cli.ts)和[桌面界面](../apps/desktop/src/renderer/src/components/SyncHealth.tsx)，回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
+
+## 断网与同步恢复
+
+Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网退避；只把明确 status 0 的非延期失败计入。传输失败从五秒开始指数等待，最长五分钟；等待期间不重新刷新 token 或发起后台请求，延期不写 provider-failure。发送、打开正文和下载附件绕过断网等待，成功会重置失败次数；手动 Sync RPC 先调用 portable `Mailbox.resetConnectivity`。发送提交失败仍按既有发送确认流程查询 Sent，提交和确认不会被断网等待拦截。系统唤醒、renderer online 和手机 AppState active 事件清除断网和 Inbox 轮询等待，立即恢复同步。手机未安装 NetInfo，使用既有 expo-network 的 addNetworkStateListener 处理前台网络恢复；服务端 Retry-After 独立保存，不能被这些事件清除。
+
+同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `mailbox-syncfix.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
+
+Graph 搜索集合的 `$select` 不含 internetMessageHeaders，attachments 的 name／contentType／size／isInline 元数据经 `$expand` 一次取得；搜索不逐项 GET 附件或 MIME，服务商省略附件扩展或存在签名容器时，将正文标为待完整读取，打开阅读器后再补齐。未完成的搜索结果保留已缓存的附件清单，阅读器补全同时写入完整附件清单，避免空扩展或原始签名容器覆盖已解码的 PDF 等附件。标点词保留转义后的 KQL 引号。Graph 普通搜索词仅使用一层 `$search="词"`，短语及属性查询保留 KQL 转义，不混入 `$filter` 或 `$orderby`。搜索请求使用读取错误映射；桌面使用 Lingui 搜索专用文案并保留本地结果。实现依据 [Graph 搜索文档](https://learn.microsoft.com/en-us/graph/search-query-parameter)，回归覆盖 E64KZJ、短语转义和搜索拒绝。脱敏日志未包含 Graph 响应错误码或查询，普通词的双层引号及集合上的 internetMessageHeaders 选择已移除，附件扩展保留；不能仅凭原日志证明哪一项导致该次拒绝。搜索失败诊断记录 operation=search 和固定枚举的 Graph error.code，未知值记为 unknown；不记录响应 message 或 query。只读真实数据库备份中，Gmail CATEGORY_PERSONAL 有 22 条消息、21 个线程；Outlook Drafts 有 40 条消息、37 个线程，其中 38 条早于 90 天。两账户 drafts 表及 pending_ops 均为 0，没有孤立草稿、local-only 草稿或队列重复计数。真实服务商计数请求未成功，不能据此把这些缓存行排除，也不能认定差值来自本地 SQL；保留待服务商总数确认的结论。

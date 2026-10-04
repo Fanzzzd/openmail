@@ -1,10 +1,22 @@
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
+import { ProviderError } from "./errors.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { assert, it } from "@effect/vitest";
 import { EMPTY_FILTER } from "./organization.js";
 import { parseCalendar } from "./invites.js";
 
-import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
+import {
+  Cause,
+  Clock,
+  Deferred,
+  Effect,
+  Fiber,
+  Layer,
+  Logger,
+  Option,
+  Schema,
+  Stream,
+} from "effect";
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
@@ -4367,16 +4379,27 @@ for (const reply of [false, true])
     () =>
       Effect.gen(function* () {
         let pulls = 0;
+        const release = yield* Deferred.make<void>();
         const http = fakeHttp({
-          "PATCH /me/messages/m": () => {
-            pulls++;
-            return { status: 429, headers: { "Retry-After": "30" } };
-          },
+          "PATCH /me/messages/m": { status: 429, headers: { "Retry-After": "30" } },
           "POST /me/sendMail": { status: 202 },
           "POST /me/messages/orig/createReply": { json: { id: "prepared" } },
           "PATCH /me/messages/prepared": { json: {} },
           "POST /me/messages/prepared/send": { status: 202 },
         });
+        // Hold all four permits before responding, so the shared throttle gate
+        // does not prevent this saturation fixture from reaching the server.
+        http.layer = Layer.succeed(HttpClient.HttpClient)(
+          HttpClient.make((request) =>
+            Effect.gen(function* () {
+              if (new URL(request.url).pathname.endsWith("/messages/m")) {
+                pulls++;
+                yield* Deferred.await(release);
+              }
+              return yield* http.client.execute(request);
+            }),
+          ),
+        );
         yield* run(http, (a) =>
           Effect.gen(function* () {
             const stalled = yield* Effect.forEach([1, 2, 3, 4], () =>
@@ -4385,6 +4408,7 @@ for (const reply of [false, true])
                 .pipe(Effect.result, Effect.forkChild),
             );
             while ((() => pulls < 4)()) yield* Effect.yieldNow;
+            yield* Deferred.succeed(release, undefined);
             const send = yield* a
               .send(
                 account,
@@ -5169,3 +5193,387 @@ it.effect("Graph header backfill accepts successful replies with omitted or null
     ]);
   }),
 );
+
+it.effect("empty delta restart persists once and healthy increments emit no reset listing", () =>
+  Effect.gen(function* () {
+    const diagnostics: unknown[] = [];
+    const logger = Logger.make((options) => {
+      diagnostics.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+    });
+    const http = fakeHttp(mailbox({}));
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const initial = yield* Stream.runCollect(adapter.pull(account, Option.none()));
+        const saved = initial.find((change) => change._tag === "Cursor");
+        assert.ok(saved?._tag === "Cursor");
+        diagnostics.length = 0;
+        for (let pass = 0; pass < 3; pass++) {
+          const changes = yield* Stream.runCollect(
+            adapter.pull(account, Option.some(saved.cursor)),
+          );
+          assert.isFalse(
+            changes.some((change) => change._tag === "Reset" || change._tag === "DeleteLabel"),
+          );
+        }
+        assert.strictEqual(
+          diagnostics.filter(
+            (value) =>
+              typeof value === "object" &&
+              value !== null &&
+              "_tag" in value &&
+              value._tag === "SyncResetDiagnostic",
+          ).length,
+          0,
+        );
+      }).pipe(Effect.provide(Logger.layer([logger]))),
+    );
+    const pulls = http.calls.filter((call) => call.url.pathname.endsWith("/messages/delta"));
+    for (const folder of [...WELL_KNOWN, "id-c1", "id-c2"])
+      assert.strictEqual(
+        pulls.filter(
+          (call) =>
+            call.url.pathname.includes(`/mailFolders/${folder}/`) &&
+            !call.url.searchParams.has("$deltatoken"),
+        ).length,
+        1,
+      );
+  }),
+);
+
+it.effect("plain Graph token uses the documented single search literal", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages": (url) => {
+        assert.strictEqual(url.searchParams.get("$search"), '"E64KZJ"');
+        assert.strictEqual(
+          url.searchParams.get("$expand"),
+          "attachments($select=name,contentType,size,isInline)",
+        );
+        assert.isFalse(url.searchParams.get("$select")?.includes("internetMessageHeaders"));
+        assert.isFalse(url.searchParams.has("$filter"));
+        assert.isFalse(url.searchParams.has("$orderby"));
+        return { json: { value: [] } };
+      },
+    });
+    yield* run(http, (adapter) =>
+      adapter.search(account, { search: "E64KZJ", searchScope: "all" }),
+    );
+  }),
+);
+
+it.effect("search rejection has a search reason rather than a mutation reason", () =>
+  Effect.gen(function* () {
+    const http = fakeHttp({ ...mailbox({}), "GET /me/messages": { status: 400 } });
+    const error = yield* run(http, (adapter) =>
+      adapter.search(account, { search: "E64KZJ" }).pipe(Effect.flip),
+    );
+    assert.strictEqual(error.message, "The server could not complete this search.");
+  }),
+);
+
+it.effect("offline refresh failures share exponential backoff across all account reads", () => {
+  let refreshes = 0;
+  const http = fakeHttp(mailbox({}));
+  return run(
+    http,
+    (adapter) =>
+      Effect.gen(function* () {
+        const read = () => adapter.folderStatus(account, "INBOX").pipe(Effect.result);
+        for (let tick = 0; tick < 8; tick++) yield* read();
+        assert.strictEqual(refreshes, 1);
+        yield* TestClock.adjust("5 seconds");
+        yield* read();
+        assert.strictEqual(refreshes, 2);
+        yield* TestClock.adjust("5 seconds");
+        yield* read();
+        assert.strictEqual(refreshes, 2);
+        for (let second = 0; second < 3600; second += 10) {
+          yield* TestClock.adjust("10 seconds");
+          yield* read();
+        }
+        assert.isAtMost(refreshes, 20);
+        const before = refreshes;
+        yield* adapter.resetConnectivity?.() ?? Effect.void;
+        yield* read();
+        assert.strictEqual(refreshes, before + 1);
+      }),
+    {
+      ...platformOptions,
+      oauth: {
+        refresh: () =>
+          Effect.suspend(() => {
+            refreshes++;
+            return Effect.fail(new ProviderError({ message: "Offline", status: 0 }));
+          }),
+      },
+    },
+  );
+});
+
+it.effect("Graph Retry-After stops another read while the original retry sleeps", () =>
+  Effect.gen(function* () {
+    let reads = 0;
+    const http = fakeHttp({
+      "GET /me/messages/a": () =>
+        ++reads === 1
+          ? { status: 429, headers: { "Retry-After": "30" } }
+          : { json: { ...raw, id: "a", parentFolderId: "id-inbox", hasAttachments: false } },
+      "GET /me/messages/b": {
+        json: { ...raw, id: "b", parentFolderId: "id-inbox", hasAttachments: false },
+      },
+      ...mailbox({}),
+    });
+    yield* run(http, (adapter) =>
+      Effect.gen(function* () {
+        const first = yield* adapter.fetchMessage(account, "a").pipe(Effect.forkChild);
+        yield* TestClock.adjust("0 seconds");
+        assert.strictEqual(reads, 1);
+        const blocked = yield* adapter.fetchMessage(account, "b").pipe(Effect.result);
+        assert.strictEqual(blocked._tag, "Failure");
+        assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/messages/b")));
+        yield* TestClock.adjust("30 seconds");
+        yield* Fiber.join(first);
+        yield* adapter.fetchMessage(account, "b");
+        assert.strictEqual(reads, 2);
+      }),
+    );
+  }),
+);
+
+it.effect("Outlook Drafts undercounts are checked against collection count", () => {
+  const http = fakeHttp({
+    "GET /me/mailFolders/drafts": { json: { totalItemCount: 0, unreadItemCount: 0 } },
+    "GET /me/mailFolders/drafts/messages": (url) => {
+      assert.strictEqual(url.searchParams.get("$count"), "true");
+      assert.strictEqual(url.searchParams.get("$select"), "id");
+      assert.strictEqual(url.searchParams.get("$top"), "1");
+      return { json: { "@odata.count": url.searchParams.has("$filter") ? 0 : 40, value: [] } };
+    },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      assert.strictEqual(
+        (yield* adapter.folderStatus(account, "DRAFT", {
+          localTotal: 40,
+          summary: yield* adapter.folderStatus(account, "DRAFT"),
+        })).total,
+        40,
+      );
+      assert.isFalse(http.calls.some((call) => call.method === "POST"));
+    }),
+  );
+});
+
+it.effect("search rejection retains the fixed Graph code without response text", () =>
+  Effect.gen(function* () {
+    const records: unknown[] = [];
+    const logger = Logger.make((options) =>
+      records.push(...(Array.isArray(options.message) ? options.message : [options.message])),
+    );
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/messages": {
+        status: 400,
+        json: { error: { code: "ErrorInvalidProperty", message: "private query" } },
+      },
+    });
+    yield* run(http, (adapter) =>
+      adapter
+        .search(account, { search: "E64KZJ" })
+        .pipe(Effect.result, Effect.provide(Logger.layer([logger]))),
+    );
+    assert.ok(
+      records.some(
+        (record) =>
+          typeof record === "object" &&
+          record !== null &&
+          "errorCode" in record &&
+          record.errorCode === "ErrorInvalidProperty",
+      ),
+    );
+    assert.isFalse(JSON.stringify(records).includes("private"));
+  }),
+);
+
+it.effect("punctuated search terms preserve the escaped KQL literal", () => {
+  const http = fakeHttp({
+    ...mailbox({}),
+    "GET /me/messages": (url) => {
+      const search = url.searchParams.get("$search");
+      assert.ok(search);
+      assert.strictEqual(
+        Schema.decodeUnknownSync(Schema.String)(JSON.parse(search)),
+        '"E64KZJ-123"',
+      );
+      return { json: { value: [] } };
+    },
+  });
+  return run(http, (adapter) => adapter.search(account, { search: "E64KZJ-123" }));
+});
+
+for (const expanded of [true, false]) {
+  it.effect(
+    `search attachment metadata ${expanded ? "uses expansion" : "stays lazy when expansion is omitted"} without one GET per result`,
+    () => {
+      const attachment = { name: "file.txt", contentType: "text/plain", size: 10, isInline: false };
+      const hits = Array.from({ length: 40 }, (_, index) => ({
+        ...raw,
+        id: `hit-${index}`,
+        subject: "E64KZJ",
+        parentFolderId: "id-inbox",
+        hasAttachments: true,
+      }));
+      const http = fakeHttp({
+        ...mailbox({}),
+        ...Object.fromEntries(
+          hits.map((hit) => [
+            `GET /me/messages/${hit.id}/attachments`,
+            { json: { value: [attachment] } },
+          ]),
+        ),
+        "GET /me/messages": (url) => ({
+          json: {
+            value: hits.map((hit) => ({
+              ...hit,
+              ...(expanded && url.searchParams.has("$expand") ? { attachments: [attachment] } : {}),
+            })),
+          },
+        }),
+      });
+      return run(http, (adapter) =>
+        Effect.gen(function* () {
+          const result = yield* adapter.search(account, { search: "E64KZJ" });
+          assert.strictEqual(result.messages.length, 40);
+          assert.strictEqual(result.messages[0]?.attachments.length, expanded ? 1 : 0);
+          assert.strictEqual(result.messages[0]?.bodyCached, expanded);
+          assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("/attachments")));
+          assert.strictEqual(
+            http.calls.filter((call) => call.url.pathname === "/v1.0/me/messages").length,
+            1,
+          );
+        }),
+      );
+    },
+  );
+}
+
+it.effect("an unsupported Drafts count recheck preserves the available summary", () => {
+  const http = fakeHttp({
+    "GET /me/mailFolders/drafts": { json: { totalItemCount: 10, unreadItemCount: 1 } },
+    "GET /me/mailFolders/drafts/messages": { status: 400 },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const summary = yield* adapter.folderStatus(account, "DRAFT");
+      assert.deepStrictEqual(
+        yield* adapter.folderStatus(account, "DRAFT", { localTotal: 40, summary }),
+        summary,
+      );
+      assert.strictEqual(http.calls.length, 2);
+    }),
+  );
+});
+
+for (const partial of ["omitted", "signed", "complete"] as const) {
+  it.effect(
+    partial === "complete"
+      ? "complete search metadata can clear a previously known attachment list"
+      : `search with ${partial} attachment metadata preserves cached PDFs and reader hydration writes the full list`,
+    () => {
+      const pdf = { filename: "report.pdf", mimeType: "application/pdf", size: 12 };
+      const added = { filename: "updated.pdf", mimeType: "application/pdf", size: 24 };
+      const graph = {
+        ...raw,
+        id: "cached-pdf",
+        subject: "attachment-preservation",
+        parentFolderId: "id-inbox",
+        hasAttachments: true,
+      };
+      const fullAttachments = [pdf, added];
+      const expanded = fullAttachments.map((attachment) => ({
+        name: attachment.filename,
+        contentType: attachment.mimeType,
+        size: attachment.size,
+        isInline: false,
+      }));
+      const http = fakeHttp({
+        ...mailbox({}),
+        "GET /me/messages": {
+          json: {
+            value: [
+              {
+                ...graph,
+                ...(partial === "complete" ? { hasAttachments: false, attachments: [] } : {}),
+                ...(partial === "signed"
+                  ? {
+                      internetMessageHeaders: [
+                        {
+                          name: "Content-Type",
+                          value: "application/pkcs7-mime; smime-type=signed-data",
+                        },
+                      ],
+                      attachments: [
+                        {
+                          name: "smime.p7m",
+                          contentType: "application/pkcs7-mime",
+                          size: 100,
+                          isInline: false,
+                        },
+                      ],
+                    }
+                  : {}),
+              },
+            ],
+          },
+        },
+        "GET /me/messages/cached-pdf": {
+          json: {
+            ...graph,
+            attachments: expanded,
+            body: { contentType: "text", content: "Full reader body" },
+          },
+        },
+      });
+      const adapters = Layer.effect(
+        Providers,
+        Effect.map(makeOutlook, (adapter) => Providers.of({ get: () => adapter })),
+      );
+      const layer = MailboxLive({ backgroundFlush: false }).pipe(
+        Layer.provideMerge(Layer.mergeAll(StoreLive, adapters)),
+        Layer.provide(Layer.mergeAll(MemoryPlatform(platformOptions), http.layer)),
+      );
+      return Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const saved = yield* store.upsertAccount("outlook", account.email);
+        const id = `${saved.id}/${graph.id}`;
+        yield* store.upsertMessage(saved.id, parseGraphMessage(graph, "INBOX", [pdf]));
+        const search = yield* mailbox.searchServer({
+          search: "attachment-preservation",
+          accountIds: [saved.id],
+          searchScope: "all",
+        });
+        assert.deepStrictEqual(search.errors, []);
+        const afterSearch = yield* store.getMessage(id);
+        assert.strictEqual(afterSearch.bodyCached, partial === "complete");
+        assert.deepStrictEqual(afterSearch.attachments, partial === "complete" ? [] : [pdf]);
+        assert.isFalse(
+          http.calls.some(
+            (call) =>
+              call.url.pathname.endsWith("/attachments") || call.url.pathname.endsWith("/$value"),
+          ),
+        );
+        const hydrated = (yield* mailbox.readerThread(id)).find((message) => message.id === id);
+        assert.ok(hydrated);
+        assert.deepStrictEqual(hydrated.attachments, partial === "complete" ? [] : fullAttachments);
+        if (partial !== "complete") assert.strictEqual(hydrated.bodyText, "Full reader body");
+        assert.isTrue(hydrated.bodyCached);
+        assert.deepStrictEqual(
+          (yield* store.getMessage(id)).attachments,
+          partial === "complete" ? [] : fullAttachments,
+        );
+      }).pipe(Effect.provide(layer));
+    },
+  );
+}

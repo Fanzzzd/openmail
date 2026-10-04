@@ -3250,3 +3250,126 @@ it.effect("Gmail header backfill stops sequential reads when Retry-After exceeds
     assert.strictEqual(http.calls.length, 1);
   }),
 );
+
+it.effect(
+  "offline Gmail refresh failures back off across background readers and reset on wake",
+  () => {
+    let refreshes = 0;
+    const http = fakeHttp({});
+    return makeGmail.pipe(
+      Effect.flatMap((adapter) =>
+        Effect.gen(function* () {
+          for (let tick = 0; tick < 8; tick++)
+            yield* adapter.folderStatus(account, "INBOX").pipe(Effect.result);
+          assert.strictEqual(refreshes, 1);
+          yield* TestClock.adjust("5 seconds");
+          yield* adapter.folderStatus(account, "INBOX").pipe(Effect.result);
+          assert.strictEqual(refreshes, 2);
+          yield* TestClock.adjust("5 seconds");
+          yield* adapter.fetchCachedHeaders?.(account, ["a"]).pipe(Effect.result) ?? Effect.void;
+          assert.strictEqual(refreshes, 2);
+          yield* adapter.resetConnectivity?.() ?? Effect.void;
+          yield* adapter.folderStatus(account, "INBOX").pipe(Effect.result);
+          assert.strictEqual(refreshes, 3);
+        }),
+      ),
+      Effect.provide(
+        Layer.mergeAll(
+          http.layer,
+          MemoryPlatform({
+            secrets: { [account.id]: "refresh-token" },
+            config: { google: { clientId: "client", clientSecret: "secret" } },
+            oauth: {
+              refresh: () =>
+                Effect.suspend(() => {
+                  refreshes++;
+                  return Effect.fail(new ProviderError({ message: "Offline", status: 0 }));
+                }),
+            },
+          }),
+        ),
+      ),
+    );
+  },
+);
+
+it.effect("Gmail category undercounts use paginated IDs including spam/trash", () => {
+  const ids = Array.from({ length: 22 }, (_, index) => ({ id: `m${index}` }));
+  const http = fakeHttp({
+    "GET /labels/CATEGORY_PERSONAL": {
+      json: { messagesTotal: 0, messagesUnread: 0, threadsTotal: 0 },
+    },
+    "GET /messages": (url) => {
+      assert.strictEqual(url.searchParams.get("includeSpamTrash"), "true");
+      assert.ok(url.searchParams.getAll("labelIds").includes("CATEGORY_PERSONAL"));
+      if (url.searchParams.getAll("labelIds").includes("UNREAD")) return { json: { messages: [] } };
+      return {
+        json: url.searchParams.has("pageToken")
+          ? { messages: ids.slice(10) }
+          : { messages: ids.slice(0, 10), nextPageToken: "next" },
+      };
+    },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const counts = yield* adapter.folderStatus(account, "CATEGORY_PERSONAL", {
+        localTotal: 22,
+        summary: yield* adapter.folderStatus(account, "CATEGORY_PERSONAL"),
+      });
+      assert.strictEqual(counts.total, 22);
+      assert.strictEqual(counts.unread, 0);
+      assert.isFalse(http.calls.some((call) => /messages\//.test(call.url.pathname)));
+    }),
+  );
+});
+
+it.effect("a capped category recheck retains the summary and skips unread listing", () => {
+  let pages = 0;
+  const http = fakeHttp({
+    "GET /labels/CATEGORY_PERSONAL": {
+      json: { messagesTotal: 999, messagesUnread: 100, threadsTotal: 20_000 },
+    },
+    "GET /messages": (url) => {
+      assert.isFalse(url.searchParams.getAll("labelIds").includes("UNREAD"));
+      return {
+        json: {
+          messages: Array.from({ length: 500 }, (_, index) => ({ id: `page-${pages}-${index}` })),
+          nextPageToken: String(++pages),
+        },
+      };
+    },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const summary = yield* adapter.folderStatus(account, "CATEGORY_PERSONAL");
+      assert.deepStrictEqual(
+        yield* adapter.folderStatus(account, "CATEGORY_PERSONAL", { localTotal: 30_000, summary }),
+        summary,
+      );
+      assert.strictEqual(pages, 2);
+      assert.strictEqual(
+        http.calls.filter((call) => call.url.pathname.includes("/labels/")).length,
+        1,
+      );
+    }),
+  );
+});
+
+it.effect("category summaries above the listing capacity skip repeated rechecks", () => {
+  const http = fakeHttp({
+    "GET /labels/CATEGORY_PERSONAL": {
+      json: { messagesTotal: 1001, messagesUnread: 100, threadsTotal: 1000 },
+    },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const summary = yield* adapter.folderStatus(account, "CATEGORY_PERSONAL");
+      for (let pass = 0; pass < 3; pass++)
+        assert.deepStrictEqual(
+          yield* adapter.folderStatus(account, "CATEGORY_PERSONAL", { localTotal: 2000, summary }),
+          summary,
+        );
+      assert.strictEqual(http.calls.length, 1);
+    }),
+  );
+});

@@ -899,6 +899,9 @@ exports[`tool input and output schemas are stable 1`] = `
                 "message": {
                   "type": "string",
                 },
+                "requiresReauth": {
+                  "type": "boolean",
+                },
               },
               "required": [
                 "accountId",

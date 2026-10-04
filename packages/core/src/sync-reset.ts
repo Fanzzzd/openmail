@@ -27,6 +27,10 @@ const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
 export const RESET_VERIFICATION_LIMIT = 500;
 export const STALE_SWEEP_LIMIT = 500;
+const staleFingerprint = (candidate: ResetCandidate) =>
+  sha256Hex(
+    JSON.stringify([candidate.providerId, candidate.rfcMessageId, candidate.labels.toSorted()]),
+  ).slice(0, 16);
 
 export const SyncResetDiagnostic = Schema.Struct({
   _tag: Schema.Literal("SyncResetDiagnostic"),
@@ -86,7 +90,6 @@ export function makeResetGuard(
       .pipe(Effect.catch(() => Effect.succeed<readonly ResetVerification[]>([])));
     const requested = new Map(selected.map((item) => [item.providerId, item]));
     const completed = new Set<string>();
-    let incomplete = 0;
     yield* store.transaction(
       Effect.gen(function* () {
         for (const result of results) {
@@ -99,15 +102,6 @@ export function makeResetGuard(
             if (id) counts.deleted++;
           } else if (id) {
             let local = yield* store.getMessage(id).pipe(Effect.orDie);
-            if (
-              candidate.labels.some(
-                (label) =>
-                  result.labels.includes(label) &&
-                  !["UNREAD", "STARRED", "IMPORTANT"].includes(label) &&
-                  !label.startsWith("category:"),
-              )
-            )
-              incomplete++;
             if (candidate.resetProviderId) {
               const target = yield* store.messageIdForProvider(account.id, result.providerId);
               if (target) {
@@ -180,6 +174,12 @@ export function makeResetGuard(
           ]);
       }),
     );
+    if (candidates !== undefined)
+      yield* store.saveStaleSweepVerified(
+        account.id,
+        selected.filter((candidate) => completed.has(candidate.providerId)).map(staleFingerprint),
+        yield* Clock.currentTimeMillis,
+      );
     verificationDeferred ||= completed.size < selected.length;
     yield* logSyncReset(account, "account", {
       phase: "verification",
@@ -188,7 +188,7 @@ export function makeResetGuard(
       local: pending.length,
       candidates: pending.length,
       verified: completed.size,
-      incomplete,
+      incomplete: selected.length - completed.size,
       deferred: pending.length - completed.size,
     });
   });
@@ -249,30 +249,31 @@ export function makeResetGuard(
     // Counts identify suspect folders, not missing identities. Probe each bounded
     // page; only an explicit absence or current server labels can change a row.
     yield* store.saveStaleSweepPosition(account.id, selected.at(-1)?.providerId ?? "");
+    const queued = new Set(
+      (yield* store.pendingResetCandidates(account.id)).map((candidate) => candidate.providerId),
+    );
+    const unchecked = selected.filter(
+      (candidate) =>
+        state.value.verified?.[staleFingerprint(candidate)] === undefined &&
+        !attempted.has(candidate.providerId) &&
+        !queued.has(candidate.providerId),
+    );
+    if (!unchecked.length) return;
     let knownDrafts = new Set<string>();
-    if (scopes.includes("DRAFT") && adapter.draftMessageIds) {
+    if (unchecked.some((candidate) => candidate.draftOnly) && adapter.draftMessageIds) {
       const page = yield* adapter.draftMessageIds(account).pipe(
         Effect.map(Option.some),
         Effect.catch(() => Effect.succeed(Option.none())),
       );
-      // Do not follow a failed/throttled listing with another verification request.
       if (Option.isNone(page)) {
         verificationDeferred = true;
         return;
       }
       knownDrafts = new Set(page.value);
     }
-    const queued = new Set(
-      (yield* store.pendingResetCandidates(account.id)).map((candidate) => candidate.providerId),
-    );
-    // A list page proves presence only. Missing ids (including later pages) still
-    // need minimal GET verification; never use drafts.list as a deletion keep set.
     yield* verify(
-      selected.filter(
-        (candidate) =>
-          !attempted.has(candidate.providerId) &&
-          !queued.has(candidate.providerId) &&
-          (!candidate.draftOnly || !knownDrafts.has(candidate.providerId)),
+      unchecked.filter(
+        (candidate) => !candidate.draftOnly || !knownDrafts.has(candidate.providerId),
       ),
     );
   });

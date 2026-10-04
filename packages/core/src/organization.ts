@@ -251,7 +251,13 @@ export const SearchResult = Schema.Struct({
       Schema.Struct({ accountId: Schema.String, operators: Schema.Array(Schema.String) }),
     ),
   ),
-  errors: Schema.Array(Schema.Struct({ accountId: Schema.String, message: Schema.String })),
+  errors: Schema.Array(
+    Schema.Struct({
+      accountId: Schema.String,
+      message: Schema.String,
+      requiresReauth: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
 });
 export type SearchResult = typeof SearchResult.Type;
 

@@ -10,7 +10,9 @@ const bridge: RpcBridge = {
       ipcRenderer.send(RPC_CHANNEL, frame);
   },
   onFrame: (listener) => {
-    const handler = (_: IpcRendererEvent, frame: string) => listener(frame);
+    const handler = (_: IpcRendererEvent, frame: string) => {
+      listener(frame);
+    };
     ipcRenderer.on(RPC_CHANNEL, handler);
     return () => {
       ipcRenderer.off(RPC_CHANNEL, handler);

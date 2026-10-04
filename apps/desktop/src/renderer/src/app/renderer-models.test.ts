@@ -350,7 +350,9 @@ beforeEach(() => {
     moreNotLoaded: null,
     searchingServer: false,
     searchTruncated: false,
-    searchErrors: [],
+    searchErrorAccounts: [],
+    searchReauthAccounts: [],
+    searchInputInvalid: false,
     searchIgnored: [],
   });
   state.calls = [];

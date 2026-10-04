@@ -338,7 +338,9 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
           searching: false,
           searchingServer: false,
           searchTruncated: false,
-          searchErrors: [],
+          searchErrorAccounts: [],
+          searchReauthAccounts: [],
+          searchInputInvalid: false,
           searchIgnored: [],
           filters: {
             enabled: false,
@@ -862,7 +864,9 @@ it("keeps a keyboard entry into the virtual list when selection is outside the v
         searching: false,
         searchingServer: false,
         searchTruncated: false,
-        searchErrors: [],
+        searchErrorAccounts: [],
+        searchReauthAccounts: [],
+        searchInputInvalid: false,
         searchIgnored: [],
         filters: {
           enabled: false,

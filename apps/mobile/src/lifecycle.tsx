@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { AppState } from "react-native";
-import { deviceOnline, isForeground } from "./device";
+import { deviceOnline, isForeground, watchConnectivity, resumeConnectivity } from "./device";
 import { Mailbox, type Language } from "@openmail/core/portable";
 import { Effect, Fiber } from "effect";
 import { useMailbox, useMailboxQuery, useMailboxRevision } from "./mailbox";
@@ -105,14 +104,19 @@ export function ForegroundLifecycle() {
   useEffect(() => {
     const active = (foreground: boolean) =>
       foreground
-        ? work(true).catch(() => null)
+        ? resumeConnectivity(runtime, () => work(true)).catch(() => null)
         : runtime
             .runPromise(Effect.flatMap(Mailbox, (mailbox) => mailbox.closeSessions()))
             .catch(() => null);
     void active(isForeground());
-    const subscription = AppState.addEventListener("change", (state) => {
-      void active(state === "active");
-    });
+    const subscription = watchConnectivity(
+      () => {
+        void active(true);
+      },
+      () => {
+        void active(false);
+      },
+    );
     return () => subscription.remove();
   }, [work, runtime]);
   useEffect(() => {

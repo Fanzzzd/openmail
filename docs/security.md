@@ -44,11 +44,11 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 ## 服务商诊断
 
-桌面在 `OPENMAIL_HOME/diagnostics/diagnostics.jsonl` 记录固定字段，默认数据目录见 [README](../README.md#cli-与-mcp)。Gmail／Graph 的 `provider-failure` 只保存时间、服务商、HTTP 方法、端点模板、可用的 status、failure 分类和账户 ID 的 16 位 SHA-256 前缀。不保存完整 URL、query、资源 ID、消息文本、错误正文、堆栈或 token。该格式不提供 IMAP 协议逐条日志，也不证明散列匿名化。
+桌面在 `OPENMAIL_HOME/diagnostics/diagnostics.jsonl` 记录固定字段，默认数据目录见 [README](../README.md#cli-与-mcp)。Gmail／Graph 的 `provider-failure` 只保存时间、服务商、HTTP 方法、端点模板、可用的 status、failure 分类和账户 ID 的 16 位 SHA-256 前缀。搜索失败还保存 operation=search 和固定枚举的 Graph error.code，未知代码保存 unknown；延期不写事件。不保存完整 URL、query、资源 ID、消息文本、错误正文、堆栈或 token。该格式不提供 IMAP 协议逐条日志，也不证明散列匿名化。
 
 `failure` 分为 `http`、`transport`、`credentials`、`configuration`、`other`。只有实际传输失败用 status 0；缺少 OAuth client 属于 configuration，无 HTTP 状态。凭证失败与局部服务权限不足分别处理，可选端点的权限 403 在重新登录前停止重复请求，不暂停正常邮件同步；限流或未启用 API 不按此规则缓存。
 
-`sync-reset` 诊断还记录服务商、listing／reset／verification 阶段、账户与文件夹哈希，以及列出、保留、候选、已验证和延期等计数，不记录候选 ID。事件定义见 [sync-reset.ts](../packages/core/src/sync-reset.ts)，落盘与导出沿用同一字段白名单。
+`sync-reset` 诊断还记录服务商、listing／reset／verification 阶段、账户与文件夹哈希，以及列出、保留、候选、已验证和延期等计数，不记录候选 ID。runtime-error 的 sync-crashed 还允许固定 phase 和 causeKind，不导出异常内容或堆栈。RPC renderer 回调显式返回 void，防止 Fiber 经 contextBridge 返回时触发克隆错误；回归用 structuredClone 检查 JSON 帧和回调返回值。事件定义见 [sync-reset.ts](../packages/core/src/sync-reset.ts)，落盘与导出沿用同一字段白名单。
 
 每文件默认 256 KiB，另保留最多三份轮转档。Feedback 展示导出预览并让用户选择附件，创建反馈草稿不自动上传；旧日志在预览时重新按白名单编码。RPC 失败仅记录方法名，不记录参数，正常中断不记录。实现见 [provider-diagnostics.ts](../packages/core/src/provider-diagnostics.ts)、[diagnostics.ts](../packages/core/src/platform/node/diagnostics.ts)、[reliability.ts](../apps/desktop/src/main/reliability.ts)和 [Feedback.tsx](../apps/desktop/src/renderer/src/components/Feedback.tsx)，回归见 [provider-diagnostics.test.ts](../packages/core/src/provider-diagnostics.test.ts)。
 

@@ -4691,6 +4691,7 @@ msgstr "Barre latérale"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4738,6 +4739,10 @@ msgstr "Signatures"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Les versions signées utilisent un jeton d’accès GitHub pour télécharger des versions privées. Le jeton est stocké dans le trousseau de votre système."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "Simplifiez votre recherche."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5114,6 +5119,10 @@ msgstr "Le message sélectionné n’est plus disponible."
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Le nom de l’expéditeur contient une autre adresse e-mail."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "Le serveur n’a pas pu terminer cette recherche."
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

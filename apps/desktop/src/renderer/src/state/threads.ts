@@ -153,7 +153,9 @@ export interface ThreadList {
   moreNotLoaded: number | null;
   searchingServer: boolean;
   searchTruncated: boolean;
-  searchErrors: readonly string[];
+  searchErrorAccounts: readonly string[];
+  searchReauthAccounts: readonly string[];
+  searchInputInvalid: boolean;
   searchIgnored: readonly string[];
 }
 
@@ -167,7 +169,9 @@ const EMPTY: ThreadList = {
   moreNotLoaded: null,
   searchingServer: false,
   searchTruncated: false,
-  searchErrors: [],
+  searchErrorAccounts: [],
+  searchReauthAccounts: [],
+  searchInputInvalid: false,
   searchIgnored: [],
 };
 
@@ -193,7 +197,7 @@ export const threadListAtom = Atom.writable(
     const query = get(listQueryAtom);
     if (!query) return EMPTY;
     const invalid = searchInputError(query.search ?? "");
-    if (invalid) return { ...EMPTY, searchErrors: [invalid.message] };
+    if (invalid) return { ...EMPTY, searchInputInvalid: true };
     const result = get(pagedList(query).loaded);
     const total = AsyncResult.getOrElse(
       get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
@@ -212,7 +216,10 @@ export const threadListAtom = Atom.writable(
       searchingServer: server !== null && (server._tag === "Initial" || server.waiting),
       searchTruncated: remote?.truncated ?? false,
       searchIgnored: remote?.ignored?.map((e) => `${e.accountId}: ${e.operators.join(", ")}`) ?? [],
-      searchErrors: remote?.errors.map((e) => `${e.accountId}: ${e.message}`) ?? [],
+      searchInputInvalid: false,
+      searchErrorAccounts: remote?.errors.map((e) => e.accountId) ?? [],
+      searchReauthAccounts:
+        remote?.errors.filter((e) => e.requiresReauth).map((e) => e.accountId) ?? [],
     };
     const liveRemote = remote
       ? get(

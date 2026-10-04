@@ -4701,6 +4701,7 @@ msgstr "侧栏"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4748,6 +4749,10 @@ msgstr "签名"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "正式签名的应用使用 GitHub 访问令牌下载私库更新。令牌保存在系统钥匙串。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "请简化搜索条件。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5124,6 +5129,10 @@ msgstr "所选邮件已不存在。"
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "发件人名称含有不同的邮件地址。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "服务器未能完成搜索。"
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

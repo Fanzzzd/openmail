@@ -4691,6 +4691,7 @@ msgstr "Postranní panel"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4738,6 +4739,10 @@ msgstr "Podpisy"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Podepsané sestavení používají ke stažení soukromých vydání přístupový token GitHub. Token je uložen ve vaší systémové klíčence."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "Zjednodušte vyhledávací dotaz."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5114,6 +5119,10 @@ msgstr "Vybraná zpráva již není dostupná."
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Jméno odesílatele obsahuje jinou e-mailovou adresu."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "Server nemohl dokončit toto hledání."
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

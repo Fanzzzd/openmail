@@ -3,6 +3,7 @@ import { nativeRecoveryLabels } from "./native-i18n";
 import {
   ProviderDiagnostic,
   SyncResetDiagnostic,
+  SyncCrashDiagnostic,
   checkLocalDatabase,
   createLocalDiagnostics,
   runtimeDiagnosticReason,
@@ -29,6 +30,11 @@ export const diagnosticsLogger = Logger.make((options) => {
     : [options.message];
   let classified = false;
   for (const message of messages) {
+    const crash = Schema.decodeUnknownOption(SyncCrashDiagnostic)(message);
+    if (crash._tag === "Some") {
+      localLog("runtime-error", crash.value);
+      classified = true;
+    }
     const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(message);
     if (reset._tag === "Some") {
       localLog("sync-reset", reset.value);

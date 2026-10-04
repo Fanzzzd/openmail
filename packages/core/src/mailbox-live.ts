@@ -2,6 +2,8 @@ import type { QueuedSend } from "./mobile-outbox.js";
 import { newMessageId } from "./message-id.js";
 import { draftVersionMetadata } from "./draft-version.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
+import { BackgroundRead } from "./provider-connectivity.js";
+import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
 import { scopedAdapter, serviceGranted, type AuthorizationFeature } from "./optional-services.js";
 import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
@@ -200,6 +202,8 @@ const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
     ),
   );
 
+const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
+
 export interface MailboxOptions {
   /** Desktop releases optional startup work after its first window is painted. */
   backgroundReady?: Effect.Effect<void>;
@@ -315,6 +319,13 @@ export const MailboxLive = (
 
       const syncLock = yield* Semaphore.make(1);
       const polling = new Map<string, { failures: number; due: number }>();
+      const resetConnectivity = Effect.gen(function* () {
+        polling.clear();
+        for (const provider of new Set(
+          (yield* store.listAccounts).map((account) => account.provider),
+        ))
+          yield* providers.get(provider).resetConnectivity?.() ?? Effect.void;
+      });
       const cache = makeCacheMailbox(
         store,
         providers,
@@ -2410,6 +2421,11 @@ export const MailboxLive = (
         incrementalOnly = false,
         budget = { remaining: RESET_VERIFICATION_LIMIT },
       ) {
+        let phase: typeof SyncCrashDiagnostic.Type.phase = "pull";
+        const enter = (next: typeof phase) =>
+          Effect.sync(() => {
+            phase = next;
+          });
         const counts = { changed: 0, deleted: 0 };
         const guard = makeResetGuard(
           store,
@@ -2501,7 +2517,9 @@ export const MailboxLive = (
         );
         return yield* pull.pipe(
           Effect.retry(scope ? { ...PULL_RETRY, times: 0 } : PULL_RETRY),
+          Effect.tap(() => enter("verification")),
           Effect.andThen(scope ? Effect.void : guard.verify()),
+          Effect.tap(() => enter("health")),
           Effect.andThen(
             scope
               ? Effect.void
@@ -2536,6 +2554,7 @@ export const MailboxLive = (
                 )
               : Effect.void,
           ),
+          Effect.tap(() => enter("headers")),
           Effect.andThen(
             Effect.suspend(() =>
               scope || guard.isDeferred() ? Effect.void : maintainHeaders(account),
@@ -2548,9 +2567,7 @@ export const MailboxLive = (
           Effect.catchCause((cause) =>
             Cause.hasInterruptsOnly(cause)
               ? Effect.failCause(cause)
-              : Effect.logError("sync crashed", cause).pipe(
-                  Effect.andThen(failed(String(Cause.squash(cause)), false)),
-                ),
+              : logSyncCrash(cause, phase).pipe(Effect.andThen(failed(SYNC_RETRY_MESSAGE, false))),
           ),
         );
       });
@@ -2606,6 +2623,30 @@ export const MailboxLive = (
         yield* Ref.set(inflight, Option.some(done));
         return yield* runSync(accountId).pipe(
           syncLock.withPermits(1),
+          Effect.catchCause((cause) =>
+            Cause.hasInterruptsOnly(cause)
+              ? Effect.failCause(cause)
+              : logSyncCrash(cause, "maintenance").pipe(
+                  Effect.andThen(
+                    Effect.gen(function* () {
+                      yield* Ref.update(state, (s) => ({
+                        ...s,
+                        running: false,
+                        errors: [SYNC_RETRY_MESSAGE],
+                      }));
+                      yield* emit({ _tag: "SyncState", state: yield* Ref.get(state) });
+                      return [
+                        {
+                          accountId: accountId ?? "all",
+                          changed: 0,
+                          deleted: 0,
+                          error: SYNC_RETRY_MESSAGE,
+                        },
+                      ];
+                    }),
+                  ),
+                ),
+          ),
           Effect.onExit((exit) =>
             Ref.set(inflight, Option.none()).pipe(
               Effect.andThen(Deferred.done(done, exit)),
@@ -2878,7 +2919,8 @@ export const MailboxLive = (
         yield* backgroundReady.pipe(
           Effect.andThen(
             Effect.suspend(() => (syncPaused ? Effect.void : sync())).pipe(
-              Effect.catchCause((cause) => Effect.logWarning("sync failed", cause)),
+              Effect.provideService(BackgroundRead, true),
+              Effect.catchCause(() => Effect.void),
               Effect.repeat(Schedule.spaced(options.autoSync)),
             ),
           ),
@@ -3301,10 +3343,12 @@ export const MailboxLive = (
             ))
               yield* providers.get(provider).closeSessions?.() ?? Effect.void;
           }),
+        resetConnectivity: () => resetConnectivity,
         setSyncPaused: (paused) =>
           Effect.gen(function* () {
             syncPaused = paused;
             idle?.pause(paused);
+            if (!paused) yield* resetConnectivity;
             if (paused)
               for (const provider of new Set(
                 (yield* store.listAccounts).map((account) => account.provider),

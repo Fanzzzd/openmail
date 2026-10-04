@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import type { Mailbox } from "@openmail/core/portable";
 import type { MailRpcs } from "./rpc";
 
@@ -162,7 +163,8 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     AgentWriteMode: () => m.agentWriteMode,
     SetAgentWriteMode: ({ mode }) => m.setAgentWriteMode(mode),
 
-    Sync: () => m.sync(),
+    Sync: () => m.resetConnectivity().pipe(Effect.andThen(m.sync())),
+    NetworkChanged: () => m.resetConnectivity().pipe(Effect.andThen(m.sync()), Effect.asVoid),
     SyncState: () => m.syncState,
     Events: () => m.events,
   } satisfies Partial<Parameters<typeof MailRpcs.of>[0]>;

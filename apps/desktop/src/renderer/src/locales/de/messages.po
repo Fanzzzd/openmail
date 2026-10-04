@@ -4691,6 +4691,7 @@ msgstr "Seitenleiste"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4738,6 +4739,10 @@ msgstr "Signaturen"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Signierte Builds verwenden ein GitHub-Zugriffstoken, um private Versionen herunterzuladen. Das Token wird in Ihrem System-Schlüsselbund gespeichert."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "Vereinfachen Sie Ihre Suchanfrage."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5114,6 +5119,10 @@ msgstr "Die ausgewählte Nachricht ist nicht mehr verfügbar."
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "Der Absendername enthält eine andere E-Mail-Adresse."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "Der Server konnte diese Suche nicht abschließen."
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

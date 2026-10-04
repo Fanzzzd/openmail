@@ -4691,6 +4691,7 @@ msgstr "Zijbalk"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4738,6 +4739,10 @@ msgstr "Handtekeningen"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "Ondertekende builds gebruiken een GitHub-toegangstoken om privéreleases te downloaden. Het token wordt opgeslagen in uw systeemsleutelhanger."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "Vereenvoudig uw zoekopdracht."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5114,6 +5119,10 @@ msgstr "Het geselecteerde bericht is niet langer beschikbaar."
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "De naam van de afzender bevat een ander e-mailadres."
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "De server kon deze zoekopdracht niet voltooien."
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

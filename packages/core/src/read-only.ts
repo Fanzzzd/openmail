@@ -10,6 +10,7 @@ export const READ_ONLY_METHODS = Object.freeze([
   // Sync health only reads server counts through GET or IMAP STATUS.
   "folderStatus",
   "closeSessions",
+  "resetConnectivity",
   "fetchMessage",
   "fetchCachedHeaders",
   "verifyResetCandidates",

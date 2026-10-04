@@ -70,7 +70,9 @@ it("selection renders only changed visible rows and calls the latest parent hand
     searching: false,
     searchingServer: false,
     searchTruncated: false,
-    searchErrors: [],
+    searchErrorAccounts: [],
+    searchReauthAccounts: [],
+    searchInputInvalid: false,
     searchIgnored: [],
     threads: Array.from({ length: 40 }, (_, i) => ({
       id: `m${i}`,

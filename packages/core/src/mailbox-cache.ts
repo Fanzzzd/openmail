@@ -214,6 +214,7 @@ export function makeCacheMailbox(
                   replyTo: full.replyTo ?? [],
                   bodyText: full.bodyText,
                   bodyHtml: full.bodyHtml,
+                  attachments: full.attachments,
                   bodyCached: true,
                 });
               }),

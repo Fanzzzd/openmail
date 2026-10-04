@@ -93,7 +93,7 @@ export const OAuthLoopback: Layer.Layer<
           )
           .pipe(
             Effect.mapError(
-              (e) => new ProviderError({ message: `Token endpoint unreachable: ${e.message}` }),
+              () => new ProviderError({ message: "Token endpoint unreachable", status: 0 }),
             ),
           );
         if (res.status < 200 || res.status >= 300) {

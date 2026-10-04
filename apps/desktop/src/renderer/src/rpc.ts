@@ -26,7 +26,7 @@ const ElectronProtocol = Layer.effect(
         // Route by request owner even before a short-lived client's receive
         // loop starts. Protocol.make buffers early replies for that client.
         const owners = new Map<string | number, number>();
-        const off = bridge.onFrame((frame) =>
+        const off = bridge.onFrame((frame) => {
           run(
             Effect.forEach(
               parser.decode(frame) as ReadonlyArray<RpcMessage.FromServerEncoded>,
@@ -43,8 +43,8 @@ const ElectronProtocol = Layer.effect(
               },
               { discard: true },
             ),
-          ),
-        );
+          );
+        });
         yield* Effect.addFinalizer(() => Effect.sync(off));
         return {
           send: (clientId, request) =>

@@ -1,12 +1,18 @@
 import { newMessageId } from "./message-id.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { draftVersionMetadata } from "./draft-version.js";
+import type { FolderStatus } from "./sync-health.js";
+import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { graphPageLink } from "./graph-pagination.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
 import { BatchResponse } from "./provider-batch.js";
 import type { CachedHeaders } from "./header-backfill.js";
 import { logSyncReset, type ResetVerification } from "./sync-reset.js";
-import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
+import {
+  graphSearchErrorCode,
+  logProviderFailure,
+  makeOptionalPermissions,
+} from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
 import { cleanDisplayName, messageSecurity } from "./message-security.js";
 import {
@@ -124,6 +130,9 @@ const PAGE_SIZE = 50;
 const DELTA_PREFER = `${PREFER.prefer}, odata.maxpagesize=${PAGE_SIZE}`;
 const INITIAL_WINDOW_DAYS = 90;
 const CONCURRENCY = 4;
+const SearchRequest = Context.Reference<boolean>("openmail/GraphSearchRequest", {
+  defaultValue: () => false,
+});
 // Draft preparation and delivery confirmation belong to the send lane, too.
 const SendRequest = Context.Reference<boolean>("openmail/OutlookSendRequest", {
   defaultValue: () => false,
@@ -288,7 +297,8 @@ class ApiError extends Data.TaggedError("ApiError")<{
 }> {}
 
 // 429 throttling and 5xx are transient; back off and retry.
-const isTransient = (e: ApiError) => e.status === 0 || e.status === 429 || e.status >= 500;
+const isTransient = (e: ApiError) =>
+  !e.deferred && (e.status === 0 || e.status === 429 || e.status >= 500);
 
 const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 /** Graph expires delta links it no longer tracks (syncStateNotFound). */
@@ -394,6 +404,7 @@ export const makeOutlook: Effect.Effect<
 
   // One refresh at a time: Graph may rotate the refresh token, and two
   // parallel refreshes would race to save it.
+  const connectivity = makeProviderConnectivity();
   const tokens = new Map<string, { token: string; expiresAt: number }>();
   const refreshLock = yield* Semaphore.make(1);
 
@@ -434,16 +445,51 @@ export const makeOutlook: Effect.Effect<
       }),
     );
 
+  const readRetryAt = new Map<string, number>();
+  const checkReadDeadline = (accountId: string, sending = false) =>
+    Effect.gen(function* () {
+      const remaining = (readRetryAt.get(accountId) ?? 0) - (yield* Clock.currentTimeMillis);
+      if (!sending && remaining > 0)
+        yield* new ApiError({
+          status: 429,
+          body: "Account reads deferred",
+          deferred: true,
+          retryAfter: String(remaining / 1000),
+        });
+    });
+  const throttleReads = (
+    accountId: string,
+    status: number,
+    retryAfter: string | undefined,
+    sending = false,
+  ) =>
+    Effect.gen(function* () {
+      if (sending || !retryAfter || (status !== 429 && status < 500)) return;
+      const now = yield* Clock.currentTimeMillis;
+      readRetryAt.set(
+        accountId,
+        Math.max(readRetryAt.get(accountId) ?? 0, now + retryAfterMillis(retryAfter, now)),
+      );
+    });
+
   /** Sends one request with retries; resolves to the parsed JSON body, or null for 202/204. */
-  const execute = (token: string, request: HttpClientRequest.HttpClientRequest) =>
+  const execute = (
+    token: string,
+    request: HttpClientRequest.HttpClientRequest,
+    accountId?: string,
+    sending = false,
+  ) =>
     retryProviderRequest(
       Effect.gen(function* () {
+        if (accountId !== undefined) yield* checkReadDeadline(accountId, sending);
         const res = yield* http.execute(
           request.pipe(
             HttpClientRequest.bearerToken(token),
             HttpClientRequest.setHeader("prefer", request.headers.prefer ?? PREFER.prefer),
           ),
         );
+        if (accountId !== undefined)
+          yield* throttleReads(accountId, res.status, res.headers["retry-after"], sending);
         const text = yield* res.text;
         if (res.status < 200 || res.status >= 300) {
           return yield* new ApiError({
@@ -494,29 +540,22 @@ export const makeOutlook: Effect.Effect<
     return lock;
   };
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
-  const readRetryAt = new Map<string, number>();
   const requestToken = (accountId: string, sending: boolean) =>
     Effect.gen(function* () {
-      const now = yield* Clock.currentTimeMillis;
-      const remaining = (readRetryAt.get(accountId) ?? 0) - now;
-      if (!sending && remaining > 0)
-        return yield* new ApiError({
-          status: 429,
-          body: "Account reads deferred",
-          deferred: true,
-          retryAfter: String(remaining / 1000),
-        });
+      yield* checkReadDeadline(accountId, sending);
       return yield* accessToken(accountId);
     });
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
     Effect.gen(function* () {
       const sending = yield* SendRequest;
+      const background = yield* BackgroundRead;
+      const searching = yield* SearchRequest;
       return yield* permissions
         .run(
           accountId,
           request,
           requestToken(accountId, sending).pipe(
-            Effect.flatMap((token) => execute(token, request)),
+            Effect.flatMap((token) => execute(token, request, accountId, sending)),
             // The provider can reject an access token before it expires. Drop it,
             // refresh, and retry once; only a failed refresh means signing in again.
             Effect.catchIf(
@@ -524,22 +563,22 @@ export const makeOutlook: Effect.Effect<
               () =>
                 Effect.sync(() => tokens.delete(accountId)).pipe(
                   Effect.andThen(accessToken(accountId)),
-                  Effect.flatMap((token) => execute(token, request)),
+                  Effect.flatMap((token) => execute(token, request, accountId, sending)),
                 ),
             ),
-            Effect.tapError((e) => logProviderFailure("outlook", accountId, request, e)),
             Effect.tapError((e) =>
-              Effect.gen(function* () {
-                if (sending || e._tag !== "ApiError" || !e.retryAfter) return;
-                const now = yield* Clock.currentTimeMillis;
-                readRetryAt.set(
-                  accountId,
-                  Math.max(
-                    readRetryAt.get(accountId) ?? 0,
-                    now + retryAfterMillis(e.retryAfter, now),
-                  ),
-                );
-              }),
+              logProviderFailure(
+                "outlook",
+                accountId,
+                request,
+                e,
+                searching
+                  ? {
+                      operation: "search",
+                      errorCode: graphSearchErrorCode(e._tag === "ApiError" ? e.body : ""),
+                    }
+                  : undefined,
+              ),
             ),
             Effect.tapError((e) =>
               e._tag === "ApiError" && e.status === 401
@@ -549,6 +588,14 @@ export const makeOutlook: Effect.Effect<
           ),
         )
         .pipe(
+          (requestEffect) =>
+            connectivity.run(
+              accountId,
+              requestEffect,
+              background &&
+                !sending &&
+                (request.method === "GET" || new URL(request.url).pathname.endsWith("/$batch")),
+            ),
           (sending ? sendLock(accountId) : requestLock(accountId)).withPermits(
             new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1,
           ),
@@ -674,54 +721,64 @@ export const makeOutlook: Effect.Effect<
 
   /** A GET whose body is not JSON (a message's MIME source). */
   const getBytesAttempt = (accountId: string, path: string, maxBytes?: number) =>
-    accessToken(accountId).pipe(
-      Effect.flatMap((token) =>
-        retryProviderRequest(
-          Effect.gen(function* () {
-            const res = yield* http.execute(
-              HttpClientRequest.get(`${GRAPH}${path}`).pipe(
-                HttpClientRequest.bearerToken(token),
-                HttpClientRequest.setHeaders(PREFER),
+    Effect.flatMap(BackgroundRead, (background) =>
+      connectivity.run(
+        accountId,
+        accessToken(accountId).pipe(
+          Effect.flatMap((token) =>
+            retryProviderRequest(
+              Effect.gen(function* () {
+                yield* checkReadDeadline(accountId);
+                const res = yield* http.execute(
+                  HttpClientRequest.get(`${GRAPH}${path}`).pipe(
+                    HttpClientRequest.bearerToken(token),
+                    HttpClientRequest.setHeaders(PREFER),
+                  ),
+                );
+                yield* throttleReads(accountId, res.status, res.headers["retry-after"]);
+                if (res.status < 200 || res.status >= 300) {
+                  return yield* new ApiError({
+                    status: res.status,
+                    body: yield* res.text,
+                    ...(res.headers["retry-after"]
+                      ? { retryAfter: res.headers["retry-after"] }
+                      : {}),
+                  });
+                }
+                if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
+                if (Number(res.headers["content-length"]) > maxBytes)
+                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+                const parts: Uint8Array[] = [];
+                let total = 0;
+                yield* res.stream.pipe(
+                  Stream.runForEach((part) =>
+                    Effect.gen(function* () {
+                      total += part.length;
+                      if (total > maxBytes)
+                        return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+                      parts.push(part);
+                      return yield* Effect.void;
+                    }),
+                  ),
+                );
+                return new Uint8Array(Buffer.concat(parts));
+              }).pipe(
+                Effect.catchTag("HttpClientError", (e) =>
+                  Effect.fail(
+                    new ApiError({
+                      status: 0,
+                      body: e.message,
+                      requestNotSent: requestNotSent(e.reason.cause),
+                    }),
+                  ),
+                ),
               ),
-            );
-            if (res.status < 200 || res.status >= 300) {
-              return yield* new ApiError({
-                status: res.status,
-                body: yield* res.text,
-                ...(res.headers["retry-after"] ? { retryAfter: res.headers["retry-after"] } : {}),
-              });
-            }
-            if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
-            if (Number(res.headers["content-length"]) > maxBytes)
-              return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-            const parts: Uint8Array[] = [];
-            let total = 0;
-            yield* res.stream.pipe(
-              Stream.runForEach((part) =>
-                Effect.gen(function* () {
-                  total += part.length;
-                  if (total > maxBytes)
-                    return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                  parts.push(part);
-                  return yield* Effect.void;
-                }),
-              ),
-            );
-            return new Uint8Array(Buffer.concat(parts));
-          }).pipe(
-            Effect.catchTag("HttpClientError", (e) =>
-              Effect.fail(
-                new ApiError({
-                  status: 0,
-                  body: e.message,
-                  requestNotSent: requestNotSent(e.reason.cause),
-                }),
-              ),
-            ),
+              HttpClientRequest.get(`${GRAPH}${path}`),
+              (error) => error._tag === "ApiError" && isTransient(error),
+            ).pipe(requestLock(accountId).withPermits(1)),
           ),
-          HttpClientRequest.get(`${GRAPH}${path}`),
-          (error) => error._tag === "ApiError" && isTransient(error),
-        ).pipe(requestLock(accountId).withPermits(1)),
+        ),
+        background,
       ),
     );
 
@@ -790,6 +847,7 @@ export const makeOutlook: Effect.Effect<
     // would keep failing until they expire.
     tokens.clear();
     permissions.clear();
+    yield* connectivity.reset;
     headersDenied.clear();
     return {
       email: me.mail ?? me.userPrincipalName,
@@ -1085,16 +1143,17 @@ export const makeOutlook: Effect.Effect<
               page = yield* getDelta(account.id, url);
             }
             if (!next[folder.key] && known !== undefined) next[folder.key] = known;
-            yield* logSyncReset(account, folder.label, {
-              phase: "listing",
-              listed: listed.size,
-              kept: folderKept.size,
-              local: 0,
-              candidates: 0,
-              verified: 0,
-              incomplete: deferredFetches + (page["@odata.deltaLink"] ? 0 : 1),
-              deferred: deferredFetches,
-            });
+            if (reset || known === undefined || restarted.has(folder.label))
+              yield* logSyncReset(account, folder.label, {
+                phase: "listing",
+                listed: listed.size,
+                kept: folderKept.size,
+                local: 0,
+                candidates: 0,
+                verified: 0,
+                incomplete: deferredFetches + (page["@odata.deltaLink"] ? 0 : 1),
+                deferred: deferredFetches,
+              });
           }
           // Changes from removed folders can overwrite a move observed earlier.
           // Resolve overlaps after all pages, through the durable verification queue.
@@ -2015,7 +2074,7 @@ export const makeOutlook: Effect.Effect<
       const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
       const kql = graphSearch(query);
       const params = new URLSearchParams({
-        $select: `${MESSAGE_SELECT},parentFolderId`,
+        $select: `${SELECT},parentFolderId`,
         $expand: "attachments($select=name,contentType,size,isInline)",
         $top: "100",
       });
@@ -2049,10 +2108,13 @@ export const makeOutlook: Effect.Effect<
             system.find((f) => f.id === raw.parentFolderId)?.label ??
             folders.find((f) => f.id === raw.parentFolderId)?.id;
           if (!label) continue;
-          const attachments =
-            expandedAttachments(raw) ??
-            (raw.hasAttachments ? yield* fetchAttachments(account.id, raw.id) : []);
-          const message = yield* incomingGraph(account, raw, label, attachments);
+          const attachments = expandedAttachments(raw) ?? [];
+          const parsed = parseGraphMessage(raw, label, attachments);
+          const message: IncomingMessage = {
+            ...parsed,
+            bodyCached:
+              !(raw.hasAttachments && raw.attachments === undefined) && !hasSignedContainer(parsed),
+          };
           if (matchesSearch(message, query, folderNames)) messages.push(message);
           if (messages.length >= limit) break;
         }
@@ -2061,7 +2123,18 @@ export const makeOutlook: Effect.Effect<
           return { messages, truncated: true };
       }
       return { messages, truncated: url !== undefined || scanned >= 1000 };
-    }).pipe(Effect.mapError(writeFailure(account.id)));
+    }).pipe(
+      Effect.mapError((error) => {
+        const failure = readFailure(account.id)(error);
+        return failure._tag === "AuthError"
+          ? failure
+          : new ProviderError({
+              ...Schema.encodeSync(ProviderError)(failure),
+              message: "The server could not complete this search.",
+            });
+      }),
+      Effect.provideService(SearchRequest, true),
+    );
 
   const pageSchema = Schema.Struct({
     value: Schema.Array(WithId),
@@ -2274,11 +2347,20 @@ export const makeOutlook: Effect.Effect<
       (error) => error._tag === "ApiError" && isTransient(error),
     ).pipe(Effect.mapError(readFailure(account.id)));
 
+  const folderMessageCount = (accountId: string, id: string, filter: "all" | "unread") =>
+    get(
+      accountId,
+      Schema.Struct({ "@odata.count": Schema.Int }),
+      `/me/mailFolders/${encodeURIComponent(id)}/messages?${new URLSearchParams({ $count: "true", $select: "id", $top: "1", ...(filter === "unread" ? { $filter: "isRead eq false" } : {}) }).toString()}`,
+    );
   return {
-    fetchCachedHeaders,
-    backfill,
+    resetConnectivity: () => connectivity.reset,
+    fetchCachedHeaders: (account, ids) =>
+      fetchCachedHeaders(account, ids).pipe(Effect.provideService(BackgroundRead, true)),
+    backfill: (...args) => backfill(...args).pipe(Effect.provideService(BackgroundRead, true)),
     fetchMessage,
-    verifyResetCandidates,
+    verifyResetCandidates: (account, candidates) =>
+      verifyResetCandidates(account, candidates).pipe(Effect.provideService(BackgroundRead, true)),
     ...settings,
     ...makeOutlookFeatures(get, write),
     ...makeProviderCalendar(
@@ -2298,22 +2380,36 @@ export const makeOutlook: Effect.Effect<
     search,
     changeLabel,
     connect,
-    pull,
-    folderStatus: (account, scope) => {
+    pull: (...args) => pull(...args).pipe(Stream.provideService(BackgroundRead, true)),
+    folderStatus: (account, scope, recheck) => {
       const id = WELL_KNOWN.find((folder) => folder.label === scope)?.name ?? scope;
-      return get(
-        account.id,
-        Schema.Struct({ totalItemCount: Schema.Int, unreadItemCount: Schema.Int }),
-        `/me/mailFolders/${encodeURIComponent(id)}?$select=totalItemCount,unreadItemCount`,
-      ).pipe(
-        Effect.map((row) => ({
-          total: row.totalItemCount,
-          unread: row.unreadItemCount,
-          threads: null,
-          uidNext: null,
-          uidValidity: null,
-        })),
+      const summary = recheck
+        ? Effect.succeed(recheck.summary)
+        : get(
+            account.id,
+            Schema.Struct({ totalItemCount: Schema.Int, unreadItemCount: Schema.Int }),
+            `/me/mailFolders/${encodeURIComponent(id)}?$select=totalItemCount,unreadItemCount`,
+          ).pipe(
+            Effect.map((row): FolderStatus => ({
+              total: row.totalItemCount,
+              unread: row.unreadItemCount,
+              threads: null,
+              uidNext: null,
+              uidValidity: null,
+            })),
+          );
+      return summary.pipe(
+        Effect.flatMap((status) => {
+          if (!recheck || scope !== "DRAFT" || status.total >= recheck.localTotal)
+            return Effect.succeed(status);
+          return Effect.gen(function* () {
+            const total = (yield* folderMessageCount(account.id, id, "all"))["@odata.count"];
+            const unread = (yield* folderMessageCount(account.id, id, "unread"))["@odata.count"];
+            return { ...status, total, unread };
+          }).pipe(Effect.catch(() => Effect.succeed(status)));
+        }),
         Effect.mapError(readFailure(account.id)),
+        Effect.provideService(BackgroundRead, true),
       );
     },
     listFolderMessages: (account, folder, cursor, options) =>

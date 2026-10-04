@@ -11,6 +11,9 @@ import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { type IncomingMessage, type Provider } from "./domain.js";
 import { makeSyncHealth, redactSyncHealth, type HealthVerdict } from "./sync-health.js";
 import { sha256Hex } from "./platform/crypto.js";
+import { makeGmail } from "./gmail.js";
+import { makeResetGuard } from "./sync-reset.js";
+import { HttpClient, HttpClientResponse } from "effect/http";
 import { ProviderError } from "./errors.js";
 
 const message = (id: string, labels = ["INBOX"], unread = false): IncomingMessage => ({
@@ -241,3 +244,142 @@ it.effect(
     }).pipe(Effect.provide(TestMailbox({ imap: server })));
   },
 );
+
+for (const scope of ["INBOX", "CATEGORY_PERSONAL"]) {
+  it.effect(
+    `large ${scope} summaries stay available and stale candidates keep being swept despite slow rechecks`,
+    () => {
+      let listings = 0;
+      let verified = 0;
+      const client = HttpClient.make((request, url) =>
+        Effect.gen(function* () {
+          if (url.pathname.endsWith("/messages")) {
+            listings++;
+            yield* Effect.sleep("2 seconds");
+            return HttpClientResponse.fromWeb(
+              request,
+              Response.json({
+                messages: Array.from({ length: 500 }, (_, index) => ({
+                  id: `id-${listings}-${index}`,
+                })),
+                nextPageToken: String(listings),
+              }),
+            );
+          }
+          return HttpClientResponse.fromWeb(
+            request,
+            Response.json({
+              messagesTotal: scope === "CATEGORY_PERSONAL" ? 999 : 29_999,
+              messagesUnread: 0,
+              threadsTotal: 29_999,
+            }),
+          );
+        }),
+      );
+      const dependencies = StoreLive.pipe(
+        Layer.provideMerge(
+          Layer.mergeAll(
+            MemoryPlatform({
+              secrets: { "gmail:me@example.test": "refresh" },
+              config: { google: { clientId: "client", clientSecret: "secret" } },
+            }),
+            Layer.succeed(HttpClient.HttpClient, client),
+          ),
+        ),
+      );
+      return Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "me@example.test");
+        const gmail = yield* makeGmail;
+        yield* store.upsertMessage(account.id, message("cached", [scope]));
+        const countedStore: Store["Service"] = {
+          ...store,
+          syncHealthLocal: (id, label, imap) =>
+            label === scope
+              ? Effect.succeed({
+                  total: 30_000,
+                  unread: 0,
+                  threads: 30_000,
+                  label: scope,
+                  pendingOps: 0,
+                })
+              : store.syncHealthLocal(id, label, imap),
+        };
+        const adapter = {
+          ...makeFakeProvider(fakeServer(account.email)),
+          folderStatus: (...args: Parameters<typeof gmail.folderStatus>) =>
+            gmail.folderStatus(...args),
+          verifyResetCandidates: () =>
+            Effect.sync(() => {
+              verified++;
+              return [];
+            }),
+        };
+        const providers = Providers.of({ get: () => adapter });
+        let available = false;
+        const sweep = () =>
+          makeResetGuard(
+            countedStore,
+            adapter,
+            account,
+            { changed: 0, deleted: 0 },
+            { remaining: 500 },
+          ).sweep(() =>
+            makeSyncHealth(
+              countedStore,
+              providers,
+            )(account.id).pipe(
+              Effect.orDie,
+              Effect.tap((report) =>
+                Effect.sync(() => {
+                  available =
+                    report.folders.find((folder) => folder.scope === scope)?.server.kind ===
+                    "available";
+                }),
+              ),
+            ),
+          );
+        const first = yield* sweep().pipe(Effect.forkChild);
+        yield* TestClock.adjust("11 seconds");
+        yield* Fiber.join(first);
+        assert.isTrue(available);
+        assert.strictEqual(verified, 1);
+        assert.isAtMost(listings, 2);
+        yield* TestClock.adjust("1 hour");
+        const second = yield* sweep().pipe(Effect.forkChild);
+        yield* TestClock.adjust("11 seconds");
+        yield* Fiber.join(second);
+        assert.isTrue(available);
+        assert.strictEqual(verified, 2);
+      }).pipe(Effect.provide(dependencies));
+    },
+  );
+}
+
+for (const [provider, scope, rows, threads] of [
+  ["gmail", "CATEGORY_PERSONAL", 22, 21],
+  ["outlook", "DRAFT", 40, 37],
+] satisfies [Provider, string, number, number][]) {
+  it.effect(
+    `${provider} health counts ${rows} cached message identities across ${threads} threads with no editable drafts or queued operations`,
+    () =>
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount(provider, "me@example.test");
+        for (let index = 0; index < rows; index++)
+          yield* store.upsertMessage(account.id, {
+            ...message(`cached-${index}`, [scope]),
+            threadId: `thread-${index % threads}`,
+            rfcMessageId: `<fixture-${index % threads}@example.test>`,
+          });
+        const local = yield* store.syncHealthLocal(account.id, scope, false);
+        assert.strictEqual(local.total, rows);
+        assert.strictEqual(local.threads, threads);
+        assert.deepStrictEqual(yield* store.listPendingOps, []);
+        assert.strictEqual(
+          (yield* store.staleCandidates(account.id, [scope], false, "", 500)).length,
+          rows,
+        );
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+}

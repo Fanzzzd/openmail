@@ -62,7 +62,7 @@ import { messageMissing, causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { useDesktopLabels } from "./state/desktop";
 import { liveUpdatesAtom } from "./state/events";
-import { useRunMail } from "./state/mail";
+import { networkChanged, useRunMail } from "./state/mail";
 import {
   accountsAtom,
   labelPreferencesAtom,
@@ -85,6 +85,13 @@ export function App({ composeId }: { composeId?: string }) {
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
+  useEffect(() => {
+    const onOnline = () => {
+      run(networkChanged);
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [run]);
   useDesktopLabels();
   const strings = useAppMessages();
   const { t, i18n } = useLingui();
@@ -444,7 +451,9 @@ export function App({ composeId }: { composeId?: string }) {
       searching={search !== ""}
       searchingServer={threads.searchingServer}
       searchTruncated={threads.searchTruncated}
-      searchErrors={threads.searchErrors}
+      searchErrorAccounts={threads.searchErrorAccounts}
+      searchReauthAccounts={threads.searchReauthAccounts}
+      searchInputInvalid={threads.searchInputInvalid}
       searchIgnored={threads.searchIgnored}
       searchQuery={listQuery ?? undefined}
       filters={filters}

@@ -117,6 +117,7 @@ export const openMessageWindow = (id: string) =>
 
 /** Starts a sync of every account. Progress and results arrive as events. */
 export const syncNow = withMail((call) => call("Sync", undefined));
+export const networkChanged = withMail((call) => call("NetworkChanged", undefined));
 
 /**
  * Runs mail Effects from event handlers. Each call gets its own fiber in the

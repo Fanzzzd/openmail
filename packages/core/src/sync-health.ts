@@ -191,6 +191,40 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
         }),
       { concurrency: 4 },
     );
+    // Optional rechecks start only after all primary summaries have settled.
+    const checkedFolders = yield* Effect.forEach(
+      folders,
+      (folder) =>
+        Effect.gen(function* () {
+          if (
+            folder.server.kind !== "available" ||
+            folder.local.total <= folder.server.total ||
+            !(
+              (account.provider === "gmail" &&
+                (folder.scope === "DRAFT" || folder.scope.startsWith("CATEGORY_"))) ||
+              (account.provider === "outlook" && folder.scope === "DRAFT")
+            )
+          )
+            return folder;
+          const remaining = 10_000 - ((yield* Clock.currentTimeMillis) - now);
+          if (remaining <= 0) return folder;
+          const summary = folder.server;
+          const server = yield* providers
+            .get(account.provider)
+            .folderStatus(account, folder.scope, { localTotal: folder.local.total, summary })
+            .pipe(
+              Effect.timeout(Math.min(1000, remaining)),
+              Effect.map((status): HealthFolder["server"] => ({ kind: "available", ...status })),
+              Effect.catch(() => Effect.succeed(summary)),
+            );
+          return {
+            ...folder,
+            server,
+            verdict: healthVerdict(folder.local, server, folder.headerWindow !== null),
+          };
+        }),
+      { concurrency: 1 },
+    );
     return {
       provider: account.provider,
       accountDomainHash: sha256Hex(
@@ -199,7 +233,7 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
       checkedAt: now,
       cursorAgeMs,
       pendingOps,
-      folders,
+      folders: checkedFolders,
     } satisfies SyncHealth;
   });
 }

@@ -24,7 +24,7 @@ vi.mock("./components/AccountBadge", () => ({ AccountBadge: () => null }));
 vi.mock("./components/TriageChip", () => ({ TriageChip: () => null }));
 import { MessageList } from "./components/MessageList";
 
-it("each density renders its own height, preview lines and attachment indicator", () => {
+it("each density keeps local results and shows search-specific errors", () => {
   const thread: ThreadSummary = {
     id: "one",
     accountId: "gmail:me",
@@ -57,7 +57,9 @@ it("each density renders its own height, preview lines and attachment indicator"
           searching: false,
           searchingServer: false,
           searchTruncated: false,
-          searchErrors: [],
+          searchErrorAccounts: ["outlook:me"],
+          searchInputInvalid: false,
+          searchReauthAccounts: density === "dense" ? ["outlook:me"] : [],
           searchIgnored: [],
           filters: {
             enabled: false,
@@ -91,6 +93,13 @@ it("each density renders its own height, preview lines and attachment indicator"
       ),
     );
     expect(markup).toContain(`height:${LIST_DENSITIES[density].height}px`);
+    expect(markup).toContain("Subject");
+    expect(markup).toContain(
+      density === "dense"
+        ? "outlook:me: Sign in again"
+        : "outlook:me: The server could not complete this search.",
+    );
+    expect(markup).not.toContain("The server rejected this change.");
     expect(markup.includes("Unique preview body")).toBe(LIST_DENSITIES[density].previewLines > 0);
     expect(markup.includes("visible.pdf")).toBe(LIST_DENSITIES[density].attachments);
     expect(markup.includes("lucide-paperclip")).toBe(true);
@@ -123,7 +132,9 @@ it("unknown-size notices only appear for real size conditions, while omitted ope
           searching: true,
           searchingServer: false,
           searchTruncated: false,
-          searchErrors: [],
+          searchErrorAccounts: [],
+          searchReauthAccounts: [],
+          searchInputInvalid: false,
           searchIgnored: ["label:work"],
           searchQuery: { search },
           filters: {

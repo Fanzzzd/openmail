@@ -4691,6 +4691,7 @@ msgstr "サイドバー"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
@@ -4738,6 +4739,10 @@ msgstr "署名"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Signed builds use a GitHub access token to download private releases. The token is stored in your system keychain."
 msgstr "署名付きビルドは、GitHub アクセス トークンを使用してプライベート リリースをダウンロードします。トークンはシステム キーチェーンに保存されます。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Simplify your search query."
+msgstr "検索条件を簡単にしてください。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Size comparison"
@@ -5114,6 +5119,10 @@ msgstr "選択したメッセージは利用できなくなりました。"
 #: src/renderer/src/components/Reader.tsx
 msgid "The sender name contains a different email address."
 msgstr "送信者名に別のメールアドレスが含まれています。"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "The server could not complete this search."
+msgstr "サーバーで検索を完了できませんでした。"
 
 #: src/renderer/src/errors.ts
 msgid "The server refused this action."

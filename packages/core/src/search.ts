@@ -439,7 +439,11 @@ export function graphSearch(query: ThreadQuery): string {
   const c = parsed.criteria ?? {};
   const terms = searchWords(parsed.search ?? "")
     .map(unquoteSearchValue)
-    .map(quoteSearchValue);
+    .map((term) =>
+      /^[\p{L}\p{N}]+$/u.test(term) && !["AND", "OR", "NOT"].includes(term.toUpperCase())
+        ? term
+        : quoteSearchValue(term),
+    );
   if (c.from) terms.push(`from:${quoteSearchValue(c.from)}`);
   if (c.bcc) terms.push(`bcc:${quoteSearchValue(c.bcc)}`);
   if (c.cc) terms.push(`cc:${quoteSearchValue(c.cc)}`);

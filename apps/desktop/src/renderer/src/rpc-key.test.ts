@@ -35,7 +35,11 @@ it("a short-lived key client receives a validation reply before its receive loop
           },
         });
         // Deliberately synchronous, so broadcasting only to active loops loses this reply.
-        for (const listener of listeners) listener(JSON.stringify(response));
+        for (const listener of listeners) {
+          const returned: unknown = listener(structuredClone(JSON.stringify(response)));
+          expect(returned).toBeUndefined();
+          expect(() => structuredClone(returned)).not.toThrow();
+        }
       }
     },
   };

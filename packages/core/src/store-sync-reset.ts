@@ -5,7 +5,14 @@ import { all, first, run } from "./sql-rows.js";
 import { ResetCandidate, type ResetChange } from "./sync-reset.js";
 import type { ImapFolderIdentity } from "./services.js";
 
-const StaleSweepState = Schema.Struct({ checkedAt: Schema.Number, after: Schema.String });
+const StaleSweepState = Schema.Struct({
+  checkedAt: Schema.Number,
+  after: Schema.String,
+  verified: Schema.optionalKey(Schema.Record(Schema.String, Schema.Number)),
+});
+const VERIFIED_TTL = 86_400_000;
+const pruneVerified = (verified: typeof StaleSweepState.Type.verified, now: number) =>
+  Object.fromEntries(Object.entries(verified ?? {}).filter(([, at]) => now - at < VERIFIED_TTL));
 const staleKey = (account: string) => `sync-stale:${account}`;
 const key = (account: string) => `sync-reset:${account}`;
 
@@ -36,6 +43,10 @@ export function makeSyncResetStore(
             const state = {
               checkedAt: now,
               after: Option.isSome(row) ? row.value.value_json.after : "",
+              verified: pruneVerified(
+                Option.isSome(row) ? row.value.value_json.verified : undefined,
+                now,
+              ),
             };
             yield* run(
               sql`INSERT INTO prefs(key,value_json) VALUES(${staleKey(account)},${JSON.stringify(state)}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
@@ -48,6 +59,23 @@ export function makeSyncResetStore(
       run(
         sql`UPDATE prefs SET value_json=json_set(value_json,'$.after',${after}) WHERE key=${staleKey(account)}`,
       ),
+    saveStaleSweepVerified: (account: string, fingerprints: readonly string[], now: number) =>
+      sql
+        .withTransaction(
+          Effect.gen(function* () {
+            const row = yield* first(
+              Schema.Struct({ value_json: Schema.fromJsonString(StaleSweepState) }),
+            )(sql`SELECT value_json FROM prefs WHERE key=${staleKey(account)}`);
+            if (Option.isNone(row)) return;
+            const state = row.value.value_json;
+            const verified = pruneVerified(state.verified, now);
+            for (const fingerprint of fingerprints) verified[fingerprint] = now;
+            yield* run(
+              sql`UPDATE prefs SET value_json=${JSON.stringify({ ...state, verified })} WHERE key=${staleKey(account)}`,
+            );
+          }),
+        )
+        .pipe(Effect.orDie),
     staleCandidates: (
       account: string,
       scopes: readonly string[],

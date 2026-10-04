@@ -334,3 +334,24 @@ it("runtime reason codes classify fixed failures without retaining arbitrary tex
   expect(preview.match(/"reason":"unclassified"/g)).toHaveLength(4);
   expect(preview).not.toMatch(/private|secret|body|constructor|__proto__/);
 });
+
+it("core sync crashes retain safe phase and cause codes", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  await Effect.runPromise(
+    Effect.logError({
+      _tag: "SyncCrashDiagnostic",
+      reason: "sync-crashed",
+      phase: "pull",
+      causeKind: "defect",
+      message: "private body",
+      token: "private token",
+    }).pipe(Effect.provide(Logger.layer([recovery.diagnosticsLogger]))),
+  );
+  const preview = recovery.diagnosticsPreview(false);
+  expect(preview).toContain('"reason":"sync-crashed"');
+  expect(preview).toContain('"phase":"pull"');
+  expect(preview).toContain('"causeKind":"defect"');
+  expect(preview).not.toContain("private");
+});

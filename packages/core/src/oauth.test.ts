@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { NodeCrypto } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Ref } from "effect";
-import { HttpClient, HttpClientResponse } from "effect/http";
+import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 
 import { OAuthLoopback } from "./platform/node/oauth.js";
 import { Browser, OAuth } from "./services.js";
@@ -106,3 +106,31 @@ it.live("OAuth reports actual granted scopes rather than requested scopes", () =
     assert.deepStrictEqual(tokens.scopes, ["mail.read", "https://mail.google.com/"]);
   }),
 );
+
+it.effect("an offline token endpoint is a transport failure with status zero", () => {
+  const http = Layer.succeed(
+    HttpClient.HttpClient,
+    HttpClient.make((request) =>
+      Effect.fail(
+        new HttpClientError.HttpClientError({
+          reason: new HttpClientError.TransportError({ request, description: "offline" }),
+        }),
+      ),
+    ),
+  );
+  const layer = OAuthLoopback.pipe(
+    Layer.provide([http, NodeCrypto.layer, Layer.succeed(Browser, { open: () => Effect.void })]),
+  );
+  return Effect.gen(function* () {
+    const oauth = yield* OAuth;
+    const error = yield* oauth
+      .refresh("account", {
+        tokenUrl: "https://oauth2.googleapis.com/token",
+        clientId: "client",
+        refreshToken: "refresh",
+      })
+      .pipe(Effect.flip);
+    assert.strictEqual(error._tag, "ProviderError");
+    if (error._tag === "ProviderError") assert.strictEqual(error.status, 0);
+  }).pipe(Effect.provide(layer));
+});

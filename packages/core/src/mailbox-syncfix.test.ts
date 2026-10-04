@@ -1,5 +1,5 @@
 import { assert, it } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
+import { Cause, Deferred, Effect, Fiber, Layer, Logger, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import type { IncomingMessage } from "./domain.js";
 import { PermanentError, ProviderError } from "./errors.js";
@@ -350,3 +350,237 @@ it.effect(
     );
   },
 );
+
+it.effect("provider defect is content-free and the following sync recovers", () => {
+  let failed = true;
+  const adapter: ProviderAdapter = {
+    ...makeFakeProvider(fakeServer("me@example.com")),
+    pull: () =>
+      failed
+        ? Stream.fromEffect(Effect.die(new Error("private provider payload")))
+        : Stream.succeed({ _tag: "Cursor", cursor: "1" }),
+  };
+  return withAdapter(
+    adapter,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* store.upsertAccount("outlook", "me@example.com");
+      const first = yield* mailbox.sync(account.id);
+      assert.strictEqual(first[0]?.error, "Sync could not finish. It will retry automatically.");
+      failed = false;
+      assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
+      assert.isFalse((yield* mailbox.syncState).running);
+    }),
+  );
+});
+
+for (const failure of ["defect", "interrupted"] as const)
+  it.effect(
+    `automatic sync survives a provider ${failure} and normal cancellation stays silent`,
+    () => {
+      let pulls = 0;
+      const crashes: unknown[] = [];
+      const logger = Logger.make((options) => {
+        crashes.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+      });
+      const adapter: ProviderAdapter = {
+        ...makeFakeProvider(fakeServer("me@example.com")),
+        pull: () =>
+          ++pulls === 1
+            ? failure === "defect"
+              ? Stream.fromEffect(Effect.die("private provider response"))
+              : Stream.failCause(Cause.interrupt(42))
+            : Stream.succeed({ _tag: "Cursor", cursor: "1" }),
+      };
+      return Effect.gen(function* () {
+        const ready = yield* Deferred.make<void>();
+        const layer = MailboxLive({
+          backgroundFlush: false,
+          autoSync: "2 seconds",
+          backgroundReady: Deferred.await(ready),
+        }).pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
+              Layer.provideMerge(MemoryPlatform()),
+            ),
+          ),
+        );
+        yield* Effect.gen(function* () {
+          const store = yield* Store;
+          const mailbox = yield* Mailbox;
+          const account = yield* store.upsertAccount("outlook", "me@example.com");
+          yield* Deferred.succeed(ready, undefined);
+          yield* TestClock.adjust("3 seconds");
+          assert.isAtLeast(pulls, 2);
+          assert.isNull((yield* store.getAccount(account.id)).lastSyncError);
+          assert.isFalse((yield* mailbox.syncState).running);
+        }).pipe(Effect.provide(layer));
+        const recorded = crashes.filter(
+          (value) =>
+            typeof value === "object" &&
+            value !== null &&
+            "_tag" in value &&
+            value._tag === "SyncCrashDiagnostic",
+        );
+        assert.strictEqual(recorded.length, failure === "defect" ? 1 : 0);
+        assert.deepStrictEqual(
+          recorded.map((value) =>
+            typeof value === "object" && value !== null && "causeKind" in value
+              ? value.causeKind
+              : null,
+          ),
+          failure === "defect" ? [failure] : [],
+        );
+        assert.isFalse(JSON.stringify(crashes).includes("private"));
+      }).pipe(Effect.provide(Logger.layer([logger])));
+    },
+  );
+
+it.effect("a propagated provider interruption releases sync state and allows a later pull", () => {
+  let interrupted = true;
+  const adapter: ProviderAdapter = {
+    ...makeFakeProvider(fakeServer("me@example.com")),
+    pull: () =>
+      interrupted
+        ? Stream.failCause(Cause.interrupt(42))
+        : Stream.succeed({ _tag: "Cursor", cursor: "1" }),
+  };
+  return withAdapter(
+    adapter,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* store.upsertAccount("outlook", "me@example.com");
+      assert.strictEqual((yield* mailbox.sync(account.id).pipe(Effect.exit))._tag, "Failure");
+      assert.isFalse((yield* mailbox.syncState).running);
+      interrupted = false;
+      assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
+    }),
+  );
+});
+
+it.effect("maintenance defects release shared sync waiters and the next run recovers", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("outlook", "me@example.com");
+    let broken = true;
+    const entered = yield* Deferred.make<void>();
+    const release = yield* Deferred.make<void>();
+    const adapter = makeFakeProvider(fakeServer(account.email));
+    const unreliableStore: Store["Service"] = {
+      ...store,
+      getBackfillState: (id) =>
+        Effect.suspend(() =>
+          broken
+            ? Deferred.succeed(entered, undefined).pipe(
+                Effect.andThen(Deferred.await(release)),
+                Effect.andThen(Effect.die("private maintenance payload")),
+              )
+            : store.getBackfillState(id),
+        ),
+    };
+    yield* Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const first = yield* mailbox.sync(account.id).pipe(Effect.forkChild);
+      yield* Deferred.await(entered);
+      const waiter = yield* mailbox.sync(account.id).pipe(Effect.forkChild);
+      yield* Effect.yieldNow;
+      yield* Deferred.succeed(release, undefined);
+      const result = yield* Fiber.join(first);
+      assert.deepStrictEqual(yield* Fiber.join(waiter), result);
+      assert.strictEqual(result[0]?.error, "Sync could not finish. It will retry automatically.");
+      assert.isFalse((yield* mailbox.syncState).running);
+      broken = false;
+      assert.isUndefined((yield* mailbox.sync(account.id))[0]?.error);
+    }).pipe(
+      Effect.provide(
+        MailboxLive({ backgroundFlush: false }).pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(
+              Layer.succeed(Store, unreliableStore),
+              Layer.succeed(Providers, { get: () => adapter }),
+            ).pipe(Layer.provideMerge(MemoryPlatform())),
+          ),
+        ),
+      ),
+    );
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
+it.effect("closing the automatic-sync scope during a pull is silent and terminates", () => {
+  const crashes: unknown[] = [];
+  const logger = Logger.make((options) => {
+    crashes.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+  });
+  return Effect.gen(function* () {
+    const ready = yield* Deferred.make<void>();
+    const pulling = yield* Deferred.make<void>();
+    const adapter: ProviderAdapter = {
+      ...makeFakeProvider(fakeServer("me@example.com")),
+      pull: () =>
+        Stream.fromEffect(Deferred.succeed(pulling, undefined).pipe(Effect.andThen(Effect.never))),
+    };
+    yield* Effect.gen(function* () {
+      const store = yield* Store;
+      yield* store.upsertAccount("outlook", "me@example.com");
+      yield* Deferred.succeed(ready, undefined);
+      yield* Deferred.await(pulling);
+      // Releasing the layer interrupts the in-flight pull and the scheduler together.
+    }).pipe(
+      Effect.provide(
+        MailboxLive({
+          backgroundFlush: false,
+          autoSync: "2 seconds",
+          backgroundReady: Deferred.await(ready),
+        }).pipe(
+          Layer.provideMerge(
+            Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
+              Layer.provideMerge(MemoryPlatform()),
+            ),
+          ),
+        ),
+      ),
+    );
+    assert.deepStrictEqual(crashes, []);
+  }).pipe(Effect.provide(Logger.layer([logger])));
+});
+
+it.effect("wake clears provider and inbox polling backoff before the next pull", () => {
+  let offline = false;
+  let pulls = 0;
+  let resets = 0;
+  const adapter: ProviderAdapter = {
+    ...makeFakeProvider(fakeServer("me@example.com")),
+    pull: () => {
+      pulls++;
+      return offline
+        ? Stream.fail(new ProviderError({ message: "Offline", status: 0, deferred: true }))
+        : Stream.succeed({ _tag: "Cursor", cursor: "1" });
+    },
+    resetConnectivity: () =>
+      Effect.sync(() => {
+        resets++;
+      }),
+  };
+  return withAdapter(
+    adapter,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* store.upsertAccount("outlook", "me@example.com");
+      yield* mailbox.sync(account.id);
+      offline = true;
+      yield* mailbox.pollInbox();
+      const before = pulls;
+      yield* mailbox.pollInbox();
+      assert.strictEqual(pulls, before);
+      yield* mailbox.setSyncPaused(true);
+      offline = false;
+      yield* mailbox.setSyncPaused(false);
+      yield* mailbox.pollInbox();
+      assert.strictEqual(resets, 1);
+      assert.strictEqual(pulls, before + 1);
+    }),
+  );
+});

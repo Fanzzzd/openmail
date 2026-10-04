@@ -533,6 +533,7 @@ export class Mailbox extends Context.Service<
       names: { personal: string; work: string },
     ): Effect.Effect<void>;
     closeSessions(): Effect.Effect<void>;
+    resetConnectivity(): Effect.Effect<void>;
     setSyncPaused(paused: boolean): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void, NotFound>;

@@ -129,7 +129,11 @@ export function makeOrganizationMailbox(
         .search(account, query)
         .pipe(Effect.result);
       if (result._tag === "Failure") {
-        errors.push({ accountId: account.id, message: result.failure.message });
+        errors.push({
+          accountId: account.id,
+          message: result.failure.message,
+          ...(result.failure._tag === "AuthError" ? { requiresReauth: true } : {}),
+        });
         continue;
       }
       const page = result.success;
@@ -142,7 +146,15 @@ export function makeOrganizationMailbox(
               pending.some((p) => p.accountId === account.id && p.providerId === message.providerId)
             )
               continue;
-            yield* store.upsertMessage(account.id, message);
+            let next = message;
+            if (message.bodyCached === false) {
+              const id = yield* store.messageIdForProvider(account.id, message.providerId);
+              if (id) {
+                const current = yield* store.getMessage(id).pipe(Effect.orDie);
+                next = { ...message, attachments: current.attachments };
+              }
+            }
+            yield* store.upsertMessage(account.id, next);
           }
         }),
       );

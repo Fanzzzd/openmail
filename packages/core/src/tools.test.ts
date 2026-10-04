@@ -64,6 +64,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     cacheSize: Effect.die("unused"),
     clearCache: () => Effect.die("unused"),
     initializeProfiles: () => Effect.die("unused"),
+    resetConnectivity: () => Effect.die("unused"),
     setSyncPaused: () => Effect.die("unused"),
     cacheWindows: Effect.die("unused"),
     setCacheWindow: () => Effect.die("unused"),

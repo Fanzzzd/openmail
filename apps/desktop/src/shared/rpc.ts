@@ -748,6 +748,7 @@ export class MailRpcs extends RpcGroup.make(
 
   // Sync
   Rpc.make("Sync", { success: Schema.Array(SyncResult) }),
+  Rpc.make("NetworkChanged", { success: Schema.Void }),
   Rpc.make("SyncState", { success: SyncState }),
   /** Sync state, progress and change notices as they happen. */
   Rpc.make("Events", { success: MailboxEvent, stream: true }),
