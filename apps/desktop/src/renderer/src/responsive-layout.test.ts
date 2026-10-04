@@ -17,12 +17,17 @@ it("picks the layout from the panes' minimum widths", () => {
   expect(layoutMode(480)).toBe("narrow");
 });
 
-it("applies max-sm: styles exactly below the medium layout", () => {
-  const media = new Set<string>();
-  builtStyles().walkRules(/max-sm\\:inset-0/, (rule) => {
-    if (rule.parent?.type === "atrule" && "params" in rule.parent) media.add(rule.parent.params);
-  });
-  expect([...media]).toEqual([`not all and (min-width: ${MEDIUM_MIN / 16}rem)`]);
+it("switches max-sm: and sm: styles exactly at the medium layout", () => {
+  const css = builtStyles();
+  const mediaOf = (selector: RegExp) => {
+    const media = new Set<string>();
+    css.walkRules(selector, (rule) => {
+      if (rule.parent?.type === "atrule" && "params" in rule.parent) media.add(rule.parent.params);
+    });
+    return [...media];
+  };
+  expect(mediaOf(/max-sm\\:inset-0/)).toEqual([`not all and (min-width: ${MEDIUM_MIN / 16}rem)`]);
+  expect(mediaOf(/^\.sm\\:hidden$/)).toEqual([`(min-width: ${MEDIUM_MIN / 16}rem)`]);
 });
 
 it("shows both panes unless the window is narrow, and never a hidden reading pane", () => {

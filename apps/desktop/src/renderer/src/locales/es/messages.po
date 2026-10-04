@@ -4702,6 +4702,7 @@ msgid "Show quoted text"
 msgstr "Mostrar texto citado"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Show sidebar"
 msgstr "Mostrar la barra lateral"
 

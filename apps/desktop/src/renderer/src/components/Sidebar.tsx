@@ -121,14 +121,22 @@ const CATEGORY_ICONS: Record<string, Icon> = {
 
 const NO_COUNTS: Readonly<Record<string, number>> = {};
 
-/** Unread counts by label in the accounts the view's mailboxes cover, for their badges. */
-export function useMailboxCounts(view: View, accounts: readonly Account[]) {
+/**
+ * Unread counts by label in the accounts the view's mailboxes cover, for
+ * their badges; with `within`, only of mail that also has that label.
+ */
+export function useMailboxCounts(view: View, accounts: readonly Account[], within?: string) {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
   return AsyncResult.getOrElse(
-    useAtomValue(unreadByLabelAtom(scope, undefined, prefs?.threadGrouping !== false)),
+    useAtomValue(unreadByLabelAtom(scope, within, prefs?.threadGrouping !== false)),
     () => NO_COUNTS,
   );
+}
+
+/** The shortcut that opens the space at `index` among the user's spaces, for the first nine. */
+export function spaceShortcut(shortcutSet: string, index: number) {
+  return index < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${index + 1}` : undefined;
 }
 
 interface Props {
@@ -181,10 +189,7 @@ export function Sidebar({
   const members = spaceAccounts(view.space, accounts);
   const scope = scopeAccountIds({ ...view, label: undefined }, accounts);
   const byLabel = useMailboxCounts(view, accounts);
-  const inInbox = AsyncResult.getOrElse(
-    useAtomValue(unreadByLabelAtom(scope, "INBOX", prefs?.threadGrouping !== false)),
-    () => NO_COUNTS,
-  );
+  const inInbox = useMailboxCounts(view, accounts, "INBOX");
   const labelPrefs = AsyncResult.getOrElse(useAtomValue(labelPreferencesAtom), () => []);
   const organization = AsyncResult.getOrElse(useAtomValue(organizationAtom), () => []);
   const favoriteLabels = AsyncResult.getOrElse(
@@ -813,24 +818,16 @@ export function Sidebar({
 }
 
 /** Brings back the sidebar when it is hidden or, in a narrow window, opens it as a drawer. */
-export function SidebarToggle({
-  onClick,
-  side = "bottom",
-  className = iconButton,
-}: {
-  onClick: () => void;
-  side?: "bottom" | "right";
-  className?: string;
-}) {
+export function SidebarToggle({ onClick }: { onClick: () => void }) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
   return (
-    <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side={side}>
+    <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")}>
       <button
         type="button"
         aria-label={t`Show sidebar`}
         onClick={onClick}
-        className={`shrink-0 text-a11y-muted ${className}`}
+        className={`shrink-0 text-a11y-muted ${iconButton}`}
       >
         <PanelLeft className="size-4.5" />
       </button>
@@ -914,12 +911,7 @@ function SpaceSwitcher({
           }
         >
           {profiles.map((p, i) => (
-            <Tip
-              key={p.id}
-              label={p.name}
-              shortcut={i < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${i + 1}` : undefined}
-              side="top"
-            >
+            <Tip key={p.id} label={p.name} shortcut={spaceShortcut(shortcutSet, i)} side="top">
               <Toolbar.Button
                 aria-label={p.name}
                 aria-current={space === p.id || undefined}

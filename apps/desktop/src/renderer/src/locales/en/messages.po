@@ -4706,6 +4706,7 @@ msgid "Show quoted text"
 msgstr "Show quoted text"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Show sidebar"
 msgstr "Show sidebar"
 

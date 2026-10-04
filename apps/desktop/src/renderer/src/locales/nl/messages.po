@@ -4702,6 +4702,7 @@ msgid "Show quoted text"
 msgstr "Geciteerde tekst tonen"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Show sidebar"
 msgstr "Zijbalk tonen"
 

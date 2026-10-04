@@ -4702,6 +4702,7 @@ msgid "Show quoted text"
 msgstr "引用されたテキストを表示"
 
 #: src/renderer/src/components/Sidebar.tsx
+#: src/renderer/src/components/SidebarRail.tsx
 msgid "Show sidebar"
 msgstr "サイドバーを表示"
 

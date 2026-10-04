@@ -30,7 +30,7 @@ interface DialogProps {
 }
 
 /**
- * Below 640 px a sheet fills the window, whatever size the caller asked for.
+ * Below MEDIUM_MIN (696 px, Tailwind's `sm`) a sheet fills the window, whatever size the caller asked for.
  * Its top 32 px stay clear for the traffic lights; pair it with {@link SheetDragStrip}.
  */
 export const narrowSheet =

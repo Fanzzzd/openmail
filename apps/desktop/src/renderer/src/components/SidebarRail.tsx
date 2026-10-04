@@ -2,14 +2,14 @@ import { useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { DEFAULT_PREFS, specialFolderBadge } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { Layers, LayoutGrid, SquarePen } from "lucide-react";
+import { Layers, LayoutGrid, PanelLeft, SquarePen } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Account, Mailbox, Profile } from "../../../shared/api";
 import { PROFILE_BG } from "../format";
 import { prefsAtom } from "../state/queries";
 import { useShortcutText } from "../use-shortcut-text";
 import { ALL, MAILBOX_NAMES, OVERVIEW, type SpaceId, spaceAccounts, type View } from "../view";
-import { MAILBOXES, SidebarToggle, useMailboxCounts } from "./Sidebar";
+import { MAILBOXES, spaceShortcut, useMailboxCounts } from "./Sidebar";
 import { Tip } from "./ui/Tip";
 
 /** The mailboxes the rail shows, in the sidebar's order. The drawer has the rest. */
@@ -55,8 +55,6 @@ export function SidebarRail({
   const counts = useMailboxCounts(view, accounts);
   const spaceUnread = (space: SpaceId) =>
     spaceAccounts(space, accounts).reduce((n, a) => n + (unread[a.id] ?? 0), 0);
-  const profileShortcut = (i: number) =>
-    i < 9 ? `${prefs.shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${i + 1}` : undefined;
 
   return (
     <div
@@ -67,7 +65,16 @@ export function SidebarRail({
       {/* The traffic lights sit in this strip. */}
       <div className="drag h-13 w-full shrink-0" />
       <div className="flex shrink-0 flex-col items-center gap-1 pb-2">
-        <SidebarToggle onClick={onOpenSidebar} side="right" className={cell(false)} />
+        <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")} side="right">
+          <button
+            type="button"
+            aria-label={t`Show sidebar`}
+            onClick={onOpenSidebar}
+            className={`${cell(false)} text-a11y-muted`}
+          >
+            <PanelLeft className="size-4.5" />
+          </button>
+        </Tip>
         <Tip label={t`New message`} shortcut={shortcut("compose")} side="right">
           <button
             type="button"
@@ -121,7 +128,7 @@ export function SidebarRail({
             <RailButton
               key={p.id}
               label={p.name}
-              shortcut={profileShortcut(i)}
+              shortcut={spaceShortcut(prefs.shortcutSet, i)}
               current={view.space === p.id || undefined}
               badge={spaceUnread(p.id)}
               onClick={() => onSpace(p.id)}

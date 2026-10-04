@@ -37,6 +37,7 @@ import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { useShortcutText } from "../use-shortcut-text";
 import { useElementWidth } from "../use-element-width";
+import { fittingCount, shownActions, withAnchor } from "../toolbar-fit";
 import { Tip } from "./ui/Tip";
 
 import { MultiOrganization } from "./MultiOrganization";
@@ -189,6 +190,7 @@ export function ThreadActions({
         labels={labels}
         current={state.labels}
         onOp={onOp}
+        trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
       />
     );
   const controls: Record<ToolbarAction, ReactNode> = {
@@ -310,10 +312,12 @@ export function ThreadActions({
   const width = useElementWidth(root);
   const [widths, measure] = useMeasuredWidths(fit);
   // An open picker needs its button as the anchor, in place of the last one that fits.
+  const anchor = labelPicker ? picker : undefined;
+  const candidates = withAnchor(ordered, anchor);
   const visible = shownActions(
-    ordered,
-    fit ? fittingCount(ordered, widths, width) : limit,
-    labelPicker ? picker : undefined,
+    candidates,
+    fit ? fittingCount(candidates, widths, width) : limit,
+    anchor,
   );
   return (
     <Toolbar.Root
@@ -356,30 +360,6 @@ export function ThreadActions({
   );
 }
 
-/** A toolbar icon button: 6 px padding around a 16 px icon, and the 2 px gap before the next. */
-const ACTION_WIDTH = 30;
-
-/**
- * How many actions fit in `width` px beside the actions menu, by their
- * measured widths or, for one not shown yet, an icon button's. A toolbar not
- * measured yet (first paint, jsdom) shows them all.
- */
-export function fittingCount(
-  ordered: readonly string[],
-  widths: Readonly<Record<string, number>>,
-  width: number,
-): number {
-  if (width === 0) return ordered.length;
-  let used = ACTION_WIDTH - 2;
-  let count = 0;
-  for (const action of ordered) {
-    used += (widths[action] ?? ACTION_WIDTH - 2) + 2;
-    if (used > width) break;
-    count++;
-  }
-  return count;
-}
-
 /**
  * The rendered width of each action in the toolbar, kept from earlier renders
  * so an action folded into the menu keeps its last width. The ref callback
@@ -395,21 +375,6 @@ function useMeasuredWidths(enabled: boolean) {
       );
   };
   return [widths, measure] as const;
-}
-
-/**
- * The first `limit` actions, with `anchor` replacing the last of them when it
- * is not among them. Only an anchor with no room at all goes past the limit.
- */
-export function shownActions<A extends string>(
-  ordered: readonly A[],
-  limit: number | undefined,
-  anchor?: A,
-): A[] {
-  const count = Math.max(0, limit ?? ordered.length);
-  const shown = ordered.slice(0, count);
-  if (anchor && !shown.includes(anchor)) return [...shown.slice(0, Math.max(0, count - 1)), anchor];
-  return shown;
 }
 
 /**

@@ -215,8 +215,12 @@ it("a medium window docks an icon rail whose mailboxes and spaces hand focus to 
   ).toBeNull();
 });
 
-it("the thread window folds actions into the actions menu as it narrows and keeps their shortcuts", async () => {
-  let toolbarWidth = 0;
+/**
+ * jsdom has no layout: the actions toolbar is `width` px wide, icon buttons
+ * are 28 px and a text button 7 px per character. Resizing notifies observers.
+ */
+function toolbarLayout() {
+  let width = 0;
   const observers = new Set<() => void>();
   const SetupObserver = globalThis.ResizeObserver;
   const clientWidth = Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth");
@@ -228,8 +232,9 @@ it("the thread window folds actions into the actions menu as it narrows and keep
       constructor(callback: () => void) {
         this.changed = callback;
       }
-      observe() {
-        observers.add(this.changed);
+      // Only the actions toolbar resizes here; popups observe other elements.
+      observe(target: Element) {
+        if (target.getAttribute("role") === "toolbar") observers.add(this.changed);
       }
       unobserve = constVoid;
       disconnect() {
@@ -237,81 +242,138 @@ it("the thread window folds actions into the actions menu as it narrows and keep
       }
     },
   );
-  // jsdom has no layout: the actions toolbar is toolbarWidth wide and each icon button 28 px.
   Object.defineProperty(Element.prototype, "clientWidth", {
     configurable: true,
     get(this: Element) {
       return this.getAttribute("aria-label") === "Conversation actions" &&
         this.getAttribute("role") === "toolbar"
-        ? toolbarWidth
+        ? width
         : 0;
     },
   });
   Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
     configurable: true,
     get(this: HTMLElement) {
-      return this.dataset.toolbarAction ? 28 : 0;
+      if (!this.dataset.toolbarAction) return 0;
+      const text = this.textContent;
+      return text ? text.length * 7 + 12 : 28;
     },
   });
-  const resizeToolbar = (next: number) => {
-    toolbarWidth = next;
-    act(() => {
-      for (const changed of observers) changed();
-    });
+  return {
+    resize: (next: number) => {
+      width = next;
+      act(() => {
+        for (const changed of observers) changed();
+      });
+    },
+    restore: () => {
+      vi.stubGlobal("ResizeObserver", SetupObserver);
+      if (clientWidth) Object.defineProperty(Element.prototype, "clientWidth", clientWidth);
+      if (offsetWidth) Object.defineProperty(HTMLElement.prototype, "offsetWidth", offsetWidth);
+    },
   };
-  const shown = () =>
-    [...document.querySelectorAll<HTMLElement>("[data-toolbar-action]")].map(
-      (action) => action.dataset.toolbarAction,
-    );
-  try {
-    current = await flow({ thread: "one" });
-    const h = current;
-    await screen.findByRole("button", { name: "Archive" });
-    const header = document.querySelector("[data-thread-toolbar]");
-    expect(header?.className).toContain("drag");
-    expect(header?.className).toContain(trafficLightInset);
-    const all = shown();
-    expect(all).toEqual(["archive", "trash", "spam", "read", "star", "important", "move", "label"]);
+}
+let toolbar: ReturnType<typeof toolbarLayout> | undefined;
+afterEach(() => {
+  toolbar?.restore();
+  toolbar = undefined;
+});
+const shown = () =>
+  [...document.querySelectorAll<HTMLElement>("[data-toolbar-action]")].map(
+    (action) => action.dataset.toolbarAction,
+  );
 
-    // 4 buttons of 30 px and the 28 px menu button fit in 150 px; a fifth would not.
-    resizeToolbar(150);
-    expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
-    expect(screen.queryByRole("button", { name: "Star" })).toBeNull();
-    const menu = screen.getByRole("button", { name: "Conversation actions" });
-    expect(menu.closest('[role="toolbar"]')).not.toBeNull();
-    fireEvent.click(menu);
-    expect(await screen.findByRole("menuitem", { name: /^Star/ })).toBeTruthy();
-    key("Escape");
-    await eventually(() => expect(screen.queryByRole("menuitem", { name: /^Star/ })).toBeNull());
+it("the thread window folds actions into the actions menu as it narrows and keeps their shortcuts", async () => {
+  const layout = toolbarLayout();
+  toolbar = layout;
+  const resizeToolbar = layout.resize;
+  current = await flow({ thread: "one" });
+  const h = current;
+  await screen.findByRole("button", { name: "Archive" });
+  const header = document.querySelector("[data-thread-toolbar]");
+  expect(header?.className).toContain("drag");
+  expect(header?.className).toContain(trafficLightInset);
+  const all = shown();
+  expect(all).toEqual(["archive", "trash", "spam", "read", "star", "important", "move", "label"]);
 
-    // Folded actions keep their shortcuts; the label picker takes the last button's place.
-    key("l", { metaKey: true }, document.body);
-    await screen.findByRole("combobox", { name: "Labels" });
-    expect(shown()).toEqual(["archive", "trash", "spam", "label"]);
-    key("Escape");
-    await eventually(() => expect(screen.queryByRole("combobox", { name: "Labels" })).toBeNull());
-    expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
-    key("l", { metaKey: true, shiftKey: true }, document.body);
-    await eventually(() =>
-      expect(
-        h.requests.some(
-          (request) =>
-            request.tag === "Modify" && JSON.stringify(request.payload).includes('"star"'),
-        ),
-      ).toBe(true),
-    );
+  // 4 buttons of 30 px and the 28 px menu button fit in 150 px; a fifth would not.
+  resizeToolbar(150);
+  expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
+  expect(screen.queryByRole("button", { name: "Star" })).toBeNull();
+  const menu = screen.getByRole("button", { name: "Conversation actions" });
+  expect(menu.closest('[role="toolbar"]')).not.toBeNull();
+  fireEvent.click(menu);
+  expect(await screen.findByRole("menuitem", { name: /^Star/ })).toBeTruthy();
+  key("Escape");
+  await eventually(() => expect(screen.queryByRole("menuitem", { name: /^Star/ })).toBeNull());
 
-    // Only the menu button fits in 40 px; widening brings every action back.
-    resizeToolbar(40);
-    expect(shown()).toEqual([]);
-    expect(screen.getByRole("button", { name: "Conversation actions" })).toBeTruthy();
-    resizeToolbar(400);
-    expect(shown()).toEqual(all);
-  } finally {
-    vi.stubGlobal("ResizeObserver", SetupObserver);
-    if (clientWidth) Object.defineProperty(Element.prototype, "clientWidth", clientWidth);
-    if (offsetWidth) Object.defineProperty(HTMLElement.prototype, "offsetWidth", offsetWidth);
-  }
+  // Folded actions keep their shortcuts; the label picker takes the last button's place.
+  key("l", { metaKey: true }, document.body);
+  await screen.findByRole("combobox", { name: "Labels" });
+  expect(shown()).toEqual(["archive", "trash", "spam", "label"]);
+  key("Escape");
+  await eventually(() => expect(screen.queryByRole("combobox", { name: "Labels" })).toBeNull());
+  expect(shown()).toEqual(["archive", "trash", "spam", "read"]);
+  key("l", { metaKey: true, shiftKey: true }, document.body);
+  await eventually(() =>
+    expect(
+      h.requests.some(
+        (request) => request.tag === "Modify" && JSON.stringify(request.payload).includes('"star"'),
+      ),
+    ).toBe(true),
+  );
+
+  // Only the menu button fits in 40 px; widening brings every action back.
+  resizeToolbar(40);
+  expect(shown()).toEqual([]);
+  expect(screen.getByRole("button", { name: "Conversation actions" })).toBeTruthy();
+  resizeToolbar(400);
+  expect(shown()).toEqual(all);
+});
+
+it("the thread window opens IMAP's copy form in a popover that stays open while the toolbar fits", async () => {
+  const layout = toolbarLayout();
+  toolbar = layout;
+  current = await flow({ provider: "imap", thread: "one" });
+  const h = current;
+  await screen.findByRole("button", { name: "Archive" });
+  layout.resize(400);
+  expect(shown()).toEqual(["archive", "trash", "spam", "read", "star", "move", "label"]);
+
+  fireEvent.click(screen.getByRole("button", { name: "Copy to folders…" }));
+  const form = await screen.findByRole("dialog", { name: "Copy to folders…" });
+  // The form is outside the toolbar, so the button keeps its width and stays shown.
+  expect(form.closest('[role="toolbar"]')).toBeNull();
+  layout.resize(401);
+  expect(shown()).toContain("label");
+  expect(screen.getByRole("dialog", { name: "Copy to folders…" })).toBe(form);
+
+  fireEvent.click(within(form).getByRole("checkbox", { name: "Work" }));
+  fireEvent.click(within(form).getByRole("button", { name: "Copy" }));
+  await eventually(() =>
+    expect(
+      h.requests.some(
+        (request) => request.tag === "Modify" && JSON.stringify(request.payload).includes('"copy"'),
+      ),
+    ).toBe(true),
+  );
+  await eventually(() =>
+    expect(screen.queryByRole("dialog", { name: "Copy to folders…" })).toBeNull(),
+  );
+});
+
+it("an open picker joins the toolbar without hiding actions that have room", async () => {
+  const layout = toolbarLayout();
+  toolbar = layout;
+  current = await flow({ thread: "one", prefs: { toolbarActions: ["archive", "trash", "star"] } });
+  await screen.findByRole("button", { name: "Archive" });
+  layout.resize(400);
+  expect(shown()).toEqual(["archive", "trash", "star"]);
+  key("l", { metaKey: true }, document.body);
+  await screen.findByRole("combobox", { name: "Labels" });
+  expect(shown()).toEqual(["archive", "trash", "star", "label"]);
+  key("Escape");
+  await eventually(() => expect(shown()).toEqual(["archive", "trash", "star"]));
 });
 
 it("a narrow window shows dialogs as full-window sheets with a close button", async () => {
