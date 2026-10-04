@@ -213,8 +213,9 @@ export function Composer({
 
   const field =
     "h-9 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-a11y-muted";
+  // The row draws the one focus ring for its text field; buttons in it keep their own outline.
   const row =
-    "flex items-start gap-2 focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus border-b border-black/[0.07] px-4 dark:border-white/[0.08]";
+    "flex items-start gap-2 has-[input:focus]:ring-2 has-[input:focus]:ring-inset has-[input:focus]:ring-a11y-focus border-b border-black/[0.07] px-4 dark:border-white/[0.08]";
   const label = "flex h-9 w-14 shrink-0 items-center text-a11y-muted";
   const quiet =
     "rounded p-1 text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-popup-open:bg-black/5 dark:hover:bg-white/10 dark:data-popup-open:bg-white/10";

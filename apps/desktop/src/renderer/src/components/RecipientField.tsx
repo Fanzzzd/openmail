@@ -180,7 +180,7 @@ export function RecipientField({
             onDropRecipient(chip);
           }
         }}
-        className="rounded focus-within:ring-2 focus-within:ring-a11y-focus flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5"
+        className="flex min-h-9 min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5"
       >
         {chips.map((text, i) => {
           const address = parseAddresses(text).addresses[0];
