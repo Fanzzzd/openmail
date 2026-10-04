@@ -447,20 +447,24 @@ msgstr "Návrh AI"
 msgid "AI suggestions"
 msgstr "návrhy AI"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "Zarovnat na střed"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "Zarovnat doleva"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "Zarovnat doprava"
+
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Alignment"
+msgstr "Zarovnání"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
@@ -588,7 +592,7 @@ msgstr "Apple Mail"
 msgid "Apply"
 msgstr "Použít"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Apply color"
 msgstr "Použít barvu"
 
@@ -717,7 +721,7 @@ msgstr "Povolit trvalé smazání"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "Povolte oprávnění k trvalému smazání pošty v tomto účtu Gmail."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "Automatický směr"
@@ -746,6 +750,10 @@ msgstr "Čeká na odpověď"
 msgid "Back"
 msgstr "Zpět"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Back to messages"
+msgstr "Zpět na zprávy"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill paused"
 msgstr "Stahování starší pošty pozastaveno"
@@ -754,7 +762,7 @@ msgstr "Stahování starší pošty pozastaveno"
 msgid "Backfill runs between syncs"
 msgstr "Mezi synchronizacemi probíhá zálohování"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Barva pozadí"
 
@@ -799,7 +807,7 @@ msgctxt "message text"
 msgid "Body"
 msgstr "Text zprávy"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "Tučné"
@@ -812,7 +820,7 @@ msgstr "Hlášení chyby"
 msgid "Built-in AI"
 msgstr "Vestavěná AI"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "Seznam s odrážkami"
@@ -982,7 +990,7 @@ msgstr "Zkontrolovat aktualizace"
 msgid "Check for Updates…"
 msgstr "Zkontrolovat aktualizace…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Check grammar on this Mac"
 msgstr "Zkontrolovat gramatiku na tomto Macu"
 
@@ -999,7 +1007,7 @@ msgstr "Zkontrolovat stav synchronizace"
 msgid "Checking for updates…"
 msgstr "Kontrolují se aktualizace…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Checking grammar…"
 msgstr "Kontrola gramatiky…"
 
@@ -1076,7 +1084,7 @@ msgstr "Vymazat mezipaměť účtu"
 msgid "Clear all caches"
 msgstr "Vymazat všechny mezipaměti"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Odstranit formátování"
@@ -1104,6 +1112,7 @@ msgstr "Klikněte do tohoto okna a vyberte zařízení pro pořízení fotky, sk
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Dialog.tsx
 #: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Zavřít"
@@ -1121,7 +1130,7 @@ msgstr "Zavřít hledání"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Zavřete ostatní procesy OpenMail (CLI/MCP), restartujte tuto aplikaci a zkuste obnovu znovu."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "Blok kódu"
@@ -1142,12 +1151,13 @@ msgstr "Sbalit kategorie"
 msgid "Collapse message"
 msgstr "Sbalit zprávu"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Barva"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "Použít barvu pro"
 
@@ -1155,7 +1165,6 @@ msgstr "Použít barvu pro"
 msgid "Compact"
 msgstr "Kompaktní"
 
-#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Nová zpráva"
@@ -1300,7 +1309,7 @@ msgstr "Kopírovat anonymizovanou zprávu"
 msgid "Copy selected"
 msgstr "Kopírovat vybrané"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Kopírovat styl"
@@ -1543,7 +1552,7 @@ msgstr "Vlastní barva"
 msgid "Custom folder"
 msgstr "Vlastní složka"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Custom hex color"
 msgstr "Vlastní hexadecimální barva"
 
@@ -1559,7 +1568,7 @@ msgstr "Vlastní čas"
 msgid "Dark background"
 msgstr "tmavé pozadí"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Přerušovaný seznam"
@@ -1594,12 +1603,12 @@ msgstr "Odmítnuto"
 msgid "Decrease font size"
 msgstr "Zmenšit velikost písma"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "Zmenšit odsazení"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "Snížit úroveň citace"
@@ -1851,7 +1860,7 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "Upravit text zprávy"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "Upravit odkaz"
@@ -2082,6 +2091,10 @@ msgstr "Dokončete přihlašování ve svém prohlížeči"
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Dokončete přihlašování v prohlížeči a vraťte se sem."
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Fit to width"
+msgstr "Přizpůsobit šířce"
+
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Fix grammar and proofread"
 msgstr "Opravit gramatiku a zkontrolovat text"
@@ -2114,13 +2127,17 @@ msgstr "Cesta ke složce"
 msgid "Follow system"
 msgstr "Podle systému"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Font"
+msgstr "Písmo"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font family"
 msgstr "Rodina písem"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font size"
 msgstr "Velikost písma"
 
@@ -2128,7 +2145,7 @@ msgstr "Velikost písma"
 msgid "Format"
 msgstr "Formát"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Formatting"
 msgstr "Formátování"
 
@@ -2418,22 +2435,22 @@ msgstr "Zahrnout oddělovač podpisu"
 msgid "Increase font size"
 msgstr "Zvětšit velikost písma"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "Zvětšit odsazení"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "Zvýšit úroveň citace"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "Zvětšit odsazení seznamu"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "Vložený kód"
@@ -2495,7 +2512,7 @@ msgstr "Změny pozvánky"
 msgid "Invitation status in this conversation"
 msgstr "Stav pozvánky v této konverzaci"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "kurzíva"
@@ -2508,7 +2525,7 @@ msgstr "Připojte se ke schůzce"
 msgid "Jump to selection"
 msgstr "Přejít na výběr"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "Zarovnat do bloku"
@@ -2632,7 +2649,7 @@ msgstr "Dlouhé přejetí doleva"
 msgid "Left short swipe"
 msgstr "Krátké přejetí doleva"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "Zleva doprava"
@@ -3019,6 +3036,10 @@ msgstr "Další akce"
 msgid "More formal"
 msgstr "Formálnější"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "More formatting"
+msgstr "Další formátování"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
 msgstr "Existuje více shod. Zužte vyhledávání."
@@ -3026,6 +3047,10 @@ msgstr "Existuje více shod. Zužte vyhledávání."
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "Další zprávy nebyly načteny"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "More options"
+msgstr "Další možnosti"
 
 #. placeholder {0}: signature.name
 #: src/renderer/src/components/SignatureSettings.tsx
@@ -3395,7 +3420,7 @@ msgstr "Oznámení"
 msgid "Notifications for {0}"
 msgstr "Oznámení pro {0}"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "Číslovaný seznam"
@@ -3626,7 +3651,7 @@ msgstr "Další zpětná vazba"
 msgid "Other IMAP"
 msgstr "Jiný IMAP"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "Zmenšit odsazení seznamu"
@@ -3691,7 +3716,7 @@ msgstr "Vložit a přizpůsobit styl"
 msgid "Paste as quotation"
 msgstr "Vložit jako citaci"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "Vložit styl"
@@ -3979,7 +4004,7 @@ msgstr "Odebrat klíč"
 msgid "Remove label"
 msgstr "Odstraňte štítek"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Odebrat odkaz"
 
@@ -4216,7 +4241,7 @@ msgstr "Dlouhé přejetí doprava"
 msgid "Right short swipe"
 msgstr "Krátký pohyb doprava"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "Zprava doleva"
@@ -4651,9 +4676,17 @@ msgstr "Zobrazit originál"
 msgid "Show quoted text"
 msgstr "Zobrazit citovaný text"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Show sidebar"
+msgstr "Zobrazit postranní panel"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "Zobrazit počet nepřečtených v řádku nabídek"
+
+#: src/renderer/src/App.tsx
+msgid "Sidebar"
+msgstr "Postranní panel"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4866,7 +4899,7 @@ msgstr "Zastavit zpracování dalších pravidel"
 msgid "Stop suggesting {0}"
 msgstr "Přestat navrhovat {0}"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "Přeškrtnutí"
@@ -4881,7 +4914,7 @@ msgstr "Předmět"
 msgid "Subject contains"
 msgstr "Předmět obsahuje"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "Dolní index"
@@ -4902,7 +4935,7 @@ msgstr "Shrnout"
 msgid "Sunday"
 msgstr "Neděle"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "Horní index"
@@ -4993,7 +5026,7 @@ msgstr "Šablony…"
 msgid "Tentative"
 msgstr "Předběžně"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Barva textu"
 
@@ -5283,7 +5316,7 @@ msgstr "Vypnout"
 msgid "Turned off"
 msgstr "Vypnuto"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "Podtržené"
@@ -5492,6 +5525,10 @@ msgstr "Výsledek"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "Ověřování…"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "View at 100%"
+msgstr "Zobrazit ve 100 %"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Visible categories"

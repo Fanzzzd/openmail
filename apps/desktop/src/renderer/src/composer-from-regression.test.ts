@@ -102,6 +102,10 @@ vi.mock("./components/ui/Picker", () => ({
   pickerItem: "",
   pickerList: "",
 }));
+vi.mock("./components/ui/Menu", () => ({
+  DropdownMenu: ({ trigger }: { trigger: ReactNode }) => trigger,
+  MenuItem: () => null,
+}));
 import { Composer } from "./components/Composer";
 
 afterAll(() => {
@@ -120,6 +124,7 @@ afterAll(() => {
     "./components/ui/Tip",
     "./components/ui/Dialog",
     "./components/ui/Picker",
+    "./components/ui/Menu",
   ])
     vi.doUnmock(name);
   vi.resetModules();

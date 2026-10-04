@@ -13,6 +13,7 @@ import { useMailCompose } from "./app/use-mail-compose";
 import { useMailSelection } from "./app/use-mail-selection";
 import { useMailShortcuts } from "./app/use-mail-shortcuts";
 import { useNativeMenuBridge } from "./app/use-native-menu-bridge";
+import { usePaneNavigation } from "./app/use-pane-navigation";
 import { Assistant } from "./components/AiPanel";
 import { FolderActions } from "./components/FolderActions";
 import {
@@ -33,6 +34,7 @@ import { numberedFavorites } from "./favorite-navigation";
 import { supportsInInboxFilter } from "./folder-actions";
 import { labelsById } from "./label-map";
 import { readerThreadKey, type ReaderSelection } from "./reader-selection";
+import { PANE_MIN } from "./responsive-layout";
 
 import { BatchActions, BatchMenuItems } from "./components/BatchActions";
 import { MailPanels } from "./components/MailPanels";
@@ -41,10 +43,17 @@ import { Overview } from "./components/Overview";
 import { DefaultProfilesPrompt, ProfileSwitcher } from "./components/ProfileSettings";
 import { Reader, useThreadPrint } from "./components/Reader";
 import { ResizeHandle } from "./components/ResizeHandle";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, SidebarToggle } from "./components/Sidebar";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
-import { Alert, alertButton, AlertCancel, alertDanger, alertPrimary } from "./components/ui/Dialog";
+import {
+  Alert,
+  alertButton,
+  AlertCancel,
+  alertDanger,
+  alertPrimary,
+  Drawer,
+} from "./components/ui/Dialog";
 import { SearchField } from "./components/ui/SearchField";
 import { UndoHistory } from "./components/UndoHistory";
 import { messageMissing, causeText } from "./errors";
@@ -283,9 +292,12 @@ export function App({ composeId }: { composeId?: string }) {
     openExternal: navigation.openExternal,
   });
 
+  const { layout } = panels;
+  const paneNav = usePaneNavigation({ layout, navigation, run });
   useMailShortcuts({
     panels,
     navigation,
+    panes: paneNav,
     mailActions,
     composition,
     run,
@@ -308,10 +320,11 @@ export function App({ composeId }: { composeId?: string }) {
   const user = viewAccount?.email.split("@")[0];
   const title = viewAccount ? t`${baseTitle}: ${user}` : baseTitle;
 
-  const { narrow, readingPosition, paneMode, panes, mailOrientation } = usePanelLayout({
+  const { docked, paneMode, panes, mailOrientation } = usePanelLayout({
     prefs,
     hasAccounts,
     view,
+    mode: layout.mode,
   });
   if (composeId)
     return (
@@ -335,6 +348,266 @@ export function App({ composeId }: { composeId?: string }) {
         <Toast toast={toast} onDone={hideToast} />
       </div>
     );
+  /** Sidebar actions also close the drawer the sidebar sits in when it is not docked. */
+  const fromDrawer =
+    <A extends unknown[]>(action: (...args: A) => void) =>
+    (...args: A) => {
+      layout.setDrawerOpen(false);
+      action(...args);
+    };
+  const sidebar = (
+    <Sidebar
+      view={view}
+      // The overview has no list; picking a mailbox there opens it in All.
+      onView={fromDrawer((v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v))}
+      onSpace={fromDrawer(switchSpace)}
+      onEditProfile={fromDrawer(setEditing)}
+      accounts={accountList}
+      profiles={profileList}
+      unread={counts}
+      syncState={syncState}
+      progress={progress}
+      proposals={proposals.length}
+      onAddAccount={fromDrawer(() => setDialog("add"))}
+      onCompose={fromDrawer(() => startCompose("new"))}
+      onReauth={fromDrawer(mailActions.reauth)}
+      onProposals={fromDrawer(() => setDialog("proposals"))}
+      onSettings={fromDrawer(() => setDialog("settings"))}
+    />
+  );
+  const sidebarToggle = docked ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
+  const mainPane = !hasAccounts ? (
+    <main className="h-full w-full bg-white dark:bg-neutral-900">
+      <div className="drag h-13" />
+    </main>
+  ) : (
+    <Overview
+      leading={sidebarToggle}
+      accounts={accountList}
+      profiles={profileList}
+      unread={counts}
+      syncState={syncState}
+      onOpen={switchSpace}
+      onEditProfile={setEditing}
+    />
+  );
+  const listPane = (
+    <MessageList
+      leading={sidebarToggle}
+      searchBar={
+        !prefs.readingPaneVisible || layout.mode === "narrow" ? (
+          <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
+        ) : undefined
+      }
+      key={JSON.stringify([view, search, filters])}
+      title={title}
+      threads={list}
+      loading={threads.loading}
+      loadingMore={threads.loadingMore}
+      loadError={threads.loadError}
+      exhausted={threads.exhausted}
+      showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
+      searching={search !== ""}
+      searchingServer={threads.searchingServer}
+      searchTruncated={threads.searchTruncated}
+      searchErrors={threads.searchErrors}
+      searchIgnored={threads.searchIgnored}
+      searchQuery={listQuery ?? undefined}
+      filters={filters}
+      inLabel={supportsInInboxFilter(view, accountList)}
+      onFilters={setFilters}
+      folderActions={
+        <>
+          <UndoHistory entries={undoHistory} onUndo={undoRestored} />
+          <FolderActions
+            folder={{
+              mailbox: view.mailbox,
+              ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
+              ...(view.label ? { label: view.label.id } : {}),
+            }}
+            notify={(text, error) => say({ text, ...(error ? { tone: "error" as const } : {}) })}
+          />
+        </>
+      }
+      labels={labelMap}
+      selectedId={selection.focus}
+      selectedIds={selection.ids}
+      listRef={listRef}
+      selectionSource={selectionSource}
+      rowActions={{
+        batchMenu: (
+          <BatchMenuItems
+            onPermanentDelete={
+              deleteFolder
+                ? () => requestPermanentDelete(batchRows.map((row) => row.id))
+                : undefined
+            }
+            onCreate={(accountId, move) =>
+              setLabelCreation({
+                accountId,
+                move,
+                threads: batchRows
+                  .filter((row) => row.accountId === accountId)
+                  .map((row) => row.id),
+                flat: !prefs.threadGrouping,
+                removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+              })
+            }
+            currentLabel={view.label?.id}
+            mailbox={view.mailbox}
+            rows={batchRows}
+            accounts={accountList}
+            labels={labels}
+            onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
+          />
+        ),
+        grouped: prefs.threadGrouping,
+        currentLabel: view.label?.id,
+        mailbox: view.mailbox,
+        labels,
+        stateOf: rowState,
+        onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
+        onSwipeOp: (m, state, op) =>
+          act(op, { confirmedIds: new Set([m.id]) }, { id: m.id, state }),
+        onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
+        onPermanentDelete: deleteFolder
+          ? (thread) => requestPermanentDelete([thread.id])
+          : undefined,
+        onCreate: (thread, move) =>
+          setLabelCreation({
+            accountId: thread.accountId,
+            move,
+            threads: [thread.id],
+            flat: !prefs.threadGrouping,
+            removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+          }),
+        onSnooze: (thread) => setSnoozeIds([thread.id]),
+        onFilter: (thread) =>
+          setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
+        onOpenWindow: (m) =>
+          view.mailbox === "drafts" ? openSavedDraft(m.id) : navigation.openWindow(m.id),
+      }}
+      onSelect={(id, modifiers) => {
+        if (threads.loading) return;
+        if (view.mailbox !== "drafts") {
+          navigation.selectRow(id, modifiers);
+          if (!modifiers.toggle && !modifiers.range) paneNav.openReader();
+          return;
+        }
+        // Drafts open in the compose window.
+        setSelectedId(id);
+        openSavedDraft(id);
+      }}
+      onEndReached={() => {
+        loadMore();
+      }}
+    />
+  );
+  const readerPane = (
+    <Reader
+      messageId={selectedId}
+      threadKey={currentReaderThreadKey}
+      onMarkUnread={() => setReadTarget(null)}
+      onActionDone={({ result, ids, op }) => mailActions.actionDone(result, ids, op)}
+      onSelectMessage={(id) => {
+        if (currentReaderThreadKey) setReaderSelection({ threadKey: currentReaderThreadKey, id });
+      }}
+      derivedMatches={selected?.derivedMatches}
+      query={query}
+      onQuery={setQuery}
+      searchRef={searchRef}
+      onComposeMessage={(id, mode, attachment) => startCompose(mode, attachment, id)}
+      onEditDraft={openSavedDraft}
+      notify={(next) => say(next)}
+      onBack={layout.mode === "narrow" ? paneNav.back : undefined}
+      renderToolbar={(compact) =>
+        selection.ids.size > 1 ? (
+          <BatchActions
+            onPermanentDelete={
+              deleteFolder
+                ? () => requestPermanentDelete(batchRows.map((row) => row.id))
+                : undefined
+            }
+            onCreate={(accountId, move) =>
+              setLabelCreation({
+                accountId,
+                move,
+                threads: batchRows
+                  .filter((row) => row.accountId === accountId)
+                  .map((row) => row.id),
+                flat: !prefs.threadGrouping,
+                removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
+              })
+            }
+            currentLabel={view.label?.id}
+            mailbox={view.mailbox}
+            rows={batchRows}
+            canLoadMore={threads.canLoadMore}
+            moreNotLoaded={threads.moreNotLoaded}
+            accounts={accountList}
+            labels={labels}
+            onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
+            labelPicker={labelPicker}
+            onLabelPicker={setLabelPicker}
+          />
+        ) : (
+          threadState && (
+            <ThreadActions
+              currentLabel={view.label?.id}
+              pickerMode={pickerMode}
+              organizationTarget={
+                batchRows[0]
+                  ? {
+                      accountId: batchRows[0].accountId,
+                      threads: [batchRows[0].id],
+                      flat: !prefs.threadGrouping,
+                    }
+                  : undefined
+              }
+              compact={compact}
+              state={threadState}
+              mailbox={view.mailbox}
+              labels={threadLabels}
+              onOp={(op) => act(op)}
+              onPermanentDelete={
+                deleteFolder
+                  ? () => {
+                      if (selectedId) requestPermanentDelete([selectedId]);
+                    }
+                  : undefined
+              }
+              onCompose={startCompose}
+              onSendAgain={
+                stateMessages?.some((m) => m.labels.includes("SENT"))
+                  ? () =>
+                      sendAgain(stateMessages.filter((m) => m.labels.includes("SENT")).at(-1)?.id)
+                  : undefined
+              }
+              onSnooze={() => {
+                if (selectedId) setSnoozeIds([selectedId]);
+              }}
+              onFilter={
+                selectedAccount?.provider === "imap"
+                  ? undefined
+                  : () => {
+                      if (selectedAccount && selected)
+                        setFilterSeed({
+                          accountId: selectedAccount.id,
+                          from: selected.from.address,
+                        });
+                    }
+              }
+              onOpenWindow={() => {
+                if (selectedId) navigation.openWindow(selectedId);
+              }}
+              labelPicker={labelPicker}
+              onLabelPicker={setLabelPicker}
+            />
+          )
+        )
+      }
+    />
+  );
   return (
     <div className="flex h-full flex-col text-[13px] text-neutral-900 dark:text-neutral-100">
       <DefaultProfilesPrompt
@@ -345,190 +618,69 @@ export function App({ composeId }: { composeId?: string }) {
       <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
       <FailedOpNotice onOpenDraft={openSavedDraft} />
       <UpdateNotice onSettings={() => setDialog("settings")} />
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+      {layout.mode === "narrow" ? (
+        // One pane at a time. The list stays mounted to keep its scroll position.
+        <div className="flex min-h-0 flex-1">
+          {paneMode !== "mail" ? (
+            mainPane
+          ) : (
+            <>
+              <div
+                data-mail-pane={paneNav.shown.list ? "list" : undefined}
+                hidden={!paneNav.shown.list}
+                className="flex min-w-0 flex-1"
+              >
+                {listPane}
+              </div>
+              {paneNav.shown.reader && (
+                <div data-mail-pane="reader" tabIndex={-1} className="flex min-w-0 flex-1">
+                  {readerPane}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
         <Group
-          key={`${paneMode}:${prefs.sidebarVisible}`}
-          orientation={narrow ? "vertical" : "horizontal"}
-          className={narrow ? "min-h-[640px] flex-1" : "min-h-0 flex-1"}
+          key={`${paneMode}:${docked}`}
+          className="min-h-0 flex-1"
           defaultLayout={panes.defaultLayout}
           onLayoutChanged={panes.onLayoutChanged}
           resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
         >
-          {prefs.sidebarVisible && (
+          {docked && (
             <Panel
               id="sidebar"
               data-mail-pane="sidebar"
-              defaultSize={narrow ? 160 : 232}
-              minSize={narrow ? 120 : 190}
-              maxSize={narrow ? 240 : 380}
+              defaultSize={232}
+              minSize={PANE_MIN.sidebar}
+              maxSize={380}
               groupResizeBehavior="preserve-pixel-size"
             >
-              <Sidebar
-                view={view}
-                // The overview has no list; picking a mailbox there opens it in All.
-                onView={(v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v)}
-                onSpace={switchSpace}
-                onEditProfile={setEditing}
-                accounts={accountList}
-                profiles={profileList}
-                unread={counts}
-                syncState={syncState}
-                progress={progress}
-                proposals={proposals.length}
-                onAddAccount={() => setDialog("add")}
-                onCompose={() => startCompose("new")}
-                onReauth={mailActions.reauth}
-                onProposals={() => setDialog("proposals")}
-                onSettings={() => setDialog("settings")}
-              />
+              {sidebar}
             </Panel>
           )}
-          {prefs.sidebarVisible && (
-            <ResizeHandle orientation={narrow ? "vertical" : "horizontal"} />
-          )}
-          {!hasAccounts ? (
+          {docked && <ResizeHandle />}
+          {paneMode !== "mail" ? (
             <Panel id="main" minSize={360}>
-              <main className="h-full bg-white dark:bg-neutral-900">
-                <div className="drag h-13" />
-              </main>
-            </Panel>
-          ) : view.space === OVERVIEW ? (
-            <Panel id="main" minSize={360}>
-              <Overview
-                accounts={accountList}
-                profiles={profileList}
-                unread={counts}
-                syncState={syncState}
-                onOpen={switchSpace}
-                onEditProfile={setEditing}
-              />
+              {mainPane}
             </Panel>
           ) : (
-            <MailPanels position={readingPosition} readerVisible={prefs.readingPaneVisible}>
+            <MailPanels
+              position={prefs.readingPanePosition}
+              readerVisible={prefs.readingPaneVisible}
+            >
               <Panel
                 id="list"
                 data-mail-pane="list"
                 defaultSize={380}
-                minSize={mailOrientation === "vertical" ? 120 : 280}
+                minSize={mailOrientation === "vertical" ? 120 : PANE_MIN.list}
                 maxSize={
                   !prefs.readingPaneVisible || mailOrientation === "vertical" ? undefined : 720
                 }
                 groupResizeBehavior="preserve-pixel-size"
               >
-                <MessageList
-                  searchBar={
-                    !prefs.readingPaneVisible ? (
-                      <div className="drag flex h-13 shrink-0 items-center px-4">
-                        <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
-                      </div>
-                    ) : undefined
-                  }
-                  key={JSON.stringify([view, search, filters])}
-                  title={title}
-                  threads={list}
-                  loading={threads.loading}
-                  loadingMore={threads.loadingMore}
-                  loadError={threads.loadError}
-                  exhausted={threads.exhausted}
-                  showAccount={!viewAccount && (scope?.length ?? accountList.length) > 1}
-                  searching={search !== ""}
-                  searchingServer={threads.searchingServer}
-                  searchTruncated={threads.searchTruncated}
-                  searchErrors={threads.searchErrors}
-                  searchIgnored={threads.searchIgnored}
-                  searchQuery={listQuery ?? undefined}
-                  filters={filters}
-                  inLabel={supportsInInboxFilter(view, accountList)}
-                  onFilters={setFilters}
-                  folderActions={
-                    <>
-                      <UndoHistory entries={undoHistory} onUndo={undoRestored} />
-                      <FolderActions
-                        folder={{
-                          mailbox: view.mailbox,
-                          ...(folderAccountIds ? { accountIds: folderAccountIds } : {}),
-                          ...(view.label ? { label: view.label.id } : {}),
-                        }}
-                        notify={(text, error) =>
-                          say({ text, ...(error ? { tone: "error" as const } : {}) })
-                        }
-                      />
-                    </>
-                  }
-                  labels={labelMap}
-                  selectedId={selection.focus}
-                  selectedIds={selection.ids}
-                  listRef={listRef}
-                  selectionSource={selectionSource}
-                  rowActions={{
-                    batchMenu: (
-                      <BatchMenuItems
-                        onPermanentDelete={
-                          deleteFolder
-                            ? () => requestPermanentDelete(batchRows.map((row) => row.id))
-                            : undefined
-                        }
-                        onCreate={(accountId, move) =>
-                          setLabelCreation({
-                            accountId,
-                            move,
-                            threads: batchRows
-                              .filter((row) => row.accountId === accountId)
-                              .map((row) => row.id),
-                            flat: !prefs.threadGrouping,
-                            removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
-                          })
-                        }
-                        currentLabel={view.label?.id}
-                        mailbox={view.mailbox}
-                        rows={batchRows}
-                        accounts={accountList}
-                        labels={labels}
-                        onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
-                      />
-                    ),
-                    grouped: prefs.threadGrouping,
-                    currentLabel: view.label?.id,
-                    mailbox: view.mailbox,
-                    labels,
-                    stateOf: rowState,
-                    onOp: (m, state, op) => act(op, {}, { id: m.id, state }),
-                    onSwipeOp: (m, state, op) =>
-                      act(op, { confirmedIds: new Set([m.id]) }, { id: m.id, state }),
-                    onCompose: (m, mode, asAttachment) => startCompose(mode, asAttachment, m.id),
-                    onPermanentDelete: deleteFolder
-                      ? (thread) => requestPermanentDelete([thread.id])
-                      : undefined,
-                    onCreate: (thread, move) =>
-                      setLabelCreation({
-                        accountId: thread.accountId,
-                        move,
-                        threads: [thread.id],
-                        flat: !prefs.threadGrouping,
-                        removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
-                      }),
-                    onSnooze: (thread) => setSnoozeIds([thread.id]),
-                    onFilter: (thread) =>
-                      setFilterSeed({ accountId: thread.accountId, from: thread.from.address }),
-                    onOpenWindow: (m) =>
-                      view.mailbox === "drafts"
-                        ? openSavedDraft(m.id)
-                        : navigation.openWindow(m.id),
-                  }}
-                  onSelect={(id, modifiers) => {
-                    if (threads.loading) return;
-                    if (view.mailbox !== "drafts") {
-                      navigation.selectRow(id, modifiers);
-                      return;
-                    }
-                    // Drafts open in the compose window.
-                    setSelectedId(id);
-                    openSavedDraft(id);
-                  }}
-                  onEndReached={() => {
-                    loadMore();
-                  }}
-                />
+                {listPane}
               </Panel>
               {prefs.readingPaneVisible && <ResizeHandle orientation={mailOrientation} />}
               {prefs.readingPaneVisible && (
@@ -536,120 +688,24 @@ export function App({ composeId }: { composeId?: string }) {
                   id="reader"
                   data-mail-pane="reader"
                   tabIndex={-1}
-                  minSize={mailOrientation === "vertical" ? 150 : 360}
+                  minSize={mailOrientation === "vertical" ? 150 : PANE_MIN.reader}
                 >
-                  <Reader
-                    messageId={selectedId}
-                    threadKey={currentReaderThreadKey}
-                    onMarkUnread={() => setReadTarget(null)}
-                    onActionDone={({ result, ids, op }) => mailActions.actionDone(result, ids, op)}
-                    onSelectMessage={(id) => {
-                      if (currentReaderThreadKey)
-                        setReaderSelection({ threadKey: currentReaderThreadKey, id });
-                    }}
-                    derivedMatches={selected?.derivedMatches}
-                    query={query}
-                    onQuery={setQuery}
-                    searchRef={searchRef}
-                    onComposeMessage={(id, mode, attachment) => startCompose(mode, attachment, id)}
-                    onEditDraft={openSavedDraft}
-                    notify={(next) => say(next)}
-                    renderToolbar={(compact) =>
-                      selection.ids.size > 1 ? (
-                        <BatchActions
-                          onPermanentDelete={
-                            deleteFolder
-                              ? () => requestPermanentDelete(batchRows.map((row) => row.id))
-                              : undefined
-                          }
-                          onCreate={(accountId, move) =>
-                            setLabelCreation({
-                              accountId,
-                              move,
-                              threads: batchRows
-                                .filter((row) => row.accountId === accountId)
-                                .map((row) => row.id),
-                              flat: !prefs.threadGrouping,
-                              removeLabelId: moveSourceLabel(view.mailbox, view.label?.id),
-                            })
-                          }
-                          currentLabel={view.label?.id}
-                          mailbox={view.mailbox}
-                          rows={batchRows}
-                          canLoadMore={threads.canLoadMore}
-                          moreNotLoaded={threads.moreNotLoaded}
-                          accounts={accountList}
-                          labels={labels}
-                          onOp={(op, accountId) => act(op, accountId ? { accountId } : {})}
-                          labelPicker={labelPicker}
-                          onLabelPicker={setLabelPicker}
-                        />
-                      ) : (
-                        threadState && (
-                          <ThreadActions
-                            currentLabel={view.label?.id}
-                            pickerMode={pickerMode}
-                            organizationTarget={
-                              batchRows[0]
-                                ? {
-                                    accountId: batchRows[0].accountId,
-                                    threads: [batchRows[0].id],
-                                    flat: !prefs.threadGrouping,
-                                  }
-                                : undefined
-                            }
-                            compact={compact}
-                            state={threadState}
-                            mailbox={view.mailbox}
-                            labels={threadLabels}
-                            onOp={(op) => act(op)}
-                            onPermanentDelete={
-                              deleteFolder
-                                ? () => {
-                                    if (selectedId) requestPermanentDelete([selectedId]);
-                                  }
-                                : undefined
-                            }
-                            onCompose={startCompose}
-                            onSendAgain={
-                              stateMessages?.some((m) => m.labels.includes("SENT"))
-                                ? () =>
-                                    sendAgain(
-                                      stateMessages.filter((m) => m.labels.includes("SENT")).at(-1)
-                                        ?.id,
-                                    )
-                                : undefined
-                            }
-                            onSnooze={() => {
-                              if (selectedId) setSnoozeIds([selectedId]);
-                            }}
-                            onFilter={
-                              selectedAccount?.provider === "imap"
-                                ? undefined
-                                : () => {
-                                    if (selectedAccount && selected)
-                                      setFilterSeed({
-                                        accountId: selectedAccount.id,
-                                        from: selected.from.address,
-                                      });
-                                  }
-                            }
-                            onOpenWindow={() => {
-                              if (selectedId) navigation.openWindow(selectedId);
-                            }}
-                            labelPicker={labelPicker}
-                            onLabelPicker={setLabelPicker}
-                          />
-                        )
-                      )
-                    }
-                  />
+                  {readerPane}
                 </Panel>
               )}
             </MailPanels>
           )}
         </Group>
-      </div>
+      )}
+      {layout.mode !== "wide" && (
+        <Drawer
+          open={layout.drawerOpen}
+          onOpenChange={layout.setDrawerOpen}
+          aria-label={t`Sidebar`}
+        >
+          {sidebar}
+        </Drawer>
+      )}
       <Alert
         open={deleteKeyPrompt}
         onOpenChange={setDeleteKeyPrompt}

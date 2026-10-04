@@ -16,7 +16,11 @@ import {
 import { useRunMail, withMail } from "../state/mail";
 import { nativeComposeCapabilitiesAtom } from "../state/queries";
 
-export function ComposeGrammar({
+/**
+ * Grammar checking with the Mac's checker: the composer's menu starts a
+ * check, and `GrammarResults` lists what it found under the toolbar.
+ */
+export function useComposeGrammar({
   body,
   bodyRef,
   onChange,
@@ -27,7 +31,6 @@ export function ComposeGrammar({
   onChange: (body: ComposeBody) => void;
   locked: boolean;
 }) {
-  const { t } = useLingui();
   const run = useRunMail();
   const available = AsyncResult.getOrElse(useAtomValue(nativeComposeCapabilitiesAtom), () => ({
     grammar: false,
@@ -104,21 +107,33 @@ export function ComposeGrammar({
     onChange(editorBody(root, body));
     setResult(null);
   };
-  if (!available) return null;
+  return {
+    available,
+    checking,
+    disabled: checking || locked || !text || text.length > 100_000,
+    check,
+    text,
+    result,
+    error,
+    issues,
+    locked,
+    bodyRef,
+    replace,
+    clear: () => setResult(null),
+  };
+}
+export type ComposeGrammar = ReturnType<typeof useComposeGrammar>;
+
+export function GrammarResults({ grammar }: { grammar: ComposeGrammar }) {
+  const { t } = useLingui();
+  const { text, result, error, issues, locked, bodyRef, replace } = grammar;
+  if (!grammar.available || (!error && result?.text !== text)) return null;
   return (
     <div className="shrink-0 border-b px-4 py-2 text-xs">
-      <button
-        type="button"
-        disabled={checking || locked || !text || text.length > 100_000}
-        onClick={check}
-        className="rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/10"
-      >
-        {checking ? t`Checking grammar…` : t`Check grammar on this Mac`}
-      </button>
       {result?.text === text && (
         <button
           type="button"
-          onClick={() => setResult(null)}
+          onClick={grammar.clear}
           className="rounded px-2 py-1"
         >{t`Close`}</button>
       )}

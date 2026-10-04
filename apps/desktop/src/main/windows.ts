@@ -310,8 +310,9 @@ export function createMainWindow(restored?: SavedWindow): BrowserWindow {
   const win = createAppWindow({
     width: 1320,
     height: 860,
-    minWidth: 960,
-    minHeight: 600,
+    // The renderer switches to two panes below 960 px and one below 640 px.
+    minWidth: 480,
+    minHeight: 400,
     restored,
   });
   mainWindows.add(win);

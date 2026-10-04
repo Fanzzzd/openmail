@@ -3,6 +3,7 @@ import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { CircleAlert, Layers, Pencil, Plus, RefreshCw } from "lucide-react";
+import type { ReactNode } from "react";
 
 import type { Account, Profile, SyncState } from "../../../shared/api";
 import {
@@ -32,13 +33,23 @@ interface Props {
   syncState: SyncState;
   onOpen: (space: SpaceId, messageId?: string) => void;
   onEditProfile: (profile: Profile | "new") => void;
+  /** Controls before the title when the overview is the leftmost pane, clear of the traffic lights. */
+  leading?: ReactNode;
 }
 
 /**
  * Every space on one screen: unread counts, sync health per account, and the
  * newest unread conversations. Accounts outside any profile form their own group.
  */
-export function Overview({ accounts, profiles, unread, syncState, onOpen, onEditProfile }: Props) {
+export function Overview({
+  accounts,
+  profiles,
+  unread,
+  syncState,
+  onOpen,
+  onEditProfile,
+  leading,
+}: Props) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -61,25 +72,30 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
 
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
-      <header className="drag flex h-13 shrink-0 items-center gap-3 px-7">
-        <h1 className="text-[17px] font-bold">
+      <header
+        className={`drag flex h-13 shrink-0 items-center gap-3 pr-4 sm:pr-7 ${leading ? "pl-20" : "pl-4 sm:pl-7"}`}
+      >
+        {leading}
+        <h1 className="shrink-0 text-[17px] font-bold">
           <Trans>Overview</Trans>
         </h1>
-        <span className="text-[13px] text-a11y-muted">
+        <span className="min-w-0 truncate text-[13px] text-a11y-muted">
           {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${total} unread`}
         </span>
         <span className="flex-1" />
         <button
           type="button"
           onClick={() => run(syncNow)}
-          className="flex h-7 items-center gap-1.5 rounded-md border border-black/10 px-2.5 text-[13px] hover:bg-black/[0.03] dark:border-white/10 dark:hover:bg-white/5"
+          className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-black/10 px-2.5 text-[13px] hover:bg-black/[0.03] dark:border-white/10 dark:hover:bg-white/5"
         >
           <RefreshCw className={`size-3.5 ${syncState.running ? "animate-spin" : ""}`} />
-          <Trans>Sync All</Trans>
+          <span className="max-sm:sr-only">
+            <Trans>Sync All</Trans>
+          </span>
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-7 pb-10">
+      <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-7">
         {profiles.length === 0 && (
           <div className="mb-6 flex items-center gap-4 rounded-xl border border-dashed border-black/15 p-4 dark:border-white/15">
             <p className="flex-1 text-[13px] leading-relaxed text-neutral-600 dark:text-neutral-300">
@@ -98,7 +114,7 @@ export function Overview({ accounts, profiles, unread, syncState, onOpen, onEdit
             </button>
           </div>
         )}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(320px,100%),1fr))] gap-4">
           {groups.map((g) => (
             <GroupCard
               key={g.profile?.id ?? "ungrouped"}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
+import { PANE_MIN } from "../responsive-layout";
 
 export function MailPanels({
   position,
@@ -16,7 +17,7 @@ export function MailPanels({
     storage: localStorage,
   });
   return (
-    <Panel id="mail" minSize={position === "bottom" ? 360 : 640}>
+    <Panel id="mail" minSize={position === "bottom" ? 360 : PANE_MIN.list + PANE_MIN.reader}>
       <Group
         key={String(readerVisible)}
         orientation={position === "bottom" ? "vertical" : "horizontal"}

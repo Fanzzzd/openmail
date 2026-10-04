@@ -15,12 +15,21 @@ import type {
   RemoteImageMode,
 } from "./domain.js";
 
-/** Only contacts, the account itself, and people previously mailed count as known. */
-export function senderLabel(sender: Address, known: boolean): string {
-  const name = cleanDisplayName(sender.name);
-  return name && !known && name !== sender.address
-    ? `${name} <${sender.address}>`
-    : name || sender.address;
+/**
+ * The sender's name for a header that shows the address beside it. Senders
+ * often repeat their own address in the name ("Azure <azure@…>", or just the
+ * address); that copy is dropped. A different address stays, so the spoofing
+ * warning still has something to point at.
+ */
+export function senderName(sender: Address): string {
+  const address = sender.address.trim();
+  const own = address.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const name = address
+    ? cleanDisplayName(sender.name)
+        .replace(new RegExp(`[<([]\\s*${own}\\s*[>)\\]]|${own}`, "giu"), "")
+        .replace(/^[\s"'“”‘’,;:|–—-]+|[\s"'“”‘’,;:|–—-]+$/gu, "")
+    : cleanDisplayName(sender.name).trim();
+  return name || address;
 }
 
 export function threadExpansion(ids: readonly string[], expanded: boolean): Set<string> {

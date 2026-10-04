@@ -11,11 +11,12 @@ import { readerSelectedText } from "../quote-selection";
 import { jumpReaderSelection } from "../jump-selection";
 import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
+import { Tip } from "./ui/Tip";
+import { isBackKey } from "../responsive-layout";
 import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
-  cleanDisplayName,
   senderSpoofed,
   addressDomain,
   DEFAULT_PREFS,
@@ -30,7 +31,7 @@ import {
   prepareMessageHtml,
   type PreparedHtml,
   READER_ZOOMS,
-  senderLabel,
+  senderName,
   shouldLoadRemote,
   threadExpansion,
   type ReaderZoom,
@@ -42,6 +43,7 @@ import {
   AppWindow,
   Code,
   ChevronDown,
+  ChevronLeft,
   ChevronsDownUp,
   ChevronsUpDown,
   FileDown,
@@ -134,6 +136,8 @@ interface Props {
     mode: "reply" | "replyAll" | "forward",
     attachment?: boolean,
   ) => void;
+  /** Single-pane layout: returns to the list, which then holds the search field. */
+  onBack?: (() => void) | undefined;
 }
 
 export function Reader({
@@ -150,7 +154,9 @@ export function Reader({
   onComposeMessage,
   onEditDraft,
   notify,
+  onBack,
 }: Props) {
+  const { t } = useLingui();
   const headerRef = useRef<HTMLElement>(null);
   const width = useSyncExternalStore(
     (onChange) => {
@@ -177,12 +183,24 @@ export function Reader({
       <header
         ref={headerRef}
         data-reader-toolbar
-        className="drag flex min-h-13 shrink-0 items-center gap-3 px-4 py-3"
+        className={`drag flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? "pl-20" : "pl-4"}`}
       >
+        {onBack && (
+          <Tip label={t`Back to messages`} shortcut="⌘[">
+            <button
+              type="button"
+              aria-label={t`Back to messages`}
+              onClick={onBack}
+              className="no-drag -ml-1 shrink-0 rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+          </Tip>
+        )}
         {prefs.toolbarVisible && (
           <div className="no-drag shrink-0">{renderToolbar?.(width < 900)}</div>
         )}
-        <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
+        {!onBack && <SearchField value={query} onChange={onQuery} inputRef={searchRef} />}
       </header>
       {!messageId || !messages ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-a11y-muted dark:text-neutral-600">
@@ -207,6 +225,7 @@ export function Reader({
           onEditDraft={onEditDraft}
           notify={notify}
           canOpenWindow
+          onBack={onBack}
         />
       )}
     </main>
@@ -288,6 +307,7 @@ export function ThreadView({
   onMarkUnread,
   onActionDone,
   onComposeMessage,
+  onBack,
 }: {
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
@@ -302,6 +322,7 @@ export function ThreadView({
   onMarkUnread?: (() => void) | undefined;
   onActionDone?: ReaderActionDone | undefined;
   onComposeMessage?: Props["onComposeMessage"] | undefined;
+  onBack?: Props["onBack"];
 }) {
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -621,6 +642,12 @@ export function ThreadView({
     activate(id);
     onZoomKey(e);
     onReaderKey(e, id);
+    // The frame's keys do not reach the window, where the list's back keys live.
+    if (onBack && !e.defaultPrevented && isBackKey(e)) {
+      e.preventDefault();
+      onBack();
+      return;
+    }
     if (!e.defaultPrevented && !e.repeat) {
       const typing = Boolean(
         e.target &&
@@ -895,7 +922,6 @@ export function ThreadView({
             <Expanded
               key={m.id}
               message={m}
-              known={isKnown(m)}
               onActivate={() => activate(m.id)}
               active={m.id === activeId}
               onMessageOp={(op) => messageAction(m.id, op)}
@@ -942,7 +968,7 @@ export function ThreadView({
             >
               <Avatar message={m} />
               <span className="min-w-0 flex-1">
-                <MessageHead message={m} known={isKnown(m)} />
+                <MessageHead message={m} />
                 <span className="mt-0.5 block truncate text-[13px] text-a11y-muted">
                   {m.snippet}
                 </span>
@@ -958,16 +984,14 @@ export function ThreadView({
 
 function MessageHead({
   message: m,
-  known,
   onSearchSender,
 }: {
   message: Message;
-  known: boolean;
   onSearchSender?: (() => void) | undefined;
 }) {
   const { t, i18n } = useLingui();
   const shortcut = useShortcutText();
-  const label = senderLabel({ ...m.from, name: cleanDisplayName(m.from.name) }, known);
+  const label = senderName(m.from);
   // Names wrap between words; an unbroken run breaks only when it would overflow.
   const name = (
     <span data-sender-name className="line-clamp-2 break-words" title={label}>
@@ -997,9 +1021,11 @@ function MessageHead({
           )}
         </span>
         <span className="flex min-w-0 items-baseline gap-x-2 text-[12px] @max-[420px]/message:flex-wrap @min-[520px]/message:max-w-[65%]">
-          <span data-sender-address className="min-w-0 truncate" title={m.from.address}>
-            {m.from.address}
-          </span>
+          {label !== m.from.address && (
+            <span data-sender-address className="min-w-0 truncate" title={m.from.address}>
+              {m.from.address}
+            </span>
+          )}
           {m.isStarred && (
             <Star className="size-3.5 shrink-0 self-center fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />
           )}
@@ -1053,7 +1079,6 @@ function Expanded({
   onPrint,
   onCollapse,
   onEditDraft,
-  known,
   onActivate,
   onSave,
   onSearchSender,
@@ -1084,7 +1109,6 @@ function Expanded({
   onPrint: (pdf: boolean) => void;
   onCollapse?: (() => void) | undefined;
   onEditDraft?: (() => void) | undefined;
-  known: boolean;
   onActivate: () => void;
   onSave: () => void;
   onSearchSender: () => void;
@@ -1163,7 +1187,7 @@ function Expanded({
         <div className="flex min-w-0 flex-1 gap-3 text-left select-text">
           <Avatar message={m} />
           <span className="min-w-0 flex-1">
-            <MessageHead message={m} known={known} onSearchSender={onSearchSender} />
+            <MessageHead message={m} onSearchSender={onSearchSender} />
             <span
               className="mt-0.5 block truncate text-[13px] text-a11y-muted"
               title={[...m.to, ...m.cc].map((a) => a.address).join(separator)}

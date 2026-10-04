@@ -22,9 +22,12 @@ import type { useAppPanels } from "./use-app-panels";
 import type { useMailActions } from "./use-mail-actions";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
+import type { PaneNavigation } from "./use-pane-navigation";
+import { isBackKey } from "../responsive-layout";
 export function useMailShortcuts({
   panels,
   navigation,
+  panes,
   mailActions,
   composition,
   run,
@@ -37,6 +40,7 @@ export function useMailShortcuts({
 }: {
   panels: ReturnType<typeof useAppPanels>;
   navigation: ReturnType<typeof useMailSelection>;
+  panes: PaneNavigation;
   mailActions: ReturnType<typeof useMailActions>;
   composition: ReturnType<typeof useMailCompose>;
   run: ReturnType<typeof useRunMail>;
@@ -156,6 +160,11 @@ export function useMailShortcuts({
       e.preventDefault();
       return;
     }
+    if (!panes.shown.list && !typing && isBackKey(e)) {
+      e.preventDefault();
+      panes.back();
+      return;
+    }
     if (e.key === "Escape") {
       setQuery("");
       searchRef.current?.blur();
@@ -219,7 +228,12 @@ export function useMailShortcuts({
         setDialog("help");
         break;
       case "search":
-        searchRef.current?.focus();
+        if (panes.shown.list) searchRef.current?.focus();
+        else {
+          // A narrow window searches from the list.
+          panes.back();
+          requestAnimationFrame(() => searchRef.current?.focus());
+        }
         break;
       case "sync":
         run(syncNow);
@@ -280,11 +294,7 @@ export function useMailShortcuts({
         );
         break;
       case "toggleSidebar":
-        run(
-          withMail((call) =>
-            call("SetPrefs", { patch: { sidebarVisible: !prefs.sidebarVisible } }),
-          ).pipe(Reactivity.mutation([Keys.prefs])),
-        );
+        panes.toggleSidebar();
         break;
       case "spam":
         act({ kind: "spam" });

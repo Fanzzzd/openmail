@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ComponentProps } from "react";
 
 /** One Tab stop; arrows visit controls, including custom selects and text inputs. */
-export function KeyboardToolbar({ children, ...props }: ComponentProps<"div">) {
+export function KeyboardToolbar({ children, ref: outer, ...props }: ComponentProps<"div">) {
   const ref = useRef<HTMLDivElement>(null);
   const controls = () =>
     [
@@ -33,7 +33,11 @@ export function KeyboardToolbar({ children, ...props }: ComponentProps<"div">) {
   return (
     <div
       {...props}
-      ref={ref}
+      ref={(node) => {
+        ref.current = node;
+        if (typeof outer === "function") outer(node);
+        else if (outer) outer.current = node;
+      }}
       // A toolbar contains mixed controls; no native element provides its role.
       // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
       role="toolbar"

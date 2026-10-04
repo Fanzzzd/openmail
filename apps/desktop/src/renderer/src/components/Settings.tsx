@@ -9,6 +9,7 @@ import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
 import { useRef, useState } from "react";
+import { useLayoutMode } from "../responsive-layout";
 
 import type { Account, AgentWriteMode, Language } from "../../../shared/api";
 import { resultError, OAUTH_CONFIGURATION_ERROR } from "../errors";
@@ -100,6 +101,7 @@ export function Settings({
 }: Props) {
   const { t, i18n } = useLingui();
   const [tab, setTab] = useState<Tab>(initialTab);
+  const narrow = useLayoutMode() === "narrow";
 
   return (
     <Dialog
@@ -111,20 +113,20 @@ export function Settings({
         <Trans>Settings</Trans>
       </h2>
       <Tabs.Root
-        orientation="vertical"
+        orientation={narrow ? "horizontal" : "vertical"}
         value={tab}
         onValueChange={(value) => {
           const next = TABS.find((item) => item.id === value);
           if (next) setTab(next.id);
         }}
-        className="flex min-h-0 flex-1"
+        className="flex min-h-0 flex-1 max-sm:flex-col"
       >
-        <Tabs.List className="flex w-40 shrink-0 flex-col overflow-y-auto gap-1 border-r border-black/[0.07] p-3 dark:border-white/[0.08]">
+        <Tabs.List className="flex w-40 shrink-0 flex-col gap-1 overflow-y-auto border-r border-black/[0.07] p-3 max-sm:w-auto max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:p-2 dark:border-white/[0.08]">
           {TABS.map((item) => (
             <Tabs.Tab
               key={item.id}
               value={item.id}
-              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium text-a11y-muted outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
+              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium whitespace-nowrap text-a11y-muted outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
             >
               {i18n._(item.label)}
             </Tabs.Tab>

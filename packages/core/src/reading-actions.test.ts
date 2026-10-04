@@ -10,7 +10,7 @@ import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-import { gmailThreadUrl, officialMessageUrl, senderLabel, threadExpansion } from "./reading.js";
+import { gmailThreadUrl, officialMessageUrl, senderName, threadExpansion } from "./reading.js";
 import { parseSearchQuery, senderSearchQuery } from "./search.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 
@@ -35,9 +35,26 @@ it("expands and collapses every ID independently of thread order or duplicate ID
   assert.deepStrictEqual([...threadExpansion(["old", "new", "old"], true)], ["old", "new"]);
   assert.strictEqual(threadExpansion(["old", "new"], false).size, 0);
   assert.strictEqual(threadExpansion([], true).size, 0);
-  assert.strictEqual(senderLabel(incoming.from, false), "Alice <alice@example.com>");
-  assert.strictEqual(senderLabel(incoming.from, true), "Alice");
-  assert.strictEqual(senderLabel({ name: "", address: "a@example.com" }, false), "a@example.com");
+  assert.strictEqual(senderName(incoming.from), "Alice");
+  assert.strictEqual(senderName({ name: "", address: "a@example.com" }), "a@example.com");
+});
+
+it("drops the sender's own address from the display name and keeps a different one", () => {
+  const azure = "azure@infoemails.microsoft.com";
+  for (const name of [
+    `Microsoft Azure <${azure}>`,
+    `"Microsoft Azure" (${azure})`,
+    `Microsoft Azure ${azure.toUpperCase()}`,
+    `Microsoft Azure - ${azure}`,
+  ])
+    assert.strictEqual(senderName({ name, address: azure }), "Microsoft Azure");
+  assert.strictEqual(senderName({ name: azure, address: azure }), azure);
+  assert.strictEqual(senderName({ name: `"${azure}"`, address: azure }), azure);
+  assert.strictEqual(
+    senderName({ name: "Bank <help@bank.example>", address: azure }),
+    "Bank <help@bank.example>",
+  );
+  assert.strictEqual(senderName({ name: "Al​ice", address: "a@example.com" }), "Alice");
 });
 
 it("quotes sender addresses so spaces, quotes, slashes and operators cannot inject criteria", () => {

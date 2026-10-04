@@ -447,20 +447,24 @@ msgstr "AI の提案"
 msgid "AI suggestions"
 msgstr "AIによる提案"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "中央揃え"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "左揃え"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "右揃え"
+
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Alignment"
+msgstr "配置"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
@@ -588,7 +592,7 @@ msgstr "Apple Mail"
 msgid "Apply"
 msgstr "適用"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Apply color"
 msgstr "色を適用"
 
@@ -717,7 +721,7 @@ msgstr "完全な削除を承認する"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "この Gmail アカウントのメールを完全に削除する権限を承認します。"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "自動方向"
@@ -746,6 +750,10 @@ msgstr "返答待ち"
 msgid "Back"
 msgstr "戻る"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Back to messages"
+msgstr "メッセージ一覧に戻る"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill paused"
 msgstr "古いメールのダウンロードを一時停止中"
@@ -754,7 +762,7 @@ msgstr "古いメールのダウンロードを一時停止中"
 msgid "Backfill runs between syncs"
 msgstr "バックフィルは同期の間に実行されます"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "背景色"
 
@@ -799,7 +807,7 @@ msgctxt "message text"
 msgid "Body"
 msgstr "本文"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "太字"
@@ -812,7 +820,7 @@ msgstr "バグレポート"
 msgid "Built-in AI"
 msgstr "内蔵AI"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "箇条書きリスト"
@@ -982,7 +990,7 @@ msgstr "アップデートを確認"
 msgid "Check for Updates…"
 msgstr "アップデートを確認してください…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Check grammar on this Mac"
 msgstr "このMacで文法をチェック"
 
@@ -999,7 +1007,7 @@ msgstr "同期状態を確認"
 msgid "Checking for updates…"
 msgstr "アップデートを確認中…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Checking grammar…"
 msgstr "文法をチェック中…"
 
@@ -1076,7 +1084,7 @@ msgstr "アカウントのキャッシュを消去"
 msgid "Clear all caches"
 msgstr "すべてのキャッシュを消去"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "書式をクリア"
@@ -1104,6 +1112,7 @@ msgstr "このウインドウをクリックし、デバイスを選択して写
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Dialog.tsx
 #: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "閉じる"
@@ -1121,7 +1130,7 @@ msgstr "検索を閉じる"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプリを再起動し、リカバリを再試行します。"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "コードブロック"
@@ -1142,12 +1151,13 @@ msgstr "カテゴリを折りたたむ"
 msgid "Collapse message"
 msgstr "メッセージを折りたたむ"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "色"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "色の適用先"
 
@@ -1155,7 +1165,6 @@ msgstr "色の適用先"
 msgid "Compact"
 msgstr "コンパクト"
 
-#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "新規メッセージ"
@@ -1300,7 +1309,7 @@ msgstr "匿名化レポートをコピー"
 msgid "Copy selected"
 msgstr "選択したものをコピー"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "スタイルをコピー"
@@ -1543,7 +1552,7 @@ msgstr "カスタムカラー"
 msgid "Custom folder"
 msgstr "カスタムフォルダ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Custom hex color"
 msgstr "カスタム 16 進カラー"
 
@@ -1559,7 +1568,7 @@ msgstr "カスタム時間"
 msgid "Dark background"
 msgstr "暗い背景"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "破線リスト"
@@ -1594,12 +1603,12 @@ msgstr "辞退済み"
 msgid "Decrease font size"
 msgstr "文字サイズを小さくする"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "インデントを減らす"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "引用レベルを下げる"
@@ -1851,7 +1860,7 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "本文を編集"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "リンクを編集"
@@ -2082,6 +2091,10 @@ msgstr "ブラウザでのサインインを完了する"
 msgid "Finish signing in in your browser, then come back here."
 msgstr "ブラウザでのサインインを完了してから、ここに戻ってください。"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Fit to width"
+msgstr "幅に合わせる"
+
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Fix grammar and proofread"
 msgstr "文法の修正と校正"
@@ -2114,13 +2127,17 @@ msgstr "フォルダパス"
 msgid "Follow system"
 msgstr "システム設定に従う"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Font"
+msgstr "フォント"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font family"
 msgstr "フォントファミリー"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font size"
 msgstr "フォントサイズ"
 
@@ -2128,7 +2145,7 @@ msgstr "フォントサイズ"
 msgid "Format"
 msgstr "書式"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Formatting"
 msgstr "書式設定"
 
@@ -2418,22 +2435,22 @@ msgstr "署名の区切り線を含める"
 msgid "Increase font size"
 msgstr "文字サイズを大きくする"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "インデントを増やす"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "引用レベルを上げる"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "リストのインデントを増やす"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "インラインコード"
@@ -2495,7 +2512,7 @@ msgstr "招待状の変更"
 msgid "Invitation status in this conversation"
 msgstr "このスレッドの招待ステータス"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "イタリック"
@@ -2508,7 +2525,7 @@ msgstr "ミーティングに参加する"
 msgid "Jump to selection"
 msgstr "選択範囲に移動"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "両端揃え"
@@ -2632,7 +2649,7 @@ msgstr "左ロングスワイプ"
 msgid "Left short swipe"
 msgstr "左に短くスワイプ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "左から右へ"
@@ -3019,6 +3036,10 @@ msgstr "その他の操作"
 msgid "More formal"
 msgstr "より丁寧に"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "More formatting"
+msgstr "その他の書式"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
 msgstr "さらに多くの一致が存在します。検索を絞り込みます。"
@@ -3026,6 +3047,10 @@ msgstr "さらに多くの一致が存在します。検索を絞り込みます
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "さらにメッセージが読み込まれていません"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "More options"
+msgstr "その他のオプション"
 
 #. placeholder {0}: signature.name
 #: src/renderer/src/components/SignatureSettings.tsx
@@ -3395,7 +3420,7 @@ msgstr "通知"
 msgid "Notifications for {0}"
 msgstr "{0} の通知"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "番号付きリスト"
@@ -3626,7 +3651,7 @@ msgstr "その他のフィードバック"
 msgid "Other IMAP"
 msgstr "その他のIMAP"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "リストのインデントを減らす"
@@ -3691,7 +3716,7 @@ msgstr "ペーストしてスタイルを合わせる"
 msgid "Paste as quotation"
 msgstr "引用としてペースト"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "スタイルをペースト"
@@ -3979,7 +4004,7 @@ msgstr "キーを削除"
 msgid "Remove label"
 msgstr "ラベルを削除する"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "リンクを削除する"
 
@@ -4216,7 +4241,7 @@ msgstr "右ロングスワイプ"
 msgid "Right short swipe"
 msgstr "右に短くスワイプ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "右から左へ"
@@ -4651,9 +4676,17 @@ msgstr "元のメッセージを表示"
 msgid "Show quoted text"
 msgstr "引用されたテキストを表示"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Show sidebar"
+msgstr "サイドバーを表示"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "メニューバーに未開封数を表示"
+
+#: src/renderer/src/App.tsx
+msgid "Sidebar"
+msgstr "サイドバー"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4866,7 +4899,7 @@ msgstr "後続ルールの処理を停止"
 msgid "Stop suggesting {0}"
 msgstr "{0} の提案をやめる"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "取り消し線"
@@ -4881,7 +4914,7 @@ msgstr "件名"
 msgid "Subject contains"
 msgstr "件名に含まれる文字"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "下付き文字"
@@ -4902,7 +4935,7 @@ msgstr "要約"
 msgid "Sunday"
 msgstr "日曜日"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "上付き文字"
@@ -4993,7 +5026,7 @@ msgstr "テンプレート…"
 msgid "Tentative"
 msgstr "仮承諾"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "文字の色"
 
@@ -5283,7 +5316,7 @@ msgstr "オフにする"
 msgid "Turned off"
 msgstr "オフ"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "下線"
@@ -5492,6 +5525,10 @@ msgstr "判定"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "確認中…"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "View at 100%"
+msgstr "100% で表示"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Visible categories"

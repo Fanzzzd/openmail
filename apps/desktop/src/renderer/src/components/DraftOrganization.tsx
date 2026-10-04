@@ -4,6 +4,8 @@ import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import type { OutgoingMessage, Provider } from "../../../shared/api";
 import { labelsAtom } from "../state/queries";
+import { Tag } from "lucide-react";
+import { Tip } from "./ui/Tip";
 
 type Organization = NonNullable<OutgoingMessage["draftOrganization"]>;
 export function DraftOrganization({
@@ -23,6 +25,12 @@ export function DraftOrganization({
   );
   const [open, setOpen] = useState(false);
   const [names, setNames] = useState(value.labels.join(", "));
+  const organizeLabel =
+    provider === "outlook"
+      ? t`Draft categories`
+      : provider === "imap"
+        ? t`Draft keywords`
+        : t`Local draft labels`;
   return (
     <>
       <button
@@ -34,20 +42,20 @@ export function DraftOrganization({
       >
         {value.starred ? "★" : "☆"}
       </button>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => {
-          setNames(value.labels.join(", "));
-          setOpen((previous) => !previous);
-        }}
-      >
-        {provider === "outlook"
-          ? t`Draft categories`
-          : provider === "imap"
-            ? t`Draft keywords`
-            : t`Local draft labels`}
-      </button>
+      <Tip label={organizeLabel} side="top">
+        <button
+          type="button"
+          aria-label={organizeLabel}
+          aria-expanded={open}
+          onClick={() => {
+            setNames(value.labels.join(", "));
+            setOpen((previous) => !previous);
+          }}
+          className={`rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10 ${value.labels.length ? "text-a11y-accent" : ""}`}
+        >
+          <Tag className="size-4" />
+        </button>
+      </Tip>
       {open && (
         <div className="absolute right-4 bottom-12 z-10 w-64 space-y-2 rounded-lg border bg-white p-3 shadow-lg dark:bg-neutral-800">
           {provider === "gmail" && (

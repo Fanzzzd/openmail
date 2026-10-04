@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   Mails,
   MessagesSquare,
+  PanelLeft,
   Pencil,
   Plus,
   RefreshCw,
@@ -355,7 +356,7 @@ export function Sidebar({
     <aside
       onDropCapture={() => setDragAccount(null)}
       onDragEndCapture={() => setDragAccount(null)}
-      className="flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
+      className="@container/sidebar flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"
     >
       <div className="drag flex h-13 shrink-0 items-center justify-end gap-0.5 px-3">
         <Tip label={t`Add email account`}>
@@ -400,7 +401,7 @@ export function Sidebar({
 
       <nav aria-label={t`Mailboxes`} className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3">
         {members.length > 1 && (
-          <div className="mb-4 grid grid-cols-2 gap-1.5">
+          <div className="mb-4 grid gap-1 @min-[240px]/sidebar:grid-cols-2 @min-[240px]/sidebar:gap-1.5">
             <Tile
               active={!view.accountId}
               onClick={() => onView({ ...view, accountId: undefined, label: undefined })}
@@ -804,6 +805,24 @@ export function Sidebar({
   );
 }
 
+/** Brings back the sidebar when it is hidden or, in a narrow window, opens it as a drawer. */
+export function SidebarToggle({ onClick }: { onClick: () => void }) {
+  const { t } = useLingui();
+  const shortcut = useShortcutText();
+  return (
+    <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")}>
+      <button
+        type="button"
+        aria-label={t`Show sidebar`}
+        onClick={onClick}
+        className="shrink-0 rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+      >
+        <PanelLeft className="size-4.5" />
+      </button>
+    </Tip>
+  );
+}
+
 const ring = (active: boolean) =>
   active
     ? "bg-white shadow-sm ring-1 ring-black/10 dark:bg-white/15 dark:ring-white/10"
@@ -1074,21 +1093,20 @@ function Tile(props: {
       <button
         type="button"
         onClick={props.onClick}
-        className={`flex min-w-0 flex-col gap-1.5 rounded-lg px-2.5 py-2 text-left ${
+        // One row in a narrow sidebar, a card in two columns once it has room.
+        className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-lg px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${
           props.active
             ? "bg-black/[0.08] dark:bg-white/12"
             : "bg-black/[0.03] hover:bg-black/[0.05] dark:bg-white/[0.04] dark:hover:bg-white/[0.07]"
         }`}
       >
-        <span className="flex items-center justify-between">
-          {props.icon}
-          {props.badge > 0 && (
-            <span className="text-[12px] text-a11y-muted tabular-nums">
-              {i18n.number(props.badge)}
-            </span>
-          )}
-        </span>
-        <span className="min-w-0">
+        <span className="flex [grid-area:icon]">{props.icon}</span>
+        {props.badge > 0 && (
+          <span className="justify-self-end text-[12px] text-a11y-muted tabular-nums [grid-area:badge]">
+            {i18n.number(props.badge)}
+          </span>
+        )}
+        <span className="min-w-0 [grid-area:text]">
           <span className="block truncate text-[13px] font-medium">{props.label}</span>
           {props.sublabel && (
             <span
@@ -1132,7 +1150,9 @@ function Item(props: {
         }`}
       >
         <span className="flex size-5 items-center justify-center">{props.icon}</span>
-        <span className="min-w-0 flex-1 truncate">{props.label}</span>
+        <span className="min-w-0 flex-1 truncate" title={props.label}>
+          {props.label}
+        </span>
         {props.badge > 0 && (
           <span className="text-[12px] text-a11y-muted tabular-nums">
             {i18n.number(props.badge)}

@@ -164,7 +164,7 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
   };
   try {
     render([older, newer], newer.id);
-    click(dom.element, "old <");
+    click(dom.element, "old@example.com");
     expect(select.mock.calls.at(-1)).toEqual([older.id]);
     key(selected(), "f");
     expect(dom.element.querySelector('input[aria-label="Find in message"]')).not.toBeNull();

@@ -1,11 +1,17 @@
-import { ComposeGrammar } from "./ComposeGrammar";
-import { KeyboardToolbar } from "./ui/KeyboardToolbar";
+import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
+import { ComposeToolbar } from "./ComposeToolbar";
+import { MenuCheckboxItem, MenuGroupLabel, MenuItem, MenuSeparator } from "./ui/Menu";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
 import { useAtomValue } from "@effect/atom-react";
-import { matchesShortcut, type ShortcutSet } from "../../../shared/shortcuts";
+import {
+  matchesShortcut,
+  shortcutText,
+  type ShortcutAction,
+  type ShortcutSet,
+} from "../../../shared/shortcuts";
 import { Effect } from "effect";
 import { useRunMail, withMail } from "../state/mail";
 import { AsyncResult, Atom, Reactivity } from "effect/reactivity";
@@ -30,7 +36,6 @@ import {
   mentionHtml,
   emojiAtCaret,
 } from "@openmail/core/schema";
-import { Bold, Italic, Underline, Link, Unlink, Strikethrough } from "lucide-react";
 import {
   useLayoutEffect,
   useEffectEvent,
@@ -55,7 +60,6 @@ import {
 import type { OutgoingAttachment } from "../../../shared/api";
 import { makeInlinePreviewCache } from "../compose-previews";
 import { Select } from "./ui/Select";
-import { ComposeFormatBar } from "./ComposeFormatBar";
 import {
   FORMAT_ACTIONS,
   formatEditor,
@@ -97,6 +101,7 @@ export function ComposeEditor({
   onMentionsChange,
 }: Props) {
   const { t } = useLingui();
+  const shortcut = (action: ShortcutAction) => shortcutText(shortcutSet, action);
   const run = useRunMail();
   const richRef = useRef<HTMLDivElement>(null);
   const [formatBar, setFormatBar] = useState(prefs.composeFormatBar);
@@ -158,6 +163,7 @@ export function ComposeEditor({
     [body],
   );
   const locked = remoteUnsupported && !unlocked;
+  const grammar = useComposeGrammar({ body, bodyRef, onChange, locked });
   const changeMode = (next: ComposeBody) => {
     setModeUndo(body);
     setMention(null);
@@ -590,162 +596,122 @@ export function ComposeEditor({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus">
-      <KeyboardToolbar
-        aria-label={t`Compose`}
-        className="flex shrink-0 flex-wrap items-center gap-1 border-b border-black/[0.07] px-4 py-1 dark:border-white/[0.08]"
-      >
-        <Select
-          aria-label={t`Writing mode`}
-          value={body.kind}
-          options={[
-            { value: "rich", label: t`Rich text` },
-            { value: "plain", label: t`Plain text` },
-            ...(prefs.labs.markdown || body.kind === "markdown"
-              ? [{ value: "markdown" as const, label: t`Markdown` }]
-              : []),
-          ]}
-          onValueChange={(kind) => {
-            const conversion = composeConversion(body, kind);
-            if (conversion.losesFormatting) setModePrompt(conversion.body);
-            else changeMode(conversion.body);
-          }}
-        />
-        <button
-          type="button"
-          className={button}
-          disabled={locked}
-          onClick={() => setFinding((value) => !value)}
-        >{t`Find and replace`}</button>
-        <button
-          type="button"
-          className={button}
-          disabled={locked}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => paste("matchStyle")}
-        >{t`Paste and match style`}</button>
-        <button
-          type="button"
-          className={button}
-          disabled={locked}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => paste("quotation")}
-        >{t`Paste as quotation`}</button>
-        {modeUndo && (
-          <button
-            type="button"
-            className={button}
-            onClick={() => {
-              onChange(modeUndo);
-              setModeUndo(null);
-              selectionRef.current = null;
-            }}
-          >{t`Undo mode change`}</button>
-        )}
-        {body.kind === "rich" && (
+      <ComposeToolbar
+        formatting={body.kind === "rich" && formatBar}
+        disabled={locked}
+        onFormat={format}
+        onStyle={style}
+        onCommand={(name) => command(name)}
+        onLink={openLink}
+        leading={
           <>
-            <button
-              type="button"
-              className={button}
-              aria-pressed={formatBar}
-              onClick={toggleFormatBar}
-            >
-              {formatBar ? t`Hide format bar` : t`Show format bar`}
-            </button>
-            <button
-              type="button"
-              className={button}
-              aria-pressed={smartLists}
-              onClick={() => {
-                setSmartLists(!smartLists);
-                saveFormatPrefs({ composeSmartLists: !smartLists });
+            <Select
+              aria-label={t`Writing mode`}
+              value={body.kind}
+              options={[
+                { value: "rich", label: t`Rich text` },
+                { value: "plain", label: t`Plain text` },
+                ...(prefs.labs.markdown || body.kind === "markdown"
+                  ? [{ value: "markdown" as const, label: t`Markdown` }]
+                  : []),
+              ]}
+              onValueChange={(kind) => {
+                const conversion = composeConversion(body, kind);
+                if (conversion.losesFormatting) setModePrompt(conversion.body);
+                else changeMode(conversion.body);
               }}
-            >{t`Smart Lists`}</button>
-            <button
-              type="button"
-              className={button}
-              aria-pressed={markdownReplacement}
-              onClick={() => {
-                setMarkdownReplacement(!markdownReplacement);
-                saveFormatPrefs({ composeMarkdownReplacement: !markdownReplacement });
-              }}
-            >{t`Markdown replacements`}</button>
-          </>
-        )}
-        {body.kind === "rich" && formatBar && (
-          <>
-            {[
-              { name: "bold", label: t`Bold`, Icon: Bold },
-              { name: "italic", label: t`Italic`, Icon: Italic },
-              { name: "underline", label: t`Underline`, Icon: Underline },
-              { name: "strikeThrough", label: t`Strikethrough`, Icon: Strikethrough },
-            ].map(({ name, label, Icon }) => (
+            />
+            {modeUndo && (
               <button
-                key={name}
                 type="button"
-                disabled={locked}
-                aria-label={label}
-                title={label}
                 className={button}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => command(name)}
-              >
-                <Icon className="size-4" />
-              </button>
-            ))}
-            <button
-              type="button"
-              disabled={locked}
-              aria-label={t`Edit link`}
-              title={t`Edit link`}
-              className={button}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={openLink}
-            >
-              <Link className="size-4" />
-            </button>
-            <button
-              type="button"
-              disabled={locked}
-              aria-label={t`Remove link`}
-              title={t`Remove link`}
-              className={button}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => command("unlink")}
-            >
-              <Unlink className="size-4" />
-            </button>
+                onClick={() => {
+                  onChange(modeUndo);
+                  setModeUndo(null);
+                  selectionRef.current = null;
+                }}
+              >{t`Undo mode change`}</button>
+            )}
+            {emojiUndo && (
+              <button
+                type="button"
+                className={button}
+                onClick={undoEmoji}
+              >{t`Undo emoji replacement`}</button>
+            )}
           </>
-        )}
-        {emojiUndo && (
-          <button
-            type="button"
-            className={button}
-            onClick={undoEmoji}
-          >{t`Undo emoji replacement`}</button>
-        )}
-        {body.kind === "rich" && (
-          <Select
-            disabled={locked}
-            aria-label={t`Image size`}
-            value={prefs.inlineImageSize}
-            options={[
-              { value: "small", label: t`Small` },
-              { value: "medium", label: t`Medium` },
-              { value: "large", label: t`Large` },
-              { value: "original", label: t`Original` },
-            ]}
-            onValueChange={(size) => {
-              if (locked) return;
-              onImageSize(size);
-              resizeComposeImage(richRef.current, imageCid, size);
-              changed();
-            }}
-          />
-        )}
-      </KeyboardToolbar>
-      {body.kind === "rich" && formatBar && (
-        <ComposeFormatBar disabled={locked} onFormat={format} onStyle={style} />
-      )}
+        }
+        more={
+          <>
+            <MenuItem disabled={locked} onClick={() => setFinding((value) => !value)}>
+              {t`Find and replace`}
+            </MenuItem>
+            <MenuItem
+              disabled={locked}
+              shortcut={shortcut("pasteMatchStyle")}
+              onClick={() => paste("matchStyle")}
+            >{t`Paste and match style`}</MenuItem>
+            <MenuItem
+              disabled={locked}
+              shortcut={shortcut("pasteQuotation")}
+              onClick={() => paste("quotation")}
+            >{t`Paste as quotation`}</MenuItem>
+            {body.kind === "rich" && (
+              <>
+                <MenuSeparator />
+                <MenuItem shortcut={shortcut("toggleFormatBar")} onClick={toggleFormatBar}>
+                  {formatBar ? t`Hide format bar` : t`Show format bar`}
+                </MenuItem>
+                <MenuCheckboxItem
+                  checked={smartLists}
+                  onCheckedChange={(next) => {
+                    setSmartLists(next);
+                    saveFormatPrefs({ composeSmartLists: next });
+                  }}
+                >{t`Smart Lists`}</MenuCheckboxItem>
+                <MenuCheckboxItem
+                  checked={markdownReplacement}
+                  onCheckedChange={(next) => {
+                    setMarkdownReplacement(next);
+                    saveFormatPrefs({ composeMarkdownReplacement: next });
+                  }}
+                >{t`Markdown replacements`}</MenuCheckboxItem>
+                <MenuSeparator />
+                <MenuGroupLabel>{t`Image size`}</MenuGroupLabel>
+                {(
+                  [
+                    ["small", t`Small`],
+                    ["medium", t`Medium`],
+                    ["large", t`Large`],
+                    ["original", t`Original`],
+                  ] as const
+                ).map(([size, label]) => (
+                  <MenuCheckboxItem
+                    key={size}
+                    checked={prefs.inlineImageSize === size}
+                    onCheckedChange={() => {
+                      if (locked) return;
+                      onImageSize(size);
+                      resizeComposeImage(richRef.current, imageCid, size);
+                      changed();
+                    }}
+                  >
+                    {label}
+                  </MenuCheckboxItem>
+                ))}
+              </>
+            )}
+            {grammar.available && (
+              <>
+                <MenuSeparator />
+                <MenuItem disabled={grammar.disabled} onClick={grammar.check}>
+                  {grammar.checking ? t`Checking grammar…` : t`Check grammar on this Mac`}
+                </MenuItem>
+              </>
+            )}
+          </>
+        }
+      />
       {pasteError && <p role="alert">{t`Could not read clipboard`}</p>}
       {mention && mentionSuggestions.length > 0 && (
         <div className="shrink-0 border-b px-4 py-2" aria-label={t`Mention suggestions`}>
@@ -823,7 +789,7 @@ export function ComposeEditor({
           >{t`Close find`}</button>
         </search>
       )}
-      <ComposeGrammar body={body} bodyRef={bodyRef} onChange={onChange} locked={locked} />
+      <GrammarResults grammar={grammar} />
       {remoteUnsupported && (
         <div
           role="status"

@@ -10,13 +10,14 @@ import { presentBody } from "./body-text";
 import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
+import { DARK_CSS, fitDocument } from "./frame-style";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
 // allowed for the message. Known trackers are stripped from the HTML before it
 // gets here (`prepareMessageHtml`), so allowing images never loads them.
-// `allow-same-origin` only lets this component measure the document and
-// listen for shortcut keys; without `allow-scripts` the mail cannot use it.
+// `allow-same-origin` only lets this component measure and fit the document
+// and listen for shortcut keys; without `allow-scripts` the mail cannot use it.
 // The resource policy is also the baseline checked by the mobile reader.
 const BLOCKED = "default-src 'none'; img-src data: cid:; style-src 'unsafe-inline'; font-src data:";
 const ALLOWED =
@@ -37,14 +38,6 @@ const BASE_CSS = `
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
-`;
-
-// Dark background for mail designed for white: invert the page, then invert
-// pictures back so photos and logos keep their colors.
-const DARK_CSS = `
-  html { filter: invert(1) hue-rotate(180deg); }
-  img, video, picture, svg, [background], [style*="background-image"], [style*="background:url"],
-  [style*="background: url"] { filter: invert(1) hue-rotate(180deg); }
 `;
 
 export type MessageBackground = "light" | "dark";
@@ -100,6 +93,14 @@ export function EmailFrame({
     return () => view.dispose();
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches]);
   const [height, setHeight] = useState(120);
+  const [fit, setFit] = useState(true);
+  const [wide, setWide] = useState(false);
+  const fitting = useRef(fit);
+  const measure = useRef<(() => void) | undefined>(undefined);
+  useEffect(() => {
+    fitting.current = fit;
+    measure.current?.();
+  }, [fit]);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
   const dispose = useRef<(() => void) | undefined>(undefined);
   const observer = useRef<ResizeObserver | null>(null);
@@ -126,7 +127,8 @@ export function EmailFrame({
   const link = hint?.document === doc ? hint.url : null;
 
   // Size the frame to its content so the thread scrolls as one page. Late
-  // images and web fonts change the height after load, hence the observer.
+  // images and web fonts change the page after load and the pane can resize,
+  // hence the observer on both.
   const onLoad = (e: SyntheticEvent<HTMLIFrameElement>) => {
     dispose.current?.();
     observer.current?.disconnect();
@@ -138,9 +140,16 @@ export function EmailFrame({
     // Mail styles cannot hide the viewport's horizontal overflow.
     root.style.setProperty("overflow-x", "auto", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
-    setHeight(root.scrollHeight);
-    observer.current = new ResizeObserver(() => setHeight(root.scrollHeight));
+    const frame = e.currentTarget;
+    measure.current = () => {
+      const size = fitDocument(frameDoc, fitting.current);
+      setHeight(size.height);
+      setWide(size.wide);
+    };
+    measure.current();
+    observer.current = new ResizeObserver(() => measure.current?.());
     observer.current.observe(root);
+    observer.current.observe(frame);
     const keydown = (event: KeyboardEvent) => {
       if (
         event.isTrusted &&
@@ -201,6 +210,11 @@ export function EmailFrame({
         style={{ height }}
         className="block w-full border-0"
       />
+      {wide && (
+        <button type="button" onClick={() => setFit(!fit)} className="mt-2 mr-4 text-a11y-accent">
+          {fit ? t`View at 100%` : t`Fit to width`}
+        </button>
+      )}
       {pendingLink && (
         <LinkConfirmDialog
           url={pendingLink}

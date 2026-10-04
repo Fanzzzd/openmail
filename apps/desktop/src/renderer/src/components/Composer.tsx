@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { customTemplateVariables, ownText, reorderAttachments } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { FileText, Paperclip, Trash2, X } from "lucide-react";
+import { AppWindow, Ellipsis, FileText, ImagePlus, Link, Paperclip, Trash2, X } from "lucide-react";
 import { useId, useRef, useState, type ReactElement, type RefObject } from "react";
 import type { Account, OutgoingMessage, Template } from "../../../shared/api";
 import { type ComposeElement } from "../compose-editor-dom";
@@ -239,7 +239,7 @@ export function Composer({
           data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
-          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
         >
           {standalone && <div className="drag h-8 shrink-0" />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
@@ -294,7 +294,10 @@ export function Composer({
                   disabled={checkingClose || saveState.waiting}
                   onClick={() => onPopOut(draft)}
                 >
-                  <Trans>Open in New Window</Trans>
+                  <AppWindow className="size-4 sm:hidden" />
+                  <span className="max-sm:sr-only">
+                    <Trans>Open in New Window</Trans>
+                  </span>
                 </button>
               )}
               <Tip label={t`Close`} shortcut={shortcut("closeCompose")}>
@@ -643,7 +646,7 @@ export function Composer({
               </div>
             )}
 
-            <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
+            <footer className="flex shrink-0 items-center gap-2 border-t border-black/[0.07] px-4 py-2.5 dark:border-white/[0.08]">
               <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
                 <button
                   type="submit"
@@ -712,22 +715,6 @@ export function Composer({
                   }}
                 />
               )}
-              {draft.body.kind === "rich" && (
-                <>
-                  <button
-                    type="button"
-                    disabled={adding}
-                    className={quiet}
-                    onClick={() => imageFileRef.current?.click()}
-                  >{t`Image file`}</button>
-                  <button
-                    type="button"
-                    disabled={adding}
-                    className={quiet}
-                    onClick={() => setImageUrlOpen((open) => !open)}
-                  >{t`Image URL`}</button>
-                </>
-              )}
               <TemplatePicker
                 open={picker}
                 onOpenChange={setPicker}
@@ -741,10 +728,32 @@ export function Composer({
                   </button>
                 }
               />
+              {draft.body.kind === "rich" && (
+                <DropdownMenu
+                  align="start"
+                  trigger={
+                    <button type="button" aria-label={t`More options`} className={quiet}>
+                      <Ellipsis className="size-4" />
+                    </button>
+                  }
+                >
+                  <MenuItem
+                    icon={ImagePlus}
+                    disabled={adding}
+                    onClick={() => imageFileRef.current?.click()}
+                  >{t`Image file`}</MenuItem>
+                  <MenuItem
+                    icon={Link}
+                    disabled={adding}
+                    onClick={() => setImageUrlOpen((open) => !open)}
+                  >{t`Image URL`}</MenuItem>
+                </DropdownMenu>
+              )}
               <span
                 id={errorId}
                 role="alert"
-                className="min-w-0 flex-1 text-[12px] text-a11y-danger"
+                className="min-w-0 flex-1 truncate text-[12px] text-a11y-danger"
+                title={error ?? undefined}
               >
                 {error}
               </span>

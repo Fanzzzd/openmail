@@ -176,8 +176,8 @@ import { Dialog, Alert, AlertCancel } from "./components/ui/Dialog";
 import { TriageChip } from "./components/TriageChip";
 import { DetectedCalendarEvents } from "./components/CalendarEvents";
 import { AttachmentList } from "./components/Attachments";
-import { useNarrowLayout } from "./responsive-layout";
-import { ComposeFormatBar } from "./components/ComposeFormatBar";
+import { useLayoutMode } from "./responsive-layout";
+import { ComposeToolbar } from "./components/ComposeToolbar";
 import { RecipientField } from "./components/RecipientField";
 import { GoToFolder } from "./components/GoToFolder";
 import { PickerPopover } from "./components/ui/Picker";
@@ -563,17 +563,28 @@ it("traps dialog focus, focuses the first control, closes on Escape and restores
   );
 });
 
-it("roves the format bar and retains native text editing", async () => {
+it("roves the one-row format toolbar and moves groups that do not fit into More formatting", async () => {
   const user = userEvent.setup();
-  render(
-    localized(
-      h(
-        "main",
-        null,
-        h(ComposeFormatBar, { disabled: false, onFormat: vi.fn(), onStyle: vi.fn() }),
+  const toolbarAt = () =>
+    render(
+      localized(
+        h(
+          "main",
+          null,
+          h(ComposeToolbar, {
+            leading: null,
+            formatting: true,
+            disabled: false,
+            onFormat: vi.fn(),
+            onStyle: vi.fn(),
+            onCommand: vi.fn(),
+            onLink: vi.fn(),
+            more: null,
+          }),
+        ),
       ),
-    ),
-  );
+    );
+  toolbarAt();
   const toolbar = screen.getByRole("toolbar", { name: "Formatting" });
   expect(
     [...toolbar.querySelectorAll("button,input")].filter(
@@ -581,19 +592,34 @@ it("roves the format bar and retains native text editing", async () => {
     ),
   ).toHaveLength(1);
   await user.tab();
-  expect(document.activeElement).toBe(
-    within(toolbar).getByRole("combobox", { name: "Font family" }),
-  );
+  expect(document.activeElement).toBe(within(toolbar).getByRole("button", { name: "Bold" }));
   await user.keyboard("{ArrowRight}");
-  expect(document.activeElement).toBe(within(toolbar).getByRole("combobox", { name: "Font size" }));
+  expect(document.activeElement).toBe(within(toolbar).getByRole("button", { name: "Italic" }));
   await user.keyboard("{End}");
   expect(document.activeElement).toBe(
-    within(toolbar).getByRole("button", { name: "Clear formatting" }),
+    within(toolbar).getByRole("button", { name: "More formatting" }),
   );
-  screen.getByRole("textbox", { name: "Custom hex color" }).focus();
-  await user.keyboard("{ArrowLeft}");
-  expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Custom hex color" }));
+  expect(within(toolbar).getByRole("button", { name: "Bulleted list" })).toBeTruthy();
+  await user.click(within(toolbar).getByRole("button", { name: "Color" }));
+  expect(await screen.findByRole("textbox", { name: "Custom hex color" })).toBeTruthy();
   await audit();
+  cleanup();
+
+  const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(420);
+  try {
+    toolbarAt();
+    const narrow = screen.getByRole("toolbar", { name: "Formatting" });
+    expect(within(narrow).getByRole("button", { name: "Underline" })).toBeTruthy();
+    expect(within(narrow).queryByRole("button", { name: "Bulleted list" })).toBeNull();
+    expect(within(narrow).queryByRole("button", { name: "Alignment" })).toBeNull();
+    await user.click(within(narrow).getByRole("button", { name: "More formatting" }));
+    expect(await screen.findByRole("menuitem", { name: /^Bulleted list/ })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /^Align left/ })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: /^Clear formatting/ })).toBeTruthy();
+    expect(screen.queryByRole("menuitem", { name: /^Underline/ })).toBeNull();
+  } finally {
+    width.mockRestore();
+  }
 });
 
 it("names recipient actions and exposes removal and moving to keyboard users", async () => {
@@ -783,14 +809,14 @@ it("defaults confirmations to Cancel and restores the opener on Escape", async (
   );
 });
 
-it("keeps the wide layout at 110% zoom and stacks only below 640 CSS pixels", () => {
-  let width = 960;
+it("follows CSS pixels, so zoom moves the window between three, two and one pane", () => {
+  let width = 1056;
   let changed: (() => void) | undefined;
   vi.stubGlobal("matchMedia", (query: string) => {
-    const breakpoint = Number(query.match(/max-width:\s*(\d+)px/)?.[1]);
+    const breakpoint = Number(query.match(/width < (\d+)px/)?.[1]);
     return {
       get matches() {
-        return width <= breakpoint;
+        return width < breakpoint;
       },
       addEventListener: (_name: string, listener: () => void) => {
         changed = listener;
@@ -799,16 +825,20 @@ it("keeps the wide layout at 110% zoom and stacks only below 640 CSS pixels", ()
     };
   });
   function Harness() {
-    return h("output", null, useNarrowLayout() ? "stacked" : "split");
+    return h("output", null, useLayoutMode());
   }
   render(h(Harness));
-  expect(screen.getByRole("status").textContent).toBe("split");
+  expect(screen.getByRole("status").textContent).toBe("wide");
+  // 1056 px at 110% zoom.
+  width = 960;
+  act(() => changed?.());
+  expect(screen.getByRole("status").textContent).toBe("wide");
   width = 873;
   act(() => changed?.());
-  expect(screen.getByRole("status").textContent).toBe("split");
+  expect(screen.getByRole("status").textContent).toBe("medium");
   width = 639;
   act(() => changed?.());
-  expect(screen.getByRole("status").textContent).toBe("stacked");
+  expect(screen.getByRole("status").textContent).toBe("narrow");
 });
 
 afterAll(() => {

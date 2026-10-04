@@ -5,7 +5,7 @@ import { AsyncResult } from "effect/reactivity";
 import { act, createElement } from "react";
 import { expect, it, vi } from "vitest";
 import type { GrammarIssue } from "../../shared/native-compose";
-import { ComposeGrammar } from "./components/ComposeGrammar";
+import { GrammarResults, useComposeGrammar } from "./components/ComposeGrammar";
 import { testDom } from "./test-dom";
 
 const state = vi.hoisted(() => {
@@ -39,6 +39,21 @@ vi.mock("./state/mail", () => ({
     }),
 }));
 
+/** The composer's "More formatting" item, reduced to a button, above the results. */
+function Grammar(props: Parameters<typeof useComposeGrammar>[0]) {
+  const grammar = useComposeGrammar(props);
+  return createElement(
+    "div",
+    null,
+    createElement(
+      "button",
+      { type: "button", disabled: grammar.disabled, onClick: grammar.check },
+      "Check grammar on this Mac",
+    ),
+    createElement(GrammarResults, { grammar }),
+  );
+}
+
 it("grammar is user-triggered, discards late results, selects UTF-16 ranges, and never changes text automatically", async () => {
   state.requests.length = 0;
   state.answers.length = 0;
@@ -57,7 +72,7 @@ it("grammar is user-triggered, discards late results, selects UTF-16 ranges, and
       createElement(
         I18nProvider,
         { i18n },
-        createElement(ComposeGrammar, {
+        createElement(Grammar, {
           body: { kind: "plain", text },
           bodyRef: { current: textarea },
           onChange,

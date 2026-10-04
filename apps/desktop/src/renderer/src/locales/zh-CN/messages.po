@@ -457,20 +457,24 @@ msgstr "AI 建议"
 msgid "AI suggestions"
 msgstr "AI 建议"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "居中"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "左对齐"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "右对齐"
+
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Alignment"
+msgstr "对齐"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
@@ -598,7 +602,7 @@ msgstr "Apple 邮件"
 msgid "Apply"
 msgstr "应用"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Apply color"
 msgstr "应用颜色"
 
@@ -727,7 +731,7 @@ msgstr "授权永久删除"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "请授权永久删除此 Gmail 账户的邮件。"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "自动方向"
@@ -756,6 +760,10 @@ msgstr "等待回应"
 msgid "Back"
 msgstr "返回"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Back to messages"
+msgstr "返回邮件列表"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill paused"
 msgstr "回填已暂停"
@@ -764,7 +772,7 @@ msgstr "回填已暂停"
 msgid "Backfill runs between syncs"
 msgstr "同步间隙回填"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "背景色"
 
@@ -809,7 +817,7 @@ msgctxt "message text"
 msgid "Body"
 msgstr "正文"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "粗体"
@@ -822,7 +830,7 @@ msgstr "问题报告"
 msgid "Built-in AI"
 msgstr "内置 AI"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "圆点列表"
@@ -992,7 +1000,7 @@ msgstr "检查更新"
 msgid "Check for Updates…"
 msgstr "检查更新…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Check grammar on this Mac"
 msgstr "在此 Mac 上检查语法"
 
@@ -1009,7 +1017,7 @@ msgstr "检查同步状态"
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Checking grammar…"
 msgstr "正在检查语法…"
 
@@ -1086,7 +1094,7 @@ msgstr "清除账户缓存"
 msgid "Clear all caches"
 msgstr "清除全部缓存"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "清除格式"
@@ -1114,6 +1122,7 @@ msgstr "点击窗口，再选择设备拍照、扫描文稿或添加速写。"
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Dialog.tsx
 #: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "关闭"
@@ -1131,7 +1140,7 @@ msgstr "关闭查找"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "代码块"
@@ -1152,12 +1161,13 @@ msgstr "收起分类"
 msgid "Collapse message"
 msgstr "收起邮件"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "颜色"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "颜色类型"
 
@@ -1165,7 +1175,6 @@ msgstr "颜色类型"
 msgid "Compact"
 msgstr "紧凑"
 
-#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "撰写"
@@ -1310,7 +1319,7 @@ msgstr "复制脱敏报告"
 msgid "Copy selected"
 msgstr "复制选中附件"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "复制样式"
@@ -1553,7 +1562,7 @@ msgstr "自定义颜色"
 msgid "Custom folder"
 msgstr "自定义目录"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Custom hex color"
 msgstr "自定义十六进制颜色"
 
@@ -1569,7 +1578,7 @@ msgstr "自选时间"
 msgid "Dark background"
 msgstr "深色背景"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "短横线列表"
@@ -1604,12 +1613,12 @@ msgstr "已拒绝"
 msgid "Decrease font size"
 msgstr "减小字号"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "减少缩进"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "减少引用层级"
@@ -1861,7 +1870,7 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "编辑正文"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "编辑链接"
@@ -2092,6 +2101,10 @@ msgstr "请在浏览器里完成授权"
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Fit to width"
+msgstr "适应宽度"
+
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Fix grammar and proofread"
 msgstr "校对并修正语法"
@@ -2124,13 +2137,17 @@ msgstr "文件夹路径"
 msgid "Follow system"
 msgstr "跟随系统"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Font"
+msgstr "字体"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font family"
 msgstr "字体"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font size"
 msgstr "字号"
 
@@ -2138,7 +2155,7 @@ msgstr "字号"
 msgid "Format"
 msgstr "格式"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Formatting"
 msgstr "格式"
 
@@ -2428,22 +2445,22 @@ msgstr "显示签名分隔符"
 msgid "Increase font size"
 msgstr "增大字号"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "增加缩进"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "增加引用层级"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "缩进列表"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "行内代码"
@@ -2505,7 +2522,7 @@ msgstr "邀请变更"
 msgid "Invitation status in this conversation"
 msgstr "会话中的邀请状态"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "斜体"
@@ -2518,7 +2535,7 @@ msgstr "加入会议"
 msgid "Jump to selection"
 msgstr "跳转到选区"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "两端对齐"
@@ -2642,7 +2659,7 @@ msgstr "向左长滑"
 msgid "Left short swipe"
 msgstr "向左短滑"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "从左到右"
@@ -3029,6 +3046,10 @@ msgstr "更多操作"
 msgid "More formal"
 msgstr "更正式"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "More formatting"
+msgstr "更多格式"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
 msgstr "还有更多结果，请缩小搜索范围。"
@@ -3036,6 +3057,10 @@ msgstr "还有更多结果，请缩小搜索范围。"
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "More options"
+msgstr "更多选项"
 
 #. placeholder {0}: signature.name
 #: src/renderer/src/components/SignatureSettings.tsx
@@ -3405,7 +3430,7 @@ msgstr "通知"
 msgid "Notifications for {0}"
 msgstr "{0} 的通知"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "编号列表"
@@ -3636,7 +3661,7 @@ msgstr "其他反馈"
 msgid "Other IMAP"
 msgstr "其他 IMAP"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "减少列表缩进"
@@ -3701,7 +3726,7 @@ msgstr "粘贴并匹配样式"
 msgid "Paste as quotation"
 msgstr "粘贴为引用"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "粘贴样式"
@@ -3989,7 +4014,7 @@ msgstr "移除密钥"
 msgid "Remove label"
 msgstr "去掉标签"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "移除链接"
 
@@ -4226,7 +4251,7 @@ msgstr "向右长滑"
 msgid "Right short swipe"
 msgstr "向右短滑"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "从右到左"
@@ -4661,9 +4686,17 @@ msgstr "显示原始邮件"
 msgid "Show quoted text"
 msgstr "展开引用"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Show sidebar"
+msgstr "显示侧栏"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "在菜单栏显示未读数"
+
+#: src/renderer/src/App.tsx
+msgid "Sidebar"
+msgstr "侧栏"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4876,7 +4909,7 @@ msgstr "停止处理后续规则"
 msgid "Stop suggesting {0}"
 msgstr "不再建议 {0}"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "删除线"
@@ -4891,7 +4924,7 @@ msgstr "主题"
 msgid "Subject contains"
 msgstr "主题包含"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "下标"
@@ -4912,7 +4945,7 @@ msgstr "摘要"
 msgid "Sunday"
 msgstr "星期日"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "上标"
@@ -5003,7 +5036,7 @@ msgstr "模板…"
 msgid "Tentative"
 msgstr "暂定"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "文字色"
 
@@ -5293,7 +5326,7 @@ msgstr "停用"
 msgid "Turned off"
 msgstr "已停用"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "下划线"
@@ -5502,6 +5535,10 @@ msgstr "判断"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "正在验证…"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "View at 100%"
+msgstr "按 100% 显示"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Visible categories"

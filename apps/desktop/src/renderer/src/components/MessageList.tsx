@@ -41,7 +41,10 @@ import { Tip } from "./ui/Tip";
 export type SelectionSource = "keyboard" | "mouse";
 
 interface Props {
+  /** The search field, when the list has the window's search instead of the reader. */
   searchBar?: ReactNode;
+  /** Controls before everything else when the list is the window's leftmost pane, clear of the traffic lights. */
+  leading?: ReactNode;
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
@@ -97,6 +100,7 @@ export interface RowActions {
 export function MessageList({
   title,
   searchBar,
+  leading,
   threads,
   loading,
   loadingMore = false,
@@ -210,14 +214,26 @@ export function MessageList({
       aria-label={searching ? t`Search results` : title}
       className="flex h-full w-full flex-col bg-white dark:bg-neutral-900"
     >
-      {searchBar}
-      <header className="drag flex h-13 shrink-0 items-center gap-2 pr-3 pl-5">
+      {searchBar && (
+        <div
+          className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${leading ? "pl-20" : "pl-4"}`}
+        >
+          {leading}
+          {searchBar}
+        </div>
+      )}
+      <header
+        className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${leading && !searchBar ? "pl-20" : "pl-5"}`}
+      >
+        {!searchBar && leading}
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">
           {searching ? <Trans>Search results</Trans> : title}
         </h1>
         <div className="flex shrink-0 items-center gap-2">{folderActions}</div>
       </header>
-      <div className="flex shrink-0 flex-wrap items-center gap-1 px-3 pb-2">
+      {/* One row at any width; chips that do not fit scroll sideways. The
+          vertical padding keeps their focus ring inside the scroll box. */}
+      <div className="-mt-1 flex shrink-0 items-center gap-1 overflow-x-auto px-3 pt-1 pb-2">
         {!searching && (
           <>
             <FilterChip
@@ -464,7 +480,7 @@ function FilterChip(props: {
       <Toggle
         pressed={props.active}
         onPressedChange={props.onChange}
-        className="h-6 shrink-0 rounded-full px-2.5 text-[12px] font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:hover:bg-white/10 dark:data-pressed:text-white"
+        className="h-6 shrink-0 rounded-full px-2.5 whitespace-nowrap text-[12px] font-medium text-a11y-muted outline-offset-1 outline-a11y-focus hover:bg-black/5 focus-visible:outline-[3px] data-pressed:bg-blue-600 data-pressed:text-white dark:hover:bg-white/10 dark:data-pressed:text-white"
       >
         {props.label}
       </Toggle>

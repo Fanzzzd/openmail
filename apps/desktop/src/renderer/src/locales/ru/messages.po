@@ -447,20 +447,24 @@ msgstr "Предложение ИИ"
 msgid "AI suggestions"
 msgstr "Предложения ИИ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "По центру"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "По левому краю"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "По правому краю"
+
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Alignment"
+msgstr "Выравнивание"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
@@ -588,7 +592,7 @@ msgstr "Apple Mail"
 msgid "Apply"
 msgstr "Применить"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Apply color"
 msgstr "Применить цвет"
 
@@ -717,7 +721,7 @@ msgstr "Разрешить окончательное удаление"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "Разрешите разрешить безвозвратное удаление почты в этой учетной записи Gmail."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "Автоматическое направление"
@@ -746,6 +750,10 @@ msgstr "Ожидает ответа"
 msgid "Back"
 msgstr "Назад"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Back to messages"
+msgstr "Назад к сообщениям"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill paused"
 msgstr "Загрузка старой почты приостановлена"
@@ -754,7 +762,7 @@ msgstr "Загрузка старой почты приостановлена"
 msgid "Backfill runs between syncs"
 msgstr "Заполнение выполняется между синхронизациями"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Цвет фона"
 
@@ -799,7 +807,7 @@ msgctxt "message text"
 msgid "Body"
 msgstr "Текст сообщения"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "Полужирный"
@@ -812,7 +820,7 @@ msgstr "Отчет об ошибке"
 msgid "Built-in AI"
 msgstr "Встроенный ИИ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "Маркированный список"
@@ -982,7 +990,7 @@ msgstr "Проверить наличие обновлений"
 msgid "Check for Updates…"
 msgstr "Проверить наличие обновлений…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Check grammar on this Mac"
 msgstr "Проверить грамматику на этом Mac"
 
@@ -999,7 +1007,7 @@ msgstr "Проверить синхронизацию"
 msgid "Checking for updates…"
 msgstr "Проверка обновлений…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Checking grammar…"
 msgstr "Проверка грамматики…"
 
@@ -1076,7 +1084,7 @@ msgstr "Очистить кэш учётной записи"
 msgid "Clear all caches"
 msgstr "Очистить все кэши"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Очистить форматирование"
@@ -1104,6 +1112,7 @@ msgstr "Нажмите в этом окне, затем выберите уст�
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Dialog.tsx
 #: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Закрыть"
@@ -1121,7 +1130,7 @@ msgstr "Закрыть поиск"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Закройте другие процессы OpenMail (CLI/MCP), затем перезапустите это приложение и повторите попытку восстановления."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "Кодовый блок"
@@ -1142,12 +1151,13 @@ msgstr "Свернуть категории"
 msgid "Collapse message"
 msgstr "Свернуть сообщение"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Цвет"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "Применить цвет к"
 
@@ -1155,7 +1165,6 @@ msgstr "Применить цвет к"
 msgid "Compact"
 msgstr "Компактный"
 
-#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Новое сообщение"
@@ -1300,7 +1309,7 @@ msgstr "Копировать обезличенный отчёт"
 msgid "Copy selected"
 msgstr "Копировать выбранное"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Скопировать стиль"
@@ -1543,7 +1552,7 @@ msgstr "Пользовательский цвет"
 msgid "Custom folder"
 msgstr "Пользовательская папка"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Custom hex color"
 msgstr "Пользовательский шестнадцатеричный цвет"
 
@@ -1559,7 +1568,7 @@ msgstr "Пользовательское время"
 msgid "Dark background"
 msgstr "Темный фон"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Пунктирный список"
@@ -1594,12 +1603,12 @@ msgstr "Отклонено"
 msgid "Decrease font size"
 msgstr "Уменьшить размер шрифта"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "Уменьшить отступ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "Уменьшить уровень цитирования"
@@ -1851,7 +1860,7 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "Изменить текст сообщения"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "Изменить ссылку"
@@ -2082,6 +2091,10 @@ msgstr "Завершите вход в браузере"
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Завершите вход в браузере и вернитесь сюда."
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Fit to width"
+msgstr "По ширине"
+
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Fix grammar and proofread"
 msgstr "Исправить грамматику и вычитать"
@@ -2114,13 +2127,17 @@ msgstr "Путь к папке"
 msgid "Follow system"
 msgstr "Как в системе"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Font"
+msgstr "Шрифт"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font family"
 msgstr "Семейство шрифтов"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font size"
 msgstr "Размер шрифта"
 
@@ -2128,7 +2145,7 @@ msgstr "Размер шрифта"
 msgid "Format"
 msgstr "Формат"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Formatting"
 msgstr "Форматирование"
 
@@ -2418,22 +2435,22 @@ msgstr "Добавлять разделитель подписи"
 msgid "Increase font size"
 msgstr "Увеличить размер шрифта"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "Увеличить отступ"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "Увеличить уровень цитирования"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "Увеличить отступ списка"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "Встроенный код"
@@ -2495,7 +2512,7 @@ msgstr "Изменения приглашения"
 msgid "Invitation status in this conversation"
 msgstr "Статус приглашения в этом переписке"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "Курсив"
@@ -2508,7 +2525,7 @@ msgstr "Присоединиться к встрече"
 msgid "Jump to selection"
 msgstr "Перейти к выделению"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "По ширине"
@@ -2632,7 +2649,7 @@ msgstr "Длинный свайп влево"
 msgid "Left short swipe"
 msgstr "Короткий свайп влево"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "Слева направо"
@@ -3019,6 +3036,10 @@ msgstr "Другие действия"
 msgid "More formal"
 msgstr "Официальнее"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "More formatting"
+msgstr "Другое форматирование"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
 msgstr "Существует больше совпадений. Сузьте область поиска."
@@ -3026,6 +3047,10 @@ msgstr "Существует больше совпадений. Сузьте о�
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "Больше сообщений не загружено"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "More options"
+msgstr "Другие параметры"
 
 #. placeholder {0}: signature.name
 #: src/renderer/src/components/SignatureSettings.tsx
@@ -3395,7 +3420,7 @@ msgstr "Уведомления"
 msgid "Notifications for {0}"
 msgstr "Уведомления для {0}"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "Нумерованный список"
@@ -3626,7 +3651,7 @@ msgstr "Другие отзывы"
 msgid "Other IMAP"
 msgstr "Другой IMAP"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "Уменьшить отступ списка"
@@ -3691,7 +3716,7 @@ msgstr "Вставить с учётом стиля"
 msgid "Paste as quotation"
 msgstr "Вставить как цитату"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "Вставить стиль"
@@ -3979,7 +4004,7 @@ msgstr "Удалить ключ"
 msgid "Remove label"
 msgstr "Удалить ярлык"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Удалить ссылку"
 
@@ -4216,7 +4241,7 @@ msgstr "Длинный свайп вправо"
 msgid "Right short swipe"
 msgstr "Короткое смахивание вправо"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "Справа налево"
@@ -4651,9 +4676,17 @@ msgstr "Показать оригинал"
 msgid "Show quoted text"
 msgstr "Показать цитируемый текст"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Show sidebar"
+msgstr "Показать боковую панель"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "Показывать количество непрочитанных в строке меню"
+
+#: src/renderer/src/App.tsx
+msgid "Sidebar"
+msgstr "Боковая панель"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4866,7 +4899,7 @@ msgstr "Остановить обработку следующих правил"
 msgid "Stop suggesting {0}"
 msgstr "Перестаньте предлагать {0}"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "Зачеркивание"
@@ -4881,7 +4914,7 @@ msgstr "Тема"
 msgid "Subject contains"
 msgstr "Тема содержит"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "Подстрочный индекс"
@@ -4902,7 +4935,7 @@ msgstr "Кратко изложить"
 msgid "Sunday"
 msgstr "Воскресенье"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "Надстрочный индекс"
@@ -4993,7 +5026,7 @@ msgstr "Шаблоны…"
 msgid "Tentative"
 msgstr "Под вопросом"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Цвет текста"
 
@@ -5283,7 +5316,7 @@ msgstr "Выключить"
 msgid "Turned off"
 msgstr "Выключено"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "Подчёркнутый"
@@ -5492,6 +5525,10 @@ msgstr "Результат"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "Проверка…"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "View at 100%"
+msgstr "Показать в масштабе 100 %"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Visible categories"

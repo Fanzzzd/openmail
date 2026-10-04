@@ -8,7 +8,7 @@ import { itemClass, kbdClass, popupMotion, popupSurface, separatorClass } from "
 
 type Icon = ComponentType<{ className?: string }>;
 
-const popup = `min-w-48 p-[5px] ${popupSurface} ${popupMotion}`;
+const popup = `min-w-48 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`;
 
 /**
  * The popup of a context menu. ContextMenu parts other than Root, Trigger and
@@ -107,6 +107,15 @@ export function MenuCheckboxItem({
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-2">{children}</span>
     </Menu.CheckboxItem>
+  );
+}
+
+/** A heading over the items after it, such as the choices of one setting. */
+export function MenuGroupLabel({ children }: { children: ReactNode }) {
+  return (
+    <div role="presentation" className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-a11y-muted">
+      {children}
+    </div>
   );
 }
 

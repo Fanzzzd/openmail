@@ -57,6 +57,13 @@ function editor(body: ComposeBody, prefs = DEFAULT_PREFS) {
   ] as const)
     vi.stubGlobal(name, dom.window[name]);
   vi.stubGlobal("getSelection", () => null);
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe = vi.fn();
+      disconnect = vi.fn();
+    },
+  );
   const command = vi.fn((_name: string, _ui?: boolean, _value?: string) => true);
   dom.window.document.execCommand = command;
   const bodyRef = createRef<ComposeElement>();
@@ -87,7 +94,7 @@ function editor(body: ComposeBody, prefs = DEFAULT_PREFS) {
   const key = (
     target: Element,
     value: string,
-    modifiers: { altKey?: boolean; shiftKey?: boolean } = {},
+    modifiers: { altKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean } = {},
   ) => {
     Object.defineProperty(target, "attachEvent", { value: vi.fn(), configurable: true });
     Object.defineProperty(target, "detachEvent", { value: vi.fn(), configurable: true });
@@ -202,14 +209,13 @@ it("Markdown textarea leaves emoji in code untouched and replaces tokens outside
   }
 });
 
-it("format bar and substitution switches update persisted preferences and stay available while hidden", () => {
+it("hiding the format bar keeps the toolbar row, persists the preference and keeps style keys", () => {
   const dom = editor(richComposeBody("Hello"));
   try {
-    const toggle = dom.element.querySelector('[aria-pressed="true"]');
-    if (!toggle) throw new Error("Missing format toggle");
-    expect(dom.element.querySelector('[aria-label="Formatting"]')).not.toBeNull();
-    void act(() => toggle.dispatchEvent(new dom.window.Event("click", { bubbles: true })));
-    expect(dom.element.querySelector('[aria-label="Formatting"]')).toBeNull();
+    expect(dom.element.querySelector('[aria-label="Bold"]')).not.toBeNull();
+    dom.key(dom.body, "x", { ctrlKey: true, altKey: true });
+    expect(dom.element.querySelector('[aria-label="Bold"]')).toBeNull();
+    expect(dom.element.querySelector('[aria-label="More formatting"]')).not.toBeNull();
     expect(controls.calls.at(-1)).toEqual({
       name: "SetPrefs",
       payload: { patch: { composeFormatBar: false } },

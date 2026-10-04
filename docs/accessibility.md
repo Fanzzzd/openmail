@@ -12,6 +12,7 @@ renderer 的自动检查覆盖组件语义、键盘操作、播报内容和主�
 | `apps/desktop/src/renderer/src/accessibility-theme.test.ts`  | 浅色/深色主题正文、次要文字、强调色、错误色达到 4.5:1；边框和焦点色达到 3:1。另检查构建后的工具类、用户标签混色和选中行表面。                                                                                                |
 | `apps/desktop/src/renderer/src/accessibility-css.test.ts`    | 构建后的焦点样式、层级和弹窗边界。主题测试同时检查减少动画规则。                                                                                                                                                             |
 | `apps/desktop/src/renderer/src/e2e/flows.test.ts`            | jsdom 中实际 renderer/core 流程，包括键盘从列表进入 reader、回复和发送。                                                                                                                                                     |
+| `apps/desktop/src/renderer/src/e2e/layout.test.ts`           | 按窗口宽度切换三栏、两栏和单栏。单栏下用返回按钮、Escape 和 ⌘[ 从 reader 回到列表，焦点回到原来的行。侧栏抽屉打开时焦点在当前邮箱，Escape 关闭后焦点回到开关按钮。单栏下对话框铺满窗口，带关闭按钮。                         |
 
 键盘测试检查对话框和 picker 的 Tab 循环、Escape 关闭、焦点返回，菜单的键盘打开和关闭，格式栏方向键，以及收件人 Delete 移除。消息行通过 Shift+F10 打开完整操作菜单，提供滑动和鼠标操作的键盘入口。
 

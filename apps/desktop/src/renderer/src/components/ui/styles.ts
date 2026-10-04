@@ -3,9 +3,9 @@
  * each surface opts out of the titlebar drag region itself (no-drag).
  */
 
-/** Menus, pickers, selects: a light macOS-style panel. */
+/** Menus, pickers, selects: a light macOS-style panel, kept inside the window. */
 export const popupSurface =
-  "no-drag rounded-lg bg-white/95 text-[13px] text-neutral-900 shadow-[0_8px_24px_rgb(0_0_0/0.16)] ring-1 ring-black/10 outline-none backdrop-blur-xl dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_8px_24px_rgb(0_0_0/0.5)] dark:ring-white/10";
+  "no-drag max-h-(--available-height) max-w-(--available-width) rounded-lg bg-white/95 text-[13px] text-neutral-900 shadow-[0_8px_24px_rgb(0_0_0/0.16)] ring-1 ring-black/10 outline-none backdrop-blur-xl dark:bg-[#2c2c2e]/95 dark:text-neutral-100 dark:shadow-[0_8px_24px_rgb(0_0_0/0.5)] dark:ring-white/10";
 
 /** Scale-and-fade from the anchor. Off with reduced motion and for instant opens. */
 export const popupMotion =

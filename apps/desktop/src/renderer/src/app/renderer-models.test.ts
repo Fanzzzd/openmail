@@ -18,6 +18,7 @@ import { useMailCompose } from "./use-mail-compose";
 import { useMailSelection } from "./use-mail-selection";
 import { useMailShortcuts } from "./use-mail-shortcuts";
 import { useNativeMenuBridge } from "./use-native-menu-bridge";
+import { usePaneNavigation } from "./use-pane-navigation";
 
 const state = vi.hoisted(() => {
   vi.resetModules();
@@ -203,9 +204,11 @@ function Harness() {
     showUndo,
     selectedAccount: account,
   });
+  const panes = usePaneNavigation({ layout: panels.layout, navigation, run });
   useMailShortcuts({
     panels,
     navigation,
+    panes,
     mailActions,
     composition,
     run,
@@ -416,6 +419,7 @@ it("panels keep independent state and layout persistence follows overview and si
       prefs: { ...DEFAULT_PREFS, sidebarVisible: false },
       hasAccounts: true,
       view: { space: OVERVIEW, mailbox: "inbox" },
+      mode: "wide",
     });
     return null;
   }

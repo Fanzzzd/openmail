@@ -447,20 +447,24 @@ msgstr "Suggerimento IA"
 msgid "AI suggestions"
 msgstr "Suggerimenti dell’intelligenza artificiale"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align center"
 msgstr "Centra"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align left"
 msgstr "Allinea a sinistra"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Align right"
 msgstr "Allinea a destra"
+
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Alignment"
+msgstr "Allineamento"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "All"
@@ -588,7 +592,7 @@ msgstr "Apple Mail"
 msgid "Apply"
 msgstr "Applica"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Apply color"
 msgstr "Applica colore"
 
@@ -717,7 +721,7 @@ msgstr "Autorizza la cancellazione permanente"
 msgid "Authorize permission to permanently delete mail in this Gmail account."
 msgstr "Autorizza l’autorizzazione a eliminare definitivamente la posta in questo account Gmail."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Automatic direction"
 msgstr "Direzione automatica"
@@ -746,6 +750,10 @@ msgstr "In attesa di risposta"
 msgid "Back"
 msgstr "Indietro"
 
+#: src/renderer/src/components/Reader.tsx
+msgid "Back to messages"
+msgstr "Torna ai messaggi"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Backfill paused"
 msgstr "Download della posta meno recente in pausa"
@@ -754,7 +762,7 @@ msgstr "Download della posta meno recente in pausa"
 msgid "Backfill runs between syncs"
 msgstr "Il recupero viene eseguito tra le sincronizzazioni"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Colore di sfondo"
 
@@ -799,7 +807,7 @@ msgctxt "message text"
 msgid "Body"
 msgstr "Testo del messaggio"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bold"
 msgstr "Grassetto"
@@ -812,7 +820,7 @@ msgstr "Segnalazione di bug"
 msgid "Built-in AI"
 msgstr "IA integrata"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Bulleted list"
 msgstr "Elenco puntato"
@@ -982,7 +990,7 @@ msgstr "Verifica aggiornamenti"
 msgid "Check for Updates…"
 msgstr "Verifica aggiornamenti..."
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Check grammar on this Mac"
 msgstr "Controlla la grammatica su questo Mac"
 
@@ -999,7 +1007,7 @@ msgstr "Verifica sincronizzazione"
 msgid "Checking for updates…"
 msgstr "Verifica degli aggiornamenti…"
 
-#: src/renderer/src/components/ComposeGrammar.tsx
+#: src/renderer/src/components/ComposeEditor.tsx
 msgid "Checking grammar…"
 msgstr "Controllo grammaticale…"
 
@@ -1076,7 +1084,7 @@ msgstr "Svuota cache dell’account"
 msgid "Clear all caches"
 msgstr "Svuota tutte le cache"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Clear formatting"
 msgstr "Cancella formattazione"
@@ -1104,6 +1112,7 @@ msgstr "Fai clic in questa finestra, poi scegli un dispositivo per scattare una 
 #: src/renderer/src/components/SignatureSettings.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 #: src/renderer/src/components/TriageChip.tsx
+#: src/renderer/src/components/ui/Dialog.tsx
 #: src/renderer/src/components/ui/Picker.tsx
 msgid "Close"
 msgstr "Chiudi"
@@ -1121,7 +1130,7 @@ msgstr "Chiudi ricerca"
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Chiudi altri processi OpenMail (CLI/MCP), quindi riavvia questa app e prova di nuovo il ripristino."
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Code block"
 msgstr "Blocco di codice"
@@ -1142,12 +1151,13 @@ msgstr "Comprimi categorie"
 msgid "Collapse message"
 msgstr "Comprimi messaggio"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Color"
 msgstr "Colore"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Color target"
 msgstr "Applica colore a"
 
@@ -1155,7 +1165,6 @@ msgstr "Applica colore a"
 msgid "Compact"
 msgstr "Compatto"
 
-#: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Nuovo messaggio"
@@ -1300,7 +1309,7 @@ msgstr "Copia rapporto anonimizzato"
 msgid "Copy selected"
 msgstr "Copia selezionata"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Copia stile"
@@ -1543,7 +1552,7 @@ msgstr "Colore personalizzato"
 msgid "Custom folder"
 msgstr "Cartella personalizzata"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Custom hex color"
 msgstr "Colore esadecimale personalizzato"
 
@@ -1559,7 +1568,7 @@ msgstr "Orario personalizzato"
 msgid "Dark background"
 msgstr "Sfondo scuro"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Dashed list"
 msgstr "Elenco tratteggiato"
@@ -1594,12 +1603,12 @@ msgstr "Rifiutato"
 msgid "Decrease font size"
 msgstr "Riduci dimensione del font"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease indent"
 msgstr "Diminuisci rientro"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Decrease quote level"
 msgstr "Riduci livello di citazione"
@@ -1851,7 +1860,7 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "Modifica testo del messaggio"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Edit link"
 msgstr "Modifica collegamento"
@@ -2082,6 +2091,10 @@ msgstr "Completa l’accesso nel browser"
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Completa l’accesso nel browser, quindi torna qui."
 
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "Fit to width"
+msgstr "Adatta alla larghezza"
+
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Fix grammar and proofread"
 msgstr "Correggi la grammatica e rileggi"
@@ -2114,13 +2127,17 @@ msgstr "Percorso della cartella"
 msgid "Follow system"
 msgstr "Segui il sistema"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "Font"
+msgstr "Carattere"
+
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font family"
 msgstr "Famiglia di caratteri"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
 #: src/renderer/src/components/ComposeSettings.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font size"
 msgstr "Dimensione del carattere"
 
@@ -2128,7 +2145,7 @@ msgstr "Dimensione del carattere"
 msgid "Format"
 msgstr "Formato"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Formatting"
 msgstr "Formattazione"
 
@@ -2418,22 +2435,22 @@ msgstr "Includi separatore della firma"
 msgid "Increase font size"
 msgstr "Aumenta dimensione del font"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase indent"
 msgstr "Aumenta rientro"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Increase quote level"
 msgstr "Aumenta livello di citazione"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Indent list"
 msgstr "Aumenta rientro elenco"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
 msgstr "Codice in linea"
@@ -2495,7 +2512,7 @@ msgstr "Modifiche all’invito"
 msgid "Invitation status in this conversation"
 msgstr "Stato dell’invito in questa conversazione"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Italic"
 msgstr "Corsivo"
@@ -2508,7 +2525,7 @@ msgstr "Partecipa alla riunione"
 msgid "Jump to selection"
 msgstr "Vai alla selezione"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Justify"
 msgstr "Giustifica"
@@ -2632,7 +2649,7 @@ msgstr "Scorri lungo a sinistra"
 msgid "Left short swipe"
 msgstr "Scorri breve a sinistra"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Left to right"
 msgstr "Da sinistra a destra"
@@ -3019,6 +3036,10 @@ msgstr "Altre azioni"
 msgid "More formal"
 msgstr "Più formale"
 
+#: src/renderer/src/components/ComposeToolbar.tsx
+msgid "More formatting"
+msgstr "Altra formattazione"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
 msgstr "Esistono più corrispondenze. Restringi la ricerca."
@@ -3026,6 +3047,10 @@ msgstr "Esistono più corrispondenze. Restringi la ricerca."
 #: src/renderer/src/components/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "Altri messaggi non caricati"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "More options"
+msgstr "Altre opzioni"
 
 #. placeholder {0}: signature.name
 #: src/renderer/src/components/SignatureSettings.tsx
@@ -3395,7 +3420,7 @@ msgstr "Notifiche"
 msgid "Notifications for {0}"
 msgstr "Notifiche per {0}"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Numbered list"
 msgstr "Elenco numerato"
@@ -3626,7 +3651,7 @@ msgstr "Altri feedback"
 msgid "Other IMAP"
 msgstr "Altro IMAP"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Outdent list"
 msgstr "Riduci rientro elenco"
@@ -3691,7 +3716,7 @@ msgstr "Incolla e adatta lo stile"
 msgid "Paste as quotation"
 msgstr "Incolla come citazione"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Paste style"
 msgstr "Incolla stile"
@@ -3979,7 +4004,7 @@ msgstr "Rimuovi chiave"
 msgid "Remove label"
 msgstr "Rimuovere l’etichetta"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Rimuovi collegamento"
 
@@ -4216,7 +4241,7 @@ msgstr "Scorri lungo verso destra"
 msgid "Right short swipe"
 msgstr "Scorri brevemente verso destra"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Right to left"
 msgstr "Da destra a sinistra"
@@ -4651,9 +4676,17 @@ msgstr "Mostra originale"
 msgid "Show quoted text"
 msgstr "Mostra testo citato"
 
+#: src/renderer/src/components/Sidebar.tsx
+msgid "Show sidebar"
+msgstr "Mostra la barra laterale"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Show unread count in the menu bar"
 msgstr "Mostra il conteggio dei non letti nella barra dei menu"
+
+#: src/renderer/src/App.tsx
+msgid "Sidebar"
+msgstr "Barra laterale"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
@@ -4866,7 +4899,7 @@ msgstr "Interrompi l’elaborazione delle regole successive"
 msgid "Stop suggesting {0}"
 msgstr "Smetti di suggerire {0}"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Strikethrough"
 msgstr "Barrato"
@@ -4881,7 +4914,7 @@ msgstr "Oggetto"
 msgid "Subject contains"
 msgstr "L’oggetto contiene"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Subscript"
 msgstr "Pedice"
@@ -4902,7 +4935,7 @@ msgstr "Riassumi"
 msgid "Sunday"
 msgstr "Domenica"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Superscript"
 msgstr "Apice"
@@ -4993,7 +5026,7 @@ msgstr "Modelli…"
 msgid "Tentative"
 msgstr "Forse"
 
-#: src/renderer/src/components/ComposeFormatBar.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Text color"
 msgstr "Colore del testo"
 
@@ -5283,7 +5316,7 @@ msgstr "Disattiva"
 msgid "Turned off"
 msgstr "Disattivato"
 
-#: src/renderer/src/components/ComposeEditor.tsx
+#: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Underline"
 msgstr "Sottolineato"
@@ -5492,6 +5525,10 @@ msgstr "Esito"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Verifying…"
 msgstr "Verifica…"
+
+#: src/renderer/src/components/EmailFrame.tsx
+msgid "View at 100%"
+msgstr "Visualizza al 100%"
 
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Visible categories"
