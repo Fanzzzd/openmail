@@ -9,7 +9,7 @@ core 负责邮件网络、数据库、策略和同步。桌面、CLI、MCP 与�
 | Mailbox         | `mailbox.ts` 定义 Effect 服务；`mailbox-live.ts` 组装同步、队列、策略和事件                                                                                                                         |
 | Mailbox 子模块  | `mailbox-batch.ts`、`mailbox-folders.ts`、`mailbox-cache.ts`、`mailbox-features.ts`、`mailbox-organization.ts`、`mailbox-ai.ts` 分别实现批量、破坏性文件夹操作、缓存、日历／联系人、搜索／整理与 AI |
 | Store           | `services.ts` 定义端口，`store.ts` 与 `store-*.ts` 实现查询；`db.ts` 保存追加迁移及数据库能力                                                                                                       |
-| ProviderAdapter | `services.ts` 定义接口；`gmail.ts`、`outlook.ts` 和 `platform/node/imap.ts` 实现协议                                                                                                                |
+| ProviderAdapter | `services.ts` 定义接口；`gmail.ts`、`outlook.ts` 和 `platform/node/imap/adapter.ts` 实现协议                                                                                                                |
 | 模型与工具      | `model.ts` 提供 Model；`tools.ts` 提供 MailToolkit；`tool-pages.ts` 处理游标和预算                                                                                                                  |
 | 本机索引        | `indexer.ts`、`semantic-indexer.ts` 与 media／semantic Store 处理派生文本及向量                                                                                                                     |
 | Node 平台       | `platform/node/` 实现数据库、密钥、OAuth、IMAP/SMTP、MIME、文件、PDF 和推理 worker                                                                                                                  |
@@ -57,7 +57,7 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 
 ### Provider 与 Store
 
-`ProviderAdapter.pull` 返回 `Stream<Change>`，Mailbox 统一消费邮件、删除、标签与游标变更。适配器提供 push、send、草稿、附件、搜索、联系人与日历等方法。Gmail 和 Outlook 使用可移植 HTTP；IMAP/SMTP 分别由 [Node adapter](../packages/core/src/platform/node/imap.ts) 和[手机 adapter](../packages/core/src/platform/react-native/imap.ts)实现。
+`ProviderAdapter.pull` 返回 `Stream<Change>`，Mailbox 统一消费邮件、删除、标签与游标变更。适配器提供 push、send、草稿、附件、搜索、联系人与日历等方法。Gmail 和 Outlook 使用可移植 HTTP；IMAP/SMTP 分别由 [Node adapter](../packages/core/src/platform/node/imap/adapter.ts) 和[手机 adapter](../packages/core/src/platform/react-native/imap.ts)实现。
 
 Store 使用 Effect `SqlClient`。Node Layer 提供 `node:sqlite` 与可选 sqlite-vec；手机 Layer 提供 op-sqlite 并报告向量能力不可用。两端运行同一 `MIGRATIONS`。消息经 `upsertMessage` 更新，保留 rowid 与外部内容 FTS 的对应。词索引、trigram、徽标及联系人投影用于查询，性能证据见[性能](performance.md)。
 

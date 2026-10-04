@@ -16,7 +16,7 @@ import { graphPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
 import { confirmDelivery, deliverOrConfirm } from "../provider-send.js";
 import { type DraftPush, type DraftSaveResult, type ProviderAdapter } from "../services.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import {
   AttachmentIds,
   decode,
@@ -31,7 +31,7 @@ import {
   writeFailure,
 } from "./graph.js";
 
-export const makeOutlookSend = (client: GraphClient) =>
+export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { codec, api, get, write } = client;
 

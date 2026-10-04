@@ -3,9 +3,9 @@ import { PermanentError } from "../errors.js";
 import { FOLDER_BATCH_LIMIT, type PermanentDeleteBatch } from "../folder-actions.js";
 import { graphPages } from "../provider-pages.js";
 import { type ProviderAdapter } from "../services.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import { is404, nextPage, WELL_KNOWN, WithId, writeFailure } from "./graph.js";
-export const makeOutlookFolders = (client: GraphClient) => {
+export const makeOutlookFolders = (client: OutlookClient) => {
   const { get, write, deleteFolderIds } = client;
 
   return {

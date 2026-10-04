@@ -15,7 +15,7 @@ import { uncertainWrite } from "../provider-retry.js";
 import { graphSearch, matchesSearch, parseSearchQuery, searchMailboxLabel } from "../search.js";
 import { type ProviderAdapter } from "../services.js";
 import type { FolderStatus } from "../sync-health.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import { makeOutlookFolders } from "./folders.js";
 import {
   AttachmentList,
@@ -38,7 +38,7 @@ import type { OutlookRead } from "./parse.js";
 import { expandedAttachments, parseGraphMessage } from "./parse.js";
 import { makeOutlookPull } from "./pull.js";
 import { makeOutlookRecovery } from "./recovery.js";
-export const makeOutlookSync = (client: GraphClient, reader: OutlookRead) =>
+export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
   Effect.sync(() => {
     const { connectivity, api, get, write, connect } = client;
 
@@ -514,10 +514,10 @@ export interface OutlookSyncSources {
     accountId: string,
   ) => Effect.Effect<
     readonly { id: string; name: string }[],
-    Effect.Error<ReturnType<GraphClient["get"]>>
+    Effect.Error<ReturnType<OutlookClient["get"]>>
   >;
   fetchAttachments: (
     accountId: string,
     id: string,
-  ) => Effect.Effect<Attachment[], Effect.Error<ReturnType<GraphClient["get"]>>>;
+  ) => Effect.Effect<Attachment[], Effect.Error<ReturnType<OutlookClient["get"]>>>;
 }

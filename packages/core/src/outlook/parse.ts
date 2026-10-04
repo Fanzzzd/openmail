@@ -11,10 +11,10 @@ import {
   withDecodedBody,
   withUuAttachments,
 } from "../platform/mime-compat.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import { AttachmentNames, GraphAddress, GraphMessage, writeFailure } from "./graph.js";
 
-export const makeOutlookRead = (client: GraphClient) =>
+export const makeOutlookRead = (client: OutlookClient) =>
   Effect.sync(() => {
     const { codec, get, getBytes } = client;
 

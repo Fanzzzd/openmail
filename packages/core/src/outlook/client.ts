@@ -299,4 +299,4 @@ export const makeOutlookClient = Effect.gen(function* () {
     connect,
   };
 });
-export type GraphClient = Effect.Success<typeof makeOutlookClient>;
+export type OutlookClient = Effect.Success<typeof makeOutlookClient>;

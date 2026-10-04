@@ -6,7 +6,7 @@ import { logInvalidGraphCursor } from "../provider-diagnostics.js";
 import { graphPages } from "../provider-pages.js";
 import { type Change, type ProviderAdapter } from "../services.js";
 import { logSyncReset } from "../sync-reset.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import {
   CONCURRENCY,
   decodeCursor,
@@ -30,7 +30,7 @@ import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
 import type { OutlookSyncSources } from "./sync.js";
 export const makeOutlookPull = (
-  client: GraphClient,
+  client: OutlookClient,
   reader: OutlookRead,
   sources: OutlookSyncSources,
 ) => {

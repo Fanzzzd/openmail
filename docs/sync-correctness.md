@@ -1,6 +1,6 @@
 # 同步与发送结果
 
-UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
+UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。
 
@@ -14,7 +14,7 @@ COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确
 
 Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
 
-实现见 [Node IMAP](../packages/core/src/platform/node/imap.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
+实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)与 [Store](../packages/core/src/store.ts)。回归入口见[测试](testing.md#出站操作与发送回归)。
 
 ## 出站操作队列
 
@@ -40,7 +40,7 @@ IMAP SMTP 在 DATA 终止符已发出后丢失回复时，按 Message-ID 查询 
 
 Node SMTP 部分拒收会列出拒收地址，保留原草稿并启用重发保护。提示中的“仅向拒收收件人重发”创建新草稿，只保留拒收的 To／Cc／Bcc，保留消息文本及附件，不自动发送，也不修改原草稿。
 
-发送确认实现见 [provider-send.ts](../packages/core/src/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
+发送确认实现见 [provider-send.ts](../packages/core/src/provider-send.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)；失败提示经 Mailbox 的 listFailedOps、acknowledgeFailedOps 与 prepareRejectedResend 提供。
 
 ## 草稿与其他写入
 
@@ -70,7 +70,7 @@ slice 62 移除了删除数量阈值。Reset、DeleteLabel 和 RebuildFolder 中
 
 保护已随 slice 56 合入。验证队列使用既有 prefs 持久化，无新增迁移；本地队列未验证完时继续保留缓存。只读会话允许这些存在性探测，包括只含 GET 子请求的 Graph batch。实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)、[store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)、[Outlook](../packages/core/src/outlook.ts)、[Gmail](../packages/core/src/gmail.ts)和 [read-only.ts](../packages/core/src/read-only.ts)。回归见 [sync-reset.test.ts](../packages/core/src/sync-reset.test.ts)和 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
 
-Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store.ts](../packages/core/src/store.ts)，回归见 [imap.test.ts](../packages/core/src/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
+Node IMAP adapter 将 ImapFlow SEARCH 返回的 false／undefined 视为 ProviderError，不转成空 UID 集合。首次拉取、增量、标记扫描、历史回填、服务端搜索和存在性验证共用此规则，搜索失败不能证明邮件消失。文件夹遗漏先核对 STATUS；只有明确 NotFound 且再次 LIST 仍缺失才确认删除，失败或隐藏文件夹保留旧状态。Outlook 同样先直接 GET 遗漏的文件夹，仅明确 404 才进入删除验证，其他结果保留旧游标。实现见 [Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)、[Outlook](../packages/core/src/outlook.ts)和 [store.ts](../packages/core/src/store.ts)，回归见 [imap.test.ts](../packages/core/src/imap.test.ts)及 [sync-reset-imap.test.ts](../packages/core/src/sync-reset-imap.test.ts)。
 
 ## 过期缓存扫描
 

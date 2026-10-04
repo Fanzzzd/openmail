@@ -8,7 +8,7 @@ import { ApiError } from "../provider-http.js";
 import { retryProvider } from "../provider-retry.js";
 import { type ProviderAdapter } from "../services.js";
 import { type ResetVerification, stateLabel } from "../sync-reset.js";
-import type { GraphClient } from "./client.js";
+import type { OutlookClient } from "./client.js";
 import {
   decode,
   EXPAND_ATTACHMENTS,
@@ -27,7 +27,7 @@ import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
 import type { OutlookSyncSources } from "./sync.js";
 export const makeOutlookRecovery = (
-  client: GraphClient,
+  client: OutlookClient,
   reader: OutlookRead,
   sources: OutlookSyncSources,
 ) => {
