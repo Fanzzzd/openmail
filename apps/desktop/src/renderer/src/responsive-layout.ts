@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
+import { MEDIUM_MIN, WIDE_MIN } from "../../shared/layout";
 
 /**
  * How many panes the main window shows. Three when wide; two when medium,
@@ -7,16 +8,10 @@ import { useState, useSyncExternalStore } from "react";
  */
 export type LayoutMode = "wide" | "medium" | "narrow";
 
-/** The narrowest width at which each pane's content stays readable, in CSS pixels. */
-export const PANE_MIN = { sidebar: 200, list: 300, reader: 340 } as const;
-
-/** The sidebar docks only once the reader keeps 460 px beside it; below that the reader gets its room. */
-export const WIDE_MIN = PANE_MIN.sidebar + PANE_MIN.list + 460;
-/** Equal to Tailwind's `sm` breakpoint, so `max-sm:` styles apply exactly in the narrow layout. */
-export const MEDIUM_MIN = PANE_MIN.list + PANE_MIN.reader;
-
 export function layoutMode(width: number): LayoutMode {
-  return width >= WIDE_MIN ? "wide" : width >= MEDIUM_MIN ? "medium" : "narrow";
+  if (width >= WIDE_MIN) return "wide";
+  if (width >= MEDIUM_MIN) return "medium";
+  return "narrow";
 }
 
 // Browser zoom shrinks the CSS viewport, so media queries track zoom as well as window size.
@@ -29,8 +24,7 @@ function subscribe(changed: () => void) {
   };
 }
 function snapshot(): LayoutMode {
-  const [belowWide, belowMedium] = queries.map((query) => window.matchMedia(query).matches);
-  return belowMedium ? "narrow" : belowWide ? "medium" : "wide";
+  return layoutMode(window.innerWidth);
 }
 
 export function useLayoutMode(): LayoutMode {
@@ -43,14 +37,20 @@ export function useLayoutMode(): LayoutMode {
  */
 export function useMailLayout() {
   const mode = useLayoutMode();
-  const [drawer, setDrawerOpen] = useState(false);
-  const [readerIn, setReaderIn] = useState<string | null>(null);
+  const [drawerRequested, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState(mode);
+  const [readerViewKey, setReaderViewKey] = useState<string | null>(null);
+  // A drawer opened in one layout does not reappear after the window crosses into another.
+  if (drawerMode !== mode) {
+    setDrawerMode(mode);
+    setDrawerOpen(false);
+  }
   return {
     mode,
-    drawerOpen: drawer && mode !== "wide",
+    drawerOpen: drawerRequested && mode !== "wide",
     setDrawerOpen,
-    readerIn,
-    setReaderIn,
+    readerViewKey,
+    setReaderViewKey,
   };
 }
 export type MailLayout = ReturnType<typeof useMailLayout>;
@@ -64,16 +64,20 @@ export function visiblePanes(
   mode: LayoutMode,
   state: {
     readingPane: boolean;
-    readerIn: string | null;
+    readerViewKey: string | null;
     viewKey: string;
     selectedId: string | null;
   },
 ): { list: boolean; reader: boolean } {
   if (!state.readingPane) return { list: true, reader: false };
   if (mode !== "narrow") return { list: true, reader: true };
-  const reader = state.readerIn === state.viewKey && state.selectedId !== null;
+  const reader = state.readerViewKey === state.viewKey && state.selectedId !== null;
   return { list: !reader, reader };
 }
+
+const BACK_KEY = "[";
+/** The label of the ⌘ shortcut that {@link isBackKey} accepts. */
+export const BACK_SHORTCUT = `⌘${BACK_KEY}`;
 
 /** Escape or ⌘[ returns from the reader to the list in the narrow layout. */
 export function isBackKey(
@@ -81,5 +85,5 @@ export function isBackKey(
 ) {
   if (event.altKey || event.shiftKey) return false;
   if (event.key === "Escape") return !event.metaKey && !event.ctrlKey;
-  return event.key === "[" && event.metaKey && !event.ctrlKey;
+  return event.key === BACK_KEY && event.metaKey && !event.ctrlKey;
 }

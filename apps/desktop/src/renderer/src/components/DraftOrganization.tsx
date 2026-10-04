@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { OutgoingMessage, Provider } from "../../../shared/api";
 import { labelsAtom } from "../state/queries";
 import { Tag } from "lucide-react";
+import { iconButton } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 
 type Organization = NonNullable<OutgoingMessage["draftOrganization"]>;
@@ -25,12 +26,17 @@ export function DraftOrganization({
   );
   const [open, setOpen] = useState(false);
   const [names, setNames] = useState(value.labels.join(", "));
-  const organizeLabel =
-    provider === "outlook"
-      ? t`Draft categories`
-      : provider === "imap"
-        ? t`Draft keywords`
-        : t`Local draft labels`;
+  let organizeLabel: string;
+  switch (provider) {
+    case "outlook":
+      organizeLabel = t`Draft categories`;
+      break;
+    case "imap":
+      organizeLabel = t`Draft keywords`;
+      break;
+    case "gmail":
+      organizeLabel = t`Local draft labels`;
+  }
   return (
     <>
       <button
@@ -51,7 +57,7 @@ export function DraftOrganization({
             setNames(value.labels.join(", "));
             setOpen((previous) => !previous);
           }}
-          className={`rounded p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10 ${value.labels.length ? "text-a11y-accent" : ""}`}
+          className={`${iconButton} ${value.labels.length ? "text-a11y-accent" : "text-a11y-muted"}`}
         >
           <Tag className="size-4" />
         </button>

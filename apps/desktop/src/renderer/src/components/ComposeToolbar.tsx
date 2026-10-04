@@ -1,5 +1,4 @@
 import { useLingui } from "@lingui/react/macro";
-import { constVoid } from "effect/Function";
 import {
   COMPOSE_COLORS,
   COMPOSE_FONT_FAMILIES,
@@ -20,10 +19,10 @@ import {
   Type,
   Underline,
 } from "lucide-react";
-import { type ComponentType, type ReactNode, useRef, useState, useSyncExternalStore } from "react";
+import { type ComponentType, type ReactNode, useRef, useState } from "react";
 import type { ShortcutAction } from "../../../shared/shortcuts";
 import type { FormatAction } from "../compose-format-dom";
-import { useShortcutText } from "../use-shortcut-text";
+import { useElementWidth } from "../use-element-width";
 import { KeyboardToolbar } from "./ui/KeyboardToolbar";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
@@ -61,6 +60,15 @@ interface Props {
   onLink: () => void;
   /** Editor items after the formatting groups in "More formatting". */
   more: ReactNode;
+  shortcut: (action: ShortcutAction) => string;
+}
+
+/** One formatting command, shown as a toolbar button when it fits and as a menu item otherwise. */
+interface Command {
+  label: string;
+  icon?: Icon | undefined;
+  run: () => void;
+  shortcut?: ShortcutAction;
 }
 
 /**
@@ -78,57 +86,75 @@ export function ComposeToolbar({
   onCommand,
   onLink,
   more,
+  shortcut,
 }: Props) {
   const { t } = useLingui();
-  const shortcut = useShortcutText();
   const ref = useRef<HTMLDivElement>(null);
-  const width = useSyncExternalStore(
-    (changed) => {
-      const element = ref.current;
-      if (!element) return constVoid;
-      const observer = new ResizeObserver(changed);
-      observer.observe(element);
-      return () => observer.disconnect();
-    },
-    () => ref.current?.clientWidth ?? 0,
-  );
-  const shown = visibleTiers(width);
+  const shown = visibleTiers(useElementWidth(ref));
 
-  const iconButton = (label: string, Icon: Icon, onClick: () => void, action?: ShortcutAction) => (
-    <Tip label={label} shortcut={action && shortcut(action)}>
+  const format = (label: string, action: FormatAction, icon?: Icon): Command => ({
+    label,
+    icon,
+    run: () => onFormat(action),
+    shortcut: action,
+  });
+  const bold: Command = {
+    label: t`Bold`,
+    icon: Bold,
+    run: () => onCommand("bold"),
+    shortcut: "bold",
+  };
+  const italic: Command = {
+    label: t`Italic`,
+    icon: Italic,
+    run: () => onCommand("italic"),
+    shortcut: "italic",
+  };
+  const link: Command = { label: t`Edit link`, icon: Link, run: onLink, shortcut: "link" };
+  const style: Command[] = [
+    {
+      label: t`Underline`,
+      icon: Underline,
+      run: () => onCommand("underline"),
+      shortcut: "underline",
+    },
+    {
+      label: t`Strikethrough`,
+      icon: Strikethrough,
+      run: () => onCommand("strikeThrough"),
+      shortcut: "strikethrough",
+    },
+  ];
+  const align = [
+    format(t`Align left`, "alignLeft"),
+    format(t`Align center`, "alignCenter"),
+    format(t`Align right`, "alignRight"),
+    format(t`Justify`, "alignJustify"),
+  ];
+  const lists = [
+    format(t`Bulleted list`, "bulletList", List),
+    format(t`Numbered list`, "numberList", ListOrdered),
+  ];
+  const quote = format(t`Increase quote level`, "quoteIncrease", TextQuote);
+
+  const toolButton = ({ label, icon: Icon, run, shortcut: action }: Command) => (
+    <Tip key={label} label={label} shortcut={action && shortcut(action)}>
       <button
         type="button"
         disabled={disabled}
         aria-label={label}
         className={button}
         onMouseDown={(event) => event.preventDefault()}
-        onClick={onClick}
+        onClick={run}
       >
-        <Icon className="size-4" />
+        {Icon && <Icon className="size-4" />}
       </button>
     </Tip>
   );
-  const item = (label: string, action: FormatAction) => (
-    <MenuItem
-      key={action}
-      disabled={disabled}
-      shortcut={shortcut(action)}
-      onClick={() => onFormat(action)}
-    >
+  const menuItem = ({ label, run, shortcut: action }: Command) => (
+    <MenuItem key={label} disabled={disabled} shortcut={action && shortcut(action)} onClick={run}>
       {label}
     </MenuItem>
-  );
-  const labels = {
-    bulletList: t`Bulleted list`,
-    numberList: t`Numbered list`,
-    quoteIncrease: t`Increase quote level`,
-    alignLeft: t`Align left`,
-    alignCenter: t`Align center`,
-    alignRight: t`Align right`,
-    alignJustify: t`Justify`,
-  };
-  const alignItems = (["alignLeft", "alignCenter", "alignRight", "alignJustify"] as const).map(
-    (action) => item(labels[action], action),
   );
 
   return (
@@ -141,20 +167,10 @@ export function ComposeToolbar({
       {formatting && (
         <>
           <Separator />
-          {iconButton(t`Bold`, Bold, () => onCommand("bold"), "bold")}
-          {iconButton(t`Italic`, Italic, () => onCommand("italic"), "italic")}
-          {shown.style && (
-            <>
-              {iconButton(t`Underline`, Underline, () => onCommand("underline"), "underline")}
-              {iconButton(
-                t`Strikethrough`,
-                Strikethrough,
-                () => onCommand("strikeThrough"),
-                "strikethrough",
-              )}
-            </>
-          )}
-          {iconButton(t`Edit link`, Link, onLink, "link")}
+          {toolButton(bold)}
+          {toolButton(italic)}
+          {shown.style && style.map(toolButton)}
+          {toolButton(link)}
           <Separator />
           <FontPopover disabled={disabled} onStyle={onStyle} />
           <ColorPopover disabled={disabled} onStyle={onStyle} />
@@ -172,28 +188,16 @@ export function ComposeToolbar({
                 </button>
               }
             >
-              {alignItems}
+              {align.map(menuItem)}
             </DropdownMenu>
           )}
           {shown.lists && (
             <>
               <Separator />
-              {iconButton(labels.bulletList, List, () => onFormat("bulletList"), "bulletList")}
-              {iconButton(
-                labels.numberList,
-                ListOrdered,
-                () => onFormat("numberList"),
-                "numberList",
-              )}
+              {lists.map(toolButton)}
             </>
           )}
-          {shown.quote &&
-            iconButton(
-              labels.quoteIncrease,
-              TextQuote,
-              () => onFormat("quoteIncrease"),
-              "quoteIncrease",
-            )}
+          {shown.quote && toolButton(quote)}
         </>
       )}
       <span className="flex-1" />
@@ -208,50 +212,46 @@ export function ComposeToolbar({
           <>
             {!shown.style && (
               <>
-                <MenuItem
-                  disabled={disabled}
-                  shortcut={shortcut("underline")}
-                  onClick={() => onCommand("underline")}
-                >{t`Underline`}</MenuItem>
-                <MenuItem
-                  disabled={disabled}
-                  shortcut={shortcut("strikethrough")}
-                  onClick={() => onCommand("strikeThrough")}
-                >{t`Strikethrough`}</MenuItem>
+                {style.map(menuItem)}
                 <MenuSeparator />
               </>
             )}
             {!shown.align && (
               <>
-                {alignItems}
+                {align.map(menuItem)}
                 <MenuSeparator />
               </>
             )}
-            {!shown.lists && item(labels.bulletList, "bulletList")}
-            {!shown.lists && item(labels.numberList, "numberList")}
-            {item(t`Dashed list`, "dashList")}
-            {item(t`Indent list`, "indentList")}
-            {item(t`Outdent list`, "outdentList")}
-            {item(t`Increase indent`, "indentParagraph")}
-            {item(t`Decrease indent`, "outdentParagraph")}
-            {!shown.quote && item(labels.quoteIncrease, "quoteIncrease")}
-            {item(t`Decrease quote level`, "quoteDecrease")}
+            {!shown.lists && lists.map(menuItem)}
+            {[
+              format(t`Dashed list`, "dashList"),
+              format(t`Indent list`, "indentList"),
+              format(t`Outdent list`, "outdentList"),
+              format(t`Increase indent`, "indentParagraph"),
+              format(t`Decrease indent`, "outdentParagraph"),
+              ...(shown.quote ? [] : [quote]),
+              format(t`Decrease quote level`, "quoteDecrease"),
+            ].map(menuItem)}
             <MenuSeparator />
-            {item(t`Left to right`, "directionLtr")}
-            {item(t`Right to left`, "directionRtl")}
-            {item(t`Automatic direction`, "directionAuto")}
+            {[
+              format(t`Left to right`, "directionLtr"),
+              format(t`Right to left`, "directionRtl"),
+              format(t`Automatic direction`, "directionAuto"),
+            ].map(menuItem)}
             <MenuSeparator />
-            {item(t`Inline code`, "inlineCode")}
-            {item(t`Code block`, "blockCode")}
-            {item(t`Superscript`, "superscript")}
-            {item(t`Subscript`, "subscript")}
+            {[
+              format(t`Inline code`, "inlineCode"),
+              format(t`Code block`, "blockCode"),
+              format(t`Superscript`, "superscript"),
+              format(t`Subscript`, "subscript"),
+            ].map(menuItem)}
             <MenuSeparator />
-            {item(t`Copy style`, "copyStyle")}
-            {item(t`Paste style`, "pasteStyle")}
-            {item(t`Clear formatting`, "clearFormatting")}
-            <MenuItem disabled={disabled} onClick={() => onCommand("unlink")}>
-              {t`Remove link`}
-            </MenuItem>
+            {[
+              format(t`Copy style`, "copyStyle"),
+              format(t`Paste style`, "pasteStyle"),
+              format(t`Clear formatting`, "clearFormatting"),
+              { label: t`Remove link`, run: () => onCommand("unlink") },
+            ].map(menuItem)}
             <MenuSeparator />
           </>
         )}
@@ -287,7 +287,6 @@ function FontPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props[
         aria-label={t`Font family`}
         value={family}
         options={COMPOSE_FONT_FAMILIES.map((value) => ({ value, label: value }))}
-
         onValueChange={(value) => {
           setFamily(value);
           onStyle("font-family", value);
@@ -297,7 +296,6 @@ function FontPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props[
         aria-label={t`Font size`}
         value={size}
         options={COMPOSE_FONT_SIZES.map((value) => ({ value: String(value), label: `${value}px` }))}
-
         onValueChange={(value) => {
           setSize(value);
           onStyle("font-size", `${value}px`);
@@ -337,7 +335,6 @@ function ColorPopover({ disabled, onStyle }: { disabled: boolean; onStyle: Props
           { value: "color", label: t`Text color` },
           { value: "background-color", label: t`Background color` },
         ]}
-
         onValueChange={setTarget}
       />
       <div className="grid grid-cols-5 gap-1.5">

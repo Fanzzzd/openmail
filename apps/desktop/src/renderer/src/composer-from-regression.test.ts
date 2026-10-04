@@ -94,6 +94,8 @@ vi.mock("./components/ui/Dialog", () => ({
   alertButton: "",
   alertPrimary: "",
   alertDanger: "",
+  narrowSheet: "",
+  SheetDragStrip: () => null,
 }));
 vi.mock("./components/ui/Picker", () => ({
   PickerPopover: () => null,

@@ -63,7 +63,7 @@ export function usePanelLayout({
   const docked = mode === "wide" && prefs.sidebarVisible;
   // Sidebar widths persist separately from the list/reader orientation.
   const paneMode = !hasAccounts ? "empty" : view.space === OVERVIEW ? "overview" : "mail";
-  const panes = useDefaultLayout({
+  const savedLayout = useDefaultLayout({
     id: `openmail:panes:${paneMode}`,
     panelIds: [...(docked ? ["sidebar"] : []), paneMode === "mail" ? "mail" : "main"],
     storage: localStorage,
@@ -71,5 +71,5 @@ export function usePanelLayout({
   const mailOrientation: "vertical" | "horizontal" =
     prefs.readingPanePosition === "bottom" ? "vertical" : "horizontal";
 
-  return { docked, paneMode, panes, mailOrientation };
+  return { docked, paneMode, savedLayout, mailOrientation };
 }

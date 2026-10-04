@@ -1,12 +1,6 @@
 import { expect, it } from "vitest";
-import {
-  isBackKey,
-  layoutMode,
-  MEDIUM_MIN,
-  PANE_MIN,
-  visiblePanes,
-  WIDE_MIN,
-} from "./responsive-layout";
+import { MEDIUM_MIN, PANE_MIN, WIDE_MIN } from "../../shared/layout";
+import { isBackKey, layoutMode, visiblePanes } from "./responsive-layout";
 
 it("picks the layout from the panes' minimum widths", () => {
   expect(WIDE_MIN).toBe(960);
@@ -20,11 +14,11 @@ it("picks the layout from the panes' minimum widths", () => {
 });
 
 it("shows both panes unless the window is narrow, and never a hidden reading pane", () => {
-  const state = { readingPane: true, readerIn: null, viewKey: "inbox", selectedId: "a" };
+  const state = { readingPane: true, readerViewKey: null, viewKey: "inbox", selectedId: "a" };
   expect(visiblePanes("wide", state)).toEqual({ list: true, reader: true });
   expect(visiblePanes("medium", state)).toEqual({ list: true, reader: true });
   expect(visiblePanes("narrow", state)).toEqual({ list: true, reader: false });
-  const opened = { ...state, readerIn: "inbox" };
+  const opened = { ...state, readerViewKey: "inbox" };
   expect(visiblePanes("narrow", opened)).toEqual({ list: false, reader: true });
   // Another view, or no selection left, returns to the list.
   expect(visiblePanes("narrow", { ...opened, viewKey: "sent" })).toEqual({

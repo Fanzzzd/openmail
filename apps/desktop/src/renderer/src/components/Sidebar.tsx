@@ -84,6 +84,7 @@ import {
   MenuItem,
   MenuSeparator,
 } from "./ui/Menu";
+import { iconButton } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 import {
   ALL,
@@ -815,7 +816,7 @@ export function SidebarToggle({ onClick }: { onClick: () => void }) {
         type="button"
         aria-label={t`Show sidebar`}
         onClick={onClick}
-        className="shrink-0 rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+        className={`shrink-0 text-a11y-muted ${iconButton}`}
       >
         <PanelLeft className="size-4.5" />
       </button>

@@ -1,6 +1,6 @@
 import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
 import { ComposeToolbar } from "./ComposeToolbar";
-import { MenuCheckboxItem, MenuGroupLabel, MenuItem, MenuSeparator } from "./ui/Menu";
+import { MenuCheckboxItem, MenuItem, MenuRadioGroup, MenuSeparator } from "./ui/Menu";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
@@ -601,8 +601,9 @@ export function ComposeEditor({
         disabled={locked}
         onFormat={format}
         onStyle={style}
-        onCommand={(name) => command(name)}
+        onCommand={command}
         onLink={openLink}
+        shortcut={shortcut}
         leading={
           <>
             <Select
@@ -677,28 +678,22 @@ export function ComposeEditor({
                   }}
                 >{t`Markdown replacements`}</MenuCheckboxItem>
                 <MenuSeparator />
-                <MenuGroupLabel>{t`Image size`}</MenuGroupLabel>
-                {(
-                  [
-                    ["small", t`Small`],
-                    ["medium", t`Medium`],
-                    ["large", t`Large`],
-                    ["original", t`Original`],
-                  ] as const
-                ).map(([size, label]) => (
-                  <MenuCheckboxItem
-                    key={size}
-                    checked={prefs.inlineImageSize === size}
-                    onCheckedChange={() => {
-                      if (locked) return;
-                      onImageSize(size);
-                      resizeComposeImage(richRef.current, imageCid, size);
-                      changed();
-                    }}
-                  >
-                    {label}
-                  </MenuCheckboxItem>
-                ))}
+                <MenuRadioGroup
+                  label={t`Image size`}
+                  value={prefs.inlineImageSize}
+                  disabled={locked}
+                  options={[
+                    { value: "small", label: t`Small` },
+                    { value: "medium", label: t`Medium` },
+                    { value: "large", label: t`Large` },
+                    { value: "original", label: t`Original` },
+                  ]}
+                  onValueChange={(size) => {
+                    onImageSize(size);
+                    resizeComposeImage(richRef.current, imageCid, size);
+                    changed();
+                  }}
+                />
               </>
             )}
             {grammar.available && (
@@ -789,7 +784,7 @@ export function ComposeEditor({
           >{t`Close find`}</button>
         </search>
       )}
-      <GrammarResults grammar={grammar} />
+      <GrammarResults grammar={grammar} locked={locked} />
       {remoteUnsupported && (
         <div
           role="status"

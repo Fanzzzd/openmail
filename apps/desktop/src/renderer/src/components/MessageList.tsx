@@ -35,6 +35,7 @@ import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
 import { ThreadMenuItems, type ThreadState } from "./ThreadActions";
+import { trafficLightInset } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */
@@ -216,14 +217,14 @@ export function MessageList({
     >
       {searchBar && (
         <div
-          className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${leading ? "pl-20" : "pl-4"}`}
+          className={`drag flex h-13 shrink-0 items-center gap-2 pr-4 ${leading ? trafficLightInset : "pl-4"}`}
         >
           {leading}
           {searchBar}
         </div>
       )}
       <header
-        className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${leading && !searchBar ? "pl-20" : "pl-5"}`}
+        className={`drag flex h-13 shrink-0 items-center gap-2 pr-3 ${leading && !searchBar ? trafficLightInset : "pl-5"}`}
       >
         {!searchBar && leading}
         <h1 className="min-w-0 flex-1 truncate text-[17px] font-bold">

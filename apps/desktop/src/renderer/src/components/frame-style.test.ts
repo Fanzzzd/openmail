@@ -11,7 +11,8 @@ it("fits wide mail to the frame and leaves mail that fits alone", () => {
   expect(fitScale(800, 0)).toBe(1);
 });
 
-function frameDocument(natural: number, frame: number, height: number) {
+/** A frame `frame` px wide and `frameHeight` px tall whose page is `height` px tall, styled html { height: 100% }. */
+function frameDocument(natural: number, frame: number, height: number, frameHeight = 300) {
   const doc = document.implementation.createHTMLDocument("mail");
   const root = doc.documentElement;
   Object.defineProperty(root, "scrollWidth", {
@@ -19,9 +20,10 @@ function frameDocument(natural: number, frame: number, height: number) {
   });
   Object.defineProperty(root, "clientWidth", { value: frame });
   Object.defineProperty(root, "scrollHeight", { value: height });
+  // The box is as tall as the frame, not the content, and the transform shrinks it.
   root.getBoundingClientRect = () => {
     const scale = Number(/scale\(([\d.]+)\)/.exec(root.style.transform)?.[1] ?? 1);
-    return DOMRect.fromRect({ width: frame, height: height * scale });
+    return DOMRect.fromRect({ width: frame * scale, height: frameHeight * scale });
   };
   return doc;
 }

@@ -19,14 +19,21 @@ export function usePaneNavigation({
   return {
     shown: visiblePanes(layout.mode, {
       readingPane: prefs.readingPaneVisible,
-      readerIn: layout.readerIn,
+      readerViewKey: layout.readerViewKey,
       viewKey,
       selectedId,
     }),
-    openReader: () => layout.setReaderIn(viewKey),
+    /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */
+    openReader: () => {
+      layout.setReaderViewKey(viewKey);
+      if (layout.mode !== "narrow") return;
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus(),
+      );
+    },
     /** Back from the reader to the list in the narrow layout, focus on the same row. */
     back: () => {
-      layout.setReaderIn(null);
+      layout.setReaderViewKey(null);
       focusList(selectedId);
     },
     /** Docks or hides the sidebar when wide; otherwise opens or closes its drawer. */

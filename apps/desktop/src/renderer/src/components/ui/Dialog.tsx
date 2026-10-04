@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
 import { type ComponentProps, type ReactNode, useRef } from "react";
 import { useLayoutMode } from "../../responsive-layout";
+import { iconButton } from "./styles";
 
 type InitialFocus = ComponentProps<typeof BaseDialog.Popup>["initialFocus"];
 
@@ -28,9 +29,17 @@ interface DialogProps {
   children: ReactNode;
 }
 
-/** Below 640 px a dialog fills the window, whatever size the caller asked for. */
-const narrowSheet =
-  "max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none";
+/**
+ * Below 640 px a sheet fills the window, whatever size the caller asked for.
+ * Its top 32 px stay clear for the traffic lights; pair it with {@link SheetDragStrip}.
+ */
+export const narrowSheet =
+  "max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:pt-8";
+
+/** The titlebar of a full-window sheet: it drags the window, as the titlebar it covers did. */
+export function SheetDragStrip() {
+  return <div aria-hidden className="drag absolute inset-x-0 top-0 h-8 sm:hidden" />;
+}
 
 /**
  * A centered modal dialog. It traps focus, closes on Escape and backdrop
@@ -65,6 +74,7 @@ export function Dialog({
           finalFocus={finalFocus}
           className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${narrowSheet}`}
         >
+          <SheetDragStrip />
           {children}
           {narrow && onClose && <SheetClose />}
         </BaseDialog.Popup>
@@ -82,7 +92,7 @@ function SheetClose() {
   return (
     <BaseDialog.Close
       aria-label={t`Close`}
-      className="absolute top-2.5 right-3 rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+      className={`no-drag absolute top-2.5 right-3 text-a11y-muted ${iconButton}`}
     >
       <X className="size-4" />
     </BaseDialog.Close>
@@ -118,6 +128,11 @@ export function Drawer({
           initialFocus={() =>
             popup.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? true
           }
+          // Focus returns to the toggle unless it already moved on, such as to the list of a mailbox picked here.
+          finalFocus={() => {
+            const active = document.activeElement;
+            return !active || active === document.body || !!popup.current?.contains(active);
+          }}
           className="no-drag fixed inset-y-0 left-0 z-40 flex max-h-none w-72 max-w-[calc(100vw-48px)] flex-col overflow-hidden bg-neutral-100 text-[13px] text-neutral-900 shadow-2xl outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full motion-reduce:transition-none dark:bg-neutral-900 dark:text-neutral-100"
         >
           {children}

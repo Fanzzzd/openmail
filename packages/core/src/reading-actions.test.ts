@@ -55,6 +55,19 @@ it("drops the sender's own address from the display name and keeps a different o
     "Bank <help@bank.example>",
   );
   assert.strictEqual(senderName({ name: "Al​ice", address: "a@example.com" }), "Alice");
+  // A longer address that merely contains the sender's stays whole for the spoofing warning.
+  assert.strictEqual(
+    senderName({ name: "support@paypal.com", address: "support@paypal.co" }),
+    "support@paypal.com",
+  );
+  assert.strictEqual(
+    senderName({ name: "PayPal support@paypal.com.au", address: "support@paypal.com" }),
+    "PayPal support@paypal.com.au",
+  );
+  assert.strictEqual(
+    senderName({ name: "PayPal x.support@paypal.com", address: "support@paypal.com" }),
+    "PayPal x.support@paypal.com",
+  );
 });
 
 it("quotes sender addresses so spaces, quotes, slashes and operators cannot inject criteria", () => {

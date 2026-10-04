@@ -31,7 +31,15 @@ import { ComposerAi } from "./ComposerAi";
 import { DraftOrganization } from "./DraftOrganization";
 import { DraftSyncRecovery } from "./DraftSyncRecovery";
 import { RecipientField } from "./RecipientField";
-import { Alert, AlertCancel, alertButton, alertDanger, alertPrimary } from "./ui/Dialog";
+import {
+  Alert,
+  AlertCancel,
+  alertButton,
+  alertDanger,
+  alertPrimary,
+  narrowSheet,
+  SheetDragStrip,
+} from "./ui/Dialog";
 import { PickerPopover, pickerFooter, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { Select } from "./ui/Select";
 import { Tip } from "./ui/Tip";
@@ -240,9 +248,9 @@ export function Composer({
           data-full-window={standalone || undefined}
           aria-label={title}
           initialFocus={initialFocus}
-          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : "no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:rounded-none "} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
+          className={`${standalone ? "no-drag fixed inset-0 z-50 flex h-full w-full " : `no-drag fixed right-5 bottom-5 z-50 flex h-[min(680px,calc(100%-40px))] w-[min(680px,calc(100%-40px))] ${narrowSheet} `} flex-col overflow-hidden rounded-xl bg-white text-[13px] text-neutral-900 shadow-2xl ring-1 ring-black/10 outline-none transition-[opacity,translate] duration-150 ease-out data-starting-style:translate-y-2 data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-800 dark:text-neutral-100 dark:ring-white/10`}
         >
-          {standalone && <div className="drag h-8 shrink-0" />}
+          {standalone ? <div className="drag h-8 shrink-0" /> : <SheetDragStrip />}
           {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- The entire composer accepts file drops; the attachment picker provides keyboard access. */}
           <form
             className="flex min-h-[360px] flex-1 flex-col overflow-y-auto"

@@ -11,8 +11,9 @@ import { readerSelectedText } from "../quote-selection";
 import { jumpReaderSelection } from "../jump-selection";
 import { readerFindAction } from "../reader-shortcuts";
 import { SearchField } from "./ui/SearchField";
+import { iconButton, trafficLightInset } from "./ui/styles";
 import { Tip } from "./ui/Tip";
-import { isBackKey } from "../responsive-layout";
+import { BACK_SHORTCUT, isBackKey } from "../responsive-layout";
 import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -102,6 +103,7 @@ import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { MeetingLinks } from "./MeetingLinks";
 import { highlightBody } from "./body-text";
 
+import { useElementWidth } from "../use-element-width";
 import { useShortcutText } from "../use-shortcut-text";
 
 import { useSaveMessage } from "./reader-actions";
@@ -158,16 +160,7 @@ export function Reader({
 }: Props) {
   const { t } = useLingui();
   const headerRef = useRef<HTMLElement>(null);
-  const width = useSyncExternalStore(
-    (onChange) => {
-      const header = headerRef.current;
-      if (!header) return constVoid;
-      const observer = new ResizeObserver(onChange);
-      observer.observe(header);
-      return () => observer.disconnect();
-    },
-    () => headerRef.current?.clientWidth ?? 0,
-  );
+  const width = useElementWidth(headerRef);
   const result = useAtomValue(threadAtom(messageId));
   const thread = AsyncResult.value(result);
   const messages = useReaderMessages(
@@ -183,15 +176,15 @@ export function Reader({
       <header
         ref={headerRef}
         data-reader-toolbar
-        className={`drag flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? "pl-20" : "pl-4"}`}
+        className={`drag flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? trafficLightInset : "pl-4"}`}
       >
         {onBack && (
-          <Tip label={t`Back to messages`} shortcut="⌘[">
+          <Tip label={t`Back to messages`} shortcut={BACK_SHORTCUT}>
             <button
               type="button"
               aria-label={t`Back to messages`}
               onClick={onBack}
-              className="no-drag -ml-1 shrink-0 rounded-md p-1 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+              className={`no-drag -ml-1 shrink-0 text-a11y-muted ${iconButton}`}
             >
               <ChevronLeft className="size-5" />
             </button>

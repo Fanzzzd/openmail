@@ -580,6 +580,7 @@ it("roves the one-row format toolbar and moves groups that do not fit into More 
             onCommand: vi.fn(),
             onLink: vi.fn(),
             more: null,
+            shortcut: () => "",
           }),
         ),
       ),
@@ -810,34 +811,29 @@ it("defaults confirmations to Cancel and restores the opener on Escape", async (
 });
 
 it("follows CSS pixels, so zoom moves the window between three, two and one pane", () => {
-  let width = 1056;
   let changed: (() => void) | undefined;
-  vi.stubGlobal("matchMedia", (query: string) => {
-    const breakpoint = Number(query.match(/width < (\d+)px/)?.[1]);
-    return {
-      get matches() {
-        return width < breakpoint;
-      },
-      addEventListener: (_name: string, listener: () => void) => {
-        changed = listener;
-      },
-      removeEventListener: vi.fn(),
-    };
-  });
+  vi.stubGlobal("matchMedia", () => ({
+    addEventListener: (_name: string, listener: () => void) => {
+      changed = listener;
+    },
+    removeEventListener: vi.fn(),
+  }));
+  const resize = (width: number) => {
+    vi.stubGlobal("innerWidth", width);
+    act(() => changed?.());
+  };
+  vi.stubGlobal("innerWidth", 1056);
   function Harness() {
     return h("output", null, useLayoutMode());
   }
   render(h(Harness));
   expect(screen.getByRole("status").textContent).toBe("wide");
   // 1056 px at 110% zoom.
-  width = 960;
-  act(() => changed?.());
+  resize(960);
   expect(screen.getByRole("status").textContent).toBe("wide");
-  width = 873;
-  act(() => changed?.());
+  resize(873);
   expect(screen.getByRole("status").textContent).toBe("medium");
-  width = 639;
-  act(() => changed?.());
+  resize(639);
   expect(screen.getByRole("status").textContent).toBe("narrow");
 });
 

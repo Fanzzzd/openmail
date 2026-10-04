@@ -23,13 +23,15 @@ import type {
  */
 export function senderName(sender: Address): string {
   const address = sender.address.trim();
+  const name = cleanDisplayName(sender.name);
+  if (!address) return name.trim();
   const own = address.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const name = address
-    ? cleanDisplayName(sender.name)
-        .replace(new RegExp(`[<([]\\s*${own}\\s*[>)\\]]|${own}`, "giu"), "")
-        .replace(/^[\s"'“”‘’,;:|–—-]+|[\s"'“”‘’,;:|–—-]+$/gu, "")
-    : cleanDisplayName(sender.name).trim();
-  return name || address;
+  // Only the whole address counts; "support@paypal.com.au" is not "support@paypal.com".
+  const whole = `(?<![\\w.+-])${own}(?![\\w.-])`;
+  const stripped = name
+    .replace(new RegExp(`[<([]\\s*${whole}\\s*[>)\\]]|${whole}`, "giu"), "")
+    .replace(/^[\s"'“”‘’,;:|–—-]+|[\s"'“”‘’,;:|–—-]+$/gu, "");
+  return stripped || address;
 }
 
 export function threadExpansion(ids: readonly string[], expanded: boolean): Set<string> {

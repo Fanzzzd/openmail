@@ -116,17 +116,19 @@ export function useComposeGrammar({
     result,
     error,
     issues,
-    locked,
-    bodyRef,
+    /** Selects the issue's text in the editor. */
+    select: (issue: GrammarIssue) => {
+      if (bodyRef.current) selectEditorMatch(bodyRef.current, issue.start, issue.end);
+    },
     replace,
     clear: () => setResult(null),
   };
 }
 export type ComposeGrammar = ReturnType<typeof useComposeGrammar>;
 
-export function GrammarResults({ grammar }: { grammar: ComposeGrammar }) {
+export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; locked: boolean }) {
   const { t } = useLingui();
-  const { text, result, error, issues, locked, bodyRef, replace } = grammar;
+  const { text, result, error, issues, select, replace } = grammar;
   if (!grammar.available || (!error && result?.text !== text)) return null;
   return (
     <div className="shrink-0 border-b px-4 py-2 text-xs">
@@ -148,12 +150,7 @@ export function GrammarResults({ grammar }: { grammar: ComposeGrammar }) {
                 key={JSON.stringify([issue.start, issue.end, issue.description])}
                 className="block py-1"
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (bodyRef.current) selectEditorMatch(bodyRef.current, issue.start, issue.end);
-                  }}
-                >
+                <button type="button" onClick={() => select(issue)}>
                   <span className="underline decoration-wavy decoration-blue-500">
                     {text.slice(issue.start, issue.end)}
                   </span>

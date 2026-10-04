@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import { app, BrowserWindow, nativeTheme, screen } from "electron";
 import { randomUUID } from "node:crypto";
+import { WINDOW_MIN } from "../shared/layout";
 import type { ComposeRecipients, SavedWindow, WindowSelection } from "../shared/window-state";
 import { visibleBounds, windowStateFile } from "./window-state";
 
@@ -145,8 +146,8 @@ export function restoreWindows() {
         createAppWindow({
           width: 820,
           height: 860,
-          minWidth: 480,
-          minHeight: 400,
+          minWidth: WINDOW_MIN.width,
+          minHeight: WINDOW_MIN.height,
           kind: state.kind,
           target: state.target,
           restored: state,
@@ -310,9 +311,9 @@ export function createMainWindow(restored?: SavedWindow): BrowserWindow {
   const win = createAppWindow({
     width: 1320,
     height: 860,
-    // The renderer switches to two panes below 960 px and one below 640 px.
-    minWidth: 480,
-    minHeight: 400,
+    // Below WIDE_MIN the sidebar becomes a drawer; below MEDIUM_MIN one pane shows at a time.
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     restored,
   });
   mainWindows.add(win);
@@ -339,8 +340,8 @@ export function openThreadWindow(messageId: string): BrowserWindow {
   return createAppWindow({
     width: 820,
     height: 860,
-    minWidth: 480,
-    minHeight: 400,
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     kind: "thread",
     target: messageId,
     query: { thread: messageId },
@@ -352,8 +353,8 @@ export function openMessageWindow(messageId: string): BrowserWindow {
   return createAppWindow({
     width: 820,
     height: 860,
-    minWidth: 480,
-    minHeight: 400,
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     kind: "message",
     target: messageId,
     query: { thread: messageId, single: "1" },
@@ -380,8 +381,8 @@ export function openComposeWindow(
   const win = createAppWindow({
     width: 760,
     height: 800,
-    minWidth: 480,
-    minHeight: 400,
+    minWidth: WINDOW_MIN.width,
+    minHeight: WINDOW_MIN.height,
     kind: "compose",
     target: draftId,
     restored,

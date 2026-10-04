@@ -47,7 +47,10 @@ export function fitDocument(doc: Document, fit: boolean): { height: number; wide
   const scale = fit ? fitScale(natural, frame) : 1;
   if (scale === 1) return { height: root.scrollHeight, wide: natural > frame + 1 };
   root.style.setProperty("width", `${natural}px`, "important");
+  // Measured at the natural width but before scaling: a page sized to the
+  // frame (html { height: 100% }) would otherwise shrink the frame every pass.
+  const height = Math.ceil(root.scrollHeight * scale);
   root.style.setProperty("transform", `scale(${scale})`, "important");
   root.style.setProperty("transform-origin", "0 0", "important");
-  return { height: Math.ceil(root.getBoundingClientRect().height), wide: true };
+  return { height, wide: true };
 }

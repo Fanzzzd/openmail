@@ -95,15 +95,26 @@ export function EmailFrame({
   const [height, setHeight] = useState(120);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
-  const fitting = useRef(fit);
-  const measure = useRef<(() => void) | undefined>(undefined);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  // Size the frame to its content so the thread scrolls as one page. Late
+  // images and web fonts change the page after load and the pane can resize,
+  // hence the observer on both.
   useEffect(() => {
-    fitting.current = fit;
-    measure.current?.();
-  }, [fit]);
+    const frame = frameRef.current;
+    if (!frameDocument || !frame) return constVoid;
+    const measure = () => {
+      const size = fitDocument(frameDocument, fit);
+      setHeight(size.height);
+      setWide(size.wide);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(frameDocument.documentElement);
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, [frameDocument, fit]);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
   const dispose = useRef<(() => void) | undefined>(undefined);
-  const observer = useRef<ResizeObserver | null>(null);
   const keys = useRef(onKeyDown);
   useEffect(() => {
     keys.current = onKeyDown;
@@ -116,22 +127,12 @@ export function EmailFrame({
 <meta http-equiv="Content-Security-Policy" content="${remote ? ALLOWED : BLOCKED}; ${FRAME_RESTRICTIONS}">
 <base target="_blank"><style>${css}</style></head><body dir="auto">${safeHtml}</body></html>`;
 
-  useEffect(
-    () => () => {
-      observer.current?.disconnect();
-      dispose.current?.();
-    },
-    [],
-  );
+  useEffect(() => () => dispose.current?.(), []);
 
   const link = hint?.document === doc ? hint.url : null;
 
-  // Size the frame to its content so the thread scrolls as one page. Late
-  // images and web fonts change the page after load and the pane can resize,
-  // hence the observer on both.
   const onLoad = (e: SyntheticEvent<HTMLIFrameElement>) => {
     dispose.current?.();
-    observer.current?.disconnect();
     const frameDoc = e.currentTarget.contentDocument;
     const root = frameDoc?.documentElement;
     if (!frameDoc || !root || frameDoc.URL !== "about:srcdoc") return;
@@ -140,16 +141,6 @@ export function EmailFrame({
     // Mail styles cannot hide the viewport's horizontal overflow.
     root.style.setProperty("overflow-x", "auto", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
-    const frame = e.currentTarget;
-    measure.current = () => {
-      const size = fitDocument(frameDoc, fitting.current);
-      setHeight(size.height);
-      setWide(size.wide);
-    };
-    measure.current();
-    observer.current = new ResizeObserver(() => measure.current?.());
-    observer.current.observe(root);
-    observer.current.observe(frame);
     const keydown = (event: KeyboardEvent) => {
       if (
         event.isTrusted &&
@@ -203,6 +194,7 @@ export function EmailFrame({
       }`}
     >
       <iframe
+        ref={frameRef}
         title={t`Message`}
         onLoad={onLoad}
         sandbox="allow-same-origin"

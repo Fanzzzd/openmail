@@ -110,12 +110,48 @@ export function MenuCheckboxItem({
   );
 }
 
-/** A heading over the items after it, such as the choices of one setting. */
-export function MenuGroupLabel({ children }: { children: ReactNode }) {
+/** A labelled set of choices, such as the values of one setting. The current one has a check mark. */
+export function MenuRadioGroup<V extends string>({
+  label,
+  value,
+  options,
+  onValueChange,
+  disabled,
+}: {
+  label: string;
+  value: V;
+  options: readonly { value: V; label: string }[];
+  onValueChange: (value: V) => void;
+  disabled?: boolean;
+}) {
   return (
-    <div role="presentation" className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-a11y-muted">
-      {children}
-    </div>
+    <Menu.RadioGroup
+      value={value}
+      disabled={disabled}
+      onValueChange={(next) => {
+        const option = options.find((candidate) => candidate.value === next);
+        if (option) onValueChange(option.value);
+      }}
+    >
+      <Menu.GroupLabel className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-a11y-muted">
+        {label}
+      </Menu.GroupLabel>
+      {options.map((option) => (
+        <Menu.RadioItem
+          key={option.value}
+          value={option.value}
+          closeOnClick
+          className={`group ${itemClass}`}
+        >
+          <span className="flex size-4 shrink-0 items-center justify-center">
+            <Menu.RadioItemIndicator>
+              <Check className="size-3.5" />
+            </Menu.RadioItemIndicator>
+          </span>
+          <span className="min-w-0 flex-1 truncate">{option.label}</span>
+        </Menu.RadioItem>
+      ))}
+    </Menu.RadioGroup>
   );
 }
 

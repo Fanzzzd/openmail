@@ -18,6 +18,12 @@ export const itemClass =
 /** Menu separator. */
 export const separatorClass = "mx-2 my-1 h-px bg-black/10 dark:bg-white/10";
 
+/** A borderless icon button in a header or toolbar. Callers add the text color. */
+export const iconButton = "rounded-md p-1 hover:bg-black/5 dark:hover:bg-white/10";
+
+/** Left padding that keeps a header at the window's leading edge clear of the traffic lights. */
+export const trafficLightInset = "pl-20";
+
 /** Keyboard shortcut next to a label. */
 export const kbdClass =
   "font-sans text-[11px] tracking-wide text-neutral-600 tabular-nums group-data-highlighted:text-white dark:text-neutral-400";

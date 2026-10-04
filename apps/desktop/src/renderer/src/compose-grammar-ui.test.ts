@@ -50,7 +50,7 @@ function Grammar(props: Parameters<typeof useComposeGrammar>[0]) {
       { type: "button", disabled: grammar.disabled, onClick: grammar.check },
       "Check grammar on this Mac",
     ),
-    createElement(GrammarResults, { grammar }),
+    createElement(GrammarResults, { grammar, locked: props.locked }),
   );
 }
 
