@@ -1,70 +1,27 @@
+import { account as buildAccount } from "./platform/node/testing.js";
+import { fakeHttp } from "./platform/node/fake-http.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { nodeMailCodec } from "./platform/node/mail-codec.js";
 import { assert, it } from "@effect/vitest";
 import { parseCalendar } from "./invites.js";
-
 import { Cause, Clock, Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
-
-import type { Account, OutgoingMessage } from "./domain.js";
+import { type Account, type OutgoingMessage } from "./domain.js";
 import { makeGmail, parseGmailMessage } from "./gmail.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { ProviderError } from "./errors.js";
 import { type GmailRuleDefinition, EMPTY_FILTER } from "./organization.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import type { Change, ProviderAdapter } from "./services.js";
+import { type Change, type ProviderAdapter } from "./services.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
-
-interface Call {
-  method: string;
-  url: URL;
-  body: unknown;
-}
-
-const parseJson = (text: string): unknown => JSON.parse(text);
-
-type Reply = { headers?: Record<string, string>; status?: number; json?: unknown };
-
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under the
  * Gmail API base. Unknown routes answer 404, like a missing resource.
  */
-function fakeHttp(routes: Record<string, Reply | ((url: URL) => Reply)>) {
-  const calls: Call[] = [];
-  const client = HttpClient.make((request, url) =>
-    Effect.sync(() => {
-      const body =
-        request.body._tag === "Uint8Array"
-          ? parseJson(new TextDecoder().decode(request.body.body))
-          : undefined;
-      calls.push({ method: request.method, url, body });
-      const path = url.pathname.replace("/gmail/v1/users/me", "");
-      const route = routes[`${request.method} ${path}`];
-      const reply = typeof route === "function" ? route(url) : (route ?? { status: 404 });
-      return HttpClientResponse.fromWeb(
-        request,
-        new Response(reply.json === undefined ? null : JSON.stringify(reply.json), {
-          status: reply.status ?? 200,
-          headers: reply.headers,
-        }),
-      );
-    }),
-  );
-  return { layer: Layer.succeed(HttpClient.HttpClient)(client), calls };
-}
 
-const account: Account = {
-  id: "gmail:me@gmail.com",
-  provider: "gmail",
-  email: "me@gmail.com",
-  createdAt: 0,
-  lastSyncedAt: null,
-  lastSyncError: null,
-  profileId: null,
-  needsReauth: false,
-};
+const account: Account = buildAccount("gmail");
 
 const platform = MemoryPlatform({
   secrets: { [account.id]: "refresh-token" },
@@ -72,7 +29,7 @@ const platform = MemoryPlatform({
 });
 
 function run<A, E>(
-  http: ReturnType<typeof fakeHttp>,
+  http: Pick<ReturnType<typeof fakeHttp>, "layer" | "calls">,
   f: (adapter: ProviderAdapter) => Effect.Effect<A, E>,
 ) {
   return makeGmail.pipe(Effect.flatMap(f), Effect.provide(Layer.mergeAll(http.layer, platform)));
@@ -2580,7 +2537,7 @@ it.effect(
     }),
 );
 
-it.effect("slice49: label-only history reads minimal and additions read full", () =>
+it.effect("label-only history reads minimal and additions read full", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "GET /labels": { json: { labels: [] } },
@@ -2614,7 +2571,7 @@ it.effect("slice49: label-only history reads minimal and additions read full", (
 );
 
 for (const delivered of [true, false])
-  it.effect(`slice49: Gmail ambiguous send ${delivered} checks Sent once without resending`, () =>
+  it.effect(`Gmail ambiguous send ${delivered} checks Sent once without resending`, () =>
     Effect.gen(function* () {
       const http = fakeHttp({
         "POST /messages/send": { status: 503, json: { error: "ambiguous" } },
@@ -2647,7 +2604,7 @@ for (const delivered of [true, false])
     }),
   );
 
-it.effect("slice49: a changed remote Gmail draft creates a second copy", () =>
+it.effect("a changed remote Gmail draft creates a second copy", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "GET /drafts/d1": { json: { id: "d1", message: { id: "other-edit" } } },
@@ -2670,7 +2627,7 @@ it.effect("slice49: a changed remote Gmail draft creates a second copy", () =>
 );
 
 for (const date of [false, true])
-  it.effect(`slice49: Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
+  it.effect(`Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
     Effect.gen(function* () {
       const now = yield* Clock.currentTimeMillis;
       let requests = 0;
@@ -2698,7 +2655,7 @@ for (const date of [false, true])
     }),
   );
 
-it.effect("slice49: send transport timeout checks Sent and never replays POST", () =>
+it.effect("send transport timeout checks Sent and never replays POST", () =>
   Effect.gen(function* () {
     let posts = 0,
       sentChecks = 0;
@@ -2740,7 +2697,7 @@ it.effect("slice49: send transport timeout checks Sent and never replays POST", 
   }),
 );
 
-it.effect("slice49: Gmail JSON signed containers use raw MIME for the body", () =>
+it.effect("Gmail JSON signed containers use raw MIME for the body", () =>
   Effect.gen(function* () {
     const signedRaw =
       "Content-Type: application/pkcs7-mime; smime-type=signed-data; name=smime.p7m\r\nContent-Transfer-Encoding: base64\r\n\r\nMFEGCSqGSIb3DQEHAqBEMEICAQExADA7BgkqhkiG9w0BBwGgLgQsQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluDQoNCnNpZ25lZCBKU09OIGJvZHk=";
@@ -2767,7 +2724,7 @@ it.effect("slice49: Gmail JSON signed containers use raw MIME for the body", () 
     );
   }),
 );
-it.effect("slice49: Gmail JSON uuencode attachments are listed and fetched from raw MIME", () =>
+it.effect("Gmail JSON uuencode attachments are listed and fetched from raw MIME", () =>
   Effect.gen(function* () {
     const text = "hello\r\nbegin 644 file.txt\r\n#0V%T\r\n`\r\nend\r\n";
     const http = fakeHttp({
@@ -2800,7 +2757,7 @@ it.effect("slice49: Gmail JSON uuencode attachments are listed and fetched from 
   }),
 );
 
-it.effect("slice49-fix: a late Sent copy is polled without repeating the send", () =>
+it.effect("a late Sent copy is polled without repeating the send", () =>
   Effect.gen(function* () {
     let lookup = 0;
     const http = fakeHttp({
@@ -2829,48 +2786,46 @@ it.effect("slice49-fix: a late Sent copy is polled without repeating the send", 
   }),
 );
 
-it.effect(
-  "slice55: ambiguous Gmail sends search their random Message-ID token in recent Sent",
-  () =>
-    Effect.gen(function* () {
-      let token = "";
-      const http = fakeHttp({
-        "POST /messages/send": () => {
-          const sent = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
-            http.calls.find((call) => call.method === "POST")?.body,
-          );
-          const mime = Buffer.from(sent.raw, "base64url").toString();
-          assert.notInclude(mime, "X-OpenMail-Id:");
-          const id = /^Message-ID: <([a-f0-9-]+)@gmail.com>$/im.exec(mime.replaceAll("\r", ""));
-          assert.ok(id);
-          token = id[1]!;
-          return { status: 503 };
+it.effect("ambiguous Gmail sends search their random Message-ID token in recent Sent", () =>
+  Effect.gen(function* () {
+    let token = "";
+    const http = fakeHttp({
+      "POST /messages/send": () => {
+        const sent = Schema.decodeUnknownSync(Schema.Struct({ raw: Schema.String }))(
+          http.calls.find((call) => call.method === "POST")?.body,
+        );
+        const mime = Buffer.from(sent.raw, "base64url").toString();
+        assert.notInclude(mime, "X-OpenMail-Id:");
+        const id = /^Message-ID: <([a-f0-9-]+)@gmail.com>$/im.exec(mime.replaceAll("\r", ""));
+        assert.ok(id);
+        token = id[1]!;
+        return { status: 503 };
+      },
+      "GET /messages": (url) => {
+        const q = url.searchParams.get("q") ?? "";
+        if (q.includes("@gmail.com")) return { json: { messages: [] } };
+        assert.include(q, "in:sent");
+        assert.notInclude(q, "rfc822msgid:");
+        assert.match(q, /after:-?\d+/);
+        return { json: { messages: [{ id: "rewritten" }] } };
+      },
+      "GET /messages/rewritten": () => ({
+        json: {
+          payload: { headers: [{ name: "Message-ID", value: `<${token}@rewritten.gmail.com>` }] },
         },
-        "GET /messages": (url) => {
-          const q = url.searchParams.get("q") ?? "";
-          if (q.includes("@gmail.com")) return { json: { messages: [] } };
-          assert.include(q, "in:sent");
-          assert.notInclude(q, "rfc822msgid:");
-          assert.match(q, /after:-?\d+/);
-          return { json: { messages: [{ id: "rewritten" }] } };
-        },
-        "GET /messages/rewritten": () => ({
-          json: {
-            payload: { headers: [{ name: "Message-ID", value: `<${token}@rewritten.gmail.com>` }] },
-          },
-        }),
-      });
-      const result = yield* run(http, (a) =>
-        a.send(account, outgoing, Option.none()).pipe(Effect.result),
-      );
-      assert.strictEqual(result._tag, "Success");
-      assert.ok(
-        http.calls.some((call) => call.url.searchParams.get("metadataHeaders") === "Message-ID"),
-      );
-    }),
+      }),
+    });
+    const result = yield* run(http, (a) =>
+      a.send(account, outgoing, Option.none()).pipe(Effect.result),
+    );
+    assert.strictEqual(result._tag, "Success");
+    assert.ok(
+      http.calls.some((call) => call.url.searchParams.get("metadataHeaders") === "Message-ID"),
+    );
+  }),
 );
 
-it.effect("slice49-fix: a Retry-After over sixty seconds returns to the next sync", () =>
+it.effect("a Retry-After over sixty seconds returns to the next sync", () =>
   Effect.gen(function* () {
     let calls = 0;
     const http = fakeHttp({
@@ -2896,7 +2851,7 @@ it.effect("slice49-fix: a Retry-After over sixty seconds returns to the next syn
   }),
 );
 
-it.effect("slice49-fix: MIME parse failures preserve opaque mail and advance history", () =>
+it.effect("MIME parse failures preserve opaque mail and advance history", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "GET /labels": { json: { labels: [] } },
@@ -2934,7 +2889,7 @@ it.effect("slice49-fix: MIME parse failures preserve opaque mail and advance his
   }),
 );
 
-it.effect("slice49-fix: signed attachments do not trigger Gmail body replacement", () =>
+it.effect("signed attachments do not trigger Gmail body replacement", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "GET /messages/invoice": (url) => {

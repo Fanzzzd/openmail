@@ -1,6 +1,5 @@
 import { expect, it, vi } from "vitest";
 import { parseMobileMime } from "./mail-codec.js";
-
 it("parses portable MIME body text, HTML, addresses and inline binary attachments", async () => {
   const raw = [
     "From: Test <person@example.test>",
@@ -45,7 +44,7 @@ it("rejects oversized MIME", async () => {
   await expect(parseMobileMime(new Uint8Array(25 * 1024 * 1024 + 1))).rejects.toThrow("25 MiB");
 });
 
-it("slice49: portable MIME decodes gbk without host charset support", async () => {
+it("portable MIME decodes gbk without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=gbk\r\nContent-Transfer-Encoding: base64\r\n\r\n1tDOxA==",
   );
@@ -65,7 +64,7 @@ it("slice49: portable MIME decodes gbk without host charset support", async () =
     vi.unstubAllGlobals();
   }
 });
-it("slice49: portable MIME decodes gb18030 without host charset support", async () => {
+it("portable MIME decodes gb18030 without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=gb18030\r\nContent-Transfer-Encoding: base64\r\n\r\n1tDOxJUygjY=",
   );
@@ -85,7 +84,7 @@ it("slice49: portable MIME decodes gb18030 without host charset support", async 
     vi.unstubAllGlobals();
   }
 });
-it("slice49: portable MIME decodes big5 without host charset support", async () => {
+it("portable MIME decodes big5 without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=big5\r\nContent-Transfer-Encoding: base64\r\n\r\npKSk5Q==",
   );
@@ -105,7 +104,7 @@ it("slice49: portable MIME decodes big5 without host charset support", async () 
     vi.unstubAllGlobals();
   }
 });
-it("slice49: portable MIME decodes shift_jis without host charset support", async () => {
+it("portable MIME decodes shift_jis without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=shift_jis\r\nContent-Transfer-Encoding: base64\r\n\r\nk/qWe4zq",
   );
@@ -125,7 +124,7 @@ it("slice49: portable MIME decodes shift_jis without host charset support", asyn
     vi.unstubAllGlobals();
   }
 });
-it("slice49: portable MIME decodes euc-kr without host charset support", async () => {
+it("portable MIME decodes euc-kr without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=euc-kr\r\nContent-Transfer-Encoding: base64\r\n\r\nx9Gxub7u",
   );
@@ -145,7 +144,7 @@ it("slice49: portable MIME decodes euc-kr without host charset support", async (
     vi.unstubAllGlobals();
   }
 });
-it("slice49: portable MIME decodes iso-2022-jp without host charset support", async () => {
+it("portable MIME decodes iso-2022-jp without host charset support", async () => {
   const raw = new TextEncoder().encode(
     "Content-Type: text/plain; charset=iso-2022-jp\r\nContent-Transfer-Encoding: base64\r\n\r\nGyRCRnxLXDhsGyhC",
   );

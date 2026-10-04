@@ -17,7 +17,6 @@ import {
   retryProviderRequest,
   uncertainWrite,
 } from "./provider-retry.js";
-
 it("connect failures are definite, but response timeouts remain uncertain", () => {
   for (const code of [
     "ENOTFOUND",
@@ -72,7 +71,7 @@ for (const request of [
   );
 }
 
-it.effect("slice55: Retry-After has a sixty-second total budget across retries", () =>
+it.effect("Retry-After has a sixty-second total budget across retries", () =>
   Effect.gen(function* () {
     let calls = 0;
     const started = yield* Clock.currentTimeMillis;

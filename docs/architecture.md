@@ -61,7 +61,7 @@ Mailbox 是 Effect `Context.Service`。`NodeMailbox(options)` 返回已组装的
 
 Store 使用 Effect `SqlClient`。Node Layer 提供 `node:sqlite` 与可选 sqlite-vec；手机 Layer 提供 op-sqlite 并报告向量能力不可用。两端运行同一 `MIGRATIONS`。消息经 `upsertMessage` 更新，保留 rowid 与外部内容 FTS 的对应。词索引、trigram、徽标及联系人投影用于查询，性能证据见[性能](performance.md)。
 
-[db.ts](../packages/core/src/db.ts) 的迁移已到 36：31 保存邮件头与词位置视图，32 保存认证结果及安全退订目标，33 保存本机可选服务开关，34 增加消息文本字节数、运行总量和 LRU 索引；35 调整 provider ID 与列表日期覆盖索引，并增加 IMAP 路径、孤立远端草稿和消息文本字节数索引。36 保存出站重试与复制进度、认领 token、APPEND 身份和失败提示。前 35 条未改，下一可用迁移编号为 37。索引的读取收益、写入与空间成本只在[性能](performance.md#迁移-35写入与磁盘成本)维护。消息文本容量预算默认关闭，启用后每小时或额度变更时回收；保留期限、星标、草稿和发件箱优先，额度不保证覆盖受保护内容。它不限制整个数据库或所有附件占用，见 [store-cache.ts](../packages/core/src/store-cache.ts)。
+[db.ts](../packages/core/src/db.ts) 的迁移已到 36：31 保存邮件头与词位置视图，32 保存认证结果及安全退订目标，33 保存本机可选服务开关，34 增加消息文本字节数、运行总量和 LRU 索引；35 调整 provider ID 与列表日期覆盖索引，并增加 IMAP 路径、孤立远端草稿和消息文本字节数索引。36 保存出站重试与复制进度、认领 token、APPEND 身份和失败提示。前 35 条未改，下一可用迁移编号为 37。索引的读取收益、写入与空间成本只在[性能](performance.md#写入与磁盘成本)维护。消息文本容量预算默认关闭，启用后每小时或额度变更时回收；保留期限、星标、草稿和发件箱优先，额度不保证覆盖受保护内容。它不限制整个数据库或所有附件占用，见 [store-cache.ts](../packages/core/src/store-cache.ts)。
 
 slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候选纳入持久验证队列，验证失败保留；实现见 [sync-reset.ts](../packages/core/src/sync-reset.ts)和 [store-sync-reset.ts](../packages/core/src/store-sync-reset.ts)。slice 60 增加独立预算的过期缓存扫描与持久 Outlook 冲突验证，仍不按计数差直接删除。删除范围、扫描预算、Outlook delta 页大小、UID 身份隔离、发送结果与同步健康报告只在[同步说明](sync-correctness.md)维护。
 

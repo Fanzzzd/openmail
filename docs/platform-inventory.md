@@ -2,7 +2,7 @@
 
 修改 core 平台实现、打包入口或手机 Layer 时读取。导入边界规则在 AGENTS.md，禁止的包名以 `.oxlintrc.json` 为准。`platform-imports.test.ts` 读取该配置，另检查 Node 内置模块和 portable 的本地依赖图。
 
-slice 39 对原有 `packages/core/src` 的审计包括静态、类型、动态导入及 `.mjs` worker。生产 Node 实现现在全部位于 `platform/node/`；进程测试 fixture、fake provider 和 SQLite 内存测试平台也放在此目录。
+对原有 `packages/core/src` 的审计包括静态、类型、动态导入及 `.mjs` worker。生产 Node 实现现在全部位于 `platform/node/`；进程测试 fixture、fake provider 和 SQLite 内存测试平台也放在此目录。
 
 | 原文件                                                               | 原平台依赖                                                | 处理                                                                                                 |
 | -------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -36,12 +36,12 @@ Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、
 
 core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，缺少该全局对象时回退到 `buffer/index.js` 的浏览器实现。该模块的 native Buffer 探测由导入守卫检查，边界规则见 AGENTS.md。base64url 明确转换字母表及 padding。TNEF 直接使用 Uint8Array / DataView，共享有界输入；UTF-16LE 手工保留 BOM 和独立代理码元，丢弃末尾单字节，保持原生 Buffer 的解码结果。同步 SHA-256 / HMAC 使用 `@noble/hashes` 的可移植实现，Node 的 `PlatformCrypto` 使用原生加密；随机数服务须由手机安全随机实现提供。
 
-手机端待办以[路线图](roadmap.md#core-平台接口slice-39-已完成)为准。slice 41 已添加 Expo 项目、无 RN 依赖的 core op-sqlite/OAuth/provider/MIME adapters，以及手机端 Expo OS Layers，入口见[手机端说明](../apps/mobile/README.md)。portable 入口在 slice 39 已通过浏览器平台打包。导入检查证明 core 的本地模块边界，不代替 React Native 真机验证、第三方包的 Metro 打包验证或 op-sqlite 的兼容性检查。
+手机端待办以[路线图](roadmap.md#core-平台接口)为准。已添加 Expo 项目、无 RN 依赖的 core op-sqlite/OAuth/provider/MIME adapters，以及手机端 Expo OS Layers，入口见[手机端说明](../apps/mobile/README.md)。portable 入口在 通过浏览器平台打包。导入检查证明 core 的本地模块边界，不代替 React Native 真机验证、第三方包的 Metro 打包验证或 op-sqlite 的兼容性检查。
 
 阅读 HTML 的 CSS 清洗和可见文本提取直接导入 `css-tree/dist/csstree.esm`。css-tree 3.2.1 的 `exports["./dist/*"]` 指向 `./dist/*.js`，该入口是完整浏览器 ESM 包，不依赖根入口的 `module.createRequire`；因此不依赖 Metro 对根入口 `browser` 字段的重定向。手机 `metro.config.cjs` 使用 Expo 默认解析器，未改写此包的解析。`platform/node/css-browser.test.ts` 验证导出映射、浏览器包及实际 CSS 解析；本 slice 未运行 Metro。
 
 MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect services，缺少 Layer 会在类型检查中报错。provider、阅读附件和 indexer 构建时捕获依赖，返回的方法不读调用方的隐藏 context。真实 NodeMailbox 回归测试覆盖 IMAP 原始 MIME fallback、正文/日历/嵌套附件、PDF 索引、文件缓存、图片输入和 SSRF 拒绝；仅替换 IMAP 传输和合成密码，使用临时数据库，不启动 Electron。
 
-Slice 47：portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力slice-47)。
+portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力)。
 
 开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `read-only.ts`、`mailbox-live.ts`，没有引入隐式 Node 全局。

@@ -55,7 +55,7 @@ OAuth 使用系统浏览器、PKCE S256、随机 state、五分钟超时和原�
 - 设置包含账户添加、重新登录、启用／停用、移除，四种滑动动作、撤销发送时间、远程图片默认值和语言。远程图片默认阻断；主动开启后仅允许图片 HTTPS，脚本、表单、字体与导航限制继续生效。
 - Lingui 包含 en、zh-CN、cs、nl、fr、de、it、ja、ru、es。相同文案复用桌面译文，消息文本字段保留提取注释。修改后执行 `pnpm --filter @openmail/mobile i18n:extract`、补齐译文，再执行 `i18n:compile`。测试检查目录同步与漏译。
 
-## 前后台同步与原生权限（slice 51）
+## 前后台同步与原生权限
 
 初次进入前台、从后台返回和下拉刷新运行 core 同步。后台刷新默认关闭，设置中可开启；expo-background-task 通过 iOS BGAppRefreshTask／Android WorkManager 调度，最小间隔 15 分钟只是调度提示，执行时间由 OS 决定，并非实时。后台共享 portable Mailbox 的 Inbox 增量命令，约 25 秒总预算，逐账户分配时间；未完成首次同步、缺失或过期游标、IMAP UIDVALIDITY 变化均留待前台处理，不全量同步、不回填、不发送或推送整理队列。自定义 `index.js` 先导入后台任务，再导入 Router；headless 启动不依赖路由加载。iOS 检查 NWPath 的 constrained／expensive 和低电量模式；Android worker 要求 unmetered network、battery-not-low，并检查省电模式，只有非计费网络才运行。Android 重启后不会重新调度，须打开应用恢复，因为 RECEIVE_BOOT_COMPLETED 被显式屏蔽。无轮询或推送中转。
 
@@ -69,7 +69,7 @@ Expo 的默认 background-task iOS 实现使用 BGProcessingTask，本项目依�
 
 实现见 [background.ts](src/background.ts)、[background-policy.ts](src/background-policy.ts)、core [mobile-background.ts](../../packages/core/src/mobile-background.ts)和 [mailbox-live.ts](../../packages/core/src/mailbox-live.ts)。默认值与持久去重由 core 管理；原生配置见 [app.config.ts](app.config.ts)及 [plugins](plugins)。
 
-## AI、稍后提醒与签名（slice 58）
+## AI、稍后提醒与签名
 
 AI 默认关闭，逐账户确认后才向 Anthropic 发送可见消息文本。API 密钥仅经 SecureStore 保存，界面只查询是否已配置；模型沿用 core 的选项。会话摘要支持按需生成；自动摘要仅在开启该账户的自动选项后、打开会话时生成，不在后台刷新中调用 AI。询问会话会预先装入同一可见文本管线的上下文；助手可提议归档、Gmail 用户标签和纯文本草稿，用户在手机审批页查看全部会话、真实标签及完整草稿后批准或拒绝。即使共享写权限为直接整理，内置助手仍只创建提议。批准草稿后进入撰写页，发送仍须原有人工确认。
 
@@ -91,7 +91,7 @@ AI 默认关闭，逐账户确认后才向 Anthropic 发送可见消息文本。
 | IMAP 发送       | core MIME／SMTP，发送前沿用人工确认与撤销队列；Bcc 只进信封。DATA 和 APPEND 按 64 KiB 分块并等待写入。不确定结果、重发保护及 Sent 副本缺失提示见[发送结果](../../docs/sync-correctness.md#发送结果)。                                                                                                                                                                                                               |
 | 阅读附件        | Gmail／Outlook／IMAP 经 core 下载；按账户与缓存键哈希写入 `Paths.cache/openmail-attachments`，遵循共享缓存容量和清理；本进程按最近访问驱逐，重启后以文件修改时间排序，系统也可驱逐。iOS 分享面板结束即删除副本。Android 在 URI 交接后保留副本，供接收应用延迟读取；启动及分享时按 24 小时和 64 MiB 总量驱逐，分享失败立即清理。iOS 的预览／打开选项由系统分享面板和已安装应用提供。IMAP 原始 MIME 单封上限 25 MiB。 |
 | 图片与链接      | 仅含 cid: 的 HTML 查询 core 图片，按消息 ID 复用下载结果，邮箱刷新保留阅读视图。远程图片默认阻断，可逐封加载，CSP 仅允许 HTTPS；WebView JS 始终关闭。移除 form、全部 meta http-equiv 和非 stylesheet link；iOS 只打开用户点击链接，Android 兼容省略 isTopFrame 的 release 事件，明确子框架仍拒绝；先显示 ASCII 域名及解码后的国际化域名供确认，CSP 禁止框架。                                                       |
-| 联系人          | 撰写 To／Cc／Bcc 自动补全查询共享联系人表及本地邮件历史；已有 slice 44 路径保留。                                                                                                                                                                                                                                                                                                                                   |
+| 联系人          | 撰写 To／Cc／Bcc 自动补全查询共享联系人表及本地邮件历史；已有 路径保留。                                                                                                                                                                                                                                                                                                                                            |
 | 邮箱列表        | 账户内标签／文件夹的嵌套名称与共享未读数；未缓存邮件不计入本地未读数。                                                                                                                                                                                                                                                                                                                                              |
 | 后台刷新        | 默认关闭；OS 控制时间，约 25 秒 Inbox 增量预算，低电量／受限网络暂停，不保证实时。                                                                                                                                                                                                                                                                                                                                  |
 | 通知与徽标      | 本地通知按账户 opt-in，默认仅显示发件人；未读 Inbox 徽标单独 opt-in。无远程推送。                                                                                                                                                                                                                                                                                                                                   |
@@ -100,13 +100,13 @@ AI 默认关闭，逐账户确认后才向 Anthropic 发送可见消息文本。
 | 签名            | 共享签名库及每账户的新邮件／回复默认值，手机设置可编辑，撰写插入纯文本。                                                                                                                                                                                                                                                                                                                                            |
 | 仍不支持        | PDF 文本提取、固定地址图片下载、端侧推理和数据库恢复。文件层支持沙箱内目录、读取、写入、复制、改名和删除，其他 Effect FileSystem 操作仍不支持。                                                                                                                                                                                                                                                                     |
 
-协议和队列实现见 core [IMAP/SMTP adapter](../../packages/core/src/platform/react-native/imap.ts)、[mail-socket.ts](../../packages/core/src/platform/mail-socket.ts)，OS 接线见 [transport.ts](src/platform/transport.ts)和 [平台组装](src/platform/index.ts)。UID 重置及 COPY／删除回退的边界只在[同步说明](../../docs/sync-correctness.md)维护；slice 56 的重置删除保护已合入共享 core，slice 62 将所有重置删除候选纳入持久续验，未验证项保留。
+协议和队列实现见 core [IMAP/SMTP adapter](../../packages/core/src/platform/react-native/imap.ts)、[mail-socket.ts](../../packages/core/src/platform/mail-socket.ts)，OS 接线见 [transport.ts](src/platform/transport.ts)和 [平台组装](src/platform/index.ts)。UID 重置及 COPY／删除回退的边界只在[同步说明](../../docs/sync-correctness.md)维护；重置删除保护已合入共享 core，将所有重置删除候选纳入持久续验，未验证项保留。
 
 原生库需重新生成开发构建。自动测试使用分片协议流、SQLite 与原生 API mocks，没有连接真实邮箱；不能证明各服务商兼容性、真机 TLS、分享面板预览或 Metro 打包。依赖依据：[TCP/TLS API](https://github.com/Rapsssito/react-native-tcp-socket)、[Expo Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)。
 
 ## 尚需验证
 
-自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。slice 58 自动测试补充 AI 授权与隐藏文本过滤、提议审批、草稿接受、共享签名和后台提醒去重；未调用真实 Anthropic API。真机仍需验证 SQLite／Metro、两家 OAuth、五家 IMAP／SMTP 及 Other 服务器、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、AI 请求取消与审批界面、提醒到期通知、附件投递及前后台生命周期。推送须先决定中转服务。
+自动测试覆盖屏幕 view-model、串行草稿、搜索／滑动／富文本、原生 picker／备份排除 mocks、两家 core 整理与发送命令、撤销、发送失败和数据库重开。未启动模拟器、Metro 或 EAS。自动测试补充 AI 授权与隐藏文本过滤、提议审批、草稿接受、共享签名和后台提醒去重；未调用真实 Anthropic API。真机仍需验证 SQLite／Metro、两家 OAuth、五家 IMAP／SMTP 及 Other 服务器、大邮箱分页、备份排除的原生属性、手势与 VoiceOver、照片／文档选择、原生日期选择、AI 请求取消与审批界面、提醒到期通知、附件投递及前后台生命周期。推送须先决定中转服务。
 
 版本依据：[SDK 57](https://expo.dev/changelog/sdk-57)、[Expo monorepo](https://docs.expo.dev/guides/monorepos/)、[AuthSession](https://docs.expo.dev/guides/authentication/)。
 

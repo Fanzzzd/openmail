@@ -1,11 +1,10 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
-import type { IncomingMessage } from "./domain.js";
+import { type IncomingMessage } from "./domain.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
-
 const message: IncomingMessage = {
   providerId: "one",
   threadId: "thread",
@@ -22,45 +21,6 @@ const message: IncomingMessage = {
   isUnread: true,
   isStarred: false,
 };
-
-it.effect("hot metadata lookups use the replacement covering indexes", () =>
-  Effect.gen(function* () {
-    const sql = yield* SqlClient.SqlClient;
-    const plans = [
-      [
-        "messages_unread_threads",
-        sql`EXPLAIN QUERY PLAN SELECT account_id,COUNT(DISTINCT thread_id) FROM messages WHERE is_unread=1 GROUP BY account_id`,
-      ],
-      [
-        "messages_thread_labels",
-        sql`EXPLAIN QUERY PLAN SELECT labels_json FROM messages WHERE account_id='account' AND thread_id='thread'`,
-      ],
-      [
-        "messages_provider",
-        sql`EXPLAIN QUERY PLAN SELECT provider_id FROM messages WHERE account_id='account' AND provider_id='message'`,
-      ],
-      [
-        "messages_rfc_trimmed",
-        sql`EXPLAIN QUERY PLAN SELECT id FROM messages WHERE account_id='account' AND trim(rfc_message_id,'<>')='rfc' ORDER BY date DESC LIMIT 1`,
-      ],
-      [
-        "pending_ops_account",
-        sql`EXPLAIN QUERY PLAN SELECT provider_id FROM pending_ops WHERE account_id='account'`,
-      ],
-    ] as const;
-    for (const [index, statement] of plans) {
-      const rows = Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ detail: Schema.String })))(
-        yield* statement,
-      );
-      const detail = rows.map((row) => row.detail).join("\n");
-      assert.include(detail, index);
-      assert.notMatch(detail, /SCAN (?:messages|pending_ops)(?:$|\n)|TEMP B-TREE/);
-    }
-    const indexes =
-      yield* sql`SELECT name FROM sqlite_master WHERE type='index' AND name IN ('messages_account_thread','messages_rfc_id')`;
-    assert.deepStrictEqual(indexes, []);
-  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
-);
 
 it.effect(
   "badge projection follows flags, thread regrouping and deletes; identical upserts write nothing",

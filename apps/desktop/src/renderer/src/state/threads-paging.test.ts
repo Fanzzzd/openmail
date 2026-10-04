@@ -1,6 +1,6 @@
 import { afterAll, expect, it, vi } from "vitest";
 import { AtomRegistry } from "effect/reactivity";
-
+import { pagedList } from "./threads";
 const calls = vi.hoisted(() => {
   vi.resetModules();
   return { older: vi.fn() };
@@ -15,13 +15,12 @@ vi.mock("../rpc", async () => {
     }
     return Effect.succeed([]);
   };
-  class MailClient extends Context.Service<MailClient, typeof call>()("test/slice28-paging") {
+  class MailClient extends Context.Service<MailClient, typeof call>()("test/fixture-paging") {
     static runtime = Atom.runtime(Layer.succeed(MailClient, call));
     static query = () => Atom.make(AsyncResult.success([]));
   }
   return { MailClient };
 });
-import { pagedList } from "./threads";
 
 afterAll(() => {
   vi.doUnmock("../rpc");

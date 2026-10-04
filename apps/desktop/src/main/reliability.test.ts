@@ -1,4 +1,4 @@
-import type { CacheResetResult } from "../../../../packages/core/src/platform/node/database-recovery.js";
+import { type CacheResetResult } from "../../../../packages/core/src/platform/node/database-recovery.js";
 import { Effect, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -245,7 +245,7 @@ it("records only redacted provider failure fields from the core logger", async (
   expect(preview).not.toMatch(/private|secret|token/);
 });
 
-it("slice56: smoke diagnostics retain sync reset counts and redact folder and mail data", async () => {
+it("smoke diagnostics retain sync reset counts and redact folder and mail data", async () => {
   const dir = temp();
   const recovery = await import("./reliability");
   await recovery.prepareReliability(dir);

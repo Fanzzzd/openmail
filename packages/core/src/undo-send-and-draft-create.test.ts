@@ -1,17 +1,14 @@
 import { expect } from "vitest";
 import { assert, it } from "@effect/vitest";
-import { Clock, Deferred, Effect, Fiber, Layer, ManagedRuntime, Option } from "effect";
+import { Clock, Deferred, Effect, Fiber, ManagedRuntime, Option } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
 import { AuthError, PermanentError, ProviderError, SendUncertain } from "./errors.js";
-import { MailboxLive, type MailboxOptions } from "./mailbox-live.js";
+import { type MailboxOptions } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { TestMailbox } from "./platform/node/testing.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { Providers, Store, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
-
+import { Store, type ProviderAdapter } from "./services.js";
 for (const action of ["discard", "send"] as const) {
   it.effect(`${action} queues Message-ID cleanup for an uncertain draft creation`, () =>
     core(
@@ -62,14 +59,12 @@ function core<A, E>(
 ) {
   const server = fakeServer("me@gmail.com");
   const adapter = { ...makeFakeProvider(server), ...overrides };
-  const services = Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
-    Layer.provideMerge(MemoryPlatform()),
-  );
+
   return body.pipe(
     Effect.provide(
-      MailboxLive({ backgroundFlush: false, imapIdle: false, ...options }).pipe(
-        Layer.provideMerge(services),
-      ),
+      TestMailbox.withAdapter(adapter, {
+        options: { backgroundFlush: false, imapIdle: false, ...options },
+      }),
     ),
   );
 }

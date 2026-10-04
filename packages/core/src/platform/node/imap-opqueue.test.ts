@@ -21,8 +21,7 @@ import {
   type ProviderAdapter,
   type ProviderPushContext,
 } from "../../services.js";
-import type { Account } from "../../domain.js";
-
+import { type Account } from "../../domain.js";
 const settings = {
   preset: "custom",
   username: "me@example.com",
@@ -194,7 +193,7 @@ function fixture<A, E>(
   );
 }
 
-it.effect("slice63 Node flags false stays queued", () =>
+it.effect("Node flags false stays queued", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsAdd").mockResolvedValue(false);
@@ -203,7 +202,7 @@ it.effect("slice63 Node flags false stays queued", () =>
     }),
   ),
 );
-it.effect("slice63 Node forbidden permanent flag fails permanently", () =>
+it.effect("Node forbidden permanent flag fails permanently", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "mailboxOpen").mockResolvedValue({
@@ -221,7 +220,7 @@ it.effect("slice63 Node forbidden permanent flag fails permanently", () =>
     }),
   ),
 );
-it.effect("slice63 Node failed draft deletion stays queued", () =>
+it.effect("Node failed draft deletion stays queued", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsAdd").mockResolvedValue(false);
@@ -230,7 +229,7 @@ it.effect("slice63 Node failed draft deletion stays queued", () =>
     }),
   ),
 );
-it.effect("slice63 Node unknown appended draft UID preserves previous copy", () =>
+it.effect("Node unknown appended draft UID preserves previous copy", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "append").mockResolvedValue({ destination: "Drafts" });
@@ -247,7 +246,7 @@ it.effect("slice63 Node unknown appended draft UID preserves previous copy", () 
     }),
   ),
 );
-it.effect("slice63 Node failed previous draft cleanup returns cleanup reference", () =>
+it.effect("Node failed previous draft cleanup returns cleanup reference", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsAdd").mockResolvedValue(false);
@@ -263,7 +262,7 @@ it.effect("slice63 Node failed previous draft cleanup returns cleanup reference"
     }),
   ),
 );
-it.effect("slice63 Node copy retry skips completed destination after reconnect", () =>
+it.effect("Node copy retry skips completed destination after reconnect", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       const copied = new Set<string>();
@@ -304,7 +303,7 @@ it.effect("slice63 Node copy retry skips completed destination after reconnect",
     }),
   ),
 );
-it.effect("slice63 Node emulated move retries only deletion", () =>
+it.effect("Node emulated move retries only deletion", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsAdd").mockResolvedValueOnce(false).mockResolvedValue(true);
@@ -342,7 +341,7 @@ it.effect("slice63 Node emulated move retries only deletion", () =>
     }),
   ),
 );
-it.effect("slice63 Node move without COPYUID resolves destination Message-ID", () =>
+it.effect("Node move without COPYUID resolves destination Message-ID", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       let copied = false;
@@ -358,7 +357,7 @@ it.effect("slice63 Node move without COPYUID resolves destination Message-ID", (
     }),
   ),
 );
-it.effect("slice63 Node DATA disconnect confirms Sent without SMTP resend", () =>
+it.effect("Node DATA disconnect confirms Sent without SMTP resend", () =>
   fixture((a, c, t, _opens, markDataSent) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockImplementation(() => {
@@ -376,7 +375,7 @@ it.effect("slice63 Node DATA disconnect confirms Sent without SMTP resend", () =
     }),
   ),
 );
-it.effect("slice63 Node DATA disconnect without Sent is SendUncertain", () =>
+it.effect("Node DATA disconnect without Sent is SendUncertain", () =>
   fixture((a, _c, t, _opens, markDataSent) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockImplementation(() => {
@@ -397,7 +396,7 @@ it.effect("slice63 Node DATA disconnect without Sent is SendUncertain", () =>
     }),
   ),
 );
-it.effect("slice63 Node definite DATA 550 is permanent", () =>
+it.effect("Node definite DATA 550 is permanent", () =>
   fixture((a, c, t) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockRejectedValue({
@@ -412,7 +411,7 @@ it.effect("slice63 Node definite DATA 550 is permanent", () =>
     }),
   ),
 );
-it.effect("slice63 Node partial SMTP delivery returns rejected recipients", () =>
+it.effect("Node partial SMTP delivery returns rejected recipients", () =>
   fixture((a, _c, t) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockImplementation(() =>
@@ -433,7 +432,7 @@ it.effect("slice63 Node partial SMTP delivery returns rejected recipients", () =
     }),
   ),
 );
-it.effect("slice63 Node Sent append reconnects once and reports missing copy", () =>
+it.effect("Node Sent append reconnects once and reports missing copy", () =>
   fixture((a, c, _t, opens) =>
     Effect.gen(function* () {
       vi.spyOn(c, "append").mockResolvedValue(false);
@@ -445,7 +444,7 @@ it.effect("slice63 Node Sent append reconnects once and reports missing copy", (
   ),
 );
 
-it.effect("slice63 Node flags removal false stays queued", () =>
+it.effect("Node flags removal false stays queued", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageFlagsRemove").mockResolvedValue(false);
@@ -456,7 +455,7 @@ it.effect("slice63 Node flags removal false stays queued", () =>
     }),
   ),
 );
-it.effect("slice63 Node UIDPLUS draft deletion false stays queued", () =>
+it.effect("Node UIDPLUS draft deletion false stays queued", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       c.capabilities.set("UIDPLUS", true);
@@ -466,7 +465,7 @@ it.effect("slice63 Node UIDPLUS draft deletion false stays queued", () =>
     }),
   ),
 );
-it.effect("slice63 Node unresolved destination UID holds source even with MOVE", () =>
+it.effect("Node unresolved destination UID holds source even with MOVE", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       c.capabilities.set("MOVE", true);
@@ -481,7 +480,7 @@ it.effect("slice63 Node unresolved destination UID holds source even with MOVE",
     }),
   ),
 );
-it.effect("slice63 Node Sent append reconnects once and recovers", () =>
+it.effect("Node Sent append reconnects once and recovers", () =>
   fixture((a, c, _t, opens) =>
     Effect.gen(function* () {
       vi.spyOn(c, "append")
@@ -496,7 +495,7 @@ it.effect("slice63 Node Sent append reconnects once and recovers", () =>
 );
 
 for (const sourceState of ["deleted", "expunged", "folderGone"] as const) {
-  it.effect(`slice63 Node queued Message-ID resumes a move after source ${sourceState}`, () =>
+  it.effect(`Node queued Message-ID resumes a move after source ${sourceState}`, () =>
     fixture((a, c) =>
       Effect.gen(function* () {
         const queued = queuedContext(
@@ -545,7 +544,7 @@ for (const sourceState of ["deleted", "expunged", "folderGone"] as const) {
     ),
   );
 }
-it.effect("slice63 Node unresolved copied UID stays queued after source gone", () =>
+it.effect("Node unresolved copied UID stays queued after source gone", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "search").mockResolvedValue([]);
@@ -565,7 +564,7 @@ it.effect("slice63 Node unresolved copied UID stays queued after source gone", (
     }),
   ),
 );
-it.effect("slice63 Node queued Message-ID confirms copy after source gone", () =>
+it.effect("Node queued Message-ID confirms copy after source gone", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "search").mockImplementation(async (query) => (query.header ? [4] : []));
@@ -590,7 +589,7 @@ it.effect("slice63 Node queued Message-ID confirms copy after source gone", () =
   ),
 );
 
-it.effect("slice63 Node pre-DATA SMTP 535 preserves authentication failure", () =>
+it.effect("Node pre-DATA SMTP 535 preserves authentication failure", () =>
   fixture((a, c, t) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockRejectedValue(
@@ -606,7 +605,7 @@ it.effect("slice63 Node pre-DATA SMTP 535 preserves authentication failure", () 
     }),
   ),
 );
-it.effect("slice63 Node after-DATA SMTP 554 remains permanent", () =>
+it.effect("Node after-DATA SMTP 554 remains permanent", () =>
   fixture((a, c, t) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockRejectedValue(
@@ -624,7 +623,7 @@ it.effect("slice63 Node after-DATA SMTP 554 remains permanent", () =>
 );
 
 for (const op of [{ kind: "copy", labelIds: ["A"] }, { kind: "archive" }] as const) {
-  it.effect(`slice63 Node mismatched queued Message-ID prevents ${op.kind}`, () =>
+  it.effect(`Node mismatched queued Message-ID prevents ${op.kind}`, () =>
     fixture((a, c) =>
       Effect.gen(function* () {
         vi.spyOn(c, "fetchAll").mockResolvedValue([
@@ -646,7 +645,7 @@ for (const op of [{ kind: "copy", labelIds: ["A"] }, { kind: "archive" }] as con
     ),
   );
 }
-it.effect("slice63 Node mismatched Deleted source is never deleted again", () =>
+it.effect("Node mismatched Deleted source is never deleted again", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       c.capabilities.set("UIDPLUS", true);
@@ -676,22 +675,20 @@ it.effect("slice63 Node mismatched Deleted source is never deleted again", () =>
   ),
 );
 
-it.effect(
-  "slice63 followup Node externally removed source without copy progress fails permanently",
-  () =>
-    fixture((a, c) =>
-      Effect.gen(function* () {
-        vi.spyOn(c, "search").mockResolvedValue([]);
-        const queued = queuedContext(new Map([["7:1:INBOX", "<source@example.com>"]]));
-        const error = yield* Effect.flip(
-          a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued),
-        );
-        assert.strictEqual(error._tag, "PermanentError");
-        assert.strictEqual(vi.spyOn(c, "messageCopy").mock.calls.length, 0);
-      }),
-    ),
+it.effect("followup Node externally removed source without copy progress fails permanently", () =>
+  fixture((a, c) =>
+    Effect.gen(function* () {
+      vi.spyOn(c, "search").mockResolvedValue([]);
+      const queued = queuedContext(new Map([["7:1:INBOX", "<source@example.com>"]]));
+      const error = yield* Effect.flip(
+        a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued),
+      );
+      assert.strictEqual(error._tag, "PermanentError");
+      assert.strictEqual(vi.spyOn(c, "messageCopy").mock.calls.length, 0);
+    }),
+  ),
 );
-it.effect("slice63 followup Node pre-existing destination copy still receives fresh COPY", () =>
+it.effect("followup Node pre-existing destination copy still receives fresh COPY", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "search").mockImplementation(async (query) => (query.header ? [4] : [1]));
@@ -706,7 +703,7 @@ it.effect("slice63 followup Node pre-existing destination copy still receives fr
     }),
   ),
 );
-it.effect("slice63 followup Node no Message-ID or COPYUID completes move and reconciles", () =>
+it.effect("followup Node no Message-ID or COPYUID completes move and reconciles", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "fetchAll").mockResolvedValue([{ seq: 1, uid: 1 }]);
@@ -726,7 +723,7 @@ it.effect("slice63 followup Node no Message-ID or COPYUID completes move and rec
     }),
   ),
 );
-it.effect("slice63 followup Node normalizes queued and envelope Message-ID", () =>
+it.effect("followup Node normalizes queued and envelope Message-ID", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "fetchAll").mockResolvedValue([
@@ -738,7 +735,7 @@ it.effect("slice63 followup Node normalizes queued and envelope Message-ID", () 
     }),
   ),
 );
-it.effect("slice63 followup Node SMTP ECONNREFUSED is definite failure", () =>
+it.effect("followup Node SMTP ECONNREFUSED is definite failure", () =>
   fixture((a, c, t) =>
     Effect.gen(function* () {
       vi.spyOn(t, "sendMail").mockRejectedValue(
@@ -758,62 +755,58 @@ it.effect("slice63 followup Node SMTP ECONNREFUSED is definite failure", () =>
     }),
   ),
 );
-it.effect(
-  "slice63 followup Node draft APPEND retry finds issued copy instead of appending again",
-  () =>
-    fixture((a, c) =>
-      Effect.gen(function* () {
-        const queued = queuedContext();
-        let appended = false;
-        let source = Buffer.from("");
-        vi.spyOn(c, "append").mockImplementation(async (_path, content) => {
-          assert.ok(typeof content === "string" || Buffer.isBuffer(content));
-          source = Buffer.from(content);
-          appended = true;
-          throw new Error("APPEND response lost");
-        });
-        vi.spyOn(c, "fetchOne").mockImplementation(async (_uid, query) => ({
-          seq: 9,
-          uid: 9,
-          flags: new Set<string>(),
-          ...(query.source ? { source } : {}),
-        }));
-        vi.spyOn(c, "search").mockImplementation(async (query) =>
-          query.header && appended ? [9] : [],
-        );
-        const draft = {
-          creation: draftCreation(),
-          message,
-          original: Option.none(),
-          remote: previous,
-          replaceAttachments: true,
-        };
-        yield* Effect.flip(a.saveDraft(account, draft, queued));
-        const remote = yield* a.saveDraft(account, draft, queued);
-        assert.strictEqual(remote.messageId, "7:9:Drafts");
-        assert.strictEqual(vi.spyOn(c, "append").mock.calls.length, 1);
-        assert.ok(queued.appendedDraftMessageId);
-      }),
-    ),
+it.effect("followup Node draft APPEND retry finds issued copy instead of appending again", () =>
+  fixture((a, c) =>
+    Effect.gen(function* () {
+      const queued = queuedContext();
+      let appended = false;
+      let source = Buffer.from("");
+      vi.spyOn(c, "append").mockImplementation(async (_path, content) => {
+        assert.ok(typeof content === "string" || Buffer.isBuffer(content));
+        source = Buffer.from(content);
+        appended = true;
+        throw new Error("APPEND response lost");
+      });
+      vi.spyOn(c, "fetchOne").mockImplementation(async (_uid, query) => ({
+        seq: 9,
+        uid: 9,
+        flags: new Set<string>(),
+        ...(query.source ? { source } : {}),
+      }));
+      vi.spyOn(c, "search").mockImplementation(async (query) =>
+        query.header && appended ? [9] : [],
+      );
+      const draft = {
+        creation: draftCreation(),
+        message,
+        original: Option.none(),
+        remote: previous,
+        replaceAttachments: true,
+      };
+      yield* Effect.flip(a.saveDraft(account, draft, queued));
+      const remote = yield* a.saveDraft(account, draft, queued);
+      assert.strictEqual(remote.messageId, "7:9:Drafts");
+      assert.strictEqual(vi.spyOn(c, "append").mock.calls.length, 1);
+      assert.ok(queued.appendedDraftMessageId);
+    }),
+  ),
 );
-it.effect(
-  "slice63 followup Node no Message-ID retry after COPY success only retries deletion",
-  () =>
-    fixture((a, c) =>
-      Effect.gen(function* () {
-        vi.spyOn(c, "fetchAll").mockResolvedValue([{ seq: 1, uid: 1 }]);
-        vi.spyOn(c, "messageCopy").mockResolvedValue({ path: "INBOX", destination: "Archive" });
-        vi.spyOn(c, "messageFlagsAdd").mockResolvedValueOnce(false).mockResolvedValue(true);
-        const queued = queuedContext();
-        yield* Effect.flip(a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued));
-        const result = yield* a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued);
-        assert.deepStrictEqual(result, { reconcile: true });
-        assert.strictEqual(vi.spyOn(c, "messageCopy").mock.calls.length, 1);
-        assert.strictEqual(vi.spyOn(c, "messageFlagsAdd").mock.calls.length, 2);
-      }),
-    ),
+it.effect("followup Node no Message-ID retry after COPY success only retries deletion", () =>
+  fixture((a, c) =>
+    Effect.gen(function* () {
+      vi.spyOn(c, "fetchAll").mockResolvedValue([{ seq: 1, uid: 1 }]);
+      vi.spyOn(c, "messageCopy").mockResolvedValue({ path: "INBOX", destination: "Archive" });
+      vi.spyOn(c, "messageFlagsAdd").mockResolvedValueOnce(false).mockResolvedValue(true);
+      const queued = queuedContext();
+      yield* Effect.flip(a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued));
+      const result = yield* a.push(account, "7:1:INBOX", { kind: "archive" }, undefined, queued);
+      assert.deepStrictEqual(result, { reconcile: true });
+      assert.strictEqual(vi.spyOn(c, "messageCopy").mock.calls.length, 1);
+      assert.strictEqual(vi.spyOn(c, "messageFlagsAdd").mock.calls.length, 2);
+    }),
+  ),
 );
-it.effect("slice63 followup Node mixed bulk COPY probes only previously issued source", () =>
+it.effect("followup Node mixed bulk COPY probes only previously issued source", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       assert.ok(a.pushBatch);
@@ -850,7 +843,7 @@ it.effect("slice63 followup Node mixed bulk COPY probes only previously issued s
 
 for (const disconnectAfterData of [false, true]) {
   it.effect(
-    `slice63 followup real Node SMTP disconnect ${disconnectAfterData ? "after terminator" : "before greeting"} uses DATA phase`,
+    `followup real Node SMTP disconnect ${disconnectAfterData ? "after terminator" : "before greeting"} uses DATA phase`,
     () =>
       Effect.scoped(
         Effect.gen(function* () {
@@ -943,7 +936,7 @@ for (const disconnectAfterData of [false, true]) {
 }
 
 it.effect(
-  "slice63 followup Node accepted identity-free copy resumes after lost Deleted acknowledgment",
+  "followup Node accepted identity-free copy resumes after lost Deleted acknowledgment",
   () =>
     fixture((a, c) =>
       Effect.gen(function* () {
@@ -969,7 +962,7 @@ it.effect(
       }),
     ),
 );
-it.effect("slice63 followup Node explicit COPY NO clears issued progress", () =>
+it.effect("followup Node explicit COPY NO clears issued progress", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageCopy").mockRejectedValue(
@@ -981,7 +974,7 @@ it.effect("slice63 followup Node explicit COPY NO clears issued progress", () =>
     }),
   ),
 );
-it.effect("slice63 followup Node ambiguous COPY false preserves issued progress", () =>
+it.effect("followup Node ambiguous COPY false preserves issued progress", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageCopy").mockResolvedValue(false);
@@ -991,7 +984,7 @@ it.effect("slice63 followup Node ambiguous COPY false preserves issued progress"
     }),
   ),
 );
-it.effect("slice63 followup Node observed COPY NO clears progress even if socket then closes", () =>
+it.effect("followup Node observed COPY NO clears progress even if socket then closes", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "messageCopy").mockImplementation(async () => {
@@ -1006,7 +999,7 @@ it.effect("slice63 followup Node observed COPY NO clears progress even if socket
   ),
 );
 it.effect(
-  "slice63 followup Node COPY authentication refusal preserves AuthError while clearing progress",
+  "followup Node COPY authentication refusal preserves AuthError while clearing progress",
   () =>
     fixture((a, c) =>
       Effect.gen(function* () {
@@ -1027,7 +1020,7 @@ it.effect(
 );
 
 for (const previousId of ["7:9:Drafts", "7:009:Drafts", "007:009:Drafts"]) {
-  it.effect(`slice63 coordinator recovered draft ${previousId} keeps its own copy`, () =>
+  it.effect(`coordinator recovered draft ${previousId} keeps its own copy`, () =>
     fixture((a, c) =>
       Effect.gen(function* () {
         const raw = yield* buildMime(
@@ -1063,27 +1056,25 @@ for (const previousId of ["7:9:Drafts", "7:009:Drafts", "007:009:Drafts"]) {
     ),
   );
 }
-it.effect(
-  "slice63 coordinator RFC cleanup deletes matching Drafts copies without creating folders",
-  () =>
-    fixture((a, c) =>
-      Effect.gen(function* () {
-        vi.spyOn(c, "search").mockResolvedValue([9, 10]);
-        const create = vi.spyOn(c, "mailboxCreate");
-        yield* a.deleteDraft(account, {
-          draftId: null,
-          messageId: null,
-          rfcMessageId: "<draft@example.com>",
-        });
-        assert.deepStrictEqual(
-          vi.spyOn(c, "messageFlagsAdd").mock.calls.map(([uid]) => uid),
-          ["9", "10"],
-        );
-        assert.strictEqual(create.mock.calls.length, 0);
-      }),
-    ),
+it.effect("coordinator RFC cleanup deletes matching Drafts copies without creating folders", () =>
+  fixture((a, c) =>
+    Effect.gen(function* () {
+      vi.spyOn(c, "search").mockResolvedValue([9, 10]);
+      const create = vi.spyOn(c, "mailboxCreate");
+      yield* a.deleteDraft(account, {
+        draftId: null,
+        messageId: null,
+        rfcMessageId: "<draft@example.com>",
+      });
+      assert.deepStrictEqual(
+        vi.spyOn(c, "messageFlagsAdd").mock.calls.map(([uid]) => uid),
+        ["9", "10"],
+      );
+      assert.strictEqual(create.mock.calls.length, 0);
+    }),
+  ),
 );
-it.effect("slice63 coordinator RFC cleanup missing Drafts does not create it", () =>
+it.effect("coordinator RFC cleanup missing Drafts does not create it", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       vi.spyOn(c, "list").mockResolvedValue([]);
@@ -1099,7 +1090,7 @@ it.effect("slice63 coordinator RFC cleanup missing Drafts does not create it", (
   ),
 );
 it.effect(
-  "slice63 coordinator real Mailbox updates edited content after lost APPEND with one cloud draft",
+  "coordinator real Mailbox updates edited content after lost APPEND with one cloud draft",
   () =>
     fixture((a, c) => {
       const cloud = new Map<number, Buffer>();
@@ -1176,7 +1167,7 @@ it.effect(
       );
     }),
 );
-it.effect("slice63 coordinator canonical UIDVALIDITY still cleans a different previous UID", () =>
+it.effect("coordinator canonical UIDVALIDITY still cleans a different previous UID", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       const raw = yield* buildMime(
@@ -1212,7 +1203,7 @@ it.effect("slice63 coordinator canonical UIDVALIDITY still cleans a different pr
     }),
   ),
 );
-it.effect("slice63 coordinator matching UID numbers in case-distinct folders stay distinct", () =>
+it.effect("coordinator matching UID numbers in case-distinct folders stay distinct", () =>
   fixture((a, c) =>
     Effect.gen(function* () {
       const raw = yield* buildMime(

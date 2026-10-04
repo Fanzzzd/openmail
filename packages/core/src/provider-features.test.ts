@@ -1,18 +1,10 @@
+import { account as buildAccount } from "./platform/node/testing.js";
 import { Effect } from "effect";
 import { expect, it } from "vitest";
-import type { Account } from "./domain.js";
+import { type Account } from "./domain.js";
 import { AuthError, FeatureScopeMissing, ProviderError } from "./errors.js";
 import { featureRequest } from "./provider-features.js";
-const account: Account = {
-  id: "outlook:fake",
-  email: "fake@example.com",
-  provider: "outlook",
-  createdAt: 0,
-  lastSyncedAt: null,
-  lastSyncError: null,
-  profileId: null,
-  needsReauth: false,
-};
+const account: Account = buildAccount("outlook", { id: "outlook:fake", email: "fake@example.com" });
 
 it("contacts preserve capability failures through nested adapters and never classify 403 as AuthError", () => {
   for (const error of [

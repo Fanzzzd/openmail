@@ -14,13 +14,12 @@ import {
 } from "../shared/native-actions";
 import { KEYMAP, matchesShortcut } from "../shared/shortcuts";
 import { DesktopEvent, desktopEventRoute, shouldBufferDesktopEvent } from "../shared/desktop";
-
+import { spellingItems } from "./spellcheck";
 vi.mock("electron", () => ({
   app: new EventEmitter(),
   BrowserWindow: { getAllWindows: () => [] },
   Menu: {},
 }));
-import { spellingItems } from "./spellcheck";
 
 it("Dock drops read bounded regular files and roundtrip as a deferred compose event", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "openmail-dock-"));

@@ -1,10 +1,15 @@
-import { draftCreation } from "./platform/node/draft-create-fixture.js";
+import { assert, it } from "@effect/vitest";
 import { ProviderError } from "./errors.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
-import { assert, it } from "@effect/vitest";
-import { EMPTY_FILTER } from "./organization.js";
 import { parseCalendar } from "./invites.js";
-
+import { EMPTY_FILTER } from "./organization.js";
+import { draftCreation } from "./platform/node/draft-create-fixture.js";
+import {
+  fakeHttp,
+  type FakeHttpCall as Call,
+  type FakeHttpReply as Reply,
+} from "./platform/node/fake-http.js";
+import { account as buildAccount } from "./platform/node/testing.js";
 import {
   Cause,
   Clock,
@@ -20,35 +25,23 @@ import {
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { TestClock } from "effect/testing";
 import { simpleParser } from "mailparser";
-
-import type { Account, OutgoingMessage } from "./domain.js";
-import { makeOutlook, parseGraphMessage, MARKDOWN_DRAFT_PROPERTY } from "./outlook.js";
+import { type Account, type OutgoingMessage } from "./domain.js";
+import { MailboxLive } from "./mailbox-live.js";
+import { Mailbox } from "./mailbox.js";
+import { markdownDraftSource } from "./markdown-draft.js";
+import { renderMarkdown } from "./markdown.js";
+import { makeOutlook, MARKDOWN_DRAFT_PROPERTY, parseGraphMessage } from "./outlook.js";
+import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
 import {
   importedMessage,
   parseRawDraft,
   withDraftMarkdownSource,
 } from "./platform/node/portable-helpers.js";
-import { markdownDraftSource } from "./markdown-draft.js";
-import { renderMarkdown } from "./markdown.js";
-import { replyRecipients } from "./recipients.js";
-import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
-import { type Change, type ProviderAdapter, Providers, Secrets, Store } from "./services.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Mailbox } from "./mailbox.js";
-import { StoreLive } from "./store.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
-
+import { replyRecipients } from "./recipients.js";
+import { Providers, Secrets, Store, type Change, type ProviderAdapter } from "./services.js";
+import { StoreLive } from "./store.js";
 const GRAPH = "https://graph.microsoft.com/v1.0";
-
-interface Call {
-  method: string;
-  url: URL;
-  body: unknown;
-  contentType: string;
-  prefer: string | undefined;
-}
-
-const parseJson = (text: string): unknown => JSON.parse(text);
 
 it.effect(
   "discarding an uncertain Outlook creation removes its actual server copy by journal identity",
@@ -1090,54 +1083,13 @@ it.live("Outlook checks changeKey before overwriting a draft", () =>
   }),
 );
 
-type Reply = { headers?: Record<string, string>; status?: number; json?: unknown; text?: string };
-
 /**
  * An HttpClient that answers from `routes`, keyed by "METHOD /path" under
  * GRAPH. Function routes see the full URL (delta pages share a path).
  * Unknown routes answer 404, like a folder the mailbox does not have.
  */
-function fakeHttp(routes: Record<string, Reply | ((url: URL, call: Call) => Reply)>) {
-  const calls: Call[] = [];
-  const client = HttpClient.make((request, url) =>
-    Effect.sync(() => {
-      const text =
-        request.body._tag === "Uint8Array" ? new TextDecoder().decode(request.body.body) : "";
-      const contentType = request.body._tag === "Uint8Array" ? request.body.contentType : "";
-      const body = contentType.startsWith("application/json") ? parseJson(text) : text || undefined;
-      const call: Call = {
-        method: request.method,
-        url,
-        body,
-        contentType,
-        prefer: request.headers["prefer"],
-      };
-      calls.push(call);
-      const path = url.pathname.replace("/v1.0", "");
-      const route = routes[`${request.method} ${path}`];
-      const reply = typeof route === "function" ? route(url, call) : (route ?? { status: 404 });
-      return HttpClientResponse.fromWeb(
-        request,
-        new Response(reply.text ?? (reply.json === undefined ? null : JSON.stringify(reply.json)), {
-          status: reply.status ?? 200,
-          headers: reply.headers,
-        }),
-      );
-    }),
-  );
-  return { client, layer: Layer.succeed(HttpClient.HttpClient)(client), calls };
-}
 
-const account: Account = {
-  id: "outlook:me@outlook.com",
-  provider: "outlook",
-  email: "me@outlook.com",
-  createdAt: 0,
-  lastSyncedAt: null,
-  lastSyncError: null,
-  profileId: null,
-  needsReauth: false,
-};
+const account: Account = buildAccount("outlook");
 
 const platformOptions: MemoryPlatformOptions = {
   secrets: { [account.id]: "refresh-token" },
@@ -3857,7 +3809,7 @@ it.effect("category registration failure never patches message categories", () =
   }),
 );
 
-it.effect("slice49: Graph expanded attachment metadata avoids per-message requests", () =>
+it.effect("Graph expanded attachment metadata avoids per-message requests", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       ...mailbox({}),
@@ -3885,7 +3837,7 @@ it.effect("slice49: Graph expanded attachment metadata avoids per-message reques
 
 for (const reply of [false, true])
   it.effect(
-    `slice49: Graph ambiguous ${reply ? "reply" : "new"} send checks Sent without duplicate POST`,
+    `Graph ambiguous ${reply ? "reply" : "new"} send checks Sent without duplicate POST`,
     () =>
       Effect.gen(function* () {
         const http = fakeHttp({
@@ -3934,7 +3886,7 @@ for (const reply of [false, true])
       }),
   );
 
-it.effect("slice49: reply preparation failure deletes its orphan draft without sending", () =>
+it.effect("reply preparation failure deletes its orphan draft without sending", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "POST /me/messages/orig/createReply": { json: { id: "prepared" } },
@@ -3956,7 +3908,7 @@ it.effect("slice49: reply preparation failure deletes its orphan draft without s
 );
 
 for (const date of [false, true])
-  it.effect(`slice49: Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
+  it.effect(`Retry-After ${date ? "HTTP date" : "seconds"} delays provider retries`, () =>
     Effect.gen(function* () {
       const now = yield* Clock.currentTimeMillis;
       let requests = 0;
@@ -3984,7 +3936,7 @@ for (const date of [false, true])
     }),
   );
 
-it.effect("slice49: Graph shares at most four requests per account across concurrent work", () =>
+it.effect("Graph shares at most four requests per account across concurrent work", () =>
   Effect.gen(function* () {
     let active = 0,
       peak = 0;
@@ -4021,7 +3973,7 @@ it.effect("slice49: Graph shares at most four requests per account across concur
   }),
 );
 
-it.effect("slice49: send transport timeout checks Sent and never replays POST", () =>
+it.effect("send transport timeout checks Sent and never replays POST", () =>
   Effect.gen(function* () {
     let posts = 0,
       sentChecks = 0;
@@ -4062,7 +4014,7 @@ it.effect("slice49: send transport timeout checks Sent and never replays POST", 
   }),
 );
 
-it.effect("slice49: Graph JSON signed containers use raw MIME for the body", () =>
+it.effect("Graph JSON signed containers use raw MIME for the body", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       ...mailbox({}),
@@ -4091,7 +4043,7 @@ it.effect("slice49: Graph JSON signed containers use raw MIME for the body", () 
     );
   }),
 );
-it.effect("slice49: Graph JSON uuencode attachments are listed and fetched from raw MIME", () =>
+it.effect("Graph JSON uuencode attachments are listed and fetched from raw MIME", () =>
   Effect.gen(function* () {
     const text = "hello\r\nbegin 644 file.txt\r\n#0V%T\r\n`\r\nend\r\n";
     const http = fakeHttp({
@@ -4127,7 +4079,7 @@ it.effect("slice49: Graph JSON uuencode attachments are listed and fetched from 
   }),
 );
 
-it.effect("slice49-fix: ambiguous reply creation cleans its orphan without sending", () =>
+it.effect("ambiguous reply creation cleans its orphan without sending", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       "POST /me/messages/orig/createReply": { status: 503 },
@@ -4152,7 +4104,7 @@ it.effect("slice49-fix: ambiguous reply creation cleans its orphan without sendi
   }),
 );
 
-it.effect("slice49-fix: Graph Retry-After dates over sixty seconds release the request", () =>
+it.effect("Graph Retry-After dates over sixty seconds release the request", () =>
   Effect.gen(function* () {
     const now = yield* Clock.currentTimeMillis;
     let calls = 0;
@@ -4176,7 +4128,7 @@ it.effect("slice49-fix: Graph Retry-After dates over sixty seconds release the r
   }),
 );
 
-it.effect("slice49-fix: oversized opaque Graph MIME falls back without blocking the message", () =>
+it.effect("oversized opaque Graph MIME falls back without blocking the message", () =>
   Effect.gen(function* () {
     const opaque = {
       ...raw,
@@ -4203,7 +4155,7 @@ it.effect("slice49-fix: oversized opaque Graph MIME falls back without blocking 
   }),
 );
 
-it.effect("slice49-fix: Graph signed files preserve the outer JSON message body", () =>
+it.effect("Graph signed files preserve the outer JSON message body", () =>
   Effect.gen(function* () {
     const http = fakeHttp({
       ...mailbox({}),
@@ -4375,7 +4327,7 @@ it.effect("outlook interruption aborts the GET and never retries or returns Auth
 
 for (const reply of [false, true])
   it.effect(
-    `slice55: ${reply ? "reply" : "new"} sending never queues behind four throttled Graph requests`,
+    `${reply ? "reply" : "new"} sending never queues behind four throttled Graph requests`,
     () =>
       Effect.gen(function* () {
         let pulls = 0;
@@ -4428,7 +4380,7 @@ for (const reply of [false, true])
       }),
   );
 
-it.effect("slice55: Graph sends use the sender domain and no custom trace header", () =>
+it.effect("Graph sends use the sender domain and no custom trace header", () =>
   Effect.gen(function* () {
     const http = fakeHttp({ "POST /me/sendMail": { status: 202 } });
     yield* run(http, (a) => a.send(account, { ...draftMessage, attachments: [] }, Option.none()));
@@ -4477,7 +4429,7 @@ it.effect("Outlook sync health GETs the exact system/custom folder count selecti
 
 for (const restart of [false, true]) {
   it.effect(
-    `slice56: delta page-size preference enumerates all messages after ${restart ? "410 restart" : "initial sync"}`,
+    `delta page-size preference enumerates all messages after ${restart ? "410 restart" : "initial sync"}`,
     () =>
       Effect.gen(function* () {
         const delta = `${GRAPH}/me/mailFolders/inbox/messages/delta`;
@@ -4724,45 +4676,42 @@ for (const firstStatus of [200, 403]) {
 }
 
 for (const status of [200, 403, 404] as const) {
-  it.effect(
-    `slice62: an unlisted Graph folder is removed only after GET confirms 404 (${status})`,
-    () => {
-      const link = `${GRAPH}/me/mailFolders/id-old/messages/delta?token=old`;
-      const http = fakeHttp({
-        ...mailbox({}),
-        "GET /me/mailFolders/id-old": {
-          status,
-          json: status === 200 ? { id: "id-old" } : undefined,
-        },
-      });
-      return run(http, (adapter) =>
-        Effect.gen(function* () {
-          const changes = yield* Stream.runCollect(
-            adapter.pull(
-              account,
-              Option.some(JSON.stringify({ __idType: "immutable", "id-old": link })),
-            ),
-          );
-          assert.strictEqual(
-            changes.some((change) => change._tag === "DeleteLabel" && change.label === "id-old"),
-            status === 404,
-          );
-          const cursor = changes.findLast((change) => change._tag === "Cursor");
-          assert.ok(cursor?._tag === "Cursor");
-          const saved = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.String))(
-            JSON.parse(cursor.cursor),
-          );
-          assert.strictEqual(saved["id-old"], status === 404 ? undefined : link);
-          assert.isTrue(
-            http.calls.some((call) => call.url.pathname === "/v1.0/me/mailFolders/id-old"),
-          );
-        }),
-      );
-    },
-  );
+  it.effect(`an unlisted Graph folder is removed only after GET confirms 404 (${status})`, () => {
+    const link = `${GRAPH}/me/mailFolders/id-old/messages/delta?token=old`;
+    const http = fakeHttp({
+      ...mailbox({}),
+      "GET /me/mailFolders/id-old": {
+        status,
+        json: status === 200 ? { id: "id-old" } : undefined,
+      },
+    });
+    return run(http, (adapter) =>
+      Effect.gen(function* () {
+        const changes = yield* Stream.runCollect(
+          adapter.pull(
+            account,
+            Option.some(JSON.stringify({ __idType: "immutable", "id-old": link })),
+          ),
+        );
+        assert.strictEqual(
+          changes.some((change) => change._tag === "DeleteLabel" && change.label === "id-old"),
+          status === 404,
+        );
+        const cursor = changes.findLast((change) => change._tag === "Cursor");
+        assert.ok(cursor?._tag === "Cursor");
+        const saved = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.String))(
+          JSON.parse(cursor.cursor),
+        );
+        assert.strictEqual(saved["id-old"], status === 404 ? undefined : link);
+        assert.isTrue(
+          http.calls.some((call) => call.url.pathname === "/v1.0/me/mailFolders/id-old"),
+        );
+      }),
+    );
+  });
 }
 
-it.effect("slice62: Graph message and child-folder pages accept key segments unchanged", () => {
+it.effect("Graph message and child-folder pages accept key segments unchanged", () => {
   const messagesNext = `${GRAPH}/me/mailfolders('actual-trash-id')/messages?$skiptoken=a%2Fb%2B%3D`;
   const childrenNext = `${GRAPH}/me/mailfolders('trash-root')/childfolders?$skiptoken=child%2Fnext`;
   const http = fakeHttp({
@@ -4796,7 +4745,7 @@ it.effect("slice62: Graph message and child-folder pages accept key segments unc
 });
 
 it.effect(
-  "slice62: Graph contacts include paged root and nested folders, dedupe ids and bound people",
+  "Graph contacts include paged root and nested folders, dedupe ids and bound people",
   () => {
     const contact = (id: string, address: string) => ({
       id,
@@ -4874,7 +4823,7 @@ it.effect(
   },
 );
 
-it.effect("slice62: empty Graph Trash walks key-segment child pages", () => {
+it.effect("empty Graph Trash walks key-segment child pages", () => {
   const next = `${GRAPH}/me/mailfolders('deleteditems')/childfolders?$skiptoken=next%2Fpage`;
   const http = fakeHttp({
     "GET /me/mailFolders/deleteditems/messages": { json: { value: [] } },
@@ -4898,7 +4847,7 @@ it.effect("slice62: empty Graph Trash walks key-segment child pages", () => {
 });
 
 for (const status of [403, 409, 413, 415, 422])
-  it.effect(`slice63: Graph ${status} write rejection is permanent with a reason`, () => {
+  it.effect(`Graph ${status} write rejection is permanent with a reason`, () => {
     const http = fakeHttp({
       "PATCH /me/messages/p": {
         status,
@@ -4919,7 +4868,7 @@ for (const status of [403, 409, 413, 415, 422])
     );
   });
 
-it.effect("slice63-review: a failed Graph change exposes a short reason instead of JSON", () => {
+it.effect("a failed Graph change exposes a short reason instead of JSON", () => {
   const http = fakeHttp({
     "PATCH /me/messages/p": {
       status: 403,

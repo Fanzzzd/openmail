@@ -17,7 +17,6 @@ import { notificationAction, spaceAccountIds, dockUnreadCount } from "./system.j
 import { TestMailbox } from "./platform/node/testing.js";
 import { TestClock } from "effect/testing";
 import { ProviderError } from "./errors.js";
-
 const incoming = (id: string): IncomingMessage => ({
   providerId: id,
   threadId: id,
@@ -328,13 +327,10 @@ it.effect(
         sendAs: (a: Parameters<typeof base.sendAs>[0]) =>
           Effect.sync(() => aliases++).pipe(Effect.andThen(base.sendAs(a))),
       };
-      const layer = MailboxLive({ backgroundFlush: false }).pipe(
-        Layer.provideMerge(
-          Layer.merge(StoreLive, Layer.succeed(Providers, { get: () => provider })).pipe(
-            Layer.provideMerge(MemoryPlatform()),
-          ),
-        ),
-      );
+      const layer = TestMailbox.withAdapter(provider, {
+        options: { backgroundFlush: false },
+        platformOptions: {},
+      });
       yield* Effect.gen(function* () {
         const mailbox = yield* Mailbox;
         const store = yield* Store;

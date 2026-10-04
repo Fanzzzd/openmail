@@ -22,7 +22,7 @@ if (process.env.OPENMAIL_PERF !== "1")
 const directory = mkdtempSync(join(tmpdir(), "openmail-perf-cost-"));
 const baseline = join(directory, "baseline.db");
 const upgraded = join(directory, "upgraded.db");
-const output = process.env.OPENMAIL_PERF_COST_REPORT ?? "/tmp/openmail-slice61-cost.json";
+const output = process.env.OPENMAIL_PERF_COST_REPORT ?? "/tmp/openmail-cost.json";
 const baselineRef = execFileSync(
   "git",
   ["rev-parse", process.env.OPENMAIL_PERF_BASELINE_REF ?? "main"],

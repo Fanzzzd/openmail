@@ -1,3 +1,4 @@
+import { TestMailbox } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { TestClock } from "effect/testing";
@@ -9,7 +10,6 @@ import { afterEach, vi } from "vitest";
 import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import { DEFAULT_ACTIVE_HOURS, type IncomingMessage, type Provider } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
 import {
   type GmailRuleDefinition,
   EMPTY_FILTER,
@@ -22,11 +22,9 @@ import { gmailDelta } from "./gmail.js";
 import { destination } from "./outlook.js";
 import { ProviderError } from "./errors.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers, Store, type ProviderAdapter } from "./services.js";
+import { Store, type ProviderAdapter } from "./services.js";
 import { StoreLive } from "./store.js";
-
 const incoming = (id: string, overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
   providerId: id,
   threadId: "thread",
@@ -74,14 +72,10 @@ function fixture<A, E>(
     return yield* body(m, store, server, account.id);
   }).pipe(
     Effect.provide(
-      MailboxLive({ backgroundFlush: false }).pipe(
-        Layer.provideMerge(
-          Layer.mergeAll(
-            StoreLive,
-            Layer.succeed(Providers, { get: () => wrapProvider(makeFakeProvider(server), server) }),
-          ).pipe(Layer.provideMerge(MemoryPlatform())),
-        ),
-      ),
+      TestMailbox.withAdapter(wrapProvider(makeFakeProvider(server), server), {
+        options: { backgroundFlush: false },
+        platformOptions: {},
+      }),
     ),
   );
 }

@@ -129,19 +129,6 @@ function storedValue<A, I>(schema: Schema.Codec<A, I>, value: unknown, fallback:
 /** Suggestions lose half their weight after this many milliseconds (30 days). */
 const MONTH = 30 * 86_400_000;
 
-/** Shared by completion and its SQLite query-plan regression check. */
-export function contactMatch(sql: SqlClient.SqlClient, match: string): Fragment {
-  return sql`c.rowid IN (
-    SELECT rowid FROM contact_candidates_fts WHERE contact_candidates_fts MATCH ${match}
-    UNION ALL
-    SELECT cc.rowid FROM (
-      SELECT account_id,address FROM contact_organizations WHERE rowid IN (
-        SELECT rowid FROM contact_organizations_fts WHERE contact_organizations_fts MATCH ${match}
-      )
-    ) o CROSS JOIN contact_candidates cc ON cc.address=o.address AND cc.account_id=o.account_id
-  )`;
-}
-
 export function makeComposeStore(
   sql: SqlClient.SqlClient,
   crypto: PlatformCrypto = Context.get(Context.empty(), PlatformCrypto),

@@ -2,11 +2,10 @@ import { expect, it } from "vitest";
 import { act, createElement, useEffect, useState } from "react";
 import { parseHTML } from "linkedom";
 import { prepareQuoteHistory } from "@openmail/core/schema";
-import type { Message } from "../../shared/api";
+import { type Message } from "../../shared/api";
 import { readerThreadKey, useReaderMessages } from "./reader-selection";
 import { useBodyQuotes } from "./components/body-quotes";
 import { testDom } from "./test-dom";
-
 const message = (id: string, threadId = "shared"): Message => ({
   id,
   threadId,
@@ -116,7 +115,7 @@ it("find navigation and quote toggles never rerun quote detection for the same d
   }
 });
 
-it("slice55-fix: a vanished message clears cached reader content even in the same conversation", () => {
+it("a vanished message clears cached reader content even in the same conversation", () => {
   const dom = testDom();
   let ids: string[] = [];
   function Reader({ missing }: { missing: boolean }) {

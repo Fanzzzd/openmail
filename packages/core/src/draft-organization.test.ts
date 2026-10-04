@@ -4,17 +4,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ProviderError } from "./errors.js";
-import { databaseLayer } from "./platform/node/db.js";
 import { DEFAULT_PREFS, type OutgoingMessage, type Provider } from "./domain.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-
 const message: OutgoingMessage = {
   to: [],
   cc: [],
@@ -35,19 +32,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const server = fakeServer("me@example.com");
         const adapter = makeFakeProvider(server);
         const layer = () =>
-          MailboxLive({ backgroundFlush: false }).pipe(
-            Layer.provide(
-              Layer.merge(
-                StoreLive.pipe(
-                  Layer.provide(
-                    databaseLayer(join(directory, "mail.db")).pipe(Layer.provide(NodeSystem)),
-                  ),
-                ),
-                Layer.succeed(Providers, Providers.of({ get: () => adapter })),
-              ),
-            ),
-            Layer.provide(MemoryPlatform()),
-          );
+          TestMailbox.withAdapter(adapter, {
+            options: { backgroundFlush: false },
+            platformOptions: { database: join(directory, "mail.db") },
+          });
         const accountId = `${provider}:${server.email}`;
         const organization = {
           labels: [provider === "gmail" ? "Label_work" : "Work"],

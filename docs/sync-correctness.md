@@ -98,23 +98,7 @@ Gmail 按共享账户请求许可串行 GET metadata，用 `metadataHeaders` 指
 
 同步重置计数由 `logSyncReset` 记录为 Info。桌面日志桥将已识别的 `sync-reset` 和 `provider-failure` 事件各记录一次，不再为其额外产生 `runtime-warning`。真正的运行时警告／错误只保存固定原因码，例如 `header-backfill-failed`、`history-backfill-failed`、`sync-failed`；未知来源记为 `unclassified`，不记录错误文本、邮件、路径或凭证。
 
-## slice 56 根因证据
-
-协调器在只读真实数据副本上运行 sync-health，得到以下结果：
-
-| Outlook 文件夹 |              服务端消息 |                  本地消息 |
-| -------------- | ----------------------: | ------------------------: |
-| Inbox          | 28,666，其中未读 26,042 | 重启前 1,199，重列举约 91 |
-| Sent           |                      98 |                        65 |
-| Archive        |                     103 |                        52 |
-
-410 重启后的缺失不能解释为服务端 Inbox 缩小。已确认的客户端错误是：把未证明完整的 delta 列举当作整个文件夹的 keep 集合，清理约 1,100 条本地消息；源码还允许在没有 nextLink 或 deltaLink 时结束，并在缺少 conversationId 的单项 GET 返回 404 后漏记 listed ID。旧 Outlook 循环没有 90 天或 2,000 条截断，也没有日期过滤。当前实现明确限定日期范围，将每个列出的 ID 立即加入 keep，失败的完整读取稍后补取，并验证窗口内缺失项。
-
-协调器随后在只读真实数据副本上验证 `532b888`：Outlook 保留 1,479 条，没有大规模删除。新诊断显示，410 重启后 Inbox 的 listing 阶段 `listed:50, kept:50`，reset 阶段全局 keep 为 53，文件夹范围内本地有 512 条。50 与旧初始 delta URL 的 `$top=50` 一致；这次观测中 Graph 把 `$top` 用作本轮上限，在 50 条后直接返回 deltaLink，没有 nextLink，适配器因而停止枚举。
-
-根因修复将页大小移到 `odata.maxpagesize` 请求头，并从 delta 请求 URL 删除 `$top`，包括旧游标中的显式参数。回归假 Graph 在有 `$top` 时复现“50 条后结束”，改用请求头后按 50、50、23 分页交付全部 123 条；初始同步、410 重启、续页和下一轮增量都检查请求头与 ImmutableId 设置。窗口范围、5,000 条过滤上限的保护、逐项验证和持久续验继续生效。已有 28,666 条服务端计数、1,199 条窗内缓存与 91 条列举的回归仍通过 `syncHealth` 检查本地保留，并覆盖窗外邮件、UID 复用、移动和失败。
-
-重试与发送确认实现见 [provider-retry.ts](../packages/core/src/provider-retry.ts)、[Gmail](../packages/core/src/gmail.ts)、[Outlook](../packages/core/src/outlook.ts)和 [mailbox-live.ts](../packages/core/src/mailbox-live.ts)。UID 重置与发送回归见 [mailbox-syncfix.test.ts](../packages/core/src/mailbox-syncfix.test.ts)及 [store.test.ts](../packages/core/src/store.test.ts)。
+根因证据与决策见 [同步重置 ADR](adr/sync-reset-verification.md)。
 
 ## 同步健康检查
 
@@ -152,6 +136,6 @@ CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签�
 
 Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网退避；只把明确 status 0 的非延期失败计入。传输失败从五秒开始指数等待，最长五分钟；等待期间不重新刷新 token 或发起后台请求，延期不写 provider-failure。发送、打开正文和下载附件绕过断网等待，成功会重置失败次数；手动 Sync RPC 先调用 portable `Mailbox.resetConnectivity`。发送提交失败仍按既有发送确认流程查询 Sent，提交和确认不会被断网等待拦截。系统唤醒、renderer online 和手机 AppState active 事件清除断网和 Inbox 轮询等待，立即恢复同步。手机未安装 NetInfo，使用既有 expo-network 的 addNetworkStateListener 处理前台网络恢复；服务端 Retry-After 独立保存，不能被这些事件清除。
 
-同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `mailbox-syncfix.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
+同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `uid-remap.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
 
 Graph 搜索集合的 `$select` 不含 internetMessageHeaders，attachments 的 name／contentType／size／isInline 元数据经 `$expand` 一次取得；搜索不逐项 GET 附件或 MIME，服务商省略附件扩展或存在签名容器时，将正文标为待完整读取，打开阅读器后再补齐。未完成的搜索结果保留已缓存的附件清单，阅读器补全同时写入完整附件清单，避免空扩展或原始签名容器覆盖已解码的 PDF 等附件。标点词保留转义后的 KQL 引号。Graph 普通搜索词仅使用一层 `$search="词"`，短语及属性查询保留 KQL 转义，不混入 `$filter` 或 `$orderby`。搜索请求使用读取错误映射；桌面使用 Lingui 搜索专用文案并保留本地结果。实现依据 [Graph 搜索文档](https://learn.microsoft.com/en-us/graph/search-query-parameter)，回归覆盖 E64KZJ、短语转义和搜索拒绝。脱敏日志未包含 Graph 响应错误码或查询，普通词的双层引号及集合上的 internetMessageHeaders 选择已移除，附件扩展保留；不能仅凭原日志证明哪一项导致该次拒绝。搜索失败诊断记录 operation=search 和固定枚举的 Graph error.code，未知值记为 unknown；不记录响应 message 或 query。只读真实数据库备份中，Gmail CATEGORY_PERSONAL 有 22 条消息、21 个线程；Outlook Drafts 有 40 条消息、37 个线程，其中 38 条早于 90 天。两账户 drafts 表及 pending_ops 均为 0，没有孤立草稿、local-only 草稿或队列重复计数。真实服务商计数请求未成功，不能据此把这些缓存行排除，也不能认定差值来自本地 SQL；保留待服务商总数确认的结论。

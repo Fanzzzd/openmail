@@ -1,7 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-
 import { decodeBytes, decodeHeader, htmlToText, parseAddressList } from "./mime.js";
-
 describe("mime", () => {
   it("decodes base64 and quoted-printable encoded words", () => {
     assert.strictEqual(decodeHeader("=?UTF-8?B?5L2g5aW9?= world"), "你好 world");
@@ -54,7 +52,7 @@ describe("mime", () => {
   });
 });
 
-it("slice49: joins split RFC 2047 byte sequences before decoding GBK and UTF-8", () => {
+it("joins split RFC 2047 byte sequences before decoding GBK and UTF-8", () => {
   assert.strictEqual(decodeHeader("=?GBK?B?1g==?= =?gbk?B?0A==?="), "中");
   assert.strictEqual(decodeHeader("=?UTF-8?B?5A==?=\r\n =?UTF-8?Q?=B8=AD?="), "中");
   assert.strictEqual(decodeHeader("prefix =?UTF-8?B?5Lit?= suffix"), "prefix 中 suffix");

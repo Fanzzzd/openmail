@@ -1,17 +1,12 @@
+import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
-import { Clock, Effect, Layer, Option, Schema, Stream } from "effect";
+import { Clock, Effect, Option, Stream } from "effect";
 import { SqlClient } from "effect/sql";
-import { CurrentTransformer, type Transformer } from "effect/sql/Statement";
-import type { IncomingMessage, Provider } from "./domain.js";
+import { type IncomingMessage, type Provider } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { Providers, Store } from "./services.js";
-import { StoreLive } from "./store.js";
-import { fakeServer } from "./platform/node/testing.js";
-
+import { Store } from "./services.js";
 const incoming = (labels: string[]): IncomingMessage => ({
   providerId: "one",
   threadId: "thread",
@@ -36,26 +31,21 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         const server = fakeServer(`${provider}@example.com`, [
           incoming(sequence === "inbox" ? ["ARCHIVE", "UNREAD"] : ["INBOX", "UNREAD"]),
         ]);
-        const fake = makeFakeProvider(server);
         let flagsOnly = false;
-        const adapter = {
-          ...fake,
-          pull: (...args: Parameters<typeof fake.pull>) =>
-            flagsOnly
-              ? Stream.make({
-                  _tag: "Flags",
-                  providerId: "one",
-                  isUnread: true,
-                  isStarred: true,
-                } as const)
-              : fake.pull(...args),
-        };
-        const layer = MailboxLive({ backgroundFlush: false }).pipe(
-          Layer.provideMerge(
-            Layer.merge(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
-              Layer.provideMerge(MemoryPlatform()),
-            ),
-          ),
+        const layer = TestMailbox.withAdapter(
+          (base) => ({
+            ...base,
+            pull: (...args: Parameters<typeof base.pull>) =>
+              flagsOnly
+                ? Stream.make({
+                    _tag: "Flags",
+                    providerId: "one",
+                    isUnread: true,
+                    isStarred: true,
+                  } as const)
+                : base.pull(...args),
+          }),
+          { servers: { [provider]: server } },
         );
         return Effect.gen(function* () {
           const m = yield* Mailbox;
@@ -77,20 +67,30 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const before = yield* store.reminderSnapshot(id);
           assert.isTrue(Option.isSome(before));
           flagsOnly = pull === "flags";
-          const statements: string[] = [];
-          const capture: Transformer = (statement) =>
-            Effect.sync(() => {
-              statements.push(statement.compile()[0]);
-              return statement;
-            });
-          yield* m.sync().pipe(Effect.provideService(CurrentTransformer, capture));
-          assert.strictEqual(
-            statements.filter((sql) => sql.startsWith("INSERT INTO messages (")).length,
-            1,
-          );
-          assert.isFalse(
-            statements.some((sql) => sql.startsWith("UPDATE messages SET labels_json")),
-          );
+          const sql = yield* SqlClient.SqlClient;
+          const rowid = yield* sql`SELECT rowid FROM messages WHERE id=${id}`;
+          if (flagsOnly) {
+            yield* sql`CREATE TEMP TABLE label_writes(message_id TEXT PRIMARY KEY, writes INTEGER NOT NULL)`;
+            yield* sql`INSERT INTO label_writes VALUES (${id}, 0)`;
+            yield* sql`CREATE TEMP TRIGGER count_label_writes AFTER UPDATE OF labels_json ON main.messages
+              BEGIN UPDATE label_writes SET writes=writes+1 WHERE message_id=NEW.id; END`;
+          }
+          yield* m.sync();
+          if (flagsOnly) {
+            // The changed flags need one upsert; they must not replay a separate label update.
+            assert.strictEqual((yield* sql`SELECT writes FROM label_writes`)[0]?.["writes"], 1);
+            const labels = yield* sql`SELECT labels_json FROM messages WHERE id=${id}`;
+            yield* sql`UPDATE label_writes SET writes=0`;
+            yield* m.sync();
+            assert.strictEqual((yield* sql`SELECT writes FROM label_writes`)[0]?.["writes"], 0);
+            assert.deepStrictEqual(
+              yield* sql`SELECT labels_json FROM messages WHERE id=${id}`,
+              labels,
+            );
+          }
+          assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${id}`, rowid);
+          const message = yield* store.getMessage(id);
+          assert.strictEqual(message.bodyText, "original");
           assert.deepStrictEqual(yield* store.reminderSnapshot(id), before);
           assert.include((yield* store.getMessage(id)).labels, "SNOOZED");
           assert.notInclude((yield* store.getMessage(id)).labels, "INBOX");
@@ -103,53 +103,6 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
     }
   }
 }
-
-it.effect("incoming pending lookup uses the account index, filters ids and keeps queue order", () =>
-  Effect.gen(function* () {
-    const store = yield* Store;
-    const sql = yield* SqlClient.SqlClient;
-    const account = yield* store.upsertAccount("gmail", "me@example.com");
-    const other = yield* store.upsertAccount("gmail", "other@example.com");
-    yield* store.enqueueOp(account.id, "one", { kind: "star", value: true });
-    yield* store.enqueueOp(account.id, "ignored", { kind: "archive" });
-    yield* store.enqueueOp(other.id, "one", { kind: "trash" });
-    yield* store.enqueueOp(account.id, "one", { kind: "read", value: true });
-    const statements: (readonly [string, ReadonlyArray<unknown>])[] = [];
-    const capture: Transformer = (statement) =>
-      Effect.sync(() => {
-        statements.push(statement.compile());
-        return statement;
-      });
-    const pending = yield* store
-      .pendingOpsForMessages(account.id, ["one"])
-      .pipe(Effect.provideService(CurrentTransformer, capture));
-    assert.deepStrictEqual(
-      pending.map((item) => item.op),
-      [
-        { kind: "star", value: true },
-        { kind: "read", value: true },
-      ],
-    );
-    assert.isTrue(
-      pending.every((item) => item.accountId === account.id && item.providerId === "one"),
-    );
-    assert.strictEqual(statements.length, 1);
-    const statement = statements[0];
-    assert.ok(statement);
-    const plan = yield* Schema.decodeUnknownEffect(
-      Schema.Array(Schema.Struct({ detail: Schema.String })),
-    )(yield* sql.unsafe(`EXPLAIN QUERY PLAN ${statement[0]}`, statement[1]));
-    assert.isTrue(plan.some((row) => row.detail.includes("pending_ops_account")));
-    statements.length = 0;
-    assert.deepStrictEqual(
-      yield* store
-        .pendingOpsForMessages(account.id, [])
-        .pipe(Effect.provideService(CurrentTransformer, capture)),
-      [],
-    );
-    assert.strictEqual(statements.length, 0);
-  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
-);
 
 for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
   it.effect(`${provider}: queued read and star preserve wake_pending when Flags arrive`, () => {
@@ -168,13 +121,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             } as const)
           : fake.pull(...args),
     };
-    const layer = MailboxLive({ backgroundFlush: false }).pipe(
-      Layer.provideMerge(
-        Layer.merge(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
-          Layer.provideMerge(MemoryPlatform()),
-        ),
-      ),
-    );
+    const layer = TestMailbox.withAdapter(adapter, {
+      options: { backgroundFlush: false },
+      platformOptions: {},
+    });
     return Effect.gen(function* () {
       const m = yield* Mailbox;
       const store = yield* Store;

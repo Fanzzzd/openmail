@@ -1,24 +1,16 @@
 import { assert, it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleParser } from "mailparser";
-
 import { buildMime } from "./platform/node/compose.js";
 import { richComposeBody, preservedComposeHtml, remoteComposeBody } from "./compose-body.js";
-import { databaseLayer } from "./platform/node/db.js";
-import type { Actor, IncomingMessage, Provider } from "./domain.js";
+import { type Actor, type IncomingMessage, type Provider } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { NodeSystem } from "./platform/node/platform-node.js";
-import { Providers } from "./services.js";
-import { StoreLive } from "./store.js";
 import { fakeServer, TestMailbox } from "./platform/node/testing.js";
-
 const user: Actor = { kind: "user", surface: "app" };
 const html =
   '<p style="color:red"><b>你好</b> <i>italic</i> <u>underline</u><br><a href="https://example.com/?a=1&amp;b=2" onclick="bad()">link</a><script>bad()</script><img src="https://tracker.test" onerror="bad()"><a href="jav&#x61;script:bad()">label</a></p><table><tr><td>Cell</td></tr></table><ul><li>Item</li></ul>';
@@ -74,19 +66,10 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
         server.raw.set("remote", raw);
         const adapter = makeFakeProvider(server);
         const layer = () =>
-          MailboxLive({ backgroundFlush: false }).pipe(
-            Layer.provide(
-              Layer.merge(
-                StoreLive.pipe(
-                  Layer.provide(
-                    databaseLayer(join(directory, "mail.db")).pipe(Layer.provide(NodeSystem)),
-                  ),
-                ),
-                Layer.succeed(Providers, Providers.of({ get: () => adapter })),
-              ),
-            ),
-            Layer.provide(MemoryPlatform()),
-          );
+          TestMailbox.withAdapter(adapter, {
+            options: { backgroundFlush: false },
+            platformOptions: { database: join(directory, "mail.db") },
+          });
         const id = yield* Effect.gen(function* () {
           const mailbox = yield* Mailbox;
           yield* mailbox.connect(

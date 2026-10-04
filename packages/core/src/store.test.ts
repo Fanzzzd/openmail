@@ -1,18 +1,15 @@
 import { load } from "sqlite-vec";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { DatabaseSync } from "node:sqlite";
-
 import { assert, it } from "@effect/vitest";
 import { Effect, Exit, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { SqlClient } from "effect/sql";
-
 import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import { DEFAULT_LIST_FILTERS, type Actor, type Command, type IncomingMessage } from "./domain.js";
 import { MemoryFileSystem, MemoryPlatform } from "./platform/node/platform-memory.js";
 import { Store } from "./services.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
-
 function message(overrides: Partial<IncomingMessage>): IncomingMessage {
   return {
     providerId: "m1",
@@ -679,7 +676,7 @@ it.effect(
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const dir = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-slice3-test-" });
+      const dir = yield* fs.makeTempDirectoryScoped({ prefix: "openmail-test-" });
       const disk = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer);
       const db = () => databaseLayer(path.join(dir, "mail.db")).pipe(Layer.provide(disk));
       yield* withStore(
@@ -1005,47 +1002,45 @@ it.effect("stores provider authentication without changing the FTS row identity"
   ),
 );
 
-it.effect(
-  "slice49: provider remaps preserve local rowids, derived data, snoozes and queued ops",
-  () =>
-    withStore(
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const sql = yield* SqlClient.SqlClient;
-        const account = yield* store.upsertAccount("imap", "me@example.com");
-        yield* store.upsertMessage(
-          account.id,
-          message({ providerId: "7:1:INBOX", rfcMessageId: "<one@x>" }),
-        );
-        const local = `${account.id}/7:1:INBOX`;
-        yield* store.snooze(local, 999999);
-        yield* store.enqueueOp(account.id, "7:1:INBOX", { kind: "star", value: true });
-        yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES (${local},'cached OCR','{}')`;
-        const before = yield* sql`SELECT rowid FROM messages WHERE id=${local}`;
-        yield* store.remapProviderIds(account.id, [{ from: "7:1:INBOX", to: "8:9:INBOX" }]);
-        yield* store.upsertMessage(
-          account.id,
-          message({ providerId: "8:9:INBOX", rfcMessageId: "<one@x>" }),
-        );
-        yield* store.deleteMessage(account.id, "7:1:INBOX");
-        assert.strictEqual((yield* store.messageRef(local)).providerId, "8:9:INBOX");
-        assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${local}`, before);
-        assert.strictEqual((yield* store.listPendingOps)[0]?.providerId, "8:9:INBOX");
-        assert.strictEqual(
-          (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${local}`)[0]?.text,
-          "cached OCR",
-        );
-        assert.ok((yield* store.getMessage(local)).labels.includes("SNOOZED"));
-        assert.strictEqual(
-          (yield* sql`SELECT provider_id FROM snoozed_messages`)[0]?.provider_id,
-          "8:9:INBOX",
-        );
-        assert.strictEqual((yield* store.listThreads({ search: "产能" }))[0]?.id, local);
-      }),
-    ),
+it.effect("provider remaps preserve local rowids, derived data, snoozes and queued ops", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", rfcMessageId: "<one@x>" }),
+      );
+      const local = `${account.id}/7:1:INBOX`;
+      yield* store.snooze(local, 999999);
+      yield* store.enqueueOp(account.id, "7:1:INBOX", { kind: "star", value: true });
+      yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES (${local},'cached OCR','{}')`;
+      const before = yield* sql`SELECT rowid FROM messages WHERE id=${local}`;
+      yield* store.remapProviderIds(account.id, [{ from: "7:1:INBOX", to: "8:9:INBOX" }]);
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "8:9:INBOX", rfcMessageId: "<one@x>" }),
+      );
+      yield* store.deleteMessage(account.id, "7:1:INBOX");
+      assert.strictEqual((yield* store.messageRef(local)).providerId, "8:9:INBOX");
+      assert.deepStrictEqual(yield* sql`SELECT rowid FROM messages WHERE id=${local}`, before);
+      assert.strictEqual((yield* store.listPendingOps)[0]?.providerId, "8:9:INBOX");
+      assert.strictEqual(
+        (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${local}`)[0]?.text,
+        "cached OCR",
+      );
+      assert.ok((yield* store.getMessage(local)).labels.includes("SNOOZED"));
+      assert.strictEqual(
+        (yield* sql`SELECT provider_id FROM snoozed_messages`)[0]?.provider_id,
+        "8:9:INBOX",
+      );
+      assert.strictEqual((yield* store.listThreads({ search: "产能" }))[0]?.id, local);
+    }),
+  ),
 );
 
-it.effect("slice49: replies without References inherit a parent's thread via Message-ID", () =>
+it.effect("replies without References inherit a parent's thread via Message-ID", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1080,7 +1075,7 @@ it.effect("slice49: replies without References inherit a parent's thread via Mes
   ),
 );
 
-it.effect("slice49: expired-history window sweeping preserves older cached mail", () =>
+it.effect("expired-history window sweeping preserves older cached mail", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1101,7 +1096,7 @@ it.effect("slice49: expired-history window sweeping preserves older cached mail"
   ),
 );
 
-it.effect("slice49: SQLite limits journal size and permits an idle truncate checkpoint", () =>
+it.effect("SQLite limits journal size and permits an idle truncate checkpoint", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1112,7 +1107,7 @@ it.effect("slice49: SQLite limits journal size and permits an idle truncate chec
   ),
 );
 
-it.effect("slice49-fix: remapping a duplicate target preserves source identity and snooze", () =>
+it.effect("remapping a duplicate target preserves source identity and snooze", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1140,7 +1135,7 @@ it.effect("slice49-fix: remapping a duplicate target preserves source identity a
   ),
 );
 
-it.effect("slice49-fix: re-upsert retains an inherited thread when the parent is unavailable", () =>
+it.effect("re-upsert retains an inherited thread when the parent is unavailable", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1155,7 +1150,7 @@ it.effect("slice49-fix: re-upsert retains an inherited thread when the parent is
   ),
 );
 
-it.effect("slice49-fix: folder-prefix lookup includes untracked backfilled rows", () =>
+it.effect("folder-prefix lookup includes untracked backfilled rows", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1185,7 +1180,7 @@ it.effect("slice49-fix: folder-prefix lookup includes untracked backfilled rows"
   ),
 );
 
-it.effect("slice49-fix: routine checkpoints retain the reusable WAL instead of truncating it", () =>
+it.effect("routine checkpoints retain the reusable WAL instead of truncating it", () =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
@@ -1207,7 +1202,7 @@ it.effect("slice49-fix: routine checkpoints retain the reusable WAL instead of t
   }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
 
-it.effect("slice63: database failures during remap propagate and roll back", () =>
+it.effect("database failures during remap propagate and roll back", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1224,7 +1219,7 @@ it.effect("slice63: database failures during remap propagate and roll back", () 
   ),
 );
 
-it.effect("slice55: remapping never deletes an unrelated target", () =>
+it.effect("remapping never deletes an unrelated target", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1249,7 +1244,7 @@ it.effect("slice55: remapping never deletes an unrelated target", () =>
   ),
 );
 
-it.effect("slice55: an upsert cannot overwrite a local id left behind by a move", () =>
+it.effect("an upsert cannot overwrite a local id left behind by a move", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1275,7 +1270,7 @@ it.effect("slice55: an upsert cannot overwrite a local id left behind by a move"
   ),
 );
 
-it.effect("slice55: IMAP folder matching uses the complete path after the UID", () =>
+it.effect("IMAP folder matching uses the complete path after the UID", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1294,50 +1289,48 @@ it.effect("slice55: IMAP folder matching uses the complete path after the UID", 
   ),
 );
 
-it.effect(
-  "slice55-fix: invalidated local ids are never reused and stale local work is discarded",
-  () =>
-    withStore(
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const sql = yield* SqlClient.SqlClient;
-        const account = yield* store.upsertAccount("imap", "me@example.com");
-        const old = `${account.id}/7:1:INBOX`;
-        yield* store.upsertMessage(
-          account.id,
-          message({ providerId: "7:1:INBOX", rfcMessageId: "<x@x>" }),
-        );
-        yield* store.snooze(old, 999999);
-        yield* store.enqueueOp(account.id, "7:1:INBOX", {
-          kind: "deleteDraft",
-          remote: { draftId: "7:1:INBOX", messageId: "7:1:INBOX" },
-        });
-        yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
-        yield* store.upsertMessage(
-          account.id,
-          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
-        );
-        const fresh = yield* store.messageIdForProvider(account.id, "7:1:INBOX");
-        assert.notStrictEqual(fresh, old);
-        assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
-        assert.strictEqual((yield* sql`SELECT * FROM thread_reminders`).length, 0);
-        assert.isTrue(
-          (yield* store.listPendingOps).every(
-            (op) => op.op.kind === "reconcile" && op.providerId.startsWith("unmapped:"),
-          ),
-        );
-        // A second invalidation creates a new generation, even when the UID and Message-ID recur.
-        yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
-        yield* store.upsertMessage(
-          account.id,
-          message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
-        );
-        assert.notStrictEqual(yield* store.messageIdForProvider(account.id, "7:1:INBOX"), fresh);
-      }),
-    ),
+it.effect("invalidated local ids are never reused and stale local work is discarded", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      const old = `${account.id}/7:1:INBOX`;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", rfcMessageId: "<x@x>" }),
+      );
+      yield* store.snooze(old, 999999);
+      yield* store.enqueueOp(account.id, "7:1:INBOX", {
+        kind: "deleteDraft",
+        remote: { draftId: "7:1:INBOX", messageId: "7:1:INBOX" },
+      });
+      yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+      );
+      const fresh = yield* store.messageIdForProvider(account.id, "7:1:INBOX");
+      assert.notStrictEqual(fresh, old);
+      assert.isTrue((yield* store.messageRef(old)).providerId.startsWith("unmapped:"));
+      assert.strictEqual((yield* sql`SELECT * FROM thread_reminders`).length, 0);
+      assert.isTrue(
+        (yield* store.listPendingOps).every(
+          (op) => op.op.kind === "reconcile" && op.providerId.startsWith("unmapped:"),
+        ),
+      );
+      // A second invalidation creates a new generation, even when the UID and Message-ID recur.
+      yield* store.invalidateImapFolder(account.id, { path: "INBOX", uidValidity: "7" });
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "7:1:INBOX", rfcMessageId: "<y@x>" }),
+      );
+      assert.notStrictEqual(yield* store.messageIdForProvider(account.id, "7:1:INBOX"), fresh);
+    }),
+  ),
 );
 
-it.effect("slice55-fix: an unrelated remap target always has a cleanup reconciliation", () =>
+it.effect("an unrelated remap target always has a cleanup reconciliation", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1361,7 +1354,7 @@ it.effect("slice55-fix: an unrelated remap target always has a cleanup reconcili
   ),
 );
 
-it.effect("slice55-fix: folder epochs survive reopening the database", () =>
+it.effect("folder epochs survive reopening the database", () =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
@@ -1419,46 +1412,44 @@ it.effect("slice55-fix: folder epochs survive reopening the database", () =>
   }).pipe(Effect.scoped, Effect.provide(NodeFileSystem.layer), Effect.provide(NodePath.layer)),
 );
 
-it.effect(
-  "slice63-final: coalescing a waiting draft save preserves its APPEND identity and copy progress",
-  () =>
-    withStore(
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const account = yield* store.upsertAccount("imap", "me@example.com");
-        const message = {
-          to: [],
-          cc: [],
-          bcc: [],
-          subject: "draft",
-          text: "original",
-          attachments: [],
-        };
-        yield* store.putDraft({ id: "draft:carry", accountId: account.id, message });
-        yield* store.enqueueDraftSave(account.id, "draft:carry");
-        const [first] = yield* store.listPendingOps;
-        assert.ok(first);
-        assert.isTrue(yield* store.claimPendingOp(first.id, "writer"));
-        yield* store.recordAppendedMessageId(first.id, "writer", "<appended@example.com>");
-        yield* store.recordCopyProgress(first.id, "writer", "Drafts", "draft:carry", "accepted");
-        yield* store.failPendingOp(first.id, "Lost APPEND acknowledgement", "writer");
-        yield* store.putDraft({
-          id: "draft:carry",
-          accountId: account.id,
-          message: { ...message, text: "edited" },
-        });
-        yield* store.enqueueDraftSave(account.id, "draft:carry");
-        const [replacement] = yield* store.listPendingOps;
-        assert.ok(replacement);
-        assert.notStrictEqual(replacement.id, first.id);
-        assert.strictEqual(replacement.appendedMessageId, "<appended@example.com>");
-        assert.strictEqual(replacement.progress.length, 2);
-      }),
-    ),
+it.effect("coalescing a waiting draft save preserves its APPEND identity and copy progress", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("imap", "me@example.com");
+      const message = {
+        to: [],
+        cc: [],
+        bcc: [],
+        subject: "draft",
+        text: "original",
+        attachments: [],
+      };
+      yield* store.putDraft({ id: "draft:carry", accountId: account.id, message });
+      yield* store.enqueueDraftSave(account.id, "draft:carry");
+      const [first] = yield* store.listPendingOps;
+      assert.ok(first);
+      assert.isTrue(yield* store.claimPendingOp(first.id, "writer"));
+      yield* store.recordAppendedMessageId(first.id, "writer", "<appended@example.com>");
+      yield* store.recordCopyProgress(first.id, "writer", "Drafts", "draft:carry", "accepted");
+      yield* store.failPendingOp(first.id, "Lost APPEND acknowledgement", "writer");
+      yield* store.putDraft({
+        id: "draft:carry",
+        accountId: account.id,
+        message: { ...message, text: "edited" },
+      });
+      yield* store.enqueueDraftSave(account.id, "draft:carry");
+      const [replacement] = yield* store.listPendingOps;
+      assert.ok(replacement);
+      assert.notStrictEqual(replacement.id, first.id);
+      assert.strictEqual(replacement.appendedMessageId, "<appended@example.com>");
+      assert.strictEqual(replacement.progress.length, 2);
+    }),
+  ),
 );
 
 for (const action of ["discard", "local"] as const)
-  it.effect(`slice63-final: ${action} queues cleanup of an unacknowledged appended draft`, () =>
+  it.effect(`${action} queues cleanup of an unacknowledged appended draft`, () =>
     withStore(
       Effect.gen(function* () {
         const store = yield* Store;
@@ -1486,7 +1477,7 @@ for (const action of ["discard", "local"] as const)
     ),
   );
 
-it.effect("slice63-final: retry keeps APPEND progress until the next save is coalesced", () =>
+it.effect("retry keeps APPEND progress until the next save is coalesced", () =>
   withStore(
     Effect.gen(function* () {
       const store = yield* Store;
@@ -1512,38 +1503,36 @@ it.effect("slice63-final: retry keeps APPEND progress until the next save is coa
   ),
 );
 
-it.effect(
-  "slice63-final: switching accounts cleans the original APPEND identity without reusing it",
-  () =>
-    withStore(
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const original = yield* store.upsertAccount("imap", "original@example.com");
-        const next = yield* store.upsertAccount("imap", "next@example.com");
-        const message = {
-          to: [],
-          cc: [],
-          bcc: [],
-          subject: "draft",
-          text: "content",
-          attachments: [],
-        };
-        yield* store.putDraft({ id: "draft:moved", accountId: original.id, message });
-        yield* store.enqueueDraftSave(original.id, "draft:moved");
-        const [op] = yield* store.listPendingOps;
-        assert.ok(op);
-        yield* store.claimPendingOp(op.id, "writer");
-        yield* store.recordAppendedMessageId(op.id, "writer", "<original@example.com>");
-        yield* store.failPendingOp(op.id, "Lost APPEND acknowledgement", "writer");
-        yield* store.putDraft({ id: "draft:moved", accountId: next.id, message });
-        yield* store.enqueueDraftSave(next.id, "draft:moved");
-        const queued = yield* store.listPendingOps;
-        const cleanup = queued.find((p) => p.accountId === original.id);
-        const save = queued.find((p) => p.accountId === next.id);
-        assert.ok(cleanup?.op.kind === "deleteDraft");
-        assert.strictEqual(cleanup.op.remote.rfcMessageId, "<original@example.com>");
-        assert.strictEqual(save?.appendedMessageId, null);
-        assert.deepStrictEqual(save?.progress, []);
-      }),
-    ),
+it.effect("switching accounts cleans the original APPEND identity without reusing it", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const original = yield* store.upsertAccount("imap", "original@example.com");
+      const next = yield* store.upsertAccount("imap", "next@example.com");
+      const message = {
+        to: [],
+        cc: [],
+        bcc: [],
+        subject: "draft",
+        text: "content",
+        attachments: [],
+      };
+      yield* store.putDraft({ id: "draft:moved", accountId: original.id, message });
+      yield* store.enqueueDraftSave(original.id, "draft:moved");
+      const [op] = yield* store.listPendingOps;
+      assert.ok(op);
+      yield* store.claimPendingOp(op.id, "writer");
+      yield* store.recordAppendedMessageId(op.id, "writer", "<original@example.com>");
+      yield* store.failPendingOp(op.id, "Lost APPEND acknowledgement", "writer");
+      yield* store.putDraft({ id: "draft:moved", accountId: next.id, message });
+      yield* store.enqueueDraftSave(next.id, "draft:moved");
+      const queued = yield* store.listPendingOps;
+      const cleanup = queued.find((p) => p.accountId === original.id);
+      const save = queued.find((p) => p.accountId === next.id);
+      assert.ok(cleanup?.op.kind === "deleteDraft");
+      assert.strictEqual(cleanup.op.remote.rfcMessageId, "<original@example.com>");
+      assert.strictEqual(save?.appendedMessageId, null);
+      assert.deepStrictEqual(save?.progress, []);
+    }),
+  ),
 );

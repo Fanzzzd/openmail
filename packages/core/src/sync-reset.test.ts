@@ -2,7 +2,7 @@ import { TestClock } from "effect/testing";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
-import type { IncomingMessage, Provider } from "./domain.js";
+import { type IncomingMessage, type Provider } from "./domain.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { MailboxLive } from "./mailbox-live.js";
@@ -13,7 +13,6 @@ import { Providers, Store, type ProviderAdapter } from "./services.js";
 import { StoreLive } from "./store.js";
 import { makeResetGuard } from "./sync-reset.js";
 import { parseGmailBatch } from "./provider-batch.js";
-
 const mail = (providerId: string): IncomingMessage => ({
   providerId,
   threadId: providerId,
@@ -243,62 +242,57 @@ function runtime<A, E>(
 
 for (const provider of ["outlook", "gmail"] as const)
   for (const outcome of ["present", "gone", "moved", "deferred"] as const) {
-    it.effect(
-      `slice56: ${provider} expired reset listing 10% verifies ${outcome} candidates`,
-      () => {
-        const http = httpProvider(provider, outcome);
-        return runtime(
-          provider,
-          provider === "outlook" ? makeOutlook : makeGmail,
-          Effect.gen(function* () {
-            const store = yield* Store;
-            const account = yield* store.upsertAccount(provider, "me@example.test");
-            for (let index = 0; index < 100; index++)
-              yield* store.upsertMessage(account.id, mail(`m${index}`));
-            yield* store.saveSyncCursor(
-              account.id,
-              provider === "gmail"
-                ? "expired"
-                : JSON.stringify({
-                    __idType: "immutable",
-                    inbox: "https://graph.microsoft.com/v1.0/expired",
-                  }),
-            );
-            const result = yield* (yield* Mailbox).sync(account.id);
-            assert.isUndefined(result[0]?.error);
-            assert.strictEqual(http.expired(), 1);
-            if (outcome === "deferred")
-              assert.deepStrictEqual(yield* store.headerBackfillState(account.id), {
-                kind: "running",
-                after: null,
-              });
-            assert.deepStrictEqual(
-              http.batches,
-              outcome === "deferred" ? [20] : [20, 20, 20, 20, 10],
-            );
-            assert.strictEqual(
-              yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
-              outcome === "gone" ? 10 : 100,
-            );
-            if (outcome === "moved") {
-              assert.isFalse(
-                (yield* store.getMessage(`${account.id}/m10`)).labels.includes("INBOX"),
-              );
-              if (provider === "outlook")
-                assert.include((yield* store.getMessage(`${account.id}/m10`)).labels, "ARCHIVE");
-            }
-            assert.strictEqual(
-              (yield* store.pendingResetCandidates(account.id)).length,
-              outcome === "deferred" ? 90 : 0,
-            );
-          }),
-          http.layer,
-        );
-      },
-    );
+    it.effect(`${provider} expired reset listing 10% verifies ${outcome} candidates`, () => {
+      const http = httpProvider(provider, outcome);
+      return runtime(
+        provider,
+        provider === "outlook" ? makeOutlook : makeGmail,
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const account = yield* store.upsertAccount(provider, "me@example.test");
+          for (let index = 0; index < 100; index++)
+            yield* store.upsertMessage(account.id, mail(`m${index}`));
+          yield* store.saveSyncCursor(
+            account.id,
+            provider === "gmail"
+              ? "expired"
+              : JSON.stringify({
+                  __idType: "immutable",
+                  inbox: "https://graph.microsoft.com/v1.0/expired",
+                }),
+          );
+          const result = yield* (yield* Mailbox).sync(account.id);
+          assert.isUndefined(result[0]?.error);
+          assert.strictEqual(http.expired(), 1);
+          if (outcome === "deferred")
+            assert.deepStrictEqual(yield* store.headerBackfillState(account.id), {
+              kind: "running",
+              after: null,
+            });
+          assert.deepStrictEqual(
+            http.batches,
+            outcome === "deferred" ? [20] : [20, 20, 20, 20, 10],
+          );
+          assert.strictEqual(
+            yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+            outcome === "gone" ? 10 : 100,
+          );
+          if (outcome === "moved") {
+            assert.isFalse((yield* store.getMessage(`${account.id}/m10`)).labels.includes("INBOX"));
+            if (provider === "outlook")
+              assert.include((yield* store.getMessage(`${account.id}/m10`)).labels, "ARCHIVE");
+          }
+          assert.strictEqual(
+            (yield* store.pendingResetCandidates(account.id)).length,
+            outcome === "deferred" ? 90 : 0,
+          );
+        }),
+        http.layer,
+      );
+    });
   }
 
-it.effect("slice56: a listed Graph id stays kept when the complete message GET returns 404", () => {
+it.effect("a listed Graph id stays kept when the complete message GET returns 404", () => {
   const http = httpProvider("outlook", "gone", true);
   return runtime(
     "outlook",
@@ -330,7 +324,7 @@ it.effect("slice56: a listed Graph id stays kept when the complete message GET r
   );
 });
 
-it.effect("slice56: verification cap and persisted remainder continue on the next sync", () => {
+it.effect("verification cap and persisted remainder continue on the next sync", () => {
   const server = fakeServer("me@example.test");
   const seen: number[] = [];
   let reset = true;
@@ -372,34 +366,31 @@ it.effect("slice56: verification cap and persisted remainder continue on the nex
   );
 });
 
-it.effect(
-  "slice56: Gmail reset respects its date window and failed verification retains rows",
-  () => {
-    const adapter = makeFakeProvider(fakeServer("me@example.test"));
-    return runtime(
-      "gmail",
-      Effect.succeed(adapter),
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const account = yield* store.upsertAccount("gmail", "me@example.test");
-        for (let index = 0; index < 100; index++)
-          yield* store.upsertMessage(account.id, mail(`m${index}`));
-        yield* store.upsertMessage(account.id, { ...mail("older"), date: 0 });
-        const counts = { changed: 0, deleted: 0 };
-        const guard = makeResetGuard(store, adapter, account, counts, { remaining: 500 });
-        yield* guard.reset({ _tag: "Reset", since: 1000, keep: [] });
-        yield* guard.verify();
-        assert.strictEqual(
-          yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
-          101,
-        );
-        assert.strictEqual((yield* store.pendingResetCandidates(account.id)).length, 100);
-      }),
-    );
-  },
-);
+it.effect("Gmail reset respects its date window and failed verification retains rows", () => {
+  const adapter = makeFakeProvider(fakeServer("me@example.test"));
+  return runtime(
+    "gmail",
+    Effect.succeed(adapter),
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.test");
+      for (let index = 0; index < 100; index++)
+        yield* store.upsertMessage(account.id, mail(`m${index}`));
+      yield* store.upsertMessage(account.id, { ...mail("older"), date: 0 });
+      const counts = { changed: 0, deleted: 0 };
+      const guard = makeResetGuard(store, adapter, account, counts, { remaining: 500 });
+      yield* guard.reset({ _tag: "Reset", since: 1000, keep: [] });
+      yield* guard.verify();
+      assert.strictEqual(
+        yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+        101,
+      );
+      assert.strictEqual((yield* store.pendingResetCandidates(account.id)).length, 100);
+    }),
+  );
+});
 
-it("slice56: Gmail multipart responses map by Content-ID rather than position", () => {
+it("Gmail multipart responses map by Content-ID rather than position", () => {
   assert.deepStrictEqual(
     parseGmailBatch(
       "--b\r\nContent-ID: <response-7>\r\n\r\nHTTP/1.1 404 Gone\r\nContent-Type: application/json\r\n\r\n{}\r\n--b--",
@@ -414,7 +405,7 @@ it("slice56: Gmail multipart responses map by Content-ID rather than position", 
 });
 
 it.effect(
-  "slice56: deferred location probes preserve newer local flags and account removal clears the queue",
+  "deferred location probes preserve newer local flags and account removal clears the queue",
   () => {
     const adapter: ProviderAdapter = {
       ...makeFakeProvider(fakeServer("me@example.test")),
@@ -461,7 +452,7 @@ it.effect(
 
 for (const recovering of [true, false]) {
   it.effect(
-    `slice56 evidence: Outlook 28,666 server rows and 1,199 window rows survive ${recovering ? "410 restart" : "initial sync"}`,
+    `evidence: Outlook 28,666 server rows and 1,199 window rows survive ${recovering ? "410 restart" : "initial sync"}`,
     () => {
       const now = Date.UTC(2026, 9, 3);
       const http = httpProvider("outlook", "present", false, { listed: 91, now });
@@ -525,44 +516,41 @@ for (const recovering of [true, false]) {
   );
 }
 
-it.effect(
-  "slice56: an early-ended Outlook window probes small gaps and retains its checkpoint",
-  () => {
-    const http = httpProvider("outlook", "present", false, { listed: 10, missingCheckpoint: true });
-    return runtime(
-      "outlook",
-      makeOutlook,
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const account = yield* store.upsertAccount("outlook", "me@example.test");
-        for (let index = 0; index < 12; index++)
-          yield* store.upsertMessage(account.id, mail(`m${index}`));
-        const previous = "https://graph.microsoft.com/v1.0/expired";
-        yield* store.saveSyncCursor(
-          account.id,
-          JSON.stringify({ __idType: "immutable", inbox: previous }),
-        );
-        assert.isUndefined((yield* (yield* Mailbox).sync(account.id))[0]?.error);
-        assert.strictEqual(
-          yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
-          12,
-        );
-        assert.deepStrictEqual(http.batches, [2]);
-        const cursor = yield* store.getSyncCursor(account.id);
-        const value =
-          cursor._tag === "Some"
-            ? Schema.decodeUnknownSync(
-                Schema.fromJsonString(Schema.Struct({ inbox: Schema.String })),
-              )(cursor.value)
-            : undefined;
-        assert.strictEqual(value?.inbox, previous);
-      }),
-      http.layer,
-    );
-  },
-);
+it.effect("an early-ended Outlook window probes small gaps and retains its checkpoint", () => {
+  const http = httpProvider("outlook", "present", false, { listed: 10, missingCheckpoint: true });
+  return runtime(
+    "outlook",
+    makeOutlook,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("outlook", "me@example.test");
+      for (let index = 0; index < 12; index++)
+        yield* store.upsertMessage(account.id, mail(`m${index}`));
+      const previous = "https://graph.microsoft.com/v1.0/expired";
+      yield* store.saveSyncCursor(
+        account.id,
+        JSON.stringify({ __idType: "immutable", inbox: previous }),
+      );
+      assert.isUndefined((yield* (yield* Mailbox).sync(account.id))[0]?.error);
+      assert.strictEqual(
+        yield* store.countThreads({ accountIds: [account.id], mailbox: "all", flat: true }),
+        12,
+      );
+      assert.deepStrictEqual(http.batches, [2]);
+      const cursor = yield* store.getSyncCursor(account.id);
+      const value =
+        cursor._tag === "Some"
+          ? Schema.decodeUnknownSync(
+              Schema.fromJsonString(Schema.Struct({ inbox: Schema.String })),
+            )(cursor.value)
+          : undefined;
+      assert.strictEqual(value?.inbox, previous);
+    }),
+    http.layer,
+  );
+});
 
-it.effect("slice56: a Graph delta reaching the filtered 5,000 cap remains a partial window", () => {
+it.effect("a Graph delta reaching the filtered 5,000 cap remains a partial window", () => {
   const http = httpProvider("outlook", "present", false, { listed: 5000 });
   return makeOutlook.pipe(
     Effect.flatMap((adapter) =>
@@ -610,7 +598,7 @@ it.effect("slice56: a Graph delta reaching the filtered 5,000 cap remains a part
 
 for (const provider of ["gmail", "outlook"] as const) {
   it.effect(
-    `slice60: ${provider} stale verification respects batch Retry-After and the hourly cooldown`,
+    `${provider} stale verification respects batch Retry-After and the hourly cooldown`,
     () => {
       const http = httpProvider(provider, "deferred");
       return runtime(
@@ -691,7 +679,7 @@ for (const provider of ["gmail", "outlook"] as const) {
 
 for (const provider of ["gmail", "outlook"] as const) {
   for (const status of [400, 401, 403]) {
-    it.effect(`slice60-fix: ${provider} sweep inner ${status} keeps cached rows`, () => {
+    it.effect(`${provider} sweep inner ${status} keeps cached rows`, () => {
       const http = httpProvider(provider, "present", false, { verificationStatus: status });
       return runtime(
         provider,
@@ -749,32 +737,27 @@ for (const provider of ["gmail", "outlook"] as const) {
   }
 }
 
-it.effect(
-  "slice60-fix: Gmail verification 200 without labelIds reports a present unlabeled message",
-  () => {
-    const http = httpProvider("gmail", "present", false, { omitLabels: true });
-    return runtime(
-      "gmail",
-      makeGmail,
-      Effect.gen(function* () {
-        const store = yield* Store;
-        const account = yield* store.upsertAccount("gmail", "me@example.test");
-        const adapter = (yield* Providers).get("gmail");
-        assert.ok(typeof adapter.verifyResetCandidates === "function");
-        const result = yield* adapter.verifyResetCandidates(account, [
-          { providerId: "m1", rfcMessageId: null, labels: ["CATEGORY_PERSONAL"] },
-        ]);
-        assert.deepStrictEqual(result, [
-          { kind: "present", id: "m1", providerId: "m1", labels: [] },
-        ]);
-      }),
-      http.layer,
-    );
-  },
-);
+it.effect("Gmail verification 200 without labelIds reports a present unlabeled message", () => {
+  const http = httpProvider("gmail", "present", false, { omitLabels: true });
+  return runtime(
+    "gmail",
+    makeGmail,
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.test");
+      const adapter = (yield* Providers).get("gmail");
+      assert.ok(typeof adapter.verifyResetCandidates === "function");
+      const result = yield* adapter.verifyResetCandidates(account, [
+        { providerId: "m1", rfcMessageId: null, labels: ["CATEGORY_PERSONAL"] },
+      ]);
+      assert.deepStrictEqual(result, [{ kind: "present", id: "m1", providerId: "m1", labels: [] }]);
+    }),
+    http.layer,
+  );
+});
 
 for (const kind of ["Reset", "DeleteLabel", "RebuildFolder"] as const) {
-  it.effect(`slice62: a single missing row in ${kind} is verified before deletion`, () => {
+  it.effect(`a single missing row in ${kind} is verified before deletion`, () => {
     const verified: string[] = [];
     const adapter: ProviderAdapter = {
       ...makeFakeProvider(fakeServer("me@example.test")),
@@ -818,30 +801,27 @@ for (const kind of ["Reset", "DeleteLabel", "RebuildFolder"] as const) {
   });
 }
 
-it.effect(
-  "slice62: Gmail recovery verifies a single missing message at the 90-day window edge",
-  () => {
-    const now = 100 * 86400000;
-    const http = httpProvider("gmail", "present", false, { now });
-    return runtime(
-      "gmail",
-      makeGmail,
-      Effect.gen(function* () {
-        yield* TestClock.setTime(now);
-        const store = yield* Store;
-        const account = yield* store.upsertAccount("gmail", "me@example.test");
-        for (let index = 0; index < 10; index++)
-          yield* store.upsertMessage(account.id, { ...mail(`m${index}`), date: now });
-        yield* store.upsertMessage(account.id, { ...mail("edge"), date: now - 90 * 86400000 + 1 });
-        yield* store.saveSyncCursor(account.id, "expired");
-        yield* (yield* Mailbox).sync(account.id);
-        assert.deepStrictEqual(http.verifiedIds, ["edge"]);
-        assert.strictEqual(
-          (yield* store.getMessage(`${account.id}/edge`)).bodyText,
-          "full cached body",
-        );
-      }),
-      http.layer,
-    );
-  },
-);
+it.effect("Gmail recovery verifies a single missing message at the 90-day window edge", () => {
+  const now = 100 * 86400000;
+  const http = httpProvider("gmail", "present", false, { now });
+  return runtime(
+    "gmail",
+    makeGmail,
+    Effect.gen(function* () {
+      yield* TestClock.setTime(now);
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.test");
+      for (let index = 0; index < 10; index++)
+        yield* store.upsertMessage(account.id, { ...mail(`m${index}`), date: now });
+      yield* store.upsertMessage(account.id, { ...mail("edge"), date: now - 90 * 86400000 + 1 });
+      yield* store.saveSyncCursor(account.id, "expired");
+      yield* (yield* Mailbox).sync(account.id);
+      assert.deepStrictEqual(http.verifiedIds, ["edge"]);
+      assert.strictEqual(
+        (yield* store.getMessage(`${account.id}/edge`)).bodyText,
+        "full cached body",
+      );
+    }),
+    http.layer,
+  );
+});

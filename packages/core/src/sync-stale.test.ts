@@ -1,16 +1,13 @@
 import { assert, it } from "@effect/vitest";
-import { Clock, Effect, Fiber, Layer, Logger, Option, Stream } from "effect";
+import { Clock, Effect, Fiber, Logger, Option, Stream } from "effect";
 import { TestClock } from "effect/testing";
-import type { IncomingMessage, OutgoingMessage, Provider } from "./domain.js";
+import { type IncomingMessage, type OutgoingMessage, type Provider } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
-import { MailboxLive } from "./mailbox-live.js";
-import { Providers, Store, type Change, type ProviderAdapter } from "./services.js";
-import { StoreLive } from "./store.js";
-import { makeResetGuard } from "./sync-reset.js";
-import type { SyncHealth } from "./sync-health.js";
-import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
-
+import { TestMailbox } from "./platform/node/testing.js";
+import { Store, type Change, type ProviderAdapter } from "./services.js";
+import { type SyncHealth } from "./sync-health.js";
+import { makeResetGuard } from "./sync-reset.js";
 const message = (providerId: string, labels: string[]): IncomingMessage => ({
   providerId,
   threadId: providerId,
@@ -36,13 +33,10 @@ const draft: OutgoingMessage = {
   attachments: [],
 };
 function runtime(adapter: ProviderAdapter) {
-  return MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
-    Layer.provideMerge(
-      Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => adapter })).pipe(
-        Layer.provideMerge(MemoryPlatform()),
-      ),
-    ),
-  );
+  return TestMailbox.withAdapter(adapter, {
+    options: { backgroundFlush: false, imapIdle: false },
+    platformOptions: {},
+  });
 }
 
 for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {

@@ -19,7 +19,6 @@ import { Providers, Secrets, Store } from "../../services.js";
 import { MailboxLive } from "../../mailbox-live.js";
 import { Mailbox } from "../../mailbox.js";
 import { Buffer } from "../bytes.js";
-
 const raw = Buffer.from(
   [
     "From: Alice <alice@example.test>",
@@ -702,7 +701,7 @@ it("SMTP DATA writes a large body in bounded chunks and waits for the final acce
   expect(accepted).toBe(true);
 });
 
-it("slice49: mobile pushes reuse one connection and preserve COPYUID without unsafe EXPUNGE", async () => {
+it("mobile pushes reuse one connection and preserve COPYUID without unsafe EXPUNGE", async () => {
   const test = server({ noMove: true, noUidplus: true, copyUid: true });
   try {
     await test.runtime.runPromise(
@@ -731,7 +730,7 @@ it("slice49: mobile pushes reuse one connection and preserve COPYUID without uns
   }
 });
 
-it("slice49: mobile custom Office365 SMTP infers the server's Sent copy", async () => {
+it("mobile custom Office365 SMTP infers the server's Sent copy", async () => {
   const test = server();
   try {
     await test.runtime.runPromise(
@@ -768,7 +767,7 @@ it("slice49: mobile custom Office365 SMTP infers the server's Sent copy", async 
   }
 });
 
-it("slice49-fix: a successful mobile move tolerates malformed COPYUID metadata", async () => {
+it("a successful mobile move tolerates malformed COPYUID metadata", async () => {
   const test = server({ noMove: true, noUidplus: true, copyUidResponse: "11 1 4:3" });
   try {
     await test.runtime.runPromise(
@@ -792,7 +791,7 @@ it("slice49-fix: a successful mobile move tolerates malformed COPYUID metadata",
   }
 });
 
-it("slice49-fix: mobile rebuilds remap rows that backfill did not put in the cursor", async () => {
+it("mobile rebuilds remap rows that backfill did not put in the cursor", async () => {
   const test = server();
   try {
     await test.runtime.runPromise(
@@ -863,7 +862,7 @@ it("background IMAP pull refuses absent cursors and changed UIDVALIDITY before f
   }
 });
 
-it("slice55: concurrent commands on one IMAP wire are serialized", async () => {
+it("concurrent commands on one IMAP wire are serialized", async () => {
   const writes: string[] = [];
   let firstTag = "";
   const socket = new ScriptSocket((bytes, current) => {
@@ -887,7 +886,7 @@ it("slice55: concurrent commands on one IMAP wire are serialized", async () => {
   expect(writes).toHaveLength(2);
 });
 
-it("slice55: In-Reply-To with multiple ids uses only the first parent", async () => {
+it("In-Reply-To with multiple ids uses only the first parent", async () => {
   const parsed = await parseMobileMime(
     Buffer.from("Message-ID: <child@x>\r\nIn-Reply-To: <one@x> <two@x>\r\n\r\nbody"),
   );
@@ -897,7 +896,7 @@ it("slice55: In-Reply-To with multiple ids uses only the first parent", async ()
   ).toBe("one@x");
 });
 
-it("slice55: interrupted pooled mobile pushes evict and close the socket", async () => {
+it("interrupted pooled mobile pushes evict and close the socket", async () => {
   let began: () => void = () => {
     // The Promise constructor installs the resolver before any command starts.
   };
@@ -935,7 +934,7 @@ it("slice55: interrupted pooled mobile pushes evict and close the socket", async
   }
 });
 
-it("slice55: mobile sync omits Deleted copies on a server without MOVE or UIDPLUS", async () => {
+it("mobile sync omits Deleted copies on a server without MOVE or UIDPLUS", async () => {
   const test = server({ noMove: true, noUidplus: true });
   try {
     await test.runtime.runPromise(
@@ -975,7 +974,7 @@ it("slice55: mobile sync omits Deleted copies on a server without MOVE or UIDPLU
   }
 });
 
-it("slice55: mobile UIDNEXT regression invalidates old mappings before any refetch", async () => {
+it("mobile UIDNEXT regression invalidates old mappings before any refetch", async () => {
   const test = server({ uidNext: 2 });
   try {
     await test.runtime.runPromise(
@@ -1005,7 +1004,7 @@ it("slice55: mobile UIDNEXT regression invalidates old mappings before any refet
   }
 });
 
-it("slice55-fix: mobile pushes refuse regressed UIDNEXT before STORE or COPY", async () => {
+it("mobile pushes refuse regressed UIDNEXT before STORE or COPY", async () => {
   const test = server({ uidNext: 2 });
   try {
     await test.runtime.runPromise(
@@ -1046,7 +1045,7 @@ it("slice55-fix: mobile pushes refuse regressed UIDNEXT before STORE or COPY", a
 });
 
 for (const outcome of ["present", "gone", "moved"] as const) {
-  it(`slice56: mobile IMAP reset verifies ${outcome} by UID and Message-ID`, async () => {
+  it(`mobile IMAP reset verifies ${outcome} by UID and Message-ID`, async () => {
     const test = server({
       resetSearch: (command, path) => {
         if (command.includes("HEADER Message-ID")) {
@@ -1131,7 +1130,7 @@ for (const outcome of ["present", "gone", "moved"] as const) {
   });
 }
 
-it("slice56: successful IMAP command without a SEARCH reply is not proof of absence", async () => {
+it("successful IMAP command without a SEARCH reply is not proof of absence", async () => {
   const socket = new ScriptSocket((bytes, current) => {
     const tag = Buffer.from(bytes).toString("utf8").split(" ")[0];
     current.enqueue(`${tag} OK completed\r\n`);
@@ -1146,7 +1145,7 @@ it("slice56: successful IMAP command without a SEARCH reply is not proof of abse
 });
 
 for (const outcome of ["present", "gone", "moved"] as const) {
-  it(`slice56: mobile invalidation verifies ${outcome} through Message-ID and preserves cached rows first`, async () => {
+  it(`mobile invalidation verifies ${outcome} through Message-ID and preserves cached rows first`, async () => {
     const test = server({
       resetSearch: (command, path) => {
         if (!command.includes("HEADER Message-ID")) throw new Error("Unsafe reused UID probe");
@@ -1229,7 +1228,7 @@ for (const outcome of ["present", "gone", "moved"] as const) {
   });
 }
 
-const slice63Message = {
+const testMessage = {
   to: [{ name: "", address: "alice@example.test" }],
   cc: [],
   bcc: [],
@@ -1239,7 +1238,7 @@ const slice63Message = {
 };
 
 for (const response of ["disconnect", 554] as const) {
-  it(`slice63: SMTP DATA ${response} distinguishes uncertainty from definite rejection`, async () => {
+  it(`SMTP DATA ${response} distinguishes uncertainty from definite rejection`, async () => {
     const test = server({ smtpDataReply: response });
     try {
       await test.runtime.runPromise(
@@ -1250,7 +1249,7 @@ for (const response of ["disconnect", 554] as const) {
           });
           const adapter = (yield* Providers).get("imap");
           const result = yield* adapter
-            .send(account, slice63Message, Option.none())
+            .send(account, testMessage, Option.none())
             .pipe(Effect.result);
           expect(result._tag).toBe(response === "disconnect" ? "Success" : "Failure");
           if (result._tag === "Failure") expect(result.failure._tag).toBe("PermanentError");
@@ -1267,7 +1266,7 @@ for (const response of ["disconnect", 554] as const) {
   });
 }
 
-it("slice63: mobile copy/move retries reuse the destination and resolve missing COPYUID", async () => {
+it("mobile copy/move retries reuse the destination and resolve missing COPYUID", async () => {
   const test = server({ noMove: true, noUidplus: true, rejectDeleteOnce: true });
   try {
     await test.runtime.runPromise(
@@ -1293,7 +1292,7 @@ it("slice63: mobile copy/move retries reuse the destination and resolve missing 
 });
 
 for (const existing of [true, false]) {
-  it(`slice63: mobile special folders ${existing ? "reuse path aliases" : "accept ALREADYEXISTS"}`, async () => {
+  it(`mobile special folders ${existing ? "reuse path aliases" : "accept ALREADYEXISTS"}`, async () => {
     const test = server({
       noMove: true,
       noUidplus: true,
@@ -1319,7 +1318,7 @@ for (const existing of [true, false]) {
   });
 }
 
-it("slice63: mobile move holds queued operations when destination UID remains unresolved", async () => {
+it("mobile move holds queued operations when destination UID remains unresolved", async () => {
   const test = server({ noMove: true, noUidplus: true, unresolvedCopy: true });
   try {
     await test.runtime.runPromise(
@@ -1343,7 +1342,7 @@ it("slice63: mobile move holds queued operations when destination UID remains un
 });
 
 for (const failures of [1, 2]) {
-  it(`slice63: mobile Sent APPEND retries once after ${failures} failure(s) and reports missing copy`, async () => {
+  it(`mobile Sent APPEND retries once after ${failures} failure(s) and reports missing copy`, async () => {
     const test = server({
       appendFailures: failures,
       resetSearch: (command) => (command.includes("HEADER Message-ID") ? [] : [1]),
@@ -1357,7 +1356,7 @@ for (const failures of [1, 2]) {
           });
           const result = yield* (yield* Providers)
             .get("imap")
-            .send(account, slice63Message, Option.none());
+            .send(account, testMessage, Option.none());
           expect(result).toEqual(failures === 2 ? { sentCopyMissing: true } : undefined);
         }),
       );
@@ -1369,7 +1368,7 @@ for (const failures of [1, 2]) {
   });
 }
 
-it("slice63: multi-destination mobile copy waits for completed destinations while SEARCH lags", async () => {
+it("multi-destination mobile copy waits for completed destinations while SEARCH lags", async () => {
   let visible = false;
   const test = server({
     noMove: true,
@@ -1404,7 +1403,7 @@ it("slice63: multi-destination mobile copy waits for completed destinations whil
   }
 });
 
-it("slice63: lost SMTP acknowledgement without a Sent match preserves SendUncertain", async () => {
+it("lost SMTP acknowledgement without a Sent match preserves SendUncertain", async () => {
   const test = server({ smtpDataReply: "disconnect", resetSearch: () => [] });
   try {
     const account = await test.runtime.runPromise(
@@ -1420,7 +1419,7 @@ it("slice63: lost SMTP acknowledgement without a Sent match preserves SendUncert
     );
     vi.useFakeTimers();
     const sending = test.runtime.runPromise(
-      adapter.send(account, slice63Message, Option.none()).pipe(Effect.result),
+      adapter.send(account, testMessage, Option.none()).pipe(Effect.result),
     );
     await vi.advanceTimersByTimeAsync(35000);
     const result = await sending;
@@ -1434,7 +1433,7 @@ it("slice63: lost SMTP acknowledgement without a Sent match preserves SendUncert
   }
 });
 
-it("slice63: advertised native MOVE keeps the source when COPYUID and destination lookup are unavailable", async () => {
+it("advertised native MOVE keeps the source when COPYUID and destination lookup are unavailable", async () => {
   const test = server({ unresolvedCopy: true });
   try {
     await test.runtime.runPromise(
@@ -1460,7 +1459,7 @@ it("slice63: advertised native MOVE keeps the source when COPYUID and destinatio
   }
 });
 
-it("slice63: persisted Message-ID remaps an expunged source after mobile adapter restart", async () => {
+it("persisted Message-ID remaps an expunged source after mobile adapter restart", async () => {
   const test = server();
   try {
     await test.runtime.runPromise(
@@ -1498,7 +1497,7 @@ it("slice63: persisted Message-ID remaps an expunged source after mobile adapter
   }
 });
 
-it("slice63: mobile move retries accepted Deleted flags after a lost acknowledgement", async () => {
+it("mobile move retries accepted Deleted flags after a lost acknowledgement", async () => {
   const test = server({ disconnectAfterDeleteOnce: true });
   try {
     await test.runtime.runPromise(
@@ -1533,7 +1532,7 @@ it("slice63: mobile move retries accepted Deleted flags after a lost acknowledge
 });
 
 for (const operation of ["move", "copy"] as const) {
-  it(`slice63: queued identity refuses silently reused mobile UID before ${operation}`, async () => {
+  it(`queued identity refuses silently reused mobile UID before ${operation}`, async () => {
     const test = server();
     try {
       await test.runtime.runPromise(
@@ -1563,7 +1562,7 @@ for (const operation of ["move", "copy"] as const) {
   });
 }
 
-it("slice63-fix: an externally removed source without persisted COPY progress fails permanently", async () => {
+it("an externally removed source without persisted COPY progress fails permanently", async () => {
   const test = server({ resetSearch: () => [] });
   try {
     await test.runtime.runPromise(
@@ -1592,7 +1591,7 @@ it("slice63-fix: an externally removed source without persisted COPY progress fa
   }
 });
 
-it("slice63-fix: first COPY preserves a distinct source with the same Message-ID already in destination", async () => {
+it("first COPY preserves a distinct source with the same Message-ID already in destination", async () => {
   const test = server({ copyUid: true, resetSearch: () => [1] });
   let marked = false;
   try {
@@ -1633,7 +1632,7 @@ it("slice63-fix: first COPY preserves a distinct source with the same Message-ID
 });
 
 for (const copyUid of [true, false]) {
-  it(`slice63-fix: mobile moves a source without Message-ID ${copyUid ? "with COPYUID" : "and requests reconcile"}`, async () => {
+  it(`mobile moves a source without Message-ID ${copyUid ? "with COPYUID" : "and requests reconcile"}`, async () => {
     const source = Buffer.from(
       Buffer.from(raw)
         .toString("latin1")
@@ -1667,7 +1666,7 @@ for (const copyUid of [true, false]) {
   });
 }
 
-it("slice63-fix: mobile normalizes stored Message-ID brackets and whitespace before identity checks", async () => {
+it("mobile normalizes stored Message-ID brackets and whitespace before identity checks", async () => {
   const test = server({ copyUid: true });
   try {
     await test.runtime.runPromise(
@@ -1698,7 +1697,7 @@ it("slice63-fix: mobile normalizes stored Message-ID brackets and whitespace bef
   }
 });
 
-it("slice63-fix: Courier INBOX-prefixed special folders match their leaf aliases", async () => {
+it("Courier INBOX-prefixed special folders match their leaf aliases", async () => {
   const test = server({
     copyUid: true,
     noUidplus: true,
@@ -1713,7 +1712,7 @@ it("slice63-fix: Courier INBOX-prefixed special folders match their leaf aliases
           input: { preset: "fastmail", email: "me@example.test", password: "secret" },
         });
         const adapter = (yield* Providers).get("imap");
-        yield* adapter.send(account, slice63Message, Option.none());
+        yield* adapter.send(account, testMessage, Option.none());
         expect(yield* adapter.push(account, "9:1:INBOX", { kind: "trash" })).toEqual([
           { from: "9:1:INBOX", to: "11:4:INBOX.Trash" },
         ]);
@@ -1727,7 +1726,7 @@ it("slice63-fix: Courier INBOX-prefixed special folders match their leaf aliases
   }
 });
 
-it("slice63-fix: accepted COPY without Message-ID retries only Deleted after restart", async () => {
+it("accepted COPY without Message-ID retries only Deleted after restart", async () => {
   const source = Buffer.from(
     Buffer.from(raw)
       .toString("latin1")
@@ -1775,7 +1774,7 @@ it("slice63-fix: accepted COPY without Message-ID retries only Deleted after res
   }
 });
 
-it("slice63-fix: persisted COPY intent with source and destination absent waits without re-copying", async () => {
+it("persisted COPY intent with source and destination absent waits without re-copying", async () => {
   const test = server({ resetSearch: () => [] });
   try {
     await test.runtime.runPromise(
@@ -1807,7 +1806,7 @@ it("slice63-fix: persisted COPY intent with source and destination absent waits 
   }
 });
 
-it("slice63-fix: a new queued move ignores an earlier operation's local COPY progress", async () => {
+it("a new queued move ignores an earlier operation's local COPY progress", async () => {
   const test = server({ noUidplus: true, copyUid: true });
   try {
     await test.runtime.runPromise(

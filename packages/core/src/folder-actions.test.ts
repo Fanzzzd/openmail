@@ -16,7 +16,6 @@ import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers, Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { fakeServer } from "./platform/node/testing.js";
-
 const message = (id: string, labels = ["INBOX", "UNREAD"], threadId = id): IncomingMessage => ({
   providerId: id,
   threadId,
@@ -999,7 +998,7 @@ it.effect(
 );
 
 for (const reconcile of [false, true])
-  it.effect(`slice49-fix: folder mark-read uses remapped IDs, reconcile=${reconcile}`, () =>
+  it.effect(`folder mark-read uses remapped IDs, reconcile=${reconcile}`, () =>
     Effect.gen(function* () {
       const store = yield* Store;
       const account = yield* store.upsertAccount("outlook", "me@example.com");
@@ -1018,7 +1017,7 @@ for (const reconcile of [false, true])
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
   );
 
-it.effect("slice49-fix: empty-folder checks remapped local location before deleting", () =>
+it.effect("empty-folder checks remapped local location before deleting", () =>
   Effect.gen(function* () {
     const store = yield* Store;
     const account = yield* store.upsertAccount("outlook", "me@example.com");

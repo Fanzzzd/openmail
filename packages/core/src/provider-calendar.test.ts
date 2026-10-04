@@ -1,10 +1,9 @@
 import { assert, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
 import { makeProviderCalendar } from "./provider-calendar.js";
-import type { Account } from "./domain.js";
-import type { CalendarEvent } from "./calendar.js";
+import { type Account } from "./domain.js";
+import { type CalendarEvent } from "./calendar.js";
 import { ProviderError } from "./errors.js";
-
 const account: Account = {
   id: "gmail:me@gmail.com",
   provider: "gmail",
@@ -307,7 +306,7 @@ it.effect(
     }),
 );
 
-it.effect("slice62: Graph calendar pagination accepts calendar key segments unchanged", () =>
+it.effect("Graph calendar pagination accepts calendar key segments unchanged", () =>
   Effect.gen(function* () {
     const next =
       "https://graph.microsoft.com/v1.0/me/calendars('default')/calendarView?$skiptoken=a%2Fb";

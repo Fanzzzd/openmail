@@ -55,7 +55,7 @@ openmail 要避免"又一个信封"，需要一个自己的标记。第四轮所
 
 ## 第五轮：对标 opencode
 
-opencode 的桌面图标（`refs/opencode-prod.png`，取自 sst/opencode 仓库的 `packages/desktop/icons/prod`）是一个像素风的方形 o：
+opencode 的桌面图标（`refs/opencode-prod.png`，取自 sst/opencode 仓库的 `apps/desktop/build/icon.icon`）是一个像素风的方形 o：
 
 - 一个字母就是整个标记。粗方框，直角，没有圆角也没有装饰。
 - 黑白单色，材质交给系统，白色标记在深色底上变成带高光的银色。

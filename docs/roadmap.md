@@ -4,7 +4,7 @@
 
 ## 进度（2026-10-03）
 
-本页按 slices 42 至 62 后的当前代码更新。下表的“完成”指产品路径和自动回归已存在；真实账户、设备权限与正式发行另行验收。slice 56 的同步重置删除保护和 Outlook delta 分页修复、slice 60 的过期缓存扫描与 Outlook 冲突队列均已合入。slice 62 将所有重置删除候选纳入验证，并修复 IMAP 搜索失败处理、Graph 续页和 Outlook 联系人文件夹遍历。同步规则与证据见[同步说明](sync-correctness.md#重置删除保护)。
+本页按当前代码维护。下表的“完成”指产品路径和自动回归已存在；真实账户、设备权限与正式发行另行验收。同步重置删除保护和 Outlook delta 分页修复、过期缓存扫描与 Outlook 冲突队列均已合入。当前实现将所有重置删除候选纳入验证，并修复 IMAP 搜索失败处理、Graph 续页和 Outlook 联系人文件夹遍历。同步规则与证据见[同步说明](sync-correctness.md#重置删除保护)。
 
 | 范围             | 已完成                                                                                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -18,7 +18,7 @@
 | 工程验证         | 性能查询计划与内存回归、无障碍与键盘回归、renderer 模块拆分、真实 App／RPC／Mailbox 邮件流程、解析器 fuzz 与 axe 检查、十种语言目录检查                              |
 | 平台与手机       | Node 平台拆分、portable 入口、Expo 项目、op-sqlite／SecureStore／AuthSession adapters、Gmail／Outlook／IMAP/SMTP、受限阅读、撰写与确认发送、后台刷新、本地通知和徽标 |
 
-当前新增能力的证据见 [只读与可选服务](architecture.md#只读会话)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#同步健康检查)和[测试入口](testing.md)。[db.ts](../packages/core/src/db.ts) 已有迁移 1 至 36；消息文本容量预算不等于整库空间上限。迁移 36 与出站可靠性规则见[同步说明](sync-correctness.md#出站操作队列)。slice 61 已合入迁移 35 和 10 万封性能预算；测量条件、查询计划及写入成本见[性能](performance.md)。
+当前新增能力的证据见 [只读与可选服务](architecture.md#只读会话)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#同步健康检查)和[测试入口](testing.md)。[db.ts](../packages/core/src/db.ts) 已有迁移 1 至 36；消息文本容量预算不等于整库空间上限。迁移 36 与出站可靠性规则见[同步说明](sync-correctness.md#出站操作队列)。已合入迁移 35 和 10 万封性能预算；测量条件、查询计划及写入成本见[性能](performance.md)。
 
 Gmail 与个人 Outlook 的基础读写、发信已有真实账户验证记录。后续能力的 fake provider、fake Model、临时数据库及 DOM 回归不能代替新增 scope、真实模型、原生权限和发行验收。验证入口见[测试](testing.md)，测量条件见[性能](performance.md)。
 
@@ -55,22 +55,22 @@ Gmail 与个人 Outlook 的基础读写、发信已有真实账户验证记录�
 
 其余缺口包括 Workspace Directory、可选服务真实授权验收、部分 Gmail 搜索扩展与规则条件、Gmail 服务器草稿标签／星标、整库空间控制，以及实时推送。Google restricted-scope verification、Advanced Protection 与 CASA 属于外部审核事项。内置 AI 已实现，I01 至 I05 仍专指 Apple 原生能力。
 
-parity 保留各次切片的历史基准与计数。涉及旧路径或旧工作树的记录用于追溯，当前模块入口按 [CONTEXT.md](../CONTEXT.md) 和[架构](architecture.md)读取。
+历史切片更新保存在 git；parity 维护当前能力计数。模块入口按 [CONTEXT.md](../CONTEXT.md) 和[架构](architecture.md)读取。
 
 ## 手机端
 
-### core 平台接口（slice 39 已完成）
+### core 平台接口
 
 Node 专用实现集中在 `packages/core/src/platform/node/`。手机从 `@openmail/core/portable` 加载 Mailbox、Store、迁移及 HTTP provider。接口见[架构的 Platform 端口](architecture.md#platform-端口)，逐文件清单见[平台依赖清单](platform-inventory.md)。
 
-### 手机基础（slice 41 已完成）
+### 手机基础
 
 已接入 Expo、React Native、op-sqlite、SecureStore、系统浏览器 PKCE 授权、账户／邮箱／会话列表、分页、受限 HTML 阅读、下拉同步及十种语言。根 `build` 只编译语言目录和检查类型；自动测试使用 Node SQLite shim 与原生服务 mocks。
 
-### 手机邮件流程与后台能力（slices 44、47、51）
+### 手机邮件流程与后台能力
 
 已接入整理与撤销、多选、可配置滑动、VoiceOver actions、回复／转发／富文本撰写、文件与照片附件、本地草稿和持久发送队列。IMAP/SMTP 使用 portable 协议和原生 TCP/TLS，强制 TLS 或 STARTTLS；阅读附件经 core 下载。实现见 [手机平台组装](../apps/mobile/src/platform/index.ts)、[IMAP adapter](../packages/core/src/platform/react-native/imap.ts)和[撰写界面](../apps/mobile/app/compose.tsx)。
 
-后台刷新、本地通知和徽标默认关闭。OS 决定后台任务时间；后台只拉取 Inbox 增量，不回填、不发送或推送整理队列。通知默认只显示发件人，不显示消息文本，无远程推送。代码与原生补丁见 [background.ts](../apps/mobile/src/background.ts) 和[手机端说明](../apps/mobile/README.md#前后台同步与原生权限slice-51)。
+后台刷新、本地通知和徽标默认关闭。OS 决定后台任务时间；后台只拉取 Inbox 增量，不回填、不发送或推送整理队列。通知默认只显示发件人，不显示消息文本，无远程推送。代码与原生补丁见 [background.ts](../apps/mobile/src/background.ts) 和[手机端说明](../apps/mobile/README.md#前后台同步与原生权限)。
 
 自动测试使用 SQLite shim、分片协议流和原生服务 mocks，不能证明真机 TLS、Metro、通知、锁屏存储或后台唤醒。PDF 文本提取、固定地址图片下载、端侧推理及数据库恢复仍缺移动 adapter。能力表、权限和真机验收只在[手机端说明](../apps/mobile/README.md)维护。

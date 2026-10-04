@@ -18,9 +18,8 @@ import {
   traceQueries,
   type QueryPlan,
 } from "./fixtures/performance-mailbox.js";
-
 it.effect(
-  "slice61: 100k mailbox stays within local performance budgets",
+  "100k mailbox stays within local performance budgets",
   () => {
     const trace = traceQueries();
     const mailbox = PerformanceMailbox();
@@ -48,7 +47,7 @@ it.effect(
         yield* sql`SELECT COUNT(*) AS messages, (SELECT COUNT(*) FROM (SELECT account_id,thread_id FROM messages GROUP BY account_id,thread_id)) AS threads, (SELECT COUNT(*) FROM labels) AS labels FROM messages`;
       assert.deepStrictEqual(counts, { messages: 100_000, threads: 20_000, labels: 200 });
 
-      const output = process.env.OPENMAIL_PERF_REPORT ?? "/tmp/openmail-slice61-performance.json";
+      const output = process.env.OPENMAIL_PERF_REPORT ?? "/tmp/openmail-performance.json";
       let complete = false;
       const writeReport = () => {
         writeFileSync(

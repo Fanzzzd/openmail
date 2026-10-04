@@ -16,9 +16,8 @@ import {
   unavailableVision,
 } from "./media.js";
 import { textChunks } from "./text-chunks.js";
-import type { IncomingMessage } from "./domain.js";
+import { type IncomingMessage } from "./domain.js";
 import { semanticRankFusion } from "./search.js";
-
 const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
   body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
 const vector = (dim: number, index = 0) =>
@@ -596,27 +595,6 @@ it.effect("one process load failure never spends attempts across the backlog", (
       yield* TestClock.adjust("60 seconds");
       yield* sql`UPDATE semantic_jobs SET retry_at=0`;
       assert.strictEqual(yield* (yield* indexer(store, base)).batch(), 2);
-    }),
-  ),
-);
-
-it.effect("body chunk cap and indexed queue ordering bound backfill work", () =>
-  withStore(
-    Effect.gen(function* () {
-      const { store, account } = yield* setup;
-      const sql = yield* SqlClient.SqlClient;
-      yield* store.upsertMessage(
-        account.id,
-        message({ bodyText: "body sentence. ".repeat(10000) }),
-      );
-      yield* store.semantics.setEnabled(true);
-      const calls: string[] = [];
-      yield* (yield* indexer(store, fakeModels(calls))).batch();
-      assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 256);
-      const plan =
-        yield* sql`EXPLAIN QUERY PLAN SELECT j.message_id FROM semantic_jobs j INDEXED BY semantic_jobs_priority CROSS JOIN messages m ON m.id=j.message_id CROSS JOIN accounts a ON a.id=m.account_id
-    WHERE j.status='queued' AND j.retry_at<=0 AND j.attempts<5 AND a.needs_reauth=0 ORDER BY j.priority_at DESC,j.message_id LIMIT 1`;
-      assert.ok(!plan.some((row) => String(row.detail).includes("TEMP B-TREE")));
     }),
   ),
 );
