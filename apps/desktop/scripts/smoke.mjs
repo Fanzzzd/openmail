@@ -240,6 +240,13 @@ try {
   await send("Runtime.enable");
   await send("Log.enable");
   await send("Page.enable");
+  // Window managers may tile the window narrow; the steps below need the three-pane layout.
+  await send("Emulation.setDeviceMetricsOverride", {
+    width: 1320,
+    height: 860,
+    deviceScaleFactor: 0,
+    mobile: false,
+  });
   await send("Page.addScriptToEvaluateOnNewDocument", {
     source: `if (window.top === window && window.openmailRpc) window.openmailRpc.onFrame(frame => {
     try { const frames = JSON.parse(frame); for (const response of Array.isArray(frames) ? frames : [frames]) {
