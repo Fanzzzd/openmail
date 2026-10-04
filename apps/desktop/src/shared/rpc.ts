@@ -220,10 +220,6 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("IndexingProgress", { success: IndexingProgress }),
   Rpc.make("SetModelsEnabled", { payload: { enabled: Schema.Boolean } }),
   Rpc.make("SetIndexingPaused", { payload: { paused: Schema.Boolean } }),
-  Rpc.make("DerivedChunks", {
-    payload: { id: Schema.String },
-    success: Schema.Array(DerivedChunk),
-  }),
   Rpc.make("MediaImage", { payload: { chunk: DerivedChunk }, success: Schema.String, error }),
   Rpc.make("CalendarEvents", {
     payload: { messageId: Schema.String, key: Schema.String },
@@ -642,7 +638,6 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("DeleteNamedSignature", { payload: { id: Schema.String } }),
   Rpc.make("SetSignatureDefault", { payload: { setting: SignatureDefault }, error }),
   Rpc.make("Signatures", { success: Schema.Array(Signature) }),
-  Rpc.make("SetSignature", { payload: { signature: Signature } }),
   Rpc.make("Templates", { success: Schema.Array(Template) }),
   Rpc.make("SaveTemplate", {
     payload: { input: TemplateInput, id: Schema.optionalKey(Schema.String) },

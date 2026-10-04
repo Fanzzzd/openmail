@@ -59,19 +59,3 @@ export interface InferenceProcess {
   kill(): Promise<void>;
 }
 export type InferenceProcessLauncher = (entry: string, root: string) => InferenceProcess;
-export class InferenceWorker extends Context.Service<
-  InferenceWorker,
-  { readonly launch: InferenceProcessLauncher }
->()("openmail/InferenceWorker") {}
-
-/** Recovery operates on the complete database file, including its WAL and lock. */
-export class DatabaseFiles extends Context.Service<
-  DatabaseFiles,
-  {
-    readonly prepareStartup: (directory: string) => void;
-    readonly quickCheck: (file: string) => "ok" | "corrupt" | "unavailable";
-    readonly rebuild: (
-      directory: string,
-    ) => { kind: "reset" } | { kind: "recovered"; backup: string; copied: number; skipped: number };
-  }
->()("openmail/DatabaseFiles") {}

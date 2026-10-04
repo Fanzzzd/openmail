@@ -75,3 +75,51 @@ export function recipientLabel(address: Address, showFullAddress: boolean): stri
 export function displayName(address: Address): string {
   return address.name || address.address.split("@")[0] || address.address;
 }
+
+export function formatAddress(a: Address): string {
+  if (!a.name) return a.address;
+  const name = /[",;:，；\\]/.test(a.name)
+    ? `"${a.name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`
+    : a.name;
+  return `${name} <${a.address}>`;
+}
+
+/** Separators between addresses in a recipient field. */
+export const ADDRESS_SEPARATOR = /[,;，；\n]/;
+
+/**
+ * Parses "李雷 <li@example.com>, han@example.com". Returns the addresses and
+ * the pieces that are not addresses, so the form can point at them.
+ */
+export function parseAddresses(input: string): { addresses: Address[]; invalid: string[] } {
+  const addresses: Address[] = [];
+  const invalid: string[] = [];
+  for (const raw of splitAddresses(input)) {
+    const part = raw.trim();
+    if (!part) continue;
+    const angle = /^(.*)<([^>]+)>$/.exec(part);
+    const name = angle
+      ? angle[1]!
+          .trim()
+          .replace(/^"|"$/g, "")
+          .replace(/\\(["\\])/g, "$1")
+      : "";
+    const address = (angle ? angle[2]! : part).trim();
+    if (isEmailAddress(address)) addresses.push({ name, address });
+    else invalid.push(part);
+  }
+  return { addresses, invalid };
+}
+
+/** Mobile draft fields retain invalid addresses so editing never discards user input. */
+export function draftRecipients(value: string) {
+  return splitAddresses(value)
+    .filter((part) => part.trim())
+    .map((part) => {
+      const match = /^(.*?)<([^<>]+)>$/.exec(part.trim());
+      return {
+        name: match?.[1]?.trim().replace(/^"|"$/g, "") ?? "",
+        address: (match?.[2] ?? part).trim(),
+      };
+    });
+}

@@ -1,7 +1,6 @@
-import { InferenceWorker } from "../runtime.js";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Effect, Option, Semaphore, Schema } from "effect";
+import { Effect, Semaphore, Schema } from "effect";
 import {
   EmbeddedImage,
   MediaError,
@@ -37,9 +36,7 @@ export const makeNodeModels = Effect.fn("makeNodeModels")(function* (
   localRoot?: string,
   options: NodeModelsOptions = {},
 ) {
-  const worker = yield* Effect.serviceOption(InferenceWorker);
-  const launch =
-    options.launch ?? Option.getOrElse(worker, () => ({ launch: nodeInferenceProcess })).launch;
+  const launch = options.launch ?? nodeInferenceProcess;
   const root = localRoot ?? join(dataDirectory, "models", "v1-761b726d-757d59c9");
   let status: ModelsStatus = { kind: "disabled" };
   let verified = false;

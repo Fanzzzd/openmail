@@ -31,6 +31,11 @@ openmail 在本机缓存邮件。桌面、CLI 和 MCP 通过 core 共享数据�
 | 平台端口             | core 所需的 SQL、文件、密钥、OAuth、MIME、网络或 worker 服务                              |
 | Layer                | 为 Effect 服务提供具体实现的组装单元                                                      |
 
+- `messageId` 按边界区分：provider 返回服务器 ID；Mailbox／Store 参数用含账户前缀的本地 ID；RFC Message-ID 在 `rfcMessageId` 中，来自邮件头，通常带 `<…>`。三者不可互换。
+- `MailOp` 是 read、star、move、label 等单项邮件改动；`Command` 加上目标和审批语义；`QueuedOp` 还包括草稿保存、删除和 reconcile。
+- queued send（`queueSend`）保存离线／定时投递意图；delayed send（`queueUndoSend`）保存撤销发送的短暂等待。两者都写入 outbox 并显示 waiting，后者用 `desktopUndo` 标记。
+- `FolderScope`（mailbox、accountIds、label）表示整夹操作目标，不包含搜索、分页或未读筛选；标签／文件夹范围也非正式地称为 "label scope"。
+
 ## 模块入口
 
 | 位置                                                                       | 职责                                                                               |

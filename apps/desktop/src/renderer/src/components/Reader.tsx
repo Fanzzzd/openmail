@@ -1,26 +1,9 @@
-import { UnsubscribeButton } from "./UnsubscribeButton";
-import { MailClient } from "../rpc";
-import { AppleContactActions } from "./AppleContactActions";
-import { InviteBanner, RawMessageDialog } from "./LazyDialogs";
-import { ThreadSummary } from "./AiPanel";
-import { TriageChip } from "./TriageChip";
-import { ContactAvatar as Avatar } from "./ContactAvatar";
-import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
-import { readerMessageId, readerThreadKey, useReaderMessages } from "../reader-selection";
-import { readerSelectedText } from "../quote-selection";
-import { jumpReaderSelection } from "../jump-selection";
-import { readerFindAction } from "../reader-shortcuts";
-import { SearchField } from "./ui/SearchField";
-import { iconButton, trafficLightInset } from "./ui/styles";
-import { Tip } from "./ui/Tip";
-import { BACK_SHORTCUT, isBackKey } from "../responsive-layout";
-import { RegistryContext, useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { plural } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useAtomValue, RegistryContext, useAtom, useAtomSet } from "@effect/atom-react";
+import { AsyncResult, Atom } from "effect/reactivity";
 import {
+  DEFAULT_PREFS,
   senderSpoofed,
   addressDomain,
-  DEFAULT_PREFS,
   htmlToText,
   normalizeQuote,
   EMPTY_QUOTE_HISTORY,
@@ -37,9 +20,48 @@ import {
   threadExpansion,
   type ReaderZoom,
 } from "@openmail/core/schema";
+import {
+  useState,
+  type ReactNode,
+  type RefObject,
+  useContext,
+  useCallback,
+  useMemo,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useSyncExternalStore,
+} from "react";
+import type { Message, DerivedChunk } from "../../../shared/api";
+import { letterAvatarColor, displayName, threadDate } from "../format";
+import {
+  contactPhotoAtom,
+  prefsAtom,
+  accountsAtom,
+  knownSendersAtom,
+  imageSendersAtom,
+  inlineImagesAtom,
+  threadAtom,
+} from "../state/queries";
+import { UnsubscribeButton } from "./UnsubscribeButton";
+import { MailClient } from "../rpc";
+import { AppleContactActions } from "./AppleContactActions";
+import { InviteBanner, RawMessageDialog } from "./LazyDialogs";
+import { ThreadSummary } from "./AiPanel";
+import { TriageChip } from "./TriageChip";
+import { matchesShortcut, shortcutAction, type ShortcutSet } from "../../../shared/shortcuts";
+import { readerMessageId, readerThreadKey, useReaderMessages } from "../reader-selection";
+import { readerSelectedText } from "../quote-selection";
+import { jumpReaderSelection } from "../jump-selection";
+import { readerFindAction } from "../reader-shortcuts";
+import { SearchField } from "./ui/SearchField";
+import { iconButton, trafficLightInset } from "./ui/styles";
+import { Tip } from "./ui/Tip";
+import { BACK_SHORTCUT, isBackKey } from "../responsive-layout";
+import { plural } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
-import { AsyncResult, Atom } from "effect/reactivity";
 import {
   AppWindow,
   Code,
@@ -61,22 +83,8 @@ import {
   Sun,
   Type,
 } from "lucide-react";
-import {
-  type ReactNode,
-  type RefObject,
-  useContext,
-  useCallback,
-  useMemo,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
 
-import type { Message, DerivedChunk } from "../../../shared/api";
 import { messageMissing, causeText } from "../errors";
-import { displayName, threadDate } from "../format";
 import { Keys } from "../state/keys";
 import {
   openThreadWindow,
@@ -88,14 +96,6 @@ import {
   withMail,
 } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
-import {
-  accountsAtom,
-  knownSendersAtom,
-  imageSendersAtom,
-  inlineImagesAtom,
-  prefsAtom,
-  threadAtom,
-} from "../state/queries";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
@@ -1482,4 +1482,31 @@ function SelectedMessageAnnouncement({ message }: { message: Message | undefined
     if (region.current) region.current.textContent = text;
   }, [text]);
   return <output ref={region} aria-live="polite" aria-atomic="true" className="sr-only" />;
+}
+
+const noPhoto = Atom.make(AsyncResult.success(null));
+function Avatar({ message: m }: { message: Message }) {
+  const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
+  const photo = AsyncResult.getOrElse(
+    useAtomValue(prefs.contactPhotos ? contactPhotoAtom(m.accountId, m.from.address) : noPhoto),
+    () => null,
+  );
+  const [failed, setFailed] = useState<string | null>(null);
+  return (
+    <span
+      className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-[15px] font-semibold text-white"
+      style={{ backgroundColor: letterAvatarColor(displayName(m.from)) }}
+    >
+      {photo && photo !== failed && /^data:image\/(png|jpeg|gif|webp);base64,/.test(photo) ? (
+        <img
+          src={photo}
+          alt=""
+          className="size-full object-cover"
+          onError={() => setFailed(photo)}
+        />
+      ) : (
+        displayName(m.from).slice(0, 1).toUpperCase()
+      )}
+    </span>
+  );
 }

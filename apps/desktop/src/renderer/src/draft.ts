@@ -1,10 +1,11 @@
+import { quoteDate } from "./format";
 import {
   displayName,
+  formatAddress,
+  parseAddresses,
   applySignature,
   replyFromAddress,
-  isEmailAddress,
   replyRecipients,
-  splitAddresses,
   type SendAs,
   type SignatureOptions,
   type ComposeBody,
@@ -78,64 +79,10 @@ export function emptyDraft(accountId: string): Draft {
   };
 }
 
-export function formatAddress(a: Address): string {
-  if (!a.name) return a.address;
-  const name = /[",;:，；\\]/.test(a.name)
-    ? `"${a.name.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`
-    : a.name;
-  return `${name} <${a.address}>`;
-}
-
-/** Separators between addresses in a recipient field. */
-export const ADDRESS_SEPARATOR = /[,;，；\n]/;
-
-/**
- * Parses "李雷 <li@example.com>, han@example.com". Returns the addresses and
- * the pieces that are not addresses, so the form can point at them.
- */
-export function parseAddresses(input: string): { addresses: Address[]; invalid: string[] } {
-  const addresses: Address[] = [];
-  const invalid: string[] = [];
-  for (const raw of splitAddresses(input)) {
-    const part = raw.trim();
-    if (!part) continue;
-    const angle = /^(.*)<([^>]+)>$/.exec(part);
-    const name = angle
-      ? angle[1]!
-          .trim()
-          .replace(/^"|"$/g, "")
-          .replace(/\\(["\\])/g, "$1")
-      : "";
-    const address = (angle ? angle[2]! : part).trim();
-    if (isEmailAddress(address)) addresses.push({ name, address });
-    else invalid.push(part);
-  }
-  return { addresses, invalid };
-}
+export { formatAddress, parseAddresses, ADDRESS_SEPARATOR } from "@openmail/core/schema";
 
 function prefixed(prefix: string, subject: string): string {
   return new RegExp(`^${prefix}:`, "i").test(subject) ? subject : `${prefix}: ${subject}`;
-}
-
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-
-/**
- * The date in a quoted reply or forward header. Quoted text goes out in the
- * mail itself, so it stays in Chinese whatever the UI language is.
- */
-function quoteDate(ms: number): string {
-  const d = new Date(ms);
-  const now = new Date();
-  const time = d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return `今天 ${time}`;
-  if (sameDay(d, yesterday)) return `昨天 ${time}`;
-  const day =
-    d.getFullYear() === now.getFullYear()
-      ? d.toLocaleDateString("zh-CN", { month: "long", day: "numeric" })
-      : d.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
-  return `${day} ${time}`;
 }
 
 function quote(m: Message): string {

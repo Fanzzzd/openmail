@@ -9,7 +9,6 @@ import {
   swipeAction,
   swipeOperation,
   toggleSelection,
-  unreadBadge,
 } from "./workflows";
 import { editMarks, markSelection, richTextBody } from "./rich-text";
 
@@ -131,7 +130,6 @@ describe("mail screen view models", () => {
     });
     await run(true);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(unreadBadge({ a: 3, b: 2 })).toBe(5);
   });
 });
 

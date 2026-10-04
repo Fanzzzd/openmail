@@ -2,7 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ContextMenu } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { Check, ChevronRight } from "lucide-react";
-import type { ComponentProps, ComponentType, ReactElement, ReactNode } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 
 import { itemClass, kbdClass, popupMotion, popupSurface, separatorClass } from "./styles";
 
@@ -201,4 +201,3 @@ export function ContextSubmenu({
 
 export const ContextMenuRoot = ContextMenu.Root;
 export const ContextMenuTrigger = ContextMenu.Trigger;
-export type ContextMenuRootProps = ComponentProps<typeof ContextMenu.Root>;

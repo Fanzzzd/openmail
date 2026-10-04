@@ -93,7 +93,7 @@ pnpm --filter @openmail/desktop exec vitest run fuzz
 
 固定 seed 和轮数在各测试中维护。`OPENMAIL_LOW_MEMORY_TESTS=1` 会减少部分属性测试轮数；调查 fast-check 失败时保留输出中的 seed、path 和最小反例，用对应测试的参数重放。
 
-[accessibility.test.ts](../apps/desktop/src/renderer/src/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/accessibility-allowlist.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
+[accessibility.test.ts](../apps/desktop/src/renderer/src/accessibility.test.ts) 用 axe 检查主界面、设置、撰写、阅读及确认对话框；serious／critical 必须为零，moderate 必须准确匹配带理由的 [allowlist](../apps/desktop/src/renderer/src/accessibility.test.ts)，当前为空。jsdom 不做布局和 canvas 对比度判断，axe 的 color-contrast 关闭；主题 token 对比度、focus 和 reduced motion 由 [accessibility-theme.test.ts](../apps/desktop/src/renderer/src/accessibility-theme.test.ts)单独检查，另有 CSS 与语言回归。键盘路径、焦点恢复、控件名称和 live region 由 DOM 交互测试覆盖，不能代替 VoiceOver 或真机手势验收。
 
 ```sh
 pnpm --filter @openmail/desktop exec vitest run accessibility

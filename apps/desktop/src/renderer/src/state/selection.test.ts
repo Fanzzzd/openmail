@@ -9,7 +9,6 @@ import {
   batchScope,
   trimSelection,
   selectionForQuery,
-  notLoadedCount,
   requiresBatchDeleteConfirmation,
 } from "./selection";
 
@@ -134,9 +133,6 @@ it("one visible row set determines loaded count, action IDs and delete confirmat
   expect(scope.rows.map((row) => row.id)).toEqual(scope.ids);
   expect(batchScope(selection, visible, "missing").count).toBe(0);
   expect(batchScope(selection, visible, undefined, "another-account").count).toBe(0);
-  expect(notLoadedCount(205, 100)).toBe(105);
-  expect(notLoadedCount(5, 5)).toBe(0);
-  expect(notLoadedCount(null, 100)).toBeNull();
   expect(requiresBatchDeleteConfirmation(50)).toBe(false);
   expect(requiresBatchDeleteConfirmation(51)).toBe(true);
 });

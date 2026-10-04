@@ -1,3 +1,6 @@
+import { msg } from "@lingui/core/macro";
+import type { MessageDescriptor } from "@lingui/core";
+import type { DockFileReason } from "../../../shared/dock-files";
 import { nativeShareKind } from "../../../shared/native-actions";
 import { causeText } from "../errors";
 import { isTypingTarget } from "./use-mail-shortcuts";
@@ -10,9 +13,8 @@ import type { Account } from "../../../shared/api";
 import { desktopEventRoute, editCommandRoute, type DesktopEvent } from "../../../shared/desktop";
 import type { AppMessages } from "../App";
 import { attachmentProblemMessage } from "../attachment-problem-message";
-import { type ThreadState } from "../components/ThreadActions";
-import { type ToastState } from "../components/Toast";
-import { DOCK_FILE_MESSAGES } from "../dock-file-errors";
+import type { ThreadState } from "../components/ThreadActions";
+import type { ToastState } from "../components/Toast";
 import { toDraftInput } from "../draft";
 import { dispatchNativeAction } from "../native-actions";
 import { useDesktopEvents } from "../state/desktop";
@@ -269,3 +271,11 @@ export function useNativeMenuBridge({
 
   return {};
 }
+
+const DOCK_FILE_MESSAGES: Record<DockFileReason, MessageDescriptor> = {
+  tooMany: msg`Too many attachments. Attach up to 256 files.`,
+  notFile: msg`Only regular files can be attached. Folders cannot be attached.`,
+  tooLarge: msg`Attachments exceed the 30 MB compose limit.`,
+  changed: msg`An attachment changed while reading. Try adding it again.`,
+  unreadable: msg`Could not read the attachments. Check the files and their permissions.`,
+};

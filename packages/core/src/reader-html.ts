@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 /**
  * Prepares untrusted mail HTML for the reader and for printing. It only
  * rewrites resource URLs; the sandboxed iframe and its CSP stay the security
@@ -156,7 +157,7 @@ export function prepareMessageHtml(html: string, options: PrepareOptions = {}): 
     if (/^cid:/i.test(trimmed)) {
       hasCid = true;
       try {
-        const id = decodeURIComponent(trimmed.slice(4)).replace(/^<|>$/g, "");
+        const id = stripMessageIdBrackets(decodeURIComponent(trimmed.slice(4)));
         return options.inline?.[id] ?? url;
       } catch {
         return url;

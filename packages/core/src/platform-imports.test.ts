@@ -95,6 +95,31 @@ it("the portable entry never loads a Node adapter through another core module", 
   expect(visited.has(join(root, "gmail.ts"))).toBe(true);
   expect(visited.has(join(root, "outlook.ts"))).toBe(true);
 });
+it("the Node entry does not load mobile adapters or mobile-only workflows", () => {
+  const visited = new Set<string>();
+  const violations: string[] = [];
+  const mobileOnly = new Set([
+    join(root, "mobile-background.ts"),
+    join(root, "mobile-compose.ts"),
+    join(root, "platform", "mail-socket.ts"),
+  ]);
+  const visit = (file: string) => {
+    if (visited.has(file)) return;
+    visited.add(file);
+    if (file.startsWith(`${join(root, "platform", "react-native")}/`) || mobileOnly.has(file)) {
+      violations.push(relative(root, file));
+      return;
+    }
+    for (const name of imports(readFileSync(file, "utf8"))) {
+      if (name === "postal-mime") violations.push(`${relative(root, file)}: ${name}`);
+      if (name.startsWith(".")) visit(resolve(dirname(file), name.replace(/\.js$/, ".ts")));
+    }
+  };
+  visit(join(native, "index.ts"));
+  expect(violations).toEqual([]);
+  expect(visited.has(join(root, "common.ts"))).toBe(true);
+  expect(visited.has(join(root, "portable.ts"))).toBe(false);
+});
 it("checks syntax instead of matching comments or string literals", () => {
   expect(imports('// import "node:fs"\nconst text = "node:crypto";')).toEqual([]);
   expect(

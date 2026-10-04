@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 import { Buffer } from "./platform/bytes.js";
 /**
  * Turning drafts into what providers take and back: the attached original of
@@ -73,7 +74,7 @@ export const parseRawDraft = (raw: Uint8Array) =>
           filename: a.filename ?? "attachment",
           mimeType: a.contentType,
           content: Buffer.from(a.content).toString("base64"),
-          ...(a.contentId ? { contentId: a.contentId.replace(/^<|>$/g, "") } : {}),
+          ...(a.contentId ? { contentId: stripMessageIdBrackets(a.contentId) } : {}),
         })),
         isReply: Boolean(parsed.inReplyTo),
       };

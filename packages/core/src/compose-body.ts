@@ -746,9 +746,6 @@ export function composeConversion(
       /<[^>]*\s(?:style=|dir="(?:ltr|rtl)"|type="(?:dash|[aAiI])")/.test(body.html),
   };
 }
-export function changeComposeBodyKind(body: ComposeBody, kind: ComposeBody["kind"]): ComposeBody {
-  return composeConversion(body, kind).body;
-}
 export function outgoingComposeBody(
   message: Pick<OutgoingMessage, "text" | "html" | "markdown" | "originalHtml" | "composeFont">,
 ): ComposeBody {

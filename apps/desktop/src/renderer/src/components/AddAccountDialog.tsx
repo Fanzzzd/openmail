@@ -1,6 +1,6 @@
-import { useAtom, useAtomValue } from "@effect/atom-react";
-import type { I18n, MessageDescriptor } from "@lingui/core";
+import type { MessageDescriptor, I18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
+import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
 import { AsyncResult } from "effect/reactivity";
@@ -11,10 +11,30 @@ import type { Account, ImapConnectInput } from "../../../shared/api";
 import { type AppError, causeText, resultError } from "../errors";
 import { connectAtom, saveClientAtom } from "../state/mutations";
 import { clientSetupAtom, imapPresetsAtom } from "../state/queries";
-import { PRESET_NAMES, PRESET_NOTES } from "./imapPresetText";
 import { ProviderIcon, type ProviderIconName } from "./ProviderIcon";
 import { Dialog } from "./ui/Dialog";
 import { SegmentedControl } from "./ui/SegmentedControl";
+
+/**
+ * UI text for core's IMAP presets, keyed by preset id. Core keeps its own
+ * Chinese `note` for the CLI; the app shows these instead and falls back to
+ * core's text for a preset it does not know.
+ */
+
+/** Preset names that are not plain brand names. */
+const PRESET_NAMES: Record<string, MessageDescriptor> = {
+  qq: msg`QQ Mail`,
+  "163": msg`163 Mail`,
+};
+
+/** The line under the password field: where to create the app password. */
+const PRESET_NOTES: Record<string, MessageDescriptor> = {
+  icloud: msg`Create an app-specific password under Sign-In and Security in your Apple Account.`,
+  yahoo: msg`Create an app password under Account Security in your Yahoo account.`,
+  qq: msg`On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code.`,
+  "163": msg`On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code.`,
+  fastmail: msg`Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked.`,
+};
 
 type OAuthProvider = "gmail" | "outlook";
 /** IMAP preset keys in core, plus "custom" for any other server. */

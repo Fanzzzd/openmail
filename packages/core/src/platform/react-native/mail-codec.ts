@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "../../message-id.js";
 import { compatibleMime, normalizeMimeCharsets } from "../mime-compat.js";
 import PostalMime, { type Address } from "postal-mime";
 import { Layer } from "effect";
@@ -54,7 +55,7 @@ async function parsePortableMime(raw: Uint8Array): Promise<MimeMessage> {
         ),
         ...(part.filename ? { filename: part.filename } : {}),
         ...(part.contentId
-          ? { contentId: part.contentId, cid: part.contentId.replace(/^<|>$/g, "") }
+          ? { contentId: part.contentId, cid: stripMessageIdBrackets(part.contentId) }
           : {}),
       };
     }),

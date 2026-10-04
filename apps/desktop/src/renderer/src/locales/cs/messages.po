@@ -157,7 +157,7 @@ msgstr "1 týden, zítra 9:00, příští pondělí"
 msgid "1 year"
 msgstr "1 rok"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
@@ -567,7 +567,7 @@ msgstr "Vždy citujte celou zprávu"
 msgid "Always use selection"
 msgstr "Vždy používejte výběr"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "Příloha se během načítání změnila. Zkuste ji přidat znovu."
 
@@ -700,8 +700,8 @@ msgstr "Složka pro ukládání příloh"
 msgid "Attachments"
 msgstr "Přílohy"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Přílohy přesahují limit 30 MB pro psaní."
 
@@ -1126,7 +1126,7 @@ msgstr "Zavřít okno pro psaní"
 msgid "Close find"
 msgstr "Zavřít hledání"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Zavřete ostatní procesy OpenMail (CLI/MCP), restartujte tuto aplikaci a zkuste obnovu znovu."
 
@@ -1250,8 +1250,8 @@ msgstr "Operace s kontakty selhala."
 msgid "Content matches"
 msgstr "Obsah se shoduje"
 
+#: src/main/native-i18n.ts
 #: src/renderer/src/components/UnsubscribeButton.tsx
-#: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "Pokračovat"
 
@@ -1406,7 +1406,7 @@ msgstr "Schránku se nepodařilo přečíst"
 msgid "Could not read system permission"
 msgstr "Nelze přečíst oprávnění systému"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "Přílohy se nepodařilo načíst. Zkontrolujte soubory a jejich oprávnění."
 
@@ -1414,7 +1414,7 @@ msgstr "Přílohy se nepodařilo načíst. Zkontrolujte soubory a jejich oprávn
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "Nelze zaregistrovat OpenMail. Zkuste to znovu z nainstalované aplikace."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "Nelze resetovat místní mezipaměť"
 
@@ -1497,15 +1497,15 @@ msgstr "Počty porovnávají zprávy. Shodné počty neověřují obsah zpráv. 
 msgid "Create"
 msgstr "Vytvořit"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "Vytvořte heslo aplikace v části Zabezpečení účtu ve svém účtu Yahoo."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
 msgstr "Vytvořte heslo aplikace v části Nastavení > Soukromí a zabezpečení se zaškrtnutými protokoly IMAP a SMTP."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "V části Přihlášení a zabezpečení ve svém účtu Apple vytvořte heslo pro konkrétní aplikaci."
 
@@ -1577,7 +1577,7 @@ msgstr "Přerušovaný seznam"
 msgid "Database pages"
 msgstr "Databázové stránky"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMail obnovte zachovanou databázi. Zachovaná databáze: {backup}"
 
@@ -3458,11 +3458,11 @@ msgstr "Nejdříve nejstarší"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "Na baterii: rozpoznávání obrazu čeká na napájení střídavým proudem. Indexování textu PDF je omezeno."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "Na webu zapněte protokol IMAP v části Nastavení > POP3/SMTP/IMAP a poté podle pokynů vygenerujte autorizační kód."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "Na webu zapněte IMAP/SMTP v části Nastavení > Účet a zabezpečení > Nastavení zabezpečení a poté vygenerujte autorizační kód."
 
@@ -3482,7 +3482,7 @@ msgstr "Odložit lze jen zprávy v doručené poště"
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Trvale se smažou jen zprávy z vybraných konverzací v této složce koše nebo nevyžádané pošty. Kopie v doručené poště a odeslaných zůstanou. Tuto akci nelze vrátit zpět."
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "Přiložit lze jen běžné soubory. Složky nelze přiložit."
 
@@ -3570,7 +3570,7 @@ msgstr "OpenMail je výchozí e-mailová aplikace"
 msgid "OpenMail is up to date."
 msgstr "OpenMail je aktuální."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Bezpečný režim OpenMail"
 
@@ -3586,7 +3586,7 @@ msgstr "openmail se přihlásí pomocí klienta OAuth, kterého si sami zaregist
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail se neočekávaně zastavil"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail se během pěti minut třikrát neočekávaně ukončil. Můžete pokračovat, obnovit místní mezipaměť pošty a znovu synchronizovat nebo aplikaci ukončit. Účty, koncepty a tokeny v klíčence zůstanou zachovány."
 
@@ -3852,7 +3852,7 @@ msgstr "Profily seskupují účty. Účty můžete přiřadit a profily upravit 
 msgid "Promotions"
 msgstr "Promo akce"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
@@ -3861,7 +3861,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Rychlý náhled"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Ukončit"
@@ -3906,7 +3906,7 @@ msgstr "Příjmení příjemce"
 msgid "Recipient name"
 msgstr "Jméno příjemce"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
 
@@ -4136,7 +4136,7 @@ msgstr "Znovu odeslat odmítnutým příjemcům"
 msgid "Reset Favorites"
 msgstr "Obnovit oblíbené"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Obnovte místní mezipaměť"
 
@@ -4967,7 +4967,7 @@ msgid "Sync All"
 msgstr "Synchronizovat vše"
 
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "Synchronizace se nezdařila"
 
@@ -4997,7 +4997,7 @@ msgid "Syncing {fetched}/{total}"
 msgstr "Synchronizace {fetched}/{total}"
 
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "Normální synchronizace"
 
@@ -5056,11 +5056,11 @@ msgstr "Tlačítko níže otevře přihlašovací stránku {name}. openmail pouz
 msgid "The calendar organizer does not match this invitation"
 msgstr "Organizátor kalendáře neodpovídá této pozvánce"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "Kontrola integrity databáze (quick_check) selhala nebo je soubor nedostupný. Reset obnoví poškozenou databázi z čitelných místních záznamů a zachová původní soubor. Klíčenky jsou uloženy."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Databáze byla zachována. Ukončete OpenMail a obnovte místní zálohu nebo kontaktujte podporu."
 
@@ -5076,11 +5076,11 @@ msgstr "Konec musí být po startu"
 msgid "The filter applies to future mail on the server."
 msgstr "Filtr se vztahuje na budoucí poštu na serveru."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "Místní databázi se nepodařilo ověřit"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "Místní databáze byla obnovena"
 
@@ -5280,7 +5280,7 @@ msgstr "Zítra ráno"
 msgid "Tone"
 msgstr "Tón"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "Příliš mnoho příloh. Přiložit lze nejvýše 256 souborů."
 

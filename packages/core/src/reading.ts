@@ -222,10 +222,6 @@ export interface QuoteHistory {
   readonly before: number;
 }
 export const EMPTY_QUOTE_HISTORY: QuoteHistory = { bodies: [], before: 0 };
-export const prepareQuoteHistory = (bodies: readonly string[]): QuoteHistory => ({
-  bodies: bodies.map(normalizeQuote),
-  before: bodies.length,
-});
 
 export function repeatedQuote(text: string, previous: QuoteHistory): boolean {
   const quote = normalizeQuote(text);

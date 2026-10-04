@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
 import { act, createElement, useEffect, useState } from "react";
 import { parseHTML } from "linkedom";
-import { prepareQuoteHistory } from "@openmail/core/schema";
-import { type Message } from "../../shared/api";
+import { normalizeQuote } from "@openmail/core/schema";
+import type { Message } from "../../shared/api";
 import { readerThreadKey, useReaderMessages } from "./reader-selection";
 import { useBodyQuotes } from "./components/body-quotes";
 import { testDom } from "./test-dom";
@@ -85,7 +85,7 @@ it("find navigation and quote toggles never rerun quote detection for the same d
   const dom = testDom();
   const old = "An original message with enough content for detecting quoted history.";
   const document = parseHTML(`<html><body><blockquote>${old}</blockquote></body></html>`).document;
-  const history = prepareQuoteHistory([old]);
+  const history = { bodies: [normalizeQuote(old)], before: 1 };
   const quote = document.querySelector("blockquote");
   if (!quote) throw new Error("Missing quote");
   let reads = 0;

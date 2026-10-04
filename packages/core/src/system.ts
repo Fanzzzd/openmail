@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 /** Protocol and notification decisions shared by desktop and tests. No platform APIs. */
 import { Schema } from "effect";
 
@@ -86,7 +87,7 @@ export function stableReference(
   message: Pick<Message, "id" | "accountId" | "rfcMessageId">,
 ): string {
   return message.rfcMessageId
-    ? `rfc:${JSON.stringify([message.accountId, message.rfcMessageId.replace(/^<|>$/g, "")])}`
+    ? `rfc:${JSON.stringify([message.accountId, stripMessageIdBrackets(message.rfcMessageId)])}`
     : message.id;
 }
 export function parseStableReference(id: string): { accountId: string; messageId: string } | null {

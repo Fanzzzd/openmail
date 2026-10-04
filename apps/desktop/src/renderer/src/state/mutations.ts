@@ -27,7 +27,6 @@ export const setPrefsAtom = MailClient.mutation("SetPrefs");
 export const saveNamedSignatureAtom = MailClient.mutation("SaveNamedSignature");
 export const deleteNamedSignatureAtom = MailClient.mutation("DeleteNamedSignature");
 export const setSignatureDefaultAtom = MailClient.mutation("SetSignatureDefault");
-export const setSignatureAtom = MailClient.mutation("SetSignature");
 export const saveTemplateAtom = MailClient.mutation("SaveTemplate");
 export const deleteTemplateAtom = MailClient.mutation("DeleteTemplate");
 export const setContactHiddenAtom = MailClient.mutation("SetContactHidden");

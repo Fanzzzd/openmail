@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 import { Buffer } from "./platform/bytes.js";
 /**
  * Attachment lookup shared by the provider adapters, and parts read from raw
@@ -59,7 +60,8 @@ export const inlineImagesFromRaw = (raw: Uint8Array) =>
     const out: Record<string, string> = {};
     let total = 0;
     for (const a of parsed.attachments) {
-      const cid = a.cid ?? a.contentId?.replace(/^<|>$/g, "");
+      const cid =
+        a.cid ?? (a.contentId === undefined ? undefined : stripMessageIdBrackets(a.contentId));
       if (!cid || !a.contentType.toLowerCase().startsWith("image/")) continue;
       total += a.size;
       if (total > MAX_INLINE_BYTES) break;
@@ -81,7 +83,8 @@ export const inlineMediaFromRaw = (raw: Uint8Array) =>
   Effect.map(parse(raw), (parsed) => {
     let total = 0;
     return parsed.attachments.flatMap((a) => {
-      const cid = a.cid ?? a.contentId?.replace(/^<|>$/g, "");
+      const cid =
+        a.cid ?? (a.contentId === undefined ? undefined : stripMessageIdBrackets(a.contentId));
       if (!cid || !a.contentType.toLowerCase().startsWith("image/")) return [];
       total += a.size;
       return total > MAX_INLINE_BYTES

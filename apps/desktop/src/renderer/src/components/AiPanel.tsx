@@ -1,4 +1,3 @@
-import { assistantShortcut } from "../ai-shortcut";
 import { useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { AiEvent, AiSource } from "@openmail/core/schema";
@@ -306,3 +305,6 @@ export function Assistant({
     </>
   );
 }
+
+const assistantShortcut = (platform: string): string =>
+  /Mac|darwin/i.test(platform) ? "⌘J" : "Ctrl+J";

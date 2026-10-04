@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  changeComposeBodyKind,
   richComposeBody,
   remoteComposeBody,
   editedComposeBody,
@@ -301,9 +300,9 @@ describe("compose draft model", () => {
 
   it("switching to plain text strips formatting; switching back escapes markup", () => {
     const rich = richComposeBody("<strong>one</strong><br>&lt;img&gt;");
-    const plain = changeComposeBodyKind(rich, "plain");
+    const plain = composeConversion(rich, "plain").body;
     expect(plain).toEqual({ kind: "plain", text: "one\n<img>" });
-    expect(changeComposeBodyKind(plain, "rich")).toEqual({
+    expect(composeConversion(plain, "rich").body).toEqual({
       kind: "rich",
       text: "one\n<img>",
       html: "one<br>&lt;img&gt;",

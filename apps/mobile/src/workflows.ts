@@ -1,7 +1,7 @@
 import {
   parseSearchQuery,
   replyRecipients,
-  splitAddresses,
+  draftRecipients,
   isEmailAddress,
   messageModelText,
   type ComposeMode,
@@ -62,17 +62,7 @@ export function composeMessage(
     ...(original ? { inReplyTo: original.id } : {}),
   };
 }
-export function draftRecipients(value: string) {
-  return splitAddresses(value)
-    .filter((part) => part.trim())
-    .map((part) => {
-      const match = /^(.*?)<([^<>]+)>$/.exec(part.trim());
-      return {
-        name: match?.[1]?.trim().replace(/^"|"$/g, "") ?? "",
-        address: (match?.[2] ?? part).trim(),
-      };
-    });
-}
+export { draftRecipients } from "@openmail/core/portable";
 export function parseRecipients(value: string) {
   const addresses = draftRecipients(value);
   if (addresses.some((address) => !isEmailAddress(address.address)))
@@ -84,21 +74,6 @@ export const searchQuery = (accountId: string, search: string) =>
   parseSearchQuery({ accountIds: [accountId], search, limit: 100 });
 export const modifyThreads = (mailbox: Mailbox["Service"], ids: readonly string[], op: MailOp) =>
   mailbox.modifyWithUndo(ids, op);
-export const applyLabel = (
-  mailbox: Mailbox["Service"],
-  ids: readonly string[],
-  provider: string,
-  labelId: string,
-  removeLabelId: string | null,
-) =>
-  modifyThreads(
-    mailbox,
-    ids,
-    provider === "gmail"
-      ? { kind: "label", labelId, value: true }
-      : { kind: "move", labelId, removeLabelId },
-  );
-
 /** Serial autosaves cannot finish in reverse order; send waits for the last edit. */
 export function draftWriter(save: (message: OutgoingMessage) => Promise<unknown>) {
   let pending = Promise.resolve();
@@ -151,8 +126,6 @@ export function foregroundCoordinator(deps: {
     return pending;
   };
 }
-export const unreadBadge = (counts: Record<string, number>) =>
-  Object.values(counts).reduce((sum, count) => sum + count, 0);
 
 /** Reminder work stays local and does not depend on connectivity or send deadlines. */
 export function foregroundReminderTimer(active: () => boolean, wake: () => Promise<unknown>) {

@@ -13,7 +13,7 @@ import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
 import {
-  prepareQuoteHistory,
+  normalizeQuote,
   meetingLinks,
   meetingUrl,
   messagesFrom,
@@ -233,12 +233,15 @@ it("meeting links require supported paths at exact allow-listed HTTPS origins", 
 
 it("only repeated trailing plain-text quotes collapse; unique content remains", () => {
   const old = "The original message has enough text to compare.";
-  assert.deepStrictEqual(splitRepeatedQuote(`New reply\n> ${old}`, prepareQuoteHistory([old])), {
-    body: "New reply",
-    quote: `\n> ${old}`,
-  });
+  assert.deepStrictEqual(
+    splitRepeatedQuote(`New reply\n> ${old}`, { bodies: [normalizeQuote(old)], before: 1 }),
+    {
+      body: "New reply",
+      quote: `\n> ${old}`,
+    },
+  );
   const unique = "New reply\n> This is a new quotation, not prior thread text.";
-  assert.deepStrictEqual(splitRepeatedQuote(unique, prepareQuoteHistory([old])), {
+  assert.deepStrictEqual(splitRepeatedQuote(unique, { bodies: [normalizeQuote(old)], before: 1 }), {
     body: unique,
     quote: "",
   });
@@ -252,22 +255,10 @@ it("calendar-only descriptions and URL fields retain meeting links", () => {
   assert.strictEqual(parsed[0]?.invite.url, "https://zoom.us/j/123");
 });
 
-it("quote history is normalized once and matching excludes the current and later bodies", () => {
+it("quote matching excludes the current and later bodies", () => {
   const old = "Original body with enough words to detect a repeated quotation.";
   const future = "A later message must never be used to collapse an earlier quotation.";
-  let reads = 0;
-  const bodies: string[] = [];
-  Object.defineProperty(bodies, 0, {
-    get: () => {
-      reads++;
-      return `> ${old}`;
-    },
-  });
-  const history = prepareQuoteHistory(bodies);
-  for (let index = 0; index < 10; index++)
-    assert.ok(splitRepeatedQuote(`Reply\n> ${old}`, history).quote);
-  assert.strictEqual(reads, 1);
-  const thread = prepareQuoteHistory([old, future]);
+  const thread = { bodies: [old, future].map(normalizeQuote), before: 2 };
   assert.deepStrictEqual(splitRepeatedQuote(`Reply\n> ${future}`, { ...thread, before: 1 }), {
     body: `Reply\n> ${future}`,
     quote: "",

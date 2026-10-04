@@ -8,12 +8,12 @@
 | -------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `compose-images.ts`                                                  | dns/promises、http、https、net、crypto                    | 校验和流式限额留在 core；`ImageNetwork` 的 Node adapter 固定解析后的地址，UUID 来自 `PlatformCrypto` |
 | `database-access.ts`                                                 | fs、path、sqlite                                          | Node 数据库进程锁 adapter                                                                            |
-| `database-recovery.ts`                                               | crypto、fs、path、sqlite                                  | Node 恢复 adapter，通过 `DatabaseFiles` 暴露完整文件操作                                             |
+| `database-recovery.ts`                                               | crypto、fs、path、sqlite                                  | Node 恢复 adapter，直接提供数据库完整文件操作                                                        |
 | `recovery-files.ts`                                                  | fs、path、sqlite                                          | Node WAL、恢复文件及锁处理                                                                           |
 | `diagnostics.ts`                                                     | crypto、fs、path、sqlite                                  | Node 本地诊断及数据库检查                                                                            |
 | `db.ts`                                                              | @effect/sql-sqlite-node、sqlite-vec                       | 迁移、SQL 初始化、能力标签留在 core；连接、扩展加载和锁在 Node adapter                               |
-| `embeddings-node.ts`                                                 | path、url、推理进程                                       | Node 模型 adapter，默认 launcher 可由 `InferenceWorker` 替换                                         |
-| `inference-process.ts`                                               | child_process                                             | fork adapter；协议及 `InferenceWorker` 在可移植平台端口                                              |
+| `embeddings-node.ts`                                                 | path、url、推理进程                                       | Node 模型 adapter，launcher 可由 `NodeModelsOptions.launch` 替换                                     |
+| `inference-process.ts`                                               | child_process                                             | fork adapter；推理进程协议在可移植平台端口                                                           |
 | `embedding-worker.mjs`                                               | module、path、onnxruntime-node、@huggingface/transformers | Node worker，保留原资源预算和离线限制                                                                |
 | `model-downloads.ts`                                                 | crypto、fs、fs/promises、path                             | Node 下载文件 adapter，保留哈希、续传和租约                                                          |
 | `pdf-text.ts`、`pdf-worker.mjs`                                      | worker_threads、url、pdfjs-dist                           | `PdfWorker` 的 Node adapter，保留超时、页数、内存及离线限制                                          |
@@ -45,3 +45,5 @@ MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect servi
 portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力)。
 
 开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `read-only.ts`、`mailbox-live.ts`，没有引入隐式 Node 全局。
+
+共享导出集中在 `common.ts`。Node 入口只重导出桌面／CLI 消费的名称，不经 `portable.ts` 加载手机 adapters 或手机专用工作流；`platform-imports.test.ts` 检查该依赖图。手机端继续从 `portable.ts` 获得共享能力和移动平台组装。

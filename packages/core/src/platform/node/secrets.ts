@@ -36,5 +36,3 @@ export const makeSecretsKeyring = (
       ),
     }),
   );
-
-export const SecretsKeyring = makeSecretsKeyring();

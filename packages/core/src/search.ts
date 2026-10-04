@@ -1,16 +1,17 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 import { Option, Schema } from "effect";
-import { SearchCondition } from "./domain.js";
-import { InvalidInput } from "./errors.js";
-import type {
-  Address,
-  Attachment,
-  AttachmentType,
-  IncomingMessage,
-  Label,
-  SearchCriteria,
-  ThreadQuery,
-  ThreadSummary,
+import {
+  SearchCondition,
+  type Address,
+  type Attachment,
+  type AttachmentType,
+  type IncomingMessage,
+  type Label,
+  type SearchCriteria,
+  type ThreadQuery,
+  type ThreadSummary,
 } from "./domain.js";
+import { InvalidInput } from "./errors.js";
 import type { FilterCriteria } from "./organization.js";
 
 export const SEARCH_OPERATORS = [
@@ -575,7 +576,9 @@ export function matchesSearchCondition(
     return false;
   if (
     c.rfcMessageId &&
-    message.rfcMessageId?.replace(/^<|>$/g, "") !== c.rfcMessageId.replace(/^<|>$/g, "")
+    (message.rfcMessageId === undefined
+      ? undefined
+      : stripMessageIdBrackets(message.rfcMessageId)) !== stripMessageIdBrackets(c.rfcMessageId)
   )
     return false;
   if (c.sizeLarger !== undefined && message.size !== undefined && message.size <= c.sizeLarger)

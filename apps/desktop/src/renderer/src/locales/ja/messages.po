@@ -157,7 +157,7 @@ msgstr "1週間、明日、来週月曜日の午前9時"
 msgid "1 year"
 msgstr "1年"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
@@ -567,7 +567,7 @@ msgstr "必ずメッセージ全体を引用してください"
 msgid "Always use selection"
 msgstr "常に選択範囲を使用する"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "読み込み中に添付ファイルが変更されました。もう一度追加してください。"
 
@@ -700,8 +700,8 @@ msgstr "添付ファイルの保存先フォルダ"
 msgid "Attachments"
 msgstr "添付ファイル"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "添付ファイルが 30 MB の作成制限を超えています。"
 
@@ -1126,7 +1126,7 @@ msgstr "作成ウィンドウを閉じる"
 msgid "Close find"
 msgstr "検索を閉じる"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "他の OpenMail プロセス (CLI/MCP) を閉じてから、このアプリを再起動し、リカバリを再試行します。"
 
@@ -1250,8 +1250,8 @@ msgstr "連絡先の操作に失敗しました。"
 msgid "Content matches"
 msgstr "コンテンツの一致"
 
+#: src/main/native-i18n.ts
 #: src/renderer/src/components/UnsubscribeButton.tsx
-#: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "続ける"
 
@@ -1406,7 +1406,7 @@ msgstr "クリップボードを読み取れませんでした"
 msgid "Could not read system permission"
 msgstr "システム権限を読み取れませんでした"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "添付ファイルを読み込めませんでした。ファイルとアクセス権を確認してください。"
 
@@ -1414,7 +1414,7 @@ msgstr "添付ファイルを読み込めませんでした。ファイルとア
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "OpenMailを登録できませんでした。インストールされているアプリから再度お試しください。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "ローカルキャッシュをリセットできませんでした"
 
@@ -1497,15 +1497,15 @@ msgstr "件数はメッセージ単位で比較します。件数の一致は内
 msgid "Create"
 msgstr "作成"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "Yahoo アカウントの [アカウント セキュリティ] でアプリのパスワードを作成します。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
 msgstr "[設定] > [プライバシーとセキュリティ] で、IMAP と SMTP をオンにしてアプリ パスワードを作成します。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Apple アカウントの「サインインとセキュリティ」でアプリ固有のパスワードを作成します。"
 
@@ -1577,7 +1577,7 @@ msgstr "破線リスト"
 msgid "Database pages"
 msgstr "データベースのページ"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "データベースの回復が中断されました。 OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース: {backup}"
 
@@ -3458,11 +3458,11 @@ msgstr "古い順"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "バッテリ駆動: 画像認識は AC 電源を待ちます。 PDF テキストのインデックス作成が抑制されています。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "Web では、[設定] > [POP3/SMTP/IMAP] で IMAP をオンにし、プロンプトに従って認証コードを生成します。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "Web では、[設定] > [アカウントとセキュリティ] > [セキュリティ設定] で IMAP/SMTP をオンにし、認証コードを生成します。"
 
@@ -3482,7 +3482,7 @@ msgstr "受信のメッセージのみスヌーズできます"
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "選択したスレッドのうち、このゴミ箱または迷惑メールフォルダにあるメッセージのみ完全に削除されます。受信と送信済みのコピーは保持されます。この操作は取り消せません。"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "通常のファイルのみ添付できます。フォルダは添付できません。"
 
@@ -3570,7 +3570,7 @@ msgstr "OpenMail はデフォルトの電子メール アプリです"
 msgid "OpenMail is up to date."
 msgstr "OpenMail は最新です。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail セーフ モード"
 
@@ -3586,7 +3586,7 @@ msgstr "openmail は、自分で登録した OAuth クライアントを使用�
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail が予期せず停止しました"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMailが5分間に3回予期せず終了しました。続行するか、ローカルのメールキャッシュをリセットして再同期するか、終了してください。アカウント、下書き、キーチェーンのトークンは保持されます。"
 
@@ -3852,7 +3852,7 @@ msgstr "プロファイルでアカウントをグループ化します。「設
 msgid "Promotions"
 msgstr "プロモーション"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
@@ -3861,7 +3861,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "クイックルック"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "終了"
@@ -3906,7 +3906,7 @@ msgstr "受信者の姓"
 msgid "Recipient name"
 msgstr "受信者名"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
 
@@ -4136,7 +4136,7 @@ msgstr "拒否された宛先に再送信"
 msgid "Reset Favorites"
 msgstr "お気に入りをリセット"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Reset local cache"
 msgstr "ローカルキャッシュをリセットする"
 
@@ -4967,7 +4967,7 @@ msgid "Sync All"
 msgstr "すべてを同期"
 
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "同期に失敗しました"
 
@@ -4997,7 +4997,7 @@ msgid "Syncing {fetched}/{total}"
 msgstr "{fetched}/{total} を同期しています"
 
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "正常に同期しています"
 
@@ -5056,11 +5056,11 @@ msgstr "下のボタンをクリックすると、{name} サインイン ペー�
 msgid "The calendar organizer does not match this invitation"
 msgstr "カレンダーの主催者がこの招待状と一致しません"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "データベースの整合性チェック (quick_check) が失敗したか、ファイルが使用できません。リセットは、読み取り可能なローカル レコードから破損したデータベースを再構築し、元のファイルを保持します。キーチェーントークンは保持されます。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "データベースは保存されていました。 OpenMail を終了し、ローカル バックアップを復元するか、サポートに連絡してください。"
 
@@ -5076,11 +5076,11 @@ msgstr "終わりは始まりの後にあるはずだ"
 msgid "The filter applies to future mail on the server."
 msgstr "フィルターはサーバー上の今後のメールに適用されます。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "ローカルデータベースを検証できませんでした"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "ローカルデータベースが回復されました"
 
@@ -5280,7 +5280,7 @@ msgstr "明日の朝"
 msgid "Tone"
 msgstr "文体"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "添付ファイルが多すぎます。最大256個のファイルを添付できます。"
 

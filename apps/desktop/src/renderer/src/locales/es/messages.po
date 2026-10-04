@@ -157,7 +157,7 @@ msgstr "1 semana, mañana a las 9h, el próximo lunes"
 msgid "1 year"
 msgstr "1 año"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 Mail"
@@ -567,7 +567,7 @@ msgstr "Cite siempre el mensaje completo."
 msgid "Always use selection"
 msgstr "Utilice siempre la selección"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "Un archivo adjunto cambió durante la lectura. Intenta añadirlo de nuevo."
 
@@ -700,8 +700,8 @@ msgstr "Carpeta para guardar adjuntos"
 msgid "Attachments"
 msgstr "Archivos adjuntos"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Los archivos adjuntos superan el límite de redacción de 30 MB."
 
@@ -1126,7 +1126,7 @@ msgstr "Cerrar ventana de redacción"
 msgid "Close find"
 msgstr "Cerrar búsqueda"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "Cierre otros procesos de OpenMail (CLI/MCP), luego reinicie esta aplicación e intente la recuperación nuevamente."
 
@@ -1250,8 +1250,8 @@ msgstr "La operación con los contactos ha fallado."
 msgid "Content matches"
 msgstr "Coincidencias de contenido"
 
+#: src/main/native-i18n.ts
 #: src/renderer/src/components/UnsubscribeButton.tsx
-#: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "Continuar"
 
@@ -1406,7 +1406,7 @@ msgstr "No se pudo leer el portapapeles"
 msgid "Could not read system permission"
 msgstr "No se pudo leer el permiso del sistema"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "No se pudieron leer los adjuntos. Comprueba los archivos y sus permisos."
 
@@ -1414,7 +1414,7 @@ msgstr "No se pudieron leer los adjuntos. Comprueba los archivos y sus permisos.
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "No se pudo registrar OpenMail. Inténtalo de nuevo desde la aplicación instalada."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "No se pudo restablecer el caché local"
 
@@ -1497,15 +1497,15 @@ msgstr "Los recuentos comparan mensajes. Recuentos iguales no verifican el conte
 msgid "Create"
 msgstr "Crear"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "Cree una contraseña de aplicación en Seguridad de la cuenta en su cuenta de Yahoo."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
 msgstr "Cree una contraseña de aplicación en Ajustes > Privacidad y seguridad, con IMAP y SMTP marcados."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "Cree una contraseña específica de la aplicación en Inicio de sesión y seguridad en su cuenta Apple."
 
@@ -1577,7 +1577,7 @@ msgstr "Lista discontinua"
 msgid "Database pages"
 msgstr "Páginas de la base de datos"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base de datos preservada antes de volver a abrir OpenMail. Base de datos preservada: {backup}"
 
@@ -3458,11 +3458,11 @@ msgstr "El más viejo primero"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "Con batería: el reconocimiento de imágenes espera la alimentación de CA. La indexación de texto PDF está limitada."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "En la web, active IMAP en Ajustes > POP3/SMTP/IMAP, luego siga las instrucciones para generar un código de autorización."
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "En la web, active IMAP/SMTP en Ajustes > Cuenta y seguridad > Ajustes de seguridad y luego genere un código de autorización."
 
@@ -3482,7 +3482,7 @@ msgstr "Solo se pueden posponer los mensajes de la Bandeja de entrada"
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "Solo se eliminarán permanentemente los mensajes de las conversaciones seleccionadas en esta Papelera o carpeta de Correo no deseado. Se conservarán las copias en la Bandeja de entrada y Enviado. Esta acción no se puede deshacer."
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "Solo se pueden adjuntar archivos normales. Las carpetas no se pueden adjuntar."
 
@@ -3570,7 +3570,7 @@ msgstr "OpenMail es la aplicación de correo electrónico predeterminada"
 msgid "OpenMail is up to date."
 msgstr "OpenMail está actualizado."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "Modo seguro de OpenMail"
 
@@ -3586,7 +3586,7 @@ msgstr "Openmail inicia sesión con un cliente OAuth que usted mismo registra. P
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail se detuvo inesperadamente"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail se cerró inesperadamente tres veces en cinco minutos. Continúa, restablece la caché local y sincroniza de nuevo, o sal. Las cuentas, los borradores y los tokens del llavero se conservan."
 
@@ -3852,7 +3852,7 @@ msgstr "Los perfiles agrupan cuentas. Puedes asignar cuentas y editar perfiles e
 msgid "Promotions"
 msgstr "Promociones"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ Mail"
@@ -3861,7 +3861,7 @@ msgstr "QQ Mail"
 msgid "Quick Look"
 msgstr "Vista rápida"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "Salir"
@@ -3906,7 +3906,7 @@ msgstr "Apellido del destinatario"
 msgid "Recipient name"
 msgstr "Nombre del destinatario"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} registros locales recuperados. Se omitieron {skipped} elementos ilegibles. Base de datos original: {backup}"
 
@@ -4136,7 +4136,7 @@ msgstr "Reenviar a los destinatarios rechazados"
 msgid "Reset Favorites"
 msgstr "Restablecer favoritos"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Reset local cache"
 msgstr "Restablecer caché local"
 
@@ -4967,7 +4967,7 @@ msgid "Sync All"
 msgstr "Sincronizar todo"
 
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "Error de sincronización"
 
@@ -4997,7 +4997,7 @@ msgid "Syncing {fetched}/{total}"
 msgstr "Sincronizando {fetched}/{total}"
 
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "Sincronizando normalmente"
 
@@ -5056,11 +5056,11 @@ msgstr "El siguiente botón abre la página de inicio de sesión {name}. openmai
 msgid "The calendar organizer does not match this invitation"
 msgstr "El organizador del calendario no coincide con esta invitación."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "La verificación de integridad de la base de datos (quick_check) falló o el archivo no está disponible. Restablecer reconstruye una base de datos dañada a partir de registros locales legibles y conserva el archivo original. Se conservan las fichas de llavero."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "Se mantuvo la base de datos. Salga de OpenMail y restaure una copia de seguridad local o comuníquese con el soporte técnico."
 
@@ -5076,11 +5076,11 @@ msgstr "El final debe ser después del comienzo."
 msgid "The filter applies to future mail on the server."
 msgstr "El filtro se aplica al correo futuro en el servidor."
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "No se pudo verificar la base de datos local"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "La base de datos local fue recuperada."
 
@@ -5280,7 +5280,7 @@ msgstr "Mañana por la mañana"
 msgid "Tone"
 msgstr "Tono"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "Demasiados adjuntos. Puedes adjuntar hasta 256 archivos."
 

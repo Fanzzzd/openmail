@@ -61,14 +61,25 @@ export function formatBytes(n: number, locale: string): string {
 
 /** Thread headers: "Today 18:24", "Yesterday 18:24", "September 21 18:24", or a full date in older years. */
 export function threadDate(ms: number, i18n: I18n): string {
-  const locale = i18n.locale;
+  return quoteDate(ms, i18n.locale, (day, time) =>
+    day === "today" ? i18n._(msg`Today ${time}`) : i18n._(msg`Yesterday ${time}`),
+  );
+}
+
+/** Outgoing quote headers retain Chinese; reader headers provide translated relative dates. */
+export function quoteDate(
+  ms: number,
+  locale = "zh-CN",
+  relative = (day: "today" | "yesterday", time: string) =>
+    `${day === "today" ? "今天" : "昨天"} ${time}`,
+): string {
   const d = new Date(ms);
   const now = new Date();
   const time = d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
-  if (sameDay(d, now)) return i18n._(msg`Today ${time}`);
-  if (sameDay(d, yesterday)) return i18n._(msg`Yesterday ${time}`);
+  if (sameDay(d, now)) return relative("today", time);
+  if (sameDay(d, yesterday)) return relative("yesterday", time);
   const day =
     d.getFullYear() === now.getFullYear()
       ? d.toLocaleDateString(locale, { month: "long", day: "numeric" })

@@ -1,6 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
 import {
-  changeComposeBodyKind,
   composeLink,
   normalizeComposeMessage,
   outgoingComposeBody,
@@ -96,12 +95,12 @@ import { performance } from "node:perf_hooks";
 
     it("keeps explicit plain and Markdown modes and replaces stale text for rich HTML", () => {
       const rich = richComposeBody("<b>bold</b> &amp; text");
-      assert.deepStrictEqual(changeComposeBodyKind(rich, "plain"), {
+      assert.deepStrictEqual(composeConversion(rich, "plain").body, {
         kind: "plain",
         text: "bold & text",
       });
       assert.deepStrictEqual(
-        changeComposeBodyKind({ kind: "markdown", text: "**source**" }, "rich"),
+        composeConversion({ kind: "markdown", text: "**source**" }, "rich").body,
         { kind: "rich", text: "**source**", html: "**source**" },
       );
       const message = {

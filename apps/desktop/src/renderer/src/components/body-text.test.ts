@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { parseHTML } from "linkedom";
-import { prepareQuoteHistory } from "@openmail/core/schema";
+import { normalizeQuote } from "@openmail/core/schema";
 import { highlightBody, presentBody, repeatedQuoteElements } from "./body-text";
 
 function body(html: string) {
@@ -56,11 +56,11 @@ it("collapses repeated HTML quotes once, preserving novel quotations and origina
   const root = body(
     `<p>New response</p><div class="gmail_quote"><blockquote>${old}</blockquote></div><blockquote>New unique quote that must stay visible.</blockquote>`,
   );
-  const quotes = repeatedQuoteElements(root, prepareQuoteHistory([old]));
+  const quotes = repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 });
   expect(quotes).toHaveLength(1);
   expect(quotes[0]?.className).toBe("gmail_quote");
   expect(root.textContent).toContain("New unique quote");
-  expect(repeatedQuoteElements(root, prepareQuoteHistory([]))).toEqual([]);
+  expect(repeatedQuoteElements(root, { bodies: [], before: 0 })).toEqual([]);
 });
 
 it("quote toggles and searching restore sender styles and keep original hidden content hidden", async () => {
@@ -71,7 +71,7 @@ it("quote toggles and searching restore sender styles and keep original hidden c
   const original = root.innerHTML;
   const collapsed = presentBody(
     root,
-    repeatedQuoteElements(root, prepareQuoteHistory([old])),
+    repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 }),
     false,
     "",
   );
@@ -81,7 +81,7 @@ it("quote toggles and searching restore sender styles and keep original hidden c
   expect(root.innerHTML).toBe(original);
   const expanded = presentBody(
     root,
-    repeatedQuoteElements(root, prepareQuoteHistory([old])),
+    repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 }),
     true,
     "",
   );
@@ -89,7 +89,7 @@ it("quote toggles and searching restore sender styles and keep original hidden c
   expanded.dispose();
   const searched = presentBody(
     root,
-    repeatedQuoteElements(root, prepareQuoteHistory([old])),
+    repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 }),
     false,
     "original message",
   );
@@ -101,11 +101,11 @@ it("quote toggles and searching restore sender styles and keep original hidden c
 it("recognizes Outlook's repeated tail without hiding a new response after the separator", () => {
   const old = "The original message has enough text to compare.";
   const root = body(`<p>Reply</p><div id="divRplyFwdMsg">From: Alice</div><div>${old}</div>`);
-  expect(repeatedQuoteElements(root, prepareQuoteHistory([old]))).toHaveLength(2);
+  expect(repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 })).toHaveLength(2);
   root.append(root.ownerDocument.createElement("p"));
   const last = root.lastElementChild;
   if (last) last.textContent = "Another new comment";
-  const quotes = repeatedQuoteElements(root, prepareQuoteHistory([old]));
+  const quotes = repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 });
   expect(quotes).toHaveLength(1);
   expect(quotes[0]?.textContent).toBe(old);
 });
@@ -127,7 +127,7 @@ it("malformed sender CSS cannot swallow the collapse property; show restores the
     const original = root.innerHTML;
     const collapsed = presentBody(
       root,
-      repeatedQuoteElements(root, prepareQuoteHistory([old])),
+      repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 }),
       false,
       "",
     );
@@ -150,6 +150,6 @@ it("deep repeated quote nesting checks the top container once instead of recheck
       },
     });
   }
-  expect(repeatedQuoteElements(root, prepareQuoteHistory([old]))).toHaveLength(1);
+  expect(repeatedQuoteElements(root, { bodies: [normalizeQuote(old)], before: 1 })).toHaveLength(1);
   expect(reads).toBe(1);
 });

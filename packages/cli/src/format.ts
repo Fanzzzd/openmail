@@ -6,23 +6,10 @@ import {
   type Outcome,
   type Proposal,
   type SyncResult,
-  type ThreadSummary,
   actorLabel,
 } from "@openmail/core";
 
 const stamp = (ms: number) => new Date(ms).toLocaleString("sv-SE").slice(0, 16);
-
-export function threadTable(rows: readonly ThreadSummary[]): string {
-  if (rows.length === 0) return "(no messages)";
-  return rows
-    .map((m) => {
-      const flags = `${m.isUnread ? "●" : " "}${m.isStarred ? "★" : " "}${m.hasAttachments ? "📎" : "  "}`;
-      const from = (m.from.name || m.from.address).slice(0, 24).padEnd(24);
-      const count = m.threadCount > 1 ? ` (${m.threadCount})` : "";
-      return `${flags} ${stamp(m.date)}  ${from}  ${m.subject}${count}\n      ${m.id}`;
-    })
-    .join("\n");
-}
 
 export function accountTable(rows: readonly Account[]): string {
   if (rows.length === 0) return "(no accounts; run `openmail accounts add gmail`)";

@@ -1,7 +1,8 @@
+import { requireNativeModule } from "expo";
+import { Platform } from "react-native";
 import { AppPaths } from "@openmail/core/portable";
 import { Effect, FileSystem, Layer, Path, PlatformError } from "effect";
 import { Directory, File, Paths } from "expo-file-system";
-import { excludeMailBackup } from "./backup";
 import { randomUUID } from "expo-crypto";
 
 const persistentDirectory = () => new Directory(Paths.document, "openmail-data");
@@ -96,3 +97,12 @@ export const filesLayer = Layer.mergeAll(
   Layer.succeed(FileSystem.FileSystem, fileSystem),
   Layer.succeed(AppPaths, { dataDirectory: Effect.sync(dataDirectory) }),
 );
+
+/** iOS must acknowledge backup exclusion before a database can be opened. */
+function excludeMailBackup(uri: string): void {
+  if (Platform.OS === "ios") {
+    requireNativeModule<{ excludeFromBackup: (uri: string) => void }>(
+      "OpenmailStorage",
+    ).excludeFromBackup(uri);
+  }
+}

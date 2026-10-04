@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { Effect, ManagedRuntime } from "effect";
 import { Mailbox } from "@openmail/core/portable";
 import { TestMailbox, fakeServer } from "@openmail/core/testing/node";
-import { applyLabel, composeMessage, modifyThreads, searchQuery } from "./workflows";
+import { composeMessage, modifyThreads, searchQuery } from "./workflows";
 for (const provider of ["gmail", "outlook"] as const) {
   it(`${provider}: mobile view models enter the shared Mailbox command and search paths`, async () => {
     const server = fakeServer("me@example.test", [
@@ -42,12 +42,12 @@ for (const provider of ["gmail", "outlook"] as const) {
           const result = yield* modifyThreads(mailbox, [row.id], { kind: "read", value: true });
           expect((yield* mailbox.threads({ accountIds: [account.id] }))[0]?.isUnread).toBe(false);
           yield* mailbox.undoBatch(result.undoId);
-          const moved = yield* applyLabel(
+          const moved = yield* modifyThreads(
             mailbox,
             [row.id],
-            provider,
-            provider === "gmail" ? "Label_project" : "ARCHIVE",
-            "INBOX",
+            provider === "gmail"
+              ? { kind: "label", labelId: "Label_project", value: true }
+              : { kind: "move", labelId: "ARCHIVE", removeLabelId: "INBOX" },
           );
           yield* mailbox.undoBatch(moved.undoId);
           const draft = {

@@ -104,8 +104,6 @@ export function batchScope(
 }
 
 export const requiresBatchDeleteConfirmation = (count: number) => count > 50;
-export const notLoadedCount = (total: number | null, loaded: number) =>
-  total === null ? null : Math.max(0, total - loaded);
 
 export function moveSelection(
   selection: Selection,

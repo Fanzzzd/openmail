@@ -15,9 +15,8 @@ const Result = Schema.Union([
   }),
   Schema.Struct({ ok: Schema.Literal(false) }),
 ]);
-import { PDF_LIMITS } from "../../pdf-text.js";
 import type { PdfOptions } from "../runtime.js";
-export { PDF_LIMITS } from "../../pdf-text.js";
+export const PDF_LIMITS = { timeoutMs: 30_000, maxPages: 100, maxBytes: 32 * 1024 * 1024 } as const;
 /** Every PDF runs in a disposable worker. Terminate on timeout, abort, error or success. */
 export const pdfText = (data: Uint8Array, options: PdfOptions = {}) =>
   Effect.tryPromise({

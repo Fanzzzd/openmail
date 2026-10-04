@@ -167,7 +167,7 @@ msgstr "一周后、明天上午9点、下周一"
 msgid "1 year"
 msgstr "1 年"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "163 Mail"
 msgstr "163 邮箱"
@@ -577,7 +577,7 @@ msgstr "总是引用全文"
 msgid "Always use selection"
 msgstr "总是引用选中文字"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "An attachment changed while reading. Try adding it again."
 msgstr "附件在读取时发生变化，请重新添加。"
 
@@ -710,8 +710,8 @@ msgstr "附件保存目录"
 msgid "Attachments"
 msgstr "附件"
 
+#: src/renderer/src/app/use-native-menu-bridge.ts
 #: src/renderer/src/components/Composer.tsx
-#: src/renderer/src/dock-file-errors.ts
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "附件总大小超过 30 MB，请移除部分附件。"
 
@@ -1136,7 +1136,7 @@ msgstr "关闭写信窗口"
 msgid "Close find"
 msgstr "关闭查找"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again."
 msgstr "请关闭其他 OpenMail 进程（CLI／MCP），再重启此应用并重试恢复。"
 
@@ -1260,8 +1260,8 @@ msgstr "通讯录操作失败。"
 msgid "Content matches"
 msgstr "内容命中"
 
+#: src/main/native-i18n.ts
 #: src/renderer/src/components/UnsubscribeButton.tsx
-#: src/renderer/src/recovery-labels.ts
 msgid "Continue"
 msgstr "继续"
 
@@ -1416,7 +1416,7 @@ msgstr "无法读取剪贴板"
 msgid "Could not read system permission"
 msgstr "无法读取系统权限"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Could not read the attachments. Check the files and their permissions."
 msgstr "无法读取附件，请检查文件和访问权限。"
 
@@ -1424,7 +1424,7 @@ msgstr "无法读取附件，请检查文件和访问权限。"
 msgid "Could not register OpenMail. Try again from the installed app."
 msgstr "注册失败，请从安装后的 app 重试。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Could not reset the local cache"
 msgstr "无法重置本地缓存"
 
@@ -1507,15 +1507,15 @@ msgstr "计数按邮件比较。数量相同不代表内容一致。缓存窗口
 msgid "Create"
 msgstr "创建"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Account Security in your Yahoo account."
 msgstr "在 Yahoo 账户的「账户安全」里生成应用密码。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app password under Settings > Privacy & Security, with IMAP and SMTP checked."
 msgstr "在「设置 > 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Create an app-specific password under Sign-In and Security in your Apple Account."
 msgstr "在 Apple 账户的「登录与安全」里生成 App 专用密码。"
 
@@ -1587,7 +1587,7 @@ msgstr "短横线列表"
 msgid "Database pages"
 msgstr "数据库页"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 OpenMail。保留的数据库：{backup}"
 
@@ -3468,11 +3468,11 @@ msgstr "最早的在前"
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
 msgstr "电池供电时暂停图片识别，PDF 文字索引降速。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP under Settings > POP3/SMTP/IMAP, then follow the prompts to generate an authorization code."
 msgstr "在网页版「设置 > POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 msgid "On the web, turn on IMAP/SMTP under Settings > Account & Security > Security Settings, then generate an authorization code."
 msgstr "在网页版「设置 > 账号与安全 > 安全设置」开启 IMAP/SMTP 服务，再生成授权码。"
 
@@ -3492,7 +3492,7 @@ msgstr "只能为收件箱邮件设置提醒"
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
 msgstr "仅永久删除所选会话中属于当前垃圾箱或垃圾邮件文件夹的邮件。收件箱和已发送中的副本会保留。此操作无法撤销。"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Only regular files can be attached. Folders cannot be attached."
 msgstr "只能添加普通文件，不能添加文件夹。"
 
@@ -3580,7 +3580,7 @@ msgstr "OpenMail 已是默认邮件客户端"
 msgid "OpenMail is up to date."
 msgstr "OpenMail 已是最新版本。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail safe mode"
 msgstr "OpenMail 安全模式"
 
@@ -3596,7 +3596,7 @@ msgstr "openmail 用你自己注册的 OAuth 客户端登录。先填入Google C
 msgid "OpenMail stopped unexpectedly"
 msgstr "OpenMail 意外退出"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "OpenMail stopped unexpectedly three times within five minutes. Continue, reset the local mail cache and re-sync, or quit. Accounts, drafts and keychain tokens are kept."
 msgstr "OpenMail 在五分钟内意外退出三次。可继续、重置本地邮件缓存并重新同步，或退出。账户、草稿和钥匙串令牌会保留。"
 
@@ -3862,7 +3862,7 @@ msgstr "Profile 用于账户分组。可在设置中分配账户、编辑 Profil
 msgid "Promotions"
 msgstr "推广"
 
-#: src/renderer/src/components/imapPresetText.ts
+#: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/ProviderIcon.tsx
 msgid "QQ Mail"
 msgstr "QQ 邮箱"
@@ -3871,7 +3871,7 @@ msgstr "QQ 邮箱"
 msgid "Quick Look"
 msgstr "快速查看"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 #: src/renderer/src/state/desktop.ts
 msgid "Quit"
 msgstr "退出"
@@ -3916,7 +3916,7 @@ msgstr "收件人姓氏"
 msgid "Recipient name"
 msgstr "收件人姓名"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
@@ -4146,7 +4146,7 @@ msgstr "仅向被拒收的收件人重发"
 msgid "Reset Favorites"
 msgstr "重置收藏夹"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "Reset local cache"
 msgstr "重置本地缓存"
 
@@ -4977,7 +4977,7 @@ msgid "Sync All"
 msgstr "同步全部"
 
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "同步失败"
 
@@ -5007,7 +5007,7 @@ msgid "Syncing {fetched}/{total}"
 msgstr "同步中 {fetched}/{total}"
 
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/SyncStatusAnnouncement.tsx
+#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "正常"
 
@@ -5066,11 +5066,11 @@ msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮�
 msgid "The calendar organizer does not match this invitation"
 msgstr "日历中的组织者与邀请不一致"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database integrity check (quick_check) failed or the file is unavailable. Reset rebuilds a damaged database from readable local records and keeps the original file. Keychain tokens are kept."
 msgstr "数据库完整性检查（quick_check）失败，或文件无法访问。重置会用可读的本地记录重建损坏的数据库，并保留原文件和钥匙串令牌。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The database was kept. Quit OpenMail and restore a local backup or contact support."
 msgstr "数据库已保留。请退出 OpenMail，恢复本地备份或联系支持。"
 
@@ -5086,11 +5086,11 @@ msgstr "结束时间须晚于开始时间"
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "无法验证本地数据库"
 
-#: src/renderer/src/recovery-labels.ts
+#: src/main/native-i18n.ts
 msgid "The local database was recovered"
 msgstr "本地数据库已恢复"
 
@@ -5290,7 +5290,7 @@ msgstr "明天上午"
 msgid "Tone"
 msgstr "语气"
 
-#: src/renderer/src/dock-file-errors.ts
+#: src/renderer/src/app/use-native-menu-bridge.ts
 msgid "Too many attachments. Attach up to 256 files."
 msgstr "附件过多，最多可添加 256 个文件。"
 

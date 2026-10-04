@@ -1,4 +1,4 @@
-import { fakeImapClient } from "./platform/node/fake-imap-client.js";
+import { ImapFlow, type ListResponse } from "imapflow";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { nodeMailCodec } from "./platform/node/mail-codec.js";
@@ -6,11 +6,10 @@ import { assert, it, layer } from "@effect/vitest";
 import { Clock, Effect, Exit, Fiber, Layer, Option, Stream } from "effect";
 import { vi } from "vitest";
 import { TestClock } from "effect/testing";
-import { ImapFlow, type ListResponse } from "imapflow";
 import { simpleParser } from "mailparser";
 import { createServer } from "node:net";
 import { createTransport } from "nodemailer";
-import { type Account } from "./domain.js";
+import type { Account } from "./domain.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import {
   attachmentNodes,
@@ -2121,3 +2120,13 @@ it.effect(
       }),
     ),
 );
+
+function fakeImapClient(
+  options: ConstructorParameters<typeof ImapFlow>[0] = {
+    host: "fake.invalid",
+    port: 993,
+    logger: false,
+  },
+) {
+  return new ImapFlow(options);
+}

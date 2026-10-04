@@ -1,8 +1,14 @@
+import {
+  recipientLabel,
+  type MailOp,
+  type Prefs,
+  type SwipeAction,
+  type ThreadSummary,
+} from "@openmail/core/portable";
 import { Pressable, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { useLingui } from "@lingui/react";
-import type { MailOp, Prefs, SwipeAction, ThreadSummary } from "@openmail/core/portable";
 import { swipeAction } from "./workflows";
 import { actionLabels } from "./labels";
 import { styles } from "./styles";
@@ -55,7 +61,7 @@ export function ThreadRow({
           accessibilityState={{ selected }}
           accessibilityLabel={[
             row.subject,
-            row.from.name || row.from.address,
+            recipientLabel(row.from, false),
             row.isUnread ? names.unread : names.read,
             row.isStarred ? names.star : "",
           ]
@@ -94,7 +100,7 @@ export function ThreadRow({
               {row.isStarred ? "★ " : ""}
               {row.subject || i18n._({ id: "(No subject)", message: "(No subject)" })}
             </Text>
-            <Text style={styles.detail}>{row.from.name || row.from.address}</Text>
+            <Text style={styles.detail}>{recipientLabel(row.from, false)}</Text>
             <Text style={styles.detail} numberOfLines={2}>
               {row.snippet}
             </Text>

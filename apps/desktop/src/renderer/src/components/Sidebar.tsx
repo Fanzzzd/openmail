@@ -1,4 +1,11 @@
-import { SyncStatusAnnouncement } from "./SyncStatusAnnouncement";
+import {
+  useState,
+  type ButtonHTMLAttributes,
+  type ComponentType,
+  type ReactNode,
+  useRef,
+} from "react";
+import { useLingui, Trans } from "@lingui/react/macro";
 import { numberedFavorites, favoriteView } from "../favorite-navigation";
 import { systemFolderId, specialFolderBadge, DEFAULT_PREFS } from "@openmail/core/schema";
 import { Effect } from "effect";
@@ -14,7 +21,6 @@ import {
 import { MAIL_KEYS, Keys } from "../state/keys";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { useAtomValue } from "@effect/atom-react";
-import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult, Reactivity } from "effect/reactivity";
 import {
   ArrowRight,
@@ -44,13 +50,6 @@ import {
   User,
   Users,
 } from "lucide-react";
-import {
-  type ButtonHTMLAttributes,
-  type ComponentType,
-  type ReactNode,
-  useRef,
-  useState,
-} from "react";
 
 import type {
   Account,
@@ -1162,5 +1161,18 @@ function Item(props: {
       </button>
       {props.disclosure}
     </div>
+  );
+}
+
+/** Sync ticks and progress stay visual; only entering/clearing failure is announced. */
+function SyncStatusAnnouncement({ failed }: { failed: boolean }) {
+  const { t } = useLingui();
+  const [state, setState] = useState<"initial" | "failed" | "cleared">("initial");
+  if (failed && state !== "failed") setState("failed");
+  else if (!failed && state === "failed") setState("cleared");
+  return (
+    <output aria-live="polite" aria-atomic="true" className="sr-only">
+      {state === "failed" ? t`Sync failed` : state === "cleared" ? t`Syncing normally` : ""}
+    </output>
   );
 }

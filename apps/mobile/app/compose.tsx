@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, TextInput, View } from "react-native";
-import { useLingui } from "@lingui/react";
-import { router, useLocalSearchParams } from "expo-router";
 import {
+  recipientLabel,
   Mailbox,
   mobileAttachmentProblem,
   restoreMobileRichText,
@@ -11,6 +8,10 @@ import {
   type OutgoingMessage,
   signatureDefault,
 } from "@openmail/core/portable";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, View } from "react-native";
+import { useLingui } from "@lingui/react";
+import { router, useLocalSearchParams } from "expo-router";
 import { Effect } from "effect";
 import { randomUUID } from "expo-crypto";
 import { useMailbox } from "../src/mailbox";
@@ -37,9 +38,7 @@ import { aiUndoBody, type AiEditUndo } from "../src/ai-edit";
 import { signedMobileMessage } from "../src/ai-workflows";
 
 const recipientsText = (addresses: readonly Address[]) =>
-  addresses
-    .map((address) => (address.name ? `${address.name} <${address.address}>` : address.address))
-    .join(", ");
+  addresses.map((address) => recipientLabel(address, true)).join(", ");
 export default function Compose() {
   const params = useLocalSearchParams<{
     accountId: string;

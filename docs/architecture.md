@@ -81,16 +81,16 @@ slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候�
 
 ## Platform 端口
 
-| 能力           | 端口                                                  | Node 实现                                                |
-| -------------- | ----------------------------------------------------- | -------------------------------------------------------- |
-| 文件与路径     | Effect `FileSystem`／`Path`、`AppPaths`               | Node 文件服务和共享数据目录                              |
-| 加密           | Effect `Crypto`、`PlatformCrypto`                     | Node 加密与 UUID；纯函数指纹使用可移植 SHA-256           |
-| SQL 与恢复     | `SqlClient`、`DatabaseCapabilities`、`DatabaseFiles`  | `node:sqlite`、sqlite-vec、WAL、进程锁与恢复             |
-| 密钥与授权     | `Secrets`、`OAuth`、`Browser`、`AppConfig`            | 系统钥匙串、回环 PKCE、系统浏览器、config.json           |
-| MIME           | `MailCodec`                                           | mailparser 与 nodemailer composer                        |
-| 附件与图片传输 | `AttachmentFiles`、`ImageNetwork`                     | 私有目录、固定解析后的网络地址、逐跳重定向校验与流式限额 |
-| 本机媒体与进程 | `InferenceWorker`、`PdfWorker`、`ChildProcessSpawner` | 推理／PDF worker 与进程管理                              |
-| 应用签名       | `AppVerifier`                                         | macOS codesign                                           |
+| 能力           | 端口                                               | Node 实现                                                |
+| -------------- | -------------------------------------------------- | -------------------------------------------------------- |
+| 文件与路径     | Effect `FileSystem`／`Path`、`AppPaths`            | Node 文件服务和共享数据目录                              |
+| 加密           | Effect `Crypto`、`PlatformCrypto`                  | Node 加密与 UUID；纯函数指纹使用可移植 SHA-256           |
+| SQL 与恢复     | `SqlClient`、`DatabaseCapabilities`                | `node:sqlite`、sqlite-vec、WAL、进程锁与恢复             |
+| 密钥与授权     | `Secrets`、`OAuth`、`Browser`、`AppConfig`         | 系统钥匙串、回环 PKCE、系统浏览器、config.json           |
+| MIME           | `MailCodec`                                        | mailparser 与 nodemailer composer                        |
+| 附件与图片传输 | `AttachmentFiles`、`ImageNetwork`                  | 私有目录、固定解析后的网络地址、逐跳重定向校验与流式限额 |
+| 本机媒体与进程 | `ModelRuntime`、`PdfWorker`、`ChildProcessSpawner` | 推理／PDF worker 与进程管理                              |
+| 应用签名       | `AppVerifier`                                      | macOS codesign                                           |
 
 `@openmail/core` 是 Node 兼容入口，`@openmail/core/node` 显式导出同一套适配器。`@openmail/core/portable` 导出领域、Mailbox、Store、Gmail／Outlook 与移动 adapters。`@openmail/core/schema` 为 renderer 提供 schema 和纯函数；`@openmail/core/testing/node` 提供临时数据库与 fake provider 的测试组装。
 

@@ -1,4 +1,4 @@
-import { Mailbox, shouldLoadRemote, type Message } from "@openmail/core/portable";
+import { recipientLabel, Mailbox, shouldLoadRemote, type Message } from "@openmail/core/portable";
 import { Effect } from "effect";
 import { useLingui } from "@lingui/react";
 import { router, useLocalSearchParams } from "expo-router";
@@ -73,7 +73,7 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
       <Text style={styles.subject}>
         {message.subject || i18n._({ id: "(No subject)", message: "(No subject)" })}
       </Text>
-      <Text style={styles.detail}>{message.from.name || message.from.address}</Text>
+      <Text style={styles.detail}>{recipientLabel(message.from, false)}</Text>
       <Text style={styles.detail}>{i18n.date(new Date(message.date))}</Text>
       {message.bodyHtml && (
         <Pressable accessibilityRole="button" onPress={() => setHtml((value) => !value)}>

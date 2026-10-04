@@ -4,8 +4,9 @@
  * user:cli, so policy and audit hold here too. There is no send command:
  * sending needs the review window in the app.
  */
-import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import {
+  Browser,
+  openInSystemBrowser,
   type Actor,
   IMAP_PRESETS,
   MAILBOXES,
@@ -20,11 +21,11 @@ import {
   redactSyncHealth,
 } from "@openmail/core";
 import {
-  Config,
   Console,
-  Data,
   Effect,
   Layer,
+  Config,
+  Data,
   Logger,
   Option,
   Redacted,
@@ -32,6 +33,8 @@ import {
   Schema,
   Stream,
 } from "effect";
+import { ChildProcessSpawner } from "effect/process";
+import { NodeRuntime, NodeServices } from "@effect/platform-node";
 import { Tool } from "effect/ai";
 import { Argument, CliError, Command, Flag, Prompt } from "effect/cli";
 
@@ -46,7 +49,6 @@ import {
 } from "./format.js";
 import { runMcp } from "./mcp-server.js";
 import { withProgress } from "./sync-progress.js";
-import { CliBrowser } from "./open-url.js";
 
 const CLI: Actor = { kind: "user", surface: "cli" };
 
@@ -64,6 +66,25 @@ const jsonFlag = Flag.Boolean("json").pipe(
 
 const print = <A>(data: A, asJson: boolean, human: (data: A) => string) =>
   Console.log(asJson ? JSON.stringify(data, null, 2) : human(data));
+
+/**
+ * The CLI's browser: prints the consent URL on stderr, in case no browser can
+ * be launched (SSH, headless), then hands it to the OS opener.
+ */
+const CliBrowser: Layer.Layer<Browser, never, ChildProcessSpawner.ChildProcessSpawner> =
+  Layer.effect(
+    Browser,
+    Effect.gen(function* () {
+      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+      return Browser.of({
+        open: (url) =>
+          Console.error(`Opening browser for sign-in:\n${url}`).pipe(
+            Effect.andThen(openInSystemBrowser(url)),
+            Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
+          ),
+      });
+    }),
+  );
 
 // config
 
@@ -572,6 +593,18 @@ function invokeTool(name: ToolName, input: unknown) {
     return last.value.encodedResult;
   }).pipe(Effect.provide(toolHandlers));
 }
+function runToolCommand(
+  name: ToolName,
+  { input, json, allowWrites }: { input: string; json: boolean; allowWrites: boolean },
+) {
+  return Effect.gen(function* () {
+    if (isWriteTool(name) && !allowWrites)
+      return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
+    const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
+    const result = yield* invokeTool(name, parsed);
+    return yield* print(result, json, (value) => JSON.stringify(value, null, 2));
+  });
+}
 const toolInput = Flag.String("input-json").pipe(
   Flag.withDescription("Tool parameters as a JSON object. Use tools --json for schemas."),
   Flag.withDefault("{}"),
@@ -608,13 +641,7 @@ const tool = Command.make(
     json: jsonFlag,
     allowWrites: allowWritesFlag,
   },
-  Effect.fn(function* ({ name, input, json, allowWrites }) {
-    if (isWriteTool(name) && !allowWrites)
-      return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
-    const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
-    const result = yield* invokeTool(name, parsed);
-    return yield* print(result, json, (value) => JSON.stringify(value, null, 2));
-  }),
+  ({ name, input, json, allowWrites }) => runToolCommand(name, { input, json, allowWrites }),
 ).pipe(
   Command.withDescription(
     "Call any agent tool through the shared core Toolkit. Parameters are validated against tools --json; results honor cursors and byte budgets.",
@@ -635,16 +662,7 @@ const agentCommands = toolNames
     Command.make(
       name.replaceAll("_", "-"),
       { input: toolInput, json: jsonFlag, allowWrites: allowWritesFlag },
-      Effect.fn(function* ({ input, json, allowWrites }) {
-        if (isWriteTool(name) && !allowWrites)
-          return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
-        const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(
-          input,
-        );
-        return yield* print(yield* invokeTool(name, parsed), json, (value) =>
-          JSON.stringify(value, null, 2),
-        );
-      }),
+      (options) => runToolCommand(name, options),
     ).pipe(Command.withDescription(MailToolkit.tools[name].description ?? name)),
   );
 

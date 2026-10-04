@@ -1,3 +1,4 @@
+import { recipientLabel } from "./recipients.js";
 /**
  * Plain-text rules of the compose window: where the signature goes, what a
  * template's variables mean, whether the body talks about an attachment. Pure
@@ -179,7 +180,7 @@ export interface TemplateContext {
   readonly bcc?: readonly Address[];
 }
 const templateAddresses = (list: readonly Address[] | undefined) =>
-  (list ?? []).map((a) => (a.name ? `${a.name} <${a.address}>` : a.address)).join(", ");
+  (list ?? []).map((a) => recipientLabel(a, true)).join(", ");
 /** The legacy four recipient variables are retained for saved templates. */
 export function templateVariables(
   recipient: Address | undefined,

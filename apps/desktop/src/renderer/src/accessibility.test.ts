@@ -4,7 +4,6 @@ import { act, createElement as h, createRef, useState, type ReactNode } from "re
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
-import { moderateAllowlist } from "./accessibility-allowlist";
 import { setupI18n, i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { AsyncResult } from "effect/reactivity";
@@ -99,7 +98,6 @@ vi.mock("./state/mutations", () => ({
   saveNamedSignatureAtom: "saveNamedSignatureAtom",
   deleteNamedSignatureAtom: "deleteNamedSignatureAtom",
   setSignatureDefaultAtom: "setSignatureDefaultAtom",
-  setSignatureAtom: "setSignatureAtom",
   saveTemplateAtom: "saveTemplateAtom",
   deleteTemplateAtom: "deleteTemplateAtom",
   setContactHiddenAtom: "setContactHiddenAtom",
@@ -1392,3 +1390,15 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
     await audit();
   });
 }
+
+/**
+ * Snapshot of reviewed moderate axe findings. Match fixture, rule and targets,
+ * and explain each exception here. Serious/critical findings are never allowed.
+ * Empty because the audited fixtures currently have no moderate violations.
+ */
+const moderateAllowlist: readonly {
+  fixture: string;
+  rule: string;
+  targets: readonly (readonly string[])[];
+  reason: string;
+}[] = [];

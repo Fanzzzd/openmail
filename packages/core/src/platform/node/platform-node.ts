@@ -9,13 +9,7 @@ import { FetchHttpClient, type HttpClient } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import type { SqlClient } from "effect/sql";
 
-import {
-  AttachmentFiles,
-  ImageNetwork,
-  PdfWorker,
-  DatabaseFiles,
-  InferenceWorker,
-} from "../runtime.js";
+import { AttachmentFiles, ImageNetwork, PdfWorker } from "../runtime.js";
 import { AppPaths } from "../paths.js";
 import { NodeRuntime, NodePaths } from "./runtime.js";
 import { appConfigFile } from "../../config.js";
@@ -38,8 +32,6 @@ export type PlatformServices =
   | ImageNetwork
   | HttpClient.HttpClient
   | AppPaths
-  | DatabaseFiles
-  | InferenceWorker
   | FileSystem.FileSystem
   | Path.Path
   | Crypto.Crypto

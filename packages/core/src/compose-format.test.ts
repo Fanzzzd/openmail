@@ -1,11 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 import { performance } from "node:perf_hooks";
-import {
-  composeStyle,
-  composeStyleValue,
-  composeDirection,
-  composeReplacement,
-} from "./compose-format.js";
+import { composeStyle, composeStyleValue, composeReplacement } from "./compose-format.js";
 import {
   composeHtmlHasUnsupported,
   richComposeBody,
@@ -140,16 +135,6 @@ describe("rich formatting boundary", () => {
     assert.isBelow(performance.now() - start, 3000);
     assert.include(body.html, 'style="color:#123"');
   });
-});
-it("finds the first strong character for mixed paragraphs", () => {
-  for (const [text, expected] of [
-    ["123 שלום abc", "rtl"],
-    ["! العربية", "rtl"],
-    ["123 abc שלום", "ltr"],
-    ["中文 العربية", "ltr"],
-    ["", "ltr"],
-  ] as const)
-    assert.strictEqual(composeDirection(text), expected);
 });
 it("detects bounded Markdown replacements and independently controls lists", () => {
   for (const [text, field, expected] of [

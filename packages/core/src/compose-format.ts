@@ -60,13 +60,6 @@ export function composeStyle(input: string): string {
   }
   return [...styles].map(([p, v]) => `${p}:${v}`).join(";");
 }
-export function composeDirection(text: string): "ltr" | "rtl" {
-  for (const char of text) {
-    if (!/\p{L}/u.test(char)) continue;
-    return /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/u.test(char) ? "rtl" : "ltr";
-  }
-  return "ltr";
-}
 export type ComposeReplacement =
   | { start: number; end: number; tag: "strong" | "em" | "s" | "code"; text: string }
   | { start: number; end: number; block: "ul" | "ol" | "blockquote" | "pre"; dashed: boolean };

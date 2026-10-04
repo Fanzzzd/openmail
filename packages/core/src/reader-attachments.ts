@@ -1,3 +1,4 @@
+import { stripMessageIdBrackets } from "./message-id.js";
 import { Buffer } from "./platform/bytes.js";
 import { Effect, Result } from "effect";
 import type { MailCodecPort } from "./platform/mail-codec.js";
@@ -263,7 +264,8 @@ export function makeReaderAttachments(
     const inline: Record<string, string> = {};
     let inlineBytes = 0;
     for (const a of parsed.attachments) {
-      const cid = a.cid ?? a.contentId?.replace(/^<|>$/g, "");
+      const cid =
+        a.cid ?? (a.contentId === undefined ? undefined : stripMessageIdBrackets(a.contentId));
       if (!cid || !a.contentType.startsWith("image/")) continue;
       inlineBytes += a.size;
       if (inlineBytes > 8 * 1024 * 1024) break;

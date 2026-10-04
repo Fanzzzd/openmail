@@ -1,13 +1,13 @@
+import { Separator, Group, Panel } from "react-resizable-panels";
+import { useCallback, useState, type ComponentProps, useEffect } from "react";
+import type { Label, MailOp } from "../../shared/api";
 import { useAtomMount, useAtomValue } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { moveSourceLabel } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { type ComponentProps, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Group, Panel } from "react-resizable-panels";
-import type { MailOp } from "../../shared/api";
 import { PANE_MIN } from "../../shared/layout";
 import { useAppPanels, usePanelLayout } from "./app/use-app-panels";
 import { useMailActions } from "./app/use-mail-actions";
@@ -15,7 +15,6 @@ import { useMailCompose } from "./app/use-mail-compose";
 import { useMailSelection } from "./app/use-mail-selection";
 import { useMailShortcuts } from "./app/use-mail-shortcuts";
 import { useNativeMenuBridge } from "./app/use-native-menu-bridge";
-import { usePaneHost } from "./app/use-pane-host";
 import { usePaneNavigation } from "./app/use-pane-navigation";
 import { Assistant } from "./components/AiPanel";
 import { FolderActions } from "./components/FolderActions";
@@ -35,7 +34,6 @@ import { FailedOpNotice } from "./components/FailedOpNotice";
 import { UpdateNotice } from "./components/UpdateNotice";
 import { numberedFavorites } from "./favorite-navigation";
 import { supportsInInboxFilter } from "./folder-actions";
-import { labelsById } from "./label-map";
 import { readerThreadKey, type ReaderSelection } from "./reader-selection";
 
 import { BatchActions, BatchMenuItems } from "./components/BatchActions";
@@ -44,7 +42,6 @@ import { MessageList } from "./components/MessageList";
 import { Overview } from "./components/Overview";
 import { DefaultProfilesPrompt, ProfileSwitcher } from "./components/ProfileSettings";
 import { Reader, useThreadPrint } from "./components/Reader";
-import { ResizeHandle } from "./components/ResizeHandle";
 import { Sidebar, SidebarToggle } from "./components/Sidebar";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
@@ -961,3 +958,47 @@ export function useAppMessages() {
   };
 }
 export type AppMessages = ReturnType<typeof useAppMessages>;
+
+/** Immutable query arrays own their lookup maps; WeakMap releases old results. */
+const maps = new WeakMap<readonly Label[], Map<string, Label>>();
+function labelsById(labels: readonly Label[]) {
+  const cached = maps.get(labels);
+  if (cached) return cached;
+  const map = new Map(labels.map((label) => [`${label.accountId}/${label.id}`, label]));
+  maps.set(labels, map);
+  return map;
+}
+
+/**
+ * A pane that keeps its React state when the layout moves it. The caller
+ * portals the pane into `host` at one fixed place in the tree, and each
+ * layout gives the host a slot through the `slot` ref. Changing layouts then
+ * moves one DOM node instead of remounting the list or the reader.
+ */
+function usePaneHost() {
+  const [host] = useState(() => {
+    const element = document.createElement("div");
+    element.className = "flex h-full min-w-0 flex-1";
+    return element;
+  });
+  const slot = useCallback(
+    (element: HTMLElement | null) => {
+      element?.append(host);
+    },
+    [host],
+  );
+  return { host, slot };
+}
+
+/**
+ * The line between two panes. It draws the 1 px border the panes used to
+ * carry themselves; the group's resizeTargetMinimumSize widens what the
+ * pointer can grab without widening the line.
+ */
+function ResizeHandle({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
+  return (
+    <Separator
+      className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors outline-none data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
+    />
+  );
+}

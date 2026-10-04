@@ -1,4 +1,4 @@
-import { newMessageId } from "./message-id.js";
+import { stripMessageIdBrackets, newMessageId } from "./message-id.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { draftVersionMetadata } from "./draft-version.js";
 import type { FolderStatus } from "./sync-health.js";
@@ -2082,7 +2082,7 @@ export const makeOutlook: Effect.Effect<
       if (messageId)
         params.set(
           "$filter",
-          `internetMessageId eq '${`<${messageId.replace(/^<|>$/g, "")}>`.replaceAll("'", "''")}'`,
+          `internetMessageId eq '${`<${stripMessageIdBrackets(messageId)}>`.replaceAll("'", "''")}'`,
         );
       else if (kql) params.set("$search", JSON.stringify(kql));
       const messages: IncomingMessage[] = [];
