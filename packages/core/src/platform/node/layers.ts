@@ -5,7 +5,7 @@ import { dataDir } from "./paths.js";
 import { Config, Effect, Layer } from "effect";
 
 import { makeGmail } from "../../gmail.js";
-import { makeImap } from "./imap.js";
+import { makeImap } from "./imap/adapter.js";
 import { MailboxLive, type MailboxOptions } from "../../mailbox-live.js";
 import type { Mailbox } from "../../mailbox.js";
 import { makeOutlook } from "../../outlook.js";

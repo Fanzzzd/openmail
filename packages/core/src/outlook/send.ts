@@ -733,7 +733,7 @@ export const makeOutlookSend = (client: GraphClient) =>
     >;
   });
 
-export function fileAttachment(a: OutgoingMessage["attachments"][number]) {
+function fileAttachment(a: OutgoingMessage["attachments"][number]) {
   return {
     "@odata.type": "#microsoft.graph.fileAttachment",
     name: a.filename,
@@ -743,14 +743,14 @@ export function fileAttachment(a: OutgoingMessage["attachments"][number]) {
   };
 }
 
-export const recipients = (list: readonly Address[]) =>
+const recipients = (list: readonly Address[]) =>
   list.map((a) => ({ emailAddress: { address: a.address, ...(a.name ? { name: a.name } : {}) } }));
 
 /** Custom internet headers are create-only; this property also supports draft updates. */
 export const MARKDOWN_DRAFT_PROPERTY =
   "String {57d14d35-4d11-4f8f-ae63-961883378d87} Name OpenmailMarkdownSource";
 
-export function graphFields(message: OutgoingMessage) {
+function graphFields(message: OutgoingMessage) {
   return {
     subject: message.subject,
     body: message.html
@@ -762,7 +762,7 @@ export function graphFields(message: OutgoingMessage) {
   };
 }
 
-export const checkRequestSize = (body: string) =>
+const checkRequestSize = (body: string) =>
   body.length > REQUEST_LIMIT
     ? Effect.fail(
         new PermanentError({
@@ -771,10 +771,10 @@ export const checkRequestSize = (body: string) =>
       )
     : Effect.void;
 
-export const forwardsMessage = (message: OutgoingMessage) =>
+const forwardsMessage = (message: OutgoingMessage) =>
   message.attachments.some((a) => a.mimeType.toLowerCase() === "message/rfc822");
 
-export const checkAttachmentSize = (message: OutgoingMessage) => {
+const checkAttachmentSize = (message: OutgoingMessage) => {
   const problem = attachmentProblem("outlook", message.attachments);
   return problem
     ? Effect.fail(new PermanentError({ message: attachmentProblemMessage(problem) }))

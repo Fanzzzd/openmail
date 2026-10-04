@@ -64,4 +64,4 @@ portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTranspo
 | 永久删除       | 要求 UIDPLUS 或 IMAP4rev2，限定目标 UID 删除并返回部分结果    | checkPermanentDelete／permanentlyDelete 不支持                                |
 | SMTP 发送      | 使用 message.from，报告部分收件人拒绝，并可创建 Sent 文件夹   | 使用账户地址作为信封和 MIME 发件人，逐个处理 RCPT 响应，Sent 文件夹必须已存在 |
 
-Node IMAP 的实现分为 `platform/node/imap/{session,parse,pull,ops,drafts,pool}.ts`。Outlook 分为 `outlook/{graph,client,send,sync,parse}.ts`。旧入口只组装或重导出，现有调用路径继续有效。
+Node IMAP 的实现分为 `platform/node/imap/{adapter,session,parse,pull,ops,send,recovery,pool}.ts`。Outlook 分为 `outlook/{graph,client,send,sync,parse,pull,recovery,folders}.ts`。旧入口只导出 provider 组装函数；纯函数和传输帮助函数由调用处直接导入所属模块。

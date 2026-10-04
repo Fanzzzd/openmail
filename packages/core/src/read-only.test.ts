@@ -3,7 +3,7 @@ import { Effect, Layer, ConfigProvider, Option } from "effect";
 import { HttpClient } from "effect/http";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
-import { makeImap } from "./platform/node/imap.js";
+import { makeImap } from "./platform/node/imap/adapter.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { READ_ONLY_METHODS, readOnlyAdapter, READ_ONLY_MESSAGE, refused } from "./read-only.js";
 import { Mailbox } from "./mailbox.js";

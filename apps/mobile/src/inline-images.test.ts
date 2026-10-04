@@ -31,7 +31,9 @@ it("does not download the message source when cid: appears only in text or links
   const fetch = vi.fn(async () => ({}));
   const loader = new MessageInlineImages(fetch);
   expect(await loader.load("text", "<p>Reference cid:photo in the text</p>")).toEqual({});
-  expect(await loader.load("link", '<a href="https://example.test/?q=cid:photo">open</a>')).toEqual({});
+  expect(await loader.load("link", '<a href="https://example.test/?q=cid:photo">open</a>')).toEqual(
+    {},
+  );
   expect(fetch).not.toHaveBeenCalled();
   await loader.load("background", '<td background="cid:banner">x</td>');
   expect(fetch).toHaveBeenCalledTimes(1);

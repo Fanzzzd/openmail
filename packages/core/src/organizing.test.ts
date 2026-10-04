@@ -19,7 +19,7 @@ import {
 } from "./organization.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { gmailDelta } from "./gmail.js";
-import { destination } from "./outlook.js";
+import { destination } from "./outlook/graph.js";
 import { ProviderError } from "./errors.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { NodeSystem } from "./platform/node/platform-node.js";

@@ -31,7 +31,9 @@ import { MailboxLive } from "./mailbox-live.js";
 import { Mailbox } from "./mailbox.js";
 import { markdownDraftSource } from "./markdown-draft.js";
 import { renderMarkdown } from "./markdown.js";
-import { makeOutlook, MARKDOWN_DRAFT_PROPERTY, parseGraphMessage } from "./outlook.js";
+import { makeOutlook } from "./outlook.js";
+import { MARKDOWN_DRAFT_PROPERTY } from "./outlook/send.js";
+import { parseGraphMessage } from "./outlook/parse.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
 import {
   importedMessage,

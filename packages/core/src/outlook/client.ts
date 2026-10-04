@@ -1,6 +1,5 @@
-import { Effect, Option, Schema, Stream } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
-import { MEDIA_RAW_TOO_LARGE } from "../attachments.js";
 import type { Account } from "../domain.js";
 import {
   AuthError,
@@ -11,17 +10,10 @@ import {
 } from "../errors.js";
 import { type DeleteFolder } from "../folder-actions.js";
 import { OPTIONAL_SCOPES } from "../optional-services.js";
-import { Buffer } from "../platform/bytes.js";
 import { MailCodec } from "../platform/mail-codec.js";
-import { BackgroundRead, makeProviderConnectivity } from "../provider-connectivity.js";
-import {
-  graphSearchErrorCode,
-  logProviderFailure,
-  makeOptionalPermissions,
-} from "../provider-diagnostics.js";
-import { ApiError, keyedLock, makeProviderHttp } from "../provider-http.js";
+import { graphSearchErrorCode, logProviderFailure } from "../provider-diagnostics.js";
+import { makeProviderHttp } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
-import { requestNotSent, retryProviderRequest } from "../provider-retry.js";
 import { AppConfig, type Connected, type ConnectInput, OAuth, Secrets } from "../services.js";
 import {
   AUTH_URL,
@@ -42,7 +34,7 @@ import {
   WithId,
 } from "./graph.js";
 
-export const makeGraphClient = Effect.gen(function* () {
+export const makeOutlookClient = Effect.gen(function* () {
   const codec = yield* MailCodec;
 
   const http = yield* HttpClient.HttpClient;
@@ -53,93 +45,56 @@ export const makeGraphClient = Effect.gen(function* () {
 
   const secrets = yield* Secrets;
 
-  const connectivity = makeProviderConnectivity();
-
-  const {
-    tokens,
-    execute,
-    authorized,
-    invalidateRejectedToken,
-    retryUnauthorized,
-    accessToken,
-    readRetryAt,
-    checkReadDeadline,
-    throttleReads,
-  } = yield* makeProviderHttp({
-    http,
-    secrets,
-    tokenLabel: "Microsoft",
-    refresh: (accountId, refreshToken) =>
-      Effect.gen(function* () {
-        const { microsoft } = yield* config.read;
-        if (!microsoft)
-          return yield* new ProviderError({
-            message: "No Microsoft OAuth client configured",
-            reason: "configuration",
-          });
-        const res = yield* oauth
-          .refresh(accountId, { tokenUrl: TOKEN_URL, clientId: microsoft.clientId, refreshToken })
-          .pipe(
-            Effect.tapError((error) =>
-              logProviderFailure("outlook", accountId, HttpClientRequest.post(TOKEN_URL), error),
-            ),
-          );
-        if (Option.isSome(res.refreshToken)) yield* secrets.set(accountId, res.refreshToken.value);
-        return res;
-      }),
-    throttleReads: true,
-    prepareRequest: (request) =>
-      HttpClientRequest.setHeader(request, "prefer", request.headers.prefer ?? PREFER.prefer),
-    parseResponse: (text) => JSON.parse(text),
-    isTransient,
-  });
-
-  const requestLock = keyedLock(CONCURRENCY);
-
-  const sendLock = keyedLock(1);
-
-  const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
-
-  const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    Effect.gen(function* () {
-      const sending = yield* SendRequest;
-      const background = yield* BackgroundRead;
-      const searching = yield* SearchRequest;
-      return yield* permissions
-        .run(
-          accountId,
-          request,
-          authorized(accountId, request, sending).pipe(
-            Effect.tapError((e) =>
-              logProviderFailure(
-                "outlook",
-                accountId,
-                request,
-                e,
-                searching
-                  ? {
-                      operation: "search",
-                      errorCode: graphSearchErrorCode(e._tag === "ApiError" ? e.body : ""),
-                    }
-                  : undefined,
+  const { api, execute, readBytes, deferReads, clearTokens, connectivity } =
+    yield* makeProviderHttp({
+      http,
+      secrets,
+      concurrency: CONCURRENCY,
+      serializeSend: true,
+      sending: () => SendRequest,
+      background: (request) =>
+        request.method === "GET" || new URL(request.url).pathname.endsWith("/$batch"),
+      permits: (request) => (new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1),
+      logFailure: (accountId, request, error, body) =>
+        Effect.flatMap(SearchRequest, (searching) =>
+          logProviderFailure(
+            "outlook",
+            accountId,
+            request,
+            error,
+            body === "json" && searching
+              ? {
+                  operation: "search",
+                  errorCode: graphSearchErrorCode(error._tag === "ApiError" ? error.body : ""),
+                }
+              : undefined,
+          ),
+        ),
+      tokenLabel: "Microsoft",
+      refresh: (accountId, refreshToken) =>
+        Effect.gen(function* () {
+          const { microsoft } = yield* config.read;
+          if (!microsoft)
+            return yield* new ProviderError({
+              message: "No Microsoft OAuth client configured",
+              reason: "configuration",
+            });
+          const res = yield* oauth
+            .refresh(accountId, { tokenUrl: TOKEN_URL, clientId: microsoft.clientId, refreshToken })
+            .pipe(
+              Effect.tapError((error) =>
+                logProviderFailure("outlook", accountId, HttpClientRequest.post(TOKEN_URL), error),
               ),
-            ),
-            Effect.tapError((e) => invalidateRejectedToken(accountId, e)),
-          ),
-        )
-        .pipe(
-          (requestEffect) =>
-            connectivity.run(
-              accountId,
-              requestEffect,
-              background &&
-                !sending &&
-                (request.method === "GET" || new URL(request.url).pathname.endsWith("/$batch")),
-            ),
-          (sending ? sendLock(accountId) : requestLock(accountId)).withPermits(
-            new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1,
-          ),
-        );
+            );
+          if (Option.isSome(res.refreshToken))
+            yield* secrets.set(accountId, res.refreshToken.value);
+          return res;
+        }),
+      throttleReads: true,
+      prepareRequest: (request) =>
+        HttpClientRequest.setHeader(request, "prefer", request.headers.prefer ?? PREFER.prefer),
+      parseResponse: (text) => JSON.parse(text),
+      isTransient,
     });
 
   const headersDenied = new Set<string>();
@@ -270,80 +225,8 @@ export const makeGraphClient = Effect.gen(function* () {
       return ids;
     });
 
-  /** A GET whose body is not JSON (a message's MIME source). */
-  const getBytesAttempt = (accountId: string, path: string, maxBytes?: number) =>
-    Effect.flatMap(BackgroundRead, (background) =>
-      connectivity.run(
-        accountId,
-        accessToken(accountId).pipe(
-          Effect.flatMap((token) =>
-            retryProviderRequest(
-              Effect.gen(function* () {
-                yield* checkReadDeadline(accountId);
-                const res = yield* http.execute(
-                  HttpClientRequest.get(`${GRAPH}${path}`).pipe(
-                    HttpClientRequest.bearerToken(token),
-                    HttpClientRequest.setHeaders(PREFER),
-                  ),
-                );
-                yield* throttleReads(accountId, res.status, res.headers["retry-after"]);
-                if (res.status < 200 || res.status >= 300) {
-                  return yield* new ApiError({
-                    status: res.status,
-                    body: yield* res.text,
-                    ...(res.headers["retry-after"]
-                      ? { retryAfter: res.headers["retry-after"] }
-                      : {}),
-                  });
-                }
-                if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
-                if (Number(res.headers["content-length"]) > maxBytes)
-                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                const parts: Uint8Array[] = [];
-                let total = 0;
-                yield* res.stream.pipe(
-                  Stream.runForEach((part) =>
-                    Effect.gen(function* () {
-                      total += part.length;
-                      if (total > maxBytes)
-                        return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                      parts.push(part);
-                      return yield* Effect.void;
-                    }),
-                  ),
-                );
-                return new Uint8Array(Buffer.concat(parts));
-              }).pipe(
-                Effect.catchTag("HttpClientError", (e) =>
-                  Effect.fail(
-                    new ApiError({
-                      status: 0,
-                      body: e.message,
-                      requestNotSent: requestNotSent(e.reason.cause),
-                    }),
-                  ),
-                ),
-              ),
-              HttpClientRequest.get(`${GRAPH}${path}`),
-              (error) => error._tag === "ApiError" && isTransient(error),
-            ).pipe(requestLock(accountId).withPermits(1)),
-          ),
-        ),
-        background,
-      ),
-    );
-
   const getBytes = (accountId: string, path: string, maxBytes?: number) =>
-    retryUnauthorized(
-      accountId,
-      HttpClientRequest.get(`${GRAPH}${path}`),
-      getBytesAttempt(accountId, path, maxBytes),
-      () => getBytesAttempt(accountId, path, maxBytes),
-    ).pipe(
-      Effect.tapError((error) =>
-        logProviderFailure("outlook", accountId, HttpClientRequest.get(`${GRAPH}${path}`), error),
-      ),
-    );
+    readBytes(accountId, HttpClientRequest.get(`${GRAPH}${path}`), maxBytes);
 
   const connect = Effect.fn("Outlook.connect")(function* (
     input: ConnectInput,
@@ -394,8 +277,7 @@ export const makeGraphClient = Effect.gen(function* () {
     );
     // A new sign-in may carry new scopes; cached tokens from the old grant
     // would keep failing until they expire.
-    tokens.clear();
-    permissions.clear();
+    clearTokens();
     yield* connectivity.reset;
     headersDenied.clear();
     return {
@@ -407,7 +289,7 @@ export const makeGraphClient = Effect.gen(function* () {
   return {
     codec,
     connectivity,
-    readRetryAt,
+    deferReads,
     api,
     get,
     getDelta,
@@ -417,4 +299,4 @@ export const makeGraphClient = Effect.gen(function* () {
     connect,
   };
 });
-export type GraphClient = Effect.Success<typeof makeGraphClient>;
+export type GraphClient = Effect.Success<typeof makeOutlookClient>;

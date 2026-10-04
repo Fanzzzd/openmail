@@ -1,34 +1,33 @@
-import { gmailPages } from "./provider-pages.js";
-import { ApiError, keyedLock, makeProviderHttp } from "./provider-http.js";
-import { newMessageId } from "./message-id.js";
-import { PlatformCrypto } from "./platform/crypto.js";
-import type { FolderStatus } from "./sync-health.js";
-import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
-import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
-import {
-  batchThrottleDelay,
-  verifyInChunks,
-  BatchResponse,
-  parseGmailBatch,
-} from "./provider-batch.js";
-import type { ResetVerification } from "./sync-reset.js";
-import { CACHED_HEADER_NAMES, firstHeaders, type CachedHeaders } from "./header-backfill.js";
-import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
-import { deliverOrConfirm, providerReadFailure } from "./provider-send.js";
-import { messageSecurity } from "./message-security.js";
-import { retryProvider, isProviderSend, uncertainWrite } from "./provider-retry.js";
-import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
-import { MailCodec } from "./platform/mail-codec.js";
-import { Buffer } from "./platform/bytes.js";
-import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
-import { featureRequest } from "./provider-features.js";
 import { Clock, Effect, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
+import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
+import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./header-backfill.js";
+import { newMessageId } from "./message-id.js";
+import { messageSecurity } from "./message-security.js";
+import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
+import { Buffer } from "./platform/bytes.js";
+import { PlatformCrypto } from "./platform/crypto.js";
+import { MailCodec } from "./platform/mail-codec.js";
+import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
+import {
+  BatchResponse,
+  deferIfThrottled,
+  parseGmailBatch,
+  verifyInChunks,
+} from "./provider-batch.js";
+import { BackgroundRead } from "./provider-connectivity.js";
+import { logProviderFailure } from "./provider-diagnostics.js";
+import { featureRequest } from "./provider-features.js";
+import { ApiError, makeProviderHttp } from "./provider-http.js";
+import { gmailPages } from "./provider-pages.js";
+import { isProviderSend, retryProvider, uncertainWrite } from "./provider-retry.js";
+import { deliverOrConfirm, providerDecode, providerReadFailure } from "./provider-send.js";
+import type { FolderStatus } from "./sync-health.js";
+import type { ResetVerification } from "./sync-reset.js";
 
-import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
-import { buildMime as unboundBuildMime, type Threading } from "./compose.js";
 import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
-import { Label } from "./domain.js";
+import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "./attachments.js";
+import { type Threading, buildMime as unboundBuildMime } from "./compose.js";
 import type {
   Account,
   Attachment,
@@ -37,6 +36,7 @@ import type {
   MailOp,
   OutgoingMessage,
 } from "./domain.js";
+import { Label } from "./domain.js";
 import {
   AuthError,
   ClientNotConfigured,
@@ -58,10 +58,10 @@ import {
   Secrets,
 } from "./services.js";
 
-import { gmailSearch, searchIncludesSpecialFolders } from "./search.js";
-import { makeProviderCalendar } from "./provider-calendar.js";
 import { makeGmailFeatures } from "./gmail-features.js";
 import { makeGmailSettings } from "./gmail-settings.js";
+import { makeProviderCalendar } from "./provider-calendar.js";
+import { gmailSearch, searchIncludesSpecialFolders } from "./search.js";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -196,14 +196,7 @@ const writeFailure =
         ? e
         : readFailure(accountId)(e);
 
-const decode =
-  <A>(schema: Schema.Decoder<A>) =>
-  (json: unknown): Effect.Effect<A, ProviderError> =>
-    Schema.decodeUnknownEffect(schema)(json).pipe(
-      Effect.mapError(
-        (e) => new ProviderError({ message: `Unexpected Gmail response: ${e.message}` }),
-      ),
-    );
+const decode = providerDecode("Gmail");
 
 export const makeGmail: Effect.Effect<
   ProviderAdapter,
@@ -219,10 +212,16 @@ export const makeGmail: Effect.Effect<
   const config = yield* AppConfig;
   const secrets = yield* Secrets;
 
-  const connectivity = makeProviderConnectivity();
-  const { tokens, execute, authorized, invalidateRejectedToken } = yield* makeProviderHttp({
+  const { api, execute, clearTokens, connectivity } = yield* makeProviderHttp({
     http,
     secrets,
+    concurrency: CONCURRENCY,
+    serializeSend: false,
+    sending: (request) => Effect.succeed(isProviderSend(request)),
+    background: (request) => request.method === "GET" || request.url.includes("/batch/gmail/"),
+    permits: () => 1,
+    logFailure: (accountId, request, error) =>
+      logProviderFailure("gmail", accountId, request, error),
     tokenLabel: "Google",
     refresh: (accountId, refreshToken) =>
       Effect.gen(function* () {
@@ -253,32 +252,6 @@ export const makeGmail: Effect.Effect<
       request.url.includes("/batch/gmail/") ? parseGmailBatch(text, contentType) : JSON.parse(text),
     isTransient,
   });
-  const requestLock = keyedLock(CONCURRENCY);
-  const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
-  const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
-    Effect.flatMap(BackgroundRead, (background) =>
-      permissions
-        .run(
-          accountId,
-          request,
-          authorized(accountId, request).pipe(
-            Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
-            Effect.tapError((e) => invalidateRejectedToken(accountId, e)),
-          ),
-        )
-        .pipe((requestEffect) => {
-          const sending = isProviderSend(request);
-          const guarded = connectivity.run(
-            accountId,
-            requestEffect,
-            background &&
-              !sending &&
-              (request.method === "GET" || request.url.includes("/batch/gmail/")),
-          );
-          return sending ? guarded : requestLock(accountId).withPermits(1)(guarded);
-        }),
-    );
-
   const get = <A>(
     accountId: string,
     schema: Schema.Decoder<A>,
@@ -361,8 +334,7 @@ export const makeGmail: Effect.Effect<
     );
     // A new sign-in may carry new scopes; cached tokens from the old grant
     // would keep failing until they expire.
-    tokens.clear();
-    permissions.clear();
+    clearTokens();
     yield* connectivity.reset;
     settings.clearMissingScopes(`gmail:${profile.emailAddress.toLowerCase()}`);
     return {
@@ -1125,15 +1097,7 @@ export const makeGmail: Effect.Effect<
                 HttpClientRequest.bodyText(body, `multipart/mixed; boundary=${boundary}`),
               ),
             ).pipe(Effect.flatMap(decode(BatchResponse)));
-            const now = yield* Clock.currentTimeMillis;
-            const delay = batchThrottleDelay(batch.responses, now);
-            if (delay !== undefined) {
-              return yield* new ApiError({
-                status: 429,
-                body: "Reset verification deferred",
-                retryAfter: String(delay / 1000),
-              });
-            }
+            yield* deferIfThrottled(batch.responses, "Reset verification deferred");
             const out: ResetVerification[] = [];
             for (const response of batch.responses) {
               const candidate = chunk.find((_item, index) => String(index) === response.id);

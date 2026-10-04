@@ -2,7 +2,6 @@ import { Effect, Option } from "effect";
 import { ImapFlow, type ListResponse, type ResponseEvent } from "imapflow";
 import type { MailOp } from "../../../domain.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../../errors.js";
-import { copyProgressKey } from "../../../imap-helpers.js";
 import {
   decodeProviderId,
   encodeProviderId,
@@ -10,6 +9,7 @@ import {
   uidSet,
   type FolderCursor,
 } from "../../../imap-cursor.js";
+import { copyProgressKey } from "../../../imap-helpers.js";
 import { messageIdKey } from "../../../message-id.js";
 import { type ProviderPushContext } from "../../../services.js";
 import { call, describe, failure, isRefusal, searchUids, type Session } from "./session.js";
@@ -30,12 +30,12 @@ export const ensureFolder = Effect.fnUntraced(function* (
 });
 
 /** Check the selected mailbox before ImapFlow silently drops unsupported flags. */
-export const requireFlag = (flags: Set<string> | undefined, flag: string) =>
+const requireFlag = (flags: Set<string> | undefined, flag: string) =>
   flags && !flags.has(flag) && !flags.has("\\*")
     ? Effect.fail(new PermanentError({ message: `This IMAP folder does not allow ${flag}.` }))
     : Effect.void;
 
-export const checkedFlags = Effect.fnUntraced(function* (
+const checkedFlags = Effect.fnUntraced(function* (
   s: Session,
   range: string,
   flag: string,
@@ -52,7 +52,7 @@ export const checkedFlags = Effect.fnUntraced(function* (
 });
 
 /** Server-side Message-ID lookup persists copy progress across sessions and restarts. */
-export const destinationRefs = Effect.fnUntraced(function* (
+const destinationRefs = Effect.fnUntraced(function* (
   s: Session,
   from: string,
   validity: string,
@@ -76,7 +76,7 @@ export const destinationRefs = Effect.fnUntraced(function* (
   return refs;
 });
 
-export const hasCopyProgress = (
+const hasCopyProgress = (
   context: ProviderPushContext | undefined,
   providerId: string,
   destination: string,
@@ -84,7 +84,7 @@ export const hasCopyProgress = (
 ) => context?.progress?.has(copyProgressKey(providerId, destination, accepted)) === true;
 
 /** Persist the issued/accepted boundaries around COPY before changing its source. */
-export const issueCopy = Effect.fnUntraced(function* (
+const issueCopy = Effect.fnUntraced(function* (
   s: Session,
   uids: readonly number[],
   from: string,
@@ -127,7 +127,7 @@ export const issueCopy = Effect.fnUntraced(function* (
   return copied;
 });
 
-export const moveTo = Effect.fnUntraced(function* (
+const moveTo = Effect.fnUntraced(function* (
   s: Session,
   uids: readonly number[],
   from: string,
@@ -190,7 +190,7 @@ export const moveTo = Effect.fnUntraced(function* (
   }));
 });
 
-export const targetFor = Effect.fnUntraced(function* (
+const targetFor = Effect.fnUntraced(function* (
   s: Session,
   list: readonly ListResponse[],
   from: string,
@@ -231,7 +231,7 @@ export const targetFor = Effect.fnUntraced(function* (
 });
 
 /** A COPY can be complete even if source deletion or the local remap was interrupted. */
-export const resumeCopied = Effect.fnUntraced(function* (
+const resumeCopied = Effect.fnUntraced(function* (
   s: Session,
   ref: { path: string; uidValidity: string; uid: number },
   uids: readonly number[],
@@ -299,7 +299,7 @@ export const resumeCopied = Effect.fnUntraced(function* (
 });
 
 /** Refuse a reused UID before replacing the queued identity or touching its source. */
-export const readSourceIdentities = Effect.fnUntraced(function* (
+const readSourceIdentities = Effect.fnUntraced(function* (
   s: Session,
   uids: readonly number[],
   identities: Map<number, string>,

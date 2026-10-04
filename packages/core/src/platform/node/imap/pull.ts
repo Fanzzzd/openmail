@@ -1,7 +1,6 @@
 import { Clock, Effect, Option, Stream } from "effect";
 import type { IncomingMessage } from "../../../domain.js";
 import { ProviderError } from "../../../errors.js";
-import { flagsOf } from "../../../imap-helpers.js";
 import {
   encodeProviderId,
   folderRegressed,
@@ -9,35 +8,31 @@ import {
   uidSet,
   type ImapCursor,
 } from "../../../imap-cursor.js";
+import type { Flags } from "../../../imap-helpers.js";
+import { flagsOf } from "../../../imap-helpers.js";
 import { type Change } from "../../../services.js";
 import { nodeMailCodec } from "../mail-codec.js";
-import {
-  type Flags,
-  mapFolders,
-  structureAttachments,
-  type SyncFolder,
-  toIncoming,
-} from "./parse.js";
+import { mapFolders, structureAttachments, toIncoming, type ImapSyncFolder } from "./parse.js";
 import { call, confirmFolderGone, describe, failure, searchUids, type Session } from "./session.js";
 
 /** First sync pulls this window per folder; older mail is left on the server. */
-export const INITIAL_DAYS = 90;
+const INITIAL_DAYS = 90;
 
 /** Newest messages taken per folder on the first sync. */
-export const FOLDER_LIMIT = 1000;
+const FOLDER_LIMIT = 1000;
 
 export const FETCH_BATCH = 25;
 
-export const FLAG_BATCH = 500;
+const FLAG_BATCH = 500;
 
 /** Bigger messages are parsed from their first bytes only; attachments come from BODYSTRUCTURE. */
-export const MAX_SOURCE = 10 * 1024 * 1024;
+const MAX_SOURCE = 10 * 1024 * 1024;
 
-export const TRUNCATED_SOURCE = 512 * 1024;
+const TRUNCATED_SOURCE = 512 * 1024;
 
 // Pull
 
-export interface FetchedHead {
+interface FetchedHead {
   uid: number;
   size: number;
 }
@@ -46,7 +41,7 @@ export interface FetchedHead {
 /** Adds historical UIDs to normal flag/deletion tracking without advancing new-mail or MODSEQ checkpoints. */
 export const fetchMessages = Effect.fnUntraced(function* (
   s: Session,
-  folder: SyncFolder,
+  folder: ImapSyncFolder,
   uidValidity: string,
   uids: readonly number[],
 ) {
@@ -140,7 +135,7 @@ export const runPull = Effect.fnUntraced(function* (
 
   // Pass 1: new UIDs per folder, so progress has a total.
   const plans: {
-    folder: SyncFolder;
+    folder: ImapSyncFolder;
     newUids: number[];
     uidNext: number;
     validity: string;

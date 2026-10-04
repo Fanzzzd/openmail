@@ -23,7 +23,7 @@ export type ResetVerification =
       readonly providerId: string;
       readonly labels: readonly string[];
     };
-const stateLabel = (label: string) =>
+export const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
 export const RESET_VERIFICATION_LIMIT = 500;
 export const STALE_SWEEP_LIMIT = 500;

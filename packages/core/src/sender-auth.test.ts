@@ -1,4 +1,4 @@
-import { parseGraphMessage } from "./outlook.js";
+import { parseGraphMessage } from "./outlook/parse.js";
 import { expect, it } from "vitest";
 import { messageSecurity, cleanDisplayName, senderSpoofed } from "./message-security.js";
 import { cleanLink, linkHint, linkNeedsConfirmation, registrableDomain } from "./link-security.js";

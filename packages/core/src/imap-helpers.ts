@@ -1,3 +1,7 @@
+export interface Flags {
+  unread: boolean;
+  starred: boolean;
+}
 import { Option } from "effect";
 import { decodeProviderId } from "./imap-cursor.js";
 
@@ -16,10 +20,7 @@ export const IMAP_SPECIAL_LABELS: Record<string, string> = {
   "\\Archive": "ARCHIVE",
 };
 
-export function flagsOf(flags: Iterable<string> | undefined): {
-  unread: boolean;
-  starred: boolean;
-} {
+export function flagsOf(flags: Iterable<string> | undefined): Flags {
   const values = new Set(flags);
   return { unread: !values.has("\\Seen"), starred: values.has("\\Flagged") };
 }

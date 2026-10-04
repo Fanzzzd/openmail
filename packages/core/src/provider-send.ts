@@ -1,5 +1,5 @@
 import type { PerformError } from "./mailbox.js";
-import { Clock, Effect } from "effect";
+import { Clock, Effect, Schema } from "effect";
 import type { ApiError } from "./provider-http.js";
 import { AuthError, ProviderError, SendUncertain } from "./errors.js";
 
@@ -39,6 +39,8 @@ export const deliverOrConfirm = <A, E, R, E2, R2>(
 ) =>
   submission.pipe(Effect.catchIf(uncertain, () => confirmDelivery(lookup).pipe(Effect.as(null))));
 
+/** Maps a failed call to what the op queue does next: sign in again, drop
+ * the op, or retry later. Meaningful read 404s are handled by the caller. */
 export const providerReadFailure =
   (provider: string) =>
   (accountId: string) =>
@@ -54,3 +56,13 @@ export const providerReadFailure =
       ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}),
     });
   };
+
+export const providerDecode =
+  (name: string) =>
+  <A>(schema: Schema.Decoder<A>) =>
+  (json: unknown): Effect.Effect<A, ProviderError> =>
+    Schema.decodeUnknownEffect(schema)(json).pipe(
+      Effect.mapError(
+        (error) => new ProviderError({ message: `Unexpected ${name} response: ${error.message}` }),
+      ),
+    );

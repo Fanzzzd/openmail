@@ -14,7 +14,7 @@ import {
 import type { GraphClient } from "./client.js";
 import { AttachmentNames, GraphAddress, GraphMessage, writeFailure } from "./graph.js";
 
-export const makeOutlookParse = (client: GraphClient) =>
+export const makeOutlookRead = (client: GraphClient) =>
   Effect.sync(() => {
     const { codec, get, getBytes } = client;
 
@@ -116,7 +116,7 @@ export const makeOutlookParse = (client: GraphClient) =>
       incomingGraph,
     };
   });
-export type OutlookParser = Effect.Success<ReturnType<typeof makeOutlookParse>>;
+export type OutlookRead = Effect.Success<ReturnType<typeof makeOutlookRead>>;
 
 export const expandedAttachments = (raw: GraphMessage): Attachment[] | undefined =>
   raw.attachments

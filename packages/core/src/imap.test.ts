@@ -13,23 +13,27 @@ import type { Account } from "./domain.js";
 import { IMAP_PRESETS, type ImapConnectInput } from "./imap-presets.js";
 import {
   attachmentNodes,
-  decodeProviderId,
-  FolderState,
-  encodeProviderId,
-  makeImap as unboundMakeImap,
-  makeImapWith as unboundMakeImapWith,
   mapFolders,
   parseHeaders,
-  parseUidSet,
-  readCursor,
-  resolveImapSettings,
   stripBcc,
   threadIdOf,
   toIncoming,
+} from "./platform/node/imap/parse.js";
+import {
+  decodeProviderId,
+  FolderState,
+  encodeProviderId,
+  parseUidSet,
+  readCursor,
   trackImapBackfill,
-  fetchMessages,
   uidSet,
-} from "./platform/node/imap.js";
+} from "./imap-cursor.js";
+import {
+  makeImap as unboundMakeImap,
+  makeImapWith as unboundMakeImapWith,
+} from "./platform/node/imap/adapter.js";
+import { resolveImapSettings } from "./imap-settings.js";
+import { fetchMessages } from "./platform/node/imap/pull.js";
 import { Secrets } from "./services.js";
 const makeImap = unboundMakeImap.pipe(Effect.provideService(MailCodec, nodeMailCodec));
 const makeImapWith = (...args: Parameters<typeof unboundMakeImapWith>) =>

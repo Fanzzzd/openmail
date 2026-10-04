@@ -6,7 +6,7 @@ import { type IncomingMessage } from "./domain.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
-import { makeImapWith } from "./platform/node/imap.js";
+import { makeImapWith } from "./platform/node/imap/adapter.js";
 import { makeResetGuard } from "./sync-reset.js";
 import { readCursor, parseUidSet } from "./imap-cursor.js";
 const settings = {

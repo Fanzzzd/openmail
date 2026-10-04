@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 
-/** Lazy asynchronous pages in the caller's Effect fiber, with its typed errors and cancellation. */
+/** Lazy pages in the caller's Effect fiber. The caller must run each yielded loader before advancing. */
 export function* gmailPages<A extends { readonly nextPageToken?: string }, E, R>(
   load: (token: string | undefined) => Effect.Effect<A, E, R>,
 ): Generator<Effect.Effect<A, E, R>, void, unknown> {

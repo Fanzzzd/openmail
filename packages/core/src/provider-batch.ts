@@ -1,5 +1,6 @@
+import { ApiError } from "./provider-http.js";
 import { retryAfterMillis } from "./provider-retry.js";
-import { Effect, Schema } from "effect";
+import { Clock, Effect, Schema } from "effect";
 
 export const BatchResponse = Schema.Struct({
   responses: Schema.Array(
@@ -69,4 +70,17 @@ export const verifyInChunks = <A, B, E, R>(
       results.push(...verified.success);
     }
     return results;
+  });
+
+/** Turn batch throttles into the same retryable error, preserving the caller's label. */
+export const deferIfThrottled = (
+  responses: typeof BatchResponse.Type.responses,
+  label: string,
+  defer?: (delayMs: number) => Effect.Effect<void>,
+) =>
+  Effect.gen(function* () {
+    const delay = batchThrottleDelay(responses, yield* Clock.currentTimeMillis);
+    if (delay === undefined) return;
+    if (defer) yield* defer(delay);
+    yield* new ApiError({ status: 429, body: label, retryAfter: String(delay / 1000) });
   });

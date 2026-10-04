@@ -4,12 +4,12 @@ import { PermanentError, ProviderError, type ProviderFailure } from "../errors.j
 import { graphPageLink } from "../graph-pagination.js";
 import { BASE_SCOPES } from "../optional-services.js";
 import { ApiError } from "../provider-http.js";
-import { providerReadFailure } from "../provider-send.js";
+import { providerDecode, providerReadFailure } from "../provider-send.js";
 
 // `consumers` scopes sign-in to personal Microsoft accounts (outlook.com,
 // hotmail, live). Work/school accounts need a tenant admin to consent to the
 // app first, which openmail deliberately does not work around.
-export const TENANT = "consumers";
+const TENANT = "consumers";
 
 export const AUTH_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize`;
 
@@ -17,7 +17,7 @@ export const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.
 
 export const GRAPH = "https://graph.microsoft.com/v1.0";
 
-export type PageHistory = Set<string> | { readonly previous: string } | undefined;
+type PageHistory = Set<string> | { readonly previous: string } | undefined;
 
 export function nextPage<E>(
   link: string,
@@ -102,7 +102,7 @@ export const SELECT =
 // Header selection is supported on ordinary message GETs, not requested from delta.
 export const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
 
-export const PAGE_SIZE = 50;
+const PAGE_SIZE = 50;
 
 export const DELTA_PREFER = `${PREFER.prefer}, odata.maxpagesize=${PAGE_SIZE}`;
 
@@ -138,7 +138,7 @@ export const GraphAddress = Schema.Struct({
 
 export type GraphAddress = typeof GraphAddress.Type;
 
-export const GraphAttachment = Schema.Struct({
+const GraphAttachment = Schema.Struct({
   name: Schema.String,
   contentType: Schema.String,
   size: Schema.Number,
@@ -177,13 +177,13 @@ export const GraphMessage = Schema.Struct({
 export type GraphMessage = typeof GraphMessage.Type;
 
 /** A delta entry for a message that left the folder or was deleted. */
-export const Removed = Schema.Struct({ id: Schema.String, "@removed": Schema.Struct({}) });
+const Removed = Schema.Struct({ id: Schema.String, "@removed": Schema.Struct({}) });
 
 /**
  * A delta entry that carries only some of the selected fields. Graph sends
  * these for some changes in an incremental round; the message is fetched whole.
  */
-export const Partial = Schema.Struct({ id: Schema.String });
+const Partial = Schema.Struct({ id: Schema.String });
 
 export const DeltaPage = Schema.Struct({
   value: Schema.Array(Schema.Union([Removed, GraphMessage, Partial])),
@@ -264,12 +264,12 @@ export const UploadedAttachments = Schema.Struct({
  * Per-folder delta links, stored as the account's opaque sync cursor. Keyed by
  * well-known name for system folders and by folder id for custom ones.
  */
-export const Cursor = Schema.fromJsonString(Schema.Record(Schema.String, Schema.String));
+const Cursor = Schema.fromJsonString(Schema.Record(Schema.String, Schema.String));
 
 export const decodeCursor = Schema.decodeUnknownOption(Cursor);
 
 /** One folder to sync: its delta key, the Graph path segment, and the label its messages get. */
-export interface SyncFolder {
+export interface GraphSyncFolder {
   key: string;
   path: string;
   label: string;
@@ -286,7 +286,7 @@ export const is410 = (e: { _tag: string }) => e instanceof ApiError && e.status 
 
 export const readFailure = providerReadFailure("Graph");
 
-export const GraphFailureBody = Schema.fromJsonString(
+const GraphFailureBody = Schema.fromJsonString(
   Schema.Struct({
     error: Schema.Struct({
       message: Schema.optionalKey(Schema.String),
@@ -295,7 +295,7 @@ export const GraphFailureBody = Schema.fromJsonString(
   }),
 );
 
-export const writeReason = (error: ApiError) => {
+const writeReason = (error: ApiError) => {
   const decoded = Schema.decodeUnknownOption(GraphFailureBody)(error.body);
   const message = Option.isSome(decoded) ? decoded.value.error.message : undefined;
   if (message?.trim()) return message.replace(/\s+/g, " ").trim().slice(0, 300);
@@ -337,14 +337,7 @@ export const writeFailure =
             })
           : readFailure(accountId)(e);
 
-export const decode =
-  <A>(schema: Schema.Decoder<A>) =>
-  (json: unknown): Effect.Effect<A, ProviderError> =>
-    Schema.decodeUnknownEffect(schema)(json).pipe(
-      Effect.mapError(
-        (e) => new ProviderError({ message: `Unexpected Graph response: ${e.message}` }),
-      ),
-    );
+export const decode = providerDecode("Graph");
 
 /** Where each moving op sends an Outlook message. Well-known names work as destination ids. */
 export function destination(op: MailOp): string | null {

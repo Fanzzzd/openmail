@@ -9,9 +9,9 @@ import { htmlToText } from "../../../mime.js";
 import { mimeAddresses, type MimeMessage } from "../../mail-codec.js";
 
 // Virtual folders that hold copies of mail from other folders.
-export const VIRTUAL = new Set(["\\All", "\\Flagged"]);
+const VIRTUAL = new Set(["\\All", "\\Flagged"]);
 
-export interface SyncFolder {
+export interface ImapSyncFolder {
   path: string;
   /** Label every message of this folder gets. */
   label: string;
@@ -26,8 +26,8 @@ export interface SyncFolder {
  */
 export function mapFolders(
   list: readonly Pick<ListResponse, "path" | "delimiter" | "flags" | "specialUse">[],
-): SyncFolder[] {
-  const out: SyncFolder[] = [];
+): ImapSyncFolder[] {
+  const out: ImapSyncFolder[] = [];
   for (const f of list) {
     if (f.flags.has("\\Noselect") || f.flags.has("\\NonExistent")) continue;
     const special = f.specialUse ?? (f.path.toUpperCase() === "INBOX" ? "\\Inbox" : undefined);
@@ -45,9 +45,9 @@ export function mapFolders(
 
 // Threads and parsing
 
-export const ANGLE_ID = /<([^<>\s]+)>/g;
+const ANGLE_ID = /<([^<>\s]+)>/g;
 
-export function messageIds(value: string | readonly string[] | undefined): string[] {
+function messageIds(value: string | readonly string[] | undefined): string[] {
   if (!value) return [];
   const joined = Predicate.isString(value) ? value : value.join(" ");
   const ids = [...joined.matchAll(ANGLE_ID)].map((m) => m[1]!);
@@ -94,12 +94,7 @@ export function structureAttachments(node: MessageStructureObject | undefined): 
   return attachmentNodes(node).map((n) => n.attachment);
 }
 
-export interface Flags {
-  unread: boolean;
-  starred: boolean;
-}
-
-export function folderLabels(label: string, flags: Set<string> | undefined): string[] {
+function folderLabels(label: string, flags: Set<string> | undefined): string[] {
   const { unread, starred } = flagsOf(flags);
   const labels = [label];
   if (unread) labels.push("UNREAD");

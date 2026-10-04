@@ -14,7 +14,7 @@ import { eventFromInvite, makeFeatureMailbox } from "./mailbox-features.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
 import { Buffer } from "./platform/bytes.js";
-import { destination as outlookDestination } from "./outlook.js";
+import { destination as outlookDestination } from "./outlook/graph.js";
 import { applyOpToLabels, invalidCategoryFolderOp } from "./mail-ops.js";
 import { makeAiMailbox } from "./mailbox-ai.js";
 import { Model, ModelUnavailable } from "./model.js";

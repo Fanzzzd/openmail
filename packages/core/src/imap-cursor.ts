@@ -1,7 +1,7 @@
 import { Option, Predicate, Schema } from "effect";
 import type { IncomingMessage } from "./domain.js";
 import type { Change } from "./services.js";
-type Flags = { unread: boolean; starred: boolean };
+import type { Flags } from "./imap-helpers.js";
 export function encodeProviderId(path: string, uidValidity: bigint | string, uid: number): string {
   return `${uidValidity}:${uid}:${path}`;
 }

@@ -11,7 +11,7 @@ import { IDLE_RENEW_MS } from "../imap-idle.js";
 // client identifies itself with the IMAP ID command. imapflow sends ID with
 // these fields when the server advertises it, and again after LOGIN when the
 // first answer was empty.
-export const CLIENT_INFO = { name: "openmail", version: "0.1.0", vendor: "openmail" };
+const CLIENT_INFO = { name: "openmail", version: "0.1.0", vendor: "openmail" };
 
 // Errors
 
@@ -68,12 +68,12 @@ export interface Session {
   client: ImapFlow;
 }
 
-export function ignore(): void {
+function ignore(): void {
   // Nothing to do: the command waiting on the socket rejects with the same error.
 }
 
 /** Logs out politely; a session that cannot is closed. */
-export const logout = ({ client }: Session) =>
+const logout = ({ client }: Session) =>
   Effect.tryPromise(() => client.logout()).pipe(
     Effect.catch(() => Effect.sync(() => client.close())),
   );
