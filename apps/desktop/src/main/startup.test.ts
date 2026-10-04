@@ -93,6 +93,8 @@ beforeEach(async () => {
   native.warnStart = false;
   vi.clearAllMocks();
 });
+// The first test pays the cold transform of the main entry. That takes over 5 s
+// when `pnpm test` runs the core suite on the same cores.
 it("any already-created window can release startup after the first window closes", async () => {
   await import("./index");
   const { app } = await import("electron");
@@ -109,7 +111,7 @@ it("any already-created window can release startup after the first window closes
   expect(app.listenerCount("browser-window-created")).toBe(0);
   app.emit("will-quit", { preventDefault: vi.fn() });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
-});
+}, 30_000);
 it("the second process exits before building core or opening any data", async () => {
   native.primary = false;
   await import("./index");
