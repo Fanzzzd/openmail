@@ -22,8 +22,17 @@ it("retries a failed CID download without retaining an error as the message cach
     .mockRejectedValueOnce(new Error("offline"))
     .mockResolvedValueOnce({ photo: "data:image/png;base64,AQID" });
   const loader = new MessageInlineImages(fetch);
-  await expect(loader.load("mail", 'src="cid:photo"')).rejects.toThrow("offline");
-  expect(await loader.load("mail", 'src="cid:photo"')).toEqual({
+  await expect(loader.load("mail", '<img src="cid:photo">')).rejects.toThrow("offline");
+  expect(await loader.load("mail", '<img src="cid:photo">')).toEqual({
     photo: "data:image/png;base64,AQID",
   });
+});
+it("does not download the message source when cid: appears only in text or links", async () => {
+  const fetch = vi.fn(async () => ({}));
+  const loader = new MessageInlineImages(fetch);
+  expect(await loader.load("text", "<p>Reference cid:photo in the text</p>")).toEqual({});
+  expect(await loader.load("link", '<a href="https://example.test/?q=cid:photo">open</a>')).toEqual({});
+  expect(fetch).not.toHaveBeenCalled();
+  await loader.load("background", '<td background="cid:banner">x</td>');
+  expect(fetch).toHaveBeenCalledTimes(1);
 });
