@@ -9,6 +9,9 @@ import { createServer, type Socket } from "node:net";
 import { MailCodec } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { makeImapWith } from "./imap/adapter.js";
+import { incoming, fakeServer } from "./testing.js";
+import { makeFakeProvider } from "./fake-provider.js";
+import { ProviderError } from "../../errors.js";
 import { parseHeaders } from "./imap/parse.js";
 import { parseUidSet } from "../../imap-cursor.js";
 import { smtpTransport } from "./imap/session.js";
@@ -1240,3 +1243,103 @@ it.effect("coordinator matching UID numbers in case-distinct folders stay distin
     }),
   ),
 );
+
+for (const operation of ["move", "copy"] as const) {
+  for (const offline of [false, true]) {
+    it.effect(
+      `MailboxLive Node identity changed before ${operation}, reconciliation ${offline ? "offline" : "online"}`,
+      () =>
+        fixture((adapter, client) => {
+          const remote = incoming("7:1:INBOX", {
+            rfcMessageId: "<source@example.com>",
+            bodyText: "replacement body",
+          });
+          const server = fakeServer(account.email, [remote]);
+          const fake = makeFakeProvider(server);
+          let reconciliationOffline = offline;
+          const provider: ProviderAdapter = {
+            ...fake,
+            push: (...args) => adapter.push(...args),
+            pull: () => Stream.empty,
+            fetchMessage: (owner, id) =>
+              reconciliationOffline
+                ? Effect.fail(new ProviderError({ message: "offline" }))
+                : fake.fetchMessage(owner, id),
+          };
+          return Effect.gen(function* () {
+            const store = yield* Store;
+            const mailbox = yield* Mailbox;
+            const saved = yield* store.upsertAccount("imap", account.email);
+            yield* store.setImapSettings(saved.id, settings);
+            const old = incoming("7:1:INBOX", {
+              rfcMessageId: "<original@example.com>",
+              bodyText: "cached original body",
+            });
+            yield* store.upsertMessage(saved.id, old);
+            yield* store.upsertMessage(
+              saved.id,
+              incoming("7:2:INBOX", { bodyText: "unrelated body" }),
+            );
+            yield* store.putDraft({ id: "local-draft", accountId: saved.id, message });
+            yield* mailbox.perform(
+              {
+                kind: "modify",
+                threads: [`${saved.id}/7:1:INBOX`],
+                op:
+                  operation === "move"
+                    ? { kind: "move", labelId: "A", removeLabelId: "INBOX" }
+                    : { kind: "copy", labelIds: ["A"] },
+              },
+              { kind: "user", surface: "app" },
+            );
+            const failures = yield* mailbox.listFailedOps;
+            assert.strictEqual(failures.length, 1);
+            assert.strictEqual(
+              failures[0]?.reason,
+              "Message identity changed; sync before changing this message.",
+            );
+            assert.strictEqual(failures[0]?.kind, operation);
+            const cached = yield* store.getMessage(`${saved.id}/7:1:INBOX`);
+            assert.strictEqual(cached.bodyText, offline ? old.bodyText : remote.bodyText);
+            if (!offline) assert.deepStrictEqual(cached.labels, remote.labels);
+            assert.strictEqual(
+              (yield* store.getMessage(`${saved.id}/7:2:INBOX`)).bodyText,
+              "unrelated body",
+            );
+            assert.isTrue(Option.isSome(yield* store.getDraft("local-draft")));
+            assert.deepStrictEqual(server.messages.get(remote.providerId), remote);
+            assert.strictEqual(vi.spyOn(client, "messageCopy").mock.calls.length, 0);
+            assert.strictEqual(vi.spyOn(client, "messageFlagsAdd").mock.calls.length, 0);
+            const pending = yield* store.listPendingOps;
+            assert.deepStrictEqual(
+              pending.map((item) => item.op.kind),
+              offline ? ["reconcile"] : [],
+            );
+            if (offline) {
+              reconciliationOffline = false;
+              yield* TestClock.adjust("2 minutes");
+              yield* mailbox.sync(saved.id);
+              assert.deepStrictEqual(yield* store.listPendingOps, []);
+              assert.strictEqual(
+                (yield* store.getMessage(`${saved.id}/7:1:INBOX`)).bodyText,
+                remote.bodyText,
+              );
+              assert.strictEqual(vi.spyOn(client, "messageCopy").mock.calls.length, 0);
+            }
+            yield* mailbox.acknowledgeFailedOps(failures.map((item) => item.id));
+            assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+          }).pipe(
+            Effect.provide(
+              MailboxLive({ backgroundFlush: false, imapIdle: false }).pipe(
+                Layer.provideMerge(
+                  Layer.mergeAll(StoreLive, Layer.succeed(Providers, { get: () => provider })).pipe(
+                    Layer.provideMerge(MemoryPlatform()),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+    );
+  }
+}

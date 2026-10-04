@@ -198,7 +198,11 @@ export const makeSyncMailbox = (
       Effect.andThen(
         scope
           ? Effect.void
-          : guard.sweep(() => makeSyncHealth(store, providers)(account.id).pipe(Effect.orDie)),
+          : guard.sweep(() =>
+              makeSyncHealth(store, providers, { diagnoseDraftExcess: false })(account.id).pipe(
+                Effect.orDie,
+              ),
+            ),
       ),
       Effect.andThen(
         scope

@@ -135,7 +135,6 @@ it.live("Gmail can retry draft creation after a DNS failure without a lookup", (
           original: Option.none(),
           replaceAttachments: false,
           creation: {
-            isLinked: () => Effect.succeed(false),
             missing: () => Effect.succeed(false),
             begin: () => Effect.succeed({ messageId: "<dns@example.test>", attempted }),
             attempted: (_id: string, value = true) =>
@@ -176,7 +175,6 @@ it.live("Gmail recreates a draft after the creation journal expires", () =>
           original: Option.none(),
           replaceAttachments: false,
           creation: {
-            isLinked: () => Effect.succeed(false),
             begin: () => Effect.succeed({ messageId: "<rewritten@example.test>", attempted: true }),
             attempted: () => Effect.void,
             missing: () => Effect.sync(() => ++misses >= 3),
@@ -219,7 +217,6 @@ it.live("Gmail uncertain draft creation is reconciled by the client Message-ID",
         original: Option.none(),
         replaceAttachments: false,
         creation: {
-          isLinked: () => Effect.succeed(false),
           missing: () => Effect.succeed(false),
           begin: () => Effect.succeed({ messageId: "<draft@example.com>", attempted: false }),
           attempted: () =>
@@ -264,7 +261,6 @@ for (const status of [200, 400]) {
             original: Option.none(),
             replaceAttachments: false,
             creation: {
-              isLinked: () => Effect.succeed(false),
               missing: () => Effect.succeed(false),
               begin: () => Effect.succeed({ messageId: "<attempt@example.com>", attempted: true }),
               attempted: () => Effect.void,

@@ -4,6 +4,8 @@ import { all, first } from "./sql-rows.js";
 
 const LocalHealth = Schema.Struct({
   total: Schema.Number,
+  cachedTotal: Schema.Number,
+  unmirroredDraftTotal: Schema.Number,
   unread: Schema.Number,
   threads: Schema.Number,
   label: Schema.NullOr(Schema.String),
@@ -27,7 +29,7 @@ export function makeSyncHealthStore(sql: SqlClient.SqlClient) {
         : sql.literal("0");
     return first(
       LocalHealth,
-    )(sql`SELECT COUNT(*) + ${orphanDrafts} AS total, COALESCE(SUM(m.is_unread),0) AS unread, COUNT(DISTINCT m.thread_id) + ${orphanDrafts} AS threads,
+    )(sql`SELECT COUNT(*) AS cachedTotal, ${orphanDrafts} AS unmirroredDraftTotal, COUNT(*) + ${orphanDrafts} AS total, COALESCE(SUM(m.is_unread),0) AS unread, COUNT(DISTINCT m.thread_id) + ${orphanDrafts} AS threads,
       MIN(json_extract(m.labels_json,'$[0]')) AS label,
       (SELECT COUNT(*) FROM pending_ops p WHERE p.account_id=${accountId} AND p.provider_id IN (SELECT m.provider_id FROM messages m WHERE m.account_id=${accountId} AND ${within})) AS pendingOps
       FROM messages m WHERE m.account_id=${accountId} AND ${within}`).pipe(

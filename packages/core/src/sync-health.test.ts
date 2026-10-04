@@ -6,7 +6,7 @@ import { StoreLive } from "./store.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Mailbox } from "./mailbox.js";
-import { Providers, Store } from "./services.js";
+import { Providers, Store, type ProviderAdapter } from "./services.js";
 import { TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { type IncomingMessage, type Provider } from "./domain.js";
 import { makeSyncHealth, redactSyncHealth, type HealthVerdict } from "./sync-health.js";
@@ -298,6 +298,8 @@ for (const scope of ["INBOX", "CATEGORY_PERSONAL"]) {
             label === scope
               ? Effect.succeed({
                   total: 30_000,
+                  cachedTotal: 30_000,
+                  unmirroredDraftTotal: 0,
                   unread: 0,
                   threads: 30_000,
                   label: scope,
@@ -383,3 +385,119 @@ for (const [provider, scope, rows, threads] of [
       }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
   );
 }
+
+it.effect(
+  "Outlook Drafts excess reports absent/moved identities without changing cache or drafts",
+  () => {
+    const remote = fakeServer("me@example.test", [
+      message("present", ["DRAFT"]),
+      message("moved", ["SENT"]),
+    ]);
+    const base = makeFakeProvider(remote);
+    const adapter: ProviderAdapter = {
+      ...base,
+      verifyResetCandidates: (_account, candidates) =>
+        Effect.sync(() =>
+          candidates
+            .filter((candidate) => candidate.providerId !== "unavailable")
+            .map((candidate) => {
+              const message = remote.messages.get(candidate.providerId);
+              return message
+                ? {
+                    kind: "present" as const,
+                    id: candidate.providerId,
+                    providerId: candidate.providerId,
+                    labels: message.labels,
+                  }
+                : { kind: "gone" as const, id: candidate.providerId };
+            }),
+        ),
+    };
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* store.upsertAccount("outlook", remote.email);
+      for (const id of ["present", "moved", "gone", "unavailable"])
+        yield* store.upsertMessage(account.id, message(id, ["DRAFT"]));
+      yield* store.putDraft({
+        id: "unmirrored",
+        accountId: account.id,
+        message: { to: [], cc: [], bcc: [], subject: "draft", text: "keep", attachments: [] },
+      });
+      yield* store.setDraftRemote(
+        "unmirrored",
+        { draftId: "absent-draft", messageId: "absent-draft" },
+        null,
+        account.id,
+      );
+      const before = yield* store.syncHealthLocal(account.id, "DRAFT", false);
+      const report = yield* mailbox.syncHealth(account.id);
+      const folder = report.folders.find((entry) => entry.scope === "DRAFT");
+      assert.strictEqual(folder?.local.total, 5);
+      assert.strictEqual(folder?.server.kind === "available" && folder.server.total, 1);
+      assert.deepStrictEqual(folder?.diagnostic, {
+        code: "OUTLOOK_DRAFT_COUNT_EXCESS",
+        cachedTotal: 4,
+        unmirroredDraftTotal: 1,
+        sampled: 5,
+        gone: 2,
+        outsideDrafts: 1,
+        presentInDrafts: 1,
+        unverified: 1,
+      });
+      assert.deepStrictEqual(
+        redactSyncHealth(report).folders.find((entry) => entry.scope === "DRAFT")?.diagnostic,
+        folder?.diagnostic,
+      );
+      assert.deepStrictEqual(yield* store.syncHealthLocal(account.id, "DRAFT", false), before);
+      assert.isTrue(Option.isSome(yield* store.getDraft("unmirrored")));
+      assert.deepStrictEqual(yield* store.listPendingOps, []);
+      assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+    }).pipe(
+      Effect.provide(
+        TestMailbox.withAdapter(adapter, { options: { backgroundFlush: false, imapIdle: false } }),
+      ),
+    );
+  },
+);
+
+it.effect(
+  "Outlook Drafts diagnostic caps its sample and keeps counts available after verification timeout",
+  () => {
+    const adapter: ProviderAdapter = {
+      ...makeFakeProvider(fakeServer("me@example.test")),
+      verifyResetCandidates: (_account, candidates) => {
+        assert.strictEqual(candidates.length, 50);
+        return Effect.never;
+      },
+    };
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const mailbox = yield* Mailbox;
+      const account = yield* store.upsertAccount("outlook", "me@example.test");
+      for (let index = 0; index < 51; index++)
+        yield* store.upsertMessage(account.id, message(`draft-${index}`, ["DRAFT"]));
+      const fiber = yield* mailbox.syncHealth(account.id).pipe(Effect.forkChild);
+      yield* TestClock.adjust("11 seconds");
+      const report = yield* Fiber.join(fiber);
+      const folder = report.folders.find((entry) => entry.scope === "DRAFT");
+      assert.strictEqual(folder?.server.kind, "available");
+      assert.strictEqual(folder?.local.total, 51);
+      assert.deepStrictEqual(folder?.diagnostic, {
+        code: "OUTLOOK_DRAFT_COUNT_EXCESS",
+        cachedTotal: 51,
+        unmirroredDraftTotal: 0,
+        sampled: 50,
+        gone: 0,
+        outsideDrafts: 0,
+        presentInDrafts: 0,
+        unverified: 50,
+      });
+      assert.strictEqual((yield* store.syncHealthLocal(account.id, "DRAFT", false)).total, 51);
+    }).pipe(
+      Effect.provide(
+        TestMailbox.withAdapter(adapter, { options: { backgroundFlush: false, imapIdle: false } }),
+      ),
+    );
+  },
+);

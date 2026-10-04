@@ -128,8 +128,6 @@ export const makeDraftsMailbox = (
       account,
       {
         creation: {
-          isLinked: (messageId) =>
-            Effect.map(store.draftByRemoteMessage(account.id, messageId), Option.isSome),
           begin: () =>
             withDraftClaim(
               Effect.gen(function* () {

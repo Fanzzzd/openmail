@@ -1,4 +1,4 @@
-import { Clock, Effect, Option, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { HttpClientRequest } from "effect/http";
 import { attachmentProblem, attachmentProblemMessage } from "../attachment-policy.js";
 import { composeTransportHtml } from "../compose-body.js";
@@ -35,8 +35,6 @@ export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { codec, api, get, write } = client;
 
-    const inFlightSendDrafts = new Map<symbol, string | null>();
-
     const crypto = yield* PlatformCrypto;
 
     const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
@@ -49,66 +47,31 @@ export const makeOutlookSend = (client: OutlookClient) =>
         `/me/messages/${encodeURIComponent(id)}?$select=id,changeKey,lastModifiedDateTime`,
       );
 
-    const deliveryLookup = (accountId: string, messageId: string, folder = "sentitems") =>
+    const deliveryLookup = (accountId: string, messageId: string) =>
       get(
         accountId,
         Schema.Struct({ value: Schema.Array(WithId) }),
-        `/me/mailFolders/${folder}/messages?${new URLSearchParams({ $filter: `internetMessageId eq '${messageId.replaceAll("'", "''")}'`, $select: "id", $top: "1" }).toString()}`,
+        `/me/mailFolders/sentitems/messages?${new URLSearchParams({ $filter: `internetMessageId eq '${messageId.replaceAll("'", "''")}'`, $select: "id", $top: "1" }).toString()}`,
       );
 
-    const replyDraftLookup = (
-      accountId: string,
-      sourceId: string,
-      messageId: string,
-      attemptedAt: number,
-      isLinked: DraftPush["creation"]["isLinked"],
-    ) =>
-      Effect.gen(function* () {
-        const identified = yield* deliveryLookup(accountId, messageId, "drafts");
-        if (identified.value.length) return identified;
-        const source = yield* get(
-          accountId,
-          Schema.Struct({ conversationId: Schema.String }),
-          `/me/messages/${encodeURIComponent(sourceId)}?$select=conversationId`,
-        );
-        const skew = 5000;
-        const from = new Date(attemptedAt - skew).toISOString();
-        const until = new Date(attemptedAt + 2 * 60_000).toISOString();
-        const found = yield* get(
-          accountId,
-          Schema.Struct({
-            "@odata.nextLink": Schema.optionalKey(Schema.String),
-            value: Schema.Array(
-              Schema.Struct({
-                id: Schema.String,
-                conversationId: Schema.String,
-                createdDateTime: Schema.String,
-                lastModifiedDateTime: Schema.optionalKey(Schema.String),
-                isDraft: Schema.optionalKey(Schema.Boolean),
-              }),
-            ),
-          }),
-          `/me/mailFolders/drafts/messages?${new URLSearchParams({ $filter: `conversationId eq '${source.conversationId.replaceAll("'", "''")}' and createdDateTime ge ${from} and createdDateTime le ${until}`, $select: "id,conversationId,createdDateTime,lastModifiedDateTime,isDraft", $top: "2" }).toString()}`,
-        );
-        const candidates = yield* Effect.filter(found.value, (entry) =>
-          Effect.gen(function* () {
-            const created = Date.parse(entry.createdDateTime);
-            const modified = Date.parse(entry.lastModifiedDateTime ?? "");
-            return (
-              entry.conversationId === source.conversationId &&
-              created >= attemptedAt - skew &&
-              created <= attemptedAt + 2 * 60_000 &&
-              entry.isDraft === true &&
-              modified >= created &&
-              modified - created <= skew &&
-              ![...inFlightSendDrafts.values()].some((id) => id === null || id === entry.id) &&
-              !(yield* isLinked(entry.id))
-            );
-          }),
-        );
-        // Ambiguity counts as a miss, allowing the durable retry bound to advance.
-        return { value: candidates.length === 1 && !found["@odata.nextLink"] ? candidates : [] };
-      });
+    /** Only our exact random Message-ID proves ownership; dates and conversations do not. */
+    const draftLookup = (accountId: string, messageId: string) =>
+      get(
+        accountId,
+        Schema.Struct({
+          value: Schema.Array(WithId),
+          "@odata.nextLink": Schema.optionalKey(Schema.String),
+        }),
+        `/me/mailFolders/drafts/messages?${new URLSearchParams({
+          $filter: `internetMessageId eq '${messageId.replaceAll("'", "''")}' and isDraft eq true`,
+          $select: "id",
+          $top: "2",
+        }).toString()}`,
+      ).pipe(
+        Effect.map((found) => ({
+          value: found.value.length === 1 && !found["@odata.nextLink"] ? found.value : [],
+        })),
+      );
 
     const listDraftAttachments = (accountId: string, id: string) =>
       Effect.gen(function* () {
@@ -252,86 +215,74 @@ export const makeOutlookSend = (client: OutlookClient) =>
             replyAll: "createReplyAll",
             forward: "createForward",
           }[mode];
-          const token = Symbol();
-          yield* Effect.gen(function* () {
-            // Until createReply returns its ID, any template could be this send's copy.
-            inFlightSendDrafts.set(token, null);
-            const draft = yield* write(
-              account.id,
-              "POST",
-              `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
-              { message: { internetMessageId: messageId } },
-            ).pipe(
-              Effect.flatMap(decode(WithId)),
-              Effect.catchIf(
-                (error) => error._tag === "ApiError" && uncertainWrite(error),
-                (error) => {
-                  // A conversation/time match can belong to another composer.
-                  // Only the random Message-ID identifies a disposable send draft.
-                  const cleanup = deliveryLookup(account.id, messageId, "drafts").pipe(
-                    Effect.flatMap((found) =>
-                      Effect.forEach(
-                        found.value,
-                        (orphan) =>
-                          write(
-                            account.id,
-                            "DELETE",
-                            `/me/messages/${encodeURIComponent(orphan.id)}`,
-                          ),
-                        { discard: true },
-                      ).pipe(Effect.as(found.value.length > 0)),
-                    ),
-                  );
-                  return confirmDelivery(cleanup).pipe(
-                    Effect.result,
-                    Effect.asVoid,
-                    Effect.andThen(Effect.fail(error)),
-                  );
-                },
-              ),
-            );
-            const path = `/me/messages/${encodeURIComponent(draft.id)}`;
-            inFlightSendDrafts.set(token, draft.id);
-            let sendAttempted = false;
-            yield* Effect.gen(function* () {
-              yield* write(account.id, "PATCH", path, fields);
-              if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
-                const inherited = yield* get(
-                  account.id,
-                  AttachmentIds,
-                  `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
+          const draft = yield* write(
+            account.id,
+            "POST",
+            `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`,
+            { message: { internetMessageId: messageId } },
+          ).pipe(
+            Effect.flatMap(decode(WithId)),
+            Effect.catchIf(
+              (error) => error._tag === "ApiError" && uncertainWrite(error),
+              (error) => {
+                // A conversation/time match can belong to another composer.
+                // Only the random Message-ID identifies a disposable send draft.
+                const cleanup = draftLookup(account.id, messageId).pipe(
+                  Effect.flatMap((found) =>
+                    Effect.forEach(
+                      found.value,
+                      (orphan) =>
+                        write(
+                          account.id,
+                          "DELETE",
+                          `/me/messages/${encodeURIComponent(orphan.id)}`,
+                        ),
+                      { discard: true },
+                    ).pipe(Effect.as(found.value.length > 0)),
+                  ),
                 );
-                for (const attachment of inherited.value)
-                  yield* write(
-                    account.id,
-                    "DELETE",
-                    `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
-                  );
-              }
-              yield* addDraftAttachments(account.id, draft.id, attachments);
-              sendAttempted = true;
-              yield* deliver(account.id, messageId, write(account.id, "POST", `${path}/send`));
-            }).pipe(
-              Effect.onError(() =>
-                (sendAttempted
-                  ? get(
-                      account.id,
-                      Schema.Struct({ isDraft: Schema.Boolean }),
-                      `${path}?$select=isDraft`,
-                    ).pipe(
-                      Effect.flatMap((current) =>
-                        current.isDraft ? write(account.id, "DELETE", path) : Effect.void,
-                      ),
-                    )
-                  : write(account.id, "DELETE", path)
-                ).pipe(Effect.catch(() => Effect.void)),
-              ),
-            );
+                return confirmDelivery(cleanup).pipe(
+                  Effect.result,
+                  Effect.asVoid,
+                  Effect.andThen(Effect.fail(error)),
+                );
+              },
+            ),
+          );
+          const path = `/me/messages/${encodeURIComponent(draft.id)}`;
+          let sendAttempted = false;
+          yield* Effect.gen(function* () {
+            yield* write(account.id, "PATCH", path, fields);
+            if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
+              const inherited = yield* get(
+                account.id,
+                AttachmentIds,
+                `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
+              );
+              for (const attachment of inherited.value)
+                yield* write(
+                  account.id,
+                  "DELETE",
+                  `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
+                );
+            }
+            yield* addDraftAttachments(account.id, draft.id, attachments);
+            sendAttempted = true;
+            yield* deliver(account.id, messageId, write(account.id, "POST", `${path}/send`));
           }).pipe(
-            Effect.ensuring(
-              Effect.sync(() => {
-                inFlightSendDrafts.delete(token);
-              }),
+            Effect.onError(() =>
+              (sendAttempted
+                ? get(
+                    account.id,
+                    Schema.Struct({ isDraft: Schema.Boolean }),
+                    `${path}?$select=isDraft`,
+                  ).pipe(
+                    Effect.flatMap((current) =>
+                      current.isDraft ? write(account.id, "DELETE", path) : Effect.void,
+                    ),
+                  )
+                : write(account.id, "DELETE", path)
+              ).pipe(Effect.catch(() => Effect.void)),
             ),
           );
         }
@@ -442,19 +393,9 @@ export const makeOutlookSend = (client: OutlookClient) =>
           const mode = message.mode ?? "new";
           const state = yield* draft.creation.begin();
           const reply = Option.isSome(original) && mode !== "new";
-          const attemptedAt = state.attemptedAt ?? (yield* Clock.currentTimeMillis);
           // Graph does not promise to preserve a supplied ID in createReply/createForward.
           // https://learn.microsoft.com/en-us/graph/api/message-update#request-body
-          const lookup =
-            reply && Option.isSome(original)
-              ? replyDraftLookup(
-                  account.id,
-                  original.value.providerId,
-                  state.messageId,
-                  attemptedAt,
-                  draft.creation.isLinked,
-                )
-              : deliveryLookup(account.id, state.messageId, "drafts");
+          const lookup = draftLookup(account.id, state.messageId);
           if (state.attempted) {
             const found = yield* lookup;
             const existing = found.value[0];
@@ -640,38 +581,8 @@ export const makeOutlookSend = (client: OutlookClient) =>
           return;
         }
         if (!remote.rfcMessageId) return;
-        const base = "/me/mailFolders/drafts/messages";
-        let next: string | undefined =
-          `${base}?${new URLSearchParams({ $filter: `internetMessageId eq '${remote.rfcMessageId.replaceAll("'", "''")}' and isDraft eq true`, $select: "id", $top: "100" }).toString()}`;
-        const seen = new Set<string>();
-        const Page = Schema.Struct({
-          value: Schema.Array(WithId),
-          "@odata.nextLink": Schema.optionalKey(Schema.String),
-        });
-        for (const loadPage of graphPages(
-          next,
-          (pagePath) =>
-            Effect.gen(function* () {
-              if (seen.has(pagePath))
-                yield* new ProviderError({ message: "Draft cleanup pagination repeated a page" });
-              seen.add(pagePath);
-
-              return yield* get(account.id, Page, pagePath);
-            }),
-          () => next,
-        )) {
-          const page: typeof Page.Type = yield* loadPage;
-
-          for (const draft of page.value) yield* remove(draft.id);
-          next = page["@odata.nextLink"]
-            ? yield* nextPage(
-                page["@odata.nextLink"],
-                base,
-                undefined,
-                () => new ProviderError({ message: "Invalid draft cleanup pagination link" }),
-              )
-            : undefined;
-        }
+        const found = yield* draftLookup(account.id, remote.rfcMessageId);
+        for (const draft of found.value) yield* remove(draft.id);
       },
       (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
     );

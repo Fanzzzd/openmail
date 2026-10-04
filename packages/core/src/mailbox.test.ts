@@ -602,3 +602,54 @@ it.effect(
     }).pipe(Effect.provide(TestMailbox({ gmail: server })));
   },
 );
+
+for (const provider of ["outlook", "gmail"] as const) {
+  it.effect(
+    `Mailbox.perform rejects copy for ${provider} before any queued mutation, including mixed targets`,
+    () => {
+      let pushes = 0;
+      const adapter = {
+        ...makeFakeProvider(fakeServer("me@example.test")),
+        push: () =>
+          Effect.sync(() => {
+            pushes++;
+          }),
+      };
+      return Effect.gen(function* () {
+        const store = yield* Store;
+        const mailbox = yield* Mailbox;
+        const imap = yield* store.upsertAccount("imap", "me@example.test");
+        const unsupported = yield* store.upsertAccount(provider, "me@example.test");
+        yield* store.upsertMessage(imap.id, incoming("1:1:INBOX"));
+        yield* store.upsertMessage(unsupported.id, incoming("one"));
+        const imapId = `${imap.id}/1:1:INBOX`;
+        const unsupportedId = `${unsupported.id}/one`;
+        for (const targets of [[unsupportedId], [imapId, unsupportedId]]) {
+          const result = yield* mailbox
+            .perform(
+              { kind: "modify", threads: targets, op: { kind: "copy", labelIds: ["Projects"] } },
+              { kind: "user", surface: "app" },
+            )
+            .pipe(Effect.result);
+          assert.strictEqual(result._tag, "Failure");
+          if (result._tag === "Failure") {
+            assert.strictEqual(result.failure._tag, "InvalidInput");
+            assert.strictEqual(
+              result.failure.message,
+              "This organization action is unavailable for this account.",
+            );
+          }
+          assert.deepStrictEqual(yield* store.listPendingOps, []);
+          assert.deepStrictEqual(yield* mailbox.listFailedOps, []);
+          assert.strictEqual(pushes, 0);
+        }
+      }).pipe(
+        Effect.provide(
+          TestMailbox.withAdapter(adapter, {
+            options: { backgroundFlush: false, imapIdle: false },
+          }),
+        ),
+      );
+    },
+  );
+}

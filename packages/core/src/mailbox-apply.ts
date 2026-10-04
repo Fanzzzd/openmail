@@ -104,9 +104,23 @@ export const makeApplyMailbox = (
     if (ids.size === 0) {
       return yield* new InvalidInput({ message: "No message matches the given thread ids." });
     }
+    const refs = yield* Effect.forEach([...ids], (id) =>
+      store.messageRef(id).pipe(Effect.map((ref) => ({ id, ...ref }))),
+    );
     const accounts = new Map<string, Account>();
-    for (const id of ids) {
-      const { accountId, providerId } = yield* store.messageRef(id);
+    if (command.op.kind === "copy") {
+      // Validate every account before queuing anything for mixed selections.
+      for (const { accountId } of refs) {
+        if (accounts.has(accountId)) continue;
+        const account = yield* store.getAccount(accountId);
+        if (account.provider !== "imap")
+          return yield* new InvalidInput({
+            message: "This organization action is unavailable for this account.",
+          });
+        accounts.set(accountId, account);
+      }
+    }
+    for (const { id, accountId, providerId } of refs) {
       let account = accounts.get(accountId);
       if (!account) {
         account = yield* store.getAccount(accountId);
@@ -119,7 +133,7 @@ export const makeApplyMailbox = (
         (command.op.kind === "important" && account.provider === "outlook");
       if (account.provider !== "gmail" && !flag) {
         const labels = yield* store.messageLabels(accountId, providerId);
-        if (!folderTarget(command.op, labels)) continue;
+        if (command.op.kind !== "copy" && !folderTarget(command.op, labels)) continue;
       }
       yield* store.transaction(
         Effect.all([

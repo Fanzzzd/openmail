@@ -960,8 +960,6 @@ export interface DraftPush {
       attempted?: boolean,
     ) => Effect.Effect<void, ProviderFailure>;
     readonly missing: () => Effect.Effect<boolean, ProviderFailure>;
-    /** Exclude copies already owned by any local composer in this account. */
-    readonly isLinked: (messageId: string) => Effect.Effect<boolean>;
     readonly remember: (remote: DraftRemote) => Effect.Effect<void>;
   };
   readonly remote: DraftRemote | null;

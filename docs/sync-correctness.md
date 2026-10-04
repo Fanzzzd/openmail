@@ -10,7 +10,7 @@ UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效�
 
 COPY 前按排队操作、源 provider ID 和目标文件夹持久记录 issued 进度，成功回复后记录 accepted。首次操作正常复制，即使目标已有相同 Message-ID；重试才按进度查询目标，查到后只重做源副本删除。明确拒绝会清除对应进度；丢失回复时保留。源、目标均不存在且没有进度时返回 PermanentError，终止操作并 reconcile；有进度但结果未确认时继续等待。批量操作逐封记录，不能把一封的进度当作另一封的进度。
 
-COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确认时保留源副本和队列；没有 Message-ID 且已确认 COPY 成功时完成源删除，排队 reconcile，并暂停本轮对旧 ID 的后续操作，由下一次拉取恢复缓存。重试前核对源邮件身份；比较时去掉尖括号和空白。手机特殊文件夹同时匹配路径末级名称，例如 `INBOX.Sent`；CREATE 的 `NO [ALREADYEXISTS]` 视为已存在。
+COPYUID 缺失时按 Message-ID 查目标 UID。已有 Message-ID 但 UID 未确认时保留源副本和队列；没有 Message-ID 且已确认 COPY 成功时完成源删除，排队 reconcile，并暂停本轮对旧 ID 的后续操作，由下一次拉取恢复缓存。重试前核对源邮件身份；比较时去掉尖括号和空白。身份不符时停止操作，failed_ops 显示 “Message identity changed”，在线 reconcile 恢复当前服务器消息；离线保留缓存并排队 reconcile，不复制或删除复用 UID 的消息。Mailbox.perform 的 IMAP copy 直接进入队列，不使用移动目标判断；非 IMAP 的 copy 在任何入队前返回 InvalidInput，混合账户选择也不执行部分复制。手机特殊文件夹同时匹配路径末级名称，例如 `INBOX.Sent`；CREATE 的 `NO [ALREADYEXISTS]` 视为已存在。
 
 Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PERMANENTFLAGS 禁止所需标记时永久失败。草稿 APPEND 前记录 Message-ID，重试先查已追加副本，避免重复追加。退避期间的编辑或手动重试保留这份身份和进度；发现内容已变则替换恢复的副本，最终只保留最新的可见副本。恢复的 UID 与旧引用相同时不删除该副本。丢弃草稿或保留本地副本时，排队按已记录的 Message-ID 清理未确认副本；切换账户时在原账户清理，不把旧身份用于新账户。新草稿 UID 未知时保留旧副本并失败；新关联已确定而旧副本清理失败时，排队 deleteDraft 重试清理。
 
@@ -46,7 +46,11 @@ Node SMTP 部分拒收会列出拒收地址，保留原草稿并启用重发保�
 
 创建草稿、附件、规则、标签／文件夹及会议响应的 POST 只对 429 自动重试，5xx 或响应丢失不重放。Gmail 的修改标签、trash、untrash POST 可重放；Calendar 的 `PATCH sendUpdates=all` 不重放通知。
 
-草稿创建前，core 在既有 prefs 中保存客户端 Message-ID、尝试时间与查询未命中次数。客户端能确认请求尚未发出的 DNS／连接失败可直接重试。其他未确认创建先按 Gmail `in:drafts rfc822msgid:` 或 Graph `internetMessageId` 查草稿；找到后应用当前编辑。查询至少三次未命中且尝试满两分钟，才重新创建；服务商改写 Message-ID 时仍可能留下重复副本。Graph 回复、回复全部及转发草稿创建后，在 isDraft 为 true 时 PATCH 客户端 Message-ID；创建响应丢失时，按原消息的 conversationId 与提交前五秒至提交后两分钟的创建时间查找，候选必须仍是草稿，且最后修改时间距创建不超过五秒；排除已关联本地草稿和正在发送的临时草稿。发送草稿的创建响应尚未返回时，不采用模板候选。多个候选或尚有续页时视为未命中，推进持久重试计数，不修改候选。丢弃或发送本地草稿时，若创建日志仍标为已尝试，则先在同一事务中按日志 Message-ID 排队清理服务器草稿，再清除日志；查不到副本时清理为空操作。创建日志与远端引用写入核对当前认领 token，旧 worker 不覆盖新 owner；拿到新 ID 便持久保存远端引用，后续 PATCH 或附件失败仍返回该 ID 和同步错误。Outlook 普通更新仅在初次 PATCH 返回 404 时重建；附件阶段的 404 不重建。forward 替换后的旧草稿删除失败，交给持久 `deleteDraft` 队列处理。
+草稿创建前，core 在既有 prefs 中保存客户端 Message-ID、尝试时间与查询未命中次数。客户端能确认请求尚未发出的 DNS／连接失败可直接重试。其他未确认创建先按 Gmail `in:drafts rfc822msgid:` 或 Graph `internetMessageId` 查草稿；查询至少三次未命中且尝试满两分钟，才重新创建。尝试时间只控制重试间隔，不用于识别服务器草稿。
+
+Outlook 只在对应账户的 Drafts 文件夹中，凭精确的客户端 Message-ID 和 `isDraft=true` 证明草稿归属，才恢复编辑或清理未确认副本。多个命中或尚有续页时保留不确定状态；精确命中不受创建时间、修改时间或 conversationId 限制。会话、时间接近、看似未编辑、未关联本地草稿和唯一候选都不能证明归属，我们不猜测。Graph 在结果不确定的 createReply 中替换客户端 Message-ID 时，恢复会按未命中处理并在重试条件满足后重新创建，清理会保留未知副本。因此空的重复回复草稿可能留在 Drafts，需要用户删除；宁可留下副本，也不覆盖或删除其他客户端写好的内容。回复全部与转发遵守同一规则。
+
+丢弃或发送本地草稿时，若创建日志仍标为已尝试，则先在同一事务中按日志 Message-ID 排队清理服务器草稿，再清除日志。创建日志与远端引用写入核对当前认领 token，旧 worker 不覆盖新 owner；已取得创建响应中的新 ID 便持久保存远端引用，后续 PATCH 或附件失败仍返回该 ID 和同步错误。Graph 回复、回复全部及转发创建后 PATCH 客户端 Message-ID。Outlook 普通更新仅在初次 PATCH 返回 404 时重建；附件阶段的 404 不重建。forward 替换后的旧草稿删除失败，交给持久 `deleteDraft` 队列处理。
 
 Outlook 附件上传结果不确定时，读取全部附件页并核对文件名、内容字节及 Content-ID。恢复创建时只添加缺失附件。打开服务器草稿时即保存 changeKey 和 lastModifiedDateTime；远端版本只保存 changeKey 与服务端修改时间，不用本地时钟补值。更新前 GET 比较，只有版本不同且服务端修改时间晚于最后写入时，才另存本地版本并报告冲突。PATCH 后的部分失败会重读版本；读取失败则清除旧 changeKey，避免把本次写入当作其他客户端修改。Graph 的[消息更新文档](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)未承诺 If-Match，当前比较仍存在 GET 与 PATCH 之间的竞态。
 
@@ -121,6 +125,12 @@ OPENMAIL_READ_ONLY=1 node packages/cli/dist/cli.js health --account 'gmail:me@ex
 | `accountDomainHash`、`checkedAt` | 账户邮箱域名的 SHA-256 与检查时间；散列不代表匿名化                                                                                                                         |
 
 Gmail／Outlook 的 Drafts 本地总数和会话数还包含符合上述[孤立远端草稿规则](#过期缓存扫描)的行，按远端消息 ID 去重；未读数仍只来自 messages。
+
+Outlook Drafts 本地 40、服务端约 22 的差异尚无真实服务器身份样本，不能仅凭计数确认 Graph 漏报 `@removed`。从现有代码可以确认：本地消息只在明确删除事件或存在性验证后移除；离线期间在其他设备删除的草稿，若增量未报告删除，就会暂留缓存。90 天窗口或 410 重列举不覆盖全部历史草稿；完整同步后的过期扫描每小时、每轮最多 500 项，失败、限流和未验证项继续保留。因此“曾删除但还未验证”的消息，以及未镜像到 messages 的远端草稿，都可能让 local.total 超过服务器数。现有计数复核和逐项清理已有回归；本次没有证据修改 delta 行为。
+
+健康报告在 Outlook Drafts 复核后仍多出时附 `diagnostic.code = "OUTLOOK_DRAFT_COUNT_EXCESS"`。`cachedTotal` 与 `unmirroredDraftTotal` 拆开两种计数来源；按 providerId 取最多 50 个候选，使用剩余十秒预算内最多一秒的只读位置／存在性验证，报告 `sampled`、`gone`、`outsideDrafts`、`presentInDrafts`、`unverified`。这些是抽样数，不能当成全夹数量。gone 证明当前身份已不存在，outsideDrafts 证明缓存归属陈旧；两者都不能单独证明 delta 漏报，下一次排查应结合游标年龄、上次同步时间及增量事件。超时或缺失响应计入 unverified，不作为删除证据。
+
+诊断只输出固定码和数字，脱敏导出保留它，不读取消息文本、不改缓存、草稿或操作队列。正常完整同步的过期扫描直接验证自己的候选，不再重复做诊断抽样。回归见 [sync-health.test.ts](../packages/core/src/sync-health.test.ts)。
 
 判断结果按以下规则解释：
 

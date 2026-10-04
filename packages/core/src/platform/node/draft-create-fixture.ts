@@ -6,7 +6,6 @@ import type { DraftCreateState } from "../../domain.js";
 export function draftCreation(): DraftPush["creation"] {
   let state: DraftCreateState = { messageId: "<draft@example.test>", attempted: false };
   return {
-    isLinked: () => Effect.succeed(false),
     begin: () => Effect.succeed(state),
     attempted: (messageId, attempted = true) =>
       Effect.sync(() => {

@@ -30,7 +30,18 @@ export const HealthVerdict = Schema.Literals([
   "server unavailable",
 ]);
 export type HealthVerdict = typeof HealthVerdict.Type;
+const OutlookDraftExcess = Schema.Struct({
+  code: Schema.Literal("OUTLOOK_DRAFT_COUNT_EXCESS"),
+  cachedTotal: Count,
+  unmirroredDraftTotal: Count,
+  sampled: Count,
+  gone: Count,
+  outsideDrafts: Count,
+  presentInDrafts: Count,
+  unverified: Count,
+});
 export const HealthFolder = Schema.Struct({
+  diagnostic: Schema.optionalKey(OutlookDraftExcess),
   scope: Schema.String,
   local: HealthCounts,
   server: ServerStatus,
@@ -97,7 +108,11 @@ export function redactSyncHealth(report: SyncHealth): SyncHealth {
   };
 }
 
-export function makeSyncHealth(store: Store["Service"], providers: Providers["Service"]) {
+export function makeSyncHealth(
+  store: Store["Service"],
+  providers: Providers["Service"],
+  options: { diagnoseDraftExcess?: boolean } = {},
+) {
   return Effect.fn("Mailbox.syncHealth")(function* (accountId: string) {
     const account = yield* store.getAccount(accountId);
     const now = yield* Clock.currentTimeMillis;
@@ -225,6 +240,55 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
         }),
       { concurrency: 1 },
     );
+    const diagnosed = yield* Effect.forEach(checkedFolders, (folder) =>
+      Effect.gen(function* () {
+        if (
+          options.diagnoseDraftExcess === false ||
+          account.provider !== "outlook" ||
+          folder.scope !== "DRAFT" ||
+          folder.server.kind !== "available" ||
+          folder.local.total <= folder.server.total
+        )
+          return folder;
+        const local = yield* store.syncHealthLocal(accountId, "DRAFT", false);
+        // Bounded metadata reads establish absence/location without editing cache or composers.
+        const sample = yield* store.staleCandidates(accountId, ["DRAFT"], false, "", 50);
+        const adapter = providers.get("outlook");
+        const remaining = Math.min(1000, 10_000 - ((yield* Clock.currentTimeMillis) - now));
+        const results =
+          adapter.verifyResetCandidates && remaining > 0
+            ? yield* adapter.verifyResetCandidates(account, sample).pipe(
+                Effect.timeout(remaining),
+                Effect.catch(() => Effect.succeed([])),
+              )
+            : [];
+        const requested = new Set(sample.map((candidate) => candidate.providerId));
+        const completed = new Set<string>();
+        let gone = 0,
+          outsideDrafts = 0,
+          presentInDrafts = 0;
+        for (const result of results) {
+          if (!requested.has(result.id) || completed.has(result.id)) continue;
+          completed.add(result.id);
+          if (result.kind === "gone") gone++;
+          else if (result.labels.includes("DRAFT")) presentInDrafts++;
+          else outsideDrafts++;
+        }
+        return {
+          ...folder,
+          diagnostic: {
+            code: "OUTLOOK_DRAFT_COUNT_EXCESS",
+            cachedTotal: local.cachedTotal,
+            unmirroredDraftTotal: local.unmirroredDraftTotal,
+            sampled: sample.length,
+            gone,
+            outsideDrafts,
+            presentInDrafts,
+            unverified: sample.length - completed.size,
+          },
+        } satisfies HealthFolder;
+      }),
+    );
     return {
       provider: account.provider,
       accountDomainHash: sha256Hex(
@@ -233,7 +297,7 @@ export function makeSyncHealth(store: Store["Service"], providers: Providers["Se
       checkedAt: now,
       cursorAgeMs,
       pendingOps,
-      folders: checkedFolders,
+      folders: diagnosed,
     } satisfies SyncHealth;
   });
 }

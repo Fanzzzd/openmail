@@ -1901,3 +1901,70 @@ it("mobile IMAP header backfill uses folder-scoped PEEK fields, preserves flags 
     await test.runtime.dispose();
   }
 });
+
+for (const operation of ["move", "copy"] as const) {
+  it(`MailboxLive mobile identity changed before ${operation} restores the remote message and exposes the failure`, async () => {
+    const test = server();
+    try {
+      await test.runtime.runPromise(
+        Effect.gen(function* () {
+          const mailbox = yield* Mailbox;
+          const store = yield* Store;
+          const account = yield* mailbox.connect({
+            provider: "imap",
+            input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+          });
+          yield* mailbox.sync(account.id);
+          const id = `${account.id}/9:1:INBOX`;
+          const before = yield* store.getMessage(id);
+          yield* store.upsertMessage(account.id, {
+            ...before,
+            providerId: "9:1:INBOX",
+            threadId: "stale-thread",
+            rfcMessageId: "<original@example.test>",
+          });
+          yield* store.putDraft({
+            id: "keep-draft",
+            accountId: account.id,
+            message: { to: [], cc: [], bcc: [], subject: "local", text: "keep", attachments: [] },
+          });
+          const commandStart = test.commands.length;
+          yield* mailbox.perform(
+            {
+              kind: "modify",
+              threads: [id],
+              op:
+                operation === "move"
+                  ? { kind: "move", labelId: "Projects", removeLabelId: "INBOX" }
+                  : { kind: "copy", labelIds: ["Projects"] },
+            },
+            { kind: "user", surface: "app" },
+          );
+          const failures = yield* mailbox.listFailedOps;
+          expect(failures).toHaveLength(1);
+          expect(failures[0]?.reason).toBe(
+            "Message identity changed; sync before changing this message",
+          );
+          expect(failures[0]?.kind).toBe(operation);
+          const restored = yield* store.getMessage(id);
+          expect(restored.bodyText).toBe(before.bodyText);
+          expect(restored.rfcMessageId).toBe(before.rfcMessageId);
+          expect(restored.labels).toEqual(before.labels);
+          expect(Option.isSome(yield* store.getDraft("keep-draft"))).toBe(true);
+          expect(yield* store.listPendingOps).toEqual([]);
+          expect(
+            test.commands
+              .slice(commandStart)
+              .some((command) => /UID COPY|UID STORE|UID EXPUNGE|UID MOVE/.test(command)),
+          ).toBe(false);
+          yield* mailbox.sync(account.id);
+          expect((yield* store.getMessage(id)).bodyText).toBe(before.bodyText);
+          yield* mailbox.acknowledgeFailedOps(failures.map((item) => item.id));
+          expect(yield* mailbox.listFailedOps).toEqual([]);
+        }),
+      );
+    } finally {
+      await test.runtime.dispose();
+    }
+  });
+}
