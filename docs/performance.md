@@ -1,5 +1,7 @@
 # 性能
 
+真实邮件缓存副本的内容脱敏检查见 [corpus-check](corpus-check.md)。
+
 本页维护本地性能预算及复现命令。使用 Node 和 `node:sqlite`，不测量 Electron、模型下载或真实账户端到端时延。
 
 ## 10 万封邮件预算

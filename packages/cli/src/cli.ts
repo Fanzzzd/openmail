@@ -1,9 +1,14 @@
 #!/usr/bin/env -S node --disable-warning=ExperimentalWarning
 /**
- * The openmail command line. Every action goes through core's Mailbox as
- * user:cli, so policy and audit hold here too. There is no send command:
- * sending needs the review window in the app.
+ * Mailbox commands run through core as user:cli, with policy and audit.
+ * corpus-check uses the separate offline checker. Sending needs app review.
  */
+import {
+  corpusCheck,
+  createCorpusRunKeyFile,
+  formatCorpusReport,
+  CorpusCheckError,
+} from "@openmail/core/node";
 import {
   Browser,
   openInSystemBrowser,
@@ -658,27 +663,105 @@ const agentCommands = toolNames
     ).pipe(Command.withDescription(MailToolkit.tools[name].description ?? name)),
   );
 
+const corpusFailure = (error: unknown) =>
+  new Failed({
+    message: error instanceof CorpusCheckError ? error.message : "Corpus check failed",
+  });
+
+const corpus = Command.make(
+  "corpus-check",
+  {
+    db: Flag.String("db").pipe(Flag.withDescription("Path to a mailbox cache copy")),
+    limit: optionalInt("limit", "Check the newest N cached messages; default all"),
+    explain: optionalString(
+      "explain",
+      "Explain one message using its hash from a previous corpus report",
+    ),
+    runKey: optionalString("run-key", "Private 0600 run key file; required with --explain"),
+    explainReady: Flag.Boolean("explain-ready").pipe(
+      Flag.withDescription("Save a private run key file and print its path to stderr"),
+      Flag.withDefault(false),
+    ),
+    json: jsonFlag,
+  },
+  Effect.fn(function* ({ db, limit, explain: explainHash, runKey, explainReady, json }) {
+    if (Option.isSome(explainHash)) {
+      if (Option.isNone(runKey))
+        return yield* fail("Explain requires --run-key from the previous scan");
+      if (explainReady) return yield* fail("Explain cannot be combined with --explain-ready");
+      if (Option.isSome(limit)) return yield* fail("Explain cannot be combined with --limit");
+      const report = yield* Effect.tryPromise({
+        try: (signal) =>
+          corpusCheck({ db, explain: explainHash.value, runKeyFile: runKey.value, signal }),
+        catch: corpusFailure,
+      });
+      return yield* print(report, json, (value) => JSON.stringify(value, null, 2));
+    }
+    const runKeyFile =
+      Option.getOrUndefined(runKey) ??
+      (explainReady
+        ? yield* Effect.try({ try: createCorpusRunKeyFile, catch: corpusFailure })
+        : undefined);
+    const report = yield* Effect.tryPromise({
+      try: (signal) =>
+        corpusCheck({
+          db,
+          ...(Option.isSome(limit) ? { limit: limit.value } : {}),
+          ...(runKeyFile ? { runKeyFile } : {}),
+          signal,
+        }),
+      catch: corpusFailure,
+    });
+    if (explainReady && runKeyFile) yield* Console.error(`Run key file: ${runKeyFile}`);
+    return yield* print(report, json, formatCorpusReport);
+  }),
+).pipe(
+  Command.withDescription("Run offline, content-free diagnostics on a read-only mailbox snapshot"),
+);
+
+const cliMailbox = NodeMailbox({
+  browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
+  backgroundFlush: false,
+  beforeCredentialRead: Console.error("Reading credentials from the keychain…"),
+});
+
+const mailboxCommands = [
+  config,
+  accounts,
+  profiles,
+  sync,
+  health,
+  list,
+  search,
+  show,
+  proposals,
+  agents,
+  audit,
+  mcp,
+  tools,
+  tool,
+  ...agentCommands,
+];
+// The framework's Any interface erases names and inputs, while these derived
+// error/service types retain every handler requirement through the array map.
+const providedCommands = mailboxCommands.map((command: Command.Command.Any) =>
+  Command.provide<
+    string,
+    unknown,
+    Command.Error<(typeof mailboxCommands)[number]>,
+    Command.Services<(typeof mailboxCommands)[number]>,
+    unknown,
+    Layer.Success<typeof cliMailbox>,
+    Layer.Error<typeof cliMailbox>,
+    Layer.Services<typeof cliMailbox>
+  >(command, cliMailbox),
+);
+
 const openmail = Command.make("openmail").pipe(
   Command.withDescription(
     "Local-first mail for people and models. Reads come from the local database; `openmail sync` refreshes it.",
   ),
-  Command.withSubcommands([
-    config,
-    accounts,
-    profiles,
-    sync,
-    health,
-    list,
-    search,
-    show,
-    proposals,
-    agents,
-    audit,
-    mcp,
-    tools,
-    tool,
-    ...agentCommands,
-  ]),
+  Command.withSubcommands([corpus, ...providedCommands]),
 );
 
 /** Turns Mailbox errors into one line on stderr. CLI parse errors are already printed. */
@@ -720,17 +803,7 @@ const appOnlyWriteMode =
           Effect.andThen(Effect.fail(new Failed({ message }))),
         );
   }),
-  Effect.provide(
-    Layer.mergeAll(
-      // A CLI run ends right after the command, so queue pushes happen before it returns.
-      NodeMailbox({
-        browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
-        backgroundFlush: false,
-        beforeCredentialRead: Console.error("Reading credentials from the keychain…"),
-      }),
-      NodeServices.layer,
-    ),
-  ),
+  Effect.provide(NodeServices.layer),
   Effect.provideService(Logger.LogToStderr, true),
   NodeRuntime.runMain,
 );

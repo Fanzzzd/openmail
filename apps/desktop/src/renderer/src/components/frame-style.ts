@@ -5,10 +5,9 @@ export const PICTURES = [
   "img",
   "video",
   "picture",
-  "svg",
+  "svg image",
   "[background]",
   '[style*="background" i][style*="url(" i]',
-  '[style*="background" i][style*="gradient(" i]',
 ].join(", ");
 
 /**

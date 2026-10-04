@@ -1,3 +1,5 @@
+import { legacyColour } from "./visible-text-paint.js";
+import { sanitizeReaderHtml } from "./reader-sanitize.js";
 import { expect, it } from "vitest";
 import { linkNeedsConfirmation } from "./link-security.js";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
@@ -48,7 +50,7 @@ import { type Message } from "./domain.js";
       "overflow:hidden;height:0",
       "clip:rect(0,0,0,0)",
       "clip-path:inset(100%)",
-      "color:#ffffff;background:#fff",
+      "color:#ffffff;background-color:#fff",
       "color:rgb(250,250,250);background-color:white",
     ];
     for (const style of styles) {
@@ -82,7 +84,7 @@ import { type Message } from "./domain.js";
     );
     expect(
       visibleHtmlText(
-        '<div style="background:black"><span style="background:transparent;color:black">Injection</span></div><p>Visible</p>',
+        '<div style="background-color:black"><span style="background:transparent;color:black">Injection</span></div><p>Visible</p>',
       ).text,
     ).toBe("Visible");
     expect(
@@ -184,3 +186,110 @@ import { type Message } from "./domain.js";
     });
   }
 }
+
+// Exact payloads from the fourth adversarial corpus review.
+it.each([
+  '<div style="background:none"><span style="color:#fff">SECRET</span></div>',
+  '<div style="background:#fff"><span style="color:#fff">SECRET</span></div>',
+  '<div style="background:#000"><span style="color:#000">SECRET</span></div>',
+  '<style>body{background:#000}</style><span style="color:#000">SECRET</span>',
+  '<div style="background-image:linear-gradient(#000,#000)"><span style="color:#000">SECRET</span></div>',
+  '<div style="background:#fff url(https://x.test/a.png)"><span style="color:#fff">SECRET</span></div>',
+  '<div style="background:rgba(0,0,0,.5)"><span style="color:#808080">SECRET</span></div>',
+  '<style>.c{background:#fff!important}</style><div class="c" style="background-color:#000"><span style="color:#fff">SECRET</span></div>',
+  '<table bgcolor="#ffffff"><tr><td><font color="ffffff">SECRET</font></td></tr></table>',
+  '<table><tr><td bgcolor="000000"><font color="#000000">SECRET</font></td></tr></table>',
+  '<span style="color:#000;filter:invert(1)">SECRET</span>',
+  '<div style="background:#000"><span style="filter:brightness(0)">SECRET</span></div>',
+  '<span style="filter:brightness(100)">SECRET</span>',
+  '<span style="mix-blend-mode:screen;color:#000">SECRET</span>',
+  '<span style="color:lab(100 0 0)">SECRET</span>',
+  '<style>.p{& .a{color:#fff}}</style><div class="p"><span class="a">SECRET</span></div>',
+  '<div style="position:relative"><span>SECRET</span><div style="position:absolute;top:0;left:0;width:100%;height:100%;background:#fff"></div></div>',
+])("adversarial paint payload stays hidden: %s", (html) => {
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).toBe("");
+});
+
+it.each([
+  "color:oklch(100% 0 0)",
+  "color:color(srgb 1 1 1)",
+  "color:color-mix(in srgb,white,black)",
+  "color:light-dark(white,black)",
+  "color:Canvas",
+  "color:CanvasText",
+  "filter:blur(1px)",
+  "filter:opacity(.5) invert(1)",
+])("unresolved paint cannot reveal: %s", (style) => {
+  expect(visibleHtmlText(sanitizeReaderHtml(`<span style="${style}">SECRET</span>`)).text).toBe("");
+});
+it("any matching gradient stop hides text and composited translucent gradients stay inherited", () => {
+  for (const html of [
+    '<div style="background:linear-gradient(#000,#fff)"><span style="color:#fff">SECRET</span></div>',
+    '<div style="background:black"><div style="background-image:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5))"><span style="color:#808080">SECRET</span></div></div>',
+    '<div style="filter:invert(1)"><span>SECRET</span></div>',
+    '<div style="mix-blend-mode:multiply"><span>SECRET</span></div>',
+  ])
+    expect(visibleHtmlText(sanitizeReaderHtml(html)).text).toBe("");
+});
+it("longhand and shorthand background declarations share important precedence", () => {
+  expect(
+    visibleHtmlText(
+      '<style>.c{background-color:#fff!important}</style><div class="c" style="background:#000"><span style="color:#fff">SECRET</span></div>',
+    ).text,
+  ).toBe("");
+  expect(
+    visibleHtmlText(
+      '<div style="background:#fff!important;background-color:#000"><span style="color:#fff">SECRET</span></div>',
+    ).text,
+  ).toBe("");
+});
+it("a conservative nested stylesheet affects only its matching parent", () => {
+  expect(
+    visibleHtmlText(
+      '<style>.p{& .a{color:#fff}}</style><div class="p"><span class="a">SECRET</span></div><p>VISIBLE</p>',
+    ).text,
+  ).toBe("VISIBLE");
+});
+it("positioned overlays cover both DOM orders but stay inside their containing block", () => {
+  expect(
+    visibleHtmlText(
+      '<div style="position:relative"><span>SECRET</span><div style="position:absolute;inset:0;background:white"></div><p>VISIBLE</p></div><p>OUTSIDE</p>',
+    ).text,
+  ).toBe("OUTSIDE");
+  expect(
+    visibleHtmlText(
+      '<p>SECRET</p><div style="position:fixed;inset:0;background:white"></div><p>VISIBLE</p>',
+    ).text,
+  ).toBe("");
+  expect(
+    visibleHtmlText(
+      '<p>VISIBLE</p><div style="display:none"><div style="position:fixed;inset:0;background:white"></div></div>',
+    ).text,
+  ).toBe("VISIBLE");
+});
+
+it("HTML presentational attributes use the legacy colour algorithm rather than CSS syntax", () => {
+  expect(legacyColour("ffffff")).toBe("rgb(255,255,255)");
+  expect(legacyColour("000000")).toBe("rgb(0,0,0)");
+  expect(legacyColour("chucknorris")).toBe("rgb(192,0,0)");
+  expect(legacyColour("000000ffffff000000")).toBe("rgb(0,255,0)");
+  expect(legacyColour(" RED ")).toBe("red");
+  expect(legacyColour("#abc")).toBe("#abc");
+  expect(legacyColour("transparent")).toBeNull();
+  expect(legacyColour("")).toBeNull();
+});
+
+it("paint alternatives are bounded and do not forward fallback text", () => {
+  const opening =
+    '<div style="background-image:linear-gradient(rgba(0,0,0,.5),rgba(255,255,255,.5))">';
+  const html = `${opening.repeat(10)}SECRET${"</div>".repeat(10)}`;
+  expect(visibleHtmlText(html)).toHaveProperty("flags", ["budget-exceeded"]);
+  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
+});
+it("opaque gradient overlays also remove earlier text", () => {
+  expect(
+    visibleHtmlText(
+      '<div style="position:relative"><span>SECRET</span><div style="position:absolute;inset:0;background:linear-gradient(white,white)"></div></div>',
+    ).text,
+  ).toBe("");
+});

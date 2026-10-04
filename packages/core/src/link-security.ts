@@ -48,14 +48,16 @@ export function linkIdentity(
     return null;
   }
 }
-export function linkNeedsConfirmation(href: string, label: string): boolean {
-  const identity = linkIdentity(href);
-  if (!identity) return false;
-  if (identity.suspicious) return true;
-  const text = label
+const normalizedLabel = (label: string) =>
+  label
     .normalize("NFKC")
     .replace(/[\u3002\uFF0E\uFF61]/g, ".")
     .replace(/\p{Cf}/gu, "");
+function displayMismatches(
+  identity: NonNullable<ReturnType<typeof linkIdentity>>,
+  label: string,
+): boolean {
+  const text = normalizedLabel(label);
   const tokens =
     text.match(
       /https?:\/\/[^\s<>"']+|(?:[\p{L}\p{N}-]+\.)+[\p{L}\p{N}-]{2,}(?::\d+)?(?:\/[^\s<>"']*)?/giu,
@@ -65,6 +67,28 @@ export function linkNeedsConfirmation(href: string, label: string): boolean {
     const displayed = linkIdentity(/^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned}`);
     return !!displayed && displayed.domain !== identity.domain;
   });
+}
+/** Domain mismatch is independent of an internationalized target's own warning. */
+export function linkDisplayMismatch(href: string, label: string): boolean {
+  const identity = linkIdentity(href);
+  if (!identity) return false;
+  const text = normalizedLabel(label)
+    .trim()
+    .replace(/[.,!?;:）)\]}>]+$/u, "");
+  // Corpus counters require the whole visible label to be a URL/domain. The reader
+  // still checks embedded domain tokens through displayMismatches below.
+  if (
+    !/^(?:https?:\/\/[^\s<>"']+|(?:[\p{L}\p{N}-]+\.)+[\p{L}\p{N}-]{2,}(?::\d+)?(?:[/?#][^\s<>"']*)?)$/iu.test(
+      text,
+    )
+  )
+    return false;
+  const displayed = linkIdentity(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+  return displayed !== null && displayed.domain !== identity.domain;
+}
+export function linkNeedsConfirmation(href: string, label: string): boolean {
+  const identity = linkIdentity(href);
+  return identity !== null && (identity.suspicious || displayMismatches(identity, label));
 }
 export function linkHint(value: string): string {
   const identity = linkIdentity(value);

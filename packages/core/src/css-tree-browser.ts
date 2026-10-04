@@ -3,6 +3,7 @@ import {
   generate as browserGenerate,
   walk as browserWalk,
   ident as browserIdent,
+  lexer as browserLexer,
 } from "css-tree/dist/csstree.esm";
 
 // Keep published declarations on the package's typed API, while runtime imports
@@ -11,4 +12,5 @@ export const parse: typeof import("css-tree").parse = browserParse;
 export const generate: typeof import("css-tree").generate = browserGenerate;
 export const walk: typeof import("css-tree").walk = browserWalk;
 export const ident: typeof import("css-tree").ident = browserIdent;
+export const lexer: typeof import("css-tree").lexer = browserLexer;
 export type { CssNode, EnterOrLeaveFn } from "css-tree";

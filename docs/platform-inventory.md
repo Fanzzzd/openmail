@@ -48,6 +48,8 @@ portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTranspo
 
 共享导出集中在 `common.ts`。Node 入口只重导出桌面／CLI 消费的名称，不经 `portable.ts` 加载手机 adapters 或手机专用工作流；`platform-imports.test.ts` 检查该依赖图。手机端继续从 `portable.ts` 获得共享能力和移动平台组装。
 
+可见文本先对阅读器清洗结果和参考 shell 使用 parse5 8.0.1 做 HTML5 解析，再经 parse5-htmlparser2-tree-adapter 8.0.1 接入现有选择器与遍历器。两个入口均为纯 ESM 解析代码，不调用 Node 平台服务；表格 foster-parenting 回归验证与浏览器解析一致。本次不运行 Electron 或 Metro。
+
 ## IMAP 两端行为差异
 
 修改 IMAP provider 或讨论两端能力一致性时读取。Slice 71 只提取相同的纯函数，并拆分 Node 模块；以下九项保留原行为，需要产品决定后再统一。

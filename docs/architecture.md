@@ -9,7 +9,7 @@ core 负责邮件网络、数据库、策略和同步。桌面、CLI、MCP 与�
 | Mailbox         | `mailbox.ts` 定义 Effect 服务；`mailbox-live.ts` 组装同步、队列、策略和事件                                                                                                                         |
 | Mailbox 子模块  | `mailbox-batch.ts`、`mailbox-folders.ts`、`mailbox-cache.ts`、`mailbox-features.ts`、`mailbox-organization.ts`、`mailbox-ai.ts` 分别实现批量、破坏性文件夹操作、缓存、日历／联系人、搜索／整理与 AI |
 | Store           | `services.ts` 定义端口，`store.ts` 与 `store-*.ts` 实现查询；`db.ts` 保存追加迁移及数据库能力                                                                                                       |
-| ProviderAdapter | `services.ts` 定义接口；`gmail.ts`、`outlook.ts` 和 `platform/node/imap/adapter.ts` 实现协议                                                                                                                |
+| ProviderAdapter | `services.ts` 定义接口；`gmail.ts`、`outlook.ts` 和 `platform/node/imap/adapter.ts` 实现协议                                                                                                        |
 | 模型与工具      | `model.ts` 提供 Model；`tools.ts` 提供 MailToolkit；`tool-pages.ts` 处理游标和预算                                                                                                                  |
 | 本机索引        | `indexer.ts`、`semantic-indexer.ts` 与 media／semantic Store 处理派生文本及向量                                                                                                                     |
 | Node 平台       | `platform/node/` 实现数据库、密钥、OAuth、IMAP/SMTP、MIME、文件、PDF 和推理 worker                                                                                                                  |

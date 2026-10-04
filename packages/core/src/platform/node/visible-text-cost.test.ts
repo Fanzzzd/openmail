@@ -1,0 +1,45 @@
+import { performance } from "node:perf_hooks";
+import { expect, it } from "vitest";
+import { visibleHtmlText } from "../../visible-text.js";
+import { makeDeclarationParser, visibleStylesheetRules } from "../../visible-text-css.js";
+
+it("95 KB mail with 5000 declarations and paragraphs stays under one second", () => {
+  visibleHtmlText("<style>p{color:#000}</style><p>visible</p>");
+  const html = `<style>p{${"color:#000;".repeat(5000)}}</style>${"<p>x</p>".repeat(5000)}`;
+  const start = performance.now();
+  const result = visibleHtmlText(html);
+  const ms = performance.now() - start;
+  expect(result.text.split("\n")).toHaveLength(5000);
+  expect(ms).toBeLessThan(1000);
+});
+it("20000 media groups compile under 200 ms with bounded compact bodies", () => {
+  const parser = makeDeclarationParser();
+  expect([...visibleStylesheetRules("@media screen{p{color:red}}", parser)]).toHaveLength(1);
+  const css = "@media (min-width:320px){p{color:red}}".repeat(20000);
+  const start = performance.now();
+  let rules = 0,
+    maximumDeclarations = 0;
+  for (const rule of visibleStylesheetRules(css, parser)) {
+    maximumDeclarations = Math.max(maximumDeclarations, rule.style.declarations.length);
+    rules++;
+  }
+  const ms = performance.now() - start;
+  expect(rules).toBe(20000);
+  expect(maximumDeclarations).toBe(1);
+  expect(ms).toBeLessThan(200);
+});
+
+it.each([300, 1000])(
+  "interns %i narrow media rules for 5000 matching paragraphs under one second",
+  (count) => {
+    const rules = Array.from({ length: count }, (_, i) => {
+      const n = 500 + i;
+      return `@media(min-width:${n}px) and (max-width:${n}.5px){.x{display:block}}`;
+    }).join("");
+    const html = `<style>.x{display:none}${rules}</style>${"<p class=x>x</p>".repeat(5000)}`;
+    const start = performance.now();
+    const result = visibleHtmlText(html);
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(result).toEqual({ text: "", hidden: true });
+  },
+);

@@ -65,3 +65,15 @@ export { InterruptedRecoveryError, prepareDatabaseStartup } from "./recovery-fil
 export { isSignedMacApp } from "./app-verifier.js";
 export { prepareSmokeDatabase } from "./smoke.js";
 export { createSmokeCleanup } from "./smoke-cleanup.js";
+export {
+  corpusCheck,
+  createCorpusRunKeyFile,
+  formatCorpusReport,
+  CorpusCheckError,
+  CORPUS_LIMITS,
+  type CorpusCheckOptions,
+  type CorpusExplainOptions,
+  type CorpusScanOptions,
+  type CorpusExplainReport,
+  type CorpusReport,
+} from "./corpus-check.js";

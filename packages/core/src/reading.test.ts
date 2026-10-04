@@ -310,13 +310,14 @@ import { prepareMessageHtml } from "./reader-html.js";
     expect(messageModelText("", input).flags).toContain("budget-exceeded");
   });
 
-  it("matching-budget exhaustion keeps the final paragraph for search indexing", () => {
+  it("repeated selectors share matching work and exclude the hidden final paragraph", () => {
     const css = "p{color:navy}".repeat(1300);
     const input = `<style>${css}</style>${"<p>Shipment reference</p>".repeat(2000)}<p hidden>Last searchable paragraph</p>`;
     const result = visibleHtmlText(input);
-    expect(result).toMatchObject({ hidden: true, flags: ["budget-exceeded"] });
+    expect(result).toMatchObject({ hidden: true });
+    expect(result).not.toHaveProperty("flags");
     expect(result.text.split("\n")).toHaveLength(2000);
-    expect(htmlToText(input)).toContain("Last searchable paragraph");
+    expect(htmlToText(input)).not.toContain("Last searchable paragraph");
   });
 }
 
@@ -341,3 +342,14 @@ import { prepareMessageHtml } from "./reader-html.js";
     expect(prepared.html).toContain('type("image/png")');
   });
 }
+
+it("width range comparison tokens survive CSS sanitation and repeat sanitation", () => {
+  const html =
+    '<style>@media(0px <= width <= 8000px){.x{display:block}}</style><p class="x">VISIBLE</p>';
+  const clean = sanitizeReaderHtml(html);
+  expect(clean).toContain("<=");
+  expect(sanitizeReaderHtml(clean)).toBe(clean);
+  expect(sanitizeReaderCss('p::before{content:"</style><script>"}', false)).not.toContain(
+    "</style",
+  );
+});

@@ -52,6 +52,8 @@
     "markdown-it": "^14.3.2",
     "nodemailer": "^10.0.11",
     "onnxruntime-node": "1.30.0",
+    "parse5": "8.0.1",
+    "parse5-htmlparser2-tree-adapter": "8.0.1",
     "pdfjs-dist": "6.3.289",
     "postal-mime": "4.0.2",
     "punycode.js": "2.3.1",

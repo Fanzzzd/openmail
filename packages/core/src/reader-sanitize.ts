@@ -11,18 +11,93 @@ import { flattenHtmlChildren, MAX_HTML_DEPTH } from "./html-depth.js";
 
 // HTML-only output avoids foreign-content/raw-text mutation during browser
 // reparsing. Resource preparation still runs first to resolve CID and bases.
-const TAGS = new Set(
-  "html head body style p div span a area map img br hr table thead tbody tfoot tr td th caption col colgroup font b strong i em u s strike sub sup code pre blockquote ul ol li dl dt dd h1 h2 h3 h4 h5 h6 section article header footer center address details summary wbr del ins small big tt kbd mark abbr cite q figure figcaption nav main aside var samp dfn bdi bdo".split(
-    " ",
-  ),
-);
-const ATTRS = new Set(
+export const READER_TAGS = [
+  "html",
+  "head",
+  "body",
+  "style",
+  "p",
+  "div",
+  "span",
+  "a",
+  "area",
+  "map",
+  "img",
+  "br",
+  "hr",
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "td",
+  "th",
+  "caption",
+  "col",
+  "colgroup",
+  "font",
+  "b",
+  "strong",
+  "i",
+  "em",
+  "u",
+  "s",
+  "strike",
+  "sub",
+  "sup",
+  "code",
+  "pre",
+  "blockquote",
+  "ul",
+  "ol",
+  "li",
+  "dl",
+  "dt",
+  "dd",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "section",
+  "article",
+  "header",
+  "footer",
+  "center",
+  "address",
+  "details",
+  "summary",
+  "wbr",
+  "del",
+  "ins",
+  "small",
+  "big",
+  "tt",
+  "kbd",
+  "mark",
+  "abbr",
+  "cite",
+  "q",
+  "figure",
+  "figcaption",
+  "nav",
+  "main",
+  "aside",
+  "var",
+  "samp",
+  "dfn",
+  "bdi",
+  "bdo",
+] as const;
+const TAGS = new Set<string>(READER_TAGS);
+export const READER_ATTRIBUTES: ReadonlySet<string> = new Set(
   "alt title width height align valign bgcolor color border cellpadding cellspacing colspan rowspan dir lang class id name type start reversed open hidden aria-hidden style href src background face size nowrap hspace vspace rules frame span usemap coords shape link vlink alink text".split(
     " ",
   ),
 );
-const DROP = new Set(
-  "script iframe object embed applet frame frameset form input button select textarea option template noscript xmp plaintext svg math audio video source track canvas base meta link basefont bgsound title noembed noframes".split(
+export const READER_DROP: ReadonlySet<string> = new Set(
+  "script iframe object embed applet frame frameset form input button select textarea option template noscript xmp plaintext svg math audio video source track canvas base meta link basefont bgsound title desc datalist noembed noframes".split(
     " ",
   ),
 );
@@ -114,23 +189,35 @@ export function sanitizeReaderCss(input: string, remote: boolean, inline = false
     };
     walk(ast, { enter: filter });
     // CSS strings can contain '<'. Never emit an HTML raw-text closing tag.
-    return generate(ast).replaceAll("<", "\\3c ");
+    return generate(ast).replace(/<(?=\/style(?:[\s/>]|$))/gi, "\\3c ");
   } catch {
     return "";
   }
 }
 
 /** Inert, bounded portable reader/print markup. Sandbox and CSP remain required. */
-export function sanitizeReaderHtml(input: string, remote = false): string {
+export function sanitizeReaderHtml(
+  input: string,
+  remote = false,
+  onOmit?: (node: ReturnType<typeof parseDocument>["children"][number]) => void,
+): string {
   const document = parseDocument(input);
   type Node = (typeof document.children)[number];
   const clean = (nodes: Node[], depth = 0): Node[] => {
     const flatten = depth >= MAX_HTML_DEPTH;
     if (flatten)
-      nodes = flattenHtmlChildren(nodes, (node) => "name" in node && DROP.has(node.name));
+      nodes = flattenHtmlChildren(nodes, (node) => {
+        const drop = "name" in node && READER_DROP.has(node.name);
+        if (drop) onOmit?.(node);
+        return drop;
+      });
     return nodes.flatMap((node): Node[] => {
       if (node.type === ElementType.Text) return [node];
-      if (!("name" in node) || !("attribs" in node) || DROP.has(node.name)) return [];
+      if (!("name" in node) || !("attribs" in node)) return [];
+      if (READER_DROP.has(node.name)) {
+        onOmit?.(node);
+        return [];
+      }
       if (!TAGS.has(node.name)) return flatten ? [] : clean(node.children, depth + 1);
       if (node.name === "style") {
         const text = node.children.filter((child) => child.type === ElementType.Text);
@@ -145,7 +232,7 @@ export function sanitizeReaderHtml(input: string, remote = false): string {
               ? normalizeResource(raw)
               : raw;
         if (
-          !ATTRS.has(key) ||
+          (!READER_ATTRIBUTES.has(key) && !(node.name === "style" && key === "media")) ||
           (key === "href" && !linkAllowed(value)) ||
           (key === "usemap" && !value.startsWith("#")) ||
           (["src", "background"].includes(key) && !resourceAllowed(value, remote))

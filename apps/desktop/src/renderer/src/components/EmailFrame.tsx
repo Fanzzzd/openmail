@@ -1,4 +1,4 @@
-import { linkHint, linkNeedsConfirmation } from "@openmail/core/schema";
+import { READER_BASE_CSS, linkHint, linkNeedsConfirmation } from "@openmail/core/schema";
 import { useRunMail, withMail } from "../state/mail";
 import { LinkConfirmDialog } from "./LinkConfirmDialog";
 import type { QuoteHistory } from "@openmail/core/schema";
@@ -24,21 +24,6 @@ const ALLOWED =
   "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline' https:; font-src data: https:";
 const FRAME_RESTRICTIONS =
   "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'";
-
-const BASE_CSS = `
-  html, body { margin: 0; padding: 0; }
-  html { background: #fff; overflow-x: auto !important; }
-  body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
-         overflow: visible !important; color: #1f1f1f; word-wrap: break-word; overflow-wrap: anywhere; }
-  img { max-width: 100%; height: auto; }
-  table { max-width: 100%; }
-  pre { white-space: pre-wrap; }
-  a { color: #2563eb; }
-  a:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  }
-`;
 
 export type MessageBackground = "light" | "dark";
 
@@ -120,7 +105,7 @@ export function EmailFrame({
     keys.current = onKeyDown;
   });
 
-  const css = `${BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
+  const css = `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
   const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">

@@ -72,7 +72,21 @@ it("inverts each element at most once more than the page in dark mode", () => {
   // Text without a picture behind it turns light with the page.
   expect(count("none")).toBe(1);
   expect(count("color")).toBe(1);
+  expect(count("gradient")).toBe(1);
   // Pictures and everything drawn on them keep the sender's colors.
-  for (const id of ["photo", "caption", "nested", "gradient", "legacy", "picture", "inner", "logo"])
+  for (const id of ["photo", "caption", "nested", "legacy", "picture", "inner", "logo"])
     expect(count(id), id).toBe(2);
+});
+
+it("gradient-only backgrounds and their text receive only the page inversion", () => {
+  document.body.innerHTML =
+    '<div style="background-image:linear-gradient(#000,#000)"><span id="ink" style="color:#fff">Visible</span></div>';
+  expect(inversions(document.getElementById("ink")!)).toBe(1);
+});
+
+it("vector text is inverted with the page while embedded SVG images keep their colours", () => {
+  document.body.innerHTML =
+    '<svg><text id="vector">Visible</text><image id="raster"></image></svg>';
+  expect(inversions(document.getElementById("vector")!)).toBe(1);
+  expect(inversions(document.getElementById("raster")!)).toBe(2);
 });
