@@ -7,8 +7,6 @@ import {
   Option,
   PubSub,
   Ref,
-  Schedule,
-  Schema,
   type Scope,
   Semaphore,
 } from "effect";
@@ -17,104 +15,17 @@ import {
   type inlineImagesFromRaw as unboundInlineImagesFromRaw,
   type inlineMediaFromRaw as unboundInlineMediaFromRaw,
 } from "./attachments.js";
-import {
-  type Actor,
-  type IncomingMessage,
-  type MailOp,
-  type Outcome,
-  type OutgoingMessage,
-  type Provider,
-  type SyncResult,
-} from "./domain.js";
+import { type Outcome, type Provider, type SyncResult } from "./domain.js";
 import { type parseRawDraft as unboundParseRawDraft } from "./drafts.js";
 import { type ImapIdle } from "./imap-idle.js";
-import { applyOpToLabels } from "./mail-ops.js";
 import { type Mailbox, type MailboxEvent, type PerformError, type SyncState } from "./mailbox.js";
 import { type ModelRuntime, type Vision } from "./media.js";
-import { type QueuedSend } from "./mobile-outbox.js";
 import { type Model } from "./model.js";
 import { type PlatformCrypto } from "./platform/crypto.js";
 import { type MailCodec } from "./platform/mail-codec.js";
 import { type AppVerifier, type AttachmentFiles, type ImageNetwork } from "./platform/runtime.js";
 import { type AppConfig, type Providers, type Secrets, type Store } from "./services.js";
 import { type UnsubscribeNetwork } from "./unsubscribe.js";
-export const isAiProposalActor = (actor: Actor): boolean =>
-  actor.kind === "agent" &&
-  (actor.surface === "mcp" || actor.surface === "assistant" || actor.name === "openmail-assistant");
-
-export const withAgentOrigin = (message: OutgoingMessage, actor: Actor): OutgoingMessage =>
-  isAiProposalActor(actor)
-    ? {
-        ...message,
-        agentOrigin: {
-          recipients: [...message.to, ...message.cc, ...message.bcc].map((a) => a.address),
-          ...(message.inReplyTo ? { replyTo: message.inReplyTo } : {}),
-        },
-      }
-    : message;
-
-export const isSpecialAgentLabel = (value: string) => {
-  const name = value
-    .trim()
-    .replace(/[\s_\-\\]/g, "")
-    .toUpperCase();
-  return (
-    /^(INBOX|TRASH|SPAM|DRAFTS?|SENT|JUNK(EMAIL)?|DELETED(ITEMS|MESSAGES)?|ARCHIVE|OUTBOX|ALLMAIL|IMPORTANT|STARRED|UNREAD)$/.test(
-      name,
-    ) ||
-    /^CATEGORY(PERSONAL|SOCIAL|PROMOTIONS|UPDATES|FORUMS)$/.test(name) ||
-    value.startsWith("category:") ||
-    value.startsWith("mailbox:")
-  );
-};
-
-export class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()(
-  "PendingOpClaimLost",
-  {
-    message: Schema.String,
-  },
-) {}
-
-export const WRITE_RECOVERY_WINDOW_MS = 2 * 60_000;
-
-export const isWaitingSend = (item: QueuedSend) => item.status === "waiting";
-
-export const desktopSendForOwner = (owner?: string) => (item: QueuedSend) =>
-  item.desktopUndo === true &&
-  isWaitingSend(item) &&
-  (owner === undefined || item.desktopOwner === owner);
-
-export const MAX_OP_AGE = 7 * 86_400_000;
-
-export const WRITE_BATCH = 200;
-
-export const DEFAULT_MODEL_CHARS = 12_000;
-
-export const DEFAULT_SUGGESTIONS = 8;
-
-export const isTransientPull = (e: {
-  readonly _tag: string;
-  readonly status?: number | undefined;
-  readonly deferred?: boolean;
-}) =>
-  e._tag === "ProviderError" &&
-  !e.deferred &&
-  (e.status === undefined || e.status === 429 || e.status >= 500);
-
-export const PULL_RETRY = {
-  schedule: Schedule.exponential("5 seconds"),
-  times: 2,
-  while: isTransientPull,
-};
-
-export const cacheIO = <A>(work: () => Promise<A>, fallback: A) =>
-  Effect.tryPromise(work).pipe(
-    Effect.catch((error) =>
-      Effect.logWarning("Attachment cache unavailable", error).pipe(Effect.as(fallback)),
-    ),
-  );
-
-export const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
 
 export interface MailboxOptions {
   /** Desktop releases optional startup work after its first window is painted. */
@@ -144,24 +55,6 @@ export interface MailboxOptions {
   /** Only desktop main may resume persisted desktop sends. */
   resumeDesktopSends?: boolean;
 }
-
-export const withPendingOps = (
-  incoming: IncomingMessage,
-  ops: readonly MailOp[],
-  provider: Provider,
-): IncomingMessage => {
-  if (!ops.length) return incoming;
-  const labels = ops.reduce(
-    (current, op) => applyOpToLabels(current, op, provider),
-    [...incoming.labels],
-  );
-  return {
-    ...incoming,
-    labels,
-    isUnread: labels.includes("UNREAD"),
-    isStarred: labels.includes("STARRED"),
-  };
-};
 export interface MailboxDependencies {
   crypto: PlatformCrypto;
   mailboxScope: Scope.Scope;
@@ -212,8 +105,6 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
   const adapters = new Map<Provider, import("./services.js").ProviderAdapter>();
   const attachmentCache = new AttachmentCache();
 
-  const syncPaused = false;
-  const attachmentEpoch = 0;
   const pubsub = yield* PubSub.unbounded<MailboxEvent>();
   yield* Effect.addFinalizer(() => PubSub.shutdown(pubsub));
   const state = yield* Ref.make<SyncState>({
@@ -224,22 +115,23 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
   const inflight = yield* Ref.make(Option.none<Deferred.Deferred<SyncResult[]>>());
   const syncLock = yield* Semaphore.make(1);
   const polling = new Map<string, { failures: number; due: number }>();
+  /** Background work (queue flushes after a draft save) that dies with the layer. */
   const background = yield* FiberSet.make();
+  /** One flush at a time in this process; claims keep other processes off the same op. */
   const flushLock = yield* Semaphore.make(1);
   const imapPullLocks = new Map<string, Semaphore.Semaphore>();
   const headerLocks = new Map<string, Semaphore.Semaphore>();
-  const pendingSends = 0;
   const outboxLock = yield* Semaphore.make(1);
   const undoSendWorkers = new Map<
     string,
     { worker: Fiber.Fiber<Outcome, PerformError>; token: symbol }
   >();
-  return {
+  const runtime: MailboxRuntimeState = {
     adapters,
     attachmentCache,
-    idle: Option.getOrUndefined(Option.none<ImapIdle>()),
-    syncPaused,
-    attachmentEpoch,
+    idle: undefined,
+    syncPaused: false,
+    attachmentEpoch: 0,
     pubsub,
     syncState: state,
     inflight,
@@ -249,11 +141,32 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
     flushLock,
     imapPullLocks,
     headerLocks,
-    pendingSends,
+    pendingSends: 0,
     outboxLock,
     undoSendWorkers,
     nextHeadersAccount: 0,
     nextAccount: 0,
   };
+  return runtime;
 });
-export type MailboxRuntimeState = Effect.Success<typeof makeMailboxRuntimeState>;
+export interface MailboxRuntimeState {
+  adapters: Map<Provider, import("./services.js").ProviderAdapter>;
+  attachmentCache: AttachmentCache;
+  idle: ImapIdle | undefined;
+  syncPaused: boolean;
+  attachmentEpoch: number;
+  pubsub: PubSub.PubSub<MailboxEvent>;
+  syncState: Ref.Ref<SyncState>;
+  inflight: Ref.Ref<Option.Option<Deferred.Deferred<SyncResult[]>>>;
+  syncLock: Semaphore.Semaphore;
+  polling: Map<string, { failures: number; due: number }>;
+  background: FiberSet.FiberSet;
+  flushLock: Semaphore.Semaphore;
+  imapPullLocks: Map<string, Semaphore.Semaphore>;
+  headerLocks: Map<string, Semaphore.Semaphore>;
+  pendingSends: number;
+  outboxLock: Semaphore.Semaphore;
+  undoSendWorkers: Map<string, { worker: Fiber.Fiber<Outcome, PerformError>; token: symbol }>;
+  nextHeadersAccount: number;
+  nextAccount: number;
+}

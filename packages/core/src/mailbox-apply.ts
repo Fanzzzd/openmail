@@ -8,29 +8,52 @@ import {
   type FlushResult,
   type MailOp,
   type Outcome,
+  type OutgoingMessage,
 } from "./domain.js";
 import { InvalidInput, type ProviderError } from "./errors.js";
 import { decodeProviderId } from "./imap-cursor.js";
-import { applyOpToLabels, invalidCategoryFolderOp } from "./mail-ops.js";
+import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "./mail-ops.js";
 import { type makeBatchMailbox } from "./mailbox-batch.js";
 import { eventFromInvite } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
-import {
-  cacheIO,
-  isAiProposalActor,
-  isSpecialAgentLabel,
-  withAgentOrigin,
-  withPendingOps,
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-} from "./mailbox-runtime.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import { cacheIO, withPendingOps } from "./mailbox-shared.js";
 import { type Mailbox, type PerformError } from "./mailbox.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { decide } from "./policy.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { type Change, type StoredDraft } from "./services.js";
-import { folderTarget } from "./store.js";
 import { notificationEligible, profileNotificationsActive } from "./system.js";
+
+const isAiProposalActor = (actor: Actor): boolean =>
+  actor.kind === "agent" &&
+  (actor.surface === "mcp" || actor.surface === "assistant" || actor.name === "openmail-assistant");
+
+export const withAgentOrigin = (message: OutgoingMessage, actor: Actor): OutgoingMessage =>
+  isAiProposalActor(actor)
+    ? {
+        ...message,
+        agentOrigin: {
+          recipients: [...message.to, ...message.cc, ...message.bcc].map((a) => a.address),
+          ...(message.inReplyTo ? { replyTo: message.inReplyTo } : {}),
+        },
+      }
+    : message;
+
+const isSpecialAgentLabel = (value: string) => {
+  const name = value
+    .trim()
+    .replace(/[\s_\-\\]/g, "")
+    .toUpperCase();
+  return (
+    /^(INBOX|TRASH|SPAM|DRAFTS?|SENT|JUNK(EMAIL)?|DELETED(ITEMS|MESSAGES)?|ARCHIVE|OUTBOX|ALLMAIL|IMPORTANT|STARRED|UNREAD)$/.test(
+      name,
+    ) ||
+    /^CATEGORY(PERSONAL|SOCIAL|PROMOTIONS|UPDATES|FORUMS)$/.test(name) ||
+    value.startsWith("category:") ||
+    value.startsWith("mailbox:")
+  );
+};
 
 export const makeApplyMailbox = (
   deps: MailboxDependencies & {
@@ -640,10 +663,6 @@ export const makeApplyMailbox = (
   };
   return {
     modify,
-    run,
-    validateAiProposal,
-    perform,
-    decideProposal,
     applyChanges,
     service: {
       importCalendarAttachment: (messageId, path, key, actor) =>

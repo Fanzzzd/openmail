@@ -1,17 +1,18 @@
-import { Clock, Effect, FiberSet, Option } from "effect";
+import { Clock, Effect, FiberSet, Option, Schema } from "effect";
 import { type Account } from "./domain.js";
 import { type ProviderFailure } from "./errors.js";
 import { decodeProviderId, readCursor } from "./imap-cursor.js";
-import {
-  MAX_OP_AGE,
-  PendingOpClaimLost,
-  withPendingOps,
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-} from "./mailbox-runtime.js";
-import { type Mailbox } from "./mailbox.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import { withPendingOps } from "./mailbox-shared.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { type PendingOp, type ProviderPushContext, type ProviderPushResult } from "./services.js";
+
+class PendingOpClaimLost extends Schema.TaggedError<PendingOpClaimLost>()("PendingOpClaimLost", {
+  message: Schema.String,
+}) {}
+
+/** Only a week-old mutation can expire; reconciliation waits for connectivity. */
+const MAX_OP_AGE = 7 * 86_400_000;
 
 export const makeFlushMailbox = (
   deps: MailboxDependencies & {
@@ -420,14 +421,8 @@ export const makeFlushMailbox = (
       ? flushNow
       : FiberSet.run(runtime.background, flushNow).pipe(Effect.asVoid);
   return {
-    refreshMessage,
-    imapPushCursor,
-    pushContext,
-    pushOp,
-    reconcileDropped,
     flush,
     flushNow,
     flushLater,
-    service: {} satisfies Pick<Mailbox["Service"], never>,
   };
 };

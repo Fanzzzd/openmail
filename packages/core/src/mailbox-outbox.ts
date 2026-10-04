@@ -15,19 +15,21 @@ import {
   type ProviderFailure,
   SendUncertain,
 } from "./errors.js";
-import {
-  desktopSendForOwner,
-  isWaitingSend,
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-  WRITE_RECOVERY_WINDOW_MS,
-} from "./mailbox-runtime.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { mobileAttachmentProblem, type QueuedSend } from "./mobile-outbox.js";
 import { isDefiniteSendFailure } from "./provider-send.js";
 import { READ_ONLY_MESSAGE } from "./read-only.js";
 import { isEmailAddress } from "./recipients.js";
 import { type StoredDraft } from "./services.js";
+
+const isWaitingSend = (item: QueuedSend) => item.status === "waiting";
+
+const desktopSendForOwner = (owner?: string) => (item: QueuedSend) =>
+  item.desktopUndo === true &&
+  isWaitingSend(item) &&
+  (owner === undefined || item.desktopOwner === owner);
 
 export const makeOutboxMailbox = (
   deps: MailboxDependencies & {
@@ -527,19 +529,6 @@ export const makeOutboxMailbox = (
   });
   return {
     send,
-    queueSend,
-    takeUndoWorker,
-    cancelSendWhere,
-    cancelWaitingSend,
-    cancelQueuedSend,
-    cancelDesktopUndoSends,
-    recordSendFailure,
-    expireDesktopSend,
-    deliverQueuedSend,
-    scheduleQueuedSend,
-    queueUndoSend,
-    awaitUndoSend,
-    flushQueuedSends,
     start,
     service: {
       queuedSends: store.queuedSends,

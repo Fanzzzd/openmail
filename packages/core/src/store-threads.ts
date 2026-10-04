@@ -37,6 +37,9 @@ import {
 } from "./store-rows.js";
 import { type makeWordIndexStore } from "./store-word-index.js";
 
+const keyOf = (thread: ThreadSummary, flat?: boolean) =>
+  flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+
 export const makeThreadsStore = ({
   sql,
   compose,
@@ -233,11 +236,12 @@ export const makeThreadsStore = ({
         grouped.set(key, group);
         if (!ranks.has(key)) ranks.set(key, rank);
       }
-      const keyOf = (thread: ThreadSummary) =>
-        q.flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
       const derived = candidates
-        .map((thread) => ({ ...thread, derivedMatches: grouped.get(keyOf(thread)) ?? [] }))
-        .toSorted((a, b) => (ranks.get(keyOf(a)) ?? Infinity) - (ranks.get(keyOf(b)) ?? Infinity));
+        .map((thread) => ({ ...thread, derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [] }))
+        .toSorted(
+          (a, b) =>
+            (ranks.get(keyOf(a, q.flat)) ?? Infinity) - (ranks.get(keyOf(b, q.flat)) ?? Infinity),
+        );
       threads = reciprocalRankFusion(threads, derived, q.flat).slice(0, limit);
     }
     // The Drafts list also shows drafts the provider has no copy of yet.
@@ -287,11 +291,12 @@ export const makeThreadsStore = ({
       matched.set(key, group);
       if (!ranks.has(key)) ranks.set(key, rank);
     }
-    const keyOf = (thread: ThreadSummary) =>
-      q.flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
     return candidates
-      .map((thread) => ({ ...thread, derivedMatches: matched.get(keyOf(thread)) ?? [] }))
-      .toSorted((a, b) => (ranks.get(keyOf(a)) ?? Infinity) - (ranks.get(keyOf(b)) ?? Infinity));
+      .map((thread) => ({ ...thread, derivedMatches: matched.get(keyOf(thread, q.flat)) ?? [] }))
+      .toSorted(
+        (a, b) =>
+          (ranks.get(keyOf(a, q.flat)) ?? Infinity) - (ranks.get(keyOf(b, q.flat)) ?? Infinity),
+      );
   });
 
   /** Sidebar/account badge units follow the conversation preference. */

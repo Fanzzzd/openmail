@@ -2,12 +2,8 @@ import { Effect, Option } from "effect";
 import { attachmentRef, MAX_INLINE_BYTES, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { type Message } from "./domain.js";
 import { InvalidInput, NotFound } from "./errors.js";
-import {
-  cacheIO,
-  DEFAULT_MODEL_CHARS,
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-} from "./mailbox-runtime.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import { cacheIO } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { type DerivedChunk, MediaError } from "./media.js";
 import { modelContext } from "./model-view.js";
@@ -16,6 +12,8 @@ import { makeReaderAttachments } from "./reader-attachments.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "./reading.js";
 import { parseSearchQuery, quoteSearchValue, semanticRankFusion } from "./search.js";
 import { parseStableReference, privateMailLink } from "./system.js";
+
+const DEFAULT_MODEL_CHARS = 12_000;
 
 export const makeReadingMailbox = (
   deps: MailboxDependencies & {},
@@ -237,16 +235,7 @@ export const makeReadingMailbox = (
       : store.getThread(id);
   }
   return {
-    source,
-    rawMessageBytes,
-    rawMessage,
-    messageWebUrl,
-    attachment,
-    inlineImages,
     localInline,
-    semanticThreads,
-    mediaImage,
-    thread,
     service: {
       threads: semanticThreads,
 

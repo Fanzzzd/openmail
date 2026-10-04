@@ -29,12 +29,9 @@ import {
 } from "./drafts.js";
 import { InvalidInput, NotFound, PermanentError, ProviderError } from "./errors.js";
 import { isLocalFeedbackDraft } from "./feedback.js";
-import {
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-  withAgentOrigin,
-  WRITE_RECOVERY_WINDOW_MS,
-} from "./mailbox-runtime.js";
+import { withAgentOrigin } from "./mailbox-apply.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
+import { WRITE_RECOVERY_WINDOW_MS } from "./mailbox-shared.js";
 import { type Mailbox } from "./mailbox.js";
 import { renderMarkdown } from "./markdown.js";
 import { newMessageId } from "./message-id.js";
@@ -625,16 +622,8 @@ export const makeDraftsMailbox = (
     pushDraft,
     settleProposal,
     removeDraft,
-    publicDraft,
-    draftStatus,
     persistDraft,
-    saveDraft,
-    recoverDraft,
     discardDraft,
-    importDraft,
-    openDraft,
-    composeAttachments,
-    sendAgain,
     service: {
       prepareRejectedResend: (noticeId) =>
         Effect.gen(function* () {

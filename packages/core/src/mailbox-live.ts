@@ -33,13 +33,12 @@ import { makeOrganizationMailbox } from "./mailbox-organization.js";
 import { makeOutboxMailbox } from "./mailbox-outbox.js";
 import { makeReadingMailbox } from "./mailbox-reading.js";
 import {
-  cacheIO,
-  DEFAULT_SUGGESTIONS,
   makeMailboxRuntimeState,
   type MailboxDependencies,
   type MailboxOptions,
 } from "./mailbox-runtime.js";
 import { makeOptionalServiceMailbox } from "./mailbox-services.js";
+import { cacheIO } from "./mailbox-shared.js";
 import { makeSyncMailbox } from "./mailbox-sync.js";
 import { Mailbox, type MailboxEvent } from "./mailbox.js";
 import { unavailableVision } from "./media.js";
@@ -55,6 +54,9 @@ import { AppConfig, Providers, Secrets, Store } from "./services.js";
 import { makeSyncHealth } from "./sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
+
+const DEFAULT_SUGGESTIONS = 8;
+
 export type { MailboxOptions } from "./mailbox-runtime.js";
 export const MailboxLive = (
   options: MailboxOptions = {},
@@ -216,67 +218,58 @@ export const MailboxLive = (
         resetConnectivity,
         mailbox: () => mailbox,
       };
-      const drafts = makeDraftsMailbox(
-        { ...deps, flushLater: Effect.suspend(() => flushing.flushLater) },
+      const draftsMailbox = makeDraftsMailbox(
+        { ...deps, flushLater: Effect.suspend(() => flushMailbox.flushLater) },
         runtime,
       );
-      const flushing = makeFlushMailbox(
-        { ...deps, pushDraft: (...args) => drafts.pushDraft(...args) },
+      const flushMailbox = makeFlushMailbox(
+        { ...deps, pushDraft: (...args) => draftsMailbox.pushDraft(...args) },
         runtime,
       );
-      const apply = makeApplyMailbox(
+      const applyMailbox = makeApplyMailbox(
         {
           ...deps,
-          flush: (...args) => flushing.flush(...args),
+          flush: (...args) => flushMailbox.flush(...args),
           organization: () => organization,
-          send: (...args) => outbox.send(...args),
-          removeDraft: (...args) => drafts.removeDraft(...args),
-          flushLater: Effect.suspend(() => flushing.flushLater),
+          send: (...args) => outboxMailbox.send(...args),
+          removeDraft: (...args) => draftsMailbox.removeDraft(...args),
+          flushLater: Effect.suspend(() => flushMailbox.flushLater),
           batchMailbox: () => batchMailbox,
         },
         runtime,
       );
-      const reading = makeReadingMailbox({ ...deps }, runtime);
-      const accountMailbox = makeAccountsMailbox(
-        { ...deps, features: () => features, sync: (...args) => syncing.sync(...args) },
+      const readingMailbox = makeReadingMailbox(deps, runtime);
+      const accountsMailbox = makeAccountsMailbox(
+        { ...deps, features: () => features, sync: (...args) => syncMailbox.sync(...args) },
         runtime,
       );
-      const syncing = makeSyncMailbox(
+      const syncMailbox = makeSyncMailbox(
         {
           ...deps,
-          applyChanges: (...args) => apply.applyChanges(...args),
+          applyChanges: (...args) => applyMailbox.applyChanges(...args),
           organization: () => organization,
-          flush: (...args) => flushing.flush(...args),
+          flush: (...args) => flushMailbox.flush(...args),
           features: () => features,
           cache: () => cache,
         },
         runtime,
       );
-      const outbox = makeOutboxMailbox(
+      const outboxMailbox = makeOutboxMailbox(
         {
           ...deps,
-          prepare: (...args) => drafts.prepare(...args),
-          removeDraft: (...args) => drafts.removeDraft(...args),
-          settleProposal: (...args) => drafts.settleProposal(...args),
-          modify: (...args) => apply.modify(...args),
-          flushLater: Effect.suspend(() => flushing.flushLater),
-          persistDraft: (...args) => drafts.persistDraft(...args),
-          discardDraft: (...args) => drafts.discardDraft(...args),
+          prepare: (...args) => draftsMailbox.prepare(...args),
+          removeDraft: (...args) => draftsMailbox.removeDraft(...args),
+          settleProposal: (...args) => draftsMailbox.settleProposal(...args),
+          modify: (...args) => applyMailbox.modify(...args),
+          flushLater: Effect.suspend(() => flushMailbox.flushLater),
+          persistDraft: (...args) => draftsMailbox.persistDraft(...args),
+          discardDraft: (...args) => draftsMailbox.discardDraft(...args),
         },
         runtime,
       );
 
-      const flushNow = flushing.flushNow;
-      const flushLater = flushing.flushLater;
-      const removeDraft = drafts.removeDraft;
-
-      const perform = apply.perform;
-      const attachment = reading.attachment;
-      const localInline = reading.localInline;
-      const sync = syncing.sync;
-
       const folderMailbox = makeFolderMailbox(store, providers, changed, (effect) =>
-        flushNow.pipe(
+        flushMailbox.flushNow.pipe(
           Effect.andThen(
             effect.pipe(runtime.flushLock.withPermits(1), runtime.syncLock.withPermits(1)),
           ),
@@ -286,7 +279,7 @@ export const MailboxLive = (
       const batchMailbox = yield* makeBatchMailbox(
         store,
         changed,
-        FiberSet.run(runtime.background, flushNow).pipe(Effect.asVoid),
+        FiberSet.run(runtime.background, flushMailbox.flushNow).pipe(Effect.asVoid),
         (id) =>
           Effect.gen(function* () {
             const ref = yield* store.messageRef(id);
@@ -319,7 +312,7 @@ export const MailboxLive = (
         store,
         providers,
         changed,
-        flushLater,
+        flushMailbox.flushLater,
         batchMailbox.modifyWithUndo,
         crypto,
         (ids, wokenAt) =>
@@ -346,7 +339,7 @@ export const MailboxLive = (
         store,
         providers,
         changed,
-        perform,
+        applyMailbox.service.perform,
         options.imageDownloader ?? network.download,
         codec,
         crypto,
@@ -364,8 +357,9 @@ export const MailboxLive = (
           (current) => current.running || !(options.media?.idle() ?? true),
         ),
         message: (id) => store.getMessage(id).pipe(Effect.orDie),
-        attachment: (id, index) => attachment(id, index).pipe(Effect.map((part) => part.data)),
-        inline: (id) => localInline(id),
+        attachment: (id, index) =>
+          readingMailbox.service.attachment(id, index).pipe(Effect.map((part) => part.data)),
+        inline: (id) => readingMailbox.localInline(id),
         changed,
       } satisfies import("./indexer.js").IndexerInput;
 
@@ -400,14 +394,14 @@ export const MailboxLive = (
       if (!options.media && options.models?.verifyLocal && (yield* store.semantics.enabled))
         yield* options.models.verifyLocal().pipe(Effect.catch(() => Effect.void));
 
-      yield* syncing.start;
+      yield* syncMailbox.start;
       const ai = makeAiMailbox(
         store,
         secrets,
         model,
         () => mailbox,
         changed,
-        (ownerId) => store.purgeAccountProposals(ownerId, removeDraft),
+        (ownerId) => store.purgeAccountProposals(ownerId, draftsMailbox.removeDraft),
         options.canTriage,
       );
 
@@ -418,10 +412,11 @@ export const MailboxLive = (
             ? Effect.andThen(ai.autoTriage(event.ids), ai.autoSummaries(event.ids))
             : Effect.void,
         ).pipe(Effect.forkScoped);
-      yield* outbox.start;
+      yield* outboxMailbox.start;
       const mailbox = Mailbox.of({
         ...ai,
-        setAiAccount: (input) => ai.setAiAccount(input).pipe(Effect.andThen(flushLater)),
+        setAiAccount: (input) =>
+          ai.setAiAccount(input).pipe(Effect.andThen(flushMailbox.flushLater)),
 
         updateTokenConfigured: secrets.get(UPDATE_TOKEN_KEY).pipe(Effect.map(Option.isSome)),
 
@@ -515,8 +510,10 @@ export const MailboxLive = (
                 change.kind === "color"
                   ? Effect.void
                   : options.backgroundFlush === false
-                    ? sync(accountId).pipe(Effect.asVoid)
-                    : FiberSet.run(runtime.background, sync(accountId)).pipe(Effect.asVoid),
+                    ? syncMailbox.sync(accountId).pipe(Effect.asVoid)
+                    : FiberSet.run(runtime.background, syncMailbox.sync(accountId)).pipe(
+                        Effect.asVoid,
+                      ),
               ),
             ),
 
@@ -636,13 +633,12 @@ export const MailboxLive = (
         hiddenContacts: store.hiddenContacts,
 
         setContactHidden: (address, hidden) => mutate(store.setContactHidden(address, hidden)),
-        ...drafts.service,
-        ...flushing.service,
-        ...apply.service,
-        ...reading.service,
-        ...syncing.service,
-        ...accountMailbox.service,
-        ...outbox.service,
+        ...draftsMailbox.service,
+        ...applyMailbox.service,
+        ...readingMailbox.service,
+        ...syncMailbox.service,
+        ...accountsMailbox.service,
+        ...outboxMailbox.service,
       });
       return mailbox;
     }),

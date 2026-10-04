@@ -14,6 +14,7 @@ import {
 export const PENDING_OP_COLUMNS =
   "id, account_id, provider_id, op_json, attempts, last_error, created_at, retry_at, rfc_message_id, progress_json, appended_message_id";
 
+/** A claim on a queued op older than this belongs to a process that died mid-push. */
 export const CLAIM_TTL = 2 * 60_000;
 
 export const progressFailure = (cause: Cause.Cause<unknown>) =>

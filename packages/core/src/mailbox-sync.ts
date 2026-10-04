@@ -18,19 +18,39 @@ import { ImapIdle } from "./imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type makeOrganizationMailbox } from "./mailbox-organization.js";
-import {
-  PULL_RETRY,
-  SYNC_RETRY_MESSAGE,
-  WRITE_BATCH,
-  type MailboxDependencies,
-  type MailboxRuntimeState,
-} from "./mailbox-runtime.js";
+import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { type Mailbox, type SyncState } from "./mailbox.js";
 import { BackgroundRead } from "./provider-connectivity.js";
 import { type Change } from "./services.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
 import { makeSyncHealth } from "./sync-health.js";
 import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
+
+/** Upserts from a pull land in transactions of this many, or every quarter second. */
+const WRITE_BATCH = 200;
+
+/**
+ * A pull that failed on the network (no status: the connection dropped, DNS
+ * failed after a wake from sleep), throttling or a 5xx is tried again before
+ * the sync counts as failed. The adapters already retry each request for
+ * about 8 s; this covers an outage that outlasts that.
+ */
+const isTransientPull = (e: {
+  readonly _tag: string;
+  readonly status?: number | undefined;
+  readonly deferred?: boolean;
+}) =>
+  e._tag === "ProviderError" &&
+  !e.deferred &&
+  (e.status === undefined || e.status === 429 || e.status >= 500);
+
+const PULL_RETRY = {
+  schedule: Schedule.exponential("5 seconds"),
+  times: 2,
+  while: isTransientPull,
+};
+
+const SYNC_RETRY_MESSAGE = "Sync could not finish. It will retry automatically.";
 
 export const makeSyncMailbox = (
   deps: MailboxDependencies & {
@@ -466,11 +486,7 @@ export const makeSyncMailbox = (
     }
   });
   return {
-    maintainHeaders,
-    pullAccount,
-    runSync,
     sync,
-    pollInbox,
     start,
     service: {
       resetConnectivity: () => resetConnectivity,

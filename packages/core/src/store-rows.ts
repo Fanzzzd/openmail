@@ -20,7 +20,8 @@ import { DerivedChunk } from "./media.js";
 import { cleanDisplayName } from "./message-security.js";
 import { type PendingOp } from "./services.js";
 
-// Decode SQLite JSON columns and bit flags at the IO boundary.
+// Row shapes as SQLite returns them. JSON columns and 0/1 flags decode here,
+// so the mapping functions below only rename fields.
 export const AccountRow = Schema.Struct({
   id: Schema.String,
   provider: Provider,

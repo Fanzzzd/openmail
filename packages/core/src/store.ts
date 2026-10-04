@@ -28,7 +28,11 @@ import { makeWordIndexStore } from "./store-word-index.js";
 import { makeUndoStore } from "./undo-journal.js";
 export { applyOpToLabels, folderTarget } from "./mail-ops.js";
 export { accountId } from "./store-rows.js";
-/** Composes the SQLite Store from its query and mutation factories. */
+/**
+ * The Store service over SQLite. The only module that runs SQL. Rows are
+ * decoded with schemas built from the domain types (this is the IO boundary);
+ * SQL and decode failures die, since they mean a bug or a corrupt file.
+ */
 export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.effect(
   Store,
   Effect.gen(function* () {

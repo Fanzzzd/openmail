@@ -142,8 +142,6 @@ export const makeAccountsMailbox = (
     return result;
   });
   return {
-    connect,
-    reauth,
     service: {
       closeSessions: () =>
         Effect.gen(function* () {
