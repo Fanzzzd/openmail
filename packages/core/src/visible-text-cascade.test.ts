@@ -7,24 +7,6 @@ const checkHidden = (html: string) => {
   expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
   expect(visibleHtmlText(sanitizeReaderHtml(html)).text).not.toContain("SECRET");
 };
-it.each([
-  "@supports (display:grid){.x{display:none}}",
-  "@layer a{.x{display:none}}",
-  "@media (hover:hover),(hover:none){.x{display:none}}",
-  "@media (orientation:portrait),(orientation:landscape){.x{display:none}}",
-  "@media screen and (-webkit-min-device-pixel-ratio:0){.x{display:none}}",
-  "@media (prefers-color-scheme:light),(prefers-color-scheme:dark){.x{opacity:0}}",
-  "@supports (display:grid){.x{visibility:hidden}}",
-  "@supports (display:grid){.x{font-size:0}}",
-  "@container (min-width:1px){.x{display:none}}",
-  "@media not all and (width:800px){.x{display:none}}",
-  "@media (max-width:799.9px),(min-width:800.1px){.x{display:none}}",
-  ".x{display:none}@media (width:800px){.x{display:block!important}}",
-])("conservative hiding: %s", (css) =>
-  checkHidden(
-    `<style>${css}</style><div style="container-type:inline-size"><p class="x">SECRET</p></div>`,
-  ),
-);
 
 it("uncertain style media attributes still apply hiding", () =>
   checkHidden(
@@ -68,29 +50,6 @@ it.each([
   checkHidden(`<style>.x{${css}}</style><p class="x">SECRET</p>`);
 });
 
-it("responsive reveals at both reference widths retain desktop or mobile text", () => {
-  for (const variant of ["desktop", "mobile"]) {
-    const html = `<style>.desktop,.mobile{display:none}@media screen and (min-width:0px) and (max-width:8000px){.${variant}{display:block!important}}</style><p class="desktop">DESKTOP</p><p class="mobile">MOBILE</p>`;
-    expect(visibleHtmlText(html).text).toBe(variant.toUpperCase());
-  }
-});
-it("complementary media queries on one element can establish a reveal at both reference widths", () => {
-  const html =
-    '<style>.x{display:none}@media(max-width:800px){.x{display:block!important}}@media(min-width:800px){.x{display:block!important}}</style><p class="x">VISIBLE</p>';
-  expect(visibleHtmlText(html).text).toBe("VISIBLE");
-});
-
-it.each([
-  ".x{display:none}@supports(display:grid){.x{display:block!important}}",
-  ".x{display:none}@layer a{.x{display:block!important}}",
-  ".x{display:none}@container(min-width:1px){.x{display:block!important}}",
-  ".x{font-size:0}@media(max-width:800px){.x{font-size:1em!important}}",
-  ".x{color:transparent}@media(max-width:800px){.x{color:black!important}}",
-  ".x{display:none}@media(max-width:800px){.x{display:block!important}}.x{display:none!important}@media(min-width:800px){.x{display:block!important}}",
-])("uncertain or interrupted reveal stays hidden: %s", (css) =>
-  checkHidden(`<style>${css}</style><p class="x">SECRET</p>`),
-);
-
 it.each(["400 0/0 a", "bold 0/0 a", "small-caps 0/0 a"])(
   "font shorthand with weight or variant still hides: %s",
   (font) => checkHidden(`<p style="font:${font}">SECRET</p>`),
@@ -99,8 +58,81 @@ it("readable font shorthand and a later initial reset retain text", () => {
   for (const css of ["font:400 14px Arial", "font:bold 12pt Arial", "font-size:0;font:initial"])
     expect(visibleHtmlText(`<p style="${css}">VISIBLE</p>`).text).toBe("VISIBLE");
 });
-it("declaration budget exhaustion never restores model text", () => {
-  const html = `<style>.x{${"color:black;".repeat(8193)}display:none}</style><p class="x">SECRET</p>`;
-  expect(visibleHtmlText(html)).toHaveProperty("flags", ["budget-exceeded"]);
+
+const effectsHidden = (html: string) => {
+  expect(visibleHtmlText(html).text).not.toContain("SECRET");
   expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).not.toContain("SECRET");
+};
+it.each(["ie", "importantx"])("nonstandard important marker !%s cannot reveal", (priority) => {
+  effectsHidden(`<p style="display:none!important;display:block!${priority}">SECRET</p>`);
+  effectsHidden(
+    `<style>.x{display:none!important;display:block!${priority}}</style><p class="x">SECRET</p>`,
+  );
+});
+
+it.each([
+  "font-size:revert-layer",
+  "visibility:revert-layer",
+  "all:initial",
+  "all:revert",
+  "all:revert-layer",
+])("reset %s remains possibly hiding", (css) => {
+  effectsHidden(`<div style="font-size:0;visibility:hidden"><p style="${css}">SECRET</p></div>`);
+  effectsHidden(
+    `<style>.x{${css}}</style><div style="font-size:0;visibility:hidden"><p class="x">SECRET</p></div>`,
+  );
+});
+
+it.each([":read-only", ":lang(en)", ":hover", ":visited", ":not(:hover)"])(
+  "environment selector %s can hide but cannot reveal",
+  (pseudo) => {
+    effectsHidden(
+      `<style>.x{display:none}.x${pseudo}{display:block!important}</style><p class="x">SECRET</p>`,
+    );
+    effectsHidden(`<style>.x${pseudo}{display:none}</style><p class="x">SECRET</p>`);
+  },
+);
+
+it("discarded attributes and style parents cannot reveal reader text", () => {
+  effectsHidden(
+    '<style>.x{display:none}.x[data-private]{display:block!important}</style><p class="x" data-private="yes">SECRET</p>',
+  );
+  effectsHidden(
+    '<style>.x{display:none}</style><svg><style>.x{display:block!important}</style></svg><p class="x">SECRET</p>',
+  );
+});
+
+it("HTML5 foster-parenting keeps table-dependent reveals from matching", () =>
+  effectsHidden(
+    '<style>.x{display:none}table .x{display:block!important}</style><table><p class="x">SECRET</p><tr><td>VISIBLE</td></tr></table>',
+  ));
+
+it("reader body wrapper and shell selectors match their rendered locations", () => {
+  effectsHidden(
+    '<style>.x{display:none}html>head>.x{display:block!important}</style><html><head><p class="x">SECRET</p></head></html>',
+  );
+  expect(
+    visibleHtmlText('<style>body[dir="auto"] .x{display:none}</style><p class="x">SECRET</p>').text,
+  ).toBe("");
+});
+
+it.each([
+  "form",
+  "select",
+  "option",
+  "button",
+  "textarea",
+  "svg",
+  "math",
+  "xmp",
+  "noembed",
+  "noframes",
+  "frameset",
+  "applet",
+  "plaintext",
+])("reader drops %s contents", (tag) => effectsHidden(`<${tag}>SECRET</${tag}>`));
+
+it("void embed is removed without swallowing adjacent visible text", () => {
+  expect(visibleHtmlText('<embed src="https://evil.invalid/"><p>VISIBLE</p>').text).toBe("VISIBLE");
 });

@@ -1,3 +1,4 @@
+import { MIN_VISIBLE_ALPHA, POINT_TO_PIXEL, tinyQuantity } from "./visible-text-constants.js";
 import colorString from "color-string";
 import {
   parse,
@@ -11,7 +12,7 @@ import { evaluateQuantity, INITIAL_TEXT_STYLE } from "./visible-text-inheritance
 import type { VisibleRemovalRule } from "./visible-text-diagnostics.js";
 
 export type Rgba = readonly [number, number, number, number];
-export function color(value: string): Rgba | null {
+export function parseColour(value: string): Rgba | null {
   const parsed = colorString.get(value.trim());
   if (!parsed) return null;
   const [a, b, c, alpha] = parsed.value;
@@ -28,7 +29,7 @@ export function color(value: string): Rgba | null {
     return [channel(0), channel(8), channel(4), alpha];
   }
   // HWB uses a fully saturated hue, mixed with white and black.
-  const base = color(`hsl(${a},100%,50%)`);
+  const base = parseColour(`hsl(${a},100%,50%)`);
   if (!base) return null;
   const white = b / 100,
     black = c / 100;
@@ -99,12 +100,12 @@ const scalar = (value: string): number | null => {
       ? q.value / INITIAL_TEXT_STYLE.size.value
       : null;
 };
-export const opacityValue = (value: string | undefined): number => {
+const opacityValue = (value: string | undefined): number => {
   if (!value || /^(normal|none|initial|inherit|unset)$/.test(value)) return 1;
   const n = scalar(value);
   return n === null || !Number.isFinite(n) ? 0 : Math.min(1, Math.max(0, n));
 };
-export const small = (value: string | undefined): boolean => {
+export const tinyLength = (value: string | undefined): boolean => {
   if (!value) return false;
   const simple = /^([+-]?(?:\d*\.)?\d+)\s*(px|pt|em|rem|%|vw|vh|vmin|vmax)?$/.exec(value);
   if (simple) {
@@ -115,9 +116,7 @@ export const small = (value: string | undefined): boolean => {
     );
   }
   const q = quantity(value);
-  return Boolean(
-    q && q.value <= (q.unit === "px" || q.unit === "pt" || q.unit === "number" ? 2 : 0.2),
-  );
+  return Boolean(q && tinyQuantity(q));
 };
 type FunctionNode = Extract<CssNode, { type: "Function" }>;
 const functions = (value: string | undefined): FunctionNode[] => {
@@ -226,12 +225,12 @@ const offscreen = (value: string | undefined, positive = false): boolean => {
           : q.unit === "pt"
             ? -75
             : -100) ||
-        (positive && q.value * (q.unit === "pt" ? 4 / 3 : 1) >= 9999)),
+        (positive && q.value * (q.unit === "pt" ? POINT_TO_PIXEL : 1) >= 9999)),
     );
   });
 };
 /** Colour tokens from gradients, shorthands and shadows. */
-export function colourTokens(value: string | undefined): string[] {
+function colourTokens(value: string | undefined): string[] {
   if (!value) return [];
   const ast = parsedValue(value);
   if (!ast) return [];
@@ -252,7 +251,7 @@ export function colourTokens(value: string | undefined): string[] {
   walk(ast, { enter: collect });
   return result;
 }
-export function backgroundColour(value: string | undefined): string | null {
+function backgroundColour(value: string | undefined): string | null {
   if (!value) return null;
   const ast = parsedValue(value);
   if (ast?.type !== "Value") return null;
@@ -283,7 +282,7 @@ export function shadowPaints(value: string | undefined): readonly ShadowPaint[] 
     const text = nodes.map((node) => generate(node)).join(" ");
     const lengths = nodes.flatMap((node) => {
       const q = evaluateQuantity(node, INITIAL_TEXT_STYLE);
-      return q ? [q.value * (q.unit === "pt" ? 4 / 3 : 1)] : [];
+      return q ? [q.value * (q.unit === "pt" ? POINT_TO_PIXEL : 1)] : [];
     });
     if (lengths.length < 2) return [];
     return [
@@ -296,7 +295,6 @@ export function shadowPaints(value: string | undefined): readonly ShadowPaint[] 
   });
 }
 /** Constant lengths used for conservative reach, including calc/em/percent. */
-const POINT_TO_PIXEL = 4 / 3;
 export function paintLengths(value: string | undefined): readonly number[] {
   if (!value) return [];
   // Margins and declared sizes usually contain plain lengths. Avoid building
@@ -326,7 +324,7 @@ export function paintLengths(value: string | undefined): readonly number[] {
   if (ast?.type !== "Value") return [];
   return ast.children.toArray().flatMap((node) => {
     const q = evaluateQuantity(node, INITIAL_TEXT_STYLE);
-    return q ? [q.value * (q.unit === "pt" ? 4 / 3 : 1)] : [];
+    return q ? [q.value * (q.unit === "pt" ? POINT_TO_PIXEL : 1)] : [];
   });
 }
 const transparentMask = (value: string | undefined) =>
@@ -336,8 +334,8 @@ const transparentMask = (value: string | undefined) =>
     return (
       colours.length >= 2 &&
       colours.every((token) => {
-        const parsed = color(token);
-        if (parsed) return parsed[3] <= 0.1;
+        const parsed = parseColour(token);
+        if (parsed) return parsed[3] <= MIN_VISIBLE_ALPHA;
         return /\/\s*0(?:\.0+)?%?\s*\)$/.test(token);
       })
     );
@@ -348,11 +346,11 @@ export function subtreeStyleRemovalRule(
 ): VisibleRemovalRule | null {
   if (css.get("display") === "none") return "display-none";
   if (css.get("content-visibility") === "hidden") return "content-visibility";
-  if (effects.opacity <= 0.1) return "opacity";
-  if (effects.filterOpacity <= 0.1) return "filter-opacity";
-  if (effects.scale <= 0.1) return "scale";
-  if (effects.zoom <= 0.1) return "zoom";
-  if (effects.opacity * effects.filterOpacity * effects.scale * effects.zoom <= 0.1)
+  if (effects.opacity <= MIN_VISIBLE_ALPHA) return "opacity";
+  if (effects.filterOpacity <= MIN_VISIBLE_ALPHA) return "filter-opacity";
+  if (effects.scale <= MIN_VISIBLE_ALPHA) return "scale";
+  if (effects.zoom <= MIN_VISIBLE_ALPHA) return "zoom";
+  if (effects.opacity * effects.filterOpacity * effects.scale * effects.zoom <= MIN_VISIBLE_ALPHA)
     return "opacity";
   if (effects.destructiveFilter) return "uncertain-paint";
   if (
@@ -390,7 +388,7 @@ export function subtreeStyleRemovalRule(
     ["clip-path", "-webkit-clip-path"].some((key) => css.has(key) && css.get(key) !== "none") ||
     ["mask-image", "-webkit-mask-image"].some((key) => transparentMask(css.get(key))) ||
     ((overflow || paint) &&
-      (["height", "max-height", "width", "max-width"].some((key) => small(css.get(key))) ||
+      (["height", "max-height", "width", "max-width"].some((key) => tinyLength(css.get(key))) ||
         quantity(css.get("line-height") ?? "")?.value === 0))
   )
     return "clipping";

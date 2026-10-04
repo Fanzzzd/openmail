@@ -134,6 +134,20 @@ export function corpusException(error: unknown): ExceptionClass {
   return "Error";
 }
 
+function tracedVisibleText(
+  html: string,
+  trace: ReturnType<typeof createVisibleTextTrace> | null,
+  hits: Set<CorpusAnomaly>,
+) {
+  return visibleHtmlText(html, {
+    diagnostic: (kind) => {
+      hits.add(kind);
+      trace?.diagnostic(kind);
+    },
+    observer: trace?.observer,
+  });
+}
+
 /** SQLite's actual production tokenizers, with only a disposable in-memory index. */
 export class CorpusPipeline {
   private readonly fts = new DatabaseSync(":memory:");
@@ -210,27 +224,9 @@ export class CorpusPipeline {
         : null;
       const sanitizedTrace =
         explain && sanitized !== undefined ? createVisibleTextTrace(sanitized) : null;
-      const original = visibleHtmlText(
-        message.bodyHtml,
-        "visible",
-        (kind) => {
-          hits.add(kind);
-          originalTrace?.diagnostic(kind);
-        },
-        originalTrace?.observer,
-      );
+      const original = tracedVisibleText(message.bodyHtml, originalTrace, hits);
       const after =
-        sanitized === undefined
-          ? original
-          : visibleHtmlText(
-              sanitized,
-              "visible",
-              (kind) => {
-                hits.add(kind);
-                sanitizedTrace?.diagnostic(kind);
-              },
-              sanitizedTrace?.observer,
-            );
+        sanitized === undefined ? original : tracedVisibleText(sanitized, sanitizedTrace, hits);
       if (originalTrace && sanitizedTrace)
         send({
           kind: "explanation",
@@ -257,15 +253,12 @@ export class CorpusPipeline {
     await measure("link-security", (anomaly) => {
       let mismatches = 0;
       // Use the same visible-text traversal, including ancestor and stylesheet rules.
-      const visible = visibleHtmlText(
-        sanitized ?? prepareMessageHtml(message.bodyHtml).html,
-        "visible",
-        undefined,
-        undefined,
-        (href, label) => {
+      const visible = visibleHtmlText(sanitized ?? prepareMessageHtml(message.bodyHtml).html, {
+        budgetFallback: "visible",
+        linkObserver: (href, label) => {
           if (linkDisplayMismatch(href, label)) mismatches++;
         },
-      );
+      });
       if ("flags" in visible) anomaly("budget-exceeded");
       else if (mismatches) anomaly("link-display-mismatch", mismatches);
     });

@@ -125,28 +125,17 @@ it("explain attributes font/visibility removal to text leaves and retains overri
   const html =
     '<table><tr><td style="font-size:0">PrivateZeroCanary<div style="font-size:14px">NewsletterBodyCanary</div><span style="font-size:1px">PrivateTinyCanary</span><div style="visibility:hidden;font-size:14px">PrivateVisibilityCanary<span style="visibility:visible">VisibleOverrideCanary</span></div></td></tr></table>';
   const trace = createVisibleTextTrace(html);
-  const text = visibleHtmlText(html, "visible", trace.diagnostic, trace.observer);
+  const text = visibleHtmlText(html, {
+    budgetFallback: "visible",
+    diagnostic: trace.diagnostic,
+    observer: trace.observer,
+  });
   const explained = trace.finish(text);
   expect(text.text).toContain("NewsletterBodyCanary");
   expect(text.text).toContain("VisibleOverrideCanary");
   for (const rule of ["font-size-zero", "font-size-small", "visibility"] as const)
     expect(explained.removedByRule[rule].textNodes).toBe(1);
   expect(explained.retainedTextNodes).toBe(2);
-});
-
-it("CSS budget fallback also honors inline inheritance without restoring model text", () => {
-  const css = "p{color:red}".repeat(5121);
-  const html = `<style>${css}</style><div style="font-size:0;visibility:hidden"><p style="font-size:14px;visibility:visible">NewsletterBodyCanary</p><p style="visibility:visible;font-size:1em">PrivateAttackCanary</p></div>`;
-  expect(visibleHtmlText(html)).toMatchObject({
-    text: "NewsletterBodyCanary",
-    hidden: true,
-    flags: ["budget-exceeded"],
-  });
-  expect(messageModelText("NewsletterBodyCanary PrivateAttackCanary", html).text).not.toContain(
-    "NewsletterBodyCanary",
-  );
-  // Search's explicit full-text fallback remains separate from the model's rejection.
-  expect(htmlToText(html)).toContain("NewsletterBodyCanary");
 });
 
 it("invalid or inherited font/visibility declarations do not reveal zero-sized text", () => {

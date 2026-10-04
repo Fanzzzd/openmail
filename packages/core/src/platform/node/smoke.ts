@@ -1,4 +1,5 @@
-import { copyFileSync, existsSync, statSync, chmodSync } from "node:fs";
+import { copyQuiescentDatabase } from "./database-copy.js";
+import { existsSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { MIGRATIONS } from "../../db.js";
 import { DatabaseSync } from "node:sqlite";
@@ -19,28 +20,13 @@ export function prepareSmokeDatabase(
     resolve(sourceConfig) === resolve(join(directory, "config.json"))
   )
     throw new Error("Smoke configuration must be a separate copy");
-  const files = source
-    ? [
-        { source, target },
-        { source: `${source}-wal`, target: `${target}-wal` },
-        ...(sourceConfig ? [{ source: sourceConfig, target: join(directory, "config.json") }] : []),
-      ].filter((file) => existsSync(file.source))
-    : [];
-  const before = files.map((file) => statSync(file.source));
-  for (const file of files) {
-    copyFileSync(file.source, file.target);
-    chmodSync(file.target, 0o600);
-  }
   if (
-    files.some((file, index) => {
-      const after = statSync(file.source);
-      const prior = before[index];
-      return !prior || after.size !== prior.size || after.mtimeMs !== prior.mtimeMs;
-    }) ||
-    (source &&
-      existsSync(`${source}-wal`) !== files.some((file) => file.source === `${source}-wal`)) ||
-    (sourceConfig &&
-      existsSync(sourceConfig) !== files.some((file) => file.source === sourceConfig))
+    source &&
+    copyQuiescentDatabase(source, target, {
+      kind: "smoke",
+      sourceConfig,
+      targetConfig: join(directory, "config.json"),
+    }) !== "copied"
   )
     throw new Error("Smoke inputs changed during copy. Close their writers and retry.");
   const db = new DatabaseSync(target);

@@ -1,17 +1,14 @@
+import { constantLength, REPLACED_TAGS } from "./visible-text-overlap.js";
+import { OVERPAINT_MARGIN_PX, POINT_TO_PIXEL } from "./visible-text-constants.js";
 import { parse, generate, type CssNode } from "./css-tree-browser.js";
 import { INITIAL_TEXT_STYLE, evaluateQuantity } from "./visible-text-inheritance.js";
-import { color, gradientColours, paintLengths } from "./visible-text-style.js";
+import { parseColour, gradientColours, paintLengths } from "./visible-text-style.js";
 import { legacyColour } from "./visible-text-paint.js";
 
 export type OpaqueCoverage = "containing-block" | "previous-sibling" | "adjacent-siblings";
 const zeroInset = (value: string | undefined) => {
   const lengths = paintLengths(value);
   return lengths.length > 0 && lengths.every((n) => n === 0);
-};
-const constantLength = (value: string | undefined): number | null => {
-  if (!value || value.includes("%")) return null;
-  const lengths = paintLengths(value);
-  return lengths.length === 1 ? (lengths[0] ?? null) : null;
 };
 function translationY(value: string | undefined): number | null {
   if (!value) return null;
@@ -33,7 +30,7 @@ function translationY(value: string | undefined): number | null {
       INITIAL_TEXT_STYLE,
     );
     if (!quantity || !["px", "pt", "number"].includes(quantity.unit)) return null;
-    total += quantity.value * (quantity.unit === "pt" ? 4 / 3 : 1);
+    total += quantity.value * (quantity.unit === "pt" ? POINT_TO_PIXEL : 1);
   }
   return total;
 }
@@ -45,11 +42,8 @@ export function opaqueCoverage(
   attrs: Readonly<Record<string, string>>,
   ink: string,
 ): OpaqueCoverage | null {
-  if (["img", "video", "svg"].includes(tag)) return null;
-  const fill = color(css.get("background-color") ?? legacyColour(attrs.bgcolor) ?? "transparent");
-  const stops = gradientColours(css.get("background-image"));
-  const opaque =
-    fill?.[3] === 1 || (stops.length > 0 && stops.every((stop) => color(stop)?.[3] === 1));
+  if (REPLACED_TAGS.has(tag)) return null;
+  const opaque = opaqueFill(css, attrs);
   const position = css.get("position");
   const absolute = position === "absolute" || position === "fixed";
   if (Number(css.get("z-index")) < 0) return null;
@@ -77,7 +71,7 @@ export function opaqueCoverage(
   );
   if (opaque && !absolute && height !== null && up <= -lineReach && height >= -up)
     return "previous-sibling";
-  const outline = color(
+  const outline = parseColour(
     css.get("outline-color") === "currentcolor" ? ink : (css.get("outline-color") ?? ink),
   );
   const width = constantLength(css.get("outline-width"));
@@ -98,7 +92,7 @@ export function horizontalInlineCoverage(
   tag: string,
   attrs: Readonly<Record<string, string>>,
 ): InlineCoverage | null {
-  const replaced = ["img", "video", "svg"].includes(tag);
+  const replaced = REPLACED_TAGS.has(tag);
   if (["absolute", "fixed"].includes(css.get("position") ?? "")) return null;
   const display = css.get("display");
   if (display !== "inline-block" && !(replaced && (!display || display === "inline"))) return null;
@@ -109,7 +103,7 @@ export function horizontalInlineCoverage(
       paintLengths(css.get(key)),
     ),
   );
-  if (horizontal > -10) return null;
+  if (horizontal > -OVERPAINT_MARGIN_PX) return null;
   const width = constantLength(css.get("width") ?? attrs.width);
   const height = constantLength(css.get("height") ?? attrs.height);
   if (
@@ -120,9 +114,19 @@ export function horizontalInlineCoverage(
   )
     return null;
   if (replaced) return "replaced";
-  const fill = color(css.get("background-color") ?? legacyColour(attrs.bgcolor) ?? "transparent");
+  const opaque = opaqueFill(css, attrs);
+  return opaque ? "opaque" : null;
+}
+
+function opaqueFill(
+  css: ReadonlyMap<string, string>,
+  attrs: Readonly<Record<string, string>>,
+): boolean {
+  const fill = parseColour(
+    css.get("background-color") ?? legacyColour(attrs.bgcolor) ?? "transparent",
+  );
   const stops = gradientColours(css.get("background-image"));
-  return fill?.[3] === 1 || (stops.length > 0 && stops.every((stop) => color(stop)?.[3] === 1))
-    ? "opaque"
-    : null;
+  return (
+    fill?.[3] === 1 || (stops.length > 0 && stops.every((stop) => parseColour(stop)?.[3] === 1))
+  );
 }

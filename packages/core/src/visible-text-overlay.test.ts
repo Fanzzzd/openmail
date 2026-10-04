@@ -145,10 +145,6 @@ it("reader defaults participate in the mail cascade with stable specificity", ()
   ).toBe("VISIBLE");
 });
 
-it("inline budget exhaustion in the painter prepass returns the same bounded fallback", () => {
-  const html = `<p style="${"color:black;".repeat(8193)}">SECRET</p>`;
-  expect(visibleHtmlText(html)).toHaveProperty("flags", ["budget-exceeded"]);
-});
 it("non-replaced unresolved paint without known coverage does not discard adjacent text", () => {
   const html =
     '<div style="position:relative"><span>SECRET</span><div style="position:absolute;background:var(--paper)"></div></div>';

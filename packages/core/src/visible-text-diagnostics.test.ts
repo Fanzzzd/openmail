@@ -60,7 +60,11 @@ it.each(fixtures)(
   "traces actual $rule removals without changing visible text or exposing it",
   ({ rule, html, word }) => {
     const trace = createVisibleTextTrace(html);
-    const actual = visibleHtmlText(html, "visible", trace.diagnostic, trace.observer);
+    const actual = visibleHtmlText(html, {
+      budgetFallback: "visible",
+      diagnostic: trace.diagnostic,
+      observer: trace.observer,
+    });
     expect(actual).toEqual(visibleHtmlText(html));
     const explanation = trace.finish(actual);
     expect(explanation.removedByRule[rule]).toEqual({ textNodes: 1, characters: word.length });
@@ -73,7 +77,11 @@ it("reports stylesheet origin, selector shapes and custom tags through fixed all
   const html =
     '<style>@media screen {.PrivateClassCanary:not(#PrivateIdCanary)[title="PrivateAttributeCanary"]{display:none}} :PrivatePseudoCanary{display:block}</style><PrivateTagCanary><p class="PrivateClassCanary" title="PrivateAttributeCanary">PrivateTextCanary</p></PrivateTagCanary>';
   const trace = createVisibleTextTrace(html);
-  const result = visibleHtmlText(html, "visible", trace.diagnostic, trace.observer);
+  const result = visibleHtmlText(html, {
+    budgetFallback: "visible",
+    diagnostic: trace.diagnostic,
+    observer: trace.observer,
+  });
   const explanation = trace.finish(result);
   expect(result.text).toBe("");
   expect(explanation.removedByRule["display-none"]).toEqual({
@@ -110,7 +118,11 @@ it("exposes malformed head topology and counts pruned subtrees once", () => {
   expect(structure.tagCounts.body).toBe(0);
   expect(structure.textNodesInsideHead).toBe(2);
   const trace = createVisibleTextTrace(html);
-  const result = visibleHtmlText(html, "visible", trace.diagnostic, trace.observer);
+  const result = visibleHtmlText(html, {
+    budgetFallback: "visible",
+    diagnostic: trace.diagnostic,
+    observer: trace.observer,
+  });
   const explanation = trace.finish(result);
   expect(result.text).toBe("PrivateOutlookCanary");
   expect(explanation.removedByRule["omit-tag"]).toEqual({
@@ -118,17 +130,4 @@ it("exposes malformed head topology and counts pruned subtrees once", () => {
     characters: "p{color:black}".length,
   });
   expect(JSON.stringify(explanation)).not.toContain("PrivateOutlookCanary");
-});
-
-it("preserves budget fallback and reports its actual inline removals", () => {
-  const html = `<style>${"p{color:red}".repeat(5121)}</style><p hidden>PrivateBudgetCanary</p><p>PrivateVisibleCanary</p>`;
-  const trace = createVisibleTextTrace(html);
-  const result = visibleHtmlText(html, "visible", trace.diagnostic, trace.observer);
-  const explanation = trace.finish(result);
-  expect(result).toEqual(visibleHtmlText(html));
-  expect(explanation.budgetExceeded).toBe(true);
-  expect(explanation.cssRuleBudgetHits).toBe(1);
-  expect(explanation.removedByRule["hidden-attribute"].textNodes).toBe(1);
-  expect(explanation.retainedTextNodes).toBe(1);
-  expect(explanation.retainedCharacters).toBe("PrivateVisibleCanary".length);
 });

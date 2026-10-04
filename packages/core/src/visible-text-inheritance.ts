@@ -1,3 +1,4 @@
+import { POINT_TO_PIXEL } from "./visible-text-constants.js";
 import type { CssNode } from "./css-tree-browser.js";
 import type { VisibleRemovalRule, VisibleRemovalSource } from "./visible-text-diagnostics.js";
 import type { VisibleCascade } from "./visible-text-css.js";
@@ -64,8 +65,8 @@ function sameUnits(a: Quantity, b: Quantity): [Quantity, Quantity] | null {
   if (b.value === 0 && b.unit === "number") return [a, { ...b, unit: a.unit }];
   if ((a.unit === "px" || a.unit === "pt") && (b.unit === "px" || b.unit === "pt"))
     return [
-      { value: a.value * (a.unit === "pt" ? 4 / 3 : 1), unit: "px" },
-      { value: b.value * (b.unit === "pt" ? 4 / 3 : 1), unit: "px" },
+      { value: a.value * (a.unit === "pt" ? POINT_TO_PIXEL : 1), unit: "px" },
+      { value: b.value * (b.unit === "pt" ? POINT_TO_PIXEL : 1), unit: "px" },
     ];
   return null;
 }

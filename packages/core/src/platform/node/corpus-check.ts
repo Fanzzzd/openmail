@@ -1,12 +1,11 @@
+import { copyQuiescentDatabase } from "./database-copy.js";
 import { createHmac, randomBytes } from "node:crypto";
 import {
-  copyFileSync,
   chmodSync,
   existsSync,
   lstatSync,
   mkdtempSync,
   rmSync,
-  statSync,
   readFileSync,
   writeFileSync,
 } from "node:fs";
@@ -75,28 +74,9 @@ export type CorpusCheckOptions = CorpusScanOptions | CorpusExplainOptions;
 function snapshot(source: string, directory: string): string {
   const target = join(directory, "mail.db");
   for (let attempt = 0; attempt < 3; attempt++) {
-    const files = [source, `${source}-wal`].filter((file) => existsSync(file));
-    if (files[0] !== source || files.some((file) => !lstatSync(file).isFile())) break;
-    const before = files.map((file) => statSync(file));
-    for (const suffix of ["", "-wal", "-shm"]) rmSync(`${target}${suffix}`, { force: true });
-    for (const [index, file] of files.entries()) {
-      const destination = index === 0 ? target : `${target}-wal`;
-      copyFileSync(file, destination);
-      chmodSync(destination, 0o600);
-    }
-    const stable = files.every((file, index) => {
-      if (!existsSync(file)) return false;
-      const after = statSync(file),
-        prior = before[index];
-      return (
-        prior &&
-        after.ino === prior.ino &&
-        after.size === prior.size &&
-        after.mtimeMs === prior.mtimeMs &&
-        after.ctimeMs === prior.ctimeMs
-      );
-    });
-    if (stable && existsSync(`${source}-wal`) === files.includes(`${source}-wal`)) return target;
+    const copied = copyQuiescentDatabase(source, target);
+    if (copied === "invalid") break;
+    if (copied === "copied") return target;
   }
   throw new CorpusCheckError("Cannot create a stable read-only corpus snapshot");
 }

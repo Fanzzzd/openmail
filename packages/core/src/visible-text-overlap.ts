@@ -1,5 +1,12 @@
-import { color, gradientColours, paintLengths, shadowPaints } from "./visible-text-style.js";
-import { alwaysLoadedImage, legacyColour, type PaintedBackground } from "./visible-text-paint.js";
+export { REPLACED_TAGS } from "./visible-text-constants.js";
+import { REPLACED_TAGS, MIN_VISIBLE_ALPHA, OVERPAINT_MARGIN_PX } from "./visible-text-constants.js";
+import { gradientColours, paintLengths, shadowPaints } from "./visible-text-style.js";
+import {
+  alwaysLoadedImage,
+  legacyColour,
+  paintColour,
+  type PaintedBackground,
+} from "./visible-text-paint.js";
 
 export interface SiblingPaint {
   readonly papers: readonly PaintedBackground[];
@@ -19,17 +26,12 @@ const margins = [
   "margin-block-end",
 ];
 const offsets = ["top", "left", "right", "bottom", "inset", "inset-inline", "inset-block"];
-const paper = (token: string, ink: string): PaintedBackground => {
-  const rgb = color(token === "currentcolor" ? ink : token);
-  return rgb ? { kind: "known", rgb } : { kind: "unknown" };
-};
-
 const large = (value: string | undefined, extent: number | null) => {
   if (!value) return false;
   const percent = /^([\d.]+)%$/.exec(value);
   if (percent) return Number(percent[1]) >= 50;
-  const length = declaredExtent(value);
-  return extent !== null && length !== null && length >= extent * 0.5;
+  const length = constantLength(value);
+  return extent !== null && length !== null && length > 0 && length >= extent * 0.5;
 };
 
 /** Conservative paint reach within one containing block, independent of DOM order. */
@@ -51,7 +53,9 @@ export function siblingPaint(
   const transformed = ["transform", "translate", "scale"].some(
     (key) => css.has(key) && !/^(none|initial|unset)$/.test(css.get(key) ?? ""),
   );
-  const negativeMargin = margins.some((key) => paintLengths(css.get(key)).some((n) => n <= -10));
+  const negativeMargin = margins.some((key) =>
+    paintLengths(css.get(key)).some((n) => n <= -OVERPAINT_MARGIN_PX),
+  );
   const outlineWidth = css.get("outline-width");
   const outlineSize = /^(thin|medium|thick)$/.test(outlineWidth ?? "")
     ? 3
@@ -64,7 +68,7 @@ export function siblingPaint(
   );
   if (!absolute && !shifted && !transformed && !negativeMargin && !outline && !shadows.length)
     return null;
-  const replaced = ["img", "video", "svg"].includes(tag);
+  const replaced = REPLACED_TAGS.has(tag);
   if (replaced) {
     const inset = paintLengths(css.get("inset"));
     const fills = inset.length > 0 && inset.every((n) => n === 0);
@@ -80,19 +84,21 @@ export function siblingPaint(
   const papers: PaintedBackground[] = [];
   if (replaced || local || uncertain) papers.push({ kind: "unknown" });
   const background = css.get("background-color") ?? legacyColour(attrs.bgcolor);
-  if (background) papers.push(paper(background, ink));
-  papers.push(...gradientColours(css.get("background-image")).map((stop) => paper(stop, ink)));
-  if (outline) papers.push(paper(css.get("outline-color") ?? "currentcolor", ink));
-  papers.push(...shadows.map((shadow) => paper(shadow.colour, ink)));
-  const visiblePapers = papers.filter((paint) => paint.kind === "unknown" || paint.rgb[3] > 0.1);
+  if (background) papers.push(paintColour(background, ink));
+  papers.push(
+    ...gradientColours(css.get("background-image")).map((stop) => paintColour(stop, ink)),
+  );
+  if (outline) papers.push(paintColour(css.get("outline-color") ?? "currentcolor", ink));
+  papers.push(...shadows.map((shadow) => paintColour(shadow.colour, ink)));
+  const visiblePapers = papers.filter(
+    (paint) => paint.kind === "unknown" || paint.rgb[3] > MIN_VISIBLE_ALPHA,
+  );
   if (!visiblePapers.length) return null;
   return { papers: visiblePapers, replaced, behind: Number(css.get("z-index")) < 0 };
 }
 
-/** Only explicit absolute lengths establish a containing block's declared size. */
-export function declaredExtent(value: string | undefined): number | null {
-  if (!value || value.includes("%") || /^(auto|none|initial|inherit|unset)$/.test(value))
-    return null;
+export function constantLength(value: string | undefined): number | null {
+  if (!value || value.includes("%")) return null;
   const sizes = paintLengths(value);
-  return sizes.length === 1 && sizes[0] !== undefined && sizes[0] > 0 ? sizes[0] : null;
+  return sizes.length === 1 ? (sizes[0] ?? null) : null;
 }

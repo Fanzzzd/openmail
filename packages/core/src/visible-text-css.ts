@@ -1,3 +1,4 @@
+import { MAX_MEDIA_WIDTH, MAX_ALTERNATIVES, EFFECT_PROPERTIES } from "./visible-text-constants.js";
 import {
   parse,
   generate,
@@ -33,7 +34,7 @@ import { READER_ATTRIBUTES } from "./reader-sanitize.js";
 import { resolveFont, INITIAL_TEXT_STYLE } from "./visible-text-inheritance.js";
 import {
   subtreeStyleRemovalRule,
-  small,
+  tinyLength,
   REMOVAL_PROPERTIES,
   styleEffects,
   backgroundLonghands,
@@ -239,7 +240,7 @@ function hiding(declaration: Declaration): boolean {
   return (
     subtreeStyleRemovalRule(new Map([[property, value]])) !== null ||
     (property === "overflow" && value === "hidden") ||
-    (["height", "max-height", "width", "max-width"].includes(property) && small(value))
+    (["height", "max-height", "width", "max-width"].includes(property) && tinyLength(value))
   );
 }
 /** Validate before last-wins/important compaction, for inline and stylesheet blocks. */
@@ -441,7 +442,7 @@ function revealProof(rules: readonly VisibleStyleRule[]): ReadonlySet<string> {
       if (capped.has(key)) continue;
       const merged = mergeBand(ranges);
       const first = merged?.at(0);
-      if (merged?.length === 1 && first?.lo === 0 && first.hi === 8000) whole.add(key);
+      if (merged?.length === 1 && first?.lo === 0 && first.hi === MAX_MEDIA_WIDTH) whole.add(key);
     }
   return whole;
 }
@@ -590,20 +591,14 @@ export function makeVisibleStyleCascade(parser: ReturnType<typeof makeDeclaratio
             "font-size",
             "-webkit-text-fill-color",
             "line-height",
-            "opacity",
-            "filter",
-            "transform",
-            "scale",
-            "zoom",
+            ...EFFECT_PROPERTIES,
           ].includes(d.property)
         ) {
           const old = alternatives.get(d.property) ?? [
             previous?.value ??
-              (["opacity", "filter", "transform", "scale", "zoom"].includes(d.property)
-                ? "initial"
-                : "inherit"),
+              (EFFECT_PROPERTIES.some((key) => key === d.property) ? "initial" : "inherit"),
           ];
-          if (!old.includes(d.value) && old.length < MAX_REVEAL_INTERVALS)
+          if (!old.includes(d.value) && old.length < MAX_ALTERNATIVES)
             alternatives.set(d.property, [...old, d.value]);
           else {
             alternatives.set(d.property, old);

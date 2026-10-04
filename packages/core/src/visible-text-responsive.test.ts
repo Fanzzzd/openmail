@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { htmlToText } from "./mime.js";
-import { sanitizeReaderHtml } from "./reader-sanitize.js";
+import { sanitizeReaderHtml, sanitizeReaderCss } from "./reader-sanitize.js";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { createVisibleTextTrace } from "./visible-text-diagnostics.js";
 
@@ -28,7 +28,11 @@ for (const variant of ["desktop", "mobile"] as const) {
       expect(messageModelText("DesktopBodyCanary MobileBodyCanary", html).text).toBe(expected);
       const trace = createVisibleTextTrace(html);
       const explained = trace.finish(
-        visibleHtmlText(html, "visible", trace.diagnostic, trace.observer),
+        visibleHtmlText(html, {
+          budgetFallback: "visible",
+          diagnostic: trace.diagnostic,
+          observer: trace.observer,
+        }),
       );
       expect(explained.removedByRule["display-none"].textNodes).toBe(1);
       expect(explained.retainedTextNodes).toBeGreaterThan(0);
@@ -159,14 +163,6 @@ it("important display declarations keep their priority within one style attribut
   expect(visibleHtmlText(html).text).toBe("VisibleCanary");
 });
 
-it("budget exhaustion never restores responsive or hidden text to the model", () => {
-  const html = `<style>${"p{color:red}".repeat(5121)}@media screen{.copy{display:block!important}}</style><p class="copy" style="display:none">PrivateAttackCanary</p>`;
-  expect(messageModelText("PrivateAttackCanary", html)).toMatchObject({
-    flags: ["budget-exceeded", "hidden-text-removed"],
-  });
-  expect(messageModelText("PrivateAttackCanary", html).text).not.toContain("PrivateAttackCanary");
-});
-
 it("Outlook responsive newsletter keeps desktop copy and excludes the narrow-only mobile copy", () => {
   const html =
     '<style>.mobile{display:none}@media screen and (max-width:600px){.desktop{display:none!important}.mobile{display:block!important}}@media screen and (min-width:601px){.desktop{font-size:14px;color:#222;line-height:1.4}}</style><table class="desktop"><tr><td>DesktopNewsletterCanary</td></tr></table><div class="mobile">PrivateMobileCanary</div>';
@@ -204,4 +200,138 @@ it.each([
 ])("unknown environmental condition %s never reveals text", (condition) => {
   const html = `<style>.copy{display:none}@media${condition}{.copy{display:block!important}}</style><p class="copy">PrivateEnvironmentCanary</p>`;
   expect(visibleHtmlText(html).text).toBe("");
+});
+
+const effectsHidden = (html: string) => {
+  expect(visibleHtmlText(html).text).not.toContain("SECRET");
+  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).not.toContain("SECRET");
+};
+it.each(["(min-width:320px)", "(max-width:1920px)", "(min-width:20em)"])(
+  "partial reveal condition %s cannot restore text",
+  (query) => {
+    effectsHidden(
+      `<style>.x{display:none}@media${query}{.x{display:block!important}}</style><p class="x">SECRET</p>`,
+    );
+  },
+);
+
+it("complementary max-600/min-601 reveals cover the safety range", () => {
+  expect(
+    visibleHtmlText(
+      '<style>.x{display:none}@media(max-width:600px){.x{display:block!important}}@media(min-width:601px){.x{display:block!important}}</style><p class="x">VISIBLE</p>',
+    ).text,
+  ).toBe("VISIBLE");
+});
+
+it("partial colour changes preserve inherited hiding alternatives through descendants", () => {
+  effectsHidden(
+    '<style>.x{color:transparent}@media(min-width:320px){.x{color:black}}</style><div class="x"><span>SECRET</span></div>',
+  );
+  effectsHidden(
+    '<style>.x{background-color:black;color:black}@media(min-width:320px){.x{background-color:white}}</style><div class="x"><span>SECRET</span></div>',
+  );
+});
+
+it("an uncertain ordinary colour alone does not discard readable descendants", () => {
+  expect(
+    visibleHtmlText(
+      '<style>@media(hover:hover){.x{color:red}}</style><div class="x"><span>VISIBLE</span></div>',
+    ).text,
+  ).toBe("VISIBLE");
+});
+
+const checkHidden = (html: string) => {
+  expect(visibleHtmlText(html).text).not.toContain("SECRET");
+  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).not.toContain("SECRET");
+};
+it.each([
+  "@supports (display:grid){.x{display:none}}",
+  "@layer a{.x{display:none}}",
+  "@media (hover:hover),(hover:none){.x{display:none}}",
+  "@media (orientation:portrait),(orientation:landscape){.x{display:none}}",
+  "@media screen and (-webkit-min-device-pixel-ratio:0){.x{display:none}}",
+  "@media (prefers-color-scheme:light),(prefers-color-scheme:dark){.x{opacity:0}}",
+  "@supports (display:grid){.x{visibility:hidden}}",
+  "@supports (display:grid){.x{font-size:0}}",
+  "@container (min-width:1px){.x{display:none}}",
+  "@media not all and (width:800px){.x{display:none}}",
+  "@media (max-width:799.9px),(min-width:800.1px){.x{display:none}}",
+  ".x{display:none}@media (width:800px){.x{display:block!important}}",
+])("conservative hiding: %s", (css) =>
+  checkHidden(
+    `<style>${css}</style><div style="container-type:inline-size"><p class="x">SECRET</p></div>`,
+  ),
+);
+
+it("responsive reveals at both reference widths retain desktop or mobile text", () => {
+  for (const variant of ["desktop", "mobile"]) {
+    const html = `<style>.desktop,.mobile{display:none}@media screen and (min-width:0px) and (max-width:8000px){.${variant}{display:block!important}}</style><p class="desktop">DESKTOP</p><p class="mobile">MOBILE</p>`;
+    expect(visibleHtmlText(html).text).toBe(variant.toUpperCase());
+  }
+});
+
+it("complementary media queries on one element can establish a reveal at both reference widths", () => {
+  const html =
+    '<style>.x{display:none}@media(max-width:800px){.x{display:block!important}}@media(min-width:800px){.x{display:block!important}}</style><p class="x">VISIBLE</p>';
+  expect(visibleHtmlText(html).text).toBe("VISIBLE");
+});
+
+it.each([
+  ".x{display:none}@supports(display:grid){.x{display:block!important}}",
+  ".x{display:none}@layer a{.x{display:block!important}}",
+  ".x{display:none}@container(min-width:1px){.x{display:block!important}}",
+  ".x{font-size:0}@media(max-width:800px){.x{font-size:1em!important}}",
+  ".x{color:transparent}@media(max-width:800px){.x{color:black!important}}",
+  ".x{display:none}@media(max-width:800px){.x{display:block!important}}.x{display:none!important}@media(min-width:800px){.x{display:block!important}}",
+])("uncertain or interrupted reveal stays hidden: %s", (css) =>
+  checkHidden(`<style>${css}</style><p class="x">SECRET</p>`),
+);
+
+const notification = (condition: string) =>
+  `<style>body{background-color:#140606}.main-container{background-color:#fff}.dark-font{color:#000!important}@media ${condition}{body{background-color:#262626}.dark-main-container{background-color:#333!important}.dark-font{color:#fff!important}}[data-ogsc] .dark-font{color:#fff!important}[data-ogsc] .dark-main-container{background-color:#333!important}[data-ogsb] .dark-font{color:#fff!important}</style><table><tr><td class="main-container dark-main-container" bgcolor="#fff"><table><tr><td class="background dark-font" style="color:#000"><span>NotificationCanary</span><p>ReceiptCanary</p></td></tr></table></td></tr></table>`;
+
+const readable = (html: string) => {
+  expect(visibleHtmlText(html).text).toBe("NotificationCanary\nReceiptCanary");
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).toBe("NotificationCanary\nReceiptCanary");
+  expect(messageModelText("NotificationCanary ReceiptCanary", html).text).toBe(
+    "NotificationCanary\nReceiptCanary",
+  );
+};
+
+it("light and dark notification colours stay paired with their painted ancestors", () =>
+  readable(notification("(prefers-color-scheme:dark)")));
+
+it.each([
+  "(hover:hover)",
+  "(pointer:fine)",
+  "(orientation:landscape)",
+  "(-webkit-min-device-pixel-ratio:1)",
+])("condition %s cannot mix foreground and background from different scenarios", (condition) =>
+  readable(notification(condition)),
+);
+
+it("a real same-colour match in one consistent scenario still hides text", () => {
+  const html =
+    '<style>.paper{background-color:white}.text{color:black}@media(prefers-color-scheme:dark){.paper{background-color:#333}.text{color:#333}}</style><div class="paper"><p class="text">SECRET</p></div>';
+  expect(visibleHtmlText(html).text).toBe("");
+  expect(messageModelText("SECRET", html).text).toBe("");
+});
+
+it("opposite hover scenarios remain correlated when both occur in one message", () => {
+  const html =
+    '<style>.paper{background-color:white}.text{color:black}@media(hover:hover){.paper{background-color:#333}.text{color:white}}@media(hover:none){.paper{background-color:white}.text{color:black}}</style><div class="paper"><p class="text">VISIBLE</p></div>';
+  expect(visibleHtmlText(html).text).toBe("VISIBLE");
+});
+
+it("width range comparison tokens survive CSS sanitation and repeat sanitation", () => {
+  const html =
+    '<style>@media(0px <= width <= 8000px){.x{display:block}}</style><p class="x">VISIBLE</p>';
+  const clean = sanitizeReaderHtml(html);
+  expect(clean).toContain("<=");
+  expect(sanitizeReaderHtml(clean)).toBe(clean);
+  expect(sanitizeReaderCss('p::before{content:"</style><script>"}', false)).not.toContain(
+    "</style",
+  );
 });

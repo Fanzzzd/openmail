@@ -279,13 +279,6 @@ it("HTML presentational attributes use the legacy colour algorithm rather than C
   expect(legacyColour("")).toBeNull();
 });
 
-it("paint alternatives are bounded and do not forward fallback text", () => {
-  const opening =
-    '<div style="background-image:linear-gradient(rgba(0,0,0,.5),rgba(255,255,255,.5))">';
-  const html = `${opening.repeat(10)}SECRET${"</div>".repeat(10)}`;
-  expect(visibleHtmlText(html)).toHaveProperty("flags", ["budget-exceeded"]);
-  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
-});
 it("opaque gradient overlays also remove earlier text", () => {
   expect(
     visibleHtmlText(

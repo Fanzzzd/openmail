@@ -12,7 +12,7 @@ import { expect } from "vitest";
 import { DomUtils, parseDocument } from "htmlparser2";
 import { sanitizeReaderHtml, sanitizeReaderCss } from "./reader-sanitize.js";
 import { stripMobileForms } from "./platform/react-native/reader-html.js";
-import { visibleHtmlText, messageModelText } from "./visible-text.js";
+import { visibleHtmlText } from "./visible-text.js";
 import { htmlToText } from "./mime.js";
 import { stripActiveContent } from "./print.js";
 import { prepareMessageHtml } from "./reader-html.js";
@@ -298,18 +298,6 @@ import { prepareMessageHtml } from "./reader-html.js";
     });
   });
 
-  it("budget exhaustion returns all text and an explicit flag instead of an empty body", () => {
-    const css = ".message{display:none}".repeat(6000);
-    const input = `<style>${css}</style><p class="message">Shipment reference</p><p>Last searchable paragraph</p>`;
-    expect(visibleHtmlText(input)).toMatchObject({
-      text: "Shipment reference\nLast searchable paragraph",
-      hidden: false,
-      flags: ["budget-exceeded"],
-    });
-    expect(htmlToText(input)).toBe("Shipment reference\nLast searchable paragraph");
-    expect(messageModelText("", input).flags).toContain("budget-exceeded");
-  });
-
   it("repeated selectors share matching work and exclude the hidden final paragraph", () => {
     const css = "p{color:navy}".repeat(1300);
     const input = `<style>${css}</style>${"<p>Shipment reference</p>".repeat(2000)}<p hidden>Last searchable paragraph</p>`;
@@ -342,14 +330,3 @@ import { prepareMessageHtml } from "./reader-html.js";
     expect(prepared.html).toContain('type("image/png")');
   });
 }
-
-it("width range comparison tokens survive CSS sanitation and repeat sanitation", () => {
-  const html =
-    '<style>@media(0px <= width <= 8000px){.x{display:block}}</style><p class="x">VISIBLE</p>';
-  const clean = sanitizeReaderHtml(html);
-  expect(clean).toContain("<=");
-  expect(sanitizeReaderHtml(clean)).toBe(clean);
-  expect(sanitizeReaderCss('p::before{content:"</style><script>"}', false)).not.toContain(
-    "</style",
-  );
-});

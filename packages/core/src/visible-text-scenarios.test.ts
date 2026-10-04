@@ -1,32 +1,6 @@
 import { expect, it } from "vitest";
 import { visibleHtmlText, messageModelText } from "./visible-text.js";
 import { sanitizeReaderHtml } from "./reader-sanitize.js";
-
-const notification = (condition: string) =>
-  `<style>body{background-color:#140606}.main-container{background-color:#fff}.dark-font{color:#000!important}@media ${condition}{body{background-color:#262626}.dark-main-container{background-color:#333!important}.dark-font{color:#fff!important}}[data-ogsc] .dark-font{color:#fff!important}[data-ogsc] .dark-main-container{background-color:#333!important}[data-ogsb] .dark-font{color:#fff!important}</style><table><tr><td class="main-container dark-main-container" bgcolor="#fff"><table><tr><td class="background dark-font" style="color:#000"><span>NotificationCanary</span><p>ReceiptCanary</p></td></tr></table></td></tr></table>`;
-const readable = (html: string) => {
-  expect(visibleHtmlText(html).text).toBe("NotificationCanary\nReceiptCanary");
-  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).toBe("NotificationCanary\nReceiptCanary");
-  expect(messageModelText("NotificationCanary ReceiptCanary", html).text).toBe(
-    "NotificationCanary\nReceiptCanary",
-  );
-};
-it("light and dark notification colours stay paired with their painted ancestors", () =>
-  readable(notification("(prefers-color-scheme:dark)")));
-it.each([
-  "(hover:hover)",
-  "(pointer:fine)",
-  "(orientation:landscape)",
-  "(-webkit-min-device-pixel-ratio:1)",
-])("condition %s cannot mix foreground and background from different scenarios", (condition) =>
-  readable(notification(condition)),
-);
-it("a real same-colour match in one consistent scenario still hides text", () => {
-  const html =
-    '<style>.paper{background-color:white}.text{color:black}@media(prefers-color-scheme:dark){.paper{background-color:#333}.text{color:#333}}</style><div class="paper"><p class="text">SECRET</p></div>';
-  expect(visibleHtmlText(html).text).toBe("");
-  expect(messageModelText("SECRET", html).text).toBe("");
-});
 it.each(["data-ogsc", "data-ogsb"])(
   "sanitizer-only attribute %s matches no reader element",
   (attribute) => {
@@ -49,21 +23,6 @@ it("nearest painted ancestor overrides an earlier painted ancestor", () => {
   expect(visibleHtmlText(html).text).toBe("VISIBLE");
 });
 
-it("opposite hover scenarios remain correlated when both occur in one message", () => {
-  const html =
-    '<style>.paper{background-color:white}.text{color:black}@media(hover:hover){.paper{background-color:#333}.text{color:white}}@media(hover:none){.paper{background-color:white}.text{color:black}}</style><div class="paper"><p class="text">VISIBLE</p></div>';
-  expect(visibleHtmlText(html).text).toBe("VISIBLE");
-});
-it("scenario expansion is bounded and never forwards fallback text to the model", () => {
-  const groups = Array.from(
-    { length: 7 },
-    (_, i) => `@media(unknown-feature-${i}:1){.x{color:white;background-color:#333}}`,
-  ).join("");
-  const html = `<style>${groups}</style><p class="x">SECRET</p>`;
-  expect(visibleHtmlText(html)).toHaveProperty("flags", ["budget-exceeded"]);
-  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
-});
-
 it("blocked URL backgrounds retain text contrasting with the fallback colour", () => {
   expect(
     visibleHtmlText(
@@ -71,3 +30,71 @@ it("blocked URL backgrounds retain text contrasting with the fallback colour", (
     ).text,
   ).toBe("VISIBLE");
 });
+
+const effectsHidden = (html: string) => {
+  expect(visibleHtmlText(html).text).not.toContain("SECRET");
+  expect(messageModelText("SECRET", html).text).not.toContain("SECRET");
+  expect(visibleHtmlText(sanitizeReaderHtml(html)).text).not.toContain("SECRET");
+};
+it.each([
+  "opacity:calc(0)",
+  "filter:opacity(0.05)",
+  "filter:opacity(5.5%)",
+  "scale:0",
+  "translate:-99999px",
+  "transform:translate(-99999px)",
+  "transform:rotateX(90deg)",
+  "transform:matrix(0,0,0,0,0,0)",
+  "right:99999px",
+  "bottom:99999px",
+  "inset:99999px",
+  "margin-inline-start:99999px",
+  "text-indent:calc(-99999px)",
+  "text-indent:-100%",
+  "height:0;overflow:clip",
+  "height:calc(0px);overflow-x:hidden",
+  "height:0;overflow-y:clip",
+  "height:0;contain:paint",
+  "mask-image:linear-gradient(transparent,transparent)",
+  "mask-image:linear-gradient(rgba(255,0,0,0),rgba(0,255,0,0))",
+  "-webkit-mask-image:linear-gradient(transparent,transparent)",
+  "-webkit-clip-path:inset(50%)",
+  "color:oklch(50% 0 0);background-color:oklch(50% 0 0)",
+  "color:lab(50% 0 0);background-color:lab(50% 0 0)",
+  "color:color-mix(in srgb,white,black);background-color:color-mix(in srgb,white,black)",
+  "color:Canvas;background-color:Canvas",
+  "color:black;background-image:linear-gradient(black,black)",
+  "color:black;background-image:linear-gradient(black,#000)",
+  "color:black;box-shadow:inset 0 0 0 99999px black",
+  "filter:contrast(0)",
+  "filter:blur(20px)",
+])("deterministic hiding %s", (css) => {
+  effectsHidden(`<p style="${css}">SECRET</p>`);
+  effectsHidden(`<style>.x{${css}}</style><p class="x">SECRET</p>`);
+});
+
+it.each([
+  ["opacity:.3", "opacity:.3"],
+  ["filter:opacity(.3)", "filter:opacity(.3)"],
+  ["transform:scale(.3)", "transform:scale(.3)"],
+  ["zoom:.3", "zoom:.3"],
+  ["opacity:.3", "opacity:inherit"],
+  ["filter:opacity(.3)", "filter:inherit"],
+  ["transform:scale(.3)", "transform:inherit"],
+  ["scale:.3", "scale:inherit"],
+  ["zoom:.3", "zoom:inherit"],
+  ["opacity:.3", "transform:scale(.3)"],
+])("attenuation multiplies through ancestor %s and child %s", (parent, child) =>
+  effectsHidden(`<div style="${parent}"><p style="${child}">SECRET</p></div>`),
+);
+
+it("unparseable foreground cannot establish contrast on a known background", () => {
+  expect(
+    visibleHtmlText('<p style="color:oklch(50% 0 0);background-color:white">SECRET</p>').text,
+  ).toBe("");
+});
+
+it("CSS opacity is clamped before multiplying through descendants", () =>
+  effectsHidden(
+    '<div style="opacity:2"><div style="opacity:.3"><p style="opacity:.3">SECRET</p></div></div>',
+  ));

@@ -1,3 +1,4 @@
+import { MAX_MEDIA_WIDTH, MAX_REVEAL_INTERVALS } from "./visible-text-constants.js";
 import { parse, generate, ident, walk, type CssNode } from "./css-tree-browser.js";
 export interface MediaEnvironment {
   readonly values: ReadonlyMap<string, string>;
@@ -36,12 +37,15 @@ export interface MediaCoverage {
   possibleBand: readonly BandSpan[];
   certainBand: readonly BandSpan[];
 }
+// Per-width certainty at 720/1080 cannot prove coverage of 0–8000px:
+// e.g. 600 <= width <= 1200 matches both references but leaves unsafe gaps.
+// Band coverage is therefore required by revealProof, independently of `certain`.
 export interface BandSpan {
   lo: number;
   hi: number;
 }
-export const MAX_REVEAL_INTERVALS = 256;
-const band: readonly BandSpan[] = [{ lo: 0, hi: 8000 }];
+export { MAX_REVEAL_INTERVALS } from "./visible-text-constants.js";
+const band: readonly BandSpan[] = [{ lo: 0, hi: MAX_MEDIA_WIDTH }];
 const full = REFERENCE_READER_WIDTHS;
 export const alwaysMedia: MediaCoverage = {
   possible: full,
@@ -97,7 +101,7 @@ function complementBand(ranges: readonly BandSpan[]): BandSpan[] {
     if (lo < span.lo) result.push({ lo, hi: span.lo - 1 });
     lo = span.hi + 1;
   }
-  if (lo <= 8000) result.push({ lo, hi: 8000 });
+  if (lo <= MAX_MEDIA_WIDTH) result.push({ lo, hi: MAX_MEDIA_WIDTH });
   return result;
 }
 export const andCoverage = (a: MediaCoverage, b: MediaCoverage): MediaCoverage => ({
@@ -172,9 +176,11 @@ function widthComparison(operator: string, value: number | null): MediaCoverage 
       ? Math.ceil(value) - 1
       : operator === "<=" || operator === "="
         ? Math.floor(value)
-        : 8000;
+        : MAX_MEDIA_WIDTH;
   const ranges =
-    lo <= hi && hi >= 0 && lo <= 8000 ? [{ lo: Math.max(0, lo), hi: Math.min(8000, hi) }] : [];
+    lo <= hi && hi >= 0 && lo <= MAX_MEDIA_WIDTH
+      ? [{ lo: Math.max(0, lo), hi: Math.min(MAX_MEDIA_WIDTH, hi) }]
+      : [];
   return { possible: widths, certain: widths, possibleBand: ranges, certainBand: ranges };
 }
 const isWidth = (node: CssNode) =>

@@ -1,4 +1,6 @@
-import { color, gradientColours, shadowPaints, type Rgba } from "./visible-text-style.js";
+import { MAX_ALTERNATIVES } from "./visible-text-constants.js";
+import { parseColour, gradientColours, shadowPaints, type Rgba } from "./visible-text-style.js";
+import { READER_COLOURS } from "./reader-style.js";
 import { parse, walk } from "./css-tree-browser.js";
 
 export type PaintedBackground =
@@ -17,7 +19,7 @@ export function legacyColour(input: string | undefined): string | null {
   if (!input) return null;
   let value = input.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, "").toLowerCase();
   if (value === "transparent") return null;
-  if (/^[a-z]+$/.test(value) && color(value)) return value;
+  if (/^[a-z]+$/.test(value) && parseColour(value)) return value;
   if (/^#[\da-f]{3}$/.test(value)) return value;
   value = Array.from(value, (char) => ((char.codePointAt(0) ?? 0) > 0xffff ? "00" : char))
     .join("")
@@ -44,9 +46,20 @@ export function distinctBackgrounds(
   const unique = new Map<string, PaintedBackground>();
   for (const paper of papers) {
     unique.set(paper.kind === "known" ? paper.rgb.join(",") : "unknown", paper);
-    if (unique.size > 256) throw new RangeError("Paint alternatives budget");
+    if (unique.size > MAX_ALTERNATIVES) throw new RangeError("Paint alternatives budget");
   }
   return [...unique.values()];
+}
+export function resolveInk(value: string, parentInk: string): string {
+  return value === "initial"
+    ? READER_COLOURS.ink
+    : /^(inherit|unset|revert|currentcolor)$/.test(value)
+      ? parentInk
+      : value;
+}
+export function paintColour(value: string, ink: string): PaintedBackground {
+  const rgb = parseColour(value === "currentcolor" ? ink : value);
+  return rgb ? { kind: "known", rgb } : { kind: "unknown" };
 }
 const keywords = /^(initial|unset|revert|revert-layer)$/;
 const paint = (
@@ -55,8 +68,9 @@ const paint = (
   ink: string,
 ): readonly PaintedBackground[] => {
   if (value === "inherit") return [...parent];
-  const rgb = color(value === "currentcolor" ? ink : keywords.test(value) ? "transparent" : value);
-  if (!rgb) return [{ kind: "unknown" }];
+  const resolved = paintColour(keywords.test(value) ? "transparent" : value, ink);
+  if (resolved.kind === "unknown") return [resolved];
+  const { rgb } = resolved;
   if (rgb[3] === 0) return parent;
   if (rgb[3] === 1) return [{ kind: "known", rgb }];
   return distinctBackgrounds(

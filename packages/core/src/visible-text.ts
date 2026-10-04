@@ -1,3 +1,12 @@
+import {
+  COLOUR_MATCH_TOLERANCE,
+  MIN_VISIBLE_ALPHA,
+  MAX_CSS_RULES,
+  MAX_MATCH_CHECKS,
+  MAX_SELECTOR_LENGTH,
+  EFFECT_PROPERTIES,
+  tinyQuantity,
+} from "./visible-text-constants.js";
 import { compile } from "css-select";
 import { parse as parseHtml5 } from "parse5";
 import { adapter } from "parse5-htmlparser2-tree-adapter";
@@ -33,7 +42,7 @@ import {
 } from "./visible-text-inheritance.js";
 import {
   REMOVAL_PROPERTIES,
-  color,
+  parseColour,
   type Rgba,
   styleEffects,
   subtreeStyleRemovalRule,
@@ -41,13 +50,14 @@ import {
 import {
   composite,
   legacyColour,
+  resolveInk,
   paintedBackgrounds,
   WHITE_PAPER,
   distinctBackgrounds,
   type PaintedBackground,
 } from "./visible-text-paint.js";
 import { READER_COLOUR_CSS, READER_COLOURS } from "./reader-style.js";
-import { declaredExtent, siblingPaint, type SiblingPaint } from "./visible-text-overlap.js";
+import { constantLength, siblingPaint, type SiblingPaint } from "./visible-text-overlap.js";
 import { horizontalInlineCoverage, opaqueCoverage } from "./visible-text-cover.js";
 import type { ModelThread } from "./mailbox.js";
 
@@ -55,6 +65,7 @@ export type ModelTextFlag = NonNullable<ModelThread["messages"][number]["flags"]
 type VisibleText =
   | { text: string; hidden: boolean }
   | { text: string; hidden: boolean; flags: readonly ["budget-exceeded"] };
+const PAINTER_STYLE_PATTERN = /position|transform|translate|scale|margin|outline|shadow|\\/i;
 const BLOCK = /^(p|div|br|tr|li|h[1-6]|section|article|blockquote|table)$/;
 const OMIT = new Set([
   ...READER_DROP,
@@ -77,11 +88,13 @@ const inkRemovalRule = (
   background: Rgba,
   opacity: number,
 ): VisibleRemovalRule | null => {
-  const ink = color(foreground);
+  const ink = parseColour(foreground);
   if (!ink) return "uncertain-paint";
-  if (ink[3] * opacity <= 0.1) return "opacity";
+  if (ink[3] * opacity <= MIN_VISIBLE_ALPHA) return "opacity";
   const visible = composite(ink, background);
-  return [0, 1, 2].every((i) => Math.abs((visible[i] ?? 0) - (background[i] ?? 0)) <= 16)
+  return [0, 1, 2].every(
+    (i) => Math.abs((visible[i] ?? 0) - (background[i] ?? 0)) <= COLOUR_MATCH_TOLERANCE,
+  )
     ? "colour-match"
     : null;
 };
@@ -94,18 +107,129 @@ const normalizeHtmlText = (text: string) =>
     .replace(/\n{2,}/g, "\n")
     .trim();
 
-/** Filter hidden text within a bounded CSS inspection; exhaustion is explicit. */
-export function visibleHtmlText(
-  html: string,
-  budgetFallback: "visible" | "index-full-text" = "visible",
-  diagnostic?: (kind: "css-rule-budget" | "nesting-depth-limit") => void,
-  observer?: VisibleTextObserver,
-  linkObserver?: (href: string, label: string) => void,
-): VisibleText {
+type HtmlDocument = ReturnType<typeof adapter.createDocument>;
+type HtmlNode = HtmlDocument["children"][number];
+type HtmlElement = Extract<HtmlNode, { name: string; attribs: Record<string, string> }>;
+type VisibleLink = { href: string; text: string[] };
+type Rejection = { rule: VisibleRemovalRule; source: VisibleRemovalSource };
+type RenderStyle = InheritedTextStyle & {
+  width: (typeof REFERENCE_READER_WIDTHS)[number];
+  scenario: number;
+  color: string;
+  opacity: number;
+  scale: number;
+  colours: readonly string[];
+  backgrounds: readonly PaintedBackground[];
+  ownEffects: ReturnType<typeof styleEffects>;
+};
+interface RuleList {
+  readonly id: number;
+  readonly previous: RuleList | null;
+  readonly rule: VisibleStyleRule | null;
+}
+type Painter = SiblingPaint & { readonly start: number; readonly end: number };
+type CoveredRange = {
+  start: number;
+  end: number;
+  excludedStart: number;
+  excludedEnd: number;
+  rule: VisibleRemovalRule;
+};
+export interface VisibleHtmlTextOptions {
+  budgetFallback?: "visible" | "index-full-text";
+  diagnostic?: (kind: "css-rule-budget" | "nesting-depth-limit") => void;
+  observer?: VisibleTextObserver;
+  linkObserver?: (href: string, label: string) => void;
+}
+interface VisibleContext {
+  dom: HtmlDocument;
+  budgetFallback: "visible" | "index-full-text";
+  diagnostic: VisibleHtmlTextOptions["diagnostic"];
+  observer: VisibleHtmlTextOptions["observer"];
+  linkObserver: VisibleHtmlTextOptions["linkObserver"];
+  sanitizedRemoval: boolean;
+  hidden: boolean;
+  out: string[];
+  activeLinks: VisibleLink[];
+  declarationParser: ReturnType<typeof makeDeclarationParser>;
+  cascadeStyle: ReturnType<typeof makeVisibleStyleCascade>;
+  emptyRules: readonly VisibleStyleRule[];
+  elements: HtmlNode[];
+  nodeOrder: Map<HtmlNode, number>;
+  nodeEnd: Map<HtmlNode, number>;
+  classes: Map<string, HtmlNode[]>;
+  ids: Map<string, HtmlNode[]>;
+  tags: Map<string, HtmlNode[]>;
+  stylesheets: { css: string; media: string | undefined }[];
+  environments: readonly MediaEnvironment[];
+  scenarioBudgetExceeded: boolean;
+  initialList: RuleList;
+  styles: Map<HtmlNode, RuleList>[];
+  interned: Map<number, Map<number, RuleList>>;
+  materialized: WeakMap<RuleList, readonly VisibleStyleRule[]>;
+  selectorMatches: Map<string, HtmlNode[]>;
+  nextRuleId: number;
+  nextListId: number;
+  ruleBudget: number;
+  matchesRemaining: number;
+  initialStyles: readonly RenderStyle[];
+  siblingGroups: Map<(typeof REFERENCE_READER_WIDTHS)[number], Map<HtmlNode, Painter[]>>[];
+  coverageRanges: Map<(typeof REFERENCE_READER_WIDTHS)[number], CoveredRange[]>[];
+  paintChecksRemaining: number;
+}
+
+function recordRemoval(
+  ctx: VisibleContext,
+  node: HtmlNode,
+  rule: VisibleRemovalRule,
+  source: VisibleRemovalSource,
+) {
+  ctx.observer?.removed(rule, source, subtreeTextCounts(node));
+}
+function linkText(ctx: VisibleContext, text: string) {
+  for (const link of ctx.activeLinks) link.text.push(text);
+}
+function startLink(ctx: VisibleContext, node: HtmlNode): VisibleLink | null {
+  if (
+    !ctx.linkObserver ||
+    !("name" in node) ||
+    node.name !== "a" ||
+    !("attribs" in node) ||
+    !node.attribs.href
+  )
+    return null;
+  const link = { href: node.attribs.href, text: [] };
+  ctx.activeLinks.push(link);
+  return link;
+}
+function endLink(ctx: VisibleContext, link: VisibleLink) {
+  ctx.activeLinks.pop();
+  ctx.linkObserver?.(link.href, normalizeHtmlText(link.text.join("")));
+}
+function index(map: Map<string, HtmlNode[]>, key: string, node: HtmlNode) {
+  const nodes = map.get(key);
+  if (nodes) nodes.push(node);
+  else map.set(key, [node]);
+}
+function adjacent(node: HtmlNode, direction: "previous" | "next"): HtmlNode | null {
+  let sibling = direction === "previous" ? node.prev : node.next;
+  while (sibling) {
+    if (
+      adapter.isTextNode(sibling)
+        ? Boolean(sibling.data.trim())
+        : "name" in sibling && !OMIT.has(sibling.name)
+    )
+      return sibling;
+    sibling = direction === "previous" ? sibling.prev : sibling.next;
+  }
+  return null;
+}
+
+function createContext(html: string, options: VisibleHtmlTextOptions): VisibleContext {
   let sanitizedRemoval = false;
   const clean = sanitizeReaderHtml(prepareMessageHtml(html).html, false, (node) => {
     const counts = subtreeTextCounts(node);
-    observer?.removed("omit-tag", "omit-tag", counts);
+    options.observer?.removed("omit-tag", "omit-tag", counts);
     sanitizedRemoval ||= counts.characters > 0;
   });
   const dom = parseHtml5(
@@ -113,45 +237,47 @@ export function visibleHtmlText(
     { treeAdapter: adapter, scriptingEnabled: false },
   );
   const declarationParser = makeDeclarationParser();
-  const cascadeStyle = makeVisibleStyleCascade(declarationParser);
-  const emptyRules: readonly VisibleStyleRule[] = [];
-  type HtmlNode = (typeof dom.children)[number];
-  const recordRemoval = (node: HtmlNode, rule: VisibleRemovalRule, source: VisibleRemovalSource) =>
-    observer?.removed(rule, source, subtreeTextCounts(node));
-  type VisibleLink = { href: string; text: string[] };
-  const activeLinks: VisibleLink[] = [];
-  const linkText = (text: string) => {
-    for (const link of activeLinks) link.text.push(text);
+  return {
+    dom,
+    ...options,
+    budgetFallback: options.budgetFallback ?? "visible",
+    diagnostic: options.diagnostic,
+    observer: options.observer,
+    linkObserver: options.linkObserver,
+    sanitizedRemoval,
+    hidden: sanitizedRemoval,
+    out: [],
+    activeLinks: [],
+    declarationParser,
+    cascadeStyle: makeVisibleStyleCascade(declarationParser),
+    emptyRules: [],
+    elements: [],
+    nodeOrder: new Map(),
+    nodeEnd: new Map(),
+    classes: new Map(),
+    ids: new Map(),
+    tags: new Map(),
+    stylesheets: [],
+    environments: [BASE_MEDIA_ENVIRONMENT],
+    scenarioBudgetExceeded: false,
+    initialList: { id: 0, previous: null, rule: null },
+    styles: [],
+    interned: new Map(),
+    materialized: new WeakMap(),
+    selectorMatches: new Map(),
+    nextRuleId: 0,
+    nextListId: 1,
+    ruleBudget: MAX_CSS_RULES,
+    matchesRemaining: MAX_MATCH_CHECKS,
+    initialStyles: [],
+    siblingGroups: [],
+    coverageRanges: [],
+    paintChecksRemaining: MAX_MATCH_CHECKS,
   };
-  const startLink = (node: HtmlNode): VisibleLink | null => {
-    if (
-      !linkObserver ||
-      !("name" in node) ||
-      node.name !== "a" ||
-      !("attribs" in node) ||
-      !node.attribs.href
-    )
-      return null;
-    const link = { href: node.attribs.href, text: [] };
-    activeLinks.push(link);
-    return link;
-  };
-  const endLink = (link: VisibleLink) => {
-    activeLinks.pop();
-    linkObserver?.(link.href, normalizeHtmlText(link.text.join("")));
-  };
-  const elements: HtmlNode[] = [];
-  const nodeOrder = new Map<HtmlNode, number>();
-  const nodeEnd = new Map<HtmlNode, number>();
-  const classes = new Map<string, HtmlNode[]>();
-  const ids = new Map<string, HtmlNode[]>();
-  const tags = new Map<string, HtmlNode[]>();
-  const stylesheets: { css: string; media: string | undefined }[] = [];
-  const index = (map: Map<string, HtmlNode[]>, key: string, node: HtmlNode) => {
-    const nodes = map.get(key);
-    if (nodes) nodes.push(node);
-    else map.set(key, [node]);
-  };
+}
+
+function indexDocument(ctx: VisibleContext) {
+  const { dom, elements, nodeOrder, nodeEnd, classes, ids, tags, stylesheets } = ctx;
   const indexedNodes = dom.children.toReversed();
   while (indexedNodes.length) {
     const node = indexedNodes.pop();
@@ -184,235 +310,253 @@ export function visibleHtmlText(
     );
   }
   stylesheets.unshift({ css: READER_COLOUR_CSS, media: undefined });
-  // Index only the last compound selector; pseudo-class arguments and ancestor
-  // selectors remain the compiler's job. Impossible classes/ids/tags cost no budget.
-  const candidates = (selector: string): HtmlNode[] => {
-    const ast = parse(selector, { context: "selector" });
-    if (ast.type !== "Selector") return elements;
-    let selected: HtmlNode[] | undefined;
-    for (const token of ast.children) {
-      if (token.type === "Combinator") selected = undefined;
-      else {
-        const name =
-          "name" in token && typeof token.name === "string" ? ident.decode(token.name) : "";
-        const nodes =
-          token.type === "ClassSelector"
-            ? (classes.get(name) ?? [])
-            : token.type === "IdSelector"
-              ? (ids.get(name) ?? [])
-              : token.type === "TypeSelector" && name !== "*" && !name.includes("|")
-                ? (tags.get(name.toLowerCase()) ?? [])
-                : undefined;
-        if (nodes && (!selected || nodes.length < selected.length)) selected = nodes;
-      }
+}
+
+function candidates(ctx: VisibleContext, selector: string): HtmlNode[] {
+  const { elements, classes, ids, tags } = ctx;
+
+  const ast = parse(selector, { context: "selector" });
+  if (ast.type !== "Selector") return elements;
+  let selected: HtmlNode[] | undefined;
+  for (const token of ast.children) {
+    if (token.type === "Combinator") selected = undefined;
+    else {
+      const name =
+        "name" in token && typeof token.name === "string" ? ident.decode(token.name) : "";
+      const nodes =
+        token.type === "ClassSelector"
+          ? (classes.get(name) ?? [])
+          : token.type === "IdSelector"
+            ? (ids.get(name) ?? [])
+            : token.type === "TypeSelector" && name !== "*" && !name.includes("|")
+              ? (tags.get(name.toLowerCase()) ?? [])
+              : undefined;
+      if (nodes && (!selected || nodes.length < selected.length)) selected = nodes;
     }
-    return selected ?? elements;
-  };
-  let environments: readonly MediaEnvironment[] = [BASE_MEDIA_ENVIRONMENT];
-  let scenarioBudgetExceeded = false;
+  }
+  return selected ?? elements;
+}
+
+function appendRule(
+  ctx: VisibleContext,
+  previous: RuleList,
+  rule: VisibleStyleRule,
+  id: number,
+): RuleList {
+  const { interned } = ctx;
+
+  let transitions = interned.get(previous.id);
+  if (!transitions) {
+    transitions = new Map();
+    interned.set(previous.id, transitions);
+  }
+  const cached = transitions.get(id);
+  if (cached) return cached;
+  const result = { id: ctx.nextListId++, previous, rule };
+  transitions.set(id, result);
+  return result;
+}
+
+function rulesFor(
+  ctx: VisibleContext,
+  node: HtmlNode,
+  scenario: number,
+): readonly VisibleStyleRule[] {
+  const { styles, emptyRules, materialized } = ctx;
+
+  const list = styles[scenario]?.get(node);
+  if (!list) return emptyRules;
+  const cached = materialized.get(list);
+  if (cached) return cached;
+  const reverse: VisibleStyleRule[] = [];
+  for (let entry: RuleList | null = list; entry; entry = entry.previous)
+    if (entry.rule) reverse.push(entry.rule);
+  const result = reverse.toReversed();
+  materialized.set(list, result);
+  return result;
+}
+
+function collectRules(ctx: VisibleContext): boolean {
   try {
-    environments = referenceEnvironments(stylesheets, declarationParser);
+    ctx.environments = referenceEnvironments(ctx.stylesheets, ctx.declarationParser);
   } catch {
-    scenarioBudgetExceeded = true;
+    ctx.scenarioBudgetExceeded = true;
   }
-  interface RuleList {
-    readonly id: number;
-    readonly previous: RuleList | null;
-    readonly rule: VisibleStyleRule | null;
-  }
-  const initialList: RuleList = { id: 0, previous: null, rule: null };
-  const styles = environments.map(() => new Map<HtmlNode, RuleList>());
-  const interned = new Map<number, Map<number, RuleList>>();
-  const materialized = new WeakMap<RuleList, readonly VisibleStyleRule[]>();
-  const selectorMatches = new Map<string, HtmlNode[]>();
-  let nextRuleId = 0,
-    nextListId = 1;
-  const appendRule = (previous: RuleList, rule: VisibleStyleRule, id: number): RuleList => {
-    let transitions = interned.get(previous.id);
-    if (!transitions) {
-      transitions = new Map();
-      interned.set(previous.id, transitions);
-    }
-    const cached = transitions.get(id);
-    if (cached) return cached;
-    const result = { id: nextListId++, previous, rule };
-    transitions.set(id, result);
-    return result;
-  };
-  const rulesFor = (node: HtmlNode, scenario: number): readonly VisibleStyleRule[] => {
-    const list = styles[scenario]?.get(node);
-    if (!list) return emptyRules;
-    const cached = materialized.get(list);
-    if (cached) return cached;
-    const reverse: VisibleStyleRule[] = [];
-    for (let entry: RuleList | null = list; entry; entry = entry.previous)
-      if (entry.rule) reverse.push(entry.rule);
-    const result = reverse.toReversed();
-    materialized.set(list, result);
-    return result;
-  };
-  let ruleBudget = 5120;
-  let matchesRemaining = 2_500_000;
-  const collect = (): boolean => {
-    if (scenarioBudgetExceeded) return true;
-    try {
-      for (const [scenario, mediaEnvironment] of environments.entries()) {
-        const scenarioStyles = styles[scenario];
-        if (!scenarioStyles) continue;
-        for (const stylesheet of stylesheets) {
-          for (const rule of visibleStylesheetRules(
-            stylesheet.css,
-            declarationParser,
-            stylesheet.media === undefined
-              ? undefined
-              : referenceMedia(declarationParser.media(stylesheet.media), mediaEnvironment),
-            mediaEnvironment,
-          )) {
-            const decoded = rule.selector;
-            // Empty/invalid selectors are ignored, rather than charged as matches.
-            if (!decoded) continue;
-            if (decoded.length > 20_480) return true;
-            try {
-              let matched = selectorMatches.get(decoded);
-              if (!matched) {
-                const targets = candidates(decoded);
-                if (!targets.length) {
-                  selectorMatches.set(decoded, []);
-                  continue;
-                }
-                const match = compile(decoded);
-                matched = [];
-                for (const node of targets) {
-                  if (--matchesRemaining < 0) return true;
-                  if (match(node)) matched.push(node);
-                }
-                selectorMatches.set(decoded, matched);
+  ctx.styles = ctx.environments.map(() => new Map<HtmlNode, RuleList>());
+  const {
+    scenarioBudgetExceeded,
+    environments,
+    styles,
+    stylesheets,
+    declarationParser,
+    selectorMatches,
+    diagnostic,
+    initialList,
+  } = ctx;
+
+  if (scenarioBudgetExceeded) return true;
+  try {
+    for (const [scenario, mediaEnvironment] of environments.entries()) {
+      const scenarioStyles = styles[scenario];
+      if (!scenarioStyles) continue;
+      for (const stylesheet of stylesheets) {
+        for (const rule of visibleStylesheetRules(
+          stylesheet.css,
+          declarationParser,
+          stylesheet.media === undefined
+            ? undefined
+            : referenceMedia(declarationParser.media(stylesheet.media), mediaEnvironment),
+          mediaEnvironment,
+        )) {
+          const decoded = rule.selector;
+          // Empty/invalid selectors are ignored, rather than charged as matches.
+          if (!decoded) continue;
+          if (decoded.length > MAX_SELECTOR_LENGTH) return true;
+          try {
+            let matched = selectorMatches.get(decoded);
+            if (!matched) {
+              const targets = candidates(ctx, decoded);
+              if (!targets.length) {
+                selectorMatches.set(decoded, []);
+                continue;
               }
-              if (!matched.length) continue;
-              if (--ruleBudget < 0) {
-                diagnostic?.("css-rule-budget");
-                return true;
+              const match = compile(decoded);
+              matched = [];
+              for (const node of targets) {
+                if (--ctx.matchesRemaining < 0) return true;
+                if (match(node)) matched.push(node);
               }
-              const ruleId = nextRuleId++;
-              for (const node of matched)
-                scenarioStyles.set(
-                  node,
-                  appendRule(scenarioStyles.get(node) ?? initialList, rule, ruleId),
-                );
-            } catch {
-              /* Invalid selectors do not match. */
+              selectorMatches.set(decoded, matched);
             }
+            if (!matched.length) continue;
+            if (--ctx.ruleBudget < 0) {
+              diagnostic?.("css-rule-budget");
+              return true;
+            }
+            const ruleId = ctx.nextRuleId++;
+            for (const node of matched)
+              scenarioStyles.set(
+                node,
+                appendRule(ctx, scenarioStyles.get(node) ?? initialList, rule, ruleId),
+              );
+          } catch {
+            /* Invalid selectors do not match. */
           }
         }
       }
-    } catch {
-      // An uninspectable stylesheet must not silently produce trusted model text.
-      return true;
     }
-    return false;
-  };
-  const fallback = (): VisibleText => {
-    type Frame =
-      | { kind: "node"; node: HtmlNode; textStyle: InheritedTextStyle }
-      | { kind: "line" }
-      | { kind: "link-end"; link: VisibleLink };
-    const pending: Frame[] = dom.children
-      .toReversed()
-      .map((node) => ({ kind: "node", node, textStyle: INITIAL_TEXT_STYLE }));
-    const out: string[] = [];
-    let removed = sanitizedRemoval;
-    while (pending.length) {
-      const frame = pending.pop();
-      if (!frame) continue;
-      if (frame.kind === "line") {
-        out.push("\n");
-        linkText("\n");
-        continue;
-      }
-      if (frame.kind === "link-end") {
-        endLink(frame.link);
-        continue;
-      }
-      const node = frame.node;
-      if (adapter.isTextNode(node)) {
-        const rejection =
-          budgetFallback === "visible" ? inheritedTextRemoval(frame.textStyle) : null;
-        if (rejection) {
-          recordRemoval(node, rejection.rule, rejection.source);
-          if (node.data.trim()) removed = true;
-          continue;
-        }
-        observer?.retained(node.data.length);
-        linkText(node.data);
-        out.push(node.data);
-        continue;
-      }
-      if (!("name" in node)) continue;
-      if (OMIT.has(node.name)) {
-        recordRemoval(node, "omit-tag", "omit-tag");
-        continue;
-      }
-      const attrs = "attribs" in node ? node.attribs : {};
-      const cascade = cascadeStyle(emptyRules, attrs.style ?? "");
-      const rejection =
-        "hidden" in attrs
-          ? "hidden-attribute"
-          : attrs["aria-hidden"]?.toLowerCase() === "true"
-            ? "aria-hidden"
-            : cascade.uncertain
-              ? "uncertain-css"
-              : subtreeStyleRemovalRule(cascade.values);
-      if (budgetFallback === "visible" && rejection) {
-        recordRemoval(
-          node,
-          rejection,
-          rejection === "hidden-attribute" || rejection === "aria-hidden"
-            ? "html-attribute"
-            : "inline-style",
-        );
-        removed = true;
-        continue;
-      }
-      const textStyle = resolveTextStyle(cascade, frame.textStyle, node.name === "html");
-      const link = startLink(node);
-      if (link) pending.push({ kind: "link-end", link });
-      if (BLOCK.test(node.name)) {
-        out.push("\n");
-        linkText("\n");
-        pending.push({ kind: "line" });
-      }
-      if ("children" in node)
-        for (const child of node.children.toReversed())
-          pending.push({ kind: "node", node: child, textStyle });
-    }
-    return { text: normalizeHtmlText(out.join("")), hidden: removed, flags: ["budget-exceeded"] };
-  };
-  if (collect()) return fallback();
-  // htmlparser2's textContent recursively walks descendants. Hidden sender
-  // subtrees can be arbitrarily deep, so inspect text with an explicit stack.
-  const hasText = (node: (typeof dom.children)[number]): boolean => {
-    const pending = [node];
-    while (pending.length) {
-      const current = pending.pop();
-      if (!current) continue;
-      if (adapter.isTextNode(current) && current.data.trim()) return true;
-      if ("children" in current) for (const child of current.children) pending.push(child);
-    }
-    return false;
-  };
-  let hidden = sanitizedRemoval;
+  } catch {
+    // An uninspectable stylesheet must not silently produce trusted model text.
+    return true;
+  }
+  return false;
+}
+
+function budgetFallbackText(ctx: VisibleContext): VisibleText {
+  const { dom, budgetFallback, sanitizedRemoval, observer, cascadeStyle, emptyRules } = ctx;
+
+  type Frame =
+    | { kind: "node"; node: HtmlNode; textStyle: InheritedTextStyle }
+    | { kind: "line" }
+    | { kind: "link-end"; link: VisibleLink };
+  const pending: Frame[] = dom.children
+    .toReversed()
+    .map((node) => ({ kind: "node", node, textStyle: INITIAL_TEXT_STYLE }));
   const out: string[] = [];
-  type RenderStyle = InheritedTextStyle & {
-    width: (typeof REFERENCE_READER_WIDTHS)[number];
-    scenario: number;
-    color: string;
-    opacity: number;
-    scale: number;
-    colours: readonly string[];
-    backgrounds: readonly PaintedBackground[];
-    ownEffects: ReturnType<typeof styleEffects>;
-  };
-  const initialStyles: readonly RenderStyle[] = environments.flatMap((_, scenario) =>
+  let removed = sanitizedRemoval;
+  while (pending.length) {
+    const frame = pending.pop();
+    if (!frame) continue;
+    if (frame.kind === "line") {
+      out.push("\n");
+      linkText(ctx, "\n");
+      continue;
+    }
+    if (frame.kind === "link-end") {
+      endLink(ctx, frame.link);
+      continue;
+    }
+    const node = frame.node;
+    if (adapter.isTextNode(node)) {
+      const rejection = budgetFallback === "visible" ? inheritedTextRemoval(frame.textStyle) : null;
+      if (rejection) {
+        recordRemoval(ctx, node, rejection.rule, rejection.source);
+        if (node.data.trim()) removed = true;
+        continue;
+      }
+      observer?.retained(node.data.length);
+      linkText(ctx, node.data);
+      out.push(node.data);
+      continue;
+    }
+    if (!("name" in node)) continue;
+    if (OMIT.has(node.name)) {
+      recordRemoval(ctx, node, "omit-tag", "omit-tag");
+      continue;
+    }
+    const attrs = "attribs" in node ? node.attribs : {};
+    const cascade = cascadeStyle(emptyRules, attrs.style ?? "");
+    const rejection =
+      "hidden" in attrs
+        ? "hidden-attribute"
+        : attrs["aria-hidden"]?.toLowerCase() === "true"
+          ? "aria-hidden"
+          : cascade.uncertain
+            ? "uncertain-css"
+            : subtreeStyleRemovalRule(cascade.values);
+    if (budgetFallback === "visible" && rejection) {
+      recordRemoval(
+        ctx,
+        node,
+        rejection,
+        rejection === "hidden-attribute" || rejection === "aria-hidden"
+          ? "html-attribute"
+          : "inline-style",
+      );
+      removed = true;
+      continue;
+    }
+    const textStyle = resolveTextStyle(cascade, frame.textStyle, node.name === "html");
+    const link = startLink(ctx, node);
+    if (link) pending.push({ kind: "link-end", link });
+    if (BLOCK.test(node.name)) {
+      out.push("\n");
+      linkText(ctx, "\n");
+      pending.push({ kind: "line" });
+    }
+    if ("children" in node)
+      for (const child of node.children.toReversed())
+        pending.push({ kind: "node", node: child, textStyle });
+  }
+  return { text: normalizeHtmlText(out.join("")), hidden: removed, flags: ["budget-exceeded"] };
+}
+
+function hasText(node: HtmlNode): boolean {
+  const pending = [node];
+  while (pending.length) {
+    const current = pending.pop();
+    if (!current) continue;
+    if (adapter.isTextNode(current) && current.data.trim()) return true;
+    if ("children" in current) for (const child of current.children) pending.push(child);
+  }
+  return false;
+}
+
+function buildPainters(ctx: VisibleContext): boolean {
+  ctx.siblingGroups = ctx.environments.map(() => new Map());
+  ctx.coverageRanges = ctx.environments.map(() => new Map());
+  const {
+    environments,
+    dom,
+    elements,
+    stylesheets,
+    cascadeStyle,
+    nodeOrder,
+    nodeEnd,
+    siblingGroups,
+    coverageRanges,
+  } = ctx;
+  ctx.initialStyles = environments.flatMap((_, scenario) =>
     REFERENCE_READER_WIDTHS.map((width): RenderStyle => ({
       ...INITIAL_TEXT_STYLE,
       width,
@@ -425,46 +569,13 @@ export function visibleHtmlText(
       ownEffects: styleEffects(new Map()),
     })),
   );
-  type Painter = SiblingPaint & { readonly start: number; readonly end: number };
-  const siblingGroups = environments.map(
-    () => new Map<(typeof REFERENCE_READER_WIDTHS)[number], Map<HtmlNode, Painter[]>>(),
-  );
-  type CoveredRange = {
-    start: number;
-    end: number;
-    excludedStart: number;
-    excludedEnd: number;
-    rule: VisibleRemovalRule;
-  };
-  const coverageRanges = environments.map(
-    () => new Map<(typeof REFERENCE_READER_WIDTHS)[number], CoveredRange[]>(),
-  );
-  const adjacent = (node: HtmlNode, direction: "previous" | "next"): HtmlNode | null => {
-    let sibling = direction === "previous" ? node.prev : node.next;
-    while (sibling) {
-      if (
-        adapter.isTextNode(sibling)
-          ? Boolean(sibling.data.trim())
-          : "name" in sibling && !OMIT.has(sibling.name)
-      )
-        return sibling;
-      sibling = direction === "previous" ? sibling.prev : sibling.next;
-    }
-    return null;
-  };
+  const { initialStyles } = ctx;
   // Precompute each scenario's containing blocks and painters. The text walk
   // then sees before/after siblings without mixing media colours or DOM order.
   const hasPainters =
     elements.some(
-      (node) =>
-        "attribs" in node &&
-        /position|transform|translate|scale|margin|outline|shadow|\\/i.test(
-          node.attribs.style ?? "",
-        ),
-    ) ||
-    stylesheets.some((sheet) =>
-      /position|transform|translate|scale|margin|outline|shadow|\\/i.test(sheet.css),
-    );
+      (node) => "attribs" in node && PAINTER_STYLE_PATTERN.test(node.attribs.style ?? ""),
+    ) || stylesheets.some((sheet) => PAINTER_STYLE_PATTERN.test(sheet.css));
   if (hasPainters) {
     try {
       for (const environment of initialStyles) {
@@ -480,15 +591,17 @@ export function visibleHtmlText(
           if (!("attribs" in node) || !("name" in node)) continue;
           const parent = node.parent;
           const cascade = cascadeStyle(
-            rulesFor(node, environment.scenario),
+            rulesFor(ctx, node, environment.scenario),
             node.attribs.style ?? "",
             environment.width,
           );
           const css = cascade.values;
           const horizontal = horizontalInlineCoverage(css, node.name, node.attribs);
+          const width = constantLength(css.get("width") ?? node.attribs.width);
+          const height = constantLength(css.get("height") ?? node.attribs.height);
           declaredSizes.set(node, {
-            width: declaredExtent(css.get("width") ?? node.attribs.width),
-            height: declaredExtent(css.get("height") ?? node.attribs.height),
+            width: width !== null && width > 0 ? width : null,
+            height: height !== null && height > 0 ? height : null,
           });
           if (
             (parent && omitted.has(parent)) ||
@@ -506,11 +619,7 @@ export function visibleHtmlText(
             ? (colours.get(parent) ?? READER_COLOURS.ink)
             : READER_COLOURS.ink;
           const value = css.get("color") ?? legacyColour(node.attribs.color) ?? parentInk;
-          const ink = /^(inherit|unset|revert|currentcolor)$/.test(value)
-            ? parentInk
-            : value === "initial"
-              ? READER_COLOURS.ink
-              : value;
+          const ink = resolveInk(value, parentInk);
           colours.set(node, ink);
           const position = css.get("position") ?? "static";
           const containing = parent ? containers.get(parent) : undefined;
@@ -547,7 +656,7 @@ export function visibleHtmlText(
                 if (!neighbour) continue;
                 if (horizontal && "name" in neighbour && "attribs" in neighbour) {
                   const neighbourDisplay = cascadeStyle(
-                    rulesFor(neighbour, environment.scenario),
+                    rulesFor(ctx, neighbour, environment.scenario),
                     neighbour.attribs.style ?? "",
                     environment.width,
                   ).values.get("display");
@@ -590,267 +699,288 @@ export function visibleHtmlText(
         }
       }
     } catch {
-      return { text: "", hidden: true, flags: ["budget-exceeded"] };
+      return false;
     }
   }
-  let paintChecksRemaining = 2_500_000;
-  const siblingRemoval = (
-    node: HtmlNode,
-    environment: RenderStyle,
-    inks: readonly string[],
-  ): VisibleRemovalRule | null => {
-    const order = nodeOrder.get(node) ?? -1;
-    for (const range of coverageRanges[environment.scenario]?.get(environment.width) ?? []) {
-      if (--paintChecksRemaining < 0) throw new RangeError("Opaque coverage budget");
-      if (
-        order >= range.start &&
-        order < range.end &&
-        !(order >= range.excludedStart && order < range.excludedEnd)
-      )
-        return range.rule;
-    }
-    const groups = siblingGroups[environment.scenario]?.get(environment.width);
-    if (!groups?.size) return null;
-    for (let parent = node.parent; parent; parent = parent.parent) {
-      for (const painter of groups.get(parent) ?? []) {
-        if (--paintChecksRemaining < 0) throw new RangeError("Sibling paint budget");
-        if (order >= painter.start && order < painter.end) continue;
-        for (const paper of painter.papers) {
-          if (paper.kind === "unknown") {
-            if (painter.replaced) return "positioned-overlay";
-            continue;
-          }
-          for (const backdrop of environment.backgrounds) {
-            if (backdrop.kind === "unknown") continue;
-            const rgb = composite(paper.rgb, backdrop.rgb);
-            for (const ink of inks)
-              if (
-                inkRemovalRule(ink, rgb, environment.opacity * environment.scale) === "colour-match"
-              )
-                return "positioned-overlay";
-          }
-        }
-      }
-    }
-    return null;
-  };
-  const walk = (
-    parent: Pick<typeof dom, "children">,
-    inherited: readonly RenderStyle[] = initialStyles,
-    depth = 0,
-  ): void => {
-    if (depth >= MAX_HTML_DEPTH + 2) {
-      diagnostic?.("nesting-depth-limit");
-      parent.children = flattenHtmlChildren(parent.children, (node) => {
-        const omit = "name" in node && OMIT.has(node.name);
-        if (omit) recordRemoval(node, "omit-tag", "omit-tag");
-        return omit;
-      });
-    }
-    for (const node of parent.children) {
-      if (adapter.isTextNode(node)) {
-        let rejection: { rule: VisibleRemovalRule; source: VisibleRemovalSource } | null = null;
-        for (const environment of inherited) {
-          rejection ??= inheritedTextRemoval(environment);
-          const inks =
-            environment.textFill &&
-            !/^(currentcolor|initial|revert|revert-layer)$/.test(environment.textFill)
-              ? [environment.textFill]
-              : environment.colours;
-          const overlap = siblingRemoval(node, environment, inks);
-          if (!rejection && overlap) rejection = { rule: overlap, source: "inherited" };
-          for (const ink of inks)
-            for (const paper of environment.backgrounds) {
-              const rule =
-                paper.kind === "unknown"
-                  ? "uncertain-paint"
-                  : inkRemovalRule(ink, paper.rgb, environment.opacity * environment.scale);
-              if (!rejection && rule) rejection = { rule, source: "inherited" };
-            }
-          if (rejection) break;
-        }
-        if (rejection) {
-          recordRemoval(node, rejection.rule, rejection.source);
-          if (node.data.trim()) hidden = true;
+
+  return true;
+}
+
+function siblingRemoval(
+  ctx: VisibleContext,
+  node: HtmlNode,
+  environment: RenderStyle,
+  inks: readonly string[],
+): VisibleRemovalRule | null {
+  const { nodeOrder, coverageRanges, siblingGroups } = ctx;
+
+  const order = nodeOrder.get(node) ?? -1;
+  for (const range of coverageRanges[environment.scenario]?.get(environment.width) ?? []) {
+    if (--ctx.paintChecksRemaining < 0) throw new RangeError("Opaque coverage budget");
+    if (
+      order >= range.start &&
+      order < range.end &&
+      !(order >= range.excludedStart && order < range.excludedEnd)
+    )
+      return range.rule;
+  }
+  const groups = siblingGroups[environment.scenario]?.get(environment.width);
+  if (!groups?.size) return null;
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    for (const painter of groups.get(parent) ?? []) {
+      if (--ctx.paintChecksRemaining < 0) throw new RangeError("Sibling paint budget");
+      if (order >= painter.start && order < painter.end) continue;
+      for (const paper of painter.papers) {
+        if (paper.kind === "unknown") {
+          if (painter.replaced) return "positioned-overlay";
           continue;
         }
-        observer?.retained(node.data.length);
-        linkText(node.data);
-        out.push(node.data);
-        continue;
-      }
-      if (!("name" in node) || !("attribs" in node)) continue;
-      if (OMIT.has(node.name)) {
-        recordRemoval(node, "omit-tag", "omit-tag");
-        if (!["head", "style"].includes(node.name) && hasText(node)) hidden = true;
-        continue;
-      }
-      const attrs = node.attribs;
-      const nextStyles: RenderStyle[] = [];
-      let rejection: { rule: VisibleRemovalRule; source: VisibleRemovalSource } | null = null;
-      for (const environment of inherited) {
-        const cascade = cascadeStyle(
-          rulesFor(node, environment.scenario),
-          attrs.style ?? "",
-          environment.width,
-        );
-        const css = cascade.values;
-        const ink = css.get("color") ?? legacyColour(attrs.color) ?? environment.color;
-        const foreground =
-          ink === "initial"
-            ? READER_COLOURS.ink
-            : /^(inherit|unset|revert|currentcolor)$/.test(ink)
-              ? environment.color
-              : ink;
-        const colourAlternatives = cascade.alternatives.get("color");
-        const colours = colourAlternatives
-          ? [
-              ...new Set(
-                colourAlternatives.flatMap((value) =>
-                  value === "inherit" ? environment.colours : [value],
-                ),
-              ),
-            ]
-          : (css.has("color") && !/^(inherit|unset|revert|currentcolor)$/.test(ink)) || attrs.color
-            ? [foreground]
-            : environment.colours;
-        const baseBackgrounds = paintedBackgrounds(
-          css,
-          environment.backgrounds,
-          foreground,
-          attrs.bgcolor,
-          attrs.background,
-        );
-        const backgrounds = [...baseBackgrounds];
-        for (const key of ["background-color", "background-image", "box-shadow"]) {
-          for (const value of cascade.alternatives.get(key) ?? []) {
-            const variant = new Map(css);
-            variant.set(key, value);
-            backgrounds.push(
-              ...paintedBackgrounds(
-                variant,
-                environment.backgrounds,
-                foreground,
-                attrs.bgcolor,
-                attrs.background,
-              ),
-            );
-          }
-        }
-        const ownEffects = { ...cascade.effects };
-        if (css.get("opacity") === "inherit") ownEffects.opacity = environment.ownEffects.opacity;
-        if (css.get("filter") === "inherit")
-          ownEffects.filterOpacity = environment.ownEffects.filterOpacity;
-        if (css.get("transform") === "inherit")
-          ownEffects.transformScale = environment.ownEffects.transformScale;
-        if (css.get("scale") === "inherit")
-          ownEffects.scaleValue = environment.ownEffects.scaleValue;
-        if (css.get("zoom") === "inherit") ownEffects.zoom = environment.ownEffects.zoom;
-        if (css.get("transform") === "inherit" || css.get("scale") === "inherit")
-          ownEffects.scale = ownEffects.transformScale * ownEffects.scaleValue;
-        const opacity = environment.opacity * ownEffects.opacity * ownEffects.filterOpacity;
-        const scale = environment.scale * ownEffects.scale * ownEffects.zoom;
-        let textStyle = resolveTextStyle(cascade, environment, node.name === "html");
-        if (node.name === "body" && !css.has("font-size"))
-          textStyle = { ...textStyle, size: INITIAL_TEXT_STYLE.size, sizeSource: "inherited" };
-        for (const value of cascade.alternatives.get("font-size") ?? []) {
-          const alternative =
-            value === "inherit"
-              ? environment.size
-              : resolveFont(parse(value, { context: "value" }), environment);
-          if (
-            alternative &&
-            alternative.value <= (alternative.unit === "px" || alternative.unit === "pt" ? 2 : 0.2)
-          )
-            textStyle = { ...textStyle, size: alternative };
-        }
-        if (
-          cascade.alternatives
-            .get("line-height")
-            ?.some((value) =>
-              value === "inherit"
-                ? environment.lineHeight === 0
-                : /^(0|calc\(0(?:px)?\))$/.test(value),
+        for (const backdrop of environment.backgrounds) {
+          if (backdrop.kind === "unknown") continue;
+          const rgb = composite(paper.rgb, backdrop.rgb);
+          for (const ink of inks)
+            if (
+              inkRemovalRule(ink, rgb, environment.opacity * environment.scale) === "colour-match"
             )
-        )
-          textStyle = { ...textStyle, lineHeight: 0 };
-        const clipped =
-          css.get("overflow") === "hidden" &&
-          textStyle.lineHeight !== null &&
-          textStyle.lineHeight <= 0;
-        const origin = (properties: readonly string[]): VisibleRemovalSource =>
-          properties
-            .map((property) => cascade.sources.get(property))
-            .find((source) => source !== undefined) ?? "inherited";
-        if ("hidden" in attrs) rejection = { rule: "hidden-attribute", source: "html-attribute" };
-        else if (attrs["aria-hidden"]?.toLowerCase() === "true")
-          rejection = { rule: "aria-hidden", source: "html-attribute" };
-        else if (cascade.uncertain)
-          rejection = { rule: "uncertain-css", source: origin([...css.keys()]) };
-        else if (opacity * scale <= 0.1)
-          rejection = {
-            rule:
-              cascade.effects.filterOpacity < 1
-                ? "filter-opacity"
-                : scale < 1
-                  ? ownEffects.zoom < 1
-                    ? "zoom"
-                    : "scale"
-                  : "opacity",
-            source: origin(["opacity", "filter", "transform", "scale", "zoom"]),
-          };
-        else if (clipped)
-          rejection = { rule: "clipping", source: origin(["overflow", "line-height"]) };
-        else {
-          const rule = cascade.barrier;
-          if (rule)
-            rejection = {
-              rule,
-              source: origin(REMOVAL_PROPERTIES),
-            };
+              return "positioned-overlay";
         }
-        if (rejection) break;
-        nextStyles.push({
-          ...textStyle,
-          width: environment.width,
-          scenario: environment.scenario,
-          color: foreground,
-          opacity,
-          scale,
-          colours,
-          backgrounds: distinctBackgrounds(backgrounds),
-          ownEffects,
-        });
       }
+    }
+  }
+  return null;
+}
+
+function textRejection(
+  ctx: VisibleContext,
+  node: HtmlNode,
+  inherited: readonly RenderStyle[],
+): Rejection | null {
+  let rejection: { rule: VisibleRemovalRule; source: VisibleRemovalSource } | null = null;
+  for (const environment of inherited) {
+    rejection ??= inheritedTextRemoval(environment);
+    const inks =
+      environment.textFill &&
+      !/^(currentcolor|initial|revert|revert-layer)$/.test(environment.textFill)
+        ? [environment.textFill]
+        : environment.colours;
+    const overlap = siblingRemoval(ctx, node, environment, inks);
+    if (!rejection && overlap) rejection = { rule: overlap, source: "inherited" };
+    for (const ink of inks)
+      for (const paper of environment.backgrounds) {
+        const rule =
+          paper.kind === "unknown"
+            ? "uncertain-paint"
+            : inkRemovalRule(ink, paper.rgb, environment.opacity * environment.scale);
+        if (!rejection && rule) rejection = { rule, source: "inherited" };
+      }
+    if (rejection) break;
+  }
+
+  return rejection;
+}
+
+function elementRejection(
+  ctx: VisibleContext,
+  node: HtmlElement,
+  inherited: readonly RenderStyle[],
+): { rejection: Rejection | null; nextStyles: RenderStyle[] } {
+  const { cascadeStyle } = ctx;
+  const attrs = node.attribs;
+  const nextStyles: RenderStyle[] = [];
+  let rejection: { rule: VisibleRemovalRule; source: VisibleRemovalSource } | null = null;
+  for (const environment of inherited) {
+    const cascade = cascadeStyle(
+      rulesFor(ctx, node, environment.scenario),
+      attrs.style ?? "",
+      environment.width,
+    );
+    const css = cascade.values;
+    const ink = css.get("color") ?? legacyColour(attrs.color) ?? environment.color;
+    const foreground = resolveInk(ink, environment.color);
+    const colourAlternatives = cascade.alternatives.get("color");
+    const colours = colourAlternatives
+      ? [
+          ...new Set(
+            colourAlternatives.flatMap((value) =>
+              value === "inherit" ? environment.colours : [value],
+            ),
+          ),
+        ]
+      : (css.has("color") && !/^(inherit|unset|revert|currentcolor)$/.test(ink)) || attrs.color
+        ? [foreground]
+        : environment.colours;
+    const baseBackgrounds = paintedBackgrounds(
+      css,
+      environment.backgrounds,
+      foreground,
+      attrs.bgcolor,
+      attrs.background,
+    );
+    const backgrounds = [...baseBackgrounds];
+    for (const key of ["background-color", "background-image", "box-shadow"]) {
+      for (const value of cascade.alternatives.get(key) ?? []) {
+        const variant = new Map(css);
+        variant.set(key, value);
+        backgrounds.push(
+          ...paintedBackgrounds(
+            variant,
+            environment.backgrounds,
+            foreground,
+            attrs.bgcolor,
+            attrs.background,
+          ),
+        );
+      }
+    }
+    const ownEffects = { ...cascade.effects };
+    if (css.get("opacity") === "inherit") ownEffects.opacity = environment.ownEffects.opacity;
+    if (css.get("filter") === "inherit")
+      ownEffects.filterOpacity = environment.ownEffects.filterOpacity;
+    if (css.get("transform") === "inherit")
+      ownEffects.transformScale = environment.ownEffects.transformScale;
+    if (css.get("scale") === "inherit") ownEffects.scaleValue = environment.ownEffects.scaleValue;
+    if (css.get("zoom") === "inherit") ownEffects.zoom = environment.ownEffects.zoom;
+    if (css.get("transform") === "inherit" || css.get("scale") === "inherit")
+      ownEffects.scale = ownEffects.transformScale * ownEffects.scaleValue;
+    const opacity = environment.opacity * ownEffects.opacity * ownEffects.filterOpacity;
+    const scale = environment.scale * ownEffects.scale * ownEffects.zoom;
+    let textStyle = resolveTextStyle(cascade, environment, node.name === "html");
+    if (node.name === "body" && !css.has("font-size"))
+      textStyle = { ...textStyle, size: INITIAL_TEXT_STYLE.size, sizeSource: "inherited" };
+    for (const value of cascade.alternatives.get("font-size") ?? []) {
+      const alternative =
+        value === "inherit"
+          ? environment.size
+          : resolveFont(parse(value, { context: "value" }), environment);
+      if (alternative && tinyQuantity(alternative)) textStyle = { ...textStyle, size: alternative };
+    }
+    if (
+      cascade.alternatives
+        .get("line-height")
+        ?.some((value) =>
+          value === "inherit" ? environment.lineHeight === 0 : /^(0|calc\(0(?:px)?\))$/.test(value),
+        )
+    )
+      textStyle = { ...textStyle, lineHeight: 0 };
+    const clipped =
+      css.get("overflow") === "hidden" &&
+      textStyle.lineHeight !== null &&
+      textStyle.lineHeight <= 0;
+    const origin = (properties: readonly string[]): VisibleRemovalSource =>
+      properties
+        .map((property) => cascade.sources.get(property))
+        .find((source) => source !== undefined) ?? "inherited";
+    if ("hidden" in attrs) rejection = { rule: "hidden-attribute", source: "html-attribute" };
+    else if (attrs["aria-hidden"]?.toLowerCase() === "true")
+      rejection = { rule: "aria-hidden", source: "html-attribute" };
+    else if (cascade.uncertain)
+      rejection = { rule: "uncertain-css", source: origin([...css.keys()]) };
+    else if (opacity * scale <= MIN_VISIBLE_ALPHA)
+      rejection = {
+        rule:
+          cascade.effects.filterOpacity < 1
+            ? "filter-opacity"
+            : scale < 1
+              ? ownEffects.zoom < 1
+                ? "zoom"
+                : "scale"
+              : "opacity",
+        source: origin(EFFECT_PROPERTIES),
+      };
+    else if (clipped) rejection = { rule: "clipping", source: origin(["overflow", "line-height"]) };
+    else {
+      const rule = cascade.barrier;
+      if (rule)
+        rejection = {
+          rule,
+          source: origin(REMOVAL_PROPERTIES),
+        };
+    }
+    if (rejection) break;
+    nextStyles.push({
+      ...textStyle,
+      width: environment.width,
+      scenario: environment.scenario,
+      color: foreground,
+      opacity,
+      scale,
+      colours,
+      backgrounds: distinctBackgrounds(backgrounds),
+      ownEffects,
+    });
+  }
+
+  return { rejection, nextStyles };
+}
+
+function walkDocument(
+  ctx: VisibleContext,
+  parent: Pick<HtmlDocument, "children">,
+  inherited: readonly RenderStyle[] = ctx.initialStyles,
+  depth = 0,
+) {
+  const { diagnostic, observer, out } = ctx;
+
+  if (depth >= MAX_HTML_DEPTH + 2) {
+    diagnostic?.("nesting-depth-limit");
+    parent.children = flattenHtmlChildren(parent.children, (node) => {
+      const omit = "name" in node && OMIT.has(node.name);
+      if (omit) recordRemoval(ctx, node, "omit-tag", "omit-tag");
+      return omit;
+    });
+  }
+  for (const node of parent.children) {
+    if (adapter.isTextNode(node)) {
+      const rejection = textRejection(ctx, node, inherited);
       if (rejection) {
-        recordRemoval(node, rejection.rule, rejection.source);
-        if (hasText(node)) hidden = true;
+        recordRemoval(ctx, node, rejection.rule, rejection.source);
+        if (node.data.trim()) ctx.hidden = true;
         continue;
       }
-      const link = startLink(node);
-      if (BLOCK.test(node.name)) {
-        out.push("\n");
-        linkText("\n");
-      }
-      walk(node, nextStyles, depth + 1);
-      if (BLOCK.test(node.name)) {
-        out.push("\n");
-        linkText("\n");
-      }
-      if (link) endLink(link);
+      observer?.retained(node.data.length);
+      linkText(ctx, node.data);
+      out.push(node.data);
+      continue;
     }
-  };
+    if (!("name" in node) || !("attribs" in node)) continue;
+    if (OMIT.has(node.name)) {
+      recordRemoval(ctx, node, "omit-tag", "omit-tag");
+      if (!["head", "style"].includes(node.name) && hasText(node)) ctx.hidden = true;
+      continue;
+    }
+    const { rejection, nextStyles } = elementRejection(ctx, node, inherited);
+    if (rejection) {
+      recordRemoval(ctx, node, rejection.rule, rejection.source);
+      if (hasText(node)) ctx.hidden = true;
+      continue;
+    }
+    const link = startLink(ctx, node);
+    if (BLOCK.test(node.name)) {
+      out.push("\n");
+      linkText(ctx, "\n");
+    }
+    walkDocument(ctx, node, nextStyles, depth + 1);
+    if (BLOCK.test(node.name)) {
+      out.push("\n");
+      linkText(ctx, "\n");
+    }
+    if (link) endLink(ctx, link);
+  }
+}
+
+/** Filter hidden text within a bounded CSS inspection; exhaustion is explicit. */
+export function visibleHtmlText(html: string, options: VisibleHtmlTextOptions = {}): VisibleText {
+  const ctx = createContext(html, options);
+  indexDocument(ctx);
+  if (collectRules(ctx)) return budgetFallbackText(ctx);
+  if (!buildPainters(ctx)) return { text: "", hidden: true, flags: ["budget-exceeded"] };
   try {
-    walk(dom);
+    walkDocument(ctx, ctx.dom);
   } catch {
     return { text: "", hidden: true, flags: ["budget-exceeded"] };
   }
-  return {
-    text: normalizeHtmlText(out.join("")),
-    hidden,
-  };
+  return { text: normalizeHtmlText(ctx.out.join("")), hidden: ctx.hidden };
 }
-
 export function messageModelText(
   plain: string,
   html: string,
@@ -864,16 +994,16 @@ export function messageModelText(
       text: "[Message too complex for AI: message text omitted.]",
       flags: [...visible.flags, ...(visible.hidden ? ["hidden-text-removed" as const] : [])],
     };
-  const a = normalize(plain),
-    b = normalize(visible.text);
-  const words = new Set(b.split(/\s+/));
-  const source = a.split(/\s+/).filter(Boolean);
+  const plainWords = normalize(plain),
+    visibleWords = normalize(visible.text);
+  const words = new Set(visibleWords.split(/\s+/));
+  const source = plainWords.split(/\s+/).filter(Boolean);
   const extra = source.filter((word) => !words.has(word)).length;
   const differs =
-    !!a &&
-    (Math.abs(a.length - b.length) > Math.max(20, b.length * 0.2) ||
+    !!plainWords &&
+    (Math.abs(plainWords.length - visibleWords.length) > Math.max(20, visibleWords.length * 0.2) ||
       extra > Math.max(3, source.length * 0.2) ||
-      (a.length >= 5 && extra > 0 && extra / source.length >= 0.5));
+      (plainWords.length >= 5 && extra > 0 && extra / source.length >= 0.5));
   return {
     text: visible.text,
     flags: [
