@@ -1,3 +1,4 @@
+import { gmailPages } from "./provider-pages.js";
 import { Effect, Result, Schema } from "effect";
 import { reconcileProviderWrite } from "./provider-write.js";
 import type { Account, Address } from "./domain.js";
@@ -141,30 +142,33 @@ export function makeGmailFeatures<
         const photos: ContactPhoto[] = [];
         const members = new Map<string, Address[]>();
         for (const source of ["connections", "otherContacts"] as const) {
-          let token = "";
           const seen = new Set<string>();
-          do {
-            const query = new URLSearchParams({
-              pageSize: "1000",
-              ...(source === "connections"
-                ? {
-                    personFields: details
-                      ? "names,emailAddresses,organizations,photos,memberships"
-                      : "names,emailAddresses,organizations",
-                    sources: "READ_SOURCE_TYPE_CONTACT",
-                  }
-                : { readMask: "names,emailAddresses" }),
-              ...(token ? { pageToken: token } : {}),
-            });
-            const url = `${PEOPLE}/${source === "connections" ? "people/me/connections" : "otherContacts"}?${query.toString()}`;
-            const page =
-              source === "connections"
+          for (const loadPage of gmailPages((token) =>
+            Effect.gen(function* () {
+              const query = new URLSearchParams({
+                pageSize: "1000",
+                ...(source === "connections"
+                  ? {
+                      personFields: details
+                        ? "names,emailAddresses,organizations,photos,memberships"
+                        : "names,emailAddresses,organizations",
+                      sources: "READ_SOURCE_TYPE_CONTACT",
+                    }
+                  : { readMask: "names,emailAddresses" }),
+                ...(token ? { pageToken: token } : {}),
+              });
+              const url = `${PEOPLE}/${source === "connections" ? "people/me/connections" : "otherContacts"}?${query.toString()}`;
+              return source === "connections"
                 ? yield* get(account.id, Connections, url)
                 : yield* featureRequest(account, "contacts", get(account.id, Others, url)).pipe(
                     Effect.catchTag("FeatureScopeMissing", () =>
                       Effect.succeed<typeof Others.Type>({ otherContacts: [] }),
                     ),
                   );
+            }),
+          )) {
+            const page = yield* loadPage;
+
             const people =
               "connections" in page
                 ? page.connections
@@ -206,27 +210,27 @@ export function makeGmailFeatures<
                 }
               }
             }
-            token = page.nextPageToken ?? "";
+            const token = page.nextPageToken ?? "";
             if (token && seen.has(token))
               return yield* new InvalidInput({ message: "Contact pagination repeated a page" });
             seen.add(token);
-          } while (token);
+          }
         }
         const groups: ContactGroup[] = [];
         if (details) {
-          let token = "";
           const seen = new Set<string>();
-          do {
-            const query = new URLSearchParams({
-              pageSize: "1000",
-              groupFields: "name,groupType",
-              ...(token ? { pageToken: token } : {}),
-            });
-            const page = yield* get(
-              account.id,
-              Groups,
-              `${PEOPLE}/contactGroups?${query.toString()}`,
-            );
+          for (const loadPage of gmailPages((token) =>
+            Effect.gen(function* () {
+              const query = new URLSearchParams({
+                pageSize: "1000",
+                groupFields: "name,groupType",
+                ...(token ? { pageToken: token } : {}),
+              });
+              return yield* get(account.id, Groups, `${PEOPLE}/contactGroups?${query.toString()}`);
+            }),
+          )) {
+            const page = yield* loadPage;
+
             for (const group of page.contactGroups ?? []) {
               const addresses = mergeContacts(members.get(group.resourceName) ?? []);
               if (group.groupType === "USER_CONTACT_GROUP" && addresses.length)
@@ -237,13 +241,13 @@ export function makeGmailFeatures<
                   members: addresses,
                 });
             }
-            token = page.nextPageToken ?? "";
+            const token = page.nextPageToken ?? "";
             if (token && seen.has(token))
               return yield* new InvalidInput({
                 message: "Contact group pagination repeated a page",
               });
             seen.add(token);
-          } while (token);
+          }
         }
         return { contacts: mergeContacts(contacts), groups, photos } satisfies ContactSnapshot;
       }),
@@ -263,39 +267,43 @@ export function makeGmailFeatures<
         "calendar",
         Effect.gen(function* () {
           const events: (typeof Event.Type)[] = [];
-          let token = "";
           const seen = new Set<string>();
-          do {
-            const query = new URLSearchParams({
-              iCalUID: invite.uid,
-              showDeleted: "true",
-              ...(invite.recurrenceId ? { singleEvents: "true" } : {}),
-              ...(token ? { pageToken: token } : {}),
-            });
-            if (invite.recurrenceId?.kind === "zoned" && invite.recurrenceId.timestamp !== null) {
-              query.set(
-                "timeMin",
-                new Date(invite.recurrenceId.timestamp - 86400000).toISOString(),
-              );
-              query.set(
-                "timeMax",
-                new Date(invite.recurrenceId.timestamp + 86400000).toISOString(),
-              );
-            } else if (invite.recurrenceId) {
-              const date = invite.recurrenceId.value.slice(0, 10);
-              query.set("timeMin", `${date}T00:00:00Z`);
-              query.set(
-                "timeMax",
-                new Date(Date.parse(`${date}T00:00:00Z`) + 2 * 86400000).toISOString(),
-              );
-            }
-            const page = yield* get(account.id, Events, `${EVENTS}?${query.toString()}`);
+          for (const loadPage of gmailPages((token) =>
+            Effect.gen(function* () {
+              const query = new URLSearchParams({
+                iCalUID: invite.uid,
+                showDeleted: "true",
+                ...(invite.recurrenceId ? { singleEvents: "true" } : {}),
+                ...(token ? { pageToken: token } : {}),
+              });
+              if (invite.recurrenceId?.kind === "zoned" && invite.recurrenceId.timestamp !== null) {
+                query.set(
+                  "timeMin",
+                  new Date(invite.recurrenceId.timestamp - 86400000).toISOString(),
+                );
+                query.set(
+                  "timeMax",
+                  new Date(invite.recurrenceId.timestamp + 86400000).toISOString(),
+                );
+              } else if (invite.recurrenceId) {
+                const date = invite.recurrenceId.value.slice(0, 10);
+                query.set("timeMin", `${date}T00:00:00Z`);
+                query.set(
+                  "timeMax",
+                  new Date(Date.parse(`${date}T00:00:00Z`) + 2 * 86400000).toISOString(),
+                );
+              }
+              return yield* get(account.id, Events, `${EVENTS}?${query.toString()}`);
+            }),
+          )) {
+            const page = yield* loadPage;
+
             events.push(...(page.items ?? []));
-            token = page.nextPageToken ?? "";
+            const token = page.nextPageToken ?? "";
             if (token && seen.has(token))
               return yield* new InvalidInput({ message: "Calendar pagination repeated a page" });
             seen.add(token);
-          } while (token);
+          }
           const matches = events.filter((e) =>
             invite.recurrenceId
               ? matchesInstance(e.originalStartTime, invite.recurrenceId)

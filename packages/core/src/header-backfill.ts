@@ -167,3 +167,16 @@ export function backfillCachedHeaders(
     }
   });
 }
+
+/** Keep the first field, unless a provider's existing JSON mapping keeps the last. */
+export function firstHeaders(
+  cached: Pick<Extract<CachedHeaders, { kind: "headers" }>, "headers">,
+  duplicate: "first" | "last" = "first",
+): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const header of cached.headers) {
+    const name = header.name.toLowerCase();
+    if (duplicate === "last" || !out.has(name)) out.set(name, header.value);
+  }
+  return out;
+}

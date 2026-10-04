@@ -1,6 +1,7 @@
 import type { PerformError } from "./mailbox.js";
 import { Clock, Effect } from "effect";
-import { SendUncertain } from "./errors.js";
+import type { ApiError } from "./provider-http.js";
+import { AuthError, ProviderError, SendUncertain } from "./errors.js";
 
 /** Only re-check delivery. The submission itself is never repeated. */
 export const confirmDelivery = <E, R>(lookup: Effect.Effect<boolean, E, R>) =>
@@ -29,3 +30,27 @@ export function isDefiniteSendFailure(error: PerformError): boolean {
   // describe a rejected submission or preparation that failed before sending.
   return error._tag !== "SendUncertain";
 }
+
+/** Submit once, then only look for delivery after an ambiguous transport result. */
+export const deliverOrConfirm = <A, E, R, E2, R2>(
+  submission: Effect.Effect<A, E, R>,
+  lookup: Effect.Effect<boolean, E2, R2>,
+  uncertain: (error: E) => boolean,
+) =>
+  submission.pipe(Effect.catchIf(uncertain, () => confirmDelivery(lookup).pipe(Effect.as(null))));
+
+export const providerReadFailure =
+  (provider: string) =>
+  (accountId: string) =>
+  (error: ApiError | AuthError | ProviderError): AuthError | ProviderError => {
+    if (error._tag !== "ApiError") return error;
+    const message = `${provider} API ${error.status}: ${error.body}`;
+    if (error.status === 401) return new AuthError({ accountId, message });
+    return new ProviderError({
+      message,
+      status: error.status,
+      ...(error.requestNotSent ? { reason: "connection" } : {}),
+      ...(error.deferred ? { deferred: true } : {}),
+      ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}),
+    });
+  };

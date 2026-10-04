@@ -1,4 +1,5 @@
-import { Schema } from "effect";
+import { retryAfterMillis } from "./provider-retry.js";
+import { Effect, Schema } from "effect";
 
 export const BatchResponse = Schema.Struct({
   responses: Schema.Array(
@@ -34,3 +35,38 @@ export function parseGmailBatch(text: string, contentType: string | undefined): 
   });
   return { responses };
 }
+
+/** Largest throttle deadline in a batch, or undefined when no response is throttled. */
+export function batchThrottleDelay(
+  responses: typeof BatchResponse.Type.responses,
+  now: number,
+): number | undefined {
+  const throttled = responses.filter(
+    (response) => response.status === 429 || response.status >= 500,
+  );
+  return throttled.length
+    ? Math.max(
+        ...throttled.map((response) =>
+          retryAfterMillis(
+            response.headers?.["Retry-After"] ?? response.headers?.["retry-after"],
+            now,
+          ),
+        ),
+      )
+    : undefined;
+}
+
+/** Stop after an exhausted chunk so the remaining candidates stay deferred. */
+export const verifyInChunks = <A, B, E, R>(
+  candidates: readonly A[],
+  verify: (chunk: readonly A[]) => Effect.Effect<readonly B[], E, R>,
+) =>
+  Effect.gen(function* () {
+    const results: B[] = [];
+    for (let offset = 0; offset < candidates.length; offset += 20) {
+      const verified = yield* verify(candidates.slice(offset, offset + 20)).pipe(Effect.result);
+      if (verified._tag === "Failure") break;
+      results.push(...verified.success);
+    }
+    return results;
+  });

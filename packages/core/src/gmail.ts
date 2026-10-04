@@ -1,28 +1,28 @@
+import { gmailPages } from "./provider-pages.js";
+import { ApiError, keyedLock, makeProviderHttp } from "./provider-http.js";
 import { newMessageId } from "./message-id.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import type { FolderStatus } from "./sync-health.js";
 import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
-import { BatchResponse, parseGmailBatch } from "./provider-batch.js";
-import type { ResetVerification } from "./sync-reset.js";
-import { CACHED_HEADER_NAMES, type CachedHeaders } from "./header-backfill.js";
-import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
-import { confirmDelivery } from "./provider-send.js";
-import { messageSecurity } from "./message-security.js";
 import {
-  retryProvider,
-  retryProviderRequest,
-  isProviderSend,
-  retryAfterMillis,
-  uncertainWrite,
-  requestNotSent,
-} from "./provider-retry.js";
+  batchThrottleDelay,
+  verifyInChunks,
+  BatchResponse,
+  parseGmailBatch,
+} from "./provider-batch.js";
+import type { ResetVerification } from "./sync-reset.js";
+import { CACHED_HEADER_NAMES, firstHeaders, type CachedHeaders } from "./header-backfill.js";
+import { logProviderFailure, makeOptionalPermissions } from "./provider-diagnostics.js";
+import { deliverOrConfirm, providerReadFailure } from "./provider-send.js";
+import { messageSecurity } from "./message-security.js";
+import { retryProvider, isProviderSend, uncertainWrite } from "./provider-retry.js";
 import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
 import { MailCodec } from "./platform/mail-codec.js";
 import { Buffer } from "./platform/bytes.js";
 import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { featureRequest } from "./provider-features.js";
-import { Clock, Data, Effect, Option, Schema, Semaphore, Stream } from "effect";
+import { Clock, Effect, Option, Schema, Stream } from "effect";
 import { HttpClient, HttpClientRequest } from "effect/http";
 
 import { type AttachmentRef, pickAttachment, MEDIA_RAW_TOO_LARGE } from "./attachments.js";
@@ -174,15 +174,6 @@ const DraftList = Schema.Struct({
 const RawMessage = Schema.Struct({ raw: Schema.String });
 const AttachmentBody = Schema.Struct({ data: Schema.String });
 
-/** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
-class ApiError extends Data.TaggedError("ApiError")<{
-  status: number;
-  body: string;
-  retryAfter?: string;
-  deferred?: boolean;
-  requestNotSent?: boolean;
-}> {}
-
 // 429 and 5xx are quota and transient errors. Gmail also reports per-user
 // quota as 403 rateLimitExceeded, which clears the same way.
 const isTransient = (e: ApiError) =>
@@ -193,27 +184,7 @@ const isTransient = (e: ApiError) =>
 
 const is404 = (e: { _tag: string }) => e instanceof ApiError && e.status === 404;
 
-/**
- * Maps a failed call to what the op queue does next: sign in again, drop the
- * op, or retry later. On reads a 404 that matters (stale history, deleted
- * message) is caught before this; any other is worth retrying later.
- */
-const readFailure =
-  (accountId: string) =>
-  (e: ApiError | AuthError | ProviderError): AuthError | ProviderError => {
-    if (e._tag !== "ApiError") return e;
-    const message = `Gmail API ${e.status}: ${e.body}`;
-    if (e.status === 401) {
-      return new AuthError({ accountId, message });
-    }
-    return new ProviderError({
-      message,
-      status: e.status,
-      ...(e.requestNotSent ? { reason: "connection" } : {}),
-      ...(e.deferred ? { deferred: true } : {}),
-      ...(e.retryAfter ? { retryAfter: e.retryAfter } : {}),
-    });
-  };
+const readFailure = providerReadFailure("Gmail");
 
 /** Writes Gmail will never accept (bad label id, message gone) are dropped. */
 const writeFailure =
@@ -248,96 +219,41 @@ export const makeGmail: Effect.Effect<
   const config = yield* AppConfig;
   const secrets = yield* Secrets;
 
-  // Access tokens last an hour. One refresh at a time, so a sync that starts
-  // eight fetches at once refreshes once.
   const connectivity = makeProviderConnectivity();
-  const tokens = new Map<string, { token: string; expiresAt: number }>();
-  const refreshLock = yield* Semaphore.make(1);
-  const requestLocks = new Map<string, Semaphore.Semaphore>();
-  const requestLock = (accountId: string) => {
-    let lock = requestLocks.get(accountId);
-    if (!lock) {
-      lock = Semaphore.makeUnsafe(CONCURRENCY);
-      requestLocks.set(accountId, lock);
-    }
-    return lock;
-  };
-
-  const accessToken = (accountId: string): Effect.Effect<string, AuthError | ProviderError> =>
-    refreshLock.withPermits(1)(
+  const { tokens, execute, authorized, invalidateRejectedToken } = yield* makeProviderHttp({
+    http,
+    secrets,
+    tokenLabel: "Google",
+    refresh: (accountId, refreshToken) =>
       Effect.gen(function* () {
-        const now = yield* Clock.currentTimeMillis;
-        const cached = tokens.get(accountId);
-        if (cached && cached.expiresAt > now + 60_000) return cached.token;
-        const refreshToken = yield* secrets.get(accountId);
-        if (Option.isNone(refreshToken)) {
-          return yield* new AuthError({
-            accountId,
-            message: "No Google refresh token; sign in again",
-          });
-        }
         const { google } = yield* config.read;
-        if (!google) {
+        if (!google)
           return yield* new ProviderError({
             message: "No Google OAuth client configured",
             reason: "configuration",
           });
-        }
         const res = yield* oauth
           .refresh(accountId, {
             tokenUrl: TOKEN_URL,
             clientId: google.clientId,
             clientSecret: google.clientSecret,
-            refreshToken: refreshToken.value,
+            refreshToken,
           })
           .pipe(
             Effect.tapError((error) =>
               logProviderFailure("gmail", accountId, HttpClientRequest.post(TOKEN_URL), error),
             ),
           );
-        tokens.set(accountId, { token: res.accessToken, expiresAt: now + res.expiresIn * 1000 });
-        return res.accessToken;
+
+        return res;
       }),
-    );
-
-  /** Sends one request with retries; resolves to the parsed JSON body, or null when empty. */
-  const execute = (token: string, request: HttpClientRequest.HttpClientRequest) =>
-    retryProviderRequest(
-      Effect.gen(function* () {
-        const res = yield* http.execute(HttpClientRequest.bearerToken(request, token));
-        const text = yield* res.text;
-        if (res.status < 200 || res.status >= 300) {
-          return yield* new ApiError({
-            status: res.status,
-            body: text,
-            deferred:
-              retryAfterMillis(res.headers["retry-after"], yield* Clock.currentTimeMillis) > 60000,
-            ...(res.headers["retry-after"] ? { retryAfter: res.headers["retry-after"] } : {}),
-          });
-        }
-        if (!text) return null;
-        return yield* Effect.try({
-          try: (): unknown =>
-            request.url.includes("/batch/gmail/")
-              ? parseGmailBatch(text, res.headers["content-type"])
-              : JSON.parse(text),
-          catch: () => new ApiError({ status: res.status, body: "response is not JSON" }),
-        });
-      }).pipe(
-        Effect.catchTag("HttpClientError", (e) =>
-          Effect.fail(
-            new ApiError({
-              status: 0,
-              body: e.message,
-              requestNotSent: requestNotSent(e.reason.cause),
-            }),
-          ),
-        ),
-      ),
-      request,
-      isTransient,
-    );
-
+    throttleReads: false,
+    prepareRequest: (request) => request,
+    parseResponse: (text, contentType, request) =>
+      request.url.includes("/batch/gmail/") ? parseGmailBatch(text, contentType) : JSON.parse(text),
+    isTransient,
+  });
+  const requestLock = keyedLock(CONCURRENCY);
   const permissions = makeOptionalPermissions<ApiError | AuthError | ProviderError>();
   const api = (accountId: string, request: HttpClientRequest.HttpClientRequest) =>
     Effect.flatMap(BackgroundRead, (background) =>
@@ -345,24 +261,9 @@ export const makeGmail: Effect.Effect<
         .run(
           accountId,
           request,
-          accessToken(accountId).pipe(
-            Effect.flatMap((token) => execute(token, request)),
-            // The provider can reject an access token before it expires. Drop it,
-            // refresh, and retry once; only a failed refresh means signing in again.
-            Effect.catchIf(
-              (e) => e._tag === "ApiError" && e.status === 401 && !isProviderSend(request),
-              () =>
-                Effect.sync(() => tokens.delete(accountId)).pipe(
-                  Effect.andThen(accessToken(accountId)),
-                  Effect.flatMap((token) => execute(token, request)),
-                ),
-            ),
+          authorized(accountId, request).pipe(
             Effect.tapError((e) => logProviderFailure("gmail", accountId, request, e)),
-            Effect.tapError((e) =>
-              e._tag === "ApiError" && e.status === 401
-                ? Effect.sync(() => tokens.delete(accountId))
-                : Effect.void,
-            ),
+            Effect.tapError((e) => invalidateRejectedToken(accountId, e)),
           ),
         )
         .pipe((requestEffect) => {
@@ -493,15 +394,16 @@ export const makeGmail: Effect.Effect<
       const changed = new Set<string>();
       const added = new Set<string>();
       const deleted = new Set<string>();
-      let pageToken: string | undefined;
       let latest = cursor;
-      do {
-        const page = yield* get(accountId, HistoryPage, "/history", {
+      for (const loadPage of gmailPages((pageToken) =>
+        get(accountId, HistoryPage, "/history", {
           startHistoryId: cursor,
           ...(scope ? { labelId: "INBOX" } : {}),
           maxResults: "500",
           ...(pageToken ? { pageToken } : {}),
-        });
+        }),
+      )) {
+        const page = yield* loadPage;
         for (const h of page.history ?? []) {
           for (const e of h.messagesAdded ?? []) added.add(e.message.id);
           for (const e of [
@@ -514,8 +416,7 @@ export const makeGmail: Effect.Effect<
           for (const e of h.messagesDeleted ?? []) deleted.add(e.message.id);
         }
         latest = page.historyId;
-        pageToken = page.nextPageToken;
-      } while (pageToken);
+      }
       for (const id of deleted) changed.delete(id);
       return Option.some({
         changedIds: [...changed],
@@ -540,17 +441,18 @@ export const makeGmail: Effect.Effect<
     // the next incremental run re-fetches any overlap idempotently.
     const { historyId } = yield* get(accountId, Profile, "/profile");
     const ids: string[] = [];
-    let pageToken: string | undefined;
-    do {
-      const page = yield* get(accountId, MessageList, "/messages", {
+    for (const loadPage of gmailPages((pageToken) =>
+      get(accountId, MessageList, "/messages", {
         q: scope ? `in:inbox ${INITIAL_QUERY}` : INITIAL_QUERY,
         includeSpamTrash: "true",
         maxResults: "500",
         ...(pageToken ? { pageToken } : {}),
-      });
+      }),
+    )) {
+      const page = yield* loadPage;
       ids.push(...(page.messages ?? []).map((m) => m.id));
-      pageToken = page.nextPageToken;
-    } while (pageToken && ids.length < (recovering ? Infinity : INITIAL_LIMIT));
+      if (ids.length >= (recovering ? Infinity : INITIAL_LIMIT)) break;
+    }
     return {
       changedIds: recovering ? ids : ids.slice(0, INITIAL_LIMIT),
       addedIds: new Set(ids),
@@ -766,44 +668,40 @@ export const makeGmail: Effect.Effect<
           message:
             "Gmail MIME message exceeds 25 MB. Remove attachments or shorten the body before sending.",
         });
-      yield* post(account.id, "/messages/send", {
-        raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
-        ...(threadId ? { threadId } : {}),
-      }).pipe(
-        Effect.catchIf(
-          (error) => error._tag === "ApiError" && uncertainWrite(error),
-          () =>
-            confirmDelivery(
-              Effect.gen(function* () {
-                const found = yield* get(account.id, MessageList, "/messages", {
-                  q: `in:sent rfc822msgid:${messageId}`,
-                  maxResults: "1",
-                });
-                if (found.messages?.length) return true;
-                // Inspect a bounded Sent window: Gmail does not promise ID preservation or partial-ID search.
-                const recent = yield* get(account.id, MessageList, "/messages", {
-                  q: `in:sent after:${Math.floor(started / 1000) - 60} before:${Math.floor(started / 1000) + 120}`,
-                  maxResults: "20",
-                });
-                for (const candidate of recent.messages ?? []) {
-                  const metadata = yield* get(
-                    account.id,
-                    Metadata,
-                    `/messages/${encodeURIComponent(candidate.id)}?format=metadata&metadataHeaders=Message-ID`,
-                  );
-                  if (
-                    metadata.payload.headers?.some(
-                      (header) =>
-                        header.name.toLowerCase() === "message-id" &&
-                        /^<([^<>@\s]+)@[^<>\s]+>$/.exec(header.value.trim())?.[1] === traceId,
-                    )
-                  )
-                    return true;
-                }
-                return false;
-              }),
-            ),
-        ),
+      yield* deliverOrConfirm(
+        post(account.id, "/messages/send", {
+          raw: raw.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
+          ...(threadId ? { threadId } : {}),
+        }),
+        Effect.gen(function* () {
+          const found = yield* get(account.id, MessageList, "/messages", {
+            q: `in:sent rfc822msgid:${messageId}`,
+            maxResults: "1",
+          });
+          if (found.messages?.length) return true;
+          // Inspect a bounded Sent window: Gmail does not promise ID preservation or partial-ID search.
+          const recent = yield* get(account.id, MessageList, "/messages", {
+            q: `in:sent after:${Math.floor(started / 1000) - 60} before:${Math.floor(started / 1000) + 120}`,
+            maxResults: "20",
+          });
+          for (const candidate of recent.messages ?? []) {
+            const metadata = yield* get(
+              account.id,
+              Metadata,
+              `/messages/${encodeURIComponent(candidate.id)}?format=metadata&metadataHeaders=Message-ID`,
+            );
+            if (
+              metadata.payload.headers?.some(
+                (header) =>
+                  header.name.toLowerCase() === "message-id" &&
+                  /^<([^<>@\s]+)@[^<>\s]+>$/.exec(header.value.trim())?.[1] === traceId,
+              )
+            )
+              return true;
+          }
+          return false;
+        }),
+        (error) => error._tag === "ApiError" && uncertainWrite(error),
       );
     },
     (effect, account) =>
@@ -818,16 +716,16 @@ export const makeGmail: Effect.Effect<
    * pull is only known by its message id.
    */
   const findDraftId = Effect.fnUntraced(function* (accountId: string, messageId: string) {
-    let pageToken: string | undefined;
-    do {
-      const page = yield* get(accountId, DraftList, "/drafts", {
+    for (const loadPage of gmailPages((pageToken) =>
+      get(accountId, DraftList, "/drafts", {
         maxResults: "500",
         ...(pageToken ? { pageToken } : {}),
-      });
+      }),
+    )) {
+      const page = yield* loadPage;
       const found = page.drafts?.find((d) => d.message.id === messageId);
       if (found) return Option.some(found.id);
-      pageToken = page.nextPageToken;
-    } while (pageToken);
+    }
     return Option.none<string>();
   });
 
@@ -972,19 +870,19 @@ export const makeGmail: Effect.Effect<
         return;
       }
       if (!remote.rfcMessageId) return;
-      let pageToken: string | undefined;
-      do {
-        const page = yield* get(account.id, MessageList, "/messages", {
+      for (const loadPage of gmailPages((pageToken) =>
+        get(account.id, MessageList, "/messages", {
           q: `in:drafts rfc822msgid:${remote.rfcMessageId}`,
           maxResults: "100",
           ...(pageToken ? { pageToken } : {}),
-        });
+        }),
+      )) {
+        const page = yield* loadPage;
         for (const message of page.messages ?? []) {
           const draftId = yield* findDraftId(account.id, message.id);
           if (Option.isSome(draftId)) yield* remove(draftId.value);
         }
-        pageToken = page.nextPageToken;
-      } while (pageToken);
+      }
     },
     (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
   );
@@ -1066,23 +964,26 @@ export const makeGmail: Effect.Effect<
       const labels = yield* fetchUserLabels(account.id);
       const limit = Math.max(1, Math.min(query.limit ?? 200, 1000));
       const messages: IncomingMessage[] = [];
-      let pageToken: string | undefined;
-      do {
-        const page = yield* get(account.id, MessageList, "/messages", {
+      let lastPageToken: string | undefined;
+      for (const loadPage of gmailPages((pageToken) =>
+        get(account.id, MessageList, "/messages", {
           q: gmailSearch(query, labels),
           ...(searchIncludesSpecialFolders(query) ? { includeSpamTrash: "true" } : {}),
           maxResults: String(Math.min(500, limit - messages.length)),
           ...(pageToken ? { pageToken } : {}),
-        });
+        }),
+      )) {
+        const page = yield* loadPage;
         const fetched = yield* Effect.forEach(
           page.messages ?? [],
           (m) => fetchMessage(account.id, m.id),
           { concurrency: CONCURRENCY },
         );
         for (const message of fetched) if (Option.isSome(message)) messages.push(message.value);
-        pageToken = page.nextPageToken;
-      } while (pageToken && messages.length < limit);
-      return { messages, truncated: pageToken !== undefined };
+        lastPageToken = page.nextPageToken;
+        if (messages.length >= limit) break;
+      }
+      return { messages, truncated: lastPageToken !== undefined };
     }).pipe(Effect.mapError(writeFailure(account.id)));
   const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
     Effect.gen(function* () {
@@ -1207,9 +1108,7 @@ export const makeGmail: Effect.Effect<
     candidates,
   ) =>
     Effect.gen(function* () {
-      const results: ResetVerification[] = [];
-      for (let offset = 0; offset < candidates.length; offset += 20) {
-        const chunk = candidates.slice(offset, offset + 20);
+      return yield* verifyInChunks(candidates, (chunk) => {
         const boundary = "openmail_reset_batch";
         const parts = chunk
           .map(
@@ -1218,7 +1117,7 @@ export const makeGmail: Effect.Effect<
           )
           .join("");
         const body = `${parts}--${boundary}--\r\n`;
-        const verified = yield* retryProvider(
+        return retryProvider(
           Effect.gen(function* () {
             const batch = yield* api(
               account.id,
@@ -1226,19 +1125,9 @@ export const makeGmail: Effect.Effect<
                 HttpClientRequest.bodyText(body, `multipart/mixed; boundary=${boundary}`),
               ),
             ).pipe(Effect.flatMap(decode(BatchResponse)));
-            const throttled = batch.responses.filter(
-              (response) => response.status === 429 || response.status >= 500,
-            );
-            if (throttled.length) {
-              const now = yield* Clock.currentTimeMillis;
-              const delay = Math.max(
-                ...throttled.map((response) =>
-                  retryAfterMillis(
-                    response.headers?.["Retry-After"] ?? response.headers?.["retry-after"],
-                    now,
-                  ),
-                ),
-              );
+            const now = yield* Clock.currentTimeMillis;
+            const delay = batchThrottleDelay(batch.responses, now);
+            if (delay !== undefined) {
               return yield* new ApiError({
                 status: 429,
                 body: "Reset verification deferred",
@@ -1269,13 +1158,8 @@ export const makeGmail: Effect.Effect<
             return out;
           }),
           (error) => error._tag === "ApiError" && isTransient(error),
-        ).pipe(Effect.result);
-        // An exhausted retry budget must defer the rest of the run, especially
-        // when Retry-After is longer than we can wait inside a single request.
-        if (verified._tag === "Failure") break;
-        results.push(...verified.success);
-      }
-      return results;
+        );
+      });
     }).pipe(Effect.mapError(readFailure(account.id)));
 
   const fetchCachedHeaders: NonNullable<ProviderAdapter["fetchCachedHeaders"]> = (account, ids) =>
@@ -1311,20 +1195,23 @@ export const makeGmail: Effect.Effect<
     Effect.gen(function* () {
       const ids = new Set<string>();
       const pages = new Set<string>();
-      let pageToken: string | undefined;
-      for (let pageNumber = 0; pageNumber < COUNT_RECHECK_PAGES; pageNumber++) {
-        const page = yield* get(accountId, MessageList, "/messages", {
+      let pageNumber = 0;
+      for (const loadPage of gmailPages((pageToken) =>
+        get(accountId, MessageList, "/messages", {
           labelIds: filter === "unread" && scope !== "UNREAD" ? [scope, "UNREAD"] : [scope],
           includeSpamTrash: "true",
           maxResults: String(COUNT_RECHECK_PAGE_SIZE),
           ...(pageToken ? { pageToken } : {}),
-        });
+        }),
+      )) {
+        const page = yield* loadPage;
         for (const message of page.messages ?? []) ids.add(message.id);
-        pageToken = page.nextPageToken;
+        const pageToken = page.nextPageToken;
         if (!pageToken) return Option.some(ids.size);
         if (pages.has(pageToken))
           return yield* new ProviderError({ message: "Label count pagination repeated" });
         pages.add(pageToken);
+        if (++pageNumber >= COUNT_RECHECK_PAGES) break;
       }
       return Option.none<number>();
     });
@@ -1565,9 +1452,7 @@ export function attachmentParts(payload: GmailPart): GmailPart[] {
 }
 
 export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
-  const headers = new Map(
-    (raw.payload.headers ?? []).map((h) => [h.name.toLowerCase(), h.value] as const),
-  );
+  const headers = firstHeaders({ headers: raw.payload.headers ?? [] }, "last");
   let text = "";
   let html = "";
   const attachments: Attachment[] = [];
@@ -1578,9 +1463,7 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
     if (part.filename) {
       attachments.push({ filename: part.filename, mimeType: part.mimeType, size: part.body.size });
     } else if (part.body.data) {
-      const partHeaders = new Map(
-        (part.headers ?? []).map((h) => [h.name.toLowerCase(), h.value] as const),
-      );
+      const partHeaders = firstHeaders({ headers: part.headers ?? [] }, "last");
       // Gmail's API hands text parts over already converted to UTF-8, while
       // the part header keeps the sender's charset (gb2312 from Outlook,
       // for example). Decoding by the header would garble them.

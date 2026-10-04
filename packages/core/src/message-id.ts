@@ -6,3 +6,6 @@ export const newMessageId = (address: string) =>
 
 /** Remove one opening/closing bracket. SQL trim removes repeated brackets intentionally. */
 export const stripMessageIdBrackets = (value: string): string => value.replace(/^<|>$/g, "");
+
+/** IMAP identity comparison ignores every bracket and whitespace character. */
+export const messageIdKey = (value: string): string => value.replace(/[<>\s]/g, "");

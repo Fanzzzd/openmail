@@ -47,3 +47,21 @@ portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTranspo
 开发 smoke 的数据库复制与副本迁移在 `platform/node/smoke.ts`，桌面脚本只调用该 core 导出。`OPENMAIL_READ_ONLY=1` 经 Effect Config 在 core Layer 构建时读取；provider 写入拦截与队列／发送策略见 `read-only.ts`、`mailbox-live.ts`，没有引入隐式 Node 全局。
 
 共享导出集中在 `common.ts`。Node 入口只重导出桌面／CLI 消费的名称，不经 `portable.ts` 加载手机 adapters 或手机专用工作流；`platform-imports.test.ts` 检查该依赖图。手机端继续从 `portable.ts` 获得共享能力和移动平台组装。
+
+## IMAP 两端行为差异
+
+修改 IMAP provider 或讨论两端能力一致性时读取。Slice 71 只提取相同的纯函数，并拆分 Node 模块；以下九项保留原行为，需要产品决定后再统一。
+
+| 项目           | Node                                                          | React Native                                                                  |
+| -------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 特殊文件夹识别 | 使用服务器 special-use；普通文件夹保留路径标签                | 另用 Sent Items、Deleted Items 等名称别名识别特殊文件夹                       |
+| 大消息同步     | 超过 10 MB 时读取前 512 KB，附件信息来自 BODYSTRUCTURE        | 下载完整消息，超过 25 MB 拒绝；不做截断解析                                   |
+| 标记增量       | 已启用 CONDSTORE 时用 changedSince，另查存在的 UID            | 依据 capability 和时间决定扫描，读取全部已知 UID 的 FLAGS                     |
+| 搜索范围       | 编译服务器搜索条件后拉取并复核消息                            | 搜索 UNDELETED，从新到旧读取并本地匹配，最多扫描 1000 条                      |
+| 附件下载       | 优先单独下载 BODYSTRUCTURE 对应 MIME part，必要时回退原始消息 | 下载整封消息，再解析并选取附件                                                |
+| 远程草稿       | 支持 APPEND、替换、组织标记、冲突和重试恢复                   | 草稿保留本地，saveDraft／deleteDraft 不支持                                   |
+| 文件夹管理     | 支持创建、重命名、移动、删除文件夹                            | changeLabel 不支持                                                            |
+| 永久删除       | 要求 UIDPLUS 或 IMAP4rev2，限定目标 UID 删除并返回部分结果    | checkPermanentDelete／permanentlyDelete 不支持                                |
+| SMTP 发送      | 使用 message.from，报告部分收件人拒绝，并可创建 Sent 文件夹   | 使用账户地址作为信封和 MIME 发件人，逐个处理 RCPT 响应，Sent 文件夹必须已存在 |
+
+Node IMAP 的实现分为 `platform/node/imap/{session,parse,pull,ops,drafts,pool}.ts`。Outlook 分为 `outlook/{graph,client,send,sync,parse}.ts`。旧入口只组装或重导出，现有调用路径继续有效。

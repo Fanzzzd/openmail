@@ -212,3 +212,13 @@ export function trackImapBackfill(
   for (const [folder, state] of states) previous.folders[folder] = state.toCursor();
   return Option.some(JSON.stringify(previous));
 }
+
+export function folderRegressed(
+  previous: FolderCursor | undefined,
+  uidValidity: string,
+  uidNext: number | undefined,
+): boolean {
+  return (
+    previous?.uidValidity === uidValidity && uidNext !== undefined && uidNext < previous.lastUid + 1
+  );
+}

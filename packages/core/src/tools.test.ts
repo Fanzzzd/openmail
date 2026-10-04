@@ -1260,7 +1260,11 @@ it.effect("MCP write tools refuse invisible accounts before creating any proposa
       const attempt = () =>
         Effect.all([
           call("modify_threads", { thread_ids: [id], action: "archive", rationale: "Review" }),
-          call("snooze_threads", { thread_ids: [id], due: Date.now() + 3_600_000, rationale: "Review" }),
+          call("snooze_threads", {
+            thread_ids: [id],
+            due: Date.now() + 3_600_000,
+            rationale: "Review",
+          }),
           call("draft_message", {
             account_id: account.id,
             to: ["new@example.test"],

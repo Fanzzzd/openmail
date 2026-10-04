@@ -1,3 +1,4 @@
+import { messageIdKey } from "../../message-id.js";
 import { FolderStatus } from "../../sync-health.js";
 import type { ResetVerification } from "../../sync-reset.js";
 import { Clock, Effect, Option, Queue, Schema, Scope, Semaphore, Stream } from "effect";
@@ -34,6 +35,14 @@ import {
 } from "../../errors.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
+  copyProgressKey,
+  retainedResetLabels,
+  flagsOf,
+  groupIdsByFolder,
+  IMAP_SPECIAL_LABELS as SPECIAL,
+} from "../../imap-helpers.js";
+import {
+  folderRegressed,
   encodeProviderId,
   decodeProviderId,
   FolderState,
@@ -48,14 +57,6 @@ import { confirmDelivery } from "../../provider-send.js";
 import { htmlToText } from "../../mime.js";
 import { matchesSearch, searchMailboxLabel } from "../../search.js";
 
-const SPECIAL: Record<string, string> = {
-  "\\Inbox": "INBOX",
-  "\\Sent": "SENT",
-  "\\Drafts": "DRAFT",
-  "\\Junk": "SPAM",
-  "\\Trash": "TRASH",
-  "\\Archive": "ARCHIVE",
-};
 const FOLDER_ALIASES: Record<string, readonly string[]> = {
   SENT: ["sent", "sent items", "sent messages"],
   DRAFT: ["draft", "drafts"],
@@ -71,7 +72,6 @@ const folderLabel = (path: string) => {
     )?.[0] ?? path
   );
 };
-const normalizedMessageId = (value: string) => value.replace(/[<>\s]/g, "");
 const address = (value: string) => {
   if (!/^[^\s<>\r\n\0]+@[^\s<>\r\n\0]+$/.test(value))
     throw new PermanentError({ message: "Invalid SMTP envelope address" });
@@ -156,10 +156,6 @@ export const fetchFields = (rows: readonly ImapResponse[]) => {
       return fields;
     });
 };
-const flagsOf = (flags: readonly string[]) => ({
-  unread: !flags.includes("\\Seen"),
-  starred: flags.includes("\\Flagged"),
-});
 const fetchRawIn = async (client: ImapWire, id: string, maxBytes = 25 * 1024 * 1024) => {
   const ref = refOf(id);
   await client.select(ref.path, ref.uidValidity);
@@ -357,10 +353,7 @@ const applyPush = async (
   const range = uidSet(uids);
   const validity = await client.select(ref.path, undefined, false);
   const regressed =
-    expected?.uidValidity === ref.uidValidity &&
-    validity === ref.uidValidity &&
-    client.uidNext !== undefined &&
-    client.uidNext < expected.lastUid + 1;
+    validity === ref.uidValidity && folderRegressed(expected, ref.uidValidity, client.uidNext);
   if (
     validity !== ref.uidValidity ||
     (expected && expected.uidValidity !== ref.uidValidity) ||
@@ -429,8 +422,8 @@ const applyPush = async (
       throw new PermanentError({ message: "Destination folder is gone" });
     for (const uid of uids) {
       const id = encodeProviderId(ref.path, ref.uidValidity, uid);
-      const progressKey = JSON.stringify([id, destination]);
-      const acceptedKey = JSON.stringify([id, destination, "accepted"]);
+      const progressKey = copyProgressKey(id, destination);
+      const acceptedKey = copyProgressKey(id, destination, true);
       const progress = context?.progress ?? copiedDestinations;
       const issued = progress.has(progressKey);
       const accepted = progress.has(acceptedKey);
@@ -454,10 +447,7 @@ const applyPush = async (
               .replace(/\r?\n[ \t]+/g, " "),
           )?.[1]
           ?.trim();
-        if (
-          messageId &&
-          normalizedMessageId(messageId) !== normalizedMessageId(actualMessageId ?? "")
-        )
+        if (messageId && messageIdKey(messageId) !== messageIdKey(actualMessageId ?? ""))
           throw new PermanentError({
             message: "Message identity changed; sync before changing this message",
           });
@@ -470,7 +460,7 @@ const applyPush = async (
           const uidValidity = await client.select(destination);
           const found = (
             await client.search(
-              `UNDELETED HEADER Message-ID ${mailQuote(`<${normalizedMessageId(messageId)}>`)}`,
+              `UNDELETED HEADER Message-ID ${mailQuote(`<${messageIdKey(messageId)}>`)}`,
             )
           )[0];
           if (found !== undefined) destinationRef = { uidValidity, uid: found };
@@ -517,7 +507,7 @@ const applyPush = async (
           const uidValidity = await client.select(destination);
           const found = (
             await client.search(
-              `UNDELETED HEADER Message-ID ${mailQuote(`<${normalizedMessageId(messageId)}>`)}`,
+              `UNDELETED HEADER Message-ID ${mailQuote(`<${messageIdKey(messageId)}>`)}`,
             )
           )[0];
           if (found !== undefined) destinationRef = { uidValidity, uid: found };
@@ -545,8 +535,8 @@ const applyPush = async (
   if (op.kind === "copy")
     for (const destination of targets)
       for (const id of ids) {
-        copiedDestinations.delete(JSON.stringify([id, destination]));
-        copiedDestinations.delete(JSON.stringify([id, destination, "accepted"]));
+        copiedDestinations.delete(copyProgressKey(id, destination));
+        copiedDestinations.delete(copyProgressKey(id, destination, true));
       }
   return reconcile ? { reconcile: true } : mappings;
 };
@@ -756,9 +746,7 @@ export const makeMobileImap = Effect.gen(function* () {
         for (const candidate of group) {
           const ref = decodeProviderId(candidate.resetProviderId ?? candidate.providerId);
           if (Option.isNone(ref)) continue;
-          const retained = candidate.labels.filter((label) =>
-            ["UNREAD", "STARRED", "IMPORTANT"].includes(label),
-          );
+          const retained = retainedResetLabels(candidate.labels);
           if (
             !candidate.resetProviderId &&
             validity === ref.value.uidValidity &&
@@ -892,24 +880,21 @@ export const makeMobileImap = Effect.gen(function* () {
     context,
   ) =>
     pushSession(account, async (client, signal) => {
-      const groups = new Map<string, [string, ...string[]]>();
-      for (const id of ids) {
-        const ref = refOf(id);
-        const key = `${ref.uidValidity}:${ref.path}`;
-        const group = groups.get(key);
-        if (group) group.push(id);
-        else groups.set(key, [id]);
-      }
+      for (const id of ids) refOf(id);
+      const decodedGroups = groupIdsByFolder(ids);
+      if (Option.isNone(decodedGroups))
+        throw new PermanentError({ message: "Invalid IMAP message id" });
+      const groups = decodedGroups.value;
       const mappings: ProviderIdMapping[] = [];
       let reconcile = false;
       for (const group of groups.values()) {
         const moved = await applyPush(
           client,
-          group,
+          group.ids,
           op,
           messageIdsFor(account.id, context?.messageIds),
           copiedFor(account.id),
-          pushState(account, refOf(group[0]).path, cursor),
+          pushState(account, group.path, cursor),
           context,
           signal,
         );
@@ -1008,11 +993,7 @@ export const makeMobileImap = Effect.gen(function* () {
             for (const path of selected) {
               const validity = await client.select(path.path);
               const old = previous.folders[path.path];
-              const regressed =
-                !!old &&
-                old.uidValidity === validity &&
-                client.uidNext !== undefined &&
-                client.uidNext < old.lastUid + 1;
+              const regressed = folderRegressed(old, validity, client.uidNext);
               const rebuilt = old && old.uidValidity !== validity ? old : undefined;
               if (incrementalOnly && (!old || old.uidValidity !== validity || regressed))
                 throw new ProviderError({
