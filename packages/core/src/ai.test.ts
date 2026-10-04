@@ -95,7 +95,11 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
               }),
             );
             assert.ok(Option.isSome(custom));
-            assert.strictEqual(custom.value.isFailure, provider !== "gmail");
+            assert.strictEqual(
+              custom.value.isFailure,
+              provider !== "gmail",
+              JSON.stringify(custom.value.encodedResult),
+            );
             return textStream("Checked suggestions");
           }),
         ).pipe(Stream.orDie),

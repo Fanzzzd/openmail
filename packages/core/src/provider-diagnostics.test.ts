@@ -3,6 +3,7 @@ import { HttpClientRequest } from "effect/http";
 import { expect, it } from "vitest";
 import {
   logProviderFailure,
+  logInvalidGraphCursor,
   providerEndpoint,
   makeOptionalPermissions,
 } from "./provider-diagnostics.js";
@@ -192,4 +193,22 @@ it("Graph search codes survive export but unknown strings and content do not", a
     { operation: "search", errorCode: "unknown" },
   ]);
   expect(JSON.stringify(exported)).not.toContain("private");
+});
+
+it("invalid cursor diagnostics retain a fixed code and account hash without cursor data", () => {
+  const records: unknown[] = [];
+  const logger = Logger.make((options) => {
+    records.push(...(Array.isArray(options.message) ? options.message : [options.message]));
+  });
+  Effect.runSync(
+    logInvalidGraphCursor("private@example.test").pipe(Effect.provide(Logger.layer([logger]))),
+  );
+  const record = diagnosticRecord("provider-failure", records[0], 0);
+  expect(record).toMatchObject({
+    operation: "delta",
+    errorCode: "InvalidDeltaCursor",
+    accountHash: expect.stringMatching(/^[a-f0-9]{16}$/),
+  });
+  expect(JSON.stringify(record)).not.toMatch(/private|example|token|skiptoken/);
+  expect(diagnosticRecord("provider-failure", record, 0)).toEqual(record);
 });

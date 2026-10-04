@@ -142,11 +142,20 @@ function httpProvider(
             .join("");
           responseText = `${parts}--response_boundary--\r\n`;
         }
-      } else if (url.pathname.endsWith("/expired") || url.pathname.endsWith("/history")) {
+      } else if (
+        url.searchParams.get("$deltatoken") === "expired" ||
+        url.pathname.endsWith("/history")
+      ) {
         expired++;
         status = provider === "outlook" ? 410 : 404;
       } else if (provider === "outlook") {
         if (url.pathname === "/v1.0/me/mailFolders") body = { value: [] };
+        else if (url.searchParams.get("$deltatoken") === "fresh")
+          body = {
+            value: [],
+            "@odata.deltaLink":
+              "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=fresh",
+          };
         else if (url.pathname.endsWith("/messages/delta") && url.pathname.includes("/inbox/")) {
           deltaUrls.push(url);
           body = {
@@ -162,11 +171,12 @@ function httpProvider(
             ),
             ...(options.missingCheckpoint
               ? {}
-              : { "@odata.deltaLink": "https://graph.microsoft.com/v1.0/fresh" }),
+              : {
+                  "@odata.deltaLink":
+                    "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=fresh",
+                }),
           };
-        } else if (url.pathname === "/v1.0/fresh")
-          body = { value: [], "@odata.deltaLink": "https://graph.microsoft.com/v1.0/fresh" };
-        else if (url.pathname.match(/\/mailFolders\/(inbox|archive)$/))
+        } else if (url.pathname.match(/\/mailFolders\/(inbox|archive)$/))
           body = {
             id: url.pathname.endsWith("inbox") ? "folder-inbox" : "folder-archive",
             totalItemCount: url.pathname.endsWith("inbox") ? 28666 : 103,
@@ -258,7 +268,8 @@ for (const provider of ["outlook", "gmail"] as const)
               ? "expired"
               : JSON.stringify({
                   __idType: "immutable",
-                  inbox: "https://graph.microsoft.com/v1.0/expired",
+                  inbox:
+                    "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired",
                 }),
           );
           const result = yield* (yield* Mailbox).sync(account.id);
@@ -306,7 +317,8 @@ it.effect("a listed Graph id stays kept when the complete message GET returns 40
         account.id,
         JSON.stringify({
           __idType: "immutable",
-          inbox: "https://graph.microsoft.com/v1.0/expired",
+          inbox:
+            "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired",
         }),
       );
       assert.isUndefined((yield* (yield* Mailbox).sync(account.id))[0]?.error);
@@ -474,7 +486,8 @@ for (const recovering of [true, false]) {
               account.id,
               JSON.stringify({
                 __idType: "immutable",
-                inbox: "https://graph.microsoft.com/v1.0/expired",
+                inbox:
+                  "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired",
               }),
             );
           const mailbox = yield* Mailbox;
@@ -526,7 +539,8 @@ it.effect("an early-ended Outlook window probes small gaps and retains its check
       const account = yield* store.upsertAccount("outlook", "me@example.test");
       for (let index = 0; index < 12; index++)
         yield* store.upsertMessage(account.id, mail(`m${index}`));
-      const previous = "https://graph.microsoft.com/v1.0/expired";
+      const previous =
+        "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=expired";
       yield* store.saveSyncCursor(
         account.id,
         JSON.stringify({ __idType: "immutable", inbox: previous }),

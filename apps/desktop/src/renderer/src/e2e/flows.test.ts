@@ -663,3 +663,83 @@ it("opening and closing a never-saved composer emits no failed RPC or message lo
   expect(h.requests.filter((request) => request.tag === "OpenDraft")).toEqual([]);
   expect(h.server.draftLog).toEqual([]);
 });
+
+it.each(["mcp", "rule", "assistant"] as const)(
+  "%s replies block sending until unfamiliar Bcc and outside-thread recipients are confirmed",
+  async (surface) => {
+    current = await flow({
+      agentDraft: {
+        surface,
+        message: {
+          to: [{ name: "Alice", address: "alice@example.com" }],
+          cc: [],
+          bcc: [{ name: "", address: "outsider@example.com" }],
+          subject: "Re: Flow one",
+          text: "Please review this decision.",
+          attachments: [],
+          mode: "reply",
+          inReplyTo: "gmail:me@gmail.com/one",
+        },
+      },
+    });
+    const h = current;
+    await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+    clickButton("Send");
+    await eventually(() => expect(screen.getByText("Review AI recipients")).toBeTruthy());
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog.textContent).toContain("AI added unfamiliar recipients:");
+    expect(dialog.textContent).toContain("Recipients outside the original conversation:");
+    expect(dialog.textContent).toContain("outsider@example.com");
+    expect(h.server.sent).toHaveLength(0);
+    expect(h.requests.some((r) => r.tag === "Send" || r.tag === "QueueUndoSend")).toBe(false);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(h.server.sent).toHaveLength(0);
+    clickButton("Send");
+    await eventually(() => expect(screen.getByText("Review AI recipients")).toBeTruthy());
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Send anyway" }),
+    );
+    await eventually(() => expect(h.server.sent).toHaveLength(1));
+    expect(h.server.sent[0]?.message.bcc[0]?.address).toBe("outsider@example.com");
+  },
+);
+
+it.each(["missing", "failed"] as const)(
+  "AI recipient review handles a %s original thread",
+  async (state) => {
+    current = await flow({
+      agentDraft: {
+        surface: "mcp",
+        message: {
+          to: [{ name: "", address: "alice@example.com" }],
+          cc: [],
+          bcc: [],
+          subject: "Re: original",
+          text: "Reply",
+          attachments: [],
+          mode: "reply",
+          inReplyTo: "gmail:me@gmail.com/one",
+        },
+      },
+    });
+    const h = current;
+    await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+    await h.run(h.store.rememberMailedAddresses(h.account.id, ["alice@example.com"]));
+    if (state === "missing") await h.run(h.store.deleteMessage(h.account.id, "one"));
+    else
+      vi.spyOn(h.m, "readerThread").mockImplementation(() =>
+        Effect.fail(new ProviderError({ message: "Read failed" })),
+      );
+    clickButton("Send");
+    if (state === "missing") {
+      await eventually(() => expect(screen.getByText("Review AI recipients")).toBeTruthy());
+      expect(screen.getByRole("alertdialog").textContent).toContain(
+        "Recipients outside the original conversation:",
+      );
+      expect(screen.getByRole("alertdialog").textContent).toContain("alice@example.com");
+      expect(screen.queryByText("Could not check recipients.")).toBeNull();
+    } else
+      await eventually(() => expect(screen.getByText("Could not check recipients.")).toBeTruthy());
+    expect(h.server.sent).toHaveLength(0);
+  },
+);

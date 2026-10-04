@@ -822,11 +822,25 @@ export function Composer({
               if (!open) setAsking(null);
             }}
             title={
-              asking?.warning === "subject"
-                ? t`Send this message without a subject?`
-                : t`The message mentions an attachment, but none is added.`
+              asking?.warning === "recipients"
+                ? t`Review AI recipients`
+                : asking?.warning === "subject"
+                  ? t`Send this message without a subject?`
+                  : t`The message mentions an attachment, but none is added.`
             }
           >
+            {asking?.recipients?.unfamiliar.length ? (
+              <p>
+                <Trans>AI added unfamiliar recipients:</Trans>{" "}
+                {asking.recipients.unfamiliar.join(", ")}
+              </p>
+            ) : null}
+            {asking?.recipients?.outsideThread.length ? (
+              <p>
+                <Trans>Recipients outside the original conversation:</Trans>{" "}
+                {asking.recipients.outsideThread.join(", ")}
+              </p>
+            ) : null}
             <AlertCancel>
               <Trans>Cancel</Trans>
             </AlertCancel>

@@ -1,6 +1,8 @@
 import { Effect, Stream } from "effect";
 import {
   applySignature,
+  agentRecipientWarnings,
+  hasRecipientWarnings,
   signatureDefault,
   type AiEvent,
   type Mailbox,
@@ -41,5 +43,33 @@ export function signedMobileMessage(
       ...message,
       text: applySignature(message.text, undefined, signature?.text, yield* mailbox.prefs),
     };
+  });
+}
+
+/** The compose screen must await this decision before showing its send confirmation. */
+export async function reviewAgentRecipients(
+  warnings: ReturnType<typeof agentRecipientWarnings>,
+  confirm: () => Promise<boolean>,
+): Promise<boolean> {
+  return hasRecipientWarnings(warnings) ? confirm() : true;
+}
+
+/** Expunged originals still require review of every current recipient. */
+export function mobileRecipientWarnings(
+  mailbox: Mailbox["Service"],
+  accountId: string,
+  message: OutgoingMessage,
+) {
+  return Effect.gen(function* () {
+    const known = yield* mailbox.knownSenders(
+      accountId,
+      [...message.to, ...message.cc, ...message.bcc].map((a) => a.address),
+    );
+    const thread = message.agentOrigin?.replyTo
+      ? yield* mailbox
+          .thread(message.agentOrigin.replyTo)
+          .pipe(Effect.catchTag("NotFound", () => Effect.succeed([])))
+      : [];
+    return agentRecipientWarnings(message, known, thread);
   });
 }

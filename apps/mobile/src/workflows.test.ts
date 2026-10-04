@@ -282,3 +282,10 @@ it("foreground reminders keep waking every 30 seconds offline, stop in the backg
     vi.useRealTimers();
   }
 });
+
+it("mobile forwarding and replying do not repeat existing subject prefixes", () => {
+  for (const subject of ["Fwd: Hello", "FW: Hello", "fw : Hello"]) {
+    expect(composeMessage("forward", { ...original, subject }).subject).toBe(subject);
+  }
+  expect(composeMessage("reply", { ...original, subject: "RE: Hello" }).subject).toBe("RE: Hello");
+});

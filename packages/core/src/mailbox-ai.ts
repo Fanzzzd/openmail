@@ -40,6 +40,7 @@ export function makeAiMailbox(
   model: Model["Service"],
   mailbox: () => Mailbox["Service"],
   changed: Effect.Effect<unknown>,
+  purgeAccountProposals: (accountId: string) => Effect.Effect<void>,
   canTriage: () => boolean = () => false,
 ) {
   const active = new Set<Deferred.Deferred<void>>();
@@ -49,9 +50,14 @@ export function makeAiMailbox(
   const check = (ids: readonly string[]) =>
     Effect.gen(function* () {
       const settings = yield* store.ai.accounts;
+      const accounts = yield* store.listAccounts;
       if (
         ids.length === 0 ||
-        ids.some((id) => !settings.some((a) => a.accountId === id && a.allowed))
+        ids.some(
+          (id) =>
+            !settings.some((a) => a.accountId === id && a.allowed) ||
+            !accounts.some((a) => a.id === id && a.enabled !== false),
+        )
       )
         yield* new InvalidInput({
           message: "Allow sending mail text for each selected account in AI settings.",
@@ -695,8 +701,11 @@ export function makeAiMailbox(
         yield* store.transaction(
           Effect.gen(function* () {
             yield* store.ai.setAccount(settings);
-            if (!settings.allowed) yield* store.ai.deleteAccountResults(settings.accountId);
-            else if (!settings.autoTriage) yield* store.ai.deleteAccountTriage(settings.accountId);
+            if (!settings.allowed) {
+              yield* store.ai.deleteAccountResults(settings.accountId);
+              yield* purgeAccountProposals(settings.accountId);
+            } else if (!settings.autoTriage)
+              yield* store.ai.deleteAccountTriage(settings.accountId);
           }),
         );
         yield* changed;

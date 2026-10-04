@@ -35,7 +35,7 @@ import {
 import { cleanDisplayName } from "./message-security.js";
 import { decodeProviderId } from "./imap-cursor.js";
 import { makeHeaderBackfillStore } from "./store-header-backfill.js";
-import { PlatformCrypto } from "./platform/crypto.js";
+import { PlatformCrypto, sha256Hex } from "./platform/crypto.js";
 import { categoryKey } from "./categories.js";
 import { makeSyncResetStore } from "./store-sync-reset.js";
 import { makeAiStore } from "./store-ai.js";
@@ -325,6 +325,29 @@ const progressFailure = (cause: Cause.Cause<unknown>) =>
         }),
       );
 
+function auditMetadata(entry: { accountId?: string | null; action: string; detail: unknown }) {
+  const metadata = Schema.decodeUnknownOption(
+    Schema.Struct({
+      command: Schema.optionalKey(Command),
+      to: Schema.optionalKey(Schema.Array(Schema.String)),
+      cc: Schema.optionalKey(Schema.Array(Schema.String)),
+      bcc: Schema.optionalKey(Schema.Array(Schema.String)),
+    }),
+  )(entry.detail);
+  const detail = Option.getOrUndefined(metadata);
+  const command = detail?.command;
+  const message =
+    command?.kind === "draft" || command?.kind === "send" ? command.message : undefined;
+  return {
+    kind: command?.kind ?? entry.action,
+    accountId: entry.accountId ?? (command && "accountId" in command ? command.accountId : null),
+    recipientCount: message
+      ? message.to.length + message.cc.length + message.bcc.length
+      : (detail?.to?.length ?? 0) + (detail?.cc?.length ?? 0) + (detail?.bcc?.length ?? 0),
+    hash: sha256Hex(JSON.stringify(entry.detail ?? null)),
+  };
+}
+
 export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.effect(
   Store,
   Effect.gen(function* () {
@@ -389,8 +412,33 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       return yield* Effect.orDie(getAccount(id));
     });
 
+    const REDACT_DECIDED = sql.literal(
+      "command_json='{}',actor_json=json_remove(actor_json,'$.rationale')",
+    );
+
+    const purgeAccountProposals = Effect.fn("Store.purgeAccountProposals")(function* (
+      ownerId: string,
+      removeDraft: (draft: import("./services.js").StoredDraft) => Effect.Effect<void> = (draft) =>
+        compose.deleteDraft(draft.id),
+    ) {
+      const now = yield* Clock.currentTimeMillis;
+      const rows = yield* all(Id)(sql`SELECT p.id FROM proposals p WHERE p.status='pending' AND (
+        json_extract(p.command_json,'$.accountId')=${ownerId}
+        OR EXISTS(SELECT 1 FROM json_each(p.command_json,'$.threads') t
+          WHERE t.value IN (SELECT id FROM messages WHERE account_id=${ownerId})
+          OR substr(t.value,1,${ownerId.length + 1})=${`${ownerId}/`}))`);
+      for (const row of rows) {
+        const draft = yield* compose.draftByProposal(row.id);
+        if (Option.isSome(draft)) yield* removeDraft(draft.value);
+        yield* run(
+          sql`UPDATE proposals SET status='rejected',decided_at=${now},${REDACT_DECIDED} WHERE id=${row.id}`,
+        );
+      }
+    });
+
     const removeAccount = Effect.fn("Store.removeAccount")((id: string) =>
-      media.deleteVectorsForMessages(sql`m.account_id=${id}`).pipe(
+      purgeAccountProposals(id).pipe(
+        Effect.andThen(media.deleteVectorsForMessages(sql`m.account_id=${id}`)),
         Effect.andThen(
           sql
             .withTransaction(
@@ -590,7 +638,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
               sql`DELETE FROM undo_batches WHERE EXISTS(SELECT 1 FROM json_tree(payload) e WHERE e.key='id' AND e.value IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
             );
             yield* run(
-              sql`UPDATE proposals SET status='rejected',decided_at=${now} WHERE status='pending' AND (EXISTS(SELECT 1 FROM json_each(command_json,'$.threads') t WHERE t.value IN (SELECT value FROM json_each(${JSON.stringify(ids)}))) OR json_extract(command_json,'$.message.inReplyTo') IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
+              sql`UPDATE proposals SET status='rejected',decided_at=${now},${REDACT_DECIDED} WHERE status='pending' AND (EXISTS(SELECT 1 FROM json_each(command_json,'$.threads') t WHERE t.value IN (SELECT value FROM json_each(${JSON.stringify(ids)}))) OR json_extract(command_json,'$.message.inReplyTo') IN (SELECT value FROM json_each(${JSON.stringify(ids)})))`,
             );
             // The server reused UIDs without changing UIDVALIDITY. None of the old references are safe.
             yield* run(
@@ -1889,9 +1937,10 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       detail: unknown;
     }) {
       const now = yield* Clock.currentTimeMillis;
+      const safe = auditMetadata(entry);
       yield* run(sql`INSERT INTO audit_log (at, actor, account_id, action, detail_json)
         VALUES (${now}, ${actorLabel(entry.actor)}, ${entry.accountId ?? null}, ${entry.action},
-          ${JSON.stringify(entry.detail ?? null)})`);
+          ${JSON.stringify(safe)})`);
     });
 
     const listAudit = Effect.fn("Store.listAudit")(function* (limit: number) {
@@ -1930,7 +1979,9 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       return row.value.id;
     });
 
-    const PROPOSAL_COLUMNS = sql.literal("id, created_at, actor_json, command_json, status");
+    // Decided commands have no retained payload. The API only needs their status.
+    const PROPOSAL_COLUMNS = sql.literal(`id, created_at, actor_json,
+      CASE WHEN status='pending' THEN command_json ELSE '{"kind":"modify","threads":[],"op":{"kind":"archive"}}' END AS command_json, status`);
 
     const listProposals = Effect.fn("Store.listProposals")(function* (status: Proposal["status"]) {
       const rows = yield* all(ProposalRow)(sql`SELECT ${PROPOSAL_COLUMNS} FROM proposals
@@ -1954,7 +2005,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       status: "approved" | "rejected",
     ) {
       const now = yield* Clock.currentTimeMillis;
-      yield* run(sql`UPDATE proposals SET status = ${status}, decided_at = ${now}
+      yield* run(sql`UPDATE proposals SET status = ${status}, decided_at = ${now}, ${REDACT_DECIDED}
         WHERE id = ${id} AND status = 'pending'`);
     });
 
@@ -2119,6 +2170,39 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
         )
         .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
 
+    const retentionMarker = "security:ai-retention-v1";
+    const retained = yield* first(Schema.Struct({ key: Schema.String }))(
+      sql`SELECT key FROM prefs WHERE key=${retentionMarker}`,
+    );
+    if (Option.isNone(retained))
+      yield* sql
+        .withTransaction(
+          Effect.gen(function* () {
+            // Apply the retention policy to records written before this version, without a schema migration.
+            yield* run(sql`UPDATE proposals SET ${REDACT_DECIDED}
+      WHERE status!='pending' AND (command_json!='{}' OR json_type(actor_json,'$.rationale') IS NOT NULL)`);
+            const LegacyAudit = Schema.Struct({ id: Schema.Number, ...AuditRow.fields });
+            for (;;) {
+              const rows = yield* all(
+                LegacyAudit,
+              )(sql`SELECT id,at,actor,account_id,action,detail_json FROM audit_log
+        WHERE COALESCE(json_type(detail_json,'$.hash'),'')!='text'
+          OR EXISTS(SELECT 1 FROM json_each(detail_json) WHERE key NOT IN ('kind','accountId','recipientCount','hash'))
+        ORDER BY id LIMIT 100`);
+              if (!rows.length) break;
+              for (const row of rows)
+                yield* run(
+                  sql`UPDATE audit_log SET detail_json=${JSON.stringify(auditMetadata({ accountId: row.account_id, action: row.action, detail: row.detail_json }))} WHERE id=${row.id}`,
+                );
+            }
+
+            yield* run(
+              sql`INSERT INTO prefs(key,value_json) VALUES(${retentionMarker},'true') ON CONFLICT(key) DO NOTHING`,
+            );
+          }),
+        )
+        .pipe(Effect.orDie);
+
     return Store.of({
       ai: makeAiStore(sql),
       rememberNotificationActions: (id, actions) =>
@@ -2145,6 +2229,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       getAccount,
       upsertAccount,
       removeAccount,
+      purgeAccountProposals,
       setAccountProfile,
       setAccountSettings,
       moveAccount,

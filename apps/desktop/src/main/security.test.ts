@@ -254,3 +254,23 @@ it("hands legacy mailto URLs to the OS without applying the strict inbound parse
   ])
     expect(externalUrl(raw)).toBe(expected);
 });
+
+it("AI/MCP docs match the budget placeholder and semantic snippet policy", async () => {
+  const documents = await Promise.all([
+    readFile(new URL("../../../../docs/security.md", import.meta.url), "utf8"),
+    readFile(new URL("../../../../docs/agents.md", import.meta.url), "utf8"),
+  ]);
+  const source = await readFile(
+    new URL("../../../../packages/core/src/visible-text.ts", import.meta.url),
+    "utf8",
+  );
+  const placeholder = "[Message too complex for AI: message text omitted.]";
+  expect(source).toContain(placeholder);
+  for (const doc of documents) expect(doc).toContain(placeholder);
+  const tools = await readFile(
+    new URL("../../../../packages/core/src/tools.ts", import.meta.url),
+    "utf8",
+  );
+  expect(tools).toContain("Message snippets are omitted.");
+  expect(documents[1]).toContain("无消息 snippet");
+});

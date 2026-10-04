@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "AI"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI が追加した不明な宛先："
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "AI リクエストに失敗しました。設定を確認して再試行してください。"
@@ -268,6 +273,11 @@ msgstr "新規メッセージ"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "接続"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "続行"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "開封済みにする"
 msgid "Mark as unread"
 msgstr "未開封にする"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP のアクセスはこのアカウントの AI 利用への同意に従います。無効なアカウントは MCP から読み取れません。"
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "既読状態"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "元のスレッドに含まれない宛先："
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "アカウントを追加するには、アプリ設定にモバイル OAuth クライアントを登録してください。"
@@ -780,6 +800,11 @@ msgstr "メッセージの状態を復元"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "送信を再試行"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "AI の宛先を確認"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

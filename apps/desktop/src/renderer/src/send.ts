@@ -3,7 +3,7 @@ import { composeEditorText, mentionsAttachment, type ComposeBody } from "@openma
 import type { OutgoingMessage } from "../../shared/api";
 import { type Draft, toMessage } from "./draft";
 
-export type SendWarning = "subject" | "attachment";
+export type SendWarning = "subject" | "attachment" | "recipients";
 export type SendCheck =
   | { kind: "invalid"; addresses: string[] }
   | { kind: "noRecipients" }

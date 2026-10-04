@@ -394,6 +394,10 @@ msgstr "Přístup AI"
 msgid "AI action"
 msgstr "Akce AI"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI přidala neznámé příjemce:"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI umí číst a prohledávat poštu, ale nemůže nic měnit."
@@ -1333,6 +1337,10 @@ msgstr "Nelze zkontrolovat aktualizace. Zkuste to znovu později."
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "Na tomto Macu se nepodařilo zkontrolovat gramatiku."
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "Příjemce se nepodařilo zkontrolovat."
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2894,6 +2902,10 @@ msgstr "Oblast shodného obrázku"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Shodné časy udrží tento pracovní den aktivní po celý den. Přenocování pokračuje do dalšího dne. Nezaškrtnuté dny zůstanou bez zvuku s výjimkou období přes noc z předchozího dne. Opakovaný letní čas používá stejný plán; přeskočené časy jsou překročeny."
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "Přístup MCP se řídí souhlasem s AI pro tento účet. Vypnuté účty nelze přes MCP číst."
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3906,6 +3918,10 @@ msgstr "Příjmení příjemce"
 msgid "Recipient name"
 msgstr "Jméno příjemce"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Příjemci mimo původní konverzaci:"
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
@@ -4192,6 +4208,10 @@ msgstr "Znovu využitelné místo v databázi"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Vrátit změny"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "Zkontrolovat příjemce AI"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

@@ -1,4 +1,4 @@
-import type { Address, Message } from "./domain.js";
+import type { Address, Message, OutgoingMessage } from "./domain.js";
 
 /** Split recipient text and RFC groups, keeping quoted names and encoded words intact. */
 export function splitAddresses(value: string): string[] {
@@ -122,4 +122,41 @@ export function draftRecipients(value: string) {
         address: (match?.[2] ?? part).trim(),
       };
     });
+}
+
+/** Preserve an existing reply/forward prefix, including Graph's FW alias. */
+export const replySubject = (subject: string): string =>
+  /^re\s*:/i.test(subject) ? subject : `Re: ${subject}`;
+export const forwardSubject = (subject: string): string =>
+  /^(?:fwd?|fw)\s*:/i.test(subject) ? subject : `Fwd: ${subject}`;
+
+export interface RecipientWarnings {
+  readonly unfamiliar: readonly string[];
+  readonly outsideThread: readonly string[];
+}
+export const hasRecipientWarnings = (warnings: RecipientWarnings): boolean =>
+  warnings.unfamiliar.length > 0 || warnings.outsideThread.length > 0;
+
+/** Recomputed from the current recipients at each send attempt, including hidden Bcc. */
+export function agentRecipientWarnings(
+  message: OutgoingMessage,
+  known: readonly string[],
+  thread: readonly Message[],
+): RecipientWarnings {
+  const origin = message.agentOrigin;
+  if (!origin) return { unfamiliar: [], outsideThread: [] };
+  const recipients = [
+    ...new Set([...message.to, ...message.cc, ...message.bcc].map((a) => addressKey(a.address))),
+  ];
+  const participants = new Set(
+    thread
+      .flatMap((m) => [m.from, ...m.to, ...m.cc, ...(m.bcc ?? []), ...(m.replyTo ?? [])])
+      .map((a) => addressKey(a.address)),
+  );
+  const added = new Set(origin.recipients.map(addressKey));
+  const trusted = new Set(known.map(addressKey));
+  return {
+    unfamiliar: recipients.filter((a) => added.has(a) && !trusted.has(a)),
+    outsideThread: origin.replyTo ? recipients.filter((a) => !participants.has(a)) : [],
+  };
 }

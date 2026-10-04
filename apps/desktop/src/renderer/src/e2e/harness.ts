@@ -12,6 +12,7 @@ import {
   type Provider,
   type Prefs,
   type NotificationBatch,
+  type OutgoingMessage,
 } from "@openmail/core/portable";
 import { fakeServer, type FakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react/pure";
@@ -115,6 +116,7 @@ export async function flow(
     provider?: Provider;
     messages?: IncomingMessage[];
     prefs?: Partial<Prefs>;
+    agentDraft?: { message: OutgoingMessage; surface: "mcp" | "rule" | "assistant" };
     native?: {
       pick: () => NativePickerResult;
       share: (request: { id: string; kind: "message" | "thread" | "web" }) => void;
@@ -160,6 +162,22 @@ export async function flow(
   // Connect starts a detached sync. Drain it before exposing the renderer to the fixture.
   await run(m.sync());
 
+  let composeId: string | undefined;
+  if (options.agentDraft) {
+    await run(m.setAgentWriteMode("propose"));
+    const outcome = await run(
+      m.perform(
+        { kind: "draft", accountId: account.id, message: options.agentDraft.message },
+        {
+          kind: "agent",
+          surface: options.agentDraft.surface,
+          name: options.agentDraft.surface === "mcp" ? "Flow agent" : "openmail-assistant",
+        },
+      ),
+    );
+    if (outcome.status !== "proposed") throw new Error("Agent draft was not proposed");
+    composeId = (await run(m.openDraft(`proposal:${outcome.proposalId}`))).id;
+  }
   const desktop = await Effect.runPromise(PubSub.unbounded<DesktopEvent>());
   const desktopReady = await Effect.runPromise(Deferred.make<void>());
   const notificationReady = await Effect.runPromise(Deferred.make<void>());
@@ -228,7 +246,8 @@ export async function flow(
       ClipboardText: unsupported,
       OpenSettings: unsupported,
       OpenComposeWindow: unsupported,
-      ComposeWindowDraft: unsupported,
+      ComposeWindowDraft: ({ id }) =>
+        m.openDraft(id).pipe(Effect.map((draft) => ({ draft, recipients: null }))),
       CloseComposeWindow: unsupported,
       Diagnostics: unsupported,
       DismissCrashReport: unsupported,
@@ -345,7 +364,11 @@ export async function flow(
     createElement(
       RegistryContext.Provider,
       { value: registry },
-      createElement(I18nProvider, { i18n }, createElement(TipProvider, null, createElement(App))),
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(TipProvider, null, createElement(App, { composeId })),
+      ),
     ),
   );
   await rpcRuntime.runPromise(Deferred.await(desktopReady));

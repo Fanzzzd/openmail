@@ -8,9 +8,15 @@ import {
   type IncomingMessage,
   messageModelText,
   AI_MODELS,
+  ProviderError,
 } from "@openmail/core/portable";
 import { TestMailbox, fakeServer } from "@openmail/core/testing/node";
-import { aiResponse, signedMobileMessage } from "./ai-workflows";
+import {
+  aiResponse,
+  signedMobileMessage,
+  reviewAgentRecipients,
+  mobileRecipientWarnings,
+} from "./ai-workflows";
 import { composeMessage } from "./workflows";
 import { pageQuery } from "./paging";
 
@@ -324,3 +330,79 @@ for (const provider of ["gmail", "outlook", "imap"] as const)
       await runtime.dispose();
     }
   });
+
+it("mobile AI recipient review waits for an explicit answer and cancellation blocks sending", async () => {
+  let finish: (approved: boolean) => void = () => {
+    throw new Error("Review not started");
+  };
+  let proceeded = false;
+  const decision = reviewAgentRecipients(
+    { unfamiliar: ["new@example.test"], outsideThread: ["new@example.test"] },
+    () =>
+      new Promise<boolean>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const sent = decision.then((approved) => {
+    if (approved) proceeded = true;
+    return null;
+  });
+  await Promise.resolve();
+  expect(proceeded).toBe(false);
+  finish(false);
+  await sent;
+  expect(proceeded).toBe(false);
+  expect(
+    await reviewAgentRecipients(
+      { unfamiliar: [], outsideThread: ["known@example.test"] },
+      async () => true,
+    ),
+  ).toBe(true);
+  expect(
+    await reviewAgentRecipients({ unfamiliar: [], outsideThread: [] }, async () => {
+      throw new Error("No warning needed");
+    }),
+  ).toBe(true);
+});
+
+it("mobile reviews every recipient when the original was expunged and preserves real read errors", async () => {
+  const runtime = ManagedRuntime.make(TestMailbox({ gmail: fakeServer("me@example.test", []) }));
+  try {
+    await runtime.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.connect({ provider: "gmail" });
+        const message = {
+          to: [{ name: "", address: "known@example.test" }],
+          cc: [],
+          bcc: [],
+          subject: "Reply",
+          text: "Body",
+          attachments: [],
+          agentOrigin: { recipients: ["known@example.test"], replyTo: `${account.id}/expunged` },
+        };
+        const warnings = yield* mobileRecipientWarnings(mailbox, account.id, message);
+        expect(warnings.outsideThread).toEqual(["known@example.test"]);
+        let reviewed = false;
+        expect(
+          yield* Effect.promise(() =>
+            reviewAgentRecipients(warnings, async () => {
+              reviewed = true;
+              return true;
+            }),
+          ),
+        ).toBe(true);
+        expect(reviewed).toBe(true);
+        const failed = {
+          ...mailbox,
+          thread: () => Effect.die(new ProviderError({ message: "Offline" })),
+        };
+        expect(
+          (yield* mobileRecipientWarnings(failed, account.id, message).pipe(Effect.exit))._tag,
+        ).toBe("Failure");
+      }),
+    );
+  } finally {
+    await runtime.dispose();
+  }
+});

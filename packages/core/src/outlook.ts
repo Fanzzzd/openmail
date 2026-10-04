@@ -11,6 +11,7 @@ import { logSyncReset, type ResetVerification } from "./sync-reset.js";
 import {
   graphSearchErrorCode,
   logProviderFailure,
+  logInvalidGraphCursor,
   makeOptionalPermissions,
 } from "./provider-diagnostics.js";
 import { confirmDelivery } from "./provider-send.js";
@@ -87,6 +88,43 @@ const TENANT = "consumers";
 const AUTH_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize`;
 const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
 const GRAPH = "https://graph.microsoft.com/v1.0";
+
+type PageHistory = Set<string> | { readonly previous: string } | undefined;
+function nextPage<E>(
+  link: string,
+  base: string,
+  seen: PageHistory,
+  onError: () => E,
+): Effect.Effect<string, E>;
+function nextPage<E>(
+  link: string | undefined,
+  base: string,
+  seen: PageHistory,
+  onError: () => E,
+): Effect.Effect<string | undefined, E>;
+function nextPage<E>(
+  link: string | undefined,
+  base: string,
+  seen: PageHistory,
+  onError: () => E,
+): Effect.Effect<string | undefined, E> {
+  if (link === undefined) return Effect.succeed(undefined);
+  return Effect.try({
+    try: () =>
+      graphPageLink(
+        link,
+        base,
+        seen instanceof Set || seen === undefined
+          ? seen
+          : new Set([
+              new URL(
+                seen.previous.startsWith("https://") ? seen.previous : `${GRAPH}${seen.previous}`,
+              ).href,
+            ]),
+      ),
+    catch: onError,
+  });
+}
 // offline_access is what makes Graph return a refresh token. Accounts added
 // under the old Mail.Read scope get a 403 on their first write and are asked
 // to sign in again.
@@ -368,6 +406,7 @@ const writeFailure =
           ? new ProviderError({
               message: writeReason(e),
               status: e.status,
+              ...(e.retryAfter === undefined ? {} : { retryAfter: e.retryAfter }),
               ...(e.requestNotSent ? { reason: "connection" } : {}),
               ...(e.deferred ? { deferred: true } : {}),
             })
@@ -697,22 +736,23 @@ export const makeOutlook: Effect.Effect<
         ids.add(id);
         const base = `/me/mailFolders/${encodeURIComponent(id)}/childFolders`;
         let path: string | null = `${base}?includeHiddenFolders=true&$select=id&$top=100`;
-        const links = new Set<string>();
+        const seen = new Set<string>();
         while (path !== null) {
-          if (links.has(path))
+          if (seen.has(path))
             return yield* new PermanentError({
               message: "Deleted folder pagination repeated a page.",
             });
-          links.add(path);
+          seen.add(path);
           const children: typeof Page.Type = yield* get(account.id, Page, path);
           pending.push(...children.value.map((child) => child.id));
           const next = children["@odata.nextLink"];
           path = next
-            ? yield* Effect.try({
-                try: () => graphPageLink(next, base),
-                catch: () =>
-                  new PermanentError({ message: "Invalid deleted folder pagination link." }),
-              })
+            ? yield* nextPage(
+                next,
+                base,
+                undefined,
+                () => new PermanentError({ message: "Invalid deleted folder pagination link." }),
+              )
             : null;
         }
       }
@@ -933,6 +973,7 @@ export const makeOutlook: Effect.Effect<
     }
 
     const out: { id: string; name: string }[] = [];
+    const seenFolders = new Set<string>();
     const walk = (
       path: string,
       prefix: string,
@@ -940,10 +981,16 @@ export const makeOutlook: Effect.Effect<
       Effect.gen(function* () {
         let url: string | undefined =
           `${path}?$select=id,displayName,childFolderCount,totalItemCount&$top=100&includeHiddenFolders=false`;
+        const seen = new Set<string>();
         while (url) {
           const page: typeof FolderPage.Type = yield* get(accountId, FolderPage, url);
           for (const f of page.value) {
             if (skipped.has(f.id)) continue;
+            if (seenFolders.has(f.id))
+              return yield* new ProviderError({
+                message: "Mail folder hierarchy repeated a folder",
+              });
+            seenFolders.add(f.id);
             const name = prefix ? `${prefix}/${f.displayName}` : f.displayName;
             if (!system.has(f.id)) out.push({ id: f.id, name });
             if (f.childFolderCount > 0)
@@ -951,12 +998,15 @@ export const makeOutlook: Effect.Effect<
           }
           const next = page["@odata.nextLink"];
           url = next
-            ? yield* Effect.try({
-                try: () => graphPageLink(next, path),
-                catch: () => new ProviderError({ message: "Invalid mail folder pagination link" }),
-              })
+            ? yield* nextPage(
+                next,
+                path,
+                seen,
+                () => new ProviderError({ message: "Invalid mail folder pagination link" }),
+              )
             : undefined;
         }
+        return yield* Effect.void;
       });
     yield* walk("/me/mailFolders", "");
     return mergeFolderChanges(accountId, out, true);
@@ -1051,12 +1101,34 @@ export const makeOutlook: Effect.Effect<
           };
           let fetched = 0;
           for (const folder of folders) {
-            const known = previous[folder.key];
+            let known = previous[folder.key];
             if (incrementalOnly && known === undefined)
               yield* new ProviderError({ message: "Foreground sync required to renew the cursor" });
             // Delta's filtered snapshot can cap at 5,000. Its keep set never covers older headers.
             const initial = `${GRAPH}/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta?$select=${SELECT}&${EXPAND_ATTACHMENTS}&$filter=${encodeURIComponent(`receivedDateTime ge ${new Date(since).toISOString()}`)}&$orderby=receivedDateTime%20desc`;
-            const first = yield* getDelta(account.id, known ?? initial).pipe(
+            const deltaBase = `/me/mailFolders/${encodeURIComponent(folder.path)}/messages/delta`;
+            const seen = new Set<string>();
+            const validateDelta = (link: string) =>
+              nextPage(
+                link,
+                deltaBase,
+                seen,
+                () => new ProviderError({ message: "Invalid or repeated Graph delta link" }),
+              );
+            const firstUrl = yield* validateDelta(known ?? initial).pipe(
+              Effect.catch((failure) =>
+                known === undefined
+                  ? Effect.fail(failure)
+                  : Effect.gen(function* () {
+                      yield* logInvalidGraphCursor(account.id);
+                      known = undefined;
+                      restarted.add(folder.label);
+                      seen.clear();
+                      return yield* validateDelta(initial);
+                    }),
+              ),
+            );
+            const first = yield* getDelta(account.id, firstUrl).pipe(
               Effect.map(Option.some),
               Effect.catchIf(
                 (e) => known === undefined && is404(e),
@@ -1066,7 +1138,8 @@ export const makeOutlook: Effect.Effect<
                 (e) => !incrementalOnly && known !== undefined && is410(e),
                 () =>
                   Effect.gen(function* () {
-                    const fresh = yield* getDelta(account.id, initial);
+                    seen.clear();
+                    const fresh = yield* getDelta(account.id, yield* validateDelta(initial));
                     yield* start;
                     restarted.add(folder.label);
                     return Option.some(fresh);
@@ -1137,10 +1210,16 @@ export const makeOutlook: Effect.Effect<
                   }),
                 ),
               );
-              if (page["@odata.deltaLink"]) next[folder.key] = page["@odata.deltaLink"];
+              if (page["@odata.deltaLink"])
+                next[folder.key] = yield* nextPage(
+                  page["@odata.deltaLink"],
+                  deltaBase,
+                  undefined,
+                  () => new ProviderError({ message: "Invalid Graph delta bookmark" }),
+                );
               const url = page["@odata.nextLink"];
               if (!url) break;
-              page = yield* getDelta(account.id, url);
+              page = yield* getDelta(account.id, yield* validateDelta(url));
             }
             if (!next[folder.key] && known !== undefined) next[folder.key] = known;
             if (reset || known === undefined || restarted.has(folder.label))
@@ -1244,15 +1323,17 @@ export const makeOutlook: Effect.Effect<
               message: "Category pagination repeated or exceeded its limit.",
             });
           seen.add(next);
-          if (
-            next.startsWith("https://") &&
-            !next.startsWith(`${GRAPH}/me/outlook/masterCategories?`)
-          )
-            yield* new PermanentError({ message: "Invalid category pagination URL." });
           const page: typeof Page.Type = yield* get(account.id, Page, next);
           for (const category of page.value)
             registered.set(categoryKey(category.displayName), category.displayName);
-          next = page["@odata.nextLink"];
+          next = page["@odata.nextLink"]
+            ? yield* nextPage(
+                page["@odata.nextLink"],
+                "/me/outlook/masterCategories",
+                undefined,
+                () => new PermanentError({ message: "Invalid category pagination URL." }),
+              )
+            : undefined;
         }
         const additions: string[] = [];
         for (const name of mergeCategoryNames([], op.add, [])) {
@@ -1359,10 +1440,12 @@ export const makeOutlook: Effect.Effect<
         );
         attachments.push(...page.value);
         next = page["@odata.nextLink"]
-          ? yield* Effect.try({
-              try: () => graphPageLink(page["@odata.nextLink"] ?? "", path),
-              catch: () => new ProviderError({ message: "Invalid attachment pagination link" }),
-            })
+          ? yield* nextPage(
+              page["@odata.nextLink"],
+              path,
+              undefined,
+              () => new ProviderError({ message: "Invalid attachment pagination link" }),
+            )
           : undefined;
       }
       return attachments;
@@ -1879,10 +1962,12 @@ export const makeOutlook: Effect.Effect<
         const page: typeof Page.Type = yield* get(account.id, Page, next);
         for (const draft of page.value) yield* remove(draft.id);
         next = page["@odata.nextLink"]
-          ? yield* Effect.try({
-              try: () => graphPageLink(page["@odata.nextLink"] ?? "", base),
-              catch: () => new ProviderError({ message: "Invalid draft cleanup pagination link" }),
-            })
+          ? yield* nextPage(
+              page["@odata.nextLink"],
+              base,
+              undefined,
+              () => new ProviderError({ message: "Invalid draft cleanup pagination link" }),
+            )
           : undefined;
       }
     },
@@ -2088,6 +2173,7 @@ export const makeOutlook: Effect.Effect<
       const messages: IncomingMessage[] = [];
       let url: string | undefined = `${base}?${params.toString()}`;
       let scanned = 0;
+      const seen = new Set<string>();
       while (url && scanned < 1000 && messages.length < limit) {
         const page: {
           readonly value: readonly GraphMessage[];
@@ -2118,7 +2204,14 @@ export const makeOutlook: Effect.Effect<
           if (matchesSearch(message, query, folderNames)) messages.push(message);
           if (messages.length >= limit) break;
         }
-        url = page["@odata.nextLink"];
+        url = page["@odata.nextLink"]
+          ? yield* nextPage(
+              page["@odata.nextLink"],
+              base,
+              seen,
+              () => new ProviderError({ message: "Invalid or repeated Graph search link" }),
+            )
+          : undefined;
         if (messages.length >= limit && consumed < page.value.length)
           return { messages, truncated: true };
       }
@@ -2160,8 +2253,13 @@ export const makeOutlook: Effect.Effect<
         $filter: `receivedDateTime lt ${new Date(state.before).toISOString()}`,
       });
       const url = state.cursor ?? `/me/messages?${params.toString()}`;
-      if (state.cursor && !state.cursor.startsWith(`${GRAPH}/`))
-        return yield* new ProviderError({ message: "Invalid Graph backfill continuation" });
+      if (state.cursor)
+        yield* nextPage(
+          state.cursor,
+          "/me/messages",
+          undefined,
+          () => new ProviderError({ message: "Invalid Graph backfill continuation" }),
+        );
       const page = yield* get(account.id, pageSchema, url);
       const listed = page.value.map((m) => m.id);
       const ids = select ? yield* select(listed) : listed;
@@ -2177,7 +2275,15 @@ export const makeOutlook: Effect.Effect<
       );
       return {
         messages: messages.filter((m) => m !== null),
-        cursor: page["@odata.nextLink"] ?? null,
+        cursor: page["@odata.nextLink"]
+          ? yield* nextPage(
+              page["@odata.nextLink"],
+              "/me/messages",
+              { previous: url },
+              () =>
+                new ProviderError({ message: "Invalid or repeated Graph backfill continuation" }),
+            )
+          : null,
         scanned: page.value.length,
       };
     }).pipe(Effect.mapError(readFailure(account.id)));
@@ -2443,22 +2549,24 @@ export const makeOutlook: Effect.Effect<
             if (messages.value.length) return { ids: messages.value.map((m) => m.id), next: null };
             let path: string | null =
               `${base}/childFolders?includeHiddenFolders=true&$select=id&$top=100`;
-            const links = new Set<string>();
+            const seen = new Set<string>();
             while (path !== null) {
-              if (links.has(path))
+              if (seen.has(path))
                 return yield* new PermanentError({
                   message: "Deleted folder pagination repeated a page.",
                 });
-              links.add(path);
+              seen.add(path);
               const children: typeof Page.Type = yield* get(account.id, Page, path);
               pending.push(...children.value.map((child) => child.id));
               const next = children["@odata.nextLink"];
               path = next
-                ? yield* Effect.try({
-                    try: () => graphPageLink(next, `${base}/childFolders`),
-                    catch: () =>
+                ? yield* nextPage(
+                    next,
+                    `${base}/childFolders`,
+                    undefined,
+                    () =>
                       new PermanentError({ message: "Invalid deleted folder pagination link." }),
-                  })
+                  )
                 : null;
             }
           }
@@ -2500,10 +2608,12 @@ export const makeOutlook: Effect.Effect<
         if (filters.length) params.set("$filter", filters.join(" and "));
         let path = `${base}?${params.toString()}`;
         if (cursor !== null) {
-          path = yield* Effect.try({
-            try: () => graphPageLink(cursor, base),
-            catch: () => new PermanentError({ message: "Invalid folder pagination link." }),
-          });
+          path = yield* nextPage(
+            cursor,
+            base,
+            undefined,
+            () => new PermanentError({ message: "Invalid folder pagination link." }),
+          );
         }
         const page = yield* get(
           account.id,
@@ -2513,7 +2623,18 @@ export const makeOutlook: Effect.Effect<
           }),
           path,
         );
-        return { ids: page.value.map((m) => m.id), next: page["@odata.nextLink"] ?? null };
+        return {
+          ids: page.value.map((m) => m.id),
+          next: page["@odata.nextLink"]
+            ? yield* nextPage(
+                page["@odata.nextLink"],
+                base,
+                { previous: path },
+                () =>
+                  new PermanentError({ message: "Invalid or repeated folder pagination link." }),
+              )
+            : null,
+        };
       }).pipe(Effect.mapError(writeFailure(account.id))),
     checkPermanentDelete: (account, folder) =>
       deleteFolderIds(account, folder).pipe(

@@ -48,6 +48,13 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
     <View style={styles.row}>
       <Text style={styles.title}>{i18n._({ id: "AI", message: "AI" })}</Text>
       <Text style={styles.detail}>{consent}</Text>
+      <Text style={styles.detail}>
+        {i18n._({
+          id: "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP.",
+          message:
+            "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP.",
+        })}
+      </Text>
       <TextInput
         style={styles.input}
         accessibilityLabel={i18n._({ id: "Anthropic API key", message: "Anthropic API key" })}

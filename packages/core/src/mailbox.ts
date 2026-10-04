@@ -125,8 +125,16 @@ export const ModelThread = Schema.Struct({
       date: Schema.String,
       text: Schema.String,
       flags: Schema.optionalKey(
-        Schema.Array(Schema.Literals(["hidden-text-removed", "plain-differs", "budget-exceeded"])),
+        Schema.Array(
+          Schema.Literals([
+            "hidden-text-removed",
+            "plain-differs",
+            "budget-exceeded",
+            "quoted-text-removed",
+          ]),
+        ),
       ),
+      quotedTextRemoved: Schema.optionalKey(Schema.Number),
       attachments: Schema.Array(Schema.String),
     }),
   ),

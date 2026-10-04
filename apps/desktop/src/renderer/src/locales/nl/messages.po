@@ -394,6 +394,10 @@ msgstr "AI-toegang"
 msgid "AI action"
 msgstr "AI-actie"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI heeft onbekende ontvangers toegevoegd:"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI kan e-mail lezen en doorzoeken, maar kan niets veranderen."
@@ -1333,6 +1337,10 @@ msgstr "Kan niet controleren op updates. Probeer het later opnieuw."
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "De grammatica kon niet op deze Mac worden gecontroleerd."
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "Ontvangers konden niet worden gecontroleerd."
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2894,6 +2902,10 @@ msgstr "Overeenkomend beeldgebied"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Bijpassende tijden houden die weekdag de hele dag actief. Overnachtingen gaan door tot de volgende dag. Niet-aangevinkte dagen blijven gedempt, behalve voor nachtperioden van de vorige dag. Herhaalde zomertijden gebruiken hetzelfde schema; overgeslagen tijden worden gepasseerd."
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP-toegang volgt de AI-toestemming voor dit account. Uitgeschakelde accounts kunnen niet via MCP worden gelezen."
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3906,6 +3918,10 @@ msgstr "Achternaam van de ontvanger"
 msgid "Recipient name"
 msgstr "Naam van ontvanger"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Ontvangers buiten het oorspronkelijke gesprek:"
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen. Oorspronkelijke database: {backup}"
@@ -4192,6 +4208,10 @@ msgstr "Herbruikbare databaseruimte"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Herstel wijzigingen"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "AI-ontvangers controleren"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

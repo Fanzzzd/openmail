@@ -40,6 +40,7 @@ export const GraphSearchErrorCode = Schema.Literals([
   "ErrorItemNotFound",
   "InvalidAuthenticationToken",
   "TooManyRequests",
+  "InvalidDeltaCursor",
   "unknown",
 ]);
 const GraphError = Schema.fromJsonString(
@@ -69,7 +70,7 @@ export const ProviderDiagnostic = Schema.Struct({
   failure: Schema.optionalKey(
     Schema.Literals(["http", "transport", "credentials", "configuration", "other"]),
   ),
-  operation: Schema.optionalKey(Schema.Literal("search")),
+  operation: Schema.optionalKey(Schema.Literals(["search", "delta"])),
   errorCode: Schema.optionalKey(GraphSearchErrorCode),
   accountHash: Schema.String,
 });
@@ -202,3 +203,16 @@ export function makeOptionalPermissions<
       }),
   };
 }
+
+/** Never record a persisted cursor or its query, even when it fails validation. */
+export const logInvalidGraphCursor = (accountId: string) =>
+  Effect.logWarning({
+    _tag: "ProviderDiagnostic",
+    provider: "outlook",
+    method: "GET",
+    endpoint: "/me/mailFolders/:id",
+    operation: "delta",
+    errorCode: "InvalidDeltaCursor",
+    failure: "other",
+    accountHash: sha256Hex(accountId.toLowerCase()).slice(0, 16),
+  } satisfies ProviderDiagnostic);

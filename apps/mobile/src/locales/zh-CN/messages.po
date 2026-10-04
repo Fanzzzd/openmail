@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "AI"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI 添加了陌生收件人："
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "AI 请求失败。请检查设置后重试。"
@@ -268,6 +273,11 @@ msgstr "撰写"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "连接"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "继续"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "标为已读"
 msgid "Mark as unread"
 msgstr "标为未读"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP 访问跟随此账户的 AI 授权。MCP 无法读取停用账户。"
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "已读状态"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "原会话之外的收件人："
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "在应用配置中注册手机 OAuth 客户端后可添加账户。"
@@ -780,6 +800,11 @@ msgstr "恢复邮件状态"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "重试发送"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "检查 AI 收件人"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

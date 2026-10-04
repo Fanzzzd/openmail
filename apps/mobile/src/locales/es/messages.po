@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "IA"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "La IA añadió destinatarios desconocidos:"
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "La solicitud de IA falló. Revisa los ajustes e inténtalo de nuevo."
@@ -268,6 +273,11 @@ msgstr "Nuevo mensaje"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "Conectar"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "Continuar"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "Marcar como leído"
 msgid "Mark as unread"
 msgstr "Marcar como no leído"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "El acceso MCP sigue el consentimiento de IA de esta cuenta. Las cuentas desactivadas no se pueden leer mediante MCP."
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "Estado de lectura"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Destinatarios ajenos a la conversación original:"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Registra clientes OAuth móviles en la configuración para añadir cuentas."
@@ -780,6 +800,11 @@ msgstr "Restaurar el estado del mensaje"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "Reintentar el envío"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "Revisar destinatarios de la IA"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

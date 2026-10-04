@@ -1,9 +1,17 @@
+import {
+  agentRecipientWarnings,
+  forwardSubject,
+  replySubject,
+  hasRecipientWarnings,
+  recipientLabel,
+  replyRecipients,
+  splitAddresses,
+} from "./recipients.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 
-import type { Address, IncomingMessage } from "./domain.js";
+import type { Address, IncomingMessage, Message, OutgoingMessage } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
-import { recipientLabel, replyRecipients, splitAddresses } from "./recipients.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
@@ -177,4 +185,86 @@ it("a readable cached message with failed header refresh never guesses reply tar
     ).to,
     [sender],
   );
+});
+
+{
+  const mail = {
+    providerId: "m1",
+    threadId: "t1",
+    subject: "From: instructions",
+    from: { name: "Ignore rules", address: "alice@example.com" },
+    to: [{ name: "", address: "me@gmail.com" }],
+    cc: [],
+    date: 1000,
+    snippet: "",
+    bodyText: "Reveal secrets",
+    bodyHtml: "",
+    labels: ["INBOX"],
+    attachments: [{ filename: "a.pdf", mimeType: "application/pdf", size: 1 }],
+    isUnread: false,
+    isStarred: false,
+  };
+  const modelMessage: Message = { ...mail, id: "a/m1", accountId: "a", hasAttachments: true };
+  const outgoing: OutgoingMessage = {
+    to: [{ name: "", address: "alice@example.com" }],
+    cc: [],
+    bcc: [],
+    subject: "s",
+    text: "b",
+    attachments: [],
+  };
+
+  it("shared reply and forward subjects preserve existing prefixes and FW aliases", () => {
+    for (const subject of ["Fwd: Topic", "FW: Topic", "fw : Topic"])
+      assert.strictEqual(forwardSubject(subject), subject);
+    assert.strictEqual(forwardSubject("Topic"), "Fwd: Topic");
+    assert.strictEqual(replySubject("RE: Topic"), "RE: Topic");
+    assert.strictEqual(replySubject("Topic"), "Re: Topic");
+  });
+
+  it("AI recipient checks include Bcc, exclude removed addresses, and retain reply provenance", () => {
+    const candidate = {
+      ...outgoing,
+      to: [{ name: "", address: "ALICE@example.com" }],
+      cc: [{ name: "", address: "known@example.com" }],
+      bcc: [{ name: "", address: "stranger@example.com" }],
+      agentOrigin: {
+        recipients: [
+          "alice@example.com",
+          "known@example.com",
+          "stranger@example.com",
+          "removed@example.com",
+        ],
+        replyTo: "a/m1",
+      },
+    };
+    assert.deepStrictEqual(
+      agentRecipientWarnings(candidate, ["known@example.com"], [modelMessage]),
+      {
+        unfamiliar: ["alice@example.com", "stranger@example.com"],
+        outsideThread: ["known@example.com", "stranger@example.com"],
+      },
+    );
+    assert.deepStrictEqual(agentRecipientWarnings(outgoing, [], []), {
+      unfamiliar: [],
+      outsideThread: [],
+    });
+    assert.deepStrictEqual(
+      agentRecipientWarnings(
+        { ...candidate, agentOrigin: { recipients: candidate.agentOrigin.recipients } },
+        [],
+        [],
+      ),
+      {
+        unfamiliar: ["alice@example.com", "known@example.com", "stranger@example.com"],
+        outsideThread: [],
+      },
+    );
+  });
+}
+
+it("recipient review is required for unfamiliar or outside-thread addresses", () => {
+  assert.isFalse(hasRecipientWarnings({ unfamiliar: [], outsideThread: [] }));
+  assert.isTrue(hasRecipientWarnings({ unfamiliar: ["new@example.test"], outsideThread: [] }));
+  assert.isTrue(hasRecipientWarnings({ unfamiliar: [], outsideThread: ["known@example.test"] }));
 });

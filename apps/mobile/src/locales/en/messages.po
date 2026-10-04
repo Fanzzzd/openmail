@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "AI"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI added unfamiliar recipients:"
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "AI request failed. Check your settings and try again."
@@ -268,6 +273,11 @@ msgstr "Compose"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "Connect"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "Continue"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "Mark as read"
 msgid "Mark as unread"
 msgstr "Mark as unread"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "Read status"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Recipients outside the original conversation:"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Register mobile OAuth clients in app config to add accounts."
@@ -780,6 +800,11 @@ msgstr "Restore message state"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "Retry send"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "Review AI recipients"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

@@ -1,3 +1,4 @@
+import { graphPageLink } from "./graph-pagination.js";
 import { assert, it } from "@effect/vitest";
 import { ProviderError } from "./errors.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
@@ -4183,8 +4184,8 @@ it.effect(
   "background Outlook pull refuses missing or expired delta without restarting a folder",
   () =>
     Effect.gen(function* () {
-      const expired = `${GRAPH}/expired-delta`;
-      const http = fakeHttp({ "GET /expired-delta": { status: 410 } });
+      const expired = `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=expired`;
+      const http = fakeHttp({ "GET /me/mailFolders/inbox/messages/delta": { status: 410 } });
       for (const cursor of [
         Option.none<string>(),
         Option.some(JSON.stringify({ __idType: "immutable", inbox: expired })),
@@ -4194,7 +4195,9 @@ it.effect(
         );
         assert.strictEqual(result._tag, "Failure");
       }
-      assert.isFalse(http.calls.some((call) => call.url.pathname.includes("mailFolders")));
+      assert.isTrue(
+        http.calls.every((call) => call.url.searchParams.get("$deltatoken") === "expired"),
+      );
     }),
 );
 
@@ -5523,6 +5526,115 @@ for (const partial of ["omitted", "signed", "complete"] as const) {
           partial === "complete" ? [] : fullAttachments,
         );
       }).pipe(Effect.provide(layer));
+    },
+  );
+}
+
+for (const paging of ["delta", "search", "folders"] as const) {
+  for (const next of [
+    "https://evil.test/steal",
+    `${GRAPH}/users/other/messages`,
+    `${GRAPH}/me/contacts`,
+    "repeat",
+  ]) {
+    it.effect(`${paging} refuses ${next} before another bearer request`, () => {
+      const base =
+        paging === "delta"
+          ? "/me/mailFolders/inbox/messages/delta"
+          : paging === "search"
+            ? "/me/messages"
+            : "/me/mailFolders";
+      const link = next === "repeat" ? `${GRAPH}${base}?$skiptoken=repeat` : next;
+      const http = fakeHttp({
+        ...mailbox({}),
+        [`GET ${base}`]: { json: { value: [], "@odata.nextLink": link } },
+      });
+      return run(http, (adapter) =>
+        Effect.gen(function* () {
+          const result = yield* (
+            paging === "delta"
+              ? Stream.runCollect(adapter.pull(account, Option.none())).pipe(Effect.asVoid)
+              : adapter.search(account, { search: "hello", limit: 20 }).pipe(Effect.asVoid)
+          ).pipe(Effect.result);
+          assert.strictEqual(result._tag, "Failure");
+          assert.isTrue(
+            http.calls.every((call) => call.url.origin === "https://graph.microsoft.com"),
+          );
+          assert.isFalse(
+            http.calls.some(
+              (call) =>
+                call.url.pathname.startsWith("/users/") || call.url.pathname.endsWith("/contacts"),
+            ),
+          );
+          assert.ok(http.calls.filter((call) => call.url.pathname === `/v1.0${base}`).length <= 2);
+        }),
+      );
+    });
+  }
+}
+
+it.effect("Outlook write errors retain Retry-After", () => {
+  const http = fakeHttp({
+    "PATCH /me/messages/p": { status: 429, headers: { "Retry-After": "90" } },
+  });
+  return run(http, (adapter) =>
+    Effect.gen(function* () {
+      const failure = yield* Effect.flip(adapter.push(account, "p", { kind: "read", value: true }));
+      assert.strictEqual(failure._tag, "ProviderError");
+      if (failure._tag === "ProviderError") assert.strictEqual(failure.retryAfter, "90");
+    }),
+  );
+});
+
+{
+  it("Graph page validation confines all resources and rejects repeated delta pages", () => {
+    const seen = new Set<string>();
+    const base = "/me/mailFolders/inbox/messages/delta";
+    const link =
+      "https://graph.microsoft.com/v1.0/me/mailFolders('actual-id')/messages/delta?$skiptoken=opaque";
+    assert.strictEqual(graphPageLink(link, base, seen), link);
+    assert.throws(() => graphPageLink(link, base, seen), /repeated/);
+    for (const bad of [
+      "https://evil.test/v1.0/me/messages",
+      "https://graph.microsoft.com/v1.0/users/other/messages",
+      "https://graph.microsoft.com/v1.0/me/contacts",
+      "https://graph.microsoft.com/v1.0/me/messages#fragment",
+    ])
+      assert.throws(() => graphPageLink(bad, base));
+  });
+}
+
+for (const invalid of [
+  "https://evil.test/secret?token=private",
+  `${GRAPH}/expired-delta`,
+  "broken cursor",
+]) {
+  it.effect(
+    `invalid stored Graph cursor is discarded without a bearer request (${invalid.startsWith("https://evil") ? "foreign origin" : invalid.startsWith(GRAPH) ? "invalid resource" : "malformed URL"})`,
+    () => {
+      const http = fakeHttp(mailbox({}));
+      return run(http, (adapter) =>
+        Effect.gen(function* () {
+          const changes = yield* Stream.runCollect(
+            adapter.pull(
+              account,
+              Option.some(JSON.stringify({ __idType: "immutable", inbox: invalid })),
+              "inbox",
+            ),
+          );
+          const cursor = changes.find((change) => change._tag === "Cursor");
+          assert.ok(cursor?._tag === "Cursor");
+          assert.include(cursor.cursor, "/me/mailFolders/inbox/messages/delta");
+          assert.ok(!cursor.cursor.includes(invalid));
+          assert.isTrue(
+            http.calls.every((call) => call.url.origin === "https://graph.microsoft.com"),
+          );
+          assert.isTrue(
+            http.calls.some((call) => call.url.pathname.endsWith("/inbox/messages/delta")),
+          );
+          assert.isFalse(http.calls.some((call) => call.url.pathname.endsWith("expired-delta")));
+        }),
+      );
     },
   );
 }

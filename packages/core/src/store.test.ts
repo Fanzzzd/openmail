@@ -392,9 +392,10 @@ it.effect("local ops update flags; the queue keeps order and counts attempts", (
       assert.ok(latest && earlier);
       assert.strictEqual(latest.actor, "user:cli");
       assert.strictEqual(latest.accountId, null);
-      assert.strictEqual(latest.detail, null);
+      assert.match(JSON.stringify(latest.detail), /"recipientCount":0/);
       assert.strictEqual(earlier.actor, "agent:mcp:claude");
-      assert.deepStrictEqual(earlier.detail, { id });
+      assert.match(JSON.stringify(earlier.detail), /"hash":"[a-f0-9]{64}"/);
+      assert.ok(!JSON.stringify(earlier.detail).includes(`"id":`));
       assert.strictEqual((yield* store.listAudit(1)).length, 1);
     }),
   ),
@@ -1533,6 +1534,168 @@ it.effect("switching accounts cleans the original APPEND identity without reusin
       assert.strictEqual(cleanup.op.remote.rfcMessageId, "<original@example.com>");
       assert.strictEqual(save?.appendedMessageId, null);
       assert.deepStrictEqual(save?.progress, []);
+    }),
+  ),
+);
+
+it.effect("audit keeps only metadata and decisions purge proposal commands and rationale", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const account = yield* store.upsertAccount("gmail", "me@example.com");
+      const actor: Actor = {
+        kind: "agent",
+        surface: "mcp",
+        name: "client",
+        rationale: "SECRET_REASON",
+      };
+      const command: Command = {
+        kind: "draft",
+        accountId: account.id,
+        message: {
+          to: [{ name: "SECRET_NAME", address: "secret@example.com" }],
+          cc: [],
+          bcc: [],
+          subject: "SECRET_SUBJECT",
+          text: "SECRET_BODY",
+          attachments: [],
+        },
+      };
+      const id = yield* store.insertProposal(actor, command);
+      yield* store.audit({ actor, action: "proposed", detail: { command } });
+      const rows = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ detail_json: Schema.String })),
+      )(yield* sql`SELECT detail_json FROM audit_log`);
+      const raw = rows[0]?.detail_json ?? "";
+      assert.ok(!/SECRET|secret@example.com/.test(raw));
+      assert.deepStrictEqual(
+        Object.keys(
+          Schema.decodeUnknownSync(
+            Schema.fromJsonString(Schema.Record(Schema.String, Schema.Unknown)),
+          )(raw),
+        ).toSorted(),
+        ["accountId", "hash", "kind", "recipientCount"],
+      );
+      assert.include(raw, '"recipientCount":1');
+      yield* store.setProposalStatus(id, "approved");
+      const decided = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ command_json: Schema.String, actor_json: Schema.String })),
+      )(yield* sql`SELECT command_json,actor_json FROM proposals WHERE id=${id}`);
+      assert.strictEqual(decided[0]?.command_json, "{}");
+      assert.ok(!decided[0]?.actor_json.includes("SECRET_REASON"));
+    }),
+  ),
+);
+
+it.effect(
+  "removing an account rejects its pending thread and draft proposals and purges their payloads",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        const account = yield* store.upsertAccount("gmail", "remove@example.com");
+        const other = yield* store.upsertAccount("gmail", "keep@example.com");
+        yield* store.upsertMessage(account.id, message({}));
+        const actor: Actor = {
+          kind: "agent",
+          surface: "mcp",
+          name: "client",
+          rationale: "PRIVATE_REASON",
+        };
+        yield* store.insertProposal(actor, {
+          kind: "modify",
+          threads: [`${account.id}/m1`],
+          op: { kind: "archive" },
+        });
+        const draftCommand: Command = {
+          kind: "draft",
+          accountId: account.id,
+          message: {
+            to: [],
+            cc: [],
+            bcc: [],
+            subject: "PRIVATE_SUBJECT",
+            text: "PRIVATE_BODY",
+            attachments: [],
+          },
+        };
+        const draftId = yield* store.insertProposal(actor, draftCommand);
+        yield* store.putDraft({
+          id: "purge-draft",
+          accountId: account.id,
+          message: draftCommand.message,
+          proposalId: draftId,
+        });
+        const keep = yield* store.insertProposal(actor, { ...draftCommand, accountId: other.id });
+        yield* store.removeAccount(account.id);
+        assert.deepStrictEqual(
+          (yield* store.listProposals("pending")).map((p) => p.id),
+          [keep],
+        );
+        const rows = yield* Schema.decodeUnknownEffect(
+          Schema.Array(
+            Schema.Struct({
+              status: Schema.String,
+              command_json: Schema.String,
+              actor_json: Schema.String,
+            }),
+          ),
+        )(yield* sql`SELECT status,command_json,actor_json FROM proposals WHERE id!=${keep}`);
+        assert.strictEqual(rows.length, 2);
+        for (const row of rows) {
+          assert.strictEqual(row.status, "rejected");
+          assert.strictEqual(row.command_json, "{}");
+          assert.ok(!row.actor_json.includes("PRIVATE_REASON"));
+        }
+        assert.isTrue(Option.isNone(yield* store.getDraft("purge-draft")));
+      }),
+    ),
+);
+
+it.effect("opening an existing database scrubs legacy audit and decided proposal payloads", () =>
+  withStore(
+    Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`DELETE FROM prefs WHERE key='security:ai-retention-v1'`;
+      const actor = JSON.stringify({
+        kind: "agent",
+        surface: "mcp",
+        name: "old-client",
+        rationale: "LEGACY_REASON",
+      });
+      const command = JSON.stringify({
+        kind: "draft",
+        accountId: "a",
+        message: {
+          to: [],
+          cc: [],
+          bcc: [],
+          subject: "LEGACY_SUBJECT",
+          text: "LEGACY_BODY",
+          attachments: [],
+        },
+      });
+      yield* sql`INSERT INTO proposals(created_at,actor_json,command_json,status,decided_at) VALUES(1,${actor},${command},'approved',2)`;
+      yield* sql`INSERT INTO audit_log(at,actor,action,detail_json) VALUES(1,'agent:mcp:old-client','proposed',${JSON.stringify({ command: { kind: "draft", accountId: "a", message: { to: [], cc: [], bcc: [], subject: "LEGACY_SUBJECT", text: "LEGACY_BODY", attachments: [] } } })})`;
+      yield* Store.pipe(Effect.provide(Layer.fresh(StoreLive)));
+      const proposals = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ command_json: Schema.String, actor_json: Schema.String })),
+      )(yield* sql`SELECT command_json,actor_json FROM proposals`);
+      assert.strictEqual(proposals[0]?.command_json, "{}");
+      assert.ok(!proposals[0]?.actor_json.includes("LEGACY_REASON"));
+      const audit = yield* Schema.decodeUnknownEffect(
+        Schema.Array(Schema.Struct({ detail_json: Schema.String })),
+      )(yield* sql`SELECT detail_json FROM audit_log`);
+      assert.ok(!audit[0]?.detail_json.includes("LEGACY_"));
+      assert.match(audit[0]?.detail_json ?? "", /"hash":"[a-f0-9]{64}"/);
+      // A later startup does not scan or rewrite the audit table again.
+      yield* sql`INSERT INTO audit_log(at,actor,action,detail_json) VALUES(3,'user:app','probe','{"afterMarker":true}')`;
+      yield* Store.pipe(Effect.provide(Layer.fresh(StoreLive)));
+      assert.deepStrictEqual(yield* sql`SELECT detail_json FROM audit_log WHERE at=3`, [
+        { detail_json: '{"afterMarker":true}' },
+      ]);
     }),
   ),
 );

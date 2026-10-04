@@ -52,13 +52,15 @@ function resourceFamily(path: string): string | undefined {
     /^\/me\/(?:calendar|calendars\/[^/]+)\/calendarview$/.test(canonical)
   )
     return "calendar-view";
+  if (/^\/me\/mailfolders\/[^/]+\/messages\/delta$/.test(canonical)) return "folder-delta";
+  if (canonical === "/me/outlook/mastercategories") return "categories";
   if (canonical === "/me/people") return "people";
   if (canonical === "/me/messages") return "messages";
   return undefined;
 }
 
 /** Validate the token destination and resource family; preserve the server URL and opaque query. */
-export function graphPageLink(link: string, base: string): string {
+export function graphPageLink(link: string, base: string, seen?: Set<string>): string {
   const url = new URL(link);
   if (
     url.origin !== "https://graph.microsoft.com" ||
@@ -72,5 +74,7 @@ export function graphPageLink(link: string, base: string): string {
   const actual = resourceFamily(url.pathname.slice("/v1.0".length));
   if (actual === undefined || actual !== resourceFamily(base))
     throw new Error("Invalid Graph pagination resource");
+  if (seen?.has(url.href)) throw new Error("Graph pagination repeated a page");
+  seen?.add(url.href);
   return link;
 }

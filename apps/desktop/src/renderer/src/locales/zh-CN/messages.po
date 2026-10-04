@@ -404,6 +404,10 @@ msgstr "AI 权限"
 msgid "AI action"
 msgstr "AI 操作"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI 添加了陌生收件人："
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI 能读邮件、搜索，不能改动任何东西。"
@@ -1343,6 +1347,10 @@ msgstr "无法检查更新，请稍后重试。"
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "无法在此 Mac 上检查语法。"
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "无法检查收件人。"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2904,6 +2912,10 @@ msgstr "命中的图片区域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP 访问跟随此账户的 AI 授权。MCP 无法读取停用账户。"
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3916,6 +3928,10 @@ msgstr "收件人姓氏"
 msgid "Recipient name"
 msgstr "收件人姓名"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "原会话之外的收件人："
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
@@ -4202,6 +4218,10 @@ msgstr "数据库可复用空间"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "还原"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "检查 AI 收件人"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

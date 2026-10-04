@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "AI"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI přidala neznámé příjemce:"
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "Požadavek AI selhal. Zkontrolujte nastavení a zkuste to znovu."
@@ -268,6 +273,11 @@ msgstr "Nová zpráva"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "Připojit"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "Pokračovat"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "Označit jako přečtené"
 msgid "Mark as unread"
 msgstr "Označit jako nepřečtené"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "Přístup MCP se řídí souhlasem s AI pro tento účet. Vypnuté účty nelze přes MCP číst."
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "Stav přečtení"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Příjemci mimo původní konverzaci:"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Chcete-li přidat účty, zaregistrujte mobilní klienty OAuth v konfiguraci aplikace."
@@ -780,6 +800,11 @@ msgstr "Obnovit stav zprávy"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "Zkusit odeslat znovu"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "Zkontrolovat příjemce AI"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

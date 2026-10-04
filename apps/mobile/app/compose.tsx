@@ -35,7 +35,11 @@ import { useUndo } from "../src/undo";
 import { styles } from "../src/styles";
 import { ComposeAi } from "../src/ai-controls";
 import { aiUndoBody, type AiEditUndo } from "../src/ai-edit";
-import { signedMobileMessage } from "../src/ai-workflows";
+import {
+  signedMobileMessage,
+  reviewAgentRecipients,
+  mobileRecipientWarnings,
+} from "../src/ai-workflows";
 
 const recipientsText = (addresses: readonly Address[]) =>
   addresses.map((address) => recipientLabel(address, true)).join(", ");
@@ -335,7 +339,63 @@ export default function Compose() {
       setBusy(false);
     }
   };
-  const confirmSend = () =>
+  const confirmSend = async () => {
+    if (!draft || !currentMessage || busy) return;
+    if (currentMessage.agentOrigin) {
+      setBusy(true);
+      try {
+        const warnings = await runtime.runPromise(
+          Effect.flatMap(Mailbox, (mailbox) =>
+            mobileRecipientWarnings(mailbox, draft.accountId, currentMessage),
+          ),
+        );
+        const approved = await reviewAgentRecipients(
+          warnings,
+          () =>
+            new Promise<boolean>((resolve) => {
+              Alert.alert(
+                i18n._({ id: "Review AI recipients", message: "Review AI recipients" }),
+                [
+                  ...(warnings.unfamiliar.length
+                    ? [
+                        `${i18n._({
+                          id: "AI added unfamiliar recipients:",
+                          message: "AI added unfamiliar recipients:",
+                        })} ${warnings.unfamiliar.join(", ")}`,
+                      ]
+                    : []),
+                  ...(warnings.outsideThread.length
+                    ? [
+                        `${i18n._({
+                          id: "Recipients outside the original conversation:",
+                          message: "Recipients outside the original conversation:",
+                        })} ${warnings.outsideThread.join(", ")}`,
+                      ]
+                    : []),
+                ].join("\n\n"),
+                [
+                  {
+                    text: i18n._({ id: "Cancel", message: "Cancel" }),
+                    style: "cancel",
+                    onPress: () => resolve(false),
+                  },
+                  {
+                    text: i18n._({ id: "Continue", message: "Continue" }),
+                    onPress: () => resolve(true),
+                  },
+                ],
+                { cancelable: false },
+              );
+            }),
+        );
+        if (!approved) return;
+      } catch {
+        setFailed(true);
+        return;
+      } finally {
+        setBusy(false);
+      }
+    }
     Alert.alert(
       uncertain
         ? i18n._({
@@ -349,6 +409,7 @@ export default function Compose() {
         { text: i18n._({ id: "Send", message: "Send" }), onPress: () => void send(uncertain) },
       ],
     );
+  };
   return (
     <ScrollView style={styles.screen} keyboardShouldPersistTaps="handled">
       {!draft && !failed && <ActivityIndicator />}

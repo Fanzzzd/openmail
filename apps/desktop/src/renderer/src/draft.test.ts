@@ -441,3 +441,24 @@ it("a signature without its separator still counts as an untouched empty compose
     isEmpty({ ...automatic, body: { kind: "plain", text: "Authored\n\nMe" } }, "Me", options),
   ).toBe(false);
 });
+
+it("AI provenance survives reopening and autosave serialization", () => {
+  const message = {
+    to: [],
+    cc: [],
+    bcc: [],
+    subject: "AI",
+    text: "Draft",
+    attachments: [],
+    agentOrigin: { recipients: ["new@example.com"], replyTo: "original" },
+  };
+  const draft = fromStored({
+    id: "ai-draft",
+    accountId: "a",
+    message,
+    updatedAt: 1,
+    synced: false,
+    proposalId: 1,
+  });
+  expect(toMessage(draft).message.agentOrigin).toEqual(message.agentOrigin);
+});

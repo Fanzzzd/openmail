@@ -442,6 +442,13 @@ export const InlineImageSize = Schema.Literals(["small", "medium", "large", "ori
 export type InlineImageSize = typeof InlineImageSize.Type;
 
 export const OutgoingMessage = Schema.Struct({
+  /** Local AI provenance survives editing, autosave and proposal approval. Never emitted as MIME. */
+  agentOrigin: Schema.optionalKey(
+    Schema.Struct({
+      recipients: Schema.Array(Schema.String),
+      replyTo: Schema.optionalKey(Schema.String),
+    }),
+  ),
   composeFont: Schema.optionalKey(ComposeFont),
   /** Verified Gmail send-as address; omitted uses the account address. */
   from: Schema.optionalKey(Address),

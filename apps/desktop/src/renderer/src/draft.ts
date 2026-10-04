@@ -6,6 +6,8 @@ import {
   applySignature,
   replyFromAddress,
   replyRecipients,
+  replySubject,
+  forwardSubject,
   type SendAs,
   type SignatureOptions,
   type ComposeBody,
@@ -60,6 +62,7 @@ export interface Draft {
   organization?: OutgoingMessage["draftOrganization"];
   /** The agent proposal this draft came from. */
   proposalId?: number;
+  agentOrigin?: OutgoingMessage["agentOrigin"];
 }
 
 export const newDraftId = () => `draft:${crypto.randomUUID()}`;
@@ -80,10 +83,6 @@ export function emptyDraft(accountId: string): Draft {
 }
 
 export { formatAddress, parseAddresses, ADDRESS_SEPARATOR } from "@openmail/core/schema";
-
-function prefixed(prefix: string, subject: string): string {
-  return new RegExp(`^${prefix}:`, "i").test(subject) ? subject : `${prefix}: ${subject}`;
-}
 
 function quote(m: Message): string {
   const lines = m.bodyText.trimEnd().split("\n");
@@ -138,7 +137,7 @@ export function draftFor(
     to: to.map(formatAddress).join(", "),
     cc: cc.map(formatAddress).join(", "),
     bcc: "",
-    subject: prefixed(mode === "forward" ? "Fwd" : "Re", m.subject),
+    subject: mode === "forward" ? forwardSubject(m.subject) : replySubject(m.subject),
     body:
       mode === "forward" && !forwardAsAttachment && quoted.bodyHtml
         ? remoteComposeBody(
@@ -161,6 +160,7 @@ export function fromStored(d: StoredDraft): Draft {
   const m = d.message;
   return {
     id: d.id,
+    ...(m.agentOrigin ? { agentOrigin: m.agentOrigin } : {}),
     synced: d.synced,
     ...(m.signatureId === undefined ? {} : { signatureId: m.signatureId }),
     syncError: d.syncError,
@@ -193,6 +193,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
   const body = d.body;
   return {
     message: normalizeComposeMessage({
+      ...(d.agentOrigin ? { agentOrigin: d.agentOrigin } : {}),
       ...(d.from ? { from: d.from } : {}),
       to: to.addresses,
       cc: cc.addresses,
@@ -279,8 +280,7 @@ export function switchReplyMode(
     return [...recipients.map(formatAddress), ...entered.invalid].join(", ");
   };
   const subject = /^(?:re|fwd?|fw)\s*:/i.test(draft.subject)
-    ? prefixed(
-        mode === "forward" ? "Fwd" : "Re",
+    ? (mode === "forward" ? forwardSubject : replySubject)(
         draft.subject.replace(/^(?:(?:re|fwd?|fw)\s*:\s*)+/i, ""),
       )
     : draft.subject;

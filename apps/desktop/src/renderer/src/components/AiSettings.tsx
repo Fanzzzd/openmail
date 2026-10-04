@@ -77,6 +77,12 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
           <Trans>Remove key</Trans>
         </button>
       </div>
+      <p className="text-a11y-muted">
+        <Trans>
+          MCP access follows this account's AI consent. Disabled accounts cannot be read through
+          MCP.
+        </Trans>
+      </p>
       <label className="block">
         <Trans>Model</Trans>{" "}
         <select

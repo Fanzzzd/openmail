@@ -394,6 +394,10 @@ msgstr "Доступ к ИИ"
 msgid "AI action"
 msgstr "Действие ИИ"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "ИИ добавил незнакомых получателей:"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "ИИ может читать и искать почту, но не может ничего изменить."
@@ -1333,6 +1337,10 @@ msgstr "Не удалось проверить наличие обновлени
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "Не удалось проверить грамматику на этом Mac."
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "Не удалось проверить получателей."
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2894,6 +2902,10 @@ msgstr "Соответствующая область изображения"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Соответствующее время сохраняет активность в течение всего дня в будние дни. Ночные периоды продолжаются и на следующий день. Неотмеченные дни остаются отключенными, за исключением ночных периодов предыдущего дня. При повторном переходе на летнее время используется один и тот же график; пропущенное время пропускается."
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "Доступ MCP зависит от согласия на ИИ для этой учётной записи. Отключённые учётные записи недоступны через MCP."
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3906,6 +3918,10 @@ msgstr "Фамилия получателя"
 msgid "Recipient name"
 msgstr "Имя получателя"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Получатели вне исходной переписки:"
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Восстановлено {copied} локальных записей. Пропущено {skipped} нечитаемых элементов. Исходная база данных: {backup}"
@@ -4192,6 +4208,10 @@ msgstr "Повторно используемое место базы данны
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Отменить изменения"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "Проверить получателей ИИ"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

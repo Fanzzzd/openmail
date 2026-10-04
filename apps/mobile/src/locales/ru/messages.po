@@ -81,6 +81,11 @@ msgid "AI"
 msgstr "ИИ"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "ИИ добавил незнакомых получателей:"
+
+#. js-lingui-explicit-id
 #: src/ai-controls.tsx
 msgid "AI request failed. Check your settings and try again."
 msgstr "Запрос ИИ не выполнен. Проверьте настройки и повторите попытку."
@@ -268,6 +273,11 @@ msgstr "Новое сообщение"
 #: app/imap-setup.tsx
 msgid "Connect"
 msgstr "Подключить"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Continue"
+msgstr "Продолжить"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -562,6 +572,11 @@ msgstr "Отметить как прочитанное"
 msgid "Mark as unread"
 msgstr "Отметить как непрочитанное"
 
+#. js-lingui-explicit-id
+#: src/ai-settings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "Доступ MCP зависит от согласия на ИИ для этой учётной записи. Отключённые учётные записи недоступны через MCP."
+
 #. Plain message body text field.
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -701,6 +716,11 @@ msgid "Read status"
 msgstr "Статус прочтения"
 
 #. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Получатели вне исходной переписки:"
+
+#. js-lingui-explicit-id
 #: app/index.tsx
 msgid "Register mobile OAuth clients in app config to add accounts."
 msgstr "Для добавления учётных записей зарегистрируйте мобильные клиенты OAuth в конфигурации приложения."
@@ -780,6 +800,11 @@ msgstr "Восстановить состояние сообщения"
 #: app/settings.tsx
 msgid "Retry send"
 msgstr "Повторить отправку"
+
+#. js-lingui-explicit-id
+#: app/compose.tsx
+msgid "Review AI recipients"
+msgstr "Проверить получателей ИИ"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx

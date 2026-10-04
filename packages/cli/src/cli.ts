@@ -520,27 +520,19 @@ const proposals = Command.make("proposals").pipe(
 
 const writeMode = Command.make(
   "write-mode",
-  {
-    mode: Argument.Literals("mode", ["off", "propose", "allow"]).pipe(
-      Argument.withDescription(
-        "off: MCP cannot propose changes or drafts. propose: changes wait for approval. allow: rules can organize directly; MCP always proposes for approval in the app",
-      ),
-      Argument.optional,
-    ),
-  },
-  Effect.fn(function* ({ mode }) {
+  {},
+  Effect.fn(function* () {
     const mailbox = yield* Mailbox;
-    if (Option.isSome(mode)) {
-      yield* mailbox.setAgentWriteMode(mode.value);
-      yield* Console.log(`Agent write mode: ${mode.value}.`);
-    } else {
-      yield* Console.log(`Agent write mode: ${yield* mailbox.agentWriteMode}.`);
-    }
+    yield* Console.log(`Agent write mode: ${yield* mailbox.agentWriteMode}.`);
     yield* Console.log(
-      "MCP always proposes changes for approval in the app. MCP drafts require a mode other than Read only. Sending requires confirmation in the app.",
+      "The mode can only be changed in the app under Settings > AI permissions. MCP always proposes for app approval. Sending requires confirmation in the app.",
     );
   }),
-).pipe(Command.withDescription("Show or set whether agents may change mail (Settings > AI 权限)"));
+).pipe(
+  Command.withDescription(
+    "Show agent write permissions; change them in the app (Settings > AI permissions)",
+  ),
+);
 
 const agents = Command.make("agents").pipe(
   Command.withDescription("Permissions for MCP clients and other agents"),
@@ -711,7 +703,15 @@ function explain(error: unknown): string | undefined {
   }
 }
 
-Command.run(openmail, { version: "0.1.0" }).pipe(
+const cliArgs = process.argv.slice(2);
+const appOnlyWriteMode =
+  cliArgs[0] === "agents" &&
+  cliArgs[1] === "write-mode" &&
+  cliArgs.slice(2).some((arg) => !arg.startsWith("-"));
+(appOnlyWriteMode
+  ? fail("Agent write mode can only be changed in the app under Settings > AI permissions.")
+  : Command.run(openmail, { version: "0.1.0" })
+).pipe(
   Effect.catch((error) => {
     const message = explain(error);
     return message === undefined

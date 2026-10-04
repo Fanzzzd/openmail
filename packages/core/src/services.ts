@@ -233,6 +233,10 @@ export class Store extends Context.Service<
     /** Inserts or returns the existing account `${provider}:${email}`. */
     upsertAccount(provider: Provider, email: string): Effect.Effect<Account>;
     removeAccount(id: string): Effect.Effect<void>;
+    purgeAccountProposals(
+      accountId: string,
+      removeDraft?: (draft: StoredDraft) => Effect.Effect<void>,
+    ): Effect.Effect<void>;
     setAccountProfile(id: string, profileId: string | null): Effect.Effect<void>;
     setImapSettings(id: string, settings: ImapSettings): Effect.Effect<void>;
     setNeedsReauth(id: string, value: boolean): Effect.Effect<void>;

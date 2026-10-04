@@ -143,6 +143,21 @@ import { folderTarget } from "./store.js";
 import { makeBatchMailbox } from "./mailbox-batch.js";
 import { gmailThreadUrl, officialMessageUrl, validMessageProviderId } from "./reading.js";
 
+const isAiProposalActor = (actor: Actor): boolean =>
+  actor.kind === "agent" &&
+  (actor.surface === "mcp" || actor.surface === "assistant" || actor.name === "openmail-assistant");
+
+const withAgentOrigin = (message: OutgoingMessage, actor: Actor): OutgoingMessage =>
+  isAiProposalActor(actor)
+    ? {
+        ...message,
+        agentOrigin: {
+          recipients: [...message.to, ...message.cc, ...message.bcc].map((a) => a.address),
+          ...(message.inReplyTo ? { replyTo: message.inReplyTo } : {}),
+        },
+      }
+    : message;
+
 const isSpecialAgentLabel = (value: string) => {
   const name = value
     .trim()
@@ -1399,7 +1414,7 @@ export const MailboxLive = (
         }
       });
 
-      const validateMcpProposal = Effect.fnUntraced(function* (command: Command) {
+      const validateAiProposal = Effect.fnUntraced(function* (command: Command) {
         if (command.kind === "modify" && command.op.kind === "label") {
           const labelId = command.op.labelId;
           for (const thread of command.threads) {
@@ -1416,7 +1431,8 @@ export const MailboxLive = (
               isSpecialAgentLabel(label.name)
             )
               return yield* new InvalidInput({
-                message: "MCP can only propose existing Gmail user labels for the same account.",
+                message:
+                  "AI proposals can only use existing Gmail user labels for the same account.",
               });
           }
         }
@@ -1430,7 +1446,7 @@ export const MailboxLive = (
             (composeMode === "new") === Boolean(draft.inReplyTo)
           )
             return yield* new InvalidInput({
-              message: "MCP drafts support plain-text new messages and replies only.",
+              message: "AI proposals support plain-text new messages and replies only.",
             });
           if (
             draft.inReplyTo &&
@@ -1472,7 +1488,7 @@ export const MailboxLive = (
             }
           }
         }
-        if (actor.kind === "agent" && actor.surface === "mcp") yield* validateMcpProposal(command);
+        if (actor.kind === "agent" && actor.surface === "mcp") yield* validateAiProposal(command);
         const decision = decide(command, actor, mode);
         if (decision.status === "denied") {
           yield* store.audit({
@@ -1497,6 +1513,7 @@ export const MailboxLive = (
                 const draft = yield* store.putDraft({
                   id: newDraftId(),
                   ...message.value,
+                  message: withAgentOrigin(message.value.message, actor),
                   proposalId: id,
                 });
                 // Read-only agents change nothing on the server: the draft
@@ -1504,8 +1521,7 @@ export const MailboxLive = (
                 // Otherwise the app's next flush pushes it, not the agent's process.
                 const push =
                   actor.kind === "agent" &&
-                  actor.surface !== "mcp" &&
-                  !(actor.surface === "rule" && actor.name === "openmail-assistant") &&
+                  !isAiProposalActor(actor) &&
                   (yield* store.agentWriteMode(actor.name)) !== "off";
                 if (push) yield* store.enqueueDraftSave(draft.accountId, draft.id);
               }
@@ -1529,21 +1545,15 @@ export const MailboxLive = (
         surface: "app" | "cli",
       ) {
         const proposal = yield* store.getProposal(id);
-        if (
-          approve &&
-          surface !== "app" &&
-          proposal.actor.kind === "agent" &&
-          (proposal.actor.surface === "mcp" ||
-            (proposal.actor.surface === "rule" && proposal.actor.name === "openmail-assistant"))
-        )
-          return yield* new InvalidInput({ message: "Approve agent suggestions in the app." });
+        if (approve && surface !== "app" && isAiProposalActor(proposal.actor))
+          return yield* new InvalidInput({ message: "Approve AI proposals in the app." });
         if (proposal.status !== "pending") {
           return yield* new InvalidInput({
             message: `Proposal ${id} is already ${proposal.status}.`,
           });
         }
-        if (approve && proposal.actor.kind === "agent" && proposal.actor.surface === "mcp")
-          yield* validateMcpProposal(proposal.command);
+        if (approve && isAiProposalActor(proposal.actor))
+          yield* validateAiProposal(proposal.command);
         const person: Actor = { kind: "user", surface };
         yield* store.setProposalStatus(id, approve ? "approved" : "rejected");
         yield* store.audit({
@@ -1616,7 +1626,12 @@ export const MailboxLive = (
             const draft = yield* store.putDraft({
               id: input.id,
               accountId: input.accountId,
-              message: normalizeComposeMessage(input.message),
+              message: normalizeComposeMessage({
+                ...input.message,
+                ...(Option.isSome(existing) && existing.value.message.agentOrigin
+                  ? { agentOrigin: existing.value.message.agentOrigin }
+                  : {}),
+              }),
             });
             const restoreLocalOnly = localOnly && !draft.localOnly;
             if (restoreLocalOnly) yield* store.setDraftLocalOnly(input.id, true);
@@ -1777,7 +1792,7 @@ export const MailboxLive = (
           const draft = yield* store.putDraft({
             id: newDraftId(),
             accountId: command.accountId,
-            message: command.message,
+            message: withAgentOrigin(command.message, proposal.actor),
             proposalId,
           });
           yield* store.enqueueDraftSave(draft.accountId, draft.id);
@@ -2126,6 +2141,7 @@ export const MailboxLive = (
           const writes: Effect.Effect<void, ProviderError>[] = [];
           const newIds: string[] = [];
           const pendingById = new Map<string, MailOp[]>();
+          const deletingDrafts = new Set<string>();
           for (const change of batch) {
             // Polling only discovers arrivals/flags; full sync reconciles moves and resets.
             if (
@@ -2146,6 +2162,7 @@ export const MailboxLive = (
                 counts.changed++;
                 writes.push(
                   Effect.gen(function* () {
+                    if (deletingDrafts.has(change.message.providerId)) return;
                     if (
                       change._tag === "Remap" &&
                       change.message.rfcMessageId &&
@@ -2398,6 +2415,7 @@ export const MailboxLive = (
                 ),
               ];
               for (const pending of yield* store.pendingOpsForMessages(account.id, ids)) {
+                if (pending.op.kind === "deleteDraft") deletingDrafts.add(pending.providerId);
                 if (
                   pending.op.kind === "saveDraft" ||
                   pending.op.kind === "deleteDraft" ||
@@ -2940,7 +2958,15 @@ export const MailboxLive = (
       const mutate = <A, E>(effect: Effect.Effect<A, E>) => Effect.tap(effect, () => changed);
 
       let mailbox: Mailbox["Service"];
-      const ai = makeAiMailbox(store, secrets, model, () => mailbox, changed, options.canTriage);
+      const ai = makeAiMailbox(
+        store,
+        secrets,
+        model,
+        () => mailbox,
+        changed,
+        (ownerId) => store.purgeAccountProposals(ownerId, removeDraft),
+        options.canTriage,
+      );
       function thread(id: string): Effect.Effect<Message[], NotFound>;
       function thread(
         id: string,
@@ -3336,6 +3362,7 @@ export const MailboxLive = (
         cancelDesktopUndoSends,
         flushQueuedSends,
         ...ai,
+        setAiAccount: (input) => ai.setAiAccount(input).pipe(Effect.andThen(flushLater)),
         closeSessions: () =>
           Effect.gen(function* () {
             for (const provider of new Set(

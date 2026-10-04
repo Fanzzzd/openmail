@@ -2,6 +2,8 @@ import {
   parseSearchQuery,
   replyRecipients,
   draftRecipients,
+  replySubject,
+  forwardSubject,
   isEmailAddress,
   messageModelText,
   type ComposeMode,
@@ -51,7 +53,9 @@ export function composeMessage(
     attachments: [],
     mode,
     subject: original
-      ? `${mode === "forward" ? "Fwd: " : /^re:/i.test(original.subject) ? "" : "Re: "}${original.subject}`
+      ? mode === "forward"
+        ? forwardSubject(original.subject)
+        : replySubject(original.subject)
       : "",
     text: original
       ? `\n\n${messageModelText(original.bodyText, original.bodyHtml)

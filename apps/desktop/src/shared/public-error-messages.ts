@@ -16,7 +16,7 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Add an automatic reply message",
   "Add at least one filter condition",
   "Allow sending mail text for each selected account in AI settings.",
-  "Approve agent suggestions in the app.",
+  "Approve AI proposals in the app.",
   "Attachment exceeds the 32 MB reader limit",
   "Attachments and their containers exceed the 32 MB reader limit",
   "Automatic triage is disabled.",

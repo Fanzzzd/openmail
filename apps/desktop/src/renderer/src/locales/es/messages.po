@@ -394,6 +394,10 @@ msgstr "Acceso a IA"
 msgid "AI action"
 msgstr "Acción de IA"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "La IA añadió destinatarios desconocidos:"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "La IA puede leer y buscar correo, pero no puede cambiar nada."
@@ -1333,6 +1337,10 @@ msgstr "No se pudo buscar actualizaciones. Vuelve a intentarlo más tarde."
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "No se pudo revisar la gramática en este Mac."
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "No se pudieron comprobar los destinatarios."
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2894,6 +2902,10 @@ msgstr "Región de imagen coincidente"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Los horarios coincidentes mantienen activo ese día de la semana durante todo el día. Los períodos nocturnos continúan hasta el día siguiente. Los días no marcados permanecen silenciados excepto durante los períodos nocturnos del día anterior. Los horarios de verano repetidos utilizan el mismo horario; los tiempos omitidos se pasan por alto."
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "El acceso MCP sigue el consentimiento de IA de esta cuenta. Las cuentas desactivadas no se pueden leer mediante MCP."
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3906,6 +3918,10 @@ msgstr "Apellido del destinatario"
 msgid "Recipient name"
 msgstr "Nombre del destinatario"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "Destinatarios ajenos a la conversación original:"
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} registros locales recuperados. Se omitieron {skipped} elementos ilegibles. Base de datos original: {backup}"
@@ -4192,6 +4208,10 @@ msgstr "Espacio reutilizable de la base de datos"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Revertir"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "Revisar destinatarios de la IA"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

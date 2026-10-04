@@ -150,7 +150,15 @@ function fixture(
     const model = yield* Model;
     yield* m.connect({ provider: "gmail" });
     yield* m.sync();
-    const ai = makeAiMailbox(store, secrets, model, () => m, Effect.void, canTriage);
+    const ai = makeAiMailbox(
+      store,
+      secrets,
+      model,
+      () => m,
+      Effect.void,
+      (id) => store.purgeAccountProposals(id),
+      canTriage,
+    );
     return { m, store, ai, server };
   });
   return { setup, layer: Layer.mergeAll(mLayer, storeLayer, fake) };

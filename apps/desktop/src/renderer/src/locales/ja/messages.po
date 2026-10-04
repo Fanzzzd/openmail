@@ -394,6 +394,10 @@ msgstr "AIアクセス"
 msgid "AI action"
 msgstr "AI 操作"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "AI added unfamiliar recipients:"
+msgstr "AI が追加した不明な宛先："
+
 #: src/renderer/src/components/Settings.tsx
 msgid "AI can read and search mail, but can't change anything."
 msgstr "AI はメールを読んだり検索したりすることはできますが、何も変更することはできません。"
@@ -1333,6 +1337,10 @@ msgstr "アップデートを確認できませんでした。後でもう一度
 #: src/renderer/src/components/ComposeGrammar.tsx
 msgid "Could not check grammar on this Mac."
 msgstr "このMacで文法をチェックできませんでした。"
+
+#: src/renderer/src/compose/use-compose-send.ts
+msgid "Could not check recipients."
+msgstr "宛先を確認できませんでした。"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Could not check sync health."
@@ -2894,6 +2902,10 @@ msgstr "一致した画像領域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "時間を一致させると、その平日は一日中アクティブになります。夜間の期間は翌日まで続きます。チェックされていない日は、前日からの一晩の期間を除き、ミュートされたままになります。夏時間が繰り返される場合は、同じスケジュールが使用されます。スキップされた時間は引き継がれます。"
 
+#: src/renderer/src/components/AiSettings.tsx
+msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
+msgstr "MCP のアクセスはこのアカウントの AI 利用への同意に従います。無効なアカウントは MCP から読み取れません。"
+
 #. readOnly is the translated Read only write-mode label above.
 #: src/renderer/src/components/Settings.tsx
 msgid "MCP can propose drafts only when the write mode is not \"{readOnly}\". You review drafts and confirm sending in the app."
@@ -3906,6 +3918,10 @@ msgstr "受信者の姓"
 msgid "Recipient name"
 msgstr "受信者名"
 
+#: src/renderer/src/components/Composer.tsx
+msgid "Recipients outside the original conversation:"
+msgstr "元のスレッドに含まれない宛先："
+
 #: src/main/native-i18n.ts
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
@@ -4192,6 +4208,10 @@ msgstr "再利用可能なデータベース領域"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "変更を元に戻す"
+
+#: src/renderer/src/components/Composer.tsx
+msgid "Review AI recipients"
+msgstr "AI の宛先を確認"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Review AI suggestions"

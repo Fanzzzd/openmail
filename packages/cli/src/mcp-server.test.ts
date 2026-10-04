@@ -152,7 +152,7 @@ test("openmail mcp --allow-writes exposes only supported proposals and still che
       },
     }),
   );
-  expect(called.content[0]?.text).toContain("denied");
+  expect(called.content[0]?.text).toContain("enabled account with AI consent");
 }, 30_000);
 
 test("write-mode help and status distinguish MCP proposals from direct rule writes", async () => {
@@ -165,9 +165,26 @@ test("write-mode help and status distinguish MCP proposals from direct rule writ
     ["dist/cli.js", "agents", "write-mode", "--help"],
     options,
   );
-  expect(help.stdout).toContain("rules can organize directly");
-  expect(help.stdout).toContain("MCP always proposes for approval in the app");
+  expect(help.stdout).toContain("Show agent write permissions");
+  expect(help.stdout).not.toMatch(/<mode>|\[mode\]/);
   const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
-  expect(status.stdout).toContain("MCP drafts require a mode other than Read only");
+  expect(status.stdout).toContain("The mode can only be changed in the app");
   expect(status.stdout).toContain("Sending requires confirmation in the app");
+});
+
+test("CLI write-mode cannot enable writes", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-app-policy-"));
+  cleanups.push(() => rm(directory, { recursive: true, force: true }));
+  const run = promisify(execFile);
+  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+  for (const mode of ["allow", "propose"]) {
+    await expect(
+      run(process.execPath, ["dist/cli.js", "agents", "write-mode", mode], options),
+    ).rejects.toMatchObject({
+      code: 1,
+      stderr: expect.stringContaining("Agent write mode can only be changed in the app"),
+    });
+    const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+    expect(status.stdout).toContain("Agent write mode: off.");
+  }
 });
