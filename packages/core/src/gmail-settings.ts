@@ -1,13 +1,15 @@
 import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
 import { uncertainWrite } from "./provider-retry.js";
 import { richComposeBody } from "./compose-body.js";
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Option } from "effect";
 import { CATEGORIES, type Account } from "./domain.js";
 import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
 import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
   EMPTY_FILTER,
+  GMAIL_REMOVABLE_SYSTEM_LABELS,
+  gmailRuleLabels,
   filterDestinationsSupported,
   type FilterInput,
   type GmailRuleDefinition,
@@ -25,9 +27,10 @@ const ParsedGmailFilter = Schema.Struct({
       subject: Schema.optionalKey(Schema.String),
       query: Schema.optionalKey(Schema.String),
       hasAttachment: Schema.optionalKey(Schema.Boolean),
+      excludeChats: Schema.optionalKey(Schema.Boolean),
       negatedQuery: Schema.optionalKey(Schema.String),
       size: Schema.optionalKey(Schema.Number),
-      sizeComparison: Schema.optionalKey(Schema.Literals(["larger", "smaller"])),
+      sizeComparison: Schema.optionalKey(Schema.Literals(["larger", "smaller", "unspecified"])),
     }),
   ),
   action: Schema.optionalKey(
@@ -66,11 +69,13 @@ const Aliases = Schema.Struct({
 });
 
 function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
-  const parsed = Schema.decodeUnknownSync(ParsedGmailFilter)(raw);
+  const decoded = Schema.decodeUnknownOption(ParsedGmailFilter)(raw);
+  if (Option.isNone(decoded)) return { ...EMPTY_FILTER, id: raw.id, name: raw.id, editable: false };
+  const parsed = decoded.value;
   const add = parsed.action?.addLabelIds ?? [];
   const remove = parsed.action?.removeLabelIds ?? [];
   const category = CATEGORIES.find((value) => add.includes(value));
-  const { negatedQuery, ...criteria } = parsed.criteria ?? {};
+  const { negatedQuery, sizeComparison, ...criteria } = parsed.criteria ?? {};
   const action = {
     archive: remove.includes("INBOX"),
     markRead: remove.includes("UNREAD"),
@@ -86,10 +91,16 @@ function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
         ? { important: false }
         : {}),
     ...(category ? { category } : {}),
+    addLabelIds: add.filter(
+      (id) => !["STARRED", "TRASH", "IMPORTANT", category].includes(id) && !id.startsWith("Label_"),
+    ),
+    removeLabelIds: remove.filter(
+      (id) => !GMAIL_REMOVABLE_SYSTEM_LABELS.some((label) => label === id),
+    ),
   };
   const editable =
     filterDestinationsSupported(action, "gmail") &&
-    add.filter((id) => CATEGORIES.some((value) => value === id)).length <= 1 &&
+    sizeComparison !== "unspecified" &&
     Object.keys(raw.criteria ?? {}).every((key) =>
       [
         "from",
@@ -97,19 +108,13 @@ function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
         "subject",
         "query",
         "hasAttachment",
+        "excludeChats",
         "negatedQuery",
         "size",
         "sizeComparison",
       ].includes(key),
     ) &&
-    Object.keys(raw.action ?? {}).every((key) => ["addLabelIds", "removeLabelIds"].includes(key)) &&
-    (parsed.action?.removeLabelIds ?? []).every((id) =>
-      ["INBOX", "UNREAD", "IMPORTANT"].includes(id),
-    ) &&
-    !(parsed.action?.addLabelIds ?? []).some(
-      (id) =>
-        !["STARRED", "TRASH", "IMPORTANT", ...CATEGORIES].includes(id) && !id.startsWith("Label_"),
-    );
+    Object.keys(raw.action ?? {}).every((key) => ["addLabelIds", "removeLabelIds"].includes(key));
   return {
     id: raw.id,
     ...(editable ? {} : { editable: false }),
@@ -117,6 +122,7 @@ function fromFilter(raw: typeof GmailFilter.Type): ServerFilter {
     criteria: {
       ...EMPTY_FILTER.criteria,
       ...criteria,
+      ...(sizeComparison && sizeComparison !== "unspecified" ? { sizeComparison } : {}),
       ...(negatedQuery ? { notWords: negatedQuery } : {}),
     },
     action,
@@ -199,6 +205,9 @@ export function makeGmailSettings<
         to: input.criteria.to,
         subject: input.criteria.subject,
         hasAttachment: input.criteria.hasAttachment,
+        ...(input.criteria.excludeChats !== undefined
+          ? { excludeChats: input.criteria.excludeChats }
+          : {}),
         query: input.criteria.hasWords
           ? [input.criteria.query, input.criteria.hasWords]
               .filter(Boolean)
@@ -210,21 +219,7 @@ export function makeGmailSettings<
           ? { size: input.criteria.size, sizeComparison: input.criteria.sizeComparison }
           : {}),
       },
-      action: {
-        addLabelIds: [
-          ...(a.star ? ["STARRED"] : []),
-          ...(a.trash ? ["TRASH"] : []),
-          ...(a.label ? [a.label] : []),
-          ...(a.labels ?? []),
-          ...(a.important === true ? ["IMPORTANT"] : []),
-          ...(a.category ? [a.category] : []),
-        ],
-        removeLabelIds: [
-          ...(a.archive ? ["INBOX"] : []),
-          ...(a.markRead ? ["UNREAD"] : []),
-          ...(a.important === false ? ["IMPORTANT"] : []),
-        ],
-      },
+      action: gmailRuleLabels(a),
     };
     return wrap(account, createDefinition(account, definition)).pipe(Effect.map(fromFilter));
   };

@@ -1,3 +1,4 @@
+import { sameProviderWrite } from "./provider-write.js";
 import { Schema } from "effect";
 import { ThreadSummary, type MailboxView, type Provider, CATEGORIES } from "./domain.js";
 
@@ -26,6 +27,7 @@ export const FilterPreview = Schema.Struct({
   token: Schema.String,
   matches: Schema.Array(ThreadSummary),
   truncated: Schema.Boolean,
+  unavailable: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export type FilterPreview = typeof FilterPreview.Type;
 
@@ -72,13 +74,52 @@ export const AccountOrganization = Schema.Struct({
 });
 export type AccountOrganization = typeof AccountOrganization.Type;
 
-/** Shared subset that maps losslessly to Gmail filters and Outlook inbox rules. */
+export const RULE_IMPORTANCE = ["low", "normal", "high"] as const;
+export const RULE_SENSITIVITY = ["normal", "personal", "private", "confidential"] as const;
+export const MESSAGE_ACTION_FLAGS = [
+  "any",
+  "call",
+  "doNotForward",
+  "followUp",
+  "fyi",
+  "forward",
+  "noResponseNecessary",
+  "read",
+  "reply",
+  "replyToAll",
+  "review",
+] as const;
+/** Additional Graph predicates, shared by conditions and exceptions. Sizes are KiB. */
+export const OutlookRulePredicates = Schema.Struct({
+  bodyContains: Schema.optionalKey(Schema.Array(Schema.String)),
+  headerContains: Schema.optionalKey(Schema.Array(Schema.String)),
+  importance: Schema.optionalKey(Schema.Literals(RULE_IMPORTANCE)),
+  sensitivity: Schema.optionalKey(Schema.Literals(RULE_SENSITIVITY)),
+  messageActionFlag: Schema.optionalKey(Schema.Literals(MESSAGE_ACTION_FLAGS)),
+  isAutomaticReply: Schema.optionalKey(Schema.Boolean),
+  sentToMe: Schema.optionalKey(Schema.Boolean),
+  sentOnlyToMe: Schema.optionalKey(Schema.Boolean),
+  sentCcMe: Schema.optionalKey(Schema.Boolean),
+  notSentToMe: Schema.optionalKey(Schema.Boolean),
+  sentToOrCcMe: Schema.optionalKey(Schema.Boolean),
+  withinSizeRange: Schema.optionalKey(
+    Schema.Struct({
+      minimumSize: Schema.optionalKey(Schema.Number),
+      maximumSize: Schema.optionalKey(Schema.Number),
+    }),
+  ),
+});
+export type OutlookRulePredicates = typeof OutlookRulePredicates.Type;
+/** Shared fields plus explicit provider-specific predicates. */
 export const FilterCriteria = Schema.Struct({
   from: Schema.String,
   to: Schema.String,
   subject: Schema.String,
   query: Schema.String,
   hasAttachment: Schema.Boolean,
+  excludeChats: Schema.optionalKey(Schema.Boolean),
+  outlook: Schema.optionalKey(OutlookRulePredicates),
+  outlookExceptions: Schema.optionalKey(OutlookRulePredicates),
   hasWords: Schema.optionalKey(Schema.String),
   notWords: Schema.optionalKey(Schema.String),
   exceptFrom: Schema.optionalKey(Schema.String),
@@ -90,6 +131,11 @@ export const FilterCriteria = Schema.Struct({
 });
 export type FilterCriteria = typeof FilterCriteria.Type;
 export const FilterAction = Schema.Struct({
+  markImportance: Schema.optionalKey(Schema.Literals(RULE_IMPORTANCE)),
+  assignCategories: Schema.optionalKey(Schema.Array(Schema.String)),
+  copyToFolder: Schema.optionalKey(Schema.String),
+  addLabelIds: Schema.optionalKey(Schema.Array(Schema.String)),
+  removeLabelIds: Schema.optionalKey(Schema.Array(Schema.String)),
   stopProcessing: Schema.optionalKey(Schema.Boolean),
   archive: Schema.Boolean,
   markRead: Schema.Boolean,
@@ -101,8 +147,69 @@ export const FilterAction = Schema.Struct({
   category: Schema.optionalKey(Schema.Literals(CATEGORIES)),
 });
 export type FilterAction = typeof FilterAction.Type;
+/** System removals represented by the archive, read and importance switches. */
+export const GMAIL_REMOVABLE_SYSTEM_LABELS = ["INBOX", "UNREAD", "IMPORTANT"] as const;
+/** Omit undocumented INBOX/UNREAD/SPAM additions and reserved SENT/DRAFT additions. */
+export const GMAIL_READ_ONLY_ADD_LABELS = ["INBOX", "UNREAD", "SPAM", "SENT", "DRAFT"] as const;
+export function ruleImportance(action: FilterAction) {
+  if (action.markImportance) return action.markImportance;
+  return action.important === undefined ? undefined : action.important ? "high" : "normal";
+}
+export function outlookServerOnlyAction(action: FilterAction): boolean {
+  return !!(
+    action.stopProcessing ||
+    ruleImportance(action) ||
+    action.assignCategories?.length ||
+    action.copyToFolder
+  );
+}
+export function gmailRuleLabels(a: FilterAction) {
+  const removals = { INBOX: a.archive, UNREAD: a.markRead, IMPORTANT: a.important === false };
+  return {
+    addLabelIds: [
+      ...new Set([
+        ...(a.addLabelIds ?? []),
+        ...(a.star ? ["STARRED"] : []),
+        ...(a.trash ? ["TRASH"] : []),
+        ...(a.label ? [a.label] : []),
+        ...(a.labels ?? []),
+        ...(a.important === true ? ["IMPORTANT"] : []),
+        ...(a.category ? [a.category] : []),
+      ]),
+    ],
+    removeLabelIds: [
+      ...new Set([
+        ...(a.removeLabelIds ?? []),
+        ...GMAIL_REMOVABLE_SYSTEM_LABELS.filter((id) => removals[id]),
+      ]),
+    ],
+  };
+}
 export function filterDestinationsSupported(action: FilterAction, provider: Provider): boolean {
+  const labels = gmailRuleLabels(action);
+  if (
+    provider === "gmail" &&
+    (labels.addLabelIds.some(
+      (id) =>
+        labels.removeLabelIds.includes(id) ||
+        GMAIL_READ_ONLY_ADD_LABELS.some((label) => label === id),
+    ) ||
+      (labels.addLabelIds.includes("TRASH") &&
+        (labels.removeLabelIds.includes("INBOX") ||
+          labels.addLabelIds.some(
+            (id) =>
+              id.startsWith("Label_") ||
+              CATEGORIES.some((category) => category === id) ||
+              ["INBOX", "SPAM"].includes(id),
+          ))))
+  )
+    return false;
   return (
+    !(
+      provider !== "outlook" &&
+      (action.markImportance || action.assignCategories?.length || action.copyToFolder)
+    ) &&
+    !(provider !== "gmail" && (action.addLabelIds?.length || action.removeLabelIds?.length)) &&
     !(provider !== "outlook" && action.stopProcessing) &&
     !(
       action.trash &&
@@ -151,6 +258,13 @@ export function sameFilterRule(left: FilterInput, right: FilterInput): boolean {
     input.criteria.subject,
     input.criteria.query,
     input.criteria.hasAttachment,
+    input.criteria.excludeChats ?? false,
+    input.criteria.outlook ?? {},
+    input.criteria.outlookExceptions ?? {},
+    input.action.assignCategories ?? [],
+    input.action.copyToFolder ?? null,
+    input.action.addLabelIds ?? [],
+    input.action.removeLabelIds ?? [],
     input.criteria.hasWords ?? "",
     input.criteria.notWords ?? "",
     input.criteria.exceptFrom ?? "",
@@ -166,10 +280,12 @@ export function sameFilterRule(left: FilterInput, right: FilterInput): boolean {
     input.action.trash,
     input.action.label,
     input.action.labels ?? [],
-    input.action.important ?? null,
+    ruleImportance(input.action) ?? null,
     input.action.category ?? null,
   ];
-  return JSON.stringify(values(left)) === JSON.stringify(values(right));
+  const named = (input: FilterInput) =>
+    Object.fromEntries(values(input).map((value, index) => [index, value]));
+  return sameProviderWrite(named(left), named(right));
 }
 export const Vacation = Schema.Struct({
   enabled: Schema.Boolean,
@@ -272,7 +388,7 @@ export function snoozeTimes(now: number): { later: number; tomorrow: number; nex
 }
 
 export function requiresFilterDeleteConfirmation(input: FilterInput): boolean {
-  return input.action.trash && input.criteria.query.trim().length > 0;
+  return input.action.trash || input.action.addLabelIds?.includes("TRASH") === true;
 }
 
 /** Supported reminder phrases use local calendar dates, including across DST changes. */

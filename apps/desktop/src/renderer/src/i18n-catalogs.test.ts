@@ -126,3 +126,23 @@ it("the translation check lists raw missing, fuzzy and broken arguments in every
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+it("Chinese incoming action flag labels have a separate noun context", async () => {
+  const url = new URL("./locales/zh-CN/messages.po", import.meta.url);
+  const catalog = await formatter().parse(readFileSync(url, "utf8"), {
+    locale: "zh-CN",
+    sourceLocale: "en",
+    filename: fileURLToPath(url),
+  });
+  const contextual = Object.values(catalog).filter(
+    (message) => message.context === "incoming message action flag",
+  );
+  expect(
+    Object.fromEntries(contextual.map((message) => [message.message, message.translation])),
+  ).toEqual({
+    Forward: "转发标记",
+    Read: "阅读标记",
+    Reply: "回复标记",
+    "Reply all": "全部回复标记",
+  });
+});

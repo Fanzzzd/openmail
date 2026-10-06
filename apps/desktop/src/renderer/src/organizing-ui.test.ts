@@ -228,9 +228,7 @@ for (const deletion of [true, false]) {
         form?.dispatchEvent(new editor.window.Event("submit", { bubbles: true, cancelable: true }));
       });
       const alert = editor.element.querySelector('[role="alertdialog"]');
-      expect(
-        alert?.textContent.includes("This rule deletes messages matching a search query."),
-      ).toBe(deletion);
+      expect(alert?.textContent.includes("This rule deletes messages.")).toBe(deletion);
       expect(calls.apply).not.toHaveBeenCalled();
       const confirm = [
         ...editor.element.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
@@ -448,6 +446,163 @@ it("Discard recovery requires confirmation and does not prepare or restore a ser
     expect(calls.restore).not.toHaveBeenCalled();
   } finally {
     calls.backups = [];
+    dom.dispose();
+  }
+});
+
+for (const mode of ["save", "apply"] as const) {
+  it(`Outlook uncached predicates show no guessed count and ${mode === "save" ? "allow server saving" : "block existing-mail application"}`, async () => {
+    const initial: ServerFilter = {
+      ...EMPTY_FILTER,
+      id: "rule",
+      name: "Headers",
+      criteria: { ...EMPTY_FILTER.criteria, outlook: { headerContains: ["X-Custom"] } },
+      action: { ...EMPTY_FILTER.action, markRead: true },
+    };
+    const dom = render(
+      createElement(FilterEditor, {
+        account: { ...account, provider: "outlook" },
+        initial,
+        mode,
+        onClose: vi.fn(),
+      }),
+    );
+    try {
+      const submit = dom.element.querySelector<HTMLButtonElement>('button[type="submit"]');
+      expect(submit?.disabled).toBe(mode === "apply");
+      expect(dom.element.textContent).toContain("Preview unavailable");
+      expect(dom.element.textContent).not.toContain("Local preview: 0 messages");
+      if (mode === "save") {
+        calls.prepare.mockResolvedValue({
+          _tag: "Success",
+          value: {
+            token: "preview-token",
+            matches: [],
+            truncated: false,
+            unavailable: ["headerContains"],
+          },
+        });
+        await act(async () => {
+          dom.element
+            .querySelector("form")
+            ?.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(dom.element.querySelector('[role="alertdialog"]')?.textContent).toContain(
+          "Preview unavailable. The rule will apply to future mail on the server.",
+        );
+      }
+    } finally {
+      dom.dispose();
+    }
+  });
+}
+
+for (const provider of ["gmail", "outlook"] as const) {
+  for (const mode of ["save", "apply"] as const) {
+    it(`${provider} ${mode} warns before deleting mail without a search query`, async () => {
+      const initial: ServerFilter = {
+        ...EMPTY_FILTER,
+        id: "delete",
+        name: "Delete",
+        criteria: { ...EMPTY_FILTER.criteria, subject: "Budget" },
+        action: { ...EMPTY_FILTER.action, trash: true },
+      };
+      const dom = render(
+        createElement(FilterEditor, {
+          account: { ...account, provider },
+          initial,
+          mode,
+          onClose: vi.fn(),
+        }),
+      );
+      try {
+        await act(async () => {
+          dom.element
+            .querySelector("form")
+            ?.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+        });
+        expect(
+          dom.element.querySelector('[role="alertdialog"] [role="alert"]')?.textContent,
+        ).toContain("This rule deletes messages.");
+      } finally {
+        dom.dispose();
+      }
+    });
+  }
+}
+
+it("Gmail does not offer undocumented INBOX, UNREAD or SPAM additions", () => {
+  const dom = render(createElement(FilterEditor, { account, onClose: vi.fn() }));
+  try {
+    const additions = [...dom.element.querySelectorAll("fieldset")].find(
+      (field) => field.querySelector("legend")?.textContent === "Add labels",
+    );
+    expect(additions).toBeDefined();
+    for (const label of ["Inbox", "Unread", "Spam"])
+      expect(additions?.textContent).not.toContain(label);
+    expect(additions?.textContent).toContain("Updates");
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("Outlook category text follows external rule input changes", () => {
+  const props = { account: { ...account, provider: "outlook" as const }, onClose: vi.fn() };
+  const first: ServerFilter = {
+    ...EMPTY_FILTER,
+    id: "one",
+    action: { ...EMPTY_FILTER.action, assignCategories: ["Clients", "Budget"] },
+  };
+  const second: ServerFilter = {
+    ...EMPTY_FILTER,
+    id: "two",
+    action: { ...EMPTY_FILTER.action, assignCategories: ["Review"] },
+  };
+  const dom = render(createElement(FilterEditor, { ...props, initial: first }));
+  try {
+    expect(dom.element.querySelector("textarea")?.defaultValue).toBe("Clients\nBudget");
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n: setupI18n({ locale: "en", messages: {} }) },
+        createElement(FilterEditor, { ...props, initial: second }),
+      ),
+    );
+    expect(dom.element.querySelector("textarea")?.value).toBe("Review");
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("Outlook truncated previews describe the bounded sample without promising that narrowing reaches older mail", async () => {
+  const initial: ServerFilter = {
+    ...EMPTY_FILTER,
+    id: "rule",
+    name: "Rule",
+    criteria: { ...EMPTY_FILTER.criteria, hasWords: "budget" },
+    action: { ...EMPTY_FILTER.action, markRead: true },
+  };
+  const dom = render(
+    createElement(FilterEditor, {
+      account: { ...account, provider: "outlook" },
+      initial,
+      onClose: vi.fn(),
+    }),
+  );
+  try {
+    calls.prepare.mockResolvedValue({
+      _tag: "Success",
+      value: { token: "sample", matches: [], truncated: true },
+    });
+    await act(async () => {
+      dom.element
+        .querySelector("form")
+        ?.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    });
+    const alert = dom.element.querySelector('[role="alertdialog"]');
+    expect(alert?.textContent).toContain("The preview checked at most 201 server messages.");
+    expect(alert?.textContent).not.toContain("Narrow the conditions");
+  } finally {
     dom.dispose();
   }
 });

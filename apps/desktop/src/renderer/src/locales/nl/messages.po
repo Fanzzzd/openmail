@@ -316,6 +316,10 @@ msgstr "E-mailaccount toevoegen"
 msgid "Add label"
 msgstr "Label toevoegen"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "Labels toevoegen"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "Voeg tijdvak toe"
@@ -580,6 +584,10 @@ msgstr "Een bijlage is gewijzigd tijdens het lezen. Probeer deze opnieuw toe te 
 msgid "Anthropic API key"
 msgstr "Anthropic API-sleutel"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "Elke actiemarkering"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "App-specifiek wachtwoord"
@@ -667,6 +675,10 @@ msgstr "Vraag het elke keer"
 msgid "Ask me first"
 msgstr "Vraag het mij eerst"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "Categorieën toewijzen (één per regel)"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "Assistent"
@@ -734,6 +746,10 @@ msgstr "Automatische richting"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Automatische antwoorden"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
+msgstr "Automatisch antwoord"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -866,6 +882,10 @@ msgstr "Het antwoord op de uitnodiging is niet verstuurd"
 msgid "Calendar responses require a user action"
 msgstr "Agendareacties vereisen een gebruikersactie"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "Bellen"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "Kan dit account niet vinden."
@@ -966,6 +986,10 @@ msgstr "Categorienamen, gescheiden door komma’s"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Kopie"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "CC aan mij"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1203,6 +1227,10 @@ msgid "Compose"
 msgstr "Nieuw bericht"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "Vertrouwelijk"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "Bevestig"
 
@@ -1211,8 +1239,8 @@ msgid "Confirm and add event"
 msgstr "Bevestig en voeg evenement toe"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "Bevestig de verwijdering van een filter met een zoekopdracht"
+msgid "Confirm deletion for this rule"
+msgstr "Bevestig verwijderen door deze regel"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1346,6 +1374,10 @@ msgstr "Kopieer geselecteerd"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Kopieer stijl"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "Kopiëren naar map"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1788,6 +1820,11 @@ msgstr "Afwijzen"
 msgid "Display name"
 msgstr "Weergavenaam"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "Doorstuurverbod"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "Bevat niet de woorden"
@@ -2045,6 +2082,10 @@ msgstr "Behalve afzender bevat"
 msgid "Except subject contains"
 msgstr "Behalve onderwerp bevat"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "Chats uitsluiten"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "Sluit overeenkomsten uit"
@@ -2168,6 +2209,10 @@ msgstr "Mappad"
 msgid "Follow system"
 msgstr "Volg systeem"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "Opvolgen"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "Lettertype"
@@ -2182,6 +2227,10 @@ msgstr "Lettertypefamilie"
 msgid "Font size"
 msgstr "Lettergrootte"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "Ter informatie"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "Opmaak"
@@ -2190,8 +2239,7 @@ msgstr "Opmaak"
 msgid "Formatting"
 msgstr "Opmaak"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Forums"
@@ -2203,6 +2251,12 @@ msgstr "Forums"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "Stuur door"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "Doorstuurmarkering"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2354,6 +2408,10 @@ msgstr "Hebt u „Verstuurd“ gecontroleerd en bevestigd dat dit bericht niet i
 msgid "Headers"
 msgstr "Berichtkoppen"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "Headers bevatten"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "Help"
@@ -2374,6 +2432,10 @@ msgstr "Opmaakbalk verbergen"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "Geciteerde tekst verbergen"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "Hoog"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2433,9 +2495,14 @@ msgstr "Importeren vanaf iPhone of iPad"
 msgid "Importance action"
 msgstr "Belang actie"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "Belangrijkheidsvoorwaarde"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2463,6 +2530,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "In de lezer veranderen ⌘+ en ⌘− dit en ⌘0 gaat terug naar 100%."
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2822,6 +2890,10 @@ msgstr "Locatie gewijzigd:"
 msgid "Lost the connection to the background process."
 msgstr "De verbinding met het achtergrondproces is verbroken."
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "Laag"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS gebruikt de systeemspellingcontrole en herkent talen automatisch."
@@ -2952,6 +3024,10 @@ msgstr "Overeenkomend beeldgebied"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Bijpassende tijden houden die weekdag de hele dag actief. Overnachtingen gaan door tot de volgende dag. Niet-aangevinkte dagen blijven gedempt, behalve voor nachtperioden van de vorige dag. Herhaalde zomertijden gebruiken hetzelfde schema; overgeslagen tijden worden gepasseerd."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "Maximale grootte (KiB)"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "MCP-toegang volgt de AI-toestemming voor dit account. Uitgeschakelde accounts kunnen niet via MCP worden gelezen."
@@ -2987,6 +3063,10 @@ msgstr "Suggesties voor vermeldingen"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Bericht"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "Actiemarkering van bericht"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3039,6 +3119,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "Bewaarperiode voor berichttekst"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "Berichttekst bevat"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "De berichttekst kon niet worden vernieuwd. De opgeslagen versie wordt weergegeven."
@@ -3058,6 +3143,10 @@ msgstr "Berichten behouden hun andere labels."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "Minimale grootte (KiB)"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3100,9 +3189,17 @@ msgstr "Meer"
 msgid "More actions"
 msgstr "Meer acties"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "Meer voorwaarden"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Meer schijfruimte nodig"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "Meer uitzonderingen"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3111,6 +3208,10 @@ msgstr "Formeler"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "Meer opmaak"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "Meer labelacties"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3370,6 +3471,10 @@ msgstr "Nog geen accounts"
 msgid "No activity yet."
 msgstr "Nog geen activiteit."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "Niet kopiëren"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3429,6 +3534,10 @@ msgstr "Geen bovenliggende map"
 msgid "no printers are available."
 msgstr "er zijn geen printers beschikbaar."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "Geen antwoord nodig"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "Geen suggesties"
@@ -3464,6 +3573,11 @@ msgstr "Geen ongelezen mail in de Postvak IN"
 msgid "None"
 msgstr "Geen"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "Normaal"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "Niet toegestaan"
@@ -3475,6 +3589,10 @@ msgstr "Niet aangevraagd"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "Niet gesynchroniseerd"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "Niet aan mij"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3566,6 +3684,10 @@ msgstr "Alleen geselecteerde Apple-contacten zijn beschikbaar."
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Alleen de geselecteerde berichten in deze map Prullenmand of Ongewenste reclame worden permanent verwijderd. Dit kan niet ongedaan worden gemaakt."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "Alleen aan mij"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3828,6 +3950,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "Permanent verwijderde {count} berichten"
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "Privé"
 
@@ -3857,6 +3980,14 @@ msgstr "Voorbeeld {0}"
 msgid "Preview changes"
 msgstr "Wijzigingen bekijken"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "Voorbeeld niet beschikbaar"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "Voorbeeld niet beschikbaar. De regel geldt voor toekomstige e-mail op de server."
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3884,9 +4015,8 @@ msgstr "Vorige tijd:"
 msgid "Previous window"
 msgstr "Vorig venster"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "Primair"
@@ -3907,6 +4037,10 @@ msgstr "Bericht afdrukken…"
 msgid "Print…"
 msgstr "Afdrukken…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "Privé"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "Profiel"
@@ -3920,8 +4054,7 @@ msgstr "Profielen"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "Profielen groeperen accounts. Je kunt accounts toewijzen en profielen bewerken in Instellingen."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Reclame"
@@ -3951,6 +4084,12 @@ msgstr "Alleen de geselecteerde tekst citeren?"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Citeer de geselecteerde tekst"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "Leesmarkering"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4086,6 +4225,10 @@ msgstr "Verwijder sleutel"
 msgid "Remove label"
 msgstr "Label verwijderen"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "Labels verwijderen"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Koppeling verwijderen"
@@ -4166,12 +4309,24 @@ msgstr "Antwoorden en doorsturen"
 msgid "Reply"
 msgstr "Beantwoord"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "Antwoordmarkering"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "Beantwoord allen"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "Markering voor antwoord aan allen"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4270,6 +4425,10 @@ msgstr "Probeer opnieuw"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Herstel wijzigingen"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "Beoordelen"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4605,6 +4764,10 @@ msgstr "Naam afzender"
 msgid "Sending…"
 msgstr "Versturen…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "Gevoeligheid"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4876,8 +5039,7 @@ msgstr "Stel uit"
 msgid "Snoozed"
 msgstr "Uitgesteld"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Sociaal"
@@ -4887,6 +5049,10 @@ msgstr "Sociaal"
 msgid "Software updates"
 msgstr "Software-updates"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "Sommige voorwaarden vereisen metadata die niet in de cache staan. Sla de regel op voor toekomstige e-mail op de server."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Sommige opmaak kan in deze modus niet behouden blijven. Linkadressen worden bewaard. U kunt de moduswijziging ongedaan maken."
@@ -4894,6 +5060,10 @@ msgstr "Sommige opmaak kan in deze modus niet behouden blijven. Linkadressen wor
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Sommige ontvangers hebben dit bericht niet ontvangen."
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "Sommige regelvoorwaarden kunnen niet worden beoordeeld met e-mail uit de cache"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4911,6 +5081,7 @@ msgstr "Werkruimten"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Ongewenste reclame"
@@ -4959,6 +5130,7 @@ msgstr "Geef bericht een ster"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "Met ster"
@@ -5193,6 +5365,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "De organisator verschilt van de afzender van het bericht. Controleer de ontvanger van het antwoord voordat u antwoordt."
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "Het voorbeeld controleerde maximaal 201 berichten op de server. Overeenkomende berichten buiten deze steekproef kunnen ontbreken."
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Het voorbeeld is beperkt tot 200 berichten. Beperk de voorwaarden om andere berichten te verwerken."
 
@@ -5304,8 +5480,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "Hierdoor wordt het filter van de server verwijderd. Bestaande berichten blijven ongewijzigd."
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Deze regel verwijdert berichten die overeenkomen met een zoekopdracht. Bevestig alleen als het voorbeeld de berichten toont die je wilt verwijderen."
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "Deze regel kan alleen worden toegepast op toekomstige e-mail op de server"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Deze regel verwijdert berichten. Bevestig alleen als het voorbeeld overeenkomt met de berichten die u wilt verwijderen."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5335,6 +5516,14 @@ msgstr "Tijd"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "Aan"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "Aan mij"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "Aan mij of CC aan mij"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5389,6 +5578,7 @@ msgid "Translate"
 msgstr "Vertalen"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5487,6 +5677,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Onbekende tijdzone van de organisator; toont de oorspronkelijke tijd."
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "Ongelezen"
 
@@ -5514,6 +5705,10 @@ msgstr "Afmelden?"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "Wordt niet ondersteund op dit platform"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "Niet-ondersteunde serverregel"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5562,8 +5757,7 @@ msgstr "Zoeken naar of downloaden van de update is mislukt. Probeer het opnieuw.
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Voor updatecontroles zijn een ondertekende, geïnstalleerde macOS-app en een opgeslagen GitHub-toegangstoken vereist."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Updates"

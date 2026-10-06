@@ -1,10 +1,11 @@
 import { PlatformCrypto } from "./platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
-import type { MailOp, ThreadQuery, Provider } from "./domain.js";
+import type { Account, Label, MailOp, ThreadQuery, Provider } from "./domain.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
 import {
   requiresFilterDeleteConfirmation,
+  outlookServerOnlyAction,
   filterDestinationsSupported,
   sameFilterRule,
   SYSTEM_FOLDERS,
@@ -25,12 +26,25 @@ import {
   searchQueryError,
 } from "./search.js";
 import type { Providers, Store } from "./services.js";
+import {
+  evaluateOutlookRule,
+  outlookPreviewUnavailable,
+  validOutlookPredicates,
+} from "./outlook-rules.js";
 
 const validateFilter = (input: FilterInput, provider: Provider) => {
   if (requiresFilterDeleteConfirmation(input) && !input.queryDeletionConfirmed)
-    return new InvalidInput({ message: "Confirm deletion for a filter with a search query" });
+    return new InvalidInput({ message: "Confirm deletion for this rule" });
   const c = input.criteria;
   const a = input.action;
+  if (
+    (provider !== "outlook" && (c.outlook || c.outlookExceptions)) ||
+    (provider !== "gmail" && c.excludeChats) ||
+    !validOutlookPredicates(c.outlook) ||
+    !validOutlookPredicates(c.outlookExceptions) ||
+    (c.size !== undefined && c.outlook?.withinSizeRange)
+  )
+    return new InvalidInput({ message: "Unsupported server rule" });
   if (provider === "outlook" && c.exceptAttachment === false)
     return new InvalidInput({ message: "Unsupported server rule" });
   if (
@@ -45,7 +59,10 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     !c.exceptTo?.trim() &&
     !c.exceptSubject?.trim() &&
     c.exceptAttachment === undefined &&
-    c.size === undefined
+    c.size === undefined &&
+    !c.excludeChats &&
+    !Object.keys(c.outlook ?? {}).length &&
+    !Object.keys(c.outlookExceptions ?? {}).length
   )
     return new InvalidInput({ message: "Add at least one filter condition" });
   if (
@@ -57,7 +74,12 @@ const validateFilter = (input: FilterInput, provider: Provider) => {
     !a.labels?.length &&
     a.important === undefined &&
     !a.category &&
-    !a.stopProcessing
+    !a.stopProcessing &&
+    !a.markImportance &&
+    !a.assignCategories?.length &&
+    !a.copyToFolder &&
+    !a.addLabelIds?.length &&
+    !a.removeLabelIds?.length
   )
     return new InvalidInput({ message: "Choose at least one filter action" });
   if (c.size !== undefined && (!Number.isSafeInteger(c.size) || c.size < 0 || !c.sizeComparison))
@@ -79,6 +101,30 @@ const fingerprint = (input: FilterInput) =>
 
 const eligibleForFilter = (message: { readonly labels: readonly string[] }) =>
   !message.labels.some((label) => ["TRASH", "SPAM", "DRAFT", "SENT"].includes(label));
+
+function unknownRuleLabel(input: FilterInput, labels: readonly Pick<Label, "id">[]) {
+  return [
+    input.action.label,
+    input.action.copyToFolder,
+    ...(input.action.labels ?? []),
+    ...(input.action.addLabelIds ?? []).filter((id) => id.startsWith("Label_")),
+    ...(input.action.removeLabelIds ?? []).filter((id) => id.startsWith("Label_")),
+  ].find((id) => id && !labels.some((label) => label.id === id));
+}
+export function labelOps(ids: readonly string[], value: boolean): MailOp[] {
+  return ids.map((labelId): MailOp => {
+    switch (labelId) {
+      case "UNREAD":
+        return { kind: "read", value: !value };
+      case "STARRED":
+        return { kind: "star", value };
+      case "IMPORTANT":
+        return { kind: "important", value };
+      default:
+        return { kind: "label", labelId, value };
+    }
+  });
+}
 
 /** Organization operations are app/CLI user operations; the AI toolkit does not expose them. */
 export function makeOrganizationMailbox(
@@ -312,9 +358,70 @@ export function makeOrganizationMailbox(
     yield* store.transaction(store.replaceSendAs(account.id, aliases));
     yield* changed;
   });
+  const cacheSearchPage = Effect.fnUntraced(function* (account: Account, query: ThreadQuery) {
+    const invalid = searchQueryError(query);
+    if (invalid) return yield* invalid;
+    const pendingBefore = yield* store.listPendingOps;
+    const page = yield* providers.get(account.provider).search(account, query);
+    yield* store.transaction(
+      Effect.gen(function* () {
+        const pending = [...pendingBefore, ...(yield* store.listPendingOps)];
+        for (const message of page.messages)
+          if (
+            !pending.some(
+              (op) => op.accountId === account.id && op.providerId === message.providerId,
+            )
+          )
+            yield* store.upsertMessage(account.id, message);
+      }),
+    );
+    return {
+      ...page,
+      ids: yield* Effect.forEach(page.messages.filter(eligibleForFilter), (message) =>
+        store
+          .messageIdForProvider(account.id, message.providerId)
+          .pipe(Effect.map((id) => id ?? `${account.id}/${message.providerId}`)),
+      ),
+    };
+  });
+  const localOutlookPreview = Effect.fnUntraced(function* (
+    accountId: string,
+    email: string,
+    criteria: FilterInput["criteria"],
+    messageIds?: readonly string[],
+  ) {
+    const aliases = (yield* store.sendAs).filter((alias) => alias.accountId === accountId);
+    const identities = aliases.length
+      ? [email, ...aliases.map((alias) => alias.address)]
+      : undefined;
+    const unavailable = new Set(outlookPreviewUnavailable(criteria, identities !== undefined));
+    if (unavailable.size) return { matches: [], unavailable: [...unavailable], truncated: false };
+    const candidates = yield* store.listThreads({
+      mailbox: "all",
+      accountIds: [accountId],
+      flat: true,
+      ...(messageIds ? { messageIds } : {}),
+      limit: 10001,
+    });
+    const matches: FilterPreview["matches"][number][] = [];
+    for (const summary of candidates.filter(eligibleForFilter)) {
+      const evaluation = evaluateOutlookRule(
+        criteria,
+        yield* store.getMessage(summary.id),
+        identities,
+      );
+      for (const field of evaluation.unavailable) unavailable.add(field);
+      if (evaluation.matches && !evaluation.unavailable.length) matches.push(summary);
+    }
+    return {
+      matches: unavailable.size ? [] : matches.slice(0, 200),
+      ...(unavailable.size ? { unavailable: [...unavailable] } : {}),
+      truncated: candidates.length > 10000 || matches.length > 200,
+    };
+  });
   const previews = new Map<
     string,
-    { accountId: string; input: string; ids: string[]; expires: number }
+    { accountId: string; input: string; ids: string[]; expires: number; unavailable: boolean }
   >();
   const confirmPreview = Effect.fnUntraced(function* (
     accountId: string,
@@ -334,16 +441,12 @@ export function makeOrganizationMailbox(
     const invalid = validateFilter(input, account.provider);
     if (invalid) return yield* invalid;
     const labelsForRule = yield* store.listLabels([accountId]);
-    if (
-      [input.action.label, ...(input.action.labels ?? [])]
-        .filter(Boolean)
-        .some((id) => !labelsForRule.some((l) => l.id === id))
-    )
+    if (unknownRuleLabel(input, labelsForRule))
       return yield* new InvalidInput({ message: "Choose a label or folder from this account" });
     return preview;
   });
   const prepareFilter = Effect.fnUntraced(function* (accountId: string, input: FilterInput) {
-    const { account, adapter } = yield* owner(accountId);
+    const { account } = yield* owner(accountId);
     const invalid = validateFilter({ ...input, queryDeletionConfirmed: true }, account.provider);
     if (invalid) return yield* invalid;
     if (
@@ -352,47 +455,65 @@ export function makeOrganizationMailbox(
     )
       return yield* new InvalidInput({ message: "Unsupported server rule" });
     const labelsForRule = yield* store.listLabels([accountId]);
-    if (
-      [input.action.label, ...(input.action.labels ?? [])]
-        .filter(Boolean)
-        .some((id) => !labelsForRule.some((l) => l.id === id))
-    )
+    if (unknownRuleLabel(input, labelsForRule))
       return yield* new InvalidInput({ message: "Choose a label or folder from this account" });
-    const query = {
-      ...filterQuery(input.criteria),
-      accountIds: [accountId],
-      flat: true,
-      limit: 201,
-    };
-    const searchError = searchQueryError(query);
-    if (searchError) return yield* searchError;
-    const pending = yield* store.listPendingOps;
-    const page = yield* adapter.search(account, query);
-    yield* store.transaction(
-      Effect.gen(function* () {
-        const queued = [...pending, ...(yield* store.listPendingOps)];
-        for (const message of page.messages)
-          if (
-            !queued.some((op) => op.accountId === accountId && op.providerId === message.providerId)
-          )
-            yield* store.upsertMessage(accountId, message);
-      }),
-    );
-    const eligible = page.messages.filter(eligibleForFilter);
-    const matches = (yield* store.listThreads({
-      mailbox: "all",
-      accountIds: [accountId],
-      flat: true,
-      messageIds: yield* Effect.forEach(eligible.slice(0, 200), (m) =>
-        store
-          .messageIdForProvider(accountId, m.providerId)
-          .pipe(Effect.map((id) => id ?? `${accountId}/${m.providerId}`)),
-      ),
-      limit: 200,
-    })).filter(eligibleForFilter);
+    const preview = yield* Effect.gen(function* () {
+      switch (account.provider) {
+        case "outlook": {
+          // KQL cannot represent arbitrary literal containment; search only supplies candidates.
+          const unavailable = yield* localOutlookPreview(
+            accountId,
+            account.email,
+            input.criteria,
+            [],
+          );
+          if (unavailable.unavailable?.length) return unavailable;
+          const page = yield* cacheSearchPage(account, {
+            mailbox: "all",
+            searchScope: "all",
+            accountIds: [accountId],
+            flat: true,
+            limit: 201,
+          });
+          const result = yield* localOutlookPreview(
+            accountId,
+            account.email,
+            input.criteria,
+            page.ids,
+          );
+          return {
+            ...result,
+            truncated: result.truncated || page.truncated || page.messages.length > 200,
+          };
+        }
+        case "gmail": {
+          const page = yield* cacheSearchPage(account, {
+            ...filterQuery(input.criteria),
+            accountIds: [accountId],
+            flat: true,
+            limit: 201,
+          });
+          const matches = (yield* store.listThreads({
+            mailbox: "all",
+            accountIds: [accountId],
+            flat: true,
+            messageIds: page.ids.slice(0, 200),
+            limit: 200,
+          })).filter(eligibleForFilter);
+          return { matches, truncated: page.truncated || page.messages.length > 200 };
+        }
+        case "imap":
+          return yield* new InvalidInput({ message: "Unsupported server rule" });
+        default: {
+          const _exhaustive: never = account.provider;
+          return _exhaustive;
+        }
+      }
+    });
+    const { matches } = preview;
     const token = crypto.randomUUID();
     const now = yield* Clock.currentTimeMillis;
-    for (const [key, preview] of previews) if (preview.expires <= now) previews.delete(key);
+    for (const [key, cached] of previews) if (cached.expires <= now) previews.delete(key);
     if (previews.size >= 50) {
       const oldest = previews.keys().next().value;
       if (oldest) previews.delete(oldest);
@@ -401,12 +522,12 @@ export function makeOrganizationMailbox(
       accountId,
       input: fingerprint(input),
       ids: matches.map((m) => m.id),
+      unavailable: "unavailable" in preview && (preview.unavailable?.length ?? 0) > 0,
       expires: now + 5 * 60_000,
     });
     return {
       token,
-      matches,
-      truncated: page.truncated || page.messages.length > 200,
+      ...preview,
     } satisfies FilterPreview;
   });
   const clearRecoveredFilter = Effect.fnUntraced(function* (backup: FilterRestoration) {
@@ -521,16 +642,29 @@ export function makeOrganizationMailbox(
       ruleMutation(
         Effect.gen(function* () {
           const preview = yield* confirmPreview(accountId, input, token);
+          const { account } = yield* owner(accountId);
+          if (
+            preview.unavailable ||
+            (account.provider === "outlook" && outlookServerOnlyAction(input.action))
+          )
+            return yield* new InvalidInput({
+              message: "This rule can only be applied to future mail on the server",
+            });
           previews.delete(token);
           const ops: MailOp[] = [
             ...(input.action.markRead ? [{ kind: "read", value: true } satisfies MailOp] : []),
             ...(input.action.important !== undefined
               ? [{ kind: "important", value: input.action.important } satisfies MailOp]
               : []),
-            ...[
-              ...(input.action.labels ?? []),
-              ...(input.action.category ? [input.action.category] : []),
-            ].map((labelId): MailOp => ({ kind: "label", labelId, value: true })),
+            ...labelOps(
+              [
+                ...(input.action.labels ?? []),
+                ...(input.action.category ? [input.action.category] : []),
+                ...(input.action.addLabelIds ?? []),
+              ],
+              true,
+            ),
+            ...labelOps(input.action.removeLabelIds ?? [], false),
             ...(input.action.star ? [{ kind: "star", value: true } satisfies MailOp] : []),
             ...(input.action.archive ? [{ kind: "archive" } satisfies MailOp] : []),
             ...(input.action.trash ? [{ kind: "trash" } satisfies MailOp] : []),
@@ -668,37 +802,25 @@ export function makeOrganizationMailbox(
       }),
     previewFilter: (accountId, criteria) =>
       Effect.gen(function* () {
-        const { account, adapter } = yield* owner(accountId);
+        const { account } = yield* owner(accountId);
         if (account.provider === "outlook" && criteria.exceptAttachment === false)
           return yield* new InvalidInput({ message: "Unsupported server rule" });
+        if (account.provider === "outlook") {
+          const preview = yield* localOutlookPreview(accountId, account.email, criteria);
+          if (preview.unavailable?.length)
+            return yield* new InvalidInput({
+              message: "Some rule conditions cannot be evaluated from cached mail",
+            });
+          return preview.matches;
+        }
         const query = { ...filterQuery(criteria), accountIds: [accountId], flat: true, limit: 200 };
         if (account.provider !== "gmail")
           return (yield* store.listThreads(query)).filter(eligibleForFilter);
-        const searchError = searchQueryError(query);
-        if (searchError) return yield* searchError;
-        const pendingBefore = yield* store.listPendingOps;
-        const page = yield* adapter.search(account, query);
-        yield* store.transaction(
-          Effect.gen(function* () {
-            const pending = [...pendingBefore, ...(yield* store.listPendingOps)];
-            for (const message of page.messages) {
-              if (
-                !pending.some(
-                  (p) => p.accountId === accountId && p.providerId === message.providerId,
-                )
-              )
-                yield* store.upsertMessage(accountId, message);
-            }
-          }),
-        );
+        const page = yield* cacheSearchPage(account, query);
         return (yield* store.listThreads({
           mailbox: "all",
           flat: true,
-          messageIds: yield* Effect.forEach(page.messages.filter(eligibleForFilter), (m) =>
-            store
-              .messageIdForProvider(accountId, m.providerId)
-              .pipe(Effect.map((id) => id ?? `${accountId}/${m.providerId}`)),
-          ),
+          messageIds: page.ids,
           limit: 200,
         })).filter(eligibleForFilter);
       }),

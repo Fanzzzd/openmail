@@ -1,5 +1,5 @@
 import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Option } from "effect";
 import type { Account } from "./domain.js";
 import { AuthError, PermanentError, ProviderError, SettingsScopeMissing } from "./errors.js";
 import { graphTimestamp } from "./graph-time.js";
@@ -7,11 +7,19 @@ import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
   EMPTY_FILTER,
+  RULE_IMPORTANCE,
+  OutlookRulePredicates,
   filterDestinationsSupported,
   type FilterInput,
   type ServerFilter,
   type Vacation,
 } from "./organization.js";
+import {
+  outlookConditions,
+  outlookExceptions,
+  outlookActions,
+  validOutlookPredicates,
+} from "./outlook-rules.js";
 
 const Strings = Schema.optionalKey(Schema.Array(Schema.String));
 const Recipients = Schema.optionalKey(
@@ -24,45 +32,31 @@ const Recipients = Schema.optionalKey(
     }),
   ),
 );
+const Predicates = Schema.Struct({
+  ...OutlookRulePredicates.fields,
+  senderContains: Strings,
+  recipientContains: Strings,
+  subjectContains: Strings,
+  bodyOrSubjectContains: Strings,
+  hasAttachments: Schema.optionalKey(Schema.Boolean),
+  fromAddresses: Recipients,
+  sentToAddresses: Recipients,
+});
+const Actions = Schema.Struct({
+  markImportance: Schema.optionalKey(Schema.Literals(RULE_IMPORTANCE)),
+  stopProcessingRules: Schema.optionalKey(Schema.Boolean),
+  markAsRead: Schema.optionalKey(Schema.Boolean),
+  delete: Schema.optionalKey(Schema.Boolean),
+  moveToFolder: Schema.optionalKey(Schema.String),
+  copyToFolder: Schema.optionalKey(Schema.String),
+  assignCategories: Strings,
+});
 const ParsedGraphRule = Schema.Struct({
   id: Schema.String,
   displayName: Schema.String,
-  conditions: Schema.optionalKey(
-    Schema.Struct({
-      senderContains: Strings,
-      recipientContains: Strings,
-      subjectContains: Strings,
-      bodyContains: Strings,
-      bodyOrSubjectContains: Strings,
-      withinSizeRange: Schema.optionalKey(
-        Schema.Struct({
-          minimumSize: Schema.optionalKey(Schema.Number),
-          maximumSize: Schema.optionalKey(Schema.Number),
-        }),
-      ),
-      hasAttachments: Schema.optionalKey(Schema.Boolean),
-      fromAddresses: Recipients,
-      sentToAddresses: Recipients,
-    }),
-  ),
-  exceptions: Schema.optionalKey(
-    Schema.Struct({
-      bodyOrSubjectContains: Strings,
-      senderContains: Strings,
-      recipientContains: Strings,
-      subjectContains: Strings,
-      hasAttachments: Schema.optionalKey(Schema.Boolean),
-    }),
-  ),
-  actions: Schema.optionalKey(
-    Schema.Struct({
-      markImportance: Schema.optionalKey(Schema.Literals(["high", "normal", "low"])),
-      stopProcessingRules: Schema.optionalKey(Schema.Boolean),
-      markAsRead: Schema.optionalKey(Schema.Boolean),
-      delete: Schema.optionalKey(Schema.Boolean),
-      moveToFolder: Schema.optionalKey(Schema.String),
-    }),
-  ),
+  conditions: Schema.optionalKey(Predicates),
+  exceptions: Schema.optionalKey(Predicates),
+  actions: Schema.optionalKey(Actions),
 });
 const GraphRule = Schema.Struct({
   id: Schema.String,
@@ -81,8 +75,55 @@ const Replies = Schema.Struct({
   internalReplyMessage: Schema.optionalKey(Schema.String),
   externalReplyMessage: Schema.optionalKey(Schema.String),
 });
+const supportedPredicates = (raw: Readonly<Record<string, unknown>> | undefined) =>
+  Object.entries(raw ?? {}).every(
+    ([key, value]) =>
+      Object.hasOwn(Predicates.fields, key) &&
+      !["fromAddresses", "sentToAddresses"].includes(key) &&
+      (!Array.isArray(value) || value.length <= 1) &&
+      value !== false &&
+      (key !== "withinSizeRange" ||
+        (typeof value === "object" &&
+          value !== null &&
+          Object.keys(value).every((k) => ["minimumSize", "maximumSize"].includes(k)))),
+  );
+
+type RuleSizeRange = (typeof OutlookRulePredicates.Type)["withinSizeRange"];
+const bothBounds = (range: RuleSizeRange) =>
+  range?.minimumSize !== undefined && range.maximumSize !== undefined;
+function legacySize(
+  range: RuleSizeRange,
+): Pick<FilterInput["criteria"], "size" | "sizeComparison"> {
+  if (!range || bothBounds(range)) return {};
+  if (range.minimumSize !== undefined)
+    return { size: range.minimumSize * 1024, sizeComparison: "larger" };
+  if (range.maximumSize !== undefined)
+    return { size: range.maximumSize * 1024, sizeComparison: "smaller" };
+  return {};
+}
+const unsupportedOutlookInput = (input: FilterInput) =>
+  input.criteria.query ||
+  input.action.star ||
+  input.criteria.exceptAttachment === false ||
+  !validOutlookPredicates(input.criteria.outlook) ||
+  !validOutlookPredicates(input.criteria.outlookExceptions);
+const outlookPredicates = (
+  predicates: typeof Predicates.Type | undefined,
+  useLegacySize = false,
+) => {
+  const result = Schema.decodeUnknownSync(OutlookRulePredicates)(predicates ?? {});
+  if (useLegacySize && !bothBounds(result.withinSizeRange)) {
+    const { withinSizeRange: _range, ...rest } = result;
+    return rest;
+  }
+  return result;
+};
+
 function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): ServerFilter {
-  const parsed = Schema.decodeUnknownSync(ParsedGraphRule)(r);
+  const decoded = Schema.decodeUnknownOption(ParsedGraphRule)(r);
+  if (Option.isNone(decoded))
+    return { ...EMPTY_FILTER, id: r.id, name: r.displayName, editable: false };
+  const parsed = decoded.value;
   const c = parsed.conditions;
   const action = {
     ...EMPTY_FILTER.action,
@@ -90,8 +131,14 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
       ? { stopProcessing: parsed.actions.stopProcessingRules }
       : {}),
     markRead: parsed.actions?.markAsRead ?? false,
-    ...(parsed.actions?.markImportance
-      ? { important: parsed.actions.markImportance === "high" }
+    ...(parsed.actions?.markImportance === "low"
+      ? { markImportance: "low" as const }
+      : parsed.actions?.markImportance
+        ? { important: parsed.actions.markImportance === "high" }
+        : {}),
+    ...(parsed.actions?.copyToFolder ? { copyToFolder: parsed.actions.copyToFolder } : {}),
+    ...(parsed.actions?.assignCategories
+      ? { assignCategories: parsed.actions.assignCategories }
       : {}),
     trash: parsed.actions?.delete ?? false,
     archive: !!archiveId && parsed.actions?.moveToFolder === archiveId,
@@ -101,43 +148,13 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
   const editable =
     filterDestinationsSupported(action, "outlook") &&
     !r.isReadOnly &&
-    parsed.actions?.markImportance !== "low" &&
-    Object.keys(r.exceptions ?? {}).every((key) =>
-      [
-        "bodyOrSubjectContains",
-        "senderContains",
-        "recipientContains",
-        "subjectContains",
-        "hasAttachments",
-      ].includes(key),
-    ) &&
-    [
-      parsed.exceptions?.bodyOrSubjectContains,
-      parsed.exceptions?.senderContains,
-      parsed.exceptions?.recipientContains,
-      parsed.exceptions?.subjectContains,
-    ].every((values) => !values || values.length <= 1) &&
-    !(
-      c?.withinSizeRange?.minimumSize !== undefined && c.withinSizeRange.maximumSize !== undefined
-    ) &&
-    Object.keys(r.conditions ?? {}).every((key) =>
-      [
-        "senderContains",
-        "recipientContains",
-        "subjectContains",
-        "hasAttachments",
-        "bodyOrSubjectContains",
-        "withinSizeRange",
-      ].includes(key),
-    ) &&
-    Object.keys(r.actions ?? {}).every((key) =>
-      ["markAsRead", "delete", "moveToFolder", "markImportance", "stopProcessingRules"].includes(
-        key,
-      ),
-    ) &&
-    [c?.senderContains, c?.recipientContains, c?.subjectContains, c?.bodyOrSubjectContains].every(
-      (values) => !values || values.length <= 1,
-    );
+    supportedPredicates(r.conditions) &&
+    supportedPredicates(r.exceptions) &&
+    validOutlookPredicates(c) &&
+    validOutlookPredicates(parsed.exceptions) &&
+    Object.keys(r.actions ?? {}).every((key) => Object.hasOwn(Actions.fields, key));
+  const conditions = outlookPredicates(c, true);
+  const exceptions = outlookPredicates(parsed.exceptions);
   return {
     id: r.id,
     ...(editable ? {} : { editable: false }),
@@ -165,29 +182,20 @@ function fromRule(r: typeof GraphRule.Type, archiveId: string | null = null): Se
       ...(parsed.exceptions?.hasAttachments === true
         ? { exceptAttachment: parsed.exceptions.hasAttachments }
         : {}),
-      query: c?.bodyContains?.join(" ") ?? "",
+      query: "",
+      ...(Object.keys(conditions).length ? { outlook: conditions } : {}),
+      ...(Object.keys(exceptions).length ? { outlookExceptions: exceptions } : {}),
       hasAttachment: c?.hasAttachments ?? false,
+      ...legacySize(c?.withinSizeRange),
       ...(c?.bodyOrSubjectContains?.length ? { hasWords: c.bodyOrSubjectContains.join(" ") } : {}),
       ...(parsed.exceptions?.bodyOrSubjectContains?.length
         ? { notWords: parsed.exceptions.bodyOrSubjectContains.join(" ") }
         : {}),
-      ...(c?.withinSizeRange?.minimumSize !== undefined
-        ? { size: c.withinSizeRange.minimumSize * 1024, sizeComparison: "larger" }
-        : c?.withinSizeRange?.maximumSize !== undefined
-          ? { size: c.withinSizeRange.maximumSize * 1024, sizeComparison: "smaller" }
-          : {}),
     },
     action,
   };
 }
 
-const ruleExceptions = (criteria: FilterInput["criteria"]) => ({
-  ...(criteria.notWords ? { bodyOrSubjectContains: [criteria.notWords] } : {}),
-  ...(criteria.exceptFrom ? { senderContains: [criteria.exceptFrom] } : {}),
-  ...(criteria.exceptTo ? { recipientContains: [criteria.exceptTo] } : {}),
-  ...(criteria.exceptSubject ? { subjectContains: [criteria.exceptSubject] } : {}),
-  ...(criteria.exceptAttachment === true ? { hasAttachments: true } : {}),
-});
 export function makeOutlookSettings<
   E extends {
     readonly _tag: string;
@@ -242,7 +250,7 @@ export function makeOutlookSettings<
     );
   const saveRule = (account: Account, input: FilterInput, id: string) =>
     Effect.gen(function* () {
-      if (input.criteria.query || input.action.star || input.criteria.exceptAttachment === false)
+      if (unsupportedOutlookInput(input))
         return yield* new PermanentError({
           message: "Outlook rules do not support search queries or starring",
         });
@@ -269,37 +277,11 @@ export function makeOutlookSettings<
         `/me/mailFolders/inbox/messageRules/${encodeURIComponent(id)}`,
         {
           displayName: input.name,
-          conditions: {
-            ...(c.from ? { senderContains: [c.from] } : {}),
-            ...(c.to ? { recipientContains: [c.to] } : {}),
-            ...(c.subject ? { subjectContains: [c.subject] } : {}),
-            ...(c.hasAttachment ? { hasAttachments: true } : {}),
-            ...(c.hasWords ? { bodyOrSubjectContains: [c.hasWords] } : {}),
-            ...(c.size !== undefined
-              ? {
-                  withinSizeRange:
-                    c.sizeComparison === "smaller"
-                      ? { maximumSize: c.size / 1024 }
-                      : { minimumSize: c.size / 1024 },
-                }
-              : {}),
-          },
-          ...(Object.keys(ruleExceptions(c)).length || original.exceptions
-            ? { exceptions: ruleExceptions(c) }
+          conditions: outlookConditions(c),
+          ...(original.exceptions || Object.keys(outlookExceptions(c)).length
+            ? { exceptions: outlookExceptions(c) }
             : {}),
-          actions: {
-            ...(input.action.stopProcessing !== undefined
-              ? { stopProcessingRules: input.action.stopProcessing }
-              : {}),
-            ...(input.action.important !== undefined
-              ? { markImportance: input.action.important ? "high" : "normal" }
-              : {}),
-            ...(input.action.markRead ? { markAsRead: true } : {}),
-            ...(input.action.trash ? { delete: true } : {}),
-            ...(input.action.label || archive
-              ? { moveToFolder: input.action.label ?? archive?.id }
-              : {}),
-          },
+          actions: outlookActions(input.action, archive?.id ?? null),
         },
       );
       return yield* parseRule(
@@ -322,7 +304,7 @@ export function makeOutlookSettings<
     createFilter: (account: Account, input: FilterInput) =>
       Effect.gen(function* () {
         // Graph rules have no Gmail query parser or flag action. Reject rather than create a broader rule.
-        if (input.criteria.query || input.action.star || input.criteria.exceptAttachment === false)
+        if (unsupportedOutlookInput(input))
           return yield* new PermanentError({
             message: "Outlook rules do not support search queries or starring",
           });
@@ -343,35 +325,9 @@ export function makeOutlookSettings<
           displayName: input.name,
           sequence: Math.max(0, ...existing.value.map((r) => r.sequence)) + 1,
           isEnabled: true,
-          conditions: {
-            ...(c.from ? { senderContains: [c.from] } : {}),
-            ...(c.to ? { recipientContains: [c.to] } : {}),
-            ...(c.subject ? { subjectContains: [c.subject] } : {}),
-            ...(c.hasAttachment ? { hasAttachments: true } : {}),
-            ...(c.hasWords ? { bodyOrSubjectContains: [c.hasWords] } : {}),
-            ...(c.size !== undefined
-              ? {
-                  withinSizeRange:
-                    c.sizeComparison === "smaller"
-                      ? { maximumSize: c.size / 1024 }
-                      : { minimumSize: c.size / 1024 },
-                }
-              : {}),
-          },
-          ...(Object.keys(ruleExceptions(c)).length ? { exceptions: ruleExceptions(c) } : {}),
-          actions: {
-            ...(input.action.stopProcessing !== undefined
-              ? { stopProcessingRules: input.action.stopProcessing }
-              : {}),
-            ...(input.action.important !== undefined
-              ? { markImportance: input.action.important ? "high" : "normal" }
-              : {}),
-            ...(input.action.markRead ? { markAsRead: true } : {}),
-            ...(input.action.trash ? { delete: true } : {}),
-            ...(input.action.label || archive
-              ? { moveToFolder: input.action.label ?? archive?.id }
-              : {}),
-          },
+          conditions: outlookConditions(c),
+          ...(Object.keys(outlookExceptions(c)).length ? { exceptions: outlookExceptions(c) } : {}),
+          actions: outlookActions(input.action, archive?.id ?? null),
         };
         const raw = yield* reconcileProviderWrite(
           write(account.id, "POST", "/me/mailFolders/inbox/messageRules", definition),

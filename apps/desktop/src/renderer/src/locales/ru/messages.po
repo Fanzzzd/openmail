@@ -316,6 +316,10 @@ msgstr "Добавить учетную запись электронной по
 msgid "Add label"
 msgstr "Добавить ярлык"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "Добавить ярлыки"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "Добавить период"
@@ -580,6 +584,10 @@ msgstr "Вложение изменилось во время чтения. По
 msgid "Anthropic API key"
 msgstr "Ключ API Anthropic"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "Любой флаг действия"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "Пароль для конкретного приложения"
@@ -667,6 +675,10 @@ msgstr "Спрашивайте каждый раз"
 msgid "Ask me first"
 msgstr "Спроси меня сначала"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "Назначить категории (по одной в строке)"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "Помощник"
@@ -734,6 +746,10 @@ msgstr "Автоматическое направление"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Автоматические ответы"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
+msgstr "Автоматический ответ"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -866,6 +882,10 @@ msgstr "Ответ на приглашение не был отправлен"
 msgid "Calendar responses require a user action"
 msgstr "Ответы календаря требуют действий пользователя"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "Позвонить"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "Не могу найти этот учётная запись."
@@ -966,6 +986,10 @@ msgstr "Названия категорий, разделенные запяты
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Копия"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "Копия мне"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1203,6 +1227,10 @@ msgid "Compose"
 msgstr "Новое сообщение"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "Конфиденциально"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "Подтвердить"
 
@@ -1211,8 +1239,8 @@ msgid "Confirm and add event"
 msgstr "Подтвердите и добавьте событие"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "Подтвердить удаление фильтра с помощью поискового запроса"
+msgid "Confirm deletion for this rule"
+msgstr "Подтвердите удаление по этому правилу"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1346,6 +1374,10 @@ msgstr "Копировать выбранное"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Скопировать стиль"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "Копировать в папку"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1788,6 +1820,11 @@ msgstr "Отклонить"
 msgid "Display name"
 msgstr "Отображаемое имя"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "Не пересылать"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "Не содержит слов"
@@ -2045,6 +2082,10 @@ msgstr "Кроме случаев, когда отправитель содер�
 msgid "Except subject contains"
 msgstr "Кроме случаев, когда тема содержит"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "Исключить чаты"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "Исключить совпадения"
@@ -2168,6 +2209,10 @@ msgstr "Путь к папке"
 msgid "Follow system"
 msgstr "Как в системе"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "К исполнению"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "Шрифт"
@@ -2182,6 +2227,10 @@ msgstr "Семейство шрифтов"
 msgid "Font size"
 msgstr "Размер шрифта"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "К сведению"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "Формат"
@@ -2190,8 +2239,7 @@ msgstr "Формат"
 msgid "Formatting"
 msgstr "Форматирование"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Форумы"
@@ -2203,6 +2251,12 @@ msgstr "Форумы"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "Переслать"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "Метка пересылки"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2354,6 +2408,10 @@ msgstr "Вы проверили «Отправленные» и убедилис
 msgid "Headers"
 msgstr "Заголовки сообщения"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "Заголовки содержат"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "Справка"
@@ -2374,6 +2432,10 @@ msgstr "Скрыть панель формата"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "Скрыть цитируемый текст"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "Высокая"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2433,9 +2495,14 @@ msgstr "Импортировать с iPhone или iPad"
 msgid "Importance action"
 msgstr "Важное действие"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "Условие важности"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2463,6 +2530,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "В программе чтения ⌘+ и ⌘− измените его, и ⌘0 вернется к 100%."
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2822,6 +2890,10 @@ msgstr "Местоположение изменено:"
 msgid "Lost the connection to the background process."
 msgstr "Потеряно соединение с фоновым процессом."
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "Низкая"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS использует системную проверку орфографии и автоматически определяет языки."
@@ -2952,6 +3024,10 @@ msgstr "Соответствующая область изображения"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Соответствующее время сохраняет активность в течение всего дня в будние дни. Ночные периоды продолжаются и на следующий день. Неотмеченные дни остаются отключенными, за исключением ночных периодов предыдущего дня. При повторном переходе на летнее время используется один и тот же график; пропущенное время пропускается."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "Максимальный размер (КиБ)"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "Доступ MCP зависит от согласия на ИИ для этой учётной записи. Отключённые учётные записи недоступны через MCP."
@@ -2987,6 +3063,10 @@ msgstr "Подсказки упоминаний"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Сообщение"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "Флаг действия сообщения"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3039,6 +3119,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "Период кэширования текста сообщений"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "Текст сообщения содержит"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Не удалось обновить текст сообщения. Показана кешированная версия."
@@ -3058,6 +3143,10 @@ msgstr "Сообщения сохраняют свои другие ярлыки
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "Минимальный размер (КиБ)"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3100,9 +3189,17 @@ msgstr "Ещё"
 msgid "More actions"
 msgstr "Другие действия"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "Другие условия"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Требуется больше места на диске"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "Другие исключения"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3111,6 +3208,10 @@ msgstr "Официальнее"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "Другое форматирование"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "Другие действия с ярлыками"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3370,6 +3471,10 @@ msgstr "Учётная записьов пока нет"
 msgid "No activity yet."
 msgstr "Пока нет активности."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "Не копировать"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3429,6 +3534,10 @@ msgstr "Без родительской папки"
 msgid "no printers are available."
 msgstr "принтеров нет."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "Ответ не требуется"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "Нет подсказок"
@@ -3464,6 +3573,11 @@ msgstr "Нет непрочитанных писем во входящих"
 msgid "None"
 msgstr "Нет"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "Обычная"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "Не разрешено"
@@ -3475,6 +3589,10 @@ msgstr "Не запрошено"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "Не синхронизировано"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "Не мне"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3566,6 +3684,10 @@ msgstr "Доступны только выбранные контакты Apple.
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Навсегда удалятся только выбранные сообщения в этой Корзине или папке «Спам». Действие нельзя отменить."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "Только мне"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3828,6 +3950,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "Сообщения {count} удалены навсегда."
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "Личное"
 
@@ -3857,6 +3980,14 @@ msgstr "Предварительный просмотр {0}"
 msgid "Preview changes"
 msgstr "Предпросмотр изменений"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "Предпросмотр недоступен"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "Предпросмотр недоступен. Правило будет применяться к будущей почте на сервере."
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3884,9 +4015,8 @@ msgstr "Прежнее время:"
 msgid "Previous window"
 msgstr "Предыдущее окно"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "Несортированные"
@@ -3907,6 +4037,10 @@ msgstr "Распечатать сообщение…"
 msgid "Print…"
 msgstr "Распечатать…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "Частное"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "Профиль"
@@ -3920,8 +4054,7 @@ msgstr "Профили"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "Профили группируют учётные записи. В настройках можно назначать учётные записи и изменять профили."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Промоакции"
@@ -3951,6 +4084,12 @@ msgstr "Цитировать только выделенный текст?"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Цитировать выделенный текст"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "Метка прочтения"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4086,6 +4225,10 @@ msgstr "Удалить ключ"
 msgid "Remove label"
 msgstr "Удалить ярлык"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "Удалить ярлыки"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Удалить ссылку"
@@ -4166,12 +4309,24 @@ msgstr "Ответы и пересылки"
 msgid "Reply"
 msgstr "Ответить"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "Метка ответа"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "Ответить всем"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "Метка «Ответить всем»"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4270,6 +4425,10 @@ msgstr "Повторить"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Отменить изменения"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "Проверить"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4605,6 +4764,10 @@ msgstr "Имя отправителя"
 msgid "Sending…"
 msgstr "Отправка…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "Уровень конфиденциальности"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4876,8 +5039,7 @@ msgstr "Отложить"
 msgid "Snoozed"
 msgstr "Отложенные"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Соцсети"
@@ -4887,6 +5049,10 @@ msgstr "Соцсети"
 msgid "Software updates"
 msgstr "Обновления ПО"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "Для некоторых условий нужны метаданные, которых нет в кеше. Сохраните правило для будущей почты на сервере."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "В этом режиме невозможно сохранить некоторое форматирование. Адреса ссылок сохраняются. Вы можете отменить изменение режима."
@@ -4894,6 +5060,10 @@ msgstr "В этом режиме невозможно сохранить нек�
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Некоторые получатели не получили это сообщение."
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "Некоторые условия правила нельзя проверить по кешированной почте"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4911,6 +5081,7 @@ msgstr "Пространства"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Спам"
@@ -4959,6 +5130,7 @@ msgstr "Пометить сообщение звездой"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "Помеченные"
@@ -5193,6 +5365,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "Организатор отличается от отправителя сообщения. Прежде чем ответить, проверьте получателя ответа."
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "Для предпросмотра проверено не более 201 сообщения на сервере. Подходящие сообщения вне этой выборки могут отсутствовать."
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Предварительный просмотр ограничен 200 сообщениями. Сузьте условия для обработки других сообщений."
 
@@ -5304,8 +5480,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "Это удалит фильтр с сервера. Существующие сообщения не изменяются."
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Это правило удаляет сообщения, соответствующие поисковому запросу. Подтвердите, только если предварительный просмотр соответствует сообщениям, которые вы хотите удалить."
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "Это правило можно применить только к будущей почте на сервере"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Это правило удаляет сообщения. Подтверждайте только если предпросмотр соответствует сообщениям, которые вы хотите удалить."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5335,6 +5516,14 @@ msgstr "Время"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "Кому"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "Мне"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "Мне или копия мне"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5389,6 +5578,7 @@ msgid "Translate"
 msgstr "Перевести"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5487,6 +5677,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Неизвестный часовой пояс организатора; показывает исходное время."
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "Непрочитанные"
 
@@ -5514,6 +5705,10 @@ msgstr "Отписаться?"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "Не поддерживается на этой платформе"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "Неподдерживаемое правило сервера"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5562,8 +5757,7 @@ msgstr "Не удалось проверить или загрузить обн�
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Для проверки обновлений требуется подписанное и установленное приложение macOS и сохраненный токен доступа GitHub."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Оповещения"

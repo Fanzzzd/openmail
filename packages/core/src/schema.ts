@@ -67,3 +67,5 @@ export * from "./attachment-import.js";
 export * from "./optional-services.js";
 
 export * from "./sync-health.js";
+
+export { outlookPreviewUnavailable } from "./outlook-rules.js";

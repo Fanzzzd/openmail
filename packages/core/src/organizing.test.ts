@@ -598,7 +598,11 @@ for (const provider of ["gmail", "outlook"] as const) {
     () =>
       fixture(provider, (m, store, server, accountId) =>
         Effect.gen(function* () {
-          const deleting = { ...rule, action: { ...EMPTY_FILTER.action, trash: true } };
+          const deleting = {
+            ...rule,
+            queryDeletionConfirmed: true as const,
+            action: { ...EMPTY_FILTER.action, trash: true },
+          };
           const preview = yield* m.prepareFilter(accountId, deleting);
           server.messages.set("after-preview", incoming("after-preview"));
           yield* store.upsertMessage(accountId, incoming("after-preview"));

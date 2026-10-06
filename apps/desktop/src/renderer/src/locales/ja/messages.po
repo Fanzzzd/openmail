@@ -316,6 +316,10 @@ msgstr "メールアカウントを追加"
 msgid "Add label"
 msgstr "ラベルを追加する"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "ラベルを追加"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "時間帯を追加"
@@ -580,6 +584,10 @@ msgstr "読み込み中に添付ファイルが変更されました。もう一
 msgid "Anthropic API key"
 msgstr "AnthropicのAPIキー"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "任意の操作フラグ"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "アプリ固有のパスワード"
@@ -667,6 +675,10 @@ msgstr "毎回尋ねる"
 msgid "Ask me first"
 msgstr "まずは聞いてください"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "分類を割り当てる（1行に1つ）"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "アシスタント"
@@ -733,6 +745,10 @@ msgstr "自動方向"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
+msgstr "自動返信"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
 msgstr "自動返信"
 
 #: src/renderer/src/components/UpdateSettings.tsx
@@ -866,6 +882,10 @@ msgstr "招待への返信が送信されませんでした"
 msgid "Calendar responses require a user action"
 msgstr "カレンダーの応答にはユーザーのアクションが必要です"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "電話する"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "このアカウントが見つかりません。"
@@ -966,6 +986,10 @@ msgstr "カンマで区切られたカテゴリ名"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Cc"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "自分にCC"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1203,6 +1227,10 @@ msgid "Compose"
 msgstr "新規メッセージ"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "機密"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "確認"
 
@@ -1211,8 +1239,8 @@ msgid "Confirm and add event"
 msgstr "イベントの確認と追加"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "検索クエリを使用してフィルターの削除を確認する"
+msgid "Confirm deletion for this rule"
+msgstr "このルールによる削除を確認してください"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1346,6 +1374,10 @@ msgstr "選択したものをコピー"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "スタイルをコピー"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "フォルダーにコピー"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1788,6 +1820,11 @@ msgstr "却下"
 msgid "Display name"
 msgstr "表示名"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "転送しない"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "含まないキーワード"
@@ -2045,6 +2082,10 @@ msgstr "差出人に含まれる場合は除外"
 msgid "Except subject contains"
 msgstr "件名に含まれる場合は除外"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "チャットを除外"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "一致する項目を除外"
@@ -2168,6 +2209,10 @@ msgstr "フォルダパス"
 msgid "Follow system"
 msgstr "システム設定に従う"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "フォローアップ"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "フォント"
@@ -2182,6 +2227,10 @@ msgstr "フォントファミリー"
 msgid "Font size"
 msgstr "フォントサイズ"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "参考情報"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "書式"
@@ -2190,8 +2239,7 @@ msgstr "書式"
 msgid "Formatting"
 msgstr "書式設定"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "フォーラム"
@@ -2203,6 +2251,12 @@ msgstr "フォーラム"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "転送"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "転送フラグ"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2354,6 +2408,10 @@ msgstr "「送信済み」を確認し、このメッセージが送信されて
 msgid "Headers"
 msgstr "ヘッダ"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "ヘッダーに含む"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "ヘルプ"
@@ -2374,6 +2432,10 @@ msgstr "フォーマットバーを隠す"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "引用されたテキストを非表示にする"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "高"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2433,9 +2495,14 @@ msgstr "iPhoneまたはiPadから読み込む"
 msgid "Importance action"
 msgstr "重要なアクション"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "重要度の条件"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2463,6 +2530,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "リーダーで、⌘+ と ⌘- を押すと変更され、⌘0 は 100% に戻ります。"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2822,6 +2890,10 @@ msgstr "場所が変更されました:"
 msgid "Lost the connection to the background process."
 msgstr "バックグラウンドプロセスへの接続が失われました。"
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "低"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOSはシステムのスペルチェッカーを使用し、言語を自動検出します。"
@@ -2952,6 +3024,10 @@ msgstr "一致した画像領域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "時間を一致させると、その平日は一日中アクティブになります。夜間の期間は翌日まで続きます。チェックされていない日は、前日からの一晩の期間を除き、ミュートされたままになります。夏時間が繰り返される場合は、同じスケジュールが使用されます。スキップされた時間は引き継がれます。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "最大サイズ（KiB）"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "MCP のアクセスはこのアカウントの AI 利用への同意に従います。無効なアカウントは MCP から読み取れません。"
@@ -2987,6 +3063,10 @@ msgstr "メンション候補"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "メッセージ"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "メッセージの操作フラグ"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3039,6 +3119,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "メッセージ本文のキャッシュ期間"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "メッセージ本文に含む"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "メッセージ本文を更新できませんでした。キャッシュされた内容を表示しています。"
@@ -3058,6 +3143,10 @@ msgstr "メッセージには他のラベルが保持されます。"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "最小サイズ（KiB）"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3100,9 +3189,17 @@ msgstr "その他"
 msgid "More actions"
 msgstr "その他の操作"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "その他の条件"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "ディスクの空き容量が不足しています"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "その他の例外"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3111,6 +3208,10 @@ msgstr "より丁寧に"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "その他の書式"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "その他のラベル操作"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3370,6 +3471,10 @@ msgstr "まだアカウントがありません"
 msgid "No activity yet."
 msgstr "まだ活動はありません。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "コピーしない"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3429,6 +3534,10 @@ msgstr "親フォルダなし"
 msgid "no printers are available."
 msgstr "使用できるプリンターがありません。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "返信不要"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "候補がありません"
@@ -3464,6 +3573,11 @@ msgstr "受信箱に未開封メールがない"
 msgid "None"
 msgstr "なし"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "標準"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "未許可"
@@ -3475,6 +3589,10 @@ msgstr "要求されていません"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "同期されていません"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "自分宛てではない"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3566,6 +3684,10 @@ msgstr "選択したAppleの連絡先のみ利用できます。"
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "このゴミ箱または迷惑メールフォルダで選択したメッセージのみ完全に削除されます。この操作は取り消せません。"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "自分のみに送信"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3828,6 +3950,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "{count} メッセージが完全に削除されました"
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "個人"
 
@@ -3857,6 +3980,14 @@ msgstr "{0} をプレビューする"
 msgid "Preview changes"
 msgstr "変更をプレビュー"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "プレビューを利用できません"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "プレビューを利用できません。ルールはサーバー上の今後のメールに適用されます。"
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3884,9 +4015,8 @@ msgstr "変更前の日時："
 msgid "Previous window"
 msgstr "前のウィンドウ"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "メイン"
@@ -3907,6 +4037,10 @@ msgstr "メッセージを印刷…"
 msgid "Print…"
 msgstr "印刷…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "非公開"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "プロファイル"
@@ -3920,8 +4054,7 @@ msgstr "プロファイル"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "プロファイルでアカウントをグループ化します。「設定」でアカウントを割り当てたり、プロファイルを編集したりできます。"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "プロモーション"
@@ -3951,6 +4084,12 @@ msgstr "選択したテキストのみを引用しますか?"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "選択したテキストを引用する"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "閲覧フラグ"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4086,6 +4225,10 @@ msgstr "キーを削除"
 msgid "Remove label"
 msgstr "ラベルを削除する"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "ラベルを削除"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "リンクを削除する"
@@ -4166,12 +4309,24 @@ msgstr "返信と転送"
 msgid "Reply"
 msgstr "返信"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "返信フラグ"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "全員に返信"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "全員に返信フラグ"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4270,6 +4425,10 @@ msgstr "再試行"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "変更を元に戻す"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "確認"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4605,6 +4764,10 @@ msgstr "差出人の名前"
 msgid "Sending…"
 msgstr "送信中…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "秘密度"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4876,8 +5039,7 @@ msgstr "スヌーズ"
 msgid "Snoozed"
 msgstr "スヌーズ中"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "ソーシャル"
@@ -4887,6 +5049,10 @@ msgstr "ソーシャル"
 msgid "Software updates"
 msgstr "ソフトウェアアップデート"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "一部の条件にはキャッシュされていないメタデータが必要です。今後のメールに適用するルールをサーバーに保存できます。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "一部のフォーマットはこのモードでは維持できません。リンクアドレスは保持されます。モード変更を取り消すことができます。"
@@ -4894,6 +5060,10 @@ msgstr "一部のフォーマットはこのモードでは維持できません
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "一部の宛先にメッセージが届きませんでした。"
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "一部のルール条件はキャッシュされたメールから判定できません"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4911,6 +5081,7 @@ msgstr "スペース"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "迷惑メール"
@@ -4959,6 +5130,7 @@ msgstr "メッセージにスターを付ける"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "スター付き"
@@ -5193,6 +5365,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "主催者はメッセージ送信者とは異なります。返信する前に返信先を確認してください。"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "プレビューではサーバー上の最大201件のメッセージを確認しました。この範囲外の一致するメッセージは表示されない場合があります。"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "プレビューは 200 メッセージに制限されています。条件を絞り込んで他のメッセージを処理します。"
 
@@ -5304,8 +5480,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "これにより、サーバーからフィルターが削除されます。既存のメッセージは変更されません。"
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "このルールは、検索クエリに一致するメッセージを削除します。プレビューが削除するメッセージと一致する場合にのみ確認してください。"
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "このルールはサーバー上の今後のメールにのみ適用できます"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "このルールはメッセージを削除します。プレビューが削除するメッセージと一致する場合のみ確認してください。"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5335,6 +5516,14 @@ msgstr "時間"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "宛先"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "自分宛て"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "自分宛てまたはCC"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5389,6 +5578,7 @@ msgid "Translate"
 msgstr "翻訳"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5487,6 +5677,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "主催者のタイムゾーンが不明。元の時間を表示します。"
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "未開封"
 
@@ -5514,6 +5705,10 @@ msgstr "購読を解除しますか？"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "このプラットフォームではサポートされていません"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "未対応のサーバールール"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5562,8 +5757,7 @@ msgstr "アップデートの確認またはダウンロードに失敗しまし
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "更新チェックには、署名されインストールされた macOS アプリと保存された GitHub アクセス トークンが必要です。"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "新着"

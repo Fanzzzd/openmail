@@ -19,7 +19,10 @@ const NOT_FOUND = {
   signature: msg`Can't find this signature.`,
   attachment: msg`Can't find this attachment.`,
 } as const;
-const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Some rule conditions cannot be evaluated from cached mail": msg`Some rule conditions cannot be evaluated from cached mail`,
+  "This rule can only be applied to future mail on the server": msg`This rule can only be applied to future mail on the server`,
+  "Unsupported server rule": msg`Unsupported server rule`,
   "Remote writes are disabled in this read-only session": msg`Remote writes are disabled in this read-only session`,
   "Save an Anthropic API key in AI settings.": msg`Save an Anthropic API key in AI settings.`,
   "AI input could not be encoded.": msg`AI input could not be encoded.`,
@@ -61,7 +64,7 @@ const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Calendar response was not sent": msg`Calendar response was not sent`,
   "This invitation has a newer update": msg`This invitation has a newer update`,
   "Only inbox messages can be snoozed": msg`Only inbox messages can be snoozed`,
-  "Confirm deletion for a filter with a search query": msg`Confirm deletion for a filter with a search query`,
+  "Confirm deletion for this rule": msg`Confirm deletion for this rule`,
   "Choose a user label or folder": msg`Choose a user label or folder`,
   "A label or folder needs a valid name": msg`A label or folder needs a valid name`,
   "Choose a parent folder from this account": msg`Choose a parent folder from this account`,

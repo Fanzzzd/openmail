@@ -326,6 +326,10 @@ msgstr "添加邮箱"
 msgid "Add label"
 msgstr "加标签"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "添加标签"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "添加时段"
@@ -590,6 +594,10 @@ msgstr "附件在读取时发生变化，请重新添加。"
 msgid "Anthropic API key"
 msgstr "Anthropic API 密钥"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "任意操作标记"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "应用专用密码"
@@ -677,6 +685,10 @@ msgstr "每次询问"
 msgid "Ask me first"
 msgstr "先问我"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "分配分类（每行一个）"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "助手"
@@ -743,6 +755,10 @@ msgstr "自动方向"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
+msgstr "自动回复"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
 msgstr "自动回复"
 
 #: src/renderer/src/components/UpdateSettings.tsx
@@ -876,6 +892,10 @@ msgstr "日历响应未发送"
 msgid "Calendar responses require a user action"
 msgstr "日历响应须由用户操作"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "致电"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "找不到这个账户。"
@@ -976,6 +996,10 @@ msgstr "分类名称，用逗号分隔"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "抄送"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "抄送给我"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1213,6 +1237,10 @@ msgid "Compose"
 msgstr "撰写"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "机密"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "确认"
 
@@ -1221,8 +1249,8 @@ msgid "Confirm and add event"
 msgstr "确认添加事件"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "请确认带查询条件的删除过滤器"
+msgid "Confirm deletion for this rule"
+msgstr "请确认此规则的删除操作"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1356,6 +1384,10 @@ msgstr "复制选中附件"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "复制样式"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "复制到文件夹"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1798,6 +1830,11 @@ msgstr "忽略"
 msgid "Display name"
 msgstr "显示名称"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "不要转发"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "不包含词语"
@@ -2055,6 +2092,10 @@ msgstr "排除发件人包含"
 msgid "Except subject contains"
 msgstr "排除主题包含"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "排除聊天"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "排除匹配项"
@@ -2178,6 +2219,10 @@ msgstr "文件夹路径"
 msgid "Follow system"
 msgstr "跟随系统"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "跟进"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "字体"
@@ -2192,6 +2237,10 @@ msgstr "字体"
 msgid "Font size"
 msgstr "字号"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "供参考"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "格式"
@@ -2200,8 +2249,7 @@ msgstr "格式"
 msgid "Formatting"
 msgstr "格式"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "论坛"
@@ -2213,6 +2261,12 @@ msgstr "论坛"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "转发"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "转发标记"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2364,6 +2418,10 @@ msgstr "是否已检查“已发送”，并确认这封邮件尚未发送？"
 msgid "Headers"
 msgstr "邮件头"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "邮件头包含"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "帮助"
@@ -2384,6 +2442,10 @@ msgstr "隐藏格式栏"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "收起引用"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "高"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2443,9 +2505,14 @@ msgstr "从 iPhone 或 iPad 导入"
 msgid "Importance action"
 msgstr "重要性动作"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "重要性条件"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2473,6 +2540,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "在阅读区按 ⌘+ 和 ⌘− 调整，按 ⌘0 回到 100%。"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2832,6 +2900,10 @@ msgstr "地点变更："
 msgid "Lost the connection to the background process."
 msgstr "和后台的连接出错了。"
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "低"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS 使用系统拼写检查器，自动识别语言。"
@@ -2962,6 +3034,10 @@ msgstr "命中的图片区域"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "开始与结束相同表示当天全天活跃。跨午夜时段延续到次日；未勾选日期仅保留前一天延续的时段。夏令时重复时刻按同一日程，跳过的时刻不触发通知。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "最大大小（KiB）"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "MCP 访问跟随此账户的 AI 授权。MCP 无法读取停用账户。"
@@ -2997,6 +3073,10 @@ msgstr "提及建议"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "正文"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "消息操作标记"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3049,6 +3129,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "消息文本缓存窗口"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "消息文本包含"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "消息文本无法刷新。正在显示缓存版本。"
@@ -3068,6 +3153,10 @@ msgstr "邮件保留其他标签。"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "最小大小（KiB）"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3110,9 +3199,17 @@ msgstr "更多"
 msgid "More actions"
 msgstr "更多操作"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "更多条件"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "需要更多磁盘空间"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "更多例外"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3121,6 +3218,10 @@ msgstr "更正式"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "更多格式"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "更多标签动作"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3380,6 +3481,10 @@ msgstr "还没有账户"
 msgid "No activity yet."
 msgstr "还没有操作记录。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "不复制"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3439,6 +3544,10 @@ msgstr "无上级文件夹"
 msgid "no printers are available."
 msgstr "没有可用的打印机。"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "无需回复"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "没有建议"
@@ -3474,6 +3583,11 @@ msgstr "收件箱没有未读"
 msgid "None"
 msgstr "不选"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "普通"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "未授权"
@@ -3485,6 +3599,10 @@ msgstr "尚未请求"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "未同步"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "未发送给我"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3576,6 +3694,10 @@ msgstr "仅可使用已选的 Apple 联系人。"
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "仅永久删除所选邮件中属于当前垃圾箱或垃圾邮件文件夹的邮件。此操作无法撤销。"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "仅发送给我"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3838,6 +3960,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "已永久删除 {count} 封邮件"
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "个人"
 
@@ -3867,6 +3990,14 @@ msgstr "预览 {0}"
 msgid "Preview changes"
 msgstr "预览修改"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "预览不可用"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "预览不可用。规则将用于服务器上的新邮件。"
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3894,9 +4025,8 @@ msgstr "原时间："
 msgid "Previous window"
 msgstr "上一个窗口"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "主要"
@@ -3917,6 +4047,10 @@ msgstr "打印这封邮件…"
 msgid "Print…"
 msgstr "打印…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "私人"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "Profile"
@@ -3930,8 +4064,7 @@ msgstr "Profiles"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "Profile 用于账户分组。可在设置中分配账户、编辑 Profile。"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "推广"
@@ -3961,6 +4094,12 @@ msgstr "只引用选中文字？"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "引用选中文字"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "阅读标记"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4096,6 +4235,10 @@ msgstr "移除密钥"
 msgid "Remove label"
 msgstr "去掉标签"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "移除标签"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "移除链接"
@@ -4176,12 +4319,24 @@ msgstr "回复和转发"
 msgid "Reply"
 msgstr "回复"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "回复标记"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "回复全部"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "全部回复标记"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4280,6 +4435,10 @@ msgstr "重试"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "还原"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "审阅"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4615,6 +4774,10 @@ msgstr "发件人姓名"
 msgid "Sending…"
 msgstr "正在发送…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "敏感度"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4886,8 +5049,7 @@ msgstr "稍后提醒"
 msgid "Snoozed"
 msgstr "稍后提醒"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "社交"
@@ -4897,6 +5059,10 @@ msgstr "社交"
 msgid "Software updates"
 msgstr "软件更新"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "部分条件需要未缓存的元数据。可保存规则，用于服务器上的新邮件。"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以撤销。"
@@ -4904,6 +5070,10 @@ msgstr "此模式会丢失部分格式，链接地址会保留。切换后可以
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "部分收件人未收到此邮件。"
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "部分规则条件无法通过缓存邮件判断"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4921,6 +5091,7 @@ msgstr "空间"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "垃圾邮件"
@@ -4969,6 +5140,7 @@ msgstr "为此邮件加星标"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "星标"
@@ -5203,6 +5375,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "组织者与邮件发件人不同，回复前请核对收件地址。"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "预览最多检查了服务器上的 201 条消息。样本外可能还有命中消息。"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "预览最多显示 200 封。请缩小条件以处理其他邮件。"
 
@@ -5314,8 +5490,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "将从服务器移除此规则，已有邮件不变。"
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "此规则会删除匹配查询的邮件。请核对预览，确认这些正是你要删除的邮件。"
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "此规则只能用于服务器上的新邮件"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "此规则会删除消息。仅当预览符合要删除的消息时才确认。"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5345,6 +5526,14 @@ msgstr "时间"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "收件人"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "发送给我"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "发送或抄送给我"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5399,6 +5588,7 @@ msgid "Translate"
 msgstr "翻译"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5497,6 +5687,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "无法识别组织者时区，显示原始时间。"
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "未读"
 
@@ -5524,6 +5715,10 @@ msgstr "确认退订？"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "此平台不支持"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "不支持的服务器规则"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5572,8 +5767,7 @@ msgstr "检查或下载更新失败，请重试。"
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "检查更新需要已签名并安装的 macOS 应用和已保存的 GitHub 访问令牌。"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "动态"

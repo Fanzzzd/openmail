@@ -316,6 +316,10 @@ msgstr "Přidat e-mailový účet"
 msgid "Add label"
 msgstr "Přidat štítek"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "Přidat štítky"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "Přidat časový úsek"
@@ -580,6 +584,10 @@ msgstr "Příloha se během načítání změnila. Zkuste ji přidat znovu."
 msgid "Anthropic API key"
 msgstr "Klíč API Anthropic"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "Libovolný příznak akce"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "Heslo pro konkrétní aplikaci"
@@ -667,6 +675,10 @@ msgstr "Pokaždé se ptejte"
 msgid "Ask me first"
 msgstr "Nejdřív se mě zeptej"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "Přiřadit kategorie (jednu na řádek)"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "Asistent"
@@ -734,6 +746,10 @@ msgstr "Automatický směr"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Automatické odpovědi"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
+msgstr "Automatická odpověď"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -866,6 +882,10 @@ msgstr "Odpověď na pozvánku nebyla odeslána"
 msgid "Calendar responses require a user action"
 msgstr "Odpovědi kalendáře vyžadují akci uživatele"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "Zavolat"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "Tento účet nelze najít."
@@ -966,6 +986,10 @@ msgstr "Názvy kategorií oddělené čárkami"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Kopie"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "Kopie pro mě"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1203,6 +1227,10 @@ msgid "Compose"
 msgstr "Nová zpráva"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "Důvěrné"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "Potvrdit"
 
@@ -1211,8 +1239,8 @@ msgid "Confirm and add event"
 msgstr "Potvrďte a přidejte událost"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "Potvrďte smazání filtru pomocí vyhledávacího dotazu"
+msgid "Confirm deletion for this rule"
+msgstr "Potvrďte mazání tímto pravidlem"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1346,6 +1374,10 @@ msgstr "Kopírovat vybrané"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Kopírovat styl"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "Kopírovat do složky"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1788,6 +1820,11 @@ msgstr "Zamítnout"
 msgid "Display name"
 msgstr "Zobrazovaný název"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "Nepřeposílat"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "Neobsahuje slova"
@@ -2045,6 +2082,10 @@ msgstr "Kromě odesílatele obsahujícího"
 msgid "Except subject contains"
 msgstr "Kromě předmětu obsahujícího"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "Vyloučit chaty"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "Vyloučit shody"
@@ -2168,6 +2209,10 @@ msgstr "Cesta ke složce"
 msgid "Follow system"
 msgstr "Podle systému"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "Sledovat"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "Písmo"
@@ -2182,6 +2227,10 @@ msgstr "Rodina písem"
 msgid "Font size"
 msgstr "Velikost písma"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "Pro informaci"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "Formát"
@@ -2190,8 +2239,7 @@ msgstr "Formát"
 msgid "Formatting"
 msgstr "Formátování"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Fóra"
@@ -2203,6 +2251,12 @@ msgstr "Fóra"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "Přeposlat"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "Příznak přeposlání"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2354,6 +2408,10 @@ msgstr "Zkontrolovali jste složku „Odeslané“ a ověřili, že tato zpráva
 msgid "Headers"
 msgstr "Záhlaví zprávy"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "Hlavičky obsahují"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "Nápověda"
@@ -2374,6 +2432,10 @@ msgstr "Skrýt formátovací lištu"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "Skrýt citovaný text"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "Vysoká"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2433,9 +2495,14 @@ msgstr "Importovat z iPhonu nebo iPadu"
 msgid "Importance action"
 msgstr "Důležitá akce"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "Podmínka důležitosti"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2463,6 +2530,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "Ve čtečce to změníte ⌘+ a ⌘− a ⌘0 se vrátí na 100 %."
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2822,6 +2890,10 @@ msgstr "Místo změněno:"
 msgid "Lost the connection to the background process."
 msgstr "Ztratilo se připojení k procesu na pozadí."
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "Nízká"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "macOS používá systémovou kontrolu pravopisu a automaticky rozpoznává jazyky."
@@ -2952,6 +3024,10 @@ msgstr "Oblast shodného obrázku"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Shodné časy udrží tento pracovní den aktivní po celý den. Přenocování pokračuje do dalšího dne. Nezaškrtnuté dny zůstanou bez zvuku s výjimkou období přes noc z předchozího dne. Opakovaný letní čas používá stejný plán; přeskočené časy jsou překročeny."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "Maximální velikost (KiB)"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "Přístup MCP se řídí souhlasem s AI pro tento účet. Vypnuté účty nelze přes MCP číst."
@@ -2987,6 +3063,10 @@ msgstr "Návrhy zmínek"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Zpráva"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "Příznak akce zprávy"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3039,6 +3119,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "Doba uchování textu zpráv v mezipaměti"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "Text zprávy obsahuje"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Text zprávy se nepodařilo obnovit. Zobrazuje se verze z mezipaměti."
@@ -3058,6 +3143,10 @@ msgstr "Zprávy si ponechají své další štítky."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "Minimální velikost (KiB)"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3100,9 +3189,17 @@ msgstr "Více"
 msgid "More actions"
 msgstr "Další akce"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "Další podmínky"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Je potřeba více místa na disku"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "Další výjimky"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3111,6 +3208,10 @@ msgstr "Formálnější"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "Další formátování"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "Další akce se štítky"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3370,6 +3471,10 @@ msgstr "Zatím žádné účty"
 msgid "No activity yet."
 msgstr "Zatím žádná aktivita."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "Nekopírovat"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3429,6 +3534,10 @@ msgstr "Bez nadřazené složky"
 msgid "no printers are available."
 msgstr "nejsou k dispozici žádné tiskárny."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "Odpověď není nutná"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "Žádné návrhy"
@@ -3464,6 +3573,11 @@ msgstr "V doručené poště nejsou žádné nepřečtené zprávy"
 msgid "None"
 msgstr "Žádné"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "Normální"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "Nepovoleno"
@@ -3475,6 +3589,10 @@ msgstr "Není požadováno"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "Nesynchronizováno"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "Není pro mě"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3566,6 +3684,10 @@ msgstr "K dispozici jsou pouze vybrané kontakty Apple."
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Trvale se smažou jen vybrané zprávy v této složce koše nebo nevyžádané pošty. Tuto akci nelze vrátit zpět."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "Pouze pro mě"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3828,6 +3950,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "Trvale smazáno {count} zpráv"
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "Osobní"
 
@@ -3857,6 +3980,14 @@ msgstr "Náhled {0}"
 msgid "Preview changes"
 msgstr "Náhled změn"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "Náhled není dostupný"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "Náhled není dostupný. Pravidlo se použije na budoucí poštu na serveru."
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3884,9 +4015,8 @@ msgstr "Původní čas:"
 msgid "Previous window"
 msgstr "Předchozí okno"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "Primární"
@@ -3907,6 +4037,10 @@ msgstr "Vytisknout zprávu…"
 msgid "Print…"
 msgstr "Vytisknout…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "Soukromé"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "Profil"
@@ -3920,8 +4054,7 @@ msgstr "Profily"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "Profily seskupují účty. Účty můžete přiřadit a profily upravit v Nastavení."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Promo akce"
@@ -3951,6 +4084,12 @@ msgstr "Citovat pouze vybraný text?"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Citovat vybraný text"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "Příznak přečtení"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4086,6 +4225,10 @@ msgstr "Odebrat klíč"
 msgid "Remove label"
 msgstr "Odstraňte štítek"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "Odebrat štítky"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Odebrat odkaz"
@@ -4166,12 +4309,24 @@ msgstr "Odpovědi a přeposlání"
 msgid "Reply"
 msgstr "Odpovědět"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "Příznak odpovědi"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "Odpovědět všem"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "Příznak odpovědi všem"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4270,6 +4425,10 @@ msgstr "Zkusit znovu"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Vrátit změny"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "Zkontrolovat"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4605,6 +4764,10 @@ msgstr "Jméno odesílatele"
 msgid "Sending…"
 msgstr "Odesílání…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "Citlivost"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4876,8 +5039,7 @@ msgstr "Odložit"
 msgid "Snoozed"
 msgstr "Odložené"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Sociální sítě"
@@ -4887,6 +5049,10 @@ msgstr "Sociální sítě"
 msgid "Software updates"
 msgstr "Aktualizace softwaru"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "Některé podmínky vyžadují metadata, která nejsou v mezipaměti. Uložte pravidlo pro budoucí poštu na serveru."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Některé formátování nelze v tomto režimu zachovat. Adresy odkazů jsou zachovány. Změnu režimu můžete vrátit zpět."
@@ -4894,6 +5060,10 @@ msgstr "Některé formátování nelze v tomto režimu zachovat. Adresy odkazů 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Někteří příjemci tuto zprávu neobdrželi."
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "Některé podmínky pravidla nelze vyhodnotit z pošty v mezipaměti"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4911,6 +5081,7 @@ msgstr "Prostory"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Nevyžádaná pošta"
@@ -4959,6 +5130,7 @@ msgstr "Označit zprávu hvězdičkou"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "S hvězdičkou"
@@ -5193,6 +5365,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "Organizátor se liší od odesílatele zprávy. Než odpovíte, zkontrolujte příjemce odpovědi."
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "Náhled ověřil nejvýše 201 zpráv na serveru. Odpovídající zprávy mimo tento vzorek mohou chybět."
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "Náhled je omezen na 200 zpráv. Zužte podmínky pro zpracování dalších zpráv."
 
@@ -5304,8 +5480,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "Tím se filtr odebere ze serveru. Stávající zprávy jsou nezměněny."
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Toto pravidlo odstraní zprávy odpovídající vyhledávacímu dotazu. Potvrďte pouze v případě, že náhled odpovídá zprávám, které chcete smazat."
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "Toto pravidlo lze použít pouze na budoucí poštu na serveru"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Toto pravidlo maže zprávy. Potvrďte pouze tehdy, pokud náhled odpovídá zprávám, které chcete smazat."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5335,6 +5516,14 @@ msgstr "Čas"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "Komu"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "Pro mě"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "Pro mě nebo kopie pro mě"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5389,6 +5578,7 @@ msgid "Translate"
 msgstr "Přeložit"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5487,6 +5677,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Neznámé časové pásmo organizátora; ukazuje původní čas."
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "Nepřečtené"
 
@@ -5514,6 +5705,10 @@ msgstr "Odhlásit odběr?"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "Na této platformě není podporováno"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "Nepodporované pravidlo serveru"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5562,8 +5757,7 @@ msgstr "Kontrola nebo stažení aktualizace se nezdařilo. Zkuste to znovu."
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Kontroly aktualizací vyžadují podepsanou nainstalovanou aplikaci pro macOS a uložený přístupový token GitHub."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Aktualizace"

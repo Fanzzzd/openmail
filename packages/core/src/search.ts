@@ -626,24 +626,16 @@ export function matchesSearchCondition(
 }
 
 export function filterQuery(criteria: FilterCriteria): ThreadQuery {
+  const terms = [
+    criteria.excludeChats ? "-is:chat" : "",
+    criteria.query.trim(),
+    criteria.hasWords?.trim(),
+    criteria.notWords?.trim() ? `-(${criteria.notWords})` : "",
+  ].filter(Boolean);
   return {
     mailbox: "all",
     searchScope: "all",
-    ...([
-      criteria.query.trim(),
-      criteria.hasWords?.trim(),
-      criteria.notWords?.trim() ? `-(${criteria.notWords})` : "",
-    ].filter(Boolean).length
-      ? {
-          search: [
-            criteria.query.trim(),
-            criteria.hasWords?.trim(),
-            criteria.notWords?.trim() ? `-(${criteria.notWords})` : "",
-          ]
-            .filter(Boolean)
-            .join(" "),
-        }
-      : {}),
+    ...(terms.length ? { search: terms.join(" ") } : {}),
     criteria: {
       excluded: [
         ...(criteria.exceptFrom ? [{ from: criteria.exceptFrom }] : []),

@@ -1,4 +1,5 @@
 import { accountName } from "../format";
+import { categoryNames } from "../organization-labels";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CATEGORIES, type LabelChange } from "@openmail/core/schema";
@@ -18,6 +19,7 @@ import { formInput, formButton } from "./ui/form-styles";
 export function OrganizationSettings({ accounts }: { accounts: readonly Account[] }) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
+  const names = categoryNames(t);
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [editing, setEditing] = useState<Label | "new" | null>(null);
   const [deleting, setDeleting] = useState<Label | null>(null);
@@ -78,13 +80,6 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
             {CATEGORIES.map((category) => {
               const selected = organization.find((o) => o.accountId === accountId)
                 ?.selectedCategories ?? [...CATEGORIES];
-              const names = {
-                CATEGORY_PERSONAL: t`Primary`,
-                CATEGORY_SOCIAL: t`Social`,
-                CATEGORY_PROMOTIONS: t`Promotions`,
-                CATEGORY_UPDATES: t`Updates`,
-                CATEGORY_FORUMS: t`Forums`,
-              };
               return (
                 <label key={category} className="flex items-center gap-2">
                   <Checkbox

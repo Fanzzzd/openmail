@@ -2159,7 +2159,7 @@ for (const source of ["TRASH", "SPAM"] as const) {
 }
 
 it.effect(
-  "Gmail category and important filters are editable while unsupported system actions remain protected",
+  "Gmail documented category and importance actions are editable while undocumented additions stay protected",
   () =>
     Effect.gen(function* () {
       const rules = ["CATEGORY_UPDATES", "SENT", "INBOX", "IMPORTANT"].map((label, index) => ({

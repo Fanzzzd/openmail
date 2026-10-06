@@ -1,9 +1,18 @@
 import { ServiceHint } from "./OptionalServices";
 import { accountName } from "../format";
+import { categoryNames, importanceNames } from "../organization-labels";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   CATEGORIES,
+  GMAIL_REMOVABLE_SYSTEM_LABELS,
+  ruleImportance,
+  outlookServerOnlyAction,
+  MESSAGE_ACTION_FLAGS,
+  RULE_IMPORTANCE,
+  RULE_SENSITIVITY,
+  outlookPreviewUnavailable,
+  type OutlookRulePredicates,
   EMPTY_FILTER,
   requiresFilterDeleteConfirmation,
   EMPTY_VACATION,
@@ -344,10 +353,173 @@ function FilterDeletionWarning() {
   return (
     <p role="alert">
       <Trans>
-        This rule deletes messages matching a search query. Confirm only if the preview matches the
-        messages you intend to delete.
+        This rule deletes messages. Confirm only if the preview matches the messages you intend to
+        delete.
       </Trans>
     </p>
+  );
+}
+
+function OutlookPredicatesEditor({
+  value,
+  onChange,
+}: {
+  value: OutlookRulePredicates;
+  onChange: (value: OutlookRulePredicates) => void;
+}) {
+  const { t } = useLingui();
+  const patch = (update: Partial<OutlookRulePredicates>) => {
+    const next = { ...value, ...update };
+    const entries: [string, unknown][] = Object.entries(next);
+    onChange(Object.fromEntries(entries.filter(([, v]) => v !== undefined)));
+  };
+  const importance = importanceNames(t);
+  const sensitivity = {
+    normal: t`Normal`,
+    personal: t`Personal`,
+    private: t`Private`,
+    confidential: t`Confidential`,
+  };
+  const flags = {
+    any: t`Any action flag`,
+    call: t`Call`,
+    doNotForward: t({
+      message: "Do not forward",
+      comment: "Incoming message action flag value; this option does not execute forwarding.",
+    }),
+    followUp: t`Follow up`,
+    fyi: t`For your information`,
+    forward: t({
+      message: "Forward",
+      context: "incoming message action flag",
+      comment: "Flag value on the incoming message, not an action to execute.",
+    }),
+    noResponseNecessary: t`No response needed`,
+    read: t({
+      message: "Read",
+      context: "incoming message action flag",
+      comment: "Flag value on the incoming message, not an action to execute.",
+    }),
+    reply: t({
+      message: "Reply",
+      context: "incoming message action flag",
+      comment: "Flag value on the incoming message, not an action to execute.",
+    }),
+    replyToAll: t({
+      message: "Reply all",
+      context: "incoming message action flag",
+      comment: "Flag value on the incoming message, not an action to execute.",
+    }),
+    review: t`Review`,
+  };
+  const selects = [
+    {
+      key: "importance",
+      label: t`Importance condition`,
+      value: value.importance ?? "",
+      options: RULE_IMPORTANCE.map((entry) => ({ value: entry, label: importance[entry] })),
+      onChange: (next: string) =>
+        patch({ importance: RULE_IMPORTANCE.find((entry) => entry === next) }),
+    },
+    {
+      key: "sensitivity",
+      label: t`Sensitivity`,
+      value: value.sensitivity ?? "",
+      options: RULE_SENSITIVITY.map((entry) => ({ value: entry, label: sensitivity[entry] })),
+      onChange: (next: string) =>
+        patch({ sensitivity: RULE_SENSITIVITY.find((entry) => entry === next) }),
+    },
+    {
+      key: "messageActionFlag",
+      label: t`Message action flag`,
+      value: value.messageActionFlag ?? "",
+      options: MESSAGE_ACTION_FLAGS.map((entry) => ({ value: entry, label: flags[entry] })),
+      onChange: (next: string) =>
+        patch({ messageActionFlag: MESSAGE_ACTION_FLAGS.find((entry) => entry === next) }),
+    },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {(
+        [
+          {
+            key: "bodyContains",
+            label: t({
+              message: "Message text contains",
+              comment: "Rule predicate matching the message text, excluding the subject.",
+            }),
+          },
+          { key: "headerContains", label: t`Headers contain` },
+        ] as const
+      ).map(({ key, label }) => (
+        <label key={key} className="block space-y-1">
+          <span>{label}</span>
+          <input
+            className={formInput}
+            value={value[key]?.[0] ?? ""}
+            onChange={(e) => patch({ [key]: e.target.value ? [e.target.value] : undefined })}
+          />
+        </label>
+      ))}
+      {selects.map((select) => (
+        <label
+          key={select.key}
+          className={
+            select.key === "messageActionFlag" ? "col-span-2 block space-y-1" : "block space-y-1"
+          }
+        >
+          <span>{select.label}</span>
+          <Select
+            aria-label={select.label}
+            value={select.value}
+            options={[{ value: "", label: t`None` }, ...select.options]}
+            onValueChange={select.onChange}
+          />
+        </label>
+      ))}
+      {(
+        [
+          { key: "minimumSize", label: t`Minimum size (KiB)` },
+          { key: "maximumSize", label: t`Maximum size (KiB)` },
+        ] as const
+      ).map(({ key, label }) => (
+        <label key={key} className="block space-y-1">
+          <span>{label}</span>
+          <input
+            className={formInput}
+            type="number"
+            min="0"
+            step="1"
+            max="2147483647"
+            value={value.withinSizeRange?.[key] ?? ""}
+            onChange={(e) => {
+              const range = { ...value.withinSizeRange };
+              if (e.target.value) range[key] = Number(e.target.value);
+              else delete range[key];
+              patch({ withinSizeRange: Object.keys(range).length ? range : undefined });
+            }}
+          />
+        </label>
+      ))}
+      {(
+        [
+          { key: "isAutomaticReply", label: t`Automatic reply` },
+          { key: "sentToMe", label: t`To me` },
+          { key: "sentOnlyToMe", label: t`Only to me` },
+          { key: "sentCcMe", label: t`CC me` },
+          { key: "notSentToMe", label: t`Not to me` },
+          { key: "sentToOrCcMe", label: t`To or CC me` },
+        ] as const
+      ).map(({ key, label }) => (
+        <label key={key} className="flex items-center gap-2">
+          <Checkbox
+            checked={value[key] ?? false}
+            onCheckedChange={(checked) => patch({ [key]: checked ? true : undefined })}
+          />
+          <span>{label}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -365,6 +537,8 @@ export function FilterEditor({
   onClose: () => void;
 }) {
   const { t, i18n } = useLingui();
+  const categories = categoryNames(t);
+  const importance = importanceNames(t);
   const [input, setInput] = useState<FilterInput>(() => {
     const value = initial ?? { ...EMPTY_FILTER, criteria: { ...EMPTY_FILTER.criteria, from } };
     return { name: value.name, criteria: value.criteria, action: value.action };
@@ -373,6 +547,22 @@ export function FilterEditor({
     input: FilterInput;
     preview: FilterPreview;
   } | null>(null);
+  const [categoriesText, setCategoriesText] = useState(
+    input.action.assignCategories?.join("\n") ?? "",
+  );
+  const [inputSource, setInputSource] = useState(initial);
+  const [categoriesSource, setCategoriesSource] = useState(input.action.assignCategories);
+  if (inputSource !== initial) {
+    setInputSource(initial);
+    if (initial)
+      setInput({ name: initial.name, criteria: initial.criteria, action: initial.action });
+  }
+  if (categoriesSource !== input.action.assignCategories) {
+    setCategoriesSource(input.action.assignCategories);
+    const edited = categoriesText.split("\n").filter((value) => value.trim());
+    if (JSON.stringify(edited) !== JSON.stringify(input.action.assignCategories ?? []))
+      setCategoriesText(input.action.assignCategories?.join("\n") ?? "");
+  }
   const [previewCriteria, setPreviewCriteria] = useState(input.criteria);
   useEffect(() => {
     const timer = setTimeout(() => setPreviewCriteria(input.criteria), 350);
@@ -392,8 +582,12 @@ export function FilterEditor({
       { reactivityKeys: [Keys.threads] },
     ),
   );
-  const matches = AsyncResult.getOrElse(preview, () => []);
+  const previewUnavailable =
+    account.provider === "outlook" &&
+    (outlookPreviewUnavailable(input.criteria).length > 0 || preview._tag === "Failure");
+  const matches = previewUnavailable ? [] : AsyncResult.getOrElse(preview, () => []);
   const count = matches.length;
+  const serverOnlyAction = account.provider === "outlook" && outlookServerOnlyAction(input.action);
   const previewBusy =
     previewCriteria !== input.criteria || preview._tag === "Initial" || preview.waiting;
   const submit = async (value: FilterInput, token: string) => {
@@ -425,6 +619,8 @@ export function FilterEditor({
       const next = { ...old.action, ...patch };
       if (next.important === undefined) delete next.important;
       if (next.category === undefined) delete next.category;
+      if (next.markImportance === undefined) delete next.markImportance;
+      if (next.copyToFolder === undefined) delete next.copyToFolder;
       return { ...old, action: next };
     });
   return (
@@ -524,6 +720,7 @@ export function FilterEditor({
               min="0"
               step={account.provider === "outlook" ? "1024" : "1"}
               className={formInput}
+              disabled={!!input.criteria.outlook?.withinSizeRange}
               value={input.criteria.size ?? ""}
               onChange={(e) =>
                 criteria({
@@ -580,6 +777,40 @@ export function FilterEditor({
             />
           </div>
         )}
+        {account.provider === "outlook" && (
+          <>
+            <details className="space-y-3">
+              <summary>{t`More conditions`}</summary>
+              <OutlookPredicatesEditor
+                value={input.criteria.outlook ?? {}}
+                onChange={(outlook) =>
+                  criteria({
+                    outlook,
+                    ...(outlook.withinSizeRange
+                      ? { size: undefined, sizeComparison: undefined }
+                      : {}),
+                  })
+                }
+              />
+            </details>
+            <details className="space-y-3">
+              <summary>{t`More exceptions`}</summary>
+              <OutlookPredicatesEditor
+                value={input.criteria.outlookExceptions ?? {}}
+                onChange={(outlookExceptions) => criteria({ outlookExceptions })}
+              />
+            </details>
+          </>
+        )}
+        {account.provider === "gmail" && (
+          <label className="flex items-center gap-2">
+            <Checkbox
+              checked={input.criteria.excludeChats ?? false}
+              onCheckedChange={(excludeChats) => criteria({ excludeChats })}
+            />
+            <span>{t`Exclude chats`}</span>
+          </label>
+        )}
         <fieldset className="space-y-2 rounded-md border border-black/10 p-3 dark:border-white/10">
           <legend>
             <Trans>Actions</Trans>
@@ -619,24 +850,70 @@ export function FilterEditor({
               <span>{t`Star`}</span>
             </label>
           )}
-          <Select
-            aria-label={t`Importance action`}
-            value={
-              input.action.important === undefined
-                ? "unchanged"
-                : input.action.important
-                  ? "important"
-                  : "normal"
-            }
-            options={[
-              { value: "unchanged", label: t`Keep importance` },
-              { value: "important", label: t`Mark as important` },
-              { value: "normal", label: t`Mark as not important` },
-            ]}
-            onValueChange={(value) =>
-              action({ important: value === "unchanged" ? undefined : value === "important" })
-            }
-          />
+          {account.provider === "gmail" && (
+            <Select
+              aria-label={t`Importance action`}
+              value={
+                input.action.important === undefined
+                  ? "unchanged"
+                  : input.action.important
+                    ? "important"
+                    : "normal"
+              }
+              options={[
+                { value: "unchanged", label: t`Keep importance` },
+                { value: "important", label: t`Mark as important` },
+                { value: "normal", label: t`Mark as not important` },
+              ]}
+              onValueChange={(value) =>
+                action({ important: value === "unchanged" ? undefined : value === "important" })
+              }
+            />
+          )}
+
+          {account.provider === "outlook" && (
+            <>
+              <Select
+                aria-label={t`Importance action`}
+                value={ruleImportance(input.action) ?? ""}
+                options={[
+                  { value: "", label: t`Keep importance` },
+                  ...RULE_IMPORTANCE.map((entry) => ({ value: entry, label: importance[entry] })),
+                ]}
+                onValueChange={(v) =>
+                  action({
+                    important: undefined,
+                    markImportance: RULE_IMPORTANCE.find((entry) => entry === v),
+                  })
+                }
+              />
+              <label className="block space-y-1">
+                <span>{t`Assign categories (one per line)`}</span>
+                <textarea
+                  rows={2}
+                  className={formInput}
+                  value={categoriesText}
+                  onChange={(e) => {
+                    setCategoriesText(e.target.value);
+                    action({
+                      assignCategories: e.target.value.split("\n").filter((value) => value.trim()),
+                    });
+                  }}
+                />
+              </label>
+              <Select
+                aria-label={t`Copy to folder`}
+                value={input.action.copyToFolder ?? ""}
+                options={[
+                  { value: "", label: t`No copy` },
+                  ...labels.map((l) => ({ value: l.id, label: l.name })),
+                ]}
+                onValueChange={(copyToFolder) =>
+                  action({ copyToFolder: copyToFolder || undefined })
+                }
+              />
+            </>
+          )}
           {account.provider === "gmail" && (
             <>
               <Select
@@ -646,13 +923,7 @@ export function FilterEditor({
                   { value: "", label: t`Keep category` },
                   ...CATEGORIES.map((category) => ({
                     value: category,
-                    label: {
-                      CATEGORY_PERSONAL: t`Primary`,
-                      CATEGORY_SOCIAL: t`Social`,
-                      CATEGORY_PROMOTIONS: t`Promotions`,
-                      CATEGORY_UPDATES: t`Updates`,
-                      CATEGORY_FORUMS: t`Forums`,
-                    }[category],
+                    label: categories[category],
                   })),
                 ]}
                 onValueChange={(value) => action({ category: CATEGORIES.find((c) => c === value) })}
@@ -677,6 +948,54 @@ export function FilterEditor({
                 ))}
               </fieldset>
             </>
+          )}
+          {account.provider === "gmail" && (
+            <details className="space-y-2">
+              <summary>{t`More label actions`}</summary>
+              {(
+                [
+                  { key: "addLabelIds", title: t`Add labels` },
+                  { key: "removeLabelIds", title: t`Remove labels` },
+                ] as const
+              ).map(({ key, title }) => (
+                <fieldset key={key}>
+                  <legend>{title}</legend>
+                  {[
+                    ...labels,
+                    { id: "INBOX", name: t`Inbox` },
+                    { id: "UNREAD", name: t`Unread` },
+                    { id: "STARRED", name: t`Starred` },
+                    { id: "IMPORTANT", name: t`Important` },
+                    { id: "SPAM", name: t`Spam` },
+                    { id: "TRASH", name: t`Trash` },
+                    ...CATEGORIES.map((id) => ({
+                      id,
+                      name: categories[id],
+                    })),
+                  ]
+                    .filter((label) =>
+                      key === "addLabelIds"
+                        ? CATEGORIES.some((category) => category === label.id)
+                        : !GMAIL_REMOVABLE_SYSTEM_LABELS.some((id) => id === label.id),
+                    )
+                    .map((label) => (
+                      <label key={label.id} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={input.action[key]?.includes(label.id) ?? false}
+                          onCheckedChange={(checked) =>
+                            action({
+                              [key]: checked
+                                ? [...(input.action[key] ?? []), label.id]
+                                : (input.action[key] ?? []).filter((id) => id !== label.id),
+                            })
+                          }
+                        />
+                        <span>{label.name}</span>
+                      </label>
+                    ))}
+                </fieldset>
+              ))}
+            </details>
           )}
           <label className="flex items-center gap-2">
             <Checkbox
@@ -707,6 +1026,8 @@ export function FilterEditor({
           <p aria-live="polite">
             {previewBusy ? (
               <Trans>Loading…</Trans>
+            ) : previewUnavailable ? (
+              <Trans>Preview unavailable</Trans>
             ) : account.provider === "gmail" ? (
               <Trans>Server preview: {count} messages</Trans>
             ) : (
@@ -714,6 +1035,19 @@ export function FilterEditor({
             )}
             {count === 200 && " +"}
           </p>
+          {previewUnavailable && (
+            <p className="text-[12px] text-a11y-muted">
+              <Trans>
+                Some conditions need metadata that is not cached. Save the rule for future mail on
+                the server.
+              </Trans>
+            </p>
+          )}
+          {mode === "apply" && serverOnlyAction && (
+            <p className="text-[12px] text-a11y-muted">
+              <Trans>This rule can only be applied to future mail on the server</Trans>
+            </p>
+          )}
           {resultError(i18n, preview) && (
             <p role="alert" className="text-a11y-danger">
               {resultError(i18n, preview)}
@@ -754,7 +1088,9 @@ export function FilterEditor({
           type="submit"
           className={formButton}
           disabled={
-            busy || (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
+            busy ||
+            (mode === "apply" && (previewUnavailable || serverOnlyAction)) ||
+            (account.provider === "gmail" && (previewBusy || preview._tag !== "Success"))
           }
         >
           {mode === "apply" ? t`Apply to existing mail` : initial ? t`Save rule` : t`Create filter`}
@@ -767,16 +1103,22 @@ export function FilterEditor({
         }}
         title={mode === "apply" ? t`Apply to existing mail?` : t`Confirm rule changes?`}
         description={
-          confirming
-            ? t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`
-            : ""
+          confirming?.preview.unavailable?.length
+            ? t`Preview unavailable. The rule will apply to future mail on the server.`
+            : confirming
+              ? t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`
+              : ""
         }
       >
         {confirming && requiresFilterDeleteConfirmation(confirming.input) && (
           <FilterDeletionWarning />
         )}
         {confirming?.preview.truncated && (
-          <p>{t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}</p>
+          <p>
+            {account.provider === "outlook"
+              ? t`The preview checked at most 201 server messages. Matching messages outside this sample may be missing.`
+              : t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}
+          </p>
         )}
         <AlertCancel>
           <Trans>Cancel</Trans>

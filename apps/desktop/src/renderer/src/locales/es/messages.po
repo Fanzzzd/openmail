@@ -316,6 +316,10 @@ msgstr "Agregar cuenta de correo electrónico"
 msgid "Add label"
 msgstr "Agregar etiqueta"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Add labels"
+msgstr "Añadir etiquetas"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Add period"
 msgstr "Añadir intervalo"
@@ -580,6 +584,10 @@ msgstr "Un archivo adjunto cambió durante la lectura. Intenta añadirlo de nuev
 msgid "Anthropic API key"
 msgstr "Clave API de Anthropic"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Any action flag"
+msgstr "Cualquier marca de acción"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "App-specific password"
 msgstr "Contraseña específica de la aplicación"
@@ -667,6 +675,10 @@ msgstr "Pregunta cada vez"
 msgid "Ask me first"
 msgstr "Pregúntame primero"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Assign categories (one per line)"
+msgstr "Asignar categorías (una por línea)"
+
 #: src/renderer/src/components/Proposals.tsx
 msgid "Assistant"
 msgstr "Asistente"
@@ -734,6 +746,10 @@ msgstr "Dirección automática"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Automatic replies"
 msgstr "Respuestas automáticas"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Automatic reply"
+msgstr "Respuesta automática"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Automatically download updates"
@@ -866,6 +882,10 @@ msgstr "La respuesta a la invitación no se ha enviado"
 msgid "Calendar responses require a user action"
 msgstr "Las respuestas del calendario requieren una acción del usuario"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Call"
+msgstr "Llamar"
+
 #: src/renderer/src/errors.ts
 msgid "Can't find this account."
 msgstr "No puedo encontrar esta cuenta."
@@ -966,6 +986,10 @@ msgstr "Nombres de categorías, separados por comas"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Cc"
 msgstr "Cc"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "CC me"
+msgstr "CC a mí"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Cc: {cc}"
@@ -1203,6 +1227,10 @@ msgid "Compose"
 msgstr "Nuevo mensaje"
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "Confidential"
+msgstr "Confidencial"
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Confirm"
 msgstr "Confirmar"
 
@@ -1211,8 +1239,8 @@ msgid "Confirm and add event"
 msgstr "Confirmar y agregar evento"
 
 #: src/renderer/src/errors.ts
-msgid "Confirm deletion for a filter with a search query"
-msgstr "Confirmar la eliminación de un filtro con una consulta de búsqueda"
+msgid "Confirm deletion for this rule"
+msgstr "Confirme la eliminación con esta regla"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Confirm removal"
@@ -1346,6 +1374,10 @@ msgstr "Copiar seleccionado"
 #: src/renderer/src/shortcut-names.ts
 msgid "Copy style"
 msgstr "Copiar estilo"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Copy to folder"
+msgstr "Copiar a carpeta"
 
 #: src/renderer/src/components/MultiOrganization.tsx
 msgid "Copy to folders…"
@@ -1788,6 +1820,11 @@ msgstr "Descartar"
 msgid "Display name"
 msgstr "Nombre para mostrar"
 
+#. Incoming message action flag value; this option does not execute forwarding.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Do not forward"
+msgstr "No reenviar"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "No contiene las palabras"
@@ -2045,6 +2082,10 @@ msgstr "Excepto si el remitente contiene"
 msgid "Except subject contains"
 msgstr "Excepto si el asunto contiene"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Exclude chats"
+msgstr "Excluir chats"
+
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Exclude matches"
 msgstr "Excluir coincidencias"
@@ -2168,6 +2209,10 @@ msgstr "Ruta de la carpeta"
 msgid "Follow system"
 msgstr "Seguir el sistema"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Follow up"
+msgstr "Seguimiento"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Font"
 msgstr "Fuente"
@@ -2182,6 +2227,10 @@ msgstr "Familia de fuentes"
 msgid "Font size"
 msgstr "Tamaño de fuente"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "For your information"
+msgstr "Para su información"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Format"
 msgstr "Formato"
@@ -2190,8 +2239,7 @@ msgstr "Formato"
 msgid "Formatting"
 msgstr "Formato"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Forums"
 msgstr "Foros"
@@ -2203,6 +2251,12 @@ msgstr "Foros"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward"
 msgstr "Reenviar"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Forward"
+msgstr "Marca para reenviar"
 
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/ThreadActions.tsx
@@ -2354,6 +2408,10 @@ msgstr "¿Has revisado «Enviado» y confirmado que este mensaje no se envió?"
 msgid "Headers"
 msgstr "Encabezados"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Headers contain"
+msgstr "Las cabeceras contienen"
+
 #: src/renderer/src/state/desktop.ts
 msgid "Help"
 msgstr "Ayuda"
@@ -2374,6 +2432,10 @@ msgstr "Ocultar barra de formato"
 #: src/renderer/src/components/Reader.tsx
 msgid "Hide quoted text"
 msgstr "Ocultar texto citado"
+
+#: src/renderer/src/organization-labels.ts
+msgid "High"
+msgstr "Alta"
 
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
@@ -2433,9 +2495,14 @@ msgstr "Importar desde iPhone o iPad"
 msgid "Importance action"
 msgstr "Acción de importancia"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Importance condition"
+msgstr "Condición de importancia"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/shortcut-names.ts
 #: src/renderer/src/view.ts
@@ -2463,6 +2530,7 @@ msgid "In the reader, ⌘+ and ⌘− change it and ⌘0 goes back to 100%."
 msgstr "En el lector, ⌘+ y ⌘− lo cambian y ⌘0 vuelve al 100%."
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Inbox"
@@ -2822,6 +2890,10 @@ msgstr "Ubicación cambiada:"
 msgid "Lost the connection to the background process."
 msgstr "Se perdió la conexión con el proceso en segundo plano."
 
+#: src/renderer/src/organization-labels.ts
+msgid "Low"
+msgstr "Baja"
+
 #: src/renderer/src/components/SpellcheckSettings.tsx
 msgid "macOS uses the system spellchecker and detects languages automatically."
 msgstr "MacOS usa el corrector ortográfico del sistema y detecta los idiomas automáticamente."
@@ -2952,6 +3024,10 @@ msgstr "Región de imagen coincidente"
 msgid "Matching times keep that weekday active all day. Overnight periods continue into the next day. Unchecked days stay muted except for overnight periods from the previous day. Repeated daylight-saving times use the same schedule; skipped times are passed over."
 msgstr "Los horarios coincidentes mantienen activo ese día de la semana durante todo el día. Los períodos nocturnos continúan hasta el día siguiente. Los días no marcados permanecen silenciados excepto durante los períodos nocturnos del día anterior. Los horarios de verano repetidos utilizan el mismo horario; los tiempos omitidos se pasan por alto."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Maximum size (KiB)"
+msgstr "Tamaño máximo (KiB)"
+
 #: src/renderer/src/components/AiSettings.tsx
 msgid "MCP access follows this account's AI consent. Disabled accounts cannot be read through MCP."
 msgstr "El acceso MCP sigue el consentimiento de IA de esta cuenta. Las cuentas desactivadas no se pueden leer mediante MCP."
@@ -2987,6 +3063,10 @@ msgstr "Sugerencias de menciones"
 #: src/renderer/src/state/desktop.ts
 msgid "Message"
 msgstr "Mensaje"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message action flag"
+msgstr "Marca de acción del mensaje"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Message actions"
@@ -3039,6 +3119,11 @@ msgctxt "cached message text"
 msgid "Message text cache window"
 msgstr "Período de caché del texto de los mensajes"
 
+#. Rule predicate matching the message text, excluding the subject.
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Message text contains"
+msgstr "El texto del mensaje contiene"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "No se pudo actualizar el texto del mensaje. Se muestra la versión en caché."
@@ -3058,6 +3143,10 @@ msgstr "Los mensajes mantienen sus otras etiquetas."
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Minimum size (KiB)"
+msgstr "Tamaño mínimo (KiB)"
 
 #: src/renderer/src/components/Proposals.tsx
 msgid "Mode"
@@ -3100,9 +3189,17 @@ msgstr "Más"
 msgid "More actions"
 msgstr "Más acciones"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More conditions"
+msgstr "Más condiciones"
+
 #: src/main/native-i18n.ts
 msgid "More disk space is needed"
 msgstr "Se necesita más espacio en disco"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More exceptions"
+msgstr "Más excepciones"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3111,6 +3208,10 @@ msgstr "Más formal"
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "More formatting"
 msgstr "Más formato"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "More label actions"
+msgstr "Más acciones de etiquetas"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "More matches exist. Narrow your search."
@@ -3370,6 +3471,10 @@ msgstr "Aún no hay cuentas"
 msgid "No activity yet."
 msgstr "Aún no hay actividad."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No copy"
+msgstr "No copiar"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/ThreadWindow.tsx
 msgid "No current label applies. Moving to Trash."
@@ -3429,6 +3534,10 @@ msgstr "Sin carpeta superior"
 msgid "no printers are available."
 msgstr "No hay impresoras disponibles."
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "No response needed"
+msgstr "No es necesario responder"
+
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
 msgstr "Sin sugerencias"
@@ -3464,6 +3573,11 @@ msgstr "No hay correo no leído en la Bandeja de entrada"
 msgid "None"
 msgstr "Ninguno"
 
+#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
+msgid "Normal"
+msgstr "Normal"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Not granted"
 msgstr "Sin autorizar"
@@ -3475,6 +3589,10 @@ msgstr "No solicitado"
 #: src/renderer/src/components/Overview.tsx
 msgid "Not synced"
 msgstr "No sincronizado"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Not to me"
+msgstr "No a mí"
 
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Notification action buttons"
@@ -3566,6 +3684,10 @@ msgstr "Solo están disponibles los contactos de Apple seleccionados."
 #: src/renderer/src/App.tsx
 msgid "Only the selected messages in this Trash or Spam folder will be permanently deleted. This cannot be undone."
 msgstr "Solo se eliminarán permanentemente los mensajes seleccionados en esta Papelera o carpeta de Correo no deseado. Esta acción no se puede deshacer."
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Only to me"
+msgstr "Solo a mí"
 
 #: src/renderer/src/components/Attachments.tsx
 msgid "Open"
@@ -3828,6 +3950,7 @@ msgid "Permanently deleted {count} messages"
 msgstr "{count} mensajes eliminados permanentemente"
 
 #: src/renderer/src/components/ProfileSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Personal"
 msgstr "Personal"
 
@@ -3857,6 +3980,14 @@ msgstr "Vista previa {0}"
 msgid "Preview changes"
 msgstr "Vista previa de los cambios"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable"
+msgstr "Vista previa no disponible"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Preview unavailable. The rule will apply to future mail on the server."
+msgstr "Vista previa no disponible. La regla se aplicará al correo futuro en el servidor."
+
 #. placeholder {0}: confirming.preview.matches.length
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Preview: {0} messages. Only the previewed messages will be changed when applying to existing mail."
@@ -3884,9 +4015,8 @@ msgstr "Hora anterior:"
 msgid "Previous window"
 msgstr "Ventana anterior"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Primary"
 msgstr "Principal"
@@ -3907,6 +4037,10 @@ msgstr "Imprimir mensaje…"
 msgid "Print…"
 msgstr "Imprimir…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Private"
+msgstr "Privado"
+
 #: src/renderer/src/components/ProfileSettings.tsx
 msgid "Profile"
 msgstr "Perfil"
@@ -3920,8 +4054,7 @@ msgstr "Perfiles"
 msgid "Profiles group accounts. You can assign accounts and edit profiles in Settings."
 msgstr "Los perfiles agrupan cuentas. Puedes asignar cuentas y editar perfiles en Ajustes."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Promotions"
 msgstr "Promociones"
@@ -3951,6 +4084,12 @@ msgstr "¿Citar sólo el texto seleccionado?"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Quote selected text"
 msgstr "Citar texto seleccionado"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Read"
+msgstr "Marca para leer"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "Read only"
@@ -4086,6 +4225,10 @@ msgstr "Eliminar clave"
 msgid "Remove label"
 msgstr "Quitar etiqueta"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Remove labels"
+msgstr "Quitar etiquetas"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Remove link"
 msgstr "Quitar enlace"
@@ -4166,12 +4309,24 @@ msgstr "Responde y reenvía"
 msgid "Reply"
 msgstr "Responder"
 
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply"
+msgstr "Marca para responder"
+
 #: src/renderer/src/action-names.ts
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/ThreadActions.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Reply all"
 msgstr "Responder a todos"
+
+#. Flag value on the incoming message, not an action to execute.
+#: src/renderer/src/components/ServerSettings.tsx
+msgctxt "incoming message action flag"
+msgid "Reply all"
+msgstr "Marca para responder a todos"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Reply All"
@@ -4270,6 +4425,10 @@ msgstr "Reintentar"
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
 msgstr "Revertir"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Review"
+msgstr "Revisar"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Review AI recipients"
@@ -4605,6 +4764,10 @@ msgstr "Nombre del remitente"
 msgid "Sending…"
 msgstr "Enviando…"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Sensitivity"
+msgstr "Confidencialidad"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/view.ts
 msgid "Sent"
@@ -4876,8 +5039,7 @@ msgstr "Posponer"
 msgid "Snoozed"
 msgstr "Pospuesto"
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Social"
 msgstr "Social"
@@ -4887,6 +5049,10 @@ msgstr "Social"
 msgid "Software updates"
 msgstr "Actualizaciones de software"
 
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "Some conditions need metadata that is not cached. Save the rule for future mail on the server."
+msgstr "Algunas condiciones necesitan metadatos no guardados en caché. Guarde la regla para el correo futuro en el servidor."
+
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Some formatting cannot be kept in this mode. Link addresses are kept. You can undo the mode change."
 msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de enlace se mantienen. Puede deshacer el cambio de modo."
@@ -4894,6 +5060,10 @@ msgstr "Algunos formatos no se pueden mantener en este modo. Las direcciones de 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Some recipients did not receive this message."
 msgstr "Algunos destinatarios no recibieron este mensaje."
+
+#: src/renderer/src/errors.ts
+msgid "Some rule conditions cannot be evaluated from cached mail"
+msgstr "Algunas condiciones de la regla no se pueden evaluar con el correo en caché"
 
 #: src/renderer/src/components/MessageList.tsx
 msgid "Some server predicates were omitted to preserve matches; local filters still apply:"
@@ -4911,6 +5081,7 @@ msgstr "Espacios"
 
 #: src/renderer/src/components/CacheSettings.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Spam"
 msgstr "Correo no deseado"
@@ -4959,6 +5130,7 @@ msgstr "Destacar mensaje"
 
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Starred"
 msgstr "Destacado"
@@ -5193,6 +5365,10 @@ msgid "The organizer differs from the message sender. Check the response recipie
 msgstr "El organizador difiere del remitente del mensaje. Verifique el destinatario de la respuesta antes de responder."
 
 #: src/renderer/src/components/ServerSettings.tsx
+msgid "The preview checked at most 201 server messages. Matching messages outside this sample may be missing."
+msgstr "La vista previa comprobó como máximo 201 mensajes del servidor. Pueden faltar mensajes coincidentes fuera de esta muestra."
+
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "The preview is limited to 200 messages. Narrow the conditions to process other messages."
 msgstr "La vista previa está limitada a 200 mensajes. Limite las condiciones para procesar otros mensajes."
 
@@ -5304,8 +5480,13 @@ msgid "This removes the filter from the server. Existing messages are unchanged.
 msgstr "Esto elimina el filtro del servidor. Los mensajes existentes no se modifican."
 
 #: src/renderer/src/components/ServerSettings.tsx
-msgid "This rule deletes messages matching a search query. Confirm only if the preview matches the messages you intend to delete."
-msgstr "Esta regla elimina mensajes que coinciden con una consulta de búsqueda. Confirme solo si la vista previa coincide con los mensajes que desea eliminar."
+#: src/renderer/src/errors.ts
+msgid "This rule can only be applied to future mail on the server"
+msgstr "Esta regla solo se puede aplicar al correo futuro en el servidor"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "This rule deletes messages. Confirm only if the preview matches the messages you intend to delete."
+msgstr "Esta regla elimina mensajes. Confirme solo si la vista previa coincide con los mensajes que desea eliminar."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "This space has no accounts yet."
@@ -5335,6 +5516,14 @@ msgstr "Tiempo"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "To"
 msgstr "Para"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To me"
+msgstr "A mí"
+
+#: src/renderer/src/components/ServerSettings.tsx
+msgid "To or CC me"
+msgstr "A mí o CC a mí"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "To: {to}"
@@ -5389,6 +5578,7 @@ msgid "Translate"
 msgstr "Traducir"
 
 #: src/renderer/src/components/CacheSettings.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 #: src/renderer/src/view.ts
 msgid "Trash"
@@ -5487,6 +5677,7 @@ msgid "Unknown organizer time zone; showing the original time."
 msgstr "Zona horaria del organizador desconocida; mostrando la hora original."
 
 #: src/renderer/src/components/MessageList.tsx
+#: src/renderer/src/components/ServerSettings.tsx
 msgid "Unread"
 msgstr "No leído"
 
@@ -5514,6 +5705,10 @@ msgstr "¿Cancelar suscripción?"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Unsupported on this platform"
 msgstr "No compatible con esta plataforma"
+
+#: src/renderer/src/errors.ts
+msgid "Unsupported server rule"
+msgstr "Regla de servidor no compatible"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/SystemSettings.tsx
@@ -5562,8 +5757,7 @@ msgstr "No se ha podido buscar o descargar la actualización. Inténtalo de nuev
 msgid "Update checks require a signed, installed macOS app and a saved GitHub access token."
 msgstr "Las comprobaciones de actualización requieren una aplicación macOS instalada y firmada y un token de acceso de GitHub guardado."
 
-#: src/renderer/src/components/OrganizationSettings.tsx
-#: src/renderer/src/components/ServerSettings.tsx
+#: src/renderer/src/organization-labels.ts
 #: src/renderer/src/view.ts
 msgid "Updates"
 msgstr "Notificaciones"
