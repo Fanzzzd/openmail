@@ -41,7 +41,18 @@ const who = (a: Address) => (a.name ? `${cleanDisplayName(a.name)} <${a.address}
  * `truncated` says how many characters were dropped.
  */
 export function toModelThread(messages: readonly Message[], maxChars: number): ModelThread {
-  const bodies = messages.map((m) => messageModelText(m.bodyText, m.bodyHtml));
+  // Long threads can repeat the same body. Reuse extraction only within this
+  // view and key both alternatives, since plain-differs depends on bodyText.
+  const extracted = new Map<string, Map<string, ReturnType<typeof messageModelText>>>();
+  const bodies = messages.map((m) => {
+    const alternatives = extracted.get(m.bodyHtml);
+    const cached = alternatives?.get(m.bodyText);
+    if (cached) return cached;
+    const body = messageModelText(m.bodyText, m.bodyHtml);
+    if (alternatives) alternatives.set(m.bodyText, body);
+    else extracted.set(m.bodyHtml, new Map([[m.bodyText, body]]));
+    return body;
+  });
   const quoteInfo = bodies.map((body, i) => {
     const message = messages[i];
     const hasReply = message?.headers?.some(

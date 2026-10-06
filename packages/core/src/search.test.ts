@@ -842,6 +842,62 @@ import { type DerivedChunk } from "./media.js";
   );
 
   it.effect(
+    "zero-distance AROUND preserves order, phrases, repeated tokens and column/chunk boundaries",
+    () =>
+      Effect.gen(function* () {
+        const store = yield* Store,
+          sql = yield* SqlClient.SqlClient;
+        const account = yield* store.upsertAccount("gmail", "adjacent@example.com");
+        const fixtures = [
+          message("forward", "red fox blue bird"),
+          message("reverse", "blue bird red fox"),
+          message("gap", "red fox near blue bird"),
+          message("overlap", "red fox blue"),
+          message("repeated", "alpha alpha"),
+          message("single", "alpha"),
+          { ...message("columns", "blue bird"), subject: "red fox" },
+          message("ocr", "unrelated"),
+          message("chunks", "unrelated"),
+        ];
+        for (const fixture of fixtures) yield* store.upsertMessage(account.id, fixture);
+        for (const [id, text] of [
+          ["ocr", "red fox blue bird"],
+          ["chunks", "red fox"],
+          ["chunks", "blue bird"],
+        ])
+          yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${`${account.id}/${id}`},${text},'{}')`;
+        while (!(yield* store.backfillWordIndex(500)).ready) {
+          /* Complete both indexes before checking adjacency. */
+        }
+        for (const [search, expected] of [
+          ['"red fox AROUND 0 blue bird"', ["forward", "ocr"]],
+          ['"red fox" AROUND 0 "blue bird"', ["forward", "ocr", "reverse"]],
+          ['"RÉD, fox AROUND 0 blue-bird"', ["forward", "ocr"]],
+          ['"red fox" AROUND 0 "fox blue"', []],
+          ['"alpha AROUND 0 alpha"', ["repeated"]],
+          ["alpha AROUND 0 alpha", ["repeated"]],
+          ['in:attachment "red fox AROUND 0 blue bird"', ["ocr"]],
+          [
+            '-("red fox AROUND 0 blue bird")',
+            ["chunks", "columns", "gap", "overlap", "repeated", "reverse", "single"],
+          ],
+        ] as const) {
+          const rows = yield* store.listThreads({ search, flat: true });
+          assert.deepStrictEqual(
+            rows.map((row) => row.id.slice(account.id.length + 1)).toSorted(),
+            [...expected],
+            search,
+          );
+          assert.strictEqual(
+            yield* store.countThreads({ search, flat: true }),
+            expected.length,
+            search,
+          );
+        }
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+
+  it.effect(
     "AROUND degrades to AND without writes during indexing, then checks phrases within each chunk",
     () =>
       Effect.gen(function* () {

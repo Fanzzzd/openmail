@@ -140,6 +140,15 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         textFilter(quoteSearchValue(p.right), derived, false),
       ]);
     const index = sql.literal(derived ? "derived_words" : "messages_words");
+    if (p.distance === 0) {
+      // Adjacent non-overlapping phrases are one FTS phrase. Let the index
+      // verify positions instead of materializing and joining the instance stream.
+      const forward = quoteSearchValue([...left, ...right].join(" "));
+      const match = p.ordered
+        ? forward
+        : `${forward} OR ${quoteSearchValue([...right, ...left].join(" "))}`;
+      return sql`${derived ? sql.literal("d.id") : sql.literal("m.rowid")} IN (SELECT rowid FROM ${index} WHERE ${index} MATCH ${match})`;
+    }
     const table = sql.literal(derived ? "derived_word_positions" : "messages_word_positions");
     const near = `NEAR(${quoteSearchValue(left.join(" "))} ${quoteSearchValue(right.join(" "))}, ${p.distance})`;
     const samePhrase = (words: string[], alias: "a" | "b") =>

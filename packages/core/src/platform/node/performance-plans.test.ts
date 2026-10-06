@@ -50,6 +50,7 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     });
     yield* store.resetCandidates(gmail, { _tag: "Reset", keep: [], since: fixtureNow - 86400000 });
     yield* store.listThreads({ search: '"alpha AROUND 0 beta"', limit: 5 });
+    yield* store.listThreads({ search: '"alpha AROUND 1 beta"', limit: 5 });
     yield* store.bodySizes;
     yield* store.evictBodyBudget(1, true);
     const queries = trace.stop();
@@ -86,8 +87,14 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     const proximity = queries.find((q) => q.sql.includes("WITH matches AS MATERIALIZED"));
     assert.ok(proximity);
     assert.include(proximity.plan.join("\n"), "COVERING INDEX messages_list_date_id");
+    assert.notMatch(proximity.plan.join("\n"), /word_positions|MATERIALIZE positions/);
+    assert.include(proximity.plan.join("\n"), "SCAN messages_words VIRTUAL TABLE INDEX");
+    const spacedProximity = queries.find(
+      (q) => q.sql.includes("WITH matches AS MATERIALIZED") && q.sql.includes("positions AS"),
+    );
+    assert.ok(spacedProximity);
     assert.strictEqual(
-      proximity.plan.filter((line) => line.includes("SCAN messages_word_positions")).length,
+      spacedProximity.plan.filter((line) => line.includes("SCAN messages_word_positions")).length,
       1,
     );
     const lru = queries.find((q) => q.sql.includes("AS opened_at"));
