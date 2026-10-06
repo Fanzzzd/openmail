@@ -62,6 +62,17 @@ vi.mock("expo-file-system", () => ({
     async text() {
       return new TextDecoder().decode(await this.bytes());
     }
+    async copy(target: { uri: string }, options?: { overwrite?: boolean }) {
+      const data = native.files.get(this.uri);
+      if (!data || (native.files.has(target.uri) && !options?.overwrite))
+        throw new Error("Copy failed");
+      native.files.set(target.uri, new Uint8Array(data));
+    }
+    async move(target: { uri: string }, options?: { overwrite?: boolean }) {
+      await this.copy(target, options);
+      native.files.delete(this.uri);
+      this.uri = target.uri;
+    }
     delete() {
       native.files.delete(this.uri);
     }
@@ -168,4 +179,28 @@ it("stops before opening or moving data when backup exclusion fails", () => {
   });
   expect(() => prepareMailDirectory()).toThrow("Backup exclusion");
   expect(native.files.has(`${cache}/mail.db`)).toBe(true);
+});
+
+it("maps quarantine copy and replacement move to the Expo Promise APIs", async () => {
+  resetStorage();
+  const root = dataDirectory();
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      yield* fs.writeFile(`${root}/mail.db`, new Uint8Array([1, 128, 255]));
+      yield* fs.copyFile(`${root}/mail.db`, `${root}/mail.db.corrupt-id`);
+      yield* fs.writeFile(`${root}/mail.db.recovery-id`, new Uint8Array([2, 0]));
+      yield* fs.remove(`${root}/mail.db`);
+      yield* fs.rename(`${root}/mail.db.recovery-id`, `${root}/mail.db`);
+      expect(yield* fs.readFile(`${root}/mail.db.corrupt-id`)).toEqual(
+        new Uint8Array([1, 128, 255]),
+      );
+      expect(yield* fs.readFile(`${root}/mail.db`)).toEqual(new Uint8Array([2, 0]));
+      yield* fs.writeFileString(`${root}/state.json`, "old");
+      yield* fs.writeFileString(`${root}/state.json.tmp`, "complete");
+      yield* fs.rename(`${root}/state.json.tmp`, `${root}/state.json`);
+      expect(yield* fs.readFileString(`${root}/state.json`)).toBe("complete");
+      expect(yield* fs.exists(`${root}/mail.db.recovery-id`)).toBe(false);
+    }).pipe(Effect.provide(filesLayer)),
+  );
 });

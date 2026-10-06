@@ -87,7 +87,9 @@ export const fileSystem = FileSystem.makeNoop({
       } else if (!options?.force) throw new Error("File does not exist");
     }),
   rename: (source, target) =>
-    asynchronous("rename", () => new File(fileUri(source)).move(new File(fileUri(target)))),
+    asynchronous("rename", () =>
+      new File(fileUri(source)).move(new File(fileUri(target)), { overwrite: true }),
+    ),
   copyFile: (source, target) =>
     asynchronous("copyFile", () => new File(fileUri(source)).copy(new File(fileUri(target)))),
   realPath: (path) => attempt("realPath", () => decodeURIComponent(fileUri(path).slice(7))),

@@ -276,6 +276,7 @@ msgstr "Verbinden"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "Doorgaan"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "Het concept voor opnieuw versturen kon niet worden voorbereid. Probeer het opnieuw."
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "De lokale database kon niet opnieuw worden opgebouwd"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "Ongedaan maken mislukt. Probeer het opnieuw."
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "Een app-wachtwoord maken"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "Het databaseherstel is onderbroken. Probeer het opnieuw."
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "Link openen"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "{filename} openen of delen"
 
@@ -688,6 +699,11 @@ msgstr "Postvak uit"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "Gedeeltelijke bezorging"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "Tekstextractie uit PDF is niet beschikbaar op mobiel."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "Leesstatus"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "Lokale database opnieuw opbouwen"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "Bouw de lokale database opnieuw op met leesbare records en synchroniseer de e-mail opnieuw. Leesbare lokale concepten en wijzigingen in de wachtrij blijven behouden. De oorspronkelijke database en veilig opgeslagen tokens blijven behouden."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Ontvangers buiten het oorspronkelijke gesprek:"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen. Oorspronkelijke database: {backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "Veeg acties"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Systeemtaal"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "De lokale database kan niet worden geverifieerd"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "De lokale database is hersteld"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

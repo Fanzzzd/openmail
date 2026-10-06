@@ -276,6 +276,7 @@ msgstr "Connecter"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "Continuer"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "Impossible de préparer le brouillon à renvoyer. Réessayez."
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "Impossible de reconstruire la base de données locale"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "Impossible d’annuler. Réessayez."
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "Créer un mot de passe d’application"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "La récupération de la base de données a été interrompue. Réessayez."
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "Ouvrir le lien"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "Ouvrir ou partager {filename}"
 
@@ -688,6 +699,11 @@ msgstr "Boîte d’envoi"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "Envoi partiel"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "L’extraction de texte PDF n’est pas disponible sur mobile."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "État de lecture"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "Reconstruire la base de données locale"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "Reconstruisez la base de données locale à partir des enregistrements lisibles et resynchronisez les e-mails. Les brouillons locaux et les modifications en attente sont conservés s’ils sont lisibles. La base de données d’origine et les jetons stockés de façon sécurisée sont conservés."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Destinataires en dehors de la conversation d’origine :"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "{copied} enregistrements locaux récupérés. {skipped} éléments illisibles ignorés."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "Récupération des enregistrements locaux {copied}. {skipped} éléments illisibles ont été ignorés. Base de données d’origine : {backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "Actions de balayage"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Langue du système"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "La base de données locale n’a pas pu être vérifiée"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "La base de données locale a été récupérée"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

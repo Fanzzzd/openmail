@@ -1,9 +1,7 @@
 import {
-  ImageNetwork,
   mobileMailCodecLayer,
-  MediaError,
-  PdfWorker,
-  ProviderError,
+  type MobileDatabaseState,
+  mobileMediaLayer,
   MailboxLive,
   ModelAnthropic,
   MobileBackgroundStorageLive,
@@ -12,25 +10,22 @@ import {
   mobileProvidersLayer,
   opSqliteLayer,
 } from "@openmail/core/portable";
-import { Effect, Layer } from "effect";
+import { Layer } from "effect";
 import { attachmentFilesLayer } from "./attachment-cache";
 import { FetchHttpClient } from "effect/http";
-import { open } from "@op-engineering/op-sqlite";
 import { configLayer, readMobileConfig } from "./config";
 import { cryptoLayer } from "./crypto";
-import { prepareMailDirectory, filesLayer } from "./files";
+import { filesLayer } from "./files";
+import { openMobileDatabase } from "./database-recovery";
 import { authSession, browserLayer } from "./oauth";
 import { clearShareCopies } from "../received-attachments";
 import { transportLayer } from "./transport";
 import { secretsLayer } from "./secrets";
 
-export function mobileMailboxLayer() {
+export function mobileMailboxLayer(inspection?: MobileDatabaseState) {
   clearShareCopies();
   const config = readMobileConfig();
-  const database = opSqliteLayer(() => {
-    const directory = prepareMailDirectory();
-    return open({ name: "mail.db", location: directory });
-  });
+  const database = opSqliteLayer(() => openMobileDatabase(inspection));
   const platform = Layer.mergeAll(
     database,
     configLayer(config),
@@ -52,18 +47,8 @@ export function mobileMailboxLayer() {
   ).pipe(Layer.provide(services));
 }
 
-// MIME and attachment cache are portable; media extraction still needs a native worker.
 const readerCapabilitiesLayer = Layer.mergeAll(
   mobileMailCodecLayer,
-  Layer.succeed(PdfWorker, {
-    extract: () =>
-      Effect.fail(new MediaError({ message: "PDF extraction is unavailable on mobile" })),
-  }),
-  Layer.succeed(ImageNetwork, {
-    download: () =>
-      Effect.fail(
-        new ProviderError({ message: "Pinned image transport is unavailable on mobile" }),
-      ),
-  }),
+  mobileMediaLayer,
   attachmentFilesLayer,
 );

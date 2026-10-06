@@ -276,6 +276,7 @@ msgstr "连接"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "继续"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "未能准备重发草稿。请重试。"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "无法重建本地数据库"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "撤销失败，请重试。"
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "创建应用专用密码"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "恢复数据库时中断。请重试。"
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "打开链接"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "打开或分享 {filename}"
 
@@ -688,6 +699,11 @@ msgstr "发件箱"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "部分投递"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "手机端不支持 PDF 文本提取。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "已读状态"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "重建本地数据库"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "从可读取的记录重建本地数据库，并重新同步邮件。保留可读取的本地草稿和排队更改。原数据库与安全存储中的令牌会保留。"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "原会话之外的收件人："
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "已恢复 {copied} 条本地记录。跳过 {skipped} 个无法读取的项目。"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "滑动操作"
 #: app/settings.tsx
 msgid "System language"
 msgstr "系统语言"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "无法验证本地数据库"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "本地数据库已恢复"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

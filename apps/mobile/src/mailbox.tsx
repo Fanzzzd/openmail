@@ -1,13 +1,16 @@
-import { Mailbox } from "@openmail/core/portable";
+import { Mailbox, MobileDatabaseRecovery, type MobileDatabaseState } from "@openmail/core/portable";
 import { Effect, ManagedRuntime, Stream } from "effect";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { useLingui } from "@lingui/react";
 import { mobileMailboxLayer } from "./platform";
 import { styles } from "./styles";
+import { databaseRecoveryRuntime } from "./platform/database-recovery";
+import { Button } from "./controls";
 
 type MobileRuntime = ReturnType<typeof createRuntime>;
-const createRuntime = () => ManagedRuntime.make(mobileMailboxLayer());
+const createRuntime = (inspection: MobileDatabaseState) =>
+  ManagedRuntime.make(mobileMailboxLayer(inspection));
 const RuntimeContext = createContext<MobileRuntime | null>(null);
 const RevisionContext = createContext(0);
 export function MailboxProvider({ children }: { children: ReactNode }) {
@@ -16,6 +19,10 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [databaseState, setDatabaseState] = useState<MobileDatabaseState>({ kind: "healthy" });
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryFailed, setRecoveryFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     const isActive = () => active;
@@ -24,7 +31,17 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
       await Promise.resolve();
       if (!isActive()) return;
       try {
-        instance = createRuntime();
+        if (attempt > 0)
+          await databaseRecoveryRuntime().runPromise(
+            Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.acknowledge),
+          );
+        const state = await databaseRecoveryRuntime().runPromise(
+          Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.inspect()),
+        );
+        if (!isActive()) return;
+        setDatabaseState(state);
+        if (state.kind !== "healthy") return;
+        instance = createRuntime(state);
         await instance.runPromise(Mailbox);
         if (isActive()) {
           setRuntime(instance);
@@ -53,7 +70,91 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
       active = false;
       if (instance) void instance.dispose();
     };
-  }, [i18n]);
+  }, [i18n, attempt]);
+  const recover = async () => {
+    setRecovering(true);
+    setRecoveryFailed(false);
+    try {
+      const report = await databaseRecoveryRuntime().runPromise(
+        Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.rebuild),
+      );
+      setDatabaseState({ kind: "recovered", report });
+    } catch {
+      const state = await databaseRecoveryRuntime()
+        .runPromise(Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.inspect()))
+        .catch(() => null);
+      if (state) setDatabaseState(state);
+      setRecoveryFailed(true);
+    } finally {
+      setRecovering(false);
+    }
+  };
+  const acknowledge = () => {
+    setDatabaseState({ kind: "healthy" });
+    setAttempt((value) => value + 1);
+  };
+  if (databaseState.kind !== "healthy")
+    return (
+      <View style={styles.center}>
+        <Text accessibilityRole="alert" style={styles.subject}>
+          {databaseState.kind === "recovered"
+            ? i18n._({
+                id: "The local database was recovered",
+                message: "The local database was recovered",
+              })
+            : i18n._({
+                id: "The local database could not be verified",
+                message: "The local database could not be verified",
+              })}
+        </Text>
+        <Text selectable style={styles.body}>
+          {databaseState.kind === "recovered"
+            ? Platform.OS === "ios"
+              ? i18n._({
+                  id: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
+                  message: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
+                  values: {
+                    copied: databaseState.report.copied,
+                    skipped: databaseState.report.skipped,
+                  },
+                })
+              : i18n._({
+                  id: "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
+                  message:
+                    "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
+                  values: databaseState.report,
+                })
+            : databaseState.kind === "interrupted"
+              ? i18n._({
+                  id: "Database recovery was interrupted. Try recovery again.",
+                  message: "Database recovery was interrupted. Try recovery again.",
+                })
+              : i18n._({
+                  id: "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
+                  message:
+                    "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
+                })}
+        </Text>
+        {recoveryFailed && (
+          <Text accessibilityRole="alert" style={styles.error}>
+            {i18n._({
+              id: "Could not rebuild the local database",
+              message: "Could not rebuild the local database",
+            })}
+          </Text>
+        )}
+        {recovering && <ActivityIndicator />}
+        <Button
+          disabled={recovering}
+          label={
+            databaseState.kind === "recovered"
+              ? i18n._({ id: "Continue", message: "Continue" })
+              : i18n._({ id: "Rebuild local database", message: "Rebuild local database" })
+          }
+          onPress={() => void (databaseState.kind === "recovered" ? acknowledge() : recover())}
+        />
+      </View>
+    );
   if (error)
     return (
       <View style={styles.center}>

@@ -71,10 +71,11 @@ export const validateSqlite = (db: OpSqliteDatabase) =>
     });
   });
 
-export const makeOpSqliteClient = (open: () => OpSqliteDatabase) =>
+export const makeOpSqliteClient = (open: () => OpSqliteDatabase | Promise<OpSqliteDatabase>) =>
   Effect.gen(function* () {
-    const db = yield* Effect.acquireRelease(Effect.sync(open), (connection) =>
-      Effect.sync(() => connection.close()),
+    const db = yield* Effect.acquireRelease(
+      Effect.tryPromise({ try: async () => open(), catch: sqlError }),
+      (connection) => Effect.sync(() => connection.close()),
     );
     yield* validateSqlite(db).pipe(Effect.uninterruptible);
     const execute = (query: string, params: readonly unknown[]) =>
@@ -126,7 +127,7 @@ export const makeOpSqliteClient = (open: () => OpSqliteDatabase) =>
   });
 
 /** One scoped, serialized connection; the unchanged core migrations run before Store construction. */
-export const opSqliteLayer = (open: () => OpSqliteDatabase) => {
+export const opSqliteLayer = (open: () => OpSqliteDatabase | Promise<OpSqliteDatabase>) => {
   const client = Layer.effect(
     SqlClient.SqlClient,
     makeOpSqliteClient(open).pipe(Effect.orDie),

@@ -276,6 +276,7 @@ msgstr "Подключить"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "Продолжить"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "Не удалось подготовить черновик для повторной отправки. Попробуйте ещё раз."
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "Не удалось пересоздать локальную базу данных"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "Не удалось отменить. Повторите попытку.
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "Создать пароль приложения"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "Восстановление базы данных прервано. Попробуйте ещё раз."
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "Открыть ссылку"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "Открыть или поделиться {filename}"
 
@@ -688,6 +699,11 @@ msgstr "Исходящие"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "Частичная доставка"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "Извлечение текста из PDF недоступно на мобильных устройствах."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "Статус прочтения"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "Пересоздать локальную базу данных"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "Пересоздайте локальную базу данных из читаемых записей и повторно синхронизируйте почту. Читаемые локальные черновики и изменения в очереди сохранятся. Исходная база данных и токены в защищённом хранилище сохранятся."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Получатели вне исходной переписки:"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "Восстановлено локальных записей: {copied}. Пропущено нечитаемых элементов: {skipped}."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "Восстановлено {copied} локальных записей. Пропущено {skipped} нечитаемых элементов. Исходная база данных: {backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "Действия смахивания"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Язык системы"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "Локальную базу данных не удалось проверить."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "Локальная база данных восстановлена."
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

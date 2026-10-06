@@ -18,6 +18,7 @@ import { useMailbox, useMailboxQuery } from "../src/mailbox";
 import { ThreadAi } from "../src/ai-controls";
 import { handleReaderNavigation, readerDocument, type ReaderLink } from "../src/reader-html";
 import { useMessageInlineImages } from "../src/inline-images";
+import { ReceivedAttachments } from "../src/received-attachments-view";
 import { shareReceivedAttachment } from "../src/received-attachments";
 import { Button, Sheet } from "../src/controls";
 import { ThreadMenu } from "../src/thread-actions";
@@ -153,18 +154,11 @@ function ReaderMessage({ message, remoteImages }: { message: Message; remoteImag
           />
         </Sheet>
       )}
-      {message.attachments.map((attachment, index) => (
-        <Button
-          key={`${index}:${attachment.filename}`}
-          disabled={attachmentBusy}
-          label={i18n._({
-            id: "Open or share {filename}",
-            message: "Open or share {filename}",
-            values: { filename: attachment.filename },
-          })}
-          onPress={() => void openAttachment(index)}
-        />
-      ))}
+      <ReceivedAttachments
+        attachments={message.attachments}
+        busy={attachmentBusy}
+        onOpen={(index) => void openAttachment(index)}
+      />
       {linkFailed && (
         <Text accessibilityRole="alert" style={styles.error}>
           {i18n._({

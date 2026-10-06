@@ -276,6 +276,7 @@ msgstr "Připojit"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "Pokračovat"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "Koncept k opětovnému odeslání se nepodařilo připravit. Zkuste to znovu."
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "Místní databázi se nepodařilo znovu sestavit"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "Akci se nepodařilo vrátit. Zkuste to znovu."
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "Vytvořit heslo aplikace"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "Obnova databáze byla přerušena. Zkuste obnovu znovu."
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "Otevřít odkaz"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "Otevřít nebo sdílet {filename}"
 
@@ -688,6 +699,11 @@ msgstr "Pošta k odeslání"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "Částečné doručení"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "Extrakce textu z PDF není na mobilních zařízeních dostupná."
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "Stav přečtení"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "Znovu sestavit místní databázi"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "Znovu sestavte místní databázi z čitelných záznamů a znovu synchronizujte poštu. Čitelné místní koncepty a změny ve frontě se zachovají. Původní databáze a bezpečně uložené tokeny se zachovají."
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "Příjemci mimo původní konverzaci:"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "Obnoveno {copied} místních záznamů. Přeskočeno {skipped} nečitelných položek."
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "Akce přejetí prstem"
 #: app/settings.tsx
 msgid "System language"
 msgstr "Jazyk systému"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "Místní databázi se nepodařilo ověřit"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "Místní databáze byla obnovena"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

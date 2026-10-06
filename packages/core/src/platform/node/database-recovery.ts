@@ -19,37 +19,8 @@ import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { MIGRATIONS } from "../../db.js";
 
-/** User state from every migration. Cache/FTS/vector tables are intentionally rebuilt. */
-export const RECOVERY_TABLES = [
-  "profiles",
-  "accounts",
-  "ai_accounts",
-  "ai_config",
-  "agent_policies",
-  "proposals",
-  "drafts",
-  "pending_ops",
-  "failed_ops",
-  "prefs",
-  "signatures",
-  "named_signatures",
-  "signature_defaults",
-  "undo_batches",
-  "templates",
-  "hidden_contacts",
-  "image_senders",
-  "label_preferences",
-  "account_organization",
-  "thread_reminders",
-  "snoozed_messages",
-  "send_as",
-  "cache_windows",
-  "account_oauth_scopes",
-  "account_optional_services",
-  "filter_restorations",
-  "invite_responses",
-  "audit_log",
-] as const;
+import { RECOVERY_TABLES } from "../recovery-tables.js";
+export { RECOVERY_TABLES } from "../recovery-tables.js";
 export type CacheResetResult =
   | { kind: "reset" }
   | { kind: "recovered"; backup: string; copied: number; skipped: number };

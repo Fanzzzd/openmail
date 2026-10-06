@@ -2,7 +2,7 @@
 import { act, createElement, useCallback, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Effect } from "effect";
-import { Mailbox } from "@openmail/core/portable";
+import { Mailbox, type MobileDatabaseState } from "@openmail/core/portable";
 import { afterEach, expect, it, vi } from "vitest";
 import { MailboxProvider, useMailbox, useMailboxQuery } from "./mailbox";
 import { useMessageInlineImages } from "./inline-images";
@@ -21,6 +21,19 @@ vi.mock("./platform", async () => {
     mobileMailboxLayer: () =>
       TestMailbox({}, { backgroundFlush: false, imapIdle: false, localDraftQueue: true }),
   };
+});
+vi.mock("./platform/database-recovery", async () => {
+  const { MobileDatabaseRecovery } = await import("@openmail/core/portable");
+  const { Effect, Layer, ManagedRuntime } = await import("effect");
+  const runtime = ManagedRuntime.make(
+    Layer.succeed(MobileDatabaseRecovery, {
+      inspect: () => Effect.succeed<MobileDatabaseState>({ kind: "healthy" }),
+      open: () => Effect.die(new Error("unused")),
+      rebuild: Effect.die(new Error("unused")),
+      acknowledge: Effect.void,
+    }),
+  );
+  return { databaseRecoveryRuntime: () => runtime };
 });
 afterEach(() => vi.unstubAllGlobals());
 it("mailbox revision keeps the mounted reader and its resolved CID images while thread reload is pending", async () => {

@@ -73,4 +73,4 @@ Node 专用实现集中在 `packages/core/src/platform/node/`。手机从 `@open
 
 后台刷新、本地通知和徽标默认关闭。OS 决定后台任务时间；后台只拉取 Inbox 增量，不回填、不发送或推送整理队列。通知默认只显示发件人，不显示消息文本，无远程推送。代码与原生补丁见 [background.ts](../apps/mobile/src/background.ts) 和[手机端说明](../apps/mobile/README.md#前后台同步与原生权限)。
 
-自动测试使用 SQLite shim、分片协议流和原生服务 mocks，不能证明真机 TLS、Metro、通知、锁屏存储或后台唤醒。PDF 文本提取、固定地址图片下载、端侧推理及数据库恢复仍缺移动 adapter。能力表、权限和真机验收只在[手机端说明](../apps/mobile/README.md)维护。
+自动测试使用 SQLite shim、分片协议流和原生服务 mocks，不能证明真机 TLS、Metro、通知、锁屏存储或后台唤醒。数据库恢复已接入完整性检查、隔离副本、可读用户记录抢救、中断重试及 provider 重同步。PDF 文本提取和固定地址图片下载已有明确返回 unavailable 的移动 no-op adapters；端侧推理不支持，原因及后续原生验证边界见手机端说明。能力表、权限和真机验收只在[手机端说明](../apps/mobile/README.md)维护。

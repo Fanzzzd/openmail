@@ -276,6 +276,7 @@ msgstr "接続"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
+#: src/mailbox.tsx
 msgid "Continue"
 msgstr "続行"
 
@@ -343,6 +344,11 @@ msgid "Could not prepare the resend draft. Try again."
 msgstr "再送信用の下書きを準備できませんでした。もう一度お試しください。"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Could not rebuild the local database"
+msgstr "ローカルデータベースを再構築できませんでした"
+
+#. js-lingui-explicit-id
 #: app/settings.tsx
 #: src/ai-settings.tsx
 msgid "Could not save settings. Try again."
@@ -362,6 +368,11 @@ msgstr "元に戻せませんでした。再試行してください。"
 #: app/imap-setup.tsx
 msgid "Create an app password"
 msgstr "アプリ用パスワードを作成"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Database recovery was interrupted. Try recovery again."
+msgstr "データベースの復旧が中断されました。もう一度お試しください。"
 
 #. Action that moves messages to the Trash mailbox, not the mailbox name.
 #. js-lingui-explicit-id
@@ -670,7 +681,7 @@ msgid "Open link"
 msgstr "リンクを開く"
 
 #. js-lingui-explicit-id
-#: app/reader.tsx
+#: src/received-attachments-view.tsx
 msgid "Open or share {filename}"
 msgstr "{filename} を開く・共有"
 
@@ -688,6 +699,11 @@ msgstr "送信トレイ"
 #: src/failed-op-notice.tsx
 msgid "Partial delivery"
 msgstr "一部のみ配信"
+
+#. js-lingui-explicit-id
+#: src/received-attachments-view.tsx
+msgid "PDF text extraction is unavailable on mobile."
+msgstr "モバイルではPDFのテキスト抽出を利用できません。"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -716,9 +732,29 @@ msgid "Read status"
 msgstr "既読状態"
 
 #. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild local database"
+msgstr "ローカルデータベースを再構築"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept."
+msgstr "読み取れるレコードからローカルデータベースを再構築し、メールを再同期します。読み取れるローカルの下書きと待機中の変更は保持されます。元のデータベースと安全に保存されたトークンも保持されます。"
+
+#. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Recipients outside the original conversation:"
 msgstr "元のスレッドに含まれない宛先："
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items."
+msgstr "ローカルレコードを{copied}件復旧しました。読み取れない項目を{skipped}件スキップしました。"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
+msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
 
 #. js-lingui-explicit-id
 #: app/index.tsx
@@ -999,6 +1035,16 @@ msgstr "スワイプアクション"
 #: app/settings.tsx
 msgid "System language"
 msgstr "システムの言語"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database could not be verified"
+msgstr "ローカルデータベースを検証できませんでした"
+
+#. js-lingui-explicit-id
+#: src/mailbox.tsx
+msgid "The local database was recovered"
+msgstr "ローカルデータベースが回復されました"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

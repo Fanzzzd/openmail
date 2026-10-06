@@ -32,7 +32,7 @@
 | `fixtures/migration-open.mjs`                                        | fs、sqlite、Node 驱动                                     | Node 进程测试 fixture                                                                                |
 | `layers.ts`、`platform-memory.ts`、`testing.ts`、`fake-provider.ts`  | 间接依赖 Node 驱动或 MIME composer                        | Node 组装与测试适配器                                                                                |
 
-Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、`@effect/sql-sqlite-node`、`@napi-rs/keyring`、`sqlite-vec`、`onnxruntime-node`、`imapflow`、`nodemailer`、`mailparser`、`pdfjs-dist`。当前 Transformers 的模型 worker 也限定在 Node adapter；手机推理使用已有 `ModelRuntime` 替代。`better-sqlite3` 同样在禁止清单，桌面仍使用 `node:sqlite`。
+Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、`@effect/sql-sqlite-node`、`@napi-rs/keyring`、`sqlite-vec`、`onnxruntime-node`、`imapflow`、`nodemailer`、`mailparser`、`pdfjs-dist`。当前 Transformers 的模型 worker 也限定在 Node adapter；手机端未提供 `ModelRuntime`，端侧推理不支持，原因见手机端说明。`better-sqlite3` 同样在禁止清单，桌面仍使用 `node:sqlite`。
 
 core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，缺少该全局对象时回退到 `buffer/index.js` 的浏览器实现。该模块的 native Buffer 探测由导入守卫检查，边界规则见 AGENTS.md。base64url 明确转换字母表及 padding。TNEF 直接使用 Uint8Array / DataView，共享有界输入；UTF-16LE 手工保留 BOM 和独立代理码元，丢弃末尾单字节，保持原生 Buffer 的解码结果。同步 SHA-256 / HMAC 使用 `@noble/hashes` 的可移植实现，Node 的 `PlatformCrypto` 使用原生加密；随机数服务须由手机安全随机实现提供。
 
@@ -41,6 +41,10 @@ core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，�
 阅读 HTML 的 CSS 清洗和可见文本提取直接导入 `css-tree/dist/csstree.esm`。css-tree 3.2.1 的 `exports["./dist/*"]` 指向 `./dist/*.js`，该入口是完整浏览器 ESM 包，不依赖根入口的 `module.createRequire`；因此不依赖 Metro 对根入口 `browser` 字段的重定向。手机 `metro.config.cjs` 使用 Expo 默认解析器，未改写此包的解析。`platform/node/css-browser.test.ts` 验证导出映射、浏览器包及实际 CSS 解析；本 slice 未运行 Metro。
 
 MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect services，缺少 Layer 会在类型检查中报错。provider、阅读附件和 indexer 构建时捕获依赖，返回的方法不读调用方的隐藏 context。真实 NodeMailbox 回归测试覆盖 IMAP 原始 MIME fallback、正文/日历/嵌套附件、PDF 索引、文件缓存、图片输入和 SSRF 拒绝；仅替换 IMAP 传输和合成密码，使用临时数据库，不启动 Electron。
+
+手机数据库恢复位于 `platform/react-native/database-recovery.ts`，通过 `MobileDatabaseRecovery`、Effect FileSystem、AppPaths、PlatformCrypto 和结构化 op-sqlite 端口实现。用户表清单在 `platform/recovery-tables.ts`，两端共用。手机 OS 组装在 `apps/mobile/src/platform/database-recovery.ts`，前台和 headless 数据库共用恢复门；前台检查的结果与时间由 Effect FileSystem 持久保存，冷后台启动可复用未过期的成功记录。SQLite shim 只在 `packages/core/test-support`，不进入生产 build。完整性检查、隔离、抢救、provider 重同步与中断边界见[手机数据库说明](../apps/mobile/README.md#数据库)。
+
+手机 `PdfWorker` 和 `ImageNetwork` 的 no-op Layer 在 `platform/react-native/media.ts`，明确返回 unavailable。PDF.js 的现有 worker 不适用于 Hermes；手机无固定地址图片导入入口，fetch 不能替代 DNS pinning。阅读器继续使用 shouldLoadRemote／HTTPS CSP；端侧推理未实现。详细预算、安全规则和原因只在[手机媒体说明](../apps/mobile/README.md#媒体适配边界)维护。这些 adapters 不调用 Node、转换服务或云端媒体推理。
 
 portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTransport` 只暴露 TCP/TLS 字节流，手机原生实现位于 `apps/mobile/src/platform/transport.ts`。账户预设解析由两端共用 `imap-settings.ts`，密码仍经 Secrets。Expo 附件缓存与临时分享副本位于手机沙箱 cache，core 的 AttachmentFiles 仍负责容量、清理与版本失效；未增加数据库迁移。原生 TLS 证书主机名校验、Android 读取线程同步及两端握手完成事件补丁随 pnpm 锁文件安装。具体能力及验证边界见[手机端能力表](../apps/mobile/README.md#能力)。
 

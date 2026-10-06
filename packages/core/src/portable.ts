@@ -10,6 +10,8 @@ export * from "./mobile-outbox.js";
 export * from "./mobile-background.js";
 export * from "./mobile-compose.js";
 export { opSqliteLayer } from "./platform/react-native/sqlite.js";
+export * from "./platform/react-native/database-recovery.js";
+export { mobileMediaLayer } from "./platform/react-native/media.js";
 export { mobileOAuthLayer, type MobileAuthSession } from "./platform/react-native/oauth.js";
 export { mobileMailCodecLayer } from "./platform/react-native/mail-codec.js";
 export { stripMobileForms } from "./platform/react-native/reader-html.js";
