@@ -287,10 +287,10 @@ it("a slow previous selection cannot replace the latest prepared drag", async ()
           Effect.delay(target[0]?.[0] === 0 ? "30 millis" : "0 millis"),
         ),
       );
+      // Start the older selection before the newer one without relying on timers.
       const older = yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[0]] }).pipe(
-        Effect.forkChild,
+        Effect.forkChild({ startImmediately: true }),
       );
-      yield* Effect.sleep("1 millis");
       yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[1]] });
       yield* Fiber.join(older);
       expect(
