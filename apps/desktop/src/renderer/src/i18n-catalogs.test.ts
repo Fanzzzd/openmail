@@ -10,6 +10,21 @@ import { setupI18n, type Messages } from "@lingui/core";
 import { expect, it } from "vitest";
 import { parse, type Token } from "@messageformat/parser";
 
+/** Derive sample bindings from ICU instead of maintaining a list of feature-specific names. */
+function sampleArguments(tokens: readonly Token[], count: number): Record<string, string | number> {
+  const names = new Set<string>(),
+    numbers = new Set<string>();
+  const visit = (items: readonly Token[]) => {
+    for (const token of items) {
+      if ("arg" in token) names.add(token.arg);
+      if (token.type === "plural" || token.type === "selectordinal") numbers.add(token.arg);
+      if ("cases" in token) for (const branch of token.cases) visit(branch.tokens);
+    }
+  };
+  visit(tokens);
+  return Object.fromEntries([...names].map((name) => [name, numbers.has(name) ? count : "VALUE"]));
+}
+
 it("all real catalogs compile and render ICU counts, arguments and component markup", async () => {
   const po = formatter();
   const root = new URL("./locales/", import.meta.url);
@@ -56,16 +71,10 @@ it("all real catalogs compile and render ICU counts, arguments and component mar
     for (const [id, message] of Object.entries(source)) {
       if (!message.message?.includes(", plural,")) continue;
       for (const count of [0, 1, 2, 5, 21, 1.5]) {
-        const rendered = i18n._(id, {
-          count,
-          accountCount: count,
-          delay: count,
-          seconds: count,
-          pixels: count,
-          hours: count,
-          op: "ACTION",
-          total: "TOTAL",
-        });
+        const rendered = i18n._(
+          id,
+          sampleArguments(parse(message.message, { strict: true }), count),
+        );
         expect(rendered).not.toContain("plural");
         expect(rendered).not.toContain("{");
         expect(rendered).toContain(i18n.number(count));

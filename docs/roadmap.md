@@ -42,16 +42,16 @@ Gmail 与个人 Outlook 的基础读写、发信已有真实账户验证记录�
 
 原生能力以 [parity](parity.md) 的功能编号为准：
 
-| 功能编号        | 剩余范围                                                                                                  |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| A05             | ASWebAuthenticationSession 与授权浏览器选择                                                               |
-| C51、I01 至 I05 | 系统自动纠错、行内预测、Apple Writing Tools 和系统 ChatGPT 扩展；显式语法检查已有，仍需实机验收           |
-| N11             | 按 Profile 接入 Focus Filter／App Intents                                                                 |
-| N17、N19、M05   | Universal Links、Associated Domains、HTTPS 回退页和接收内容的系统分享扩展；向外分享链接已有，仍需实机验收 |
-| M06 至 M08      | Photos picker 与 Continuity Camera 的实机验收；Markup 写回尚未实现                                        |
-| M11、P06、P07   | Liquid Glass 原生控件、WebKit 行为对齐、macOS App Sandbox                                                 |
-| M01             | 单个 Universal app；当前配置生成 arm64 与 x64 两套包，Intel 真机及 ONNX 限制见发布说明                    |
-| R40             | Apple Calendar；现有 Gmail／Outlook 事件创建也不覆盖模糊自然语言日期及所有重复规则                        |
+| 功能编号        | 剩余范围                                                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| A05             | ASWebAuthenticationSession 与授权浏览器选择                                                                                 |
+| C51、I01 至 I05 | 系统自动纠错、行内预测、Apple Writing Tools 和系统 ChatGPT 扩展；显式语法检查已有，仍需实机验收                             |
+| N11             | 按 Profile 接入 Focus Filter／App Intents                                                                                   |
+| N17、N19、M05   | Universal Links、Associated Domains、HTTPS 回退页和接收内容的系统分享扩展；向外分享链接已有，仍需实机验收                   |
+| M06 至 M08      | Photos picker 与 Continuity Camera 的实机验收；Markup 写回尚未实现                                                          |
+| M11、P06、P07   | Liquid Glass 原生控件、WebKit 行为对齐、macOS App Sandbox                                                                   |
+| M01             | 单个 Universal app；当前配置生成 arm64 与 x64 两套包，Intel 真机及 ONNX 限制见发布说明                                      |
+| R40             | Apple Calendar；日期仅支持有界英中语法。常用重复规则已覆盖，Outlook 无法无损表达的月底／闰日／第 5 个星期几及例外规则会拒绝 |
 
 其余缺口包括 Workspace Directory、可选服务真实授权验收、部分 Gmail 搜索扩展与规则条件、Gmail 服务器草稿标签／星标、整库空间控制，以及实时推送。Google restricted-scope verification、Advanced Protection 与 CASA 属于外部审核事项。内置 AI 已实现，I01 至 I05 仍专指 Apple 原生能力。
 

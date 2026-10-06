@@ -12,6 +12,7 @@ import {
 import { InvalidInput } from "./errors.js";
 import { featureRequest } from "./provider-features.js";
 import { graphTimestamp } from "./graph-time.js";
+import { validateEventRecurrenceForProvider } from "./event-recurrence.js";
 import { graphRecurrence } from "./graph-recurrence.js";
 
 const GoogleTime = Schema.Struct({
@@ -58,7 +59,7 @@ function googleTime(time: typeof GoogleTime.Type | undefined): CalendarTime | nu
     ? { kind: "zoned", value: time.dateTime, zone: time.timeZone ?? "UTC", timestamp: stamp }
     : null;
 }
-const GOOGLE_ZONES = new Set(Intl.supportedValuesOf("timeZone"));
+const GOOGLE_ZONES = new Set([...Intl.supportedValuesOf("timeZone"), "UTC", "Etc/UTC"]);
 function googleZone(zone: string): string | undefined {
   const mapped = WINDOWS_ZONES[zone] ?? zone;
   if (GOOGLE_ZONES.has(mapped)) return mapped;
@@ -220,15 +221,32 @@ export function makeProviderCalendar<
               try: () => calendarWindow(event),
               catch: () => new InvalidInput({ message: "Invalid calendar event time" }),
             });
+            yield* Effect.try({
+              try: () => validateEventRecurrenceForProvider(event, provider),
+              catch: (error) =>
+                error instanceof InvalidInput
+                  ? error
+                  : new InvalidInput({ message: "Invalid calendar event time" }),
+            });
             const uid =
               event.uid ?? `openmail-${sha256Hex(`${account.id}:${event.key}`)}@openmail.local`;
-            const identity = sha256Hex(JSON.stringify([account.id, uid]));
+            const identity = sha256Hex(
+              JSON.stringify([
+                account.id,
+                uid,
+                event.start,
+                event.end,
+                event.title,
+                event.recurrence,
+              ]),
+            );
+            const importUid = event.uid ? uid : `openmail-${identity}@openmail.local`;
             const body = yield* Effect.try({
               try: () =>
                 provider === "gmail"
                   ? {
                       summary: event.title,
-                      iCalUID: uid,
+                      iCalUID: importUid,
                       start: googleInput(event.start, event.recurrence.length > 0),
                       end: googleInput(event.end, event.recurrence.length > 0),
                       location: event.location,
@@ -256,7 +274,7 @@ export function makeProviderCalendar<
               const seen = new Set<string>();
               do {
                 const query = new URLSearchParams({
-                  iCalUID: uid,
+                  iCalUID: importUid,
                   ...(token ? { pageToken: token } : {}),
                 });
                 const page = yield* get(account.id, GooglePage, `${GOOGLE}?${query.toString()}`);

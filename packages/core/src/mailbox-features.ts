@@ -8,11 +8,13 @@ import {
   COMPOSE_IMAGE_LIMIT,
   type ImageDownloader,
 } from "./compose-images.js";
-import { Clock, Effect, Semaphore } from "effect";
+import { Clock, Effect, Schema, Semaphore } from "effect";
 import type { Account, Actor, Command } from "./domain.js";
 import {
   calendarTimestamp,
   detectMailEvents,
+  editCalendarEvent,
+  CalendarEventEdits,
   inviteHistory,
   matchingInviteAttendee,
   shouldLoadInvitation,
@@ -246,7 +248,12 @@ export function makeFeatureMailbox(
           });
         return yield* adapter.calendarEvents(account, { ...event, key: invite.uid });
       }),
-    createCalendarEvent: (messageId: string, key: string, actor: Actor) =>
+    createCalendarEvent: (
+      messageId: string,
+      key: string,
+      actor: Actor,
+      edits?: CalendarEventEdits,
+    ) =>
       responseLock.withPermit(
         Effect.gen(function* () {
           if (actor.kind !== "user" || actor.surface !== "app")
@@ -263,7 +270,20 @@ export function makeFeatureMailbox(
             return yield* new InvalidInput({
               message: "Calendar access is unavailable for this account",
             });
-          yield* adapter.createCalendarEvent(account, event);
+          const message = yield* store.getMessage(messageId);
+          const updated = yield* Effect.try({
+            try: () =>
+              editCalendarEvent(
+                event,
+                Schema.decodeUnknownSync(CalendarEventEdits)(edits ?? {}),
+                message.date,
+              ),
+            catch: (error) =>
+              error instanceof InvalidInput
+                ? error
+                : new InvalidInput({ message: "Invalid calendar event time" }),
+          });
+          yield* adapter.createCalendarEvent(account, updated);
           yield* store.audit({
             actor,
             accountId: account.id,

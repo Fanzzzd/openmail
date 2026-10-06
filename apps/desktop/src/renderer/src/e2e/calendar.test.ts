@@ -1,6 +1,8 @@
-import { afterEach, expect, it } from "vitest";
+import { afterAll, beforeAll, afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
 import { flow, incoming, row, eventually } from "./harness";
+beforeAll(() => vi.stubEnv("TZ", "UTC"));
+afterAll(() => vi.unstubAllEnvs());
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
   await current?.dispose();
@@ -33,4 +35,164 @@ it("event detection uses core results and refreshes same-id body changes without
   fireEvent.click(screen.getByRole("button", { name: "Confirm and add event" }));
   await eventually(() => expect(h.server.createdEvents[0]?.title).toBe("CD456"));
   expect(h.server.createdEvents[0]?.endEstimated).toBe(true);
+});
+
+it("confirmation edits dates and multi-weekday recurrence through RPC with a readable summary", async () => {
+  current = await flow({
+    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00" })],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
+  fireEvent.change(screen.getByLabelText("Event date or range"), {
+    target: { value: "2026-10-26 09:00–10:00" },
+  });
+  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "weekly" } });
+  fireEvent.change(screen.getByLabelText("Interval"), { target: { value: "2" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Wed" }));
+  fireEvent.change(screen.getByLabelText("Ends"), { target: { value: "until" } });
+  fireEvent.change(screen.getByLabelText("Repeat end date"), { target: { value: "2026-12-31" } });
+  expect(screen.getByText("Every 2 weeks on Mon & Wed until Dec 31, 2026")).toBeTruthy();
+  expect(h.server.createdEvents).toHaveLength(0);
+  fireEvent.click(screen.getByRole("button", { name: "Confirm and add event" }));
+  await eventually(() => expect(h.server.createdEvents).toHaveLength(1));
+  expect(h.server.createdEvents[0]?.recurrence).toEqual([
+    "RRULE:FREQ=WEEKLY;BYDAY=MO,WE;WKST=MO;INTERVAL=2;UNTIL=20270101T045959Z",
+  ]);
+  expect(h.server.createdEvents[0]?.start).toMatchObject({
+    kind: "zoned",
+    zone: "America/New_York",
+    timestamp: Date.parse("2026-10-26T13:00:00Z"),
+  });
+});
+
+it("ambiguous dates block confirmation until the person chooses an explicit date", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { date: Date.parse("2026-10-09T12:00:00Z"), bodyText: "Meet Friday" }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  expect(screen.getByText("Date is ambiguous. Enter an explicit date and time")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  expect(
+    screen.getByRole("button", { name: "Download calendar file" }).hasAttribute("disabled"),
+  ).toBe(true);
+  fireEvent.change(screen.getByLabelText("Event date or range"), { target: { value: "03/04" } });
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  fireEvent.change(screen.getByLabelText("Event date or range"), {
+    target: { value: "2026-10-16 15:00" },
+  });
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(false);
+  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "yearly-date" } });
+  fireEvent.change(screen.getByLabelText("Month"), { target: { value: "0" } });
+  expect(screen.getByText("Check the date and repeat settings")).toBeTruthy();
+  expect(screen.getByLabelText("Month").closest("fieldset")?.hasAttribute("disabled")).toBe(false);
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  fireEvent.change(screen.getByLabelText("Month"), { target: { value: "10" } });
+  fireEvent.change(screen.getByLabelText("Ends"), { target: { value: "count" } });
+  fireEvent.change(screen.getByLabelText("Occurrences"), { target: { value: "3" } });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm and add event" }));
+  await eventually(() => expect(h.server.createdEvents).toHaveLength(1));
+  expect(h.server.createdEvents[0]?.recurrence).toEqual([
+    "RRULE:FREQ=YEARLY;BYMONTH=10;BYMONTHDAY=16;INTERVAL=1;COUNT=3",
+  ]);
+});
+
+it("Outlook shows a lossless-mapping error before confirmation for a month-end repeat", async () => {
+  current = await flow({
+    provider: "outlook",
+    messages: [incoming("one", { bodyText: "Trip 2026-10-31" })],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "monthly-date" } });
+  expect(screen.getByText("This recurrence cannot be represented in Outlook")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  expect(h.server.createdEvents).toHaveLength(0);
+  expect(h.requests.some((request) => request.tag === "CreateCalendarEvent")).toBe(false);
+});
+
+it("changing the start flags the rule mismatch and leaves the editor available to fix it", async () => {
+  current = await flow({
+    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00" })],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  expect(screen.getByLabelText("Time zone").tagName).toBe("SELECT");
+  expect(screen.getByRole("option", { name: "America/New_York" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "weekly" } });
+  fireEvent.change(screen.getByLabelText("Event date or range"), {
+    target: { value: "2026-10-27 09:00–10:00" },
+  });
+  expect(screen.getByText("Repeat pattern must include the event start date")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  expect(
+    screen.getByLabelText("Repeat pattern").closest("fieldset")?.hasAttribute("disabled"),
+  ).toBe(false);
+  expect(h.requests.some((request) => request.tag === "CreateCalendarEvent")).toBe(false);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Tue" }));
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(false);
+});
+it("DST gaps have an explicit offset prompt before any creation", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", {
+        bodyText: "Meeting 2026-03-08 02:30",
+        date: Date.parse("2026-03-01T12:00:00Z"),
+      }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
+  expect(
+    screen.getByText(
+      "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset",
+    ),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
+  ).toBe(true);
+  expect(h.server.createdEvents).toHaveLength(0);
 });

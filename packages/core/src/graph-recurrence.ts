@@ -113,7 +113,10 @@ function recurringTime(time: CalendarTime) {
   return { dateTime, timeZone };
 }
 
-/** Only lossless RRULE mappings. Exceptions/multiple rules are rejected before any POST. */
+/** Field names and range semantics:
+ * https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern
+ * https://learn.microsoft.com/en-us/graph/api/resources/recurrencerange
+ * Only lossless RRULE mappings. Exceptions/multiple rules are rejected before any POST. */
 export function graphRecurrence(event: CalendarEvent): {
   start: ReturnType<typeof recurringTime>;
   end: ReturnType<typeof recurringTime>;

@@ -1,5 +1,11 @@
 /** Fixed validation and device messages authored by OpenMail. Provider/OS details are excluded. */
 export const PUBLIC_ERROR_MESSAGES = new Set([
+  "Repeat pattern must include the event start date",
+  "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset",
+
+  "Date is ambiguous. Enter an explicit date and time",
+  "Repeat end date must be on or after the event",
+  "Cannot edit a series with recurrence overrides",
   "Remote writes are disabled in this read-only session",
   "A folder cannot be moved inside itself",
   "A label or folder needs a valid name",

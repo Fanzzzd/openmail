@@ -3568,6 +3568,9 @@ exports[`tool input and output schemas are stable 1`] = `
                 "items": {
                   "additionalProperties": true,
                   "properties": {
+                    "dateInput": {
+                      "type": "string",
+                    },
                     "description": {
                       "type": "string",
                     },

@@ -20,6 +20,12 @@ const NOT_FOUND = {
   attachment: msg`Can't find this attachment.`,
 } as const;
 export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Repeat pattern must include the event start date": msg`Repeat pattern must include the event start date`,
+  "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset": msg`This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset`,
+
+  "Date is ambiguous. Enter an explicit date and time": msg`Date is ambiguous. Enter an explicit date and time`,
+  "Repeat end date must be on or after the event": msg`Repeat end date must be on or after the event`,
+  "Cannot edit a series with recurrence overrides": msg`Cannot edit a series with recurrence overrides`,
   "Some rule conditions cannot be evaluated from cached mail": msg`Some rule conditions cannot be evaluated from cached mail`,
   "This rule can only be applied to future mail on the server": msg`This rule can only be applied to future mail on the server`,
   "Unsupported server rule": msg`Unsupported server rule`,

@@ -2,21 +2,48 @@ import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   calendarEventIcs,
+  CalendarEventEdits,
+  editCalendarEvent,
+  localCalendarTimeZone,
+  calendarIanaZones,
+  calendarZoneName,
+  validateEventRecurrenceForProvider,
+  type EventRecurrence,
   DEFAULT_PREFS,
   formatCalendarRange,
   type CalendarEvent,
 } from "@openmail/core/schema";
-import { Cause } from "effect";
+import type { I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Cause, Schema } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 import type { Message } from "../../../shared/api";
 import { calendarEventsAtom, detectedEventsAtom, prefsAtom, accountsAtom } from "../state/queries";
 import { createCalendarEventAtom, reauthAtom } from "../state/mutations";
 import { Keys } from "../state/keys";
-import { type AppError, resultError } from "../errors";
+import { type AppError, resultError, INPUT_ERRORS } from "../errors";
 import { Dialog, alertButton, alertPrimary } from "./ui/Dialog";
-import { formButton } from "./ui/form-styles";
+import { EventRecurrenceEditor } from "./EventRecurrenceEditor";
+import { formButton, formInput } from "./ui/form-styles";
 
+const DATE_ZONES = calendarIanaZones();
+function editorTimeZone(event: CalendarEvent): string {
+  if (event.start.kind === "zoned") {
+    try {
+      const zone = calendarZoneName(event.start.zone);
+      if (DATE_ZONES.includes(zone)) return zone;
+    } catch {
+      /* Unknown source zones remain visible in the event details. */
+    }
+  }
+  return localCalendarTimeZone();
+}
+const CHECK_SETTINGS = msg`Check the date and repeat settings`;
+function inputErrorText(error: unknown, i18n: I18n): string {
+  const descriptor = error instanceof Error ? INPUT_ERRORS[error.message] : undefined;
+  return i18n._(descriptor ?? CHECK_SETTINGS);
+}
 /** The failure of a calendar call, for CalendarAccessAction. */
 export function calendarFailure<A>(result: AsyncResult.AsyncResult<A, AppError>) {
   if (result._tag !== "Failure") return null;
@@ -131,19 +158,56 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
   const { t, i18n } = useLingui();
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState(false);
-  const [result, create] = useAtom(createCalendarEventAtom, { mode: "promiseExit" });
+  const [dateInput, setDateInput] = useState<string | null>(event.dateInput ?? null);
+  const [timeZone, setTimeZone] = useState(editorTimeZone(event));
+  const [recurrence, setRecurrence] = useState<EventRecurrence | null | undefined>(
+    event.recurrence.length ? undefined : null,
+  );
+  const dates = dateInput === null ? undefined : { input: dateInput, timeZone };
+  const edits: CalendarEventEdits = {
+    ...(dates ? { dates } : {}),
+    ...(recurrence === undefined ? {} : { recurrence }),
+  };
   const accounts = AsyncResult.getOrElse(useAtomValue(accountsAtom), () => []);
-  const provider = accounts.find((a) => a.id === message.accountId)?.provider;
-  const email = accounts.find((a) => a.id === message.accountId)?.email ?? "";
-  const range = formatCalendarRange(event, i18n.locale);
+  const account = accounts.find((a) => a.id === message.accountId);
+  const provider = account?.provider;
+  const email = account?.email ?? "";
+  let preview: CalendarEvent | null = null;
+  let datePreview: CalendarEvent | null = null;
+  let validationError = "";
+  let providerError = "";
+  try {
+    datePreview = editCalendarEvent(
+      { ...event, recurrence: [] },
+      dates ? { dates } : {},
+      message.date,
+    );
+    preview = editCalendarEvent(
+      event,
+      Schema.decodeUnknownSync(CalendarEventEdits)(edits),
+      message.date,
+    );
+    try {
+      validateEventRecurrenceForProvider(preview, provider);
+    } catch (error) {
+      providerError = inputErrorText(error, i18n);
+    }
+  } catch (error) {
+    validationError = inputErrorText(error, i18n);
+  }
+  const [result, create] = useAtom(createCalendarEventAtom, { mode: "promiseExit" });
+  const shown = preview ?? event;
+  const range = preview
+    ? formatCalendarRange(preview, i18n.locale)
+    : (event.dateInput ?? t`Choose a date and time`);
   return (
     <section className="mt-3 space-y-2 rounded-lg border border-blue-200 p-3 dark:border-blue-900">
       <h3 className="font-semibold">{event.title || message.subject}</h3>
       <p>
         {range}
-        {event.start.kind === "date" && <> · {t`All day`}</>}
+        {shown.start.kind === "date" && <> · {t`All day`}</>}
       </p>
-      {event.endEstimated && (
+      {shown.endEstimated && (
         <p>
           <Trans>End time is estimated. Review it before adding the event.</Trans>
         </p>
@@ -159,16 +223,16 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
         >
           <h2 className="font-semibold">{t`Add this event to your calendar?`}</h2>
           <p>{t`Review the event details before confirming.`}</p>
-          <div className="max-h-64 space-y-2 overflow-auto break-words">
+          <div className="max-h-[55vh] space-y-2 overflow-auto break-words">
             <p>{email}</p>
             <h3 className="font-semibold">{event.title || message.subject}</h3>
             <p>{range}</p>
-            {event.endEstimated && (
+            {shown.endEstimated && (
               <p>
                 <Trans>End time is estimated. Review it before adding the event.</Trans>
               </p>
             )}
-            {event.start.kind === "date" && (
+            {shown.start.kind === "date" && (
               <p>
                 <Trans>All day</Trans>
               </p>
@@ -177,8 +241,55 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
               {t`Location`}: {event.location || t`None`}
             </p>
             {event.description && <p className="whitespace-pre-wrap">{event.description}</p>}
-            {!!event.recurrence.length && <p>{event.recurrence.join("; ")}</p>}
+            <label className="block">
+              {t`Event date or range`}
+              <input
+                className={formInput}
+                value={dateInput ?? ""}
+                placeholder={t`For example: tomorrow 3pm or Oct 12–14`}
+                disabled={result.waiting}
+                onChange={(e) => setDateInput(e.target.value || null)}
+              />
+            </label>
+            <p className="text-sm">{t`Relative dates use the date of this message.`}</p>
+            <label className="block">
+              {t`Time zone`}
+              <select
+                className={formInput}
+                value={timeZone}
+                disabled={result.waiting}
+                onChange={(e) => {
+                  setTimeZone(e.target.value);
+                  if (dateInput === null) setDateInput(event.start.value);
+                }}
+              >
+                {DATE_ZONES.map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <EventRecurrenceEditor
+              rule={recurrence}
+              start={datePreview?.start ?? event.start}
+              onChange={setRecurrence}
+              disabled={result.waiting || !!event.hasRecurrenceOverrides || !datePreview}
+            />
+            {recurrence === undefined && !!event.recurrence.length && (
+              <p>{event.recurrence.join("; ")}</p>
+            )}
+            {validationError && (
+              <p role="alert" className="text-a11y-danger">
+                {validationError}
+              </p>
+            )}
           </div>
+          {providerError && (
+            <p role="alert" className="text-a11y-danger">
+              {providerError}
+            </p>
+          )}
           {resultError(i18n, result) && (
             <p role="alert" className="text-a11y-danger">
               {resultError(i18n, result)}
@@ -196,9 +307,12 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
             <button
               type="button"
               className={alertButton}
+              disabled={result.waiting || !preview}
               onClick={() => {
                 const url = URL.createObjectURL(
-                  new Blob([calendarEventIcs(event)], { type: "text/calendar;charset=utf-8" }),
+                  new Blob([calendarEventIcs(shown)], {
+                    type: "text/calendar;charset=utf-8",
+                  }),
                 );
                 const link = document.createElement("a");
                 link.href = url;
@@ -212,10 +326,10 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
               <button
                 type="button"
                 className={alertPrimary}
-                disabled={result.waiting}
+                disabled={result.waiting || !preview || !!providerError}
                 onClick={async () => {
                   const exit = await create({
-                    payload: { messageId: message.id, key: event.key },
+                    payload: { messageId: message.id, key: event.key, edits },
                     reactivityKeys: [Keys.audit],
                   });
                   if (exit._tag === "Success") {

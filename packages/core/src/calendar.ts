@@ -3,6 +3,22 @@ import { structuredMailEvents } from "./structured-events.js";
 import { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 export { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 import { Schema } from "effect";
+import {
+  calendarDateCandidates,
+  calendarParseDates,
+  type DateContext,
+  calendarWallTime,
+  calendarZoneName,
+  localCalendarTimeZone,
+} from "./event-dates.js";
+import {
+  eventRecurrenceRule,
+  validateRecurrenceStart,
+  type CalendarEventEdits,
+} from "./event-recurrence.js";
+import { InvalidInput } from "./errors.js";
+export * from "./event-dates.js";
+export * from "./event-recurrence.js";
 import { Address, type Message, type Provider } from "./domain.js";
 
 export const InviteResponse = Schema.Literals(["accepted", "tentative", "declined"]);
@@ -29,6 +45,7 @@ export const CalendarEvent = Schema.Struct({
   description: Schema.String,
   recurrence: Schema.Array(Schema.String),
   endEstimated: Schema.optionalKey(Schema.Boolean),
+  dateInput: Schema.optionalKey(Schema.String),
   hasRecurrenceOverrides: Schema.optionalKey(Schema.Boolean),
 });
 export type CalendarEvent = typeof CalendarEvent.Type;
@@ -41,72 +58,89 @@ export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
   return { timeMin: new Date(start).toISOString(), timeMax: new Date(end).toISOString() };
 }
 
-/** Detect explicit ISO dates and times only; ambiguous prose is left to the person. */
+/** The message date anchors relative expressions, so reopening never moves a candidate. */
 export function detectMailEvents(
-  message: Pick<Message, "subject" | "bodyText"> & Partial<Pick<Message, "bodyHtml">>,
+  message: Pick<Message, "subject" | "bodyText"> & Partial<Pick<Message, "bodyHtml" | "date">>,
+  context: DateContext = {
+    reference: message.date ?? Date.now(),
+    timeZone: localCalendarTimeZone(),
+  },
 ): CalendarEvent[] {
   const structured = structuredMailEvents(message.bodyHtml ?? "", message.subject);
   if (structured.events.length || structured.cancelled) return structured.events;
-  const result: CalendarEvent[] = [];
-  const pattern =
-    /\b(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2})(?::\d{2})?(Z|[+-]\d{2}:\d{2})?)?(?:\s*(?:–|—|-|to|至)\s*(\d{2}:\d{2}))?/g;
-  for (const match of message.bodyText.slice(0, 100_000).matchAll(pattern)) {
-    if (result.length >= 20) break;
-    const date = match[1] ?? "";
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-      !Number.isFinite(Date.parse(date)) ||
-      new Date(date).toISOString().slice(0, 10) !== date
-    )
-      continue;
-    if (
-      [match[2], match[4]].some(
-        (time) => time && (Number(time.slice(0, 2)) > 23 || Number(time.slice(3, 5)) > 59),
-      )
-    )
-      continue;
-    const wall = `${date}T${match[2]}:00`;
-    const start: CalendarTime = !match[2]
-      ? { kind: "date", value: date }
-      : match[3]
-        ? {
-            kind: "zoned",
-            value: `${wall}${match[3]}`,
-            zone: "UTC",
-            timestamp: Date.parse(`${wall}${match[3]}`),
-          }
-        : { kind: "floating", value: wall };
-    const stamp = calendarTimestamp(start);
-    if (!Number.isFinite(stamp)) continue;
-    let end: CalendarTime;
-    if (start.kind === "date") {
-      const day = new Date(`${date}T00:00:00Z`);
-      day.setUTCDate(day.getUTCDate() + 1);
-      end = { kind: "date", value: day.toISOString().slice(0, 10) };
-    } else if (match[4]) {
-      const value = `${date}T${match[4]}:00${match[3] ?? ""}`;
-      end =
-        start.kind === "floating"
-          ? { kind: "floating", value }
-          : { kind: "zoned", value, zone: "UTC", timestamp: Date.parse(value) };
-    } else
-      end = {
-        kind: "zoned",
-        value: new Date(stamp + 3600000).toISOString(),
-        zone: "UTC",
-        timestamp: stamp + 3600000,
-      };
-    if (calendarTimestamp(end) <= stamp || !Number.isFinite(calendarTimestamp(end))) continue;
-    result.push({
-      key: `text:${match.index}:${match[0]}`,
-      title: message.subject,
-      start,
-      end,
-      location: "",
-      description: message.bodyText.slice(0, 8000),
-      recurrence: [],
+  return calendarDateCandidates(message.bodyText).flatMap(({ input, index }) => {
+    const parsed = calendarParseDates(input, context);
+    if (parsed.kind === "invalid") return [];
+    const times =
+      parsed.kind === "parsed"
+        ? { start: parsed.start, end: parsed.end }
+        : {
+            start: { kind: "floating", value: "" } satisfies CalendarTime,
+            end: { kind: "floating", value: "" } satisfies CalendarTime,
+          };
+    return [
+      {
+        key: `text:${index}:${input}`,
+        title: message.subject,
+        ...times,
+        dateInput: input,
+        endEstimated: parsed.kind === "parsed" && parsed.endEstimated,
+        location: "",
+        description: message.bodyText.slice(0, 8000),
+        recurrence: [],
+      },
+    ];
+  });
+}
+
+/** Only dates and a typed repeat rule can be edited; identity and source details stay server-owned. */
+export function editCalendarEvent(
+  event: CalendarEvent,
+  edits: CalendarEventEdits,
+  reference: number,
+): CalendarEvent {
+  let result = event;
+  if (edits.dates) {
+    const parsed = calendarParseDates(edits.dates.input, {
+      reference,
+      timeZone: edits.dates.timeZone,
     });
+    if (parsed.kind !== "parsed")
+      throw new InvalidInput({
+        message:
+          parsed.kind === "ambiguous"
+            ? parsed.reason === "dst"
+              ? "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
+              : "Date is ambiguous. Enter an explicit date and time"
+            : "Invalid calendar event time",
+      });
+    result = {
+      ...result,
+      start: parsed.start,
+      end: parsed.end,
+      endEstimated: parsed.endEstimated,
+      dateInput: edits.dates.input,
+    };
   }
+  if (edits.recurrence !== undefined) {
+    if (event.hasRecurrenceOverrides)
+      throw new InvalidInput({ message: "Cannot edit a series with recurrence overrides" });
+    result = {
+      ...result,
+      recurrence:
+        edits.recurrence === null ? [] : [eventRecurrenceRule(edits.recurrence, result.start)],
+    };
+  }
+  if (
+    event.uid &&
+    JSON.stringify([event.start, event.end, event.recurrence]) !==
+      JSON.stringify([result.start, result.end, result.recurrence])
+  ) {
+    const { uid: _sourceUid, ...copy } = result;
+    result = copy;
+  }
+  calendarWindow(result);
+  validateRecurrenceStart(result);
   return result;
 }
 
@@ -168,7 +202,7 @@ export function formatCalendarTime(time: CalendarTime, locale: string): string {
   const local = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
     time.timestamp,
   );
-  const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const localZone = localCalendarTimeZone();
   if (localZone === time.zone) return `${local} (${time.zone})`;
   return `${local} (${localZone}); ${time.value.replace("T", " ").replace(/Z$/, "")} (${time.zone})`;
 }
@@ -303,7 +337,18 @@ const icsTime = (time: CalendarTime) => {
     .replace(/\.\d{3}/, "")}`;
 };
 
-/** Export detected one-off events without needing a calendar permission. */
+/** IANA TZID keeps a downloaded series on its local clock across DST. */
+function recurringIcsTime(time: CalendarTime): string {
+  if (time.kind === "date") return icsTime(time);
+  const zone = time.kind === "zoned" ? time.zone : localCalendarTimeZone();
+  const stamp = calendarTimestamp(time);
+  const wall = calendarWallTime(stamp, zone).replaceAll("-", "").replaceAll(":", "");
+  // Intl validates and canonicalizes the TZID before it becomes an ICS parameter.
+  const canonical = calendarZoneName(zone);
+  return `;TZID=${canonical}:${wall}`;
+}
+
+/** Export confirmed events without needing a calendar permission. */
 export function calendarEventIcs(event: CalendarEvent): string {
   calendarWindow(event);
   const lines = [
@@ -314,8 +359,8 @@ export function calendarEventIcs(event: CalendarEvent): string {
     "BEGIN:VEVENT",
     `UID:${escapeCalendarText(event.uid ?? `openmail-${sha256Hex(event.key)}@openmail.local`)}`,
     "DTSTAMP:19700101T000000Z",
-    `DTSTART${icsTime(event.start)}`,
-    `DTEND${icsTime(event.end)}`,
+    `DTSTART${event.recurrence.length ? recurringIcsTime(event.start) : icsTime(event.start)}`,
+    `DTEND${event.recurrence.length ? recurringIcsTime(event.end) : icsTime(event.end)}`,
     `SUMMARY:${escapeCalendarText(event.title)}`,
     `LOCATION:${escapeCalendarText(event.location)}`,
     `DESCRIPTION:${escapeCalendarText(event.description)}`,

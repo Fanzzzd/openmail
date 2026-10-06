@@ -62,7 +62,12 @@ import type {
   SendUncertain,
   SettingsScopeMissing,
 } from "./errors.js";
-import type { CalendarEvent, CalendarInvite, InviteResponse } from "./calendar.js";
+import type {
+  CalendarEvent,
+  CalendarEventEdits,
+  CalendarInvite,
+  InviteResponse,
+} from "./calendar.js";
 import type { ContactSync, ContactGroup } from "./contacts.js";
 import type { ClientConfig, ConnectInput } from "./services.js";
 
@@ -236,6 +241,7 @@ export class Mailbox extends Context.Service<
       messageId: string,
       key: string,
       actor: Actor,
+      edits?: CalendarEventEdits,
     ): Effect.Effect<void, PerformError>;
     invitations(messageId: string): Effect.Effect<CalendarInvite[], PerformError>;
     respondInvite(

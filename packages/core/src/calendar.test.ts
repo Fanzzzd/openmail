@@ -337,7 +337,12 @@ import { Mailbox } from "./mailbox.js";
   it("detects explicit dates and ranges in local time, preserves all-day dates and rejects invalid times", () => {
     const [found] = detectMailEvents(message);
     assert.ok(found);
-    assert.deepStrictEqual(found.start, { kind: "floating", value: "2026-10-10T09:00:00" });
+    assert.deepStrictEqual(found.start, {
+      kind: "zoned",
+      value: "2026-10-10T09:00:00",
+      zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timestamp: new Date("2026-10-10T09:00:00").getTime(),
+    });
     assert.strictEqual(calendarTimestamp(found.end) - calendarTimestamp(found.start), 90 * 60000);
     const [day] = detectMailEvents({ ...message, bodyText: "2026-10-10" });
     assert.ok(day);

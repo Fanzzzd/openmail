@@ -151,6 +151,14 @@ msgstr "{pixels, plural, other {# 个追踪像素}}"
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, other {# 秒}}"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary} until {date}"
+msgstr "{summary}，截至 {date}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
+msgstr "{summary}, {count, plural, other {# 次}}"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
@@ -387,6 +395,10 @@ msgstr "地址或域名"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "不再建议的地址"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "After a number of occurrences"
+msgstr "达到指定次数后"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "After date"
@@ -964,6 +976,10 @@ msgstr "取消"
 msgid "Cannot build calendar response"
 msgstr "无法生成日历响应"
 
+#: src/renderer/src/errors.ts
+msgid "Cannot edit a series with recurrence overrides"
+msgstr "无法编辑含单次例外的重复事件"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Categories"
 msgstr "类别"
@@ -1042,6 +1058,10 @@ msgstr "输入时检查拼写"
 msgid "Check sync health"
 msgstr "检查同步状态"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Check the date and repeat settings"
+msgstr "请检查日期和重复设置"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "正在检查更新…"
@@ -1069,6 +1089,10 @@ msgstr "插入图片前，请选择“{editBody}”。"
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "请选择会话"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Choose a date and time"
+msgstr "请选择日期和时间"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a future reminder time"
@@ -1643,6 +1667,10 @@ msgstr "自定义图标"
 msgid "Custom time"
 msgstr "自选时间"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Daily"
+msgstr "每天"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "深色背景"
@@ -1662,9 +1690,17 @@ msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 Op
 msgid "Date"
 msgstr "日期"
 
+#: src/renderer/src/errors.ts
+msgid "Date is ambiguous. Enter an explicit date and time"
+msgstr "日期有歧义，请输入明确的日期和时间"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "日"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Day of month"
+msgstr "每月日期"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1838,6 +1874,10 @@ msgstr "不要转发"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "不包含词语"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Does not repeat"
+msgstr "不重复"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -2027,6 +2067,10 @@ msgstr "结束"
 msgid "End time is estimated. Review it before adding the event."
 msgstr "结束时间为估算值。添加事件前请核对。"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Ends"
+msgstr "结束条件"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "请输入未来的提醒时间"
@@ -2059,6 +2103,34 @@ msgstr "填写项目反馈邮箱"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
 msgstr "请在收件人、抄送和密送中输入有效邮箱地址。"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Event date or range"
+msgstr "事件日期或范围"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# day} other {# days}}"
+msgstr "{interval, plural, other {每 # 天}}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on day {date}"
+msgstr "{interval, plural, other {每 # 个月}}的 {date} 日"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on the {ordinal} {day}"
+msgstr "{interval, plural, other {每 # 个月}}的{ordinal}个{day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# week} other {# weeks}} on {days}"
+msgstr "{interval, plural, other {每 # 周}}的{days}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} in {month} on the {ordinal} {day}"
+msgstr "{interval, plural, other {每 # 年}}{month}的{ordinal}个{day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} on {date}"
+msgstr "{interval, plural, other {每 # 年}}的 {date}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -2149,6 +2221,10 @@ msgstr "反馈"
 msgid "Feedback address"
 msgstr "反馈邮箱"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fifth"
+msgstr "第五"
+
 #: src/renderer/src/state/desktop.ts
 msgid "File"
 msgstr "文件"
@@ -2182,6 +2258,10 @@ msgstr "请在浏览器里完成授权"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "请在浏览器里完成授权。完成后回到这里。"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "First"
+msgstr "第一"
 
 #: src/renderer/src/components/EmailFrame.tsx
 msgid "Fit to width"
@@ -2237,6 +2317,10 @@ msgstr "字体"
 msgid "Font size"
 msgstr "字号"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "For example: tomorrow 3pm or Oct 12–14"
+msgstr "例如：明天下午三点或10月12日至14日"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "For your information"
 msgstr "供参考"
@@ -2273,6 +2357,10 @@ msgstr "转发标记"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "作为附件转发"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fourth"
+msgstr "第四"
 
 #: src/main/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
@@ -2614,6 +2702,10 @@ msgstr "应用内部目录"
 msgid "Internal reply"
 msgstr "内部回复"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Interval"
+msgstr "间隔"
+
 #: src/renderer/src/ai-settings-errors.test.ts
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
@@ -2669,6 +2761,10 @@ msgstr "{0} 正文保留期限"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep category"
 msgstr "保留分类"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Keep existing rule"
+msgstr "保留现有规则"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep importance"
@@ -2755,6 +2851,18 @@ msgstr "放大文字"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Larger than"
 msgstr "大于"
+
+#. Last weekday occurrence in a month; a dropdown option.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence position option"
+msgid "Last"
+msgstr "最后一个"
+
+#. Ordinal inside a recurrence summary, before a weekday name.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence summary ordinal"
+msgid "Last"
+msgstr "最后一"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
@@ -3186,9 +3294,18 @@ msgstr "修改 {token}"
 msgid "Monday"
 msgstr "星期一"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Month"
 msgstr "月"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by date"
+msgstr "每月按日期"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by weekday"
+msgstr "每月按星期"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
@@ -3361,6 +3478,10 @@ msgstr "名称，比如 工作"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "需要重新登录"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Never"
+msgstr "永不"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Never synced"
@@ -3630,6 +3751,10 @@ msgstr "编号列表"
 msgid "OAuth client not configured. Set it up before syncing."
 msgstr "未配置 OAuth 客户端。请先配置再同步。"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Occurrences"
+msgstr "次数"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -3654,6 +3779,10 @@ msgstr "旧邮件已回填"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "最早的在前"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "On a date"
+msgstr "指定日期"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
@@ -3977,6 +4106,10 @@ msgstr "纯文本"
 msgid "Port"
 msgstr "端口"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Position"
+msgstr "顺序"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "在输入框外按 ? 查看快捷键。"
@@ -4166,6 +4299,10 @@ msgstr "拒绝"
 msgid "Reject suggestion"
 msgstr "拒绝建议"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Relative dates use the date of this message."
+msgstr "相对日期以这封邮件的日期为准。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "提醒时间"
@@ -4274,6 +4411,26 @@ msgstr "已去掉星标"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "重命名"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat"
+msgstr "重复"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat end date"
+msgstr "重复截止日期"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat end date must be on or after the event"
+msgstr "重复截止日期不能早于事件日期"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat pattern"
+msgstr "重复规则"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat pattern must include the event start date"
+msgstr "重复规则必须包含事件开始日期"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats daily"
@@ -4663,6 +4820,10 @@ msgstr "搜索模板"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "搜索服务器中…"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Second"
+msgstr "第二"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
@@ -5426,6 +5587,10 @@ msgstr "这些不是邮件地址：{list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "这些已加载的会话将移至垃圾箱，可以整批撤销。"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Third"
+msgstr "第三"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
@@ -5506,6 +5671,10 @@ msgstr "这个空间还没有账户。"
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "这个空间还没有账户。<0>添加账户</0>"
 
+#: src/renderer/src/errors.ts
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
+msgstr "夏令时切换使该时间不存在或重复，请输入带 UTC 偏移的日期和时间"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Thread link copied"
 msgstr "已复制会话链接"
@@ -5518,6 +5687,10 @@ msgstr "星期四"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "时间"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Time zone"
+msgstr "时区"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -5872,6 +6045,14 @@ msgstr "已复制网页邮箱链接"
 msgid "Wednesday"
 msgstr "星期三"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekday"
+msgstr "星期"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekly"
+msgstr "每周"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "欢迎使用 openmail。选择你的邮箱服务商，凭证只存在这台电脑上。"
@@ -5915,6 +6096,14 @@ msgstr "撰写模式"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"
 msgstr "年"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by date"
+msgstr "每年按日期"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by weekday"
+msgstr "每年按星期"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts

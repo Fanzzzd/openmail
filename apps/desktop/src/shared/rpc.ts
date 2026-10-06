@@ -28,6 +28,7 @@ import {
   IndexingProgress,
   CalendarInvite,
   CalendarEvent,
+  CalendarEventEdits,
   InviteResponse,
   AppleContactsStatus,
   AppleContactsState,
@@ -234,7 +235,11 @@ export class MailRpcs extends RpcGroup.make(
     error,
   }),
   Rpc.make("CreateCalendarEvent", {
-    payload: { messageId: Schema.String, key: Schema.String },
+    payload: {
+      messageId: Schema.String,
+      key: Schema.String,
+      edits: Schema.optionalKey(CalendarEventEdits),
+    },
     error,
   }),
   Rpc.make("Invitations", {

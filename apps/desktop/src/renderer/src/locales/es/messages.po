@@ -141,6 +141,14 @@ msgstr "{pixels, plural, one {# píxel de seguimiento} other {# píxeles de segu
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, one {# segundo} other {# segundos}}"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary} until {date}"
+msgstr "{summary} hasta {date}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
+msgstr "{summary}, {count, plural, one {# repetición} other {# repeticiones}}"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
@@ -377,6 +385,10 @@ msgstr "Dirección o dominio"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "Direcciones ya no sugeridas"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "After a number of occurrences"
+msgstr "Tras un número de repeticiones"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "After date"
@@ -954,6 +966,10 @@ msgstr "Cancelar"
 msgid "Cannot build calendar response"
 msgstr "No se puede generar la respuesta del calendario"
 
+#: src/renderer/src/errors.ts
+msgid "Cannot edit a series with recurrence overrides"
+msgstr "No se puede editar una serie con eventos individuales modificados"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Categories"
 msgstr "Categorías"
@@ -1032,6 +1048,10 @@ msgstr "Revisar ortografía al escribir"
 msgid "Check sync health"
 msgstr "Comprobar sincronización"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Check the date and repeat settings"
+msgstr "Revisa la fecha y los ajustes de repetición"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Buscando actualizaciones…"
@@ -1059,6 +1079,10 @@ msgstr "Selecciona «{editBody}» antes de insertar una imagen."
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "Elige una conversación"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Choose a date and time"
+msgstr "Elige una fecha y una hora"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a future reminder time"
@@ -1633,6 +1657,10 @@ msgstr "Icono personalizado"
 msgid "Custom time"
 msgstr "Hora personalizada"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Daily"
+msgstr "A diario"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "Fondo oscuro"
@@ -1652,9 +1680,17 @@ msgstr "Se interrumpió la recuperación de la base de datos. Restaure una base 
 msgid "Date"
 msgstr "Fecha"
 
+#: src/renderer/src/errors.ts
+msgid "Date is ambiguous. Enter an explicit date and time"
+msgstr "La fecha es ambigua. Introduce una fecha y hora exactas"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "Día"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Day of month"
+msgstr "Día del mes"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1828,6 +1864,10 @@ msgstr "No reenviar"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "No contiene las palabras"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Does not repeat"
+msgstr "No se repite"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -2017,6 +2057,10 @@ msgstr "Fin"
 msgid "End time is estimated. Review it before adding the event."
 msgstr "La hora de finalización es estimada. Revísala antes de añadir el evento."
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Ends"
+msgstr "Finaliza"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Introduzca una hora de recordatorio futura"
@@ -2049,6 +2093,34 @@ msgstr "Ingrese la dirección de comentarios del proyecto"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
 msgstr "Ingrese direcciones de correo electrónico válidas en Para, CC y CCO."
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Event date or range"
+msgstr "Fecha o intervalo del evento"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# day} other {# days}}"
+msgstr "{interval, plural, one {Cada # día} other {Cada # días}}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on day {date}"
+msgstr "{interval, plural, one {Cada # mes} other {Cada # meses}}, el día {date}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on the {ordinal} {day}"
+msgstr "{interval, plural, one {Cada # mes} other {Cada # meses}}: {ordinal} {day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# week} other {# weeks}} on {days}"
+msgstr "{interval, plural, one {Cada # semana} other {Cada # semanas}}, los {days}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} in {month} on the {ordinal} {day}"
+msgstr "{interval, plural, one {Cada # año} other {Cada # años}} en {month}: {ordinal} {day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} on {date}"
+msgstr "{interval, plural, one {Cada # año} other {Cada # años}}, el {date}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -2139,6 +2211,10 @@ msgstr "Comentarios"
 msgid "Feedback address"
 msgstr "Dirección de comentarios"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fifth"
+msgstr "Quinto"
+
 #: src/renderer/src/state/desktop.ts
 msgid "File"
 msgstr "Archivo"
@@ -2172,6 +2248,10 @@ msgstr "Termina de iniciar sesión en tu navegador"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Termine de iniciar sesión en su navegador y luego regrese aquí."
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "First"
+msgstr "Primer"
 
 #: src/renderer/src/components/EmailFrame.tsx
 msgid "Fit to width"
@@ -2227,6 +2307,10 @@ msgstr "Familia de fuentes"
 msgid "Font size"
 msgstr "Tamaño de fuente"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "For example: tomorrow 3pm or Oct 12–14"
+msgstr "Por ejemplo: tomorrow 3pm u Oct 12–14"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "For your information"
 msgstr "Para su información"
@@ -2263,6 +2347,10 @@ msgstr "Marca para reenviar"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "Reenviar como adjunto"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fourth"
+msgstr "Cuarto"
 
 #: src/main/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
@@ -2604,6 +2692,10 @@ msgstr "Carpeta interna"
 msgid "Internal reply"
 msgstr "Respuesta interna"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Interval"
+msgstr "Intervalo"
+
 #: src/renderer/src/ai-settings-errors.test.ts
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
@@ -2659,6 +2751,10 @@ msgstr "Conservar los textos de los mensajes en {0}"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep category"
 msgstr "Mantener categoría"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Keep existing rule"
+msgstr "Mantener la regla actual"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep importance"
@@ -2745,6 +2841,18 @@ msgstr "Texto más grande"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Larger than"
 msgstr "Más grande que"
+
+#. Last weekday occurrence in a month; a dropdown option.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence position option"
+msgid "Last"
+msgstr "Último"
+
+#. Ordinal inside a recurrence summary, before a weekday name.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence summary ordinal"
+msgid "Last"
+msgstr "Último"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
@@ -3176,9 +3284,18 @@ msgstr "Modificar {token}"
 msgid "Monday"
 msgstr "Lunes"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Month"
 msgstr "Mes"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by date"
+msgstr "Mensualmente por fecha"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by weekday"
+msgstr "Mensualmente por día de la semana"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
@@ -3351,6 +3468,10 @@ msgstr "Nombre, como Trabajo"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "Necesita iniciar sesión"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Never"
+msgstr "Nunca"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Never synced"
@@ -3620,6 +3741,10 @@ msgstr "Lista numerada"
 msgid "OAuth client not configured. Set it up before syncing."
 msgstr "El cliente OAuth no está configurado. Configúralo antes de sincronizar."
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Occurrences"
+msgstr "Repeticiones"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -3644,6 +3769,10 @@ msgstr "El correo antiguo está actualizado."
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "El más viejo primero"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "On a date"
+msgstr "En una fecha"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
@@ -3967,6 +4096,10 @@ msgstr "Texto sin formato"
 msgid "Port"
 msgstr "Puerto"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Position"
+msgstr "Posición"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "Prensa ? fuera de un campo de texto para mostrar esta lista."
@@ -4156,6 +4289,10 @@ msgstr "Rechazar"
 msgid "Reject suggestion"
 msgstr "Rechazar sugerencia"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Relative dates use the date of this message."
+msgstr "Las fechas relativas usan la fecha de este mensaje."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "Recordarme"
@@ -4264,6 +4401,26 @@ msgstr "Estrella eliminada"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "Cambiar nombre"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat"
+msgstr "Repetir"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat end date"
+msgstr "Fecha de fin de repetición"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat end date must be on or after the event"
+msgstr "La fecha de fin debe ser la del evento o posterior"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat pattern"
+msgstr "Patrón de repetición"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat pattern must include the event start date"
+msgstr "La regla debe incluir la fecha de inicio del evento"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats daily"
@@ -4653,6 +4810,10 @@ msgstr "Buscar plantillas"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "Buscando en el servidor…"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Second"
+msgstr "Segundo"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
@@ -5416,6 +5577,10 @@ msgstr "Estas no son direcciones de correo electrónico: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Estas conversaciones cargadas se moverán a la Papelera. Puedes deshacer este lote."
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Third"
+msgstr "Tercer"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
@@ -5496,6 +5661,10 @@ msgstr "Este espacio aún no tiene cuentas."
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "Este espacio aún no tiene cuentas. <0>Agregar cuenta</0>"
 
+#: src/renderer/src/errors.ts
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
+msgstr "Esta hora se omite o se repite por el cambio de hora. Introduce fecha y hora con diferencia UTC"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Thread link copied"
 msgstr "Enlace a la conversación copiado"
@@ -5508,6 +5677,10 @@ msgstr "Jueves"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "Tiempo"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Time zone"
+msgstr "Zona horaria"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -5862,6 +6035,14 @@ msgstr "Enlace al correo web copiado"
 msgid "Wednesday"
 msgstr "Miércoles"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekday"
+msgstr "Día de la semana"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekly"
+msgstr "Semanalmente"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "Bienvenido a openmail. Elija su proveedor de correo electrónico. Sus credenciales permanecen en esta computadora."
@@ -5905,6 +6086,14 @@ msgstr "Modo de redacción"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"
 msgstr "Año"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by date"
+msgstr "Anualmente por fecha"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by weekday"
+msgstr "Anualmente por día de la semana"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts

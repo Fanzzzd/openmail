@@ -141,6 +141,14 @@ msgstr "{pixels, plural, other {#個のトラッキングピクセル}}"
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, other {#秒}}"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary} until {date}"
+msgstr "{summary}、{date}まで"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
+msgstr "{summary}, {count, plural, other {#回}}"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
@@ -377,6 +385,10 @@ msgstr "アドレスまたはドメイン"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "住所は提案されなくなりました"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "After a number of occurrences"
+msgstr "指定回数の後"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "After date"
@@ -954,6 +966,10 @@ msgstr "キャンセル"
 msgid "Cannot build calendar response"
 msgstr "カレンダーの応答を構築できません"
 
+#: src/renderer/src/errors.ts
+msgid "Cannot edit a series with recurrence overrides"
+msgstr "個別に変更された予定を含む繰り返しは編集できません"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Categories"
 msgstr "カテゴリ"
@@ -1032,6 +1048,10 @@ msgstr "入力中にスペルをチェック"
 msgid "Check sync health"
 msgstr "同期状態を確認"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Check the date and repeat settings"
+msgstr "日時と繰り返し設定を確認してください"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "アップデートを確認中…"
@@ -1059,6 +1079,10 @@ msgstr "画像を挿入する前に「{editBody}」を選択してください�
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "スレッドを選択してください"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Choose a date and time"
+msgstr "日時を指定してください"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a future reminder time"
@@ -1633,6 +1657,10 @@ msgstr "カスタムアイコン"
 msgid "Custom time"
 msgstr "カスタム時間"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Daily"
+msgstr "毎日"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "暗い背景"
@@ -1652,9 +1680,17 @@ msgstr "データベースの回復が中断されました。 OpenMail を再�
 msgid "Date"
 msgstr "日付"
 
+#: src/renderer/src/errors.ts
+msgid "Date is ambiguous. Enter an explicit date and time"
+msgstr "日時が曖昧です。明確な日時を入力してください"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "日"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Day of month"
+msgstr "日付"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1828,6 +1864,10 @@ msgstr "転送しない"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "含まないキーワード"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Does not repeat"
+msgstr "繰り返さない"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -2017,6 +2057,10 @@ msgstr "終了"
 msgid "End time is estimated. Review it before adding the event."
 msgstr "終了時刻は推定です。予定を追加する前に確認してください。"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Ends"
+msgstr "終了"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "将来のリマインダー時刻を入力してください"
@@ -2049,6 +2093,34 @@ msgstr "プロジェクトのフィードバック アドレスを入力して�
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
 msgstr "To、Cc、Bcc に有効な電子メール アドレスを入力してください。"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Event date or range"
+msgstr "予定の日時または期間"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# day} other {# days}}"
+msgstr "{interval, plural, other {#日ごと}}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on day {date}"
+msgstr "{interval, plural, other {#か月ごと}}、{date}日"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on the {ordinal} {day}"
+msgstr "{interval, plural, other {#か月ごと}}、{ordinal}{day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# week} other {# weeks}} on {days}"
+msgstr "{interval, plural, other {#週間ごと}}、{days}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} in {month} on the {ordinal} {day}"
+msgstr "{interval, plural, other {#年ごと}}、{month}の{ordinal}{day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} on {date}"
+msgstr "{interval, plural, other {#年ごと}}、{date}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -2139,6 +2211,10 @@ msgstr "フィードバック"
 msgid "Feedback address"
 msgstr "フィードバックアドレス"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fifth"
+msgstr "第5"
+
 #: src/renderer/src/state/desktop.ts
 msgid "File"
 msgstr "ファイル"
@@ -2172,6 +2248,10 @@ msgstr "ブラウザでのサインインを完了する"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "ブラウザでのサインインを完了してから、ここに戻ってください。"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "First"
+msgstr "第1"
 
 #: src/renderer/src/components/EmailFrame.tsx
 msgid "Fit to width"
@@ -2227,6 +2307,10 @@ msgstr "フォントファミリー"
 msgid "Font size"
 msgstr "フォントサイズ"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "For example: tomorrow 3pm or Oct 12–14"
+msgstr "例：tomorrow 3pm、Oct 12–14"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "For your information"
 msgstr "参考情報"
@@ -2263,6 +2347,10 @@ msgstr "転送フラグ"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "添付ファイルとして転送"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fourth"
+msgstr "第4"
 
 #: src/main/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
@@ -2604,6 +2692,10 @@ msgstr "内部フォルダ"
 msgid "Internal reply"
 msgstr "内部返信"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Interval"
+msgstr "間隔"
+
 #: src/renderer/src/ai-settings-errors.test.ts
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
@@ -2659,6 +2751,10 @@ msgstr "{0}の本文を保持"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep category"
 msgstr "カテゴリを保持する"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Keep existing rule"
+msgstr "既存のルールを保持"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep importance"
@@ -2745,6 +2841,18 @@ msgstr "大きな文字"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Larger than"
 msgstr "より大きい"
+
+#. Last weekday occurrence in a month; a dropdown option.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence position option"
+msgid "Last"
+msgstr "最終"
+
+#. Ordinal inside a recurrence summary, before a weekday name.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence summary ordinal"
+msgid "Last"
+msgstr "最終"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
@@ -3176,9 +3284,18 @@ msgstr "{token} を変更します"
 msgid "Monday"
 msgstr "月曜日"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Month"
 msgstr "月"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by date"
+msgstr "毎月、日付指定"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by weekday"
+msgstr "毎月、曜日指定"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
@@ -3351,6 +3468,10 @@ msgstr "名前、仕事など"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "サインインが必要です"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Never"
+msgstr "なし"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Never synced"
@@ -3620,6 +3741,10 @@ msgstr "番号付きリスト"
 msgid "OAuth client not configured. Set it up before syncing."
 msgstr "OAuth クライアントが設定されていません。同期する前に設定してください。"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Occurrences"
+msgstr "回数"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -3644,6 +3769,10 @@ msgstr "古いメールは最新です"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "古い順"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "On a date"
+msgstr "日付を指定"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
@@ -3967,6 +4096,10 @@ msgstr "標準テキスト"
 msgid "Port"
 msgstr "ポート"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Position"
+msgstr "順番"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "プレス ？このリストを表示するには、テキストフィールドの外側にクリックします。"
@@ -4156,6 +4289,10 @@ msgstr "拒否する"
 msgid "Reject suggestion"
 msgstr "提案を拒否する"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Relative dates use the date of this message."
+msgstr "相対的な日時はこのメッセージの日付を基準にします。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "後で通知"
@@ -4264,6 +4401,26 @@ msgstr "スターを外しました"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "名前を変更"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat"
+msgstr "繰り返し"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat end date"
+msgstr "繰り返しの終了日"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat end date must be on or after the event"
+msgstr "終了日は予定の日付以降にしてください"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat pattern"
+msgstr "繰り返しパターン"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat pattern must include the event start date"
+msgstr "繰り返しには予定の開始日を含めてください"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats daily"
@@ -4653,6 +4810,10 @@ msgstr "テンプレートを検索"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "サーバー上を検索中…"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Second"
+msgstr "第2"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
@@ -5416,6 +5577,10 @@ msgstr "これらは電子メール アドレスではありません: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "これらのロードされたスレッドはゴミ箱に移動されます。このバッチは取り消すことができます。"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Third"
+msgstr "第3"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
@@ -5496,6 +5661,10 @@ msgstr "このスペースにはまだアカウントがありません。"
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "このスペースにはまだアカウントがありません。 <0>アカウントを追加</0>"
 
+#: src/renderer/src/errors.ts
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
+msgstr "夏時間の切り替えでこの時刻は存在しないか重複します。UTCオフセット付きの日時を入力してください"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Thread link copied"
 msgstr "スレッドへのリンクをコピーしました"
@@ -5508,6 +5677,10 @@ msgstr "木曜日"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "時間"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Time zone"
+msgstr "タイムゾーン"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -5862,6 +6035,14 @@ msgstr "ウェブメールのリンクをコピーしました"
 msgid "Wednesday"
 msgstr "水曜日"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekday"
+msgstr "曜日"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekly"
+msgstr "毎週"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "オープンメールへようこそ。電子メールプロバイダーを選択します。資格情報はこのコンピューター上に残ります。"
@@ -5905,6 +6086,14 @@ msgstr "作成モード"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"
 msgstr "年"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by date"
+msgstr "毎年、日付指定"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by weekday"
+msgstr "毎年、曜日指定"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts

@@ -22,7 +22,8 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
 
     CalendarEvents: ({ messageId, key }) => m.calendarEvents(messageId, key),
     DetectedEvents: ({ messageId }) => m.detectedEvents(messageId),
-    CreateCalendarEvent: ({ messageId, key }) => m.createCalendarEvent(messageId, key, USER),
+    CreateCalendarEvent: ({ messageId, key, edits }) =>
+      m.createCalendarEvent(messageId, key, USER, edits),
     Invitations: ({ messageId }) => m.invitations(messageId),
     RespondInvite: ({ messageId, key, response }) =>
       m.respondInvite(messageId, key, response, USER),

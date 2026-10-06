@@ -141,6 +141,14 @@ msgstr "{pixels, plural, one {# sledovací pixel} few {# sledovací pixely} many
 msgid "{seconds, plural, one {# second} other {# seconds}}"
 msgstr "{seconds, plural, one {# sekunda} few {# sekundy} many {# sekundy} other {# sekund}}"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary} until {date}"
+msgstr "{summary} do {date}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
+msgstr "{summary}, {count, plural, one {# výskyt} few {# výskyty} other {# výskytů}}"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "{text} → {recipient}"
 msgstr "{text} → {recipient}"
@@ -377,6 +385,10 @@ msgstr "Adresa nebo doména"
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Addresses no longer suggested"
 msgstr "Adresy již nejsou nabízeny"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "After a number of occurrences"
+msgstr "Po daném počtu opakování"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "After date"
@@ -954,6 +966,10 @@ msgstr "Zrušit"
 msgid "Cannot build calendar response"
 msgstr "Nelze vytvořit odpověď kalendáře"
 
+#: src/renderer/src/errors.ts
+msgid "Cannot edit a series with recurrence overrides"
+msgstr "Nelze upravit sérii se změněnými výskyty"
+
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "Categories"
 msgstr "Kategorie"
@@ -1032,6 +1048,10 @@ msgstr "Kontrolovat pravopis při psaní"
 msgid "Check sync health"
 msgstr "Zkontrolovat stav synchronizace"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Check the date and repeat settings"
+msgstr "Zkontrolujte datum a nastavení opakování"
+
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Checking for updates…"
 msgstr "Kontrolují se aktualizace…"
@@ -1059,6 +1079,10 @@ msgstr "Před vložením obrázku zvolte „{editBody}“."
 #: src/renderer/src/errors.ts
 msgid "Choose a conversation"
 msgstr "Vyberte konverzaci"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Choose a date and time"
+msgstr "Vyberte datum a čas"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a future reminder time"
@@ -1633,6 +1657,10 @@ msgstr "Vlastní ikona"
 msgid "Custom time"
 msgstr "Vlastní čas"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Daily"
+msgstr "Denně"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Dark background"
 msgstr "tmavé pozadí"
@@ -1652,9 +1680,17 @@ msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMai
 msgid "Date"
 msgstr "Datum"
 
+#: src/renderer/src/errors.ts
+msgid "Date is ambiguous. Enter an explicit date and time"
+msgstr "Datum je nejednoznačné. Zadejte přesné datum a čas"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Day"
 msgstr "Den"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Day of month"
+msgstr "Den v měsíci"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Decline"
@@ -1828,6 +1864,10 @@ msgstr "Nepřeposílat"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Does not have words"
 msgstr "Neobsahuje slova"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Does not repeat"
+msgstr "Neopakuje se"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Don't attach the original message"
@@ -2017,6 +2057,10 @@ msgstr "Konec"
 msgid "End time is estimated. Review it before adding the event."
 msgstr "Čas konce je odhadovaný. Před přidáním události jej zkontrolujte."
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Ends"
+msgstr "Konec"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Zadejte budoucí čas připomenutí"
@@ -2049,6 +2093,34 @@ msgstr "Zadejte adresu zpětné vazby projektu"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter valid email addresses in To, Cc and Bcc."
 msgstr "Do polí Komu, Kopie a Skrytá kopie zadejte platné e-mailové adresy."
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Event date or range"
+msgstr "Datum události nebo rozsah"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# day} other {# days}}"
+msgstr "{interval, plural, one {Každý # den} few {Každé # dny} other {Každých # dní}}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on day {date}"
+msgstr "{interval, plural, one {Každý # měsíc} few {Každé # měsíce} other {Každých # měsíců}}, {date}. den"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# month} other {# months}} on the {ordinal} {day}"
+msgstr "{interval, plural, one {Každý # měsíc} few {Každé # měsíce} other {Každých # měsíců}}: {ordinal}, {day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# week} other {# weeks}} on {days}"
+msgstr "{interval, plural, one {Každý # týden} few {Každé # týdny} other {Každých # týdnů}}: {days}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} in {month} on the {ordinal} {day}"
+msgstr "{interval, plural, one {Každý # rok} few {Každé # roky} other {Každých # let}} v měsíci {month}: {ordinal}, {day}"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Every {interval, plural, one {# year} other {# years}} on {date}"
+msgstr "{interval, plural, one {Každý # rok} few {Každé # roky} other {Každých # let}} dne {date}"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Every {interval} days"
@@ -2139,6 +2211,10 @@ msgstr "Zpětná vazba"
 msgid "Feedback address"
 msgstr "Adresa pro zpětnou vazbu"
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fifth"
+msgstr "Pátý"
+
 #: src/renderer/src/state/desktop.ts
 msgid "File"
 msgstr "Soubor"
@@ -2172,6 +2248,10 @@ msgstr "Dokončete přihlašování ve svém prohlížeči"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Finish signing in in your browser, then come back here."
 msgstr "Dokončete přihlašování v prohlížeči a vraťte se sem."
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "First"
+msgstr "První"
 
 #: src/renderer/src/components/EmailFrame.tsx
 msgid "Fit to width"
@@ -2227,6 +2307,10 @@ msgstr "Rodina písem"
 msgid "Font size"
 msgstr "Velikost písma"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "For example: tomorrow 3pm or Oct 12–14"
+msgstr "Například: tomorrow 3pm nebo Oct 12–14"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "For your information"
 msgstr "Pro informaci"
@@ -2263,6 +2347,10 @@ msgstr "Příznak přeposlání"
 #: src/renderer/src/shortcut-names.ts
 msgid "Forward as attachment"
 msgstr "Přeposlat jako přílohu"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Fourth"
+msgstr "Čtvrtý"
 
 #: src/main/native-i18n.ts
 msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
@@ -2604,6 +2692,10 @@ msgstr "Vnitřní složka"
 msgid "Internal reply"
 msgstr "Interní odpověď"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Interval"
+msgstr "Interval"
+
 #: src/renderer/src/ai-settings-errors.test.ts
 #: src/renderer/src/errors.ts
 msgid "Invalid AI account settings."
@@ -2659,6 +2751,10 @@ msgstr "Uchovávat texty zpráv ve složce {0}"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep category"
 msgstr "Zachovat kategorii"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Keep existing rule"
+msgstr "Ponechat stávající pravidlo"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Keep importance"
@@ -2745,6 +2841,18 @@ msgstr "Větší text"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Larger than"
 msgstr "Větší než"
+
+#. Last weekday occurrence in a month; a dropdown option.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence position option"
+msgid "Last"
+msgstr "Poslední"
+
+#. Ordinal inside a recurrence summary, before a weekday name.
+#: src/renderer/src/components/recurrence-summary.ts
+msgctxt "recurrence summary ordinal"
+msgid "Last"
+msgstr "Poslední"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 msgid "Last 7 days"
@@ -3176,9 +3284,18 @@ msgstr "Upravit {token}"
 msgid "Monday"
 msgstr "Pondělí"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Month"
 msgstr "Měsíc"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by date"
+msgstr "Měsíčně podle data"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Monthly by weekday"
+msgstr "Měsíčně podle dne v týdnu"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "More"
@@ -3351,6 +3468,10 @@ msgstr "Jméno, třeba Práce"
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Needs sign-in"
 msgstr "Vyžaduje přihlášení"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Never"
+msgstr "Nikdy"
 
 #: src/renderer/src/components/SyncHealth.tsx
 msgid "Never synced"
@@ -3620,6 +3741,10 @@ msgstr "Číslovaný seznam"
 msgid "OAuth client not configured. Set it up before syncing."
 msgstr "Klient OAuth není nakonfigurován. Před synchronizací jej nastavte."
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Occurrences"
+msgstr "Počet opakování"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Off"
@@ -3644,6 +3769,10 @@ msgstr "Starší pošta je aktuální"
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Nejdříve nejstarší"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "On a date"
+msgstr "K určitému datu"
 
 #: src/renderer/src/components/IndexingSettings.tsx
 msgid "On battery: image recognition waits for AC power. PDF text indexing is throttled."
@@ -3967,6 +4096,10 @@ msgstr "Prostý text"
 msgid "Port"
 msgstr "Port"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Position"
+msgstr "Pořadí"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Press ? outside a text field to show this list."
 msgstr "Stiskněte tlačítko ? mimo textové pole pro zobrazení tohoto seznamu."
@@ -4156,6 +4289,10 @@ msgstr "Odmítnout"
 msgid "Reject suggestion"
 msgstr "Odmítnout návrh"
 
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Relative dates use the date of this message."
+msgstr "Relativní data vycházejí z data této zprávy."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Remind me"
 msgstr "Připomenout"
@@ -4264,6 +4401,26 @@ msgstr "Hvězdička odebrána"
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Rename"
 msgstr "Přejmenovat"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat"
+msgstr "Opakování"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat end date"
+msgstr "Datum konce opakování"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat end date must be on or after the event"
+msgstr "Konec opakování nesmí být před datem události"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Repeat pattern"
+msgstr "Pravidlo opakování"
+
+#: src/renderer/src/errors.ts
+msgid "Repeat pattern must include the event start date"
+msgstr "Pravidlo opakování musí zahrnovat počáteční datum události"
 
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Repeats daily"
@@ -4653,6 +4810,10 @@ msgstr "Hledat šablony"
 #: src/renderer/src/components/MessageList.tsx
 msgid "Searching server…"
 msgstr "Hledání na serveru…"
+
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Second"
+msgstr "Druhý"
 
 #. placeholder {0}: file.filename
 #: src/renderer/src/components/Attachments.tsx
@@ -5416,6 +5577,10 @@ msgstr "Toto nejsou e-mailové adresy: {list}"
 msgid "These loaded conversations will be moved to Trash. You can undo this batch."
 msgstr "Tyto načtené konverzace budou přesunuty do koše. Tuto dávku můžete vrátit zpět."
 
+#: src/renderer/src/components/recurrence-summary.ts
+msgid "Third"
+msgstr "Třetí"
+
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/Composer.tsx
 msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
@@ -5496,6 +5661,10 @@ msgstr "Tento prostor zatím nemá žádné účty."
 msgid "This space has no accounts yet. <0>Add account</0>"
 msgstr "Tento prostor zatím nemá žádné účty. <0>Přidat účet</0>"
 
+#: src/renderer/src/errors.ts
+msgid "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset"
+msgstr "Letní čas tento čas vynechává nebo opakuje. Zadejte datum a čas s posunem vůči UTC"
+
 #: src/renderer/src/components/Reader.tsx
 msgid "Thread link copied"
 msgstr "Odkaz na konverzaci zkopírován"
@@ -5508,6 +5677,10 @@ msgstr "Čtvrtek"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Time"
 msgstr "Čas"
+
+#: src/renderer/src/components/CalendarEvents.tsx
+msgid "Time zone"
+msgstr "Časové pásmo"
 
 #: src/renderer/src/components/Attachments.tsx
 #: src/renderer/src/components/Composer.tsx
@@ -5862,6 +6035,14 @@ msgstr "Odkaz na webovou poštu zkopírován"
 msgid "Wednesday"
 msgstr "Středa"
 
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekday"
+msgstr "Den v týdnu"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Weekly"
+msgstr "Týdně"
+
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Welcome to openmail. Choose your email provider. Your credentials stay on this computer."
 msgstr "Vítejte v openmailu. Vyberte poskytovatele e-mailu. Vaše přihlašovací údaje zůstanou v tomto počítači."
@@ -5905,6 +6086,14 @@ msgstr "Režim psaní"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Year"
 msgstr "Rok"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by date"
+msgstr "Ročně podle data"
+
+#: src/renderer/src/components/EventRecurrenceEditor.tsx
+msgid "Yearly by weekday"
+msgstr "Ročně podle dne v týdnu"
 
 #: src/renderer/src/components/ui/SearchField.tsx
 #: src/renderer/src/format.ts
