@@ -36,6 +36,7 @@ import type {
   Command,
   Draft,
   DraftInput,
+  InferenceClassification,
   Label,
   Message,
   Outcome,
@@ -312,6 +313,10 @@ export class Mailbox extends Context.Service<
     ): Effect.Effect<Record<string, number>>;
 
     searchServer(query: ThreadQuery): Effect.Effect<SearchResult, InvalidInput>;
+    setClassificationOverride(
+      messageId: string,
+      classifyAs: InferenceClassification,
+    ): Effect.Effect<void, PerformError>;
     changeLabel(accountId: string, change: LabelChange): Effect.Effect<void, PerformError>;
     readonly labelPreferences: Effect.Effect<LabelPreference[]>;
     reorderFavorites(

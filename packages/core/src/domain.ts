@@ -289,6 +289,29 @@ export const CATEGORIES = [
   "CATEGORY_FORUMS",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
+/** Outlook inference classification shares Primary, with one secondary bucket. */
+export const OUTLOOK_CATEGORIES = ["CATEGORY_PERSONAL", "CATEGORY_OTHER"] as const;
+export const isOutlookClassification = (
+  label: string,
+): label is (typeof OUTLOOK_CATEGORIES)[number] =>
+  OUTLOOK_CATEGORIES.some((category) => category === label);
+export const INBOX_CATEGORIES = [...CATEGORIES, "CATEGORY_OTHER"] as const;
+export const InferenceClassification = Schema.Literals(["focused", "other"]);
+export type InferenceClassification = typeof InferenceClassification.Type;
+export function inboxCategories(provider: Provider) {
+  switch (provider) {
+    case "outlook":
+      return OUTLOOK_CATEGORIES;
+    case "gmail":
+      return CATEGORIES;
+    case "imap":
+      return [];
+    default: {
+      const exhaustive: never = provider;
+      return exhaustive;
+    }
+  }
+}
 
 /** Parsed search operators, shared by local queries and provider adapters. */
 export const AttachmentType = Schema.Literals([
@@ -410,6 +433,7 @@ export const MailOp = Schema.Union([
     add: Schema.Array(Schema.String),
     remove: Schema.Array(Schema.String),
   }),
+  Schema.Struct({ kind: Schema.Literal("classification"), value: InferenceClassification }),
   /** IMAP COPY keeps the original; server-generated copy ids are discovered by sync. */
   Schema.Struct({
     kind: Schema.Literal("copy"),
@@ -788,7 +812,7 @@ export const Prefs = Schema.Struct({
   /** Message order inside an open conversation. */
   threadOrder: Schema.Literals(THREAD_ORDERS),
   shortcutSet: Schema.Literals(SHORTCUT_SETS),
-  /** Missing accounts default to Primary. Other providers treat Primary as Inbox. */
+  /** Missing accounts default to Primary (Outlook Focused). IMAP treats Primary as Inbox. */
   notifications: Schema.Record(Schema.String, NotificationMode),
   /** Profile id to quiet hours; "all" covers accounts outside a profile. */
   quietHours: Schema.Record(Schema.String, QuietHours),

@@ -1,3 +1,4 @@
+import { requestFocusedPermission } from "../focused-inbox";
 import { useLingui } from "@lingui/react/macro";
 import { type DeleteFolder, type Prefs } from "@openmail/core/schema";
 import { Cause, Effect, Option } from "effect";
@@ -79,6 +80,7 @@ export function useMailActions({
     if (!account) return null;
     return {
       provider: account.provider,
+      focusedSender: { messageId: m.id, address: m.from.address },
       isUnread: m.isUnread,
       isStarred: m.isStarred,
       isImportant: m.labels.includes("IMPORTANT"),
@@ -145,7 +147,11 @@ export function useMailActions({
     if (needsPage) navigation.beginRemoval(before, next, actionScopeKey);
     setReadTarget(null);
     run(
-      modifyWithUndo(targets, op, !prefs.threadGrouping).pipe(
+      modifyWithUndo(
+        targets,
+        op,
+        op.kind === "classification" ? false : !prefs.threadGrouping,
+      ).pipe(
         Effect.tap(() =>
           needsPage
             ? pageAfterRemoval(listQuery, lastLoaded, (nextQuery) =>
@@ -169,6 +175,7 @@ export function useMailActions({
         Effect.matchCause({
           onFailure: (cause) => {
             navigation.cancelRemoval(before);
+            if (requestFocusedPermission(cause)) return;
             const reason = causeText(i18n, cause);
             say({ text: messages.actionFailed(reason), tone: "error" });
           },

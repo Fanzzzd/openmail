@@ -580,6 +580,18 @@ msgstr "Laad altijd afbeeldingen van {domain}"
 msgid "Always load remote images from"
 msgstr "Laad altijd externe afbeeldingen van"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "Berichten van deze afzender altijd naar Prioriteit verplaatsen"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "Berichten van deze afzender altijd naar Overige verplaatsen"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "Berichten van deze afzender altijd verplaatsen?"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "Citeer altijd het hele bericht"
@@ -952,6 +964,7 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "Kies een toekomstig herinneringstijdstip"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "Kies een label of map uit dit account"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "Kies een bericht van een andere afzender."
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "Grammatica verbeteren en nalezen"
 msgid "Focus main window"
 msgstr "Hoofdvenster scherpstellen"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "Prioriteit"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "Postvak IN met Prioriteit vereist Outlook."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "Prioriteit/Overige"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "Mapactie mislukt: {reason}"
@@ -2390,6 +2422,14 @@ msgstr "Van mensen die ik ken"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "Afzender bijgewerkt"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "Nieuwe berichten van deze afzender verschijnen in Prioriteit. Bestaande berichten behouden hun indeling."
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "Nieuwe berichten van deze afzender verschijnen in Overige. Bestaande berichten behouden hun indeling."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "Berichten waarvoor verzenden nog ongedaan kan worden gemaakt, blijven co
 msgid "Messages keep their other labels."
 msgstr "Berichten behouden hun andere labels."
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft vraagt toestemming om e-mail bij te werken. Kies na het aanmelden de actie opnieuw."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "Verplaats naar Blinde kopie"
 msgid "Move to Cc"
 msgstr "Verplaats naar Kopie"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "Naar Prioriteit verplaatsen"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "Verplaatsen naar map…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "Verplaatsen naar Postvak IN"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "Naar Overige verplaatsen"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "Verplaatst"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "Verplaatst naar Prioriteit"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "Verplaatst naar Postvak IN"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "Verplaatst naar Overige"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "Origineel bericht niet beschikbaar"
 msgid "Other"
 msgstr "Ander"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "Overige"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "Andere feedback"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "Primair"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "Primair sluit de andere Gmail-categorieën uit. Voor Outlook en IMAP omvat het alle e-mail in Postvak IN. Gelezen berichten en de eerste synchronisatie geven geen meldingen."
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Primair sluit de andere Gmail-categorieën uit en bevat alleen Outlook-mail in Prioriteit. Voor IMAP bevat het alle e-mail in Postvak IN. Gelezen e-mail en de eerste synchronisatie geven geen meldingen."
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "Zaterdag"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "Toon accountnamen in uniforme mappen"
 msgid "Show Cc field"
 msgstr "Cc-veld tonen"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "Prioriteit/Overige tonen"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "Zijbalk"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Meld u opnieuw aan"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "Meld je opnieuw aan om Prioriteit/Overige te wijzigen."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "Deze bijeenkomst is geannuleerd"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Deze vergaderingslink wordt niet ondersteund."
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "Dit bericht heeft geen geldig afzenderadres."
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

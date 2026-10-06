@@ -4,7 +4,7 @@ import { FOLDER_BATCH_LIMIT, GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actio
 import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./header-backfill.js";
 import { newMessageId } from "./message-id.js";
 import { messageSecurity } from "./message-security.js";
-import { BASE_SCOPES, OPTIONAL_SCOPES } from "./optional-services.js";
+import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "./optional-services.js";
 import { Buffer } from "./platform/bytes.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { MailCodec } from "./platform/mail-codec.js";
@@ -301,7 +301,7 @@ export const makeGmail: Effect.Effect<
           ...(input.grantedScopes ?? []),
           ...(input.feature === "permanentDelete"
             ? [GMAIL_PERMANENT_DELETE_SCOPE]
-            : input.feature
+            : isOptionalService(input.feature)
               ? OPTIONAL_SCOPES.gmail[input.feature]
               : []),
         ]),
@@ -545,7 +545,7 @@ export const makeGmail: Effect.Effect<
 
   const push = Effect.fn("Gmail.push")(
     function* (account: Account, providerId: string, op: MailOp) {
-      if (op.kind === "categories" || op.kind === "copy")
+      if (op.kind === "categories" || op.kind === "classification" || op.kind === "copy")
         yield* new PermanentError({
           message: "This organization action is unavailable for Gmail.",
         });
@@ -1394,6 +1394,7 @@ export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
       };
     case "label":
       return op.value ? { add: [op.labelId], remove: [] } : { add: [], remove: [op.labelId] };
+    case "classification":
     case "categories":
     case "copy":
       return { add: [], remove: [] };

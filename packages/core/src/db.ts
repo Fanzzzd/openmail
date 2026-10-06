@@ -1249,6 +1249,10 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   END;`,
   `CREATE INDEX messages_thread_participants ON messages(account_id,thread_id,from_addr,date,from_name);
    CREATE INDEX messages_starred_threads ON messages(account_id,thread_id) WHERE is_starred=1;`,
+  // Migration 39: renew Outlook delta selections to backfill Focused/Other. Keep cached messages.
+  `UPDATE accounts SET sync_cursor=NULL WHERE provider='outlook';
+   UPDATE incoming_state SET inbox_cursor=NULL WHERE account_id IN (SELECT id FROM accounts WHERE provider='outlook');
+   UPDATE account_organization SET selected_categories=NULL WHERE account_id IN (SELECT id FROM accounts WHERE provider='outlook');`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

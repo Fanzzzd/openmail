@@ -1,5 +1,10 @@
 import { mergeCategoryNames } from "./categories.js";
-import type { MailOp, Provider } from "./domain.js";
+import {
+  OUTLOOK_CATEGORIES,
+  isOutlookClassification,
+  type MailOp,
+  type Provider,
+} from "./domain.js";
 
 const FLAG_LABELS = new Set(["UNREAD", "STARRED", "IMPORTANT"]);
 
@@ -23,13 +28,17 @@ export function applyOpToLabels(
   if (op.kind === "read") flag("UNREAD", !op.value);
   else if (op.kind === "star") flag("STARRED", op.value);
   else if (op.kind === "important" && provider !== "imap") flag("IMPORTANT", op.value);
-  else if (op.kind === "categories" && provider === "outlook") {
+  else if (op.kind === "classification" && provider === "outlook") {
+    for (const category of OUTLOOK_CATEGORIES) out.delete(category);
+    out.add(op.value === "focused" ? "CATEGORY_PERSONAL" : "CATEGORY_OTHER");
+  } else if (op.kind === "categories" && provider === "outlook") {
     const current = [...out]
       .filter((label) => label.startsWith("category:"))
       .map((label) => label.slice(9));
     for (const name of current) out.delete(`category:${name}`);
     for (const name of mergeCategoryNames(current, op.add, op.remove)) out.add(`category:${name}`);
-  } else if (op.kind === "copy" || op.kind === "categories") return [...labels];
+  } else if (op.kind === "copy" || op.kind === "categories" || op.kind === "classification")
+    return [...labels];
   else if (provider === "gmail") {
     switch (op.kind) {
       case "important":
@@ -61,7 +70,13 @@ export function applyOpToLabels(
   } else {
     const target = folderTarget(op, labels);
     if (target) {
-      for (const l of labels) if (!FLAG_LABELS.has(l) && !l.startsWith("category:")) out.delete(l);
+      for (const l of labels)
+        if (
+          !FLAG_LABELS.has(l) &&
+          !l.startsWith("category:") &&
+          !(provider === "outlook" && isOutlookClassification(l))
+        )
+          out.delete(l);
       out.add(target);
     }
   }

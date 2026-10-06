@@ -580,6 +580,18 @@ msgstr "Chargez toujours les images depuis {domain}"
 msgid "Always load remote images from"
 msgstr "Chargez toujours les images distantes depuis"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "Toujours déplacer les messages de cet expéditeur vers Prioritaire"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "Toujours déplacer les messages de cet expéditeur vers Autres"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "Toujours déplacer les messages de cet expéditeur ?"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "Citez toujours l’intégralité du message"
@@ -952,6 +964,7 @@ msgstr "Le serveur de messagerie est momentanément inaccessible."
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "Choisissez une heure de rappel future"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "Choisissez une libellé ou un dossier de ce compte"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "Choisissez un message d’un autre expéditeur."
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "Corriger la grammaire et relire"
 msgid "Focus main window"
 msgstr "Focus sur la fenêtre principale"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "Prioritaire"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "La boîte de réception Prioritaire nécessite Outlook."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "Prioritaire/Autres"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "Échec de l’action sur le dossier : {reason}"
@@ -2390,6 +2422,14 @@ msgstr "Des personnes que je connais"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "Expéditeur modifié"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "Les futurs messages de cet expéditeur apparaîtront dans Prioritaire. Les messages existants conservent leur classement."
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "Les futurs messages de cet expéditeur apparaîtront dans Autres. Les messages existants conservent leur classement."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "Les messages encore dans le délai d’annulation restent des brouillons
 msgid "Messages keep their other labels."
 msgstr "Les messages conservent leurs autres libellés."
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft demandera votre autorisation pour modifier les e-mails. Après la connexion, choisissez à nouveau cette action."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "Déplacer vers Cci"
 msgid "Move to Cc"
 msgstr "Déplacer vers Cc"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "Déplacer vers Prioritaire"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "Déplacer vers le dossier…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "Déplacer vers la boîte de réception"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "Déplacer vers Autres"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "Déplacé"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "Déplacé vers Prioritaire"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "Déplacé vers la boîte de réception"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "Déplacé vers Autres"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "Message original indisponible"
 msgid "Other"
 msgstr "Autre"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "Autres"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "Autres commentaires"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "Principale"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "Principale exclut les autres catégories Gmail. Pour Outlook et IMAP, elle comprend tous les messages de la boîte de réception. Les messages lus et la première synchronisation ne produisent pas de notifications."
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Principale exclut les autres catégories de Gmail et inclut uniquement les e-mails Prioritaire d’Outlook. Pour IMAP, elle inclut tous les e-mails de la boîte de réception. Les e-mails lus et la première synchronisation restent silencieux."
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "Samedi"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "Afficher les noms de comptes dans des dossiers unifiés"
 msgid "Show Cc field"
 msgstr "Afficher le champ Cc"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "Afficher Prioritaire/Autres"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "Barre latérale"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Connectez-vous à nouveau"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "Reconnectez-vous pour modifier Prioritaire/Autres."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "Cette réunion a été annulée"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Ce lien de réunion n’est pas pris en charge."
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "Ce message n’a pas d’adresse d’expéditeur valide."
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

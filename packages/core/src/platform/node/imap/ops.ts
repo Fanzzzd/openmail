@@ -201,7 +201,8 @@ const targetFor = Effect.fnUntraced(function* (
     op.kind === "read" ||
     op.kind === "star" ||
     op.kind === "important" ||
-    op.kind === "categories"
+    op.kind === "categories" ||
+    op.kind === "classification"
   )
     return null;
   if (
@@ -401,11 +402,12 @@ export const applyOp = Effect.fnUntraced(function* (
     op.kind !== "read" &&
     op.kind !== "star" &&
     op.kind !== "important" &&
-    op.kind !== "categories"
+    op.kind !== "categories" &&
+    op.kind !== "classification"
   ) {
     yield* readSourceIdentities(s, uids, identities);
   }
-  if (op.kind === "categories") {
+  if (op.kind === "categories" || op.kind === "classification") {
     yield* new PermanentError({ message: "Categories are available for Outlook accounts." });
     return [];
   }

@@ -580,6 +580,18 @@ msgstr "Всегда загружайте изображения из {domain}."
 msgid "Always load remote images from"
 msgstr "Всегда загружайте удаленные изображения из"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "Всегда перемещать сообщения этого отправителя в Отсортированные"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "Всегда перемещать сообщения этого отправителя в Другие"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "Всегда перемещать сообщения этого отправителя?"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "Всегда цитируйте все сообщение"
@@ -952,6 +964,7 @@ msgstr "Сейчас не удаётся подключиться к почто�
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "Выберите будущее время напоминания"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "Выберите ярлык или папку из этого учётной записи"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "Выберите сообщение другого отправителя."
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "Исправить грамматику и вычитать"
 msgid "Focus main window"
 msgstr "Главное окно фокуса"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "Отсортированные"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "Вкладка «Отсортированные» во входящих требует Outlook."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "Отсортированные/Другие"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "Не удалось выполнить действие с папкой: {reason}."
@@ -2390,6 +2422,14 @@ msgstr "От знакомых"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "Отправитель изменён"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "Новые сообщения этого отправителя будут появляться в Отсортированных. Классификация существующих сообщений сохранится."
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "Новые сообщения этого отправителя будут появляться в Других. Классификация существующих сообщений сохранится."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "Сообщения в период отмены отправки ост�
 msgid "Messages keep their other labels."
 msgstr "Сообщения сохраняют свои другие ярлыки."
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft запросит разрешение на изменение почты. После входа выберите действие ещё раз."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "Переместить в скрытую копию"
 msgid "Move to Cc"
 msgstr "Переместить в копию"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "Переместить в Отсортированные"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "Переместить в папку…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "Переместить в папку «Входящие»"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "Переместить в Другие"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "Перемещено"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "Перемещено в Отсортированные"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "Перемещено во входящие"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "Перемещено в Другие"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "Исходное сообщение недоступно"
 msgid "Other"
 msgstr "Другой"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "Другие"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "Другие отзывы"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "Несортированные"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "«Несортированные» исключают другие категории Gmail. Для Outlook и IMAP включаются все сообщения из «Входящих». Прочитанные сообщения и первая синхронизация не вызывают уведомлений."
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Основные исключают другие категории Gmail и включают только почту Outlook на вкладке Отсортированные. Для IMAP включается вся входящая почта. Прочитанная почта и первая синхронизация не вызывают уведомлений."
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "Суббота"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "Показывать имена учетных записей в объ�
 msgid "Show Cc field"
 msgstr "Показать поле «Копия»"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "Показывать Отсортированные/Другие"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "Боковая панель"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Войдите снова"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "Войдите снова, чтобы изменить Отсортированные/Другие."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "Эта встреча отменена"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Эта ссылка на собрание не поддерживается."
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "У этого сообщения нет действительного адреса отправителя."
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

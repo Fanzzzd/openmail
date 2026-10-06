@@ -1,5 +1,5 @@
 import { Clock, Effect, Option, Schema } from "effect";
-import type { Account } from "./domain.js";
+import { isOutlookClassification, type Account } from "./domain.js";
 import type { Change, ProviderAdapter, Store } from "./services.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { trackImapBackfill } from "./imap-cursor.js";
@@ -25,6 +25,8 @@ export type ResetVerification =
     };
 export const stateLabel = (label: string) =>
   ["UNREAD", "STARRED", "IMPORTANT"].includes(label) || label.startsWith("category:");
+export const outlookStateLabel = (label: string) =>
+  stateLabel(label) || isOutlookClassification(label);
 export const RESET_VERIFICATION_LIMIT = 500;
 export const STALE_SWEEP_LIMIT = 500;
 const staleFingerprint = (candidate: ResetCandidate) =>
@@ -124,12 +126,13 @@ export function makeResetGuard(
                 : [pendingOp.op],
             );
             // Graph/IMAP presence probes read location only; preserve current local flags.
+            const preservedState = account.provider === "outlook" ? outlookStateLabel : stateLabel;
             const verifiedLabels =
               account.provider === "gmail"
                 ? [...result.labels]
                 : [
-                    ...result.labels.filter((label) => !stateLabel(label)),
-                    ...local.labels.filter(stateLabel),
+                    ...result.labels.filter((label) => !preservedState(label)),
+                    ...local.labels.filter(preservedState),
                   ];
             const labels = ops.reduce(
               (current, op) => applyOpToLabels(current, op, account.provider),

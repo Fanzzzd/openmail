@@ -580,6 +580,18 @@ msgstr "Bilder immer von {domain} laden"
 msgid "Always load remote images from"
 msgstr "Entfernte Bilder immer laden von"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "Nachrichten dieses Absenders immer nach Relevant verschieben"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "Nachrichten dieses Absenders immer nach Sonstige verschieben"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "Nachrichten dieses Absenders immer verschieben?"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "Immer die gesamte Nachricht zitieren"
@@ -952,6 +964,7 @@ msgstr "Der Mailserver ist derzeit nicht erreichbar."
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "Zukünftigen Erinnerungszeitpunkt auswählen"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "Label oder Ordner aus diesem Account auswählen"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "Wähle eine Nachricht von einem anderen Absender."
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "Grammatik korrigieren und Korrektur lesen"
 msgid "Focus main window"
 msgstr "Hauptfenster fokussieren"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "Relevant"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "Der Posteingang Relevant erfordert Outlook."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "Relevant/Sonstige"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "Ordneraktion fehlgeschlagen: {reason}"
@@ -2390,6 +2422,14 @@ msgstr "Von Personen, die ich kenne"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "Absender aktualisiert"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "Künftige Nachrichten dieses Absenders erscheinen unter Relevant. Vorhandene Nachrichten behalten ihre Zuordnung."
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "Künftige Nachrichten dieses Absenders erscheinen unter Sonstige. Vorhandene Nachrichten behalten ihre Zuordnung."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "Nachrichten innerhalb der Frist zum Rückgängigmachen bleiben Entwürfe
 msgid "Messages keep their other labels."
 msgstr "Nachrichten behalten ihre anderen Labels."
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft bittet um die Erlaubnis, E-Mails zu ändern. Wähle nach der Anmeldung die Aktion erneut."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "In „Blindkopie“ verschieben"
 msgid "Move to Cc"
 msgstr "In „Kopie“ verschieben"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "Nach Relevant verschieben"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "In Ordner verschieben…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "In den Posteingang verschieben"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "Nach Sonstige verschieben"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "Verschoben"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "Nach Relevant verschoben"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "In den Posteingang verschoben"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "Nach Sonstige verschoben"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "Originalnachricht nicht verfügbar"
 msgid "Other"
 msgstr "Andere"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "Sonstige"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "Sonstiges Feedback"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "Allgemein"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "„Allgemein“ schließt andere Gmail-Kategorien aus. Bei Outlook und IMAP umfasst es alle Nachrichten im Posteingang. Gelesene Nachrichten und die erste Synchronisierung bleiben stumm."
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Allgemein schließt die anderen Gmail-Kategorien aus und enthält nur Outlook-E-Mails unter Relevant. Bei IMAP sind alle E-Mails im Posteingang enthalten. Gelesene E-Mails und die erste Synchronisierung lösen keine Benachrichtigungen aus."
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "Samstag"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "Account-Namen in gemeinsamen Ordnern anzeigen"
 msgid "Show Cc field"
 msgstr "Cc-Feld anzeigen"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "Relevant/Sonstige anzeigen"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "Seitenleiste"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Erneut anmelden"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "Melde dich erneut an, um Relevant/Sonstige zu ändern."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "Dieses Treffen wurde abgesagt"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Dieser Besprechungslink wird nicht unterstützt."
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "Diese Nachricht hat keine gültige Absenderadresse."
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

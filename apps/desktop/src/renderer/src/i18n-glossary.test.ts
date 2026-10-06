@@ -31,6 +31,13 @@ it("the complete catalogs consistently use the mail glossary, message-text termi
       const target = message.translation ?? "";
       const visibleSource = source.replace(/\{[A-Za-z_]\w*\}/g, "");
       for (const [term, patterns] of Object.entries(glossary)) {
+        // Other is an Outlook tab only in its context or in explicit classification text.
+        if (
+          term === "Other" &&
+          message.context !== "outlook-inbox" &&
+          !/Focused\/Other|(?:to|in|Outlook) Other/.test(source)
+        )
+          continue;
         // Japanese naturally calls the message text 本文, without repeating メッセージ.
         if (locale === "ja" && source === "Message body" && term === "Message") continue;
         const selector = new RegExp(selectors[term] ?? `\\b${term}s?\\b`, "i");

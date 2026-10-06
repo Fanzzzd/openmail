@@ -1,3 +1,4 @@
+import { focusedSender, focusedSenderMessage } from "./focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useState, type ComponentProps, useEffect } from "react";
 import type { Label, MailOp } from "../../shared/api";
@@ -45,6 +46,7 @@ import { Reader, useThreadPrint } from "./components/Reader";
 import { Sidebar, SidebarToggle } from "./components/Sidebar";
 import { SidebarRail } from "./components/SidebarRail";
 import { railTrafficLightInset, trafficLightInset } from "./components/ui/styles";
+import { FocusedInboxPermission } from "./components/FocusedInboxActions";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
 import {
@@ -69,11 +71,19 @@ import {
   profilesAtom,
   proposalsAtom,
   signaturesAtom,
+  sendAsAtom,
   threadAtom,
   unreadCountsAtom,
 } from "./state/queries";
 import { useBatchUndo } from "./state/undo";
-import { ALL, CATEGORY_NAMES, MAILBOX_NAMES, OVERVIEW, scopeAccountIds } from "./view";
+import {
+  ALL,
+  inboxCategoryNames,
+  categoryAccounts,
+  MAILBOX_NAMES,
+  OVERVIEW,
+  scopeAccountIds,
+} from "./view";
 
 import { GoToFolder } from "./components/GoToFolder";
 import { SnoozeDialog } from "./components/SnoozeDialog";
@@ -218,10 +228,20 @@ export function App({ composeId }: { composeId?: string }) {
   const stateMessages = prefs.threadGrouping
     ? messages
     : messages?.filter((message) => message.id === selectedId);
+  const aliasResult = useAtomValue(sendAsAtom);
+  const aliases = AsyncResult.getOrElse(aliasResult, () => []);
+  const focusedMessage = AsyncResult.isSuccess(aliasResult)
+    ? focusedSenderMessage(
+        stateMessages,
+        [...accountList.map((account) => account.email), ...aliases.map((alias) => alias.address)],
+        readerSelection?.threadKey === currentReaderThreadKey ? readerSelection.id : undefined,
+      )
+    : undefined;
   const threadState: ThreadState | null =
     selectedAccount && stateMessages
       ? {
           provider: selectedAccount.provider,
+          ...focusedSender(focusedMessage),
           isUnread: stateMessages.some((m) => m.isUnread),
           isStarred: stateMessages.some((m) => m.isStarred),
           isImportant: stateMessages.some((m) => m.labels.includes("IMPORTANT")),
@@ -319,7 +339,12 @@ export function App({ composeId }: { composeId?: string }) {
 
   const hasAccounts = accountList.length > 0;
   const viewAccount = accountList.find((a) => a.id === (view.label?.accountId ?? view.accountId));
-  const category = view.label ? CATEGORY_NAMES[view.label.id] : undefined;
+  const categorized = categoryAccounts(view, accountList);
+  const category = view.label
+    ? inboxCategoryNames(
+        categorized.length > 0 && categorized.every((a) => a.provider === "outlook"),
+      )[view.label.id]
+    : undefined;
   const baseTitle = view.label
     ? category
       ? i18n._(category)
@@ -621,6 +646,7 @@ export function App({ composeId }: { composeId?: string }) {
         busy={Boolean(dialog || compose)}
       />
       <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
+      <FocusedInboxPermission />
       <FailedOpNotice onOpenDraft={openSavedDraft} />
       <UpdateNotice onSettings={() => setDialog("settings")} />
       {narrow ? (
@@ -949,6 +975,10 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
   spam: () => msg`Reported as spam`,
   move: () => msg`Moved`,
   categories: () => msg`Categories updated`,
+  classification: (op) =>
+    op.kind === "classification" && op.value === "focused"
+      ? msg`Moved to Focused`
+      : msg`Moved to Other`,
   copy: () => msg`Copied to folders`,
   label: (op) => (op.kind === "label" && op.value ? msg`Label added` : msg`Label removed`),
 };

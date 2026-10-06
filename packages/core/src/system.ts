@@ -156,8 +156,9 @@ export function notificationEligible(
     return false;
   return (
     mode !== "primary" ||
-    account.provider !== "gmail" ||
-    !message.labels.some((l) => SECONDARY.has(l))
+    (account.provider === "outlook"
+      ? !message.labels.includes("CATEGORY_OTHER")
+      : account.provider !== "gmail" || !message.labels.some((l) => SECONDARY.has(l)))
   );
 }
 

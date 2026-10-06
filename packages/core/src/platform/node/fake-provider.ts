@@ -156,7 +156,8 @@ export function makeFakeProvider(
         Effect.andThen(
           failOnce,
           Effect.suspend(() =>
-            (op.kind === "categories" && account.provider !== "outlook") ||
+            ((op.kind === "categories" || op.kind === "classification") &&
+              account.provider !== "outlook") ||
             (op.kind === "copy" && account.provider !== "imap")
               ? Effect.fail(
                   new PermanentError({
@@ -409,14 +410,16 @@ export function makeFakeProvider(
               }),
             ),
       ),
-    search: (_account, query) =>
+    search: (account, query) =>
       Effect.andThen(
         failOnce,
         Effect.sync(() => {
           server.searched.push(query);
           const matches =
             server.searchResults ??
-            [...server.messages.values()].filter((m) => matchesSearch(m, query, server.labels));
+            [...server.messages.values()].filter((m) =>
+              matchesSearch(m, query, server.labels, account.provider),
+            );
           return {
             messages: matches.slice(0, query.limit ?? 200),
             truncated: matches.length > (query.limit ?? 200),

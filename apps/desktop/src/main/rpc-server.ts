@@ -148,6 +148,8 @@ const Handlers = MailRpcs.toLayer(
       NotificationActionCapabilities: () =>
         Effect.succeed(notificationActionCapabilities(process.platform)),
       Connect: ({ input }) => Effect.tap(m.connect(input), () => focusApp),
+      SetClassificationOverride: ({ messageId, classifyAs }) =>
+        m.setClassificationOverride(messageId, classifyAs),
       Reauth: ({ accountId, feature }) => Effect.tap(m.reauth(accountId, feature), () => focusApp),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => apple.status,

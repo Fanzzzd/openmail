@@ -375,7 +375,8 @@ const applyPush = async (
     await client.command(`UID STORE ${range} ${op.value ? "+" : "-"}FLAGS.SILENT (${flag})`);
     return [];
   }
-  if (op.kind === "categories") throw new PermanentError({ message: "Categories require Outlook" });
+  if (op.kind === "categories" || op.kind === "classification")
+    throw new PermanentError({ message: "Categories require Outlook" });
   const list = await folders(client);
   const label =
     op.kind === "archive"

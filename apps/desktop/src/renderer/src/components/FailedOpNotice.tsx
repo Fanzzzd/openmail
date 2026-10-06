@@ -22,6 +22,7 @@ const OPERATION_LABELS: Readonly<Record<string, MessageDescriptor>> = {
   copy: msg`Copy`,
   label: msg`Label`,
   categories: msg`Categories`,
+  classification: msg`Focused/Other`,
   saveDraft: msg`Save draft`,
   deleteDraft: msg`Delete draft`,
   delete: msg`Delete permanently`,

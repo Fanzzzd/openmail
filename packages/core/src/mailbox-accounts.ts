@@ -5,7 +5,12 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 import { type makeFeatureMailbox } from "./mailbox-features.js";
 import { type MailboxDependencies, type MailboxRuntimeState } from "./mailbox-runtime.js";
 import { type Mailbox } from "./mailbox.js";
-import { type AuthorizationFeature, serviceGranted } from "./optional-services.js";
+import {
+  type AuthorizationFeature,
+  serviceGranted,
+  focusedInboxGranted,
+  isOptionalService,
+} from "./optional-services.js";
 import { type ConnectInput } from "./services.js";
 
 export const makeAccountsMailbox = (
@@ -94,6 +99,8 @@ export const makeAccountsMailbox = (
     feature?: AuthorizationFeature,
   ) {
     const account = yield* store.getAccount(accountId);
+    if (feature === "focusedInbox" && account.provider !== "outlook")
+      return yield* new InvalidInput({ message: "Focused Inbox requires Outlook." });
     if (feature === "permanentDelete" && account.provider !== "gmail")
       return yield* new InvalidInput({
         message: "Only Gmail requires an extra permanent deletion permission.",
@@ -116,23 +123,25 @@ export const makeAccountsMailbox = (
             provider: "outlook",
             loginHint: account.email,
             grantedScopes,
-            ...(feature && feature !== "permanentDelete" ? { feature } : {}),
+            ...(isOptionalService(feature) ? { feature } : {}),
           },
       account.email,
     );
+    const authorizedScopes = feature ? yield* store.grantedScopes(accountId) : [];
     if (
       feature &&
-      !(feature === "permanentDelete"
-        ? (yield* store.grantedScopes(accountId)).includes(GMAIL_PERMANENT_DELETE_SCOPE)
-        : serviceGranted(account.provider, feature, yield* store.grantedScopes(accountId)))
+      !(feature === "focusedInbox"
+        ? focusedInboxGranted(authorizedScopes)
+        : feature === "permanentDelete"
+          ? authorizedScopes.includes(GMAIL_PERMANENT_DELETE_SCOPE)
+          : serviceGranted(account.provider, feature, authorizedScopes))
     )
       return yield* new FeatureScopeMissing({
         accountId,
         feature,
         message: "The provider did not grant the requested permission.",
       });
-    if (feature && feature !== "permanentDelete")
-      yield* store.setServiceEnabled(accountId, feature, true);
+    if (isOptionalService(feature)) yield* store.setServiceEnabled(accountId, feature, true);
     if (feature === "contacts")
       yield* deps
         .features()

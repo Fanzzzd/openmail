@@ -1,5 +1,5 @@
 import { Context, Effect, Option, Schema } from "effect";
-import type { MailOp } from "../domain.js";
+import { InferenceClassification, type MailOp } from "../domain.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../errors.js";
 import { graphPageLink } from "../graph-pagination.js";
 import { BASE_SCOPES } from "../optional-services.js";
@@ -97,7 +97,7 @@ export const SKIPPED = [
 
 export const SELECT =
   "id,conversationId,subject,bodyPreview,body,from,toRecipients,ccRecipients,replyTo," +
-  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,internetMessageId,bccRecipients";
+  "receivedDateTime,sentDateTime,isRead,isDraft,hasAttachments,flag,importance,webLink,categories,inferenceClassification,internetMessageId,bccRecipients";
 
 // Header selection is supported on ordinary message GETs, not requested from delta.
 export const MESSAGE_SELECT = `${SELECT},internetMessageHeaders`;
@@ -171,6 +171,7 @@ export const GraphMessage = Schema.Struct({
   parentFolderId: Schema.optionalKey(Schema.String),
   categories: Schema.optionalKey(Schema.Array(Schema.String)),
   importance: Schema.optionalKey(Schema.String),
+  inferenceClassification: Schema.optionalKey(Schema.NullOr(InferenceClassification)),
   flag: Schema.optionalKey(Schema.Struct({ flagStatus: Schema.optionalKey(Schema.String) })),
 });
 

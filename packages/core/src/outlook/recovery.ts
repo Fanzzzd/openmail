@@ -7,7 +7,7 @@ import { BackgroundRead } from "../provider-connectivity.js";
 import { ApiError } from "../provider-http.js";
 import { retryProvider } from "../provider-retry.js";
 import { type ProviderAdapter } from "../services.js";
-import { type ResetVerification, stateLabel } from "../sync-reset.js";
+import { type ResetVerification, outlookStateLabel } from "../sync-reset.js";
 import type { OutlookClient } from "./client.js";
 import {
   decode,
@@ -151,7 +151,7 @@ export const makeOutlookRecovery = (
                   kind: "present",
                   id: candidate.providerId,
                   providerId: raw.id,
-                  labels: [label, ...candidate.labels.filter(stateLabel)],
+                  labels: [label, ...candidate.labels.filter(outlookStateLabel)],
                 });
               }
             }

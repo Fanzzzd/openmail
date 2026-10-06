@@ -75,6 +75,7 @@ import {
   Draft,
   DraftInput,
   ImapConnectInput,
+  InferenceClassification,
   ImapPreset,
   Label,
   MailError,
@@ -542,6 +543,10 @@ export class MailRpcs extends RpcGroup.make(
 
   // Changes, all performed as the person at the app
   Rpc.make("ThreadCount", { payload: { query: ThreadQuery }, success: Schema.Number, error }),
+  Rpc.make("SetClassificationOverride", {
+    payload: { messageId: Schema.String, classifyAs: InferenceClassification },
+    error,
+  }),
   Rpc.make("ModifyWithUndo", {
     payload: { threads: Schema.Array(Schema.String), op: MailOp, flat: Schema.Boolean },
     success: BatchResult,

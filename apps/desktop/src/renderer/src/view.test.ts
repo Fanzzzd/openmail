@@ -30,3 +30,12 @@ it("In Inbox is available for Gmail labels and categories, excluding exclusive p
   ).toBe(true);
   expect(supportsInInboxFilter({ space: "all", mailbox: "inbox" }, [])).toBe(false);
 });
+
+it("Outlook Inbox labels use Focused/Other while Gmail keeps its five categories", async () => {
+  const { inboxCategoryNames } = await import("./view");
+  const outlook = inboxCategoryNames(true);
+  expect(Object.keys(outlook)).toEqual(["CATEGORY_PERSONAL", "CATEGORY_OTHER"]);
+  expect(outlook.CATEGORY_PERSONAL?.message).toBe("Focused");
+  expect(outlook.CATEGORY_OTHER?.message).toBe("Other");
+  expect(inboxCategoryNames(false).CATEGORY_PERSONAL?.message).toBe("Primary");
+});

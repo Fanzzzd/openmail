@@ -191,6 +191,10 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
             message: "Folder copies are available for IMAP accounts.",
           });
         const path = `/me/messages/${encodeURIComponent(providerId)}`;
+        if (op.kind === "classification") {
+          yield* write(account.id, "PATCH", path, { inferenceClassification: op.value });
+          return;
+        }
         if (op.kind === "read") {
           yield* write(account.id, "PATCH", path, { isRead: op.value });
           return;
@@ -268,6 +272,15 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
       (effect, account) => Effect.mapError(effect, writeFailure(account.id)),
     );
 
+    const setClassificationOverride: NonNullable<ProviderAdapter["setClassificationOverride"]> = (
+      account,
+      sender,
+      classifyAs,
+    ) =>
+      write(account.id, "POST", "/me/inferenceClassification/overrides", {
+        classifyAs,
+        senderEmailAddress: { name: sender.name, address: sender.address },
+      }).pipe(Effect.asVoid, Effect.mapError(writeFailure(account.id)));
     const settings = makeOutlookSettings(get, write);
 
     const changeLabel: ProviderAdapter["changeLabel"] = (account, change) =>
@@ -412,7 +425,7 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
                 !(raw.hasAttachments && raw.attachments === undefined) &&
                 !hasSignedContainer(parsed),
             };
-            if (matchesSearch(message, query, folderNames)) messages.push(message);
+            if (matchesSearch(message, query, folderNames, "outlook")) messages.push(message);
             if (messages.length >= limit) break;
           }
           url = page["@odata.nextLink"]
@@ -454,6 +467,7 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
       ...makeOutlookFolders(client),
       resetConnectivity: () => connectivity.reset,
       ...settings,
+      setClassificationOverride,
       ...makeOutlookFeatures(get, write),
       ...makeProviderCalendar(
         "outlook",
@@ -506,7 +520,13 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
       push,
     } satisfies Pick<
       ProviderAdapter,
-      "resetConnectivity" | "search" | "changeLabel" | "connect" | "folderStatus" | "push"
+      | "resetConnectivity"
+      | "search"
+      | "changeLabel"
+      | "connect"
+      | "folderStatus"
+      | "push"
+      | "setClassificationOverride"
     >;
   });
 export interface OutlookSyncSources {

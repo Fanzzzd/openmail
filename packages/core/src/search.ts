@@ -3,6 +3,7 @@ import { MAILBOX_LABEL } from "./mailbox-labels.js";
 import { Option, Schema } from "effect";
 import {
   SearchCondition,
+  type Provider,
   type Address,
   type Attachment,
   type AttachmentType,
@@ -230,7 +231,9 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
         criteria.rfcMessageId = value;
         break;
       case "category": {
-        const category = value.toUpperCase() === "PRIMARY" ? "PERSONAL" : value.toUpperCase();
+        const category = ["PRIMARY", "FOCUSED"].includes(value.toUpperCase())
+          ? "PERSONAL"
+          : value.toUpperCase();
         criteria.labels = [...(criteria.labels ?? []), `CATEGORY_${category}`];
         break;
       }
@@ -455,10 +458,15 @@ const contains = (text: string, term: string) =>
   text.toLocaleLowerCase().includes(term.toLocaleLowerCase());
 
 export function matchesSearch(
-  message: IncomingMessage,
+  incoming: IncomingMessage,
   raw: ThreadQuery,
   labels: readonly Pick<Label, "id" | "name">[] = [],
+  provider?: Provider,
 ): boolean {
+  const message =
+    provider === "outlook" && !incoming.labels.includes("CATEGORY_OTHER")
+      ? { ...incoming, labels: [...incoming.labels, "CATEGORY_PERSONAL"] }
+      : incoming;
   const q = parseSearchQuery(raw);
   if (
     raw.search !== undefined &&

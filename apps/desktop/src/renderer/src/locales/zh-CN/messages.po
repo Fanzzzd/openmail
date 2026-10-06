@@ -590,6 +590,18 @@ msgstr "总是加载 {domain} 的图片"
 msgid "Always load remote images from"
 msgstr "总是加载以下发件人的远程图片"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "始终将此发件人的邮件移至重点"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "始终将此发件人的邮件移至其他"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "始终移动此发件人的邮件？"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "总是引用全文"
@@ -962,6 +974,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1105,6 +1118,10 @@ msgstr "请选择未来的提醒时间"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "请选择此账户的标签或文件夹"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "请选择其他发件人的邮件。"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2279,6 +2296,21 @@ msgstr "校对并修正语法"
 msgid "Focus main window"
 msgstr "聚焦主窗口"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "重点"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "重点收件箱需要 Outlook。"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "重点/其他"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "文件夹操作失败：{reason}"
@@ -2400,6 +2432,14 @@ msgstr "来自我认识的人"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "已更新发件人"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "此发件人的新邮件将显示在重点中。已有邮件保留原分类。"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "此发件人的新邮件将显示在其他中。已有邮件保留原分类。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3268,6 +3308,10 @@ msgstr "撤销等待中的邮件将保留为草稿。已开始发送的邮件可
 msgid "Messages keep their other labels."
 msgstr "邮件保留其他标签。"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft 将请求邮件修改权限。登录后，请重新选择操作。"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3418,6 +3462,12 @@ msgstr "移到密送"
 msgid "Move to Cc"
 msgstr "移到抄送"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "移至重点"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3436,6 +3486,12 @@ msgstr "移到文件夹…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "移回收件箱"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "移至其他"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3464,8 +3520,18 @@ msgid "Moved"
 msgstr "已移动"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "已移至重点"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "已移回收件箱"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "已移至其他"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3987,6 +4053,12 @@ msgstr "原邮件不可用"
 msgid "Other"
 msgstr "其他"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "其他"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "其他反馈"
@@ -4203,8 +4275,8 @@ msgid "Primary"
 msgstr "主要"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "「主要」排除 Gmail 的其他分类；Outlook 和 IMAP 则包含整个收件箱。已读邮件和首次同步不通知。"
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "主要排除 Gmail 的其他分类，只包含 Outlook 的重点邮件。IMAP 包含整个收件箱。已读邮件和首次同步不通知。"
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4711,6 +4783,7 @@ msgstr "星期六"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5061,6 +5134,10 @@ msgstr "在统一邮件夹中显示账号名称"
 msgid "Show Cc field"
 msgstr "展开抄送栏"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "显示重点/其他"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5146,12 +5223,18 @@ msgstr "侧栏"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "重新登录"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "重新登录以更改重点/其他分类。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5661,6 +5744,10 @@ msgstr "此会议已取消"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "不支持此会议链接。"
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "此邮件没有有效的发件人地址。"
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

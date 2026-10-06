@@ -159,6 +159,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     contactSync: notUsed("contactSync"),
     refreshContacts: () => notUsed("refreshContacts"),
     searchServer: () => notUsed("searchServer"),
+    setClassificationOverride: () => notUsed("setClassificationOverride"),
     changeLabel: () => notUsed("changeLabel"),
     setLabelPreference: () => notUsed("setLabelPreference"),
     setOrganization: () => notUsed("setOrganization"),

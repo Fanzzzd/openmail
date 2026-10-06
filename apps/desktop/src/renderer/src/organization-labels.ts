@@ -1,11 +1,14 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
+import { OUTLOOK_OTHER } from "./view";
+
 type Translate = (message: MessageDescriptor) => string;
 
-export function categoryNames(t: Translate) {
+export function categoryNames(t: Translate, outlook = false) {
   return {
-    CATEGORY_PERSONAL: t(msg`Primary`),
+    CATEGORY_PERSONAL: t(outlook ? msg`Focused` : msg`Primary`),
+    CATEGORY_OTHER: t(OUTLOOK_OTHER),
     CATEGORY_SOCIAL: t(msg`Social`),
     CATEGORY_PROMOTIONS: t(msg`Promotions`),
     CATEGORY_UPDATES: t(msg`Updates`),

@@ -2,7 +2,7 @@ import { accountName } from "../format";
 import { categoryNames } from "../organization-labels";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { CATEGORIES, type LabelChange } from "@openmail/core/schema";
+import { inboxCategories, type LabelChange } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { useId, useState } from "react";
 import type { Account, Label } from "../../../shared/api";
@@ -19,7 +19,6 @@ import { formInput, formButton } from "./ui/form-styles";
 export function OrganizationSettings({ accounts }: { accounts: readonly Account[] }) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
-  const names = categoryNames(t);
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [editing, setEditing] = useState<Label | "new" | null>(null);
   const [deleting, setDeleting] = useState<Label | null>(null);
@@ -30,6 +29,8 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
   const setOrg = useAtomSet(setOrganizationAtom);
   const [changed, change] = useAtom(changeLabelAtom, { mode: "promiseExit" });
   const account = accounts.find((a) => a.id === accountId);
+  const categoryIds = account ? inboxCategories(account.provider) : [];
+  const names = categoryNames(t, account?.provider === "outlook");
   const perform = async (input: LabelChange) => {
     const exit = await change({
       payload: { accountId, change: input },
@@ -52,7 +53,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         }}
         options={accounts.map((a) => ({ value: a.id, label: accountName(a) }))}
       />
-      {account?.provider === "gmail" && (
+      {(account?.provider === "gmail" || account?.provider === "outlook") && (
         <label className="flex items-center gap-2">
           <Checkbox
             checked={organization.find((o) => o.accountId === accountId)?.categories ?? true}
@@ -63,23 +64,25 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
                     accountId,
                     categories,
                     selectedCategories: organization.find((o) => o.accountId === accountId)
-                      ?.selectedCategories ?? [...CATEGORIES],
+                      ?.selectedCategories ?? [...categoryIds],
                   },
                 },
                 reactivityKeys: [Keys.organization],
               })
             }
           />
-          <span>{t`Show Gmail categories`}</span>
+          <span>
+            {account.provider === "outlook" ? t`Show Focused/Other` : t`Show Gmail categories`}
+          </span>
         </label>
       )}
-      {account?.provider === "gmail" &&
+      {(account?.provider === "gmail" || account?.provider === "outlook") &&
         organization.find((o) => o.accountId === accountId)?.categories !== false && (
           <fieldset className="space-y-2">
             <legend>{t`Visible categories`}</legend>
-            {CATEGORIES.map((category) => {
+            {categoryIds.map((category) => {
               const selected = organization.find((o) => o.accountId === accountId)
-                ?.selectedCategories ?? [...CATEGORIES];
+                ?.selectedCategories ?? [...categoryIds];
               return (
                 <label key={category} className="flex items-center gap-2">
                   <Checkbox

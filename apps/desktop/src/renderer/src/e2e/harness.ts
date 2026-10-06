@@ -274,6 +274,8 @@ export async function flow(
       DefaultMailClient: () => Effect.succeed({ available: false, isDefault: false }),
       BecomeDefaultMailClient: unsupported,
       Connect: ({ input }) => m.connect(input),
+      SetClassificationOverride: ({ messageId, classifyAs }) =>
+        m.setClassificationOverride(messageId, classifyAs),
       Reauth: ({ accountId, feature }) => m.reauth(accountId, feature),
       ImapPresets: () => Effect.succeed(IMAP_PRESETS),
       AppleContactsStatus: () => Effect.succeed({ status: "off", revision: 0 }),

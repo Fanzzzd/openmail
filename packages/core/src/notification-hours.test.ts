@@ -239,7 +239,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           for (const id of ["keep", "read", "delete", "archive", "secondary"])
             server.messages.set(id, {
               ...incoming(id, date),
-              ...(id === "secondary" ? { labels: ["INBOX", "UNREAD", "CATEGORY_PROMOTIONS"] } : {}),
+              ...(provider === "outlook"
+                ? {
+                    labels: ["INBOX", "UNREAD", ...(id === "secondary" ? ["CATEGORY_OTHER"] : [])],
+                  }
+                : id === "secondary"
+                  ? { labels: ["INBOX", "UNREAD", "CATEGORY_PROMOTIONS"] }
+                  : {}),
             });
           yield* m.pollInbox();
           yield* m.sync();
@@ -273,7 +279,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           assert.strictEqual(batches[0]?.profileId, profileId);
           assert.deepStrictEqual(
             batches[0]?.messages.map((m) => m.id).toSorted(),
-            (provider === "gmail"
+            (provider !== "imap"
               ? [`${accountId}/keep`]
               : [`${accountId}/keep`, `${accountId}/secondary`]
             ).toSorted(),

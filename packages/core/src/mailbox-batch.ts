@@ -5,6 +5,7 @@ import { Clock, Effect, Option, Semaphore } from "effect";
 
 import {
   UNDO_HISTORY_TTL_MS,
+  isOutlookClassification,
   type Actor,
   type MailOp,
   type Message,
@@ -12,6 +13,7 @@ import {
   type IncomingMessage,
 } from "./domain.js";
 import { messagesFrom } from "./reading.js";
+import { requireFocusedInboxScope } from "./optional-services.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
 import type { ReminderSnapshot, Store } from "./services.js";
@@ -36,6 +38,17 @@ function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
   if (op.kind === "important" && provider !== "imap")
     return [{ kind: "important", value: message.labels.includes("IMPORTANT") }];
   if (op.kind === "star") return [{ kind: "star", value: message.isStarred }];
+  if (op.kind === "classification")
+    return [
+      {
+        kind: "classification",
+        // Unknown cached classification has the same effective behavior as Focused.
+        value:
+          message.labels.some(isOutlookClassification) && message.labels.includes("CATEGORY_OTHER")
+            ? "other"
+            : "focused",
+      },
+    ];
   if (op.kind === "categories") {
     const current = message.labels
       .filter((label) => label.startsWith("category:"))
@@ -57,7 +70,9 @@ function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
     if (!folderTarget(op, message.labels)) return [];
     const folder = message.labels.find(
       (l) =>
-        !["UNREAD", "STARRED", "IMPORTANT", "SNOOZED"].includes(l) && !l.startsWith("category:"),
+        !["UNREAD", "STARRED", "IMPORTANT", "SNOOZED"].includes(l) &&
+        !l.startsWith("category:") &&
+        !(provider === "outlook" && isOutlookClassification(l)),
     );
     switch (folder) {
       case "INBOX":
@@ -159,7 +174,14 @@ export const makeBatchMailbox = (
                       ? [message.value.id]
                       : []
                     : yield* store.threadMessageIds(thread);
-                  for (const id of found) ids.add(id);
+                  for (const id of found) {
+                    if (
+                      op.kind === "classification" &&
+                      !(yield* store.getMessage(id)).labels.includes("INBOX")
+                    )
+                      continue;
+                    ids.add(id);
+                  }
                 }
                 const forward: Change[] = [];
                 const inverses: Change[] = [];
@@ -168,12 +190,15 @@ export const makeBatchMailbox = (
                   const message = yield* store.getMessage(id);
                   const account = yield* store.getAccount(message.accountId);
                   if (
-                    (op.kind === "categories" && account.provider !== "outlook") ||
+                    ((op.kind === "categories" || op.kind === "classification") &&
+                      account.provider !== "outlook") ||
                     (op.kind === "copy" && account.provider !== "imap")
                   )
                     return yield* new InvalidInput({
                       message: "This organization action is unavailable for this account.",
                     });
+                  if (op.kind === "classification")
+                    yield* requireFocusedInboxScope(store, account.id);
                   if (
                     op.kind === "categories" &&
                     [...op.add, ...op.remove].some((name) => !name.trim() || /[\r\n\0]/.test(name))
@@ -211,6 +236,7 @@ export const makeBatchMailbox = (
                     op.kind !== "star" &&
                     !(op.kind === "important" && account.provider === "outlook") &&
                     op.kind !== "categories" &&
+                    op.kind !== "classification" &&
                     op.kind !== "copy" &&
                     !folderTarget(op, message.labels)
                   )

@@ -580,6 +580,18 @@ msgstr "常に {domain} から画像をロードします"
 msgid "Always load remote images from"
 msgstr "常にリモート イメージをロードする"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "この送信者のメッセージを常に優先へ移動"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "この送信者のメッセージを常にその他へ移動"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "この送信者のメッセージを常に移動しますか？"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "必ずメッセージ全体を引用してください"
@@ -952,6 +964,7 @@ msgstr "現在メールサーバーに接続できません。"
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "将来のリマインダー時間を選択してください"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "このアカウントからラベルまたはフォルダを選択してください"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "別の送信者のメッセージを選択してください。"
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "文法の修正と校正"
 msgid "Focus main window"
 msgstr "メインウィンドウにフォーカスする"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "優先"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "優先受信トレイには Outlook が必要です。"
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "優先/その他"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "フォルダアクションが失敗しました: {reason}"
@@ -2390,6 +2422,14 @@ msgstr "知り合いから"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "差出人を更新しました"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "この送信者からの新しいメッセージは優先に表示されます。既存のメッセージの分類は維持されます。"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "この送信者からの新しいメッセージはその他に表示されます。既存のメッセージの分類は維持されます。"
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "送信取り消しの待機時間内のメッセージは下書きとし
 msgid "Messages keep their other labels."
 msgstr "メッセージには他のラベルが保持されます。"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft がメールの変更権限を求めます。ログイン後、もう一度操作を選んでください。"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "Bccに移動"
 msgid "Move to Cc"
 msgstr "Ccに移動"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "優先へ移動"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "フォルダに移動…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "受信に移動"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "その他へ移動"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "移動しました"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "優先へ移動しました"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "受信箱に移動しました"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "その他へ移動しました"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "元のメッセージを利用できません"
 msgid "Other"
 msgstr "他の"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "その他"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "その他のフィードバック"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "メイン"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "メインにはGmailの他のカテゴリは含まれません。OutlookとIMAPでは受信のすべてのメッセージが対象です。開封済みのメッセージと初回同期は通知されません。"
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "メインには Gmail の他のカテゴリを除くメールと Outlook の優先メールのみが含まれます。IMAP では受信トレイのすべてのメールが含まれます。既読メールと初回同期では通知されません。"
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "土曜日"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "統合フォルダ内のアカウント名を表示する"
 msgid "Show Cc field"
 msgstr "CCフィールドを表示"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "優先/その他を表示"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "サイドバー"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "再度サインインしてください"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "優先/その他を変更するには再度ログインしてください。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "この会議はキャンセルされました"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "この会議リンクはサポートされていません。"
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "このメッセージには有効な送信者アドレスがありません。"
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

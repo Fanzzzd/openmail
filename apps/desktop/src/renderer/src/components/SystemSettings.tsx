@@ -259,7 +259,10 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                 aria-label={t`Notifications for ${account.email}`}
                 value={prefs.notifications[account.id] ?? "primary"}
                 options={[
-                  { value: "primary", label: t`Primary` },
+                  {
+                    value: "primary",
+                    label: account.provider === "outlook" ? t`Focused` : t`Primary`,
+                  },
                   { value: "inbox", label: t`Inbox` },
                   { value: "off", label: t`Off` },
                 ]}
@@ -272,8 +275,8 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         </div>
         <p className="mt-3 text-a11y-muted">
           <Trans>
-            Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox
-            mail. Read mail and the first sync stay silent.
+            Primary excludes Gmail's other categories and includes only Outlook Focused mail. For
+            IMAP, it includes all Inbox mail. Read mail and the first sync stay silent.
           </Trans>
         </p>
       </section>

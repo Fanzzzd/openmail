@@ -143,6 +143,8 @@ export function parseGraphMessage(
   const isStarred = raw.flag?.flagStatus === "flagged";
 
   const labels = [folderLabel, ...(raw.categories ?? []).map((name) => `category:${name}`)];
+  if (raw.inferenceClassification)
+    labels.push(raw.inferenceClassification === "focused" ? "CATEGORY_PERSONAL" : "CATEGORY_OTHER");
   if (raw.importance === "high") labels.push("IMPORTANT");
   if (isUnread) labels.push("UNREAD");
   if (isStarred) labels.push("STARRED");

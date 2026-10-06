@@ -12,6 +12,7 @@ import {
   AuthError,
   InvalidInput,
   type NotFound,
+  type FeatureScopeMissing,
   type ProviderFailure,
   SendUncertain,
 } from "./errors.js";
@@ -45,7 +46,7 @@ export const makeOutboxMailbox = (
     modify: (
       command: Extract<Command, { kind: "modify" }>,
       actor: Actor,
-    ) => Effect.Effect<FlushResult, NotFound | InvalidInput>;
+    ) => Effect.Effect<FlushResult, FeatureScopeMissing | NotFound | InvalidInput>;
     flushLater: Effect.Effect<void | boolean>;
     persistDraft: (
       input: DraftInput,

@@ -7,9 +7,13 @@ export const OptionalService = Schema.Literals(["contacts", "calendar", "setting
 export type OptionalService = typeof OptionalService.Type;
 export const AuthorizationFeature = Schema.Literals([
   "permanentDelete",
+  "focusedInbox",
   ...OptionalService.literals,
 ]);
 export type AuthorizationFeature = typeof AuthorizationFeature.Type;
+export const isOptionalService = (
+  feature: AuthorizationFeature | undefined,
+): feature is OptionalService => OptionalService.literals.some((service) => service === feature);
 export const ServiceGrant = Schema.Struct({
   service: OptionalService,
   state: Schema.Literals(["notGranted", "granted", "turnedOff"]),
@@ -39,6 +43,23 @@ export const OPTIONAL_SCOPES = {
     settings: ["MailboxSettings.ReadWrite"],
   },
 } satisfies Record<Exclude<Provider, "imap">, Record<OptionalService, readonly string[]>>;
+
+/** Graph message classification and sender overrides both require the base Mail.ReadWrite grant. */
+export const focusedInboxGranted = (scopes: readonly string[]) =>
+  scopes.some(
+    (scope) =>
+      scope.replace(/^https:\/\/graph.microsoft.com\//i, "").toLowerCase() === "mail.readwrite",
+  );
+export const requireFocusedInboxScope = (store: Store["Service"], accountId: string) =>
+  Effect.gen(function* () {
+    if (!focusedInboxGranted(yield* store.grantedScopes(accountId)))
+      return yield* new FeatureScopeMissing({
+        accountId,
+        feature: "focusedInbox",
+        message: "Sign in again to grant Mail.ReadWrite for Focused Inbox.",
+      });
+    return yield* Effect.void;
+  });
 
 /** Compatibility baseline only for accounts whose scope metadata predates migration 19/Outlook reporting. */
 export function legacyScopes(provider: Provider): readonly string[] {

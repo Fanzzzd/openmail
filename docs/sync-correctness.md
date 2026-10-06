@@ -1,5 +1,7 @@
 # 同步与发送结果
 
+迁移 39 清除 Outlook 的完整和 Inbox delta 游标，以补取 `inferenceClassification`。下次同步会重拉同步窗口内的邮件及消息文本一次，窗口外缓存保留，但分类不会自动补齐；未知分类暂按 Focused 处理，用户可直接更改分类。
+
 UIDNEXT 回退且 UIDVALIDITY 未变时，旧 UID 已不可信。core 先失效远端草稿引用，把旧队列操作改成带无效 provider ID 的 `reconcile`，并撤销旧撤销记录与待审批提议。UID 身份失效会隔离保留全部旧缓存，用 Message-ID 验证；重新发现的邮件使用新的本地世代 ID，不复用旧句柄。此情况不按旧 UID 自动重映射。阅读视图在消息查询返回不存在时清除旧内容。IMAP 全量同步和普通收件箱轮询先拉取、后推送；按账户与推送队列互斥，其他账户操作不等拉取结束。UIDVALIDITY 改变时仍按 Message-ID 重映射，每个旧行在一次拉取中最多使用一次。手机 OS 后台任务仅增量拉取，不推送队列。实现见 [store.ts](../packages/core/src/store.ts)、[mailbox-live.ts](../packages/core/src/mailbox-live.ts)、[Node IMAP](../packages/core/src/platform/node/imap/adapter.ts)和[手机 IMAP](../packages/core/src/platform/react-native/imap.ts)。
 
 文件夹失效后，尚未同步的本地改动会被丢弃，包括标签、已读、星标、稍后提醒和排队的远端草稿删除；相关操作只保留无效 ID 的清理记录，孤立提醒行会删除。推送在 SELECT 后核对保存的 UIDVALIDITY 和 UIDNEXT 下界；发现回退便返回永久错误，等待重新同步。

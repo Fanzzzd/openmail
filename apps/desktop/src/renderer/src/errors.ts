@@ -21,6 +21,9 @@ const NOT_FOUND = {
 } as const;
 const OUTLOOK_UPLOAD_FAILED = msg`Outlook attachment upload failed. Try saving or sending again.`;
 export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Choose a message from another sender.": msg`Choose a message from another sender.`,
+  "This message has no valid sender address.": msg`This message has no valid sender address.`,
+  "Focused Inbox requires Outlook.": msg`Focused Inbox requires Outlook.`,
   "Outlook attachment upload failed. Try saving or sending again.": OUTLOOK_UPLOAD_FAILED,
   "Invalid Outlook upload session": OUTLOOK_UPLOAD_FAILED,
   "Invalid Outlook upload byte ranges": OUTLOOK_UPLOAD_FAILED,
@@ -117,13 +120,15 @@ const CLIENTS = { gmail: "Google", outlook: "Microsoft" } as const;
 export function errorText(i18n: I18n, error: AppError): string {
   return Match.valueTags(error, {
     FeatureScopeMissing: (e) =>
-      e.feature === "permanentDelete"
-        ? i18n._(msg`Authorize permission to permanently delete mail in this Gmail account.`)
-        : e.feature === "calendar"
-          ? i18n._(msg`Calendar access isn't granted for this account.`)
-          : e.feature === "settings"
-            ? i18n._(msg`Sign in again to enable filters and automatic replies.`)
-            : i18n._(msg`Sign in again to sync server contacts.`),
+      e.feature === "focusedInbox"
+        ? i18n._(msg`Sign in again to change Focused/Other.`)
+        : e.feature === "permanentDelete"
+          ? i18n._(msg`Authorize permission to permanently delete mail in this Gmail account.`)
+          : e.feature === "calendar"
+            ? i18n._(msg`Calendar access isn't granted for this account.`)
+            : e.feature === "settings"
+              ? i18n._(msg`Sign in again to enable filters and automatic replies.`)
+              : i18n._(msg`Sign in again to sync server contacts.`),
     SettingsScopeMissing: () => i18n._(msg`Sign in again to enable filters and automatic replies.`),
     SendUncertain: () =>
       i18n._(

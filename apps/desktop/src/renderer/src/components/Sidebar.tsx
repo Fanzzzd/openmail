@@ -87,7 +87,8 @@ import { iconButton } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 import {
   ALL,
-  CATEGORY_NAMES,
+  inboxCategoryNames,
+  categoryAccounts,
   MAILBOX_NAMES,
   OVERVIEW,
   scopeAccountIds,
@@ -335,12 +336,12 @@ export function Sidebar({
     onDrop: (e) => drop(e, l, true),
   });
   const profile = profiles.find((p) => p.id === view.space);
-  const hasGmail = accounts.some(
-    (a) =>
-      a.enabled !== false &&
-      a.provider === "gmail" &&
-      (!scope || scope.includes(a.id)) &&
-      organization.find((o) => o.accountId === a.id)?.categories !== false,
+  const categorized = categoryAccounts({ ...view, label: undefined }, accounts);
+  const categoryNames = inboxCategoryNames(
+    categorized.length > 0 && categorized.every((a) => a.provider === "outlook"),
+  );
+  const hasCategories = categorized.some(
+    (account) => organization.find((o) => o.accountId === account.id)?.categories !== false,
   );
   const spaceUnread = members.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
@@ -554,7 +555,7 @@ export function Sidebar({
                               : "☆"}
                           </button>
                         )}
-                        {id === "inbox" && hasGmail ? (
+                        {id === "inbox" && hasCategories ? (
                           <button
                             type="button"
                             aria-label={
@@ -577,22 +578,23 @@ export function Sidebar({
                     }
                   />
                   {id === "inbox" &&
-                    hasGmail &&
+                    hasCategories &&
                     categoriesOpen &&
-                    Object.entries(CATEGORY_NAMES)
+                    Object.entries(categoryNames)
                       .filter(([category]) =>
                         accounts.some(
                           (a) =>
                             a.enabled !== false &&
-                            a.provider === "gmail" &&
+                            (a.provider === "gmail" || a.provider === "outlook") &&
                             (!scope || scope.includes(a.id)) &&
-                            organization.some(
-                              (o) =>
-                                o.accountId === a.id &&
-                                o.categories &&
-                                (o.selectedCategories === undefined ||
-                                  o.selectedCategories.some((c) => c === category)),
-                            ),
+                            (a.provider === "outlook"
+                              ? ["CATEGORY_PERSONAL", "CATEGORY_OTHER"].includes(category)
+                              : category !== "CATEGORY_OTHER") &&
+                            organization.find((o) => o.accountId === a.id)?.categories !== false &&
+                            (organization
+                              .find((o) => o.accountId === a.id)
+                              ?.selectedCategories?.some((c) => c === category) ??
+                              true),
                         ),
                       )
                       .map(([cat, name]) => {

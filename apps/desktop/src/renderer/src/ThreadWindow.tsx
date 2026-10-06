@@ -1,3 +1,4 @@
+import { focusedSender, focusedSenderMessage, requestFocusedPermission } from "./focused-inbox";
 import { nativeShareKind } from "../../shared/native-actions";
 import { Settings, ShortcutHelp, AddAccountDialog } from "./components/LazyDialogs";
 import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
@@ -19,14 +20,15 @@ import type { MailOp } from "../../shared/api";
 import { ThreadView, useThreadPrint } from "./components/Reader";
 import { readerThreadKey } from "./reader-selection";
 import { useBatchUndo } from "./state/undo";
+import { FocusedInboxPermission } from "./components/FocusedInboxActions";
 import { ThreadActions, type ThreadState } from "./components/ThreadActions";
 import { Toast, type ToastState } from "./components/Toast";
 import { trafficLightInset } from "./components/ui/styles";
 import { causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { liveUpdatesAtom } from "./state/events";
-import { modifyMessages, modifyThreads, useRunMail, withMail } from "./state/mail";
-import { accountsAtom, labelsAtom, prefsAtom, threadAtom } from "./state/queries";
+import { modifyMessages, modifyThreads, modifyWithUndo, useRunMail, withMail } from "./state/mail";
+import { accountsAtom, labelsAtom, prefsAtom, threadAtom, sendAsAtom } from "./state/queries";
 
 /** Ops after which the thread has left where it was; the window closes, as in Mail. */
 const LEAVES = new Set<MailOp["kind"]>(["archive", "trash", "spam"]);
@@ -79,10 +81,23 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
     document.title = subject || "OpenMail";
   }, [subject]);
 
+  const aliasResult = useAtomValue(sendAsAtom);
+  const aliases = AsyncResult.getOrElse(aliasResult, () => []);
+  const focusedMessage = AsyncResult.isSuccess(aliasResult)
+    ? focusedSenderMessage(
+        messages,
+        [
+          ...accounts.map((ownedAccount) => ownedAccount.email),
+          ...aliases.map((alias) => alias.address),
+        ],
+        selectedMessage,
+      )
+    : undefined;
   const state: ThreadState | null =
     account && messages
       ? {
           provider: account.provider,
+          ...focusedSender(focusedMessage),
           isUnread: messages.some((m) => m.isUnread),
           isStarred: messages.some((m) => m.isStarred),
           isImportant: messages.some((m) => m.labels.includes("IMPORTANT")),
@@ -114,12 +129,26 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const act = (op: MailOp, keepOpen = false) => {
     if (op.kind === "read" && !op.value) setMarked(true);
     return run(
-      (single
-        ? modifyMessages([id], op).pipe(Effect.asVoid)
-        : modifyThreads([id], op).pipe(Effect.asVoid)
+      (op.kind === "classification"
+        ? modifyWithUndo([id], op, false).pipe(
+            Effect.tap((result) =>
+              Effect.sync(() =>
+                showUndo(
+                  result,
+                  [id],
+                  op.value === "focused" ? t`Moved to Focused` : t`Moved to Other`,
+                ),
+              ),
+            ),
+            Effect.asVoid,
+          )
+        : single
+          ? modifyMessages([id], op).pipe(Effect.asVoid)
+          : modifyThreads([id], op).pipe(Effect.asVoid)
       ).pipe(
         Effect.matchCause({
           onFailure: (cause) => {
+            if (requestFocusedPermission(cause)) return;
             const reason = causeText(i18n, cause);
             say({ text: t`Action failed: ${reason}`, tone: "error" });
           },
@@ -272,6 +301,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
 
   return (
     <div className="flex h-full flex-col bg-white text-[13px] text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+      <FocusedInboxPermission />
       {/* Room on the left for the traffic lights; actions that do not fit fold into the menu. */}
       <header
         data-thread-toolbar

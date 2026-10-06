@@ -1,6 +1,12 @@
 import { sameProviderWrite } from "./provider-write.js";
 import { Schema } from "effect";
-import { ThreadSummary, type MailboxView, type Provider, CATEGORIES } from "./domain.js";
+import {
+  ThreadSummary,
+  type MailboxView,
+  type Provider,
+  CATEGORIES,
+  INBOX_CATEGORIES,
+} from "./domain.js";
 
 export function moveSourceLabel(mailbox: MailboxView, currentLabel?: string): string | null {
   if (currentLabel?.startsWith("category:")) return null;
@@ -70,7 +76,7 @@ export type LabelPreference = typeof LabelPreference.Type;
 export const AccountOrganization = Schema.Struct({
   accountId: Schema.String,
   categories: Schema.Boolean,
-  selectedCategories: Schema.optionalKey(Schema.Array(Schema.Literals(CATEGORIES))),
+  selectedCategories: Schema.optionalKey(Schema.Array(Schema.Literals(INBOX_CATEGORIES))),
 });
 export type AccountOrganization = typeof AccountOrganization.Type;
 

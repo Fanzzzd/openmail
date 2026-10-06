@@ -118,6 +118,14 @@ it("per-account modes and per-space quiet hours decide notifications", () => {
     ),
   );
   assert.isTrue(shouldNotify({ ...account, provider: "outlook" }, secondary, DEFAULT_PREFS, now));
+  assert.isTrue(
+    shouldNotify(
+      { ...account, provider: "outlook" },
+      { ...message, labels: [...message.labels, "CATEGORY_PERSONAL"] },
+      DEFAULT_PREFS,
+      now,
+    ),
+  );
   assert.isFalse(
     shouldNotify(
       account,

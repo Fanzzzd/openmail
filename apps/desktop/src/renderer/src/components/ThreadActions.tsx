@@ -40,6 +40,7 @@ import { useElementWidth } from "../use-element-width";
 import { fittingCount, shownActions, withAnchor } from "../toolbar-fit";
 import { Tip } from "./ui/Tip";
 
+import { FocusedInboxActions } from "./FocusedInboxActions";
 import { MultiOrganization } from "./MultiOrganization";
 
 type Icon = ComponentType<{ className?: string }>;
@@ -47,6 +48,7 @@ type ComposeMode = "reply" | "replyAll" | "forward";
 
 export interface ThreadState {
   provider: Provider;
+  focusedSender?: { messageId: string; address: string };
   isUnread: boolean;
   isStarred: boolean;
   isImportant: boolean;
@@ -316,7 +318,15 @@ export function ThreadActions({
   const candidates = withAnchor(ordered, anchor);
   const visible = shownActions(
     candidates,
-    fit ? fittingCount(candidates, widths, width) : limit,
+    fit
+      ? fittingCount(
+          candidates,
+          widths,
+          width === 0 ? 0 : Math.max(1, width - (state.provider === "outlook" ? 30 : 0)),
+        )
+      : typeof limit === "number"
+        ? Math.max(0, limit - (state.provider === "outlook" ? 1 : 0))
+        : limit,
     anchor,
   );
   return (
@@ -335,6 +345,7 @@ export function ThreadActions({
           {controls[action]}
         </span>
       ))}
+      {state.provider === "outlook" && <FocusedInboxActions state={state} onOp={onOp} />}
       <DropdownMenu
         trigger={
           <Toolbar.Button aria-label={t`Conversation actions`} className={button}>
@@ -522,6 +533,18 @@ export function ThreadMenuItems({
       )}
       {onCreate && state.provider === "gmail" && (
         <MenuItem onClick={() => onCreate(false)}>{t`New label or folder`}</MenuItem>
+      )}
+      {state.provider === "outlook" && (
+        <>
+          <MenuItem
+            icon={Inbox}
+            onClick={() => onOp({ kind: "classification", value: "focused" })}
+          >{t`Move to Focused`}</MenuItem>
+          <MenuItem
+            icon={Inbox}
+            onClick={() => onOp({ kind: "classification", value: "other" })}
+          >{t`Move to Other`}</MenuItem>
+        </>
       )}
       {state.provider !== "gmail" && (
         <MultiOrganization

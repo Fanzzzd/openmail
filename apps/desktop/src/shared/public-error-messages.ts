@@ -1,5 +1,8 @@
 /** Fixed validation and device messages authored by OpenMail. Provider/OS details are excluded. */
 export const PUBLIC_ERROR_MESSAGES = new Set([
+  "Choose a message from another sender.",
+  "This message has no valid sender address.",
+  "Focused Inbox requires Outlook.",
   "Attachments rejected before sending",
   "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.",
   "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.",

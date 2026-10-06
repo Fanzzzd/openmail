@@ -12,6 +12,7 @@ import {
 } from "./domain.js";
 import { InvalidInput, type ProviderError } from "./errors.js";
 import { decodeProviderId } from "./imap-cursor.js";
+import { requireFocusedInboxScope } from "./optional-services.js";
 import { applyOpToLabels, folderTarget, invalidCategoryFolderOp } from "./mail-ops.js";
 import { type makeBatchMailbox } from "./mailbox-batch.js";
 import { eventFromInvite } from "./mailbox-features.js";
@@ -108,15 +109,17 @@ export const makeApplyMailbox = (
       store.messageRef(id).pipe(Effect.map((ref) => ({ id, ...ref }))),
     );
     const accounts = new Map<string, Account>();
-    if (command.op.kind === "copy") {
+    if (command.op.kind === "copy" || command.op.kind === "classification") {
       // Validate every account before queuing anything for mixed selections.
       for (const { accountId } of refs) {
         if (accounts.has(accountId)) continue;
         const account = yield* store.getAccount(accountId);
-        if (account.provider !== "imap")
+        if (account.provider !== (command.op.kind === "copy" ? "imap" : "outlook"))
           return yield* new InvalidInput({
             message: "This organization action is unavailable for this account.",
           });
+        if (command.op.kind === "classification")
+          yield* requireFocusedInboxScope(store, account.id);
         accounts.set(accountId, account);
       }
     }
@@ -128,6 +131,7 @@ export const makeApplyMailbox = (
       }
       // IMAP importance is read-only; removing an absent folder does nothing.
       const flag =
+        command.op.kind === "classification" ||
         command.op.kind === "read" ||
         command.op.kind === "star" ||
         (command.op.kind === "important" && account.provider === "outlook");

@@ -32,6 +32,7 @@ import type {
   DraftRemote,
   DraftCreateState,
   SendPreparationState,
+  InferenceClassification,
   ImapSettings,
   IncomingMessage,
   Label,
@@ -834,6 +835,11 @@ export interface ProviderAdapter {
     providerId: string,
   ): Effect.Effect<IncomingMessage, ProviderFailure>;
   search(account: Account, query: ThreadQuery): Effect.Effect<ProviderSearchPage, ProviderFailure>;
+  setClassificationOverride?(
+    account: Account,
+    sender: Address,
+    classifyAs: InferenceClassification,
+  ): Effect.Effect<void, ProviderFailure>;
   changeLabel(
     account: Account,
     change: LabelChange,

@@ -31,13 +31,29 @@ export const MAILBOX_NAMES: Record<Mailbox, MessageDescriptor> = {
   all: msg`All Mail`,
 };
 
+export const OUTLOOK_OTHER = msg({
+  message: "Other",
+  context: "outlook-inbox",
+  comment: "Outlook Other Inbox classification.",
+});
+
 export const CATEGORY_NAMES: Record<string, MessageDescriptor> = {
   CATEGORY_PERSONAL: msg`Primary`,
   CATEGORY_SOCIAL: msg`Social`,
   CATEGORY_PROMOTIONS: msg`Promotions`,
   CATEGORY_UPDATES: msg`Updates`,
   CATEGORY_FORUMS: msg`Forums`,
+  CATEGORY_OTHER: OUTLOOK_OTHER,
 };
+
+export function inboxCategoryNames(outlookOnly: boolean): Record<string, MessageDescriptor> {
+  return outlookOnly
+    ? {
+        CATEGORY_PERSONAL: msg`Focused`,
+        CATEGORY_OTHER: OUTLOOK_OTHER,
+      }
+    : CATEGORY_NAMES;
+}
 
 /** Accounts that belong to a space. */
 export function spaceAccounts(space: SpaceId, accounts: readonly Account[]): readonly Account[] {
@@ -56,4 +72,15 @@ export function scopeAccountIds(view: View, accounts: readonly Account[]): strin
     return accounts.filter((a) => a.enabled !== false && a.id === view.accountId).map((a) => a.id);
   if (view.space === ALL || view.space === OVERVIEW) return undefined;
   return spaceAccounts(view.space, accounts).map((a) => a.id);
+}
+
+/** Enabled Gmail/Outlook accounts in the current view's account or profile scope. */
+export function categoryAccounts(view: View, accounts: readonly Account[]): readonly Account[] {
+  const ids = scopeAccountIds(view, accounts);
+  return accounts.filter(
+    (account) =>
+      account.enabled !== false &&
+      (account.provider === "gmail" || account.provider === "outlook") &&
+      (ids === undefined || ids.includes(account.id)),
+  );
 }

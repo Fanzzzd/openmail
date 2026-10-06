@@ -6,6 +6,7 @@
  */
 import {
   DEFAULT_PREFS,
+  inboxCategories,
   mergeSearchResults,
   parseSearchQuery,
   searchInputError,
@@ -17,7 +18,7 @@ import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 import type { AppError } from "../errors";
 import { supportsInInboxFilter } from "../folder-actions";
 import { MailClient } from "../rpc";
-import { OVERVIEW, scopeAccountIds } from "../view";
+import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../view";
 import { type Loaded, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
@@ -103,11 +104,10 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
   const baseScope = scopeAccountIds(view, accounts);
   const organization = AsyncResult.getOrElse(get(organizationAtom), () => []);
   const scope = view.label?.id.startsWith("CATEGORY_")
-    ? accounts
+    ? categoryAccounts(view, accounts)
         .filter(
           (a) =>
-            a.provider === "gmail" &&
-            (!baseScope || baseScope.includes(a.id)) &&
+            inboxCategories(a.provider).some((category) => category === view.label?.id) &&
             organization.find((o) => o.accountId === a.id)?.categories !== false,
         )
         .map((a) => a.id)

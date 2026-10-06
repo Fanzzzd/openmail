@@ -219,7 +219,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (c.dateAfter !== undefined) where.push(sql`m.date >= ${c.dateAfter}`);
     for (const label of c.labels ?? [])
       where.push(
-        sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value=${label} OR j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label}))`,
+        sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label})))`,
       );
     return sql.and(where);
   };
@@ -401,4 +401,8 @@ export const accountScope = (
       ? sql.literal("0")
       : sql`${sql.literal(column)} IN ${sql.in(ids)}`;
 const labelIn = (sql: SqlClient.SqlClient, label: string): Fragment =>
-  sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;
+  label === "CATEGORY_PERSONAL"
+    ? sql`CASE WHEN m.account_id IN (SELECT id FROM accounts WHERE provider='outlook')
+        THEN NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value='CATEGORY_OTHER')
+        ELSE EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value=${label}) END`
+    : sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;

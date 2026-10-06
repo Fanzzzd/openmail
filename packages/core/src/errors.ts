@@ -74,7 +74,13 @@ export class FeatureScopeMissing extends Schema.TaggedError<FeatureScopeMissing>
   "FeatureScopeMissing",
   {
     accountId: Schema.String,
-    feature: Schema.Literals(["calendar", "contacts", "settings", "permanentDelete"]),
+    feature: Schema.Literals([
+      "calendar",
+      "contacts",
+      "settings",
+      "permanentDelete",
+      "focusedInbox",
+    ]),
     message: Schema.String,
   },
 ) {}

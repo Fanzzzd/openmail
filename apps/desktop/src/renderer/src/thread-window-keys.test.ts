@@ -22,6 +22,7 @@ vi.mock("@effect/atom-react", () => ({
 vi.mock("./state/queries", () => ({
   prefsAtom: "prefs",
   accountsAtom: "accounts",
+  sendAsAtom: "sendAs",
   labelsAtom: () => "labels",
   threadAtom: () => "thread",
 }));
@@ -44,6 +45,7 @@ vi.mock("./state/mail", () => ({
   modifyMessages: () => Effect.sync(() => calls.modify()),
 }));
 vi.mock("./components/Reader", () => ({ ThreadView: () => null, useThreadPrint: () => vi.fn() }));
+vi.mock("./components/FocusedInboxActions", () => ({ FocusedInboxPermission: () => null }));
 vi.mock("./components/ThreadActions", () => ({ ThreadActions: () => null }));
 vi.mock("./components/Toast", () => ({
   Toast: ({ toast }: { toast: { text: string } | null }) =>
@@ -72,6 +74,7 @@ afterAll(() => {
     "./state/mail",
     "./components/Reader",
     "./components/ThreadActions",
+    "./components/FocusedInboxActions",
     "./components/Toast",
     "./components/SystemSettings",
     "./components/Settings",

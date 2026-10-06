@@ -580,6 +580,18 @@ msgstr "Vždy načítat obrázky z {domain}"
 msgid "Always load remote images from"
 msgstr "Vzdálené obrázky vždy načtěte z"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Focused"
+msgstr "Vždy přesouvat zprávy od tohoto odesílatele do Prioritní"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender to Other"
+msgstr "Vždy přesouvat zprávy od tohoto odesílatele do Další"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Always move messages from this sender?"
+msgstr "Vždy přesouvat zprávy od tohoto odesílatele?"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Always quote the whole message"
 msgstr "Vždy citujte celou zprávu"
@@ -952,6 +964,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/Feedback.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
@@ -1095,6 +1108,10 @@ msgstr "Vyberte budoucí čas připomenutí"
 #: src/renderer/src/errors.ts
 msgid "Choose a label or folder from this account"
 msgstr "Vyberte štítek nebo složku z tohoto účtu"
+
+#: src/renderer/src/errors.ts
+msgid "Choose a message from another sender."
+msgstr "Vyberte zprávu od jiného odesílatele."
 
 #: src/renderer/src/errors.ts
 msgid "Choose a parent folder from this account"
@@ -2269,6 +2286,21 @@ msgstr "Opravit gramatiku a zkontrolovat text"
 msgid "Focus main window"
 msgstr "Zaměřit hlavní okno"
 
+#: src/renderer/src/components/SystemSettings.tsx
+#: src/renderer/src/organization-labels.ts
+#: src/renderer/src/view.ts
+msgid "Focused"
+msgstr "Prioritní"
+
+#: src/renderer/src/errors.ts
+msgid "Focused Inbox requires Outlook."
+msgstr "Prioritní doručená pošta vyžaduje Outlook."
+
+#: src/renderer/src/components/FailedOpNotice.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Focused/Other"
+msgstr "Prioritní/Další"
+
 #: src/renderer/src/components/FolderActions.tsx
 msgid "Folder action failed: {reason}"
 msgstr "Akce složky selhala: {reason}"
@@ -2390,6 +2422,14 @@ msgstr "Od lidí, které znám"
 #: src/renderer/src/components/Composer.tsx
 msgid "From updated"
 msgstr "Adresa odesílatele změněna"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Focused. Existing messages keep their classification."
+msgstr "Budoucí zprávy od tohoto odesílatele se zobrazí v Prioritní. Stávající zprávy si ponechají své zařazení."
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Future messages from this sender will appear in Other. Existing messages keep their classification."
+msgstr "Budoucí zprávy od tohoto odesílatele se zobrazí v Další. Stávající zprávy si ponechají své zařazení."
 
 #: src/renderer/src/components/Settings.tsx
 msgid "General"
@@ -3258,6 +3298,10 @@ msgstr "Zprávy v době pro vrácení zpět zůstanou koncepty. Již probíhají
 msgid "Messages keep their other labels."
 msgstr "Zprávy si ponechají své další štítky."
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+msgid "Microsoft will ask for permission to update mail. After signing in, choose the action again."
+msgstr "Microsoft požádá o oprávnění upravovat poštu. Po přihlášení zvolte akci znovu."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Mimestream"
 msgstr "Mimestream"
@@ -3408,6 +3452,12 @@ msgstr "Přesunout do skryté kopie"
 msgid "Move to Cc"
 msgstr "Přesunout do kopie"
 
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Focused"
+msgstr "Přesunout do Prioritní"
+
 #: src/renderer/src/components/BatchActions.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/ThreadActions.tsx
@@ -3426,6 +3476,12 @@ msgstr "Přesunout do složky…"
 #: src/renderer/src/shortcut-names.ts
 msgid "Move to Inbox"
 msgstr "Přesunout do doručené pošty"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/Proposals.tsx
+#: src/renderer/src/components/ThreadActions.tsx
+msgid "Move to Other"
+msgstr "Přesunout do Další"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Move to To"
@@ -3454,8 +3510,18 @@ msgid "Moved"
 msgstr "Přesunuto"
 
 #: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Focused"
+msgstr "Přesunuto do Prioritní"
+
+#: src/renderer/src/App.tsx
 msgid "Moved to Inbox"
 msgstr "Přesunuto do doručené pošty"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/ThreadWindow.tsx
+msgid "Moved to Other"
+msgstr "Přesunuto do Další"
 
 #: src/renderer/src/components/ProfileEditor.tsx
 msgid "Moves from “{elsewhere}”"
@@ -3977,6 +4043,12 @@ msgstr "Původní zpráva není dostupná"
 msgid "Other"
 msgstr "Ostatní"
 
+#. Outlook Other Inbox classification.
+#: src/renderer/src/view.ts
+msgctxt "outlook-inbox"
+msgid "Other"
+msgstr "Další"
+
 #: src/renderer/src/components/Feedback.tsx
 msgid "Other feedback"
 msgstr "Další zpětná vazba"
@@ -4193,8 +4265,8 @@ msgid "Primary"
 msgstr "Primární"
 
 #: src/renderer/src/components/SystemSettings.tsx
-msgid "Primary excludes Gmail's other categories. For Outlook and IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "Primární nezahrnuje ostatní kategorie Gmailu. U Outlooku a IMAP zahrnuje všechnu doručenou poštu. Přečtené zprávy a první synchronizace nevydávají oznámení."
+msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
+msgstr "Primární nezahrnuje ostatní kategorie Gmailu a zahrnuje pouze prioritní poštu Outlooku. U IMAP zahrnuje veškerou doručenou poštu. Přečtená pošta a první synchronizace nevyvolávají oznámení."
 
 #: src/renderer/src/shortcut-names.ts
 msgid "Print"
@@ -4701,6 +4773,7 @@ msgstr "Sobota"
 #: src/renderer/src/components/AccountControls.tsx
 #: src/renderer/src/components/AddAccountDialog.tsx
 #: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
 #: src/renderer/src/components/ServerSettings.tsx
@@ -5051,6 +5124,10 @@ msgstr "Zobrazovat názvy účtů ve sjednocených složkách"
 msgid "Show Cc field"
 msgstr "Zobrazit pole Kopie"
 
+#: src/renderer/src/components/OrganizationSettings.tsx
+msgid "Show Focused/Other"
+msgstr "Zobrazit Prioritní/Další"
+
 #: src/renderer/src/components/ComposeEditor.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Show format bar"
@@ -5136,12 +5213,18 @@ msgstr "Postranní panel"
 
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
+#: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Znovu se přihlaste"
+
+#: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/errors.ts
+msgid "Sign in again to change Focused/Other."
+msgstr "Přihlaste se znovu pro změnu Prioritní/Další."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Sign in again to enable filters"
@@ -5651,6 +5734,10 @@ msgstr "Tato schůzka byla zrušena"
 #: src/renderer/src/errors.ts
 msgid "This meeting link is not supported."
 msgstr "Tento odkaz na schůzku není podporován."
+
+#: src/renderer/src/errors.ts
+msgid "This message has no valid sender address."
+msgstr "Tato zpráva nemá platnou adresu odesílatele."
 
 #. Sent means the Sent mailbox.
 #: src/renderer/src/errors.ts

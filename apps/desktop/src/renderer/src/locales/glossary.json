@@ -168,5 +168,29 @@
     "ja": "取り消|取消",
     "ru": "отмен",
     "es": "deshac|deshech"
+  },
+  "Focused": {
+    "en": "Focused",
+    "zh-CN": "重点",
+    "cs": "prioritn",
+    "nl": "prioriteit",
+    "fr": "prioritaire",
+    "de": "relevant",
+    "it": "evidenziat",
+    "ja": "優先",
+    "ru": "отсортирован",
+    "es": "prioritari"
+  },
+  "Other": {
+    "en": "Other",
+    "zh-CN": "其他",
+    "cs": "další",
+    "nl": "overig",
+    "fr": "autres",
+    "de": "sonstig",
+    "it": "altra",
+    "ja": "その他",
+    "ru": "друг",
+    "es": "otros"
   }
 }

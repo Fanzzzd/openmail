@@ -1,6 +1,7 @@
 import { PlatformCrypto } from "./platform/crypto.js";
 import { Clock, Context, Effect, Semaphore } from "effect";
 import type { Account, Label, MailOp, ThreadQuery, Provider } from "./domain.js";
+import { requireFocusedInboxScope } from "./optional-services.js";
 import { InvalidInput } from "./errors.js";
 import type { Mailbox } from "./mailbox.js";
 import {
@@ -723,6 +724,31 @@ export function makeOrganizationMailbox(
         }),
       ),
     searchServer,
+    setClassificationOverride: (messageId, classifyAs) =>
+      mutation(
+        Effect.gen(function* () {
+          const message = yield* store.getMessage(messageId);
+          const { account, adapter } = yield* owner(message.accountId);
+          if (account.provider !== "outlook" || !adapter.setClassificationOverride)
+            return yield* new InvalidInput({ message: "Focused Inbox requires Outlook." });
+          if (!message.from.address.trim() || /[\r\n\0]/.test(message.from.address))
+            return yield* new InvalidInput({
+              message: "This message has no valid sender address.",
+            });
+          const own = new Set(
+            [
+              ...(yield* store.listAccounts).map((ownedAccount) => ownedAccount.email),
+              ...(yield* store.sendAs).map((alias) => alias.address),
+            ].map((address) => address.trim().toLowerCase()),
+          );
+          if (own.has(message.from.address.trim().toLowerCase()))
+            return yield* new InvalidInput({ message: "Choose a message from another sender." });
+          yield* requireFocusedInboxScope(store, account.id);
+          yield* adapter.setClassificationOverride(account, message.from, classifyAs);
+          yield* audit(account.id, "classification_override", { messageId, classifyAs });
+          return yield* Effect.void;
+        }),
+      ),
     changeLabel,
     wakeSnoozed,
     syncSendAs,
@@ -894,6 +920,7 @@ export function makeOrganizationMailbox(
     | "applyFilter"
     | "createLabelAndApply"
     | "searchServer"
+    | "setClassificationOverride"
     | "changeLabel"
     | "wakeSnoozed"
     | "syncSendAs"
