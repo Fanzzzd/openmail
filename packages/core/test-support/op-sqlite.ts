@@ -11,12 +11,14 @@ const bind = (value: SqliteScalar): SQLInputValue => {
 export function opSqliteShim(
   file = ":memory:",
   readOnly = false,
+  seed?: (db: DatabaseSync) => void,
 ): { open: () => OpSqliteDatabase; closed: () => boolean } {
   let closed = false;
   return {
     closed: () => closed,
     open: () => {
       const db = new DatabaseSync(file, { readOnly });
+      seed?.(db);
       return {
         execute: async (query, params = []) => {
           const statement = db.prepare(query);

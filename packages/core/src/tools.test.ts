@@ -81,6 +81,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     acknowledgeFailedOps: () => notUsed("acknowledgeFailedOps"),
     syncHealth: () => notUsed("syncHealth"),
     cacheDatabaseSize: notUsed("cacheDatabaseSize"),
+    compactCache: notUsed("compactCache"),
     closeSessions: () => notUsed("closeSessions"),
     optionalServices: () => notUsed("optionalServices"),
     setServiceEnabled: () => notUsed("setServiceEnabled"),

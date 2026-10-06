@@ -1170,6 +1170,34 @@ msgstr "Pas kleur toe op"
 msgid "Compact"
 msgstr "Compact"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compact now"
+msgstr "Nu verkleinen"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compacting…"
+msgstr "Bezig met verkleinen…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction failed. The database may be busy or need repair."
+msgstr "Verkleinen is mislukt. De database is mogelijk in gebruik of moet worden hersteld."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction finished."
+msgstr "Verkleinen voltooid."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable in a read-only session."
+msgstr "Verkleinen is niet beschikbaar in een alleen-lezen sessie."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable on this platform."
+msgstr "Verkleinen is niet beschikbaar op dit platform."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgstr "Verkleinen is geweigerd omdat de aansluiting van de zoekindex niet kon worden gegarandeerd."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Nieuw bericht"
@@ -1582,10 +1610,6 @@ msgstr "Donkere achtergrond"
 msgid "Dashed list"
 msgstr "Gestippelde lijst"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Database pages"
-msgstr "Databasepagina’s"
-
 #: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Databaseherstel is onderbroken. Herstel een bewaarde database voordat u OpenMail opnieuw opent. Bewaarde database: {backup}"
@@ -1746,6 +1770,14 @@ msgstr "Verwijder concept"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "Opgeslagen regel verwijderen?"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
+msgstr "Er is weinig schijfruimte. Verklein nu om automatisch schijfruimte vrij te maken."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. The cache budget has tightened automatically. Protected content is kept."
+msgstr "Er is weinig schijfruimte. Het cachebudget is automatisch verlaagd. Beschermde inhoud blijft behouden."
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -2178,6 +2210,14 @@ msgstr "Stuur door"
 msgid "Forward as attachment"
 msgstr "Stuur door als bijlage"
 
+#: src/main/native-i18n.ts
+msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
+msgstr "Maak minstens {size} MiB vrij om de lokale database bij te werken en start OpenMail opnieuw. De database is behouden."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Free database pages"
+msgstr "Vrije databasepagina’s"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Friday"
 msgstr "Vrijdag"
@@ -2459,6 +2499,10 @@ msgstr "Verhoog citaatniveau"
 msgid "Indent list"
 msgstr "Vergroot lijstinspringing"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Indexes and other data"
+msgstr "Indexen en overige gegevens"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
@@ -2555,6 +2599,10 @@ msgstr "Behoud belangrijkheidsmarkering"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
 msgstr "Bewaar een lokale kopie"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep openmail under"
+msgstr "Houd openmail onder"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
@@ -2972,6 +3020,12 @@ msgstr "Zichtbaarheid van de berichtenlijst"
 msgid "Message order in a conversation"
 msgstr "Berichtvolgorde in een gesprek"
 
+#. Storage occupied by downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text"
+msgstr "Berichttekst"
+
 #. Storage budget for downloaded email message text.
 #. Storage budget for downloaded email message text.
 #: src/renderer/src/components/CacheSettings.tsx
@@ -3045,6 +3099,10 @@ msgstr "Meer"
 #: src/renderer/src/components/ui/Menu.tsx
 msgid "More actions"
 msgstr "Meer acties"
+
+#: src/main/native-i18n.ts
+msgid "More disk space is needed"
+msgstr "Meer schijfruimte nodig"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3930,6 +3988,10 @@ msgstr "Ontvangers buiten het oorspronkelijke gesprek:"
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen. Oorspronkelijke database: {backup}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Recovery copies"
+msgstr "Herstelkopieën"
+
 #: src/renderer/src/errors.ts
 msgid "Recurring event creation is unavailable for this account"
 msgstr "Het maken van terugkerende evenementen is niet beschikbaar voor dit account"
@@ -4204,10 +4266,6 @@ msgstr "Bewaartermijnen hebben voorrang. Berichten met een ster, bewaarde berich
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Probeer opnieuw"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Reusable database space"
-msgstr "Herbruikbare databaseruimte"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5102,6 +5160,10 @@ msgstr "Het einde moet na het begin liggen"
 msgid "The filter applies to future mail on the server."
 msgstr "Het filter is van toepassing op toekomstige e-mail op de server."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
+msgstr "De limiet omvat de database, bijlagen, WAL en herstelkopieën. Beschermde inhoud kan de limiet overschrijden."
+
 #: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "De lokale database kan niet worden geverifieerd"
@@ -5165,6 +5227,10 @@ msgstr "De server heeft de aanmelding afgewezen. Controleer het e-mailadres en z
 #: src/renderer/src/errors.ts
 msgid "The thread changed. Summarize it again."
 msgstr "Het gesprek is gewijzigd. Vat het opnieuw samen."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "There is not enough free disk space to compact safely."
+msgstr "Er is onvoldoende vrije schijfruimte om veilig te verkleinen."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
@@ -5506,6 +5572,10 @@ msgstr "Updates"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Updates vereisen een ondertekende macOS-versie en een bewaard toegangstoken."
 
+#: src/main/native-i18n.ts
+msgid "Upgrading local database…"
+msgstr "Lokale database wordt bijgewerkt…"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "Gebruik {token} voor een vrije variabele. Bij het invoegen van de sjabloon wordt u naar de waarde ervan gevraagd."
@@ -5574,6 +5644,10 @@ msgstr "Zichtbare categorieën"
 msgid "Wait for attachments to finish loading."
 msgstr "Wacht tot de bijlagen zijn geladen."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Wait for syncing and queued changes to finish before compacting."
+msgstr "Wacht tot de synchronisatie en de wijzigingen in de wachtrij klaar zijn voordat u verkleint."
+
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "Wachten op toestemming voor contacten. Beantwoord de systeemvraag."
@@ -5581,6 +5655,10 @@ msgstr "Wachten op toestemming voor contacten. Beantwoord de systeemvraag."
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "Wachten op inloggen…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "WAL"
+msgstr "WAL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Webmail link copied"

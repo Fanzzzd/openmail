@@ -1180,6 +1180,34 @@ msgstr "颜色类型"
 msgid "Compact"
 msgstr "紧凑"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compact now"
+msgstr "立即压缩"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compacting…"
+msgstr "正在压缩…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction failed. The database may be busy or need repair."
+msgstr "压缩失败。数据库可能正在使用或需要修复。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction finished."
+msgstr "压缩完成。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable in a read-only session."
+msgstr "只读会话无法压缩。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable on this platform."
+msgstr "此平台暂不支持压缩。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgstr "无法保证搜索索引对齐，已拒绝压缩。"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "撰写"
@@ -1592,10 +1620,6 @@ msgstr "深色背景"
 msgid "Dashed list"
 msgstr "短横线列表"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Database pages"
-msgstr "数据库页"
-
 #: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "数据库恢复被中断。请先恢复保留的数据库，再打开 OpenMail。保留的数据库：{backup}"
@@ -1756,6 +1780,14 @@ msgstr "丢弃草稿"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "丢弃保存的规则？"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
+msgstr "磁盘空间不足。请立即压缩以启用自动空间回收。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. The cache budget has tightened automatically. Protected content is kept."
+msgstr "磁盘空间不足，缓存预算已自动收紧。受保护内容会保留。"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -2188,6 +2220,14 @@ msgstr "转发"
 msgid "Forward as attachment"
 msgstr "作为附件转发"
 
+#: src/main/native-i18n.ts
+msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
+msgstr "请释放至少 {size} MiB 空间，再重启 OpenMail 升级本地数据库。数据库已保留。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Free database pages"
+msgstr "数据库空闲页"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Friday"
 msgstr "星期五"
@@ -2469,6 +2509,10 @@ msgstr "增加引用层级"
 msgid "Indent list"
 msgstr "缩进列表"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Indexes and other data"
+msgstr "索引及其他数据"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
@@ -2565,6 +2609,10 @@ msgstr "保留重要性"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
 msgstr "保留本地副本"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep openmail under"
+msgstr "openmail 占用上限"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
@@ -2982,6 +3030,12 @@ msgstr "邮件列表标签可见性"
 msgid "Message order in a conversation"
 msgstr "会话内的邮件顺序"
 
+#. Storage occupied by downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text"
+msgstr "消息文本"
+
 #. Storage budget for downloaded email message text.
 #. Storage budget for downloaded email message text.
 #: src/renderer/src/components/CacheSettings.tsx
@@ -3055,6 +3109,10 @@ msgstr "更多"
 #: src/renderer/src/components/ui/Menu.tsx
 msgid "More actions"
 msgstr "更多操作"
+
+#: src/main/native-i18n.ts
+msgid "More disk space is needed"
+msgstr "需要更多磁盘空间"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3940,6 +3998,10 @@ msgstr "原会话之外的收件人："
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Recovery copies"
+msgstr "恢复副本"
+
 #: src/renderer/src/errors.ts
 msgid "Recurring event creation is unavailable for this account"
 msgstr "此账户暂不支持创建重复日程"
@@ -4214,10 +4276,6 @@ msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "重试"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Reusable database space"
-msgstr "数据库可复用空间"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5112,6 +5170,10 @@ msgstr "结束时间须晚于开始时间"
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
+msgstr "上限包含数据库、附件、WAL 和恢复副本。受保护内容可超过上限。"
+
 #: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "无法验证本地数据库"
@@ -5175,6 +5237,10 @@ msgstr "服务器拒绝了登录。请检查邮箱地址，并确认填的是应
 #: src/renderer/src/errors.ts
 msgid "The thread changed. Summarize it again."
 msgstr "会话已变更。请重新生成摘要。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "There is not enough free disk space to compact safely."
+msgstr "磁盘空闲空间不足，无法安全压缩。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
@@ -5516,6 +5582,10 @@ msgstr "动态"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "更新需要已签名的 macOS 版本，并保存访问令牌。"
 
+#: src/main/native-i18n.ts
+msgid "Upgrading local database…"
+msgstr "正在升级本地数据库…"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "用 {token} 等自定义变量，插入模板时填写其值。"
@@ -5584,6 +5654,10 @@ msgstr "显示的分类"
 msgid "Wait for attachments to finish loading."
 msgstr "请等待附件加载完成。"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Wait for syncing and queued changes to finish before compacting."
+msgstr "请等同步和待处理更改完成后再压缩。"
+
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "正在等待通讯录权限。请回应系统提示。"
@@ -5591,6 +5665,10 @@ msgstr "正在等待通讯录权限。请回应系统提示。"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "等待授权…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "WAL"
+msgstr "WAL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Webmail link copied"

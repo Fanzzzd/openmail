@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { incoming as makeIncoming, TestMailbox, fakeServer } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
@@ -22,7 +23,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MIGRATIONS, splitStatements } from "./db.js";
+import { MIGRATIONS } from "./db.js";
 import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
 {
   for (const provider of ["gmail", "outlook"] as const) {
@@ -296,8 +297,7 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
           const accountId = `${provider}:legacy@example.com`;
           const db = new DatabaseSync(filename);
           try {
-            for (const migration of MIGRATIONS.slice(0, 33))
-              for (const statement of splitStatements(migration)) db.exec(statement);
+            for (const migration of MIGRATIONS.slice(0, 33)) applyNativeMigration(db, migration);
             db.exec("PRAGMA user_version=33");
             db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,0)").run(
               accountId,

@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { RECOVERY_TABLES } from "./platform/node/database-recovery.js";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it } from "vitest";
@@ -301,7 +302,7 @@ it("resets a legacy database before migrations without deleting accounts", () =>
 it("keeps both remote draft ids when resetting a cache", () => {
   const dir = temp();
   const db = new DatabaseSync(join(dir, "mail.db"));
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES (?,?,?,?)").run(
     "a",
     "gmail",
@@ -336,7 +337,7 @@ it("salvages every migrated non-cache table from a database with a damaged cache
   const dir = temp();
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   const columnSchema = Schema.Array(
     Schema.Struct({
       name: Schema.String,
@@ -405,7 +406,7 @@ it("skips unreadable preference rows and continues copying later readable pages"
   const dir = temp();
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   for (let i = 1; i <= 60; i++)
     db.prepare("INSERT INTO prefs(key,value_json) VALUES (?,?)").run(
       `pref-${i}`,
@@ -454,7 +455,7 @@ it("skips unreadable preference rows and continues copying later readable pages"
 
 it("enumerates every migrated plain table as retained state or disposable cache", () => {
   const db = new DatabaseSync(":memory:");
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   const cache = new Set([
     "body_cache_budget",
     "messages",
@@ -513,7 +514,7 @@ it("preserves the old WAL/SHM and salvages records committed only in the WAL", (
   const sourceFile = join(sourceDir, "mail.db");
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(sourceFile);
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   const root = db
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -554,7 +555,7 @@ it("keeps a readable account when only its optional profile page is unreadable",
   const dir = temp();
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) db.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(db, script);
   db.prepare("INSERT INTO profiles(id,name,icon,color,position) VALUES (?,?,?,?,?)").run(
     "p",
     "Work",
@@ -590,7 +591,7 @@ it("refuses corrupt database replacement while another connection holds a read t
   const dir = temp();
   const file = join(dir, "mail.db");
   const seed = new DatabaseSync(file);
-  for (const script of MIGRATIONS) seed.exec(script);
+  for (const script of MIGRATIONS) applyNativeMigration(seed, script);
   const root = seed
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -615,7 +616,7 @@ it("cache reset removes company metadata and repairs a damaged organization FTS 
   const dir = temp();
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) db.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
     "gmail:me@example.com",
     "gmail",

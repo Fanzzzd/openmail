@@ -59,6 +59,7 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     PauseBackfill: ({ accountId, paused }) => m.pauseBackfill(accountId, paused),
     FetchOlder: ({ query }) => m.fetchOlder(query),
     CacheDatabaseSize: () => m.cacheDatabaseSize,
+    CompactCache: () => m.compactCache,
     CacheWindows: () => m.cacheWindows,
     SetCacheWindow: ({ input }) => m.setCacheWindow(input),
     SearchServer: ({ query }) => m.searchServer(query),

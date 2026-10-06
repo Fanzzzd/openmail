@@ -10,6 +10,8 @@
 export const Keys = {
   ai: "ai",
   cache: "cache",
+  /** Disk scans refresh on focus/interval and explicit cache mutations. */
+  storage: "storage",
   accounts: "accounts",
   organization: "organization",
   sendAs: "send-as",

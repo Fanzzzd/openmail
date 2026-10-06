@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { load } from "sqlite-vec";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { DatabaseSync } from "node:sqlite";
@@ -492,7 +493,7 @@ it.effect("split migrations build the same schema as running each script whole",
       }),
       (db) => Effect.sync(() => db.close()),
     );
-    for (const migration of MIGRATIONS) reference.exec(migration);
+    for (const migration of MIGRATIONS) applyNativeMigration(reference, migration);
     reference.exec(
       "CREATE VIRTUAL TABLE derived_text_vectors USING vec0(embedding float[384]); CREATE VIRTUAL TABLE derived_image_vectors USING vec0(embedding float[512]);",
     );
@@ -526,7 +527,7 @@ it.effect("a database from an older version migrates without losing mail", () =>
     yield* Effect.sync(() => {
       const old = new DatabaseSync(file);
       old.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
-      for (const migration of MIGRATIONS.slice(0, 3)) old.exec(migration);
+      for (const migration of MIGRATIONS.slice(0, 3)) applyNativeMigration(old, migration);
       old.exec("PRAGMA user_version = 3");
       old.exec(`INSERT INTO accounts (id, provider, email, created_at, needs_reauth)
         VALUES ('gmail:me@example.com', 'gmail', 'me@example.com', 1, 0)`);
@@ -818,7 +819,7 @@ it.effect(
       const file = path.join(dir, "migration.db");
       const db = new DatabaseSync(file);
       try {
-        for (const migration of MIGRATIONS.slice(0, 9)) db.exec(migration);
+        for (const migration of MIGRATIONS.slice(0, 9)) applyNativeMigration(db, migration);
         db.exec("PRAGMA user_version=9");
         const id = "gmail:migration@example.com";
         db.prepare(
@@ -927,7 +928,7 @@ it.effect(
       yield* Effect.sync(() => {
         const old = new DatabaseSync(file);
         try {
-          for (const migration of MIGRATIONS.slice(0, 13)) old.exec(migration);
+          for (const migration of MIGRATIONS.slice(0, 13)) applyNativeMigration(old, migration);
           old.exec("PRAGMA user_version=13");
           old
             .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)")

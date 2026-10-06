@@ -77,3 +77,5 @@ export {
   type CorpusExplainReport,
   type CorpusReport,
 } from "./corpus-check.js";
+
+export { DatabaseUpgradeSpaceError } from "./database-upgrade.js";

@@ -1,10 +1,11 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { incoming as makeIncoming, fakeServer, TestMailbox } from "./platform/node/testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { type IncomingMessage } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
 import { Store } from "./services.js";
@@ -220,8 +221,7 @@ import { parseAppLink, parseStableReference, privateMailLink, messageLink } from
         yield* Effect.sync(() => {
           const db = new DatabaseSync(file);
           try {
-            for (const migration of MIGRATIONS.slice(0, 13))
-              for (const statement of splitStatements(migration)) db.exec(statement);
+            for (const migration of MIGRATIONS.slice(0, 13)) applyNativeMigration(db, migration);
             db.exec("PRAGMA user_version=13");
             db.exec(
               "INSERT INTO accounts(id,provider,email,created_at) VALUES ('outlook:me@outlook.com','outlook','me@outlook.com',1)",

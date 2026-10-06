@@ -1,13 +1,22 @@
+import { showDatabaseUpgrade, isDatabaseUpgradeWindow } from "./database-upgrade";
+import { nativeRecoveryLabels } from "./native-i18n";
 import { registerSecuritySchemes, prepareSessionSecurity } from "./security-bootstrap";
 import { openExternal } from "./external";
 import { createShutdownHandler } from "./quit";
 import { prepareUpdateQuit } from "./update-install";
 import { cleanupAttachmentTemps } from "./attachment-temp";
-import { NodeMailbox, dataDir, NodeSystem, unavailableVision, type Vision } from "@openmail/core";
+import {
+  NodeMailbox,
+  DatabaseUpgradeSpaceError,
+  dataDir,
+  NodeSystem,
+  unavailableVision,
+  type Vision,
+} from "@openmail/core";
 import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { app, BrowserWindow, powerMonitor } from "electron";
+import { app, BrowserWindow, dialog, powerMonitor } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
 
@@ -95,13 +104,16 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
               };
               const watch = (win: BrowserWindow) => {
                 if (released || windows.has(win)) return;
+                const readyToShow = () => {
+                  if (!isDatabaseUpgradeWindow(win)) shown();
+                };
                 const remove = () => {
-                  win.off("ready-to-show", shown);
+                  win.off("ready-to-show", readyToShow);
                   win.off("closed", remove);
                   windows.delete(win);
                 };
                 windows.set(win, remove);
-                win.once("ready-to-show", shown);
+                win.once("ready-to-show", readyToShow);
                 win.once("closed", remove);
               };
               const created = (_event: Electron.Event, win: BrowserWindow) => watch(win);
@@ -134,6 +146,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 Effect.forkScoped,
               );
               return NodeMailbox({
+                onDatabaseUpgrade: showDatabaseUpgrade,
                 openUrl: openExternal,
                 autoSync: "2 minutes",
                 resumeDesktopSends: true,
@@ -162,8 +175,16 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
       // would otherwise leave a process with no window and nothing logged.
       // Quitting interrupts the program; that is not a failure.
       Effect.tapCause((cause) =>
-        Effect.sync(() => {
+        Effect.promise(async () => {
           if (Cause.hasInterruptsOnly(cause)) return;
+          const error = Cause.squash(cause);
+          if (error instanceof DatabaseUpgradeSpaceError) {
+            const labels = await nativeRecoveryLabels();
+            dialog.showErrorBox(
+              labels.upgradeSpaceTitle,
+              labels.upgradeSpaceDetail(String(Math.ceil(error.requiredBytes / 1024 ** 2))),
+            );
+          }
           localLog("startup-failed");
           console.error(Cause.pretty(cause));
           app.exit(1);

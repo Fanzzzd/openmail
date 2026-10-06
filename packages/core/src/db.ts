@@ -878,6 +878,375 @@ export const MIGRATIONS: readonly string[] = [
      provider_id TEXT NOT NULL, at INTEGER NOT NULL, kind TEXT NOT NULL, reason TEXT NOT NULL,
      subject TEXT, sender TEXT, rejected_json TEXT NOT NULL DEFAULT '[]'
    );`,
+  // Migration 37: pin external-content FTS rowids before user-requested VACUUM.
+  `DROP TRIGGER ai_derived_delete;
+DROP TRIGGER ai_derived_update;
+DROP TRIGGER calendar_invites_changed;
+DROP TRIGGER contact_candidates_ad;
+DROP TRIGGER contact_candidates_ai;
+DROP TRIGGER contact_candidates_au;
+DROP TRIGGER contact_completion_ad;
+DROP TRIGGER contact_completion_ai;
+DROP TRIGGER contact_completion_au;
+DROP TRIGGER contact_completion_org_ad;
+DROP TRIGGER contact_completion_org_ai;
+DROP TRIGGER contact_completion_org_au;
+DROP TRIGGER contact_organizations_ad;
+DROP TRIGGER contact_organizations_ai;
+DROP TRIGGER contact_organizations_au;
+DROP TRIGGER derived_ad;
+DROP TRIGGER derived_ai;
+DROP TRIGGER derived_au;
+DROP TRIGGER derived_priority_insert;
+DROP TRIGGER derived_words_ad;
+DROP TRIGGER derived_words_ai;
+DROP TRIGGER derived_words_au;
+DROP TRIGGER media_message_insert;
+DROP TRIGGER media_message_update;
+DROP TRIGGER message_badges_ai;
+DROP TRIGGER message_badges_au;
+DROP TRIGGER message_contact_candidate_ai;
+DROP TRIGGER message_contact_candidate_au;
+DROP TRIGGER message_priority_update;
+DROP TRIGGER message_search_meta_ai;
+DROP TRIGGER message_search_meta_au;
+DROP TRIGGER messages_ad;
+DROP TRIGGER messages_ai;
+DROP TRIGGER messages_au;
+DROP TRIGGER messages_body_bytes_ad;
+DROP TRIGGER messages_body_bytes_ai;
+DROP TRIGGER messages_body_bytes_au;
+DROP TRIGGER messages_words_ad;
+DROP TRIGGER messages_words_ai;
+DROP TRIGGER messages_words_au;
+DROP TRIGGER reminders_list_date;
+DROP TRIGGER semantic_media_insert;
+DROP TRIGGER semantic_message_insert;
+DROP TRIGGER semantic_message_update;
+DROP TRIGGER semantic_priority_insert;
+DROP TRIGGER sent_contact_candidate_ad;
+DROP TRIGGER sent_contact_candidate_ai;
+DROP TRIGGER sent_contact_candidate_au;
+DROP TRIGGER sent_message_insert;
+DROP TRIGGER sent_message_update;
+DROP TRIGGER server_contact_candidate_ad;
+DROP TRIGGER server_contact_candidate_ai;
+DROP TRIGGER server_contact_candidate_au;
+DROP TRIGGER snoozed_list_date_delete;
+DROP TRIGGER snoozed_list_date_insert;
+CREATE TABLE cache_new_messages (rowid INTEGER PRIMARY KEY,
+    id TEXT NOT NULL UNIQUE,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    provider_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    from_name TEXT NOT NULL,
+    from_addr TEXT NOT NULL,
+    to_json TEXT NOT NULL,
+    cc_json TEXT NOT NULL,
+    date INTEGER NOT NULL,
+    snippet TEXT NOT NULL,
+    body_text TEXT NOT NULL,
+    body_html TEXT NOT NULL,
+    labels_json TEXT NOT NULL,
+    attachments_json TEXT NOT NULL,
+    is_unread INTEGER NOT NULL,
+    is_starred INTEGER NOT NULL
+  , calendar_hint INTEGER, body_cached INTEGER NOT NULL DEFAULT 1, list_date INTEGER NOT NULL DEFAULT 0, body_opened_at INTEGER, reply_to_json TEXT, web_link TEXT, bcc_json TEXT NOT NULL DEFAULT '[]', rfc_message_id TEXT, message_size INTEGER, headers_json TEXT, security_json TEXT, body_bytes INTEGER NOT NULL DEFAULT 0);
+INSERT INTO cache_new_messages(rowid,id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred,calendar_hint,body_cached,list_date,body_opened_at,reply_to_json,web_link,bcc_json,rfc_message_id,message_size,headers_json,security_json,body_bytes) SELECT rowid,id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred,calendar_hint,body_cached,list_date,body_opened_at,reply_to_json,web_link,bcc_json,rfc_message_id,message_size,headers_json,security_json,body_bytes FROM messages;
+DROP TABLE messages;
+ALTER TABLE cache_new_messages RENAME TO messages;
+CREATE INDEX messages_account_date ON messages(account_id, date DESC);
+CREATE INDEX messages_date ON messages(date DESC);
+CREATE INDEX messages_thread ON messages(thread_id);
+CREATE INDEX messages_account_list_date_id ON messages(account_id, list_date DESC, id DESC);
+CREATE INDEX messages_thread_list_date_id ON messages(account_id, thread_id, list_date DESC, id DESC);
+CREATE INDEX messages_thread_labels ON messages(account_id,thread_id,labels_json);
+CREATE INDEX messages_unread_threads ON messages(account_id,thread_id,labels_json) WHERE is_unread=1;
+CREATE INDEX messages_rfc_trimmed ON messages(account_id,trim(rfc_message_id,'<>'),date DESC);
+CREATE INDEX messages_cache_page ON messages(account_id,body_cached,date,id,body_opened_at);
+CREATE INDEX messages_body_lru ON messages(COALESCE(body_opened_at,date),id) WHERE body_cached=1 AND body_bytes>0;
+CREATE INDEX messages_provider ON messages(account_id,provider_id,date DESC,id);
+CREATE INDEX messages_imap_scope ON messages(account_id,
+     substr(provider_id, instr(provider_id, ':') + instr(substr(provider_id, instr(provider_id, ':') + 1), ':') + 1),
+     provider_id,date);
+CREATE INDEX messages_body_sizes ON messages(account_id,body_bytes);
+CREATE INDEX messages_list_date_id ON messages(list_date DESC,id DESC,account_id,thread_id,is_unread,is_starred,labels_json);
+CREATE TABLE cache_new_contact_candidates (rowid INTEGER PRIMARY KEY,
+    id TEXT NOT NULL UNIQUE, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, name TEXT NOT NULL, date INTEGER NOT NULL, weight REAL NOT NULL,
+    source INTEGER NOT NULL
+  );
+INSERT INTO cache_new_contact_candidates(rowid,id,account_id,message_id,address,name,date,weight,source) SELECT rowid,id,account_id,message_id,address,name,date,weight,source FROM contact_candidates;
+DROP TABLE contact_candidates;
+ALTER TABLE cache_new_contact_candidates RENAME TO contact_candidates;
+CREATE INDEX contact_candidates_account ON contact_candidates(account_id);
+CREATE INDEX contact_candidates_message ON contact_candidates(message_id);
+CREATE INDEX contact_candidates_score ON contact_candidates(address,source DESC,date DESC,account_id,id,name,weight);
+CREATE INDEX contact_candidates_company ON contact_candidates(address,account_id);
+CREATE TABLE cache_new_contact_organizations (rowid INTEGER PRIMARY KEY,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    address TEXT NOT NULL, company TEXT NOT NULL, UNIQUE(account_id,address)
+  );
+INSERT INTO cache_new_contact_organizations(rowid,account_id,address,company) SELECT rowid,account_id,address,company FROM contact_organizations;
+DROP TABLE contact_organizations;
+ALTER TABLE cache_new_contact_organizations RENAME TO contact_organizations;
+
+CREATE TRIGGER ai_derived_delete AFTER DELETE ON messages BEGIN
+     DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
+   END;
+CREATE TRIGGER ai_derived_update AFTER UPDATE OF body_text,subject,from_addr,to_json,cc_json,date ON messages WHEN old.body_text IS NOT new.body_text OR old.subject IS NOT new.subject OR old.from_addr IS NOT new.from_addr OR old.to_json IS NOT new.to_json OR old.cc_json IS NOT new.cc_json OR old.date IS NOT new.date BEGIN
+     DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
+   END;
+CREATE TRIGGER calendar_invites_changed AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+    WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html OR old.attachments_json IS NOT new.attachments_json BEGIN
+      DELETE FROM calendar_invites WHERE message_id=new.id;
+  END;
+CREATE TRIGGER contact_candidates_ad AFTER DELETE ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(contact_candidates_fts,rowid,name,address) VALUES('delete',old.rowid,old.name,old.address);
+  END;
+CREATE TRIGGER contact_candidates_ai AFTER INSERT ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(rowid,name,address) VALUES(new.rowid,new.name,new.address);
+  END;
+CREATE TRIGGER contact_candidates_au AFTER UPDATE ON contact_candidates BEGIN
+    INSERT INTO contact_candidates_fts(contact_candidates_fts,rowid,name,address) VALUES('delete',old.rowid,old.name,old.address);
+    INSERT INTO contact_candidates_fts(rowid,name,address) VALUES(new.rowid,new.name,new.address);
+  END;
+CREATE TRIGGER contact_completion_ad AFTER DELETE ON contact_candidates BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid=old.rowid;
+   END;
+CREATE TRIGGER contact_completion_ai AFTER INSERT ON contact_candidates BEGIN
+     INSERT INTO contact_completion_fts(rowid,address,name,company) VALUES(new.rowid,new.address,new.name,
+       COALESCE((SELECT company FROM contact_organizations WHERE account_id=new.account_id AND address=new.address),''));
+   END;
+CREATE TRIGGER contact_completion_au AFTER UPDATE OF address,name,account_id ON contact_candidates
+     WHEN old.address IS NOT new.address OR old.name IS NOT new.name OR old.account_id IS NOT new.account_id BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid=old.rowid;
+     INSERT INTO contact_completion_fts(rowid,address,name,company) VALUES(new.rowid,new.address,new.name,
+       COALESCE((SELECT company FROM contact_organizations WHERE account_id=new.account_id AND address=new.address),''));
+   END;
+CREATE TRIGGER contact_completion_org_ad AFTER DELETE ON contact_organizations BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE account_id=old.account_id AND address=old.address);
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT rowid,address,name,'' FROM contact_candidates WHERE account_id=old.account_id AND address=old.address;
+   END;
+CREATE TRIGGER contact_completion_org_ai AFTER INSERT ON contact_organizations BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE account_id=new.account_id AND address=new.address);
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT rowid,address,name,new.company FROM contact_candidates WHERE account_id=new.account_id AND address=new.address;
+   END;
+CREATE TRIGGER contact_completion_org_au AFTER UPDATE ON contact_organizations
+     WHEN old.company IS NOT new.company OR old.account_id IS NOT new.account_id OR old.address IS NOT new.address BEGIN
+     DELETE FROM contact_completion_fts WHERE rowid IN (SELECT rowid FROM contact_candidates WHERE (account_id=old.account_id AND address=old.address) OR (account_id=new.account_id AND address=new.address));
+     INSERT INTO contact_completion_fts(rowid,address,name,company) SELECT c.rowid,c.address,c.name,
+       COALESCE((SELECT company FROM contact_organizations o WHERE o.account_id=c.account_id AND o.address=c.address),'') FROM contact_candidates c WHERE (c.account_id=old.account_id AND c.address=old.address) OR (c.account_id=new.account_id AND c.address=new.address);
+   END;
+CREATE TRIGGER contact_organizations_ad AFTER DELETE ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(contact_organizations_fts,rowid,company) VALUES('delete',old.rowid,old.company);
+  END;
+CREATE TRIGGER contact_organizations_ai AFTER INSERT ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(rowid,company) VALUES(new.rowid,new.company);
+  END;
+CREATE TRIGGER contact_organizations_au AFTER UPDATE ON contact_organizations BEGIN
+    INSERT INTO contact_organizations_fts(contact_organizations_fts,rowid,company) VALUES('delete',old.rowid,old.company);
+    INSERT INTO contact_organizations_fts(rowid,company) VALUES(new.rowid,new.company);
+  END;
+CREATE TRIGGER derived_ad AFTER DELETE ON derived_chunks BEGIN
+    INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
+  END;
+CREATE TRIGGER derived_ai AFTER INSERT ON derived_chunks BEGIN
+    INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
+  END;
+CREATE TRIGGER derived_au AFTER UPDATE ON derived_chunks WHEN old.text IS NOT new.text BEGIN
+    INSERT INTO derived_fts(derived_fts,rowid,text) VALUES('delete',old.id,old.text);
+    INSERT INTO derived_fts(rowid,text) VALUES(new.id,new.text);
+   END;
+CREATE TRIGGER derived_priority_insert AFTER INSERT ON derived_jobs BEGIN
+    UPDATE derived_jobs SET priority_at=(SELECT date FROM messages WHERE id=new.message_id) WHERE message_id=new.message_id;
+  END;
+CREATE TRIGGER derived_words_ad AFTER DELETE ON derived_chunks WHEN EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=old.id) BEGIN
+     INSERT INTO derived_words(derived_words,rowid,text) VALUES('delete',old.id,old.text);
+     DELETE FROM search_word_rows WHERE kind='derived' AND row_id=old.id;
+   END;
+CREATE TRIGGER derived_words_ai AFTER INSERT ON derived_chunks BEGIN
+     INSERT INTO derived_words(rowid,text) VALUES(new.id,new.text);
+     INSERT INTO search_word_rows(kind,row_id) VALUES('derived',new.id);
+   END;
+CREATE TRIGGER derived_words_au AFTER UPDATE OF text ON derived_chunks WHEN old.text IS NOT new.text BEGIN
+     INSERT INTO derived_words(derived_words,rowid,text) SELECT 'delete',old.id,old.text WHERE EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=old.id);
+     INSERT INTO derived_words(rowid,text) VALUES(new.id,new.text);
+     INSERT INTO search_word_rows(kind,row_id) SELECT 'derived',new.id WHERE NOT EXISTS(SELECT 1 FROM search_word_rows WHERE kind='derived' AND row_id=new.id);
+   END;
+CREATE TRIGGER media_message_insert AFTER INSERT ON messages
+    WHEN new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+      WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+        OR lower(json_extract(value,'$.mimeType'))='application/pdf') BEGIN
+    INSERT INTO derived_jobs(message_id) VALUES(new.id);
+  END;
+CREATE TRIGGER media_message_update AFTER UPDATE OF attachments_json,body_html ON messages
+    WHEN (old.attachments_json != new.attachments_json OR old.body_html != new.body_html)
+      AND old.body_cached = new.body_cached BEGIN
+    DELETE FROM derived_chunks WHERE message_id=new.id;
+    INSERT INTO derived_jobs(message_id) SELECT new.id
+      WHERE new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+        WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+          OR lower(json_extract(value,'$.mimeType'))='application/pdf')
+        OR EXISTS(SELECT 1 FROM derived_jobs WHERE message_id=new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',
+        claim=NULL,claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+CREATE TRIGGER message_badges_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO message_badges SELECT DISTINCT l.value,new.account_id,new.thread_id,new.id,
+       EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value='INBOX')
+       FROM json_each(new.labels_json) l WHERE new.is_unread=1 OR l.value IN ('STARRED','DRAFT');
+   END;
+CREATE TRIGGER message_badges_au AFTER UPDATE OF account_id,thread_id,labels_json,is_unread ON messages
+     WHEN old.account_id IS NOT new.account_id OR old.thread_id IS NOT new.thread_id
+       OR old.labels_json IS NOT new.labels_json OR old.is_unread IS NOT new.is_unread BEGIN
+     DELETE FROM message_badges WHERE message_id=new.id;
+     INSERT INTO message_badges SELECT DISTINCT l.value,new.account_id,new.thread_id,new.id,
+       EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value='INBOX')
+       FROM json_each(new.labels_json) l WHERE new.is_unread=1 OR l.value IN ('STARRED','DRAFT');
+   END;
+CREATE TRIGGER message_contact_candidate_ai AFTER INSERT ON messages BEGIN
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'from:'||m.id,m.account_id,m.id,lower(trim(m.from_addr)),m.from_name,m.date,1.0,1
+    FROM messages m WHERE trim(m.from_addr)!='' AND NOT EXISTS(SELECT 1 FROM
+      json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
+      WHERE value IN ('SENT','SPAM','TRASH','DRAFT')) AND m.id=new.id;
+  END;
+CREATE TRIGGER message_contact_candidate_au AFTER UPDATE OF account_id,from_name,from_addr,to_json,cc_json,labels_json,date ON messages
+    WHEN old.account_id!=new.account_id OR old.from_name!=new.from_name OR old.from_addr!=new.from_addr
+      OR old.to_json!=new.to_json OR old.cc_json!=new.cc_json OR old.labels_json!=new.labels_json OR old.date!=new.date BEGIN
+    DELETE FROM contact_candidates WHERE message_id=new.id AND source=1;
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'from:'||m.id,m.account_id,m.id,lower(trim(m.from_addr)),m.from_name,m.date,1.0,1
+    FROM messages m WHERE trim(m.from_addr)!='' AND NOT EXISTS(SELECT 1 FROM
+      json_each(CASE WHEN json_valid(m.labels_json) THEN m.labels_json ELSE '[]' END)
+      WHERE value IN ('SENT','SPAM','TRASH','DRAFT')) AND m.id=new.id;
+  END;
+CREATE TRIGGER message_priority_update AFTER UPDATE OF date ON messages WHEN old.date!=new.date BEGIN
+    UPDATE derived_jobs SET priority_at=new.date WHERE message_id=new.id;
+    UPDATE semantic_jobs SET priority_at=new.date WHERE message_id=new.id;
+  END;
+CREATE TRIGGER message_search_meta_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO message_search_meta VALUES(new.rowid,new.id,new.account_id,new.thread_id,
+       NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')));
+   END;
+CREATE TRIGGER message_search_meta_au AFTER UPDATE OF account_id,thread_id,labels_json ON messages
+     WHEN old.account_id IS NOT new.account_id OR old.thread_id IS NOT new.thread_id OR old.labels_json IS NOT new.labels_json BEGIN
+     UPDATE message_search_meta SET account_id=new.account_id,thread_id=new.thread_id,
+       eligible=NOT EXISTS(SELECT 1 FROM json_each(new.labels_json) WHERE value IN ('SPAM','TRASH')) WHERE row_id=new.rowid;
+   END;
+CREATE TRIGGER messages_ad AFTER DELETE ON messages BEGIN
+    INSERT INTO messages_fts(messages_fts, rowid, subject, from_name, from_addr, body_text)
+    VALUES ('delete', old.rowid, old.subject, old.from_name, old.from_addr, old.body_text);
+  END;
+CREATE TRIGGER messages_ai AFTER INSERT ON messages BEGIN
+    INSERT INTO messages_fts(rowid, subject, from_name, from_addr, body_text)
+    VALUES (new.rowid, new.subject, new.from_name, new.from_addr, new.body_text);
+  END;
+CREATE TRIGGER messages_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages WHEN old.subject IS NOT new.subject OR old.from_name IS NOT new.from_name OR old.from_addr IS NOT new.from_addr OR old.body_text IS NOT new.body_text BEGIN
+    INSERT INTO messages_fts(messages_fts,rowid,subject,from_name,from_addr,body_text)
+    VALUES ('delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text);
+    INSERT INTO messages_fts(rowid,subject,from_name,from_addr,body_text)
+    VALUES (new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+   END;
+CREATE TRIGGER messages_body_bytes_ad AFTER DELETE ON messages BEGIN
+     UPDATE body_cache_budget SET total_bytes=total_bytes-old.body_bytes WHERE id=1;
+   END;
+CREATE TRIGGER messages_body_bytes_ai AFTER INSERT ON messages BEGIN
+     UPDATE messages SET body_bytes=length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=new.id;
+     UPDATE body_cache_budget SET total_bytes=total_bytes+length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=1;
+   END;
+CREATE TRIGGER messages_body_bytes_au AFTER UPDATE OF body_text,body_html ON messages WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html BEGIN
+     UPDATE messages SET body_bytes=length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB)) WHERE id=new.id;
+     UPDATE body_cache_budget SET total_bytes=total_bytes+length(CAST(new.body_text AS BLOB))+length(CAST(new.body_html AS BLOB))-old.body_bytes WHERE id=1;
+   END;
+CREATE TRIGGER messages_words_ad AFTER DELETE ON messages WHEN EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid) BEGIN
+     INSERT INTO messages_words(messages_words,rowid,subject,from_name,from_addr,body_text) VALUES('delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text);
+     DELETE FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid;
+   END;
+CREATE TRIGGER messages_words_ai AFTER INSERT ON messages BEGIN
+     INSERT INTO messages_words(rowid,subject,from_name,from_addr,body_text) VALUES(new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+     INSERT INTO search_word_rows(kind,row_id) VALUES('messages',new.rowid);
+   END;
+CREATE TRIGGER messages_words_au AFTER UPDATE OF subject,from_name,from_addr,body_text ON messages WHEN old.subject IS NOT new.subject OR old.from_name IS NOT new.from_name OR old.from_addr IS NOT new.from_addr OR old.body_text IS NOT new.body_text BEGIN
+     INSERT INTO messages_words(messages_words,rowid,subject,from_name,from_addr,body_text) SELECT 'delete',old.rowid,old.subject,old.from_name,old.from_addr,old.body_text WHERE EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=old.rowid);
+     INSERT INTO messages_words(rowid,subject,from_name,from_addr,body_text) VALUES(new.rowid,new.subject,new.from_name,new.from_addr,new.body_text);
+     INSERT INTO search_word_rows(kind,row_id) SELECT 'messages',new.rowid WHERE NOT EXISTS(SELECT 1 FROM search_word_rows WHERE kind='messages' AND row_id=new.rowid);
+   END;
+CREATE TRIGGER reminders_list_date AFTER UPDATE OF woken_at ON thread_reminders BEGIN
+    UPDATE messages SET list_date=MAX(date,COALESCE(new.woken_at,0))
+    WHERE account_id=new.account_id AND thread_id=new.thread_id
+      AND EXISTS (SELECT 1 FROM snoozed_messages s WHERE s.account_id=messages.account_id AND s.provider_id=messages.provider_id);
+  END;
+CREATE TRIGGER semantic_media_insert AFTER INSERT ON derived_chunks BEGIN
+    INSERT INTO semantic_jobs(message_id) VALUES(new.message_id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+      claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+CREATE TRIGGER semantic_message_insert AFTER INSERT ON messages BEGIN
+    INSERT INTO semantic_jobs(message_id) VALUES(new.id);
+  END;
+CREATE TRIGGER semantic_message_update AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+    WHEN (old.body_text != new.body_text OR old.body_html != new.body_html OR old.attachments_json != new.attachments_json)
+      AND old.body_cached = new.body_cached BEGIN
+    DELETE FROM vector_items WHERE message_id=new.id;
+    INSERT INTO semantic_jobs(message_id) VALUES(new.id)
+      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+      claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+  END;
+CREATE TRIGGER semantic_priority_insert AFTER INSERT ON semantic_jobs BEGIN
+    UPDATE semantic_jobs SET priority_at=(SELECT date FROM messages WHERE id=new.message_id) WHERE message_id=new.message_id;
+  END;
+CREATE TRIGGER sent_contact_candidate_ad AFTER DELETE ON sent_recipients BEGIN
+    DELETE FROM contact_candidates WHERE id='sent:'||old.message_id||':'||old.address;
+  END;
+CREATE TRIGGER sent_contact_candidate_ai AFTER INSERT ON sent_recipients BEGIN
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'sent:'||s.message_id||':'||s.address,s.account_id,s.message_id,s.address,
+    COALESCE((SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),
+      (SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.cc_json) THEN m.cc_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),''),s.sent_at,
+    CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address) THEN 3.0 ELSE 2.0 END,2
+    FROM sent_recipients s JOIN messages m ON m.id=s.message_id WHERE trim(s.address)!='' AND s.message_id=new.message_id AND s.address=new.address;
+  END;
+CREATE TRIGGER sent_contact_candidate_au AFTER UPDATE ON sent_recipients
+    WHEN old.message_id!=new.message_id OR old.address!=new.address OR old.account_id!=new.account_id OR old.sent_at!=new.sent_at BEGIN
+    DELETE FROM contact_candidates WHERE id='sent:'||old.message_id||':'||old.address;
+    INSERT INTO contact_candidates(id,account_id,message_id,address,name,date,weight,source) SELECT 'sent:'||s.message_id||':'||s.address,s.account_id,s.message_id,s.address,
+    COALESCE((SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),
+      (SELECT NULLIF(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.name'),'') FROM json_each(CASE WHEN json_valid(m.cc_json) THEN m.cc_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address LIMIT 1),''),s.sent_at,
+    CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(m.to_json) THEN m.to_json ELSE '[]' END) r WHERE lower(trim(json_extract(CASE WHEN r.type='object' THEN r.value ELSE '{}' END,'$.address')))=s.address) THEN 3.0 ELSE 2.0 END,2
+    FROM sent_recipients s JOIN messages m ON m.id=s.message_id WHERE trim(s.address)!='' AND s.message_id=new.message_id AND s.address=new.address;
+  END;
+CREATE TRIGGER sent_message_insert AFTER INSERT ON messages
+    WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') BEGIN
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN json_valid(new.to_json) THEN new.to_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN json_valid(new.cc_json) THEN new.cc_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+  END;
+CREATE TRIGGER sent_message_update AFTER UPDATE OF account_id,from_addr,to_json,cc_json,date,labels_json ON messages
+    WHEN old.account_id!=new.account_id OR old.from_addr!=new.from_addr OR old.to_json!=new.to_json OR old.cc_json!=new.cc_json OR old.date!=new.date OR old.labels_json!=new.labels_json BEGIN
+    DELETE FROM sent_recipients WHERE message_id=new.id;
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.to_json) THEN new.to_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+    INSERT OR IGNORE INTO sent_recipients SELECT new.id,new.account_id,lower(trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))),lower(trim(new.from_addr)),new.date FROM json_each(CASE WHEN EXISTS(SELECT 1 FROM json_each(CASE WHEN json_valid(new.labels_json) THEN new.labels_json ELSE '[]' END) WHERE value='SENT') AND json_valid(new.cc_json) THEN new.cc_json ELSE '[]' END) WHERE trim(json_extract(CASE WHEN type='object' THEN value ELSE '{}' END,'$.address'))!='';
+  END;
+CREATE TRIGGER server_contact_candidate_ad AFTER DELETE ON server_contacts BEGIN
+    DELETE FROM contact_candidates WHERE id='server:'||old.account_id||':'||old.address;
+  END;
+CREATE TRIGGER server_contact_candidate_ai AFTER INSERT ON server_contacts WHEN trim(new.address)!='' BEGIN
+    INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
+      SELECT 'server:'||new.account_id||':'||new.address,new.account_id,new.address,new.name,0,0.2,3 WHERE trim(new.address)!='';
+  END;
+CREATE TRIGGER server_contact_candidate_au AFTER UPDATE ON server_contacts BEGIN
+    DELETE FROM contact_candidates WHERE id='server:'||old.account_id||':'||old.address;
+    INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
+      SELECT 'server:'||new.account_id||':'||new.address,new.account_id,new.address,new.name,0,0.2,3 WHERE trim(new.address)!='';
+  END;
+CREATE TRIGGER snoozed_list_date_delete AFTER DELETE ON snoozed_messages BEGIN
+    UPDATE messages SET list_date=date WHERE account_id=old.account_id AND provider_id=old.provider_id;
+  END;
+CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
+    UPDATE messages SET list_date=MAX(date,COALESCE((SELECT woken_at FROM thread_reminders
+      WHERE account_id=new.account_id AND thread_id=new.thread_id),0))
+    WHERE account_id=new.account_id AND provider_id=new.provider_id;
+  END;`,
 ];
 
 /**
@@ -923,60 +1292,92 @@ export function splitStatements(script: string): string[] {
 
 const isTrigger = (code: string) => /^\s*CREATE\s+(TEMP\s+|TEMPORARY\s+)?TRIGGER\b/i.test(code);
 
+/** All migration runners use this boundary, outside their transaction. */
+export function withMigrationForeignKeys<A, E, E2, R>(
+  execute: (statement: string) => Effect.Effect<unknown, E>,
+  work: Effect.Effect<A, E2, R>,
+): Effect.Effect<A, E | E2, R> {
+  return Effect.gen(function* () {
+    const rows = yield* Schema.decodeUnknownEffect(
+      Schema.Array(Schema.Struct({ foreign_keys: Schema.Number })),
+    )(yield* execute("PRAGMA foreign_keys")).pipe(Effect.orDie);
+    const enabled = rows[0]?.foreign_keys ?? 1;
+    yield* execute("PRAGMA foreign_keys = OFF");
+    return yield* work.pipe(
+      Effect.ensuring(execute(`PRAGMA foreign_keys = ${enabled}`).pipe(Effect.orDie)),
+    );
+  }).pipe(Effect.uninterruptible);
+}
+
 const UserVersion = Schema.Struct({ user_version: Schema.Number });
 /**
  * Runs pending migrations, one transaction each. The version is read inside
  * the transaction (BEGIN IMMEDIATE holds the write lock), so the app and the
  * CLI opening an old database at the same moment never run a step twice.
  */
-export const migrate = Effect.gen(function* () {
-  const sql = yield* SqlClient.SqlClient;
-  // Per connection, and a no-op inside a transaction, so they go first. The
-  // app, the CLI and a restarting app can share the file; wait for a lock
-  // instead of failing at once.
-  yield* sql`PRAGMA busy_timeout = 5000`;
-  yield* sql`PRAGMA journal_size_limit = 8388608`;
-  yield* sql`PRAGMA foreign_keys = ON`;
-  const step = sql.withTransaction(
-    Effect.gen(function* () {
+export const migrateTo = (targetVersion: number) =>
+  Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    // Per connection, and a no-op inside a transaction, so they go first. The
+    // app, the CLI and a restarting app can share the file; wait for a lock
+    // instead of failing at once.
+    yield* sql`PRAGMA busy_timeout = 5000`;
+    yield* sql`PRAGMA journal_size_limit = 8388608`;
+    yield* sql`PRAGMA foreign_keys = ON`;
+    const initialVersion = yield* sql`PRAGMA user_version`;
+    if (initialVersion[0]?.user_version === 0) yield* sql`PRAGMA auto_vacuum=INCREMENTAL`;
+    const step = sql.withTransaction(
+      Effect.gen(function* () {
+        const rows = yield* sql`PRAGMA user_version`;
+        const { user_version: version } = yield* Schema.decodeUnknownEffect(UserVersion)(rows[0]);
+        if (version >= targetVersion) return false;
+        const migration = MIGRATIONS[version];
+        if (migration === undefined) return false;
+        for (const statement of splitStatements(migration)) yield* sql.unsafe(statement).unprepared;
+        if (version === 36) {
+          const violations = yield* sql`PRAGMA foreign_key_check`;
+          if (violations.length)
+            return yield* Effect.die(new Error("Cache rowid migration violates foreign keys"));
+        }
+        yield* sql.unsafe(`PRAGMA user_version = ${version + 1}`).unprepared;
+        return true;
+      }),
+    );
+    const deadline = (yield* Clock.currentTimeMillis) + 120_000;
+    let waiting = false;
+    for (;;) {
       const rows = yield* sql`PRAGMA user_version`;
       const { user_version: version } = yield* Schema.decodeUnknownEffect(UserVersion)(rows[0]);
-      const migration = MIGRATIONS[version];
-      if (migration === undefined) return false;
-      for (const statement of splitStatements(migration)) yield* sql.unsafe(statement).unprepared;
-      yield* sql.unsafe(`PRAGMA user_version = ${version + 1}`).unprepared;
-      return true;
-    }),
-  );
-  const deadline = (yield* Clock.currentTimeMillis) + 120_000;
-  let waiting = false;
-  for (;;) {
-    const rows = yield* sql`PRAGMA user_version`;
-    const { user_version: version } = yield* Schema.decodeUnknownEffect(UserVersion)(rows[0]);
-    if (version >= MIGRATIONS.length) break;
-    const result = yield* Effect.result(step);
-    if (result._tag === "Success") {
-      if (!result.success) break;
-      continue;
+      if (version >= targetVersion) break;
+      // Keep the FK boundary outside the transaction even if a peer advances
+      // the version while we wait. Migration 37 preserves all rowids.
+      const result = yield* Effect.result(
+        withMigrationForeignKeys((statement) => sql.unsafe(statement).unprepared, step),
+      );
+      if (result._tag === "Success") {
+        if (!result.success) break;
+        continue;
+      }
+      const error = result.failure;
+      if (
+        !isSqlError(error) ||
+        error.reason._tag !== "LockTimeoutError" ||
+        (yield* Clock.currentTimeMillis) >= deadline
+      )
+        yield* Effect.fail(error);
+      if (!waiting) {
+        waiting = true;
+        yield* Effect.logInfo("Waiting for another process to finish database migrations", {
+          version,
+          targetVersion,
+          deadlineMs: 120_000,
+        });
+      }
+      yield* Effect.sleep("100 millis");
     }
-    const error = result.failure;
-    if (
-      !isSqlError(error) ||
-      error.reason._tag !== "LockTimeoutError" ||
-      (yield* Clock.currentTimeMillis) >= deadline
-    )
-      yield* Effect.fail(error);
-    if (!waiting) {
-      waiting = true;
-      yield* Effect.logInfo("Waiting for another process to finish database migrations", {
-        version,
-        targetVersion: MIGRATIONS.length,
-        deadlineMs: 120_000,
-      });
-    }
-    yield* Effect.sleep("100 millis");
-  }
-});
+  });
+
+export const migrate = migrateTo(MIGRATIONS.length);
 
 /**
  * The database as an Effect SqlClient, migrated before anything uses it. The

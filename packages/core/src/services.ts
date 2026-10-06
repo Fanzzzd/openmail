@@ -365,13 +365,18 @@ export class Store extends Context.Service<
       conversations?: boolean,
     ): Effect.Effect<Record<string, number>>;
 
-    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").CacheDatabaseSize>;
+    readonly cacheDatabaseFile: Effect.Effect<string>;
+    readonly cacheNeedsVacuum: Effect.Effect<boolean>;
+    readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").DatabasePages>;
+    compactCache(readOnly: boolean): Effect.Effect<import("./cache.js").CacheCompactionResult>;
+    readonly reclaimCachePages: Effect.Effect<void>;
+    readonly cachedBodyBytes: Effect.Effect<number>;
     readonly bodySizes: Effect.Effect<{ accountId: string; bytes: number }[]>;
     clearBodies(accountId: string): Effect.Effect<void>;
     readonly cacheWindows: Effect.Effect<CacheWindow[]>;
     setCacheWindow(input: CacheWindowInput): Effect.Effect<void>;
     /** Evicts bodies through UPDATE triggers, preserving rowids and header FTS. */
-    evictBodyBudget(maxBytes: number, force?: boolean): Effect.Effect<number>;
+    evictBodyBudget(maxBytes: number, force?: boolean, enabled?: boolean): Effect.Effect<number>;
     evictBodies(accountId: string, now: number, force?: boolean): Effect.Effect<number>;
     touchBody(id: string, now: number): Effect.Effect<void>;
     backfillCandidates(

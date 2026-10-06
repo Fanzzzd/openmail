@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./migrations.js";
 import {
   acquireDatabaseAccess,
   DatabaseInUseError,
@@ -180,11 +181,8 @@ function rebuildUnderLock(directory: string): CacheResetResult {
   let destination: DatabaseSync | undefined;
   try {
     destination = new DatabaseSync(fresh);
-    for (let i = 0; i < MIGRATIONS.length; i++) {
-      destination.exec("BEGIN");
-      destination.exec(MIGRATIONS[i] ?? "");
-      destination.exec(`PRAGMA user_version=${i + 1}; COMMIT;`);
-    }
+    for (let i = 0; i < MIGRATIONS.length; i++)
+      applyNativeMigration(destination, MIGRATIONS[i] ?? "", i + 1);
     destination.exec("PRAGMA foreign_keys=ON; BEGIN");
     if (source)
       for (const table of RECOVERY_TABLES) {

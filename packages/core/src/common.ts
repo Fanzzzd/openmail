@@ -71,6 +71,7 @@ export * from "./platform/crypto.js";
 export * from "./platform/paths.js";
 export * from "./platform/mail-codec.js";
 export * from "./platform/runtime.js";
+export * from "./platform/cache-storage.js";
 
 export * from "./attachment-import.js";
 export * from "./reader-sanitize.js";

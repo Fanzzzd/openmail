@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./migrations.js";
 import { copyQuiescentDatabase } from "./database-copy.js";
 import { existsSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -35,17 +36,8 @@ export function prepareSmokeDatabase(
     const version = row?.["user_version"];
     if (typeof version !== "number" || version > MIGRATIONS.length)
       throw new Error("Unsupported smoke database version");
-    for (let index = version; index < MIGRATIONS.length; index++) {
-      db.exec("BEGIN IMMEDIATE");
-      try {
-        db.exec(MIGRATIONS[index] ?? "");
-        db.exec(`PRAGMA user_version=${index + 1}`);
-        db.exec("COMMIT");
-      } catch (error) {
-        db.exec("ROLLBACK");
-        throw error;
-      }
-    }
+    for (let index = version; index < MIGRATIONS.length; index++)
+      applyNativeMigration(db, MIGRATIONS[index] ?? "", index + 1);
     db.prepare(
       "INSERT INTO prefs(key,value_json) VALUES('markReadDelay','\"manual\"') ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
     ).run();

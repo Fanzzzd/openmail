@@ -35,6 +35,7 @@ import {
   ContactGroup,
   SuggestedSender,
   CacheDatabaseSize,
+  CacheCompactionResult,
   CacheSize,
   UpdateState,
   OlderResult,
@@ -134,6 +135,7 @@ export class MailRpcs extends RpcGroup.make(
     success: Schema.Struct({ languages: Schema.Array(Schema.String), automatic: Schema.Boolean }),
   }),
   Rpc.make("CacheDatabaseSize", { success: CacheDatabaseSize }),
+  Rpc.make("CompactCache", { success: CacheCompactionResult }),
   Rpc.make("CacheSize", { success: Schema.Array(CacheSize) }),
   Rpc.make("ClearCache", { payload: { accountId: Schema.optionalKey(Schema.String) } }),
   Rpc.make("InitializeProfiles", {

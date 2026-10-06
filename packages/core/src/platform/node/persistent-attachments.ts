@@ -37,7 +37,7 @@ export class PersistentAttachments {
       if (!info.isDirectory() || info.isSymbolicLink()) continue;
       await chmod(folder, 0o700);
       for (const name of await readdir(folder)) {
-        if (!/^[a-f0-9]{64}\.bin$/.test(name)) continue;
+        if (!/^(?:[a-f0-9]{64}\.bin|[a-f0-9-]{36}\.tmp)$/.test(name)) continue;
         const file = path.join(folder, name);
         const stat = await lstat(file);
         if (!stat.isFile() || stat.isSymbolicLink()) continue;

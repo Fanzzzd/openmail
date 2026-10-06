@@ -1,3 +1,4 @@
+import { finishDatabaseUpgradeStartup } from "./database-upgrade";
 import { validOpenFile } from "./security-policy";
 import { nativeTabMenu } from "./window-keys";
 import { readDockFiles, dockFileReason } from "./dock-files";
@@ -794,6 +795,7 @@ export const DesktopLive = Layer.effect(
       }
     }
     restoreWindows();
+    finishDatabaseUpgradeStartup();
     for (const link of startupLinks.splice(0)) linkHandler(link);
     yield* refresh;
     return Desktop.of({

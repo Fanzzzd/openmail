@@ -1170,6 +1170,34 @@ msgstr "Použít barvu pro"
 msgid "Compact"
 msgstr "Kompaktní"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compact now"
+msgstr "Zmenšit nyní"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compacting…"
+msgstr "Probíhá zmenšování…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction failed. The database may be busy or need repair."
+msgstr "Zmenšení selhalo. Databáze může být zaneprázdněná nebo vyžadovat opravu."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction finished."
+msgstr "Zmenšování dokončeno."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable in a read-only session."
+msgstr "V relaci jen pro čtení nelze databázi zmenšit."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable on this platform."
+msgstr "Na této platformě není zmenšení dostupné."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgstr "Zmenšení bylo odmítnuto, protože nelze zaručit soulad vyhledávacího indexu."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Nová zpráva"
@@ -1582,10 +1610,6 @@ msgstr "tmavé pozadí"
 msgid "Dashed list"
 msgstr "Přerušovaný seznam"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Database pages"
-msgstr "Databázové stránky"
-
 #: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "Obnova databáze byla přerušena. Před opětovným otevřením OpenMail obnovte zachovanou databázi. Zachovaná databáze: {backup}"
@@ -1746,6 +1770,14 @@ msgstr "Zahodit koncept"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "Zahodit uložené pravidlo?"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
+msgstr "Na disku je málo místa. Zmenšete databázi nyní a povolte automatické uvolňování místa."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. The cache budget has tightened automatically. Protected content is kept."
+msgstr "Na disku je málo místa. Limit mezipaměti se automaticky snížil. Chráněný obsah zůstává zachován."
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -2178,6 +2210,14 @@ msgstr "Přeposlat"
 msgid "Forward as attachment"
 msgstr "Přeposlat jako přílohu"
 
+#: src/main/native-i18n.ts
+msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
+msgstr "Uvolněte alespoň {size} MiB pro aktualizaci místní databáze a restartujte OpenMail. Databáze zůstala zachována."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Free database pages"
+msgstr "Volné stránky databáze"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Friday"
 msgstr "Pátek"
@@ -2459,6 +2499,10 @@ msgstr "Zvýšit úroveň citace"
 msgid "Indent list"
 msgstr "Zvětšit odsazení seznamu"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Indexes and other data"
+msgstr "Indexy a další data"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
@@ -2555,6 +2599,10 @@ msgstr "Ponechat důležitost"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
 msgstr "Ponechat místní kopii"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep openmail under"
+msgstr "Udržovat openmail pod limitem"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
@@ -2972,6 +3020,12 @@ msgstr "Viditelnost seznamu zpráv"
 msgid "Message order in a conversation"
 msgstr "Pořadí zpráv v konverzaci"
 
+#. Storage occupied by downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text"
+msgstr "Text zpráv"
+
 #. Storage budget for downloaded email message text.
 #. Storage budget for downloaded email message text.
 #: src/renderer/src/components/CacheSettings.tsx
@@ -3045,6 +3099,10 @@ msgstr "Více"
 #: src/renderer/src/components/ui/Menu.tsx
 msgid "More actions"
 msgstr "Další akce"
+
+#: src/main/native-i18n.ts
+msgid "More disk space is needed"
+msgstr "Je potřeba více místa na disku"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3930,6 +3988,10 @@ msgstr "Příjemci mimo původní konverzaci:"
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Recovery copies"
+msgstr "Kopie pro obnovu"
+
 #: src/renderer/src/errors.ts
 msgid "Recurring event creation is unavailable for this account"
 msgstr "Vytváření opakované události není pro tento účet dostupné"
@@ -4204,10 +4266,6 @@ msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané text
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Zkusit znovu"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Reusable database space"
-msgstr "Znovu využitelné místo v databázi"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5102,6 +5160,10 @@ msgstr "Konec musí být po startu"
 msgid "The filter applies to future mail on the server."
 msgstr "Filtr se vztahuje na budoucí poštu na serveru."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
+msgstr "Limit zahrnuje databázi, přílohy, WAL a kopie pro obnovu. Chráněný obsah jej může překročit."
+
 #: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "Místní databázi se nepodařilo ověřit"
@@ -5165,6 +5227,10 @@ msgstr "Server odmítl přihlášení. Zkontrolujte e-mailovou adresu a ujistět
 #: src/renderer/src/errors.ts
 msgid "The thread changed. Summarize it again."
 msgstr "Konverzace se změnila. Vytvořte shrnutí znovu."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "There is not enough free disk space to compact safely."
+msgstr "Pro bezpečné zmenšení není na disku dostatek volného místa."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
@@ -5506,6 +5572,10 @@ msgstr "Aktualizace"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Aktualizace vyžadují podepsanou verzi aplikace pro macOS a uložený přístupový token."
 
+#: src/main/native-i18n.ts
+msgid "Upgrading local database…"
+msgstr "Probíhá aktualizace místní databáze…"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "Pro vlastní proměnnou použijte {token}. Při vkládání šablony budete požádáni o její hodnotu."
@@ -5574,6 +5644,10 @@ msgstr "Viditelné kategorie"
 msgid "Wait for attachments to finish loading."
 msgstr "Počkejte na dokončení načítání příloh."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Wait for syncing and queued changes to finish before compacting."
+msgstr "Před zmenšením počkejte na dokončení synchronizace a změn ve frontě."
+
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "Čeká se na povolení přístupu ke kontaktům. Odpovězte na systémovou výzvu."
@@ -5581,6 +5655,10 @@ msgstr "Čeká se na povolení přístupu ke kontaktům. Odpovězte na systémov
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "Čekání na přihlášení…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "WAL"
+msgstr "WAL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Webmail link copied"

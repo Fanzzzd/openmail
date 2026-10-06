@@ -1170,6 +1170,34 @@ msgstr "Appliquer la couleur à"
 msgid "Compact"
 msgstr "Compact"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compact now"
+msgstr "Compacter maintenant"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compacting…"
+msgstr "Compactage en cours…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction failed. The database may be busy or need repair."
+msgstr "Le compactage a échoué. La base de données est peut-être occupée ou nécessite une réparation."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction finished."
+msgstr "Compactage terminé."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable in a read-only session."
+msgstr "Le compactage est indisponible dans une session en lecture seule."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable on this platform."
+msgstr "Le compactage est indisponible sur cette plateforme."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgstr "Le compactage a été refusé car la cohérence de l’index de recherche ne pouvait pas être garantie."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "Nouveau message"
@@ -1582,10 +1610,6 @@ msgstr "Fond sombre"
 msgid "Dashed list"
 msgstr "Liste pointillée"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Database pages"
-msgstr "Pages de la base de données"
-
 #: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "La récupération de la base de données a été interrompue. Restaurez une base de données préservée avant de rouvrir OpenMail. Base de données conservée : {backup}"
@@ -1746,6 +1770,14 @@ msgstr "Supprimer le brouillon"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "Supprimer la règle enregistrée ?"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
+msgstr "L’espace disque est faible. Compactez maintenant pour activer la récupération automatique d’espace disque."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. The cache budget has tightened automatically. Protected content is kept."
+msgstr "L’espace disque est faible. Le budget du cache a été réduit automatiquement. Le contenu protégé est conservé."
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -2178,6 +2210,14 @@ msgstr "Transférer"
 msgid "Forward as attachment"
 msgstr "Transférer en pièce jointe"
 
+#: src/main/native-i18n.ts
+msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
+msgstr "Libérez au moins {size} MiB pour mettre à niveau la base de données locale, puis redémarrez OpenMail. La base de données a été conservée."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Free database pages"
+msgstr "Pages libres de la base de données"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Friday"
 msgstr "Vendredi"
@@ -2459,6 +2499,10 @@ msgstr "Augmenter le niveau de citation"
 msgid "Indent list"
 msgstr "Augmenter le retrait de la liste"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Indexes and other data"
+msgstr "Index et autres données"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
@@ -2555,6 +2599,10 @@ msgstr "Conserver l’importance"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
 msgstr "Conserver une copie locale"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep openmail under"
+msgstr "Limiter openmail à"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
@@ -2972,6 +3020,12 @@ msgstr "Visibilité de la liste de messages"
 msgid "Message order in a conversation"
 msgstr "Ordre des messages dans une conversation"
 
+#. Storage occupied by downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text"
+msgstr "Texte des messages"
+
 #. Storage budget for downloaded email message text.
 #. Storage budget for downloaded email message text.
 #: src/renderer/src/components/CacheSettings.tsx
@@ -3045,6 +3099,10 @@ msgstr "Plus"
 #: src/renderer/src/components/ui/Menu.tsx
 msgid "More actions"
 msgstr "Plus d’actions"
+
+#: src/main/native-i18n.ts
+msgid "More disk space is needed"
+msgstr "Davantage d’espace disque est nécessaire"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3930,6 +3988,10 @@ msgstr "Destinataires en dehors de la conversation d’origine :"
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "Récupération des enregistrements locaux {copied}. {skipped} éléments illisibles ont été ignorés. Base de données d’origine : {backup}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Recovery copies"
+msgstr "Copies de récupération"
+
 #: src/renderer/src/errors.ts
 msgid "Recurring event creation is unavailable for this account"
 msgstr "La création d’événements récurrents n’est pas disponible pour ce compte"
@@ -4204,10 +4266,6 @@ msgstr "Les durées de conservation sont prioritaires. Les messages suivis, les 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "Réessayer"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Reusable database space"
-msgstr "Espace réutilisable de la base de données"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5102,6 +5160,10 @@ msgstr "La fin doit être après le début"
 msgid "The filter applies to future mail on the server."
 msgstr "Le filtre s’applique aux futurs messages sur le serveur."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
+msgstr "La limite inclut la base de données, les pièces jointes, le WAL et les copies de récupération. Le contenu protégé peut la dépasser."
+
 #: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "La base de données locale n’a pas pu être vérifiée"
@@ -5165,6 +5227,10 @@ msgstr "Le serveur a rejeté la connexion. Vérifiez l’adresse e-mail et assur
 #: src/renderer/src/errors.ts
 msgid "The thread changed. Summarize it again."
 msgstr "La conversation a changé. Résumez-la à nouveau."
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "There is not enough free disk space to compact safely."
+msgstr "L’espace disque libre est insuffisant pour compacter en toute sécurité."
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
@@ -5506,6 +5572,10 @@ msgstr "Notifications"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "Les mises à jour nécessitent une version signée pour macOS et un jeton d’accès enregistré."
 
+#: src/main/native-i18n.ts
+msgid "Upgrading local database…"
+msgstr "Mise à niveau de la base de données locale…"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "Utilisez {token} pour une variable personnalisée. Sa valeur vous sera demandée lors de l’insertion du modèle."
@@ -5574,6 +5644,10 @@ msgstr "Catégories visibles"
 msgid "Wait for attachments to finish loading."
 msgstr "Attendez que les pièces jointes aient fini de se charger."
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Wait for syncing and queued changes to finish before compacting."
+msgstr "Attendez la fin de la synchronisation et des modifications en attente avant de compacter."
+
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "En attente de l’autorisation d’accès aux contacts. Répondez à la demande du système."
@@ -5581,6 +5655,10 @@ msgstr "En attente de l’autorisation d’accès aux contacts. Répondez à la 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "En attente de connexion…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "WAL"
+msgstr "WAL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Webmail link copied"

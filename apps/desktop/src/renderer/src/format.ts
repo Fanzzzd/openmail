@@ -47,13 +47,15 @@ export const accountColorStyle = (account: Account) =>
   account.color ? { backgroundColor: account.color } : undefined;
 
 export function formatBytes(n: number, locale: string): string {
-  const unit = n < 1024 ? "byte" : n < 1024 ** 2 ? "kilobyte" : "megabyte";
-  const value = n < 1024 ? n : n < 1024 ** 2 ? n / 1024 : n / 1024 ** 2;
-  const digits = unit === "megabyte" ? 1 : 0;
+  const unit =
+    n < 1024 ? "byte" : n < 1024 ** 2 ? "kilobyte" : n < 1024 ** 3 ? "megabyte" : "gigabyte";
+  const value =
+    n < 1024 ? n : n < 1024 ** 2 ? n / 1024 : n < 1024 ** 3 ? n / 1024 ** 2 : n / 1024 ** 3;
+  const digits = unit === "megabyte" || unit === "gigabyte" ? 1 : 0;
   return new Intl.NumberFormat(locale, {
     style: "unit",
     unit,
-    unitDisplay: "short",
+    unitDisplay: unit === "byte" ? "long" : "short",
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value);

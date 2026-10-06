@@ -71,3 +71,5 @@ portable IMAP／SMTP 协议位于 `platform/react-native/imap.ts`，`MailTranspo
 | SMTP 发送      | 使用 message.from，报告部分收件人拒绝，并可创建 Sent 文件夹   | 使用账户地址作为信封和 MIME 发件人，逐个处理 RCPT 响应，Sent 文件夹必须已存在 |
 
 Node IMAP 的实现分为 `platform/node/imap/{adapter,session,parse,pull,ops,send,recovery,pool}.ts`。Outlook 分为 `outlook/{graph,client,send,sync,parse,pull,recovery,folders}.ts`。旧入口只导出 provider 组装函数；纯函数和传输帮助函数由调用处直接导入所属模块。
+
+T07 的 `CacheStorage` 端口位于 `platform/cache-storage.ts`，Node 实现在 `platform/node/cache-storage.ts`，通过实际数据库路径读取 WAL／恢复文件及 `statfs` 卷空间。portable 默认返回 `disk: null` 与零外部文件字节，手机暂不自动判断低磁盘。SQL 页、消息文本、附件计量仍由 core 提供。`CacheMaintenance` 将 Node 压缩及旧库 rowid 重建放进 `platform/node/cache-worker.mjs`，默认 portable 完整压缩返回 unavailable。迁移共享包装在 db.ts，Node 的 smoke、恢复与测试通过 migrations.ts 使用它。

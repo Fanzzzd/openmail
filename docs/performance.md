@@ -47,7 +47,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 预算淘汰测试将 INBOX 保留窗口设为 30 天，并断言实际淘汰了消息文本。小时门控测试在一次检查后再次调用；两者均回滚。完整预算扫描仍允许保留星标、草稿和无限窗口内的消息文本。
 
-迁移 35 增加读取索引，当前迁移版本为 36。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。AROUND 一次生成匹配元数据，再分组读取选中的摘要。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
+迁移 35 增加读取索引，当前迁移版本为 37。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。AROUND 一次生成匹配元数据，再分组读取选中的摘要。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
 
 保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
 
@@ -89,3 +89,24 @@ IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留�
 设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小；初始入口仍包含 React、Effect／RPC／schema、Base UI 和邮件阅读代码。
 
 AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词索引，再执行有序计数、无序计数和列表查询，三次查询合计须低于 3 秒。通过 [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries) 预筛选候选，词位置 CTE 每条查询只读取一次。索引未就绪时请求只执行 AND 回退，不写入或回填索引；这是自动回归上限，不是实机界面时延保证。
+
+## 本地缓存管理（T07）
+
+消息文本预算与“openmail 占用上限”默认关闭。整库占用为 `page_count × page_size + WAL + 附件文件 + 恢复副本`，空闲页已包含在数据库内，不重复相加。界面分别显示消息文本、附件、索引及其他数据、空闲页、WAL、恢复副本。消息文本是 UTF-8 逻辑负载，索引及其他数据为使用页减去消息文本的估计值。Node 按实际数据库路径查询所在卷的 `statfs.bavail`，计入 `.corrupt-*`、`.recovery-*` 及其 WAL；跳过符号链接，同一 inode 的硬链接只计一次。恢复副本保留，不因预算自动删除。
+
+有效消息文本预算取手动预算和自适应预算的较小值。自适应预算从当前消息文本大小减去整库超额或磁盘空间缺口的较大值，再抵扣已有可复用页，下限为零。空闲空间低于 `min(5 GiB, 卷容量 × 10%)` 且已启用增量回收时，即使两个手动预算都关闭也执行收紧，并显示提示。旧库未启用回收时不为低磁盘继续淘汰文本，提示先手动压缩；新库在建表前直接启用增量模式。星标、保留窗口内、永久保留标签、草稿、发件箱仍豁免，因此目标可能无法达到。首次后台检查在窗口就绪一分钟后执行，随后每小时或预算变更执行；空间不足时绕过文本预算的小时门控。同步或 flush 占锁时本次检查跳过，下次小时检查重试。
+
+迁移 37 将 messages、contact_candidates、contact_organizations 的隐藏 rowid 固定为同值的 `INTEGER PRIMARY KEY`，保留原有索引、触发器及依赖行，不运行 VACUUM。core、op-sqlite、smoke、恢复和当前 schema 的测试 helper 共用迁移外键包装：重建事务前暂关外键，提交前检查外键完整性，退出时恢复原外键设置。新消息继续通过 `upsertMessage` 写入。
+
+“立即压缩”取得同步和 flush 的互斥许可，再独占 SQL 连接并升级访问锁，CLI／MCP 的闲置共享锁也会返回 busy。独立 Node worker 用自己的 DatabaseSync 连接执行 VACUUM、增量回收及检查；主进程只等待结果，界面持续显示进行中状态。另以 BEGIN IMMEDIATE 探测未注册的 SQLite writer，SQLITE_BUSY／LOCKED 同样返回 busy。同步、flush、只读会话、无法保证 rowid 的表、FTS 内容错位均拒绝。首次检查磁盘暂存空间、完整 FTS 索引后，运行 `auto_vacuum=INCREMENTAL` 与一次完整 VACUUM；后续只运行 `incremental_vacuum`。UI 显示进行中和结果。自动淘汰后、空闲页达到 1 MiB 或 WAL 达到 8 MiB 的小时检查中，只在已经启用增量模式时按实际 freelist 回收全部空闲页，并执行 `wal_checkpoint(TRUNCATE)`；不会自动执行首次完整 VACUUM。首次压缩前的空闲页仍占文件空间，目标可能需要手动压缩才能达到。
+
+`platform/node/cache-management.test.ts` 覆盖计量、低磁盘 LRU 与所有豁免、旧库稀疏 rowid 迁移、压缩前后 FTS 搜索与依赖行、同步／flush 互斥、只读和不安全 rowid 拒绝。手机 CacheStorage 默认适配器返回空磁盘统计和零 WAL／恢复副本；不执行低磁盘收紧，详见[手机端说明](../apps/mobile/README.md)。未启动 Electron，未测量实机压缩耗时。整库统计读取 `body_cache_budget.total_bytes`，界面按一分钟或窗口 focus 刷新，线程变更不触发目录扫描。字节数使用各语言的 Intl 长单位复数格式，GB 使用独立单位。
+
+迁移 37 在同一份 100k fixture 上测得 6,124.9 ms，升级前逻辑数据库 568,803,328 字节，Node v24.21.0、8 MiB 页缓存、FULL 同步。该重建也移到 worker；桌面在启动 worker 前绘制“正在升级本地数据库…”窗口，完成或失败后关闭。升级期间的 `window-all-closed` 保活监听器一直保留到 DesktopLive 注册正常关闭逻辑并创建主窗口，手动关闭升级窗口不会退出或取消迁移。已提交升级的 WAL truncate 如因读事务 busy 而延后，只记录警告并继续启动，不重复迁移。预检要求数据卷空闲至少为数据库逻辑大小，不满足时不执行重建并提示释放空间。worker 再检查一次，防止预检后的空间变化。手机的 op-sqlite 使用同一外键包装和原生异步 SQL，但未接入卷空间预检或完整 VACUUM worker；完整压缩明确返回 unavailable。
+
+```sh
+OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/platform/node/migration37-performance.test.ts
+# 报告默认 /tmp/openmail-migration37-performance.json，可设 OPENMAIL_MIGRATION_REPORT。
+```
+
+修正回归包含 FK-on smoke／手机升级保留依赖表、重复压力检查抵扣空闲页、未开启回收时不继续删除、worker 禁止调用方线程执行 VACUUM、心跳响应、真实子进程 CLI 共享锁、直接 SQLite writer、升级空间不足保留数据库字节，以及十种语言的字节复数。

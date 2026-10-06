@@ -1,3 +1,4 @@
+import { CacheMaintenance } from "./platform/cache-storage.js";
 import { Effect, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
 import { isSqlError } from "effect/sql/SqlError";
@@ -40,7 +41,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
 
     const sql = yield* SqlClient.SqlClient;
 
-    const cache = makeCacheStore(sql);
+    const cache = makeCacheStore(sql, yield* CacheMaintenance);
 
     const compose = makeComposeStore(sql, crypto);
     const {

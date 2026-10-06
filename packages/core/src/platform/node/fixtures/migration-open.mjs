@@ -3,25 +3,16 @@ import { writeSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
-import { databaseLayer, MIGRATIONS, splitStatements } from "../../../../dist/platform/node/db.js";
+import { databaseLayer } from "../../../../dist/platform/node/db.js";
 import { NodeSystem } from "../../../../dist/platform/node/platform-node.js";
 
 if (process.argv[3] === "hold") {
-  // The saved method always receives its owning connection through .call.
-  // oxlint-disable-next-line typescript/unbound-method
-  const prepare = DatabaseSync.prototype.prepare;
-  const statement = splitStatements(MIGRATIONS.at(-1) ?? "")[0]
-    ?.trim()
-    .replace(/;$/, "");
-  let held = false;
-  DatabaseSync.prototype.prepare = function (sql) {
-    if (!held && statement && sql.trimStart().startsWith(statement)) {
-      held = true;
-      writeSync(1, "migration-lock-held\n");
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 6500);
-    }
-    return prepare.call(this, sql);
-  };
+  const holder = new DatabaseSync(process.argv[2]);
+  holder.exec("BEGIN IMMEDIATE");
+  writeSync(1, "migration-lock-held\n");
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 6500);
+  holder.exec("ROLLBACK");
+  holder.close();
 }
 await Effect.runPromise(
   Effect.gen(function* () {

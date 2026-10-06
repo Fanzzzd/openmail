@@ -64,6 +64,7 @@ export const makeSyncMailbox = (
     flush: (accountIds?: readonly string[], skipImap?: boolean) => Effect.Effect<FlushResult>;
     features: () => ReturnType<typeof makeFeatureMailbox>;
     cache: () => ReturnType<typeof makeCacheMailbox>;
+    enforceCacheBudget: (force?: boolean) => Effect.Effect<void>;
   },
   runtime: MailboxRuntimeState,
 ) => {
@@ -444,9 +445,11 @@ export const makeSyncMailbox = (
         Effect.forever,
         Effect.forkScoped,
       );
-      yield* Effect.gen(function* () {
-        yield* store.evictBodyBudget((yield* store.prefs).bodyCacheBytes);
-      }).pipe(Effect.repeat(Schedule.spaced("1 hour")), Effect.forkScoped);
+      yield* backgroundReady.pipe(
+        Effect.andThen(Effect.sleep("1 minute")),
+        Effect.andThen(deps.enforceCacheBudget().pipe(Effect.repeat(Schedule.spaced("1 hour")))),
+        Effect.forkScoped,
+      );
 
       // Start after the first normal sync. A single account/page per tick
       // prevents large accounts from starving smaller ones.

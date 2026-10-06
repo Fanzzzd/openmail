@@ -1,3 +1,4 @@
+import { makeCompactionStore } from "./store-compaction.js";
 import { Clock, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { BackfillState, type CacheWindowInput, DEFAULT_CACHE_WINDOWS, keepBody } from "./cache.js";
@@ -29,7 +30,10 @@ const toState = (r: typeof StateRow.Type): BackfillState => ({
   nextRunAt: r.next_run_at,
 });
 
-export function makeCacheStore(sql: SqlClient.SqlClient) {
+export function makeCacheStore(
+  sql: SqlClient.SqlClient,
+  maintenance: import("./platform/cache-storage.js").CacheMaintenanceService,
+) {
   const cacheWindows = all(WindowRow)(sql`SELECT * FROM cache_windows`).pipe(
     Effect.map((rows) =>
       rows.map((r) => ({ accountId: r.account_id, label: r.label, days: r.days })),
@@ -171,9 +175,10 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
   const evictBodyBudget = Effect.fn("Store.evictBodyBudget")(function* (
     maxBytes: number,
     force = false,
+    enabled = maxBytes > 0,
   ) {
     // Zero means no budget. Retention windows still govern the daily expiry pass.
-    if (maxBytes === 0) return 0;
+    if (!enabled) return 0;
     const now = yield* Clock.currentTimeMillis;
     return yield* sql
       .withTransaction(
@@ -240,6 +245,12 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
       )
       .pipe(Effect.orDie);
   });
+  const cacheDatabaseFile = first(Schema.Struct({ file: Schema.String }))(
+    sql`SELECT file FROM pragma_database_list WHERE name='main'`,
+  ).pipe(Effect.map((row) => (Option.isSome(row) ? row.value.file : "")));
+  const cacheNeedsVacuum = first(Schema.Struct({ auto_vacuum: Schema.Number }))(
+    sql`PRAGMA auto_vacuum`,
+  ).pipe(Effect.map((row) => Option.isSome(row) && row.value.auto_vacuum === 0));
   const cacheDatabaseSize = Effect.gen(function* () {
     const pageSize = yield* first(Schema.Struct({ page_size: Schema.Number }))(
       sql`PRAGMA page_size`,
@@ -261,6 +272,12 @@ export function makeCacheStore(sql: SqlClient.SqlClient) {
       sql`UPDATE messages SET body_text='',body_html='',body_cached=0,body_opened_at=NULL WHERE account_id=${accountId} AND NOT EXISTS (SELECT 1 FROM json_each(messages.labels_json) WHERE value='DRAFT')`,
     );
   return {
+    ...makeCompactionStore(sql, maintenance),
+    cachedBodyBytes: first(Schema.Struct({ total_bytes: Schema.Number }))(
+      sql`SELECT total_bytes FROM body_cache_budget WHERE id=1`,
+    ).pipe(Effect.map((row) => Option.getOrThrow(row).total_bytes)),
+    cacheDatabaseFile,
+    cacheNeedsVacuum,
     evictBodyBudget,
     cacheDatabaseSize,
     bodySizes,

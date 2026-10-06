@@ -39,6 +39,7 @@ vi.mock("@effect/atom-react", async (original) => {
         ? actual.useAtom(atom)
         : [AsyncResult.initial(), fixture.decide],
     useAtomSet: () => fixture.decide,
+    useAtomRefresh: () => fixture.decide,
   };
 });
 vi.mock("./state/queries", () => ({

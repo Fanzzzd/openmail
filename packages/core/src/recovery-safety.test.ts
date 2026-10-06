@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -38,7 +39,7 @@ afterEach(() => {
 function fixture(dir: string, wal = false) {
   const file = join(dir, "mail.db");
   const db = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) db.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   const root = db
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -163,14 +164,14 @@ it("a failed post-swap marker cannot make startup copy backup WALs onto a valid 
   const dir = temp();
   const file = join(dir, "mail.db");
   const old = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) old.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(old, migration);
   old.close();
   const identity = statSync(file);
   const backup = `${file}.corrupt-test`;
   linkSync(file, backup);
   const fresh = `${file}.recovery-test`;
   const db = new DatabaseSync(fresh);
-  for (const migration of MIGRATIONS) db.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   db.prepare("INSERT INTO prefs(key,value_json) VALUES (?,?)").run("new-only", "true");
   db.close();
   renameSync(fresh, file);
@@ -201,7 +202,7 @@ it("old corrupt backups without recovery markers do not block an intentional fre
   const dir = temp();
   const file = join(dir, "mail.db");
   const seed = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) seed.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(seed, migration);
   seed.close();
   const result = rebuildCorruptDatabase(dir);
   expect(result.kind).toBe("recovered");
@@ -258,5 +259,10 @@ it("four simultaneous first openers hold shared leases quickly without initializ
     expect(result.code).toBe(0);
     expect(result.elapsed).toBeLessThan(1000);
   }
-  expect(statSync(`${file}.access-lock`).size).toBe(0);
+  const lock = new DatabaseSync(`${file}.access-lock`, { readOnly: true });
+  try {
+    expect(lock.prepare("SELECT id FROM access_guard").all()).toEqual([{ id: 1 }]);
+  } finally {
+    lock.close();
+  }
 });

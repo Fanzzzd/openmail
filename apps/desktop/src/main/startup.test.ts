@@ -32,6 +32,7 @@ vi.mock("electron", () => ({
   powerMonitor: { isOnBatteryPower: () => false, getSystemIdleTime: () => 6 },
 }));
 vi.mock("@openmail/core", () => ({
+  DatabaseUpgradeSpaceError: class extends Error {},
   unavailableVision: {
     available: false,
     version: "unavailable",

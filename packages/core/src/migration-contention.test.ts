@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -46,7 +47,7 @@ it("concurrent processes wait beyond five seconds for an old database migration"
     const db = new DatabaseSync(file);
     try {
       db.exec("PRAGMA journal_mode=WAL");
-      for (const migration of MIGRATIONS.slice(0, -1)) db.exec(migration);
+      for (const migration of MIGRATIONS.slice(0, -1)) applyNativeMigration(db, migration);
       db.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
     } finally {
       db.close();

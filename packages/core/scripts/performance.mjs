@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "../dist/platform/node/migrations.js";
 const log = (value) => process.stdout.write(`${value}\n`);
 // Node-only benchmark. Never opens a user database or starts Electron.
 // Build core first, then run with --expose-gc and OPENMAIL_LOW_MEMORY_TESTS=1.
@@ -11,7 +12,6 @@ import { performance } from "node:perf_hooks";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { SqliteClient } from "@effect/sql-sqlite-node";
-import { splitStatements } from "../dist/db.js";
 import { Store } from "../dist/services.js";
 
 const historical = process.env.OPENMAIL_PERF_BASELINE_REF;
@@ -39,7 +39,7 @@ if (historical) {
   }
   moduleRoot = new URL(`../dist/${historicalDirectory.split("/").at(-1)}/`, import.meta.url);
 }
-const { MIGRATIONS } = await import(new URL("db.js", moduleRoot));
+const { MIGRATIONS, migrate } = await import(new URL("db.js", moduleRoot));
 const { StoreLive } = await import(new URL("store.js", moduleRoot));
 
 const directory = mkdtempSync(join(tmpdir(), "openmail-perf-"));
@@ -103,7 +103,8 @@ DatabaseSync.prototype.prepare = function (sql) {
 try {
   const db = new DatabaseSync(file);
   db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA cache_size=-8192");
-  for (const migration of MIGRATIONS.slice(0, 26)) db.exec(migration);
+  for (const migration of MIGRATIONS.slice(0, 26)) applyNativeMigration(db, migration);
+  db.exec("PRAGMA user_version=26");
   db.close();
   const layer = StoreLive.pipe(Layer.provideMerge(SqliteClient.layer({ filename: file })));
   await Effect.runPromise(
@@ -135,8 +136,7 @@ try {
       }
       report.seedMs = performance.now() - seedStart;
       const migrationStart = performance.now();
-      for (const migration of MIGRATIONS.slice(26))
-        for (const statement of splitStatements(migration)) yield* sql.unsafe(statement).unprepared;
+      yield* migrate;
       report.indexUpgradeMs = performance.now() - migrationStart;
       yield* sql`INSERT INTO thread_reminders(account_id,thread_id,due_at) SELECT account_id,thread_id,${now + 86400000} FROM messages WHERE rowid%500=0 GROUP BY account_id,thread_id`;
       // Include server candidates alongside incoming and sent projections.

@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { formatBytes } from "../format";
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomValue, useAtomRefresh } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DEFAULT_CACHE_WINDOWS, DEFAULT_PREFS } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
@@ -12,16 +13,31 @@ import { backfillStateAtom, cacheWindowsAtom, labelsAtom, prefsAtom } from "../s
 import { Select } from "./ui/Select";
 
 const sizesAtom = MailClient.query("CacheSize", undefined, {
-  reactivityKeys: [Keys.cache, Keys.prefs],
+  reactivityKeys: [Keys.storage],
 });
 const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
-  reactivityKeys: [Keys.cache, Keys.prefs, Keys.threads],
+  reactivityKeys: [Keys.storage],
 });
 const clearAtom = MailClient.mutation("ClearCache");
+const compactAtom = MailClient.mutation("CompactCache");
 
 /** Local subsection: does not change the Settings layout shared with slice 4. */
 export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t, i18n } = useLingui();
+  const refreshSize = useAtomRefresh(databaseSizeAtom);
+  const refreshAccounts = useAtomRefresh(sizesAtom);
+  useEffect(() => {
+    const refresh = () => {
+      refreshSize();
+      refreshAccounts();
+    };
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [refreshSize, refreshAccounts]);
   const states = AsyncResult.getOrElse(useAtomValue(backfillStateAtom), () => []);
   const windows = AsyncResult.getOrElse(useAtomValue(cacheWindowsAtom), () => []);
   const labels = AsyncResult.getOrElse(useAtomValue(labelsAtom()), () => []);
@@ -29,6 +45,8 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
   const sizes = AsyncResult.getOrElse(useAtomValue(sizesAtom), () => []);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const [clearResult, clear] = useAtom(clearAtom);
+  const [compactResult, compact] = useAtom(compactAtom);
+  const compactStatus = AsyncResult.getOrElse(compactResult, () => null);
   const [limitResult, setLimit] = useAtom(setPrefsAtom);
   const [pauseResult, pause] = useAtom(pauseBackfillAtom);
   const [saveResult, save] = useAtom(setCacheWindowAtom);
@@ -83,7 +101,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           onValueChange={(value) =>
             setLimit({
               payload: { patch: { bodyCacheBytes: Number(value) } },
-              reactivityKeys: [Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
+              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
             })
           }
         />
@@ -94,6 +112,48 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           outbox messages are kept even when the limit is exceeded. Zero disables the budget.
         </Trans>
       </p>
+      <div className="flex items-center justify-between gap-3">
+        <span>
+          <Trans>Keep openmail under</Trans>
+        </span>
+        <Select
+          aria-label={t`Keep openmail under`}
+          value={String(prefs.totalCacheBytes)}
+          options={[
+            { value: "0", label: t`Disabled` },
+            ...[1, 2, 5, 10, 20].map((gb) => ({
+              value: String(gb * 1024 ** 3),
+              label: formatBytes(gb * 1024 ** 3, i18n.locale),
+            })),
+          ]}
+          disabled={limitResult.waiting}
+          onValueChange={(value) =>
+            setLimit({
+              payload: { patch: { totalCacheBytes: Number(value) } },
+              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs, Keys.threads, Keys.thread],
+            })
+          }
+        />
+      </div>
+      <p className="text-xs text-a11y-muted">
+        <Trans>
+          The limit includes the database, attachments, WAL and recovery copies. Protected content
+          may exceed it.
+        </Trans>
+      </p>
+      {databaseSize?.lowDisk && databaseSize.canReclaim && (
+        <output className="block text-orange-700 dark:text-orange-400">
+          <Trans>
+            Disk space is low. The cache budget has tightened automatically. Protected content is
+            kept.
+          </Trans>
+        </output>
+      )}
+      {databaseSize?.lowDisk && !databaseSize.canReclaim && (
+        <p className="text-a11y-muted">
+          <Trans>Disk space is low. Compact now to enable automatic disk space reclamation.</Trans>
+        </p>
+      )}
       <div className="flex items-center justify-between gap-3">
         <span>
           <Trans>Attachment cache limit</Trans>
@@ -112,34 +172,89 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           onValueChange={(value) =>
             setLimit({
               payload: { patch: { attachmentCacheBytes: Number(value) } },
-              reactivityKeys: [Keys.cache, Keys.prefs],
+              reactivityKeys: [Keys.storage, Keys.cache, Keys.prefs],
             })
           }
         />
       </div>
       <div className="flex items-center justify-between">
         <output>
-          <Trans>Total cache</Trans>:{" "}
-          {formatBytes(
-            sizes.reduce((n, s) => n + s.bodyBytes + s.attachmentBytes, 0),
-            i18n.locale,
-          )}
+          <Trans>Total cache</Trans>: {formatBytes(databaseSize?.footprintBytes ?? 0, i18n.locale)}
         </output>
         <button
           type="button"
           disabled={clearResult.waiting}
           onClick={() =>
-            clear({ payload: {}, reactivityKeys: [Keys.cache, Keys.threads, Keys.thread] })
+            clear({
+              payload: {},
+              reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
+            })
           }
         >
           <Trans>Clear all caches</Trans>
         </button>
       </div>
-      <p className="text-xs text-a11y-muted">
-        <Trans>Database pages</Trans>: {formatBytes(databaseSize?.totalBytes ?? 0, i18n.locale)} ·{" "}
-        <Trans>Reusable database space</Trans>:{" "}
-        {formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}
-      </p>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+        <dt>
+          <Trans
+            context="cached message text"
+            comment="Storage occupied by downloaded email message text."
+          >
+            Message text
+          </Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.bodyBytes ?? 0, i18n.locale)}</dd>
+        <dt>
+          <Trans>Attachments</Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.attachmentBytes ?? 0, i18n.locale)}</dd>
+        <dt>
+          <Trans>Indexes and other data</Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.otherBytes ?? 0, i18n.locale)}</dd>
+        <dt>
+          <Trans>Free database pages</Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}</dd>
+        <dt>
+          <Trans>WAL</Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.walBytes ?? 0, i18n.locale)}</dd>
+        <dt>
+          <Trans>Recovery copies</Trans>
+        </dt>
+        <dd>{formatBytes(databaseSize?.recoveryBytes ?? 0, i18n.locale)}</dd>
+      </dl>
+      <button
+        type="button"
+        disabled={compactResult.waiting}
+        onClick={() => compact({ payload: undefined, reactivityKeys: [Keys.storage, Keys.cache] })}
+      >
+        {compactResult.waiting ? <Trans>Compacting…</Trans> : <Trans>Compact now</Trans>}
+      </button>
+      <output className="block text-a11y-muted">
+        {compactStatus === "done" && <Trans>Compaction finished.</Trans>}
+        {compactStatus === "busy" && (
+          <Trans>Wait for syncing and queued changes to finish before compacting.</Trans>
+        )}
+        {compactStatus === "read-only" && (
+          <Trans>Compaction is unavailable in a read-only session.</Trans>
+        )}
+        {compactStatus === "unsafe" && (
+          <Trans>
+            Compaction was refused because search index alignment could not be guaranteed.
+          </Trans>
+        )}
+        {compactStatus === "low-disk" && (
+          <Trans>There is not enough free disk space to compact safely.</Trans>
+        )}
+        {compactStatus === "unavailable" && (
+          <Trans>Compaction is unavailable on this platform.</Trans>
+        )}
+        {compactStatus === "failed" && (
+          <Trans>Compaction failed. The database may be busy or need repair.</Trans>
+        )}
+      </output>
       <p className="text-a11y-muted">
         <Trans>
           Clearing removes downloaded bodies and attachments. Headers and drafts stay. Opening
@@ -179,7 +294,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                 onClick={() =>
                   clear({
                     payload: { accountId: account.id },
-                    reactivityKeys: [Keys.cache, Keys.threads, Keys.thread],
+                    reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
                   })
                 }
               >
@@ -205,7 +320,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                   onClick={() =>
                     pause({
                       payload: { accountId: account.id, paused: !state?.paused },
-                      reactivityKeys: [Keys.cache],
+                      reactivityKeys: [Keys.storage, Keys.cache],
                     })
                   }
                 >
@@ -245,7 +360,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
                               : { days: value === "all" ? null : Number(value) }),
                           },
                         },
-                        reactivityKeys: [Keys.cache, Keys.threads, Keys.thread],
+                        reactivityKeys: [Keys.storage, Keys.cache, Keys.threads, Keys.thread],
                       })
                     }
                   />
@@ -255,9 +370,13 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           </div>
         );
       })}
-      {(resultError(i18n, clearResult) || resultError(i18n, limitResult)) && (
+      {(resultError(i18n, clearResult) ||
+        resultError(i18n, limitResult) ||
+        resultError(i18n, compactResult)) && (
         <output role="alert" className="text-a11y-danger">
-          {resultError(i18n, clearResult) || resultError(i18n, limitResult)}
+          {resultError(i18n, clearResult) ||
+            resultError(i18n, limitResult) ||
+            resultError(i18n, compactResult)}
         </output>
       )}
       {(resultError(i18n, saveResult) || resultError(i18n, pauseResult)) && (

@@ -1,9 +1,10 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 
@@ -18,8 +19,7 @@ it.effect(
       const accountId = "gmail:old@example.com";
       yield* Effect.sync(() => {
         const db = new DatabaseSync(file);
-        for (const migration of MIGRATIONS.slice(0, 24))
-          for (const statement of splitStatements(migration)) db.exec(statement);
+        for (const migration of MIGRATIONS.slice(0, 24)) applyNativeMigration(db, migration);
         db.exec("PRAGMA user_version=24");
         db.exec(
           "INSERT INTO accounts(id,provider,email,created_at) VALUES('gmail:old@example.com','gmail','old@example.com',1)",
@@ -81,8 +81,7 @@ it.effect(
       const filename = path.join(directory, "mail.db");
       yield* Effect.sync(() => {
         const database = new DatabaseSync(filename);
-        for (const migration of MIGRATIONS.slice(0, -1))
-          for (const statement of splitStatements(migration)) database.exec(statement);
+        for (const migration of MIGRATIONS.slice(0, -1)) applyNativeMigration(database, migration);
         database.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
         database.exec(
           "INSERT INTO accounts(id,provider,email,created_at) VALUES('gmail:old@example.com','gmail','old@example.com',1)",

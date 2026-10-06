@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { assert, it } from "@effect/vitest";
 import { TestClock } from "effect/testing";
 import { Deferred, Effect, Fiber, Layer } from "effect";
@@ -238,7 +239,7 @@ it.effect(
       yield* Effect.sync(() => {
         const old = new DatabaseSync(file);
         try {
-          for (const migration of MIGRATIONS.slice(0, 16)) old.exec(migration);
+          for (const migration of MIGRATIONS.slice(0, 16)) applyNativeMigration(old, migration);
           old.exec("PRAGMA user_version=16");
           assert.throws(() => old.prepare("SELECT bcc_json FROM templates"), /no such column/);
           old.exec(

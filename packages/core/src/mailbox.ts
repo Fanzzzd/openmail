@@ -534,6 +534,7 @@ export class Mailbox extends Context.Service<
       options: import("./updates.js").UpdateOptions,
     ): Effect.Effect<() => void, ProviderError>;
     readonly cacheDatabaseSize: Effect.Effect<import("./cache.js").CacheDatabaseSize>;
+    readonly compactCache: Effect.Effect<import("./cache.js").CacheCompactionResult>;
     readonly cacheSize: Effect.Effect<import("./cache.js").CacheSize[]>;
     clearCache(accountId?: string): Effect.Effect<void>;
     initializeProfiles(

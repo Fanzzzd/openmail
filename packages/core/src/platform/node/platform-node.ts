@@ -38,6 +38,7 @@ export type PlatformServices =
   | ChildProcessSpawner.ChildProcessSpawner;
 
 export interface NodePlatformOptions {
+  onDatabaseUpgrade?: () => Promise<() => void>;
   /** Electron passes `shell.openExternal`. Defaults to SystemBrowser. */
   openUrl?: (url: string) => Promise<void> | void;
   /** Replaces the browser outright, e.g. the CLI's, which also prints the URL. */
@@ -124,7 +125,10 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
       const dir = opts.dataDir ?? (yield* dataDir);
       const path = yield* Path.Path;
       return Layer.mergeAll(
-        databaseLayer(path.join(dir, "mail.db")),
+        databaseLayer(
+          path.join(dir, "mail.db"),
+          opts.onDatabaseUpgrade ? { onDatabaseUpgrade: opts.onDatabaseUpgrade } : {},
+        ),
         appConfigFile(dir),
         Layer.succeed(AppPaths, { dataDirectory: Effect.succeed(dir) }),
       );

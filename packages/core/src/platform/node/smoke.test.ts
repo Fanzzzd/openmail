@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./migrations.js";
 import { expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -12,7 +13,7 @@ it("smoke preparation upgrades only the copy, retains WAL messages and forces ma
   const file = join(root, "mail.db");
   const source = new DatabaseSync(file);
   try {
-    for (const migration of MIGRATIONS.slice(0, 12)) source.exec(migration);
+    for (const migration of MIGRATIONS.slice(0, 12)) applyNativeMigration(source, migration);
     source.exec("PRAGMA user_version=12; PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0;");
     source.exec(
       "INSERT INTO accounts(id,provider,email,created_at) VALUES('one','gmail','me@example.com',1)",
@@ -70,6 +71,49 @@ it("smoke preparation without a source creates an isolated empty database", () =
     expect(prepareSmokeDatabase(undefined, target)).toEqual({ accounts: 0, messages: 0 });
     expect(existsSync(join(target, "config.json"))).toBe(false);
   } finally {
+    rmSync(target, { recursive: true, force: true });
+  }
+});
+
+it("migration 37 with foreign keys enabled preserves all dependent projections", () => {
+  const root = mkdtempSync(join(tmpdir(), "openmail-smoke-fk-"));
+  const target = mkdtempSync(join(tmpdir(), "openmail-smoke-fk-copy-"));
+  const file = join(root, "mail.db");
+  const source = new DatabaseSync(file);
+  try {
+    for (const migration of MIGRATIONS.slice(0, 36)) applyNativeMigration(source, migration);
+    source.exec("PRAGMA user_version=36; PRAGMA foreign_keys=ON");
+    source.exec(
+      "INSERT INTO accounts(id,provider,email,created_at) VALUES('a','gmail','test@example.com',0)",
+    );
+    source.exec(`INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
+      VALUES('a/one','a','one','a/thread','searchneedle','Person','person@example.com','[]','[]',0,'','text','','["INBOX"]','[]',1,0)`);
+    const tables = ["contact_candidates", "message_search_meta", "semantic_jobs", "message_badges"];
+    const before = tables.map((table) =>
+      source
+        .prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`)
+        .all(),
+    );
+    expect(before.every((rows) => rows.length > 0)).toBe(true);
+    prepareSmokeDatabase(file, target);
+    const copy = new DatabaseSync(join(target, "mail.db"));
+    try {
+      expect(copy.prepare("PRAGMA foreign_keys").get()?.foreign_keys).toBe(1);
+      expect(
+        tables.map((table) =>
+          copy
+            .prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`)
+            .all(),
+        ),
+      ).toEqual(before);
+      expect(copy.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+      copy.exec("INSERT INTO messages_fts(messages_fts,rank) VALUES('integrity-check',1)");
+    } finally {
+      copy.close();
+    }
+  } finally {
+    source.close();
+    rmSync(root, { recursive: true, force: true });
     rmSync(target, { recursive: true, force: true });
   }
 });

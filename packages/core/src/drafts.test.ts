@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import {
   incoming as buildIncoming,
   outgoing,
@@ -748,7 +749,7 @@ import { applyComposeSignature, replyFromAddress } from "./signatures.js";
     try {
       const migration23 = MIGRATIONS[22];
       assert.ok(migration23);
-      for (const migration of MIGRATIONS.slice(0, 22)) db.exec(migration);
+      for (const migration of MIGRATIONS.slice(0, 22)) applyNativeMigration(db, migration);
       db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
         accountId,
         "gmail",

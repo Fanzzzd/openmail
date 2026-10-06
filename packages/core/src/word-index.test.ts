@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -42,7 +43,7 @@ it("migration leaves trigram indexes intact and empty word indexes resume across
   const file = join(directory, "mail.sqlite");
   try {
     const legacy = new DatabaseSync(file);
-    for (const migration of MIGRATIONS.slice(0, 23)) legacy.exec(migration);
+    for (const migration of MIGRATIONS.slice(0, 23)) applyNativeMigration(legacy, migration);
     legacy.exec("PRAGMA user_version=23");
     legacy
       .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)")

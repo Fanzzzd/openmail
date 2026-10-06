@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, Schema } from "effect";
@@ -33,7 +34,7 @@ it.effect(
       const id = "gmail:me@example.com";
       yield* Effect.sync(() => {
         const db = new DatabaseSync(file);
-        for (const migration of MIGRATIONS.slice(0, 7)) db.exec(migration);
+        for (const migration of MIGRATIONS.slice(0, 7)) applyNativeMigration(db, migration);
         db.exec("PRAGMA user_version=7");
         db.exec(
           "INSERT INTO accounts(id,provider,email,created_at) VALUES ('gmail:me@example.com','gmail','me@example.com',1)",

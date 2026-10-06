@@ -1,5 +1,5 @@
-import { chmodSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { chmodSync, mkdirSync, existsSync, realpathSync } from "node:fs";
+import { dirname, basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 export class DatabaseInUseError extends Error {
@@ -26,12 +26,69 @@ export function acquireDatabaseAccess(file: string, kind: "shared" | "exclusive"
   try {
     db.exec(`PRAGMA busy_timeout=${kind === "exclusive" ? 0 : 5000}`);
     chmodSync(lockFile, 0o600);
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE name='access_guard'").get())
+      db.exec(
+        "CREATE TABLE IF NOT EXISTS access_guard(id INTEGER PRIMARY KEY); INSERT OR IGNORE INTO access_guard VALUES(1)",
+      );
     if (kind === "exclusive") db.exec("PRAGMA locking_mode=EXCLUSIVE; BEGIN EXCLUSIVE");
     else db.exec("BEGIN");
-    db.prepare("SELECT name FROM sqlite_master").get();
+    db.prepare("SELECT id FROM access_guard").get();
   } catch {
     db.close();
     throw new DatabaseInUseError(kind);
   }
-  return { release: () => db.close() };
+  const restoreShared = () => {
+    if (db.isTransaction) db.exec("ROLLBACK");
+    db.exec("PRAGMA locking_mode=NORMAL; BEGIN; SELECT id FROM access_guard; COMMIT; BEGIN");
+    db.prepare("SELECT id FROM access_guard").get();
+    db.exec("PRAGMA busy_timeout=5000");
+  };
+  return {
+    release: () => db.close(),
+    tryExclusive: () => {
+      if (kind !== "shared")
+        return () => {
+          /* No startup window or external lease to dismiss. */
+        };
+      db.exec("PRAGMA busy_timeout=0; PRAGMA locking_mode=EXCLUSIVE");
+      try {
+        // COMMIT acquires EXCLUSIVE, and exclusive mode retains it afterward.
+        // A failed COMMIT keeps our original shared transaction intact.
+        db.exec("PRAGMA user_version=1; COMMIT");
+      } catch {
+        restoreShared();
+        return null;
+      }
+      return restoreShared;
+    },
+  };
+}
+
+const canonicalFile = (file: string) =>
+  existsSync(file) ? realpathSync(file) : join(realpathSync(dirname(file)), basename(file));
+const localLeases = new Map<string, Set<ReturnType<typeof acquireDatabaseAccess>>>();
+export function registerDatabaseLease(
+  file: string,
+  lease: ReturnType<typeof acquireDatabaseAccess>,
+) {
+  file = canonicalFile(file);
+  const leases = localLeases.get(file) ?? new Set();
+  leases.add(lease);
+  localLeases.set(file, leases);
+  return () => {
+    leases.delete(lease);
+    if (!leases.size) localLeases.delete(file);
+  };
+}
+export function exclusiveMaintenanceLease(file: string): (() => void) | null {
+  file = canonicalFile(file);
+  const leases = localLeases.get(file);
+  if (leases && leases.size !== 1) return null;
+  if (leases) return leases.values().next().value?.tryExclusive() ?? null;
+  try {
+    return acquireDatabaseAccess(file, "exclusive").release;
+  } catch (error) {
+    if (error instanceof DatabaseInUseError) return null;
+    throw error;
+  }
 }

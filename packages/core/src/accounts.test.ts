@@ -1,10 +1,11 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { AccountSettings, DEFAULT_PREFS, accountName, type IncomingMessage } from "./domain.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
 import { MailboxLive } from "./mailbox-live.js";
@@ -169,8 +170,7 @@ it.effect(
       );
       const filename = join(directory, "mail.db");
       const db = new DatabaseSync(filename);
-      for (const migration of MIGRATIONS.slice(0, 17))
-        for (const statement of splitStatements(migration)) db.exec(statement);
+      for (const migration of MIGRATIONS.slice(0, 17)) applyNativeMigration(db, migration);
       db.exec("PRAGMA user_version=17");
       db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
         "gmail:a",

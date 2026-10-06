@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "../node/migrations.js";
 import { describe, expect, it } from "vitest";
 import { Effect, Fiber, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
@@ -248,4 +249,36 @@ describe("op-sqlite contract", () => {
     expect(result._tag).toBe("Failure");
     expect(closed).toBe(true);
   });
+});
+
+it("mobile migration 37 retains FK-dependent records and restores FK enforcement", async () => {
+  let before: unknown[] = [];
+  const tables = ["contact_candidates", "message_search_meta", "semantic_jobs", "message_badges"];
+  const database = shim(":memory:", false, (db) => {
+    for (const [index, migration] of MIGRATIONS.slice(0, 36).entries())
+      applyNativeMigration(db, migration, index + 1);
+    db.exec(
+      "PRAGMA foreign_keys=ON; INSERT INTO accounts(id,provider,email,created_at) VALUES('a','gmail','a@example.com',0)",
+    );
+    db.exec(`INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,is_unread,is_starred)
+      VALUES('a/m','a','m','a/t','needle','Alice','alice@example.com','[]','[]',0,'','text','','["INBOX"]','[]',1,0)`);
+    before = tables.map((table) =>
+      db.prepare(`SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`).all(),
+    );
+  });
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient;
+      const after = [];
+      for (const table of tables)
+        after.push(
+          yield* sql.unsafe(
+            `SELECT ${table === "contact_candidates" ? "rowid," : ""}* FROM ${table}`,
+          ),
+        );
+      expect(after).toEqual(before);
+      expect((yield* sql`PRAGMA foreign_keys`)[0]?.foreign_keys).toBe(1);
+      yield* sql`INSERT INTO messages_fts(messages_fts,rank) VALUES('integrity-check',1)`;
+    }).pipe(Effect.provide(opSqliteLayer(database.open))),
+  );
 });

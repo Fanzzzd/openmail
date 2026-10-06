@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./migrations.js";
 import { createHmac } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -39,7 +40,7 @@ function fixture(wal = false) {
   const file = join(directory, "fixture.db");
   const db = new DatabaseSync(file);
   if (wal) db.exec("PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0");
-  for (const migration of MIGRATIONS) db.exec(migration);
+  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   db.prepare(
     "INSERT INTO accounts(id,provider,email,created_at,settings_json) VALUES (?,?,?,?,?)",
   ).run(

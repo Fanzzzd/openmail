@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./migrations.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
@@ -692,7 +693,7 @@ for (const messageCount of [50, 150_000]) {
         const file = join(dir, "mail.db");
         yield* Effect.sync(() => {
           const db = new DatabaseSync(file);
-          for (const migration of MIGRATIONS.slice(0, 21)) db.exec(migration);
+          for (const migration of MIGRATIONS.slice(0, 21)) applyNativeMigration(db, migration);
           db.exec("PRAGMA user_version=21");
           db.exec(
             "INSERT INTO accounts(id,provider,email,created_at) VALUES ('gmail:me@example.com','gmail','me@example.com',0)",

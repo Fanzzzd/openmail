@@ -12,6 +12,12 @@ export async function nativeRecoveryLabels() {
 /** Shared catalog for native recovery dialogs, available before the mailbox starts. */
 function recoveryLabels(i18n: I18n) {
   return {
+    upgrading: i18n._(msg`Upgrading local database…`),
+    upgradeSpaceTitle: i18n._(msg`More disk space is needed`),
+    upgradeSpaceDetail: (size: string) =>
+      i18n._(
+        msg`Free at least ${size} MiB to upgrade the local database, then restart OpenMail. The database was kept.`,
+      ),
     safeMode: i18n._(msg`OpenMail safe mode`),
     integrityFailed: i18n._(msg`The local database could not be verified`),
     crashDetail: i18n._(

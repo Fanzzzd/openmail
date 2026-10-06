@@ -1,3 +1,4 @@
+import { makeStorageMailbox } from "./mailbox-storage.js";
 import {
   Cause,
   Config,
@@ -140,6 +141,7 @@ export const MailboxLive = (
           yield* providers.get(provider).resetConnectivity?.() ?? Effect.void;
       });
 
+      const storage = yield* makeStorageMailbox(store, runtime, diskAttachments, readOnly, changed);
       const cache = makeCacheMailbox(
         store,
         providers,
@@ -251,6 +253,7 @@ export const MailboxLive = (
           flush: (...args) => flushMailbox.flush(...args),
           features: () => features,
           cache: () => cache,
+          enforceCacheBudget: storage.enforceCacheBudget,
         },
         runtime,
       );
@@ -454,7 +457,8 @@ export const MailboxLive = (
         ...cache,
         syncHealth: makeSyncHealth(store, providers),
 
-        cacheDatabaseSize: store.cacheDatabaseSize,
+        cacheDatabaseSize: storage.cacheDatabaseSize,
+        compactCache: storage.compactCache,
 
         cacheSize: Effect.gen(function* () {
           const bodies = yield* store.bodySizes;
@@ -587,9 +591,11 @@ export const MailboxLive = (
               patch.updateChannel !== undefined && patch.updateChannel !== previous.updateChannel;
             return yield* mutate(store.setPrefs(patch)).pipe(
               Effect.tap(() =>
-                patch.bodyCacheBytes !== undefined &&
-                patch.bodyCacheBytes !== previous.bodyCacheBytes
-                  ? store.evictBodyBudget(patch.bodyCacheBytes, true)
+                (patch.bodyCacheBytes !== undefined &&
+                  patch.bodyCacheBytes !== previous.bodyCacheBytes) ||
+                (patch.totalCacheBytes !== undefined &&
+                  patch.totalCacheBytes !== previous.totalCacheBytes)
+                  ? storage.enforceCacheBudget(true)
                   : Effect.void,
               ),
               Effect.tap(() =>

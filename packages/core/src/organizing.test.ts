@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { TestMailbox } from "./platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
@@ -7,7 +8,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, vi } from "vitest";
-import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
+import { databaseLayer, MIGRATIONS } from "./platform/node/db.js";
 import { DEFAULT_ACTIVE_HOURS, type IncomingMessage, type Provider } from "./domain.js";
 import { Mailbox } from "./mailbox.js";
 import {
@@ -714,8 +715,7 @@ it.effect(
       );
       const filename = join(directory, "mail.db");
       const db = new DatabaseSync(filename);
-      for (const migration of MIGRATIONS.slice(0, 18))
-        for (const statement of splitStatements(migration)) db.exec(statement);
+      for (const migration of MIGRATIONS.slice(0, 18)) applyNativeMigration(db, migration);
       db.exec("PRAGMA user_version=18");
       db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
         "gmail:me",

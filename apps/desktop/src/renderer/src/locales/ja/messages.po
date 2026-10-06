@@ -1170,6 +1170,34 @@ msgstr "色の適用先"
 msgid "Compact"
 msgstr "コンパクト"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compact now"
+msgstr "今すぐ圧縮"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compacting…"
+msgstr "圧縮中…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction failed. The database may be busy or need repair."
+msgstr "圧縮に失敗しました。データベースが使用中か、修復が必要な可能性があります。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction finished."
+msgstr "圧縮が完了しました。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable in a read-only session."
+msgstr "読み取り専用セッションでは圧縮できません。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction is unavailable on this platform."
+msgstr "このプラットフォームでは圧縮できません。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Compaction was refused because search index alignment could not be guaranteed."
+msgstr "検索インデックスの整合性を保証できないため、圧縮を拒否しました。"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Compose"
 msgstr "新規メッセージ"
@@ -1582,10 +1610,6 @@ msgstr "暗い背景"
 msgid "Dashed list"
 msgstr "破線リスト"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Database pages"
-msgstr "データベースのページ"
-
 #: src/main/native-i18n.ts
 msgid "Database recovery was interrupted. Restore a preserved database before reopening OpenMail. Preserved database: {backup}"
 msgstr "データベースの回復が中断されました。 OpenMail を再度開く前に、保存されたデータベースを復元します。保存されたデータベース: {backup}"
@@ -1746,6 +1770,14 @@ msgstr "下書きを破棄"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Discard saved rule?"
 msgstr "保存されたルールを破棄しますか?"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. Compact now to enable automatic disk space reclamation."
+msgstr "ディスクの空き容量が不足しています。今すぐ圧縮して、空き容量の自動回収を有効にしてください。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Disk space is low. The cache budget has tightened automatically. Protected content is kept."
+msgstr "ディスクの空き容量が不足しています。キャッシュ容量の上限を自動的に引き下げました。保護された内容は保持されます。"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -2178,6 +2210,14 @@ msgstr "転送"
 msgid "Forward as attachment"
 msgstr "添付ファイルとして転送"
 
+#: src/main/native-i18n.ts
+msgid "Free at least {size} MiB to upgrade the local database, then restart OpenMail. The database was kept."
+msgstr "ローカルデータベースを更新するには、少なくとも {size} MiB の空き容量を確保してから OpenMail を再起動してください。データベースは保持されています。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Free database pages"
+msgstr "データベースの空きページ"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Friday"
 msgstr "金曜日"
@@ -2459,6 +2499,10 @@ msgstr "引用レベルを上げる"
 msgid "Indent list"
 msgstr "リストのインデントを増やす"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Indexes and other data"
+msgstr "インデックスとその他のデータ"
+
 #: src/renderer/src/components/ComposeToolbar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Inline code"
@@ -2555,6 +2599,10 @@ msgstr "重要マークを保持"
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Keep local copy"
 msgstr "ローカルコピーを保持する"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Keep openmail under"
+msgstr "openmail の使用容量上限"
 
 #: src/renderer/src/components/Composer.tsx
 #: src/renderer/src/components/DraftSyncRecovery.tsx
@@ -2972,6 +3020,12 @@ msgstr "メッセージリストの可視性"
 msgid "Message order in a conversation"
 msgstr "スレッド内のメッセージの順序"
 
+#. Storage occupied by downloaded email message text.
+#: src/renderer/src/components/CacheSettings.tsx
+msgctxt "cached message text"
+msgid "Message text"
+msgstr "メッセージ本文"
+
 #. Storage budget for downloaded email message text.
 #. Storage budget for downloaded email message text.
 #: src/renderer/src/components/CacheSettings.tsx
@@ -3045,6 +3099,10 @@ msgstr "その他"
 #: src/renderer/src/components/ui/Menu.tsx
 msgid "More actions"
 msgstr "その他の操作"
+
+#: src/main/native-i18n.ts
+msgid "More disk space is needed"
+msgstr "ディスクの空き容量が不足しています"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "More formal"
@@ -3930,6 +3988,10 @@ msgstr "元のスレッドに含まれない宛先："
 msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
 msgstr "{copied} 個のローカル レコードを回復しました。 {skipped} 件の読み取り不可能な項目をスキップしました。元のデータベース: {backup}"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Recovery copies"
+msgstr "復旧用コピー"
+
 #: src/renderer/src/errors.ts
 msgid "Recurring event creation is unavailable for this account"
 msgstr "このアカウントでは定期的なイベントの作成を利用できません"
@@ -4204,10 +4266,6 @@ msgstr "保存期間を優先します。上限を超えても、スター付き
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Retry"
 msgstr "再試行"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Reusable database space"
-msgstr "再利用可能なデータベース領域"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "Revert"
@@ -5102,6 +5160,10 @@ msgstr "終わりは始まりの後にあるはずだ"
 msgid "The filter applies to future mail on the server."
 msgstr "フィルターはサーバー上の今後のメールに適用されます。"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
+msgstr "上限にはデータベース、添付ファイル、WAL、復旧用コピーが含まれます。保護された内容は上限を超える場合があります。"
+
 #: src/main/native-i18n.ts
 msgid "The local database could not be verified"
 msgstr "ローカルデータベースを検証できませんでした"
@@ -5165,6 +5227,10 @@ msgstr "サーバーがサインインを拒否しました。電子メール �
 #: src/renderer/src/errors.ts
 msgid "The thread changed. Summarize it again."
 msgstr "スレッドが変更されました。要約を再生成してください。"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "There is not enough free disk space to compact safely."
+msgstr "安全に圧縮するためのディスク空き容量が不足しています。"
 
 #: src/renderer/src/components/Composer.tsx
 msgid "These are not email addresses: {list}"
@@ -5506,6 +5572,10 @@ msgstr "新着"
 msgid "Updates require a signed macOS build and a saved access token."
 msgstr "アップデートには、署名済みの macOS 版と保存済みのアクセストークンが必要です。"
 
+#: src/main/native-i18n.ts
+msgid "Upgrading local database…"
+msgstr "ローカルデータベースを更新中…"
+
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Use {token} for a custom variable. You will be asked for its value when inserting the template."
 msgstr "カスタム変数には {token} を使用します。テンプレートを挿入するときに、その値を尋ねられます。"
@@ -5574,6 +5644,10 @@ msgstr "表示可能なカテゴリ"
 msgid "Wait for attachments to finish loading."
 msgstr "添付ファイルの読み込みが完了するまで待ちます。"
 
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "Wait for syncing and queued changes to finish before compacting."
+msgstr "同期と待機中の変更が完了してから圧縮してください。"
+
 #: src/renderer/src/components/AppleContactsSettings.tsx
 msgid "Waiting for Contacts permission. Respond to the system prompt."
 msgstr "連絡先へのアクセス許可を待っています。システムの確認に応答してください。"
@@ -5581,6 +5655,10 @@ msgstr "連絡先へのアクセス許可を待っています。システムの
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Waiting for sign-in…"
 msgstr "サインインを待っています…"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "WAL"
+msgstr "WAL"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Webmail link copied"

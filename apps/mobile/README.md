@@ -141,3 +141,5 @@ iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数
 阅读器在渲染前移除全部 meta http-equiv 和非 stylesheet link，阻止自动刷新与资源预取。iOS 只将 navigationType=click 的顶层链接交给系统，Android 必须先确认真实域名与完整 URL。远程图片 CSP 只允许 HTTPS。阅读器的 CSP 在桌面资源限制上增加 `form-action 'none'` 和 `base-uri 'none'`，渲染前移除 form 子树，防止 Android POST 绕过导航回调。WebView 始终拒绝导航；通过上述点击／确认流程且不含 URL 用户名/密码的 http、https、mailto 链接才交给系统浏览器或邮件应用。OAuth 回调经 `+native-intent.tsx` 路由到账户页，code/state 仍由 AuthSession 监听和校验。
 
 依据：[Apple 目录与备份](https://developer.apple.com/documentation/foundation/using-the-file-system-effectively)、[Android allowBackup](https://docs.expo.dev/versions/latest/config/app/#allowbackup)、[SecureStore 可访问性](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/)、[Expo native intent](https://docs.expo.dev/router/advanced/native-intent/)。
+
+本地缓存 T07：`CacheStorage` 暂用 core 的默认 no-op，返回 `disk: null`、零 WAL／恢复副本字节。手机尚未接入数据卷剩余空间查询，不触发低磁盘自动收紧；数据库页、消息文本和附件仍由现有服务计量。手机界面尚未暴露整库目标与“立即压缩”。`CacheMaintenance` 暂为 no-op，完整压缩返回 unavailable；没有 Node worker 和卷空间预检。op-sqlite 升级共用 db.ts 的迁移外键包装，异步原生 execute 保留迁移 37 的依赖行；Node shim 回归不替代设备验证。Node 桌面能力及测试见[性能说明](../../docs/performance.md#本地缓存管理t07)。

@@ -1,3 +1,6 @@
+import { nodeCacheMaintenance } from "./cache-maintenance.js";
+import { CacheStorage, CacheMaintenance } from "../cache-storage.js";
+import { nodeCacheStorage } from "./cache-storage.js";
 import { UnsubscribeNetwork } from "../../unsubscribe.js";
 import { postUnsubscribe } from "./unsubscribe.js";
 import { createHash, createHmac, randomUUID } from "node:crypto";
@@ -14,6 +17,8 @@ import { pdfText } from "./pdf-text.js";
 import { isSignedMacApp } from "./app-verifier.js";
 
 export const NodeRuntime = Layer.mergeAll(
+  Layer.succeed(CacheStorage, nodeCacheStorage),
+  Layer.succeed(CacheMaintenance, nodeCacheMaintenance),
   Layer.succeed(PlatformCrypto, {
     randomUUID,
     sha256: (value) => createHash("sha256").update(value).digest("hex"),

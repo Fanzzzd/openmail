@@ -1,3 +1,4 @@
+import { applyNativeMigration } from "./platform/node/migrations.js";
 import { incoming as makeIncoming, TestMailbox } from "./platform/node/testing.js";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { assert, it } from "@effect/vitest";
@@ -421,8 +422,7 @@ import {
           const filename = path.join(dir, "mail.db");
           yield* Effect.sync(() => {
             const db = new DatabaseSync(filename);
-            for (const migration of MIGRATIONS)
-              for (const statement of splitStatements(migration)) db.exec(statement);
+            for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
             db.exec(`PRAGMA user_version=${MIGRATIONS.length}`);
             db.prepare(
               "INSERT INTO accounts(id,provider,email,created_at) VALUES ('gmail:test','gmail','test@example.com',0)",
@@ -561,8 +561,7 @@ import {
   it("cache migration and flags/snooze dates leave existing FTS segments untouched", () => {
     const db = new DatabaseSync(":memory:");
     try {
-      for (const migration of MIGRATIONS.slice(0, 12))
-        for (const statement of splitStatements(migration)) db.exec(statement);
+      for (const migration of MIGRATIONS.slice(0, 12)) applyNativeMigration(db, migration);
       db.exec(
         "INSERT INTO accounts(id,provider,email,created_at) VALUES ('a','gmail','a@example.com',0)",
       );
