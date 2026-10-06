@@ -108,7 +108,9 @@ for (const provider of ["gmail", "outlook", "imap"] as const) {
           assert.deepStrictEqual(draft.message.bcc, outgoing.bcc);
           assert.deepStrictEqual(
             draft.message.attachments.toSorted((a, b) => a.filename.localeCompare(b.filename)),
-            outgoing.attachments.toSorted((a, b) => a.filename.localeCompare(b.filename)),
+            outgoing.attachments
+              .map(({ contentId: _cid, ...file }) => file)
+              .toSorted((a, b) => a.filename.localeCompare(b.filename)),
           );
           assert.strictEqual(draft.message.subject, original.subject);
           assert.strictEqual(draft.message.text, "Body");

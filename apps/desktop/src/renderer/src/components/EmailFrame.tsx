@@ -1,4 +1,9 @@
-import { READER_BASE_CSS, linkHint, linkNeedsConfirmation } from "@openmail/core/schema";
+import {
+  READER_BASE_CSS,
+  READER_COLOURS,
+  linkHint,
+  linkNeedsConfirmation,
+} from "@openmail/core/schema";
 import { useRunMail, withMail } from "../state/mail";
 import { LinkConfirmDialog } from "./LinkConfirmDialog";
 import type { QuoteHistory } from "@openmail/core/schema";
@@ -28,6 +33,7 @@ const FRAME_RESTRICTIONS =
 export type MessageBackground = "light" | "dark";
 
 interface Props {
+  presentation?: "reader" | "compose";
   /** Prepared HTML: trackers stripped, inline images resolved. */
   html: string;
   /** Remote images may load. */
@@ -45,6 +51,7 @@ interface Props {
 }
 
 export function EmailFrame({
+  presentation = "reader",
   html,
   remote,
   background,
@@ -105,7 +112,10 @@ export function EmailFrame({
     keys.current = onKeyDown;
   });
 
-  const css = `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
+  const css =
+    presentation === "compose"
+      ? `html, body { background: ${READER_COLOURS.paper}; color: ${READER_COLOURS.ink}; color-scheme: light; }`
+      : `${READER_BASE_CSS}${background === "dark" ? DARK_CSS : ""} body { zoom: ${zoom}%; }`;
   const safeHtml = useMemo(() => sanitizeReaderHtml(html, remote), [html, remote]);
   const doc = `<!doctype html><html lang="${i18n.locale}"><head><meta charset="utf-8">
 <meta http-equiv="x-dns-prefetch-control" content="off">
@@ -125,6 +135,7 @@ export function EmailFrame({
     externalLinkTargets(frameDoc);
     // Mail styles cannot hide the viewport's horizontal overflow.
     root.style.setProperty("overflow-x", "auto", "important");
+    root.style.setProperty("overflow-y", "hidden", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
     const keydown = (event: KeyboardEvent) => {
       if (

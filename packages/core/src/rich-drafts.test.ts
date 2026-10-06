@@ -14,7 +14,7 @@ import { fakeServer, TestMailbox } from "./platform/node/testing.js";
 const user: Actor = { kind: "user", surface: "app" };
 const html =
   '<p style="color:red"><b>你好</b> <i>italic</i> <u>underline</u><br><a href="https://example.com/?a=1&amp;b=2" onclick="bad()">link</a><script>bad()</script><img src="https://tracker.test" onerror="bad()"><a href="jav&#x61;script:bad()">label</a></p><table><tr><td>Cell</td></tr></table><ul><li>Item</li></ul>';
-const expected = richComposeBody(html);
+const expected = remoteComposeBody(html);
 const remote: IncomingMessage = {
   providerId: "remote",
   threadId: "remote",
@@ -102,10 +102,13 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const push = server.draftLog.at(-1);
           assert.ok(push?.kind === "save");
           assert.strictEqual(push.push.message.html, preservedComposeHtml(html));
-          assert.strictEqual(saved.message.originalHtml, html);
-          assert.include(push.push.message.html ?? "", 'style="color:red"');
-          assert.include(push.push.message.html ?? "", "<table><tr><td>Cell</td></tr></table>");
-          assert.include(push.push.message.html ?? "", '<img src="https://tracker.test">');
+          assert.strictEqual(saved.message.originalHtml, preservedComposeHtml(html));
+          assert.include(push.push.message.html ?? "", 'style="color:rgb(255,0,0)"');
+          assert.include(
+            push.push.message.html ?? "",
+            "<table><tbody><tr><td>Cell</td></tr></tbody></table>",
+          );
+          assert.notMatch(push.push.message.html ?? "", /<img|tracker\.test/);
           assert.notMatch(push.push.message.html ?? "", /<script|onclick=|onerror=|javascript:/i);
           assert.strictEqual(push.push.message.text, expected.text);
           return opened.id;
@@ -116,7 +119,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           const reopened = yield* mailbox.openDraft(id);
           assert.strictEqual(reopened.message.html, expected.html);
           assert.strictEqual(reopened.message.text, expected.text);
-          assert.strictEqual(reopened.message.originalHtml, html);
+          assert.strictEqual(reopened.message.originalHtml, preservedComposeHtml(html));
           // Editing one marked span keeps all other formatting.
           const editedHtml = expected.html.replace("你好", "改过");
           const edited = { ...reopened.message, html: editedHtml, text: "stale after editing" };
@@ -182,7 +185,7 @@ it.effect("sending HTML directly also sanitizes and derives the text alternative
       },
       user,
     );
-    assert.strictEqual(server.sent[0]?.message.html, expected.html);
+    assert.strictEqual(server.sent[0]?.message.html, richComposeBody(html).html);
     assert.strictEqual(server.sent[0]?.message.text, expected.text);
   }).pipe(Effect.provide(TestMailbox({ gmail: server })));
 });

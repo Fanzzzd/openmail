@@ -10,13 +10,27 @@ const shared = "src/shared/mailbox-handlers.ts";
 const renderer = "src/renderer/src/";
 const cases = [
   [
+    "HTML draft import",
+    "server HTML opens|keeps unsupported tables|opens in the rich composer",
+    `${renderer}draft.ts`,
+    "body: outgoingComposeBody(m),",
+    'body: { kind: "plain", text: m.text },',
+  ],
+  [
+    "draft transport preview",
+    "preserved draft preview|forward preview",
+    `${renderer}compose-preview.ts`,
+    "return prepareMessageHtml(transport, { inline }).html;",
+    'return "<p>SECRET</p>";',
+  ],
+  [
     "unsaved draft status",
     "never-saved composer",
     shared,
     "DraftStatus: ({ id }) => m.draftStatus(id),",
     "DraftStatus: ({ id }) => m.openDraft(id),",
   ],
-  ["sync", "first sync", shared, "Sync: () => m.sync(),", "Sync: () => Effect.succeed([]),"],
+  ["sync", "first sync", shared, "Effect.andThen(m.sync())", "Effect.andThen(Effect.succeed([]))"],
   [
     "read delay",
     "opening a thread",
@@ -95,7 +109,9 @@ try {
     const changed = original.replace(before, after);
     writeFileSync(
       path,
-      relative === shared ? `import { Effect } from "effect";\n${changed}` : changed,
+      relative === shared && !original.includes('import { Effect } from "effect";')
+        ? `import { Effect } from "effect";\n${changed}`
+        : changed,
     );
     try {
       const result = spawnSync(
@@ -138,8 +154,8 @@ try {
       writeFileSync(path, original);
     }
   }
-  if (killed.size !== 25)
-    throw new Error(`Expected all 25 covered flows to fail at least once; got ${killed.size}`);
+  if (killed.size !== 42)
+    throw new Error(`Expected all 42 covered flows to fail at least once; got ${killed.size}`);
   process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
 } finally {
   rmSync(directory, { recursive: true, force: true });

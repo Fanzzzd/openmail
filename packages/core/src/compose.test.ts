@@ -129,6 +129,52 @@ describe("Chinese text survives the MIME round trip", () => {
 
 describe("parseRawDraft", () => {
   it.effect(
+    "removes hidden CID parts and keeps unreferenced MIME files as ordinary attachments",
+    () =>
+      Effect.gen(function* () {
+        const raw = yield* buildMime(from, {
+          ...message,
+          text: "Visible SECRET",
+          html: '<p>Visible<img src="cid:visible@example.com"></p><div style="display:none">SECRET<img src="cid:hidden@example.com"></div>',
+          attachments: [
+            {
+              filename: "visible.png",
+              mimeType: "image/png",
+              content: "aGk=",
+              contentId: "visible@example.com",
+            },
+            {
+              filename: "hidden.png",
+              mimeType: "image/png",
+              content: "aGk=",
+              contentId: "hidden@example.com",
+            },
+            {
+              filename: "unused.png",
+              mimeType: "image/png",
+              content: "aGk=",
+              contentId: "unused@example.com",
+            },
+          ],
+        });
+        const parsed = yield* parseRawDraft(raw);
+        assert.strictEqual(parsed.text, "Visible");
+        assert.notMatch(parsed.originalHtml ?? "", /SECRET|hidden@example/);
+        assert.deepStrictEqual(
+          parsed.attachments.toSorted((a, b) => a.filename.localeCompare(b.filename)),
+          [
+            { filename: "unused.png", mimeType: "image/png", content: "aGk=" },
+            {
+              filename: "visible.png",
+              mimeType: "image/png",
+              content: "aGk=",
+              contentId: "visible@example.com",
+            },
+          ],
+        );
+      }),
+  );
+  it.effect(
     "retains inline image parts and Content-ID while rebuilding an untouched remote body",
     () =>
       Effect.gen(function* () {

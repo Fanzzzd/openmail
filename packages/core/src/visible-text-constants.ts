@@ -1,4 +1,5 @@
 /** Shared thresholds and limits for the browser-free reader model. */
+export const MIN_TEXT_CONTRAST = 1.5;
 export const COLOUR_MATCH_TOLERANCE = 16;
 export const MIN_VISIBLE_ALPHA = 0.1;
 export const OVERPAINT_MARGIN_PX = 10;

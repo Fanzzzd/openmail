@@ -115,7 +115,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
             parsed.html || "",
             "font-family:Georgia;font-size:18px;color:#123;background-color:#fff",
           );
-          assert.include(parsed.html || "", "<sup> 2</sup><sub>3</sub><s>old</s><code>x</code>");
+          assert.include(parsed.html || "", " <sup>2</sup><sub>3</sub><s>old</s><code>x</code>");
           assert.include(
             parsed.html || "",
             'style="border-left:2px solid #ccc;padding-left:12px;margin-left:0"',

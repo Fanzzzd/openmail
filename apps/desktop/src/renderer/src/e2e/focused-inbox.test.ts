@@ -78,25 +78,26 @@ it.each([false, true])(
 );
 
 it("classification moves all Inbox messages in the conversation and Undo restores each one", async () => {
+  const date = Date.now();
   current = await flow({
     provider: "outlook",
     messages: [
       incoming("one", {
         threadId: "conversation",
         labels: ["INBOX", "UNREAD", "CATEGORY_PERSONAL"],
-        date: Date.now(),
+        date,
       }),
       incoming("two", {
         threadId: "conversation",
         labels: ["INBOX", "UNREAD", "CATEGORY_OTHER"],
-        date: Date.now() - 1,
+        date: date - 1,
       }),
       incoming("old", { threadId: "conversation", labels: ["INBOX", "UNREAD"], date: 1 }),
       incoming("sent", {
         threadId: "conversation",
         labels: ["SENT", "CATEGORY_PERSONAL"],
         isUnread: false,
-        date: Date.now() - 2,
+        date: date - 2,
       }),
     ],
   });

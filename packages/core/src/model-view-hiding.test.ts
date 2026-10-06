@@ -32,7 +32,8 @@ import { type Message } from "./domain.js";
           "Visible",
         );
     }
-    expect(visibleHtmlText('<p style="opacity:.11;font-size:14px">Visible</p>').text).toBe(
+    expect(visibleHtmlText('<p style="opacity:.11;font-size:14px">Hidden</p>').text).toBe("");
+    expect(visibleHtmlText('<p style="opacity:.3;font-size:14px">Visible</p>').text).toBe(
       "Visible",
     );
   });

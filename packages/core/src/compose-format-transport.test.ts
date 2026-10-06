@@ -54,6 +54,12 @@ it("outgoing nested quotes and dashed lists render without application CSS and i
 });
 
 it("transport defaults preserve original quote and list styles without broadening editor CSS", () => {
+  const original = preservedComposeHtml(
+    '<blockquote class="quoted" style="padding:16px;font-family:Georgia"><b>reply</b></blockquote>',
+  );
+  const decorated = composeTransportHtml({ html: original });
+  assert.include(decorated ?? "", 'class="quoted"');
+  assert.include(decorated ?? "", "padding:16px;font-family:Georgia");
   const body = richComposeBody(
     '<blockquote style="margin-left:24px;padding-left:48px;color:#123" dir="rtl">quote</blockquote><ul type="dash" style="margin-left:24px"><li>item</li></ul>',
   );

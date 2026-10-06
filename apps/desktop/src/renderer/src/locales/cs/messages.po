@@ -2555,6 +2555,12 @@ msgstr "Hlavičky obsahují"
 msgid "Help"
 msgstr "Nápověda"
 
+#. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
+#: src/renderer/src/components/ComposeEditor.tsx
+msgctxt "compose sanitization notice"
+msgid "Hidden text was removed."
+msgstr "Skrytý text byl odstraněn."
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Hide"
 msgstr "Skrýt"
@@ -4028,6 +4034,12 @@ msgstr "Originál"
 #: src/renderer/src/components/Composer.tsx
 msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Původní přílohy jsou uloženy v aplikaci Outlook, aniž by byly znovu nahrány."
+
+#. Status for a draft shown in a read-only preview that preserves its original layout.
+#: src/renderer/src/components/ComposeEditor.tsx
+msgctxt "compose formatting status"
+msgid "Original formatting kept"
+msgstr "Původní formátování zachováno"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx

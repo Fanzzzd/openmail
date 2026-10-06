@@ -1,4 +1,5 @@
-import { COMPOSE_FONT_FAMILIES, COMPOSE_FONT_SIZES } from "./domain.js";
+import { COMPOSE_FONT_FAMILIES } from "./domain.js";
+import { parse, generate, ident, lexer } from "./css-tree-browser.js";
 
 export const COMPOSE_COLORS = [
   "#000000",
@@ -13,17 +14,57 @@ export const COMPOSE_COLORS = [
   "#674ea7",
 ] as const;
 /** CSS is parsed as data, then serialized; no original declaration reaches the DOM. */
-export function composeStyleValue(property: string, raw: string): string | undefined {
+export function composeStyleValue(
+  property: string,
+  raw: string,
+  element?: "hr",
+): string | undefined {
   if (/[\\/!*]/.test(raw) || /(?:url|expression|var)\s*\(/i.test(raw)) return undefined;
   const value = raw.trim();
   const lower = value.toLowerCase();
   switch (property) {
-    case "font-family":
-      return COMPOSE_FONT_FAMILIES.find(
-        (f) => f.toLowerCase() === lower.replace(/^["']|["']$/g, ""),
-      );
-    case "font-size":
-      return COMPOSE_FONT_SIZES.some((size) => `${size}px` === lower) ? lower : undefined;
+    case "font-family": {
+      if (value.length > 4096) return undefined;
+      try {
+        const ast = parse(value, { context: "value" });
+        if (ast.type !== "Value" || !lexer.matchProperty("font-family", ast).matched)
+          return undefined;
+        const families: string[] = [];
+        let family: string[] = [];
+        for (const node of ast.children) {
+          if (node.type === "Operator" && node.value === ",") {
+            families.push(family.join(" "));
+            family = [];
+          } else if (node.type === "Identifier") family.push(ident.decode(node.name));
+          else if (node.type === "String")
+            family.push(/^[-\p{L}\p{N}_ ]+$/u.test(node.value) ? node.value : generate(node));
+          else return undefined;
+        }
+        families.push(family.join(" "));
+        return families
+          .map(
+            (name) =>
+              COMPOSE_FONT_FAMILIES.find((known) => known.toLowerCase() === name.toLowerCase()) ??
+              name,
+          )
+          .join(",");
+      } catch {
+        return undefined;
+      }
+    }
+    case "font-size": {
+      const size = /^(\d+(\.\d+)?)px$/.exec(lower);
+      return size && Number(size[1]) >= 3 && Number(size[1]) <= 72 ? lower : undefined;
+    }
+    case "display":
+      return element === "hr" && ["block", "inline-block"].includes(lower) ? lower : undefined;
+    case "width": {
+      if (element !== "hr") return undefined;
+      const width = /^(\d+(\.\d+)?)(%|px)$/.exec(lower);
+      return width && Number(width[1]) > 0 && Number(width[1]) <= (width[3] === "%" ? 100 : 9999)
+        ? lower
+        : undefined;
+    }
     case "color":
     case "background-color": {
       if (/^#(?:[a-f\d]{3}|[a-f\d]{6})$/i.test(value)) return lower;
@@ -36,6 +77,11 @@ export function composeStyleValue(property: string, raw: string): string | undef
       return ["left", "center", "right", "justify"].includes(lower) ? lower : undefined;
     case "direction":
       return ["ltr", "rtl"].includes(lower) ? lower : undefined;
+    case "line-height":
+      return lower === "normal" ||
+        (/^\d+(\.\d+)?$/.test(lower) && Number(lower) > 0 && Number(lower) <= 4)
+        ? lower
+        : undefined;
     case "margin-left":
     case "padding-left":
       return /^(?:0|[1-9]\d{0,2})px$/.test(lower) && Number.parseInt(lower) <= 240
@@ -49,13 +95,13 @@ export function composeStyleValue(property: string, raw: string): string | undef
       return undefined;
   }
 }
-export function composeStyle(input: string): string {
+export function composeStyle(input: string, element?: "hr"): string {
   const styles = new Map<string, string>();
   for (const declaration of input.split(";")) {
     const colon = declaration.indexOf(":");
     if (colon < 0) continue;
     const property = declaration.slice(0, colon).trim().toLowerCase();
-    const value = composeStyleValue(property, declaration.slice(colon + 1));
+    const value = composeStyleValue(property, declaration.slice(colon + 1), element);
     if (value !== undefined) styles.set(property, value);
   }
   return [...styles].map(([p, v]) => `${p}:${v}`).join(";");

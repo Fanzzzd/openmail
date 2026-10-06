@@ -14,7 +14,12 @@ import { Store } from "./services.js";
 import { StoreLive } from "./store.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { applyComposeSignature, replyFromAddress, signatureDefault } from "./signatures.js";
-import { remoteComposeBody, richComposeBody, textComposeHtml } from "./compose-body.js";
+import {
+  remoteComposeBody,
+  richComposeBody,
+  textComposeHtml,
+  preservedComposeHtml,
+} from "./compose-body.js";
 import { fillTemplate, customTemplateVariables } from "./compose-text.js";
 
 const accountId = "gmail:me@example.com";
@@ -167,14 +172,14 @@ it("legacy flat signatures can be picked again without replacing signatures insi
   assert.ok(inserted.text.indexOf("New") < inserted.text.indexOf("On Monday"));
 });
 
-it("switching a signature retains transport-only remote source and never loads its remote images in the editor", () => {
+it("switching a signature retains safe original layout and excludes remote images", () => {
   const source = '<table><tr><td>Quoted</td></tr></table><img src="https://remote.test/image">';
   const first = { text: "Old", html: "<b>Old</b>" },
     next = { text: "New", html: "<i>New</i>" };
   const signed = applyComposeSignature(remoteComposeBody(source), undefined, first);
   const switched = applyComposeSignature(signed, first, next);
   assert.ok(switched.kind === "rich");
-  assert.ok(switched.originalHtml?.endsWith(source));
+  assert.ok(switched.originalHtml?.endsWith(preservedComposeHtml(source)));
   assert.ok(!switched.html.includes("<img"));
   assert.ok(switched.html.includes("<em>New</em>"));
   assert.ok(!switched.html.includes("Old"));

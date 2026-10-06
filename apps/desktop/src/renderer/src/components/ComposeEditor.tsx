@@ -2,6 +2,8 @@ import { GrammarResults, useComposeGrammar } from "./ComposeGrammar";
 import { ComposeToolbar } from "./ComposeToolbar";
 import { MenuCheckboxItem, MenuItem, MenuRadioGroup, MenuSeparator } from "./ui/Menu";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
+import { composePreviewHtml } from "../compose-preview";
+import { EmailFrame } from "./EmailFrame";
 import { jumpDocumentSelection, jumpTextareaSelection } from "../jump-selection";
 import { activeComposeMentions, resizeComposeImage } from "../compose-contacts-dom";
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- A contenteditable needs textbox semantics; textarea cannot retain rich marks. */
@@ -35,6 +37,7 @@ import {
   mentionQuery,
   mentionHtml,
   emojiAtCaret,
+  EMPTY_QUOTE_HISTORY,
 } from "@openmail/core/schema";
 import {
   useLayoutEffect,
@@ -595,7 +598,9 @@ export function ComposeEditor({
     "rounded p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus">
+    <div
+      className={`flex flex-col ${locked ? "shrink-0" : "min-h-0 flex-1"} focus-within:ring-2 focus-within:ring-inset focus-within:ring-a11y-focus`}
+    >
       <ComposeToolbar
         formatting={body.kind === "rich" && formatBar}
         disabled={locked}
@@ -785,11 +790,32 @@ export function ComposeEditor({
         </search>
       )}
       <GrammarResults grammar={grammar} locked={locked} />
+      {!locked && body.kind === "rich" && body.hiddenTextRemoved && (
+        <p
+          role="status"
+          className="shrink-0 border-b border-black/10 px-4 py-2 text-sm text-a11y-muted dark:border-white/10"
+        >
+          {t({
+            message: "Hidden text was removed.",
+            context: "compose sanitization notice",
+            comment:
+              "Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.",
+          })}
+        </p>
+      )}
       {remoteUnsupported && (
         <div
           role="status"
           className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"
         >
+          <p className="font-medium">
+            {t({
+              message: "Original formatting kept",
+              context: "compose formatting status",
+              comment:
+                "Status for a draft shown in a read-only preview that preserves its original layout.",
+            })}
+          </p>
           <p>{t`This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body.`}</p>
           {locked && (
             <button type="button" className={button} onClick={() => setEditPrompt(true)}>
@@ -871,8 +897,38 @@ export function ComposeEditor({
           )}
         </div>
       )}
+      {locked && body.kind === "rich" && (
+        <div className="bg-white px-4 py-4 dark:bg-neutral-900">
+          <EmailFrame
+            html={composePreviewHtml(body, attachments)}
+            remote={false}
+            background="light"
+            zoom={100}
+            presentation="compose"
+            previous={EMPTY_QUOTE_HISTORY}
+            findQuery=""
+            findIndex={0}
+            onMatches={undefined}
+            onActivate={constVoid}
+            onKeyDown={(event) => {
+              const forwarded = new window.KeyboardEvent("keydown", {
+                key: event.key,
+                metaKey: event.metaKey,
+                ctrlKey: event.ctrlKey,
+                altKey: event.altKey,
+                shiftKey: event.shiftKey,
+                bubbles: true,
+                cancelable: true,
+              });
+              window.dispatchEvent(forwarded);
+              if (forwarded.defaultPrevented) event.preventDefault();
+            }}
+          />
+        </div>
+      )}
       {body.kind === "rich" ? (
         <div
+          hidden={locked}
           ref={(element) => {
             richRef.current = element;
             bodyRef.current = element;
@@ -891,7 +947,7 @@ export function ComposeEditor({
             context: "message text",
             comment: "Email message text, never an anatomical body.",
           })}
-          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
+          className="min-h-0 flex-1 overflow-auto px-4 py-3 text-[14px] leading-relaxed outline-none [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-blue-600 [&_a]:underline [&_em]:italic [&_strong]:font-bold [&_s]:line-through [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_img]:max-w-full [&_img:not([height])]:h-auto [&_img]:cursor-pointer [&_code]:font-mono [&_pre]:font-mono [&_pre]:whitespace-pre-wrap [&_ul[type=dash]>li]:list-none [&_ul[type=dash]>li]:before:content-['–_']"
           style={body.font ? { fontFamily: body.font.family, fontSize: body.font.size } : undefined}
           onClick={(event) => {
             const target = event.target;

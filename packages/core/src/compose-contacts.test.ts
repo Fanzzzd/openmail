@@ -220,7 +220,7 @@ import { makeOutlookFeatures } from "./outlook-features.js";
           mimeType: "image/png",
         });
         assert.ok(file.contentId);
-        const html = `${inlineImageHtml(file, "small")}${mentionHtml(alice, "00000000-0000-4000-8000-000000000000")}<span style="font-family:evil;font-size:999px" onclick="evil()">safe</span><img src="https://tracker.example.com/x">`;
+        const html = `${inlineImageHtml(file, "small")}${mentionHtml(alice, "00000000-0000-4000-8000-000000000000")}<span style="font-family:url(https://tracker.example.com/font);font-size:999px" onclick="evil()">safe</span><img src="https://tracker.example.com/x">`;
         const body = richComposeBody(html);
         assert.ok(body.html.includes('width="160"'));
         assert.ok(!body.html.includes("tracker"));
@@ -257,7 +257,7 @@ import { makeOutlookFeatures } from "./outlook-features.js";
         const small = richComposeBody(
           '<img src="cid:x@openmail" width="320" height="9" style="width:99px" onerror="evil()">',
         );
-        assert.strictEqual(small.html, '<img src="cid:x@openmail" width="320">');
+        assert.strictEqual(small.html, '<img src="cid:x@openmail" width="320" height="9">');
         assert.ok(!inlineImageHtml(file, "original").includes("width="));
         assert.strictEqual(
           (yield* imageAttachment({
@@ -540,16 +540,17 @@ import { makeOutlookFeatures } from "./outlook-features.js";
 
   const serverEmail = "me@example.com";
 
-  it("font wrappers and nested safe styles stay editable while arbitrary CSS and active attributes are rejected", () => {
+  it("font wrappers and nested safe styles stay editable while unsafe CSS and active attributes are rejected", () => {
     const valid = '<div style="font-family:Georgia;font-size:18px"><b>Hello</b></div>';
     assert.strictEqual(composeHtmlHasUnsupported(valid), false);
     assert.strictEqual(richComposeBody(valid).html.includes("style="), true);
     assert.strictEqual(composeHtmlHasUnsupported(`<span>${valid}</span>`), false);
     assert.strictEqual(composeHtmlHasUnsupported(valid.replace("<b>Hello</b>", valid)), false);
+    assert.strictEqual(composeHtmlHasUnsupported(valid.replace('18px"', '18px;color:red"')), false);
     for (const invalid of [
       valid.replace("18px", "999px"),
-      valid.replace("Georgia", "Comic Sans"),
-      valid.replace('18px"', '18px;color:red"'),
+      valid.replace("Georgia", "url(https://tracker.example.com/font)"),
+      valid.replace('18px"', '18px;color:var(--unsafe)"'),
       valid.replace("<div style", '<div onclick="evil()" style'),
     ])
       assert.strictEqual(composeHtmlHasUnsupported(invalid), true);

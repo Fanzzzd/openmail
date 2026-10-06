@@ -8,6 +8,28 @@ import {
 } from "./compose-originals";
 import { richComposeBody } from "@openmail/core/schema";
 
+it.each([
+  ["logo%40example.com", "logo@example.com"],
+  ["logo@example.com", "logo%40example.com"],
+])("encoded forward CID %s matches attachment %s", (reference, contentId) => {
+  const draft = {
+    ...emptyDraft("outlook:me"),
+    mode: "forward",
+    inReplyTo: "original",
+    body: richComposeBody(`<img src="cid:${reference}">`),
+  } satisfies Draft;
+  const loaded = withOriginalAttachments(draft, [
+    {
+      filename: "logo.png",
+      mimeType: "image/png",
+      content: "aGk=",
+      contentId,
+      sourceMessageId: "original",
+    },
+  ]);
+  expect(loaded.attachments[0]?.contentId).toBe("logo@example.com");
+});
+
 it("a failed background load leaves the open composer and body edits available without attachments", async () => {
   let draft: Draft = {
     ...emptyDraft("gmail:me"),

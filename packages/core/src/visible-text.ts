@@ -1,4 +1,5 @@
 import {
+  MIN_TEXT_CONTRAST,
   COLOUR_MATCH_TOLERANCE,
   MIN_VISIBLE_ALPHA,
   MAX_CSS_RULES,
@@ -8,6 +9,7 @@ import {
   tinyQuantity,
 } from "./visible-text-constants.js";
 import { compile } from "css-select";
+import { DomUtils } from "htmlparser2";
 import { parse as parseHtml5 } from "parse5";
 import { adapter } from "parse5-htmlparser2-tree-adapter";
 import { sanitizeReaderHtml, READER_DROP } from "./reader-sanitize.js";
@@ -54,6 +56,7 @@ import {
   paintedBackgrounds,
   WHITE_PAPER,
   distinctBackgrounds,
+  textContrast,
   type PaintedBackground,
 } from "./visible-text-paint.js";
 import { READER_COLOUR_CSS, READER_COLOURS } from "./reader-style.js";
@@ -87,17 +90,22 @@ const inkRemovalRule = (
   foreground: string,
   background: Rgba,
   opacity: number,
+  scale: number,
 ): VisibleRemovalRule | null => {
   const ink = parseColour(foreground);
   if (!ink) return "uncertain-paint";
-  if (ink[3] * opacity <= MIN_VISIBLE_ALPHA) return "opacity";
-  const visible = composite(ink, background);
+  if (ink[3] * opacity * scale <= MIN_VISIBLE_ALPHA) return "opacity";
+  return textContrast(ink, background, opacity) < MIN_TEXT_CONTRAST ? "colour-match" : null;
+};
+// Possible sibling paint has no proven coverage; contrast only applies to the actual backdrop.
+function inkMatchesPaint(foreground: string, background: Rgba, opacity: number): boolean {
+  const ink = parseColour(foreground);
+  if (!ink) return false;
+  const visible = composite([ink[0], ink[1], ink[2], ink[3] * opacity], background);
   return [0, 1, 2].every(
     (i) => Math.abs((visible[i] ?? 0) - (background[i] ?? 0)) <= COLOUR_MATCH_TOLERANCE,
-  )
-    ? "colour-match"
-    : null;
-};
+  );
+}
 const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
 const normalizeHtmlText = (text: string) =>
@@ -142,6 +150,7 @@ export interface VisibleHtmlTextOptions {
   linkObserver?: (href: string, label: string) => void;
 }
 interface VisibleContext {
+  removedNodes: Set<HtmlNode> | null;
   dom: HtmlDocument;
   budgetFallback: "visible" | "index-full-text";
   diagnostic: VisibleHtmlTextOptions["diagnostic"];
@@ -184,6 +193,8 @@ function recordRemoval(
   rule: VisibleRemovalRule,
   source: VisibleRemovalSource,
 ) {
+  if (!(rule === "omit-tag" && "name" in node && ["style", "head"].includes(node.name)))
+    ctx.removedNodes?.add(node);
   ctx.observer?.removed(rule, source, subtreeTextCounts(node));
 }
 function linkText(ctx: VisibleContext, text: string) {
@@ -239,6 +250,7 @@ function createContext(html: string, options: VisibleHtmlTextOptions): VisibleCo
   const declarationParser = makeDeclarationParser();
   return {
     dom,
+    removedNodes: null,
     ...options,
     budgetFallback: options.budgetFallback ?? "visible",
     diagnostic: options.diagnostic,
@@ -739,9 +751,7 @@ function siblingRemoval(
           if (backdrop.kind === "unknown") continue;
           const rgb = composite(paper.rgb, backdrop.rgb);
           for (const ink of inks)
-            if (
-              inkRemovalRule(ink, rgb, environment.opacity * environment.scale) === "colour-match"
-            )
+            if (inkMatchesPaint(ink, rgb, environment.opacity * environment.scale))
               return "positioned-overlay";
         }
       }
@@ -770,7 +780,7 @@ function textRejection(
         const rule =
           paper.kind === "unknown"
             ? "uncertain-paint"
-            : inkRemovalRule(ink, paper.rgb, environment.opacity * environment.scale);
+            : inkRemovalRule(ink, paper.rgb, environment.opacity, environment.scale);
         if (!rejection && rule) rejection = { rule, source: "inherited" };
       }
     if (rejection) break;
@@ -980,6 +990,33 @@ export function visibleHtmlText(html: string, options: VisibleHtmlTextOptions = 
     return { text: "", hidden: true, flags: ["budget-exceeded"] };
   }
   return { text: normalizeHtmlText(ctx.out.join("")), hidden: ctx.hidden };
+}
+
+/** Retain markup only for nodes accepted by the same bounded visibility policy as model text. */
+export function visibleHtmlMarkup(html: string, onHiddenText?: () => void): string {
+  const ctx = createContext(html, {});
+  const removed = new Set<HtmlNode>();
+  ctx.removedNodes = removed;
+  indexDocument(ctx);
+  if (collectRules(ctx) || !buildPainters(ctx)) return "";
+  try {
+    walkDocument(ctx, ctx.dom);
+  } catch {
+    return "";
+  }
+  if (ctx.hidden) onHiddenText?.();
+  const prune = (nodes: HtmlNode[]): HtmlNode[] =>
+    nodes.filter((node) => {
+      if (removed.has(node)) return false;
+      if ("children" in node) node.children = prune(node.children);
+      return true;
+    });
+  const body = ctx.elements.find((node) => "name" in node && node.name === "body");
+  for (let parent = body; parent; parent = parent.parent ?? undefined)
+    if (removed.has(parent)) return "";
+  return body && "children" in body
+    ? DomUtils.getOuterHTML(prune(body.children), { encodeEntities: "utf8" })
+    : "";
 }
 export function messageModelText(
   plain: string,

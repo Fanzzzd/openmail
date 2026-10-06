@@ -2241,7 +2241,10 @@ it.effect("Graph draft source properties survive create, update, import and remo
         );
         assert.strictEqual(external.markdown, undefined);
         assert.strictEqual(external.text, "Edited in another client");
-        assert.strictEqual(external.originalHtml, externalBody);
+        assert.strictEqual(
+          external.originalHtml,
+          '<p style="color:rgb(255,0,0)">Edited in another client</p>',
+        );
         externalBody = undefined;
         const edited = "_edited_\n";
         yield* adapter.saveDraft(account, {

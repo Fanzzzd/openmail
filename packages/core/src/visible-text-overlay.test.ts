@@ -137,7 +137,7 @@ it("reader defaults participate in the mail cascade with stable specificity", ()
   ).toBe("");
   expect(
     visibleHtmlText(
-      '<style>a{color:red}</style><div style="background:#2563eb"><a href="https://x.test">VISIBLE</a></div>',
+      '<style>a{color:white}</style><div style="background:#2563eb"><a href="https://x.test">VISIBLE</a></div>',
     ).text,
   ).toBe("VISIBLE");
   expect(

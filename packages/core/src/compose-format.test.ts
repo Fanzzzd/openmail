@@ -55,11 +55,14 @@ describe("rich formatting boundary", () => {
       "red",
     ]) {
       assert.strictEqual(composeStyleValue("color", value), undefined, value);
-      assert.strictEqual(composeHtmlHasUnsupported(`<span style="color:${value}">x</span>`), true);
+      assert.strictEqual(
+        composeHtmlHasUnsupported(`<span style="color:${value}">x</span>`),
+        value !== "#123/*x*/" && value !== "red",
+      );
     }
     for (const style of [
       "position:fixed",
-      "font-family:evil",
+      "font-family:url(https://evil)",
       "font-size:999px",
       "margin-left:241px",
       "padding-left:-1px",

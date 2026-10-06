@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { hiddenDraftProbes } from "../../../../../packages/core/test-support/html-draft-fixtures";
 import {
   richComposeBody,
   remoteComposeBody,
@@ -55,6 +56,23 @@ const message: Message = {
   hasAttachments: false,
 };
 
+it.each(hiddenDraftProbes)("forward excludes hidden content and resources: %s", (probe) => {
+  const forward = draftFor(
+    "forward",
+    {
+      ...message,
+      bodyText: "Visible SECRET",
+      bodyHtml: `<p>Visible</p>${probe}<img src="cid:logo@example.com">`,
+    },
+    account,
+  );
+  const outgoing = toMessage(forward).message;
+  const transport = preservedComposeHtml(outgoing.originalHtml ?? outgoing.html ?? "");
+  expect(transport).not.toMatch(/SECRET|HIDDEN-AFTER|remote\.test|data:image|url\(/);
+  expect(outgoing.text).not.toMatch(/SECRET|HIDDEN-AFTER/);
+  expect(transport).toContain('src="cid:logo@example.com"');
+});
+
 it("forward preserves sanitized HTML while reply/forward selected quotes contain only selected text", () => {
   const source = {
     ...message,
@@ -67,7 +85,7 @@ it("forward preserves sanitized HTML while reply/forward selected quotes contain
   expect(forward.includeOriginalAttachments).toBe(true);
   const transportHtml = preservedComposeHtml(sent.originalHtml ?? sent.html ?? "");
   expect(transportHtml).toContain("<table>");
-  expect(transportHtml).toContain('style="color:red"');
+  expect(transportHtml).toContain('style="color:rgb(255,0,0)"');
   expect(transportHtml).not.toContain("script");
   expect(forward.body.kind === "rich" ? forward.body.html : "").not.toContain("https://evil.test");
   for (const mode of ["reply", "replyAll", "forward"] as const) {
@@ -230,7 +248,7 @@ describe("compose draft model", () => {
     expect(toMessage(edited).message.originalHtml).toBeUndefined();
   });
   it("closing an image-only remote draft does not classify it as empty and discard its source", () => {
-    const source = '<img src="https://example.com/logo.png">';
+    const source = '<img src="cid:logo@example.com">';
     const draft = { ...emptyDraft("gmail:a"), body: remoteComposeBody(source) };
     expect(draft.body.text).toBe("");
     expect(isEmpty(draft)).toBe(false);
@@ -243,7 +261,7 @@ describe("compose draft model", () => {
     const draft = { ...emptyDraft("gmail:a"), body };
     const reopened = fromStored(stored(draft));
     const changedRecipients = { ...reopened, to: "bob@example.com" };
-    expect(toMessage(changedRecipients).message.originalHtml).toBe(source);
+    expect(toMessage(changedRecipients).message.originalHtml).toBe(preservedComposeHtml(source));
     expect(
       toMessage({
         ...changedRecipients,

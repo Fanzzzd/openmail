@@ -118,6 +118,8 @@ export async function flow(
     messages?: IncomingMessage[];
     prefs?: Partial<Prefs>;
     agentDraft?: { message: OutgoingMessage; surface: "mcp" | "rule" | "assistant" };
+    /** Opens a server draft in the compose window through the real import path. */
+    serverDraft?: { providerId: string; raw: Uint8Array };
     native?: {
       pick: () => NativePickerResult;
       share: (request: { id: string; kind: "message" | "thread" | "web" }) => void;
@@ -166,6 +168,10 @@ export async function flow(
   await run(m.sync());
 
   let composeId: string | undefined;
+  if (options.serverDraft) {
+    server.raw.set(options.serverDraft.providerId, options.serverDraft.raw);
+    composeId = (await run(m.openDraft(`${account.id}/${options.serverDraft.providerId}`))).id;
+  }
   if (options.agentDraft) {
     await run(m.setAgentWriteMode("propose"));
     const outcome = await run(

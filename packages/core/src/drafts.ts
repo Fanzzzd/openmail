@@ -6,7 +6,7 @@ import { Buffer } from "./platform/bytes.js";
  */
 import { Effect } from "effect";
 import { parseMime, mimeAddresses as addresses } from "./platform/mail-codec.js";
-import { remoteComposeBody } from "./compose-body.js";
+import { remoteComposeBody, richComposeBody, composeCid } from "./compose-body.js";
 import {
   draftBodyFingerprint,
   draftTextFingerprint,
@@ -36,6 +36,7 @@ export interface ParsedDraft {
   text: string;
   html?: string;
   originalHtml?: string;
+  hiddenTextRemoved?: true;
   markdown?: boolean;
   /** Actual received HTML, computed before sanitization so external edits invalidate the source. */
   bodyFingerprint?: string;
@@ -63,19 +64,37 @@ export const parseRawDraft = (raw: Uint8Array) =>
         parsed.headers.get("x-openmail-markdown") === "1" &&
         parsed.headers.get("x-openmail-markdown-source-sha256") === draftTextFingerprint(text) &&
         matchesMarkdownDraft(metadata, bodyFingerprint);
+      const body = markdown ? undefined : html ? remoteComposeBody(html) : undefined;
+      const rawReferences = richComposeBody(html ?? "").html;
+      const safeReferences = body?.originalHtml ?? body?.html ?? "";
       return {
         to: addresses(parsed.to),
         cc: addresses(parsed.cc),
         bcc: addresses(parsed.bcc),
         subject: parsed.subject ?? "",
-        ...(markdown ? { text, markdown: true } : html ? remoteComposeBody(html) : { text }),
+        ...(markdown ? { text, markdown: true } : (body ?? { text })),
         ...(bodyFingerprint === undefined ? {} : { bodyFingerprint }),
-        attachments: parsed.attachments.map((a) => ({
-          filename: a.filename ?? "attachment",
-          mimeType: a.contentType,
-          content: Buffer.from(a.content).toString("base64"),
-          ...(a.contentId ? { contentId: stripMessageIdBrackets(a.contentId) } : {}),
-        })),
+        attachments: parsed.attachments.flatMap((a) => {
+          const file = {
+            filename: a.filename ?? "attachment",
+            mimeType: a.contentType,
+            content: Buffer.from(a.content).toString("base64"),
+          };
+          if (markdown)
+            return [
+              {
+                ...file,
+                ...(a.contentId ? { contentId: stripMessageIdBrackets(a.contentId) } : {}),
+              },
+            ];
+          const cid = a.contentId
+            ? composeCid(`cid:${stripMessageIdBrackets(a.contentId)}`)
+            : undefined;
+          if (!cid) return [file];
+          const reference = `src="${cid}"`;
+          if (safeReferences.includes(reference)) return [{ ...file, contentId: cid.slice(4) }];
+          return rawReferences.includes(reference) ? [] : [file];
+        }),
         isReply: Boolean(parsed.inReplyTo),
       };
     }),
@@ -87,7 +106,7 @@ export function withDraftMarkdownSource(
   source: MarkdownDraftSource | undefined,
 ): ParsedDraft {
   if (source === undefined || !matchesMarkdownDraft(source, parsed.bodyFingerprint)) return parsed;
-  const { html: _html, originalHtml: _originalHtml, ...rest } = parsed;
+  const { html: _html, originalHtml: _originalHtml, hiddenTextRemoved: _hidden, ...rest } = parsed;
   return { ...rest, text: source.text, markdown: true };
 }
 
@@ -159,6 +178,7 @@ export function importedMessage(parsed: ParsedDraft, thread: readonly Message[])
     text: parsed.text,
     ...(parsed.html === undefined ? {} : { html: parsed.html }),
     ...(parsed.originalHtml === undefined ? {} : { originalHtml: parsed.originalHtml }),
+    ...(parsed.hiddenTextRemoved ? { hiddenTextRemoved: true } : {}),
     ...(parsed.markdown ? { markdown: true } : {}),
     attachments: parsed.attachments,
     mode,

@@ -125,7 +125,8 @@ import { remoteComposeBody, richComposeBody } from "./compose-body.js";
       below,
     );
     assert.ok(replaced.kind === "rich");
-    assert.ok(replaced.originalHtml?.includes("https://remote.invalid"));
+    assert.ok(!replaced.originalHtml?.includes("https://remote.invalid"));
+    assert.ok(replaced.originalHtml?.includes("<blockquote>Quoted</blockquote>"));
     assert.ok(replaced.originalHtml?.endsWith("<div>--<br><em>You</em></div>"));
   });
 

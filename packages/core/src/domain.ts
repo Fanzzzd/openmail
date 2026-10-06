@@ -505,6 +505,8 @@ export const OutgoingMessage = Schema.Struct({
   draftOrganization: Schema.optionalKey(DraftOrganization),
   /** Remote draft source, never rendered. Retained only while the body is unchanged. */
   originalHtml: Schema.optionalKey(Schema.String),
+  /** Local compose notice; no removed text or transport marker is retained. */
+  hiddenTextRemoved: Schema.optionalKey(Schema.Literal(true)),
   attachments: Schema.Array(OutgoingAttachment),
   /** An iTIP reply, rendered as a calendar alternative by the MIME send pipeline. */
   calendar: Schema.optionalKey(

@@ -157,7 +157,7 @@ export function draftFor(
 
 /** A draft from core, as the compose window edits it. */
 export function fromStored(d: StoredDraft): Draft {
-  const m = d.message;
+  const m = normalizeComposeMessage(d.message);
   return {
     id: d.id,
     ...(m.agentOrigin ? { agentOrigin: m.agentOrigin } : {}),
@@ -203,6 +203,7 @@ export function toMessage(d: Draft): { message: OutgoingMessage; invalid: string
       ...(body.kind === "rich"
         ? {
             html: body.html,
+            ...(body.hiddenTextRemoved ? { hiddenTextRemoved: true } : {}),
             ...(d.body.kind === "rich" && d.body.font ? { composeFont: d.body.font } : {}),
             ...(d.body.kind === "rich" && d.body.originalHtml !== undefined
               ? { originalHtml: d.body.originalHtml }

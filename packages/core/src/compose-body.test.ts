@@ -174,6 +174,29 @@ import { performance } from "node:perf_hooks";
   });
 
   describe("remote source and mode conversion", () => {
+    it("maps URL-encoded CID references to MIME content ids without dropping them on edit", () => {
+      const body = remoteComposeBody(
+        '<p><b>word</b><img src="cid:logo%40example.com" alt="Logo"></p><blockquote>quoted</blockquote>',
+      );
+      assert.include(body.html, 'src="cid:logo@example.com"');
+      assert.strictEqual(composeHtmlHasUnsupported(body.originalHtml ?? ""), false);
+      const edited = editedComposeBody(body, body.html.replace("word", "edited"));
+      assert.include(edited.html, 'src="cid:logo@example.com"');
+      assert.include(edited.html, "<blockquote>quoted</blockquote>");
+    });
+    it("keeps inert complex CSS and stylesheet rules in original-format transport", () => {
+      const preserved = preservedComposeHtml(
+        '<html><head><style>.signature { font-family:Georgia; padding:16px } @import "https://tracker.test/style.css";</style></head><body><table style="border-collapse:collapse"><tr><td class="signature" style="padding:16px;font-family:Georgia">Cell</td></tr></table></body></html>',
+      );
+      assert.include(preserved, 'style="border-collapse:collapse"');
+      assert.include(preserved, 'style="padding:16px;font-family:Georgia"');
+      assert.include(preserved, 'class="signature"');
+      assert.include(preserved, ".signature{font-family:Georgia;padding:16px}");
+      assert.notMatch(preserved, /@import|tracker\.test/);
+      const deep = `${"<div>".repeat(10_000)}<script>bad()</script><b>text</b>${"</div>".repeat(10_000)}`;
+      assert.notMatch(preservedComposeHtml(deep), /<script/);
+      assert.include(preservedComposeHtml(deep), "text");
+    });
     it("preserves original metadata over non-body edits; a real body edit clears it", () => {
       const source =
         '<p style="color:red">Title</p><table><tr><td>Cell</td></tr></table><img src="https://example.com/image.png"><ul><li>item</li></ul>';
@@ -189,7 +212,7 @@ import { performance } from "node:perf_hooks";
         originalHtml: body.originalHtml,
       };
       const saved = normalizeComposeMessage({ ...message, subject: "after" });
-      assert.strictEqual(saved.originalHtml, source);
+      assert.strictEqual(saved.originalHtml, preservedComposeHtml(source));
       assert.deepStrictEqual(outgoingComposeBody(saved), body);
       assert.strictEqual(editedComposeBody(body, body.html), body);
       assert.strictEqual(
@@ -206,16 +229,17 @@ import { performance } from "node:perf_hooks";
         false,
       );
       const preserved = preservedComposeHtml(source);
-      assert.include(preserved, 'style="color:red"');
-      assert.include(preserved, "<table><tr><td>Cell</td></tr></table>");
-      assert.include(preserved, '<img src="https://example.com/image.png">');
-      assert.notMatch(body.html, /<table|<img|style=/);
+      assert.include(preserved, 'style="color:rgb(255,0,0)"');
+      assert.include(preserved, "<table><tbody><tr><td>Cell</td></tr></tbody></table>");
+      assert.notMatch(preserved, /<img|example\.com/);
+      assert.notMatch(body.html, /<table|<img/);
+      assert.include(body.html, 'style="color:rgb(255,0,0)"');
     });
     it("the wider remote transport allow-list still strips executable content, events and unsafe CSS/URLs", () => {
       const html = preservedComposeHtml(
         '<table onclick="bad()"><tr><td style="color:red;background:url(javascript:bad());width:expression(bad())">cell</td></tr></table><script>bad()</script><img src="data:text/html,bad" onerror="bad()"><a href="javascript:bad()">label</a>',
       );
-      assert.include(html, '<td style="color:red">cell</td>');
+      assert.include(html, '<td style="color:rgb(255,0,0)">cell</td>');
       assert.notMatch(html, /script|onclick|onerror|expression|javascript:|data:|url\(/);
     });
     it("converts marks, literal Markdown syntax, links and lists to Markdown without losing supported formatting", () => {
@@ -245,7 +269,7 @@ import { performance } from "node:perf_hooks";
         true,
       );
       assert.strictEqual(
-        composeConversion(remoteComposeBody('<img src="https://example.com/a">text'), "markdown")
+        composeConversion(remoteComposeBody("<table><tr><td>text</td></tr></table>"), "markdown")
           .losesFormatting,
         true,
       );
@@ -266,7 +290,7 @@ import { performance } from "node:perf_hooks";
       assert.match(rendered, /<li>outer\s*<ol>\s*<li>inner<\/li>/);
     });
     it("bounds untrusted nesting before recursive serialization and mode conversion", () => {
-      const input = `${"<span>".repeat(600)}deep${"</span>".repeat(600)}`;
+      const input = `${"<div>".repeat(600)}deep${"</div>".repeat(600)}`;
       assert.doesNotThrow(() => richComposeBody(input));
       assert.strictEqual(composeHtmlHasUnsupported(input), true);
       const body = remoteComposeBody(input);
@@ -281,7 +305,7 @@ import { performance } from "node:perf_hooks";
       );
       assert.strictEqual(
         composeHtmlHasUnsupported(
-          "<html><head><style>p { color:red }</style></head><body>text</body></html>",
+          "<html><head><style>p { padding:16px }</style></head><body>text</body></html>",
         ),
         true,
       );
@@ -313,7 +337,10 @@ import { performance } from "node:perf_hooks";
         originalHtml: input,
         attachments: [],
       };
-      assert.strictEqual(normalizeComposeMessage(message).originalHtml, input);
+      assert.strictEqual(
+        normalizeComposeMessage(message).originalHtml,
+        preservedComposeHtml(input),
+      );
       assert.deepStrictEqual(outgoingComposeBody(message), body);
       const nested = "<ul><li>a<ol><li>b</li></ol></li><li>c</li></ul>";
       assert.strictEqual(richComposeBody(nested).html, nested);

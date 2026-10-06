@@ -2555,6 +2555,12 @@ msgstr "Las cabeceras contienen"
 msgid "Help"
 msgstr "Ayuda"
 
+#. Invisible message text was removed before opening this draft in the editable rich composer. Do not include the removed text.
+#: src/renderer/src/components/ComposeEditor.tsx
+msgctxt "compose sanitization notice"
+msgid "Hidden text was removed."
+msgstr "Se ha eliminado el texto oculto."
+
 #: src/renderer/src/components/OrganizationSettings.tsx
 msgid "Hide"
 msgstr "Ocultar"
@@ -4028,6 +4034,12 @@ msgstr "Original"
 #: src/renderer/src/components/Composer.tsx
 msgid "Original attachments are kept in Outlook without uploading them again."
 msgstr "Los archivos adjuntos originales se guardan en Outlook sin volver a cargarlos."
+
+#. Status for a draft shown in a read-only preview that preserves its original layout.
+#: src/renderer/src/components/ComposeEditor.tsx
+msgctxt "compose formatting status"
+msgid "Original formatting kept"
+msgstr "Formato original conservado"
 
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/RawMessage.tsx

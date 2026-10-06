@@ -66,7 +66,7 @@ function textPoints(element: HTMLElement): Point[] {
           points.push({ node, offset: i + 1 });
         }
       } else if (node instanceof HTMLElement) {
-        const block = new Set(["DIV", "P", "UL", "OL", "LI", "BLOCKQUOTE", "PRE"]).has(
+        const block = new Set(["DIV", "P", "UL", "OL", "LI", "BLOCKQUOTE", "PRE", "HR"]).has(
           node.tagName,
         );
         if (block) newline({ node: parent, offset: index });

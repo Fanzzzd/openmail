@@ -31,6 +31,7 @@ export function resizeComposeImage(
     )
       continue;
     const width = INLINE_IMAGE_WIDTHS[size];
+    image.removeAttribute("height");
     if (width === null) image.removeAttribute("width");
     else image.setAttribute("width", String(width));
   }

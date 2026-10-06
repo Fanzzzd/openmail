@@ -14,6 +14,23 @@ export const composite = (ink: Rgba, paper: Rgba): Rgba => [
   1,
 ];
 
+function linear(channel: number): number {
+  const value = channel / 255;
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+/** sRGB relative luminance: https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html */
+function luminance(rgb: Rgba): number {
+  return 0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2]);
+}
+
+export function textContrast(ink: Rgba, paper: Rgba, opacity = 1): number {
+  const alpha = Math.min(1, Math.max(0, ink[3] * opacity));
+  const foreground = luminance(composite([ink[0], ink[1], ink[2], alpha], paper));
+  const background = luminance(paper);
+  return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+}
+
 /** WHATWG legacy colour parsing, used only for HTML presentational attributes. */
 export function legacyColour(input: string | undefined): string | null {
   if (!input) return null;

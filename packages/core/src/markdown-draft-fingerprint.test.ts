@@ -1,3 +1,4 @@
+import { preservedComposeHtml } from "./compose-body.js";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 import { simpleParser } from "mailparser";
@@ -91,7 +92,7 @@ describe("Markdown source freshness", () => {
         ]) {
           const current = yield* parseRawDraft(markedRaw(source, html));
           assert.strictEqual(current.markdown, undefined);
-          assert.strictEqual(current.originalHtml, html);
+          assert.strictEqual(current.originalHtml, preservedComposeHtml(html));
           assert.strictEqual(importedMessage(current, []).markdown, undefined);
         }
         const changedText = yield* parseRawDraft(
@@ -116,7 +117,7 @@ describe("Markdown source freshness", () => {
           const current = yield* parseRawDraft(markedRaw(source, html));
           assert.strictEqual(withDraftMarkdownSource(current, info), current);
           assert.strictEqual(current.markdown, undefined);
-          assert.strictEqual(current.originalHtml, html);
+          assert.strictEqual(current.originalHtml, preservedComposeHtml(html));
         }
         const legacy = Buffer.from(
           "X-Openmail-Markdown: 1\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<b>Current remote body</b>",

@@ -7,11 +7,25 @@ import {
 } from "./domain.js";
 
 import { composeStyle, composeStyleValue } from "./compose-format.js";
+import {
+  composeCid,
+  composeSourceHtml,
+  sanitizeComposeCss,
+  normalizeComposeClientNodes,
+} from "./compose-source.js";
+export { composeCid } from "./compose-source.js";
 
 export type ComposeBody =
   | { kind: "plain"; text: string }
   | { kind: "markdown"; text: string }
-  | { kind: "rich"; text: string; html: string; originalHtml?: string; font?: ComposeFont };
+  | {
+      kind: "rich";
+      text: string;
+      html: string;
+      originalHtml?: string;
+      font?: ComposeFont;
+      hiddenTextRemoved?: true;
+    };
 type RichBody = Extract<ComposeBody, { kind: "rich" }>;
 type HtmlNode = ReturnType<typeof parseDocument>["children"][number];
 type SafeNode =
@@ -73,6 +87,7 @@ const BLOCKS = new Set([
   "h5",
   "h6",
   "tr",
+  "hr",
 ]);
 const LISTS = new Set(["ul", "ol", "li"]);
 const NEUTRAL_TAGS = new Set(["html", "body", "br", "a", "span"]);
@@ -88,10 +103,10 @@ const INLINE = new Map([
   ["sup", "sup"],
   ["code", "code"],
 ]);
-const RICH_TAGS = new Set(["span", "div", "pre", "blockquote", "ul", "ol", "li", "br"]);
+const RICH_TAGS = new Set(["span", "div", "pre", "blockquote", "ul", "ol", "li", "br", "hr"]);
 function richAttrs(name: string, attrs: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
-  const style = composeStyle(attrs.style ?? "")
+  const style = composeStyle(attrs.style ?? "", name === "hr" ? "hr" : undefined)
     .split(";")
     .filter((declaration) => name !== "span" || !declaration.startsWith("text-decoration:"))
     .join(";");
@@ -104,41 +119,6 @@ function richAttrs(name: string, attrs: Record<string, string>): Record<string, 
     result.type = attrs.type ?? "";
   return result;
 }
-const REMOTE_TAGS = new Set([
-  "p",
-  "div",
-  "span",
-  "font",
-  "table",
-  "thead",
-  "tbody",
-  "tfoot",
-  "tr",
-  "td",
-  "th",
-  "img",
-  "pre",
-  "blockquote",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "hr",
-]);
-const REMOTE_STYLES = new Map([
-  ["color", /^(#[a-f\d]{3,8}|[a-z]+|rgba?\([\d.,% ]+\))$/i],
-  ["background-color", /^(#[a-f\d]{3,8}|[a-z]+|rgba?\([\d.,% ]+\))$/i],
-  ["font-weight", /^(normal|bold|[1-9]00)$/],
-  ["font-style", /^(normal|italic)$/],
-  ["text-decoration", /^(none|underline|line-through)$/],
-  ["text-align", /^(left|right|center|justify)$/],
-  ["font-size", /^\d+(\.\d+)?(px|pt|em|rem|%)$/],
-  ["white-space", /^(normal|pre|pre-wrap|pre-line)$/],
-  ["width", /^\d+(\.\d+)?(px|pt|em|rem|%)$/],
-  ["height", /^\d+(\.\d+)?(px|pt|em|rem|%)$/],
-]);
 function spanMarks(style: string): string[] {
   const marks: string[] = [];
   for (const declaration of style.toLowerCase().split(";")) {
@@ -155,18 +135,14 @@ function spanMarks(style: string): string[] {
 }
 function remoteAttrs(name: string, attrs: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
-  const style = (attrs.style ?? "").split(";").flatMap((declaration) => {
-    const [property, value] = declaration.split(":").map((s) => s.trim().toLowerCase());
-    return property && value && REMOTE_STYLES.get(property)?.test(value)
-      ? [`${property}:${value}`]
-      : [];
-  });
-  if (style.length) result.style = style.join(";");
   if (name === "img") {
     const source = attrs.src ?? "";
     const safe = composeLink(source);
     if (safe && /^https?:/i.test(safe)) result.src = safe;
-    else if (/^cid:[\w.@+-]+$/i.test(source)) result.src = source;
+    else {
+      const cid = composeCid(source);
+      if (cid) result.src = cid;
+    }
     if (attrs.alt) result.alt = attrs.alt;
   }
   for (const key of [
@@ -249,7 +225,7 @@ function parseComposeNodes(input: string): HtmlNode[] {
 }
 
 /** Builds allow-listed nodes only. Whitespace follows normal HTML, including across inline tags. */
-function composeNodes(input: string, preserveRemote = false): SafeNode[] {
+function composeNodes(input: string): SafeNode[] {
   const space = { pending: false, lineStart: true };
   const reset = () => {
     space.pending = false;
@@ -289,6 +265,7 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
       if (node.type !== ElementType.Tag) continue;
       if (DROP_CONTENT.has(node.name)) continue;
       const { name, attribs } = node;
+      const cid = name === "img" ? composeCid(attribs.src ?? "") : undefined;
       if (name === "html" || name === "body") {
         for (const child of visit(node.children, pre, depth + 1)) result.push(child);
         continue;
@@ -296,21 +273,13 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
       const block = BLOCKS.has(name) || LISTS.has(name) || name === "table";
       if (block || name === "br") reset();
       let children = visit(node.children, pre || name === "pre" || name === "code", depth + 1);
-      if (name === "span" && !preserveRemote) {
+      if (name === "span") {
         for (const mark of spanMarks(attribs.style ?? "").toReversed())
           children = [{ kind: "tag", name: mark, attrs: {}, children }];
       }
       if (block || name === "br") reset();
       const inline = INLINE.get(name);
-      const tag =
-        inline ??
-        (RICH_TAGS.has(name)
-          ? name
-          : preserveRemote && REMOTE_TAGS.has(name)
-            ? name
-            : block
-              ? "div"
-              : undefined);
+      const tag = inline ?? (RICH_TAGS.has(name) ? name : block ? "div" : undefined);
       if (name === "a") {
         const href = composeLink(attribs.href ?? "");
         if (href)
@@ -327,33 +296,65 @@ function composeNodes(input: string, preserveRemote = false): SafeNode[] {
             children,
           } satisfies SafeNode);
         else for (const child of children) result.push(child);
-      } else if (!preserveRemote && name === "img" && /^cid:[\w.@+-]+$/i.test(attribs.src ?? "")) {
+      } else if (cid !== undefined) {
         result.push({
           kind: "tag",
           name: "img",
           attrs: {
-            src: attribs.src ?? "",
+            src: cid,
             ...(attribs.alt ? { alt: attribs.alt } : {}),
             ...(/^[1-9]\d{0,3}$/.test(attribs.width ?? "") ? { width: attribs.width ?? "" } : {}),
+            ...(/^[1-9]\d{0,3}$/.test(attribs.height ?? "")
+              ? { height: attribs.height ?? "" }
+              : {}),
           },
           children: [],
         });
       } else if (tag) {
-        if (name === "span" && !preserveRemote && !Object.keys(richAttrs(name, attribs)).length) {
+        if (name === "span" && !Object.keys(richAttrs(name, attribs)).length) {
           for (const child of children) result.push(child);
           continue;
         }
         result.push({
           kind: "tag",
           name: tag,
-          attrs: preserveRemote ? transportAttrs(name, attribs) : richAttrs(name, attribs),
+          attrs: richAttrs(name, attribs),
           children,
         });
       } else for (const child of children) result.push(child);
     }
     return result;
   };
-  return capComposeNodes(closeSiblingListItems(visit(parseComposeNodes(input))));
+  return hoistComposeSpace(capComposeNodes(closeSiblingListItems(visit(parseComposeNodes(input)))));
+}
+
+function hoistComposeSpace(nodes: SafeNode[]): SafeNode[] {
+  const result: SafeNode[] = [];
+  for (const node of nodes) {
+    if (node.kind === "tag") {
+      node.children = hoistComposeSpace(node.children);
+      const previous = result.at(-1);
+      let first = node.children[0];
+      let last = previous;
+      if (node.name === "a") {
+        while (first?.kind === "tag") first = first.children[0];
+        while (last?.kind === "tag") last = last.children.at(-1);
+      }
+      if (
+        ["strong", "em", "u", "s", "sub", "sup", "a"].includes(node.name) &&
+        last?.kind === "text" &&
+        /\S$/.test(last.value) &&
+        first?.kind === "text" &&
+        first.value.startsWith(" ")
+      ) {
+        if (previous?.kind === "text") previous.value += " ";
+        else result.push({ kind: "text", value: " " });
+        first.value = first.value.slice(1);
+      }
+    }
+    result.push(node);
+  }
+  return result;
 }
 
 /** Semantic marks can expand a single input span into several tags; cap the emitted tree too. */
@@ -364,23 +365,13 @@ function capComposeNodes(nodes: SafeNode[], depth = 0): SafeNode[] {
   );
 }
 function transportAttrs(name: string, attribs: Record<string, string>): Record<string, string> {
-  const remote = remoteAttrs(name, attribs);
-  const rich = richAttrs(name, attribs);
-  const styles = new Map<string, string>();
-  for (const declaration of [remote.style ?? "", rich.style ?? ""].join(";").split(";")) {
-    const colon = declaration.indexOf(":");
-    if (colon >= 0) styles.set(declaration.slice(0, colon), declaration.slice(colon + 1));
-  }
-  const ordered = new Map<string, string>();
-  for (const declaration of (attribs.style ?? "").split(";")) {
-    const property = declaration.slice(0, declaration.indexOf(":")).trim().toLowerCase();
-    const value = styles.get(property);
-    if (value !== undefined) ordered.set(property, value);
-  }
   return {
-    ...remote,
-    ...rich,
-    ...(ordered.size ? { style: [...ordered].map(([p, v]) => `${p}:${v}`).join(";") } : {}),
+    ...remoteAttrs(name, attribs),
+    ...richAttrs(name, attribs),
+    ...Object.fromEntries(
+      Object.entries(attribs).filter(([key]) => ["class", "id", "title"].includes(key)),
+    ),
+    ...(attribs.style ? { style: sanitizeComposeCss(attribs.style, true) } : {}),
   };
 }
 /** Removing table/unknown wrappers can expose a second li inside the first one. */
@@ -486,7 +477,11 @@ export function richComposeBody(input: string): RichBody {
   return { kind: "rich", html: serializeNodes(nodes), text: plainNodes(nodes) };
 }
 /** Source is never inserted in the editor. Draft metadata retains it until a real body edit. */
-export function remoteComposeBody(input: string): RichBody {
+export function remoteComposeBody(source: string): RichBody {
+  const removal: { hiddenTextRemoved?: true } = {};
+  const input = composeSourceHtml(source, () => {
+    removal.hiddenTextRemoved = true;
+  });
   const wrapper = composeFontWrapper(
     parseDocument(input, { withStartIndices: true, withEndIndices: true }).children,
   );
@@ -495,10 +490,10 @@ export function remoteComposeBody(input: string): RichBody {
     const closingStart = input.lastIndexOf("</", wrapper.node.endIndex);
     if (openingEnd > 0 && closingStart >= openingEnd) {
       const html = `${input.slice(0, wrapper.node.startIndex)}${input.slice(openingEnd, closingStart)}${input.slice(wrapper.node.endIndex + 1)}`;
-      return { ...richComposeBody(html), originalHtml: html, font: wrapper.font };
+      return { ...richComposeBody(html), originalHtml: html, font: wrapper.font, ...removal };
     }
   }
-  return { ...richComposeBody(input), originalHtml: input };
+  return { ...richComposeBody(input), originalHtml: input, ...removal };
 }
 export function editedComposeBody(previous: RichBody, html: string): RichBody {
   const next = richComposeBody(html);
@@ -509,9 +504,9 @@ export function editedComposeBody(previous: RichBody, html: string): RichBody {
 export function composeEditorText(body: ComposeBody): string {
   return body.kind === "rich" ? plainNodes(composeNodes(body.html), false) : body.text;
 }
-/** A separate transport allow-list preserves remote tables, safe colours and images; never used as editor DOM. */
+/** Transport-only HTML via the reader sanitizer; never editor DOM. */
 export function preservedComposeHtml(input: string): string {
-  return serializeNodes(composeNodes(input, true));
+  return composeSourceHtml(input);
 }
 /** Recognize only the single outer wrapper our transport emits, including MIME document framing. */
 function composeFontWrapper(
@@ -553,18 +548,19 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode):
       if (name === "head")
         return node.children.some(
           (child) =>
-            child.type === ElementType.Style ||
+            (child.type === ElementType.Style &&
+              child.children.some((text) => text.type === ElementType.Text && text.data.trim())) ||
             (child.type === ElementType.Tag && child.name === "link"),
         );
       if (name === "meta") return false;
       if (
         name === "img" &&
-        /^cid:[\w.@+-]+$/i.test(attribs.src ?? "") &&
+        composeCid(attribs.src ?? "") !== undefined &&
         Object.keys(attribs).every(
           (key) =>
             key === "src" ||
             key === "alt" ||
-            (key === "width" && /^[1-9]\d{0,3}$/.test(attribs[key] ?? "")),
+            ((key === "width" || key === "height") && /^[1-9]\d{0,3}$/.test(attribs[key] ?? "")),
         )
       )
         return false;
@@ -595,7 +591,7 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode):
               const raw = declaration.slice(colon + 1);
               return (
                 colon >= 0 &&
-                (composeStyleValue(property, raw) !== undefined ||
+                (composeStyleValue(property, raw, name === "hr" ? "hr" : undefined) !== undefined ||
                   (name === "span" &&
                     /^(font-weight|font-style)$/.test(property) &&
                     spanMarks(declaration).length > 0 &&
@@ -613,6 +609,7 @@ function unsupportedNodes(nodes: HtmlNode[], depth = 0, fontWrapper?: HtmlNode):
 }
 export function composeHtmlHasUnsupported(input: string): boolean {
   const nodes = parseComposeNodes(input);
+  normalizeComposeClientNodes(nodes);
   return unsupportedNodes(nodes, 0, composeFontWrapper(nodes)?.node);
 }
 export function textComposeHtml(text: string): string {
@@ -653,6 +650,10 @@ function markdownNodes(nodes: SafeNode[], depth = 0): string {
     const contents =
       node.name === "ul" || node.name === "ol" ? "" : markdownNodes(node.children, depth);
     switch (node.name) {
+      case "hr":
+        boundary();
+        result += "---\n";
+        break;
       case "blockquote":
         boundary();
         result += contents
@@ -742,47 +743,68 @@ export function composeConversion(
     body: { kind: "plain", text: body.text },
     losesFormatting:
       unsupported ||
-      /<(strong|em|u|s|sub|sup|code|pre|blockquote)\b/.test(body.html) ||
+      /<(strong|em|u|s|sub|sup|code|pre|blockquote|hr)\b/.test(body.html) ||
       /<[^>]*\s(?:style=|dir="(?:ltr|rtl)"|type="(?:dash|[aAiI])")/.test(body.html),
   };
 }
 export function outgoingComposeBody(
-  message: Pick<OutgoingMessage, "text" | "html" | "markdown" | "originalHtml" | "composeFont">,
+  message: Pick<
+    OutgoingMessage,
+    "text" | "html" | "markdown" | "originalHtml" | "composeFont" | "hiddenTextRemoved"
+  >,
 ): ComposeBody {
   if (message.markdown) return { kind: "markdown", text: message.text };
   if (message.html === undefined) return { kind: "plain", text: message.text };
-  const body = {
+  if (message.originalHtml !== undefined) {
+    const original = remoteComposeBody(message.originalHtml);
+    if (
+      original.html === message.html ||
+      richComposeBody(message.originalHtml).html === message.html
+    )
+      return {
+        ...original,
+        ...(message.composeFont ? { font: message.composeFont } : {}),
+        ...(message.hiddenTextRemoved ? { hiddenTextRemoved: true } : {}),
+      };
+  }
+  return {
     ...richComposeBody(message.html),
     ...(message.composeFont ? { font: message.composeFont } : {}),
+    ...(message.hiddenTextRemoved ? { hiddenTextRemoved: true } : {}),
   };
-  return message.originalHtml !== undefined &&
-    richComposeBody(message.originalHtml).html === message.html
-    ? { ...body, originalHtml: message.originalHtml }
-    : body;
 }
 export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessage {
   const body = outgoingComposeBody(message);
-  const { html: _html, originalHtml: _originalHtml, composeFont: _font, ...rest } = message;
+  const {
+    html: _html,
+    originalHtml: _originalHtml,
+    composeFont: _font,
+    hiddenTextRemoved: _hidden,
+    ...rest
+  } = message;
+  const attachmentHtml = body.kind === "rich" ? (body.originalHtml ?? body.html) : "";
+  const rawAttachmentHtml =
+    message.originalHtml === undefined ? "" : richComposeBody(message.originalHtml).html;
   const sourced: OutgoingMessage["attachments"] = message.attachments.map((attachment) => {
+    if (attachment.contentId === undefined) return attachment;
+    const reference = `src="cid:${escapeComposeText(attachment.contentId)}"`;
+    if (attachmentHtml.includes(reference)) return attachment;
     if (
-      attachment.sourceMessageId === undefined ||
-      attachment.contentId === undefined ||
+      attachment.sourceMessageId !== undefined ||
       (body.kind === "rich" &&
-        body.html.includes(`src="cid:${escapeComposeText(attachment.contentId)}"`))
-    )
-      return attachment;
-    const { contentId: _cid, ...regular } = attachment;
-    return regular;
+        body.originalHtml !== undefined &&
+        !rawAttachmentHtml.includes(reference))
+    ) {
+      const { contentId: _cid, ...regular } = attachment;
+      return regular;
+    }
+    return attachment;
   });
-  const attachments =
-    body.kind === "rich" && body.originalHtml !== undefined
-      ? sourced
-      : sourced.filter(
-          (attachment) =>
-            attachment.contentId === undefined ||
-            (body.kind === "rich" &&
-              body.html.includes(`src="cid:${escapeComposeText(attachment.contentId)}"`)),
-        );
+  const attachments = sourced.filter(
+    (attachment) =>
+      attachment.contentId === undefined ||
+      attachmentHtml.includes(`src="cid:${escapeComposeText(attachment.contentId)}"`),
+  );
   return body.kind === "rich"
     ? {
         ...rest,
@@ -791,6 +813,7 @@ export function normalizeComposeMessage(message: OutgoingMessage): OutgoingMessa
         html: body.html,
         ...(body.font ? { composeFont: body.font } : {}),
         ...(body.originalHtml === undefined ? {} : { originalHtml: body.originalHtml }),
+        ...(body.hiddenTextRemoved ? { hiddenTextRemoved: true } : {}),
       }
     : { ...rest, attachments };
 }
