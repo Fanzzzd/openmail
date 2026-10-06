@@ -1,8 +1,9 @@
-import { makeCompactionStore } from "./store-compaction.js";
 import { Clock, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import { BackfillState, type CacheWindowInput, DEFAULT_CACHE_WINDOWS, keepBody } from "./cache.js";
+import type { CacheMaintenanceService } from "./platform/cache-storage.js";
 import { all, first, run } from "./sql-rows.js";
+import { makeCompactionStore } from "./store-compaction.js";
 
 const WindowRow = Schema.Struct({
   account_id: Schema.String,
@@ -30,10 +31,7 @@ const toState = (r: typeof StateRow.Type): BackfillState => ({
   nextRunAt: r.next_run_at,
 });
 
-export function makeCacheStore(
-  sql: SqlClient.SqlClient,
-  maintenance: import("./platform/cache-storage.js").CacheMaintenanceService,
-) {
+export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaintenanceService) {
   const cacheWindows = all(WindowRow)(sql`SELECT * FROM cache_windows`).pipe(
     Effect.map((rows) =>
       rows.map((r) => ({ accountId: r.account_id, label: r.label, days: r.days })),

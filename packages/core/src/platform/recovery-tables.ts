@@ -29,3 +29,48 @@ export const RECOVERY_TABLES = [
   "invite_responses",
   "audit_log",
 ] as const;
+
+export const quoteIdentifier = (name: string): string => `"${name.replaceAll('"', '""')}"`;
+
+type PragmaRow = Readonly<Record<string, unknown>>;
+
+/** Source columns that still exist in the replacement schema, in source order. */
+export function sharedRecoveryColumns(
+  sourceColumns: readonly PragmaRow[],
+  targetColumns: readonly PragmaRow[],
+): string[] {
+  const target = new Set(targetColumns.map((column) => column.name));
+  return sourceColumns.flatMap((column) =>
+    typeof column.name === "string" && target.has(column.name) ? [column.name] : [],
+  );
+}
+
+/** Readable rows can survive an unreadable optional parent: the nullable reference is cleared. */
+export function optionalParentChecks(
+  targetColumns: readonly PragmaRow[],
+  foreignKeys: readonly PragmaRow[],
+): { column: string; query: string }[] {
+  const nullable = new Set(
+    targetColumns
+      .filter((column) => column.notnull === 0 && column.pk === 0)
+      .map((column) => column.name),
+  );
+  return foreignKeys.flatMap((fk) =>
+    typeof fk.from === "string" &&
+    typeof fk.table === "string" &&
+    typeof fk.to === "string" &&
+    nullable.has(fk.from)
+      ? [
+          {
+            column: fk.from,
+            query: `SELECT 1 FROM ${quoteIdentifier(fk.table)} WHERE ${quoteIdentifier(fk.to)}=?`,
+          },
+        ]
+      : [],
+  );
+}
+
+export function recoveryInsert(table: string, columns: readonly string[]): string {
+  const projection = columns.map(quoteIdentifier).join(",");
+  return `INSERT INTO ${quoteIdentifier(table)} (${projection}) VALUES (${columns.map(() => "?").join(",")})`;
+}

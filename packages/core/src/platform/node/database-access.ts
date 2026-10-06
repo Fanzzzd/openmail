@@ -1,6 +1,7 @@
 import { chmodSync, mkdirSync, existsSync, realpathSync } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { constVoid } from "effect/Function";
 
 export class DatabaseInUseError extends Error {
   constructor(kind: "shared" | "exclusive" = "exclusive") {
@@ -46,10 +47,8 @@ export function acquireDatabaseAccess(file: string, kind: "shared" | "exclusive"
   return {
     release: () => db.close(),
     tryExclusive: () => {
-      if (kind !== "shared")
-        return () => {
-          /* No startup window or external lease to dismiss. */
-        };
+      // An exclusive lease already excludes every peer.
+      if (kind !== "shared") return constVoid;
       db.exec("PRAGMA busy_timeout=0; PRAGMA locking_mode=EXCLUSIVE");
       try {
         // COMMIT acquires EXCLUSIVE, and exclusive mode retains it afterward.

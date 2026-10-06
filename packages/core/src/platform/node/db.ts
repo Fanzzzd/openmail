@@ -1,14 +1,62 @@
 import { existsSync, statSync } from "node:fs";
-import { checkDatabaseUpgradeSpace } from "./database-upgrade.js";
-import { DatabaseSync } from "node:sqlite";
-import { nodeCacheMaintenance } from "./cache-maintenance.js";
-import { registerDatabaseLease } from "./database-access.js";
 import { resolve } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { SqliteClient } from "@effect/sql-sqlite-node";
 import { Effect, FileSystem, Layer, Path } from "effect";
+import { constVoid } from "effect/Function";
 import { SqlClient } from "effect/sql";
-import { DatabaseCapabilities, migrate, migrateTo, MIGRATIONS } from "../../db.js";
+import {
+  DatabaseCapabilities,
+  migrate,
+  migrateTo,
+  MIGRATIONS,
+  ROWID_REBUILD_MIGRATION,
+} from "../../db.js";
+import { nodeCacheMaintenance } from "./cache-maintenance.js";
+import { registerDatabaseLease } from "./database-access.js";
+import { checkDatabaseUpgradeSpace } from "./database-upgrade.js";
 import { openDatabaseAccess } from "./recovery-files.js";
+
+/** A separate read-only handle sees the file before SqliteClient changes journal mode or schema. */
+function inspectReadOnly(filename: string, inspect: (db: DatabaseSync) => void) {
+  const inspection = new DatabaseSync(filename, { readOnly: true });
+  try {
+    inspect(inspection);
+  } finally {
+    inspection.close();
+  }
+}
+
+/** Retries a busy worker for up to two minutes; any other outcome than "done" is fatal. */
+const upgradeRowidsInWorker = (filename: string) =>
+  Effect.gen(function* () {
+    const deadline = Date.now() + 120_000;
+    let waiting = false;
+    let result;
+    do {
+      result = yield* nodeCacheMaintenance.run({
+        file: resolve(filename),
+        kind: "upgrade",
+        script: MIGRATIONS[ROWID_REBUILD_MIGRATION] ?? "",
+        version: ROWID_REBUILD_MIGRATION + 1,
+      });
+      if (result !== "busy") break;
+      if (!waiting) {
+        waiting = true;
+        yield* Effect.logInfo("Waiting for another process to finish database migrations");
+      }
+      yield* Effect.sleep("100 millis");
+    } while (Date.now() < deadline);
+    if (result !== "done")
+      yield* Effect.die(
+        new Error(
+          result === "busy"
+            ? "The local database is busy. Close other OpenMail processes and try the upgrade again."
+            : "Could not upgrade the local database. Check free disk space and try again.",
+        ),
+      );
+  });
+
 export interface DatabaseOptions {
   /** Paint a responsive startup state before the rowid rewrite worker starts. */
   readonly onDatabaseUpgrade?: () => Promise<() => void>;
@@ -35,49 +83,18 @@ export function databaseLayer(
     // before Store is exposed, while this connection stays reserved.
     const before = yield* SqlClient.SqlClient;
     const initial = yield* before`PRAGMA user_version`;
-    yield* Effect.orDie(initial[0]?.user_version === 0 ? migrate : migrateTo(36));
+    yield* Effect.orDie(
+      initial[0]?.user_version === 0 ? migrate : migrateTo(ROWID_REBUILD_MIGRATION),
+    );
     const version = yield* before`PRAGMA user_version`;
-    if (filename !== ":memory:" && version[0]?.user_version === 36) {
-      yield* Effect.sync(() => {
-        const inspection = new DatabaseSync(filename, { readOnly: true });
-        try {
-          checkDatabaseUpgradeSpace(inspection);
-        } finally {
-          inspection.close();
-        }
-      });
+    if (filename !== ":memory:" && version[0]?.user_version === ROWID_REBUILD_MIGRATION) {
+      yield* Effect.sync(() => inspectReadOnly(filename, checkDatabaseUpgradeSpace));
       const dismiss = options.onDatabaseUpgrade
         ? yield* Effect.promise(options.onDatabaseUpgrade)
-        : () => {
-            /* No startup window or external lease to dismiss. */
-          };
+        : constVoid;
       yield* Effect.gen(function* () {
         yield* before.reserve;
-        const deadline = Date.now() + 120_000;
-        let waiting = false;
-        let result;
-        do {
-          result = yield* nodeCacheMaintenance.run({
-            file: resolve(filename),
-            kind: "upgrade",
-            script: MIGRATIONS[36] ?? "",
-            version: 37,
-          });
-          if (result !== "busy") break;
-          if (!waiting) {
-            waiting = true;
-            yield* Effect.logInfo("Waiting for another process to finish database migrations");
-          }
-          yield* Effect.sleep("100 millis");
-        } while (Date.now() < deadline);
-        if (result !== "done")
-          yield* Effect.die(
-            new Error(
-              result === "busy"
-                ? "The local database is busy. Close other OpenMail processes and try the upgrade again."
-                : "Could not upgrade the local database. Check free disk space and try again.",
-            ),
-          );
+        yield* upgradeRowidsInWorker(filename);
       }).pipe(Effect.scoped, Effect.ensuring(Effect.sync(dismiss)));
     }
     yield* Effect.orDie(migrate);
@@ -127,15 +144,13 @@ export function databaseLayer(
         );
       // Inspect before SqliteClient can switch journal mode or apply any DDL.
       if (filename !== ":memory:" && existsSync(filename) && statSync(filename).size > 0) {
-        yield* Effect.sync(() => {
-          const inspection = new DatabaseSync(filename, { readOnly: true });
-          try {
+        yield* Effect.sync(() =>
+          inspectReadOnly(filename, (inspection) => {
             const version = Number(inspection.prepare("PRAGMA user_version").get()?.user_version);
-            if (version > 0 && version <= 36) checkDatabaseUpgradeSpace(inspection);
-          } finally {
-            inspection.close();
-          }
-        });
+            if (version > 0 && version <= ROWID_REBUILD_MIGRATION)
+              checkDatabaseUpgradeSpace(inspection);
+          }),
+        );
       }
       return Layer.effect(DatabaseCapabilities, initialize.pipe(Effect.orDie)).pipe(
         Layer.provideMerge(SqliteClient.layer({ filename, busyTimeout: 5000 })),

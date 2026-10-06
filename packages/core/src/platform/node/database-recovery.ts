@@ -17,15 +17,20 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
 import { MIGRATIONS } from "../../db.js";
+import {
+  optionalParentChecks,
+  quoteIdentifier,
+  RECOVERY_TABLES,
+  recoveryInsert,
+  sharedRecoveryColumns,
+} from "../recovery-tables.js";
 
-import { RECOVERY_TABLES } from "../recovery-tables.js";
 export { RECOVERY_TABLES } from "../recovery-tables.js";
 export type CacheResetResult =
   | { kind: "reset" }
   | { kind: "recovered"; backup: string; copied: number; skipped: number };
-const identifier = (value: string) => `"${value.replaceAll('"', '""')}"`;
 
 export function databaseQuickCheck(file: string): "ok" | "corrupt" | "unavailable" {
   if (!existsSync(file)) return "ok";
@@ -51,55 +56,25 @@ function copyTable(
 ) {
   let copied = 0;
   let skipped = 0;
-  const quoted = identifier(table);
+  const quoted = quoteIdentifier(table);
+  let targetColumns: Record<string, SQLOutputValue>[];
   let columns: string[];
   try {
-    const target = new Set(
-      destination
-        .prepare(`PRAGMA table_info(${quoted})`)
-        .all()
-        .map((r) => r.name),
+    targetColumns = destination.prepare(`PRAGMA table_info(${quoted})`).all();
+    columns = sharedRecoveryColumns(
+      source.prepare(`PRAGMA table_info(${quoted})`).all(),
+      targetColumns,
     );
-    columns = source
-      .prepare(`PRAGMA table_info(${quoted})`)
-      .all()
-      .flatMap((r) => (typeof r.name === "string" && target.has(r.name) ? [r.name] : []));
   } catch {
     return { copied, skipped: 1 };
   }
   if (!columns.length) return { copied, skipped };
-  const projection = columns.map(identifier).join(",");
-  const insert = destination.prepare(
-    `INSERT INTO ${quoted} (${projection}) VALUES (${columns.map(() => "?").join(",")})`,
-  );
-  // Readable accounts/drafts can survive an unreadable optional profile/proposal.
-  const nullable = new Set(
-    destination
-      .prepare(`PRAGMA table_info(${quoted})`)
-      .all()
-      .filter((c) => c.notnull === 0 && c.pk === 0)
-      .map((c) => c.name),
-  );
-  const optionalParents = destination
-    .prepare(`PRAGMA foreign_key_list(${quoted})`)
-    .all()
-    .flatMap((fk) => {
-      if (
-        typeof fk.from !== "string" ||
-        typeof fk.table !== "string" ||
-        typeof fk.to !== "string" ||
-        !nullable.has(fk.from)
-      )
-        return [];
-      return [
-        {
-          column: fk.from,
-          exists: destination.prepare(
-            `SELECT 1 FROM ${identifier(fk.table)} WHERE ${identifier(fk.to)}=?`,
-          ),
-        },
-      ];
-    });
+  const projection = columns.map(quoteIdentifier).join(",");
+  const insert = destination.prepare(recoveryInsert(table, columns));
+  const optionalParents = optionalParentChecks(
+    targetColumns,
+    destination.prepare(`PRAGMA foreign_key_list(${quoted})`).all(),
+  ).map(({ column, query }) => ({ column, exists: destination.prepare(query) }));
   const copy = (row: ReturnType<ReturnType<DatabaseSync["prepare"]>["get"]>) => {
     if (!row) return;
     for (const parent of optionalParents) {

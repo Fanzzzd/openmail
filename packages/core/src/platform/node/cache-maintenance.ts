@@ -1,5 +1,6 @@
 import { Worker } from "node:worker_threads";
 import { Effect, Schema } from "effect";
+import { constVoid } from "effect/Function";
 import { CacheCompactionResult } from "../../cache.js";
 import type { CacheMaintenanceRequest } from "../cache-storage.js";
 import { exclusiveMaintenanceLease } from "./database-access.js";
@@ -14,11 +15,10 @@ type WorkerReply = typeof WorkerReply.Type;
 export const nodeCacheMaintenance = {
   run: (request: CacheMaintenanceRequest) =>
     Effect.gen(function* () {
+      // The upgrade caller already holds the only connection; compaction needs a lease.
       const release =
         request.kind === "upgrade"
-          ? () => {
-              /* No startup window or external lease to dismiss. */
-            }
+          ? constVoid
           : yield* Effect.sync(() => exclusiveMaintenanceLease(request.file));
       if (!release) return "busy" as const;
       return yield* Effect.tryPromise(

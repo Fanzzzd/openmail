@@ -1,12 +1,25 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import type { CacheCompactionResult } from "./cache.js";
+import type { CacheMaintenanceService } from "./platform/cache-storage.js";
+
+// All implicit-rowid FTS content tables must have an explicit INTEGER
+// PRIMARY KEY. Merely having a TEXT primary key is not a guarantee.
+const ROWID_KEYS = [
+  ["messages", "rowid"],
+  ["contact_candidates", "rowid"],
+  ["contact_organizations", "rowid"],
+  ["derived_chunks", "id"],
+] as const;
+const FTS_TABLES = [
+  "messages_fts",
+  "derived_fts",
+  "contact_candidates_fts",
+  "contact_organizations_fts",
+] as const;
 
 /** Reserve the connection without a transaction: VACUUM cannot run in one. */
-export function makeCompactionStore(
-  sql: SqlClient.SqlClient,
-  worker?: import("./platform/cache-storage.js").CacheMaintenanceService,
-) {
+export function makeCompactionStore(sql: SqlClient.SqlClient, worker?: CacheMaintenanceService) {
   const maintenance = (full: boolean, readOnly: boolean): Effect.Effect<CacheCompactionResult> => {
     if (readOnly) return Effect.succeed("read-only");
     return Effect.gen(function* () {
@@ -22,26 +35,13 @@ export function makeCompactionStore(
         yield* execute("PRAGMA auto_vacuum"),
       );
       if (full) {
-        // All implicit-rowid FTS content tables must have an explicit INTEGER
-        // PRIMARY KEY. Merely having a TEXT primary key is not a guarantee.
-        for (const table of [
-          "messages",
-          "contact_candidates",
-          "contact_organizations",
-          "derived_chunks",
-        ]) {
+        for (const [table, key] of ROWID_KEYS) {
           const keys = yield* execute(
             `SELECT name FROM pragma_table_info('${table}') WHERE upper(type)='INTEGER' AND pk=1`,
           );
-          if (keys.length !== 1 || keys[0]?.[0] !== (table === "derived_chunks" ? "id" : "rowid"))
-            return "unsafe";
+          if (keys.length !== 1 || keys[0]?.[0] !== key) return "unsafe";
         }
-        for (const table of [
-          "messages_fts",
-          "derived_fts",
-          "contact_candidates_fts",
-          "contact_organizations_fts",
-        ]) {
+        for (const table of FTS_TABLES) {
           const check = yield* Effect.result(
             execute(`INSERT INTO ${table}(${table},rank) VALUES('integrity-check',1)`),
           );
@@ -49,19 +49,9 @@ export function makeCompactionStore(
         }
         for (const table of ["messages_words", "derived_words"])
           yield* execute(`INSERT INTO ${table}(${table}) VALUES('integrity-check')`);
-        if (mode[0]?.[0] === 0) {
-          yield* execute("PRAGMA auto_vacuum = INCREMENTAL");
-          yield* execute("VACUUM");
-        } else {
-          yield* execute("PRAGMA auto_vacuum = INCREMENTAL");
-          yield* execute("PRAGMA incremental_vacuum");
-        }
-        for (const table of [
-          "messages_fts",
-          "derived_fts",
-          "contact_candidates_fts",
-          "contact_organizations_fts",
-        ])
+        yield* execute("PRAGMA auto_vacuum = INCREMENTAL");
+        yield* execute(mode[0]?.[0] === 0 ? "VACUUM" : "PRAGMA incremental_vacuum");
+        for (const table of FTS_TABLES)
           yield* execute(`INSERT INTO ${table}(${table},rank) VALUES('integrity-check',1)`);
       } else if (mode[0]?.[0] === 2) {
         yield* execute("PRAGMA incremental_vacuum");

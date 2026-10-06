@@ -2,10 +2,11 @@ import { lstat, readdir, statfs } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { Effect } from "effect";
 import type { CacheFiles } from "../../cache.js";
+import { UNMEASURED_CACHE_FILES } from "../cache-storage.js";
 
 /** Counts preserved corrupt/recovery copies without following symlinks or counting hard links twice. */
 export async function measureCacheStorage(databaseFile: string): Promise<CacheFiles> {
-  if (!databaseFile) return { walBytes: 0, recoveryBytes: 0, disk: null };
+  if (!databaseFile) return UNMEASURED_CACHE_FILES;
   const directory = dirname(databaseFile);
   const name = basename(databaseFile);
   const disk = await statfs(directory).then(
@@ -34,6 +35,6 @@ export async function measureCacheStorage(databaseFile: string): Promise<CacheFi
 export const nodeCacheStorage = {
   measure: (file: string) =>
     Effect.tryPromise(() => measureCacheStorage(file)).pipe(
-      Effect.catch(() => Effect.succeed({ walBytes: 0, recoveryBytes: 0, disk: null })),
+      Effect.catch(() => Effect.succeed(UNMEASURED_CACHE_FILES)),
     ),
 };

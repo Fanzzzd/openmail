@@ -1249,6 +1249,9 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   END;`,
 ];
 
+/** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */
+export const ROWID_REBUILD_MIGRATION = 36;
+
 /**
  * Splits a migration into statements. node:sqlite has no exec through the
  * Effect client, and `prepare` silently drops everything after the first
@@ -1334,7 +1337,7 @@ export const migrateTo = (targetVersion: number) =>
         const migration = MIGRATIONS[version];
         if (migration === undefined) return false;
         for (const statement of splitStatements(migration)) yield* sql.unsafe(statement).unprepared;
-        if (version === 36) {
+        if (version === ROWID_REBUILD_MIGRATION) {
           const violations = yield* sql`PRAGMA foreign_key_check`;
           if (violations.length)
             return yield* Effect.die(new Error("Cache rowid migration violates foreign keys"));

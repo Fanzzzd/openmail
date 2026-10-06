@@ -2,7 +2,11 @@ import { useEffect } from "react";
 import { formatBytes } from "../format";
 import { useAtom, useAtomValue, useAtomRefresh } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DEFAULT_CACHE_WINDOWS, DEFAULT_PREFS } from "@openmail/core/schema";
+import {
+  type CacheCompactionResult,
+  DEFAULT_CACHE_WINDOWS,
+  DEFAULT_PREFS,
+} from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import type { Account } from "../../../shared/api";
 import { resultError } from "../errors";
@@ -20,6 +24,40 @@ const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
 });
 const clearAtom = MailClient.mutation("ClearCache");
 const compactAtom = MailClient.mutation("CompactCache");
+const MEGABYTE_LIMITS = [128, 512, 1024, 2048].map((mb) => mb * 1024 ** 2);
+const GIGABYTE_LIMITS = [1, 2, 5, 10, 20].map((gb) => gb * 1024 ** 3);
+
+function limitOptions(disabled: string, limits: readonly number[], locale: string) {
+  return [
+    { value: "0", label: disabled },
+    ...limits.map((bytes) => ({ value: String(bytes), label: formatBytes(bytes, locale) })),
+  ];
+}
+
+function CompactionStatus({ status }: { status: CacheCompactionResult | null }) {
+  switch (status) {
+    case "done":
+      return <Trans>Compaction finished.</Trans>;
+    case "busy":
+      return <Trans>Wait for syncing and queued changes to finish before compacting.</Trans>;
+    case "read-only":
+      return <Trans>Compaction is unavailable in a read-only session.</Trans>;
+    case "unsafe":
+      return (
+        <Trans>
+          Compaction was refused because search index alignment could not be guaranteed.
+        </Trans>
+      );
+    case "low-disk":
+      return <Trans>There is not enough free disk space to compact safely.</Trans>;
+    case "unavailable":
+      return <Trans>Compaction is unavailable on this platform.</Trans>;
+    case "failed":
+      return <Trans>Compaction failed. The database may be busy or need repair.</Trans>;
+    default:
+      return null;
+  }
+}
 
 /** Local subsection: does not change the Settings layout shared with slice 4. */
 export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
@@ -50,6 +88,11 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
   const [limitResult, setLimit] = useAtom(setPrefsAtom);
   const [pauseResult, pause] = useAtom(pauseBackfillAtom);
   const [saveResult, save] = useAtom(setCacheWindowAtom);
+  const storageError =
+    resultError(i18n, clearResult) ||
+    resultError(i18n, limitResult) ||
+    resultError(i18n, compactResult);
+  const backfillError = resultError(i18n, saveResult) || resultError(i18n, pauseResult);
   const options = [
     { value: "inherit", label: t`Use default` },
     { value: "all", label: t`All mail` },
@@ -90,13 +133,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             comment: "Storage budget for downloaded email message text.",
           })}
           value={String(prefs.bodyCacheBytes)}
-          options={[
-            { value: "0", label: t`Disabled` },
-            ...[128, 512, 1024, 2048].map((mb) => ({
-              value: String(mb * 1024 ** 2),
-              label: formatBytes(mb * 1024 ** 2, i18n.locale),
-            })),
-          ]}
+          options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
           disabled={limitResult.waiting}
           onValueChange={(value) =>
             setLimit({
@@ -119,13 +156,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         <Select
           aria-label={t`Keep openmail under`}
           value={String(prefs.totalCacheBytes)}
-          options={[
-            { value: "0", label: t`Disabled` },
-            ...[1, 2, 5, 10, 20].map((gb) => ({
-              value: String(gb * 1024 ** 3),
-              label: formatBytes(gb * 1024 ** 3, i18n.locale),
-            })),
-          ]}
+          options={limitOptions(t`Disabled`, GIGABYTE_LIMITS, i18n.locale)}
           disabled={limitResult.waiting}
           onValueChange={(value) =>
             setLimit({
@@ -161,13 +192,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         <Select
           aria-label={t`Attachment cache limit`}
           value={String(prefs.attachmentCacheBytes)}
-          options={[
-            { value: "0", label: t`Disabled` },
-            ...[128, 512, 1024, 2048].map((mb) => ({
-              value: String(mb * 1024 ** 2),
-              label: formatBytes(mb * 1024 ** 2, i18n.locale),
-            })),
-          ]}
+          options={limitOptions(t`Disabled`, MEGABYTE_LIMITS, i18n.locale)}
           disabled={limitResult.waiting}
           onValueChange={(value) =>
             setLimit({
@@ -233,27 +258,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         {compactResult.waiting ? <Trans>Compacting…</Trans> : <Trans>Compact now</Trans>}
       </button>
       <output className="block text-a11y-muted">
-        {compactStatus === "done" && <Trans>Compaction finished.</Trans>}
-        {compactStatus === "busy" && (
-          <Trans>Wait for syncing and queued changes to finish before compacting.</Trans>
-        )}
-        {compactStatus === "read-only" && (
-          <Trans>Compaction is unavailable in a read-only session.</Trans>
-        )}
-        {compactStatus === "unsafe" && (
-          <Trans>
-            Compaction was refused because search index alignment could not be guaranteed.
-          </Trans>
-        )}
-        {compactStatus === "low-disk" && (
-          <Trans>There is not enough free disk space to compact safely.</Trans>
-        )}
-        {compactStatus === "unavailable" && (
-          <Trans>Compaction is unavailable on this platform.</Trans>
-        )}
-        {compactStatus === "failed" && (
-          <Trans>Compaction failed. The database may be busy or need repair.</Trans>
-        )}
+        <CompactionStatus status={compactStatus} />
       </output>
       <p className="text-a11y-muted">
         <Trans>
@@ -370,18 +375,14 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           </div>
         );
       })}
-      {(resultError(i18n, clearResult) ||
-        resultError(i18n, limitResult) ||
-        resultError(i18n, compactResult)) && (
+      {storageError && (
         <output role="alert" className="text-a11y-danger">
-          {resultError(i18n, clearResult) ||
-            resultError(i18n, limitResult) ||
-            resultError(i18n, compactResult)}
+          {storageError}
         </output>
       )}
-      {(resultError(i18n, saveResult) || resultError(i18n, pauseResult)) && (
+      {backfillError && (
         <output role="alert" className="text-a11y-danger">
-          {resultError(i18n, saveResult) || resultError(i18n, pauseResult)}
+          {backfillError}
         </output>
       )}
     </section>

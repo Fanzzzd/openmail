@@ -2,6 +2,7 @@ import { Mailbox, MobileDatabaseRecovery, type MobileDatabaseState } from "@open
 import { Effect, ManagedRuntime, Stream } from "effect";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
+import type { I18n } from "@lingui/core";
 import { useLingui } from "@lingui/react";
 import { mobileMailboxLayer } from "./platform";
 import { styles } from "./styles";
@@ -11,6 +12,38 @@ import { Button } from "./controls";
 type MobileRuntime = ReturnType<typeof createRuntime>;
 const createRuntime = (inspection: MobileDatabaseState) =>
   ManagedRuntime.make(mobileMailboxLayer(inspection));
+const runRecovery = <A, E>(
+  use: (recovery: MobileDatabaseRecovery["Service"]) => Effect.Effect<A, E>,
+) => databaseRecoveryRuntime().runPromise(Effect.flatMap(MobileDatabaseRecovery, use));
+
+function recoveryDetail(state: MobileDatabaseState, i18n: I18n): string {
+  switch (state.kind) {
+    case "recovered":
+      if (Platform.OS === "ios")
+        return i18n._({
+          id: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
+          message: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
+          values: { copied: state.report.copied, skipped: state.report.skipped },
+        });
+      return i18n._({
+        id: "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
+        message:
+          "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
+        values: state.report,
+      });
+    case "interrupted":
+      return i18n._({
+        id: "Database recovery was interrupted. Try recovery again.",
+        message: "Database recovery was interrupted. Try recovery again.",
+      });
+    default:
+      return i18n._({
+        id: "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
+        message:
+          "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
+      });
+  }
+}
 const RuntimeContext = createContext<MobileRuntime | null>(null);
 const RevisionContext = createContext(0);
 export function MailboxProvider({ children }: { children: ReactNode }) {
@@ -31,13 +64,8 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
       await Promise.resolve();
       if (!isActive()) return;
       try {
-        if (attempt > 0)
-          await databaseRecoveryRuntime().runPromise(
-            Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.acknowledge),
-          );
-        const state = await databaseRecoveryRuntime().runPromise(
-          Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.inspect()),
-        );
+        if (attempt > 0) await runRecovery((recovery) => recovery.acknowledge);
+        const state = await runRecovery((recovery) => recovery.inspect());
         if (!isActive()) return;
         setDatabaseState(state);
         if (state.kind !== "healthy") return;
@@ -75,14 +103,10 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
     setRecovering(true);
     setRecoveryFailed(false);
     try {
-      const report = await databaseRecoveryRuntime().runPromise(
-        Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.rebuild),
-      );
+      const report = await runRecovery((recovery) => recovery.rebuild);
       setDatabaseState({ kind: "recovered", report });
     } catch {
-      const state = await databaseRecoveryRuntime()
-        .runPromise(Effect.flatMap(MobileDatabaseRecovery, (recovery) => recovery.inspect()))
-        .catch(() => null);
+      const state = await runRecovery((recovery) => recovery.inspect()).catch(() => null);
       if (state) setDatabaseState(state);
       setRecoveryFailed(true);
     } finally {
@@ -108,32 +132,7 @@ export function MailboxProvider({ children }: { children: ReactNode }) {
               })}
         </Text>
         <Text selectable style={styles.body}>
-          {databaseState.kind === "recovered"
-            ? Platform.OS === "ios"
-              ? i18n._({
-                  id: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
-                  message: "Recovered {copied} local records. Skipped {skipped} unreadable items.",
-                  values: {
-                    copied: databaseState.report.copied,
-                    skipped: databaseState.report.skipped,
-                  },
-                })
-              : i18n._({
-                  id: "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
-                  message:
-                    "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}",
-                  values: databaseState.report,
-                })
-            : databaseState.kind === "interrupted"
-              ? i18n._({
-                  id: "Database recovery was interrupted. Try recovery again.",
-                  message: "Database recovery was interrupted. Try recovery again.",
-                })
-              : i18n._({
-                  id: "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
-                  message:
-                    "Rebuild the local database from readable records and re-sync mail. Local drafts and queued changes are kept when readable. The original database and secure tokens are kept.",
-                })}
+          {recoveryDetail(databaseState, i18n)}
         </Text>
         {recoveryFailed && (
           <Text accessibilityRole="alert" style={styles.error}>

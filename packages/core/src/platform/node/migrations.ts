@@ -1,11 +1,11 @@
 import { checkDatabaseUpgradeSpace } from "./database-upgrade.js";
 import { Cause, Effect } from "effect";
 import type { DatabaseSync } from "node:sqlite";
-import { MIGRATIONS, withMigrationForeignKeys } from "../../db.js";
+import { MIGRATIONS, ROWID_REBUILD_MIGRATION, withMigrationForeignKeys } from "../../db.js";
 
 /** Native maintenance, fixtures and smoke share core's FK-off rebuild boundary. */
 export function applyNativeMigration(db: DatabaseSync, script: string, version?: number) {
-  const rebuild = script === MIGRATIONS[36];
+  const rebuild = script === MIGRATIONS[ROWID_REBUILD_MIGRATION];
   if (rebuild) checkDatabaseUpgradeSpace(db);
   const transaction = Effect.sync(() => {
     db.exec("BEGIN IMMEDIATE");

@@ -45,12 +45,16 @@ export function toModelThread(messages: readonly Message[], maxChars: number): M
   // view and key both alternatives, since plain-differs depends on bodyText.
   const extracted = new Map<string, Map<string, ReturnType<typeof messageModelText>>>();
   const bodies = messages.map((m) => {
-    const alternatives = extracted.get(m.bodyHtml);
-    const cached = alternatives?.get(m.bodyText);
-    if (cached) return cached;
-    const body = messageModelText(m.bodyText, m.bodyHtml);
-    if (alternatives) alternatives.set(m.bodyText, body);
-    else extracted.set(m.bodyHtml, new Map([[m.bodyText, body]]));
+    let byText = extracted.get(m.bodyHtml);
+    if (!byText) {
+      byText = new Map();
+      extracted.set(m.bodyHtml, byText);
+    }
+    let body = byText.get(m.bodyText);
+    if (!body) {
+      body = messageModelText(m.bodyText, m.bodyHtml);
+      byText.set(m.bodyText, body);
+    }
     return body;
   });
   const quoteInfo = bodies.map((body, i) => {

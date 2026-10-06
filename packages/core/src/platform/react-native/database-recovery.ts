@@ -12,7 +12,13 @@ import { SqlClient } from "effect/sql";
 import type { DatabaseCapabilities } from "../../db.js";
 import { AppPaths } from "../paths.js";
 import { PlatformCrypto } from "../crypto.js";
-import { RECOVERY_TABLES } from "../recovery-tables.js";
+import {
+  optionalParentChecks,
+  RECOVERY_TABLES,
+  quoteIdentifier,
+  recoveryInsert,
+  sharedRecoveryColumns,
+} from "../recovery-tables.js";
 import { opSqliteLayer, type OpSqliteDatabase, type SqliteScalar } from "./sqlite.js";
 
 export class MobileRecoveryError extends Schema.TaggedError<MobileRecoveryError>()(
@@ -58,7 +64,10 @@ export type MobileDatabaseOpener = (options: {
   readOnly: boolean;
 }) => OpSqliteDatabase;
 const suffixes = ["", "-wal", "-shm", "-journal"] as const;
-const identifier = (name: string) => `"${name.replaceAll('"', '""')}"`;
+const sidecars = suffixes.slice(1);
+
+const isCorruptRecovery = (error: unknown) =>
+  error instanceof MobileRecoveryError && error.reason === "corrupt";
 
 // Native op-sqlite exposes sqlite3_errmsg as an Error, without a numeric SQLite code.
 function corruption(error: unknown): boolean {
@@ -83,40 +92,23 @@ async function quickCheck(db: OpSqliteDatabase): Promise<"ok" | "corrupt"> {
 async function copyTable(source: OpSqliteDatabase, target: OpSqliteDatabase, table: string) {
   let copied = 0;
   let skipped = 0;
-  const quoted = identifier(table);
-  const targetInfo = (await target.execute(`PRAGMA table_info(${quoted})`)).rows;
-  let sourceInfo;
+  const quoted = quoteIdentifier(table);
+  const targetColumns = (await target.execute(`PRAGMA table_info(${quoted})`)).rows;
+  let sourceColumns;
   try {
-    sourceInfo = (await source.execute(`PRAGMA table_info(${quoted})`)).rows;
+    sourceColumns = (await source.execute(`PRAGMA table_info(${quoted})`)).rows;
   } catch (error) {
     if (!corruption(error)) throw error;
     return { copied, skipped: 1 };
   }
-  const names = new Set(targetInfo.map((column) => column.name));
-  const columns = sourceInfo.flatMap((column) =>
-    typeof column.name === "string" && names.has(column.name) ? [column.name] : [],
-  );
+  const columns = sharedRecoveryColumns(sourceColumns, targetColumns);
   if (!columns.length) return { copied, skipped };
-  const nullable = new Set(
-    targetInfo
-      .filter((column) => column.notnull === 0 && column.pk === 0)
-      .map((column) => column.name),
+  const parents = optionalParentChecks(
+    targetColumns,
+    (await target.execute(`PRAGMA foreign_key_list(${quoted})`)).rows,
   );
-  const parents = (await target.execute(`PRAGMA foreign_key_list(${quoted})`)).rows.flatMap((fk) =>
-    typeof fk.from === "string" &&
-    typeof fk.table === "string" &&
-    typeof fk.to === "string" &&
-    nullable.has(fk.from)
-      ? [
-          {
-            column: fk.from,
-            query: `SELECT 1 FROM ${identifier(fk.table)} WHERE ${identifier(fk.to)}=?`,
-          },
-        ]
-      : [],
-  );
-  const projection = columns.map(identifier).join(",");
-  const insert = `INSERT INTO ${quoted} (${projection}) VALUES (${columns.map(() => "?").join(",")})`;
+  const projection = columns.map(quoteIdentifier).join(",");
+  const insert = recoveryInsert(table, columns);
   const copy = async (row: Record<string, SqliteScalar>) => {
     for (const parent of parents) {
       const value = row[parent.column];
@@ -187,9 +179,16 @@ async function copyTable(source: OpSqliteDatabase, target: OpSqliteDatabase, tab
 }
 
 const backupName = (name: string) => /^mail\.db\.corrupt-[\w-]+$/.test(name);
+const freshName = (name: string) => /^mail\.db\.recovery-[\w-]+$/.test(name);
+/** The newest main backup file, ignoring its sidecars. */
+const newestBackup = (names: readonly string[]) =>
+  names
+    .filter((name) => backupName(name) && !sidecars.some((suffix) => name.endsWith(suffix)))
+    .toSorted()
+    .at(-1);
 const Snapshot = Schema.Struct({
   backup: Schema.String,
-  suffixes: Schema.Array(Schema.Literals(["", "-wal", "-shm", "-journal"])),
+  suffixes: Schema.Array(Schema.Literals(suffixes)),
   createdAt: Schema.Number,
   phase: Schema.Literals(["preserved", "installed"]),
 });
@@ -249,22 +248,19 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           await remove(temporary);
         }
       };
-      const readReport = async (path: string) => {
-        const report = Schema.decodeUnknownSync(Report)(
+      const readRecord = async <A extends MobileRecoveryReport>(
+        schema: Schema.Codec<A>,
+        path: string,
+      ) => {
+        const value = Schema.decodeUnknownSync(schema)(
           JSON.parse(await run(fs.readFileString(path))),
         );
-        if (!backupName(report.backup) || !/^mail\.db\.recovery-[\w-]+$/.test(report.fresh))
-          throw new Error("Invalid recovery paths");
-        return report;
-      };
-      const readReceipt = async () => {
-        const value = Schema.decodeUnknownSync(Receipt)(
-          JSON.parse(await run(fs.readFileString(receipt))),
-        );
-        if (!backupName(value.backup) || !/^mail\.db\.recovery-[\w-]+$/.test(value.fresh))
+        if (!backupName(value.backup) || !freshName(value.fresh))
           throw new Error("Invalid recovery paths");
         return value;
       };
+      const readMarker = () => readRecord(Report, marker);
+      const readReceipt = () => readRecord(Receipt, receipt);
       const snapshots = async () => {
         const results: Snapshot[] = [];
         for (const name of await names()) {
@@ -291,14 +287,8 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
       };
       // An explicit backup is protected even if its completion metadata was lost.
       // Otherwise only complete copies are eligible while mail.db still exists.
-      const prune = async (protectedBackup?: string, fresh?: string) => {
+      const prune = async (protectedBackup?: string) => {
         const entries = await names();
-        const candidates = entries
-          .filter(
-            (name) =>
-              backupName(name) && !suffixes.slice(1).some((suffix) => name.endsWith(suffix)),
-          )
-          .toSorted();
         const live = await exists(file);
         let reportedBackup;
         try {
@@ -314,18 +304,13 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           currentOriginal?.backup ??
           reportedBackup ??
           complete[0]?.backup ??
-          (!live ? candidates.at(-1) : undefined);
+          (!live ? newestBackup(entries) : undefined);
         const canRemoveFresh =
           live || (preserved !== undefined && (await exists(`${root}/${preserved}`)));
         for (const name of entries) {
           const base = name.replace(/(?:-wal|-shm|-journal|\.json(?:\.tmp)?)$/, "");
           if (backupName(base) && base !== preserved) await remove(`${root}/${name}`);
-          if (
-            canRemoveFresh &&
-            /^mail\.db\.recovery-[\w-]+(?:-wal|-shm|-journal)?$/.test(name) &&
-            name !== fresh &&
-            !suffixes.slice(1).some((suffix) => name === `${fresh}${suffix}`)
-          )
+          if (canRemoveFresh && /^mail\.db\.recovery-[\w-]+(?:-wal|-shm|-journal)?$/.test(name))
             await remove(`${root}/${name}`);
         }
         await remove(`${marker}.tmp`);
@@ -338,6 +323,10 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
         cached = { state, at };
         failedCheck = state.kind === "corrupt" || state.kind === "interrupted";
         return state;
+      };
+      const invalidate = () => {
+        failedCheck = true;
+        cached = undefined;
       };
       const freshCheck = (at: number) => {
         const age = clock.currentTimeMillisUnsafe() - at;
@@ -398,12 +387,13 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
         return remember({ kind: "corrupt" });
       };
       const replacement = async (report: MobileRecoveryReport) => {
+        const unverified = new MobileRecoveryError({
+          reason: "corrupt",
+          message: "The prepared database could not be verified",
+        });
         const candidate = (await exists(`${root}/${report.fresh}`)) ? report.fresh : "mail.db";
         if (!(await exists(`${root}/${report.backup}`)) || !(await exists(`${root}/${candidate}`)))
-          throw new MobileRecoveryError({
-            reason: "corrupt",
-            message: "The prepared database could not be verified",
-          });
+          throw unverified;
         let integrity;
         try {
           integrity = await check(candidate);
@@ -413,11 +403,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
             message: "The prepared database is temporarily unavailable",
           });
         }
-        if (integrity !== "ok")
-          throw new MobileRecoveryError({
-            reason: "corrupt",
-            message: "The prepared database could not be verified",
-          });
+        if (integrity !== "ok") throw unverified;
         return candidate;
       };
       const inspect = async (
@@ -448,15 +434,14 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           if (await exists(marker)) {
             let report;
             try {
-              report = await readReport(marker);
+              report = await readMarker();
             } catch {
               return await finish(await abandonMarker());
             }
             try {
               await replacement(report);
             } catch (error) {
-              if (!(error instanceof MobileRecoveryError) || error.reason !== "corrupt")
-                throw error;
+              if (!isCorruptRecovery(error)) throw error;
               return await finish(await abandonMarker());
             }
             return await finish({ kind: "interrupted" });
@@ -481,8 +466,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           }
           return await finish({ kind: "healthy" }, persisted?.at);
         } catch (error) {
-          failedCheck = true;
-          cached = undefined;
+          invalidate();
           if (!options.background)
             await persistForegroundCheck({
               at: clock.currentTimeMillisUnsafe(),
@@ -496,7 +480,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
         try {
           candidate = await replacement(report);
         } catch (error) {
-          if (!(error instanceof MobileRecoveryError) || error.reason !== "corrupt") throw error;
+          if (!isCorruptRecovery(error)) throw error;
           await abandonMarker();
           throw error;
         }
@@ -545,15 +529,51 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
         error?: unknown,
       ) => {
         if (forcedCorrupt) return;
-        if (error instanceof MobileRecoveryError && error.reason === "unavailable") {
-          failedCheck = true;
-          cached = undefined;
-          return;
+        // An unavailable store keeps the marker and candidates for a later retry.
+        if (!(error instanceof MobileRecoveryError && error.reason === "unavailable")) {
+          if (fresh && (await exists(`${root}/${fresh}`))) await remove(marker);
+          if (!(await exists(marker))) await prune(protectedBackup);
         }
-        if (fresh && (await exists(`${root}/${fresh}`))) await remove(marker);
-        if (!(await exists(marker))) await prune(protectedBackup);
-        failedCheck = true;
-        cached = undefined;
+        invalidate();
+      };
+      const buildReplacement = async (backup: string, fresh: string) => {
+        let source: OpSqliteDatabase | undefined;
+        let copied = 0;
+        let skipped = 0;
+        try {
+          source = open(backup, true);
+        } catch (error) {
+          if (!corruption(error)) throw error;
+          skipped++;
+        }
+        let runtime:
+          | ManagedRuntime.ManagedRuntime<SqlClient.SqlClient | DatabaseCapabilities, never>
+          | undefined;
+        try {
+          const target = open(fresh, false);
+          runtime = ManagedRuntime.make(opSqliteLayer(() => target));
+          await runtime.runPromise(SqlClient.SqlClient);
+          await target.execute("PRAGMA journal_mode=DELETE");
+          await target.execute("BEGIN IMMEDIATE");
+          if (source)
+            for (const table of RECOVERY_TABLES) {
+              const result = await copyTable(source, target, table);
+              copied += result.copied;
+              skipped += result.skipped;
+            }
+          await target.execute(
+            "UPDATE accounts SET sync_cursor=NULL,last_synced_at=NULL,last_sync_error=NULL",
+          );
+          await target.execute("COMMIT");
+          if ((await quickCheck(target)) !== "ok") throw new Error("Invalid replacement");
+        } finally {
+          try {
+            source?.close();
+          } finally {
+            await runtime?.dispose();
+          }
+        }
+        return { copied, skipped };
       };
       return MobileDatabaseRecovery.of({
         inspect: (options) => attempt(() => inspect(options)),
@@ -600,7 +620,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           if (await exists(marker)) {
             let report;
             try {
-              report = await readReport(marker);
+              report = await readMarker();
             } catch {
               await abandonMarker();
               throw new MobileRecoveryError({
@@ -627,13 +647,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           const fresh = `mail.db.recovery-${id}`;
           try {
             if (!snapshot && !(await exists(file))) {
-              const backup = (await names())
-                .filter(
-                  (name) =>
-                    backupName(name) && !suffixes.slice(1).some((suffix) => name.endsWith(suffix)),
-                )
-                .toSorted()
-                .at(-1);
+              const backup = newestBackup(await names());
               if (backup) {
                 const present: (typeof suffixes)[number][] = [];
                 for (const suffix of suffixes)
@@ -666,42 +680,7 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
               snapshot = complete;
               await prune(snapshot.backup);
             }
-            let source: OpSqliteDatabase | undefined;
-            let copied = 0;
-            let skipped = 0;
-            try {
-              source = open(snapshot.backup, true);
-            } catch (error) {
-              if (!corruption(error)) throw error;
-              skipped++;
-            }
-            let runtime:
-              | ManagedRuntime.ManagedRuntime<SqlClient.SqlClient | DatabaseCapabilities, never>
-              | undefined;
-            try {
-              const target = open(fresh, false);
-              runtime = ManagedRuntime.make(opSqliteLayer(() => target));
-              await runtime.runPromise(SqlClient.SqlClient);
-              await target.execute("PRAGMA journal_mode=DELETE");
-              await target.execute("BEGIN IMMEDIATE");
-              if (source)
-                for (const table of RECOVERY_TABLES) {
-                  const result = await copyTable(source, target, table);
-                  copied += result.copied;
-                  skipped += result.skipped;
-                }
-              await target.execute(
-                "UPDATE accounts SET sync_cursor=NULL,last_synced_at=NULL,last_sync_error=NULL",
-              );
-              await target.execute("COMMIT");
-              if ((await quickCheck(target)) !== "ok") throw new Error("Invalid replacement");
-            } finally {
-              try {
-                source?.close();
-              } finally {
-                await runtime?.dispose();
-              }
-            }
+            const { copied, skipped } = await buildReplacement(snapshot.backup, fresh);
             const report = { backup: snapshot.backup, fresh, copied, skipped };
             await atomicWrite(marker, report);
             return await install(report);

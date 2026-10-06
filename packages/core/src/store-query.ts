@@ -54,6 +54,8 @@ export const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.fr
 
 export const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
+const phrase = (words: readonly string[]) => quoteSearchValue(words.join(" "));
+
 export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const hasLabel = (label: string) => labelIn(sql, label);
 
@@ -140,17 +142,16 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         textFilter(quoteSearchValue(p.right), derived, false),
       ]);
     const index = sql.literal(derived ? "derived_words" : "messages_words");
+    const id = sql.literal(derived ? "d.id" : "m.rowid");
     if (p.distance === 0) {
       // Adjacent non-overlapping phrases are one FTS phrase. Let the index
       // verify positions instead of materializing and joining the instance stream.
-      const forward = quoteSearchValue([...left, ...right].join(" "));
-      const match = p.ordered
-        ? forward
-        : `${forward} OR ${quoteSearchValue([...right, ...left].join(" "))}`;
-      return sql`${derived ? sql.literal("d.id") : sql.literal("m.rowid")} IN (SELECT rowid FROM ${index} WHERE ${index} MATCH ${match})`;
+      const forward = phrase([...left, ...right]);
+      const match = p.ordered ? forward : `${forward} OR ${phrase([...right, ...left])}`;
+      return sql`${id} IN (SELECT rowid FROM ${index} WHERE ${index} MATCH ${match})`;
     }
     const table = sql.literal(derived ? "derived_word_positions" : "messages_word_positions");
-    const near = `NEAR(${quoteSearchValue(left.join(" "))} ${quoteSearchValue(right.join(" "))}, ${p.distance})`;
+    const near = `NEAR(${phrase(left)} ${phrase(right)}, ${p.distance})`;
     const samePhrase = (words: string[], alias: "a" | "b") =>
       words.slice(1).map((word, i) => {
         const ref = sql.literal(alias);
@@ -160,7 +161,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     const reverse = sql`a.offset>=b.offset+${right.length} AND a.offset-b.offset-${right.length}<=${p.distance}`;
     // These materialized sets have no outer-row references: FTS and each term's
     // instance stream are read once, not once per candidate message/chunk.
-    return sql`${derived ? sql.literal("d.id") : sql.literal("m.rowid")} IN (
+    return sql`${id} IN (
         WITH candidates AS MATERIALIZED (SELECT rowid FROM ${index} WHERE ${index} MATCH ${near}),
         positions AS MATERIALIZED (SELECT term,doc,col,offset FROM ${table} WHERE term IN (SELECT value FROM json_each(${JSON.stringify([...new Set([...left, ...right])])})) AND doc IN (SELECT rowid FROM candidates))
         SELECT DISTINCT a.doc FROM positions a JOIN positions b ON b.doc=a.doc AND b.col=a.col
