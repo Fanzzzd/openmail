@@ -1,4 +1,5 @@
 import { writeFileSync } from "node:fs";
+import { loadavg } from "node:os";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Stream, Option, Schema } from "effect";
 import { TestClock } from "effect/testing";
@@ -9,6 +10,7 @@ import { AgentIdentity, MailToolkit, MailToolkitLayer } from "../../tools.js";
 import { visibleHtmlText } from "../../visible-text.js";
 import { sanitizeReaderHtml } from "../../reader-sanitize.js";
 import { structuredMailEvents } from "../../structured-events.js";
+import { incoming } from "./testing.js";
 import {
   PerformanceMailbox,
   fixtureAccounts,
@@ -32,6 +34,8 @@ it.effect(
       medianMs: number;
       maxMs: number;
       budgetMs: number;
+      loadAverage: number[];
+      samplesMs: number[];
       queries: QueryPlan[];
     }[] = [];
     return Effect.gen(function* () {
@@ -79,6 +83,8 @@ it.effect(
         iterations = 5,
       ) =>
         Effect.gen(function* () {
+          if (process.env.OPENMAIL_PERF_MEASURE && name !== process.env.OPENMAIL_PERF_MEASURE)
+            return;
           trace.start();
           yield* effect;
           const queries = trace.stop();
@@ -91,7 +97,15 @@ it.effect(
           times.sort((a, b) => a - b);
           const medianMs = times[Math.floor(times.length / 2)] ?? 0;
           const maxMs = times.at(-1) ?? 0;
-          results.push({ name, medianMs, maxMs, budgetMs, queries });
+          results.push({
+            name,
+            medianMs,
+            maxMs,
+            budgetMs,
+            loadAverage: loadavg(),
+            samplesMs: times,
+            queries,
+          });
           writeReport();
           process.stdout.write(
             `${name}: ${medianMs.toFixed(2)} ms (max ${maxMs.toFixed(2)}, budget ${budgetMs})\n`,
@@ -151,17 +165,14 @@ it.effect(
         store.unreadByLabel(undefined, "INBOX", false),
       );
       yield* measure("list first page", 75, store.listThreads({ mailbox: "inbox", limit: 50 }));
-      for (const [name, search] of [
-        ["search common", "weekly"],
-        ["search CJK", "预算批准"],
-        ["search operators", "from:person2 is:unread has:attachment after:2026-09-01"],
-        ["search AROUND", '"alpha AROUND 0 beta"'],
+      for (const [name, search, budget] of [
+        ["search common", "weekly", 150],
+        ["search CJK", "预算批准", 150],
+        ["search operators", "from:person2 is:unread has:attachment after:2026-09-01", 150],
+        ["search AROUND", '"alpha AROUND 0 beta"', 500],
+        ["search AROUND 3", "alpha AROUND 3 beta", 475],
       ] as const)
-        yield* measure(
-          name,
-          name === "search AROUND" ? 500 : 150,
-          store.listThreads({ search, limit: 50 }),
-        );
+        yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
       yield* measure(
         "search mixed body+OCR 200",
         100,
@@ -354,3 +365,98 @@ it.effect(
   },
   { timeout: 1_200_000 },
 );
+
+for (const messageCount of [20_000, 100_000]) {
+  it.effect(
+    `${messageCount / 1000}k dense NEAR with sparse exact matches stays within the fallback budget`,
+    () => {
+      const trace = traceQueries();
+      return Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        yield* sql`PRAGMA cache_size=-8192`;
+        const account = yield* store.upsertAccount("gmail", "sparse-perf@example.com");
+        for (let start = 0; start < messageCount; start += 500) {
+          yield* store.transaction(
+            Effect.gen(function* () {
+              for (let i = start; i < start + 500; i++) {
+                yield* store.upsertMessage(
+                  account.id,
+                  incoming(`m${i}`, {
+                    threadId: `t${i}`,
+                    date: i,
+                    subject: "Mail",
+                    from: { name: "Sender", address: "sender@example.com" },
+                    bodyText: i < 3 ? "alpha one beta" : "beta one alpha",
+                    bodyHtml: "",
+                    labels: ["INBOX"],
+                    attachments: [],
+                    isUnread: false,
+                    isStarred: false,
+                  }),
+                );
+              }
+            }),
+          );
+          if (start % 10_000 === 0)
+            process.stdout.write(`Seeded sparse ${start + 500}/${messageCount}\n`);
+        }
+        while (!(yield* store.backfillWordIndex(500)).ready) {
+          /* finish indexes */
+        }
+        yield* sql`ANALYZE`;
+        const results = [];
+        const before = messageCount - 2000;
+        for (const [name, query, expected, budgetMs] of [
+          ["search AROUND sparse exact", { search: '"alpha AROUND 2 beta"' }, [2, 1, 0], 500],
+          [
+            "search AROUND sparse exact flat",
+            { search: '"alpha AROUND 2 beta"', flat: true },
+            [2, 1, 0],
+            500,
+          ],
+          ["search AROUND sparse negated", { search: '-("beta AROUND 2 alpha")' }, [2, 1, 0], 500],
+          [
+            "search AROUND deep cursor",
+            { search: '"beta AROUND 2 alpha"', before },
+            Array.from({ length: 50 }, (_, i) => before - 1 - i),
+            1500,
+          ],
+        ] as const) {
+          const run = store.listThreads({ ...query, limit: 50 }).pipe(
+            Effect.tap((rows) =>
+              Effect.sync(() =>
+                assert.deepStrictEqual(
+                  rows.map((row) => row.id),
+                  expected.map((i) => `${account.id}/m${i}`),
+                ),
+              ),
+            ),
+          );
+          trace.start();
+          yield* run;
+          const queries = trace.stop();
+          const samplesMs: number[] = [];
+          for (let i = 0; i < 5; i++) {
+            const start = performance.now();
+            yield* run;
+            samplesMs.push(performance.now() - start);
+          }
+          const medianMs = samplesMs.toSorted((a, b) => a - b)[2] ?? 0;
+          results.push({ name, medianMs, budgetMs, samplesMs, loadAverage: loadavg(), queries });
+          process.stdout.write(`${name}: ${medianMs.toFixed(2)} ms (budget ${budgetMs})\n`);
+        }
+        const output =
+          process.env.OPENMAIL_SPARSE_PERF_REPORT ?? "/tmp/openmail-around-sparse-performance.json";
+        const reportPath = messageCount === 100_000 ? output : `${output}.${messageCount}.json`;
+        writeFileSync(
+          reportPath,
+          `${JSON.stringify({ messages: messageCount, exactMatches: 3, node: process.version, results }, null, 2)}\n`,
+        );
+        process.stdout.write(`Sparse report: ${reportPath}\n`);
+        for (const result of results) assert.isBelow(result.medianMs, result.budgetMs, result.name);
+      }).pipe(Effect.provide(PerformanceMailbox()), Effect.ensuring(Effect.sync(trace.restore)));
+    },
+    { timeout: 1_200_000 },
+  );
+}

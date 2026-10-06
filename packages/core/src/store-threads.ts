@@ -12,6 +12,8 @@ import {
   hasSearchExpression,
   keyOf,
   parseSearchQuery,
+  parseSearchExpression,
+  proximityMatch,
   quoteSearchValue,
   reciprocalRankFusion,
   searchQueryError,
@@ -19,6 +21,7 @@ import {
   unquoteSearchValue,
   usesSubstringSearch,
   wordTokens,
+  type SearchExpression,
 } from "./search.js";
 import { type Store } from "./services.js";
 import { all, sqliteTextCompare } from "./sql-rows.js";
@@ -56,6 +59,42 @@ function getOrSet<K, V>(memo: Map<K, V>, key: K, create: () => V): V {
 
 const decodeSummaries = Schema.decodeUnknownSync(Schema.Array(SummaryRow));
 const decodeThreads = Schema.decodeUnknownSync(Schema.Array(ThreadRow));
+
+const nonzeroProximity = (q: LocalQuery) =>
+  (q.criteria?.proximity?.distance ?? 0) > 0 ||
+  q.criteria?.excluded?.some((condition) => (condition.proximity?.distance ?? 0) > 0) ||
+  /\bAROUND\s+0*[1-9]\d*\b/.test(q.search ?? "");
+
+const proximityWindow = (limit: number) => Math.min(limit, 50);
+const asciiText = (text: string) => /^[\t\n\r\x20-\x7e]*$/.test(text);
+const soleExpression = (node: SearchExpression): SearchExpression => {
+  if (node.kind === "and" || node.kind === "or") {
+    const [child, ...rest] = node.children;
+    if (child && !rest.length) return soleExpression(child);
+  }
+  return node;
+};
+
+const unsearchedProximity = (q: LocalQuery): LocalQuery => {
+  const { proximity: _proximity, excluded, ...criteria } = q.criteria ?? {};
+  return {
+    ...q,
+    search: "",
+    criteria: { ...criteria, excluded: excluded?.filter((condition) => !condition.proximity) },
+    proximityPage: { kind: "prefilter" },
+  };
+};
+
+const ProximityProbeRow = Schema.Struct({
+  subject: Schema.String,
+  from_name: Schema.String,
+  from_addr: Schema.String,
+  body_text: Schema.String,
+  has_derived: Schema.Number,
+});
+
+const newestFirst = (a: ThreadSummary, b: ThreadSummary) =>
+  b.date - a.date || sqliteTextCompare(b.id, a.id);
 
 const SearchBodyRow = Schema.Struct({
   id: Schema.String,
@@ -129,6 +168,37 @@ export const makeThreadsStore = ({
   listSource: ReturnType<typeof makeQueryStore>["listSource"];
   planTextPage: ReturnType<typeof makeQueryStore>["planTextPage"];
 }) => {
+  const threadMessageIds = (threads: readonly ThreadSummary[]) =>
+    sql`SELECT m.id FROM json_each(${JSON.stringify(threads.map(({ accountId, threadId }) => ({ accountId, threadId })))}) k
+      JOIN messages m ON m.account_id=json_extract(k.value,'$.accountId') AND m.thread_id=json_extract(k.value,'$.threadId')`;
+
+  // For a simple atom, ASCII columns use exactly unicode61's token boundaries.
+  // A failed cheap probe can skip the scoped instance-stream read. Derived
+  // chunks, other expressions and Unicode columns retain the SQLite check.
+  const mayMatchProximity = Effect.fnUntraced(function* (
+    q: LocalQuery,
+    messageIds: readonly string[],
+  ) {
+    if (!q.wordIndexReady || !q.derivedWordIndexReady || messageIds.length > 200) return true;
+    const expression = soleExpression(parseSearchExpression(q.search ?? ""));
+    const atom = expression.kind === "not" ? soleExpression(expression.child) : expression;
+    const term = atom.kind === "term" ? atom : undefined;
+    if (!term) return true;
+    const p = parseSearchQuery({ search: term.value }).criteria?.proximity;
+    if (!p?.distance) return true;
+    const rows = yield* all(
+      ProximityProbeRow,
+    )(sql`SELECT m.subject,m.from_name,m.from_addr,m.body_text,
+        EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id) AS has_derived
+      FROM messages m WHERE m.id IN (SELECT value FROM json_each(${JSON.stringify(messageIds)}))`);
+    const columns = rows.map((row) => [row.subject, row.from_name, row.from_addr, row.body_text]);
+    if (rows.some((row) => row.has_derived) || columns.some((texts) => !texts.every(asciiText)))
+      return true;
+    return columns.some(
+      (texts) => texts.some((text) => proximityMatch(text, p)) !== (expression.kind === "not"),
+    );
+  });
+
   const countThreads = Effect.fn("Store.countThreads")(function* (raw: ThreadQuery) {
     const invalid = searchQueryError(raw);
     if (invalid) return yield* invalid;
@@ -166,15 +236,13 @@ export const makeThreadsStore = ({
     ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
   });
 
-  const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
-    const materialize =
-      (q.criteria?.proximity?.distance ?? 0) > 0 || /\bAROUND\s+0*[1-9]\d*\b/.test(q.search ?? "");
-    // Nonzero proximity positions are computed once. Adjacent phrases use FTS
-    // directly, so their thread page can stop at the requested limit.
+  const threadPage = Effect.fn("Store.threadPage")(function* (q: LocalQuery, limit: number) {
+    // Exact passes group the candidate scope, or the corpus after fallback.
+    const materialize = q.proximityPage?.kind === "exact";
     const grouped = sql`
         WITH matches AS MATERIALIZED (
           SELECT m.id,m.account_id,m.thread_id,m.list_date AS date,m.is_unread,m.is_starred
-          FROM messages m INDEXED BY messages_list_date_id WHERE ${listFilter({ ...q, rowBoundText: false })}
+          FROM ${q.proximityPage?.kind === "exact" && q.proximityPage.messageIds ? sql`messages m` : sql`messages m INDEXED BY messages_list_date_id`} WHERE ${listFilter({ ...q, rowBoundText: false })}
         ), heads AS (
           SELECT account_id,thread_id,MAX(date) AS date,MAX(is_unread) AS any_unread,MAX(is_starred) AS any_starred
           FROM matches GROUP BY account_id,thread_id
@@ -258,8 +326,56 @@ export const makeThreadsStore = ({
     }));
   });
 
+  const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
+    if (!nonzeroProximity(q)) return yield* threadPage(q, limit);
+    const fullPage = () => threadPage({ ...q, proximityPage: { kind: "exact" } }, limit);
+    if (limit <= 0) return yield* fullPage();
+    const window = proximityWindow(limit);
+    // Unsearched heads are a superset of matching heads. Apply the caller's
+    // cursor to exact heads, then fall back if this first window cannot fill it.
+    const candidates = yield* threadPage(
+      { ...unsearchedProximity(q), before: undefined, beforeId: undefined },
+      window,
+    );
+    const [first, ...older] = candidates;
+    if (!first) return [];
+    const { before, beforeId } = q;
+    if (
+      before !== undefined &&
+      candidates.every(
+        (row) =>
+          row.threadCount === 1 &&
+          !(
+            row.date < before ||
+            (row.date === before &&
+              beforeId !== undefined &&
+              sqliteTextCompare(row.id, beforeId) < 0)
+          ),
+      )
+    )
+      return yield* fullPage();
+    const tail = older.at(-1) ?? first;
+    const ids = yield* all(Schema.Struct({ id: Schema.String }))(threadMessageIds(candidates));
+    const messageIds = ids.map((row) => row.id);
+    if (!(yield* mayMatchProximity(q, messageIds))) return yield* fullPage();
+    const matches = yield* threadPage(
+      { ...q, proximityPage: { kind: "exact", messageIds } },
+      window,
+    );
+    if (candidates.length < window) return matches;
+    if (
+      matches.length === limit &&
+      newestFirst(
+        matches.reduce((_, row) => row),
+        tail,
+      ) <= 0
+    )
+      return matches;
+    return yield* fullPage();
+  });
+
   /** Conversation grouping off: each message in the view is its own row, newest first. */
-  const messageList = (q: LocalQuery, limit: number) =>
+  const messagePage = (q: LocalQuery, limit: number) =>
     sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
         WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
         ORDER BY date DESC, m.id DESC LIMIT ${limit}`.pipe(
@@ -283,6 +399,22 @@ export const makeThreadsStore = ({
         }),
       ),
     );
+
+  const messageList = Effect.fn("Store.messageList")(function* (q: LocalQuery, limit: number) {
+    if (limit <= 0 || !nonzeroProximity(q)) return yield* messagePage(q, limit);
+    const fullPage = () => messagePage({ ...q, proximityPage: { kind: "exact" } }, limit);
+    const window = proximityWindow(limit);
+    const candidates = yield* messagePage(unsearchedProximity(q), window);
+    if (!candidates.length) return [];
+    const messageIds = candidates.map((row) => row.id);
+    if (!(yield* mayMatchProximity(q, messageIds))) return yield* fullPage();
+    const matches = yield* messagePage(
+      { ...q, proximityPage: { kind: "exact", messageIds } },
+      limit,
+    );
+    if (matches.length === limit || candidates.length < window) return matches;
+    return yield* fullPage();
+  });
 
   const derivedRanking = (words: readonly string[], q: LocalQuery) => {
     const ready = (q.derivedWordIndexReady ?? false) && !usesSubstringSearch(q.search ?? "");
@@ -368,14 +500,20 @@ export const makeThreadsStore = ({
         .map(ftsSearchTerm)
         .filter((term) => term !== null)
         .join(" OR ");
+      const selectedIds = q.flat
+        ? sql`SELECT value AS id FROM json_each(${JSON.stringify(keys)})`
+        : threadMessageIds(threads);
+      const selected = nonzeroProximity(q)
+        ? yield* all(Schema.Struct({ id: Schema.String }))(selectedIds)
+        : undefined;
       const matchRows = yield* all(
         DerivedSearchRow,
       )(sql`SELECT m.account_id,m.thread_id,d.provenance_json
           FROM ${rankable ? sql`${derivedIndex} JOIN derived_chunks d ON d.id=${derivedIndex}.rowid` : sql`derived_chunks d`}
           JOIN messages m ON m.id=d.message_id
           WHERE ${rankable ? sql`${derivedIndex} MATCH ${bodyMatch}` : sql.or(highlights.map((term) => textFilter(term, true, readiness.derived)))}
-          AND m.id IN (${q.flat ? sql`SELECT value FROM json_each(${JSON.stringify(keys)})` : sql`SELECT selected.id FROM json_each(${JSON.stringify(threads.map((thread) => ({ accountId: thread.accountId, threadId: thread.threadId })))}) k JOIN messages selected ON selected.account_id=json_extract(k.value,'$.accountId') AND selected.thread_id=json_extract(k.value,'$.threadId')`})
-          AND ${listFilter(q)} ORDER BY ${rankable ? sql`bm25(${derivedIndex})` : sql.literal("m.date DESC")},m.date DESC,d.id LIMIT 4096`);
+          ${selected ? sql.literal("") : sql`AND m.id IN (${selectedIds})`}
+          AND ${listFilter(selected ? { ...q, proximityPage: { kind: "exact", messageIds: selected.map((row) => row.id) } } : q)} ORDER BY ${rankable ? sql`bm25(${derivedIndex})` : sql.literal("m.date DESC")},m.date DESC,d.id LIMIT 4096`);
       const grouped = new Map<string, DerivedChunk[]>();
       for (const [rank, row] of matchRows.entries()) {
         const key = rowKey(row, q.flat);
@@ -520,8 +658,7 @@ export const makeThreadsStore = ({
         );
       const scope = q.flat
         ? sql`SELECT d.id FROM derived_chunks d WHERE d.message_id IN (SELECT value FROM json_each(${JSON.stringify([...mailCandidates.values()].map((thread) => thread.id))}))`
-        : sql`SELECT d.id FROM json_each(${JSON.stringify([...mailCandidates.values()].map((thread) => ({ accountId: thread.accountId, threadId: thread.threadId })))}) k
-            JOIN messages selected ON selected.account_id=json_extract(k.value,'$.accountId') AND selected.thread_id=json_extract(k.value,'$.threadId')
+        : sql`SELECT d.id FROM (${threadMessageIds([...mailCandidates.values()])}) selected
             JOIN derived_chunks d ON d.message_id=selected.id`;
       endQueryPreparation?.();
       const endQuery = profile?.begin("attachment candidate selection");

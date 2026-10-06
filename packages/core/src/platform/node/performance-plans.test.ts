@@ -50,10 +50,14 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     });
     yield* store.resetCandidates(gmail, { _tag: "Reset", keep: [], since: fixtureNow - 86400000 });
     yield* store.listThreads({ search: '"alpha AROUND 0 beta"', limit: 5 });
-    yield* store.listThreads({ search: '"alpha AROUND 1 beta"', limit: 5 });
+    const initialQueries = trace.stop();
+    trace.start();
+    yield* store.listThreads({ search: '"alpha AROUND 3 beta"', limit: 5 });
+    const proximityQueries = trace.stop();
+    trace.start();
     yield* store.bodySizes;
     yield* store.evictBodyBudget(1, true);
-    const queries = trace.stop();
+    const queries = [...initialQueries, ...proximityQueries, ...trace.stop()];
     assert.isAbove(queries.length, 8);
     for (const query of queries) {
       const plan = query.plan.join("\n");
@@ -99,13 +103,43 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     assert.include(proximity.plan.join("\n"), "MATERIALIZE page");
     assert.notInclude(proximity.plan.join("\n"), "TEMP B-TREE FOR GROUP BY");
     assert.include(proximity.plan.join("\n"), "SEARCH m USING INDEX messages_thread_list_date_id");
-    const spacedProximity = queries.find(
+    const spacedProximity = proximityQueries.find(
       (q) => q.sql.includes("WITH matches AS MATERIALIZED") && q.sql.includes("positions AS"),
     );
     assert.ok(spacedProximity);
+    assert.include(spacedProximity.sql, "AND (rowid+0) IN (");
+    assert.include(spacedProximity.sql, "SELECT rowid FROM messages WHERE id IN");
+    assert.include(
+      spacedProximity.plan.join("\n"),
+      "SEARCH m USING INDEX sqlite_autoindex_messages_1 (id=?)",
+    );
+    assert.notInclude(spacedProximity.plan.join("\n"), "SCAN m USING INDEX messages_list_date_id");
     assert.strictEqual(
       spacedProximity.plan.filter((line) => line.includes("SCAN messages_word_positions")).length,
       1,
+    );
+    const nearPage = proximityQueries.find(
+      (query) =>
+        query.sql.includes("WITH candidates AS NOT MATERIALIZED") &&
+        !query.sql.includes("positions AS"),
+    );
+    assert.ok(nearPage);
+    assert.match(nearPage.plan.join("\n"), /SCAN m USING INDEX messages_list_date_id/);
+    assert.notInclude(nearPage.plan.join("\n"), "SCAN messages_words VIRTUAL TABLE INDEX");
+    assert.match(
+      nearPage.plan.join("\n"),
+      /SEARCH m USING (?:COVERING )?INDEX messages_thread_list_date_id/,
+    );
+    assert.notMatch(
+      nearPage.plan.join("\n"),
+      /word_positions|MATERIALIZE matches|TEMP B-TREE FOR GROUP BY/,
+    );
+    // The materialized page and each selected thread's participants may sort;
+    // the mailbox walk itself must retain its date index and bounded LIMIT.
+    assert.include(nearPage.sql, "ORDER BY m.list_date DESC,m.id DESC LIMIT");
+    assert.isAtMost(
+      nearPage.plan.filter((line) => line.includes("TEMP B-TREE FOR ORDER BY")).length,
+      2,
     );
     const lru = queries.find((q) => q.sql.includes("AS opened_at"));
     assert.ok(lru);

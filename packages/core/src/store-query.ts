@@ -25,6 +25,7 @@ export type LocalQuery = ThreadQuery & {
   wordIndexReady?: boolean;
   derivedWordIndexReady?: boolean;
   rowBoundText?: boolean;
+  proximityPage?: { kind: "prefilter" } | { kind: "exact"; messageIds?: readonly string[] };
   textPage?: { index: "messages_words" | "messages_fts"; match: string };
 };
 
@@ -41,8 +42,26 @@ const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 const phrase = (words: readonly string[]) => quoteSearchValue(words.join(" "));
 
+const containsProximity = (node: SearchExpression): boolean => {
+  switch (node.kind) {
+    case "term":
+      return !!parseSearchQuery({ search: node.value }).criteria?.proximity;
+    case "not":
+      return containsProximity(node.child);
+    case "and":
+    case "or":
+      return node.children.some(containsProximity);
+    default: {
+      const exhaustive: never = node;
+      return exhaustive;
+    }
+  }
+};
+
 export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const hasLabel = (label: string) => labelIn(sql, label);
+  const idsIn = (ids: readonly string[]) =>
+    sql`SELECT value FROM json_each(${JSON.stringify(ids)})`;
 
   // An empty profile matches nothing rather than everything.
   const inAccounts = (ids: readonly string[]) => accountScope(sql, ids);
@@ -117,6 +136,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     p: NonNullable<SearchCondition["proximity"]>,
     derived = false,
     ready = true,
+    context: Pick<LocalQuery, "proximityPage"> = {},
   ): Fragment => {
     const left = wordTokens(p.left),
       right = wordTokens(p.right);
@@ -137,6 +157,13 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     }
     const table = sql.literal(derived ? "derived_word_positions" : "messages_word_positions");
     const near = `NEAR(${phrase(left)} ${phrase(right)}, ${p.distance})`;
+    if (context.proximityPage?.kind === "prefilter")
+      return sql`${id} IN (SELECT rowid FROM ${index} WHERE ${index} MATCH ${near})`;
+    const messageIds =
+      context.proximityPage?.kind === "exact" ? context.proximityPage.messageIds : undefined;
+    const scope = messageIds
+      ? sql`AND (rowid+0) IN (${derived ? sql`SELECT id FROM derived_chunks WHERE message_id IN (${idsIn(messageIds)})` : sql`SELECT rowid FROM messages WHERE id IN (${idsIn(messageIds)})`})`
+      : sql.literal("");
     const samePhrase = (words: string[], alias: "a" | "b") =>
       words.slice(1).map((word, i) => {
         const ref = sql.literal(alias);
@@ -147,14 +174,19 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     // These materialized sets have no outer-row references: FTS and each term's
     // instance stream are read once, not once per candidate message/chunk.
     return sql`${id} IN (
-        WITH candidates AS MATERIALIZED (SELECT rowid FROM ${index} WHERE ${index} MATCH ${near}),
+        WITH candidates AS MATERIALIZED (SELECT rowid FROM ${index} WHERE ${index} MATCH ${near} ${scope}),
         positions AS MATERIALIZED (SELECT term,doc,col,offset FROM ${table} WHERE term IN (SELECT value FROM json_each(${JSON.stringify([...new Set([...left, ...right])])})) AND doc IN (SELECT rowid FROM candidates))
         SELECT DISTINCT a.doc FROM positions a JOIN positions b ON b.doc=a.doc AND b.col=a.col
         WHERE a.term=${left[0]} AND b.term=${right[0]} AND (${p.ordered ? forward : sql`(${forward}) OR (${reverse})`}) AND ${sql.and([...samePhrase(left, "a"), ...samePhrase(right, "b")])}
       )`;
   };
 
-  const searchConditionFilter = (c: SearchCondition, ready = false, rowBound = false): Fragment => {
+  const searchConditionFilter = (
+    c: SearchCondition,
+    ready = false,
+    rowBound = false,
+    context: Pick<LocalQuery, "proximityPage"> = {},
+  ): Fragment => {
     const where: Fragment[] = [];
     if (c.unread !== undefined) where.push(sql`m.is_unread=${c.unread ? 1 : 0}`);
     if (c.starred !== undefined) where.push(sql`m.is_starred=${c.starred ? 1 : 0}`);
@@ -162,7 +194,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       where.push(
         sql`EXISTS (SELECT 1 FROM json_each(m.bcc_json) WHERE json_extract(value,'$.address') LIKE ${literalLike(c.bcc)} ESCAPE '\\' OR json_extract(value,'$.name') LIKE ${literalLike(c.bcc)} ESCAPE '\\')`,
       );
-    if (c.proximity) where.push(proximityFilter(c.proximity, false, ready));
+    if (c.proximity) where.push(proximityFilter(c.proximity, false, ready, context));
     if (c.subjectContains)
       where.push(sql`m.subject LIKE ${literalLike(c.subjectContains)} ESCAPE '\\'`);
     if (c.mailingList)
@@ -230,7 +262,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     media: boolean;
     attachmentOnly: boolean;
     rowBound: boolean;
-  };
+  } & Pick<LocalQuery, "proximityPage">;
 
   const expressionFilter = (node: SearchExpression, context: ExpressionContext): Fragment => {
     switch (node.kind) {
@@ -247,17 +279,21 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       case "or":
         return sql`(${sql.or(node.children.map((child) => expressionFilter(child, context)))})`;
       case "not":
+        // NEAR is a superset of exact AROUND. Negating that superset would
+        // lose valid rows, so leave these branches to the exact candidate pass.
+        if (context.proximityPage?.kind === "prefilter" && containsProximity(node.child))
+          return sql.literal("1");
         return expressionHasSize(node.child)
           ? sql`(m.message_size IS NULL OR NOT (${expressionFilter(node.child, context)}))`
           : sql`NOT (${expressionFilter(node.child, context)})`;
       case "term": {
         const q = parseSearchQuery({ search: node.value });
         const conditions = [
-          searchConditionFilter(q.criteria ?? {}, context.messagesReady, context.rowBound),
+          searchConditionFilter(q.criteria ?? {}, context.messagesReady, context.rowBound, context),
         ];
         if (q.criteria?.proximity) {
           const body = conditions.pop() ?? sql.literal("1");
-          const derived = sql`EXISTS (SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${proximityFilter(q.criteria.proximity, true, context.derivedReady)})`;
+          const derived = sql`EXISTS (SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${proximityFilter(q.criteria.proximity, true, context.derivedReady, context)})`;
           conditions.push(
             context.attachmentOnly ? derived : context.media ? sql`(${body} OR ${derived})` : body,
           );
@@ -288,7 +324,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (mailbox === "all") {
       if (q.messageIds === undefined && !searchIncludesSpecialFolders(q))
         where.push(
-          q.textPage || q.search === ""
+          q.textPage || q.proximityPage || q.search === ""
             ? sql`EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`
             : sql`NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}`,
         );
@@ -300,8 +336,9 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (q.label !== undefined && (q.search === undefined || q.searchScope === "folder"))
       where.push(hasLabel(q.label));
     if (q.accountIds) where.push(inAccounts(q.accountIds));
-    if (q.messageIds)
-      where.push(sql`m.id IN (SELECT value FROM json_each(${JSON.stringify(q.messageIds)}))`);
+    if (q.messageIds) where.push(sql`m.id IN (${idsIn(q.messageIds)})`);
+    if (q.proximityPage?.kind === "exact" && q.proximityPage.messageIds)
+      where.push(sql`m.id IN (${idsIn(q.proximityPage.messageIds)})`);
     if (q.unreadOnly) where.push(sql`m.is_unread = 1`);
     if (q.starredOnly) where.push(sql`m.is_starred = 1`);
     const filters = q.listFilters;
@@ -313,13 +350,18 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       if (flags.length) where.push(sql`(${sql.or(flags)})`);
       if (filters.inInbox) where.push(hasLabel("INBOX"));
     }
-    where.push(searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false, q.rowBoundText));
-    for (const condition of q.criteria?.excluded ?? [])
+    where.push(
+      searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false, q.rowBoundText, q),
+    );
+    for (const condition of q.criteria?.excluded ?? []) {
+      if (q.proximityPage?.kind === "prefilter" && condition.proximity) continue;
+      const filter = searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText, q);
       where.push(
         condition.sizeLarger !== undefined || condition.sizeSmaller !== undefined
-          ? sql`(m.message_size IS NULL OR NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText)}))`
-          : sql`NOT (${searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText)})`,
+          ? sql`(m.message_size IS NULL OR NOT (${filter}))`
+          : sql`NOT (${filter})`,
       );
+    }
     where.push(
       expressionFilter(parseSearchExpression(q.search ?? ""), {
         messagesReady: q.wordIndexReady ?? false,
@@ -327,6 +369,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         media: expressionMedia(q.search ?? ""),
         attachmentOnly: q.criteria?.attachmentText ?? false,
         rowBound: q.rowBoundText ?? false,
+        proximityPage: q.proximityPage,
       }),
     );
     return sql.and(where);
@@ -334,17 +377,19 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
 
   // Stream the date/id index and resolve only selected conversations. The
   // CTE is inlined, so a 100k-thread inbox does not rank 100k rows per page.
-  const listSource = (q: LocalQuery) =>
+  const listSource = (q: LocalQuery) => {
+    const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
     // Across accounts SQLite otherwise sorts the entire inbox using the
     // account/date index. Walk the global date index and stop at the limit.
     // Search keeps the planner free to start from its selective FTS rowids.
-    q.textPage && q.messageIds === undefined && q.accountIds?.length === 1
+    return boundedPage && q.messageIds === undefined && q.accountIds?.length === 1
       ? sql.literal("messages m INDEXED BY messages_account_list_date_id")
-      : (q.textPage || q.search === undefined) &&
+      : (boundedPage || q.search === undefined) &&
           q.messageIds === undefined &&
           q.accountIds?.length !== 1
         ? sql.literal("messages m INDEXED BY messages_list_date_id")
         : sql.literal("messages m");
+  };
 
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
