@@ -57,7 +57,7 @@ const asynchronous = <A>(method: string, fn: () => Promise<A>) =>
     try: fn,
     catch: () => PlatformError.systemError({ _tag: "Unknown", module: "FileSystem", method }),
   });
-export const fileSystem = FileSystem.makeNoop({
+const fileSystem = FileSystem.makeNoop({
   exists: (path) =>
     attempt("exists", () => new File(fileUri(path)).exists || new Directory(fileUri(path)).exists),
   makeDirectory: (path, options) =>

@@ -91,8 +91,6 @@ const CliBrowser: Layer.Layer<Browser, never, ChildProcessSpawner.ChildProcessSp
     }),
   );
 
-// config
-
 const configGoogle = Command.make(
   "google",
   {
@@ -122,8 +120,6 @@ const config = Command.make("config").pipe(
   Command.withDescription("Store OAuth client registrations"),
   Command.withSubcommands([configGoogle, configMicrosoft]),
 );
-
-// accounts
 
 const accountsList = Command.make(
   "list",
@@ -248,8 +244,6 @@ const accounts = Command.make("accounts").pipe(
   Command.withSubcommands([accountsList, accountsAdd, accountsRemove, accountsReauth]),
 );
 
-// profiles
-
 const profilesList = Command.make(
   "list",
   { json: jsonFlag },
@@ -317,7 +311,6 @@ const profiles = Command.make("profiles").pipe(
   Command.withSubcommands([profilesList, profilesAdd, profilesRemove, profilesAssign]),
 );
 
-// mail
 const health = Command.make(
   "health",
   {
@@ -478,8 +471,6 @@ const show = Command.make(
     );
   }),
 ).pipe(Command.withDescription("Print a message as plain text, or its whole thread"));
-
-// proposals, agents, audit
 
 const proposalsList = Command.make(
   "list",

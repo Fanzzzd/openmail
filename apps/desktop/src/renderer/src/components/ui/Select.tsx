@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { itemClass, popupMotion, popupSurface } from "./styles";
 
-export interface SelectOption<T extends string> {
+interface SelectOption<T extends string> {
   value: T;
   label: string;
   /** Drawn before the label, in the button and in the list. */

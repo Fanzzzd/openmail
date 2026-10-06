@@ -19,7 +19,7 @@ import { migrateForegroundSecrets } from "./platform/secrets";
 import { notificationRoute } from "./background-policy";
 import { activateLanguage } from "./i18n";
 
-export function useForeground() {
+function useForeground() {
   const runtime = useMailbox();
   return useMemo(
     () =>

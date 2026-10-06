@@ -1,4 +1,5 @@
 import { stripMessageIdBrackets } from "./message-id.js";
+import { MAILBOX_LABEL } from "./mailbox-labels.js";
 import { Option, Schema } from "effect";
 import {
   SearchCondition,
@@ -13,6 +14,8 @@ import {
 } from "./domain.js";
 import { InvalidInput } from "./errors.js";
 import type { FilterCriteria } from "./organization.js";
+
+const SEARCH_FOLDER_LABELS: Readonly<Record<string, string>> = MAILBOX_LABEL;
 
 export const SEARCH_OPERATORS = [
   "list:",
@@ -312,18 +315,8 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
 export const searchMailboxLabel = (q: ThreadQuery): string | undefined => {
   if (q.searchScope !== "folder") return undefined;
   if (q.label) return q.label;
-  const names = {
-    inbox: "INBOX",
-    snoozed: "SNOOZED",
-    important: "IMPORTANT",
-    starred: "STARRED",
-    sent: "SENT",
-    drafts: "DRAFT",
-    spam: "SPAM",
-    trash: "TRASH",
-    all: undefined,
-  };
-  return names[q.mailbox ?? "inbox"];
+  const mailbox = q.mailbox ?? "inbox";
+  return mailbox === "all" ? undefined : MAILBOX_LABEL[mailbox];
 };
 
 export function gmailSearch(
@@ -796,16 +789,6 @@ export function attachmentHasType(
   );
 }
 
-const SEARCH_FOLDER_LABELS: Record<string, string> = {
-  inbox: "INBOX",
-  starred: "STARRED",
-  snoozed: "SNOOZED",
-  drafts: "DRAFT",
-  sent: "SENT",
-  trash: "TRASH",
-  spam: "SPAM",
-  important: "IMPORTANT",
-};
 export function searchFolderValue(value: string): string {
   const key = value.toLowerCase();
   return Object.hasOwn(SEARCH_FOLDER_LABELS, key) ? (SEARCH_FOLDER_LABELS[key] ?? value) : value;

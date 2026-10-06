@@ -29,13 +29,11 @@ export const profilesAtom = MailClient.query("Profiles", undefined, {
   ...always,
 });
 
-/** Unread count per account id. */
 export const unreadCountsAtom = MailClient.query("UnreadCounts", undefined, {
   reactivityKeys: [Keys.counts],
   ...always,
 });
 
-/** Labels and folders, limited to `accountIds` when given. */
 export const labelsAtom = (accountIds?: readonly string[]) =>
   MailClient.query("Labels", accountIds ? { accountIds } : {}, {
     reactivityKeys: [Keys.labels],

@@ -10,7 +10,6 @@ import { errorText, resultError } from "../errors";
 import { Keys } from "../state/keys";
 
 import { aiSettingsAtom } from "../state/ai-settings";
-export { aiSettingsAtom } from "../state/ai-settings";
 const accountMutation = MailClient.mutation("SetAiAccount");
 const modelMutation = MailClient.mutation("SetAiModel");
 

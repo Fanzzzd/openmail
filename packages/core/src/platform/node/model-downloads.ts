@@ -4,7 +4,7 @@ import { mkdir, open, rename, rm, stat, utimes } from "node:fs/promises";
 import { join } from "node:path";
 import { Effect } from "effect";
 import { MediaError, type ModelsStatus } from "../../media.js";
-import { MODEL_FILES, MODEL_BYTES } from "../../model-manifest.js";
+import { MODEL_FILES } from "../../model-manifest.js";
 
 export type ModelFile = {
   readonly model: string;
@@ -174,4 +174,3 @@ export function modelFiles(
       new MediaError({ message: "On-device models are unavailable or failed verification" }),
   });
 }
-export { MODEL_BYTES };

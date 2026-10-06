@@ -30,17 +30,17 @@ import { Select } from "./ui/Select";
 import { Tip } from "./ui/Tip";
 
 type Icon = ComponentType<{ className?: string }>;
-export type InlineCommand = "bold" | "italic" | "underline" | "strikeThrough" | "unlink";
+type InlineCommand = "bold" | "italic" | "underline" | "strikeThrough" | "unlink";
 
 /**
  * Toolbar widths, in px, from which each inline group shows. Narrower
  * composers move the group into "More formatting"; the rest always shows.
  */
-export const TOOLBAR_TIERS = { style: 400, lists: 460, align: 490, quote: 550 } as const;
+const TOOLBAR_TIERS = { style: 400, lists: 460, align: 490, quote: 550 } as const;
 export type ToolbarTier = keyof typeof TOOLBAR_TIERS;
 
 /** Which inline groups fit. An unmeasured toolbar (first paint, jsdom) shows them all. */
-export function visibleTiers(width: number): Record<ToolbarTier, boolean> {
+function visibleTiers(width: number): Record<ToolbarTier, boolean> {
   const fits = (tier: ToolbarTier) => width === 0 || width >= TOOLBAR_TIERS[tier];
   return { style: fits("style"), lists: fits("lists"), align: fits("align"), quote: fits("quote") };
 }

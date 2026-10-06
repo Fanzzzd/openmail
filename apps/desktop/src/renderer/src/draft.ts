@@ -65,7 +65,7 @@ export interface Draft {
   agentOrigin?: OutgoingMessage["agentOrigin"];
 }
 
-export const newDraftId = () => `draft:${crypto.randomUUID()}`;
+const newDraftId = () => `draft:${crypto.randomUUID()}`;
 
 export function emptyDraft(accountId: string): Draft {
   return {

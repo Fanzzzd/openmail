@@ -78,7 +78,7 @@ interface Props {
   rowActions: RowActions;
 }
 
-export interface RowActions {
+interface RowActions {
   grouped?: boolean;
   currentLabel?: string | undefined;
   mailbox: Mailbox;

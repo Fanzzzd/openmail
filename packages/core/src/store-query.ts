@@ -1,12 +1,7 @@
 import { Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
-import {
-  type AttachmentType,
-  type MailboxView,
-  type SearchCondition,
-  type ThreadQuery,
-} from "./domain.js";
+import { type AttachmentType, type SearchCondition, type ThreadQuery } from "./domain.js";
 import {
   ATTACHMENT_TYPES,
   expressionHasSize,
@@ -24,6 +19,7 @@ import {
   wordTokens,
 } from "./search.js";
 import { all } from "./sql-rows.js";
+import { MAILBOX_LABEL } from "./mailbox-labels.js";
 
 export type LocalQuery = ThreadQuery & {
   wordIndexReady?: boolean;
@@ -35,24 +31,13 @@ export type LocalQuery = ThreadQuery & {
 export const expressionMedia = (text: string) =>
   hasSearchExpression(text) || searchWords(text).some((term) => term.startsWith("-"));
 
-export const MAILBOX_LABEL: Record<Exclude<MailboxView, "all">, string> = {
-  inbox: "INBOX",
-  snoozed: "SNOOZED",
-  important: "IMPORTANT",
-  starred: "STARRED",
-  sent: "SENT",
-  drafts: "DRAFT",
-  spam: "SPAM",
-  trash: "TRASH",
-};
-
 export const EFFECTIVE_DATE = "m.list_date";
 
 export const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
   ${EFFECTIVE_DATE} AS date,
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
 
-export const literalLike = (value: string) =>
+const literalLike = (value: string) =>
   `%${value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 const phrase = (words: readonly string[]) => quoteSearchValue(words.join(" "));
 
@@ -411,5 +396,5 @@ export const accountScope = (
     : ids.length === 0
       ? sql.literal("0")
       : sql`${sql.literal(column)} IN ${sql.in(ids)}`;
-export const labelIn = (sql: SqlClient.SqlClient, label: string): Fragment =>
+const labelIn = (sql: SqlClient.SqlClient, label: string): Fragment =>
   sql`EXISTS (SELECT 1 FROM json_each(m.labels_json) WHERE value = ${label})`;

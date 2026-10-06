@@ -18,17 +18,14 @@ export const Keys = {
   serverSettings: "server-settings",
   /** Thread lists: mailboxes, filters, search, the overview. */
   threads: "threads",
-  /** Every open thread. */
   thread: "thread",
   labels: "labels",
-  /** Unread counts per account and per label. */
   counts: "counts",
   profiles: "profiles",
   proposals: "proposals",
   audit: "audit",
   failedOps: "failed-ops",
   agentMode: "agent-mode",
-  /** Which OAuth clients are configured. */
   setup: "setup",
   prefs: "prefs",
   signatures: "signatures",
@@ -39,7 +36,7 @@ export const Keys = {
   imageSenders: "image-senders",
 } as const;
 
-export const threadKey = (id: string) => `${Keys.thread}:${id}`;
+const threadKey = (id: string) => `${Keys.thread}:${id}`;
 
 /** What a change to threads touches: the lists, counts, the log, and the threads themselves. */
 export const threadChangeKeys = (ids: readonly string[]) => [

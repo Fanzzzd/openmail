@@ -26,9 +26,6 @@ export {
   referenceMedia,
   type MediaCoverage,
   type ReaderWidth,
-  type BandSpan,
-  MAX_REVEAL_INTERVALS,
-  mergeBand,
 } from "./visible-text-media.js";
 import { READER_ATTRIBUTES } from "./reader-sanitize.js";
 import { resolveFont, INITIAL_TEXT_STYLE } from "./visible-text-inheritance.js";

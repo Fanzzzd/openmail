@@ -36,7 +36,7 @@ export interface ReaderLink {
   url: string;
   destination: string;
 }
-export function readerLink(raw: string): ReaderLink | null {
+function readerLink(raw: string): ReaderLink | null {
   const valid = externalReaderLink(raw);
   if (!valid) return null;
   const url = new URL(valid);

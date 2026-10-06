@@ -415,7 +415,7 @@ export function AttachmentList({
   );
 }
 
-export function EmbeddedReader({
+function EmbeddedReader({
   messageId,
   file,
   notify,

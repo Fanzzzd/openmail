@@ -12,7 +12,6 @@ allowBuilds:
   protobufjs: false
 catalog:
   typescript: ^5.9.3
-  zod: ^4.6.5
 patchedDependencies:
   expo-background-task@57.0.21: patches/expo-background-task@57.0.21.patch
   expo-notifications@57.0.21: patches/expo-notifications@57.0.21.patch

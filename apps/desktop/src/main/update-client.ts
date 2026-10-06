@@ -13,7 +13,7 @@ export interface ManagedUpdateClient extends UpdateClient {
     version: string,
   ): ((failed: () => void) => void) | null;
 }
-export const UPDATE_INSTALL_TIMEOUT_MS = 90_000;
+const UPDATE_INSTALL_TIMEOUT_MS = 90_000;
 const clients = new WeakMap<AppUpdater, ManagedUpdateClient>();
 /** SDK adapter only: core owns feed HTTP; the SDK still owns checksum/signature verification and package installation. */
 export function updateClient(updater: AppUpdater): ManagedUpdateClient {

@@ -14,7 +14,7 @@ export function shouldNotify(options: {
     !(foreground && visible?.accountId === message.accountId && visible.label === "INBOX")
   );
 }
-export function notificationText(value: string, limit: number): string {
+function notificationText(value: string, limit: number): string {
   const clean = value
     .replace(/[\p{Cc}\p{Bidi_Control}]/gu, " ")
     .replace(/\s+/gu, " ")

@@ -1,7 +1,7 @@
 import type { MailOp, Prefs, SwipeAction } from "@openmail/core/schema";
 
-export const SHORT_SWIPE = 60;
-export const LONG_SWIPE = 180;
+const SHORT_SWIPE = 60;
+const LONG_SWIPE = 180;
 export function swipeAction(distance: number, actions: Prefs["swipeActions"]): SwipeAction {
   if (Math.abs(distance) < SHORT_SWIPE) return "none";
   return distance < 0

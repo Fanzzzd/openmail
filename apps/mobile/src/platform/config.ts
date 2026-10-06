@@ -3,7 +3,7 @@ import { Effect, Layer, Schema } from "effect";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-export const MobileConfigSchema = Schema.Struct({
+const MobileConfigSchema = Schema.Struct({
   googleIosClientId: Schema.String,
   googleAndroidClientId: Schema.String,
   microsoftClientId: Schema.String,

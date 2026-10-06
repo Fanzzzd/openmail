@@ -18,10 +18,8 @@ import { Keys, MAIL_KEYS, threadChangeKeys } from "./keys";
 /** What the Effects below need; `MailClient.runtime` provides all of it. */
 export type MailEnv = MailClient | Reactivity.Reactivity | AtomRegistry.AtomRegistry | Scope.Scope;
 
-/** The flat RPC client: `call("Tag", payload)`. */
 type Call = Context.Service.Shape<typeof MailClient>;
 
-/** Runs `f` with the RPC client. */
 export const withMail = <A, E, R>(f: (call: Call) => Effect.Effect<A, E, R>) =>
   Effect.gen(function* () {
     return yield* f(yield* MailClient);
@@ -81,19 +79,6 @@ export const reauthAccount = (accountId: string, feature?: AuthorizationFeature)
     Reactivity.mutation(MAIL_KEYS),
   );
 
-/** Asks where to save the attachment and writes it. Succeeds with false when cancelled. */
-export const saveAttachment = (messageId: string, index: number) =>
-  withMail((call) => call("SaveAttachment", { messageId, index }));
-
-/** Opens the attachment with its default app, from a temporary copy. */
-export const openAttachment = (messageId: string, index: number) =>
-  withMail((call) => call("OpenAttachment", { messageId, index }));
-
-/** Asks for a folder and saves every attachment of the message. Succeeds with the count. */
-export const saveAllAttachments = (messageId: string) =>
-  withMail((call) => call("SaveAllAttachments", { messageId }));
-
-/** Prints the thread of `id` (or only message `only`), or saves it as PDF with `pdf`. */
 export const printThread = (request: {
   id: string;
   only?: string;
@@ -102,7 +87,6 @@ export const printThread = (request: {
   locale: string;
 }) => withMail((call) => call("PrintThread", request));
 
-/** Opens the thread in a window of its own. */
 export const openThreadWindow = (id: string) =>
   withMail((call) => call("OpenThreadWindow", { id }));
 

@@ -84,7 +84,7 @@ const COUNT_RECHECK_CAPACITY = COUNT_RECHECK_PAGES * COUNT_RECHECK_PAGE_SIZE;
 const Header = Schema.Struct({ name: Schema.String, value: Schema.String });
 type Header = typeof Header.Type;
 
-export interface GmailPart {
+interface GmailPart {
   readonly mimeType: string;
   readonly filename?: string;
   readonly headers?: readonly Header[];
@@ -1405,7 +1405,7 @@ export function gmailDelta(op: MailOp): { add: string[]; remove: string[] } {
 }
 
 /** Parts with a filename, in the order `parseGmailMessage` lists them as attachments. */
-export function attachmentParts(payload: GmailPart): GmailPart[] {
+function attachmentParts(payload: GmailPart): GmailPart[] {
   const out: GmailPart[] = [];
   const walk = (part: GmailPart) => {
     if (part.filename) out.push(part);

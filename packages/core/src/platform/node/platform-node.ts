@@ -114,7 +114,6 @@ export const NodeSystem = Layer.mergeAll(
   NodeRuntime,
   NodePaths.pipe(Layer.provide(NodeBase)),
 );
-export const NodeLayer = NodePlatform;
 
 /** Desktop and CLI: node:sqlite, the OS keychain, config.json, loopback OAuth, fetch. */
 export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<PlatformServices> {

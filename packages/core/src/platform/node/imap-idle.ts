@@ -1,9 +1,8 @@
 import { ImapFlow } from "imapflow";
 import type { ImapSettings } from "../../domain.js";
+import { IDLE_RENEW_MS } from "../../imap-idle.js";
 
-export const IDLE_RENEW_MS = 25 * 60_000;
-export const idleRetryDelay = (failures: number) =>
-  Math.min(5 * 60_000, 1000 * 2 ** Math.min(failures, 9));
+export { IDLE_RENEW_MS, idleRetryDelay } from "../../imap-idle.js";
 
 export async function watchImapInbox(
   settings: ImapSettings,

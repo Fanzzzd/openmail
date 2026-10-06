@@ -73,7 +73,6 @@ export const removeAccountAtom = Atom.family((accountId: string) =>
   ),
 );
 
-/** Approves (true) or rejects (false) one proposal. */
 export const decideAtom = Atom.family((id: number) =>
   MailClient.runtime.fn((approve: boolean) => decideProposal(id, approve)),
 );

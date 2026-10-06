@@ -5,8 +5,6 @@
  */
 import { Schema } from "effect";
 
-// Accounts
-
 /** gmail and outlook use OAuth and their own APIs; imap covers iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. */
 export const Provider = Schema.Literals(["gmail", "outlook", "imap"]);
 export type Provider = typeof Provider.Type;

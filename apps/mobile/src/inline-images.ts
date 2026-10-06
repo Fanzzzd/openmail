@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const EMPTY: Readonly<Record<string, string>> = {};
 /** Only resources that load `cid:` parts need the message source; the text "cid:" alone does not. */
-export const referencesCid = (html: string) => prepareMessageHtml(html).hasCid;
+const referencesCid = (html: string) => prepareMessageHtml(html).hasCid;
 /** Message IDs are stable across unrelated mailbox revisions and HTML toggles. */
 export class MessageInlineImages {
   private readonly values = new Map<string, Promise<Readonly<Record<string, string>>>>();

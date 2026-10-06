@@ -10,10 +10,10 @@ import { Keys, MAIL_KEYS } from "../state/keys";
 import { reauthAtom } from "../state/mutations";
 import { Checkbox } from "./ui/Checkbox";
 
-export const optionalServicesAtom = (accountId: string) =>
+const optionalServicesAtom = (accountId: string) =>
   MailClient.query("OptionalServices", { accountId }, { reactivityKeys: [Keys.accounts] });
 const switchAtom = MailClient.mutation("SetServiceEnabled");
-export function openOptionalServices(accountId: string) {
+function openOptionalServices(accountId: string) {
   window.dispatchEvent(new CustomEvent("openmail:optional-services", { detail: accountId }));
 }
 /** The service's grant; undefined while loading and for IMAP, which has no optional services. */

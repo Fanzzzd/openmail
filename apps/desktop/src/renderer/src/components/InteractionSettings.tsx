@@ -10,7 +10,6 @@ import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
 import { IndexingSettings } from "./IndexingSettings";
 
-export { actionNames } from "../action-names";
 import { actionNames } from "../action-names";
 
 function usePreferences() {

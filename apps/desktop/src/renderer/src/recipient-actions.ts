@@ -2,7 +2,7 @@ import { splitAddresses } from "@openmail/core/schema";
 import { formatAddress, parseAddresses } from "./draft";
 import type { Address } from "../../shared/api";
 
-export const RECIPIENT_FIELDS = ["to", "cc", "bcc"] as const;
+const RECIPIENT_FIELDS = ["to", "cc", "bcc"] as const;
 export type RecipientFieldName = (typeof RECIPIENT_FIELDS)[number];
 export type RecipientFields = Record<RecipientFieldName, string>;
 /** One atomic update retains unfinished text, names and quoted separators. */

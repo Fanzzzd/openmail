@@ -15,7 +15,7 @@ import { McpProtocol, McpServer } from "effect/ai";
  * stdout carries protocol frames only, so the entry points send logs to
  * stderr (Logger.LogToStderr).
  */
-export const McpLive = (allowWrites = false): Layer.Layer<never, never, Mailbox> =>
+const McpLive = (allowWrites = false): Layer.Layer<never, never, Mailbox> =>
   Layer.mergeAll(
     allowWrites ? McpServer.toolkit(MailToolkit) : McpServer.toolkit(ReadMailToolkit),
     McpServer.layerStdio({

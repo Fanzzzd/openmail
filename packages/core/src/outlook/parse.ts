@@ -123,7 +123,7 @@ export const expandedAttachments = (raw: GraphMessage): Attachment[] | undefined
     ?.filter((a) => !a.isInline)
     .map((a) => ({ filename: a.name, mimeType: a.contentType, size: a.size }));
 
-export function address(a: GraphAddress | null | undefined): Address {
+function address(a: GraphAddress | null | undefined): Address {
   return {
     name: cleanDisplayName(a?.emailAddress?.name ?? ""),
     address: a?.emailAddress?.address ?? "",

@@ -2,7 +2,7 @@ import { Buffer } from "./platform/bytes.js";
 import { sha256Hex } from "./platform/crypto.js";
 import { Effect, Schema } from "effect";
 
-export const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
+const ToolCursor = Schema.String.check(Schema.isMaxLength(24_000)).annotate({
   description: "Opaque next_cursor from the same tool and filters. Omit for the first page.",
 });
 export const ToolBudget = Schema.Int.check(Schema.isBetween({ minimum: 2000, maximum: 24_000 }))

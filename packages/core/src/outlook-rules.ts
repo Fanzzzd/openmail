@@ -60,7 +60,7 @@ const words = (values: readonly string[] | undefined, text: string | undefined) 
     ? undefined
     : values.some((word) => contains(text, word));
 
-export const UNCACHED_PREDICATES = [
+const UNCACHED_PREDICATES = [
   "headerContains",
   "importance",
   "sensitivity",

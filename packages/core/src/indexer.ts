@@ -12,7 +12,7 @@ import {
 import { PdfWorker } from "./platform/runtime.js";
 import type { makeMediaStore } from "./store-media.js";
 
-export class Indexer extends Context.Service<
+class Indexer extends Context.Service<
   Indexer,
   {
     readonly progress: Effect.Effect<IndexingProgress>;

@@ -19,7 +19,6 @@
     "effect": "4.0.0-rc.118"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.0-rc.118",
     "@types/node": "^22.20.4",
     "typescript": "catalog:",
     "vitest": "^5.0.2"

@@ -953,7 +953,7 @@ const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {
 };
 
 /** Keep catalog origins here; behaviour modules receive this text adapter. */
-export function useAppMessages() {
+function useAppMessages() {
   const { t, i18n } = useLingui();
   return {
     cantOpenTheMessage: (reason: string) => t`Can't open the message: ${reason}`,

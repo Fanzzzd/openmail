@@ -31,10 +31,9 @@ type MailboxService = Mailbox["Service"];
 
 import { EXECUTABLE, safeFilename } from "./attachment-filenames";
 import { attachmentTemp } from "./attachment-temp";
-export { safeFilename } from "./attachment-filenames";
 
 /** A subject is text, not a path. Reserve space for the extension and preserve code points. */
-export function subjectFilename(subject: string): string {
+function subjectFilename(subject: string): string {
   const clean = subject
     .normalize("NFC")
     .replace(/[\\/:]/g, "_")

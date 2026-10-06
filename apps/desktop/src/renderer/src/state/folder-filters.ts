@@ -34,8 +34,6 @@ export function saveFolderFilters(
     // A denied/full local storage still permits session-local filtering.
   }
 }
-export const NO_FILTERS = DEFAULT_LIST_FILTERS;
-
 export function makeFolderFiltersAtom(
   view: Atom.Atom<View>,
   storage?: Pick<Storage, "getItem" | "setItem">,
@@ -44,7 +42,7 @@ export function makeFolderFiltersAtom(
     storage ? readFolderFilters(storage) : new Map(),
   ).pipe(Atom.keepAlive);
   return Atom.writable(
-    (get) => get(saved).get(folderFilterKey(get(view))) ?? NO_FILTERS,
+    (get) => get(saved).get(folderFilterKey(get(view))) ?? DEFAULT_LIST_FILTERS,
     (ctx, filters: ListFilters) => {
       const next = new Map(ctx.get(saved)).set(folderFilterKey(ctx.get(view)), filters);
       ctx.set(saved, next);

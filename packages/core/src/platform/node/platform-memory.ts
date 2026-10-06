@@ -33,7 +33,7 @@ import {
 } from "../../services.js";
 
 /** URLs the memory Browser was asked to open, oldest first. */
-export class OpenedUrls extends Context.Service<OpenedUrls, Ref.Ref<string[]>>()(
+class OpenedUrls extends Context.Service<OpenedUrls, Ref.Ref<string[]>>()(
   "openmail/test/OpenedUrls",
 ) {}
 
@@ -107,7 +107,7 @@ export const MemoryFileSystem = (
 };
 
 /** Where MemoryPlatform keeps config.json. */
-export const MEMORY_DATA_DIR = "/openmail";
+const MEMORY_DATA_DIR = "/openmail";
 
 export interface MemoryPlatformOptions {
   /** Isolated on-disk SQLite for integration tests; defaults to an ephemeral database. */

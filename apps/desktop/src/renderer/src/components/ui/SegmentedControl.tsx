@@ -2,7 +2,7 @@ import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import type { ReactNode } from "react";
 
-export interface SegmentedOption<T> {
+interface SegmentedOption<T> {
   value: T;
   label: ReactNode;
 }

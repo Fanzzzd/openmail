@@ -23,9 +23,7 @@ const html = ["mailchimp-newsletter", "outlook-word"].map((name) =>
   readFileSync(new URL(`../../../../src/fixtures/reader/${name}.html`, import.meta.url), "utf8"),
 );
 // Small realistic bodies in every row; the standalone parser case is exactly 200 KiB UTF-8.
-export const fixtureHtml = html.map(
-  (body) => `${body}<p>weekly alpha beta 预算批准，会议通知。</p>`,
-);
+const fixtureHtml = html.map((body) => `${body}<p>weekly alpha beta 预算批准，会议通知。</p>`);
 const fragment =
   '<table><tr><td style="color:#222">weekly alpha beta 预算批准，会议通知。</td></tr></table>';
 const prefix = `<html><head><style>.hidden{display:none}td{font-family:Arial}</style></head><body><script type="application/ld+json">{"@type":"Event","name":"Review","startDate":"2026-10-04","endDate":"2026-10-04"}</script><div class="hidden">Hidden tracking text</div>${fixtureHtml[1]}`;
