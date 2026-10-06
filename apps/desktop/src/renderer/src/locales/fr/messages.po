@@ -734,6 +734,10 @@ msgstr "Pièces jointes"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Les pièces jointes dépassent la limite de composition de 30 Mo."
 
+#: src/renderer/src/errors.ts
+msgid "Attachments rejected before sending"
+msgstr "Les pièces jointes ont été refusées avant l’envoi"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
 msgstr "Participants"
@@ -3986,8 +3990,18 @@ msgid "Outlook accounts, and IMAP accounts without a trusted authentication serv
 msgstr "Les comptes Outlook, et les comptes IMAP sans serveur d’authentification fiable, ne peuvent pas confirmer l’expéditeur : seul « Toujours » charge leurs images."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook attachment upload failed. Try saving or sending again."
+msgstr "Le chargement de la pièce jointe Outlook a échoué. Réessayez d’enregistrer ou d’envoyer."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Les réponses automatiques Outlook ne prennent pas en charge un sujet personnalisé"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
+msgstr "Outlook ne peut pas charger les messages joints de 3 Mo ou plus. Supprimez cette pièce jointe avant l’envoi."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Outlook categories"
@@ -3998,8 +4012,26 @@ msgid "Outlook chooses the reply subject."
 msgstr "Outlook choisit le sujet de la réponse."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook file attachments cannot exceed 150 MB"
+msgstr "Les fichiers joints Outlook ne peuvent pas dépasser 150 Mo"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB"
+msgstr "Les requêtes de messages Outlook ne peuvent pas dépasser 4 Mo"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
+msgstr "Les requêtes de messages Outlook ne peuvent pas dépasser 4 Mo. Les messages joints volumineux ne peuvent pas être chargés comme éléments Outlook."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Les réponses planifiées Outlook nécessitent les deux dates"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
+msgstr "Les messages Outlook.com sont limités à 25 Mo, texte du message et pièces jointes compris. Supprimez des pièces jointes avant l’envoi."
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Output truncated at the token limit. It was not cached."
@@ -5580,11 +5612,6 @@ msgstr "Ces conversations chargées seront déplacées vers la corbeille. Vous p
 #: src/renderer/src/components/recurrence-summary.ts
 msgid "Third"
 msgstr "Troisième"
-
-#: src/renderer/src/App.tsx
-#: src/renderer/src/components/Composer.tsx
-msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
-msgstr "Cette application prend en charge les pièces jointes Outlook jusqu’à 3 Mo au total. Les téléchargements de pièces jointes volumineuses ne sont pas encore pris en charge. Supprimez les pièces jointes avant de les envoyer."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."

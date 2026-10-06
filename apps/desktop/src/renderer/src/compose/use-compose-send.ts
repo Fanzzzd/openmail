@@ -56,7 +56,11 @@ export function useComposeSend({
       return;
     }
     const problem = account
-      ? attachmentProblem(account.provider, toDraftInput(draft).message.attachments)
+      ? attachmentProblem(
+          account.provider,
+          toDraftInput(draft).message.attachments,
+          toDraftInput(draft).message,
+        )
       : undefined;
     if (problem) {
       showAttachmentProblem(problem);

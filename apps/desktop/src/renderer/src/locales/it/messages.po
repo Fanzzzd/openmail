@@ -734,6 +734,10 @@ msgstr "Allegati"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Gli allegati superano il limite di composizione di 30 MB."
 
+#: src/renderer/src/errors.ts
+msgid "Attachments rejected before sending"
+msgstr "Allegati rifiutati prima dell’invio"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
 msgstr "Partecipanti"
@@ -3986,8 +3990,18 @@ msgid "Outlook accounts, and IMAP accounts without a trusted authentication serv
 msgstr "Gli account Outlook, e gli account IMAP senza un server di autenticazione attendibile, non possono confermare il mittente, quindi solo “Sempre” carica le loro immagini."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook attachment upload failed. Try saving or sending again."
+msgstr "Il caricamento dell’allegato di Outlook non è riuscito. Riprova a salvare o inviare."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Le risposte automatiche di Outlook non supportano un oggetto personalizzato"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
+msgstr "Outlook non può caricare messaggi allegati di 3 MB o più. Rimuovi questo allegato prima dell’invio."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Outlook categories"
@@ -3998,8 +4012,26 @@ msgid "Outlook chooses the reply subject."
 msgstr "Outlook sceglie l’oggetto della risposta."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook file attachments cannot exceed 150 MB"
+msgstr "I file allegati di Outlook non possono superare 150 MB"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB"
+msgstr "Le richieste dei messaggi di Outlook non possono superare 4 MB"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
+msgstr "Le richieste dei messaggi di Outlook non possono superare 4 MB. I messaggi allegati di grandi dimensioni non possono essere caricati come elementi di Outlook."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Per le risposte pianificate di Outlook sono necessarie entrambe le date"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
+msgstr "I messaggi di Outlook.com sono limitati a 25 MB, inclusi il testo del messaggio e gli allegati. Rimuovi degli allegati prima dell’invio."
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Output truncated at the token limit. It was not cached."
@@ -5580,11 +5612,6 @@ msgstr "Queste conversazioni caricate verranno spostate nel Cestino. Puoi annull
 #: src/renderer/src/components/recurrence-summary.ts
 msgid "Third"
 msgstr "Terzo"
-
-#: src/renderer/src/App.tsx
-#: src/renderer/src/components/Composer.tsx
-msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
-msgstr "Questa app supporta allegati di Outlook fino a 3 MB in totale. I caricamenti di allegati di grandi dimensioni non sono ancora supportati. Rimuovere gli allegati prima dell’invio."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."

@@ -734,6 +734,10 @@ msgstr "添付ファイル"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "添付ファイルが 30 MB の作成制限を超えています。"
 
+#: src/renderer/src/errors.ts
+msgid "Attachments rejected before sending"
+msgstr "送信前の添付ファイルの確認に失敗しました"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
 msgstr "出席者"
@@ -3986,8 +3990,18 @@ msgid "Outlook accounts, and IMAP accounts without a trusted authentication serv
 msgstr "Outlook アカウントと、信頼できる認証サーバーのない IMAP アカウントは送信者を確認できないため、画像を読み込むのは「常に」だけです。"
 
 #: src/renderer/src/errors.ts
+msgid "Outlook attachment upload failed. Try saving or sending again."
+msgstr "Outlook の添付ファイルのアップロードに失敗しました。保存または送信をやり直してください。"
+
+#: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Outlook の自動返信はカスタム件名をサポートしていません"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
+msgstr "Outlook では 3 MB 以上の添付メッセージをアップロードできません。送信前にこの添付ファイルを削除してください。"
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Outlook categories"
@@ -3998,8 +4012,26 @@ msgid "Outlook chooses the reply subject."
 msgstr "Outlook によって返信の件名が選択されます。"
 
 #: src/renderer/src/errors.ts
+msgid "Outlook file attachments cannot exceed 150 MB"
+msgstr "Outlook の添付ファイルは 150 MB を超えることはできません"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB"
+msgstr "Outlook メッセージのリクエストは 4 MB を超えることはできません"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
+msgstr "Outlook メッセージのリクエストは 4 MB を超えることはできません。大きな添付メッセージを Outlook アイテムとしてアップロードすることはできません。"
+
+#: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Outlook のスケジュールされた返信には両方の日付が必要です"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
+msgstr "Outlook.com メッセージの上限は、メッセージ本文と添付ファイルを含めて 25 MB です。送信前に添付ファイルを削除してください。"
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Output truncated at the token limit. It was not cached."
@@ -5580,11 +5612,6 @@ msgstr "これらのロードされたスレッドはゴミ箱に移動されま
 #: src/renderer/src/components/recurrence-summary.ts
 msgid "Third"
 msgstr "第3"
-
-#: src/renderer/src/App.tsx
-#: src/renderer/src/components/Composer.tsx
-msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
-msgstr "このアプリは、合計 3 MB までの Outlook 添付ファイルをサポートしています。大規模な添付ファイルのアップロードはまだサポートされていません。送信する前に添付ファイルを削除してください。"
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."

@@ -72,6 +72,18 @@ export const makeOutboxMailbox = (
     discardDraft,
   } = deps;
 
+  /** Called within the send transaction, so clearing cannot lose the old draft's identity. */
+  const clearSendPreparation = (accountId: string, draftId: string) =>
+    Effect.gen(function* () {
+      const previous = yield* store.sendPreparationState(draftId);
+      if (Option.isSome(previous))
+        yield* store.enqueueOp(accountId, draftId, {
+          kind: "deleteDraft",
+          remote: { draftId: null, messageId: null, rfcMessageId: previous.value.messageId },
+        });
+      yield* store.setSendPreparationState(draftId, null);
+    });
+
   const send = Effect.fn("Mailbox.send")(function* (
     command: Extract<Command, { kind: "send" }>,
     actor: Actor,
@@ -79,6 +91,7 @@ export const makeOutboxMailbox = (
   ) {
     if (readOnly) return yield* new InvalidInput({ message: READ_ONLY_MESSAGE });
     const { accountId, message } = command;
+    const draftId = command.draftId;
     if (message.to.length + message.cc.length + message.bcc.length === 0) {
       yield* new InvalidInput({ message: "A message needs at least one recipient." });
     }
@@ -103,7 +116,11 @@ export const makeOutboxMailbox = (
       yield* new AuthError({ accountId, message: "Sign in again before sending." });
     }
     const prepared = yield* prepare(message);
-    const problem = attachmentProblem(account.provider, prepared.message.attachments);
+    const problem = attachmentProblem(
+      account.provider,
+      prepared.message.attachments,
+      prepared.message,
+    );
     if (problem) return yield* new InvalidInput({ message: attachmentProblemMessage(problem) });
     const detail = {
       to: message.to.map((a) => a.address),
@@ -136,12 +153,24 @@ export const makeOutboxMailbox = (
           )
             yield* new InvalidInput({ message: "This draft already has a queued send" });
           yield* store.setSendUncertain(id, true);
+          if (command.confirmResend && actor.kind === "user" && actor.surface === "app")
+            yield* clearSendPreparation(accountId, id);
         }),
       );
     }
     const delivery = yield* providers
       .get(account.provider)
-      .send(account, prepared.message, prepared.original)
+      .send(
+        account,
+        prepared.message,
+        prepared.original,
+        draftId
+          ? {
+              load: store.sendPreparationState(draftId),
+              save: (state) => store.setSendPreparationState(draftId, state),
+            }
+          : undefined,
+      )
       .pipe(
         Effect.tapError((error) =>
           Effect.all([
@@ -236,10 +265,11 @@ export const makeOutboxMailbox = (
         message: "A queued message needs recipients and a valid send time",
       });
     const account = yield* store.getAccount(input.accountId);
+    const problem = attachmentProblem(account.provider, input.message.attachments, input.message);
+    if (problem) return yield* new InvalidInput({ message: attachmentProblemMessage(problem) });
     if (
-      delivery.desktopUndo
-        ? attachmentProblem(account.provider, input.message.attachments)
-        : mobileAttachmentProblem(account.provider, input.message.attachments)
+      !delivery.desktopUndo &&
+      mobileAttachmentProblem(account.provider, input.message.attachments)
     )
       return yield* new InvalidInput({ message: "Attachments rejected before sending" });
     yield* store.transaction(
@@ -253,6 +283,7 @@ export const makeOutboxMailbox = (
           if (queued?.status === "failed") yield* store.deleteQueuedSend(input.id);
           yield* store.setSendUncertain(input.id, false);
         }
+        if (confirmResend) yield* clearSendPreparation(input.accountId, input.id);
         const previous = (yield* store.queuedSends).find((item) => item.id === input.id);
         if (previous?.status === "retryable" || previous?.status === "rejected")
           yield* store.deleteQueuedSend(input.id);

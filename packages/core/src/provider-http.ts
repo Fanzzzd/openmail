@@ -257,14 +257,18 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
           options.permits(request),
         )(guarded);
       });
-    /** Read MIME or attachment bytes with the existing streaming limit and retry policy. */
-    const readBytes = (
+    /** Consume a byte response under the account's auth, concurrency and retry policy. */
+    const readContent = <A>(
       accountId: string,
       request: HttpClientRequest.HttpClientRequest,
-      maxBytes?: number,
+      consume: (
+        res: HttpClientResponse.HttpClientResponse,
+      ) => Effect.Effect<A, PermanentError | HttpClientError.HttpClientError>,
     ) => {
-      const attempt = Effect.flatMap(BackgroundRead, (background) =>
-        connectivity.run(
+      const attempt = Effect.gen(function* () {
+        const background = yield* BackgroundRead;
+        const sending = yield* options.sending(request);
+        return yield* connectivity.run(
           accountId,
           accessToken(accountId).pipe(
             Effect.flatMap((token) =>
@@ -275,35 +279,74 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
                   Effect.gen(function* () {
                     if (res.status < 200 || res.status >= 300)
                       return yield* responseFailure(res, yield* res.text, false);
-                    if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
-                    if (Number(res.headers["content-length"]) > maxBytes)
-                      return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                    const parts: Uint8Array[] = [];
-                    let total = 0;
-                    yield* res.stream.pipe(
-                      Stream.runForEach((part) =>
-                        Effect.gen(function* () {
-                          total += part.length;
-                          if (total > maxBytes)
-                            return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                          parts.push(part);
-                          return yield* Effect.void;
-                        }),
-                      ),
-                    );
-                    return new Uint8Array(Buffer.concat(parts));
+                    return yield* consume(res);
                   }),
                 accountId,
-              ).pipe(requestLock(accountId).withPermits(1)),
+                sending,
+              ).pipe((sending ? sendLock(accountId) : requestLock(accountId)).withPermits(1)),
             ),
           ),
-          background,
-        ),
-      );
+          background && !sending,
+        );
+      });
       return retryUnauthorized(accountId, request, attempt, () => attempt).pipe(
         Effect.tapError((error) => options.logFailure(accountId, request, error, "bytes")),
       );
     };
+    /** Read MIME or attachment bytes with the existing streaming limit and retry policy. */
+    const readBytes = (
+      accountId: string,
+      request: HttpClientRequest.HttpClientRequest,
+      maxBytes?: number,
+    ) =>
+      readContent(accountId, request, (res) =>
+        Effect.gen(function* () {
+          if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
+          if (Number(res.headers["content-length"]) > maxBytes)
+            return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+          const parts: Uint8Array[] = [];
+          let total = 0;
+          yield* res.stream.pipe(
+            Stream.runForEach((part) =>
+              Effect.gen(function* () {
+                total += part.length;
+                if (total > maxBytes)
+                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+                parts.push(part);
+                return yield* Effect.void;
+              }),
+            ),
+          );
+          return new Uint8Array(Buffer.concat(parts));
+        }),
+      );
+    const matchesBytes = (
+      accountId: string,
+      request: HttpClientRequest.HttpClientRequest,
+      size: number,
+      range: (start: number, length: number) => Uint8Array,
+    ) =>
+      readContent(accountId, request, (res) =>
+        Effect.gen(function* () {
+          const state = { offset: 0, equal: true };
+          yield* res.stream.pipe(
+            Stream.runForEach((part) =>
+              Effect.sync(() => {
+                if (state.offset + part.length > size) state.equal = false;
+                if (state.equal) {
+                  for (let start = 0; state.equal && start < part.length; start += 64 * 1024) {
+                    const slice = part.subarray(start, start + 64 * 1024);
+                    const expected = range(state.offset + start, slice.length);
+                    state.equal = slice.every((byte, i) => expected[i] === byte);
+                  }
+                }
+                state.offset += part.length;
+              }),
+            ),
+          );
+          return state.equal && state.offset === size;
+        }),
+      );
     const deferReads = (accountId: string, delayMs: number) =>
       Effect.gen(function* () {
         const now = yield* Clock.currentTimeMillis;
@@ -313,5 +356,5 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       tokens.clear();
       permissions.clear();
     };
-    return { api, execute, readBytes, deferReads, clearTokens, connectivity };
+    return { api, execute, readBytes, matchesBytes, deferReads, clearTokens, connectivity };
   });

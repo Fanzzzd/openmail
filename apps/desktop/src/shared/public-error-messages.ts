@@ -1,5 +1,18 @@
 /** Fixed validation and device messages authored by OpenMail. Provider/OS details are excluded. */
 export const PUBLIC_ERROR_MESSAGES = new Set([
+  "Attachments rejected before sending",
+  "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.",
+  "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.",
+  "Outlook message requests cannot exceed 4 MB",
+  "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.",
+  "Outlook file attachments cannot exceed 150 MB",
+  "Outlook attachment upload failed. Try saving or sending again.",
+  "Invalid Outlook upload session",
+  "Invalid Outlook upload byte ranges",
+  "Could not read Outlook upload progress",
+  "Invalid Outlook upload response",
+  "Outlook attachment upload made no progress",
+  "Outlook attachment upload session expired repeatedly",
   "Repeat pattern must include the event start date",
   "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset",
 

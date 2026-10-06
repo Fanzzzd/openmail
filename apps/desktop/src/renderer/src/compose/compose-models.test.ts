@@ -439,5 +439,6 @@ const messages = {
   gmailSize: `Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,
   gmailBlocked: (filename: string) =>
     `Gmail blocks ${filename}. Remove this attachment before sending.`,
-  outlookSize: `This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`,
+  outlookSize: `Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.`,
+  outlookItemSize: `Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.`,
 } satisfies ComposeMessages;

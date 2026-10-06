@@ -255,6 +255,9 @@ export const UploadedAttachments = Schema.Struct({
       contentType: Schema.optionalKey(Schema.String),
       contentBytes: Schema.optionalKey(Schema.String),
       contentId: Schema.optionalKey(Schema.NullOr(Schema.String)),
+      /** Graph storage size can include envelope overhead; it is not attachment byte identity. */
+      size: Schema.optionalKey(Schema.Number),
+      isInline: Schema.optionalKey(Schema.Boolean),
     }),
   ),
   "@odata.nextLink": Schema.optionalKey(Schema.String),

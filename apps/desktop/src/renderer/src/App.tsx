@@ -983,7 +983,8 @@ function useAppMessages() {
     gmailSize: t`Gmail attachments exceed 25 MB in total. Remove attachments before sending.`,
     gmailBlocked: (filename: string) =>
       t`Gmail blocks ${filename}. Remove this attachment before sending.`,
-    outlookSize: t`This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending.`,
+    outlookSize: t`Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.`,
+    outlookItemSize: t`Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.`,
   };
 }
 export type AppMessages = ReturnType<typeof useAppMessages>;

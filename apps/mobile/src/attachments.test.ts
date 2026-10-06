@@ -107,7 +107,7 @@ it("checks cumulative limits and shared Outlook policy before queueing", async (
   expect(native.removed).toHaveBeenCalled();
   native.size = 3;
   const existing = [
-    { filename: "old.txt", mimeType: "text/plain", content: "AAAA".repeat(1024 * 1024 + 1) },
+    { filename: "old.eml", mimeType: "message/rfc822", content: "AAAA".repeat(1024 * 1024 + 1) },
   ];
   await expect(pickAttachments("document", existing, "outlook")).rejects.toThrow(
     "rejected before sending",

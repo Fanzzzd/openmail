@@ -19,7 +19,21 @@ const NOT_FOUND = {
   signature: msg`Can't find this signature.`,
   attachment: msg`Can't find this attachment.`,
 } as const;
+const OUTLOOK_UPLOAD_FAILED = msg`Outlook attachment upload failed. Try saving or sending again.`;
 export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
+  "Outlook attachment upload failed. Try saving or sending again.": OUTLOOK_UPLOAD_FAILED,
+  "Invalid Outlook upload session": OUTLOOK_UPLOAD_FAILED,
+  "Invalid Outlook upload byte ranges": OUTLOOK_UPLOAD_FAILED,
+  "Could not read Outlook upload progress": OUTLOOK_UPLOAD_FAILED,
+  "Invalid Outlook upload response": OUTLOOK_UPLOAD_FAILED,
+  "Outlook attachment upload made no progress": OUTLOOK_UPLOAD_FAILED,
+  "Outlook attachment upload session expired repeatedly": OUTLOOK_UPLOAD_FAILED,
+  "Attachments rejected before sending": msg`Attachments rejected before sending`,
+  "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.": msg`Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.`,
+  "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.": msg`Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.`,
+  "Outlook message requests cannot exceed 4 MB": msg`Outlook message requests cannot exceed 4 MB`,
+  "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.": msg`Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.`,
+  "Outlook file attachments cannot exceed 150 MB": msg`Outlook file attachments cannot exceed 150 MB`,
   "Repeat pattern must include the event start date": msg`Repeat pattern must include the event start date`,
   "This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset": msg`This time is skipped or repeated by daylight saving. Enter a date and time with a UTC offset`,
 
@@ -128,13 +142,14 @@ export function errorText(i18n: I18n, error: AppError): string {
       const reason = DEVICE_REASONS[e.message];
       return reason ? i18n._(reason) : e.message;
     },
-    PermanentError: () => i18n._(msg`The server refused this action.`),
-    ProviderError: (e) =>
-      e.reason === "configuration"
+    PermanentError: (e) => i18n._(INPUT_ERRORS[e.message] ?? msg`The server refused this action.`),
+    ProviderError: (e) => {
+      const message = INPUT_ERRORS[e.message];
+      if (message) return i18n._(message);
+      return e.reason === "configuration"
         ? i18n._(OAUTH_CONFIGURATION_ERROR)
-        : e.message === "Remote writes are disabled in this read-only session"
-          ? i18n._(msg`Remote writes are disabled in this read-only session`)
-          : i18n._(msg`Can't reach the mail server right now.`),
+        : i18n._(msg`Can't reach the mail server right now.`);
+    },
     InvalidInput: (e) => {
       const message = INPUT_ERRORS[e.message];
       return message

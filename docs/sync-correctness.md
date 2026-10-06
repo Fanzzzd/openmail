@@ -54,6 +54,22 @@ Outlook 只在对应账户的 Drafts 文件夹中，凭精确的客户端 Messag
 
 Outlook 附件上传结果不确定时，读取全部附件页并核对文件名、内容字节及 Content-ID。恢复创建时只添加缺失附件。打开服务器草稿时即保存 changeKey 和 lastModifiedDateTime；远端版本只保存 changeKey 与服务端修改时间，不用本地时钟补值。更新前 GET 比较，只有版本不同且服务端修改时间晚于最后写入时，才另存本地版本并报告冲突。PATCH 后的部分失败会重读版本；读取失败则清除旧 changeKey，避免把本次写入当作其他客户端修改。Graph 的[消息更新文档](https://learn.microsoft.com/en-us/graph/api/message-update?view=graph-rest-1.0)未承诺 If-Match，当前比较仍存在 GET 与 PATCH 之间的竞态。
 
+### Outlook 大附件
+
+规则核对于 2026-10-07：
+
+- [Graph Outlook 上传说明](https://learn.microsoft.com/en-us/graph/outlook-large-attachments)与 [createUploadSession](https://learn.microsoft.com/en-us/graph/api/attachment-createuploadsession?view=graph-rest-1.0)规定：小于 3 MB 的文件直接添加，3–150 MB 的文件使用上传会话，按顺序 PUT 字节范围。上传 URL 已包含授权，PUT 和恢复查询不附带 Authorization，也不改写 URL。最后一块返回 201，普通进度返回 200 和 nextExpectedRanges。
+- Outlook 文档建议每块小于 4 MB。[320 KiB 整数倍及小于 60 MiB](https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession?view=graph-rest-1.0#upload-bytes-to-the-upload-session)属于 OneDrive 的规则，不能拿 60 MiB 作为 Outlook 的块上限。当前统一选用 9 × 320 KiB，即 2,949,120 字节，最后一块可更短。
+- [Graph 普通写请求上限](https://learn.microsoft.com/en-us/graph/use-the-api#http-methods)是 4 MB，包含 JSON 和 Base64 开销。单个小文件仍直接上传；多个小文件合计超过请求上限时分别添加到草稿。消息文本与邮件头本身超限仍报错。
+- [Outlook.com 专用说明](https://support.microsoft.com/en-us/support/known-issues/unable-to-attach-files-in-outlook-com)规定总邮件上限为 25 MB，包含消息文本、插入文件和附件；[发送限制页](https://support.microsoft.com/en-us/outlook/sending-limits-in-outlook-com)也列出 25 MB 附件上限。Graph 文档中的默认 35 MB 指可由管理员配置的 Exchange Online 邮箱，不适用于当前仅支持的个人账户。预检计入 Base64、换行、消息文本及 256 KiB 邮件头余量；最终仍由服务器判定大小。
+- [attachment 类型说明](https://learn.microsoft.com/en-us/graph/api/resources/attachment?view=graph-rest-1.0)将 itemAttachment 限制在 3 MB 以内。上传会话只支持 file；3 MB 及以上的 message/rfc822 明确拒绝。小 EML 发送保留原 MIME 路径，完整请求仍须小于 4 MB。
+
+发送大文件先创建独立发送草稿。在 prefs 的 `send-prepare:<本地草稿 ID>` 中记录随机 Message-ID 和 creating／preparing／sending 阶段，不保存上传 URL 或附件字节。创建响应丢失或准备阶段中断后，只采用 Drafts 中唯一且无续页的精确 Message-ID 命中。未命中时先对 Sent 做最多三次有界查询；查询失败不重建。已经在网页发送的副本算投递成功，否则用同一个 Message-ID 重建草稿。Graph 回复创建若替换 Message-ID 且 PATCH 前中断，可能留下未知空草稿，但不会自动发送这些副本。sending 在提交前持久化；普通重试只查 Sent，不再次提交。用户明确确认 Send again 时，直接发送与撤销队列都在同一事务中先按旧 Message-ID 排队清理草稿，再清除旧准备记录，按新发送意图实际重发。明确拒绝发送可回到 preparing，上传失败保留已识别草稿供重试。没有持久日志的直接调用失败时，仅删除精确身份匹配的临时草稿。丢弃本地草稿会排队按 Message-ID 清理，Sent 副本不匹配 Drafts 清理条件。
+
+每次上传按 nextExpectedRanges 继续。PUT 失败先查询会话状态；最终响应丢失时逐块核对已附加内容，避免重复附件。每块超时按至少 20 KiB/s 传输速度加 30 秒余量计算；不凭本地时钟和服务端到期时间跳过 PUT，只有请求返回 404／410 或会话已过期错误才重建，最多两次。放弃的上传会 DELETE 上传 URL，不附带 Authorization。恢复查询使用 GET 上传 URL，并接受 nextExpectedRanges／NextExpectedRanges 两种写法，依据[微软 SDK 实现](https://github.com/microsoftgraph/msgraph-sdk-javascript/blob/dev/src/tasks/LargeFileUploadTask.ts)。完整传输失败则由既有草稿／发送错误路径处理，不改变撤销窗口、outbox 认领或 pending-op 规则。排队前与发送时都计入消息文本；固定大小和上传错误通过 RPC 精确白名单及 Lingui 显示，服务商任意错误文本仍被过滤。
+
+上传仅解码当前块；已有 Base64 源由 compose 模型持有，不再构造完整二进制或大附件 JSON，上传前只规范化一次空白。恢复仅列附件元数据，按名称、类型、isInline／Content-ID 筛选后流式比较字节。Graph 的 size 是存储大小，不能作为内容身份：官方示例上传 3,483,322 字节后，GET 返回 3,640,066 字节。草稿保存沿用创建日志与远端版本；附件未变时不上传。适配器缓存已核验的附件 ID 与分块内容指纹，自身仅修改消息文本的 PATCH 保留缓存，读到远端版本变化或重启后重新核验。回归见 [outlook-upload.test.ts](../packages/core/src/outlook-upload.test.ts)，包含膨胀 size、最终 PUT 响应丢失、各阶段恢复、确认重发、慢速与时钟偏差、10 MB 分块、100 MB 内存边界和服务器草稿重新打开后保存。全部 Graph 测试使用假的 HTTP 服务，未调用真实 Microsoft API。
+
 规则创建结果不确定时，重读并匹配条件、动作和排除条件。Gmail 更新规则必须先核对新规则；仍未确认时保留原规则恢复记录，不自动恢复或重放创建。会议响应重读 responseStatus 或自身 attendee 状态，匹配后才报告成功。标签／文件夹创建冲突按完整名称重读；Gmail 同时处理 400 和 409，只有找到同名用户标签才报告成功。Gmail 官方[标签说明](https://developers.google.com/workspace/gmail/api/guides/labels)明确保留名称冲突可返回 400，未规定重复自定义名称的状态码。
 
 Gmail 从 Trash 移动前先验证目标标签。untrash 后修改失败会恢复 Trash；恢复也失败则报告位置需要核对。

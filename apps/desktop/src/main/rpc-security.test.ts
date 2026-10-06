@@ -253,6 +253,32 @@ it("keeps the fixed read-only session error across RPC without exposing provider
   }
 });
 
+it("allows fixed Outlook errors across RPC while stripping provider additions", () => {
+  const messages = [
+    "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending.",
+    "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending.",
+    "Outlook message requests cannot exceed 4 MB",
+    "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.",
+  ];
+  for (const tag of ["InvalidInput", "PermanentError", "ProviderError"] as const)
+    for (const message of messages) {
+      const frame = (value: string) =>
+        ({
+          _tag: "Exit",
+          requestId: 1,
+          exit: {
+            _tag: "Failure",
+            cause: [{ _tag: "Fail", error: { _tag: tag, message: value } }],
+          },
+        }) as const;
+      expect(JSON.stringify(publicRpcResponse(frame(message)))).toContain(message);
+      const privateMessage = `${message} Bearer private-token`;
+      const redacted = JSON.stringify(publicRpcResponse(frame(privateMessage)));
+      expect(redacted).not.toContain("private-token");
+      expect(redacted).not.toContain(message);
+    }
+});
+
 it("logs the RPC tag for every failure and separates clients, terminal responses and disconnects", async () => {
   const { createRpcFailureTracker } = await import("./rpc-security");
   const recorded: string[] = [];

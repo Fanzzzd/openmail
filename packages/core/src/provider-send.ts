@@ -3,27 +3,55 @@ import { Clock, Effect, Schema } from "effect";
 import type { ApiError } from "./provider-http.js";
 import { AuthError, ProviderError, SendUncertain } from "./errors.js";
 
-/** Only re-check delivery. The submission itself is never repeated. */
-export const confirmDelivery = <E, R>(lookup: Effect.Effect<boolean, E, R>) =>
+/** A negative result requires successful lookups unless the caller is confirming an uncertain send. */
+export const pollDelivery = <E, R>(
+  lookup: Effect.Effect<boolean, E, R>,
+  options: {
+    readonly delays: readonly number[];
+    readonly timeout: number;
+    readonly ignoreErrors?: boolean;
+  },
+) =>
   Effect.gen(function* () {
     const started = yield* Clock.currentTimeMillis;
-    const delays = [0, 1000, 2000, 4000, 8000, 15000];
-    for (const delay of delays) {
+    for (const delay of options.delays) {
       if (delay)
         yield* Effect.sleep(
-          Math.min(delay, Math.max(0, 30000 - ((yield* Clock.currentTimeMillis) - started))),
+          Math.min(
+            delay,
+            Math.max(0, options.timeout - ((yield* Clock.currentTimeMillis) - started)),
+          ),
         );
-      const remaining = Math.max(1000, 30000 - ((yield* Clock.currentTimeMillis) - started));
-      const found = yield* lookup.pipe(
-        Effect.timeout(remaining),
-        Effect.catch(() => Effect.succeed(false)),
+      const remaining = Math.max(
+        1000,
+        options.timeout - ((yield* Clock.currentTimeMillis) - started),
       );
-      if (found) return;
+      const result = yield* lookup.pipe(Effect.timeout(remaining), Effect.result);
+      if (result._tag === "Success") {
+        if (result.success) return true;
+      } else if (!options.ignoreErrors) return yield* Effect.fail(result.failure);
     }
-    yield* new SendUncertain({
-      message: "This message may have been sent. Check Sent before sending it again.",
-    });
+    return false;
   });
+
+/** Only re-check delivery. The submission itself is never repeated. */
+export const confirmDelivery = <E, R>(lookup: Effect.Effect<boolean, E, R>) =>
+  pollDelivery(lookup, {
+    delays: [0, 1000, 2000, 4000, 8000, 15000],
+    timeout: 30000,
+    ignoreErrors: true,
+  }).pipe(
+    Effect.catch(() => Effect.succeed(false)),
+    Effect.flatMap((found) =>
+      found
+        ? Effect.void
+        : Effect.fail(
+            new SendUncertain({
+              message: "This message may have been sent. Check Sent before sending it again.",
+            }),
+          ),
+    ),
+  );
 
 export function isDefiniteSendFailure(error: PerformError): boolean {
   // Adapters convert unconfirmed submissions to SendUncertain. Other errors

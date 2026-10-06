@@ -4,6 +4,7 @@ type AttachmentMessages = {
   gmailSize: string;
   gmailBlocked: (filename: string) => string;
   outlookSize: string;
+  outlookItemSize: string;
 };
 /** Both renderers keep their catalog origins while sharing error dispatch. */
 export function attachmentProblemMessage(
@@ -17,6 +18,8 @@ export function attachmentProblemMessage(
       return messages.gmailBlocked(problem.filename);
     case "outlookSize":
       return messages.outlookSize;
+    case "outlookItemSize":
+      return messages.outlookItemSize;
     default: {
       const exhaustive: never = problem;
       return exhaustive;

@@ -17,6 +17,7 @@ import {
   DEFAULT_PREFS,
   type DraftRemote,
   DraftCreateState,
+  SendPreparationState,
   OutgoingMessage,
   Prefs,
   ToolbarAction,
@@ -216,6 +217,17 @@ export function makeComposeStore(
   const setDraftOrganizationKey = (id: string, key: string | null) =>
     run(sql`UPDATE drafts SET pushed_organization = ${key} WHERE id = ${id}`);
 
+  const sendPreparationState = (id: string) =>
+    first(Schema.Struct({ value_json: Schema.fromJsonString(SendPreparationState) }))(
+      sql`SELECT value_json FROM prefs WHERE key=${`send-prepare:${id}`}`,
+    ).pipe(Effect.map(Option.map((row) => row.value_json)));
+  const setSendPreparationState = (id: string, state: SendPreparationState | null) =>
+    state
+      ? run(
+          sql`INSERT INTO prefs(key,value_json) VALUES(${`send-prepare:${id}`},${JSON.stringify(state)}) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`,
+        )
+      : run(sql`DELETE FROM prefs WHERE key=${`send-prepare:${id}`}`);
+
   const WaitingDraftSave = Schema.Struct({
     account_id: Schema.String,
     appended_message_id: Schema.NullOr(Schema.String),
@@ -270,10 +282,25 @@ export function makeComposeStore(
                   },
                 ]
               : [];
+          const sendPreparation = yield* first(
+            Schema.Struct({
+              account_id: Schema.String,
+              state: Schema.fromJsonString(SendPreparationState),
+            }),
+          )(
+            sql`SELECT d.account_id,p.value_json AS state FROM drafts d JOIN prefs p ON p.key=${`send-prepare:${id}`} WHERE d.id=${id}`,
+          );
+          if (Option.isSome(sendPreparation))
+            uncertain.push({
+              account_id: sendPreparation.value.account_id,
+              appended_message_id: sendPreparation.value.state.messageId,
+              progress_json: [],
+            });
           yield* enqueueAppendedCleanup(id, [...(yield* waitingDraftSaves(id)), ...uncertain]);
           yield* setDraftCreateState(id, null);
           yield* run(sql`DELETE FROM prefs WHERE key=${`draft-remote:${id}`}`);
           yield* run(sql`DELETE FROM prefs WHERE key=${`send-uncertain:${id}`}`);
+          yield* setSendPreparationState(id, null);
           yield* run(sql`DELETE FROM drafts WHERE id=${id}`);
           // A push already running finds the draft gone and cleans its newly created copy.
           yield* run(sql`DELETE FROM pending_ops WHERE claimed_at IS NULL AND ${saveOpFor(id)}`);
@@ -837,6 +864,8 @@ export function makeComposeStore(
     setDraftRemote,
     draftCreateState,
     setDraftCreateState,
+    sendPreparationState,
+    setSendPreparationState,
     setDraftOrganizationKey,
     draftSaveState,
     setDraftSyncError,

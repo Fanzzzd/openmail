@@ -1873,7 +1873,7 @@ for (const includeOriginalAttachments of [true, false, undefined]) {
   );
 }
 
-it.effect("attachments over 3 MB are refused before any request", () =>
+it.effect("attachments over the Outlook.com message limit are refused before any request", () =>
   Effect.gen(function* () {
     const http = fakeHttp({});
     const error = yield* run(http, (a) =>
@@ -1890,7 +1890,7 @@ it.effect("attachments over 3 MB are refused before any request", () =>
               {
                 filename: "big.bin",
                 mimeType: "application/octet-stream",
-                content: "A".repeat(5_000_000),
+                content: "A".repeat(36_000_000),
               },
             ],
           },

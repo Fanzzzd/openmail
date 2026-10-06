@@ -235,7 +235,7 @@ import { type IncomingMessage, type OutgoingMessage } from "./domain.js";
               {
                 filename: "large.txt",
                 mimeType: "text/plain",
-                content: "AAAA".repeat(1024 * 1024 + 1),
+                content: "AAAA".repeat(7 * 1024 * 1024),
               },
             ],
           };

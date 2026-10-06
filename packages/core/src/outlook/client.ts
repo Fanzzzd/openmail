@@ -11,8 +11,9 @@ import {
 import { type DeleteFolder } from "../folder-actions.js";
 import { OPTIONAL_SCOPES } from "../optional-services.js";
 import { MailCodec } from "../platform/mail-codec.js";
+import { Buffer } from "../platform/bytes.js";
 import { graphSearchErrorCode, logProviderFailure } from "../provider-diagnostics.js";
-import { makeProviderHttp } from "../provider-http.js";
+import { makeProviderHttp, ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
 import { AppConfig, type Connected, type ConnectInput, OAuth, Secrets } from "../services.js";
 import {
@@ -30,6 +31,7 @@ import {
   SCOPES,
   SearchRequest,
   SendRequest,
+  REQUEST_LIMIT,
   TOKEN_URL,
   WithId,
 } from "./graph.js";
@@ -45,7 +47,7 @@ export const makeOutlookClient = Effect.gen(function* () {
 
   const secrets = yield* Secrets;
 
-  const { api, execute, readBytes, deferReads, clearTokens, connectivity } =
+  const { api, execute, readBytes, matchesBytes, deferReads, clearTokens, connectivity } =
     yield* makeProviderHttp({
       http,
       secrets,
@@ -157,13 +159,22 @@ export const makeOutlookClient = Effect.gen(function* () {
     method: "POST" | "PATCH" | "DELETE",
     path: string,
     body?: unknown,
-  ) => {
+  ): Effect.Effect<unknown, ApiError | AuthError | ProviderError> => {
     const make = {
       POST: HttpClientRequest.post,
       PATCH: HttpClientRequest.patch,
       DELETE: HttpClientRequest.delete,
     }[method];
     const request = make(`${GRAPH}${path}`);
+    if (body !== undefined && Buffer.byteLength(JSON.stringify(body)) > REQUEST_LIMIT)
+      return Effect.fail(
+        new ApiError({
+          status: 413,
+          body: JSON.stringify({
+            error: { message: "Outlook message requests cannot exceed 4 MB" },
+          }),
+        }),
+      );
     return api(
       accountId,
       body === undefined ? request : HttpClientRequest.bodyJsonUnsafe(request, body),
@@ -296,6 +307,12 @@ export const makeOutlookClient = Effect.gen(function* () {
     write,
     deleteFolderIds,
     getBytes,
+    matchesAttachment: (
+      accountId: string,
+      path: string,
+      size: number,
+      range: (start: number, length: number) => Uint8Array,
+    ) => matchesBytes(accountId, HttpClientRequest.get(`${GRAPH}${path}`), size, range),
     connect,
   };
 });

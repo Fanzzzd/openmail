@@ -1,9 +1,19 @@
 import { Effect, Option, Schema } from "effect";
 import { HttpClientRequest } from "effect/http";
-import { attachmentProblem, attachmentProblemMessage } from "../attachment-policy.js";
+import {
+  attachmentBytes,
+  attachmentProblem,
+  attachmentProblemMessage,
+} from "../attachment-policy.js";
 import { composeTransportHtml } from "../compose-body.js";
 import { buildMime as unboundBuildMime } from "../compose.js";
-import type { Account, Address, DraftRemote, OutgoingMessage } from "../domain.js";
+import type {
+  Account,
+  Address,
+  DraftRemote,
+  OutgoingMessage,
+  SendPreparationState,
+} from "../domain.js";
 import { draftVersionMetadata } from "../draft-version.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../errors.js";
 import { MarkdownDraftSource, markdownDraftSource } from "../markdown-draft.js";
@@ -11,11 +21,18 @@ import { newMessageId } from "../message-id.js";
 import { htmlDocument } from "../mime.js";
 import { PlatformCrypto } from "../platform/crypto.js";
 import { MailCodec } from "../platform/mail-codec.js";
+import { Buffer } from "../platform/bytes.js";
 import { ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
 import { uncertainWrite } from "../provider-retry.js";
-import { confirmDelivery, deliverOrConfirm } from "../provider-send.js";
-import { type DraftPush, type DraftSaveResult, type ProviderAdapter } from "../services.js";
+import { confirmDelivery, deliverOrConfirm, pollDelivery } from "../provider-send.js";
+import {
+  type DraftPush,
+  type DraftSaveResult,
+  type ProviderAdapter,
+  type SendPreparation,
+} from "../services.js";
+import { attachmentRange, largeAttachment, makeAttachmentUpload } from "./upload.js";
 import type { OutlookClient } from "./client.js";
 import {
   AttachmentIds,
@@ -33,19 +50,61 @@ import {
 
 export const makeOutlookSend = (client: OutlookClient) =>
   Effect.gen(function* () {
-    const { codec, api, get, write } = client;
+    const { codec, api, get } = client;
 
     const crypto = yield* PlatformCrypto;
+    const uploadAttachment = yield* makeAttachmentUpload(client);
 
     const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
       unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
 
+    // Verified byte fingerprints survive our body-only PATCHes, but not external version changes.
+    const attachmentProofs = new Map<string, Map<string, string>>();
+    const draftVersions = new Map<string, string>();
+    const recordVersion = (
+      accountId: string,
+      id: string,
+      version: string | undefined,
+      ownWrite = false,
+    ) => {
+      const key = draftKey(accountId, id);
+      if (!version || (!ownWrite && draftVersions.get(key) !== version))
+        attachmentProofs.delete(key);
+      if (version) draftVersions.set(key, version);
+      else draftVersions.delete(key);
+    };
+    const write: typeof client.write = (accountId, method, path, body) =>
+      client.write(accountId, method, path, body).pipe(
+        Effect.tap((json) =>
+          Effect.sync(() => {
+            const version = Schema.decodeUnknownOption(DraftVersion)(json);
+            if (Option.isSome(version) && version.value.id && version.value.changeKey)
+              recordVersion(accountId, version.value.id, version.value.changeKey, true);
+          }),
+        ),
+      );
     const readDraftVersion = (accountId: string, id: string) =>
       get(
         accountId,
         DraftVersion,
         `/me/messages/${encodeURIComponent(id)}?$select=id,changeKey,lastModifiedDateTime`,
+      ).pipe(
+        Effect.tap((version) => Effect.sync(() => recordVersion(accountId, id, version.changeKey))),
       );
+    const deleteInheritedAttachments = (accountId: string, path: string) =>
+      Effect.gen(function* () {
+        const inherited = yield* get(
+          accountId,
+          AttachmentIds,
+          `${path}/attachments?$select=id,isInline,contentId`,
+        );
+        for (const attachment of inherited.value)
+          yield* write(
+            accountId,
+            "DELETE",
+            `${path}/attachments/${encodeURIComponent(attachment.id)}`,
+          );
+      });
 
     const deliveryLookup = (accountId: string, messageId: string) =>
       get(
@@ -73,10 +132,12 @@ export const makeOutlookSend = (client: OutlookClient) =>
         })),
       );
 
-    const listDraftAttachments = (accountId: string, id: string) =>
+    const listDraftAttachments = (accountId: string, id: string, metadataOnly = false) =>
       Effect.gen(function* () {
         const path = `/me/messages/${encodeURIComponent(id)}/attachments`;
-        let next: string | undefined = path;
+        let next: string | undefined = metadataOnly
+          ? `${path}?$select=id,name,contentType,size,contentId,isInline`
+          : path;
         const seen = new Set<string>();
         const attachments: (typeof UploadedAttachments.Type)["value"][number][] = [];
         for (const loadPage of graphPages(
@@ -155,20 +216,316 @@ export const makeOutlookSend = (client: OutlookClient) =>
         }
       });
 
-    const deliver = (accountId: string, messageId: string, effect: ReturnType<typeof api>) =>
+    const deliver = (accountId: string, messageId: string, effect: ReturnType<typeof write>) =>
       deliverOrConfirm(
         effect,
         deliveryLookup(accountId, messageId).pipe(Effect.map((found) => !!found.value.length)),
         (error) => error._tag === "ApiError" && uncertainWrite(error),
       );
 
+    type Uploaded = (typeof UploadedAttachments.Type)["value"][number];
+    const findMissing = <E>(
+      files: OutgoingMessage["attachments"],
+      existing: readonly Uploaded[],
+      matches: (
+        file: OutgoingMessage["attachments"][number],
+        candidate: Uploaded,
+      ) => Effect.Effect<boolean, E>,
+    ) =>
+      Effect.gen(function* () {
+        const remaining = [...existing];
+        const missing: { file: OutgoingMessage["attachments"][number]; required: number }[] = [];
+        for (const [fileIndex, file] of files.entries()) {
+          let found = -1;
+          for (const [index, candidate] of remaining.entries())
+            if (yield* matches(file, candidate)) {
+              found = index;
+              break;
+            }
+          if (found < 0)
+            missing.push({
+              file,
+              required:
+                1 +
+                files
+                  .slice(0, fileIndex)
+                  .filter(
+                    (prior) =>
+                      prior.filename === file.filename &&
+                      prior.mimeType.toLowerCase() === file.mimeType.toLowerCase() &&
+                      prior.content === file.content &&
+                      prior.contentId === file.contentId,
+                  ).length,
+            });
+          else remaining.splice(found, 1);
+        }
+        return { missing, remaining };
+      });
+    const deleteStale = (
+      accountId: string,
+      id: string,
+      message: OutgoingMessage,
+      remaining: readonly Uploaded[],
+    ) =>
+      Effect.gen(function* () {
+        const managed = new Set(
+          message.attachments.flatMap((file) => (file.contentId ? [file.contentId] : [])),
+        );
+        for (const stale of remaining.filter(
+          (file) =>
+            (message.mode === "forward" && !keepsInherited(message)) ||
+            !file.isInline ||
+            (file.contentId !== null &&
+              file.contentId !== undefined &&
+              managed.has(file.contentId)),
+        ))
+          yield* write(
+            accountId,
+            "DELETE",
+            `/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(stale.id)}`,
+          );
+      });
+
+    // Metadata is only a candidate filter. Content is compared as a stream before reuse.
+    const syncUploadedAttachments = (
+      accountId: string,
+      id: string,
+      message: OutgoingMessage,
+      reconcile = false,
+      replace = false,
+    ) =>
+      Effect.gen(function* () {
+        message = {
+          ...message,
+          attachments: message.attachments.map((file) =>
+            /\s/.test(file.content) ? { ...file, content: file.content.replace(/\s/g, "") } : file,
+          ),
+        };
+        const key = draftKey(accountId, id);
+        const fingerprints = new Map<OutgoingMessage["attachments"][number], string>();
+        const fingerprint = (file: OutgoingMessage["attachments"][number]) => {
+          const known = fingerprints.get(file);
+          if (known) return known;
+          const chunks: string[] = [];
+          for (let start = 0; start < file.content.length; start += 256 * 1024)
+            chunks.push(crypto.sha256(file.content.slice(start, start + 256 * 1024)));
+          const hash = crypto.sha256(chunks.join(""));
+          fingerprints.set(file, hash);
+          return hash;
+        };
+        const matches = (file: OutgoingMessage["attachments"][number], candidate: Uploaded) => {
+          if (
+            candidate.name !== file.filename ||
+            candidate.contentType?.toLowerCase() !== file.mimeType.toLowerCase() ||
+            (candidate.isInline ?? !!candidate.contentId) !== !!file.contentId ||
+            (candidate.contentId ?? null) !== (file.contentId ?? null)
+          )
+            return Effect.succeed(false);
+          if (candidate.contentBytes !== undefined)
+            return Effect.succeed(candidate.contentBytes === file.content);
+          const hash = fingerprint(file);
+          if (attachmentProofs.get(key)?.get(candidate.id) === hash) return Effect.succeed(true);
+          return client
+            .matchesAttachment(
+              accountId,
+              `/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(candidate.id)}/$value`,
+              attachmentBytes(file.content),
+              (start, length) => attachmentRange(file.content, start, length),
+            )
+            .pipe(
+              Effect.tap((same) =>
+                Effect.sync(() => {
+                  if (same && draftVersions.has(key)) {
+                    let proofs = attachmentProofs.get(key);
+                    if (!proofs) {
+                      proofs = new Map();
+                      attachmentProofs.set(key, proofs);
+                    }
+                    proofs.set(candidate.id, hash);
+                  }
+                }),
+              ),
+            );
+        };
+        const existing = reconcile ? yield* listDraftAttachments(accountId, id, true) : [];
+        const { missing, remaining } = yield* findMissing(message.attachments, existing, matches);
+        if (replace) yield* deleteStale(accountId, id, message, remaining);
+        for (const { file, required } of missing) {
+          const exists = () =>
+            Effect.gen(function* () {
+              const current = yield* listDraftAttachments(accountId, id, true);
+              let present = 0;
+              for (const candidate of current) if (yield* matches(file, candidate)) present++;
+              return present >= required;
+            });
+          yield* largeAttachment(file)
+            ? uploadAttachment(accountId, id, file, exists)
+            : write(
+                accountId,
+                "POST",
+                `/me/messages/${encodeURIComponent(id)}/attachments`,
+                fileAttachment(file),
+              ).pipe(
+                Effect.catchIf(
+                  (error) => error._tag === "ApiError" && uncertainWrite(error),
+                  (error) =>
+                    exists().pipe(
+                      Effect.flatMap((found) => (found ? Effect.void : Effect.fail(error))),
+                    ),
+                ),
+              );
+        }
+      });
+
+    const sendUploaded = (
+      account: Account,
+      message: OutgoingMessage,
+      original: Option.Option<{ providerId: string; threadId: string }>,
+      preparation?: SendPreparation,
+    ) =>
+      Effect.gen(function* () {
+        const loaded = preparation ? yield* preparation.load : Option.none<SendPreparationState>();
+        const messageId = Option.isSome(loaded)
+          ? loaded.value.messageId
+          : yield* newMessageId(account.email).pipe(Effect.provideService(PlatformCrypto, crypto));
+        const save = (state: SendPreparationState | null) =>
+          preparation ? preparation.save(state) : Effect.void;
+        let sendAttempted = false;
+        let creationAttempted = false;
+        yield* Effect.gen(function* () {
+          if (Option.isSome(loaded) && loaded.value.phase === "sending") {
+            yield* confirmDelivery(
+              deliveryLookup(account.id, messageId).pipe(
+                Effect.map((delivery) => delivery.value.length > 0),
+              ),
+            );
+            return;
+          }
+          const fields = { ...graphFields(message), internetMessageId: messageId };
+          yield* checkRequestSize(JSON.stringify(fields));
+          let id: string;
+          let recovered = false;
+          const found = Option.isSome(loaded)
+            ? yield* draftLookup(account.id, messageId)
+            : undefined;
+          const candidate = found?.value[0];
+          if (candidate) {
+            id = candidate.id;
+            recovered = true;
+          } else {
+            if (
+              Option.isSome(loaded) &&
+              (yield* pollDelivery(
+                deliveryLookup(account.id, messageId).pipe(
+                  Effect.map((delivery) => delivery.value.length > 0),
+                ),
+                {
+                  delays: [0, 1000, 2000],
+                  timeout: 5000,
+                },
+              ).pipe(
+                Effect.catchTag("TimeoutError", () =>
+                  Effect.fail(new ProviderError({ message: "Outlook delivery lookup timed out" })),
+                ),
+              ))
+            )
+              return;
+            yield* save({ phase: "creating", messageId });
+            creationAttempted = true;
+            const mode = message.mode ?? "new";
+            const reply = Option.isSome(original) && mode !== "new";
+            const action =
+              mode === "forward"
+                ? "createForward"
+                : mode === "reply"
+                  ? "createReply"
+                  : "createReplyAll";
+            const created = yield* write(
+              account.id,
+              "POST",
+              reply && Option.isSome(original)
+                ? `/me/messages/${encodeURIComponent(original.value.providerId)}/${action}`
+                : "/me/messages",
+              reply ? { message: { internetMessageId: messageId } } : fields,
+            ).pipe(
+              Effect.flatMap(decode(WithId)),
+              Effect.catchIf(
+                (error) => error._tag === "ApiError" && !uncertainWrite(error),
+                (error) => save(null).pipe(Effect.andThen(Effect.fail(error))),
+              ),
+            );
+            id = created.id;
+            // createReply/createForward can assign their own Message-ID. Establish ours before adoption.
+            if (reply)
+              yield* write(account.id, "PATCH", `/me/messages/${encodeURIComponent(id)}`, fields);
+          }
+          const path = `/me/messages/${encodeURIComponent(id)}`;
+          yield* save({ phase: "preparing", messageId, draftId: id });
+          if (recovered) {
+            if (attachmentProofs.has(draftKey(account.id, id)))
+              yield* readDraftVersion(account.id, id);
+            yield* write(account.id, "PATCH", path, fields);
+          }
+          if (!recovered && message.mode === "forward" && !keepsInherited(message))
+            yield* deleteInheritedAttachments(account.id, path);
+          yield* syncUploadedAttachments(
+            account.id,
+            id,
+            message,
+            recovered,
+            recovered && !keepsInherited(message),
+          );
+          yield* save({ phase: "sending", messageId, draftId: id });
+          sendAttempted = true;
+          yield* deliver(account.id, messageId, write(account.id, "POST", `${path}/send`)).pipe(
+            Effect.tapError((error) =>
+              error._tag === "SendUncertain"
+                ? Effect.void
+                : Effect.gen(function* () {
+                    sendAttempted = false;
+                    yield* save({ phase: "preparing", messageId, draftId: id });
+                  }),
+            ),
+          );
+          attachmentProofs.delete(draftKey(account.id, id));
+          draftVersions.delete(draftKey(account.id, id));
+          return;
+        }).pipe(
+          Effect.onError(() =>
+            preparation || sendAttempted || !creationAttempted
+              ? Effect.void
+              : draftLookup(account.id, messageId).pipe(
+                  Effect.flatMap((found) =>
+                    Effect.forEach(
+                      found.value,
+                      (draft) =>
+                        write(account.id, "DELETE", `/me/messages/${encodeURIComponent(draft.id)}`),
+                      { discard: true },
+                    ),
+                  ),
+                  Effect.catch(() => Effect.void),
+                ),
+          ),
+        );
+      });
+
     const send = Effect.fn("Outlook.send")(
       function* (
         account: Account,
         message: OutgoingMessage,
         original: Option.Option<{ providerId: string; threadId: string }>,
+        preparation?: SendPreparation,
       ) {
         yield* checkAttachmentSize(message);
+        const prior = preparation ? yield* preparation.load : Option.none<SendPreparationState>();
+        if (
+          (Option.isSome(prior) &&
+            (prior.value.phase === "sending" || !forwardsMessage(message))) ||
+          (!forwardsMessage(message) && needsUpload(message))
+        ) {
+          yield* sendUploaded(account, message, original, preparation);
+          return;
+        }
         const messageId = yield* newMessageId(account.email).pipe(
           Effect.provideService(PlatformCrypto, crypto),
         );
@@ -199,6 +556,9 @@ export const makeOutlookSend = (client: OutlookClient) =>
             ),
           );
         } else if (Option.isNone(original) || mode === "new") {
+          yield* checkRequestSize(
+            JSON.stringify({ message: { ...fields, attachments }, saveToSentItems: true }),
+          );
           yield* deliver(
             account.id,
             messageId,
@@ -253,19 +613,8 @@ export const makeOutlookSend = (client: OutlookClient) =>
           let sendAttempted = false;
           yield* Effect.gen(function* () {
             yield* write(account.id, "PATCH", path, fields);
-            if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
-              const inherited = yield* get(
-                account.id,
-                AttachmentIds,
-                `/me/messages/${encodeURIComponent(draft.id)}/attachments?$select=id,isInline,contentId`,
-              );
-              for (const attachment of inherited.value)
-                yield* write(
-                  account.id,
-                  "DELETE",
-                  `/me/messages/${encodeURIComponent(draft.id)}/attachments/${encodeURIComponent(attachment.id)}`,
-                );
-            }
+            if (mode === "forward" && !keepsInherited(message))
+              yield* deleteInheritedAttachments(account.id, path);
             yield* addDraftAttachments(account.id, draft.id, attachments);
             sendAttempted = true;
             yield* deliver(account.id, messageId, write(account.id, "POST", `${path}/send`));
@@ -286,6 +635,7 @@ export const makeOutlookSend = (client: OutlookClient) =>
             ),
           );
         }
+        return;
       },
       (effect, account) =>
         Effect.mapError(effect.pipe(Effect.provideService(SendRequest, true)), (error) =>
@@ -319,8 +669,17 @@ export const makeOutlookSend = (client: OutlookClient) =>
           ],
         };
         const attachments = message.attachments.map(fileAttachment);
+        const uploaded = needsUpload(message, fields);
         const addAttachments = (id: string, reconcile = false) =>
-          addDraftAttachments(account.id, id, attachments, reconcile);
+          uploaded
+            ? syncUploadedAttachments(
+                account.id,
+                id,
+                message,
+                reconcile,
+                reconcile && !keepsInherited(message),
+              )
+            : addDraftAttachments(account.id, id, attachments, reconcile);
         let saveError: ProviderFailure | undefined;
         let changeKey: string | undefined;
         let lastWrittenAt = draft.remote?.lastWrittenAt;
@@ -371,19 +730,14 @@ export const makeOutlookSend = (client: OutlookClient) =>
               ).pipe(Effect.flatMap(decode(DraftVersion)));
               yield* captureVersion(updated);
               patchedId = id;
-              if (mode === "forward" && message.includeOriginalAttachments !== undefined) {
-                const inherited = yield* get(
+              if (mode === "forward" && !keepsInherited(message) && !(uploaded && reconcile))
+                yield* deleteInheritedAttachments(
                   account.id,
-                  AttachmentIds,
-                  `/me/messages/${encodeURIComponent(id)}/attachments?$select=id,isInline,contentId`,
+                  `/me/messages/${encodeURIComponent(id)}`,
                 );
-                for (const attachment of inherited.value)
-                  yield* write(
-                    account.id,
-                    "DELETE",
-                    `/me/messages/${encodeURIComponent(id)}/attachments/${encodeURIComponent(attachment.id)}`,
-                  );
-              }
+              yield* addAttachments(id, reconcile);
+              if (changeKey) yield* captureVersion(yield* readDraftVersion(account.id, id));
+            } else if (uploaded) {
               yield* addAttachments(id, reconcile);
               if (changeKey) yield* captureVersion(yield* readDraftVersion(account.id, id));
             }
@@ -425,7 +779,11 @@ export const makeOutlookSend = (client: OutlookClient) =>
               : "/me/messages",
             reply
               ? { message: { internetMessageId: state.messageId } }
-              : { ...fields, internetMessageId: state.messageId, attachments },
+              : {
+                  ...fields,
+                  internetMessageId: state.messageId,
+                  ...(uploaded ? {} : { attachments }),
+                },
           ).pipe(
             Effect.flatMap(decode(DraftVersion)),
             Effect.catch((error) =>
@@ -447,19 +805,20 @@ export const makeOutlookSend = (client: OutlookClient) =>
             return yield* new ProviderError({ message: "Created draft response has no ID" });
           yield* captureVersion(created);
           yield* remember(created.id, changeKey);
-          return yield* finishCreated(created.id, mode, reply, recovered, state.messageId);
+          return yield* finishCreated(
+            created.id,
+            mode,
+            reply || (uploaded && recovered),
+            recovered,
+            state.messageId,
+          );
         });
 
         const update = (id: string) =>
           Effect.gen(function* () {
             // Recreate the server-side forward when uploaded parts change. Its inherited
             // parts are opaque to the upload list and must never be deleted with it.
-            if (
-              message.mode === "forward" &&
-              message.includeOriginalAttachments === undefined &&
-              draft.replaceAttachments &&
-              Option.isSome(original)
-            ) {
+            if (keepsInherited(message) && draft.replaceAttachments && Option.isSome(original)) {
               // This replaces the message. Read live metadata instead of replaying
               // stale local intent when another client changed its categories/flag.
               if (message.draftOrganization === undefined) {
@@ -509,6 +868,11 @@ export const makeOutlookSend = (client: OutlookClient) =>
             patchedId = id;
             yield* remember(id, changeKey);
             if (!draft.replaceAttachments) return id;
+            if (uploaded) {
+              yield* syncUploadedAttachments(account.id, id, message, true, true);
+              if (changeKey) yield* captureVersion(yield* readDraftVersion(account.id, id));
+              return id;
+            }
             const current = yield* get(
               account.id,
               AttachmentIds,
@@ -544,12 +908,16 @@ export const makeOutlookSend = (client: OutlookClient) =>
 
         const known = draft.remote?.messageId ?? draft.remote?.draftId;
         // Deleted in another client meanwhile: the person is still writing it.
-        if (known && draft.remote?.changeKey) {
+        if (
+          known &&
+          (draft.remote?.changeKey || attachmentProofs.has(draftKey(account.id, known)))
+        ) {
           const live = yield* readDraftVersion(account.id, known).pipe(
             Effect.map(Option.some),
             Effect.catchIf(is404, () => Effect.succeed(Option.none())),
           );
           conflict =
+            draft.remote?.changeKey !== undefined &&
             Option.isSome(live) &&
             live.value.changeKey !== draft.remote.changeKey &&
             draft.remote.lastWrittenAt !== undefined &&
@@ -574,6 +942,12 @@ export const makeOutlookSend = (client: OutlookClient) =>
         const remove = (id: string) =>
           write(account.id, "DELETE", `/me/messages/${encodeURIComponent(id)}`).pipe(
             Effect.catchIf(is404, () => Effect.void),
+            Effect.tap(() =>
+              Effect.sync(() => {
+                attachmentProofs.delete(draftKey(account.id, id));
+                draftVersions.delete(draftKey(account.id, id));
+              }),
+            ),
           );
         const id = remote.messageId ?? remote.draftId;
         if (id) {
@@ -673,11 +1047,28 @@ function graphFields(message: OutgoingMessage) {
   };
 }
 
+const draftKey = (accountId: string, id: string) => `${accountId}\0${id}`;
+const keepsInherited = (message: OutgoingMessage) =>
+  message.mode === "forward" && message.includeOriginalAttachments === undefined;
+function needsUpload(message: OutgoingMessage, fields?: object) {
+  if (message.attachments.some(largeAttachment)) return true;
+  const graphMessage = {
+    ...(fields ?? graphFields(message)),
+    attachments: message.attachments.map(fileAttachment),
+  };
+  return (
+    Buffer.byteLength(
+      JSON.stringify(fields ? graphMessage : { message: graphMessage, saveToSentItems: true }),
+    ) > REQUEST_LIMIT
+  );
+}
+
 const checkRequestSize = (body: string) =>
-  body.length > REQUEST_LIMIT
+  Buffer.byteLength(body) > REQUEST_LIMIT
     ? Effect.fail(
         new PermanentError({
-          message: "Outlook messages over 3 MB with a forwarded message are not supported yet",
+          message:
+            "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items.",
         }),
       )
     : Effect.void;
@@ -686,7 +1077,7 @@ const forwardsMessage = (message: OutgoingMessage) =>
   message.attachments.some((a) => a.mimeType.toLowerCase() === "message/rfc822");
 
 const checkAttachmentSize = (message: OutgoingMessage) => {
-  const problem = attachmentProblem("outlook", message.attachments);
+  const problem = attachmentProblem("outlook", message.attachments, message);
   return problem
     ? Effect.fail(new PermanentError({ message: attachmentProblemMessage(problem) }))
     : Effect.void;

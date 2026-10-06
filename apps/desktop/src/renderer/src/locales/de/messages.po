@@ -734,6 +734,10 @@ msgstr "Anhänge"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Anhänge überschreiten das Erstellungslimit von 30 MB."
 
+#: src/renderer/src/errors.ts
+msgid "Attachments rejected before sending"
+msgstr "Anhänge wurden vor dem Senden abgelehnt"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
 msgstr "Teilnehmer"
@@ -3986,8 +3990,18 @@ msgid "Outlook accounts, and IMAP accounts without a trusted authentication serv
 msgstr "Outlook-Accounts und IMAP-Accounts ohne vertrauenswürdigen Authentifizierungsserver können den Absender nicht bestätigen, daher lädt nur „Immer“ ihre Bilder."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook attachment upload failed. Try saving or sending again."
+msgstr "Der Outlook-Anhang konnte nicht hochgeladen werden. Versuchen Sie erneut zu speichern oder zu senden."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Automatische Antworten von Outlook unterstützen keinen benutzerdefinierten Betreff"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
+msgstr "Outlook kann angehängte Nachrichten ab 3 MB nicht hochladen. Entfernen Sie diesen Anhang vor dem Senden."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Outlook categories"
@@ -3998,8 +4012,26 @@ msgid "Outlook chooses the reply subject."
 msgstr "Outlook wählt den Betreff der Antwort."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook file attachments cannot exceed 150 MB"
+msgstr "Outlook-Dateianhänge dürfen 150 MB nicht überschreiten"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB"
+msgstr "Outlook-Nachrichtenanfragen dürfen 4 MB nicht überschreiten"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
+msgstr "Outlook-Nachrichtenanfragen dürfen 4 MB nicht überschreiten. Große angehängte Nachrichten können nicht als Outlook-Elemente hochgeladen werden."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Für geplante Outlook-Antworten sind beide Datumsangaben erforderlich"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
+msgstr "Outlook.com-Nachrichten sind auf 25 MB begrenzt, einschließlich Nachrichtentext und Anhängen. Entfernen Sie vor dem Senden Anhänge."
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Output truncated at the token limit. It was not cached."
@@ -5580,11 +5612,6 @@ msgstr "Diese geladenen Konversationen werden in den Papierkorb verschoben. Sie 
 #: src/renderer/src/components/recurrence-summary.ts
 msgid "Third"
 msgstr "Dritter"
-
-#: src/renderer/src/App.tsx
-#: src/renderer/src/components/Composer.tsx
-msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
-msgstr "Diese App unterstützt Outlook-Anhänge mit einer Gesamtgröße von bis zu 3 MB. Das Hochladen großer Anhänge wird noch nicht unterstützt. Entfernen Sie Anhänge vor dem Senden."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."

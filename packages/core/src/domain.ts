@@ -531,6 +531,22 @@ export const DraftCreateState = Schema.Struct({
 });
 export type DraftCreateState = typeof DraftCreateState.Type;
 
+/** A send draft is separate from the user's autosaved draft. No attachment bytes or upload URLs. */
+export const SendPreparationState = Schema.Union([
+  Schema.Struct({ phase: Schema.Literal("creating"), messageId: Schema.String }),
+  Schema.Struct({
+    phase: Schema.Literal("preparing"),
+    messageId: Schema.String,
+    draftId: Schema.String,
+  }),
+  Schema.Struct({
+    phase: Schema.Literal("sending"),
+    messageId: Schema.String,
+    draftId: Schema.String,
+  }),
+]);
+export type SendPreparationState = typeof SendPreparationState.Type;
+
 /** Draft changes waiting in the queue next to MailOps. */
 export const DraftOp = Schema.Union([
   /** Push the draft's current content; the queue reads it when the op runs. */

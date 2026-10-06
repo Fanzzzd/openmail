@@ -734,6 +734,10 @@ msgstr "Bijlagen"
 msgid "Attachments exceed the 30 MB compose limit."
 msgstr "Bijlagen overschrijden de opstellimiet van 30 MB."
 
+#: src/renderer/src/errors.ts
+msgid "Attachments rejected before sending"
+msgstr "Bijlagen zijn vóór verzending geweigerd"
+
 #: src/renderer/src/components/InviteBanner.tsx
 msgid "Attendees"
 msgstr "Deelnemers"
@@ -3986,8 +3990,18 @@ msgid "Outlook accounts, and IMAP accounts without a trusted authentication serv
 msgstr "Outlook-accounts en IMAP-accounts zonder vertrouwde verificatieserver kunnen de afzender niet bevestigen, dus alleen ‘Altijd’ laadt hun afbeeldingen."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook attachment upload failed. Try saving or sending again."
+msgstr "Het uploaden van de Outlook-bijlage is mislukt. Probeer opnieuw op te slaan of te verzenden."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook automatic replies do not support a custom subject"
 msgstr "Automatische antwoorden in Outlook ondersteunen geen aangepast onderwerp"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook cannot upload attached messages of 3 MB or more. Remove this attachment before sending."
+msgstr "Outlook kan bijgevoegde berichten van 3 MB of meer niet uploaden. Verwijder deze bijlage voordat u verzendt."
 
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Outlook categories"
@@ -3998,8 +4012,26 @@ msgid "Outlook chooses the reply subject."
 msgstr "Outlook kiest het antwoordonderwerp."
 
 #: src/renderer/src/errors.ts
+msgid "Outlook file attachments cannot exceed 150 MB"
+msgstr "Bestandsbijlagen in Outlook mogen niet groter zijn dan 150 MB"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB"
+msgstr "Berichtaanvragen in Outlook mogen niet groter zijn dan 4 MB"
+
+#: src/renderer/src/errors.ts
+msgid "Outlook message requests cannot exceed 4 MB. Large attached messages cannot be uploaded as Outlook items."
+msgstr "Berichtaanvragen in Outlook mogen niet groter zijn dan 4 MB. Grote bijgevoegde berichten kunnen niet als Outlook-items worden geüpload."
+
+#: src/renderer/src/errors.ts
 msgid "Outlook scheduled replies need both dates"
 msgstr "Voor geplande Outlook-antwoorden zijn beide datums nodig"
+
+#: src/renderer/src/App.tsx
+#: src/renderer/src/components/Composer.tsx
+#: src/renderer/src/errors.ts
+msgid "Outlook.com messages are limited to 25 MB, including message text and attachments. Remove attachments before sending."
+msgstr "Outlook.com-berichten zijn beperkt tot 25 MB, inclusief berichttekst en bijlagen. Verwijder bijlagen voordat u verzendt."
 
 #: src/renderer/src/components/AiPanel.tsx
 msgid "Output truncated at the token limit. It was not cached."
@@ -5580,11 +5612,6 @@ msgstr "Deze geladen gesprekken worden naar de prullenmand verplaatst. U kunt de
 #: src/renderer/src/components/recurrence-summary.ts
 msgid "Third"
 msgstr "Derde"
-
-#: src/renderer/src/App.tsx
-#: src/renderer/src/components/Composer.tsx
-msgid "This app supports Outlook attachments up to 3 MB in total. Large attachment uploads are not supported yet. Remove attachments before sending."
-msgstr "This app supports Outlook attachments up to 3 MB in total. Het uploaden van grote bijlagen wordt nog niet ondersteund. Verwijder bijlagen voordat u deze verzendt."
 
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "This deletes the saved recovery copy. Rules on the server are unchanged."

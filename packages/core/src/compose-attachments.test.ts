@@ -203,7 +203,13 @@ it("attachment preflight accounts for padding, aggregate size, forbidden types a
   );
   const mb = { ...file, content: "A".repeat(4 * 1024 * 1024) };
   assert.strictEqual(attachmentProblem("outlook", [mb]), undefined);
-  assert.strictEqual(attachmentProblem("outlook", [mb, file])?.kind, "outlookSize");
+  assert.strictEqual(
+    attachmentProblem(
+      "outlook",
+      Array.from({ length: 9 }, () => mb),
+    )?.kind,
+    "outlookSize",
+  );
   assert.strictEqual(
     attachmentProblem(
       "gmail",

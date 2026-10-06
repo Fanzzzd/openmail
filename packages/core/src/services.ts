@@ -31,6 +31,7 @@ import type {
   Command,
   DraftRemote,
   DraftCreateState,
+  SendPreparationState,
   ImapSettings,
   IncomingMessage,
   Label,
@@ -510,6 +511,8 @@ export class Store extends Context.Service<
     setDraftLocalOnly(id: string, localOnly: boolean): Effect.Effect<void>;
     draftCreateState(id: string): Effect.Effect<Option.Option<DraftCreateState>>;
     setDraftCreateState(id: string, state: DraftCreateState | null): Effect.Effect<void>;
+    sendPreparationState(id: string): Effect.Effect<Option.Option<SendPreparationState>>;
+    setSendPreparationState(id: string, state: SendPreparationState | null): Effect.Effect<void>;
     /** Deletes the draft and its queued saves that are not being pushed. */
     deleteDraft(id: string): Effect.Effect<void>;
     /** Queues a push of the draft unless one is already waiting. */
@@ -897,6 +900,7 @@ export interface ProviderAdapter {
     account: Account,
     message: OutgoingMessage,
     original: Option.Option<{ providerId: string; threadId: string }>,
+    preparation?: SendPreparation,
   ): Effect.Effect<
     void | { readonly rejected?: readonly string[]; readonly sentCopyMissing?: boolean },
     ProviderFailure | SendUncertain
@@ -973,6 +977,11 @@ export interface DraftPush {
   readonly original: Option.Option<{ providerId: string; threadId: string }>;
   /** The attachments changed since the last push (providers that upload them one by one). */
   readonly replaceAttachments: boolean;
+}
+
+export interface SendPreparation {
+  readonly load: Effect.Effect<Option.Option<SendPreparationState>>;
+  readonly save: (state: SendPreparationState | null) => Effect.Effect<void>;
 }
 
 export class Providers extends Context.Service<
