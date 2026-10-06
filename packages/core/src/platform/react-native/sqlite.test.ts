@@ -137,16 +137,26 @@ describe("op-sqlite contract", () => {
     const started = new Promise<void>((resolve) => {
       notify = resolve;
     });
+    const statements: string[] = [];
     const open = () => {
       const native = db.open();
       return {
         ...native,
         execute: async (query: string, params?: SqliteScalar[]) => {
           if (query.startsWith("INSERT INTO interrupt_test")) {
+            statements.push("insert:start");
             notify();
             await waiting;
+            const result = await native.execute(query, params);
+            statements.push("insert:done");
+            return result;
           }
+          if (query === "ROLLBACK") statements.push("rollback");
           return native.execute(query, params);
+        },
+        close: () => {
+          statements.push("close");
+          native.close();
         },
       };
     };
@@ -158,13 +168,18 @@ describe("op-sqlite contract", () => {
           sql.withTransaction(sql`INSERT INTO interrupt_test VALUES (1)`),
         );
         yield* Effect.promise(() => started);
-        const interrupt = yield* Effect.forkChild(Fiber.interrupt(writer));
-        yield* Effect.sleep("1 millis");
+        // Send the interrupt before releasing the native statement.
+        const interrupt = yield* Effect.forkChild(Fiber.interrupt(writer), {
+          startImmediately: true,
+        });
+        expect(statements).toEqual(["insert:start"]);
+        expect(db.closed()).toBe(false);
         yield* Effect.sync(release);
         yield* Fiber.join(interrupt);
         expect(yield* sql`SELECT n FROM interrupt_test`).toEqual([]);
       }).pipe(Effect.provide(opSqliteLayer(open)), Effect.scoped),
     );
+    expect(statements).toEqual(["insert:start", "insert:done", "rollback", "close"]);
     expect(db.closed()).toBe(true);
   });
 

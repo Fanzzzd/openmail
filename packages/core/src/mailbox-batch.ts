@@ -43,10 +43,7 @@ function inverse(message: Message, provider: Provider, op: MailOp): MailOp[] {
       {
         kind: "classification",
         // Unknown cached classification has the same effective behavior as Focused.
-        value:
-          message.labels.some(isOutlookClassification) && message.labels.includes("CATEGORY_OTHER")
-            ? "other"
-            : "focused",
+        value: message.labels.includes("CATEGORY_OTHER") ? "other" : "focused",
       },
     ];
   if (op.kind === "categories") {

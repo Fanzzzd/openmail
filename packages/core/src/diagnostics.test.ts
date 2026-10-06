@@ -248,9 +248,9 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
         Stream.filter((event) => event._tag === "Changed"),
         Stream.take(1),
         Stream.runCollect,
-        Effect.forkChild,
+        // Subscribe synchronously before saveDraft can publish Changed.
+        Effect.forkChild({ startImmediately: true }),
       );
-      yield* Effect.sleep("1 millis");
       yield* m.saveDraft({ id: "feedback:local", accountId, message: feedback });
       expect(yield* Fiber.join(change)).toHaveLength(1);
       yield* m.saveDraft({
