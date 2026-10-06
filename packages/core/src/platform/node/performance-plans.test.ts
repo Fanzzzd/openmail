@@ -90,11 +90,15 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     const sizes = queries.find((q) => q.sql.includes("SUM(body_bytes)"));
     assert.ok(sizes);
     assert.include(sizes.plan.join("\n"), "COVERING INDEX messages_body_sizes");
-    const proximity = queries.find((q) => q.sql.includes("WITH matches AS MATERIALIZED"));
+    const proximity = queries.find((q) => q.sql.includes("WITH candidates AS NOT MATERIALIZED"));
     assert.ok(proximity);
-    assert.include(proximity.plan.join("\n"), "COVERING INDEX messages_list_date_id");
+    assert.match(proximity.plan.join("\n"), /SCAN m USING INDEX messages_list_date_id/);
     assert.notMatch(proximity.plan.join("\n"), /word_positions|MATERIALIZE positions/);
     assert.include(proximity.plan.join("\n"), "SCAN messages_words VIRTUAL TABLE INDEX");
+    assert.notInclude(proximity.plan.join("\n"), "MATERIALIZE matches");
+    assert.include(proximity.plan.join("\n"), "MATERIALIZE page");
+    assert.notInclude(proximity.plan.join("\n"), "TEMP B-TREE FOR GROUP BY");
+    assert.include(proximity.plan.join("\n"), "SEARCH m USING INDEX messages_thread_list_date_id");
     const spacedProximity = queries.find(
       (q) => q.sql.includes("WITH matches AS MATERIALIZED") && q.sql.includes("positions AS"),
     );

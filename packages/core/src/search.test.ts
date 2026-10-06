@@ -897,6 +897,55 @@ import { type DerivedChunk } from "./media.js";
       }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
   );
 
+  it.effect("adjacent AROUND thread pages preserve matching heads, flags and date ties", () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "around-pages@example.com");
+      for (const fixture of [
+        { ...message("a-old", "alpha beta"), threadId: "a", isUnread: true, isStarred: true },
+        { ...message("a-new", "alpha beta"), threadId: "a", date: 3 },
+        { ...message("a-unmatched", "alpha gap beta"), threadId: "a", date: 4 },
+        { ...message("b", "alpha beta"), date: 3 },
+        { ...message("c", "beta alpha"), date: 2 },
+      ])
+        yield* store.upsertMessage(account.id, fixture);
+      while (!(yield* store.backfillWordIndex(500)).ready) {
+        /* Finish the phrase index before paging. */
+      }
+      for (const search of ['"alpha AROUND 0 beta"', '"alpha AROUND 00 beta"']) {
+        const rows = yield* store.listThreads({ search, limit: 2 });
+        assert.deepStrictEqual(
+          rows.map((row) => row.id),
+          [`${account.id}/b`, `${account.id}/a-new`],
+        );
+        const thread = rows[1];
+        assert.ok(thread);
+        assert.isTrue(thread.isUnread);
+        assert.isTrue(thread.isStarred);
+        assert.strictEqual(thread.threadCount, 3);
+        assert.strictEqual(yield* store.countThreads({ search }), 2);
+        const first = rows[0];
+        assert.ok(first);
+        const next = yield* store.listThreads({
+          search,
+          before: first.date,
+          beforeId: first.id,
+          limit: 1,
+        });
+        assert.deepStrictEqual(
+          next.map((row) => row.id),
+          [`${account.id}/a-new`],
+        );
+      }
+      assert.deepStrictEqual(
+        (yield* store.listThreads({ search: "alpha AROUND 0 beta", limit: 3 })).map((row) =>
+          row.id.slice(account.id.length + 1),
+        ),
+        ["b", "a-new", "c"],
+      );
+    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+
   it.effect(
     "AROUND degrades to AND without writes during indexing, then checks phrases within each chunk",
     () =>

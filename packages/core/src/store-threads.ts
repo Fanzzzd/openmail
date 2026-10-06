@@ -167,8 +167,10 @@ export const makeThreadsStore = ({
   });
 
   const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
-    const materialize = !!q.criteria?.proximity || /\bAROUND\s+\d+\b/.test(q.search ?? "");
-    // Proximity positions are computed once; only compact matching metadata is materialized.
+    const materialize =
+      (q.criteria?.proximity?.distance ?? 0) > 0 || /\bAROUND\s+0*[1-9]\d*\b/.test(q.search ?? "");
+    // Nonzero proximity positions are computed once. Adjacent phrases use FTS
+    // directly, so their thread page can stop at the requested limit.
     const grouped = sql`
         WITH matches AS MATERIALIZED (
           SELECT m.id,m.account_id,m.thread_id,m.list_date AS date,m.is_unread,m.is_starred
