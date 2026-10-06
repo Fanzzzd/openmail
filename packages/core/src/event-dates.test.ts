@@ -1,6 +1,10 @@
 import { assert, it } from "@effect/vitest";
 import { calendarParseDates, calendarDateCandidates } from "./event-dates.js";
-import { validateEventRecurrenceForProvider } from "./event-recurrence.js";
+import {
+  eventRecurrenceRule,
+  validateEventRecurrenceForProvider,
+  type EventRecurrence,
+} from "./event-recurrence.js";
 import type { CalendarEvent } from "./calendar.js";
 const context = { reference: Date.parse("2026-12-20T12:00:00Z"), timeZone: "UTC" };
 it("typed and detected dates share year rolling, ranges and Chinese periods", () => {
@@ -111,4 +115,105 @@ it("cross-year ranges keep their full span and explicit years do not roll", () =
   const historical = calendarParseDates("Jan 5, 2026", context);
   if (historical.kind === "parsed") assert.strictEqual(historical.start.value, "2026-01-05");
   assert.strictEqual(calendarParseDates("tomorrow 13:30", context).kind, "parsed");
+});
+
+it("ranges crossing noon roll an earlier endpoint forward by twelve hours", () => {
+  const october = { ...context, reference: Date.parse("2026-10-08T12:00:00Z") };
+  for (const [input, date] of [
+    ["10月12日上午11点到1点", "2026-10-12"],
+    ["11am to 1", "2026-10-08"],
+    ["Oct 12 11am to 1", "2026-10-12"],
+    ["Oct 12 11am to 1am", "2026-10-12"],
+    ["Oct 12 11–1am", "2026-10-12"],
+    ["2026-10-12 11:00–01:00", "2026-10-12"],
+  ]) {
+    assert.ok(input && date);
+    const parsed = calendarParseDates(input, october);
+    assert.strictEqual(parsed.kind, "parsed", input);
+    if (parsed.kind === "parsed") {
+      assert.strictEqual(parsed.start.value, `${date}T11:00:00`, input);
+      assert.strictEqual(parsed.end.value, `${date}T13:00:00`, input);
+      assert.strictEqual(parsed.endEstimated, false, input);
+    }
+    assert.deepStrictEqual(
+      calendarDateCandidates(input).map((c) => c.input),
+      [input],
+      input,
+    );
+  }
+  for (const input of [
+    "Oct 12 11pm to 1",
+    "Oct 12 5pm–3pm",
+    "Oct 12 11–1pm",
+    "Oct 12 11am–11am",
+    "10月12日下午三点到一点",
+    "2026-10-12 13:00–01:00",
+  ])
+    assert.deepStrictEqual(
+      calendarParseDates(input, october),
+      { kind: "ambiguous", reason: "clock" },
+      input,
+    );
+});
+
+it("yearless dates one to fourteen local days in the past require a year", () => {
+  const october = { ...context, reference: Date.parse("2026-10-08T12:00:00Z") };
+  for (const input of ["Oct 7", "10月7日", "Sep 24", "9月24日", "9/24"])
+    assert.deepStrictEqual(
+      calendarParseDates(input, october),
+      { kind: "ambiguous", reason: "year" },
+      input,
+    );
+  for (const input of ["Sep 23", "9月23日", "9/23"]) {
+    const parsed = calendarParseDates(input, october);
+    assert.strictEqual(parsed.kind, "parsed", input);
+    if (parsed.kind === "parsed") assert.strictEqual(parsed.start.value, "2027-09-23", input);
+  }
+  for (const input of ["Oct 7, 2026", "2026年10月7日", "今年10月7日"]) {
+    const parsed = calendarParseDates(input, october);
+    assert.strictEqual(parsed.kind, "parsed", input);
+    if (parsed.kind === "parsed") assert.strictEqual(parsed.start.value, "2026-10-07", input);
+  }
+  assert.strictEqual(calendarParseDates("Oct 8", october).kind, "parsed");
+  for (const input of ["Sep 31", "9月31日", "9/31"])
+    assert.strictEqual(calendarParseDates(input, october).kind, "invalid", input);
+  assert.strictEqual(
+    calendarParseDates("Oct 7", {
+      reference: Date.parse("2026-10-08T01:00:00Z"),
+      timeZone: "America/Los_Angeles",
+    }).kind,
+    "parsed",
+  );
+});
+
+it("weekday phrases with at and on remain a single complete candidate", () => {
+  const thursday = { ...context, reference: Date.parse("2026-10-08T12:00:00Z") };
+  for (const [input, hour] of [
+    ["at noon on Friday", "12"],
+    ["on Friday at 3pm", "15"],
+    ["周五中午", "12"],
+  ]) {
+    assert.ok(input && hour);
+    const parsed = calendarParseDates(input, thursday);
+    assert.strictEqual(parsed.kind, "parsed", input);
+    if (parsed.kind === "parsed")
+      assert.strictEqual(parsed.start.value, `2026-10-09T${hour}:00:00`, input);
+    const prose = `Meet: ${input}. See you there.`;
+    assert.deepStrictEqual(calendarDateCandidates(prose), [{ input, index: 6 }], input);
+  }
+});
+
+it("recurrence rules reject an unknown time zone", () => {
+  for (const ending of [
+    { kind: "never" },
+    { kind: "until", date: "2026-10-12" },
+  ] satisfies EventRecurrence["ending"][]) {
+    for (const timestamp of [Date.parse("2026-10-08T11:00:00Z"), null])
+      assert.throws(() =>
+        eventRecurrenceRule(
+          { pattern: { kind: "daily", interval: 1 }, ending },
+          { kind: "zoned", value: "2026-10-08T11:00:00", zone: "Bad/Zone", timestamp },
+        ),
+      );
+  }
 });

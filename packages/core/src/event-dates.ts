@@ -3,7 +3,7 @@ import { WINDOWS_ZONES } from "./windows-zones.js";
 
 export type DateParseResult =
   | { kind: "parsed"; start: CalendarTime; end: CalendarTime; endEstimated: boolean }
-  | { kind: "ambiguous"; reason: "date-order" | "weekday" | "clock" | "dst" }
+  | { kind: "ambiguous"; reason: "date-order" | "year" | "weekday" | "clock" | "dst" }
   | { kind: "invalid" };
 export type DateContext = { reference: number; timeZone: string };
 
@@ -99,9 +99,13 @@ const ZH_CLOCK = String.raw`(上午|早上|下午|晚上|中午|凌晨)?(${NUMBE
 const CLOCK = String.raw`(?:${ZH_CLOCK}|${EN_CLOCK}|noon|midnight|中午|午夜|morning|afternoon|evening|上午|下午|晚上|凌晨)`;
 const CLOCK_RANGE = String.raw`${CLOCK}(?:${RANGE}${CLOCK})?`;
 const DATE = String.raw`(?:${ISO_DATE}|${EN_DATE}|${ZH_DATE}|${NUMERIC_DATE}|${RELATIVE_DATE}|${EN_WEEKDAY}|${ZH_WEEKDAY})`;
-const REVERSED_TIME = new RegExp(String.raw`^(?<time>${CLOCK_RANGE})\s+(?<date>${DATE})$`, "i");
+const DATE_WITH_PREFIX = String.raw`(?:on\s+)?${DATE}`;
+const REVERSED_TIME = new RegExp(
+  String.raw`^(?:at\s+)?(?<time>${CLOCK_RANGE})\s+(?:on\s+)?(?<date>${DATE})$`,
+  "i",
+);
 const DATE_CANDIDATE = new RegExp(
-  String.raw`(?<![a-z0-9$./])(?:${CLOCK_RANGE}\s+${DATE}|${DATE}(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})?(?:${RANGE}${CLOCK})?|\s*(?:at )?${CLOCK_RANGE})?|${CLOCK_RANGE})(?![a-z0-9:/])`,
+  String.raw`(?<![a-z0-9$./])(?:(?:at\s+)?${CLOCK_RANGE}\s+${DATE_WITH_PREFIX}|${DATE_WITH_PREFIX}(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})?(?:${RANGE}${CLOCK})?|\s*(?:at )?${CLOCK_RANGE})?|${CLOCK_RANGE})(?![a-z0-9:/])`,
   "gi",
 );
 const RELATIVE_DAYS: Readonly<Record<string, number>> = {
@@ -133,6 +137,9 @@ function chineseNumber(value: string): number {
   return digits.indexOf(value);
 }
 type Clock = { hour: number; minute: number; second: number };
+function clockSeconds(value: Clock): number {
+  return value.hour * 3600 + value.minute * 60 + value.second;
+}
 function clock(value: string, explicit24: boolean): Clock | "ambiguous" | null {
   if (value === "noon" || value === "中午") return { hour: 12, minute: 0, second: 0 };
   if (value === "midnight" || value === "午夜") return { hour: 0, minute: 0, second: 0 };
@@ -167,7 +174,10 @@ function calendarDateFromParts(year: number, month: number, day: number): string
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 function calendarDateYearRoll(date: string, today: string, explicitYear: boolean): string {
-  return !explicitYear && date < today ? `${Number(date.slice(0, 4)) + 1}${date.slice(4)}` : date;
+  if (!calendarDateValid(date) || explicitYear || date >= today) return date;
+  const daysPast = (Date.parse(`${today}T00:00:00Z`) - Date.parse(`${date}T00:00:00Z`)) / 86400000;
+  if (daysPast >= 1 && daysPast <= 14) return "ambiguous";
+  return `${Number(date.slice(0, 4)) + 1}${date.slice(4)}`;
 }
 
 /** See docs/calendar-dates.md: next is ambiguous across weekdays; this never selects a past day. */
@@ -208,6 +218,7 @@ function calendarParseDateInput(input: string, context: DateContext): DateParseR
   const reversed = REVERSED_TIME.exec(text);
   if (reversed?.groups?.date && reversed.groups.time)
     text = `${reversed.groups.date} ${reversed.groups.time}`;
+  text = text.replace(/^on\s+/, "");
   const today = calendarWallTime(context.reference, context.timeZone).slice(0, 10);
   const year = Number(today.slice(0, 4));
   let date = today,
@@ -234,6 +245,7 @@ function calendarParseDateInput(input: string, context: DateContext): DateParseR
       ? Number(match[5] ?? year)
       : Number(match[1] ?? year + (match[2] === "明年" ? 1 : 0));
     date = calendarDateYearRoll(calendarDateFromParts(selectedYear, month, day), today, explicit);
+    if (date === "ambiguous") return { kind: "ambiguous", reason: "year" };
     selectedYear = Number(date.slice(0, 4));
     const endDay = named ? match[4] : match[6];
     const endMonth = named
@@ -262,6 +274,7 @@ function calendarParseDateInput(input: string, context: DateContext): DateParseR
       today,
       !!numeric[3],
     );
+    if (date === "ambiguous") return { kind: "ambiguous", reason: "year" };
     consumed = numeric[0];
   } else if (relative) {
     consumed = relative[0];
@@ -334,18 +347,37 @@ function calendarParseDateInput(input: string, context: DateContext): DateParseR
   const zhPeriod = /^(上午|早上|下午|晚上|中午|凌晨)/.exec(first)?.[1];
   if (second && zhPeriod && new RegExp(`^${NUMBER_ZH}[点时]`).test(second))
     second = zhPeriod + second;
-  const startClock = clock(first, !!iso),
-    endClock = second ? clock(second, !!iso) : null;
+  const startClock = clock(first, !!iso);
+  let endClock = second ? clock(second, !!iso) : null;
+  // A bare English endpoint is only resolved by the bounded half-day rollover below.
+  if (endClock === "ambiguous" && second && /(?:am|pm)$/.test(first)) {
+    const bareEnd = clock(second, true);
+    if (
+      startClock &&
+      startClock !== "ambiguous" &&
+      bareEnd &&
+      bareEnd !== "ambiguous" &&
+      startClock.hour <= 12 &&
+      bareEnd.hour <= 12 &&
+      clockSeconds(bareEnd) < clockSeconds(startClock)
+    )
+      endClock = bareEnd;
+  }
   if (startClock === "ambiguous" || endClock === "ambiguous")
     return { kind: "ambiguous", reason: "clock" };
   if (!startClock || (second && !endClock)) return { kind: "invalid" };
-  if (!consumed) return { kind: "ambiguous", reason: "clock" };
-  if (
-    inferredMeridiem &&
-    endClock &&
-    startClock.hour * 60 + startClock.minute >= endClock.hour * 60 + endClock.minute
-  )
-    return { kind: "ambiguous", reason: "clock" };
+  let rolledEnd = false;
+  if (endClock && clockSeconds(endClock) <= clockSeconds(startClock)) {
+    if (
+      clockSeconds(endClock) < clockSeconds(startClock) &&
+      startClock.hour <= 12 &&
+      endClock.hour <= 12
+    ) {
+      endClock = { ...endClock, hour: endClock.hour + 12 };
+      rolledEnd = true;
+    } else return { kind: "ambiguous", reason: "clock" };
+  }
+  if (!consumed && !rolledEnd) return { kind: "ambiguous", reason: "clock" };
   const wall = (c: Clock) =>
     `${date}T${String(c.hour).padStart(2, "0")}:${String(c.minute).padStart(2, "0")}:${String(c.second).padStart(2, "0")}`;
   const starts = calendarWallInstants(wall(startClock), context.timeZone);

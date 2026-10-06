@@ -71,6 +71,7 @@ it("ambiguous dates ask for explicit input in both languages; malformed dates ne
     "11–1pm",
     "tomorrow evening",
     "tomorrow 3pm–7",
+    "tomorrow 5pm–3pm",
     "明天上午十二点",
     "明天晚上十二点",
   ]) {
@@ -82,7 +83,6 @@ it("ambiguous dates ask for explicit input in both languages; malformed dates ne
     "Oct 14–12",
     "2026-10-10 24:30",
     "tomorrow 12:80",
-    "tomorrow 5pm–3pm",
     "random prose",
     "2026-10-10T09:00:80",
   ]) {

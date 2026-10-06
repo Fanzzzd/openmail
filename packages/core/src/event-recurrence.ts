@@ -4,6 +4,7 @@ import { graphRecurrence } from "./graph-recurrence.js";
 import type { CalendarTime } from "./calendar-time.js";
 import {
   calendarTimeDate,
+  calendarZoneName,
   calendarWallInstants,
   calendarDateValid,
   localCalendarTimeZone,
@@ -63,6 +64,7 @@ export type CalendarEventEdits = typeof CalendarEventEdits.Type;
 /** https://www.rfc-editor.org/rfc/rfc5545#section-3.3.10
  * RFC 5545: timed DTSTART requires a UTC UNTIL; date-only DTSTART requires a DATE UNTIL. */
 export function eventRecurrenceRule(rule: EventRecurrence, start: CalendarTime): string {
+  if (start.kind === "zoned") calendarZoneName(start.zone);
   const pattern = rule.pattern;
   if (pattern.kind === "yearly-date" && !validMonthDay(pattern.month, pattern.day))
     throw new InvalidInput({ message: "Invalid calendar event time" });
