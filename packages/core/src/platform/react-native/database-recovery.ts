@@ -17,6 +17,7 @@ import {
   RECOVERY_TABLES,
   quoteIdentifier,
   recoveryInsert,
+  recoveryDataMigrations,
   sharedRecoveryColumns,
 } from "../recovery-tables.js";
 import { opSqliteLayer, type OpSqliteDatabase, type SqliteScalar } from "./sqlite.js";
@@ -555,12 +556,23 @@ export const mobileDatabaseRecoveryLayer = (openDatabase: MobileDatabaseOpener) 
           await runtime.runPromise(SqlClient.SqlClient);
           await target.execute("PRAGMA journal_mode=DELETE");
           await target.execute("BEGIN IMMEDIATE");
-          if (source)
+          if (source) {
+            let sourceVersion = 0;
+            try {
+              sourceVersion = Number(
+                (await source.execute("PRAGMA user_version")).rows[0]?.user_version ?? 0,
+              );
+            } catch (error) {
+              if (!corruption(error)) throw error;
+            }
             for (const table of RECOVERY_TABLES) {
               const result = await copyTable(source, target, table);
               copied += result.copied;
               skipped += result.skipped;
             }
+            for (const statement of recoveryDataMigrations(sourceVersion))
+              await target.execute(statement);
+          }
           await target.execute(
             "UPDATE accounts SET sync_cursor=NULL,last_synced_at=NULL,last_sync_error=NULL",
           );

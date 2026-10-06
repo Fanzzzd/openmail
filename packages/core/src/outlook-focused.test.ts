@@ -110,6 +110,56 @@ it.effect(
   },
 );
 
+it.effect(
+  "Focused badges count unclassified Outlook Inbox mail and preserve Gmail categories",
+  () => {
+    const outlook = fakeServer(account.email, [
+      incoming("unknown", { labels: ["INBOX", "UNREAD"] }),
+      incoming("focused", { labels: ["INBOX", "UNREAD", "CATEGORY_PERSONAL"] }),
+      incoming("other", { threadId: "t-focused", labels: ["INBOX", "UNREAD", "CATEGORY_OTHER"] }),
+      incoming("reply", { threadId: "t-unknown", labels: ["INBOX", "UNREAD"] }),
+      incoming("read", { labels: ["INBOX"], isUnread: false }),
+      incoming("archived", { labels: ["UNREAD", "CATEGORY_PERSONAL"] }),
+    ]);
+    const gmail = fakeServer("gmail@example.com", [
+      incoming("unknown", { labels: ["INBOX", "UNREAD"] }),
+      incoming("primary", { labels: ["INBOX", "UNREAD", "CATEGORY_PERSONAL"] }),
+    ]);
+    return Effect.gen(function* () {
+      const mail = yield* Mailbox;
+      const store = yield* Store;
+      yield* mail.connect({ provider: "outlook" });
+      yield* mail.connect({ provider: "gmail" });
+      yield* mail.sync();
+      const outlookIds = [account.id];
+      const gmailIds = ["gmail:gmail@example.com"];
+      for (const within of [undefined, "INBOX"]) {
+        assert.strictEqual((yield* store.unreadByLabel(outlookIds, within)).CATEGORY_PERSONAL, 3);
+        assert.strictEqual(
+          (yield* store.unreadByLabel(outlookIds, within, true)).CATEGORY_PERSONAL,
+          2,
+        );
+        assert.strictEqual((yield* store.unreadByLabel(gmailIds, within)).CATEGORY_PERSONAL, 1);
+        assert.strictEqual((yield* store.unreadByLabel(undefined, within)).CATEGORY_PERSONAL, 4);
+        assert.strictEqual((yield* store.unreadByLabel([], within)).CATEGORY_PERSONAL ?? 0, 0);
+      }
+      assert.strictEqual(
+        (yield* store.listThreads({
+          accountIds: outlookIds,
+          mailbox: "inbox",
+          label: "CATEGORY_PERSONAL",
+          unreadOnly: true,
+          flat: true,
+        })).length,
+        3,
+      );
+      assert.isFalse(
+        (yield* store.getMessage(`${account.id}/unknown`)).labels.includes("CATEGORY_PERSONAL"),
+      );
+    }).pipe(Effect.provide(TestMailbox({ outlook, gmail })));
+  },
+);
+
 it("unknown classification is absent; Outlook moves preserve inference and color categories", () => {
   const unknown = parseGraphMessage(
     Schema.decodeUnknownSync(GraphMessage)({ ...raw, inferenceClassification: null }),

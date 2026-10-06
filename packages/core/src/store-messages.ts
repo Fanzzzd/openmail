@@ -295,7 +295,8 @@ export const makeMessagesStore = ({
         }
       }
       yield* media.deleteVectorsForMessages(sql`m.id=${localId} AND
-        (m.body_text!=${m.bodyText} OR m.body_html!=${m.bodyHtml} OR m.attachments_json!=${JSON.stringify(m.attachments)})`);
+        (m.attachments_json!=${JSON.stringify(m.attachments)} OR
+          ((m.body_cached=${m.bodyCached === false ? 0 : 1} OR ${m.bodyCached === false ? 0 : 1}=1) AND (m.body_text!=${m.bodyText} OR m.body_html!=${m.bodyHtml})))`);
       yield* (
         // ON CONFLICT DO UPDATE keeps the rowid stable, which the external-content
         // FTS table is keyed on. INSERT OR REPLACE would orphan index rows.

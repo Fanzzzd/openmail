@@ -730,18 +730,41 @@ export const makeThreadsStore = ({
     where.push(
       sql`(b.label != 'INBOX' OR NOT EXISTS(SELECT 1 FROM thread_reminders r WHERE r.account_id=b.account_id AND r.thread_id=b.thread_id AND r.due_at IS NOT NULL))`,
     );
+    const literalLabels = [
+      ...where,
+      sql`(b.label!='CATEGORY_PERSONAL' OR b.account_id NOT IN (SELECT id FROM accounts WHERE provider='outlook'))`,
+    ];
     const rows = yield* all(Count)(
       conversations
         ? sql`SELECT key,SUM(n) AS n FROM (
             SELECT b.label AS key,b.account_id,COUNT(DISTINCT b.thread_id) AS n
             FROM message_badges b
-            WHERE ${sql.and(where)} GROUP BY b.label,b.account_id
+            WHERE ${sql.and(literalLabels)} GROUP BY b.label,b.account_id
           ) GROUP BY key`
         : sql`SELECT b.label AS key,COUNT(*) AS n
             FROM message_badges b
-            WHERE ${sql.and(where)} GROUP BY b.label`,
+            WHERE ${sql.and(literalLabels)} GROUP BY b.label`,
     );
     const result = counts(rows);
+    // Unknown Outlook Inbox mail belongs to Focused. Count eligible messages
+    // before grouping: a conversation may contain both Focused and Other mail.
+    const focusedWhere = [
+      ...where,
+      sql`b.label='INBOX'`,
+      sql`b.account_id IN (SELECT id FROM accounts WHERE provider='outlook')`,
+      sql`NOT EXISTS(SELECT 1 FROM message_badges other WHERE other.label='CATEGORY_OTHER'
+        AND other.account_id=b.account_id AND other.thread_id=b.thread_id AND other.message_id=b.message_id)`,
+    ];
+    const focused = yield* all(Count)(
+      conversations
+        ? sql`SELECT 'CATEGORY_PERSONAL' AS key,SUM(n) AS n FROM (
+          SELECT COUNT(DISTINCT b.thread_id) AS n FROM message_badges b
+          WHERE ${sql.and(focusedWhere)} GROUP BY b.account_id
+        ) HAVING SUM(n)>0`
+        : sql`SELECT 'CATEGORY_PERSONAL' AS key,COUNT(*) AS n FROM message_badges b
+          WHERE ${sql.and(focusedWhere)} HAVING COUNT(*)>0`,
+    );
+    for (const row of focused) result[row.key] = (result[row.key] ?? 0) + row.n;
     if (within === undefined || within === "DRAFT") {
       const local = yield* compose.countLocalDrafts(accountIds);
       if (local) result["DRAFT"] = (result["DRAFT"] ?? 0) + local;

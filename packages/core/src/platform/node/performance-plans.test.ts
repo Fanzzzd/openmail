@@ -826,3 +826,46 @@ for (const messageCount of [50, 150_000]) {
     { timeout: 120_000 },
   );
 }
+
+it.effect("missing vector repair probes jobs by message id within its bounded scan", () => {
+  const trace = traceQueries();
+  return Effect.gen(function* () {
+    const store = yield* Store;
+    const sql = yield* SqlClient.SqlClient;
+    const account = yield* store.upsertAccount("gmail", "repair@example.com");
+    yield* store.upsertMessage(account.id, {
+      providerId: "m",
+      threadId: "t",
+      subject: "",
+      from: { name: "", address: "a@example.com" },
+      to: [],
+      cc: [],
+      date: 1,
+      snippet: "",
+      bodyText: "Refilled",
+      bodyHtml: "",
+      attachments: [],
+      labels: ["INBOX"],
+      isUnread: false,
+      isStarred: false,
+    });
+    yield* sql`INSERT INTO vector_items(message_id,kind,version,provenance_json) SELECT id,'text','v1','{}' FROM messages`;
+    yield* sql`UPDATE semantic_jobs SET status='done'`;
+    trace.start();
+    assert.strictEqual(yield* store.semantics.repairMissingVectors, 1);
+    const queries = trace.stop();
+    const checks = queries.find((query) => query.sql.includes("CROSS JOIN semantic_jobs"));
+    assert.ok(checks);
+    assert.include(checks.plan.join("\n"), "sqlite_autoindex_semantic_jobs_1 (message_id=?)");
+    assert.notMatch(checks.plan.join("\n"), /semantic_jobs_(?:priority|pending) \(status=/);
+    const writes = queries.filter((query) => query.sql.startsWith("UPDATE semantic_jobs"));
+    assert.isAbove(writes.length, 0);
+    for (const query of writes) {
+      assert.include(query.plan.join("\n"), "sqlite_autoindex_semantic_jobs_1 (message_id=?)");
+      assert.notMatch(query.plan.join("\n"), /semantic_jobs_(?:priority|pending) \(status=/);
+    }
+  }).pipe(
+    Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
+    Effect.ensuring(Effect.sync(trace.restore)),
+  );
+});

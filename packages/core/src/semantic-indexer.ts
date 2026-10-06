@@ -60,6 +60,7 @@ export const makeSemanticIndexer = Effect.fn("makeSemanticIndexer")(function* (
             retryAt = (yield* Clock.currentTimeMillis) + 60_000;
           return 0;
         }
+        yield* semantic.repairMissingVectors;
         let completed = 0;
         for (let batchIndex = 0; batchIndex < 2; batchIndex++) {
           if ((yield* Clock.currentTimeMillis) < retryAt || !(yield* allowed)) break;

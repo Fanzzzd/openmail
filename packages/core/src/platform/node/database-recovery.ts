@@ -24,6 +24,7 @@ import {
   quoteIdentifier,
   RECOVERY_TABLES,
   recoveryInsert,
+  recoveryDataMigrations,
   sharedRecoveryColumns,
 } from "../recovery-tables.js";
 
@@ -159,12 +160,20 @@ function rebuildUnderLock(directory: string): CacheResetResult {
     for (let i = 0; i < MIGRATIONS.length; i++)
       applyNativeMigration(destination, MIGRATIONS[i] ?? "", i + 1);
     destination.exec("PRAGMA foreign_keys=ON; BEGIN");
-    if (source)
+    if (source) {
+      let sourceVersion = 0;
+      try {
+        sourceVersion = Number(source.prepare("PRAGMA user_version").get()?.user_version ?? 0);
+      } catch (error) {
+        if (!isDatabaseCorruption(error)) throw error;
+      }
       for (const table of RECOVERY_TABLES) {
         const result = copyTable(source, destination, table);
         copied += result.copied;
         skipped += result.skipped;
       }
+      for (const statement of recoveryDataMigrations(sourceVersion)) destination.exec(statement);
+    }
     destination.exec(
       "UPDATE accounts SET sync_cursor=NULL,last_synced_at=NULL,last_sync_error=NULL; COMMIT;",
     );

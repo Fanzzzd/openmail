@@ -1,3 +1,5 @@
+import { MIGRATIONS, splitStatements } from "../db.js";
+
 /** User state from every migration. Cache/FTS/vector tables are intentionally rebuilt. */
 export const RECOVERY_TABLES = [
   "profiles",
@@ -73,4 +75,14 @@ export function optionalParentChecks(
 export function recoveryInsert(table: string, columns: readonly string[]): string {
   const projection = columns.map(quoteIdentifier).join(",");
   return `INSERT INTO ${quoteIdentifier(table)} (${projection}) VALUES (${columns.map(() => "?").join(",")})`;
+}
+
+/** Recovery copies user rows after migrating the empty target. Apply data
+ * migrations missed by those rows, using the source version rather than the target. */
+export function recoveryDataMigrations(sourceVersion: number): readonly string[] {
+  return sourceVersion < 39
+    ? splitStatements(MIGRATIONS[38] ?? "").filter((statement) =>
+        statement.startsWith("UPDATE account_organization "),
+      )
+    : [];
 }

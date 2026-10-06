@@ -594,7 +594,7 @@ import {
   });
 
   it.effect(
-    "eviction/refetch retains OCR chunks and job generations; recent readers are protected",
+    "eviction and refetch preserve OCR chunks and generations; recent readers are protected",
     () => {
       const original = mail("old", {
         bodyHtml: '<img src="cid:scan">',
@@ -617,6 +617,14 @@ import {
           const now = 500 * 86_400_000;
           assert.strictEqual(yield* s.evictBodies(account.id, now), 1);
           assert.strictEqual((yield* m.thread(id))[0]?.bodyCached, false);
+          assert.deepStrictEqual(
+            yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`,
+            job,
+          );
+          assert.strictEqual(
+            (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${id}`).length,
+            1,
+          );
           yield* m.readerThread(id);
           assert.strictEqual((yield* m.thread(id))[0]?.bodyCached, true);
           assert.deepStrictEqual(
@@ -627,18 +635,25 @@ import {
             (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${id}`).length,
             1,
           );
+          const refilledJob =
+            yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`;
           assert.strictEqual(yield* s.evictBodies(account.id, now, true), 0);
           assert.strictEqual(yield* s.evictBodies(account.id, now + 25 * 3_600_000, true), 1);
           assert.deepStrictEqual(
             yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`,
-            job,
+            refilledJob,
           );
-          // Genuine content edits with unchanged cache state still invalidate derived text.
+          // Changing the attachment set invalidates OCR even with an evicted body.
           yield* s.upsertMessage(account.id, {
             ...original,
             bodyCached: false,
             bodyHtml: '<img src="cid:new">',
+            attachments: [{ filename: "new.pdf", mimeType: "application/pdf", size: 20 }],
           });
+          assert.deepStrictEqual(
+            yield* sql`SELECT generation,status FROM derived_jobs WHERE message_id=${id}`,
+            [{ generation: Number(refilledJob[0]?.generation) + 1, status: "queued" }],
+          );
           assert.strictEqual(
             (yield* sql`SELECT text FROM derived_chunks WHERE message_id=${id}`).length,
             0,
@@ -814,7 +829,7 @@ import {
   });
 
   it.effect(
-    "semantic vectors and job generations survive eviction/hydration and reset on real edits",
+    "semantic vectors survive eviction and hydration requeues indexing before real edits",
     () => {
       const server = fakeServer("a@example.com", [mail("old")]);
       return withMailbox(
@@ -833,15 +848,25 @@ import {
             yield* sql`SELECT generation,status FROM semantic_jobs WHERE message_id=${id}`;
           yield* TestClock.adjust("500 days");
           yield* s.evictBodies(account.id, 500 * 86_400_000);
-          yield* m.readerThread(id);
-          assert.strictEqual(
-            (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
-            1,
-          );
           assert.deepStrictEqual(
             yield* sql`SELECT generation,status FROM semantic_jobs WHERE message_id=${id}`,
             job,
           );
+          assert.strictEqual(
+            (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
+            1,
+          );
+          yield* m.readerThread(id);
+          assert.strictEqual(
+            (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
+            0,
+          );
+          assert.deepStrictEqual(
+            yield* sql`SELECT generation,status FROM semantic_jobs WHERE message_id=${id}`,
+            [{ generation: Number(job[0]?.generation) + 1, status: "queued" }],
+          );
+          const refilledJob =
+            yield* sql`SELECT generation,status FROM semantic_jobs WHERE message_id=${id}`;
           yield* s.upsertMessage(account.id, mail("old", { bodyText: "genuine edit" }));
           assert.strictEqual(
             (yield* sql`SELECT id FROM vector_items WHERE message_id=${id}`).length,
@@ -850,7 +875,7 @@ import {
           assert.ok(
             JSON.stringify(
               yield* sql`SELECT generation,status FROM semantic_jobs WHERE message_id=${id}`,
-            ) !== JSON.stringify(job),
+            ) !== JSON.stringify(refilledJob),
           );
         }),
       );

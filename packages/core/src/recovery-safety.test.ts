@@ -63,6 +63,49 @@ function fixture(dir: string, wal = false) {
   writeFileSync(file, bytes);
   return dir;
 }
+for (const version of [38, 39]) {
+  it(`node recovery normalizes pre-39 Outlook categories and preserves version ${version} choices`, () => {
+    const dir = temp();
+    const file = join(dir, "mail.db");
+    const db = new DatabaseSync(file);
+    for (const [index, migration] of MIGRATIONS.slice(0, version).entries())
+      applyNativeMigration(db, migration, index + 1);
+    const categories =
+      '["CATEGORY_PERSONAL","CATEGORY_SOCIAL","CATEGORY_PROMOTIONS","CATEGORY_UPDATES","CATEGORY_FORUMS"]';
+    for (const provider of ["outlook", "gmail", "imap"]) {
+      db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,1)").run(
+        provider,
+        provider,
+        `${provider}@example.com`,
+      );
+      db.prepare(
+        "INSERT INTO account_organization(account_id,categories,selected_categories) VALUES(?,1,?)",
+      ).run(provider, categories);
+    }
+    const root = db
+      .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
+      .get()?.rootpage;
+    const size = db.prepare("PRAGMA page_size").get()?.page_size;
+    if (typeof root !== "number" || typeof size !== "number") throw new Error("No page metadata");
+    db.close();
+    const bytes = readFileSync(file);
+    bytes[(root - 1) * size] = 0;
+    writeFileSync(file, bytes);
+    expect(rebuildCorruptDatabase(dir).kind).toBe("recovered");
+    const recovered = new DatabaseSync(file);
+    try {
+      for (const provider of ["outlook", "gmail", "imap"])
+        expect(
+          recovered
+            .prepare("SELECT selected_categories FROM account_organization WHERE account_id=?")
+            .get(provider)?.selected_categories,
+        ).toBe(provider === "outlook" && version < 39 ? null : categories);
+    } finally {
+      recovered.close();
+    }
+  });
+}
+
 it("every core database layer keeps a shared lock lease until its SQLite connection is disposed", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");

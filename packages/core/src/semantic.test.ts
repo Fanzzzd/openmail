@@ -268,6 +268,159 @@ it.effect(
     ),
 );
 
+for (const bodyText of ["Airport passport boarding pass.", "Changed after eviction."]) {
+  it.effect(`evicted body refill restores semantic neighbors for ${bodyText}`, () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        yield* store.semantics.setEnabled(true);
+        const models = fakeModels([]);
+        const run = yield* indexer(store, models);
+        assert.strictEqual(yield* run.batch(), 1);
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+          1,
+        );
+        const sql = yield* SqlClient.SqlClient;
+        yield* sql`UPDATE messages SET body_text='',body_html='',body_cached=0 WHERE id=${id}`;
+        assert.strictEqual(
+          (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+          1,
+        );
+        yield* store.upsertMessage(account.id, message({ bodyText }));
+        yield* run.batch();
+        const hits = yield* store.semantics.neighbors("text", vector(384), models.version);
+        assert.strictEqual(hits.length, 1);
+        assert.strictEqual(hits[0]?.text, bodyText);
+      }),
+    ),
+  );
+}
+
+it.effect("refilling body HTML preserves completed OCR when attachments are unchanged", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account, id } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({
+          bodyHtml: '<img src="cid:old">',
+          attachments: [{ filename: "scan.png", mimeType: "image/png", size: 20 }],
+        }),
+      );
+      const job = yield* store.media.claim("ocr", Date.now(), true);
+      assert.ok(Option.isSome(job));
+      yield* store.media.complete(
+        job.value,
+        [
+          {
+            messageId: id,
+            text: "Old receipt",
+            source: { kind: "inline", cid: "old", name: "old.png", mimeType: "image/png" },
+            page: null,
+            region: null,
+            pipelineVersion: "ocr",
+            visionRevision: 1,
+          },
+        ],
+        null,
+      );
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE messages SET body_text='',body_html='',body_cached=0 WHERE id=${id}`;
+      assert.strictEqual((yield* store.media.chunks(id)).length, 1);
+      yield* store.upsertMessage(
+        account.id,
+        message({
+          bodyHtml: '<img src="cid:new">',
+          attachments: [{ filename: "scan.png", mimeType: "image/png", size: 20 }],
+        }),
+      );
+      assert.strictEqual((yield* store.media.counts).queued, 0);
+      assert.strictEqual((yield* store.media.chunks(id))[0]?.text, "Old receipt");
+    }),
+  ),
+);
+
+it.effect("the indexer lazily repairs only missing vectors after a legacy refill", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account, id } = yield* setup;
+      yield* store.upsertMessage(
+        account.id,
+        message({ providerId: "healthy", threadId: "healthy" }),
+      );
+      yield* store.semantics.setEnabled(true);
+      const calls: string[] = [];
+      const models = fakeModels(calls);
+      const run = yield* indexer(store, models);
+      assert.strictEqual(yield* run.batch(), 2);
+      const sql = yield* SqlClient.SqlClient;
+      // Legacy refill kept vector_items and the done job but deleted the vec0 rows.
+      yield* sql`DELETE FROM derived_text_vectors WHERE rowid IN (SELECT id FROM vector_items WHERE message_id=${id})`;
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+        1,
+      );
+      calls.length = 0;
+      assert.strictEqual(yield* run.batch(), 1);
+      assert.strictEqual(
+        (yield* store.semantics.neighbors("text", vector(384), models.version)).length,
+        2,
+      );
+      assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 1);
+      calls.length = 0;
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 0);
+    }),
+  ),
+);
+
+it.effect("lazy vector repair leaves an evicted body alone until it is refilled", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      yield* store.semantics.setEnabled(true);
+      const run = yield* indexer(store, fakeModels([]));
+      assert.strictEqual(yield* run.batch(), 1);
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE messages SET body_text='',body_html='',body_cached=0 WHERE id=${id}`;
+      yield* sql`DELETE FROM derived_text_vectors WHERE rowid IN (SELECT id FROM vector_items WHERE message_id=${id})`;
+      assert.strictEqual(yield* run.batch(), 0);
+      assert.strictEqual((yield* store.semantics.counts).queued, 0);
+      assert.strictEqual((yield* store.semantics.counts).done, 1);
+    }),
+  ),
+);
+
+it.effect("lazy vector repair scans bounded batches and progresses through the corpus", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      for (let index = 1; index < 130; index++)
+        yield* store.upsertMessage(
+          account.id,
+          message({ providerId: `m${index}`, threadId: `t${index}` }),
+        );
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`INSERT INTO vector_items(message_id,kind,version,provenance_json) SELECT id,'text','test-v1','{}' FROM messages`;
+      yield* sql`UPDATE semantic_jobs SET status='done',pipeline_version='test-v1'`;
+      yield* store.semantics.setEnabled(true);
+      const run = yield* indexer(store, fakeModels([]));
+      assert.strictEqual(yield* run.batch(), 2);
+      assert.strictEqual(
+        (yield* sql`SELECT COUNT(*) AS n FROM semantic_jobs WHERE generation>1`)[0]?.n,
+        128,
+      );
+      assert.strictEqual((yield* store.semantics.counts).queued, 126);
+      assert.strictEqual(yield* run.batch(), 2);
+      assert.strictEqual(
+        (yield* sql`SELECT COUNT(*) AS n FROM semantic_jobs WHERE generation>1`)[0]?.n,
+        130,
+      );
+    }),
+  ),
+);
+
 it.effect("model failures leave resumable jobs and never upload content", () =>
   withStore(
     Effect.gen(function* () {

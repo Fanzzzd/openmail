@@ -19,6 +19,43 @@ export function makeSemanticStore(
   const enabled = first(Flag)(sql`SELECT value_json FROM prefs WHERE key='onDeviceModels'`).pipe(
     Effect.map((row) => Option.isSome(row) && row.value.value_json),
   );
+  let repairCursor = 0;
+  // Scan at most 128 metadata rows per idle batch, even for a healthy corpus.
+  // Keep advancing past healthy rows so a later broken message is reachable.
+  const repairMissingVectors = vectors
+    ? sql
+        .withTransaction(
+          Effect.gen(function* () {
+            const candidates = yield* all(Schema.Struct({ id: Schema.Number }))(
+              sql`SELECT id FROM vector_items WHERE id>${repairCursor} ORDER BY id LIMIT 128`,
+            );
+            if (candidates.length === 0) return { cursor: 0, repaired: 0 };
+            const missing = yield* all(Schema.Struct({ message_id: Schema.String }))(
+              sql`SELECT DISTINCT i.message_id FROM vector_items i
+                CROSS JOIN messages m ON m.id=i.message_id
+                CROSS JOIN semantic_jobs j ON j.message_id=i.message_id
+                WHERE i.id IN ${sql.in(candidates.map((row) => row.id))}
+                  AND m.body_cached=1 AND j.status='done'
+                  AND ((i.kind='text' AND NOT EXISTS(SELECT 1 FROM derived_text_vectors v WHERE v.rowid=i.id))
+                    OR (i.kind='image' AND NOT EXISTS(SELECT 1 FROM derived_image_vectors v WHERE v.rowid=i.id)))`,
+            );
+            // A bulk UPDATE with status + IN can walk every completed job.
+            // Equality on the primary key keeps each write bounded to one message.
+            for (const row of missing)
+              yield* run(sql`UPDATE semantic_jobs SET generation=generation+1,status='queued',claim=NULL,
+                claimed_at=NULL,attempts=0,retry_at=0,note=NULL
+                WHERE message_id=${row.message_id} AND status='done'`);
+            return { cursor: candidates.at(-1)?.id ?? repairCursor, repaired: missing.length };
+          }),
+        )
+        .pipe(
+          Effect.orDie,
+          Effect.map((result) => {
+            repairCursor = result.cursor;
+            return result.repaired;
+          }),
+        )
+    : Effect.succeed(0);
   const complete = (job: DerivedJob, items: readonly VectorItem[], version: string) =>
     sql
       .withTransaction(
@@ -75,6 +112,7 @@ export function makeSemanticStore(
     enabled,
     complete,
     neighbors,
+    repairMissingVectors,
     claim: queue.claim,
     retry: queue.retry,
     release: queue.release,

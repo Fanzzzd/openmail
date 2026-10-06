@@ -1253,6 +1253,30 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   `UPDATE accounts SET sync_cursor=NULL WHERE provider='outlook';
    UPDATE incoming_state SET inbox_cursor=NULL WHERE account_id IN (SELECT id FROM accounts WHERE provider='outlook');
    UPDATE account_organization SET selected_categories=NULL WHERE account_id IN (SELECT id FROM accounts WHERE provider='outlook');`,
+  // Migration 40: refills requeue semantics; only attachment changes invalidate OCR.
+  `DROP TRIGGER semantic_message_update;
+   CREATE TRIGGER semantic_message_update AFTER UPDATE OF body_text,body_html,attachments_json ON messages
+     WHEN old.attachments_json != new.attachments_json
+       OR ((old.body_cached=new.body_cached OR new.body_cached=1) AND (old.body_text != new.body_text OR old.body_html != new.body_html)) BEGIN
+     DELETE FROM vector_items WHERE message_id=new.id;
+     INSERT INTO semantic_jobs(message_id) VALUES(new.id)
+       ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+       claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+   END;
+   DROP TRIGGER media_message_update;
+   CREATE TRIGGER media_message_update AFTER UPDATE OF attachments_json ON messages
+     WHEN old.attachments_json != new.attachments_json BEGIN
+     DELETE FROM derived_chunks WHERE message_id=new.id;
+     INSERT INTO derived_jobs(message_id) SELECT new.id
+       WHERE new.body_html LIKE '%cid:%' OR EXISTS(SELECT 1 FROM json_each(new.attachments_json)
+         WHERE lower(json_extract(value,'$.mimeType')) LIKE 'image/%'
+           OR lower(json_extract(value,'$.mimeType'))='application/pdf')
+         OR EXISTS(SELECT 1 FROM derived_jobs WHERE message_id=new.id)
+       ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',
+         claim=NULL,claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+   END;
+   -- A migration connection may not load vec0. Missing vectors are repaired
+   -- lazily by the semantic indexer, without touching healthy or OCR jobs.`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

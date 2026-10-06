@@ -140,6 +140,16 @@ it.effect(
       );
       yield* measure("unread account badges", 100, store.unreadCounts);
       yield* measure("unread label badges", 100, store.unreadByLabel(undefined, undefined, true));
+      yield* measure(
+        "Inbox category conversation badges",
+        100,
+        store.unreadByLabel(undefined, "INBOX", true),
+      );
+      yield* measure(
+        "Inbox category message badges",
+        100,
+        store.unreadByLabel(undefined, "INBOX", false),
+      );
       yield* measure("list first page", 75, store.listThreads({ mailbox: "inbox", limit: 50 }));
       for (const [name, search] of [
         ["search common", "weekly"],

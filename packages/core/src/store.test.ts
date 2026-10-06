@@ -228,6 +228,7 @@ it.effect("all mail skips spam and trash; profiles scope accounts", () =>
         INBOX: 2,
         Label_1: 1,
         UNREAD: 2,
+        CATEGORY_PERSONAL: 1,
       });
       assert.deepStrictEqual(yield* store.unreadCounts, { [work.id]: 1, [home.id]: 1 });
 

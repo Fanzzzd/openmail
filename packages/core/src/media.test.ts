@@ -180,7 +180,13 @@ it.effect(
         const recovered = yield* store.media.claim("v1", 301001, true);
         assert.ok(Option.isSome(recovered));
         assert.strictEqual(yield* store.media.complete(first.value, [], null), false);
-        yield* store.upsertMessage(account.id, message({ bodyHtml: '<img src="cid:new">' }));
+        yield* store.upsertMessage(
+          account.id,
+          message({
+            bodyHtml: '<img src="cid:new">',
+            attachments: [{ filename: "new.png", mimeType: "image/png", size: 20 }],
+          }),
+        );
         assert.strictEqual(yield* store.media.complete(recovered.value, [], null), false);
         const indexer = yield* indexerFor(store, {
           vision: {

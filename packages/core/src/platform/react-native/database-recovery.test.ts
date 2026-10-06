@@ -1,3 +1,6 @@
+import { DatabaseSync } from "node:sqlite";
+import { MIGRATIONS } from "../../db.js";
+import { applyNativeMigration } from "../node/migrations.js";
 import {
   mkdtempSync,
   readFileSync,
@@ -283,6 +286,48 @@ describe("mobile database recovery", () => {
       ),
     ).toEqual([]);
   });
+
+  for (const version of [38, 39]) {
+    it(`mobile recovery normalizes pre-39 Outlook categories and preserves version ${version} choices`, async () => {
+      const f = await fixture();
+      const file = join(f.root, "mail.db");
+      for (const suffix of ["", "-wal", "-shm"]) rmSync(`${file}${suffix}`, { force: true });
+      const source = new DatabaseSync(file);
+      for (const [index, migration] of MIGRATIONS.slice(0, version).entries())
+        applyNativeMigration(source, migration, index + 1);
+      const categories =
+        '["CATEGORY_PERSONAL","CATEGORY_SOCIAL","CATEGORY_PROMOTIONS","CATEGORY_UPDATES","CATEGORY_FORUMS"]';
+      for (const provider of ["outlook", "gmail", "imap"]) {
+        source
+          .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,1)")
+          .run(provider, provider, `${provider}@example.com`);
+        source
+          .prepare(
+            "INSERT INTO account_organization(account_id,categories,selected_categories) VALUES(?,1,?)",
+          )
+          .run(provider, categories);
+      }
+      source.close();
+      f.failures.corrupt = true;
+      expect((await f.run(f.recovery.rebuild)).copied).toBe(6);
+      const recovered = await f.run(f.recovery.open());
+      try {
+        for (const provider of ["outlook", "gmail", "imap"])
+          expect(
+            (
+              await recovered.execute(
+                "SELECT selected_categories FROM account_organization WHERE account_id=?",
+                [provider],
+              )
+            ).rows,
+          ).toEqual([
+            { selected_categories: provider === "outlook" && version < 39 ? null : categories },
+          ]);
+      } finally {
+        recovered.close();
+      }
+    });
+  }
 
   it("salvages user records, clears sync cursors, re-syncs providers, and keeps quarantine bytes", async () => {
     const f = await fixture();
@@ -712,8 +757,8 @@ describe("mobile database recovery", () => {
           (name) => /^mail\.db\.corrupt-[\w-]+$/.test(name) && !/-wal$|-shm$|-journal$/.test(name),
         ),
       ).toEqual([backup]);
-      expect(readFileSync(join(f.root, backup))).toEqual(live);
-      expect(readFileSync(join(f.root, "mail.db"))).toEqual(live);
+      expect(readFileSync(join(f.root, backup)).equals(live)).toBe(true);
+      expect(readFileSync(join(f.root, "mail.db")).equals(live)).toBe(true);
     }
   });
 
