@@ -865,7 +865,7 @@ import { type DerivedChunk } from "./media.js";
           ["chunks", "red fox"],
           ["chunks", "blue bird"],
         ])
-          yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${`${account.id}/${id}`},${text},'{}')`;
+          yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${`${account.id}/${id}`},${text},${JSON.stringify({ messageId: `${account.id}/${id}`, text, source: { kind: "attachment", index: 0, name: "ocr.pdf", mimeType: "application/pdf" }, page: 1, region: null, pipelineVersion: "test", visionRevision: null })})`;
         while (!(yield* store.backfillWordIndex(500)).ready) {
           /* Complete both indexes before checking adjacency. */
         }
@@ -916,7 +916,7 @@ import { type DerivedChunk } from "./media.js";
           ["split", "red fox"],
           ["split", "blue bird"],
         ]) {
-          yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${`${account.id}/${id}`},${text},'{}')`;
+          yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${`${account.id}/${id}`},${text},${JSON.stringify({ messageId: `${account.id}/${id}`, text, source: { kind: "attachment", index: 0, name: "ocr.pdf", mimeType: "application/pdf" }, page: 1, region: null, pipelineVersion: "test", visionRevision: null })})`;
         }
         yield* sql`INSERT INTO messages_words(messages_words) VALUES('delete-all')`;
         yield* sql`INSERT INTO derived_words(derived_words) VALUES('delete-all')`;

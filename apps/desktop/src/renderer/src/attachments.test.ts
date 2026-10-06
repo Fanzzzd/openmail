@@ -199,3 +199,54 @@ it("multi-selection saves, copies and drags exact paths; embedded mail uses the 
     dom.dispose();
   }
 });
+
+it("marks the matching attachment index and escapes snippet text", () => {
+  rpc.calls.mockClear();
+  const dom = testDom();
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const matchingFiles = [0, 1].map((index) => ({
+    ...files[0],
+    path: [index],
+    filename: "same.pdf",
+    mimeType: "application/pdf",
+    size: 10,
+    embedded: false,
+    decodeError: false,
+  }));
+  try {
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(AttachmentList, {
+          messageId: "gmail:me/m",
+          files: matchingFiles,
+          notify: vi.fn(),
+          matches: [
+            {
+              source: "attachment",
+              messageId: "gmail:me/m",
+              attachmentIndex: 1,
+              attachmentName: "same.pdf",
+              snippet: "<script>amount</script>",
+              highlights: [{ start: 8, end: 14 }],
+            },
+          ],
+        }),
+      ),
+    );
+    expect(dom.element.querySelectorAll(".border-amber-500")).toHaveLength(1);
+    expect(
+      dom.element
+        .querySelector(".border-amber-500")
+        ?.querySelector("input")
+        ?.getAttribute("aria-label"),
+    ).toBe("Select same.pdf");
+    expect(dom.element.querySelector("mark")?.textContent).toBe("amount");
+    expect(dom.element.querySelector("script")).toBeNull();
+    expect(dom.element.textContent).toContain("In attachment same.pdf");
+    expect(rpc.calls.mock.calls.some(([tag]) => tag === "AttachmentAction")).toBe(false);
+  } finally {
+    dom.dispose();
+  }
+});

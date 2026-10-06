@@ -141,13 +141,45 @@ it.effect("common terms preserve grouped/flat pagination and the trigram fallbac
       (yield* store.listThreads({ ...query, flat: true })).map((row) => row.date),
       [2099, 2098, 2097, 2096, 2095],
     );
+    // A newest nonmatching reply must fall back to the older matching head.
+    // Nonmatching flags do not contribute; count/participants still cover the thread.
+    for (const i of [2097, 2098, 2099])
+      yield* store.upsertMessage(account.id, {
+        ...message,
+        providerId: `common-${i}`,
+        threadId: "group-699",
+        date: i,
+        subject: i === 2097 ? "Weekly report" : "Unrelated reply",
+        bodyText: i === 2097 ? "weekly report" : "unrelated reply",
+        from: i === 2097 ? { name: "Bob", address: "bob@example.com" } : message.from,
+        isUnread: i !== 2097,
+        isStarred: i !== 2097,
+      });
+    const fallback = yield* store.listThreads(query);
+    assert.deepStrictEqual(
+      fallback.map((row) => row.date),
+      [2097, 2096, 2093, 2090, 2087],
+    );
+    assert.strictEqual(fallback[0]?.isUnread, false);
+    assert.strictEqual(fallback[0]?.isStarred, false);
+    assert.strictEqual(fallback[0]?.threadCount, 3);
+    assert.deepStrictEqual(fallback[0]?.participants, [
+      { name: "Bob", address: "bob@example.com" },
+      message.from,
+    ]);
+    assert.deepStrictEqual(
+      (yield* store.listThreads({ ...query, before: 2097, beforeId: fallback[0]?.id })).map(
+        (row) => row.date,
+      ),
+      [2096, 2093, 2090, 2087, 2084],
+    );
     yield* sql`UPDATE search_word_index SET ready=0 WHERE kind='messages'`;
     assert.deepStrictEqual(
       (yield* store.listThreads(query)).map((row) => row.date),
-      page.map((row) => row.date),
+      fallback.map((row) => row.date),
     );
     assert.strictEqual(yield* store.countThreads(query), 700);
-    assert.strictEqual(yield* store.countThreads({ ...query, flat: true }), 2100);
+    assert.strictEqual(yield* store.countThreads({ ...query, flat: true }), 2098);
     for (const i of [2097, 2098, 2099])
       yield* store.applyLocalOp(`${account.id}/common-${i}`, { kind: "trash" });
     assert.strictEqual(yield* store.countThreads(query), 699);

@@ -1,7 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
 import type { Fragment } from "effect/sql/Statement";
-import { all, first, run } from "./sql-rows.js";
+import { all, first, run, sqliteBinaryCompare } from "./sql-rows.js";
 import { ResetCandidate, type ResetChange } from "./sync-reset.js";
 import type { ImapFolderIdentity } from "./services.js";
 
@@ -123,13 +123,7 @@ export function makeSyncResetStore(
           const encoder = new TextEncoder();
           return rows
             .map((row) => ({ row, key: encoder.encode(row.providerId) }))
-            .toSorted((a, b) => {
-              for (let i = 0; i < Math.min(a.key.length, b.key.length); i++) {
-                const difference = (a.key[i] ?? 0) - (b.key[i] ?? 0);
-                if (difference) return difference;
-              }
-              return a.key.length - b.key.length;
-            })
+            .toSorted((a, b) => sqliteBinaryCompare(a.key, b.key))
             .slice(0, size)
             .map(({ row }) => row);
         });

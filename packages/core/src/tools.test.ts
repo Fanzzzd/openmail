@@ -504,6 +504,16 @@ it.effect("search returns local matched chunks and provenance without image byte
     hasAttachments: true,
     threadCount: 1,
     participants: [],
+    searchMatches: [
+      {
+        source: "attachment",
+        messageId: "a/m",
+        attachmentName: "ticket.pdf",
+        attachmentIndex: 0,
+        snippet: "boarding gate",
+        highlights: [{ start: 0, end: 8 }],
+      },
+    ],
     derivedMatches: [
       {
         messageId: "a/m",
@@ -534,6 +544,8 @@ it.effect("search returns local matched chunks and provenance without image byte
       truncated: false,
     });
     const encoded = JSON.stringify(result.result);
+    assert.include(JSON.stringify(result.encodedResult), "untrusted_mail");
+    assert.include(JSON.stringify(result.encodedResult), "searchMatches");
     assert.ok(!encoded.includes("base64"));
     assert.ok(!encoded.includes('"data"'));
   });

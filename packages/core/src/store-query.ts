@@ -287,7 +287,11 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       q.search !== undefined && q.searchScope !== "folder" ? "all" : (q.mailbox ?? "inbox");
     if (mailbox === "all") {
       if (q.messageIds === undefined && !searchIncludesSpecialFolders(q))
-        where.push(sql`NOT ${hasLabel("SPAM")}`, sql`NOT ${hasLabel("TRASH")}`);
+        where.push(
+          q.textPage || q.search === ""
+            ? sql`EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`
+            : sql`NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}`,
+        );
     } else where.push(hasLabel(MAILBOX_LABEL[mailbox]));
     if (mailbox === "inbox")
       where.push(

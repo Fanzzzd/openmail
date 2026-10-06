@@ -153,6 +153,52 @@ it.effect(
           store.listThreads({ search, limit: 50 }),
         );
       yield* measure(
+        "search mixed body+OCR 200",
+        100,
+        store.listThreads({ search: "weekly", limit: 200 }).pipe(
+          Effect.tap((rows) =>
+            Effect.sync(() => {
+              assert.strictEqual(rows.length, 200);
+              assert.isTrue(
+                rows.every((row) =>
+                  row.searchMatches?.some(
+                    (match) => match.source === "subject" || match.source === "body",
+                  ),
+                ),
+              );
+              assert.isTrue(
+                rows.some((row) =>
+                  row.searchMatches?.some(
+                    (match) => match.source === "attachment" && match.highlights.length > 0,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      );
+      yield* measure(
+        "search OCR snippet",
+        150,
+        store.listThreads({ search: "in:attachment invoice", limit: 50 }).pipe(
+          Effect.tap((rows) =>
+            Effect.sync(() => {
+              assert.strictEqual(rows.length, 50);
+              assert.isTrue(
+                rows.every((row) =>
+                  row.searchMatches?.some(
+                    (match) =>
+                      match.source === "attachment" &&
+                      match.attachmentName === "report.pdf" &&
+                      match.highlights.length > 0,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      );
+      yield* measure(
         "thread open long chain",
         100,
         store

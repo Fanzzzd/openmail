@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Effect } from "effect";
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
-import { pageAfterRemoval, refreshPages } from "./list-pages";
+import { pageAfterRemoval, refreshPages, searchExtent } from "./list-pages";
 
 const row = (i: number): ThreadSummary => ({
   id: `m${i}`,
@@ -17,6 +17,20 @@ const row = (i: number): ThreadSummary => ({
   hasAttachments: false,
   threadCount: 1,
   participants: [],
+});
+
+it("ranked search grows one window without paging from a relevance-sorted date", async () => {
+  const requests: ThreadQuery[] = [];
+  const ranked = [row(399), ...Array.from({ length: 399 }, (_, index) => row(index))];
+  const loaded = await Effect.runPromise(
+    searchExtent({ search: "invoice" }, 2, (query) => {
+      requests.push(query);
+      return Effect.succeed(ranked);
+    }),
+  );
+  expect(requests).toEqual([{ search: "invoice", limit: 400 }]);
+  expect(loaded.threads).toEqual(ranked);
+  expect(loaded.done).toBe(false);
 });
 describe("list invalidation", () => {
   it("reloads 300 loaded rows once and keeps row 300 selectable", async () => {

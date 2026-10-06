@@ -2609,6 +2609,12 @@ msgstr "In \"{elsewhere}\""
 msgid "In 3 hours"
 msgstr "Tra 3 ore"
 
+#. Attachment filename followed by a localized colon before the visible text snippet.
+#: src/renderer/src/components/SearchSnippet.tsx
+msgctxt "search match source"
+msgid "In attachment {attachmentName}:"
+msgstr "Nell’allegato {attachmentName}:"
+
 #: src/renderer/src/components/MessageList.tsx
 msgid "In Inbox"
 msgstr "Nella posta in arrivo"

@@ -543,6 +543,7 @@ export function App({ composeId }: { composeId?: string }) {
         if (currentReaderThreadKey) setReaderSelection({ threadKey: currentReaderThreadKey, id });
       }}
       derivedMatches={selected?.derivedMatches}
+      searchMatches={selected?.searchMatches}
       query={query}
       onQuery={setQuery}
       searchRef={searchRef}

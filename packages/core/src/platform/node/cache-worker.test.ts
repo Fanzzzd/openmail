@@ -212,7 +212,7 @@ it("startup continues after one committed upgrade with a pinned WAL reader", asy
     await Effect.runPromise(
       Effect.gen(function* () {
         const sql = yield* SqlClient.SqlClient;
-        expect((yield* sql`PRAGMA user_version`)[0]?.user_version).toBe(37);
+        expect((yield* sql`PRAGMA user_version`)[0]?.user_version).toBe(MIGRATIONS.length);
         expect((yield* sql`SELECT count(*) AS n FROM message_search_meta`)[0]?.n).toBe(1);
       }).pipe(
         Effect.provide(startup),

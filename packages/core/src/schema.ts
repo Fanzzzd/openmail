@@ -69,3 +69,4 @@ export * from "./optional-services.js";
 export * from "./sync-health.js";
 
 export { outlookPreviewUnavailable } from "./outlook-rules.js";
+export * from "./search-snippets.js";

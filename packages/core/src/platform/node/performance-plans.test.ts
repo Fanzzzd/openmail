@@ -58,6 +58,12 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     for (const query of queries) {
       const plan = query.plan.join("\n");
       assert.notMatch(plan, /\bSCAN (?:messages|m)(?:$|\n)/, query.sql);
+      if (query.sql.includes("ranks AS MATERIALIZED"))
+        assert.notMatch(
+          plan,
+          /messages_(?:words|fts) VIRTUAL TABLE INDEX[^:]*:[^\n]*=/,
+          "BM25 must use one MATCH cursor, not a rowid probe for each candidate",
+        );
     }
     const lookup = queries.find((q) => q.sql.includes("ORDER BY date DESC,id LIMIT 1"));
     assert.ok(lookup);
@@ -232,6 +238,14 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
           sql`EXPLAIN QUERY PLAN SELECT account_id,COUNT(DISTINCT thread_id) FROM messages WHERE is_unread=1 GROUP BY account_id`,
         ],
         [
+          "messages_starred_threads",
+          sql`EXPLAIN QUERY PLAN SELECT 1 FROM messages WHERE account_id='account' AND thread_id='thread' AND is_starred=1 LIMIT 1`,
+        ],
+        [
+          "messages_thread_participants",
+          sql`EXPLAIN QUERY PLAN SELECT from_name,from_addr,MIN(date) FROM messages WHERE account_id='account' AND thread_id='thread' GROUP BY from_addr`,
+        ],
+        [
           "messages_thread_labels",
           sql`EXPLAIN QUERY PLAN SELECT labels_json FROM messages WHERE account_id='account' AND thread_id='thread'`,
         ],
@@ -254,6 +268,8 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
         )(yield* statement);
         const detail = rows.map((row) => row.detail).join("\n");
         assert.include(detail, index);
+        if (index === "messages_starred_threads")
+          assert.include(detail, "USING COVERING INDEX messages_starred_threads");
         assert.notMatch(detail, /SCAN (?:messages|pending_ops)(?:$|\n)|TEMP B-TREE/);
       }
       const indexes =

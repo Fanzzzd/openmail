@@ -80,3 +80,5 @@ export * from "./sync-health.js";
 
 export { ProviderDiagnostic } from "./provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync-reset.js";
+
+export * from "./search-snippets.js";

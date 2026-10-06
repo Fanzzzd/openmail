@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { promisify } from "node:util";
-import { Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
+import { Store } from "@openmail/core";
+import { ThreadSummary } from "@openmail/core/schema";
+import { TestMailbox, incoming } from "@openmail/core/testing/node";
 
 const Frame = Schema.Struct({
   id: Schema.optionalKey(Schema.Union([Schema.Number, Schema.String])),
@@ -25,8 +28,9 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();
 });
 
-async function client(allowWrites = false, cli = false) {
+async function client(allowWrites = false, cli = false, seed = false) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
+  if (seed) await seedAttachmentMail(directory);
   const child = spawn(
     process.execPath,
     [
@@ -110,7 +114,7 @@ async function client(allowWrites = false, cli = false) {
     clientInfo: { name: "test-client", version: "1" },
   });
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`);
-  return { request };
+  return { request, directory };
 }
 
 test("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async () => {
@@ -188,3 +192,91 @@ test("CLI write-mode cannot enable writes", async () => {
     expect(status.stdout).toContain("Agent write mode: off.");
   }
 });
+
+async function seedAttachmentMail(directory: string) {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const account = yield* store.upsertAccount("gmail", "ocr@example.com");
+        yield* store.ai.setAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+        yield* store.upsertMessage(
+          account.id,
+          incoming("ocr", {
+            subject: "Receipt",
+            bodyText: "unrelated",
+            attachments: [{ filename: "invoice.pdf", mimeType: "application/pdf", size: 10 }],
+          }),
+        );
+        const job = yield* store.media.claim("test", 0, true);
+        if (Option.isNone(job)) throw new Error("Missing OCR job");
+        yield* store.media.complete(
+          job.value,
+          [
+            {
+              messageId: `${account.id}/ocr`,
+              text: "total amount due",
+              source: {
+                kind: "attachment",
+                index: 0,
+                name: "invoice.pdf",
+                mimeType: "application/pdf",
+              },
+              page: 1,
+              region: null,
+              pipelineVersion: "test",
+              visionRevision: null,
+            },
+          ],
+          null,
+        );
+        while (!(yield* store.backfillWordIndex(500)).ready) {
+          /* finish actual indexes */
+        }
+      }).pipe(
+        Effect.provide(
+          TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+            database: join(directory, "mail.db"),
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+test("MCP and CLI search expose attachment snippets only inside the untrusted envelope", async () => {
+  const { request, directory } = await client(false, false, true);
+  const called = Schema.decodeUnknownSync(CallResult)(
+    await request("tools/call", {
+      name: "search",
+      arguments: { query: "amount" },
+    }),
+  );
+  expect(called.isError).not.toBe(true);
+  const envelope = Schema.fromJsonString(
+    Schema.Struct({
+      notice: Schema.String,
+      untrusted_mail: Schema.Struct({ threads: Schema.Array(ThreadSummary) }),
+    }),
+  );
+  const fromMcp = Schema.decodeUnknownSync(envelope)(called.content[0]?.text);
+  expect(fromMcp.notice).toContain("untrusted");
+  expect(fromMcp.untrusted_mail.threads[0]?.searchMatches).toEqual([
+    {
+      source: "attachment",
+      messageId: "gmail:ocr@example.com/ocr",
+      attachmentName: "invoice.pdf",
+      attachmentIndex: 0,
+      snippet: "total amount due",
+      highlights: [{ start: 6, end: 12 }],
+    },
+  ]);
+  const run = promisify(execFile);
+  const { stdout } = await run(process.execPath, ["dist/cli.js", "search", "amount", "--json"], {
+    env: { ...process.env, OPENMAIL_HOME: directory },
+  });
+  const fromCli = Schema.decodeUnknownSync(envelope)(stdout);
+  expect(fromCli.untrusted_mail.threads[0]?.searchMatches).toEqual(
+    fromMcp.untrusted_mail.threads[0]?.searchMatches,
+  );
+}, 30_000);

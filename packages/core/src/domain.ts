@@ -152,6 +152,24 @@ const summaryFields = {
 export const MessageSummary = Schema.Struct(summaryFields);
 export type MessageSummary = typeof MessageSummary.Type;
 
+/** Plain visible text with UTF-16 ranges; consumers render marks, never snippet HTML. */
+const searchMatchFields = {
+  messageId: Schema.String,
+  snippet: Schema.String,
+  highlights: Schema.Array(Schema.Struct({ start: Schema.Int, end: Schema.Int })),
+};
+export const SearchMatch = Schema.Union([
+  Schema.Struct({ ...searchMatchFields, source: Schema.Literals(["body", "subject"]) }),
+  Schema.Struct({
+    ...searchMatchFields,
+    source: Schema.Literal("attachment"),
+    attachmentName: Schema.String,
+    /** Null for an inline image; attachment indexes distinguish duplicate filenames. */
+    attachmentIndex: Schema.NullOr(Schema.Int),
+  }),
+]);
+export type SearchMatch = typeof SearchMatch.Type;
+
 /** One row of a conversation list: the newest message of a thread in the view. */
 export const ThreadSummary = Schema.Struct({
   ...summaryFields,
@@ -162,6 +180,7 @@ export const ThreadSummary = Schema.Struct({
   /** Distinct senders in the thread, oldest first. */
   participants: Schema.Array(Address),
   derivedMatches: Schema.optionalKey(Schema.Array(DerivedChunk)),
+  searchMatches: Schema.optionalKey(Schema.Array(SearchMatch)),
 });
 export type ThreadSummary = typeof ThreadSummary.Type;
 

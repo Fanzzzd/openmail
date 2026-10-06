@@ -56,6 +56,20 @@ export function fixtureMessage(i: number, large = false): IncomingMessage {
   };
 }
 
+/** Different lengths, frequencies and phrase spacing exercise attachment BM25. */
+export function fixtureOcrText(i: number): string {
+  switch (Math.floor(i / 10) % 4) {
+    case 0:
+      return "Invoice total amount due: 250.00. weekly delivery schedule";
+    case 1:
+      return `Invoice weekly ledger. ${"weekly delivery schedule. ".repeat(3)}total pending review amount due: 250.00.`;
+    case 2:
+      return `Invoice total ${"item details and delivery notes. ".repeat(12)}amount due: 250.00. weekly reconciliation`;
+    default:
+      return `Invoice weekly summary: total amount due. ${"delivery details. ".repeat(4)}`;
+  }
+}
+
 export const PerformanceMailbox = () =>
   Layer.unwrap(
     Effect.acquireRelease(
@@ -114,6 +128,35 @@ export const seedMailbox = (count: number) =>
       if (count === 100_000 && start % 10_000 === 0)
         process.stdout.write(`Seeded ${start + 500}/100000\n`);
     }
+    // One extracted OCR chunk for each attachment: 10k chunks in the 100k fixture.
+    for (let start = 0; start < count; start += 500) {
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let i = start; i < Math.min(start + 500, count); i += 10) {
+            const message = fixtureMessage(i, count === 100_000);
+            const account = fixtureAccounts[Number(message.threadId.slice(6)) % 3];
+            const messageId = `${account}/${message.providerId}`;
+            const text = fixtureOcrText(i);
+            yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${messageId},${text},${JSON.stringify(
+              {
+                messageId,
+                text,
+                source: {
+                  kind: "attachment",
+                  index: 0,
+                  name: "report.pdf",
+                  mimeType: "application/pdf",
+                },
+                page: 1,
+                region: null,
+                pipelineVersion: "perf-ocr",
+                visionRevision: 1,
+              },
+            )})`;
+          }
+        }),
+      );
+    }
     while (!(yield* store.backfillWordIndex(500)).ready) {
       /* finish the actual background index */
     }
@@ -124,12 +167,16 @@ const PlanRows = Schema.Array(Schema.Struct({ detail: Schema.String }));
 export type QueryPlan = { sql: string; plan: string[] };
 
 /** Captures executed SQL, including cached prepares, and computes plans only during the untimed pass. */
-export function traceQueries() {
+export function traceQueries(
+  onQuery?: (query: string, phase: "prepare" | "execute") => () => void,
+) {
   // oxlint-disable-next-line typescript/unbound-method
   const prepare = DatabaseSync.prototype.prepare;
   let capture: Map<string, QueryPlan> | undefined;
   DatabaseSync.prototype.prepare = function (query) {
+    const endPrepare = onQuery?.(query, "prepare");
     const statement = prepare.call(this, query);
+    endPrepare?.();
     const all = statement.all.bind(statement),
       get = statement.get.bind(statement),
       run = statement.run.bind(statement);
@@ -154,33 +201,48 @@ export function traceQueries() {
       ...rest: SQLInputValue[]
     ) => {
       record(first, rest);
-      return first === undefined
-        ? all()
-        : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
-          ? all(first, ...rest)
-          : all(first, ...rest);
+      const endQuery = onQuery?.(query, "execute");
+      try {
+        return first === undefined
+          ? all()
+          : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
+            ? all(first, ...rest)
+            : all(first, ...rest);
+      } finally {
+        endQuery?.();
+      }
     };
     statement.get = (
       first?: SQLInputValue | Record<string, SQLInputValue>,
       ...rest: SQLInputValue[]
     ) => {
       record(first, rest);
-      return first === undefined
-        ? get()
-        : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
-          ? get(first, ...rest)
-          : get(first, ...rest);
+      const endQuery = onQuery?.(query, "execute");
+      try {
+        return first === undefined
+          ? get()
+          : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
+            ? get(first, ...rest)
+            : get(first, ...rest);
+      } finally {
+        endQuery?.();
+      }
     };
     statement.run = (
       first?: SQLInputValue | Record<string, SQLInputValue>,
       ...rest: SQLInputValue[]
     ) => {
       record(first, rest);
-      return first === undefined
-        ? run()
-        : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
-          ? run(first, ...rest)
-          : run(first, ...rest);
+      const endQuery = onQuery?.(query, "execute");
+      try {
+        return first === undefined
+          ? run()
+          : typeof first === "object" && first !== null && !ArrayBuffer.isView(first)
+            ? run(first, ...rest)
+            : run(first, ...rest);
+      } finally {
+        endQuery?.();
+      }
     };
     return statement;
   };

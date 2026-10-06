@@ -18,14 +18,14 @@ import type { AppError } from "../errors";
 import { supportsInInboxFilter } from "../folder-actions";
 import { MailClient } from "../rpc";
 import { OVERVIEW, scopeAccountIds } from "../view";
-import { type Loaded, refreshPages } from "./list-pages";
+import { type Loaded, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchAtom, searchScopeAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
 const PAGE = 100;
-/** Initial server search stays bounded; local hits use the same cursor as folder lists. */
+/** Initial server search stays bounded. Local ranked search grows its candidate window. */
 const SEARCH_LIMIT = 200;
 
 /** A thread query without its page cursor and size. */
@@ -35,7 +35,9 @@ export type ListQuery = Omit<ThreadQuery, "before" | "beforeId" | "limit">;
 const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =>
   Effect.gen(function* () {
     const call = yield* MailClient;
-    const limit = query.search ? SEARCH_LIMIT : PAGE;
+    if (query.search)
+      return yield* searchExtent(query, wanted, (q) => call("Threads", { query: q }));
+    const limit = PAGE;
     let { threads, pages, done } = from ?? { threads: [], pages: 0, done: false };
     while (pages < wanted && !done) {
       const oldest = threads.at(-1);

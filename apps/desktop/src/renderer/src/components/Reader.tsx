@@ -19,6 +19,7 @@ import {
   shouldLoadRemote,
   threadExpansion,
   type ReaderZoom,
+  type SearchMatch,
 } from "@openmail/core/schema";
 import {
   useState,
@@ -97,6 +98,7 @@ import {
 } from "../state/mail";
 import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
+import { attachmentMatches } from "./SearchSnippet";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
 import { EmailFrame, type MessageBackground } from "./EmailFrame";
@@ -122,6 +124,7 @@ interface Props {
   messageId: string | null;
   threadKey: string | null;
   derivedMatches?: readonly DerivedChunk[] | undefined;
+  searchMatches?: readonly SearchMatch[] | undefined;
   query: string;
   onQuery: (q: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
@@ -146,6 +149,7 @@ export function Reader({
   messageId,
   threadKey,
   derivedMatches,
+  searchMatches,
   query,
   onQuery,
   searchRef,
@@ -213,6 +217,7 @@ export function Reader({
           onActionDone={onActionDone}
           onComposeMessage={onComposeMessage}
           derivedMatches={derivedMatches}
+          searchMatches={searchMatches}
           // Grouping off lists messages on their own; the reader shows just that one.
           single={!grouping}
           onEditDraft={onEditDraft}
@@ -291,6 +296,7 @@ export function useThreadPrint(notify: Notify) {
 export function ThreadView({
   messages: stored,
   derivedMatches = [],
+  searchMatches = [],
   selectedId,
   single,
   onEditDraft,
@@ -304,6 +310,7 @@ export function ThreadView({
 }: {
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
+  searchMatches?: readonly SearchMatch[] | undefined;
   selectedId: string;
   /** Show only the selected message (conversation grouping off). */
   single: boolean;
@@ -456,7 +463,18 @@ export function ThreadView({
     (a, m) => (!a || m.date >= a.date ? m : a),
     undefined,
   );
-  const [open, setOpen] = useState(() => new Set([selectedId, newest?.id ?? selectedId]));
+  const matchedIds = [
+    ...new Set(attachmentMatches(searchMatches).map((match) => match.messageId)),
+  ].toSorted();
+  const [open, setOpen] = useState(
+    () => new Set([selectedId, newest?.id ?? selectedId, ...matchedIds]),
+  );
+  const matchedKey = JSON.stringify(matchedIds);
+  const [expandedMatchKey, setExpandedMatchKey] = useState(matchedKey);
+  if (expandedMatchKey !== matchedKey) {
+    setExpandedMatchKey(matchedKey);
+    setOpen(new Set([...open, ...matchedIds]));
+  }
   if (activeSelection !== activeId) {
     setActiveId(activeId);
     setFinding(false);
@@ -915,6 +933,7 @@ export function ThreadView({
             <Expanded
               key={m.id}
               message={m}
+              searchMatches={searchMatches.filter((match) => match.messageId === m.id)}
               onActivate={() => activate(m.id)}
               active={m.id === activeId}
               onMessageOp={(op) => messageAction(m.id, op)}
@@ -1060,6 +1079,7 @@ const noInline = Atom.make(AsyncResult.success<Record<string, string>>({}));
 
 function Expanded({
   message: m,
+  searchMatches,
   zoom,
   defaultBackground,
   onZoomKey,
@@ -1088,6 +1108,7 @@ function Expanded({
   onMatches,
 }: {
   message: Message;
+  searchMatches: readonly SearchMatch[];
   zoom: ReaderZoom;
   defaultBackground: "light" | "theme";
   onZoomKey: (e: KeyboardEvent) => void;
@@ -1295,7 +1316,9 @@ function Expanded({
       <MeetingLinks sources={[m.bodyText, m.bodyHtml]} />
       <InviteBanner message={m} />
 
-      {m.attachments.length > 0 && <Attachments message={m} notify={notify} />}
+      {m.attachments.length > 0 && (
+        <Attachments message={m} notify={notify} matches={searchMatches} />
+      )}
 
       {(imageNotice || trackerCount > 0) && (
         <div

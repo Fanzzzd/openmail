@@ -4,9 +4,11 @@ import {
   DEFAULT_PREFS,
   EMPTY_QUOTE_HISTORY,
   type AttachmentAction,
+  type SearchMatch,
   type EmbeddedMessage,
   type ReaderAttachment,
 } from "@openmail/core/schema";
+import { attachmentMatches, SearchSnippet } from "./SearchSnippet";
 import { AttachmentImportDialog } from "./AttachmentImportDialog";
 import { constVoid } from "effect/Function";
 import { plural } from "@lingui/core/macro";
@@ -55,7 +57,15 @@ function iconFor(mimeType: string, filename: string): Icon {
   return File;
 }
 
-export function Attachments({ message, notify }: { message: Message; notify: Notify }) {
+export function Attachments({
+  message,
+  notify,
+  matches = [],
+}: {
+  message: Message;
+  notify: Notify;
+  matches?: readonly SearchMatch[];
+}) {
   const { t, i18n } = useLingui();
   const run = useRunMail();
   const [files, setFiles] = useState<readonly ReaderAttachment[]>([]);
@@ -89,7 +99,15 @@ export function Attachments({ message, notify }: { message: Message; notify: Not
       active = false;
     };
   }, [message.id, message.attachments, run, notify, i18n, t]);
-  return <AttachmentList key={message.id} messageId={message.id} files={files} notify={notify} />;
+  return (
+    <AttachmentList
+      key={message.id}
+      messageId={message.id}
+      files={files}
+      notify={notify}
+      matches={matches}
+    />
+  );
 }
 
 const buttonClass =
@@ -101,10 +119,12 @@ export function AttachmentList({
   messageId,
   files,
   notify,
+  matches = [],
 }: {
   messageId: string;
   files: readonly ReaderAttachment[];
   notify: Notify;
+  matches?: readonly SearchMatch[];
 }) {
   const { t, i18n } = useLingui();
   const run = useRunMail();
@@ -267,10 +287,17 @@ export function AttachmentList({
       <div className="flex flex-wrap items-center gap-2">
         {files.map((file) => {
           const Icon = iconFor(file.mimeType, file.filename);
+          const hit = matches.find(
+            (match) =>
+              match.source === "attachment" &&
+              match.attachmentIndex === file.path[0] &&
+              file.path.length === 1,
+          );
           return (
             <span
               key={pathKey(file.path)}
-              className="flex h-8 max-w-[min(20rem,100%)] items-center rounded-md border border-black/10 text-[13px] dark:border-white/10"
+              className={`flex h-8 max-w-[min(20rem,100%)] items-center rounded-md border text-[13px] ${hit ? "border-amber-500 bg-amber-500/10" : "border-black/10 dark:border-white/10"}`}
+              title={hit ? hit.snippet : undefined}
             >
               <input
                 type="checkbox"
@@ -365,6 +392,13 @@ export function AttachmentList({
           </button>
         )}
       </div>
+      {attachmentMatches(matches)
+        .slice(0, 3)
+        .map((match, index) => (
+          <p key={index} className="mt-2 text-[12px] text-a11y-muted">
+            <SearchSnippet match={match} />
+          </p>
+        ))}
       {files.some((file) => file.decodeError) && (
         <p className="mt-2 text-[12px] text-a11y-muted">
           <Trans>Could not decode winmail.dat. You can save the original file.</Trans>

@@ -84,7 +84,20 @@ vi.mock("./components/LazyDialogs", () => ({
 }));
 vi.mock("./components/AiPanel", () => ({ ThreadSummary: () => null }));
 vi.mock("./components/TriageChip", () => ({ TriageChip: () => null }));
-vi.mock("./components/Attachments", () => ({ Attachments: () => null }));
+vi.mock("./components/Attachments", () => ({
+  Attachments: ({
+    message,
+    matches,
+  }: {
+    message: Message;
+    matches: readonly { snippet: string }[];
+  }) =>
+    h(
+      "div",
+      { "data-attachment-message": message.id },
+      matches.map((match) => match.snippet).join(" "),
+    ),
+}));
 vi.mock("./components/ui/Menu", () => ({
   DropdownMenu: ({ trigger, children }: { trigger: ReactNode; children: ReactNode }) =>
     h("div", null, trigger, h("div", { role: "menu" }, children)),
@@ -356,4 +369,41 @@ it("keeps the search field on one line and folds the scope into an icon when nar
   expect(scope.className).toContain("shrink-0");
   expect(scope.querySelector("svg")).not.toBeNull();
   expect(scope.innerHTML).toContain("@max-[340px]/search:sr-only");
+});
+
+it("opens an older message whose attachment matched the search", () => {
+  const messages = [
+    message("m1", {
+      attachments: [{ filename: "invoice.pdf", mimeType: "application/pdf", size: 10 }],
+      hasAttachments: true,
+    }),
+    message("m2"),
+    message("m3"),
+  ];
+  const base = { messages, selectedId: "m3", single: false, notify: vi.fn() };
+  const { rerender } = render(localized(h(ThreadView, base)));
+  expect(document.querySelector('[data-attachment-message="m1"]')).toBeNull();
+  rerender(
+    localized(
+      h(ThreadView, {
+        messages,
+        selectedId: "m3",
+        single: false,
+        notify: vi.fn(),
+        searchMatches: [
+          {
+            source: "attachment",
+            messageId: "m1",
+            attachmentName: "invoice.pdf",
+            attachmentIndex: 0,
+            snippet: "total amount",
+            highlights: [{ start: 6, end: 12 }],
+          },
+        ],
+      }),
+    ),
+  );
+  expect(document.querySelector('[data-attachment-message="m1"]')?.textContent).toContain(
+    "total amount",
+  );
 });

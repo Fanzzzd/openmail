@@ -554,6 +554,7 @@ export function makeAiMailbox(
                   snippet: "",
                   attachmentNames: [],
                   derivedMatches: [],
+                  searchMatches: [],
                 }));
                 for (const thread of safe)
                   sources.set(thread.id, { id: thread.id, subject: thread.subject });
@@ -575,6 +576,7 @@ export function makeAiMailbox(
                   snippet: "",
                   attachmentNames: [],
                   derivedMatches: [],
+                  searchMatches: [],
                 }));
                 for (const thread of safe)
                   sources.set(thread.id, { id: thread.id, subject: thread.subject });

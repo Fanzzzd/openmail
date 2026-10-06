@@ -1247,6 +1247,8 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
       WHERE account_id=new.account_id AND thread_id=new.thread_id),0))
     WHERE account_id=new.account_id AND provider_id=new.provider_id;
   END;`,
+  `CREATE INDEX messages_thread_participants ON messages(account_id,thread_id,from_addr,date,from_name);
+   CREATE INDEX messages_starred_threads ON messages(account_id,thread_id) WHERE is_starred=1;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

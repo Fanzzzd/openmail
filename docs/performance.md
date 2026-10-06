@@ -31,6 +31,8 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 | 未读账户／标签徽标                     |     100 |
 | list_threads 首页 50 个会话            |      75 |
 | 常见词／CJK／运算符搜索，50 个会话     |     150 |
+| 消息文本＋OCR 搜索，200 个会话         |     100 |
+| OCR 摘要搜索，50 个会话                |     150 |
 | AROUND 搜索，50 个会话                 |     500 |
 | getThread，204 封长会话                |     100 |
 | 长会话模型文本                         |     500 |
@@ -50,6 +52,24 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 迁移 35 增加读取索引，当前迁移版本为 37。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。AROUND 一次生成匹配元数据，再分组读取选中的摘要。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
 
 保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
+
+## 消息文本与附件检索排名
+
+普通词查询分别选取日期窗口内的消息文本候选和 FTS 排名靠前的附件候选，再合并。消息文本窗口为请求 limit，附件窗口同样为 limit；这是有界候选排名，不保证整个邮箱的全局相关度顺序。布尔、排除和 AROUND 查询沿用原条件选择候选，再给返回的会话补附件来源。消息文本和主题使用 [FTS5 BM25](https://sqlite.org/fts5.html#the_bm25_function) `bm25(index,4,0,0,1)`，主题权重 4、消息文本权重 1、发件人权重 0；附件使用 `bm25(derived_words)`。两个消息 FTS 都按缓存的原始 `body_text` 建外部内容索引；可见消息文本只存在于语义向量项，未建可供 BM25 查询的 FTS。复用现有消息 FTS 计算候选顺序，避免在只读搜索中改索引或重写消息文本；来源分类、摘要和精确短语信号始终取经过可见性提取的消息文本，隐藏内容不成为邮件命中信号。负分越小越相关。词索引未完成或 CJK 子串查询使用 trigram 索引，无法提供 FTS 分数的短词保留日期顺序。
+
+存在附件文本命中时，对各路候选先按 BM25 排序，再计算 `score(m) = (w_mail + p × exact_mail)/(60+r_mail) + (1 + p × exact_attachment)/(60+r_attachment)`。排名从 1 开始，exact 为 0 或 1，缺席的一路贡献为零；`w_mail = max(2, (60+N_mail)/60)`，N 为消息文本候选数；普通附件权重为 1。任一路含连续多词短语时加同一个 `p = 1.5 × w_mail - 1`：消息文本／主题精确命中的权重为 `w_mail + p`，附件精确命中的权重为 `1 + p`。主题和可见消息文本分别检查，不把两个字段拼成短语。这样同为精确短语时仍保留邮件优先，附件精确短语仍可超过分散的邮件词命中。两路都命中的会话相加，每路每个会话只计一次，不因页数或 OCR chunk 数量增加得分；同分按日期降序。没有附件文本命中时保留原日期分页顺序。桌面排名搜索通过扩大候选窗口加载更多，避免用相关度末行的日期翻页。消息文本权重下限 2 让普通主题／消息文本命中优先；候选超过 60 时按窗口扩大权重，保证最后一个消息文本候选仍优于普通附件首位，连续短语允许附件越过分散的消息文本命中。RRF 避免直接比较消息文本与附件两个语料库的 BM25 数值。固定排序与隐藏文本回归见 `search-snippets.test.ts`。
+
+摘要在有界结果窗口生成，只从 `messageModelText` 的可见消息文本取词，不使用 provider preview 或语义索引中旧的消息文本 chunk。派生文本含 HTML 时也走可见文本提取；纯 OCR／PDF 提取文本作为不可信字符串。摘要约 240 个 UTF-16 单位，围绕首个命中截取，保留完整的长短语；词索引未完成时，标记也按对应的 trigram／LIKE 子串规则生成；字段包含 `source`、`messageId`、附件名／索引、纯文本 `snippet` 和 UTF-16 `highlights`。React 用文本节点和 `mark` 显示，MCP 和 CLI 仍放在 `untrusted_mail` 封装内。阅读器展开命中的邮件，并按附件索引标记附件，重名文件不混淆。阅读器现有 PDF 页码和 OCR 图片区域入口保留。十种语言新增附件来源提示；本轮不启动 Electron。
+
+100k fixture 给每个附件加入一个 OCR chunk，共 10,000 个，四类长度、词频和词间距不同的固定文本会实际影响 BM25。`search mixed body+OCR 200` 按桌面首个搜索窗口查 200 个混合结果，预算 100 ms；加载更多仍通过扩大并重新查询窗口。`search OCR snippet` 通过真实 Store 查 50 个结果，并检查附件名与标记范围，预算 150 ms。宽词搜索和派生候选通过已维护的 `message_search_meta.eligible` 排除垃圾邮件／废纸篓，避免逐命中两次解析标签 JSON。主题均有可见命中、消息文本窗口已满且只有一个词时，普通 OCR 独占命中按上述权重无法进入结果页，因此只读取该窗口内会话的附件命中。多词、短语和消息文本不足一页时仍查询独立附件候选。FTS 路径直接在命中游标上计算附件 BM25；会话先按排名选一封最新匹配的代表消息，再读取摘要与参与者，未读／星标仍按所有匹配消息聚合，不读取每个 chunk 对应的完整摘要；消息分数用物化 CTE 一次计算，先按候选 rowid 的最小／最大值限制游标范围，再以数值表达式筛选 rowid，避免 FTS 对每个 rowid 重开游标并重算语料统计；只读取结果代表消息与确需复核可见性的消息文本 chunk。避免逐行子查询反复扫描 FTS 集合。宽词列表用 CASE 先排除已有较新匹配的回复，再对候选会话头检查 MATCH；未读和星标通过匹配消息上的短路 EXISTS 生成，两路候选共用已取得的会话计数与参与者。可见消息文本只读取实际生成摘要的邮件，不重复读取未使用的附件代表消息。复杂表达式先筛派生文本命中，再核对原条件。同一请求中相同消息文本／HTML 的可见文本结果、相同 chunk 的摘要与标记范围复用，不跨请求缓存；同一对象的命中列表合并也跳过去重序列化。
+
+混合搜索剖析工具见 [search-profile.test.ts](../packages/core/src/platform/node/search-profile.test.ts)，按每条 SQL 和内存步骤计时，并在计时外采集完整查询计划。主 SQL 从 91.10 降至 28.72 ms，整条请求从 157.09 降至 76.52 ms。常见词第一页整页会话头命中时跳过全库 FTS 集合，缺少命中或使用游标时回退；追加迁移为参与者和星标查询提供覆盖索引。 同步执行相同 schema 解码，保留全部边界验证。
+
+```sh
+OPENMAIL_SEARCH_PROFILE=1 NODE_OPTIONS=--max-old-space-size=192 pnpm --filter @openmail/core exec vitest run src/platform/node/search-profile.test.ts
+```
+
+剖析默认使用 `/tmp/openmail-search-profile.db`，空库生成真实 100k fixture。默认库在连接关闭后删除，成功、失败和中断均执行清理；显式指定的其他测试库保留，便于多轮比较。预热两次后取七次中位数，热运行的 SQL prepare 全部命中缓存。`OPENMAIL_PROFILE_DATABASE` 和 `OPENMAIL_PROFILE_REPORT` 可指定测试库及报告位置。原始计时与查询计划留在临时目录，不提交生成报告。
 
 ## 2026-10-06 回归定位
 

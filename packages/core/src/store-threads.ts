@@ -3,20 +3,25 @@ import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
 import { attachmentFilename } from "./attachment-filename.js";
 import { categoryKey } from "./categories.js";
-import { type Label, type ThreadQuery, type ThreadSummary } from "./domain.js";
+import { type Label, type SearchMatch, type ThreadQuery, type ThreadSummary } from "./domain.js";
+import { exactSearchPhrase, searchHighlightTerms, searchSnippet } from "./search-snippets.js";
+import { SearchProfile, searchEffect, searchStep, type SearchProfiler } from "./search-profile.js";
 import { DerivedChunk } from "./media.js";
 import {
   ftsSearchTerm,
   hasSearchExpression,
+  keyOf,
   parseSearchQuery,
+  quoteSearchValue,
   reciprocalRankFusion,
   searchQueryError,
   searchWords,
   unquoteSearchValue,
   usesSubstringSearch,
+  wordTokens,
 } from "./search.js";
 import { type Store } from "./services.js";
-import { all } from "./sql-rows.js";
+import { all, sqliteTextCompare } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import {
   accountScope,
@@ -35,10 +40,75 @@ import {
   ThreadRow,
   toSummary,
 } from "./store-rows.js";
-import { type makeWordIndexStore } from "./store-word-index.js";
+import { type makeWordIndexStore, type WordIndexState } from "./store-word-index.js";
+import { messageModelText, visibleHtmlText } from "./visible-text.js";
 
-const keyOf = (thread: ThreadSummary, flat?: boolean) =>
-  flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+const rowKey = (row: typeof DerivedSearchRow.Type, flat?: boolean) =>
+  flat ? row.provenance_json.messageId : `${row.account_id}/${row.thread_id}`;
+
+function getOrSet<K, V>(memo: Map<K, V>, key: K, create: () => V): V {
+  const previous = memo.get(key);
+  if (previous !== undefined) return previous;
+  const value = create();
+  memo.set(key, value);
+  return value;
+}
+
+const decodeSummaries = Schema.decodeUnknownSync(Schema.Array(SummaryRow));
+const decodeThreads = Schema.decodeUnknownSync(Schema.Array(ThreadRow));
+
+const SearchBodyRow = Schema.Struct({
+  id: Schema.String,
+  body_text: Schema.String,
+  body_html: Schema.String,
+  relevance: Schema.NullOr(Schema.Number),
+});
+type SearchBodies = ReadonlyMap<string, typeof SearchBodyRow.Type>;
+type SearchContext = {
+  profile: SearchProfiler | null;
+  q: LocalQuery;
+  readiness: WordIndexState;
+  highlights: readonly string[];
+  mailCandidates: ReadonlyMap<string, ThreadSummary>;
+  derivedRanks: Map<string, number>;
+  threads: readonly ThreadSummary[];
+  limit: number;
+};
+type MatchedSearch = {
+  threads: ThreadSummary[];
+  exactMail: ReadonlySet<string>;
+  exactAttachments: ReadonlySet<string>;
+};
+
+const rankBySource = (
+  { q, mailCandidates, derivedRanks, limit }: SearchContext,
+  matched: MatchedSearch,
+  bodies: SearchBodies,
+): ThreadSummary[] => {
+  const threads = matched.threads;
+  const body = threads
+    .filter((thread) => thread.searchMatches?.some((match) => match.source !== "attachment"))
+    .toSorted(
+      (a, b) =>
+        (bodies.get(mailCandidates.get(keyOf(a, q.flat))?.id ?? a.id)?.relevance ?? 0) -
+          (bodies.get(mailCandidates.get(keyOf(b, q.flat))?.id ?? b.id)?.relevance ?? 0) ||
+        b.date - a.date,
+    );
+  const derived = threads
+    .filter((thread) => thread.searchMatches?.some((match) => match.source === "attachment"))
+    .toSorted(
+      (a, b) =>
+        (derivedRanks.get(keyOf(a, q.flat)) ?? Infinity) -
+        (derivedRanks.get(keyOf(b, q.flat)) ?? Infinity),
+    );
+  if (!derived.length) return threads;
+  const rankedKeys = new Set([...body, ...derived].map((thread) => keyOf(thread, q.flat)));
+  const other = threads.filter((thread) => !rankedKeys.has(keyOf(thread, q.flat)));
+  return [
+    ...reciprocalRankFusion(body, derived, q.flat, matched.exactAttachments, matched.exactMail),
+    ...other,
+  ].slice(0, limit);
+};
 
 export const makeThreadsStore = ({
   sql,
@@ -118,28 +188,58 @@ export const makeThreadsStore = ({
             FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
               WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
         FROM page c JOIN messages m ON m.id=c.id ORDER BY c.date DESC,c.id DESC`;
-    const rows = yield* all(ThreadRow)(
-      materialize
+    // If every head in the newest unsearched window matches, older matching
+    // replies cannot enter that window. Avoid building the corpus-wide FTS set.
+    // Any missing head requires the full query; cursors always use that query.
+    const optimistic =
+      !!q.textPage &&
+      q.before === undefined &&
+      !materialize &&
+      !hasSearchExpression(q.search ?? "");
+    const unsearched = { ...q, search: "", textPage: undefined };
+    const newestMatch = sql`NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
+      AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))`;
+    // SQLite may evaluate a row-bound MATCH before the correlated exclusion.
+    // Skip old replies first, then open MATCH only for potential thread heads.
+    const headFilter = q.textPage
+      ? sql`CASE WHEN ${newestMatch} THEN ${listFilter(q)} ELSE 0 END`
+      : sql`${newestMatch} AND ${listFilter(q)}`;
+    const query = (fast: boolean) =>
+      (materialize
         ? grouped
         : sql`
-        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter({ ...q, rowBoundText: false })}),
-        page AS (
-          SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
-          WHERE NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
-              AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))
-            AND ${listFilter(q)}
+        WITH candidates AS NOT MATERIALIZED (SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM messages m WHERE ${listFilter(fast ? unsearched : { ...q, rowBoundText: false })}),
+        ${
+          fast
+            ? sql`recent AS MATERIALIZED (
+          SELECT m.rowid FROM ${listSource(q)} WHERE CASE WHEN ${newestMatch} THEN ${listFilter(unsearched)} ELSE 0 END
+          ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
+        ),`
+            : sql.literal("")
+        }
+        flag_candidates AS NOT MATERIALIZED (SELECT m.account_id,m.thread_id,m.is_unread,m.is_starred FROM messages m WHERE ${listFilter(q)}),
+        page AS MATERIALIZED (
+          SELECT ${sql.literal(SUMMARY_COLUMNS)},
+            json_array(
+              EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=m.account_id AND v.thread_id=m.thread_id AND v.is_unread=1),
+              EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=m.account_id AND v.thread_id=m.thread_id AND v.is_starred=1)
+            ) AS flags_json
+          FROM ${fast ? sql`messages m` : listSource(q)}
+          WHERE ${accountScope(sql, q.accountIds)} AND ${fast ? sql`m.rowid IN (SELECT rowid FROM recent) AND ${listFilter(q)}` : headFilter}
             AND ${q.before === undefined ? sql.literal("1") : sql`(m.list_date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (m.list_date = ${q.before} AND m.id < ${q.beforeId})`})`}
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         )
         SELECT c.*,
-          (SELECT MAX(v.is_unread) FROM candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id) AS any_unread,
-          (SELECT MAX(v.is_starred) FROM candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id) AS any_starred,
+          json_extract(c.flags_json,'$[0]') AS any_unread,
+          json_extract(c.flags_json,'$[1]') AS any_starred,
           (SELECT COUNT(*) FROM messages t WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id) AS thread_count,
           (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
             FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
               WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
-        FROM page c ORDER BY c.date DESC,c.id DESC`,
-    );
+        FROM page c ORDER BY c.date DESC,c.id DESC`
+      ).pipe(Effect.map(decodeThreads), Effect.orDie);
+    let rows = yield* query(optimistic);
+    if (optimistic && rows.length < limit) rows = yield* query(false);
     return rows.map((r): ThreadSummary => ({
       ...toSummary(r),
       ...(r.attachments_json.length
@@ -158,9 +258,11 @@ export const makeThreadsStore = ({
 
   /** Conversation grouping off: each message in the view is its own row, newest first. */
   const messageList = (q: LocalQuery, limit: number) =>
-    all(SummaryRow)(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
+    sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
         WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
-        ORDER BY date DESC, m.id DESC LIMIT ${limit}`).pipe(
+        ORDER BY date DESC, m.id DESC LIMIT ${limit}`.pipe(
+      Effect.map(decodeSummaries),
+      Effect.orDie,
       Effect.map((rows) =>
         rows.map((r): ThreadSummary => {
           const summary = toSummary(r);
@@ -180,10 +282,188 @@ export const makeThreadsStore = ({
       ),
     );
 
+  const derivedRanking = (words: readonly string[], q: LocalQuery) => {
+    const ready = (q.derivedWordIndexReady ?? false) && !usesSubstringSearch(q.search ?? "");
+    return {
+      ready,
+      rankable:
+        ready ||
+        words.every((word) => Array.from(unquoteSearchValue(word.replace(/\*$/, ""))).length >= 3),
+      index: sql.literal(ready ? "derived_words" : "derived_fts"),
+    };
+  };
+
+  const loadBodies = Effect.fn("Store.loadSearchBodies")(function* ({
+    q,
+    readiness,
+    highlights,
+    threads,
+    mailCandidates,
+  }: SearchContext) {
+    const bodyMatch = highlights
+      .map(ftsSearchTerm)
+      .filter((term) => term !== null)
+      .join(" OR ");
+    const bodyIndex = sql.literal(
+      readiness.messages && !usesSubstringSearch(q.search ?? "")
+        ? "messages_words"
+        : "messages_fts",
+    );
+    const selectedIds = [
+      ...new Set(
+        threads.flatMap((thread) => [
+          mailCandidates.get(keyOf(thread, q.flat))?.id ?? thread.id,
+          ...(thread.derivedMatches ?? [])
+            .filter((chunk) => chunk.source.kind === "body")
+            .map((chunk) => chunk.messageId),
+        ]),
+      ),
+    ];
+    const bodyIds = sql`SELECT rowid FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(selectedIds)}))`;
+    // A rowid IN constraint restarts the FTS cursor (and BM25 corpus stats) per id.
+    // The numeric expression keeps one MATCH cursor and filters its compact rowids.
+    const rows = yield* all(
+      SearchBodyRow,
+    )(sql`WITH selected_ids(rowid) AS MATERIALIZED (${bodyIds}), ranks AS MATERIALIZED (
+          SELECT rowid,bm25(${bodyIndex},4,0,0,1) AS relevance FROM ${bodyIndex}
+          WHERE ${bodyIndex} MATCH ${bodyMatch}
+          AND rowid >= (SELECT MIN(rowid) FROM selected_ids) AND rowid <= (SELECT MAX(rowid) FROM selected_ids)
+          AND (rowid+0) IN (SELECT rowid FROM selected_ids)
+        ) SELECT m.id,m.body_text,m.body_html,r.relevance FROM messages m LEFT JOIN ranks r ON r.rowid=m.rowid
+        WHERE m.rowid IN (SELECT rowid FROM selected_ids)`);
+    return new Map(rows.map((row) => [row.id, row]));
+  });
+
+  const attachMatches = Effect.fn("Store.attachSearchMatches")(function* (
+    context: SearchContext,
+    bodies: SearchBodies,
+  ) {
+    const { q, readiness, highlights, derivedRanks, mailCandidates, profile } = context;
+    let threads = context.threads;
+    const snippetCache = new Map<string, ReturnType<typeof searchSnippet>>();
+    const snippetFor = (text: string, source: "mail" | "derived" = "mail") => {
+      const mode = (source === "mail" ? readiness.messages : readiness.derived)
+        ? "words"
+        : "substring";
+      const key = `${mode}:${text}`;
+      return getOrSet(snippetCache, key, () =>
+        searchStep(profile, "snippet extraction", () => searchSnippet(text, highlights, mode)),
+      );
+    };
+    const phraseQuery = wordTokens(highlights.map(unquoteSearchValue).join(" ")).length > 1;
+    const phraseCache = new Map<string, boolean>();
+    const exactFor = (text: string) =>
+      phraseQuery &&
+      getOrSet(phraseCache, text, () =>
+        searchStep(profile, "exact phrase check", () => exactSearchPhrase(text, highlights)),
+      );
+    const keys = threads.map((thread) => keyOf(thread, q.flat));
+    // Complex expressions already select mixed body/attachment candidates. Fetch
+    // their matching chunks in the same selected conversations, without widening scope.
+    if (expressionMedia(q.search ?? "") || q.criteria?.proximity) {
+      const { rankable, index: derivedIndex } = derivedRanking(highlights, q);
+      const bodyMatch = highlights
+        .map(ftsSearchTerm)
+        .filter((term) => term !== null)
+        .join(" OR ");
+      const matchRows = yield* all(
+        DerivedSearchRow,
+      )(sql`SELECT m.account_id,m.thread_id,d.provenance_json
+          FROM ${rankable ? sql`${derivedIndex} JOIN derived_chunks d ON d.id=${derivedIndex}.rowid` : sql`derived_chunks d`}
+          JOIN messages m ON m.id=d.message_id
+          WHERE ${rankable ? sql`${derivedIndex} MATCH ${bodyMatch}` : sql.or(highlights.map((term) => textFilter(term, true, readiness.derived)))}
+          AND m.id IN (${q.flat ? sql`SELECT value FROM json_each(${JSON.stringify(keys)})` : sql`SELECT selected.id FROM json_each(${JSON.stringify(threads.map((thread) => ({ accountId: thread.accountId, threadId: thread.threadId })))}) k JOIN messages selected ON selected.account_id=json_extract(k.value,'$.accountId') AND selected.thread_id=json_extract(k.value,'$.threadId')`})
+          AND ${listFilter(q)} ORDER BY ${rankable ? sql`bm25(${derivedIndex})` : sql.literal("m.date DESC")},m.date DESC,d.id LIMIT 4096`);
+      const grouped = new Map<string, DerivedChunk[]>();
+      for (const [rank, row] of matchRows.entries()) {
+        const key = rowKey(row, q.flat);
+        if (!derivedRanks.has(key)) derivedRanks.set(key, rank);
+        const chunks = getOrSet(grouped, key, () => []);
+        if (chunks.length < 20 && snippetFor(row.provenance_json.text, "derived").highlights.length)
+          chunks.push(row.provenance_json);
+      }
+      threads = threads.map((thread) => ({
+        ...thread,
+        derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [],
+      }));
+    }
+    const visible = new Map<string, string>();
+    const visibleBody = (id: string) => {
+      const body = bodies.get(id);
+      if (!body) return "";
+      const key = JSON.stringify([body.body_text, body.body_html]);
+      return getOrSet(visible, key, () => {
+        const model = searchStep(profile, "visible body extraction", () =>
+          messageModelText(body.body_text, body.body_html),
+        );
+        return model.flags.includes("budget-exceeded") ? "" : model.text;
+      });
+    };
+    const exactMail = new Set<string>();
+    const exactAttachments = new Set<string>();
+    const annotated = searchStep(profile, "result annotation", () =>
+      threads.map((thread) => {
+        const matches: SearchMatch[] = [];
+        const mailCandidate = mailCandidates.get(keyOf(thread, q.flat)) ?? thread;
+        const subject = snippetFor(mailCandidate.subject);
+        if (subject.highlights.length && !q.criteria?.attachmentText)
+          matches.push({ source: "subject", messageId: mailCandidate.id, ...subject });
+        const visibleText = visibleBody(mailCandidate.id);
+        const body = snippetFor(visibleText);
+        if (
+          !q.criteria?.attachmentText &&
+          (exactFor(mailCandidate.subject) || exactFor(visibleText))
+        )
+          exactMail.add(keyOf(thread, q.flat));
+        if (body.highlights.length && !q.criteria?.attachmentText)
+          matches.push({ source: "body", messageId: mailCandidate.id, ...body });
+        const derivedMatches = (thread.derivedMatches ?? []).flatMap((chunk) => {
+          const text =
+            chunk.source.kind === "body"
+              ? visibleBody(chunk.messageId)
+              : /<\/?[a-z][^>]*>/i.test(chunk.text)
+                ? visibleHtmlText(chunk.text).text
+                : chunk.text;
+          const snippet = snippetFor(text, "derived");
+          if (!snippet.highlights.length) return [];
+          if (chunk.source.kind !== "body" && exactFor(text))
+            exactAttachments.add(keyOf(thread, q.flat));
+          matches.push(
+            chunk.source.kind === "body"
+              ? { source: "body", messageId: chunk.messageId, ...snippet }
+              : {
+                  source: "attachment",
+                  messageId: chunk.messageId,
+                  attachmentName: attachmentFilename(chunk.source.name),
+                  attachmentIndex: chunk.source.kind === "attachment" ? chunk.source.index : null,
+                  ...snippet,
+                },
+          );
+          return [{ ...chunk, text: snippet.snippet }];
+        });
+        return {
+          ...thread,
+          snippet: body.highlights.length || subject.highlights.length ? body.snippet : "",
+          searchMatches: matches.slice(0, 20),
+          ...(thread.derivedMatches ? { derivedMatches } : {}),
+        };
+      }),
+    );
+    return { threads: annotated, exactMail, exactAttachments } satisfies MatchedSearch;
+  });
+
   const listThreads = Effect.fn("Store.listThreads")(function* (raw: ThreadQuery) {
+    const profile = yield* SearchProfile;
+    const endPreparation = profile?.begin("request preparation");
     const invalid = searchQueryError(raw);
-    if (invalid) return yield* invalid;
-    if (raw.search !== undefined && !raw.search.trim()) return [];
+    if (invalid) {
+      endPreparation?.();
+      return yield* invalid;
+    }
+    if (raw.search !== undefined && !raw.search.trim()) {
+      endPreparation?.();
+      return [];
+    }
     const readiness = yield* wordIndex.wordIndexReady;
     const q = yield* planTextPage({
       ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
@@ -194,55 +474,175 @@ export const makeThreadsStore = ({
     const limit = mediaExpression ? Math.min(q.limit ?? 50, 1024) : (q.limit ?? 50);
     const listing = q.flat ? messageList : threadList;
     const terms = searchWords(q.search ?? "").map(unquoteSearchValue);
+    const highlights = searchHighlightTerms(raw);
+    const derivedRanks = new Map<string, number>();
+    endPreparation?.();
     let threads =
       q.criteria?.attachmentText && terms.length && !mediaExpression
         ? []
-        : yield* listing(q, limit);
+        : yield* searchEffect(profile, "mail candidate selection", listing(q, limit));
+    const mailCandidates = searchStep(
+      profile,
+      "mail candidate map",
+      () => new Map(threads.map((thread) => [keyOf(thread, q.flat), thread])),
+    );
     if (
       terms.length &&
       !hasSearchExpression(q.search ?? "") &&
       !searchWords(q.search ?? "").some((term) => term.startsWith("-"))
     ) {
+      const endQueryPreparation = profile?.begin("attachment query preparation");
       const predicates = searchWords(q.search ?? "").map((term) =>
         textFilter(term, true, readiness.derived),
       );
-      const long = searchWords(q.search ?? "")
-        .map(ftsSearchTerm)
-        .filter((term) => term !== null);
-      const ranking =
-        readiness.derived && !usesSubstringSearch(q.search ?? "")
-          ? sql`(SELECT rank FROM derived_words WHERE rowid=d.id AND derived_words MATCH ${long.join(" AND ")})`
-          : sql.literal("m.date DESC");
+      const words = searchWords(q.search ?? "");
+      const { ready, rankable, index } = derivedRanking(words, q);
+      const ftsMatch = words
+        .map((word) =>
+          ftsSearchTerm(
+            ready ? word : quoteSearchValue(unquoteSearchValue(word.replace(/\*$/, ""))),
+          ),
+        )
+        .join(" AND ");
       const { attachmentText: _scope, ...criteria } = q.criteria ?? {};
-      const matches = yield* all(DerivedSearchRow)(
-        sql`SELECT m.account_id,m.thread_id,d.provenance_json FROM derived_chunks d JOIN messages m ON m.id=d.message_id
-          WHERE ${listFilter({ ...q, search: "", criteria })} AND ${sql.and(predicates)}
-          ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
-          ORDER BY ${long.length ? ranking : sql.literal("m.date DESC")},d.id LIMIT ${Math.min(Math.max(limit * 20, 200), 4096)}`,
+      // With a full window of visible subject hits, ordinary one-word OCR cannot outrank it.
+      // Inspect attachment matches in those conversations without reading every matching mail.
+      const scoped =
+        mailCandidates.size >= limit &&
+        highlights.length === 1 &&
+        wordTokens(unquoteSearchValue(highlights[0] ?? "")).length === 1 &&
+        [...mailCandidates.values()].every(
+          (thread) =>
+            searchSnippet(thread.subject, highlights, readiness.messages ? "words" : "substring")
+              .highlights.length > 0,
+        );
+      const scope = q.flat
+        ? sql`SELECT d.id FROM derived_chunks d WHERE d.message_id IN (SELECT value FROM json_each(${JSON.stringify([...mailCandidates.values()].map((thread) => thread.id))}))`
+        : sql`SELECT d.id FROM json_each(${JSON.stringify([...mailCandidates.values()].map((thread) => ({ accountId: thread.accountId, threadId: thread.threadId })))}) k
+            JOIN messages selected ON selected.account_id=json_extract(k.value,'$.accountId') AND selected.thread_id=json_extract(k.value,'$.threadId')
+            JOIN derived_chunks d ON d.message_id=selected.id`;
+      endQueryPreparation?.();
+      const endQuery = profile?.begin("attachment candidate selection");
+      const decodeMatches = Schema.decodeUnknownSync(
+        Schema.Array(
+          Schema.Struct({
+            ...DerivedSearchRow.fields,
+            date: Schema.Number,
+            is_unread: SummaryRow.fields.is_unread,
+            is_starred: SummaryRow.fields.is_starred,
+          }),
+        ),
       );
-      const chunks = matches.map((row) => row.provenance_json);
-      const ids = [...new Set(chunks.map((chunk) => chunk.messageId))].slice(0, 1024);
-      const candidates = ids.length
-        ? yield* listing({ ...q, search: "", criteria, messageIds: ids }, ids.length)
-        : [];
+      const matches =
+        yield* sql`${scoped && rankable ? sql`WITH scoped_chunks(id) AS MATERIALIZED (${scope})` : sql.literal("")}
+          SELECT m.account_id,m.thread_id,m.date,m.is_unread,m.is_starred,d.provenance_json FROM
+          ${rankable ? sql`${index} JOIN derived_chunks d ON d.id=${index}.rowid` : sql`derived_chunks d`}
+          JOIN messages m ON m.id=d.message_id
+          WHERE ${listFilter({ ...q, search: "", criteria })} AND ${rankable ? sql`${index} MATCH ${ftsMatch}` : sql.and(predicates)}
+          ${scoped && rankable ? sql`AND ${index}.rowid >= (SELECT MIN(id) FROM scoped_chunks) AND ${index}.rowid <= (SELECT MAX(id) FROM scoped_chunks) AND (${index}.rowid+0) IN (SELECT id FROM scoped_chunks)` : sql.literal("")}
+          ${q.before === undefined ? sql.literal("") : sql`AND m.date < ${q.before}`}
+          ORDER BY ${rankable ? sql`bm25(${index})` : sql.literal("m.date DESC")},m.date DESC,d.id LIMIT ${Math.min(Math.max(limit * 20, 200), 4096)}`.pipe(
+          Effect.map(decodeMatches),
+          Effect.orDie,
+        );
+      endQuery?.();
+      const endGrouping = profile?.begin("attachment grouping");
       const grouped = new Map<string, DerivedChunk[]>();
       const ranks = new Map<string, number>();
+      const representatives = new Map<string, { id: string; date: number }>();
+      const flags = new Map<string, { isUnread: boolean; isStarred: boolean }>();
       for (const [rank, match] of matches.entries()) {
-        const key = q.flat
-          ? match.provenance_json.messageId
-          : `${match.account_id}/${match.thread_id}`;
+        const key = rowKey(match, q.flat);
         const group = grouped.get(key) ?? [];
         if (group.length < 20) group.push(match.provenance_json);
         grouped.set(key, group);
         if (!ranks.has(key)) ranks.set(key, rank);
+        const previousFlags = flags.get(key);
+        flags.set(key, {
+          isUnread: (previousFlags?.isUnread ?? false) || match.is_unread,
+          isStarred: (previousFlags?.isStarred ?? false) || match.is_starred,
+        });
+        const previous = representatives.get(key);
+        if (
+          !previous ||
+          previous.date < match.date ||
+          (previous.date === match.date &&
+            sqliteTextCompare(previous.id, match.provenance_json.messageId) < 0)
+        )
+          representatives.set(key, { id: match.provenance_json.messageId, date: match.date });
       }
+      // Fetch one representative per ranked conversation, not every page/chunk's mail.
+      const knownIds: string[] = [];
+      const unknownIds: string[] = [];
+      for (const key of [...ranks.keys()].slice(0, Math.min(limit, 1024))) {
+        const representative = representatives.get(key);
+        if (representative)
+          (mailCandidates.has(key) ? knownIds : unknownIds).push(representative.id);
+      }
+      // The mail route already loaded these conversations' counts and participants.
+      // Fetch the attachment representative's own fields without collapsing them again.
+      endGrouping?.();
+      const known = knownIds.length
+        ? yield* searchEffect(
+            profile,
+            "known attachment representatives",
+            messageList({ ...q, search: "", criteria, messageIds: knownIds }, knownIds.length),
+          )
+        : [];
+      const unknown = unknownIds.length
+        ? yield* searchEffect(
+            profile,
+            "unknown attachment representatives",
+            listing({ ...q, search: "", criteria, messageIds: unknownIds }, unknownIds.length),
+          )
+        : [];
+      const endSummaries = profile?.begin("attachment summary ordering");
+      const candidates = [
+        ...known.map((thread) => {
+          const mail = mailCandidates.get(keyOf(thread, q.flat));
+          return mail
+            ? { ...thread, threadCount: mail.threadCount, participants: mail.participants }
+            : thread;
+        }),
+        ...unknown,
+      ];
       const derived = candidates
-        .map((thread) => ({ ...thread, derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [] }))
+        .map((thread) => ({
+          ...thread,
+          ...flags.get(keyOf(thread, q.flat)),
+          derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [],
+        }))
         .toSorted(
           (a, b) =>
             (ranks.get(keyOf(a, q.flat)) ?? Infinity) - (ranks.get(keyOf(b, q.flat)) ?? Infinity),
         );
-      threads = reciprocalRankFusion(threads, derived, q.flat).slice(0, limit);
+      for (const [rank, thread] of derived.entries()) derivedRanks.set(keyOf(thread, q.flat), rank);
+      endSummaries?.();
+      threads = searchStep(profile, "initial fusion", () =>
+        reciprocalRankFusion(threads, derived.slice(0, limit), q.flat).slice(0, limit * 2),
+      );
+    }
+    // Only the bounded result window is materialized for visibility and provenance.
+    if (highlights.length && threads.length) {
+      const context = {
+        q,
+        readiness,
+        highlights,
+        threads,
+        mailCandidates,
+        derivedRanks,
+        limit,
+        profile,
+      };
+      const bodies = yield* searchEffect(profile, "body loading and BM25", loadBodies(context));
+      const matched = yield* searchEffect(
+        profile,
+        "match preparation",
+        attachMatches(context, bodies),
+      );
+      threads = searchStep(profile, "source ranking and fusion", () =>
+        rankBySource(context, matched, bodies),
+      );
     }
     // The Drafts list also shows drafts the provider has no copy of yet.
     const filters = q.listFilters;

@@ -80,6 +80,14 @@ it("all real catalogs compile and render ICU counts, arguments and component mar
         expect(rendered).toContain(i18n.number(count));
       }
     }
+    const attachmentSource = Object.entries(source).find(
+      ([, message]) => message.message === "In attachment {attachmentName}:",
+    );
+    expect(attachmentSource).toBeDefined();
+    const attachmentLabel = i18n._(attachmentSource?.[0] ?? "", { attachmentName: "invoice.pdf" });
+    expect(attachmentLabel).toContain("invoice.pdf");
+    expect(attachmentLabel).not.toContain("{");
+    expect(attachmentLabel.endsWith(locale === "zh-CN" || locale === "ja" ? "：" : ":")).toBe(true);
     const markup = Object.entries(source).find(
       ([, message]) => message.message === "This space has no accounts yet. <0>Add account</0>",
     );

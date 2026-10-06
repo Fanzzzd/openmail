@@ -8,6 +8,18 @@ export interface Loaded {
   done: boolean;
   remoteDone?: boolean;
 }
+
+/** Ranked search order is not chronological. Grow and replace the candidate window. */
+export function searchExtent<E>(
+  query: ThreadQuery,
+  pages: number,
+  read: (q: ThreadQuery) => Effect.Effect<readonly ThreadSummary[], E>,
+) {
+  const limit = pages * 200;
+  return read({ ...query, limit }).pipe(
+    Effect.map((threads) => ({ threads, pages, requested: pages, done: threads.length < limit })),
+  );
+}
 /** Refresh the loaded extent in one query, keeping offscreen selections available. */
 export function refreshPages<E>(
   query: ThreadQuery,

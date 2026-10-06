@@ -651,6 +651,12 @@ export function filterQuery(criteria: FilterCriteria): ThreadQuery {
   };
 }
 
+/** One identity for conversation grouping, flat search and all fusion routes. */
+export const keyOf = (
+  thread: Pick<ThreadSummary, "id" | "accountId" | "threadId">,
+  flat = false,
+): string => (flat ? thread.id : `${thread.accountId}/${thread.threadId}`);
+
 export function mergeSearchResults(
   local: readonly ThreadSummary[],
   remote: readonly ThreadSummary[],
@@ -660,7 +666,7 @@ export function mergeSearchResults(
     return reciprocalRankFusion(local, remote, flat);
   const found = new Map<string, ThreadSummary>();
   for (const row of [...local, ...remote]) {
-    const key = flat ? row.id : `${row.accountId}/${row.threadId}`;
+    const key = keyOf(row, flat);
     const previous = found.get(key);
     const next = !previous || previous.date < row.date ? row : previous;
     const derivedMatches = previous?.derivedMatches ?? row.derivedMatches;
@@ -669,22 +675,61 @@ export function mergeSearchResults(
   return [...found.values()].toSorted((a, b) => b.date - a.date);
 }
 
-/** RRF keeps exact mail and attachment candidates useful without comparing score scales. */
+const SEARCH_MATCH_LIMIT = 20;
+
+function combineMatches<A>(left: readonly A[] = [], right: readonly A[] = []): readonly A[] {
+  if (left === right || right.length === 0)
+    return left.length <= SEARCH_MATCH_LIMIT ? left : left.slice(0, SEARCH_MATCH_LIMIT);
+  if (left.length === 0)
+    return right.length <= SEARCH_MATCH_LIMIT ? right : right.slice(0, SEARCH_MATCH_LIMIT);
+  return [...new Map([...left, ...right].map((hit) => [JSON.stringify(hit), hit])).values()].slice(
+    0,
+    SEARCH_MATCH_LIMIT,
+  );
+}
+
+/** Weighted RRF combines independent BM25 orders without comparing corpus score scales. */
 export function reciprocalRankFusion(
   body: readonly ThreadSummary[],
   derived: readonly ThreadSummary[],
   flat = false,
+  exactAttachments: ReadonlySet<string> = new Set(),
+  exactMail: ReadonlySet<string> = new Set(),
 ): ThreadSummary[] {
   const scores = new Map<string, { thread: ThreadSummary; score: number }>();
-  for (const list of [body, derived])
+  // Keep even the last mail candidate above the strongest ordinary OCR-only hit.
+  const mailWeight = Math.max(2, (60 + body.length) / 60);
+  const phraseBonus = 1.5 * mailWeight - 1;
+  for (const [index, list] of [body, derived].entries()) {
+    const seen = new Set<string>();
     for (const [rank, thread] of list.entries()) {
-      const key = flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+      const key = keyOf(thread, flat);
+      if (seen.has(key)) continue;
+      seen.add(key);
       const old = scores.get(key);
       scores.set(key, {
-        thread: { ...old?.thread, ...thread },
-        score: (old?.score ?? 0) + 1 / (60 + rank + 1),
+        thread: {
+          ...old?.thread,
+          ...thread,
+          ...(old?.thread.derivedMatches || thread.derivedMatches
+            ? {
+                derivedMatches: combineMatches(old?.thread.derivedMatches, thread.derivedMatches),
+              }
+            : {}),
+          ...(old?.thread.searchMatches || thread.searchMatches
+            ? {
+                searchMatches: combineMatches(old?.thread.searchMatches, thread.searchMatches),
+              }
+            : {}),
+        },
+        score:
+          (old?.score ?? 0) +
+          ((index === 0 ? mailWeight : 1) +
+            ((index === 0 ? exactMail : exactAttachments).has(key) ? phraseBonus : 0)) /
+            (60 + rank + 1),
       });
     }
+  }
   return [...scores.values()]
     .toSorted((a, b) => b.score - a.score || b.thread.date - a.thread.date)
     .map((entry) => entry.thread);
@@ -700,7 +745,7 @@ export function semanticRankFusion(
   const found = new Map<string, { thread: ThreadSummary; score: number }>();
   for (const [index, list] of [fts, text, images].entries())
     for (const [rank, thread] of list.entries()) {
-      const key = flat ? thread.id : `${thread.accountId}/${thread.threadId}`;
+      const key = keyOf(thread, flat);
       const previous = found.get(key);
       const matches = [
         ...(previous?.thread.derivedMatches ?? []),
@@ -708,7 +753,7 @@ export function semanticRankFusion(
       ];
       const unique = [...new Map(matches.map((hit) => [JSON.stringify(hit), hit])).values()].slice(
         0,
-        20,
+        SEARCH_MATCH_LIMIT,
       );
       found.set(key, {
         thread: {
