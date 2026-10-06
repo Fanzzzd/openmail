@@ -4,6 +4,18 @@ import { flow, incoming, row, eventually } from "./harness";
 beforeAll(() => vi.stubEnv("TZ", "UTC"));
 afterAll(() => vi.unstubAllEnvs());
 let current: Awaited<ReturnType<typeof flow>> | undefined;
+/** Dates in prose must not be in the past, so these messages carry a fixed date. */
+const OCTOBER = Date.parse("2026-10-01T12:00:00Z");
+/** Dates found in the message text share one row; its menu opens the event dialog. */
+async function openTextDate() {
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: /dates? found$/ })).toBeTruthy(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /dates? found$/ }));
+  const [item] = await screen.findAllByRole("menuitem");
+  if (!item) throw new Error("Missing date menu item");
+  fireEvent.click(item);
+}
 afterEach(async () => {
   await current?.dispose();
   current = undefined;
@@ -39,15 +51,12 @@ it("event detection uses core results and refreshes same-id body changes without
 
 it("confirmation edits dates and multi-weekday recurrence through RPC with a readable summary", async () => {
   current = await flow({
-    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00" })],
+    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00", date: OCTOBER })],
   });
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await eventually(() =>
-    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  await openTextDate();
   fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
   fireEvent.change(screen.getByLabelText("Event date or range"), {
     target: { value: "2026-10-26 09:00–10:00" },
@@ -80,11 +89,9 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await eventually(() =>
-    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  await openTextDate();
   expect(screen.getByText("Date is ambiguous. Enter an explicit date and time")).toBeTruthy();
+  expect(screen.getByLabelText("Event date or range").getAttribute("aria-invalid")).toBe("true");
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(true);
@@ -104,6 +111,8 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
   fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "yearly-date" } });
   fireEvent.change(screen.getByLabelText("Month"), { target: { value: "0" } });
   expect(screen.getByText("Check the date and repeat settings")).toBeTruthy();
+  // A repeat error leaves the parsed date field valid.
+  expect(screen.getByLabelText("Event date or range").hasAttribute("aria-invalid")).toBe(false);
   expect(screen.getByLabelText("Month").closest("fieldset")?.hasAttribute("disabled")).toBe(false);
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
@@ -121,15 +130,12 @@ it("ambiguous dates block confirmation until the person chooses an explicit date
 it("Outlook shows a lossless-mapping error before confirmation for a month-end repeat", async () => {
   current = await flow({
     provider: "outlook",
-    messages: [incoming("one", { bodyText: "Trip 2026-10-31" })],
+    messages: [incoming("one", { bodyText: "Workshop 2026-10-31", date: OCTOBER })],
   });
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await eventually(() =>
-    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  await openTextDate();
   fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "monthly-date" } });
   expect(screen.getByText("This recurrence cannot be represented in Outlook")).toBeTruthy();
   expect(
@@ -141,15 +147,12 @@ it("Outlook shows a lossless-mapping error before confirmation for a month-end r
 
 it("changing the start flags the rule mismatch and leaves the editor available to fix it", async () => {
   current = await flow({
-    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00" })],
+    messages: [incoming("one", { bodyText: "Meeting 2026-10-26 09:00–10:00", date: OCTOBER })],
   });
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await eventually(() =>
-    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  await openTextDate();
   expect(screen.getByLabelText("Time zone").tagName).toBe("SELECT");
   expect(screen.getByRole("option", { name: "America/New_York" })).toBeTruthy();
   fireEvent.change(screen.getByLabelText("Repeat pattern"), { target: { value: "weekly" } });
@@ -181,10 +184,7 @@ it("DST gaps have an explicit offset prompt before any creation", async () => {
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   fireEvent.click(row(h.id("one")));
-  await eventually(() =>
-    expect(screen.getByRole("button", { name: "Add to calendar" })).toBeTruthy(),
-  );
-  fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+  await openTextDate();
   fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "America/New_York" } });
   expect(
     screen.getByText(
@@ -195,4 +195,24 @@ it("DST gaps have an explicit offset prompt before any creation", async () => {
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(true);
   expect(h.server.createdEvents).toHaveLength(0);
+});
+
+it("dates in prose share one quiet row instead of a card each", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", {
+        bodyText: "Call 2026-10-26 09:00–10:00. The workshop runs Oct 12–14.",
+        date: OCTOBER,
+      }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "2 dates found" })).toBeTruthy(),
+  );
+  expect(screen.queryByRole("button", { name: "Add to calendar" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "2 dates found" }));
+  expect(await screen.findAllByRole("menuitem")).toHaveLength(2);
 });

@@ -232,10 +232,11 @@ export function EventRecurrenceEditor({
       disabled={disabled}
       className="space-y-2 border-t border-black/10 pt-2 dark:border-white/10"
     >
-      <legend className="font-medium">{t`Repeat`}</legend>
+      {/* Floated, the legend leaves the border and sits above the field like the other labels. */}
+      <legend className="float-left mb-0 w-full font-medium">{t`Repeat`}</legend>
       <select
         aria-label={t`Repeat pattern`}
-        className={formInput}
+        className={`${formInput} clear-left`}
         value={rule === undefined ? "keep" : (pattern?.kind ?? "none")}
         onChange={(e) => {
           if (e.target.value === "keep") {

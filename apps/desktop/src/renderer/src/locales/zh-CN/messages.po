@@ -34,6 +34,13 @@ msgstr "（未填收件人）"
 msgid "(No subject)"
 msgstr "（无主题）"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, other {找到 # 个日期}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -70,6 +77,18 @@ msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}：{user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, other {回填已暂停。已检查 # 封邮件。}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, other {同步间隙回填旧邮件。已检查 # 封邮件。}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, other {旧邮件已回填。已检查 # 封邮件。}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -118,10 +137,6 @@ msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {faile
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} 已重新登录"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "已检查 {fetched} 封"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -813,14 +828,6 @@ msgstr "返回"
 msgid "Back to messages"
 msgstr "返回邮件列表"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "回填已暂停"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "同步间隙回填"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "背景色"
@@ -851,11 +858,11 @@ msgstr "放大文字"
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "正文"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "正文：{bodies} · 附件：{attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3848,10 +3855,6 @@ msgstr "旧邮件与缓存"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "旧邮件在后台下载。正文过期后仍可搜索邮件头，打开时重新下载正文。"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "旧邮件已回填"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "最早的在前"
@@ -5873,8 +5876,8 @@ msgid "Toolbar actions"
 msgstr "工具栏操作"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "缓存总大小"
+msgid "Total cache: {total}"
+msgstr "缓存总大小：{total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"

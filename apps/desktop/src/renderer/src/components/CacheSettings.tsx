@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { formatBytes } from "../format";
 import { useAtom, useAtomValue, useAtomRefresh } from "@effect/atom-react";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   type CacheCompactionResult,
@@ -14,6 +15,7 @@ import { Keys } from "../state/keys";
 import { MailClient } from "../rpc";
 import { pauseBackfillAtom, setCacheWindowAtom, setPrefsAtom } from "../state/mutations";
 import { backfillStateAtom, cacheWindowsAtom, labelsAtom, prefsAtom } from "../state/queries";
+import { alertButton } from "./ui/Dialog";
 import { Select } from "./ui/Select";
 
 const sizesAtom = MailClient.query("CacheSize", undefined, {
@@ -24,6 +26,7 @@ const databaseSizeAtom = MailClient.query("CacheDatabaseSize", undefined, {
 });
 const clearAtom = MailClient.mutation("ClearCache");
 const compactAtom = MailClient.mutation("CompactCache");
+const actionButton = `${alertButton} shrink-0 disabled:opacity-50`;
 const MEGABYTE_LIMITS = [128, 512, 1024, 2048].map((mb) => mb * 1024 ** 2);
 const GIGABYTE_LIMITS = [1, 2, 5, 10, 20].map((gb) => gb * 1024 ** 3);
 
@@ -93,6 +96,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
     resultError(i18n, limitResult) ||
     resultError(i18n, compactResult);
   const backfillError = resultError(i18n, saveResult) || resultError(i18n, pauseResult);
+  const total = formatBytes(databaseSize?.footprintBytes ?? 0, i18n.locale);
   const options = [
     { value: "inherit", label: t`Use default` },
     { value: "all", label: t`All mail` },
@@ -202,12 +206,13 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           }
         />
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <output>
-          <Trans>Total cache</Trans>: {formatBytes(databaseSize?.footprintBytes ?? 0, i18n.locale)}
+          <Trans>Total cache: {total}</Trans>
         </output>
         <button
           type="button"
+          className={actionButton}
           disabled={clearResult.waiting}
           onClick={() =>
             clear({
@@ -219,7 +224,7 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
           <Trans>Clear all caches</Trans>
         </button>
       </div>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+      <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-sm">
         <dt>
           <Trans
             context="cached message text"
@@ -228,30 +233,43 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             Message text
           </Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.bodyBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.bodyBytes ?? 0, i18n.locale)}
+        </dd>
         <dt>
           <Trans>Attachments</Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.attachmentBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.attachmentBytes ?? 0, i18n.locale)}
+        </dd>
         <dt>
           <Trans>Indexes and other data</Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.otherBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.otherBytes ?? 0, i18n.locale)}
+        </dd>
         <dt>
           <Trans>Free database pages</Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.reusableBytes ?? 0, i18n.locale)}
+        </dd>
         <dt>
           <Trans>WAL</Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.walBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.walBytes ?? 0, i18n.locale)}
+        </dd>
         <dt>
           <Trans>Recovery copies</Trans>
         </dt>
-        <dd>{formatBytes(databaseSize?.recoveryBytes ?? 0, i18n.locale)}</dd>
+        <dd className="text-right tabular-nums">
+          {formatBytes(databaseSize?.recoveryBytes ?? 0, i18n.locale)}
+        </dd>
       </dl>
       <button
         type="button"
+        className={actionButton}
         disabled={compactResult.waiting}
         onClick={() => compact({ payload: undefined, reactivityKeys: [Keys.storage, Keys.cache] })}
       >
@@ -268,8 +286,10 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
       </p>
       {accounts.map((account) => {
         const state = states.find((s) => s.accountId === account.id);
-        const fetched = i18n.number(state?.fetched ?? 0);
+        const checked = state?.fetched ?? 0;
         const size = sizes.find((s) => s.accountId === account.id);
+        const bodies = formatBytes(size?.bodyBytes ?? 0, i18n.locale);
+        const attachments = formatBytes(size?.attachmentBytes ?? 0, i18n.locale);
         const rows = [
           ...DEFAULT_CACHE_WINDOWS.map((w) => ({
             id: w.label,
@@ -282,19 +302,18 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
         return (
           <div key={account.id} className="space-y-2">
             <h3 className="font-medium">{account.email}</h3>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <output>
                 <Trans
                   context="cached message text"
-                  comment="Cached texts of email messages, never anatomical bodies."
+                  comment="Cached texts of email messages, never anatomical bodies, then the size of cached attachments."
                 >
-                  Bodies
+                  Bodies: {bodies} · Attachments: {attachments}
                 </Trans>
-                : {formatBytes(size?.bodyBytes ?? 0, i18n.locale)} · <Trans>Attachments</Trans>:{" "}
-                {formatBytes(size?.attachmentBytes ?? 0, i18n.locale)}
               </output>
               <button
                 type="button"
+                className={actionButton}
                 disabled={clearResult.waiting}
                 onClick={() =>
                   clear({
@@ -308,20 +327,26 @@ export function CacheSettings({ accounts }: { accounts: readonly Account[] }) {
             </div>
             <div className="flex items-center gap-3">
               <output className="flex-1 text-a11y-muted">
-                {state?.done ? (
-                  <Trans>Older mail is up to date</Trans>
-                ) : state?.paused ? (
-                  <Trans>Backfill paused</Trans>
-                ) : (
-                  <Trans>Backfill runs between syncs</Trans>
-                )}
-                . <Trans>{fetched} messages checked</Trans>
+                {state?.done
+                  ? t`${plural(checked, {
+                      one: "Older mail is up to date. # message checked.",
+                      other: "Older mail is up to date. # messages checked.",
+                    })}`
+                  : state?.paused
+                    ? t`${plural(checked, {
+                        one: "Backfill paused. # message checked.",
+                        other: "Backfill paused. # messages checked.",
+                      })}`
+                    : t`${plural(checked, {
+                        one: "Backfill runs between syncs. # message checked.",
+                        other: "Backfill runs between syncs. # messages checked.",
+                      })}`}
               </output>
               {!state?.done && (
                 <button
                   type="button"
                   disabled={pauseResult.waiting}
-                  className="rounded px-2 py-1 hover:bg-black/5 dark:hover:bg-white/5"
+                  className={actionButton}
                   onClick={() =>
                     pause({
                       payload: { accountId: account.id, paused: !state?.paused },

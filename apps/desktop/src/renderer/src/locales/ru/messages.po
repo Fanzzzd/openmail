@@ -24,6 +24,13 @@ msgstr "(без получателей)"
 msgid "(No subject)"
 msgstr "(Без темы)"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, one {Найдена # дата} few {Найдены # даты} many {Найдено # дат} other {Найдено # даты}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -60,6 +67,18 @@ msgstr "{accountCount, plural, one {# учётная запись} few {# учё
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, one {Загрузка старой почты приостановлена. Проверено # сообщение.} few {Загрузка старой почты приостановлена. Проверено # сообщения.} many {Загрузка старой почты приостановлена. Проверено # сообщений.} other {Загрузка старой почты приостановлена. Проверено # сообщения.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, one {Старая почта загружается между синхронизациями. Проверено # сообщение.} few {Старая почта загружается между синхронизациями. Проверено # сообщения.} many {Старая почта загружается между синхронизациями. Проверено # сообщений.} other {Старая почта загружается между синхронизациями. Проверено # сообщения.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, one {Старая почта актуальна. Проверено # сообщение.} few {Старая почта актуальна. Проверено # сообщения.} many {Старая почта актуальна. Проверено # сообщений.} other {Старая почта актуальна. Проверено # сообщения.}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -108,10 +127,6 @@ msgstr "{done} завершено · {queued} в очереди · {running} в�
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} снова вошел в систему"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "Проверено {fetched} сообщений"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -803,14 +818,6 @@ msgstr "Назад"
 msgid "Back to messages"
 msgstr "Назад к сообщениям"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "Загрузка старой почты приостановлена"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "Заполнение выполняется между синхронизациями"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Цвет фона"
@@ -841,11 +848,11 @@ msgstr "Текст большего размера"
 msgid "Blocked before loading:"
 msgstr "Заблокировано перед загрузкой:"
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "Тексты сообщений"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "Тексты сообщений: {bodies} · Вложения: {attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3838,10 +3845,6 @@ msgstr "Старая почта и кэш"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "Старая почта загружается в фоне. После истечения срока хранения текстов сообщений поиск по заголовкам остаётся доступен. При открытии сообщения его текст загружается снова."
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "Старая почта актуальна"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Сначала самый старый"
@@ -5863,8 +5866,8 @@ msgid "Toolbar actions"
 msgstr "Действия на панели инструментов"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "Общий объём кэша"
+msgid "Total cache: {total}"
+msgstr "Общий объём кэша: {total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"

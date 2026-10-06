@@ -11,19 +11,22 @@ import {
   type EventRecurrence,
   DEFAULT_PREFS,
   formatCalendarRange,
+  calendarTimestamp,
   type CalendarEvent,
 } from "@openmail/core/schema";
 import type { I18n } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { Cause, Schema } from "effect";
 import { AsyncResult } from "effect/reactivity";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Message } from "../../../shared/api";
 import { calendarEventsAtom, detectedEventsAtom, prefsAtom, accountsAtom } from "../state/queries";
 import { createCalendarEventAtom, reauthAtom } from "../state/mutations";
 import { Keys } from "../state/keys";
 import { type AppError, resultError, INPUT_ERRORS } from "../errors";
 import { Dialog, alertButton, alertPrimary } from "./ui/Dialog";
+import { DropdownMenu, MenuItem } from "./ui/Menu";
+import { CalendarDays } from "lucide-react";
 import { EventRecurrenceEditor } from "./EventRecurrenceEditor";
 import { formButton, formInput } from "./ui/form-styles";
 
@@ -145,19 +148,98 @@ export function DetectedCalendarEvents({ message }: { message: Message }) {
   return <LoadedEvents message={message} />;
 }
 function LoadedEvents({ message }: { message: Message }) {
-  const result = useAtomValue(detectedEventsAtom(message.id));
+  const events = AsyncResult.getOrElse(useAtomValue(detectedEventsAtom(message.id)), () => []);
+  // Only prose candidates carry the text they came from; structured events keep a card each.
+  const prose = events.filter((event) => event.dateInput !== undefined);
   return (
     <>
-      {AsyncResult.getOrElse(result, () => []).map((event) => (
-        <EventConfirmation key={event.key} event={event} message={message} />
-      ))}
+      {events
+        .filter((event) => event.dateInput === undefined)
+        .map((event) => (
+          <EventConfirmation key={event.key} event={event} message={message} />
+        ))}
+      {prose.length > 0 && <TextDates events={prose} message={message} />}
     </>
   );
 }
-function EventConfirmation({ event, message }: { event: CalendarEvent; message: Message }) {
+
+/**
+ * Dates found in the message text are guesses, so they share one quiet row
+ * instead of a card each. Each menu entry opens the same confirmation dialog.
+ */
+function TextDates({ events, message }: { events: CalendarEvent[]; message: Message }) {
   const { t, i18n } = useLingui();
-  const [open, setOpen] = useState(false);
+  const [opened, setOpened] = useState<string | null>(null);
+  const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
+  return (
+    <div className="mt-2">
+      <DropdownMenu
+        align="start"
+        trigger={
+          <button
+            type="button"
+            className="-mx-2 inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-a11y-muted hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <CalendarDays aria-hidden className="size-4 shrink-0" />
+            {t({
+              message: plural(events.length, { one: "# date found", other: "# dates found" }),
+              context: "calendar dates",
+              comment:
+                "Dates detected in the message text. Opens a menu to add one of them to the calendar.",
+            })}
+          </button>
+        }
+      >
+        {events.map((event) => (
+          <MenuItem
+            key={event.key}
+            disabled={added.has(event.key)}
+            onClick={() => setOpened(event.key)}
+          >
+            {Number.isFinite(calendarTimestamp(event.start))
+              ? formatCalendarRange(event, i18n.locale)
+              : event.dateInput}
+            {event.start.kind === "date" && <> · {t`All day`}</>}
+            {added.has(event.key) && <> · {t`Added to calendar`}</>}
+          </MenuItem>
+        ))}
+      </DropdownMenu>
+      {events.map((event) => (
+        <EventConfirmation
+          key={event.key}
+          event={event}
+          message={message}
+          dialogOnly={{
+            open: opened === event.key,
+            onClose: () => setOpened(null),
+            onAdded: () => setAdded((keys) => new Set(keys).add(event.key)),
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function EventConfirmation({
+  event,
+  message,
+  dialogOnly,
+}: {
+  event: CalendarEvent;
+  message: Message;
+  /** Without a card: the caller opens the dialog and hears about the added event. */
+  dialogOnly?: { open: boolean; onClose: () => void; onAdded: () => void };
+}) {
+  const { t, i18n } = useLingui();
+  const [cardOpen, setCardOpen] = useState(false);
+  const open = dialogOnly ? dialogOnly.open : cardOpen;
+  const setOpen = (next: boolean) => {
+    if (dialogOnly) {
+      if (!next) dialogOnly.onClose();
+    } else setCardOpen(next);
+  };
   const [added, setAdded] = useState(false);
+  const validationId = useId();
   const [dateInput, setDateInput] = useState<string | null>(event.dateInput ?? null);
   const [timeZone, setTimeZone] = useState(editorTimeZone(event));
   const [recurrence, setRecurrence] = useState<EventRecurrence | null | undefined>(
@@ -200,6 +282,140 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
   const range = preview
     ? formatCalendarRange(preview, i18n.locale)
     : (event.dateInput ?? t`Choose a date and time`);
+  const dialog = open && (
+    <Dialog
+      aria-label={t`Add this event to your calendar?`}
+      onClose={result.waiting ? undefined : () => setOpen(false)}
+      className="w-[440px] max-w-[90vw] space-y-3 p-5"
+    >
+      <h2 className="font-semibold">{t`Add this event to your calendar?`}</h2>
+      <p>{t`Review the event details before confirming.`}</p>
+      <div className="max-h-[55vh] space-y-2 overflow-auto break-words">
+        <p>{email}</p>
+        <h3 className="font-semibold">{event.title || message.subject}</h3>
+        <p>{range}</p>
+        {shown.endEstimated && (
+          <p>
+            <Trans>End time is estimated. Review it before adding the event.</Trans>
+          </p>
+        )}
+        {shown.start.kind === "date" && (
+          <p>
+            <Trans>All day</Trans>
+          </p>
+        )}
+        <p>
+          {t`Location`}: {event.location || t`None`}
+        </p>
+        {event.description && <p className="whitespace-pre-wrap">{event.description}</p>}
+        <label className="block">
+          {t`Event date or range`}
+          <input
+            className={formInput}
+            value={dateInput ?? ""}
+            placeholder={t`For example: tomorrow 3pm or Oct 12–14`}
+            disabled={result.waiting}
+            // Only a date that does not parse marks the field; repeat errors belong to the editor.
+            aria-invalid={datePreview ? undefined : true}
+            aria-describedby={datePreview || !validationError ? undefined : validationId}
+            onChange={(e) => setDateInput(e.target.value || null)}
+          />
+        </label>
+        <p className="text-sm">{t`Relative dates use the date of this message.`}</p>
+        <label className="block">
+          {t`Time zone`}
+          <select
+            className={formInput}
+            value={timeZone}
+            disabled={result.waiting}
+            onChange={(e) => {
+              setTimeZone(e.target.value);
+              if (dateInput === null) setDateInput(event.start.value);
+            }}
+          >
+            {DATE_ZONES.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
+        </label>
+        <EventRecurrenceEditor
+          rule={recurrence}
+          start={datePreview?.start ?? event.start}
+          onChange={setRecurrence}
+          disabled={result.waiting || !!event.hasRecurrenceOverrides || !datePreview}
+        />
+        {recurrence === undefined && !!event.recurrence.length && (
+          <p>{event.recurrence.join("; ")}</p>
+        )}
+        {validationError && (
+          <p id={validationId} role="alert" className="text-a11y-danger">
+            {validationError}
+          </p>
+        )}
+      </div>
+      {providerError && (
+        <p role="alert" className="text-a11y-danger">
+          {providerError}
+        </p>
+      )}
+      {resultError(i18n, result) && (
+        <p role="alert" className="text-a11y-danger">
+          {resultError(i18n, result)}
+        </p>
+      )}
+      <div className="flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          className={alertButton}
+          disabled={result.waiting}
+          onClick={() => setOpen(false)}
+        >
+          <Trans>Cancel</Trans>
+        </button>
+        <button
+          type="button"
+          className={alertButton}
+          disabled={result.waiting || !preview}
+          onClick={() => {
+            const url = URL.createObjectURL(
+              new Blob([calendarEventIcs(shown)], {
+                type: "text/calendar;charset=utf-8",
+              }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "event.ics";
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            setOpen(false);
+          }}
+        >{t`Download calendar file`}</button>
+        {provider !== "imap" && (
+          <button
+            type="button"
+            className={alertPrimary}
+            disabled={result.waiting || !preview || !!providerError}
+            onClick={async () => {
+              const exit = await create({
+                payload: { messageId: message.id, key: event.key, edits },
+                reactivityKeys: [Keys.audit],
+              });
+              if (exit._tag === "Success") {
+                setAdded(true);
+                dialogOnly?.onAdded();
+                setOpen(false);
+              }
+            }}
+          >
+            <Trans>Confirm and add event</Trans>
+          </button>
+        )}
+      </div>
+    </Dialog>
+  );
+  if (dialogOnly) return dialog;
   return (
     <section className="mt-3 space-y-2 rounded-lg border border-blue-200 p-3 dark:border-blue-900">
       <h3 className="font-semibold">{event.title || message.subject}</h3>
@@ -215,135 +431,7 @@ function EventConfirmation({ event, message }: { event: CalendarEvent; message: 
       <button type="button" className={formButton} disabled={added} onClick={() => setOpen(true)}>
         {added ? t`Added to calendar` : t`Add to calendar`}
       </button>
-      {open && (
-        <Dialog
-          aria-label={t`Add this event to your calendar?`}
-          onClose={result.waiting ? undefined : () => setOpen(false)}
-          className="w-[440px] max-w-[90vw] space-y-3 p-5"
-        >
-          <h2 className="font-semibold">{t`Add this event to your calendar?`}</h2>
-          <p>{t`Review the event details before confirming.`}</p>
-          <div className="max-h-[55vh] space-y-2 overflow-auto break-words">
-            <p>{email}</p>
-            <h3 className="font-semibold">{event.title || message.subject}</h3>
-            <p>{range}</p>
-            {shown.endEstimated && (
-              <p>
-                <Trans>End time is estimated. Review it before adding the event.</Trans>
-              </p>
-            )}
-            {shown.start.kind === "date" && (
-              <p>
-                <Trans>All day</Trans>
-              </p>
-            )}
-            <p>
-              {t`Location`}: {event.location || t`None`}
-            </p>
-            {event.description && <p className="whitespace-pre-wrap">{event.description}</p>}
-            <label className="block">
-              {t`Event date or range`}
-              <input
-                className={formInput}
-                value={dateInput ?? ""}
-                placeholder={t`For example: tomorrow 3pm or Oct 12–14`}
-                disabled={result.waiting}
-                onChange={(e) => setDateInput(e.target.value || null)}
-              />
-            </label>
-            <p className="text-sm">{t`Relative dates use the date of this message.`}</p>
-            <label className="block">
-              {t`Time zone`}
-              <select
-                className={formInput}
-                value={timeZone}
-                disabled={result.waiting}
-                onChange={(e) => {
-                  setTimeZone(e.target.value);
-                  if (dateInput === null) setDateInput(event.start.value);
-                }}
-              >
-                {DATE_ZONES.map((zone) => (
-                  <option key={zone} value={zone}>
-                    {zone}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <EventRecurrenceEditor
-              rule={recurrence}
-              start={datePreview?.start ?? event.start}
-              onChange={setRecurrence}
-              disabled={result.waiting || !!event.hasRecurrenceOverrides || !datePreview}
-            />
-            {recurrence === undefined && !!event.recurrence.length && (
-              <p>{event.recurrence.join("; ")}</p>
-            )}
-            {validationError && (
-              <p role="alert" className="text-a11y-danger">
-                {validationError}
-              </p>
-            )}
-          </div>
-          {providerError && (
-            <p role="alert" className="text-a11y-danger">
-              {providerError}
-            </p>
-          )}
-          {resultError(i18n, result) && (
-            <p role="alert" className="text-a11y-danger">
-              {resultError(i18n, result)}
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              className={alertButton}
-              disabled={result.waiting}
-              onClick={() => setOpen(false)}
-            >
-              <Trans>Cancel</Trans>
-            </button>
-            <button
-              type="button"
-              className={alertButton}
-              disabled={result.waiting || !preview}
-              onClick={() => {
-                const url = URL.createObjectURL(
-                  new Blob([calendarEventIcs(shown)], {
-                    type: "text/calendar;charset=utf-8",
-                  }),
-                );
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = "event.ics";
-                link.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setOpen(false);
-              }}
-            >{t`Download calendar file`}</button>
-            {provider !== "imap" && (
-              <button
-                type="button"
-                className={alertPrimary}
-                disabled={result.waiting || !preview || !!providerError}
-                onClick={async () => {
-                  const exit = await create({
-                    payload: { messageId: message.id, key: event.key, edits },
-                    reactivityKeys: [Keys.audit],
-                  });
-                  if (exit._tag === "Success") {
-                    setAdded(true);
-                    setOpen(false);
-                  }
-                }}
-              >
-                <Trans>Confirm and add event</Trans>
-              </button>
-            )}
-          </div>
-        </Dialog>
-      )}
+      {dialog}
     </section>
   );
 }

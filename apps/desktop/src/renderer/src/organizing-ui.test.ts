@@ -93,13 +93,22 @@ vi.mock("./components/ui/Dialog", () => ({
   }: {
     open: boolean;
     title: string;
-    description: string;
+    description: ReactNode;
     children: ReactNode;
   }) =>
-    open ? createElement("section", { role: "alertdialog" }, title, description, children) : null,
+    open
+      ? createElement(
+          "section",
+          { role: "alertdialog", "aria-describedby": "alert-description" },
+          title,
+          createElement("p", { id: "alert-description" }, description),
+          createElement("div", null, children),
+        )
+      : null,
   AlertCancel: ({ children }: { children: ReactNode }) =>
     createElement("button", { type: "button" }, children),
   alertDanger: "",
+  alertPrimary: "",
 }));
 vi.mock("./components/ui/Checkbox", () => ({
   Checkbox: ({
@@ -521,9 +530,14 @@ for (const provider of ["gmail", "outlook"] as const) {
             .querySelector("form")
             ?.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
         });
-        expect(
-          dom.element.querySelector('[role="alertdialog"] [role="alert"]')?.textContent,
-        ).toContain("This rule deletes messages.");
+        const dialog = dom.element.querySelector('[role="alertdialog"]');
+        // The warning belongs to the description, above the buttons rather than between them,
+        // and the dialog announces it once, without a separate alert role.
+        const description = dialog?.getAttribute("aria-describedby");
+        expect(dom.element.querySelector(`[id="${description}"]`)?.textContent).toContain(
+          "This rule deletes messages.",
+        );
+        expect(dialog?.querySelector('[role="alert"]')).toBeNull();
       } finally {
         dom.dispose();
       }

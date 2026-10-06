@@ -313,7 +313,7 @@ import { Mailbox } from "./mailbox.js";
     subject: "Train",
     from: { name: "", address: "tickets@example.com" },
     to: [],
-    date: 1,
+    date: Date.parse("2026-10-01T00:00:00Z"),
     bodyText: "Departure 2026-10-10 09:00 to 10:30",
     labels: ["INBOX"],
   });
@@ -344,7 +344,7 @@ import { Mailbox } from "./mailbox.js";
       timestamp: new Date("2026-10-10T09:00:00").getTime(),
     });
     assert.strictEqual(calendarTimestamp(found.end) - calendarTimestamp(found.start), 90 * 60000);
-    const [day] = detectMailEvents({ ...message, bodyText: "2026-10-10" });
+    const [day] = detectMailEvents({ ...message, bodyText: "Meeting 2026-10-10" });
     assert.ok(day);
     assert.deepStrictEqual(day.end, { kind: "date", value: "2026-10-11" });
     assert.strictEqual(calendarWindow(day).timeMin, new Date("2026-10-10T00:00:00").toISOString());
@@ -736,6 +736,7 @@ import { Mailbox } from "./mailbox.js";
         subject: "Trip",
         bodyText,
         bodyHtml: `<script type="application/ld+json">${JSON.stringify(data)}</script>`,
+        date: Date.parse("2026-10-01T00:00:00Z"),
       });
     const food = parse({
       "@type": "FoodEstablishmentReservation",

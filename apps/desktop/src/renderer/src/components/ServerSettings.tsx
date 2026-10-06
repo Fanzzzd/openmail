@@ -44,11 +44,14 @@ import {
 } from "../state/mutations";
 import { filtersListAtom, labelsAtom, sendAsAtom, vacationAtom } from "../state/queries";
 import { MailClient } from "../rpc";
-import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
+import { Alert, AlertCancel, alertDanger, alertPrimary, Dialog } from "./ui/Dialog";
 import { Checkbox } from "./ui/Checkbox";
 import { Select } from "./ui/Select";
 import { ContactSettings } from "./ContactSettings";
 import { formButton, formInput } from "./ui/form-styles";
+
+const rowButton =
+  "h-7 shrink-0 rounded-md px-2.5 hover:bg-black/5 disabled:opacity-50 disabled:hover:bg-transparent dark:hover:bg-white/10";
 
 export function ServerSettings({ accounts }: { accounts: readonly Account[] }) {
   const { t } = useLingui();
@@ -115,24 +118,30 @@ function AccountServerSettings({ account }: { account: Account }) {
         )}
         <ul className="divide-y divide-black/5 dark:divide-white/10">
           {AsyncResult.getOrElse(filters, () => []).map((f) => (
-            <li key={f.id} className="flex items-center justify-between gap-3 py-2">
-              <span className="truncate">
-                {f.name}
+            <li key={f.id} className="flex items-center gap-1 py-2">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{f.name}</span>
                 {f.editable === false && (
                   <span className="block text-xs text-a11y-muted">{t`Edit this rule in webmail to preserve all conditions and actions.`}</span>
                 )}
               </span>
               <button
                 type="button"
+                className={rowButton}
                 disabled={f.editable === false}
                 onClick={() => setEditing(f)}
               >{t`Edit`}</button>
               <button
                 type="button"
+                className={rowButton}
                 disabled={f.editable === false}
                 onClick={() => setApplying(f)}
               >{t`Apply to existing mail`}</button>
-              <button type="button" className="text-a11y-danger" onClick={() => setDeleting(f)}>
+              <button
+                type="button"
+                className="h-7 shrink-0 rounded-md px-2.5 text-a11y-danger hover:bg-red-500/10 dark:text-red-400"
+                onClick={() => setDeleting(f)}
+              >
                 <Trans>Delete</Trans>
               </button>
             </li>
@@ -288,21 +297,21 @@ function PendingRuleRestorations({ account }: { account: Account }) {
         }}
         title={t`Restore rule?`}
         description={
-          pending
-            ? t`Restore the saved original rule on the server. Preview: ${pending.preview.matches.length} messages.`
-            : ""
+          pending && (
+            <>
+              {t`Restore the saved original rule on the server. Preview: ${pending.preview.matches.length} messages.`}
+              {requiresFilterDeleteConfirmation(pending.backup.input) && <FilterDeletionWarning />}
+            </>
+          )
         }
       >
-        {pending && requiresFilterDeleteConfirmation(pending.backup.input) && (
-          <FilterDeletionWarning />
-        )}
         <AlertCancel>
           <Trans>Cancel</Trans>
         </AlertCancel>
         <button
           type="button"
           disabled={busy}
-          className={formButton}
+          className={alertPrimary}
           onClick={async () => {
             if (!pending) return;
             const exit = await restore({
@@ -351,12 +360,13 @@ function PendingRuleRestorations({ account }: { account: Account }) {
 
 function FilterDeletionWarning() {
   return (
-    <p role="alert">
+    // The alert dialog announces its description, so this needs no role of its own.
+    <span className="mt-2 block font-medium text-a11y-danger">
       <Trans>
         This rule deletes messages. Confirm only if the preview matches the messages you intend to
         delete.
       </Trans>
-    </p>
+    </span>
   );
 }
 
@@ -462,20 +472,19 @@ function OutlookPredicatesEditor({
         </label>
       ))}
       {selects.map((select) => (
-        <label
+        // Not a label: a click on it would reach the select's hidden input, not its button.
+        <div
           key={select.key}
-          className={
-            select.key === "messageActionFlag" ? "col-span-2 block space-y-1" : "block space-y-1"
-          }
+          className={select.key === "messageActionFlag" ? "col-span-2 space-y-1" : "space-y-1"}
         >
-          <span>{select.label}</span>
+          <span className="block">{select.label}</span>
           <Select
             aria-label={select.label}
             value={select.value}
             options={[{ value: "", label: t`None` }, ...select.options]}
             onValueChange={select.onChange}
           />
-        </label>
+        </div>
       ))}
       {(
         [
@@ -704,15 +713,18 @@ export function FilterEditor({
               onChange={(e) => criteria({ notWords: e.target.value })}
             />
           </label>
-          <Select
-            aria-label={t`Size comparison`}
-            value={input.criteria.sizeComparison ?? "larger"}
-            options={[
-              { value: "larger", label: t`Larger than` },
-              { value: "smaller", label: t`Smaller than` },
-            ]}
-            onValueChange={(sizeComparison) => criteria({ sizeComparison })}
-          />
+          {/* Sits on the input row: the chosen comparison labels itself. */}
+          <div className="self-end py-[3px]">
+            <Select
+              aria-label={t`Size comparison`}
+              value={input.criteria.sizeComparison ?? "larger"}
+              options={[
+                { value: "larger", label: t`Larger than` },
+                { value: "smaller", label: t`Smaller than` },
+              ]}
+              onValueChange={(sizeComparison) => criteria({ sizeComparison })}
+            />
+          </div>
           <label className="block space-y-1">
             <span>{t`Size in bytes`}</span>
             <input
@@ -764,17 +776,21 @@ export function FilterEditor({
                 onChange={(e) => criteria({ exceptSubject: e.target.value })}
               />
             </label>
-            <Select
-              aria-label={t`Attachment exception`}
-              value={input.criteria.exceptAttachment === true ? "with" : "none"}
-              options={[
-                { value: "none", label: t`None` },
-                { value: "with", label: t`Has attachment` },
-              ]}
-              onValueChange={(value) =>
-                criteria({ exceptAttachment: value === "none" ? undefined : true })
-              }
-            />
+            {/* Not a label: a click on it would reach the select's hidden input, not its button. */}
+            <div className="space-y-1">
+              <span className="block">{t`Attachment exception`}</span>
+              <Select
+                aria-label={t`Attachment exception`}
+                value={input.criteria.exceptAttachment === true ? "with" : "none"}
+                options={[
+                  { value: "none", label: t`None` },
+                  { value: "with", label: t`Has attachment` },
+                ]}
+                onValueChange={(value) =>
+                  criteria({ exceptAttachment: value === "none" ? undefined : true })
+                }
+              />
+            </div>
           </div>
         )}
         {account.provider === "outlook" && (
@@ -1103,23 +1119,23 @@ export function FilterEditor({
         }}
         title={mode === "apply" ? t`Apply to existing mail?` : t`Confirm rule changes?`}
         description={
-          confirming?.preview.unavailable?.length
-            ? t`Preview unavailable. The rule will apply to future mail on the server.`
-            : confirming
-              ? t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`
-              : ""
+          confirming && (
+            <>
+              {confirming.preview.unavailable?.length
+                ? t`Preview unavailable. The rule will apply to future mail on the server.`
+                : t`Preview: ${confirming.preview.matches.length} messages. Only the previewed messages will be changed when applying to existing mail.`}
+              {confirming.preview.truncated && (
+                <span className="mt-2 block">
+                  {account.provider === "outlook"
+                    ? t`The preview checked at most 201 server messages. Matching messages outside this sample may be missing.`
+                    : t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}
+                </span>
+              )}
+              {requiresFilterDeleteConfirmation(confirming.input) && <FilterDeletionWarning />}
+            </>
+          )
         }
       >
-        {confirming && requiresFilterDeleteConfirmation(confirming.input) && (
-          <FilterDeletionWarning />
-        )}
-        {confirming?.preview.truncated && (
-          <p>
-            {account.provider === "outlook"
-              ? t`The preview checked at most 201 server messages. Matching messages outside this sample may be missing.`
-              : t`The preview is limited to 200 messages. Narrow the conditions to process other messages.`}
-          </p>
-        )}
         <AlertCancel>
           <Trans>Cancel</Trans>
         </AlertCancel>

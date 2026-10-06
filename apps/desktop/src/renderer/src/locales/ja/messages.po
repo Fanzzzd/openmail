@@ -24,6 +24,13 @@ msgstr "（宛先なし）"
 msgid "(No subject)"
 msgstr "（件名なし）"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, other {#件の日付が見つかりました}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -60,6 +67,18 @@ msgstr "{accountCount, plural, other {#個のアカウント}}, 未開封{total}
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, other {古いメールのダウンロードを一時停止中です。#件のメッセージを確認しました。}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, other {古いメールは同期の合間にダウンロードされます。#件のメッセージを確認しました。}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, other {古いメールは最新です。#件のメッセージを確認しました。}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -108,10 +127,6 @@ msgstr "{done} が完了しました · {queued} がキューに登録されま�
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} が再度サインインしました"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "{fetched} メッセージがチェックされました"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -803,14 +818,6 @@ msgstr "戻る"
 msgid "Back to messages"
 msgstr "メッセージ一覧に戻る"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "古いメールのダウンロードを一時停止中"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "バックフィルは同期の間に実行されます"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "背景色"
@@ -841,11 +848,11 @@ msgstr "大きなテキスト"
 msgid "Blocked before loading:"
 msgstr "ロード前にブロックされました:"
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "本文"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "本文: {bodies} · 添付ファイル: {attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3838,10 +3845,6 @@ msgstr "古いメールとキャッシュ"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "古いメールはバックグラウンドでダウンロードされます。本文の保存期限が切れてもヘッダは検索できます。メッセージを開くと本文が再ダウンロードされます。"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "古いメールは最新です"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "古い順"
@@ -5863,8 +5866,8 @@ msgid "Toolbar actions"
 msgstr "ツールバーのアクション"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "キャッシュ合計"
+msgid "Total cache: {total}"
+msgstr "キャッシュ合計: {total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"

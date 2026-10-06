@@ -98,7 +98,15 @@ const EN_CLOCK = String.raw`(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?`;
 const ZH_CLOCK = String.raw`(上午|早上|下午|晚上|中午|凌晨)?(${NUMBER_ZH})[点时](半|${NUMBER_ZH}分?)?`;
 const CLOCK = String.raw`(?:${ZH_CLOCK}|${EN_CLOCK}|noon|midnight|中午|午夜|morning|afternoon|evening|上午|下午|晚上|凌晨)`;
 const CLOCK_RANGE = String.raw`${CLOCK}(?:${RANGE}${CLOCK})?`;
-const DATE = String.raw`(?:${ISO_DATE}|${EN_DATE}|${ZH_DATE}|${NUMERIC_DATE}|${RELATIVE_DATE}|${EN_WEEKDAY}|${ZH_WEEKDAY})`;
+// Day-first English dates, as in "15 November" or "21 Oct". "May" needs a year: "top 10 may" is prose.
+const MONTH_EN_DAY_FIRST = String.raw`(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may(?=,?\s+\d{4})|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)`;
+const EN_DATE_DAY_FIRST = String.raw`(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(${MONTH_EN_DAY_FIRST})\b(?:,?\s+(\d{4}))?`;
+// A day of the month alone, as in "on the 14th". The preposition keeps "the 21st century" out,
+// and a following month or counted noun makes it something else.
+const ORDINAL_NOUNS = String.raw`centur(?:y|ies)|place|floor|anniversary|time|times|edition|birthday|year|grade|round|row|step|street|avenue|amendment|percentile`;
+const ORDINAL_DAY_TAIL = String.raw`(\d{1,2})(?:st|nd|rd|th)\b(?!\s+of\s+${MONTH_EN})(?!\s+(?:${ORDINAL_NOUNS})\b)`;
+const ORDINAL_DAY = String.raw`(?:on|by|before|until)\s+the\s+${ORDINAL_DAY_TAIL}`;
+const DATE = String.raw`(?:${ISO_DATE}|${EN_DATE_DAY_FIRST}|${ORDINAL_DAY}|${EN_DATE}|${ZH_DATE}|${NUMERIC_DATE}|${RELATIVE_DATE}|${EN_WEEKDAY}|${ZH_WEEKDAY})`;
 const DATE_WITH_PREFIX = String.raw`(?:on\s+)?${DATE}`;
 const REVERSED_TIME = new RegExp(
   String.raw`^(?:at\s+)?(?<time>${CLOCK_RANGE})\s+(?:on\s+)?(?<date>${DATE})$`,
@@ -151,7 +159,8 @@ function clock(value: string, explicit24: boolean): Clock | "ambiguous" | null {
     const minute = Number(en[2] ?? 0),
       second = Number(en[3] ?? 0);
     if (minute > 59 || second > 59 || hour > (en[4] ? 12 : 23) || (en[4] && hour < 1)) return null;
-    if (!en[4] && !explicit24 && hour <= 12) return "ambiguous";
+    // A leading zero, as in 08:55, only appears on a 24-hour clock.
+    if (!en[4] && !explicit24 && !/^0\d:\d{2}/.test(value) && hour <= 12) return "ambiguous";
     if (en[4]) hour = (hour % 12) + (en[4] === "pm" ? 12 : 0);
     return { hour, minute, second };
   }
@@ -213,6 +222,71 @@ export function calendarParseDates(input: string, context: DateContext): DatePar
     return { kind: "invalid" };
   }
 }
+/**
+ * Rewrites "15 november" as "november 15" and "the 14th" as the next 14th, with
+ * its month, so the month-first parser reads them. Other text is unchanged.
+ */
+function monthFirst(text: string, today: string): string {
+  const dayFirst = new RegExp(`^${EN_DATE_DAY_FIRST}`, "i").exec(text);
+  if (dayFirst)
+    return `${dayFirst[2]} ${dayFirst[1]}${dayFirst[3] ? `, ${dayFirst[3]}` : ""}${text.slice(dayFirst[0].length)}`;
+  // "on" is already stripped; "by", "before" and "until" only introduce the day.
+  const ordinal = new RegExp(`^(?:(?:by|before|until)\\s+)?the\\s+${ORDINAL_DAY_TAIL}`, "i").exec(
+    text,
+  );
+  if (!ordinal) return text;
+  const day = Number(ordinal[1]);
+  // The next month that has this day: "the 31st" in November means December 31.
+  let month = Number(today.slice(5, 7)) - 1 + (day < Number(today.slice(8, 10)) ? 1 : 0);
+  const year = Number(today.slice(0, 4));
+  for (let tries = 0; tries < 12; tries++, month++) {
+    const date = calendarDateFromParts(year + Math.floor(month / 12), (month % 12) + 1, day);
+    if (calendarDateValid(date))
+      return `${MONTHS[month % 12]} ${day}, ${date.slice(0, 4)}${text.slice(ordinal[0].length)}`;
+  }
+  return text;
+}
+
+/**
+ * The days an ambiguous candidate could mean, so callers can drop one that can
+ * only lie in the past. Empty when the date part is unknown.
+ */
+export function calendarAmbiguousDays(input: string, context: DateContext): string[] {
+  const text = input
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/^on\s+/, "");
+  const today = calendarWallTime(context.reference, context.timeZone).slice(0, 10);
+  const numeric = new RegExp(`^${NUMERIC_DATE}`).exec(text);
+  if (numeric) {
+    const first = Number(numeric[1]),
+      second = Number(numeric[2]);
+    const year = Number(numeric[3] ?? today.slice(0, 4));
+    return [
+      [first, second],
+      [second, first],
+    ]
+      .map(([month = 0, day = 0]) => {
+        const date = calendarDateFromParts(year, month, day);
+        // In November and December, January and February read as next year.
+        return !numeric[3] && date < today && Number(today.slice(5, 7)) >= 11 && month <= 2
+          ? calendarDateFromParts(year + 1, month, day)
+          : date;
+      })
+      .filter(calendarDateValid);
+  }
+  // The time made the rest ambiguous, so the date part alone tells the day.
+  const date = new RegExp(`^${DATE}`, "i").exec(text)?.[0];
+  if (!date) return [];
+  const parsed = calendarParseDates(date, context);
+  if (parsed.kind === "parsed") return [parsed.start.value.slice(0, 10)];
+  // A month and day 1 to 14 days ago, without a year, most likely means that recent day.
+  if (parsed.kind === "ambiguous" && parsed.reason === "year")
+    return [calendarDateShift(today, -1)];
+  return [];
+}
+
 function calendarParseDateInput(input: string, context: DateContext): DateParseResult {
   let text = input.trim().toLowerCase().replace(/\s+/g, " ");
   const reversed = REVERSED_TIME.exec(text);
@@ -221,6 +295,7 @@ function calendarParseDateInput(input: string, context: DateContext): DateParseR
   text = text.replace(/^on\s+/, "");
   const today = calendarWallTime(context.reference, context.timeZone).slice(0, 10);
   const year = Number(today.slice(0, 4));
+  text = monthFirst(text, today);
   let date = today,
     lastDate: string | undefined,
     consumed = "";

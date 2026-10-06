@@ -193,6 +193,7 @@ import { type IncomingMessage, type OutgoingMessage } from "./domain.js";
       const event = detectMailEvents({
         subject: "Travel",
         bodyText: "2026-10-03 09:00 to 10:00",
+        date: Date.parse("2026-10-01T00:00:00Z"),
       })[0];
       assert.ok(event);
       return Effect.gen(function* () {

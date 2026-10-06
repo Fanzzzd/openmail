@@ -28,6 +28,13 @@ msgstr "(no recipients)"
 msgid "(No subject)"
 msgstr "(No subject)"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, one {# date found} other {# dates found}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -64,6 +71,18 @@ msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} unre
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -112,10 +131,6 @@ msgstr "{done} completed · {queued} queued · {running} running · {failed} fai
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} is signed in again"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "{fetched} messages checked"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -807,14 +822,6 @@ msgstr "Back"
 msgid "Back to messages"
 msgstr "Back to messages"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "Backfill paused"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "Backfill runs between syncs"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Background color"
@@ -845,11 +852,11 @@ msgstr "Bigger text"
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "Bodies"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "Bodies: {bodies} · Attachments: {attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3842,10 +3849,6 @@ msgstr "Older mail and cache"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "Older mail is up to date"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Oldest first"
@@ -5867,8 +5870,8 @@ msgid "Toolbar actions"
 msgstr "Toolbar actions"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "Total cache"
+msgid "Total cache: {total}"
+msgstr "Total cache: {total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"

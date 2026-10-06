@@ -10,9 +10,8 @@ import { causeText, resultError } from "../errors";
 import { useRunMail, withMail } from "../state/mail";
 import { reauthAtom } from "../state/mutations";
 import type { ThreadState } from "./ThreadActions";
-import { Alert, AlertCancel } from "./ui/Dialog";
+import { Alert, AlertCancel, alertPrimary } from "./ui/Dialog";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
-import { formButton } from "./ui/form-styles";
 
 /** Sender overrides affect future arrivals only and require a separate explicit action. */
 export function FocusedInboxActions({
@@ -110,7 +109,7 @@ export function FocusedInboxActions({
         <AlertCancel disabled={busy}>{t`Cancel`}</AlertCancel>
         <button
           type="button"
-          className={formButton}
+          className={alertPrimary}
           disabled={busy}
           onClick={confirm}
         >{t`Save`}</button>
@@ -159,7 +158,7 @@ function Permission({ accountId, onClose }: { accountId: string; onClose: () => 
       <AlertCancel disabled={result.waiting}>{t`Cancel`}</AlertCancel>
       <button
         type="button"
-        className={formButton}
+        className={alertPrimary}
         disabled={result.waiting}
         onClick={async () => {
           const exit = await reauth("focusedInbox");

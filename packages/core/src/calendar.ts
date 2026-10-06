@@ -4,9 +4,11 @@ import { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 export { CalendarTime, calendarTimestamp } from "./calendar-time.js";
 import { Schema } from "effect";
 import {
+  calendarAmbiguousDays,
   calendarDateCandidates,
   calendarParseDates,
   type DateContext,
+  type DateParseResult,
   calendarWallTime,
   calendarZoneName,
   localCalendarTimeZone,
@@ -58,6 +60,77 @@ export function calendarWindow(event: Pick<CalendarEvent, "start" | "end">) {
   return { timeMin: new Date(start).toISOString(), timeMax: new Date(end).toISOString() };
 }
 
+/**
+ * Words that make a date in prose likely to be an appointment rather than a mention.
+ * Rooms and "stay tuned" name no appointment.
+ */
+const EVENT_WORDS =
+  /\b(?:meeting(?!\s+rooms?\b)|meet|call|sync|catch(?:ing)?\s+up|webinar|deadline|appointment|interview|conference(?!\s+rooms?\b)|workshop|seminar|lecture|class|session|demo|rsvp|invit(?:e|ation)|reservation|booking|check-?in|check-?out|stay(?!\s+(?:tuned|current|updated|safe|connected|informed|ahead|in\s+touch)\b)|flight|departure|dinner|lunch|breakfast|party|dentist|doctor)s?\b|(?<![\d:])1:1(?![\d:])|会议(?!室)|开会|截止|面试|预约|讲座|研讨会|航班|出发|入住|聚餐/i;
+/** How far an event word may sit from a numbered date, and from "today" or "Friday". */
+const NUMBERED_REACH = 40;
+const WORD_REACH = 30;
+/** Prose rarely names more appointments than this; more is a sign of a digest or newsletter. */
+const MAX_TEXT_EVENTS = 5;
+/** A clock or clock range without any date word, like a "3:12 read time". */
+const TIME_ONLY =
+  /^(?:at\s+)?(?:[\d:.\s–—~-]|am|pm|a\.m\.|p\.m\.|noon|midnight|to|上午|下午|晚上|中午|凌晨|早上|点|分|半|至|到|[零一二两三四五六七八九十])+$/i;
+/** Digits that form a date: 2026-10-10, 10/12 or 12.10.2026. */
+const NUMERIC_DATE = /\d{4}-\d{1,2}|\d{1,2}\/\d{1,2}|\d{1,2}\.\d{1,2}\.\d{2,4}/;
+/** A date that names a day by number, not only by a word like "today" or "Tuesday". */
+const NUMBERED_DAY = /\d|[零一二两三四五六七八九十]+[月日号]/;
+const SENTENCE_END = /[.!?](?:\s|$)|[。！？\n]/;
+const DAY = 86_400_000;
+const dayNumber = (day: string) => Date.parse(`${day}T00:00:00Z`) / DAY;
+
+/** An event word in the candidate's sentence, at most `reach` characters away. */
+function nearEventWord(text: string, index: number, length: number, reach: number): boolean {
+  const before =
+    text
+      .slice(Math.max(0, index - reach), index)
+      .split(SENTENCE_END)
+      .at(-1) ?? "";
+  const after = text.slice(index + length, index + length + reach).split(SENTENCE_END)[0] ?? "";
+  return EVENT_WORDS.test(`${before} ${text.slice(index, index + length)} ${after}`);
+}
+
+/**
+ * A prose date becomes a candidate with a time, or next to an event word in its
+ * sentence. "Today" or "Friday" needs the word closer than a numbered date does.
+ * Nothing before the message is offered: not a past day, not an earlier time, and
+ * not an ambiguous date whose every reading is past. An all-day date at most about
+ * a year ahead is offered; a timed one may be later.
+ */
+function usefulTextEvent(
+  parsed: DateParseResult,
+  input: string,
+  index: number,
+  text: string,
+  context: DateContext,
+): boolean {
+  const messageDay = calendarWallTime(context.reference, context.timeZone).slice(0, 10);
+  const nearWord = () =>
+    nearEventWord(
+      text,
+      index,
+      input.length,
+      NUMBERED_DAY.test(input) ? NUMBERED_REACH : WORD_REACH,
+    );
+  if (parsed.kind === "invalid") return false;
+  if (parsed.kind === "ambiguous") {
+    const days = calendarAmbiguousDays(input, context);
+    return !(days.length && days.every((day) => day < messageDay)) && nearWord();
+  }
+  const start = parsed.start.value.slice(0, 10);
+  if (!Number.isFinite(dayNumber(start)) || start < messageDay) return false;
+  // A time before the message was sent reports something that already happened.
+  if (parsed.start.kind === "zoned")
+    return (parsed.start.timestamp ?? Infinity) >= context.reference;
+  if (parsed.start.kind !== "date") return true;
+  // A whole day of "today" is how promotions talk; an appointment today has a time.
+  if (start === messageDay && !NUMBERED_DAY.test(input)) return false;
+  return dayNumber(start) - dayNumber(messageDay) <= 366 && nearWord();
+}
+
 /** The message date anchors relative expressions, so reopening never moves a candidate. */
 export function detectMailEvents(
   message: Pick<Message, "subject" | "bodyText"> & Partial<Pick<Message, "bodyHtml" | "date">>,
@@ -68,29 +141,49 @@ export function detectMailEvents(
 ): CalendarEvent[] {
   const structured = structuredMailEvents(message.bodyHtml ?? "", message.subject);
   if (structured.events.length || structured.cancelled) return structured.events;
-  return calendarDateCandidates(message.bodyText).flatMap(({ input, index }) => {
-    const parsed = calendarParseDates(input, context);
-    if (parsed.kind === "invalid") return [];
-    const times =
-      parsed.kind === "parsed"
-        ? { start: parsed.start, end: parsed.end }
-        : {
-            start: { kind: "floating", value: "" } satisfies CalendarTime,
-            end: { kind: "floating", value: "" } satisfies CalendarTime,
-          };
-    return [
-      {
-        key: `text:${index}:${input}`,
-        title: message.subject,
-        ...times,
-        dateInput: input,
-        endEstimated: parsed.kind === "parsed" && parsed.endEstimated,
-        location: "",
-        description: message.bodyText.slice(0, 8000),
-        recurrence: [],
-      },
-    ];
-  });
+  const starts = new Set<string>();
+  const candidates = calendarDateCandidates(message.bodyText);
+  return candidates
+    .flatMap(({ input, index }, position) => {
+      // "24/7" means always, never July 24.
+      if ((TIME_ONLY.test(input) && !NUMERIC_DATE.test(input)) || input === "24/7") return [];
+      // A weekday beside a numbered date, as in "Tuesday, October 6", only names that date.
+      const previous = candidates[position - 1];
+      const next = candidates[position + 1];
+      if (
+        !NUMBERED_DAY.test(input) &&
+        ((previous && index - (previous.index + previous.input.length) <= 2) ||
+          (next && next.index - (index + input.length) <= 2))
+      )
+        return [];
+      const parsed = calendarParseDates(input, context);
+      if (!usefulTextEvent(parsed, input, index, message.bodyText, context)) return [];
+      // An ambiguous date stays for the person to complete in the dialog.
+      const times =
+        parsed.kind === "parsed"
+          ? { start: parsed.start, end: parsed.end }
+          : {
+              start: { kind: "floating", value: "" } satisfies CalendarTime,
+              end: { kind: "floating", value: "" } satisfies CalendarTime,
+            };
+      // Repeated mentions of one start, like a subject line and a footer, collapse into one.
+      const start = parsed.kind === "parsed" ? JSON.stringify(parsed.start) : `?${input}`;
+      if (starts.has(start)) return [];
+      starts.add(start);
+      return [
+        {
+          key: `text:${index}:${input}`,
+          title: message.subject,
+          ...times,
+          dateInput: input,
+          endEstimated: parsed.kind === "parsed" && parsed.endEstimated,
+          location: "",
+          description: message.bodyText.slice(0, 8000),
+          recurrence: [],
+        },
+      ];
+    })
+    .slice(0, MAX_TEXT_EVENTS);
 }
 
 /** Only dates and a typed repeat rule can be edited; identity and source details stay server-owned. */

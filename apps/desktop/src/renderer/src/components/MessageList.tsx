@@ -1,6 +1,6 @@
 import { labelChipColors } from "../label-colors";
 import { useMessageSwipe } from "../message-swipe-hook";
-import { attachmentMatches, SearchSnippet } from "./SearchSnippet";
+import { attachmentMatches, distinctAttachmentMatches, SearchSnippet } from "./SearchSnippet";
 import { TriageChip } from "./TriageChip";
 import { swipeMailOp } from "../message-swipe";
 import { actionNames } from "../action-names";
@@ -700,11 +700,11 @@ const Row = memo(function Row({
             )}
           </span>
         )}
-        {attachmentMatches(m.searchMatches)
+        {distinctAttachmentMatches(m.searchMatches)
           .slice(0, 2)
           .map((match, index) => (
             <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-              <SearchSnippet match={match} />
+              <SearchSnippet match={match} lead={8} />
             </span>
           ))}
         {!m.searchMatches?.length &&

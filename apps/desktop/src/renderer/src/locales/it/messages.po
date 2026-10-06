@@ -24,6 +24,13 @@ msgstr "(nessun destinatario)"
 msgid "(No subject)"
 msgstr "(Senza oggetto)"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, one {# data trovata} other {# date trovate}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -60,6 +67,18 @@ msgstr "{accountCount, plural, one {# account} other {# account}}, {total} non l
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, one {Download della posta meno recente in pausa. # messaggio controllato.} other {Download della posta meno recente in pausa. # messaggi controllati.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, one {La posta meno recente viene scaricata tra le sincronizzazioni. # messaggio controllato.} other {La posta meno recente viene scaricata tra le sincronizzazioni. # messaggi controllati.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, one {La posta meno recente è aggiornata. # messaggio controllato.} other {La posta meno recente è aggiornata. # messaggi controllati.}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -108,10 +127,6 @@ msgstr "{done} completato · {queued} in coda · {running} in esecuzione · {fai
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} ha effettuato nuovamente l’accesso"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "{fetched} messaggi controllati"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -803,14 +818,6 @@ msgstr "Indietro"
 msgid "Back to messages"
 msgstr "Torna ai messaggi"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "Download della posta meno recente in pausa"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "Il recupero viene eseguito tra le sincronizzazioni"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Colore di sfondo"
@@ -841,11 +848,11 @@ msgstr "Testo più grande"
 msgid "Blocked before loading:"
 msgstr "Bloccato prima del caricamento:"
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "Testi dei messaggi"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "Testi dei messaggi: {bodies} · Allegati: {attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3838,10 +3845,6 @@ msgstr "Posta e cache meno recenti"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "I messaggi meno recenti vengono scaricati in background. Le intestazioni restano ricercabili quando i testi dei messaggi scadono. Aprire un messaggio ne scarica nuovamente il testo."
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "La posta più vecchia è aggiornata"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Prima il più vecchio"
@@ -5863,8 +5866,8 @@ msgid "Toolbar actions"
 msgstr "Azioni della barra degli strumenti"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "Cache totale"
+msgid "Total cache: {total}"
+msgstr "Cache totale: {total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"

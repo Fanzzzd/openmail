@@ -49,10 +49,12 @@ it("English and Chinese deterministic date table uses an explicit reference and 
     // Detection and typing must use the exact same complete candidate.
     assert.strictEqual(calendarDateCandidates(input)[0]?.input, input, input);
     const [detected] = detectMailEvents(
-      { subject: "Trip", bodyText: `Trip: ${input}.`, date: context.reference },
+      { subject: "Trip", bodyText: `Meeting: ${input}.`, date: context.reference },
       context,
     );
-    assert.deepStrictEqual(detected?.start, parsed.start, input);
+    // Prose offers all-day dates up to about a year ahead.
+    const offered = parsed.start.kind !== "date" || parsed.start.value < "2027-10-07";
+    assert.deepStrictEqual(detected?.start, offered ? parsed.start : undefined, input);
   }
 });
 it("ambiguous dates ask for explicit input in both languages; malformed dates never normalize", () => {
@@ -473,7 +475,7 @@ it("downloaded recurrence preserves the event TZID rather than fixing future occ
 it("detection keeps ambiguous range endpoints and rejects truncated numbers and clocks", () => {
   const reference = { subject: "Trip", date: context.reference };
   for (const input of ["tomorrow 3pm–7", "tomorrow 3"]) {
-    const [candidate] = detectMailEvents({ ...reference, bodyText: input }, context);
+    const [candidate] = detectMailEvents({ ...reference, bodyText: `Call ${input}` }, context);
     assert.strictEqual(candidate?.dateInput, input);
     assert.ok(candidate && Number.isNaN(calendarTimestamp(candidate.start)));
   }
@@ -631,4 +633,106 @@ it("recurrence date extraction does not swallow a bad source zone", () => {
       },
     ),
   );
+});
+
+it("prose detection skips newsletter dates and keeps a meeting request", () => {
+  const newsletter = [
+    "Your Daily Brief is ready | 3:12 read time",
+    "Nuclear reactors run 24/7, and operators re-up on uranium every 18 to 24 months.",
+    "We added the stock back in January 2025.",
+    "👀 Today's Research: tech ETFs ticked higher premarket Tuesday.",
+    "That’s today’s Insight. What others like you are reading today...",
+    "Security alert: a new sign-in today at 8:30am. 会议室 星期日 开放。",
+    "Offer valid 10/1 - 10/31. Estimated delivery Oct 10-12. Sale runs Oct 10 to Oct 20.",
+    "Join our webinar series to learn more about our new range of products. Sale ends Oct 31.",
+    "Stay tuned for Friday.",
+    "Best Flight Deals Today!",
+  ].join("\n");
+  assert.deepStrictEqual(
+    detectMailEvents({ subject: "Digest", bodyText: newsletter, date: context.reference }, context),
+    [],
+  );
+  const request = [
+    "Hi Ana,",
+    "Can we have a call tomorrow 3pm to go through the draft?",
+    "Otherwise the meeting on Friday works too, or Friday at the latest.",
+    "How about a sync Thursday?",
+    "The workshop runs Oct 12–14 and the deadline for comments is Oct 20.",
+    "Deadline: 15 November. Dentist on 21 Oct. Dinner on the 14th.",
+    "Flight CX123 departs 12 Oct 08:55. Hotel check-in Oct 25–27.",
+    "I was out on 2026-09-30, sorry for the delay. The office is open 24/7.",
+  ].join("\n");
+  const found = detectMailEvents(
+    { subject: "Draft review", bodyText: request, date: context.reference },
+    context,
+  );
+  assert.deepStrictEqual(
+    found.map((event) => [event.dateInput, event.start.value]),
+    [
+      ["tomorrow 3pm", "2026-10-07T15:00:00"],
+      ["on Friday", "2026-10-09"],
+      ["Thursday", "2026-10-08"],
+      ["Oct 12–14", "2026-10-12"],
+      ["Oct 20", "2026-10-20"],
+    ],
+  );
+});
+
+it("prose detection reads day-first dates, the day of the month and a 24-hour clock", () => {
+  const found = detectMailEvents(
+    {
+      subject: "Plans",
+      bodyText: [
+        "Deadline: 15 November.",
+        "Dentist on 21 Oct.",
+        "Dinner on the 14th.",
+        "Flight CX123 departs 12 Oct 08:55.",
+        "Hotel check-in Oct 25–27, Sunday.",
+        "预约 10月30日。",
+      ].join("\n"),
+      date: context.reference,
+    },
+    context,
+  );
+  assert.deepStrictEqual(
+    found.map((event) => [event.dateInput, event.start.value]),
+    [
+      ["15 November", "2026-11-15"],
+      ["on 21 Oct", "2026-10-21"],
+      ["on the 14th", "2026-10-14"],
+      ["12 Oct 08:55", "2026-10-12T08:55:00"],
+      ["Oct 25–27", "2026-10-25"],
+    ],
+  );
+});
+
+it("prose detection caps a list of dated items", () => {
+  const agenda = Array.from({ length: 9 }, (_, day) => `Meeting 2026-10-${10 + day} 09:00`).join(
+    "\n",
+  );
+  assert.strictEqual(
+    detectMailEvents({ subject: "Agenda", bodyText: agenda, date: context.reference }, context)
+      .length,
+    5,
+  );
+});
+
+it("ordinal days need a preposition and never swallow a month or a counted noun", () => {
+  const detect = (bodyText: string, reference = context.reference) =>
+    detectMailEvents(
+      { subject: "Plans", bodyText, date: reference },
+      { ...context, reference },
+    ).map((event) => [event.dateInput, event.start.value]);
+  assert.deepStrictEqual(detect("Party on the 4th of July."), [
+    ["on the 4th of July", "2027-07-04"],
+  ]);
+  assert.deepStrictEqual(detect("Dinner by the 14th."), [["by the 14th", "2026-10-14"]]);
+  assert.deepStrictEqual(detect("Our conference celebrates the 21st century."), []);
+  assert.deepStrictEqual(detect("He won the 1st place at the conference."), []);
+  assert.deepStrictEqual(detect("Meeting on the 2nd floor."), []);
+  assert.deepStrictEqual(detect("The conference marks the 10th anniversary."), []);
+  // November has no 31st, so the next month that has one is used.
+  assert.deepStrictEqual(detect("Dinner on the 31st.", Date.parse("2026-11-05T01:00:00Z")), [
+    ["on the 31st", "2026-12-31"],
+  ]);
 });

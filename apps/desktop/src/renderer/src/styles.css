@@ -15,10 +15,21 @@
   --color-a11y-focus: var(--a11y-focus);
 }
 
+/* The panes scroll; the window never does. The viewport takes the html
+   overflow and stays scrollable by script even when hidden, so nothing may
+   overflow html: #root clips, and as the containing block of stray absolute
+   elements (an sr-only heading deep in a pane) it clips those too. */
 html,
 body,
 #root {
   height: 100%;
+}
+html {
+  overflow: hidden;
+}
+#root {
+  position: relative;
+  overflow: clip;
 }
 
 body {

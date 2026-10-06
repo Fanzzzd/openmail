@@ -24,6 +24,13 @@ msgstr "(geen geadresseerden)"
 msgid "(No subject)"
 msgstr "(Geen onderwerp)"
 
+#. Dates detected in the message text. Opens a menu to add one of them to the calendar.
+#. placeholder {0}: events.length
+#: src/renderer/src/components/CalendarEvents.tsx
+msgctxt "calendar dates"
+msgid "{0, plural, one {# date found} other {# dates found}}"
+msgstr "{0, plural, one {# datum gevonden} other {# datums gevonden}}"
+
 #. placeholder {0}: folder.headerWindow.days
 #. placeholder {1}: folder.headerWindow.messageLimit
 #: src/renderer/src/components/SyncHealth.tsx
@@ -60,6 +67,18 @@ msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} onge
 #: src/renderer/src/App.tsx
 msgid "{baseTitle}: {user}"
 msgstr "{baseTitle}: {user}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill paused. # message checked.} other {Backfill paused. # messages checked.}}"
+msgstr "{checked, plural, one {Downloaden van oudere e-mail gepauzeerd. # bericht gecontroleerd.} other {Downloaden van oudere e-mail gepauzeerd. # berichten gecontroleerd.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Backfill runs between syncs. # message checked.} other {Backfill runs between syncs. # messages checked.}}"
+msgstr "{checked, plural, one {Oudere e-mail wordt tussen synchronisaties gedownload. # bericht gecontroleerd.} other {Oudere e-mail wordt tussen synchronisaties gedownload. # berichten gecontroleerd.}}"
+
+#: src/renderer/src/components/CacheSettings.tsx
+msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
+msgstr "{checked, plural, one {Oudere e-mail is up-to-date. # bericht gecontroleerd.} other {Oudere e-mail is up-to-date. # berichten gecontroleerd.}}"
 
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "{count, plural, one {# change could not be saved} other {# changes could not be saved}}"
@@ -108,10 +127,6 @@ msgstr "{done} voltooid · {queued} in wachtrij · {running} actief · {failed} 
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} is opnieuw aangemeld"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "{fetched} messages checked"
-msgstr "{fetched} berichten aangevinkt"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -803,14 +818,6 @@ msgstr "Terug"
 msgid "Back to messages"
 msgstr "Terug naar berichten"
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill paused"
-msgstr "Downloaden van oudere e-mail gepauzeerd"
-
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Backfill runs between syncs"
-msgstr "Aanvulling wordt uitgevoerd tussen synchronisaties"
-
 #: src/renderer/src/components/ComposeToolbar.tsx
 msgid "Background color"
 msgstr "Achtergrondkleur"
@@ -841,11 +848,11 @@ msgstr "Grotere tekst"
 msgid "Blocked before loading:"
 msgstr "Geblokkeerd vóór laden:"
 
-#. Cached texts of email messages, never anatomical bodies.
+#. Cached texts of email messages, never anatomical bodies, then the size of cached attachments.
 #: src/renderer/src/components/CacheSettings.tsx
 msgctxt "cached message text"
-msgid "Bodies"
-msgstr "Berichtteksten"
+msgid "Bodies: {bodies} · Attachments: {attachments}"
+msgstr "Berichtteksten: {bodies} · Bijlagen: {attachments}"
 
 #. Email message text, never an anatomical body.
 #. Email message text, never an anatomical body.
@@ -3838,10 +3845,6 @@ msgstr "Oudere e-mail en cache"
 msgid "Older mail downloads in the background. Headers stay searchable when bodies expire. Opening a message downloads its body again."
 msgstr "Oudere e-mail wordt op de achtergrond gedownload. Berichtkoppen blijven doorzoekbaar wanneer berichtteksten verlopen. Bij het openen van een bericht wordt de berichttekst opnieuw gedownload."
 
-#: src/renderer/src/components/CacheSettings.tsx
-msgid "Older mail is up to date"
-msgstr "Oudere e-mail is up-to-date"
-
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Oldest first"
 msgstr "Oudste eerst"
@@ -5863,8 +5866,8 @@ msgid "Toolbar actions"
 msgstr "Werkbalkacties"
 
 #: src/renderer/src/components/CacheSettings.tsx
-msgid "Total cache"
-msgstr "Totale cache"
+msgid "Total cache: {total}"
+msgstr "Totale cache: {total}"
 
 #: src/renderer/src/components/ComposerAi.tsx
 msgid "Translate"
