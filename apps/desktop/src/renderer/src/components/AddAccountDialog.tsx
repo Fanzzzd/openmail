@@ -84,6 +84,7 @@ export function AddAccountDialog({ onClose, onAdded }: Props) {
     <Dialog
       aria-label={title}
       onClose={onClose}
+      ownClose
       className="w-[460px] rounded-2xl p-6"
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >

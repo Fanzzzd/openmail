@@ -31,7 +31,7 @@ import {
 } from "react";
 
 import type { Label, MailOp, Mailbox, ThreadSummary, ThreadQuery } from "../../../shared/api";
-import { displayName, shortDate } from "../format";
+import { displayName, previewText, shortDate } from "../format";
 import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
@@ -44,6 +44,8 @@ export type SelectionSource = "keyboard" | "mouse";
 interface Props {
   /** The search field, when the list has the window's search instead of the reader. */
   searchBar?: ReactNode;
+  /** Actions for the selected rows, shown in place of the filter chips. */
+  selectionBar?: ReactNode;
   /** Controls before everything else when the list is the window's leftmost pane. */
   leading?: ReactNode;
   /** Left padding that clears the traffic lights when the top row sits under them. */
@@ -105,6 +107,7 @@ interface RowActions {
 export function MessageList({
   title,
   searchBar,
+  selectionBar,
   leading,
   inset,
   threads,
@@ -245,7 +248,8 @@ export function MessageList({
       {/* One row at any width; chips that do not fit scroll sideways. The
           vertical padding keeps their focus ring inside the scroll box. */}
       <div className="-mt-1 flex shrink-0 items-center gap-1 overflow-x-auto px-3 pt-1 pb-2">
-        {!searching && (
+        {selectionBar}
+        {!selectionBar && !searching && (
           <>
             <FilterChip
               active={filters.enabled}
@@ -677,7 +681,7 @@ const Row = memo(function Row({
             <span
               className={`min-w-0 flex-1 text-[13px] ${density.previewLines === 2 ? "line-clamp-2" : "truncate"} ${muted}`}
             >
-              {m.snippet}
+              {previewText(m.snippet)}
             </span>
             {labelChips}
             {star}

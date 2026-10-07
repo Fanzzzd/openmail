@@ -55,13 +55,11 @@ export interface ThreadState {
   labels: string[];
 }
 
+/**
+ * The actions fill the toolbar's width; those that do not fit stay in the
+ * actions menu. Before the toolbar is measured, all of them show.
+ */
 interface Props {
-  /**
-   * How many actions show as buttons; the rest stay in the actions menu. The
-   * reader collapses to two before search runs out of room. "fit" fills the
-   * toolbar's width and shows as many as fit there. Unset shows them all.
-   */
-  limit?: number | "fit" | undefined;
   currentLabel?: string | undefined;
   onCreate?: ((move: boolean) => void) | undefined;
   pickerMode?: "label" | "move";
@@ -108,7 +106,6 @@ const button =
  * buttons; tooltips carry the keyboard shortcut.
  */
 export function ThreadActions({
-  limit,
   currentLabel,
   pickerMode = "label",
   organizationTarget,
@@ -309,31 +306,26 @@ export function ThreadActions({
   };
   const ordered = [...new Set(prefs.toolbarActions)].filter((action) => controls[action]);
   const picker = pickerMode === "move" ? "move" : "label";
-  const fit = limit === "fit";
   const root = useRef<HTMLDivElement>(null);
   const width = useElementWidth(root);
-  const [widths, measure] = useMeasuredWidths(fit);
+  const [widths, measure] = useMeasuredWidths();
   // An open picker needs its button as the anchor, in place of the last one that fits.
   const anchor = labelPicker ? picker : undefined;
   const candidates = withAnchor(ordered, anchor);
   const visible = shownActions(
     candidates,
-    fit
-      ? fittingCount(
-          candidates,
-          widths,
-          width === 0 ? 0 : Math.max(1, width - (state.provider === "outlook" ? 30 : 0)),
-        )
-      : typeof limit === "number"
-        ? Math.max(0, limit - (state.provider === "outlook" ? 1 : 0))
-        : limit,
+    fittingCount(
+      candidates,
+      widths,
+      width === 0 ? 0 : Math.max(1, width - (state.provider === "outlook" ? 30 : 0)),
+    ),
     anchor,
   );
   return (
     <Toolbar.Root
       ref={root}
       aria-label={t`Conversation actions`}
-      className={`flex items-center gap-0.5 ${fit ? "min-w-0 flex-1" : "shrink-0"}`}
+      className="flex min-w-0 flex-1 items-center gap-0.5"
     >
       {visible.map((action) => (
         <span
@@ -376,10 +368,10 @@ export function ThreadActions({
  * so an action folded into the menu keeps its last width. The ref callback
  * measures during commit, so a wider label folds before it can show cut off.
  */
-function useMeasuredWidths(enabled: boolean) {
+function useMeasuredWidths() {
   const [widths, setWidths] = useState<Readonly<Record<string, number>>>({});
   const measure = (action: string, element: HTMLElement | null) => {
-    const width = enabled ? (element?.offsetWidth ?? 0) : 0;
+    const width = element?.offsetWidth ?? 0;
     if (width > 0 && widths[action] !== width)
       setWidths((current) =>
         current[action] === width ? current : { ...current, [action]: width },
@@ -405,7 +397,7 @@ export function ThreadMenuItems({
   onSnooze,
   onPermanentDelete,
   onFilter,
-}: Omit<Props, "labelPicker" | "onLabelPicker" | "limit">) {
+}: Omit<Props, "labelPicker" | "onLabelPicker">) {
   const { t } = useLingui();
   const shortcut = useShortcutText();
   const folders = state.provider !== "gmail";

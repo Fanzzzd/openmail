@@ -48,6 +48,7 @@ export function Proposals({ proposals, accounts, onClose, onOpenDraft }: Props) 
     <Dialog
       aria-label={t`AI suggestions`}
       onClose={onClose}
+      ownClose
       className="flex max-h-[min(600px,calc(100vh-40px))] w-[600px] flex-col overflow-hidden"
     >
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-black/[0.07] px-5 dark:border-white/[0.08]">

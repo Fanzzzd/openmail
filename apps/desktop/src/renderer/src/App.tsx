@@ -468,6 +468,16 @@ export function App({ composeId }: { composeId?: string }) {
       onEditProfile={setEditing}
     />
   );
+  const batchToolbar =
+    selection.ids.size > 1
+      ? {
+          ...batch,
+          canLoadMore: threads.canLoadMore,
+          moreNotLoaded: threads.moreNotLoaded,
+          labelPicker,
+          onLabelPicker: setLabelPicker,
+        }
+      : null;
   const listPane = (
     <MessageList
       leading={sidebarToggle}
@@ -475,6 +485,13 @@ export function App({ composeId }: { composeId?: string }) {
       searchBar={
         !prefs.readingPaneVisible || narrow ? (
           <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
+        ) : undefined
+      }
+      // One pane at a time leaves no reader toolbar, so selected rows get their actions above the
+      // list. Only while the list shows, so the reader's bar and this one never share a label picker.
+      selectionBar={
+        narrow && !paneNav.shown.reader && batchToolbar ? (
+          <BatchActions {...batchToolbar} />
         ) : undefined
       }
       key={JSON.stringify([view, search, filters])}
@@ -576,20 +593,9 @@ export function App({ composeId }: { composeId?: string }) {
       onEditDraft={openSavedDraft}
       notify={(next) => say(next)}
       onBack={narrow ? paneNav.back : undefined}
-      renderToolbar={(compact) => (
+      renderToolbar={() => (
         <ReaderToolbar
-          compact={compact}
-          batch={
-            selection.ids.size > 1
-              ? {
-                  ...batch,
-                  canLoadMore: threads.canLoadMore,
-                  moreNotLoaded: threads.moreNotLoaded,
-                  labelPicker,
-                  onLabelPicker: setLabelPicker,
-                }
-              : null
-          }
+          batch={batchToolbar}
           thread={
             threadState && {
               currentLabel: view.label?.id,
@@ -952,16 +958,14 @@ export function App({ composeId }: { composeId?: string }) {
 
 /** The reader's actions: for the selected rows when several are selected, otherwise for the open thread. */
 function ReaderToolbar({
-  compact,
   batch,
   thread,
 }: {
-  compact: boolean;
   batch: ComponentProps<typeof BatchActions> | null;
-  thread: Omit<ComponentProps<typeof ThreadActions>, "limit"> | null;
+  thread: ComponentProps<typeof ThreadActions> | null;
 }) {
   if (batch) return <BatchActions {...batch} />;
-  return thread && <ThreadActions {...thread} limit={compact ? 2 : undefined} />;
+  return thread && <ThreadActions {...thread} />;
 }
 
 const OP_DONE: Record<MailOp["kind"], (op: MailOp) => MessageDescriptor> = {

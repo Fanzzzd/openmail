@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { expect, it } from "vitest";
+import { READER_BASE_CSS } from "@openmail/core/schema";
 import { DARK_CSS, fitDocument, fitScale, MIN_FIT_SCALE, PICTURES } from "./frame-style";
 
 it("fits wide mail to the frame and leaves mail that fits alone", () => {
@@ -89,4 +90,15 @@ it("vector text is inverted with the page while embedded SVG images keep their c
     '<svg><text id="vector">Visible</text><image id="raster"></image></svg>';
   expect(inversions(document.getElementById("vector")!)).toBe(1);
   expect(inversions(document.getElementById("raster")!)).toBe(2);
+});
+
+it("breaks long words anywhere in text but keeps table cells at word width", () => {
+  document.head.innerHTML = `<style>${READER_BASE_CSS}</style>`;
+  document.body.innerHTML = "<p>text</p><table><tr><td>Status</td><th>Job</th></tr></table>";
+  const wrap = (selector: string) =>
+    getComputedStyle(document.querySelector(selector)!).getPropertyValue("overflow-wrap");
+  expect(wrap("p")).toBe("anywhere");
+  // "anywhere" would shrink a cell's minimum width to one letter.
+  expect(wrap("td")).toBe("break-word");
+  expect(wrap("th")).toBe("break-word");
 });

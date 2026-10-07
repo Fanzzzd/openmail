@@ -130,3 +130,14 @@ export function letterAvatarColor(name: string): string {
   for (let index = 0; index < key.length; index++) hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
   return GMAIL_AVATAR_TONES[hash % GMAIL_AVATAR_TONES.length] ?? "#3367d6";
 }
+
+/**
+ * A row's preview with preheader padding collapsed to one space. Senders pad
+ * the preview with runs of invisible characters (joiners, figure spaces, byte
+ * order marks) so clients stop reading there; kept, the padding fills the row
+ * with blank space and a lone ellipsis. A single joiner stays: emoji sequences
+ * and Persian or Indic text need it.
+ */
+export function previewText(snippet: string): string {
+  return snippet.replace(/(?:[\u00ad\u180e\u200b-\u200d\u2060\s]|\u034f){2,}/g, " ").trim();
+}

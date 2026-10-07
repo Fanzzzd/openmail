@@ -22,6 +22,10 @@ export const READER_BASE_CSS = `
   html { overflow-x: auto !important; }
   body { font: 14px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
          overflow: visible !important; word-wrap: break-word; overflow-wrap: anywhere; }
+  /* "anywhere" shrinks a cell's minimum width to one character, so an auto
+     table squeezes its columns into letter stacks. Cells break long words only
+     when they overflow; a table wider than the frame is fitted instead. */
+  td, th { overflow-wrap: break-word; }
   img { max-width: 100%; height: auto; }
   table { max-width: 100%; }
   pre { white-space: pre-wrap; }

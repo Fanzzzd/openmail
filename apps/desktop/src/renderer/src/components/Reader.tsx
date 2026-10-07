@@ -105,10 +105,10 @@ import { EmailFrame, type MessageBackground } from "./EmailFrame";
 import { MeetingLinks } from "./MeetingLinks";
 import { highlightBody } from "./body-text";
 
-import { useElementWidth } from "../use-element-width";
 import { useShortcutText } from "../use-shortcut-text";
 
 import { useSaveMessage } from "./reader-actions";
+import { TOOLBAR_MIN_WIDTH } from "../toolbar-fit";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
 
@@ -128,8 +128,11 @@ interface Props {
   query: string;
   onQuery: (q: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
-  /** Actions for the open thread, left of the search field. */
-  renderToolbar?: (compact: boolean) => ReactNode;
+  /**
+   * Actions for the open thread, left of the search field. They fill the room
+   * the search field leaves and fold into their menu when it runs out.
+   */
+  renderToolbar?: () => ReactNode;
   /** Opens a draft of the thread in the compose window, by local draft id or message id. */
   onEditDraft: (messageId: string) => void;
   notify: Notify;
@@ -163,8 +166,6 @@ export function Reader({
   onBack,
 }: Props) {
   const { t } = useLingui();
-  const headerRef = useRef<HTMLElement>(null);
-  const width = useElementWidth(headerRef);
   const result = useAtomValue(threadAtom(messageId));
   const thread = AsyncResult.value(result);
   const messages = useReaderMessages(
@@ -178,9 +179,8 @@ export function Reader({
   return (
     <main className="flex h-full w-full min-w-0 flex-col bg-white dark:bg-neutral-900">
       <header
-        ref={headerRef}
         data-reader-toolbar
-        className={`drag flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? trafficLightInset : "pl-4"}`}
+        className={`drag @container/bar flex min-h-13 shrink-0 items-center gap-3 py-3 pr-4 ${onBack ? trafficLightInset : "pl-4"}`}
       >
         {onBack && (
           <Tip label={t`Back to messages`} shortcut={BACK_SHORTCUT}>
@@ -195,9 +195,19 @@ export function Reader({
           </Tip>
         )}
         {prefs.toolbarVisible && (
-          <div className="no-drag shrink-0">{renderToolbar?.(width < 900)}</div>
+          <div className="flex flex-1" style={{ minWidth: TOOLBAR_MIN_WIDTH }}>
+            {renderToolbar?.()}
+          </div>
         )}
-        {!onBack && <SearchField value={query} onChange={onQuery} inputRef={searchRef} />}
+        {/* Beside the toolbar, search starts at 14rem: room for a query with the scope as an
+            icon. A header of 960 px leaves every default action room beside 20rem of search. */}
+        {!onBack && (
+          <div
+            className={`flex min-w-0 ${prefs.toolbarVisible ? "flex-[0_1_14rem] @min-[960px]/bar:basis-80" : "flex-1"}`}
+          >
+            <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
+          </div>
+        )}
       </header>
       {!messageId || !messages ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 text-a11y-muted dark:text-neutral-600">
@@ -738,7 +748,7 @@ export function ThreadView({
         />
       )}
       <div className="flex items-start gap-2 pt-2 pb-4">
-        <h2 className="min-w-0 flex-1 text-[24px] leading-tight font-bold break-words">
+        <h2 className="min-w-0 flex-1 text-[20px] leading-tight font-bold break-words @min-[520px]/thread:text-[24px]">
           {newest?.subject || t`(No subject)`}
         </h2>
         {messages.length > 1 && (

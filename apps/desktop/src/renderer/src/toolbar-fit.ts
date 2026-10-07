@@ -2,6 +2,8 @@
 const MENU_BUTTON = 28;
 /** The toolbar's gap between buttons. */
 const GAP = 2;
+/** The narrowest a toolbar gets: the actions menu and two icon actions. */
+export const TOOLBAR_MIN_WIDTH = MENU_BUTTON + 2 * (MENU_BUTTON + GAP);
 
 /**
  * How many actions fit in `width` px beside the actions menu, by their

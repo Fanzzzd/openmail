@@ -126,7 +126,7 @@ export function Settings({
             <Tabs.Tab
               key={item.id}
               value={item.id}
-              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium whitespace-nowrap text-a11y-muted outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
+              className="min-h-8 shrink-0 rounded-md px-3 text-left font-medium whitespace-nowrap text-a11y-muted sm:py-1.5 sm:whitespace-normal outline-none hover:bg-black/[0.04] focus-visible:ring-2 focus-visible:ring-a11y-focus data-active:bg-black/[0.07] data-active:text-inherit dark:hover:bg-white/5 dark:data-active:bg-white/10"
             >
               {i18n._(item.label)}
             </Tabs.Tab>
@@ -182,7 +182,8 @@ export function Settings({
           <AiSettings accounts={accounts} />
           <AgentPolicy />
         </Tabs.Panel>
-        <Tabs.Panel value="log" className={panel}>
+        {/* A narrow panel moves the account under the action instead of cutting off a fourth column. */}
+        <Tabs.Panel value="log" className={`${panel} @container/log`}>
           <AuditLog accounts={accounts} />
         </Tabs.Panel>
       </Tabs.Root>
@@ -557,7 +558,7 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
           <th className="pb-2 font-medium">
             <Trans>Action</Trans>
           </th>
-          <th className="pb-2 font-medium">
+          <th className="pb-2 font-medium @max-[480px]/log:hidden">
             <Trans>Account</Trans>
           </th>
         </tr>
@@ -576,8 +577,13 @@ function AuditLog({ accounts }: { accounts: readonly Account[] }) {
             <td className="py-1.5 pr-3 whitespace-nowrap">{actorName(i18n, e.actor)}</td>
             <td className="py-1.5 pr-3">
               {ACTION_NAMES[e.action] ? i18n._(ACTION_NAMES[e.action]!) : e.action}
+              <span className="hidden break-all text-a11y-muted @max-[480px]/log:block">
+                {email(e.accountId)}
+              </span>
             </td>
-            <td className="max-w-40 truncate py-1.5 text-a11y-muted">{email(e.accountId)}</td>
+            <td className="py-1.5 text-a11y-muted @max-[480px]/log:hidden">
+              <span className="block max-w-40 truncate">{email(e.accountId)}</span>
+            </td>
           </tr>
         ))}
       </tbody>

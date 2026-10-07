@@ -267,6 +267,10 @@ it("moves Expand all and Collapse all into the thread menu below 520 px", () => 
   const view = thread([message("m1"), message("m2")]);
   const scroller = view.container.querySelector('[role="document"]');
   expect(scroller?.className).toContain("@container/thread");
+  // Long subjects take fewer lines in a narrow reader.
+  const subject = screen.getByRole("heading", { level: 2, name: "Quarterly report" });
+  expect(subject.className).toContain("text-[20px]");
+  expect(subject.className).toContain("@min-[520px]/thread:text-[24px]");
   const inline = screen.getAllByRole("button", { name: "Expand all" });
   expect(inline[0]?.parentElement?.className).toContain("hidden");
   expect(inline[0]?.parentElement?.className).toContain("@min-[520px]/thread:flex");

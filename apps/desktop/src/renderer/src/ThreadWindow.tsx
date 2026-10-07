@@ -309,7 +309,6 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       >
         {state && (
           <ThreadActions
-            limit="fit"
             pickerMode={pickerMode}
             organizationTarget={
               account ? { accountId: account.id, threads: [id], flat: single } : undefined

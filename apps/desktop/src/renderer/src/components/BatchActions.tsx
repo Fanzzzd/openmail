@@ -166,8 +166,16 @@ export function BatchActions(
   const button =
     "rounded-md p-1.5 text-a11y-muted hover:bg-black/5 focus-visible:outline-a11y-focus dark:hover:bg-white/10";
   return (
-    <div className="flex items-center gap-0.5">
-      <span className="mr-2 text-sm text-a11y-muted">
+    // Below 300 px the five buttons (150 px) leave the count text too little room, so the
+    // count stands alone as a number and the actions keep their buttons.
+    <div className="@container/batch flex min-w-0 flex-1 items-center gap-0.5">
+      <span
+        aria-hidden
+        className="mr-1.5 hidden shrink-0 rounded-full bg-black/[0.07] px-1.5 text-xs leading-5 text-a11y-muted tabular-nums @max-[300px]/batch:inline dark:bg-white/10"
+      >
+        {count}
+      </span>
+      <span className="mr-2 min-w-0 truncate text-sm text-a11y-muted @max-[300px]/batch:sr-only">
         <Trans>{count} selected (loaded)</Trans>
         {props.canLoadMore && (
           <span className="ml-2">
@@ -181,7 +189,12 @@ export function BatchActions(
       </span>
       {actions.map(({ icon: Icon, label, op }) => (
         <Tip key={op.kind} label={label}>
-          <button type="button" aria-label={label} className={button} onClick={() => onOp(op)}>
+          <button
+            type="button"
+            aria-label={label}
+            className={`shrink-0 ${button}`}
+            onClick={() => onOp(op)}
+          >
             <Icon className="size-4" />
           </button>
         </Tip>
@@ -190,7 +203,7 @@ export function BatchActions(
         open={props.labelPicker}
         onOpenChange={props.onLabelPicker}
         trigger={
-          <button type="button" className={button} aria-label={t`Batch actions`}>
+          <button type="button" className={`shrink-0 ${button}`} aria-label={t`Batch actions`}>
             <Tag className="size-4" />
           </button>
         }

@@ -26,6 +26,8 @@ interface DialogProps {
   backdropClassName?: string;
   initialFocus?: InitialFocus;
   finalFocus?: ComponentProps<typeof BaseDialog.Popup>["finalFocus"];
+  /** The dialog draws its own close button, so a full-window sheet adds none. */
+  ownClose?: boolean;
   children: ReactNode;
 }
 
@@ -53,6 +55,7 @@ export function Dialog({
   backdropClassName = "bg-black/30",
   initialFocus,
   finalFocus,
+  ownClose = false,
   children,
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
@@ -76,7 +79,7 @@ export function Dialog({
         >
           <SheetDragStrip />
           {children}
-          {narrow && onClose && <SheetClose />}
+          {narrow && onClose && !ownClose && <SheetClose />}
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>

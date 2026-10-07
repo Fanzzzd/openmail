@@ -387,4 +387,64 @@ it("a narrow window shows dialogs as full-window sheets with a close button", as
   expect(within(settings).getByRole("tablist").getAttribute("data-orientation")).toBe("horizontal");
   fireEvent.click(within(settings).getByRole("button", { name: "Close" }));
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
+
+  // A dialog with a close button of its own gets no second one.
+  clickButton("Show sidebar");
+  const drawer = await screen.findByRole("dialog", { name: "Sidebar" });
+  fireEvent.click(within(drawer).getByRole("button", { name: "Add email account" }));
+  const add = await screen.findByRole("dialog", { name: "Add email account" });
+  expect(within(add).getAllByRole("button", { name: "Close" })).toHaveLength(1);
+});
+
+it("the reader's toolbar folds actions into its menu as it narrows, next to the search field", async () => {
+  const layout = toolbarLayout();
+  toolbar = layout;
+  width = 1200;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await screen.findByRole("button", { name: "Archive" });
+  const header = document.querySelector<HTMLElement>("[data-reader-toolbar]");
+  if (!header) throw new Error("Missing reader toolbar");
+  expect(header.className).toContain("@container/bar");
+  // The actions take the room the search field leaves; it keeps a basis of its own.
+  const search = within(header).getByRole("combobox", { name: "Search mail" });
+  expect(search.closest("[data-reader-toolbar] > div:last-child")?.className).toContain(
+    "flex-[0_1_14rem]",
+  );
+  const all = shown();
+  layout.resize(150);
+  expect(shown()).toEqual(all.slice(0, 4));
+  layout.resize(40);
+  expect(shown()).toEqual([]);
+  expect(screen.getByRole("button", { name: "Conversation actions" })).toBeTruthy();
+  layout.resize(2000);
+  expect(shown()).toEqual(all);
+});
+
+it("a narrow window shows actions for several selected rows above the list", async () => {
+  width = 520;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const list = () => document.querySelector<HTMLElement>('[data-mail-pane="list"]')!;
+  expect(within(list()).queryByRole("button", { name: "Batch actions" })).toBeNull();
+  expect(within(list()).getByRole("button", { name: "Filter" })).toBeTruthy();
+  fireEvent.click(row(h.id("one")), { metaKey: true });
+  fireEvent.click(row(h.id("two")), { metaKey: true });
+  await eventually(() =>
+    expect(within(list()).getByRole("button", { name: "Batch actions" })).toBeTruthy(),
+  );
+  // The selection stays in the list; the bar takes the filter chips' place. It is the only
+  // batch bar, so one label picker opens at a time.
+  expect(reader()).toBeNull();
+  expect(screen.getAllByRole("button", { name: "Batch actions", hidden: true })).toHaveLength(1);
+  expect(within(list()).queryByRole("button", { name: "Filter" })).toBeNull();
+  expect(within(list()).getByText("2 selected (loaded)")).toBeTruthy();
+  fireEvent.click(within(list()).getByRole("button", { name: "Archive" }));
+  await eventually(async () => {
+    for (const id of ["one", "two"])
+      expect((await h.run(h.store.getMessage(h.id(id)))).labels).not.toContain("INBOX");
+  });
 });
