@@ -10,7 +10,11 @@ if (process.argv[3] === "hold") {
   const holder = new DatabaseSync(process.argv[2]);
   holder.exec("BEGIN IMMEDIATE");
   writeSync(1, "migration-lock-held\n");
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 6500);
+  await new Promise((resolve) => {
+    process.stdin.once("data", resolve);
+    process.stdin.resume();
+  });
+  process.stdin.pause();
   holder.exec("ROLLBACK");
   holder.close();
 }

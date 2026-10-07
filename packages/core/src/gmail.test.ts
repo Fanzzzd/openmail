@@ -1,3 +1,4 @@
+import { GMAIL_MIME_LIMIT } from "./attachment-policy.js";
 import { account as buildAccount } from "./platform/node/testing.js";
 import { fakeHttp } from "./platform/node/fake-http.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
@@ -401,24 +402,32 @@ for (const status of [400, 409]) {
   );
 }
 
-it.effect("Gmail checks the built MIME length including a large body before posting", () =>
+it.effect("Gmail checks the built MIME byte length before posting", () =>
   Effect.gen(function* () {
     const http = fakeHttp({ "POST /messages/send": { json: { id: "sent" } } });
-    const error = yield* run(http, (adapter) =>
-      Effect.flip(
-        adapter.send(
-          account,
-          {
-            to: [{ name: "Bob", address: "bob@example.com" }],
-            cc: [],
-            bcc: [],
-            subject: "Body limit",
-            text: "a".repeat(26 * 1024 * 1024),
-            attachments: [],
-          },
-          Option.none(),
+    const codec = {
+      ...nodeMailCodec,
+      build: () => Effect.succeed(new Uint8Array(GMAIL_MIME_LIMIT + 1)),
+    };
+    const error = yield* makeGmail.pipe(
+      Effect.provideService(MailCodec, codec),
+      Effect.flatMap((adapter) =>
+        Effect.flip(
+          adapter.send(
+            account,
+            {
+              to: [{ name: "Bob", address: "bob@example.com" }],
+              cc: [],
+              bcc: [],
+              subject: "Body limit",
+              text: "Body bytes are supplied by the MIME encoder",
+              attachments: [],
+            },
+            Option.none(),
+          ),
         ),
       ),
+      Effect.provide(Layer.mergeAll(http.layer, platform)),
     );
     assert.strictEqual(error._tag, "PermanentError");
     assert.include(error.message, "25 MB");

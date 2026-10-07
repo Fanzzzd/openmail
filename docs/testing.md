@@ -17,6 +17,24 @@ pnpm exec oxfmt --check .
 
 `OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、不隔离模块、单测与 hook 超时 60 秒。普通运行保留文件隔离。完整邮件流程配置独立使用一个 worker 和 10 秒超时。
 
+## 负载下的测试
+
+- 不用 sleep 同步。用 fake timers 推进计时，用 Effect Deferred 等待明确事件。
+- 墙钟预算只在 `OPENMAIL_PERF=1` 下断言，运行 `pnpm --filter @openmail/core test:perf`。
+- 数据库 fixture 用 [migrated-database.ts](../packages/core/test-support/migrated-database.ts) 生成独立副本。
+- 大文件用 [file-bytes.ts](../packages/core/test-support/file-bytes.ts) 比较完整字节。
+
+在 `packages/core` 重复并行运行以下命令，同时启动 4–6 个 `yes > /dev/null`；结束后终止本次创建的负载进程：
+
+```sh
+pnpm exec vitest run --maxWorkers=1 \
+  src/outlook.test.ts src/outlook-focused.test.ts src/outlook-upload.test.ts \
+  src/platform/react-native/database-recovery.test.ts \
+  src/platform/node/corpus-check.test.ts src/platform/node/visible-text-cost.test.ts
+```
+
+桌面从 `apps/desktop` 运行 `pnpm exec vitest run --maxWorkers=1 src/main/attachment-actions.test.ts`。
+
 所有 Vitest 项目通过 `packages/core/test-support/temp-directory.ts` 使用各自的临时目录。启动时只清理该 helper 创建的、超过 24 小时的 `openmail-tests-*` 目录，不跟随软链接。测试仍须用 Effect scope、`afterEach` 或 `finally` 关闭数据库并删除 fixture；全局 teardown 会报告遗留的 `openmail-*`、`om-*` fixture 并删除整个目录，失败的测试也不会留下大数据库。性能 fixture 不跨运行缓存。search-profile 只保留显式指定的数据库，默认数据库在 `finally` 删除；corpus-check 的持久 explain key 由测试登记后删除。
 
 ## 验证范围

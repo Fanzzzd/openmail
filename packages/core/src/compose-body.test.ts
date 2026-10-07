@@ -194,8 +194,9 @@ import { performance } from "node:perf_hooks";
       assert.include(preserved, ".signature{font-family:Georgia;padding:16px}");
       assert.notMatch(preserved, /@import|tracker\.test/);
       const deep = `${"<div>".repeat(10_000)}<script>bad()</script><b>text</b>${"</div>".repeat(10_000)}`;
-      assert.notMatch(preservedComposeHtml(deep), /<script/);
-      assert.include(preservedComposeHtml(deep), "text");
+      const preservedDeep = preservedComposeHtml(deep);
+      assert.notMatch(preservedDeep, /<script/);
+      assert.include(preservedDeep, "text");
     });
     it("preserves original metadata over non-body edits; a real body edit clears it", () => {
       const source =

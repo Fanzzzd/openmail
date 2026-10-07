@@ -2,7 +2,7 @@ import { mkdtemp, readFile, readdir, rm, stat, mkdir, writeFile, utimes } from "
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Effect, Fiber } from "effect";
+import { Deferred, Effect, Fiber } from "effect";
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
 import { buildMime } from "../../../../packages/core/src/platform/node/compose.js";
@@ -282,16 +282,23 @@ it("a slow previous selection cannot replace the latest prepared drag", async ()
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {
       const original = m.attachmentParts.bind(m);
+      const started = yield* Deferred.make<void>();
+      const release = yield* Deferred.make<void>();
       vi.spyOn(m, "attachmentParts").mockImplementation((messageId, target) =>
         original(messageId, target).pipe(
-          Effect.delay(target[0]?.[0] === 0 ? "30 millis" : "0 millis"),
+          Effect.tap(() =>
+            target[0]?.[0] === 0
+              ? Deferred.succeed(started, undefined).pipe(Effect.andThen(Deferred.await(release)))
+              : Effect.void,
+          ),
         ),
       );
-      // Start the older selection before the newer one without relying on timers.
       const older = yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[0]] }).pipe(
-        Effect.forkChild({ startImmediately: true }),
+        Effect.forkChild,
       );
+      yield* Deferred.await(started);
       yield* prepareAttachmentDrag(m, parent, { messageId: id, paths: [[1]] });
+      yield* Deferred.succeed(release, undefined);
       yield* Fiber.join(older);
       expect(
         yield* attachmentAction(m, parent, { messageId: id, paths: [[1]], action: "drag" }),
@@ -359,7 +366,9 @@ it("all preview/open paths preserve the executable block and report shell failur
   );
 });
 it("temp storage expires and cleans up its directory; failed writes leave no partial files", async () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   const store = new AttachmentTemp(folder, 5);
+  const removal = vi.spyOn(store, "remove");
   try {
     const files = await store.write([
       { filename: "../../private.txt", data: Buffer.from("private") },
@@ -368,9 +377,15 @@ it("temp storage expires and cleans up its directory; failed writes leave no par
     if (!file) throw new Error("No temp file");
     const root = path.dirname(path.dirname(path.dirname(file)));
     expect((await stat(root)).mode & 0o777).toBe(0o700);
-    await new Promise((resolve) => {
-      setTimeout(resolve, 30);
-    });
+    await vi.advanceTimersByTimeAsync(4);
+    expect(removal).not.toHaveBeenCalled();
+    expect((await stat(file)).isFile()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(removal).toHaveBeenCalledTimes(1);
+    // The timer starts asynchronous filesystem work. Wait for that work, too.
+    const expired = removal.mock.results[0];
+    if (expired?.type !== "return") throw new Error("Expiry did not remove the batch");
+    await expired.value;
     await expect(stat(file)).rejects.toThrow();
     const long = await store.writeBatch([
       { filename: `${"x".repeat(300)}.txt`, data: Buffer.from("x") },
@@ -379,7 +394,12 @@ it("temp storage expires and cleans up its directory; failed writes leave no par
     await store.remove(long);
     expect(await readdir(root)).toEqual([]);
   } finally {
-    await store.dispose();
+    try {
+      await store.dispose();
+    } finally {
+      removal.mockRestore();
+      vi.useRealTimers();
+    }
   }
 });
 

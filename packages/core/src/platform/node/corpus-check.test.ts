@@ -1,7 +1,9 @@
-import { applyNativeMigration } from "./migrations.js";
+import { expectFileBytes } from "../../../test-support/file-bytes.js";
+import { migratedDatabaseBytes } from "../../../test-support/migrated-database.js";
 import { createHmac } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { Worker } from "node:worker_threads";
 import {
   mkdtempSync,
   readFileSync,
@@ -16,9 +18,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { afterEach, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { Schema } from "effect";
-import { MIGRATIONS } from "../../db.js";
 // The worker runs the same compiled modules shipped by the CLI, with no test runtime in its heap.
 import {
   corpusCheck,
@@ -27,23 +28,58 @@ import {
   formatCorpusReport,
   CORPUS_LIMITS,
 } from "../../../dist/platform/node/corpus-check.js";
-import { CORPUS_STAGES, CorpusTimings } from "./corpus-report.js";
+import { CORPUS_STAGES, CorpusTimings, type CorpusExplainReport } from "./corpus-report.js";
 import { CorpusPipeline, corpusException } from "./corpus-pipeline.js";
+
+const run = promisify(execFile);
+const cli = new URL("../../../../cli/dist/cli.js", import.meta.url);
+const blockedParser = vi.hoisted(
+  (): { enabled: boolean; workers: number; resolve?: () => void } => ({
+    enabled: false,
+    workers: 0,
+  }),
+);
+vi.mock("node:worker_threads", async (original) => {
+  const threads = await original<typeof import("node:worker_threads")>();
+  return {
+    ...threads,
+    Worker: class extends threads.Worker {
+      constructor(...[filename, options]: ConstructorParameters<typeof threads.Worker>) {
+        super(
+          blockedParser.enabled
+            ? new URL("./fixtures/corpus-blocked-worker.mjs", import.meta.url)
+            : filename,
+          options,
+        );
+        if (blockedParser.enabled) {
+          blockedParser.workers++;
+          this.on("message", (event: unknown) => {
+            if (event && typeof event === "object" && "kind" in event && event.kind === "start")
+              blockedParser.resolve?.();
+          });
+        }
+      }
+    },
+  };
+});
 
 const directories: string[] = [];
 const databases: DatabaseSync[] = [];
 afterEach(() => {
   for (const db of databases.splice(0)) if (db.isOpen) db.close();
+});
+afterAll(() => {
   for (const dir of directories.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function fixture(wal = false) {
   const directory = mkdtempSync(join(tmpdir(), "openmail-corpus-test-"));
   directories.push(directory);
   const file = join(directory, "fixture.db");
+  writeFileSync(file, migratedDatabaseBytes());
   const db = new DatabaseSync(file);
+  db.exec("PRAGMA synchronous=OFF");
   databases.push(db);
   if (wal) db.exec("PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0");
-  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   db.prepare(
     "INSERT INTO accounts(id,provider,email,created_at,settings_json) VALUES (?,?,?,?,?)",
   ).run(
@@ -122,6 +158,16 @@ function fixture(wal = false) {
   return { directory, file, db, add, runKeyFile, hash };
 }
 
+function sizeLimitFixture() {
+  const f = fixture();
+  // Size checks use raw columns, before parsing or cache bookkeeping. Avoid indexing
+  // 16 MB and rewriting the entire row just to fill a counter this scan never reads.
+  f.db.exec(
+    "DROP TRIGGER messages_ai; DROP TRIGGER messages_words_ai; DROP TRIGGER messages_body_bytes_ai",
+  );
+  return f;
+}
+
 it("runs every real pipeline stage, samples newest first and emits no fixture content", async () => {
   const f = fixture();
   f.add("PrivateOldId", "<p>SecretHtmlOrion</p>", { date: 1 });
@@ -166,7 +212,7 @@ it("runs every real pipeline stage, samples newest first and emits no fixture co
   expect(serialized).not.toContain(key);
   expect(serialized).not.toContain(f.runKeyFile);
   expect(serialized).not.toContain("salt");
-  expect(readFileSync(f.file)).toEqual(before);
+  expectFileBytes(f.file, before);
   expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
   const limited = await corpusCheck({ db: f.file, limit: 1 });
   expect(limited.processed).toBe(1);
@@ -188,12 +234,11 @@ it("copies an open WAL database without touching source files, locks or keychain
     f.add("PrivateWalId", "<p>SecretHtmlOrion</p>");
     f.db.exec("BEGIN IMMEDIATE");
     const files = readdirSync(f.directory);
-    const before = files.map((name) => readFileSync(join(f.directory, name)));
+    const before = files.map((name) => ({ name, bytes: readFileSync(join(f.directory, name)) }));
     const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
     expect(report.processed).toBe(1);
     expect(readdirSync(f.directory)).toEqual(files);
-    for (const [index, name] of files.entries())
-      expect(readFileSync(join(f.directory, name))).toEqual(before[index]);
+    for (const { name, bytes } of before) expectFileBytes(join(f.directory, name), bytes);
   } finally {
     f.db.close();
   }
@@ -252,26 +297,53 @@ it("redacts malformed cached JSON and attacker-controlled exception names/messag
   expect(corpusException(attacker)).toBe("Error");
 });
 
-it("terminates a synchronous parser on deadline and continues with the next message", async () => {
+it("terminates a blocked parser worker on deadline and continues with the next message", async () => {
   const f = fixture();
-  for (let i = 0; i < 2; i++)
-    f.add(
-      `PrivateTimeoutId${i}`,
-      `<style>${"p{color:red}".repeat(6000)}</style><p>SecretHtmlOrion</p>`,
-    );
+  for (let i = 0; i < 2; i++) f.add(`PrivateTimeoutId${i}`, "<p>SecretHtmlOrion</p>");
   f.db.close();
-  const report = await corpusCheck({ db: f.file, messageTimeoutMs: 1 });
-  expect(report.processed).toBe(2);
-  expect(report.anomalies.timeout.count).toBe(2);
-  expect(
-    Object.values(report.stages)
-      .flatMap((stage) => stage.failures)
-      .every((failure) => failure.exceptionClass === "TimeoutError"),
-  ).toBe(true);
+  blockedParser.enabled = true;
+  blockedParser.workers = 0;
+  const started = () =>
+    new Promise<void>((resolve) => {
+      blockedParser.resolve = resolve;
+    });
+  let nextStart = started();
+  const termination = vi.spyOn(Worker.prototype, "terminate");
+  const controller = new AbortController();
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  const running = corpusCheck({ db: f.file, messageTimeoutMs: 1, signal: controller.signal });
+  try {
+    for (let i = 0; i < 2; i++) {
+      // Advance only after the real thread enters its synchronous blocking stage.
+      await nextStart;
+      nextStart = started();
+      await vi.advanceTimersByTimeAsync(1);
+    }
+    const report = await running;
+    expect(report.processed).toBe(2);
+    expect(report.anomalies.timeout.count).toBe(2);
+    expect(blockedParser.workers).toBe(2);
+    expect(termination).toHaveBeenCalledTimes(2);
+    expect(
+      Object.values(report.stages)
+        .flatMap((stage) => stage.failures)
+        .every((failure) => failure.exceptionClass === "TimeoutError"),
+    ).toBe(true);
+  } finally {
+    controller.abort();
+    try {
+      await running;
+    } finally {
+      termination.mockRestore();
+      vi.useRealTimers();
+      blockedParser.enabled = false;
+      delete blockedParser.resolve;
+    }
+  }
 });
 
 it("caps a row before allocating its oversized fields and rejects unsafe inputs", async () => {
-  const f = fixture();
+  const f = sizeLimitFixture();
   f.add("PrivateOversizeId", "", { text: "a".repeat(CORPUS_LIMITS.maxMessageBytes + 1) });
   f.db.close();
   const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
@@ -319,8 +391,6 @@ it("CLI JSON is content-free and bypasses Mailbox/network/keychain initializatio
     guard,
     `import net from 'node:net'; import tls from 'node:tls';\nnet.Socket.prototype.connect = () => { throw new Error('Network forbidden'); };\ntls.connect = () => { throw new Error('Network forbidden'); };\nglobalThis.fetch = () => { throw new Error('Network forbidden'); };`,
   );
-  const run = promisify(execFile);
-  const cli = new URL("../../../../cli/dist/cli.js", import.meta.url);
   const { stdout, stderr } = await run(
     process.execPath,
     [
@@ -367,119 +437,101 @@ it("CLI JSON is content-free and bypasses Mailbox/network/keychain initializatio
     expect(stdout).not.toContain(word);
 });
 
-it("explains exactly one previous hash using its private run key file, with structural output only", async () => {
-  const f = fixture();
-  const html =
-    '<html><head><style>@media screen {.PrivateSelectorCanary:not(#PrivateIdCanary){display:none}}</style><body><p class="PrivateSelectorCanary">PrivateBodyCanary</p><!--[if mso]><p>PrivateMsoCanary</p><![endif]--></body></html>';
-  f.add("PrivateExplainId", html, { date: 1 });
-  f.add("PrivateOtherId", "<p>PrivateOtherBodyCanary</p>", { date: 2 });
-  f.db.close();
-  const before = readFileSync(f.file);
-  const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
-  const target = f.hash("PrivateExplainId");
-  const explained = await corpusCheck({ db: f.file, explain: target, runKeyFile: f.runKeyFile });
-  expect(explained).toMatchObject({
-    mode: "explain",
-    status: "complete",
-    sample: { hash: target },
-    failures: [],
+describe("corpus explain", () => {
+  let f: ReturnType<typeof fixture>;
+  let target: string;
+  let explained: CorpusExplainReport;
+  let before: Uint8Array;
+  beforeAll(async () => {
+    f = fixture();
+    const html =
+      '<html><head><style>@media screen {.PrivateSelectorCanary:not(#PrivateIdCanary){display:none}}</style><body><p class="PrivateSelectorCanary">PrivateBodyCanary</p><!--[if mso]><p>PrivateMsoCanary</p><![endif]--></body></html>';
+    f.add("PrivateExplainId", html, { date: 1 });
+    f.add("PrivateOtherId", "<p>PrivateOtherBodyCanary</p>", { date: 2 });
+    f.db.close();
+    writeFileSync(f.runKeyFile, "b".repeat(64), { mode: 0o600 });
+    before = readFileSync(f.file);
+    target = f.hash("PrivateExplainId");
+    explained = await corpusCheck({ db: f.file, explain: target, runKeyFile: f.runKeyFile });
   });
-  expect(explained.diagnostics?.textPlainNonEmpty).toBe(true);
-  expect(explained.diagnostics?.cachedHtml.tagCounts.p).toBe(1);
-  expect(explained.diagnostics?.original.structure.bodyInsideHead).toBe(0);
-  expect(explained.diagnostics?.original.removedByRule["omit-tag"].textNodes).toBe(1);
-  expect(explained.diagnostics?.original.removedBySource["stylesheet-rule"].textNodes).toBe(1);
-  expect(explained.diagnostics?.original.removedByRule["mso-conditional-comment"]).toEqual({
-    textNodes: 1,
-    characters: "PrivateMsoCanary".length,
+
+  it("explains exactly one previous hash with structural output only", () => {
+    expect(explained).toMatchObject({
+      mode: "explain",
+      status: "complete",
+      sample: { hash: target },
+      failures: [],
+    });
+    expect(explained.diagnostics?.textPlainNonEmpty).toBe(true);
+    expect(explained.diagnostics?.cachedHtml.tagCounts.p).toBe(1);
+    expect(explained.diagnostics?.original.structure.bodyInsideHead).toBe(0);
+    expect(explained.diagnostics?.original.removedByRule["omit-tag"].textNodes).toBe(1);
+    expect(explained.diagnostics?.original.removedBySource["stylesheet-rule"].textNodes).toBe(1);
+    expect(explained.diagnostics?.original.removedByRule["mso-conditional-comment"]).toEqual({
+      textNodes: 1,
+      characters: "PrivateMsoCanary".length,
+    });
+    expect(explained.diagnostics?.original.structure.stylesheetSelectorShapes).toMatchObject({
+      "class-selector": 1,
+      ":not": 1,
+      "@media": 1,
+    });
+    const serialized = JSON.stringify(explained).toLowerCase();
+    for (const word of [
+      "SecretSubjectZephyra",
+      "PrivateSenderName",
+      "SecretSender",
+      "SecretSenderDomain",
+      "PrivateRecipientName",
+      "SecretRecipient",
+      "SecretRecipientDomain",
+      "SecretBodyCobalt",
+      "SecretBodyNebula",
+      "PrivateSelectorCanary",
+      "PrivateIdCanary",
+      "PrivateBodyCanary",
+      "PrivateMsoCanary",
+      "PrivateOtherBodyCanary",
+      "PrivateExplainId",
+      "PrivateOtherId",
+      "PrivateFileMarker",
+      "PrivateBadDateMarker",
+      "PrivateDomainMarker",
+      "invalid",
+    ])
+      expect(serialized).not.toContain(word.toLowerCase());
+    const key = readFileSync(f.runKeyFile, "utf8");
+    expect(serialized).not.toContain(key);
+    expect(serialized).not.toContain(f.runKeyFile);
+    expect(serialized).not.toContain("salt");
+    expectFileBytes(f.file, before);
   });
-  expect(explained.diagnostics?.original.structure.stylesheetSelectorShapes).toMatchObject({
-    "class-selector": 1,
-    ":not": 1,
-    "@media": 1,
+
+  it("uses the same private run key for repeat aggregate reports", async () => {
+    const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
+    const sameKey = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
+    expect(sameKey.anomalies["missing-message-id"].samples.map((s) => s.hash)).toEqual(
+      report.anomalies["missing-message-id"].samples.map((s) => s.hash),
+    );
   });
-  const serialized = JSON.stringify(explained).toLowerCase();
-  for (const word of [
-    "SecretSubjectZephyra",
-    "PrivateSenderName",
-    "SecretSender",
-    "SecretSenderDomain",
-    "PrivateRecipientName",
-    "SecretRecipient",
-    "SecretRecipientDomain",
-    "SecretBodyCobalt",
-    "SecretBodyNebula",
-    "PrivateSelectorCanary",
-    "PrivateIdCanary",
-    "PrivateBodyCanary",
-    "PrivateMsoCanary",
-    "PrivateOtherBodyCanary",
-    "PrivateExplainId",
-    "PrivateOtherId",
-    "PrivateFileMarker",
-    "PrivateBadDateMarker",
-    "PrivateDomainMarker",
-    "invalid",
-  ])
-    expect(serialized).not.toContain(word.toLowerCase());
-  const key = readFileSync(f.runKeyFile, "utf8");
-  expect(serialized).not.toContain(key);
-  expect(serialized).not.toContain(f.runKeyFile);
-  expect(serialized).not.toContain("salt");
-  const sameKey = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
-  expect(sameKey.anomalies["missing-message-id"].samples.map((s) => s.hash)).toEqual(
-    report.anomalies["missing-message-id"].samples.map((s) => s.hash),
-  );
-  const otherKey = join(f.directory, "other.key");
-  writeFileSync(otherKey, "a".repeat(64), { mode: 0o600 });
-  await expect(corpusCheck({ db: f.file, explain: target, runKeyFile: otherKey })).rejects.toThrow(
-    "Corpus explain message not found",
-  );
-  await expect(
-    corpusCheck({ db: f.file, explain: "PrivateBadHashCanary", runKeyFile: f.runKeyFile }),
-  ).rejects.toThrow("Invalid corpus explain hash");
-  await expect(
-    corpusCheck({ db: f.file, explain: target, runKeyFile: "PrivateMissingKeyCanary" }),
-  ).rejects.toThrow("Invalid corpus run key file");
-  expect(readFileSync(f.file)).toEqual(before);
-  const run = promisify(execFile);
-  const cli = new URL("../../../../cli/dist/cli.js", import.meta.url);
-  const { stdout, stderr } = await run(
-    process.execPath,
-    [
-      "--disable-warning=ExperimentalWarning",
-      cli.pathname,
-      "corpus-check",
-      "--db",
-      f.file,
-      "--explain",
-      target,
-      "--run-key",
-      f.runKeyFile,
-      "--json",
-    ],
-    {
-      env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-      timeout: 30_000,
-    },
-  );
-  expect(JSON.parse(stdout)).toEqual(explained);
-  expect(stderr).toBe("");
-  expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-  for (const word of [
-    "SecretSubjectZephyra",
-    "SecretSender",
-    "SecretRecipient",
-    "SecretBodyCobalt",
-    "SecretBodyNebula",
-    "PrivateSelectorCanary",
-    "PrivateIdCanary",
-    "PrivateBodyCanary",
-    "PrivateMsoCanary",
-  ])
-    expect(stdout.toLowerCase()).not.toContain(word.toLowerCase());
-  await expect(
-    run(
+
+  it("rejects a different run key, an invalid explain hash and a missing key file", async () => {
+    const otherKey = join(f.directory, "other.key");
+    writeFileSync(otherKey, "a".repeat(64), { mode: 0o600 });
+    await expect(
+      corpusCheck({ db: f.file, explain: target, runKeyFile: otherKey }),
+    ).rejects.toThrow("Corpus explain message not found");
+    await expect(
+      corpusCheck({ db: f.file, explain: "PrivateBadHashCanary", runKeyFile: f.runKeyFile }),
+    ).rejects.toThrow("Invalid corpus explain hash");
+    await expect(
+      corpusCheck({ db: f.file, explain: target, runKeyFile: "PrivateMissingKeyCanary" }),
+    ).rejects.toThrow("Invalid corpus run key file");
+    expectFileBytes(f.file, before);
+  });
+
+  it("CLI explain matches the core explanation and keeps fixture content private", async () => {
+    const { stdout, stderr } = await run(
       process.execPath,
       [
         "--disable-warning=ExperimentalWarning",
@@ -489,13 +541,52 @@ it("explains exactly one previous hash using its private run key file, with stru
         f.file,
         "--explain",
         target,
+        "--run-key",
+        f.runKeyFile,
+        "--json",
       ],
       {
         env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
         timeout: 30_000,
       },
-    ),
-  ).rejects.toMatchObject({ stderr: expect.stringContaining("Explain requires --run-key") });
+    );
+    expect(JSON.parse(stdout)).toEqual(explained);
+    expect(stderr).toBe("");
+    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
+    for (const word of [
+      "SecretSubjectZephyra",
+      "SecretSender",
+      "SecretRecipient",
+      "SecretBodyCobalt",
+      "SecretBodyNebula",
+      "PrivateSelectorCanary",
+      "PrivateIdCanary",
+      "PrivateBodyCanary",
+      "PrivateMsoCanary",
+    ])
+      expect(stdout.toLowerCase()).not.toContain(word.toLowerCase());
+  });
+
+  it("CLI explain requires an explicit run key", async () => {
+    await expect(
+      run(
+        process.execPath,
+        [
+          "--disable-warning=ExperimentalWarning",
+          cli.pathname,
+          "corpus-check",
+          "--db",
+          f.file,
+          "--explain",
+          target,
+        ],
+        {
+          env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
+          timeout: 30_000,
+        },
+      ),
+    ).rejects.toMatchObject({ stderr: expect.stringContaining("Explain requires --run-key") });
+  });
 });
 
 it("counts only whole-label URL/domain mismatches and ignores plain-word redirect anchors", async () => {
@@ -559,34 +650,36 @@ it("Outlook newsletter gap styles retain readable descendants across the real co
   }
 });
 
-it("responsive Outlook variants retain the branch visible at both reference widths in aggregate and explain reports", async () => {
-  const f = fixture();
-  f.db.prepare("UPDATE accounts SET provider='outlook'").run();
-  const ids: string[] = [];
-  for (const variant of ["desktop", "mobile"] as const) {
-    for (const hiding of ["inline", "stylesheet"] as const) {
-      const id = `PrivateResponsiveId${variant}${hiding}`;
-      ids.push(id);
-      const active = variant === "desktop" ? "min-width:0px" : "max-width:8000px";
-      const inactive = variant === "desktop" ? "min-width:8001px" : "min-width:8001px";
-      const other = variant === "desktop" ? "mobile" : "desktop";
-      const style = hiding === "inline" ? ' style="display:none"' : "";
-      f.add(
-        id,
-        `<style>${hiding === "stylesheet" ? ".desktop,.mobile{display:none}" : ""}@media screen and (${active}){table[class~="${variant}"]:not(.excluded){display:block!important}}@media screen and (${inactive}){.${other}{display:block!important}}</style><table class="${variant}"${style}><tr><td>PrivateVisibleCanary</td></tr></table><table class="${other}"${style}><tr><td>PrivateHiddenCanary</td></tr></table>`,
-        { text: "PrivateVisibleCanary" },
-      );
-    }
-  }
-  f.add(
-    "PrivatePrintAttackId",
-    '<style>.copy{display:none}@media print{.copy{display:block!important}}@media screen and (max-width:0){.copy{display:block!important}}</style><p class="copy">PrivateAttackCanary</p>',
-  );
-  f.db.close();
-  const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
-  expect(report.anomalies["empty-visible-text"].count).toBe(1);
-  for (const stage of Object.values(report.stages)) expect(stage.failures).toEqual([]);
-  for (const id of ids) {
+it.each([
+  ["desktop", "inline"],
+  ["desktop", "stylesheet"],
+  ["mobile", "inline"],
+  ["mobile", "stylesheet"],
+])(
+  "responsive Outlook %s/%s retains its visible branch in aggregate and explain reports",
+  async (variant, hiding) => {
+    const f = fixture();
+    f.db.prepare("UPDATE accounts SET provider='outlook'").run();
+
+    const id = `PrivateResponsiveId${variant}${hiding}`;
+    const active = variant === "desktop" ? "min-width:0px" : "max-width:8000px";
+    const inactive = "min-width:8001px";
+    const other = variant === "desktop" ? "mobile" : "desktop";
+    const style = hiding === "inline" ? ' style="display:none"' : "";
+    f.add(
+      id,
+      `<style>${hiding === "stylesheet" ? ".desktop,.mobile{display:none}" : ""}@media screen and (${active}){table[class~="${variant}"]:not(.excluded){display:block!important}}@media screen and (${inactive}){.${other}{display:block!important}}</style><table class="${variant}"${style}><tr><td>PrivateVisibleCanary</td></tr></table><table class="${other}"${style}><tr><td>PrivateHiddenCanary</td></tr></table>`,
+      { text: "PrivateVisibleCanary" },
+    );
+    f.add(
+      "PrivatePrintAttackId",
+      '<style>.copy{display:none}@media print{.copy{display:block!important}}@media screen and (max-width:0){.copy{display:block!important}}</style><p class="copy">PrivateAttackCanary</p>',
+    );
+    f.db.close();
+    const report = await corpusCheck({ db: f.file, runKeyFile: f.runKeyFile });
+    expect(report.anomalies["empty-visible-text"].count).toBe(1);
+    for (const stage of Object.values(report.stages)) expect(stage.failures).toEqual([]);
+
     const explained = await corpusCheck({
       db: f.file,
       explain: f.hash(id),
@@ -598,8 +691,8 @@ it("responsive Outlook variants retain the branch visible at both reference widt
     expect(explained.diagnostics?.original.removedByRule["display-none"].textNodes).toBe(1);
     for (const word of ["PrivateVisibleCanary", "PrivateHiddenCanary", "PrivateAttackCanary"])
       expect(JSON.stringify(explained)).not.toContain(word);
-  }
-});
+  },
+);
 
 it("persists explain keys only outside reports and rejects unsafe key files", async () => {
   const f = fixture();
@@ -646,53 +739,67 @@ it("persists explain keys only outside reports and rejects unsafe key files", as
   expect(existsSync(missing)).toBe(false);
 });
 
-it("CLI explain-ready writes only the key path to stderr and can explain its sample", async () => {
-  const f = fixture();
-  f.add("PrivateExplainReadyId", "<p>PrivateExplainReadyBody</p>");
-  f.db.close();
-  const cli = new URL("../../../../cli/dist/cli.js", import.meta.url);
-  const run = promisify(execFile);
-  const args = [
-    "--disable-warning=ExperimentalWarning",
-    cli.pathname,
-    "corpus-check",
-    "--db",
-    f.file,
-    "--json",
-  ];
-  const options = {
-    env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
-    timeout: 30_000,
-  };
-  const { stdout, stderr } = await run(process.execPath, [...args, "--explain-ready"], options);
-  const file = /^Run key file: (.+)\n$/.exec(stderr)?.[1];
-  expect(file).toBeDefined();
-  if (!file) throw new Error("Missing run key file path");
-  directories.push(join(file, ".."));
-  const key = readFileSync(file, "utf8");
-  const target = createHmac("sha256", Buffer.from(key, "hex")).update("1").digest("hex");
-  expect(stdout).toContain(target);
-  expect(stdout).not.toContain(file);
-  expect(stdout).not.toContain(key);
-  expect(stderr).not.toContain(key);
-  const explained = await run(
-    process.execPath,
-    [...args, "--explain", target, "--run-key", file],
-    options,
-  );
-  expect(JSON.parse(explained.stdout)).toMatchObject({
-    mode: "explain",
-    status: "complete",
-    sample: { hash: target },
+describe("CLI explain-ready", () => {
+  let f: ReturnType<typeof fixture>;
+  let args: string[];
+  let options: { env: NodeJS.ProcessEnv; timeout: number };
+  let stdout: string;
+  let stderr: string;
+  let file: string;
+  let key: string;
+  let target: string;
+  beforeAll(async () => {
+    f = fixture();
+    f.add("PrivateExplainReadyId", "<p>PrivateExplainReadyBody</p>");
+    f.db.close();
+    args = [
+      "--disable-warning=ExperimentalWarning",
+      cli.pathname,
+      "corpus-check",
+      "--db",
+      f.file,
+      "--json",
+    ];
+    options = {
+      env: { ...process.env, OPENMAIL_HOME: join(f.directory, "must-not-exist") },
+      timeout: 30_000,
+    };
+    ({ stdout, stderr } = await run(process.execPath, [...args, "--explain-ready"], options));
+    const path = /^Run key file: (.+)\n$/.exec(stderr)?.[1];
+    if (!path) throw new Error("Missing run key file path");
+    file = path;
+    directories.push(join(file, ".."));
+    key = readFileSync(file, "utf8");
+    target = createHmac("sha256", Buffer.from(key, "hex")).update("1").digest("hex");
   });
-  expect(explained.stdout).not.toContain(key);
-  expect(explained.stderr).toBe("");
-  expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
-  expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
+  it("writes only its private key path to stderr", () => {
+    expect(stdout).toContain(target);
+    expect(stdout).not.toContain(file);
+    expect(stdout).not.toContain(key);
+    expect(stderr).not.toContain(key);
+    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
+    expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
+  });
+  it("can explain a sample with the generated run key", async () => {
+    const explained = await run(
+      process.execPath,
+      [...args, "--explain", target, "--run-key", file],
+      options,
+    );
+    expect(JSON.parse(explained.stdout)).toMatchObject({
+      mode: "explain",
+      status: "complete",
+      sample: { hash: target },
+    });
+    expect(explained.stdout).not.toContain(key);
+    expect(explained.stderr).toBe("");
+    expect(existsSync(join(f.directory, "must-not-exist"))).toBe(false);
+    expect(readdirSync(f.directory)).toEqual(["fixture.db"]);
+  });
 });
 
 it("oversized IDs and bodies still have rowid samples that explain without truncation", async () => {
-  const f = fixture();
+  const f = sizeLimitFixture();
   const id = "PrivateLongIdCanary".repeat(300);
   f.add(id, "", { text: "a".repeat(CORPUS_LIMITS.maxMessageBytes + 1) });
   f.db.close();

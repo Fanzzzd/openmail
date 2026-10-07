@@ -5010,86 +5010,102 @@ it.effect("Graph header backfill honors inner Retry-After and rejects malformed 
   }),
 );
 
-it.effect(
-  "Graph repairs 3840 legacy rows in eight 500-row passes, including absent headers and existing Message-IDs",
-  () =>
-    Effect.gen(function* () {
-      const requests: string[] = [];
-      const Requests = Schema.Struct({
-        requests: Schema.Array(
-          Schema.Struct({ id: Schema.String, method: Schema.Literal("GET"), url: Schema.String }),
-        ),
-      });
-      const http = fakeHttp({
-        "POST /$batch": (_url, call) => {
-          const batch = Schema.decodeUnknownSync(Requests)(call.body).requests;
-          assert.isAtMost(batch.length, 20);
-          return {
-            json: {
-              responses: batch.map((entry) => {
-                const id = decodeURIComponent(
-                  new URL(entry.url, GRAPH).pathname.split("/").at(-1) ?? "",
-                );
-                requests.push(id);
-                const n = Number(id.slice(1));
-                return {
-                  id: entry.id,
-                  status: 200,
-                  body: {
-                    ...(n % 10 === 1 ? {} : { internetMessageId: `<${id}@example.test>` }),
-                    ...(n % 3 === 0
-                      ? {}
-                      : {
-                          internetMessageHeaders: [{ name: "List-ID", value: "list.example.test" }],
-                        }),
-                  },
-                };
-              }),
-            },
-          };
-        },
-      });
-      const store = yield* Store;
-      const owner = yield* store.upsertAccount("outlook", account.email);
-      yield* store.transaction(
-        Effect.gen(function* () {
-          for (let n = 0; n < 3840; n++)
-            yield* store.upsertMessage(owner.id, {
-              ...parseGraphMessage({ ...raw, id: `m${n}`, hasAttachments: false }, "INBOX", []),
-              date: n,
-              ...(n % 2 === 0 ? { rfcMessageId: `<m${n}@example.test>` } : {}),
-            });
-        }),
-      );
-      yield* run(http, (adapter) =>
-        Effect.gen(function* () {
-          for (let pass = 0; pass < 8; pass++) {
-            const before = requests.length;
+for (const total of [1000, 1041]) {
+  it.effect(
+    `Graph repairs ${total} legacy rows and finishes only after checking the final page`,
+    () =>
+      Effect.gen(function* () {
+        const requests: string[] = [];
+        const Requests = Schema.Struct({
+          requests: Schema.Array(
+            Schema.Struct({ id: Schema.String, method: Schema.Literal("GET"), url: Schema.String }),
+          ),
+        });
+        const http = fakeHttp({
+          "POST /$batch": (_url, call) => {
+            const batch = Schema.decodeUnknownSync(Requests)(call.body).requests;
+            assert.isAtMost(batch.length, 20);
+            return {
+              json: {
+                responses: batch.map((entry) => {
+                  const id = decodeURIComponent(
+                    new URL(entry.url, GRAPH).pathname.split("/").at(-1) ?? "",
+                  );
+                  requests.push(id);
+                  const n = Number(id.slice(1));
+                  return {
+                    id: entry.id,
+                    status: 200,
+                    body: {
+                      ...(n % 10 === 1 ? {} : { internetMessageId: `<${id}@example.test>` }),
+                      ...(n % 3 === 0
+                        ? {}
+                        : {
+                            internetMessageHeaders: [
+                              { name: "List-ID", value: "list.example.test" },
+                            ],
+                          }),
+                    },
+                  };
+                }),
+              },
+            };
+          },
+        });
+        const store = yield* Store;
+        const owner = yield* store.upsertAccount("outlook", account.email);
+        const cached = parseGraphMessage({ ...raw, hasAttachments: false }, "INBOX", []);
+        yield* store.transaction(
+          Effect.gen(function* () {
+            for (let n = 0; n < total; n++)
+              yield* store.upsertMessage(owner.id, {
+                ...cached,
+                providerId: `m${n}`,
+                date: n,
+                ...(n % 2 === 0 ? { rfcMessageId: `<m${n}@example.test>` } : {}),
+              });
+          }),
+        );
+        yield* run(http, (adapter) =>
+          Effect.gen(function* () {
+            const passes = Math.ceil(total / 500);
+            for (let pass = 0; pass < passes; pass++) {
+              const before = requests.length;
+              yield* backfillCachedHeaders(store, adapter, owner);
+              assert.strictEqual(requests.length - before, Math.min(500, total - pass * 500));
+              assert.strictEqual(
+                (yield* store.headerBackfillState(owner.id)).kind,
+                pass === passes - 1 && total % 500 !== 0 ? "done" : "running",
+              );
+            }
+            if (total % 500 === 0) {
+              const batches = http.calls.length;
+              yield* backfillCachedHeaders(store, adapter, owner);
+              assert.strictEqual(http.calls.length, batches);
+            }
+            assert.strictEqual((yield* store.headerBackfillState(owner.id)).kind, "done");
+            assert.strictEqual(new Set(requests).size, total);
             yield* backfillCachedHeaders(store, adapter, owner);
-            assert.strictEqual(requests.length - before, Math.min(500, 3840 - pass * 500));
-          }
-          assert.strictEqual((yield* store.headerBackfillState(owner.id)).kind, "done");
-          assert.strictEqual(new Set(requests).size, 3840);
-          yield* backfillCachedHeaders(store, adapter, owner);
-          assert.strictEqual(requests.length, 3840);
-          assert.strictEqual(http.calls.length, 192);
-          const noIdentity = yield* store.getMessage(`${owner.id}/m21`);
-          assert.isUndefined(noIdentity.rfcMessageId);
-          assert.deepStrictEqual(noIdentity.headers, []);
-          const empty = yield* store.getMessage(`${owner.id}/m3`);
-          assert.deepStrictEqual(empty.headers, []);
-          assert.strictEqual(empty.rfcMessageId, "<m3@example.test>");
-          assert.strictEqual(
-            (yield* store.getMessage(`${owner.id}/m0`)).rfcMessageId,
-            "<m0@example.test>",
-          );
-          assert.isTrue(empty.isUnread);
-          assert.isTrue(empty.isStarred);
-          assert.deepStrictEqual(empty.labels, ["INBOX", "UNREAD", "STARRED"]);
-        }),
-      );
-    }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
-);
+            assert.strictEqual(requests.length, total);
+            assert.strictEqual(http.calls.length, Math.ceil(total / 20));
+            const noIdentity = yield* store.getMessage(`${owner.id}/m21`);
+            assert.isUndefined(noIdentity.rfcMessageId);
+            assert.deepStrictEqual(noIdentity.headers, []);
+            const empty = yield* store.getMessage(`${owner.id}/m3`);
+            assert.deepStrictEqual(empty.headers, []);
+            assert.strictEqual(empty.rfcMessageId, "<m3@example.test>");
+            assert.strictEqual(
+              (yield* store.getMessage(`${owner.id}/m0`)).rfcMessageId,
+              "<m0@example.test>",
+            );
+            assert.isTrue(empty.isUnread);
+            assert.isTrue(empty.isStarred);
+            assert.deepStrictEqual(empty.labels, ["INBOX", "UNREAD", "STARRED"]);
+          }),
+        );
+      }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+  );
+}
 
 it.effect(
   "Graph backfill preserves inner Retry-After across scheduled/manual passes and read requests",

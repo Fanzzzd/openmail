@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
 import { Store } from "@openmail/core";
@@ -23,6 +23,7 @@ const CallResult = Schema.Struct({
   ),
   isError: Schema.optionalKey(Schema.Boolean),
 });
+const run = promisify(execFile);
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();
@@ -159,38 +160,52 @@ test("openmail mcp --allow-writes exposes only supported proposals and still che
   expect(called.content[0]?.text).toContain("enabled account with AI consent");
 }, 30_000);
 
-test("write-mode help and status distinguish MCP proposals from direct rule writes", async () => {
+test("write-mode help describes app-only permissions", async () => {
   const directory = await mkdtemp(join(tmpdir(), "openmail-cli-policy-test-"));
   cleanups.push(() => rm(directory, { recursive: true, force: true }));
-  const run = promisify(execFile);
-  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-  const help = await run(
-    process.execPath,
-    ["dist/cli.js", "agents", "write-mode", "--help"],
-    options,
-  );
+  const help = await run(process.execPath, ["dist/cli.js", "agents", "write-mode", "--help"], {
+    env: { ...process.env, OPENMAIL_HOME: directory },
+  });
   expect(help.stdout).toContain("Show agent write permissions");
   expect(help.stdout).not.toMatch(/<mode>|\[mode\]/);
-  const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
+});
+
+test("write-mode status distinguishes MCP proposals from direct rule writes", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-policy-test-"));
+  cleanups.push(() => rm(directory, { recursive: true, force: true }));
+  const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], {
+    env: { ...process.env, OPENMAIL_HOME: directory },
+  });
   expect(status.stdout).toContain("The mode can only be changed in the app");
   expect(status.stdout).toContain("Sending requires confirmation in the app");
 });
 
-test("CLI write-mode cannot enable writes", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-app-policy-"));
-  cleanups.push(() => rm(directory, { recursive: true, force: true }));
-  const run = promisify(execFile);
-  const options = { env: { ...process.env, OPENMAIL_HOME: directory } };
-  for (const mode of ["allow", "propose"]) {
-    await expect(
-      run(process.execPath, ["dist/cli.js", "agents", "write-mode", mode], options),
-    ).rejects.toMatchObject({
+describe.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
+  let directory: string;
+  let options: { env: NodeJS.ProcessEnv };
+  let failure: unknown;
+  beforeAll(async () => {
+    directory = await mkdtemp(join(tmpdir(), "openmail-cli-app-policy-"));
+    options = { env: { ...process.env, OPENMAIL_HOME: directory } };
+    try {
+      await run(process.execPath, ["dist/cli.js", "agents", "write-mode", mode], options);
+    } catch (error) {
+      failure = error;
+    }
+  });
+  afterAll(() => rm(directory, { recursive: true, force: true }));
+
+  test("rejects enabling writes", () => {
+    expect(failure).toMatchObject({
       code: 1,
       stderr: expect.stringContaining("Agent write mode can only be changed in the app"),
     });
+  });
+
+  test("keeps the persisted write mode off after rejection", async () => {
     const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
     expect(status.stdout).toContain("Agent write mode: off.");
-  }
+  });
 });
 
 async function seedAttachmentMail(directory: string) {
@@ -271,7 +286,6 @@ test("MCP and CLI search expose attachment snippets only inside the untrusted en
       highlights: [{ start: 6, end: 12 }],
     },
   ]);
-  const run = promisify(execFile);
   const { stdout } = await run(process.execPath, ["dist/cli.js", "search", "amount", "--json"], {
     env: { ...process.env, OPENMAIL_HOME: directory },
   });

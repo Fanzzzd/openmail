@@ -16,12 +16,19 @@ function opener(file: string, hold: boolean) {
       file,
       hold ? "hold" : "open",
     ],
-    { stdio: ["ignore", "pipe", "pipe"] },
+    { stdio: ["pipe", "pipe", "pipe"] },
   );
   let stdout = "";
   let stderr = "";
+  const waiters = new Map<string, { resolve: () => void; reject: (error: Error) => void }>();
   child.stdout.on("data", (chunk: Buffer) => {
     stdout += chunk.toString();
+    for (const [message, waiter] of waiters) {
+      if (stdout.includes(message)) {
+        waiters.delete(message);
+        waiter.resolve();
+      }
+    }
   });
   child.stderr.on("data", (chunk: Buffer) => {
     stderr += chunk.toString();
@@ -29,14 +36,27 @@ function opener(file: string, hold: boolean) {
   const finished = new Promise<void>((resolve, reject) => {
     child.once("error", reject);
     child.once("close", (code) => {
+      const error = new Error(
+        `Database opener exited ${code} before its expected output: ${stderr}`,
+      );
+      for (const waiter of waiters.values()) waiter.reject(error);
+      waiters.clear();
       if (code === 0) resolve();
-      else reject(new Error(`Database opener failed: ${stderr}`));
+      else reject(error);
     });
   });
   void finished.catch(() => {
     /* The caller observes failures when awaiting finished. */
   });
-  return { child, finished, output: () => stdout };
+  const waitFor = (message: string) => {
+    if (stdout.includes(message)) return Promise.resolve();
+    if (child.exitCode !== null || child.signalCode !== null)
+      return Promise.reject(new Error(`Database opener exited before ${message}: ${stderr}`));
+    return new Promise<void>((resolve, reject) => {
+      waiters.set(message, { resolve, reject });
+    });
+  };
+  return { child, finished, waitFor, output: () => stdout };
 }
 
 it("concurrent processes wait beyond five seconds for an old database migration", async () => {
@@ -54,9 +74,11 @@ it("concurrent processes wait beyond five seconds for an old database migration"
     }
     const first = opener(file, true);
     children.push(first);
-    await expect.poll(first.output, { timeout: 5000 }).toContain("migration-lock-held");
+    await first.waitFor("migration-lock-held");
     const second = opener(file, false);
     children.push(second);
+    await second.waitFor("Waiting for another process to finish database migrations");
+    first.child.stdin.end("release\n");
     await Promise.all(children.map((process) => process.finished));
     expect(first.output()).toContain(`ready:${MIGRATIONS.length}`);
     expect(second.output()).toContain("Waiting for another process to finish database migrations");

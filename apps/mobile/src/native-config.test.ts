@@ -37,11 +37,14 @@ const resolved = Schema.Struct({
   }),
 });
 const root = fileURLToPath(new URL("../", import.meta.url));
+// Native permission inspection needs no network or CLI telemetry initialization.
+const nativeEnv = { ...process.env, EXPO_OFFLINE: "1", EXPO_NO_TELEMETRY: "1" };
 it("resolved native configuration allows local notifications and fetch, without camera, microphone, boot or push capability", () => {
   const config = Schema.decodeUnknownSync(Schema.fromJsonString(resolved))(
     execFileSync(`${root}node_modules/.bin/expo`, ["config", "--type", "introspect", "--json"], {
       cwd: root,
       encoding: "utf8",
+      env: nativeEnv,
     }),
   )._internal.modResults;
   for (const name of ["CAMERA", "RECORD_AUDIO", "RECEIVE_BOOT_COMPLETED"])
@@ -103,7 +106,7 @@ it("autolinks the synchronous backup-exclusion module with local notifications a
     execFileSync(
       `${root}node_modules/.bin/expo-modules-autolinking`,
       ["resolve", "--platform", "apple", "--json"],
-      { cwd: root, encoding: "utf8" },
+      { cwd: root, encoding: "utf8", env: nativeEnv },
     ),
   ).modules;
   expect(

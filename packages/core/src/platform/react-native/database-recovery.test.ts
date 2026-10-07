@@ -15,14 +15,15 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { NodeFileSystem } from "@effect/platform-node";
 import { Clock, Effect, FileSystem, Layer, ManagedRuntime, PlatformError, Schema } from "effect";
-import { SqlClient } from "effect/sql";
+import { expectFileBytes } from "../../../test-support/file-bytes.js";
+import { migratedDatabaseBytes } from "../../../test-support/migrated-database.js";
+import { opSqliteShim } from "../../../test-support/op-sqlite.js";
 import { AppPaths } from "../paths.js";
 import { PlatformCrypto, sha256Hex, hmacSha256Hex } from "../crypto.js";
-import { opSqliteShim } from "../../../test-support/op-sqlite.js";
 import { TestMailbox, fakeServer, incoming } from "../node/testing.js";
 import { Mailbox } from "../../mailbox.js";
 import { Store } from "../../services.js";
-import { opSqliteLayer, type OpSqliteDatabase } from "./sqlite.js";
+import type { OpSqliteDatabase } from "./sqlite.js";
 import {
   MobileDatabaseRecovery,
   mobileDatabaseRecoveryLayer,
@@ -226,19 +227,21 @@ async function fixture() {
   };
   const runtime = createRuntime();
   const recovery = await runtime.runPromise(MobileDatabaseRecovery);
-  const seedRuntime = ManagedRuntime.make(
-    opSqliteLayer(() => openDatabase({ name: "mail.db", location: root, readOnly: false })),
-  );
-  await seedRuntime.runPromise(
-    Effect.gen(function* () {
-      const sql = yield* SqlClient.SqlClient;
-      yield* sql`INSERT INTO profiles (id,name,icon,color,position) VALUES ('p','Personal','mail','blue',0)`;
-      yield* sql`INSERT INTO accounts (id,provider,email,created_at,profile_id,sync_cursor,last_synced_at) VALUES ('a','gmail','me@example.test',1,'p','stale',1)`;
-      yield* sql`INSERT INTO drafts (id,account_id,message_json,updated_at) VALUES ('draft','a','{"subject":"offline draft"}',1)`;
-      yield* sql`INSERT INTO prefs (key,value_json) VALUES ('language','"zh-CN"')`;
-    }),
-  );
-  await seedRuntime.dispose();
+  writeFileSync(join(root, "mail.db"), migratedDatabaseBytes());
+  const seed = new DatabaseSync(join(root, "mail.db"));
+  try {
+    seed.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF");
+    seed.exec(`
+      BEGIN;
+      INSERT INTO profiles (id,name,icon,color,position) VALUES ('p','Personal','mail','blue',0);
+      INSERT INTO accounts (id,provider,email,created_at,profile_id,sync_cursor,last_synced_at) VALUES ('a','gmail','me@example.test',1,'p','stale',1);
+      INSERT INTO drafts (id,account_id,message_json,updated_at) VALUES ('draft','a','{"subject":"offline draft"}',1);
+      INSERT INTO prefs (key,value_json) VALUES ('language','"zh-CN"');
+      COMMIT;
+    `);
+  } finally {
+    seed.close();
+  }
   return {
     root,
     failures,
@@ -336,7 +339,7 @@ describe("mobile database recovery", () => {
     const report = await f.run(f.recovery.rebuild);
     expect(report.copied).toBe(4);
     expect(report.skipped).toBe(0);
-    expect(readFileSync(join(f.root, report.backup))).toEqual(before);
+    expectFileBytes(join(f.root, report.backup), before);
     expect(await f.run(f.recovery.inspect({ force: true }))).toEqual({ kind: "recovered", report });
     const native = await f.run(f.recovery.open());
     expect(
@@ -410,7 +413,7 @@ describe("mobile database recovery", () => {
       writeFileSync(join(f.root, `mail.db${suffix}`), suffix);
     f.failures.copy = true;
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
-    expect(readFileSync(join(f.root, "mail.db"))).toEqual(before);
+    expectFileBytes(join(f.root, "mail.db"), before);
     f.failures.copy = false;
     const report = await f.run(f.recovery.rebuild);
     for (const suffix of ["-wal", "-shm", "-journal"]) {
@@ -427,7 +430,7 @@ describe("mobile database recovery", () => {
     const report = await f.run(f.recovery.rebuild);
     expect(report.copied).toBe(0);
     expect(report.skipped).toBeGreaterThan(0);
-    expect(new Uint8Array(readFileSync(join(f.root, report.backup)))).toEqual(original);
+    expectFileBytes(join(f.root, report.backup), original);
     const db = await f.run(f.recovery.open());
     expect((await db.execute("SELECT count(*) AS n FROM accounts")).rows).toEqual([{ n: 0 }]);
     db.close();
@@ -488,7 +491,7 @@ describe("mobile database recovery", () => {
       JSON.stringify({ backup: "../outside", fresh: "mail.db.recovery-id", copied: 0, skipped: 0 }),
     );
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
-    expect(readFileSync(join(f.root, "mail.db"))).toEqual(before);
+    expectFileBytes(join(f.root, "mail.db"), before);
   });
   it("aborts destination IO failures and closes source connections when creating the new DB fails", async () => {
     const f = await fixture();
@@ -497,21 +500,20 @@ describe("mobile database recovery", () => {
     f.failures.targetOpen = true;
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
     expect(f.handles.size).toBe(0);
-    expect(readFileSync(join(f.root, "mail.db"))).toEqual(original);
+    expectFileBytes(join(f.root, "mail.db"), original);
     f.failures.targetOpen = false;
     f.failures.targetFull = true;
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
     expect(f.handles.size).toBe(0);
-    expect(readFileSync(join(f.root, "mail.db"))).toEqual(original);
+    expectFileBytes(join(f.root, "mail.db"), original);
     expect(existsSync(join(f.root, "mail.db.recovery-state.json"))).toBe(false);
-    expect(
-      readFileSync(
-        join(
-          f.root,
-          readdirSync(f.root).find((name) => /^mail\.db\.corrupt-[\w-]+$/.test(name)) ?? "missing",
-        ),
+    expectFileBytes(
+      join(
+        f.root,
+        readdirSync(f.root).find((name) => /^mail\.db\.corrupt-[\w-]+$/.test(name)) ?? "missing",
       ),
-    ).toEqual(original);
+      original,
+    );
   });
 
   it("reads later rows independently when a corrupt page stops the ordered scan", async () => {
@@ -544,7 +546,7 @@ describe("mobile database recovery", () => {
       expect(readdirSync(f.root).filter((name) => name.startsWith("mail.db.recovery-"))).toEqual(
         [],
       );
-      expect(readFileSync(join(f.root, "mail.db"))).toEqual(original);
+      expectFileBytes(join(f.root, "mail.db"), original);
     }
     f.failures.targetFull = false;
     await f.run(f.recovery.rebuild);
@@ -566,7 +568,7 @@ describe("mobile database recovery", () => {
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
     expect(existsSync(join(f.root, "mail.db.recovery-state.json"))).toBe(false);
     expect(existsSync(join(f.root, "mail.db.recovery-state.json.tmp"))).toBe(false);
-    expect(readFileSync(join(f.root, "mail.db"))).toEqual(original);
+    expectFileBytes(join(f.root, "mail.db"), original);
     expect(readdirSync(f.root).filter((name) => name.startsWith("mail.db.recovery-"))).toEqual([]);
     f.failures.markerWrite = false;
     const report = await f.run(f.recovery.rebuild);
@@ -630,7 +632,7 @@ describe("mobile database recovery", () => {
     for (const suffix of ["", "-wal", "-shm", "-journal"])
       expect(existsSync(join(f.root, `mail.db${suffix}`))).toBe(false);
     const marker = readFileSync(join(f.root, "mail.db.recovery-state.json"));
-    expect(readFileSync(prepared.freshPath)).toEqual(prepared.bytes);
+    expectFileBytes(prepared.freshPath, prepared.bytes);
     await f.runtime.dispose();
     f.failures.renameGeneric = false;
     const cold = f.createRuntime();
@@ -638,7 +640,7 @@ describe("mobile database recovery", () => {
     expect(await cold.runPromise(recovery.inspect())).toEqual({ kind: "interrupted" });
     const blocked = await cold.runPromise(recovery.open().pipe(Effect.result));
     expect(blocked._tag === "Failure" && blocked.failure.reason).toBe("interrupted");
-    expect(readFileSync(join(f.root, "mail.db.recovery-state.json"))).toEqual(marker);
+    expectFileBytes(join(f.root, "mail.db.recovery-state.json"), marker);
     const report = await cold.runPromise(recovery.rebuild);
     expect(report.copied).toBe(4);
     expect(f.stats.copies).toBe(1);
@@ -660,11 +662,11 @@ describe("mobile database recovery", () => {
         (name) => /^mail\.db\.corrupt-[\w-]+$/.test(name) && !/-wal$|-shm$|-journal$/.test(name),
       );
       expect(copies).toHaveLength(0);
-      expect(readFileSync(join(f.root, "mail.db"))).toEqual(original);
+      expectFileBytes(join(f.root, "mail.db"), original);
     }
     f.failures.partialCopy = false;
     const report = await f.run(f.recovery.rebuild);
-    expect(readFileSync(join(f.root, report.backup))).toEqual(original);
+    expectFileBytes(join(f.root, report.backup), original);
     expect(
       readdirSync(f.root).filter(
         (name) => /^mail\.db\.corrupt-[\w-]+$/.test(name) && !/-wal$|-shm$|-journal$/.test(name),
@@ -718,7 +720,7 @@ describe("mobile database recovery", () => {
       f.failures.rename = false;
       const report = await f.run(f.recovery.rebuild);
       expect(report.backup).toBe(marker.backup);
-      expect(readFileSync(join(f.root, report.backup))).toEqual(original);
+      expectFileBytes(join(f.root, report.backup), original);
       expect(existsSync(join(f.root, older))).toBe(false);
       await f.run(f.recovery.acknowledge);
       // A cleanup failure may leave the older snapshot next to the metadata-less current backup.
@@ -730,7 +732,7 @@ describe("mobile database recovery", () => {
       f.failures.corrupt = true;
       f.failures.partialCopy = true;
       expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
-      expect(readFileSync(join(f.root, report.backup))).toEqual(original);
+      expectFileBytes(join(f.root, report.backup), original);
       f.failures.corrupt = false;
       f.failures.partialCopy = false;
       const recovered = await f.run(f.recovery.open());
@@ -757,8 +759,8 @@ describe("mobile database recovery", () => {
           (name) => /^mail\.db\.corrupt-[\w-]+$/.test(name) && !/-wal$|-shm$|-journal$/.test(name),
         ),
       ).toEqual([backup]);
-      expect(readFileSync(join(f.root, backup)).equals(live)).toBe(true);
-      expect(readFileSync(join(f.root, "mail.db")).equals(live)).toBe(true);
+      expectFileBytes(join(f.root, backup), live);
+      expectFileBytes(join(f.root, "mail.db"), live);
     }
   });
 
@@ -821,11 +823,11 @@ describe("mobile database recovery", () => {
       else f.failures.replacementQuery = true;
       const result = await f.run(f.recovery.inspect({ force: true }).pipe(Effect.result));
       expect(result._tag === "Failure" && result.failure.reason).toBe("unavailable");
-      expect(readFileSync(markerFile)).toEqual(marker);
-      expect(readFileSync(prepared.freshPath)).toEqual(prepared.bytes);
+      expectFileBytes(markerFile, marker);
+      expectFileBytes(prepared.freshPath, prepared.bytes);
       expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
-      expect(readFileSync(markerFile)).toEqual(marker);
-      expect(readFileSync(prepared.freshPath)).toEqual(prepared.bytes);
+      expectFileBytes(markerFile, marker);
+      expectFileBytes(prepared.freshPath, prepared.bytes);
       f.failures.replacementOpen = false;
       f.failures.replacementQuery = false;
       f.failures.rename = false;
@@ -897,7 +899,7 @@ describe("mobile database recovery", () => {
     f.time.now = 3000;
     f.failures.targetOpen = true;
     expect((await f.run(f.recovery.rebuild.pipe(Effect.result)))._tag).toBe("Failure");
-    expect(readFileSync(join(f.root, newest))).toEqual(current);
+    expectFileBytes(join(f.root, newest), current);
     expect(existsSync(join(f.root, old.backup))).toBe(false);
     expect(existsSync(join(f.root, earlier))).toBe(false);
     expect(f.stats.copies).toBe(copies);
