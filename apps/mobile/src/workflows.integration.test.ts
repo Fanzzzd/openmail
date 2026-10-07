@@ -2,26 +2,20 @@ import { expect, it } from "vitest";
 import { Effect, ManagedRuntime } from "effect";
 import { Mailbox } from "@openmail/core/portable";
 import { TestMailbox, fakeServer } from "@openmail/core/testing/node";
-import { composeMessage, modifyThreads, searchQuery } from "./workflows";
+import { message } from "../../../packages/core/test-support/semantic-fixtures";
+import { composeMessage, searchQuery } from "./workflows";
 for (const provider of ["gmail", "outlook"] as const) {
   it(`${provider}: mobile view models enter the shared Mailbox command and search paths`, async () => {
     const server = fakeServer("me@example.test", [
-      {
-        providerId: "m",
-        threadId: "t",
+      message({
         subject: "Mobile",
         from: { name: "Alice", address: "alice@example.test" },
         to: [],
-        cc: [],
         date: Date.now(),
         snippet: "budget",
         bodyText: "budget",
-        bodyHtml: "",
         labels: ["INBOX", "UNREAD"],
-        attachments: [],
-        isUnread: true,
-        isStarred: false,
-      },
+      }),
     ]);
     const runtime = ManagedRuntime.make(
       TestMailbox(
@@ -39,11 +33,10 @@ for (const provider of ["gmail", "outlook"] as const) {
             searchQuery(account.id, "from:alice@example.test is:unread budget"),
           ))[0];
           if (!row) throw new Error("missing message");
-          const result = yield* modifyThreads(mailbox, [row.id], { kind: "read", value: true });
+          const result = yield* mailbox.modifyWithUndo([row.id], { kind: "read", value: true });
           expect((yield* mailbox.threads({ accountIds: [account.id] }))[0]?.isUnread).toBe(false);
           yield* mailbox.undoBatch(result.undoId);
-          const moved = yield* modifyThreads(
-            mailbox,
+          const moved = yield* mailbox.modifyWithUndo(
             [row.id],
             provider === "gmail"
               ? { kind: "label", labelId: "Label_project", value: true }

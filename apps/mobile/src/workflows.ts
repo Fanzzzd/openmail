@@ -12,7 +12,6 @@ import {
   type Prefs,
   type SwipeAction,
   type MailOp,
-  type Mailbox,
   type Label,
   type Provider,
 } from "@openmail/core/portable";
@@ -76,8 +75,6 @@ export function parseRecipients(value: string) {
 export type Format = "plain" | "bold" | "italic" | "list";
 export const searchQuery = (accountId: string, search: string) =>
   parseSearchQuery({ accountIds: [accountId], search, limit: 100 });
-export const modifyThreads = (mailbox: Mailbox["Service"], ids: readonly string[], op: MailOp) =>
-  mailbox.modifyWithUndo(ids, op);
 /** Serial autosaves cannot finish in reverse order; send waits for the last edit. */
 export function draftWriter(save: (message: OutgoingMessage) => Promise<unknown>) {
   let pending = Promise.resolve();

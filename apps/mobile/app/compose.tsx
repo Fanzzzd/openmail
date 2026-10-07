@@ -598,29 +598,17 @@ export default function Compose() {
             <View style={styles.message}>
               <Text style={styles.detail}>{i18n._({ id: "Preview", message: "Preview" })}</Text>
               <Text style={styles.body}>
-                {list
-                  ? richTextSegments(draft.message.text, marks).map((segment) => (
-                      <Text
-                        key={segment.start}
-                        style={{
-                          fontWeight: segment.bold ? "700" : "400",
-                          fontStyle: segment.italic ? "italic" : "normal",
-                        }}
-                      >
-                        {segment.text.replaceAll("\n", "\n• ")}
-                      </Text>
-                    ))
-                  : richTextSegments(draft.message.text, marks).map((segment) => (
-                      <Text
-                        key={segment.start}
-                        style={{
-                          fontWeight: segment.bold ? "700" : "400",
-                          fontStyle: segment.italic ? "italic" : "normal",
-                        }}
-                      >
-                        {segment.text}
-                      </Text>
-                    ))}
+                {richTextSegments(draft.message.text, marks).map((segment) => (
+                  <Text
+                    key={segment.start}
+                    style={{
+                      fontWeight: segment.bold ? "700" : "400",
+                      fontStyle: segment.italic ? "italic" : "normal",
+                    }}
+                  >
+                    {list ? segment.text.replaceAll("\n", "\n• ") : segment.text}
+                  </Text>
+                ))}
               </Text>
             </View>
           )}

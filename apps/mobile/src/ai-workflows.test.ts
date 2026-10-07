@@ -5,12 +5,12 @@ import {
   FakeModelLayer,
   type ModelRequest,
   type ModelOutput,
-  type IncomingMessage,
   messageModelText,
   AI_MODELS,
   ProviderError,
 } from "@openmail/core/portable";
 import { TestMailbox, fakeServer } from "@openmail/core/testing/node";
+import { message } from "../../../packages/core/test-support/semantic-fixtures";
 import {
   aiResponse,
   signedMobileMessage,
@@ -20,13 +20,10 @@ import {
 import { composeMessage } from "./workflows";
 import { pageQuery } from "./paging";
 
-const incoming: IncomingMessage = {
-  providerId: "m",
-  threadId: "t",
+const incoming = message({
   subject: "Mobile AI",
   from: { name: "Alice", address: "alice@example.test" },
   to: [],
-  cc: [],
   date: Date.now(),
   snippet: "Visible decision",
   bodyText: "Visible decision HIDDEN_SECRET",
@@ -34,9 +31,7 @@ const incoming: IncomingMessage = {
     '<p>Visible decision</p><span style="display:none">HIDDEN_SECRET</span><img src="https://private.test/image">',
   labels: ["INBOX", "UNREAD"],
   attachments: [{ filename: "PRIVATE_ATTACHMENT.pdf", mimeType: "application/pdf", size: 12 }],
-  isUnread: true,
-  isStarred: false,
-};
+});
 const finish = (text: string) =>
   Stream.fromIterable<ModelOutput>([
     { _tag: "Delta", text },

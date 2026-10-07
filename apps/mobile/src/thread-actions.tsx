@@ -7,7 +7,7 @@ import { Effect } from "effect";
 import { useMailbox, useMailboxQuery } from "./mailbox";
 import { Button, Sheet } from "./controls";
 import { actionLabels } from "./labels";
-import { modifyThreads, labelDestinations } from "./workflows";
+import { labelDestinations } from "./workflows";
 import { batchNotice } from "./undo-state";
 import { useUndo } from "./undo";
 import { styles } from "./styles";
@@ -30,7 +30,7 @@ export function useThreadActions() {
         Effect.flatMap(Mailbox, (mailbox) =>
           op.kind === "snooze"
             ? mailbox.snoozeWithUndo(ids, op.due)
-            : modifyThreads(mailbox, ids, op),
+            : mailbox.modifyWithUndo(ids, op),
         ),
       );
       notice(

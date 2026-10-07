@@ -69,8 +69,9 @@ const jsonFlag = Flag.Boolean("json").pipe(
   Flag.withDefault(false),
 );
 
-const print = <A>(data: A, asJson: boolean, human: (data: A) => string) =>
-  Console.log(asJson ? JSON.stringify(data, null, 2) : human(data));
+const jsonText = (data: unknown) => JSON.stringify(data, null, 2);
+const print = <A>(data: A, asJson: boolean, human: (data: A) => string = jsonText) =>
+  Console.log(asJson ? jsonText(data) : human(data));
 
 /**
  * The CLI's browser: prints the consent URL on stderr, in case no browser can
@@ -416,7 +417,7 @@ const list = Command.make(
       limit: o.limit,
       token_budget: o.budget,
     });
-    return yield* print(result, o.json, (value) => JSON.stringify(value, null, 2));
+    return yield* print(result, o.json);
   }),
 ).pipe(Command.withDescription("List conversations in a mailbox, newest first"));
 
@@ -443,7 +444,7 @@ const search = Command.make(
       token_budget: o.budget,
       server: o.server,
     });
-    yield* print(result, o.json, (value) => JSON.stringify(value, null, 2));
+    yield* print(result, o.json);
   }),
 ).pipe(Command.withDescription(MailToolkit.tools.search.description ?? "Search mail"));
 
@@ -590,7 +591,7 @@ function runToolCommand(
       return yield* fail("Proposal tools require --allow-writes and app AI write permission.");
     const parsed = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(Schema.Unknown))(input);
     const result = yield* invokeTool(name, parsed);
-    return yield* print(result, json, (value) => JSON.stringify(value, null, 2));
+    return yield* print(result, json);
   });
 }
 const toolInput = Flag.String("input-json").pipe(
@@ -686,7 +687,7 @@ const corpus = Command.make(
           corpusCheck({ db, explain: explainHash.value, runKeyFile: runKey.value, signal }),
         catch: corpusFailure,
       });
-      return yield* print(report, json, (value) => JSON.stringify(value, null, 2));
+      return yield* print(report, json);
     }
     const runKeyFile =
       Option.getOrUndefined(runKey) ??

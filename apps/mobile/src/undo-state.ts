@@ -1,4 +1,4 @@
-export type Notice = { text: string; until: number } & (
+type Notice = { text: string; until: number } & (
   | { kind: "info" }
   | { kind: "undo"; undo: () => Promise<unknown> }
 );

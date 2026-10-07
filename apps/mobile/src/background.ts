@@ -14,12 +14,12 @@ import { AppState, Platform } from "react-native";
 import { deviceOnline, isForeground } from "./device";
 import { mailNotification, shouldNotify, type VisibleMailbox } from "./background-policy";
 
-export type BackgroundRuntime = Awaited<ReturnType<typeof createMobileRuntime>>;
-export const createMobileRuntime = async () => {
+type BackgroundRuntime = Awaited<ReturnType<typeof createMobileRuntime>>;
+const createMobileRuntime = async () => {
   const { mobileMailboxLayer } = await import("./platform");
   return ManagedRuntime.make(mobileMailboxLayer());
 };
-export const INBOX_CHANNEL = "openmail-inbox-private-v2";
+const INBOX_CHANNEL = "openmail-inbox-private-v2";
 export const REFRESH_TASK = "openmail-background-refresh";
 let liveRuntime: BackgroundRuntime | null = null;
 let visible: VisibleMailbox = null;
