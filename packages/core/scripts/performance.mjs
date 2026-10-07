@@ -15,97 +15,102 @@ import { SqliteClient } from "@effect/sql-sqlite-node";
 import { Store } from "../dist/services.js";
 
 const historical = process.env.OPENMAIL_PERF_BASELINE_REF;
-let moduleRoot = new URL("../dist/", import.meta.url);
+let directory;
 let historicalDirectory;
-if (historical) {
-  // Share dependencies; read historical SQL modules without changing checkout.
-  const dist = fileURLToPath(moduleRoot);
-  historicalDirectory = mkdtempSync(join(dist, "performance-before-"));
-  for (const entry of readdirSync(dist, { withFileTypes: true }))
-    if (entry.isFile()) symlinkSync(join(dist, entry.name), join(historicalDirectory, entry.name));
-  const { default: ts } = await import("typescript");
-  for (const name of ["db", "store", "store-compose", "store-contacts", "store-invite-status"]) {
-    const source = execFileSync("git", ["show", `${historical}:packages/core/src/${name}.ts`], {
-      encoding: "utf8",
-    });
-    const output = join(historicalDirectory, `${name}.js`);
-    rmSync(output);
-    writeFileSync(
-      output,
-      ts.transpileModule(source, {
-        compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2023 },
-      }).outputText,
-    );
-  }
-  moduleRoot = new URL(`../dist/${historicalDirectory.split("/").at(-1)}/`, import.meta.url);
-}
-const { MIGRATIONS, migrate } = await import(new URL("db.js", moduleRoot));
-const { StoreLive } = await import(new URL("store.js", moduleRoot));
-
-const directory = mkdtempSync(join(tmpdir(), "openmail-perf-"));
-const file = join(directory, "mail.db");
-const report = {
-  node: process.version,
-  baselineRef: historical ?? null,
-  messages: 150000,
-  accounts: 3,
-  results: [],
-};
-const now = Date.parse("2026-10-03T12:00:00Z");
-const dateOf = (i) => now - Math.floor(i / 3) * 600000;
-const message = (i) => ({
-  providerId: `m${i}`,
-  threadId: `t${Math.floor(i / 9)}`,
-  subject: `Project ${i % 101} ${i % 1000 === 0 ? "预算批准 nebula" : "weekly report"}`,
-  from: { address: `person${i % 3000}@example.com`, name: `Person ${i % 3000}` },
-  to: [{ address: `recipient${i % 1000}@example.com`, name: `Recipient ${i % 1000}` }],
-  cc: [],
-  date: dateOf(i),
-  snippet: "Weekly project update",
-  bodyText: `Project update with delivery schedule ${"The next review is scheduled for Monday. ".repeat(12)} ${i % 1000 === 0 ? "预算批准 nebula" : ""}`,
-  bodyHtml: `<p>${"Project update. ".repeat(25)}</p>`,
-  labels: [
-    i % 10 === 0 ? "SENT" : i % 31 === 0 ? "TRASH" : "INBOX",
-    `Label_${i % 20}`,
-    ...(i % 5 === 0 ? ["UNREAD"] : []),
-    ...(i % 17 === 0 ? ["STARRED"] : []),
-  ],
-  attachments:
-    i % 10 === 0
-      ? [{ id: `a${i}`, filename: "report.pdf", mimeType: "application/pdf", size: 32768 }]
-      : [],
-  isUnread: i % 5 === 0,
-  isStarred: i % 17 === 0,
-  rfcMessageId: `<m${i}@example.com>`,
-  size: 2048,
-});
-
-// Trace the actual SQL emitted by Store, including statements from cached prepares.
-// Calls below supply the owning connection explicitly and restore this hook.
 // oxlint-disable-next-line typescript/unbound-method
 const originalPrepare = DatabaseSync.prototype.prepare;
-let capture;
-DatabaseSync.prototype.prepare = function (sql) {
-  const statement = originalPrepare.call(this, sql);
-  for (const method of ["all", "get", "run"]) {
-    const original = statement[method];
-    statement[method] = (...params) => {
-      if (capture && !capture.has(sql)) {
-        const plan = originalPrepare.call(this, `EXPLAIN QUERY PLAN ${sql}`).all(...params);
-        capture.set(sql, { sql, plan: plan.map((row) => row.detail) });
-      }
-      return original.apply(statement, params);
-    };
-  }
-  return statement;
-};
-
 try {
+  let moduleRoot = new URL("../dist/", import.meta.url);
+  if (historical) {
+    // Share dependencies; read historical SQL modules without changing checkout.
+    const dist = fileURLToPath(moduleRoot);
+    historicalDirectory = mkdtempSync(join(dist, "performance-before-"));
+    for (const entry of readdirSync(dist, { withFileTypes: true }))
+      if (entry.isFile())
+        symlinkSync(join(dist, entry.name), join(historicalDirectory, entry.name));
+    const { default: ts } = await import("typescript");
+    for (const name of ["db", "store", "store-compose", "store-contacts", "store-invite-status"]) {
+      const source = execFileSync("git", ["show", `${historical}:packages/core/src/${name}.ts`], {
+        encoding: "utf8",
+      });
+      const output = join(historicalDirectory, `${name}.js`);
+      rmSync(output);
+      writeFileSync(
+        output,
+        ts.transpileModule(source, {
+          compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2023 },
+        }).outputText,
+      );
+    }
+    moduleRoot = new URL(`../dist/${historicalDirectory.split("/").at(-1)}/`, import.meta.url);
+  }
+  const { MIGRATIONS, migrate } = await import(new URL("db.js", moduleRoot));
+  const { StoreLive } = await import(new URL("store.js", moduleRoot));
+
+  directory = mkdtempSync(join(tmpdir(), "openmail-perf-"));
+  const file = join(directory, "mail.db");
+  const report = {
+    node: process.version,
+    baselineRef: historical ?? null,
+    messages: 150000,
+    accounts: 3,
+    results: [],
+  };
+  const now = Date.parse("2026-10-03T12:00:00Z");
+  const dateOf = (i) => now - Math.floor(i / 3) * 600000;
+  const message = (i) => ({
+    providerId: `m${i}`,
+    threadId: `t${Math.floor(i / 9)}`,
+    subject: `Project ${i % 101} ${i % 1000 === 0 ? "预算批准 nebula" : "weekly report"}`,
+    from: { address: `person${i % 3000}@example.com`, name: `Person ${i % 3000}` },
+    to: [{ address: `recipient${i % 1000}@example.com`, name: `Recipient ${i % 1000}` }],
+    cc: [],
+    date: dateOf(i),
+    snippet: "Weekly project update",
+    bodyText: `Project update with delivery schedule ${"The next review is scheduled for Monday. ".repeat(12)} ${i % 1000 === 0 ? "预算批准 nebula" : ""}`,
+    bodyHtml: `<p>${"Project update. ".repeat(25)}</p>`,
+    labels: [
+      i % 10 === 0 ? "SENT" : i % 31 === 0 ? "TRASH" : "INBOX",
+      `Label_${i % 20}`,
+      ...(i % 5 === 0 ? ["UNREAD"] : []),
+      ...(i % 17 === 0 ? ["STARRED"] : []),
+    ],
+    attachments:
+      i % 10 === 0
+        ? [{ id: `a${i}`, filename: "report.pdf", mimeType: "application/pdf", size: 32768 }]
+        : [],
+    isUnread: i % 5 === 0,
+    isStarred: i % 17 === 0,
+    rfcMessageId: `<m${i}@example.com>`,
+    size: 2048,
+  });
+
+  // Trace the actual SQL emitted by Store, including statements from cached prepares.
+  // Calls below supply the owning connection explicitly and restore this hook.
+  let capture;
+  DatabaseSync.prototype.prepare = function (sql) {
+    const statement = originalPrepare.call(this, sql);
+    for (const method of ["all", "get", "run"]) {
+      const original = statement[method];
+      statement[method] = (...params) => {
+        if (capture && !capture.has(sql)) {
+          const plan = originalPrepare.call(this, `EXPLAIN QUERY PLAN ${sql}`).all(...params);
+          capture.set(sql, { sql, plan: plan.map((row) => row.detail) });
+        }
+        return original.apply(statement, params);
+      };
+    }
+    return statement;
+  };
+
   const db = new DatabaseSync(file);
-  db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA cache_size=-8192");
-  for (const migration of MIGRATIONS.slice(0, 26)) applyNativeMigration(db, migration);
-  db.exec("PRAGMA user_version=26");
-  db.close();
+  try {
+    db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA cache_size=-8192");
+    for (const migration of MIGRATIONS.slice(0, 26)) applyNativeMigration(db, migration);
+    db.exec("PRAGMA user_version=26");
+  } finally {
+    db.close();
+  }
   const layer = StoreLive.pipe(Layer.provideMerge(SqliteClient.layer({ filename: file })));
   await Effect.runPromise(
     Effect.gen(function* () {
@@ -363,6 +368,6 @@ try {
   log(`Report: ${output}`);
 } finally {
   DatabaseSync.prototype.prepare = originalPrepare;
-  rmSync(directory, { recursive: true, force: true });
+  if (directory) rmSync(directory, { recursive: true, force: true });
   if (historicalDirectory) rmSync(historicalDirectory, { recursive: true, force: true });
 }

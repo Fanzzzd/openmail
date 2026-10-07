@@ -17,6 +17,8 @@ pnpm exec oxfmt --check .
 
 `OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、不隔离模块、单测与 hook 超时 60 秒。普通运行保留文件隔离。完整邮件流程配置独立使用一个 worker 和 10 秒超时。
 
+所有 Vitest 项目通过 `packages/core/test-support/temp-directory.ts` 使用各自的临时目录。启动时只清理该 helper 创建的、超过 24 小时的 `openmail-tests-*` 目录，不跟随软链接。测试仍须用 Effect scope、`afterEach` 或 `finally` 关闭数据库并删除 fixture；全局 teardown 会报告遗留的 `openmail-*`、`om-*` fixture 并删除整个目录，失败的测试也不会留下大数据库。性能 fixture 不跨运行缓存。search-profile 只保留显式指定的数据库，默认数据库在 `finally` 删除；corpus-check 的持久 explain key 由测试登记后删除。
+
 ## 验证范围
 
 | 路径                                                                                | 覆盖与限制                                                                                                 |

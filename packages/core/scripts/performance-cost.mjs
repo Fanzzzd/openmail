@@ -19,15 +19,16 @@ import {
 
 if (process.env.OPENMAIL_PERF !== "1")
   throw new Error("Set OPENMAIL_PERF=1 to generate the 100k fixture.");
-const directory = mkdtempSync(join(tmpdir(), "openmail-perf-cost-"));
-const baseline = join(directory, "baseline.db");
-const upgraded = join(directory, "upgraded.db");
-const output = process.env.OPENMAIL_PERF_COST_REPORT ?? "/tmp/openmail-cost.json";
 const baselineRef = execFileSync(
   "git",
   ["rev-parse", process.env.OPENMAIL_PERF_BASELINE_REF ?? "main"],
   { encoding: "utf8" },
 ).trim();
+const directory = mkdtempSync(join(tmpdir(), "openmail-perf-cost-"));
+const baseline = join(directory, "baseline.db");
+const upgraded = join(directory, "upgraded.db");
+const output = process.env.OPENMAIL_PERF_COST_REPORT ?? "/tmp/openmail-cost.json";
+
 const report = {
   sqlite: {
     synchronous: "FULL",

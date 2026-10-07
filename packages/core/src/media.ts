@@ -38,6 +38,8 @@ export const DerivedChunk = Schema.Struct({
   messageId: Schema.String,
   text: Schema.String,
   source: MediaSource,
+  /** Position within one MIME part, independent of text, page or pipeline revision. */
+  chunkIndex: Schema.optionalKey(Schema.Int),
   page: Schema.NullOr(Schema.Int),
   region: Schema.NullOr(ImageRegion),
   pipelineVersion: Schema.String,
@@ -111,6 +113,21 @@ export const unavailableVision: Vision = {
   recognize: () => Effect.succeed({ revision: 0, lines: [] }),
 };
 export const MEDIA_PIPELINE_VERSION = "media-1:tile1024-overlap128:pdf-text2-worker";
+
+export function derivedPart(source: DerivedChunk["source"]): string {
+  switch (source.kind) {
+    case "attachment":
+      return JSON.stringify([source.kind, source.index]);
+    case "inline":
+      return JSON.stringify([source.kind, source.cid]);
+    case "body":
+      return JSON.stringify([source.kind, source.start, source.end]);
+    default: {
+      const exhaustive: never = source;
+      return exhaustive;
+    }
+  }
+}
 
 /** Local inference ports. Arrays contain normalized finite float32 vectors. */
 export interface Embedder {

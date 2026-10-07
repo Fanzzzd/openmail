@@ -65,6 +65,248 @@ const setup = Effect.gen(function* () {
   yield* store.upsertMessage(account.id, message());
   return { store, account, id: `${account.id}/m` };
 });
+
+it.effect("duplicate extraction positions fail and roll back the cached chunks and FTS", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, id } = yield* setup;
+      const job = yield* store.media.claim("positions", 1000, true);
+      assert.ok(Option.isSome(job));
+      const chunk = {
+        messageId: id,
+        text: "boarding duplicate",
+        source: { kind: "attachment", index: 0, name: "ticket.png", mimeType: "image/png" },
+        chunkIndex: 0,
+        page: null,
+        region: null,
+        pipelineVersion: "positions",
+        visionRevision: 3,
+      } satisfies import("./media.js").DerivedChunk;
+      yield* store.media.complete(job.value, [chunk], null);
+      const cached = yield* store.media.chunks(id);
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`UPDATE derived_jobs SET status='queued' WHERE message_id=${id}`;
+      const reindex = yield* store.media.claim("positions", 2000, true);
+      assert.ok(Option.isSome(reindex));
+      const rejected = yield* Effect.exit(
+        store.media.complete(
+          reindex.value,
+          [
+            { ...chunk, text: "replacement invoice" },
+            { ...chunk, text: "silently overwritten invoice" },
+          ],
+          null,
+        ),
+      );
+      assert.strictEqual(rejected._tag, "Failure");
+      assert.deepStrictEqual(yield* store.media.chunks(id), cached);
+      assert.strictEqual(
+        (yield* sql`SELECT status FROM derived_jobs WHERE message_id=${id}`)[0]?.status,
+        "running",
+      );
+      for (const table of ["derived_fts", "derived_words"]) {
+        yield* sql`INSERT INTO ${sql.literal(table)}(${sql.literal(table)},rank) VALUES('integrity-check',1)`;
+        assert.strictEqual(
+          (yield* sql`SELECT rowid FROM ${sql.literal(table)} WHERE ${sql.literal(table)} MATCH 'boarding'`)
+            .length,
+          1,
+        );
+        assert.strictEqual(
+          (yield* sql`SELECT rowid FROM ${sql.literal(table)} WHERE ${sql.literal(table)} MATCH 'invoice'`)
+            .length,
+          0,
+        );
+      }
+    }),
+  ),
+);
+
+it.effect(
+  "chunk identity changes preserve completed and failed jobs on the existing pipeline version",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        yield* store.upsertMessage(account.id, message({ providerId: "failed" }));
+        const sql = yield* SqlClient.SqlClient;
+        const version = `media-1:tile1024-overlap128:pdf-text2-worker:${fakeVision.version}`;
+        yield* sql`UPDATE derived_jobs SET status=CASE WHEN message_id=${id} THEN 'done' ELSE 'failed' END,
+      attempts=CASE WHEN message_id=${id} THEN 0 ELSE 5 END,pipeline_version=${version}`;
+        const indexer = yield* indexerFor(store, {
+          attachment: () =>
+            Effect.die(new Error("Completed attachments must not be downloaded again")),
+        });
+        assert.strictEqual(yield* indexer.batch(), 0);
+        assert.strictEqual((yield* indexer.progress).done, 1);
+        assert.strictEqual((yield* indexer.progress).failed, 1);
+      }),
+    ),
+);
+
+it.effect(
+  "reindex twice replaces the complete chunk set and preserves repeated text positions",
+  () =>
+    withStore(
+      Effect.gen(function* () {
+        const { store, account, id } = yield* setup;
+        const vision: Vision = {
+          ...fakeVision,
+          recognize: (data) =>
+            fakeVision
+              .recognize(data)
+              .pipe(
+                Effect.map((result) => ({ ...result, lines: [...result.lines, ...result.lines] })),
+              ),
+        };
+        for (const version of ["initial", "reindex1", "reindex2"]) {
+          const indexer = yield* indexerFor(store, { vision: { ...vision, version } });
+          assert.strictEqual(yield* indexer.batch(), 1);
+          const chunks = yield* store.media.chunks(id);
+          assert.deepStrictEqual(
+            chunks.map((chunk) => chunk.chunkIndex),
+            [0, 1],
+          );
+        }
+        // Refill only queues semantic work, and cannot create another OCR set.
+        yield* store.upsertMessage(account.id, message({ bodyText: "refilled body" }));
+        assert.strictEqual((yield* store.media.chunks(id)).length, 2);
+        const shorter = yield* indexerFor(store, { vision: { ...fakeVision, version: "shorter" } });
+        assert.strictEqual(yield* shorter.batch(), 1);
+        assert.strictEqual((yield* store.media.chunks(id)).length, 1);
+        const sql = yield* SqlClient.SqlClient;
+        for (const table of ["derived_fts", "derived_words"])
+          yield* sql`INSERT INTO ${sql.literal(table)}(${sql.literal(table)},rank) VALUES('integrity-check',1)`;
+      }),
+    ),
+);
+
+it("crash during replacement rolls back chunks and FTS before a persisted lease retry", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-media-crash-"));
+  const filename = join(directory, "mail.db");
+  const layer = () => StoreLive.pipe(Layer.provideMerge(MemoryPlatform({ database: filename })));
+  try {
+    const job = await Effect.runPromise(
+      Effect.gen(function* () {
+        const { store } = yield* setup;
+        yield* (yield* indexerFor(store)).batch();
+        const sql = yield* SqlClient.SqlClient;
+        yield* sql`UPDATE derived_jobs SET status='queued'`;
+        const job = yield* store.media.claim("crash", 1000, true);
+        assert.ok(Option.isSome(job));
+        const original = yield* store.media.chunks(job.value.message_id);
+        const first = original[0];
+        assert.ok(first);
+        yield* sql.unsafe(`CREATE TRIGGER crash_chunk BEFORE INSERT ON derived_chunks
+          WHEN new.chunk_index=1 BEGIN SELECT RAISE(ABORT,'simulated crash'); END;`);
+        const failed = yield* Effect.exit(
+          store.media.complete(
+            job.value,
+            [
+              { ...first, text: "replacement invoice", chunkIndex: 0 },
+              { ...first, text: "second invoice", chunkIndex: 1 },
+            ],
+            null,
+          ),
+        );
+        assert.strictEqual(failed._tag, "Failure");
+        assert.deepStrictEqual(yield* store.media.chunks(job.value.message_id), original);
+        return job.value;
+      }).pipe(Effect.provide(layer())),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        yield* sql.unsafe("DROP TRIGGER crash_chunk");
+        const recovered = yield* store.media.claim("crash", 301001, true);
+        assert.ok(Option.isSome(recovered));
+        const [first] = yield* store.media.chunks(job.message_id);
+        assert.ok(first);
+        const replacement = [
+          { ...first, text: "replacement invoice", chunkIndex: 0 },
+          { ...first, text: "second invoice", chunkIndex: 1 },
+        ];
+        assert.strictEqual(yield* store.media.complete(job, replacement, null), false);
+        assert.strictEqual(yield* store.media.complete(recovered.value, replacement, null), true);
+        assert.strictEqual(yield* store.media.complete(recovered.value, replacement, null), false);
+        assert.strictEqual((yield* store.media.chunks(job.message_id)).length, 2);
+        for (const table of ["derived_fts", "derived_words"]) {
+          yield* sql`INSERT INTO ${sql.literal(table)}(${sql.literal(table)},rank) VALUES('integrity-check',1)`;
+          assert.strictEqual(
+            (yield* sql`SELECT rowid FROM ${sql.literal(table)} WHERE ${sql.literal(table)} MATCH 'invoice'`)
+              .length,
+            2,
+          );
+          assert.strictEqual(
+            (yield* sql`SELECT rowid FROM ${sql.literal(table)} WHERE ${sql.literal(table)} MATCH 'boarding'`)
+              .length,
+            0,
+          );
+        }
+      }).pipe(Effect.provide(layer())),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it("concurrent indexers on separate connections leave one set per message and MIME part", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-media-concurrent-"));
+  const filename = join(directory, "mail.db");
+  const layer = () => StoreLive.pipe(Layer.provideMerge(MemoryPlatform({ database: filename })));
+  try {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const { store, account } = yield* setup;
+        yield* store.upsertMessage(
+          account.id,
+          message({
+            providerId: "forward",
+            subject: "Fwd: Mail",
+            attachments: [
+              { filename: "copy.png", mimeType: "image/png", size: 20 },
+              { filename: "copy.png", mimeType: "image/png", size: 20 },
+            ],
+          }),
+        );
+      }).pipe(Effect.provide(layer())),
+    );
+    const work = () =>
+      Effect.runPromise(
+        Effect.gen(function* () {
+          const store = yield* Store;
+          const indexer = yield* indexerFor(store, {
+            vision: {
+              ...fakeVision,
+              recognize: (data) => fakeVision.recognize(data).pipe(Effect.delay("20 millis")),
+            },
+          });
+          return yield* indexer.batch();
+        }).pipe(Effect.provide(layer())),
+      );
+    const completed = await Promise.all([work(), work()]);
+    assert.strictEqual(
+      completed.reduce((total, count) => total + count, 0),
+      2,
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const sql = yield* SqlClient.SqlClient;
+        const rows = yield* sql`SELECT source_part,chunk_index FROM derived_chunks`;
+        assert.strictEqual(rows.length, 3);
+        assert.strictEqual(
+          (yield* sql`SELECT 1 FROM derived_chunks GROUP BY message_id,source_part,chunk_index HAVING COUNT(*)>1`)
+            .length,
+          0,
+        );
+        for (const table of ["derived_fts", "derived_words"])
+          yield* sql`INSERT INTO ${sql.literal(table)}(${sql.literal(table)},rank) VALUES('integrity-check',1)`;
+      }).pipe(Effect.provide(layer())),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 const indexerFor = (
   store: Store["Service"],
   options: {

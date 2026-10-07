@@ -31,7 +31,9 @@ import { CORPUS_STAGES, CorpusTimings } from "./corpus-report.js";
 import { CorpusPipeline, corpusException } from "./corpus-pipeline.js";
 
 const directories: string[] = [];
+const databases: DatabaseSync[] = [];
 afterEach(() => {
+  for (const db of databases.splice(0)) if (db.isOpen) db.close();
   for (const dir of directories.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function fixture(wal = false) {
@@ -39,6 +41,7 @@ function fixture(wal = false) {
   directories.push(directory);
   const file = join(directory, "fixture.db");
   const db = new DatabaseSync(file);
+  databases.push(db);
   if (wal) db.exec("PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0");
   for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
   db.prepare(

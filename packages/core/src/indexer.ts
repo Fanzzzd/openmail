@@ -68,12 +68,14 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
         return yield* new MediaError({ message: "Indexing suspended" });
       yield* beforeCpu;
       const result = yield* vision.recognize(data);
+      let chunkIndex = 0;
       for (const line of result.lines)
         if (line.text.trim())
           chunks.push({
             messageId: message.id,
             text: line.text,
             source,
+            chunkIndex: chunkIndex++,
             page: null,
             region: line.region,
             pipelineVersion: version(),
@@ -99,6 +101,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
       if (mimeType.startsWith("image/")) yield* image(source, data);
       else {
         yield* beforeCpu;
+        let chunkIndex = 0;
         for (const page of yield* pdfText(data)) {
           if (!page.text) {
             scanned = true;
@@ -109,6 +112,7 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
               messageId: message.id,
               text: page.text.slice(start, start + 1000),
               source,
+              chunkIndex: chunkIndex++,
               page: page.page,
               region: null,
               pipelineVersion: version(),

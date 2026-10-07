@@ -11,6 +11,7 @@ export default defineConfig({
   test: {
     ...lowMemoryTests,
     environment: "node",
+    globalSetup: ["../../packages/core/test-support/temp-directory.ts"],
     include: ["src/**/*.test.ts"],
     exclude: ["src/renderer/src/e2e/**"],
   },

@@ -2,7 +2,7 @@ import { PlatformCrypto } from "./platform/crypto.js";
 import type { Fragment } from "effect/sql/Statement";
 import { Context, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { DerivedChunk } from "./media.js";
+import { DerivedChunk, derivedPart } from "./media.js";
 import { all, first, run } from "./sql-rows.js";
 
 const Job = Schema.Struct({
@@ -91,9 +91,15 @@ export function makeMediaStore(
         WHERE message_id=${job.message_id} AND claim=${job.claim} AND generation=${job.generation}`);
           if (Option.isNone(owner)) return false;
           yield* run(sql`DELETE FROM derived_chunks WHERE message_id=${job.message_id}`);
-          for (const chunk of result)
-            yield* run(sql`INSERT INTO derived_chunks(message_id,text,provenance_json)
-        VALUES(${job.message_id},${chunk.text},${JSON.stringify(chunk)})`);
+          const positions = new Map<string, number>();
+          for (const chunk of result) {
+            const part = derivedPart(chunk.source);
+            const index = chunk.chunkIndex ?? positions.get(part) ?? 0;
+            positions.set(part, Math.max(positions.get(part) ?? 0, index + 1));
+            const provenance = { ...chunk, messageId: job.message_id, chunkIndex: index };
+            yield* run(sql`INSERT INTO derived_chunks(message_id,text,provenance_json,chunk_index)
+        VALUES(${job.message_id},${chunk.text},${JSON.stringify(provenance)},${index})`);
+          }
           yield* run(
             sql`UPDATE ${jobs} SET status='done', claim=NULL, claimed_at=NULL, note=${note}, attempts=0 WHERE message_id=${job.message_id}`,
           );

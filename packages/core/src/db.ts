@@ -1277,6 +1277,34 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    END;
    -- A migration connection may not load vec0. Missing vectors are repaired
    -- lazily by the semantic indexer, without touching healthy or OCR jobs.`,
+  // Migration 41: chunk identity is scoped to a message and MIME part, never a thread.
+  `ALTER TABLE derived_chunks ADD COLUMN source_part TEXT GENERATED ALWAYS AS (
+     CASE WHEN json_valid(provenance_json) THEN CASE json_extract(provenance_json,'$.source.kind')
+       WHEN 'attachment' THEN json_array('attachment',json_extract(provenance_json,'$.source.index'))
+       WHEN 'inline' THEN json_array('inline',json_extract(provenance_json,'$.source.cid'))
+       WHEN 'body' THEN json_array('body',json_extract(provenance_json,'$.source.start'),json_extract(provenance_json,'$.source.end'))
+     END END) VIRTUAL;
+   ALTER TABLE derived_chunks ADD COLUMN chunk_index INTEGER CHECK(chunk_index>=0);
+   CREATE TEMP TABLE duplicate_media_messages AS
+     SELECT DISTINCT message_id FROM derived_chunks WHERE source_part IS NOT NULL
+     GROUP BY message_id,provenance_json HAVING COUNT(*)>1;
+   -- Older provenance has no ordinal. Exact duplicates may also be repeated
+   -- text within a PDF page: retain one cached match and re-extract those
+   -- messages to recover all legitimate positions. Deletes use both FTS triggers.
+   DELETE FROM derived_chunks WHERE source_part IS NOT NULL AND id NOT IN (
+     SELECT MIN(id) FROM derived_chunks WHERE source_part IS NOT NULL GROUP BY message_id,provenance_json);
+   UPDATE derived_chunks SET chunk_index=p.ordinal FROM (
+     SELECT id,ROW_NUMBER() OVER(PARTITION BY message_id,source_part ORDER BY id)-1 AS ordinal
+       FROM derived_chunks WHERE source_part IS NOT NULL
+   ) p WHERE p.id=derived_chunks.id;
+   CREATE UNIQUE INDEX derived_chunks_position ON derived_chunks(message_id,source_part,chunk_index);
+   INSERT INTO derived_jobs(message_id) SELECT message_id FROM duplicate_media_messages WHERE true
+     ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+       claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+   INSERT INTO semantic_jobs(message_id) SELECT message_id FROM duplicate_media_messages WHERE true
+     ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
+       claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
+   DROP TABLE duplicate_media_messages;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

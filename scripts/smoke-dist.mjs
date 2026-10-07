@@ -1,39 +1,48 @@
 // Launch only the supplied build, always with a new temporary core/Chromium directory.
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
 const bundle = path.resolve(process.argv[2] ?? "apps/desktop/release/mac-arm64/OpenMail.app");
 const dataDir = mkdtempSync(path.join(os.tmpdir(), "openmail-dist-test-"));
+const output = path.resolve(process.env.OPENMAIL_DIST_REPORT_DIR ?? "out/dist-smoke");
 const server = net.createServer();
-await new Promise((resolve) => {
-  server.listen(0, "127.0.0.1", resolve);
-});
-const port = server.address().port;
-await new Promise((resolve) => {
-  server.close(resolve);
-});
-const child = spawn(path.join(bundle, "Contents/MacOS/OpenMail"), [
-  `--user-data-dir=${dataDir}`,
-  `--remote-debugging-port=${port}`,
-]);
+let child;
+let ws;
 let log = "";
-child.stdout.on("data", (chunk) => {
-  log += chunk;
-});
-child.stderr.on("data", (chunk) => {
-  log += chunk;
-});
+/** @type {{ error: Error | null }} */
+const launch = { error: null };
+const running = (target) => target.exitCode === null && target.signalCode === null;
 const wait = (ms) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-let ws;
 try {
+  await new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const port = server.address().port;
+  await new Promise((resolve) => {
+    server.close(resolve);
+  });
+  child = spawn(path.join(bundle, "Contents/MacOS/OpenMail"), [
+    `--user-data-dir=${dataDir}`,
+    `--remote-debugging-port=${port}`,
+  ]);
+  child.on("error", (error) => {
+    launch.error = error;
+  });
+  child.stdout.on("data", (chunk) => {
+    log += chunk;
+  });
+  child.stderr.on("data", (chunk) => {
+    log += chunk;
+  });
   let page;
   for (let attempt = 0; attempt < 400; attempt++) {
+    if (launch.error) throw launch.error;
     if (child.exitCode !== null) throw new Error(`App exited (${child.exitCode}): ${log}`);
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`)
       .then((response) => response.json())
@@ -78,14 +87,28 @@ try {
   if (!ready || !existsSync(path.join(dataDir, "mail.db")))
     throw new Error(`Renderer/preload/core did not start: ${log}`);
   const screenshot = await call("Page.captureScreenshot", { format: "png" });
-  writeFileSync(path.join(dataDir, "startup.png"), Buffer.from(screenshot.data, "base64"));
+  mkdirSync(output, { recursive: true });
+  writeFileSync(path.join(output, "startup.png"), Buffer.from(screenshot.data, "base64"));
   process.stdout.write(
-    `${JSON.stringify({ started: true, bundle, dataDir, screenshot: path.join(dataDir, "startup.png") })}\n`,
+    `${JSON.stringify({ started: true, bundle, screenshot: path.join(output, "startup.png") })}\n`,
   );
 } finally {
-  ws?.close();
-  child.kill("SIGTERM");
-  await wait(500);
-  if (child.exitCode === null) child.kill("SIGKILL");
-  writeFileSync(path.join(dataDir, "startup.log"), log);
+  try {
+    ws?.close();
+    if (server.listening) server.close();
+    if (child?.pid && running(child)) {
+      child.kill("SIGTERM");
+      await wait(500);
+      if (running(child)) {
+        child.kill("SIGKILL");
+        await new Promise((resolve) => {
+          child.once("exit", resolve);
+        });
+      }
+    }
+    mkdirSync(output, { recursive: true });
+    writeFileSync(path.join(output, "startup.log"), log);
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
 }

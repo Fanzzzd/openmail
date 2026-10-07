@@ -198,13 +198,16 @@ const stageReports = (): Record<CorpusStage, CorpusStageReport> =>
   );
 /** Explicit CLI opt-in: a private persistent key, outside every diagnostic report. */
 export function createCorpusRunKeyFile(): string {
+  let directory: string | undefined;
   try {
     const dir = mkdtempSync(join(tmpdir(), "openmail-corpus-key-"));
+    directory = dir;
     chmodSync(dir, 0o700);
     const file = join(dir, "run.key");
     writeFileSync(file, randomBytes(32).toString("hex"), { mode: 0o600, flag: "wx" });
     return file;
   } catch {
+    if (directory) rmSync(directory, { recursive: true, force: true });
     throw new CorpusCheckError("Cannot create corpus run key file");
   }
 }

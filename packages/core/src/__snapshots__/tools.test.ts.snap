@@ -457,6 +457,9 @@ exports[`tool input and output schemas are stable 1`] = `
                       "items": {
                         "additionalProperties": true,
                         "properties": {
+                          "chunkIndex": {
+                            "type": "integer",
+                          },
                           "messageId": {
                             "type": "string",
                           },
@@ -1150,6 +1153,9 @@ exports[`tool input and output schemas are stable 1`] = `
                       "items": {
                         "additionalProperties": true,
                         "properties": {
+                          "chunkIndex": {
+                            "type": "integer",
+                          },
                           "messageId": {
                             "type": "string",
                           },
@@ -1800,6 +1806,9 @@ exports[`tool input and output schemas are stable 1`] = `
                       "items": {
                         "additionalProperties": true,
                         "properties": {
+                          "chunkIndex": {
+                            "type": "integer",
+                          },
                           "messageId": {
                             "type": "string",
                           },
@@ -4302,6 +4311,9 @@ exports[`tool input and output schemas are stable 1`] = `
                 "items": {
                   "additionalProperties": true,
                   "properties": {
+                    "chunkIndex": {
+                      "type": "integer",
+                    },
                     "messageId": {
                       "type": "string",
                     },
