@@ -179,7 +179,7 @@ export const makeOutboxMailbox = (
             command.draftId && isDefiniteSendFailure(error)
               ? store.setSendUncertain(command.draftId, false)
               : Effect.void,
-            store.audit({
+            store.appendAudit({
               actor,
               accountId,
               action: "send_failed",
@@ -209,7 +209,7 @@ export const makeOutboxMailbox = (
         subject: message.subject,
         sender: message.from?.address ?? account.email,
       });
-    yield* store.audit({ actor, accountId, action: "send", detail });
+    yield* store.appendAudit({ actor, accountId, action: "send", detail });
     yield* store.rememberMailedAddresses(
       accountId,
       [...message.to, ...message.cc, ...message.bcc].map((recipient) => recipient.address),

@@ -124,7 +124,7 @@ const applyChanges = (store: Store["Service"], changes: readonly Change[]) =>
             labelIds: [labelId],
           });
       } else yield* store.enqueueOp(change.accountId, change.providerId, change.op);
-      yield* store.audit({
+      yield* store.appendAudit({
         actor: user,
         accountId: change.accountId,
         action: change.op.kind,
@@ -340,7 +340,7 @@ export const makeBatchMailbox = (
                         isStarred: member.isStarred,
                       });
                     }
-                  yield* store.audit({
+                  yield* store.appendAudit({
                     actor: user,
                     accountId: message.accountId,
                     action: "snooze",

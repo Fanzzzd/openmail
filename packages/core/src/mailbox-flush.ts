@@ -131,7 +131,7 @@ export const makeFlushMailbox = (
     yield* refreshMessage(account, item.providerId).pipe(
       Effect.catch(() => store.enqueueOp(account.id, item.providerId, { kind: "reconcile" })),
     );
-    yield* store.audit({
+    yield* store.appendAudit({
       actor: { kind: "user", surface: "app" },
       accountId: account.id,
       action: "sync-failed",

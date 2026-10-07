@@ -2,12 +2,9 @@ import {
   mobileMailCodecLayer,
   type MobileDatabaseState,
   mobileMediaLayer,
-  MailboxLive,
-  ModelAnthropic,
+  PortableMailbox,
   MobileBackgroundStorageLive,
-  StoreLive,
   mobileOAuthLayer,
-  mobileProvidersLayer,
   opSqliteLayer,
 } from "@openmail/core/portable";
 import { Layer } from "effect";
@@ -38,13 +35,10 @@ export function mobileMailboxLayer(inspection?: MobileDatabaseState) {
     FetchHttpClient.layer,
     mobileOAuthLayer(authSession(config)).pipe(Layer.provide(FetchHttpClient.layer)),
   );
-  const services = Layer.mergeAll(StoreLive, mobileProvidersLayer, ModelAnthropic).pipe(
-    Layer.provideMerge(platform),
-  );
   return Layer.mergeAll(
-    MailboxLive({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }),
+    PortableMailbox({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }),
     MobileBackgroundStorageLive,
-  ).pipe(Layer.provide(services));
+  ).pipe(Layer.provide(platform));
 }
 
 const readerCapabilitiesLayer = Layer.mergeAll(

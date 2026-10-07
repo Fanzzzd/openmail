@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { builtinModules } from "node:module";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -299,4 +300,22 @@ it("global checks respect imports and lexical bindings and only allow the byte a
   expect(nodeGlobals("const nativeBuffer = globalThis.Buffer;", true)).toEqual([]);
   expect(nodeGlobals("const other = globalThis.Buffer;", true)).toEqual(["globalThis.Buffer"]);
   expect(nodeGlobals("globalThis.Buffer = replacement;", true)).toEqual(["globalThis.Buffer"]);
+});
+
+it("production callers use public core entries without test support", () => {
+  const cwd = resolve(root, "../../..");
+  const files = execFileSync("git", ["ls-files", "apps", "packages"], { cwd, encoding: "utf8" });
+  const violations: string[] = [];
+  for (const file of files.trim().split("\n")) {
+    if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
+    if (/^packages\/core\/|\.(test|spec)\.|\/(e2e|test-support|tests|__tests__)\//.test(file))
+      continue;
+    for (const name of imports(readFileSync(join(cwd, file), "utf8")))
+      if (
+        name === "@openmail/core/testing/node" ||
+        resolve(dirname(join(cwd, file)), name).startsWith(root)
+      )
+        violations.push(`${file}: ${name}`);
+  }
+  expect(violations).toEqual([]);
 });

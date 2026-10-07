@@ -12,8 +12,7 @@ export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./imap-presets.js";
 export { Mailbox, MailboxEvent, type PerformError, SyncState } from "./mailbox.js";
 export { MailboxLive } from "./mailbox-live.js";
 
-export { AppConfig, Browser, type ClientConfig, Providers, Secrets, Store } from "./services.js";
-export { StoreLive } from "./store.js";
+export { AppConfig, Browser, type ClientConfig, Providers, Secrets } from "./services.js";
 export {
   AgentIdentity,
   MailToolkit,

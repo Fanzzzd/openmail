@@ -31,7 +31,6 @@ export {
   ProposalMailToolkit,
   ProviderDiagnostic,
   ReadMailToolkit,
-  Store,
   SyncResetDiagnostic,
   SyncResult,
   type UpdateClient,

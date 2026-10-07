@@ -92,7 +92,7 @@ slice 56 已合入同步重置删除保护。slice 62 将所有重置删除候�
 | 本机媒体与进程 | `ModelRuntime`、`PdfWorker`、`ChildProcessSpawner` | 推理／PDF worker 与进程管理                              |
 | 应用签名       | `AppVerifier`                                      | macOS codesign                                           |
 
-`@openmail/core` 是 Node 兼容入口，`@openmail/core/node` 显式导出同一套适配器。`@openmail/core/portable` 导出领域、Mailbox、Store、Gmail／Outlook 与移动 adapters。`@openmail/core/schema` 为 renderer 提供 schema 和纯函数；`@openmail/core/testing/node` 提供临时数据库与 fake provider 的测试组装。
+`@openmail/core` 是 Node 兼容入口，`@openmail/core/node` 显式导出同一套适配器。`@openmail/core/portable` 导出领域、Mailbox、PortableMailbox 与移动 adapters。`@openmail/core/schema` 为 renderer 提供 schema 和纯函数；`@openmail/core/testing/node` 提供 Store、StoreLive、临时数据库与 fake provider 的测试组装。Store 只在 core 内部使用，外部生产代码通过 Mailbox 调用。
 
 `NodeSystem` 提供 OS 服务，`NodePlatform(options)` 提供完整 Node 平台，`NodeMailbox` 再组装 Store、Providers 和 Mailbox。服务在构建时捕获依赖，返回方法不要求调用方再次提供隐藏 context。缺少必需能力时应提供明确失败的 adapter。导入守卫与逐文件依赖见[平台依赖清单](platform-inventory.md)。
 

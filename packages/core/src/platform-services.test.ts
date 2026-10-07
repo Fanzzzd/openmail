@@ -1,18 +1,25 @@
 import { createHash, createHmac } from "node:crypto";
 import { isIP as nodeIsIP } from "node:net";
 import { Context, Effect, Layer } from "effect";
+import { HttpClient } from "effect/http";
 import { expect, it } from "vitest";
 import {
   Mailbox,
   MailboxLive,
+  PortableMailbox,
+  MobileBackgroundStorage,
+  MobileBackgroundStorageLive,
+  DEFAULT_MOBILE_BACKGROUND,
+  MailTransport,
   MailCodec,
   type MailCodecPort,
   PlatformCrypto,
   Providers,
-  StoreLive,
   sha256Hex,
   hmacSha256Hex,
 } from "./portable.js";
+import { Store } from "./services.js";
+import { StoreLive } from "./store.js";
 import { isIP } from "./platform/ip.js";
 import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { fakeServer, makeFakeProvider } from "./platform/node/fake-provider.js";
@@ -134,6 +141,43 @@ it("a mailbox keeps its own MIME and random services after the platform Layer is
         message: { ...draft.message, subject: "Edited" },
       });
       expect(createdMessageId).toBe(`<${uuid}@example.com>`);
+    }).pipe(Effect.scoped),
+  );
+});
+
+it("portable assembly exposes Mailbox alongside background storage and hides internal services", async () => {
+  const layer = Layer.mergeAll(
+    PortableMailbox({ imapIdle: false, backgroundFlush: false, localDraftQueue: true }),
+    MobileBackgroundStorageLive,
+  ).pipe(
+    Layer.provide(
+      Layer.mergeAll(
+        MemoryPlatform(),
+        Layer.succeed(
+          HttpClient.HttpClient,
+          HttpClient.make(() => Effect.die(new Error("Unexpected HTTP request"))),
+        ),
+        Layer.succeed(MailTransport, {
+          connect: async () => {
+            throw new Error("Unexpected mail transport");
+          },
+        }),
+      ),
+    ),
+  );
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      const context = yield* Layer.build(layer);
+      expect(Context.getOption(context, Store)._tag).toBe("None");
+      expect(Context.getOption(context, Providers)._tag).toBe("None");
+      const mailbox = Context.get(context, Mailbox);
+      const background = Context.get(context, MobileBackgroundStorage);
+      expect(yield* mailbox.accounts).toEqual([]);
+      expect(yield* background.preferences).toEqual(DEFAULT_MOBILE_BACKGROUND);
+      yield* mailbox.setPrefs({ markReadDelay: "manual" });
+      yield* background.save({ ...DEFAULT_MOBILE_BACKGROUND, badge: true });
+      expect((yield* mailbox.prefs).markReadDelay).toBe("manual");
+      expect((yield* background.preferences).badge).toBe(true);
     }).pipe(Effect.scoped),
   );
 });

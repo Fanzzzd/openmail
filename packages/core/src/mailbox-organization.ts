@@ -144,7 +144,7 @@ export function makeOrganizationMailbox(
     return { account, adapter: providers.get(account.provider) };
   });
   const audit = (accountId: string, action: string, detail: unknown) =>
-    store.audit({ actor: { kind: "user", surface: "app" }, accountId, action, detail });
+    store.appendAudit({ actor: { kind: "user", surface: "app" }, accountId, action, detail });
   const mutation = <A, E>(effect: Effect.Effect<A, E>) => effect.pipe(Effect.tap(() => changed));
   const ruleMutation = <A, E>(effect: Effect.Effect<A, E>) =>
     ruleLock.withPermits(1)(mutation(effect));

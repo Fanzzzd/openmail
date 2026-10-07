@@ -5,9 +5,8 @@ import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
-import { Store } from "@openmail/core";
 import { ThreadSummary } from "@openmail/core/schema";
-import { TestMailbox, incoming } from "@openmail/core/testing/node";
+import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
 
 const Frame = Schema.Struct({
   id: Schema.optionalKey(Schema.Union([Schema.Number, Schema.String])),

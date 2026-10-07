@@ -59,7 +59,7 @@ export const makePolicyStore = ({
 
   // Audit, agent policy, proposals
 
-  const audit = Effect.fn("Store.audit")(function* (entry: {
+  const appendAudit = Effect.fn("Store.appendAudit")(function* (entry: {
     actor: Actor;
     accountId?: string;
     action: string;
@@ -178,7 +178,7 @@ export const makePolicyStore = ({
     initialize,
     service: {
       purgeAccountProposals,
-      audit,
+      appendAudit,
       listAudit,
       agentWriteMode,
       setAgentWriteMode,
@@ -189,7 +189,7 @@ export const makePolicyStore = ({
     } satisfies Pick<
       Store["Service"],
       | "purgeAccountProposals"
-      | "audit"
+      | "appendAudit"
       | "listAudit"
       | "agentWriteMode"
       | "setAgentWriteMode"

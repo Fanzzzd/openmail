@@ -5,8 +5,8 @@ import { expect, it } from "vitest";
 import { Mailbox } from "../../../../packages/core/src/mailbox.js";
 import { MailboxLive } from "../../../../packages/core/src/mailbox-live.js";
 import { ProviderError } from "../../../../packages/core/src/errors.js";
-import { Store, Providers } from "../../../../packages/core/src/services.js";
-import { StoreLive } from "../../../../packages/core/src/store.js";
+import { Providers } from "../../../../packages/core/src/services.js";
+import { Store, StoreLive } from "@openmail/core/testing/node";
 import { MemoryPlatform } from "../../../../packages/core/src/platform/node/platform-memory.js";
 import {
   fakeServer,

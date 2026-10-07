@@ -284,7 +284,7 @@ export function makeFeatureMailbox(
                 : new InvalidInput({ message: "Invalid calendar event time" }),
           });
           yield* adapter.createCalendarEvent(account, updated);
-          yield* store.audit({
+          yield* store.appendAudit({
             actor,
             accountId: account.id,
             action: "calendar_create",
@@ -418,7 +418,7 @@ export function makeFeatureMailbox(
             },
             response,
           });
-          yield* store.audit({
+          yield* store.appendAudit({
             actor,
             accountId: account.id,
             action: "calendar_response",

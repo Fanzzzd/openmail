@@ -379,13 +379,13 @@ it.effect("local ops update flags; the queue keeps order and counts attempts", (
         [second.id],
       );
 
-      yield* store.audit({
+      yield* store.appendAudit({
         actor: { kind: "agent", surface: "mcp", name: "claude" },
         accountId: account.id,
         action: "archive",
         detail: { id },
       });
-      yield* store.audit({
+      yield* store.appendAudit({
         actor: { kind: "user", surface: "cli" },
         action: "sync",
         detail: undefined,
@@ -1565,7 +1565,7 @@ it.effect("audit keeps only metadata and decisions purge proposal commands and r
         },
       };
       const id = yield* store.insertProposal(actor, command);
-      yield* store.audit({ actor, action: "proposed", detail: { command } });
+      yield* store.appendAudit({ actor, action: "proposed", detail: { command } });
       const rows = yield* Schema.decodeUnknownEffect(
         Schema.Array(Schema.Struct({ detail_json: Schema.String })),
       )(yield* sql`SELECT detail_json FROM audit_log`);

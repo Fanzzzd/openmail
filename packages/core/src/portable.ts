@@ -1,8 +1,17 @@
 import { Effect, Layer } from "effect";
+import type { HttpClient } from "effect/http";
+import type { SqlClient } from "effect/sql";
+import type { Mailbox } from "./mailbox.js";
+import type { MailCodec } from "./platform/mail-codec.js";
+import type { MailTransport } from "./platform/mail-socket.js";
+import type { AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtime.js";
+import { MailboxLive, type MailboxOptions } from "./mailbox-live.js";
+import { ModelAnthropic } from "./model.js";
+import { StoreLive } from "./store.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { makeMobileImap } from "./platform/react-native/imap.js";
-import { Providers } from "./services.js";
+import { Providers, type AppConfig, type OAuth, type Secrets } from "./services.js";
 
 // Mobile entry: shared core plus mobile adapters and workflows.
 export * from "./common.js";
@@ -27,3 +36,24 @@ export const mobileProvidersLayer = Layer.effect(
     return Providers.of({ get: (provider) => adapters[provider] });
   }),
 );
+
+/** Mailbox with portable persistence, providers and model; the caller supplies platform services. */
+export const PortableMailbox = (
+  options: MailboxOptions = {},
+): Layer.Layer<
+  Mailbox,
+  never,
+  | SqlClient.SqlClient
+  | Secrets
+  | AppConfig
+  | OAuth
+  | MailCodec
+  | PdfWorker
+  | AttachmentFiles
+  | ImageNetwork
+  | HttpClient.HttpClient
+  | MailTransport
+> =>
+  MailboxLive(options).pipe(
+    Layer.provide(Layer.mergeAll(StoreLive, mobileProvidersLayer, ModelAnthropic)),
+  );

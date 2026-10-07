@@ -6,7 +6,6 @@ import { I18nProvider } from "@lingui/react";
 import {
   IMAP_PRESETS,
   Mailbox,
-  Store,
   type Account,
   type IncomingMessage,
   type Provider,
@@ -14,7 +13,12 @@ import {
   type NotificationBatch,
   type OutgoingMessage,
 } from "@openmail/core/portable";
-import { fakeServer, type FakeServer, TemporaryTestMailbox } from "@openmail/core/testing/node";
+import {
+  Store,
+  fakeServer,
+  type FakeServer,
+  TemporaryTestMailbox,
+} from "@openmail/core/testing/node";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react/pure";
 import {
   Deferred,

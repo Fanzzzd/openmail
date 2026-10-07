@@ -609,7 +609,7 @@ export class Store extends Context.Service<
     setContactHidden(address: string, hidden: boolean): Effect.Effect<void>;
 
     // Audit, agent policy, proposals
-    audit(entry: {
+    appendAudit(entry: {
       actor: Actor;
       accountId?: string;
       action: string;

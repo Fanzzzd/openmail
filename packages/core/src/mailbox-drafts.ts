@@ -277,7 +277,7 @@ export const makeDraftsMailbox = (
         draftId,
         "The remote draft changed in another client. Both versions were kept.",
       );
-      yield* store.audit({
+      yield* store.appendAudit({
         actor: { kind: "user", surface: "app" },
         accountId: account.id,
         action: "draft-conflict",
@@ -295,7 +295,7 @@ export const makeDraftsMailbox = (
     const proposal = yield* store.getProposal(proposalId).pipe(Effect.option);
     if (Option.isNone(proposal) || proposal.value.status !== "pending") return;
     yield* store.setProposalStatus(proposalId, approve ? "approved" : "rejected");
-    yield* store.audit({
+    yield* store.appendAudit({
       actor: { kind: "user", surface: "app" },
       action: approve ? "approve" : "reject",
       detail: { proposalId, proposer: actorLabel(proposal.value.actor) },
@@ -353,7 +353,7 @@ export const makeDraftsMailbox = (
             yield* localOnly ? store.deleteDraft(old.id) : removeDraft(old);
           }
         } else {
-          yield* store.audit({
+          yield* store.appendAudit({
             actor: { kind: "user", surface: "app" },
             accountId: input.accountId,
             action: "draft",
@@ -426,7 +426,7 @@ export const makeDraftsMailbox = (
     yield* store.transaction(
       Effect.gen(function* () {
         yield* removeDraft(draft.value);
-        yield* store.audit({
+        yield* store.appendAudit({
           actor: { kind: "user", surface: "app" },
           accountId: draft.value.accountId,
           action: "discard_draft",

@@ -1,10 +1,10 @@
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { Mailbox, Store } from "@openmail/core";
+import { Mailbox } from "@openmail/core";
 import { ConfigProvider, Effect, Layer, Sink, Stdio, Stream } from "effect";
 import { TestConsole } from "effect/testing";
 import { expect, it } from "vitest";
-import { fakeServer, TestMailbox } from "../../core/src/platform/node/testing.js";
+import { Store, fakeServer, TestMailbox } from "@openmail/core/testing/node";
 import { withProgress } from "./sync-progress.js";
 
 it("prints sync start before the operation and subscribes to progress", async () => {

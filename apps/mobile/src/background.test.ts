@@ -4,10 +4,9 @@ import {
   Mailbox,
   MobileBackgroundStorageLive,
   DEFAULT_MOBILE_BACKGROUND,
-  Store,
   type Message,
 } from "@openmail/core/portable";
-import { TestMailbox, fakeServer } from "@openmail/core/testing/node";
+import { Store, TestMailbox, fakeServer } from "@openmail/core/testing/node";
 import { MemoryPlatform } from "../../../packages/core/src/platform/node/platform-memory";
 
 const native = vi.hoisted(() => ({

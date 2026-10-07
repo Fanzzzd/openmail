@@ -143,7 +143,7 @@ export const makeApplyMailbox = (
         Effect.all([
           store.applyLocalOp(id, command.op),
           store.enqueueOp(accountId, providerId, command.op),
-          store.audit({
+          store.appendAudit({
             actor,
             accountId,
             action: command.op.kind,
@@ -196,7 +196,7 @@ export const makeApplyMailbox = (
         );
         yield* store.removeAccount(command.accountId);
         yield* secrets.remove(command.accountId);
-        yield* store.audit({
+        yield* store.appendAudit({
           actor,
           accountId: command.accountId,
           action: "removeAccount",
@@ -286,7 +286,7 @@ export const makeApplyMailbox = (
     if (actor.kind === "agent" && actor.surface === "mcp") yield* validateAiProposal(command);
     const decision = decide(command, actor, mode);
     if (decision.status === "denied") {
-      yield* store.audit({
+      yield* store.appendAudit({
         actor,
         action: "denied",
         detail: { command, reason: decision.reason },
@@ -320,7 +320,7 @@ export const makeApplyMailbox = (
               (yield* store.agentWriteMode(actor.name)) !== "off";
             if (push) yield* store.enqueueDraftSave(draft.accountId, draft.id);
           }
-          yield* store.audit({
+          yield* store.appendAudit({
             actor,
             action: "proposed",
             detail: { proposalId: id, command },
@@ -350,7 +350,7 @@ export const makeApplyMailbox = (
     if (approve && isAiProposalActor(proposal.actor)) yield* validateAiProposal(proposal.command);
     const person: Actor = { kind: "user", surface };
     yield* store.setProposalStatus(id, approve ? "approved" : "rejected");
-    yield* store.audit({
+    yield* store.appendAudit({
       actor: person,
       action: approve ? "approve" : "reject",
       detail: { proposalId: id, proposer: actorLabel(proposal.actor) },
@@ -711,7 +711,7 @@ export const makeApplyMailbox = (
           const event = invite ? eventFromInvite(invite) : null;
           if (!event) return yield* new InvalidInput({ message: "This event cannot be imported" });
           yield* adapter.createCalendarEvent(account, event);
-          yield* store.audit({
+          yield* store.appendAudit({
             actor,
             accountId: account.id,
             action: "calendar_import",
@@ -738,7 +738,7 @@ export const makeApplyMailbox = (
           if (account.enabled === false)
             return yield* new InvalidInput({ message: "Enable this account to unsubscribe" });
           yield* unsubscribeNetwork.post(target.url);
-          yield* store.audit({
+          yield* store.appendAudit({
             actor,
             accountId: account.id,
             action: "unsubscribe",

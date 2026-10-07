@@ -49,7 +49,12 @@ export function makeFolderMailbox(
       ),
     );
   const audit = (accountId: string, action: string, count: number) =>
-    store.audit({ actor: { kind: "user", surface: "app" }, accountId, action, detail: { count } });
+    store.appendAudit({
+      actor: { kind: "user", surface: "app" },
+      accountId,
+      action,
+      detail: { count },
+    });
   const requireDeleteScopes = (accounts: readonly Account[]) =>
     Effect.forEach(
       accounts,

@@ -75,7 +75,7 @@ export const makeAccountsMailbox = (
     yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
     yield* store.setNeedsReauth(account.id, false);
     yield* store.setSyncError(account.id, null);
-    yield* store.audit({
+    yield* store.appendAudit({
       actor: { kind: "user", surface: "app" },
       accountId: account.id,
       action: "connect",

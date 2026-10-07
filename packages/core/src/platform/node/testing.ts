@@ -37,6 +37,9 @@ export function TestMailbox(
   });
 }
 
+export { Store } from "../../services.js";
+export { StoreLive } from "../../store.js";
+
 export { type FakeServer, fakeServer } from "./fake-provider.js";
 
 /** A scoped, temporary node:sqlite database, removed after all services close. */
