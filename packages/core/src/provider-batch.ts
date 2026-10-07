@@ -38,7 +38,7 @@ export function parseGmailBatch(text: string, contentType: string | undefined): 
 }
 
 /** Largest throttle deadline in a batch, or undefined when no response is throttled. */
-export function batchThrottleDelay(
+function batchThrottleDelay(
   responses: typeof BatchResponse.Type.responses,
   now: number,
 ): number | undefined {

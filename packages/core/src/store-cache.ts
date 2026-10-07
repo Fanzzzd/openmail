@@ -1,6 +1,12 @@
 import { Clock, Effect, Option, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
-import { BackfillState, type CacheWindowInput, DEFAULT_CACHE_WINDOWS, keepBody } from "./cache.js";
+import {
+  BackfillState,
+  type CacheWindow,
+  type CacheWindowInput,
+  DEFAULT_CACHE_WINDOWS,
+  keepBody,
+} from "./cache.js";
 import type { CacheMaintenanceService } from "./platform/cache-storage.js";
 import { all, first, run } from "./sql-rows.js";
 import { makeCompactionStore } from "./store-compaction.js";
@@ -31,6 +37,16 @@ const toState = (r: typeof StateRow.Type): BackfillState => ({
   nextRunAt: r.next_run_at,
 });
 
+const effectiveWindows = (windows: readonly CacheWindow[], accountId: string) => {
+  const custom = windows.filter((window) => window.accountId === accountId);
+  return [
+    ...DEFAULT_CACHE_WINDOWS.filter(
+      (window) => !custom.some((entry) => entry.label === window.label),
+    ),
+    ...custom,
+  ];
+};
+
 export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaintenanceService) {
   const cacheWindows = all(WindowRow)(sql`SELECT * FROM cache_windows`).pipe(
     Effect.map((rows) =>
@@ -42,16 +58,6 @@ export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaint
       ? run(sql`DELETE FROM cache_windows WHERE account_id=${w.accountId} AND label=${w.label}`)
       : run(sql`INSERT INTO cache_windows VALUES (${w.accountId}, ${w.label}, ${w.days})
     ON CONFLICT(account_id,label) DO UPDATE SET days=excluded.days`);
-  const windowsFor = (account: string) =>
-    cacheWindows.pipe(
-      Effect.map((windows) => {
-        const custom = windows.filter((w) => w.accountId === account);
-        return [
-          ...DEFAULT_CACHE_WINDOWS.filter((w) => !custom.some((c) => c.label === w.label)),
-          ...custom,
-        ];
-      }),
-    );
   const BodyRow = Schema.Struct({
     id: Schema.String,
     date: Schema.Number,
@@ -70,7 +76,7 @@ export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaint
       sql`SELECT evicted_at FROM cache_maintenance WHERE account_id=${account}`,
     );
     if (!force && Option.isSome(last) && last.value.evicted_at > now - 86_400_000) return 0;
-    const windows = yield* windowsFor(account);
+    const windows = effectiveWindows(yield* cacheWindows, account);
     const finite = windows.flatMap((w) => (w.days === null ? [] : [w.days]));
     const cutoff = now - Math.min(...finite) * 86_400_000;
     let cursor: { date: number; id: string } | undefined;
@@ -187,8 +193,8 @@ export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaint
             ),
           );
           if (!force && budget.evicted_at !== null && budget.evicted_at > now - 3_600_000) return 0;
-          const custom = yield* cacheWindows;
-          const effective = new Map<string, ReturnType<typeof DEFAULT_CACHE_WINDOWS.slice>>();
+          const allWindows = yield* cacheWindows;
+          const effective = new Map<string, ReturnType<typeof effectiveWindows>>();
           let remaining = budget.total_bytes;
           let count = 0;
           let cursor: { time: number; id: string } | undefined;
@@ -206,15 +212,7 @@ export function makeCacheStore(sql: SqlClient.SqlClient, maintenance: CacheMaint
               if (remaining <= maxBytes) break;
               let windows = effective.get(row.account_id);
               if (!windows) {
-                const accountWindows = custom.filter(
-                  (window) => window.accountId === row.account_id,
-                );
-                windows = [
-                  ...DEFAULT_CACHE_WINDOWS.filter(
-                    (window) => !accountWindows.some((entry) => entry.label === window.label),
-                  ),
-                  ...accountWindows,
-                ];
+                windows = effectiveWindows(allWindows, row.account_id);
                 effective.set(row.account_id, windows);
               }
               if (

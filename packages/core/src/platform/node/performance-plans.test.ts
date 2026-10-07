@@ -1,3 +1,10 @@
+import {
+  withStore,
+  message,
+  fakeModels,
+  indexer,
+  setup,
+} from "../../../test-support/semantic-fixtures.js";
 import { applyNativeMigration } from "./migrations.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
@@ -25,8 +32,6 @@ import { first } from "../../sql-rows.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { makeSemanticIndexer } from "../../semantic-indexer.js";
-import { type ModelRuntime, unavailableVision } from "../../media.js";
 import { vi } from "vitest";
 import { NodeSystem } from "./platform-node.js";
 it.effect("actual health, stale, reset and budget queries use indexed metadata", () => {
@@ -627,118 +632,26 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
   );
 }
 
-{
-  const withStore = <A, E>(body: Effect.Effect<A, E, Store | SqlClient.SqlClient>) =>
-    body.pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))));
-
-  const vector = (dim: number, index = 0) =>
-    Array.from({ length: dim }, (_, i) => (i === index ? 1 : 0));
-
-  const message = (overrides: Partial<IncomingMessage> = {}): IncomingMessage => ({
-    providerId: "m",
-    threadId: "t",
-    subject: "Mail",
-    from: { name: "Alice", address: "alice@example.com" },
-    to: [],
-    cc: [],
-    date: 1000,
-    snippet: "",
-    bodyText: "Airport passport boarding pass.",
-    bodyHtml: "",
-    attachments: [],
-    labels: ["INBOX"],
-    isUnread: true,
-    isStarred: false,
-    ...overrides,
-  });
-
-  const fakeModels = (calls: string[], version = "test-v1"): ModelRuntime => ({
-    version,
-    status: Effect.succeed({ kind: "ready", total: 1, version }),
-    ensure: (download) =>
-      Effect.sync(() => {
-        calls.push(`ensure:${download}`);
-      }),
-    stop: () => Effect.void,
-    embedder: {
-      version,
-      text: (text, mode) =>
-        Effect.sync(() => {
-          calls.push(`${mode}:${text}`);
-          return vector(384);
-        }),
-    },
-    images: {
-      version,
-      query: () => Effect.succeed(vector(512)),
-      image: () =>
-        Effect.succeed([
-          {
-            vector: vector(512),
-            region: {
-              imageWidth: 800,
-              imageHeight: 5200,
-              box: { x: 0, y: 0, width: 800, height: 5200 },
-              tile: { x: 0, y: 0, width: 800, height: 5200 },
-            },
-          },
-          {
-            vector: vector(512),
-            region: {
-              imageWidth: 800,
-              imageHeight: 5200,
-              box: { x: 0, y: 896, width: 800, height: 1024 },
-              tile: { x: 0, y: 896, width: 800, height: 1024 },
-            },
-          },
-        ]),
-    },
-  });
-
-  const indexer = (store: Store["Service"], models: ModelRuntime, battery = false, busy = false) =>
-    makeSemanticIndexer(
-      {
-        store: store.media,
-        vision: unavailableVision,
-        onBattery: () => battery,
-        busy: Effect.succeed(busy),
-        changed: Effect.void,
-        message: (id) => store.getMessage(id).pipe(Effect.orDie),
-        attachment: () => Effect.succeed(new Uint8Array([1])),
-        inline: () => Effect.succeed([]),
-      },
-      store,
-      models,
-    );
-
-  const setup = Effect.gen(function* () {
-    const store = yield* Store;
-    const account = yield* store.upsertAccount("gmail", "test@example.com");
-    yield* store.upsertMessage(account.id, message());
-    return { store, account, id: `${account.id}/m` };
-  });
-
-  it.effect("body chunk cap and indexed queue ordering bound backfill work", () =>
-    withStore(
-      Effect.gen(function* () {
-        const { store, account } = yield* setup;
-        const sql = yield* SqlClient.SqlClient;
-        yield* store.upsertMessage(
-          account.id,
-          message({ bodyText: "body sentence. ".repeat(10000) }),
-        );
-        yield* store.semantics.setEnabled(true);
-        const calls: string[] = [];
-        yield* (yield* indexer(store, fakeModels(calls))).batch();
-        assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 256);
-        const plan =
-          yield* sql`EXPLAIN QUERY PLAN SELECT j.message_id FROM semantic_jobs j INDEXED BY semantic_jobs_priority CROSS JOIN messages m ON m.id=j.message_id CROSS JOIN accounts a ON a.id=m.account_id
-    WHERE j.status='queued' AND j.retry_at<=0 AND j.attempts<5 AND a.needs_reauth=0 ORDER BY j.priority_at DESC,j.message_id LIMIT 1`;
-        assert.ok(!plan.some((row) => String(row.detail).includes("TEMP B-TREE")));
-      }),
-    ),
-  );
-}
+it.effect("body chunk cap and indexed queue ordering bound backfill work", () =>
+  withStore(
+    Effect.gen(function* () {
+      const { store, account } = yield* setup;
+      const sql = yield* SqlClient.SqlClient;
+      yield* store.upsertMessage(
+        account.id,
+        message({ bodyText: "body sentence. ".repeat(10000) }),
+      );
+      yield* store.semantics.setEnabled(true);
+      const calls: string[] = [];
+      yield* (yield* indexer(store, fakeModels(calls))).batch();
+      assert.strictEqual(calls.filter((call) => call.startsWith("passage:")).length, 256);
+      const plan =
+        yield* sql`EXPLAIN QUERY PLAN SELECT j.message_id FROM semantic_jobs j INDEXED BY semantic_jobs_priority CROSS JOIN messages m ON m.id=j.message_id CROSS JOIN accounts a ON a.id=m.account_id
+  WHERE j.status='queued' AND j.retry_at<=0 AND j.attempts<5 AND a.needs_reauth=0 ORDER BY j.priority_at DESC,j.message_id LIMIT 1`;
+      assert.ok(!plan.some((row) => String(row.detail).includes("TEMP B-TREE")));
+    }),
+  ),
+);
 
 for (const messageCount of [50, 150_000]) {
   const testMigration =

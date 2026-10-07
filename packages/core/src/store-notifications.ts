@@ -9,11 +9,11 @@ import { SUMMARY_COLUMNS } from "./store-query.js";
 import { NotificationActionRow, summaryRowFields, toSummary } from "./store-rows.js";
 import { notificationEligible, profileNotificationsActive } from "./system.js";
 
-export const NOTIFICATION_RETENTION = 7 * 86_400_000;
+const NOTIFICATION_RETENTION = 7 * 86_400_000;
 
-export const MAX_PENDING_NOTIFICATIONS = 1000;
+const MAX_PENDING_NOTIFICATIONS = 1000;
 
-export const IMMEDIATE_NOTIFICATION_AGE = 5 * 60_000;
+const IMMEDIATE_NOTIFICATION_AGE = 5 * 60_000;
 export const makeNotificationsStore = ({
   sql,
   compose,

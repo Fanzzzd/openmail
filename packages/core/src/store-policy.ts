@@ -8,11 +8,7 @@ import { all, first, run } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
 import { AuditRow, Id, Mode, ProposalRow, REDACT_DECIDED, toProposal } from "./store-rows.js";
 
-export function auditMetadata(entry: {
-  accountId?: string | null;
-  action: string;
-  detail: unknown;
-}) {
+function auditMetadata(entry: { accountId?: string | null; action: string; detail: unknown }) {
   const metadata = Schema.decodeUnknownOption(
     Schema.Struct({
       command: Schema.optionalKey(Command),
