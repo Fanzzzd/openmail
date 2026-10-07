@@ -240,8 +240,16 @@ export function shortcutText(set: ShortcutSet, action: ShortcutAction): string {
   return KEYMAP[set][action]
     .map((stroke) => {
       const symbol =
-        { Enter: "↩", Backspace: "⌫", ArrowDown: "↓", ArrowUp: "↑", Escape: "Esc" }[stroke.key] ??
-        stroke.key.toUpperCase();
+        {
+          Enter: "↩",
+          Backspace: "⌫",
+          Delete: "⌦",
+          ArrowDown: "↓",
+          ArrowUp: "↑",
+          ArrowLeft: "←",
+          ArrowRight: "→",
+          Escape: "Esc",
+        }[stroke.key] ?? stroke.key.toUpperCase();
       return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${stroke.key === "F" ? "⇧F" : symbol}`;
     })
     .join(" / ");

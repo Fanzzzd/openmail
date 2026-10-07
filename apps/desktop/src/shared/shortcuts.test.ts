@@ -76,6 +76,7 @@ describe("central shortcut sets", () => {
     );
     expect(matchesShortcut("apple", "send", event("Enter", { metaKey: true }))).toBe(false);
     expect(shortcutText("apple", "send")).toBe("⇧⌘D");
+    expect(shortcutText("apple", "nextTab")).toBe("⌥⌘→");
     expect(shortcutAction("gmail", event("F", { shiftKey: true }))).toBe("forwardAttachment");
   });
   it("leaves typing, content editing shortcuts and extra modifiers alone", () => {
