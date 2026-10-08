@@ -34,12 +34,14 @@ import {
   Menu,
   dialog,
   nativeImage,
+  net,
   Notification,
   powerMonitor,
   Tray,
 } from "electron";
 
 import { menuEdit } from "./menu-edit";
+import { watchOnline } from "./online";
 import { manualUpdateCheck } from "./updates";
 import { notificationPermission } from "./notification-permission";
 import { createQuitGuard, createSendState } from "./quit";
@@ -636,6 +638,10 @@ export const DesktopLive = Layer.effect(
       );
     powerMonitor.on("suspend", onSuspend);
     powerMonitor.on("resume", onResume);
+    yield* watchOnline(
+      () => net.isOnline(),
+      mailbox.resetConnectivity().pipe(Effect.andThen(mailbox.sync()), Effect.asVoid),
+    );
     const onFocus = (_event: Electron.Event, win: BrowserWindow) => {
       if (isMainWindow(win)) activeSpace = spaces.get(win.webContents.id) ?? "all";
       run(refresh);

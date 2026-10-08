@@ -1,5 +1,17 @@
 import { Clock, Effect } from "effect";
 import type { HttpClientRequest } from "effect/http";
+import { ProviderError } from "./errors.js";
+
+/**
+ * Token refresh holds the adapter's refresh lock, which every request waits on. A stalled
+ * token endpoint fails as offline (status 0), never as an expired sign-in.
+ */
+export const tokenTimeout = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  Effect.timeoutOrElse(effect, {
+    duration: "60 seconds",
+    orElse: () =>
+      Effect.fail(new ProviderError({ message: "Token endpoint timed out", status: 0 })),
+  });
 
 /** Retry-After may be delta seconds or an HTTP date. */
 export function retryAfterMillis(value: string | undefined, now: number): number {

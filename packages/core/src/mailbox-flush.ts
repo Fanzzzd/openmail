@@ -228,7 +228,13 @@ export const makeFlushMailbox = (
                         yield* store.invalidateImapFolder(account.id, error.imapReset);
                         yield* refreshQueued;
                       } else reconciliations.push({ item, error: error.message });
-                    } else yield* store.failPendingOp(item.id, error.message, claimToken);
+                    } else
+                      yield* store.failPendingOp(
+                        item.id,
+                        error.message,
+                        claimToken,
+                        error.status === 0,
+                      );
                     if (item.op.kind !== "reconcile") result.failed++;
                   }
                 }),

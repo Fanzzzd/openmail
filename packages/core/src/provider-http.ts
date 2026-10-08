@@ -1,13 +1,14 @@
 import { Clock, Data, Effect, Option, Semaphore, Stream } from "effect";
 import {
+  HttpClientError,
   HttpClientRequest,
   type HttpClient,
-  type HttpClientError,
   type HttpClientResponse,
 } from "effect/http";
 import { MEDIA_RAW_TOO_LARGE } from "./attachments.js";
 import { AuthError, PermanentError, ProviderError } from "./errors.js";
 import { Buffer } from "./platform/bytes.js";
+import { TextDecoder } from "./platform/text-decoder.js";
 import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { makeOptionalPermissions } from "./provider-diagnostics.js";
 import {
@@ -26,6 +27,80 @@ export class ApiError extends Data.TaggedError("ApiError")<{
   deferred?: boolean;
   requestNotSent?: boolean;
 }> {}
+
+/**
+ * A proxy can accept the connection and then go silent. Response headers and each body
+ * chunk must arrive within this window, or the attempt fails like a dropped connection.
+ */
+const STALL_TIMEOUT_MS = 60_000;
+/** Bodies on a fetch without readable streams can only be bounded as a whole. */
+const WHOLE_BODY_TIMEOUT_MS = 300_000;
+
+/** Time to move `bytes` at 20 KiB/s, the slowest link a transfer is allowed. */
+export const transferAllowance = (bytes: number) => Math.ceil(bytes / (20 * 1024)) * 1000;
+
+/**
+ * fetch does not report when the request body is sent, so the header wait also covers the
+ * upload: a 25 MB send on a slow link must not end as SendUncertain.
+ */
+const headerTimeout = (request: HttpClientRequest.HttpClientRequest) =>
+  STALL_TIMEOUT_MS +
+  transferAllowance(request.body._tag === "Uint8Array" ? request.body.body.byteLength : 0);
+
+const stalled = () =>
+  new ApiError({ status: 0, body: "The server stopped responding; the request timed out" });
+const withinStall = <A, E, R>(effect: Effect.Effect<A, E, R>, duration: number) =>
+  Effect.timeoutOrElse(effect, { duration, orElse: () => Effect.fail(stalled()) });
+/**
+ * Passes each body chunk to `onChunk` and fails when none arrives for the stall window.
+ * An empty body, or a fetch without readable streams (React Native), is read whole: at least
+ * five minutes, longer when Content-Length says the body needs it at 20 KiB/s.
+ */
+const readBody = <E, R>(
+  res: HttpClientResponse.HttpClientResponse,
+  onChunk: (part: Uint8Array) => Effect.Effect<void, E, R>,
+) =>
+  Effect.gen(function* () {
+    let last = yield* Clock.currentTimeMillis;
+    // One timer per window instead of one per chunk.
+    const watchdog = Effect.gen(function* () {
+      for (;;) {
+        const idle = (yield* Clock.currentTimeMillis) - last;
+        if (idle >= STALL_TIMEOUT_MS) return yield* stalled();
+        yield* Effect.sleep(STALL_TIMEOUT_MS - idle);
+      }
+    });
+    yield* res.stream.pipe(
+      Stream.runForEach((part) =>
+        Clock.currentTimeMillis.pipe(
+          Effect.flatMap((now) => {
+            last = now;
+            return onChunk(part);
+          }),
+        ),
+      ),
+      Effect.raceFirst(watchdog),
+      Effect.catchIf(
+        (error) =>
+          error instanceof HttpClientError.HttpClientError &&
+          error.reason._tag === "EmptyBodyError",
+        () =>
+          withinStall(
+            res.arrayBuffer.pipe(Effect.flatMap((bytes) => onChunk(new Uint8Array(bytes)))),
+            Math.max(
+              WHOLE_BODY_TIMEOUT_MS,
+              STALL_TIMEOUT_MS + transferAllowance(Number(res.headers["content-length"]) || 0),
+            ),
+          ),
+      ),
+    );
+  });
+const bodyText = (res: HttpClientResponse.HttpClientResponse) =>
+  Effect.gen(function* () {
+    const parts: Uint8Array[] = [];
+    yield* readBody(res, (part) => Effect.sync(() => parts.push(part)));
+    return new TextDecoder().decode(Buffer.concat(parts));
+  });
 
 /** Lazily allocate an independent semaphore for each account. */
 export function keyedLock(permits: number) {
@@ -156,9 +231,8 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       retryProviderRequest(
         Effect.gen(function* () {
           if (accountId !== undefined) yield* checkReadDeadline(accountId, sending);
-          const res = yield* http.execute(
-            options.prepareRequest(HttpClientRequest.bearerToken(request, token)),
-          );
+          const prepared = options.prepareRequest(HttpClientRequest.bearerToken(request, token));
+          const res = yield* withinStall(http.execute(prepared), headerTimeout(prepared));
           if (accountId !== undefined)
             yield* throttleReads(accountId, res.status, res.headers["retry-after"], sending);
           return yield* reader(res);
@@ -187,7 +261,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
         request,
         (res) =>
           Effect.gen(function* () {
-            const text = yield* res.text;
+            const text = yield* bodyText(res);
             if (res.status < 200 || res.status >= 300)
               return yield* responseFailure(res, text, true);
             if (!text) return null;
@@ -263,7 +337,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       request: HttpClientRequest.HttpClientRequest,
       consume: (
         res: HttpClientResponse.HttpClientResponse,
-      ) => Effect.Effect<A, PermanentError | HttpClientError.HttpClientError>,
+      ) => Effect.Effect<A, ApiError | PermanentError | HttpClientError.HttpClientError>,
     ) => {
       const attempt = Effect.gen(function* () {
         const background = yield* BackgroundRead;
@@ -278,7 +352,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
                 (res) =>
                   Effect.gen(function* () {
                     if (res.status < 200 || res.status >= 300)
-                      return yield* responseFailure(res, yield* res.text, false);
+                      return yield* responseFailure(res, yield* bodyText(res), false);
                     return yield* consume(res);
                   }),
                 accountId,
@@ -301,22 +375,19 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
     ) =>
       readContent(accountId, request, (res) =>
         Effect.gen(function* () {
-          if (maxBytes === undefined) return new Uint8Array(yield* res.arrayBuffer);
-          if (Number(res.headers["content-length"]) > maxBytes)
+          if (Number(res.headers["content-length"]) > (maxBytes ?? Infinity))
             return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
           const parts: Uint8Array[] = [];
           let total = 0;
-          yield* res.stream.pipe(
-            Stream.runForEach((part) =>
-              Effect.gen(function* () {
-                total += part.length;
-                if (total > maxBytes)
-                  return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
-                parts.push(part);
-                return yield* Effect.void;
-              }),
-            ),
-          );
+          const add = (part: Uint8Array) =>
+            Effect.gen(function* () {
+              total += part.length;
+              if (maxBytes !== undefined && total > maxBytes)
+                return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
+              parts.push(part);
+              return yield* Effect.void;
+            });
+          yield* readBody(res, add);
           return new Uint8Array(Buffer.concat(parts));
         }),
       );
@@ -329,20 +400,18 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       readContent(accountId, request, (res) =>
         Effect.gen(function* () {
           const state = { offset: 0, equal: true };
-          yield* res.stream.pipe(
-            Stream.runForEach((part) =>
-              Effect.sync(() => {
-                if (state.offset + part.length > size) state.equal = false;
-                if (state.equal) {
-                  for (let start = 0; state.equal && start < part.length; start += 64 * 1024) {
-                    const slice = part.subarray(start, start + 64 * 1024);
-                    const expected = range(state.offset + start, slice.length);
-                    state.equal = slice.every((byte, i) => expected[i] === byte);
-                  }
+          yield* readBody(res, (part) =>
+            Effect.sync(() => {
+              if (state.offset + part.length > size) state.equal = false;
+              if (state.equal) {
+                for (let start = 0; state.equal && start < part.length; start += 64 * 1024) {
+                  const slice = part.subarray(start, start + 64 * 1024);
+                  const expected = range(state.offset + start, slice.length);
+                  state.equal = slice.every((byte, i) => expected[i] === byte);
                 }
-                state.offset += part.length;
-              }),
-            ),
+              }
+              state.offset += part.length;
+            }),
           );
           return state.equal && state.offset === size;
         }),

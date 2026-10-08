@@ -1,6 +1,6 @@
 import { assert, it } from "@effect/vitest";
 import { vi } from "vitest";
-import { Clock, Effect, Fiber, Layer, Option, Schema } from "effect";
+import { Clock, Effect, Fiber, Layer, Option, Predicate, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { HttpClient, HttpClientResponse } from "effect/http";
 import {
@@ -89,6 +89,8 @@ type GraphFlags = {
   failAfterAttachments?: number;
   loseCreate?: boolean;
   loseSend?: boolean;
+  /** The server accepts the send and never answers. */
+  stallSend?: boolean;
   sendNotReceived?: boolean;
   hidden?: boolean;
   raw?: string;
@@ -105,7 +107,12 @@ type GraphFlags = {
 };
 function graph(files: readonly OutgoingAttachment[], input: GraphFlags = {}) {
   const flags = { ...input, version: input.version ?? 1, failure: input.failure ?? "none" };
-  const calls: { method: string; path: string; select: string | null }[] = [];
+  const calls: {
+    method: string;
+    path: string;
+    select: string | null;
+    filter: string | null;
+  }[] = [];
   const ranges: { start: number; end: number; size: number }[] = [];
   const attachments: { id: string; file: OutgoingAttachment }[] = [];
   const sessions = new Map<string, Session>();
@@ -135,7 +142,12 @@ function graph(files: readonly OutgoingAttachment[], input: GraphFlags = {}) {
       Effect.andThen(
         Effect.sync(() => {
           const path = url.pathname.replace(/^\/v1\.0/, "");
-          calls.push({ method: request.method, path, select: url.searchParams.get("$select") });
+          calls.push({
+            method: request.method,
+            path,
+            select: url.searchParams.get("$select"),
+            filter: url.searchParams.get("$filter"),
+          });
           const respond = (json?: unknown, status = 200) =>
             HttpClientResponse.fromWeb(
               request,
@@ -341,6 +353,7 @@ function graph(files: readonly OutgoingAttachment[], input: GraphFlags = {}) {
           if (request.method === "POST" && path === "/me/messages/draft/send") {
             if (flags.sendNotReceived) return respond(undefined, 503);
             sent++;
+            if (flags.stallSend) return null;
             return respond(undefined, flags.loseSend ? 503 : 202);
           }
           if (request.method === "DELETE" && path === "/me/messages/draft") {
@@ -351,6 +364,7 @@ function graph(files: readonly OutgoingAttachment[], input: GraphFlags = {}) {
           return respond(undefined, 404);
         }),
       ),
+      Effect.flatMap((response) => (response ? Effect.succeed(response) : Effect.never)),
     ),
   );
   return {
@@ -369,6 +383,9 @@ function graph(files: readonly OutgoingAttachment[], input: GraphFlags = {}) {
     },
     get sentLookups() {
       return sentLookups;
+    },
+    get identity() {
+      return identity;
     },
     flags,
   };
@@ -548,6 +565,54 @@ it.effect("a send with a lost response confirms Sent and never repeats the submi
     assert.strictEqual(server.created, 1);
   }),
 );
+
+for (const delivered of [true, false])
+  it.effect(
+    `a stalled large-attachment send is submitted once and ${delivered ? "confirmed" : "left SendUncertain"} by exact Message-ID`,
+    () =>
+      Effect.gen(function* () {
+        // A Sent copy that never appears: every lookup misses.
+        const { large, server } = setup(undefined, {
+          stallSend: true,
+          ...(delivered ? {} : { sentLag: Number.MAX_SAFE_INTEGER }),
+        });
+        const preparation = journal();
+        const exit = yield* run(server, (adapter) =>
+          Effect.gen(function* () {
+            const sending = yield* adapter
+              .send(account, message([large]), Option.none(), preparation)
+              .pipe(Effect.forkChild);
+            for (let step = 0; step < 300 && !sending.pollUnsafe(); step++)
+              yield* TestClock.adjust("1 second");
+            return sending.pollUnsafe();
+          }),
+        );
+        if (delivered) assert.strictEqual(exit?._tag, "Success");
+        else {
+          assert.strictEqual(exit?._tag, "Failure");
+          if (exit?._tag === "Failure")
+            assert.isTrue(
+              exit.cause.reasons.some(
+                (reason) =>
+                  reason._tag === "Fail" && Predicate.isTagged(reason.error, "SendUncertain"),
+              ),
+            );
+        }
+        assert.strictEqual(server.sent, 1);
+        assert.strictEqual(
+          server.calls.filter((call) => call.method === "POST" && call.path.endsWith("/send"))
+            .length,
+          1,
+        );
+        assert.strictEqual(server.sessionCount, 1);
+        const lookups = server.calls.filter(
+          (call) => call.path === "/me/mailFolders/sentitems/messages",
+        );
+        assert.isAbove(lookups.length, 0);
+        for (const lookup of lookups)
+          assert.strictEqual(lookup.filter, `internetMessageId eq '${server.identity}'`);
+      }),
+  );
 
 it.effect("a missing exact draft is recreated without deleting an unrelated draft", () =>
   Effect.gen(function* () {

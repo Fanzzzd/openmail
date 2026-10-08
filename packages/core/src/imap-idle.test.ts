@@ -173,9 +173,10 @@ it("supervisor owns one connection per account, coalesces sync and reconnects wi
     expect(sync).toHaveBeenCalledTimes(2);
     finishSync?.();
     opened[0]?.reject(new Error("offline"));
-    await vi.advanceTimersByTimeAsync(999);
+    // The first retry waits 800-1000 ms; jitter only shortens it.
+    await vi.advanceTimersByTimeAsync(799);
     expect(opened).toHaveLength(1);
-    await vi.advanceTimersByTimeAsync(1);
+    await vi.advanceTimersByTimeAsync(201);
     expect(opened).toHaveLength(2);
     watcher.pause(true);
     expect(opened[1]?.signal.aborted).toBe(true);
@@ -185,10 +186,42 @@ it("supervisor owns one connection per account, coalesces sync and reconnects wi
     expect(opened).toHaveLength(3);
     watcher.reconcile([{ ...account, enabled: false }]);
     expect(opened[2]?.signal.aborted).toBe(true);
-    expect(idleRetryDelay(99)).toBe(300_000);
+    expect(idleRetryDelay(99, 0)).toBe(300_000);
+    expect(idleRetryDelay(99, 1)).toBe(240_000);
   } finally {
     watcher.close();
     finishSync?.();
+    vi.useRealTimers();
+  }
+});
+
+it("a network change reconnects a waiting IDLE account at once instead of after its backoff", async () => {
+  vi.useFakeTimers();
+  const opened: ((error: Error) => void)[] = [];
+  const watcher = new ImapIdle(
+    (_a, signal) =>
+      new Promise((_resolve, reject) => {
+        opened.push(reject);
+        signal.addEventListener("abort", () => reject(new Error("closed")));
+      }),
+    async () => null,
+  );
+  try {
+    watcher.reconcile([account]);
+    for (let failures = 1; failures <= 6; failures++) {
+      opened.at(-1)?.(new Error("getaddrinfo ENOTFOUND imap.example.com"));
+      await vi.advanceTimersByTimeAsync(idleRetryDelay(failures, 0));
+    }
+    expect(opened).toHaveLength(7);
+    opened.at(-1)?.(new Error("getaddrinfo ENOTFOUND imap.example.com"));
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(opened).toHaveLength(7);
+    expect(watcher.reconnecting(account.id)).toBe(false);
+    watcher.retryNow();
+    expect(opened).toHaveLength(8);
+    expect(watcher.reconnecting(account.id)).toBe(true);
+  } finally {
+    watcher.close();
     vi.useRealTimers();
   }
 });

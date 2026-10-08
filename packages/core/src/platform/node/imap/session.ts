@@ -46,7 +46,15 @@ export function failure(
   host: string,
   error: unknown,
 ): AuthError | ProviderError {
-  if (/STARTTLS|TLS|certificate/i.test(describe(error)))
+  // "socket disconnected before secure TLS connection was established" is a dropped network.
+  const dropped =
+    Predicate.isObject(error) &&
+    "code" in error &&
+    Predicate.isString(error.code) &&
+    /^(?:ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ETIMEOUT|EPIPE|ENETUNREACH|EHOSTUNREACH)$/.test(
+      error.code,
+    );
+  if (!dropped && /STARTTLS|TLS|certificate/i.test(describe(error)))
     return new ProviderError({
       message: `${host}: TLS is required before authentication. ${describe(error)}`,
     });
@@ -98,6 +106,7 @@ export function openImap(accountId: string, settings: ImapSettings, password: st
         logger: false,
         disableAutoIdle: true,
         maxIdleTime: IDLE_RENEW_MS,
+        connectionTimeout: 20_000,
       });
       // Socket errors after connect arrive as events; the pending command rejects too.
       c.on("error", ignore);

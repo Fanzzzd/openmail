@@ -1,7 +1,9 @@
+import { jittered } from "./backoff.js";
 import type { Account } from "./domain.js";
 export const IDLE_RENEW_MS = 25 * 60_000;
-export const idleRetryDelay = (failures: number) =>
-  Math.min(5 * 60_000, 1000 * 2 ** Math.min(failures, 9));
+/** Capped exponential backoff with jitter, so accounts do not reconnect in lockstep. */
+export const idleRetryDelay = (failures: number, random = Math.random()) =>
+  jittered(Math.min(5 * 60_000, 1000 * 2 ** Math.min(failures, 9)), random);
 type Watch = (
   account: Account,
   signal: AbortSignal,
@@ -13,6 +15,7 @@ type Worker = {
   controller: AbortController;
   state: "connecting" | "active" | "waiting" | "unsupported";
   timer?: ReturnType<typeof setTimeout>;
+  failures?: number;
 };
 
 /** One signal connection per enabled IMAP account; all signals share a sync queue. */
@@ -80,6 +83,7 @@ export class ImapIdle {
     if (worker.controller.signal.aborted || this.workers.get(worker.account.id) !== worker) return;
     const attempts = connection.active ? 0 : failures + 1;
     worker.state = "waiting";
+    worker.failures = attempts;
     worker.timer = setTimeout(() => {
       void this.connect(worker, attempts);
     }, idleRetryDelay(attempts));
@@ -107,6 +111,15 @@ export class ImapIdle {
     } finally {
       this.syncing = false;
     }
+  }
+  /** The network came back: reconnect waiting accounts now instead of after their backoff. */
+  retryNow() {
+    if (this.paused) return;
+    for (const worker of this.workers.values())
+      if (worker.state === "waiting") {
+        clearTimeout(worker.timer);
+        void this.connect(worker, worker.failures ?? 0);
+      }
   }
   remove(id: string) {
     const worker = this.workers.get(id);

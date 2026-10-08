@@ -4,7 +4,7 @@ import { attachmentBytes, OUTLOOK_ATTACHMENT_THRESHOLD } from "../attachment-pol
 import type { OutgoingAttachment } from "../domain.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../errors.js";
 import { Buffer } from "../platform/bytes.js";
-import { ApiError } from "../provider-http.js";
+import { ApiError, transferAllowance } from "../provider-http.js";
 import { retryAfterMillis } from "../provider-retry.js";
 import type { OutlookClient } from "./client.js";
 import { decode } from "./graph.js";
@@ -15,7 +15,7 @@ export const UPLOAD_BLOCK_SIZE = 320 * 1024;
 export const UPLOAD_CHUNK_SIZE = 9 * UPLOAD_BLOCK_SIZE;
 const MAX_SESSION_RESTARTS = 2;
 const MAX_CHUNK_FAILURES = 4;
-export const uploadTimeout = (bytes: number) => 30000 + Math.ceil(bytes / (20 * 1024)) * 1000;
+export const uploadTimeout = (bytes: number) => 30000 + transferAllowance(bytes);
 const uploadFailed = "Outlook attachment upload failed. Try saving or sending again.";
 const uploadFailureBody = JSON.stringify({ error: { message: uploadFailed } });
 const invalidSession = new ProviderError({ message: "Invalid Outlook upload session" });

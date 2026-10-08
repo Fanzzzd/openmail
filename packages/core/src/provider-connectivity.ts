@@ -1,4 +1,5 @@
-import { Clock, Context, Effect, Option, Schema } from "effect";
+import { Clock, Context, Effect, Option, Random, Schema } from "effect";
+import { jittered } from "./backoff.js";
 import { ProviderError } from "./errors.js";
 
 export const BackgroundRead = Context.Reference<boolean>("openmail/BackgroundRead", {
@@ -34,7 +35,9 @@ export function makeProviderConnectivity() {
       const failures = (previous?.failures ?? 0) + 1;
       accounts.set(accountId, {
         failures,
-        due: now + Math.min(300_000, 5000 * 2 ** Math.min(failures - 1, 6)),
+        due:
+          now +
+          jittered(Math.min(300_000, 5000 * 2 ** Math.min(failures - 1, 6)), yield* Random.next),
       });
     });
   return {

@@ -4,6 +4,7 @@ import { Crypto, Deferred, Effect, Layer, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 
 import { AuthError, ProviderError } from "../../errors.js";
+import { tokenTimeout } from "../../provider-retry.js";
 import { type AuthorizeRequest, Browser, OAuth, type TokenResponse } from "../../services.js";
 
 /**
@@ -119,7 +120,7 @@ export const OAuthLoopback: Layer.Layer<
           expiresIn: json.expires_in,
           ...(json.scope === undefined ? {} : { scopes: json.scope.split(/\s+/).filter(Boolean) }),
         } satisfies TokenResponse;
-      });
+      }).pipe(tokenTimeout);
 
     const authorize = Effect.fn("OAuth.authorize")(function* (req: AuthorizeRequest) {
       const verifier = Buffer.from(yield* random(32)).toString("base64url");

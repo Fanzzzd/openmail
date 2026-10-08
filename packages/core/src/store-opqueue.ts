@@ -1,7 +1,8 @@
-import { Cause, Clock, Effect, Option, Schema } from "effect";
+import { Cause, Clock, Effect, Option, Random, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { FailedOp, type QueuedOp } from "./domain.js";
 import { NotFound, ProviderError } from "./errors.js";
+import { JITTER } from "./backoff.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import {
@@ -92,10 +93,21 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     id: number,
     error: string,
     token?: string,
+    offline = false,
   ) {
     const now = yield* Clock.currentTimeMillis;
+    // The attempt count lives in SQL, so the jitter factor is applied there.
+    const factor = 1 - (yield* Random.next) * JITTER;
     yield* run(
-      sql`UPDATE pending_ops SET retry_at=${now} + MIN(3600000, 5000 * (1 << MIN(attempts, 10))), attempts=attempts+1, last_error=${error}, claimed_at=NULL, claim_token=NULL WHERE id=${id} ${claimCondition(token)}`,
+      sql`UPDATE pending_ops SET retry_at=${now} + CAST(MIN(3600000, 5000 * (1 << MIN(attempts, 10))) * ${factor} AS INTEGER), retry_offline=${offline ? 1 : 0}, attempts=attempts+1, last_error=${error}, claimed_at=NULL, claim_token=NULL WHERE id=${id} ${claimCondition(token)}`,
+    );
+  });
+
+  /** The network came back: ops that failed offline are due now and keep their attempt count. */
+  const retryPendingOpsNow = Effect.fn("Store.retryPendingOpsNow")(function* () {
+    const now = yield* Clock.currentTimeMillis;
+    yield* run(
+      sql`UPDATE pending_ops SET retry_at=${now} WHERE retry_offline=1 AND retry_at > ${now}`,
     );
   });
 
@@ -204,6 +216,7 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     releasePendingOp,
     removePendingOp,
     failPendingOp,
+    retryPendingOpsNow,
     sendUncertain: (id) =>
       first(Schema.Struct({ key: Schema.String }))(
         sql`SELECT key FROM prefs WHERE key=${`send-uncertain:${id}`}`,
@@ -231,6 +244,7 @@ export const makeOpQueueStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     | "releasePendingOp"
     | "removePendingOp"
     | "failPendingOp"
+    | "retryPendingOpsNow"
     | "sendUncertain"
     | "setSendUncertain"
   >;

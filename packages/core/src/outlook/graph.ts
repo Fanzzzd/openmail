@@ -304,6 +304,8 @@ const writeReason = (error: ApiError) => {
   const message = Option.isSome(decoded) ? decoded.value.error.message : undefined;
   if (message?.trim()) return message.replace(/\s+/g, " ").trim().slice(0, 300);
   switch (error.status) {
+    case 0:
+      return "Outlook could not be reached. The change will be retried.";
     case 403:
       return "Access to this message was denied.";
     case 404:
@@ -317,7 +319,9 @@ const writeReason = (error: ApiError) => {
     case 422:
       return "The server could not accept this message content.";
     default:
-      return "The server rejected this change.";
+      return error.status === 429 || error.status >= 500
+        ? "Outlook is busy. The change will be retried."
+        : "The server rejected this change.";
   }
 };
 

@@ -133,6 +133,7 @@ vi.mock("electron", async () => {
     nativeImage: { createFromPath: () => ({ setTemplateImage: vi.fn() }) },
     nativeTheme: { shouldUseDarkColors: false },
     powerMonitor: new EventEmitter(),
+    net: { isOnline: () => true },
     shell: { openExternal: vi.fn() },
     testState: {
       menu: setApplicationMenu,

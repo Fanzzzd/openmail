@@ -1,6 +1,7 @@
 import { Effect, Layer, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { AuthError, ProviderError } from "../../errors.js";
+import { tokenTimeout } from "../../provider-retry.js";
 import { OAuth, type AuthorizeRequest, type TokenResponse } from "../../services.js";
 
 export interface MobileAuthSession {
@@ -72,7 +73,7 @@ export const mobileOAuthLayer = (session: MobileAuthSession) =>
               ? {}
               : { scopes: token.scope.split(/\s+/).filter(Boolean) }),
           } satisfies TokenResponse;
-        });
+        }).pipe(tokenTimeout);
       return OAuth.of({
         authorize: (request) =>
           Effect.gen(function* () {

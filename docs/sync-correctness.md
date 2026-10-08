@@ -20,7 +20,7 @@ Node IMAP 标记、复制和删除返回 false 时按 ProviderError 重试；PER
 
 ## 出站操作队列
 
-`pending_ops` 在失败后保存 retry_at，首次等待五秒，随后指数退避，最长一小时；刷新跳过尚未到期的操作，也不越过同一邮件的前置失败操作。断网、传输失败、429／deferred 和 5xx 不按重试次数丢弃。PermanentError 立即终止；普通操作再次推送失败且排队满七天时过期。reconcile 在账户不可达时一直保留。AuthError 暂停账户、标记重新登录并释放认领，不增加失败次数；只读会话不推送队列。
+`pending_ops` 在失败后保存 retry_at，首次等待五秒，随后指数退避，最长一小时，每次等待随机提前最多 20%；刷新跳过尚未到期的操作，也不越过同一邮件的前置失败操作。断网、传输失败、429／deferred 和 5xx 不按重试次数丢弃。PermanentError 立即终止；普通操作再次推送失败且排队满七天时过期。reconcile 在账户不可达时一直保留。AuthError 暂停账户、标记重新登录并释放认领，不增加失败次数；只读会话不推送队列。
 
 认领有效期两分钟，长推送每三十秒续租。每次认领有独立 token，结算及写入远端草稿关联时核对 token。续租或本地重映射失败只处理当前操作，无关操作及拉取继续；旧进程不能结算新进程认领的操作。迟到上传产生的独立草稿副本会清理，清理失败排队删除；当前草稿已引用的副本保留。
 
@@ -163,6 +163,10 @@ CLI、桌面复制及 smoke 导出通过 `redactSyncHealth` 将自定义标签�
 ## 断网与同步恢复
 
 Gmail／Outlook 的后台拉取、计数、验证及维护共用每账户断网退避；只把明确 status 0 的非延期失败计入。传输失败从五秒开始指数等待，最长五分钟；等待期间不重新刷新 token 或发起后台请求，延期不写 provider-failure。发送、打开正文和下载附件绕过断网等待，成功会重置失败次数；手动 Sync RPC 先调用 portable `Mailbox.resetConnectivity`。发送提交失败仍按既有发送确认流程查询 Sent，提交和确认不会被断网等待拦截。系统唤醒、renderer online 和手机 AppState active 事件清除断网和 Inbox 轮询等待，立即恢复同步。手机未安装 NetInfo，使用既有 expo-network 的 addNetworkStateListener 处理前台网络恢复；服务端 Retry-After 独立保存，不能被这些事件清除。
+
+Gmail／Graph 请求在 60 秒内收不到响应头，或响应体 60 秒没有新数据时，按 status 0 的传输失败处理；请求体每 20 KiB 另给响应头 1 秒上传时间。发送随后走 Sent 精确 Message-ID 确认。token 刷新限时 60 秒，超时不标记重新登录。
+
+resetConnectivity 让因断网失败的排队操作立即到期，429／5xx 的退避不变，并让等待中的 IDLE 立即重连。迁移 42 用 retry_offline 记录断网失败。桌面主进程每五秒读取 `net.isOnline()`，恢复在线时调用 resetConnectivity 和 sync。回归见 [network-failures.test.ts](../packages/core/src/network-failures.test.ts)。
 
 同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `uid-remap.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
 

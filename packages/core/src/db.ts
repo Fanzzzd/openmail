@@ -1305,6 +1305,8 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      ON CONFLICT(message_id) DO UPDATE SET generation=generation+1,status='queued',claim=NULL,
        claimed_at=NULL,attempts=0,retry_at=0,note=NULL;
    DROP TABLE duplicate_media_messages;`,
+  // 42: ops that failed on connectivity retry early when the network comes back.
+  `ALTER TABLE pending_ops ADD COLUMN retry_offline INTEGER NOT NULL DEFAULT 0;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

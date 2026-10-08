@@ -135,6 +135,8 @@ export const MailboxLive = (
 
       const resetConnectivity = Effect.gen(function* () {
         runtime.polling.clear();
+        runtime.idle?.retryNow();
+        if (!readOnly) yield* store.retryPendingOpsNow();
         for (const provider of new Set(
           (yield* store.listAccounts).map((account) => account.provider),
         ))

@@ -451,7 +451,15 @@ export class Store extends Context.Service<
     releasePendingOp(id: number, token?: string): Effect.Effect<void>;
     removePendingOp(id: number, token?: string): Effect.Effect<void>;
     /** Counts a failed attempt and releases the claim. */
-    failPendingOp(id: number, error: string, token?: string): Effect.Effect<void>;
+    /** `offline`: the push failed on connectivity, so a reconnect may retry it early. */
+    failPendingOp(
+      id: number,
+      error: string,
+      token?: string,
+      offline?: boolean,
+    ): Effect.Effect<void>;
+    /** Makes ops that failed offline due now without resetting their attempt count. */
+    retryPendingOpsNow(): Effect.Effect<void>;
 
     renewPendingOp(id: number, token: string): Effect.Effect<boolean>;
     ownsPendingOp(id: number, token: string): Effect.Effect<boolean>;
