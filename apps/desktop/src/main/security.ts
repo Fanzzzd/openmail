@@ -14,6 +14,15 @@ export function trustRenderer(
   contents.once("destroyed", () => renderers.delete(contents));
 }
 
+/** For windows that never navigate: file drops, redirects, frames, popups and webviews. */
+export function denyNavigation(contents: Pick<WebContents, "on" | "setWindowOpenHandler">): void {
+  contents.setWindowOpenHandler(() => ({ action: "deny" }));
+  contents.on("will-navigate", (event) => event.preventDefault());
+  contents.on("will-redirect", (event) => event.preventDefault());
+  contents.on("will-frame-navigate", (event) => event.preventDefault());
+  contents.on("will-attach-webview", (event) => event.preventDefault());
+}
+
 /** Only a registered app window's top frame can call the mailbox RPCs. */
 export function trustedSender(
   event: Pick<IpcMainEvent, "sender"> & {

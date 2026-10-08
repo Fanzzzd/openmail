@@ -209,10 +209,6 @@ msgstr "Un paramètre d’heures calmes quotidien précédent est toujours actif
 msgid "Above quoted text"
 msgstr "Au-dessus du texte cité"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Chemin d’accès absolu au dossier"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Choisissez une destination pour le filtre"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Choisissez votre fournisseur de messagerie."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Choisir…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

@@ -209,10 +209,6 @@ msgstr "Eine vorherige Einstellung der täglichen Ruhezeiten ist noch aktiv. Än
 msgid "Above quoted text"
 msgstr "Über dem zitierten Text"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Absoluter Ordnerpfad"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Ein Ziel für den Filter auswählen"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "E-Mail-Anbieter auswählen."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Auswählen…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

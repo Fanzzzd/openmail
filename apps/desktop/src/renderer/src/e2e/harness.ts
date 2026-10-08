@@ -38,6 +38,7 @@ import { vi } from "vitest";
 import type { RpcBridge } from "../../../shared/channel";
 import type { DesktopEvent } from "../../../shared/desktop";
 import { mailboxHandlers } from "../../../shared/mailbox-handlers";
+import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
 import { App } from "../App";
 import { ThreadWindow } from "../ThreadWindow";
@@ -298,7 +299,9 @@ export async function flow(
       ClipboardAttachments: () => Effect.succeed([]),
       SetNativeMenuState: () => Effect.void,
       SpellcheckLanguages: () => Effect.succeed({ languages: [], automatic: true }),
-      SetPrefs: ({ patch }) => m.setPrefs(patch),
+      SetPrefs: ({ patch }) =>
+        rendererPrefs(patch).pipe(Effect.flatMap((value) => m.setPrefs(value))),
+      ChooseAttachmentFolder: unsupported,
       SuggestContacts: ({ query, exclude, accountIds }) =>
         m.suggestContacts(query, { exclude, accountIds }),
       ContactAlternatives: ({ address }) => m.contactAlternatives(address),

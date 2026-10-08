@@ -209,10 +209,6 @@ msgstr "Předchozí nastavení denních klidových hodin je stále aktivní. Zm�
 msgid "Above quoted text"
 msgstr "Nad citovaným textem"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Absolutní cesta ke složce"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Vyberte jeden cíl pro filtr"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Vyberte poskytovatele e-mailu."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Vybrat…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

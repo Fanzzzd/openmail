@@ -112,6 +112,7 @@ it("locks navigation, redirects, webviews and title changes for every app window
         experimentalFeatures: false,
         webviewTag: false,
         spellcheck: true,
+        devTools: false,
       },
     });
     for (const name of ["will-navigate", "will-redirect", "will-attach-webview"]) {

@@ -219,10 +219,6 @@ msgstr "原每日静音时段仍生效。修改此日程后替换。"
 msgid "Above quoted text"
 msgstr "引文上方"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "绝对文件夹路径"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1166,6 +1162,10 @@ msgstr "请选择一个目标位置"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "选择邮箱服务商。"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "选择…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

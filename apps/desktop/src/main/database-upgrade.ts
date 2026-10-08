@@ -1,6 +1,8 @@
 import { escapeHtml } from "@openmail/core/schema";
 import { app, BrowserWindow } from "electron";
 import { nativeRecoveryLabels } from "./native-i18n";
+import { denyNavigation } from "./security";
+import { WINDOW_SECURITY } from "./security-policy";
 
 let releaseUpgradeHold: (() => void) | undefined;
 /** DesktopLive calls this after its normal close handler and main window exist. */
@@ -36,8 +38,14 @@ export async function showDatabaseUpgrade() {
     maximizable: false,
     show: false,
     title: labels.upgrading,
-    webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      ...WINDOW_SECURITY,
+      javascript: false,
+      spellcheck: false,
+      devTools: !app.isPackaged,
+    },
   });
+  denyNavigation(window.webContents);
   upgradeWindows.add(window);
   const title = escapeHtml(labels.upgrading);
   const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${title}</title><style>body{font:16px system-ui;margin:40px;color:CanvasText;background:Canvas;color-scheme:light dark}progress{width:100%;margin-top:16px}</style><p>${title}</p><progress aria-label="${title}"></progress>`;

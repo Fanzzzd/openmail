@@ -15,6 +15,7 @@ const native = vi.hoisted(() => ({
   focus: vi.fn(),
   register: vi.fn(),
   cleanup: vi.fn(),
+  printCleanup: vi.fn(),
 }));
 vi.mock("electron", () => ({
   app: Object.assign(new EventEmitter(), {
@@ -53,7 +54,10 @@ vi.mock("./security-bootstrap", () => ({
   registerSecuritySchemes: vi.fn(),
   prepareSessionSecurity: vi.fn(),
 }));
-vi.mock("./attachment-temp", () => ({ cleanupAttachmentTemps: native.cleanup }));
+vi.mock("./attachment-temp", () => ({
+  cleanupAttachmentTemps: native.cleanup,
+  cleanupPrintTemps: native.printCleanup,
+}));
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
   diagnosticsLogger: Logger.make(() => native.diagnosticLog()),
@@ -81,6 +85,7 @@ beforeEach(async () => {
     value: "/tmp/openmail-test-resources",
   });
   native.cleanup.mockResolvedValue(undefined);
+  native.printCleanup.mockResolvedValue(undefined);
   native.vision.mockResolvedValue({
     available: false,
     version: "test",
@@ -121,6 +126,13 @@ it("the second process exits before building core or opening any data", async ()
   expect(native.vision).not.toHaveBeenCalled();
   expect(native.cleanup).not.toHaveBeenCalled();
 });
+it("a failed attachment temp sweep still runs the print temp sweep", async () => {
+  native.cleanup.mockRejectedValue(new Error("attachment sweep failed"));
+  await import("./index");
+  await vi.waitFor(() =>
+    expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp"),
+  );
+});
 it("handles open-url and forwarded second-instance URLs and enables desktop-only polling", async () => {
   await import("./index");
   const { app } = await import("electron");
@@ -155,6 +167,7 @@ it("handles open-url and forwarded second-instance URLs and enables desktop-only
   );
   await vi.waitFor(() => expect(native.register).toHaveBeenCalledWith("openmail"));
   expect(native.cleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp");
+  expect(native.printCleanup).toHaveBeenCalledWith("/tmp/openmail-test-temp");
   app.emit("will-quit", { preventDefault });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0));
 });

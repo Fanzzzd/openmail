@@ -4,7 +4,7 @@ import { registerSecuritySchemes, prepareSessionSecurity } from "./security-boot
 import { openExternal } from "./external";
 import { createShutdownHandler } from "./quit";
 import { prepareUpdateQuit } from "./update-install";
-import { cleanupAttachmentTemps } from "./attachment-temp";
+import { cleanupAttachmentTemps, cleanupPrintTemps } from "./attachment-temp";
 import {
   NodeMailbox,
   DatabaseUpgradeSpaceError,
@@ -59,8 +59,13 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
   const setup = Layer.effectDiscard(
     ready.pipe(
       Effect.andThen(
-        Effect.tryPromise(() => cleanupAttachmentTemps(app.getPath("temp"))).pipe(
-          Effect.catch((error) => Effect.logWarning("Attachment temp cleanup failed", error)),
+        Effect.all(
+          [cleanupAttachmentTemps, cleanupPrintTemps].map((cleanup) =>
+            Effect.tryPromise(() => cleanup(app.getPath("temp"))).pipe(
+              Effect.catch((error) => Effect.logWarning("Attachment temp cleanup failed", error)),
+            ),
+          ),
+          { discard: true },
         ),
       ),
       Effect.andThen(

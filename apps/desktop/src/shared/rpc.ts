@@ -634,7 +634,9 @@ export class MailRpcs extends RpcGroup.make(
 
   // Compose settings
   Rpc.make("Prefs", { success: Prefs }),
-  Rpc.make("SetPrefs", { payload: { patch: PrefsPatch } }),
+  Rpc.make("SetPrefs", { payload: { patch: PrefsPatch }, error }),
+  /** Opens a folder picker in the main process and stores the choice. Null when cancelled. */
+  Rpc.make("ChooseAttachmentFolder", { success: Schema.NullOr(Schema.String), error }),
   Rpc.make("NamedSignatures", { success: Schema.Array(NamedSignature) }),
   Rpc.make("SignatureDefaults", { success: Schema.Array(SignatureDefault) }),
   Rpc.make("SaveNamedSignature", {

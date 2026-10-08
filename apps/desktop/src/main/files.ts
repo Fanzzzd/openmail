@@ -1,5 +1,5 @@
 import { attachmentImportKind } from "@openmail/core/schema";
-import { configurePermissions } from "./security";
+import { configurePermissions, denyNavigation } from "./security";
 import { WINDOW_SECURITY } from "./security-policy";
 import { quarantine } from "./file-quarantine";
 /**
@@ -8,7 +8,7 @@ import { quarantine } from "./file-quarantine";
  * asks where to put it and writes it.
  */
 import { randomUUID } from "node:crypto";
-import { mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -30,7 +30,7 @@ import type { PrintHeadings } from "../shared/rpc";
 
 type MailboxService = Mailbox["Service"];
 
-import { EXECUTABLE, safeFilename } from "./attachment-filenames";
+import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
 import { attachmentTemp } from "./attachment-temp";
 
 /** A subject is text, not a path. Reserve space for the extension and preserve code points. */
@@ -214,7 +214,7 @@ export const openAttachment: (
   if (EXECUTABLE.test(name) || attachmentImportKind(content) !== null) {
     // Fails here; nothing below runs.
     yield* new DeviceError({
-      message: `${name} can run code. Save it and open it yourself if you trust it.`,
+      message: launcherBlockedMessage(name),
     });
   }
   const downloads = (yield* m.prefs).attachmentOpenFolder === "downloads";
@@ -306,63 +306,68 @@ export const printThread: (
     inline,
   });
 
-  const folder = path.join(app.getPath("temp"), "openmail-print");
-  const file = path.join(folder, `${randomUUID()}.html`);
-  yield* Effect.tryPromise({
-    try: async () => {
-      await mkdir(folder, { recursive: true });
-      await writeFile(file, html);
-    },
+  // mkdtemp creates a fresh 0700 folder, so a planted path cannot redirect the write.
+  const folder = yield* Effect.tryPromise({
+    try: () => mkdtemp(path.join(app.getPath("temp"), "openmail-print-")),
     catch: deviceFailure,
   });
-
-  printFiles.add(pathToFileURL(file).href);
-  printSessionCache ??= printSession();
-  const win = new BrowserWindow({
-    show: false,
-    width: 800,
-    height: 1000,
-    title: "OpenMail",
-    webPreferences: {
-      ...WINDOW_SECURITY,
-      javascript: false,
-      spellcheck: false,
-      session: printSessionCache,
-    },
-  });
-  win.webContents.on("page-title-updated", (event) => event.preventDefault());
-  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
-  win.webContents.on("will-navigate", (event) => event.preventDefault());
-  win.webContents.on("will-redirect", (event) => event.preventDefault());
-  win.webContents.on("will-frame-navigate", (event) => event.preventDefault());
-  win.webContents.on("will-attach-webview", (event) => event.preventDefault());
-
+  const file = path.join(folder, `${randomUUID()}.html`);
+  const url = pathToFileURL(file).href;
+  // Cleanup is attached before anything else can fail, including the window constructor.
   return yield* Effect.gen(function* () {
     yield* Effect.tryPromise({
-      try: () => win.loadFile(file),
+      try: () => writeFile(file, html, { mode: 0o600, flag: "wx" }),
       catch: deviceFailure,
     });
-    if (pdfPath) {
-      const data = yield* Effect.tryPromise({
-        try: () => win.webContents.printToPDF({ printBackground: true }),
+    printFiles.add(url);
+    printSessionCache ??= printSession();
+    const win = new BrowserWindow({
+      show: false,
+      width: 800,
+      height: 1000,
+      title: "OpenMail",
+      webPreferences: {
+        ...WINDOW_SECURITY,
+        javascript: false,
+        spellcheck: false,
+        devTools: !app.isPackaged,
+        session: printSessionCache,
+      },
+    });
+    win.webContents.on("page-title-updated", (event) => event.preventDefault());
+    denyNavigation(win.webContents);
+    return yield* Effect.gen(function* () {
+      yield* Effect.tryPromise({
+        try: () => win.loadFile(file),
         catch: deviceFailure,
       });
-      yield* write(pdfPath, data);
-      return true;
-    }
-    return yield* Effect.callback<boolean, DeviceError>((resume) => {
-      win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
-        // A cancelled print dialog reports "Print job canceled" or "cancelled".
-        if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
-        else resume(Effect.fail(deviceFailure(reason)));
+      if (pdfPath) {
+        const data = yield* Effect.tryPromise({
+          try: () => win.webContents.printToPDF({ printBackground: true }),
+          catch: deviceFailure,
+        });
+        yield* write(pdfPath, data);
+        return true;
+      }
+      return yield* Effect.callback<boolean, DeviceError>((resume) => {
+        win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
+          // A cancelled print dialog reports "Print job canceled" or "cancelled".
+          if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
+          else resume(Effect.fail(deviceFailure(reason)));
+        });
       });
-    });
+    }).pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          if (!win.isDestroyed()) win.destroy();
+        }),
+      ),
+    );
   }).pipe(
     Effect.ensuring(
       Effect.promise(async () => {
-        if (!win.isDestroyed()) win.destroy();
-        printFiles.delete(pathToFileURL(file).href);
-        await rm(file, { force: true });
+        printFiles.delete(url);
+        await rm(folder, { recursive: true, force: true });
       }),
     ),
   );

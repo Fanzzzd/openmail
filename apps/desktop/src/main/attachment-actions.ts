@@ -23,7 +23,7 @@ import {
   type PerformError,
 } from "@openmail/core";
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
-import { EXECUTABLE, safeFilename } from "./attachment-filenames";
+import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
 import {
   registeredAttachmentApps,
   openAttachmentWith,
@@ -55,7 +55,7 @@ const blocked = (parts: readonly { filename: string; mimeType?: string }[]) => {
   return file
     ? Effect.fail(
         new DeviceError({
-          message: `${safeFilename(file.filename)} can run code. Save it and open it yourself if you trust it.`,
+          message: launcherBlockedMessage(safeFilename(file.filename)),
         }),
       )
     : Effect.void;

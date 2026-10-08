@@ -97,6 +97,7 @@ vi.mock("./state/mutations", () => ({
   moveAccountAtom: "moveAccountAtom",
   setAppleContactsAtom: "setAppleContactsAtom",
   setPrefsAtom: "setPrefsAtom",
+  chooseAttachmentFolderAtom: "chooseAttachmentFolderAtom",
   saveNamedSignatureAtom: "saveNamedSignatureAtom",
   deleteNamedSignatureAtom: "deleteNamedSignatureAtom",
   setSignatureDefaultAtom: "setSignatureDefaultAtom",
@@ -498,6 +499,28 @@ for (const tab of [
     await audit();
   });
 }
+
+it("audits a custom attachment folder shown read-only with a picker button", async () => {
+  fixture.values.set("prefsAtom", {
+    ...DEFAULT_PREFS,
+    attachmentSaveFolder: { kind: "custom", path: "/Users/me/Mail attachments" },
+  });
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "reading",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  const field = screen.getByRole("textbox", { name: "Folder path" });
+  expect(field).toHaveProperty("readOnly", true);
+  expect(field).toHaveProperty("value", "/Users/me/Mail attachments");
+  expect(screen.getByRole("button", { name: "Choose…" })).toBeTruthy();
+  await audit();
+});
 
 it("audits the mail assistant", async () => {
   render(

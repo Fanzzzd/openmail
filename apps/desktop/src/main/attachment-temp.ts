@@ -37,6 +37,19 @@ export async function cleanupAttachmentTemps(temp: string) {
   }
 }
 
+/** Print jobs normally delete their folder. Remove leftovers from a crash, never through a symlink. */
+export async function cleanupPrintTemps(temp: string) {
+  for (const entry of await readdir(temp, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !/^openmail-print(?:-[A-Za-z0-9]{6})?$/.test(entry.name)) continue;
+    const folder = path.join(temp, entry.name);
+    const info = await lstat(folder).catch(() => null);
+    if (!info || info.isSymbolicLink() || (process.getuid && info.uid !== process.getuid()))
+      continue;
+    // One undeletable leftover must not keep the others on disk.
+    await rm(folder, { recursive: true, force: true }).catch(constVoid);
+  }
+}
+
 /** One private root per app process, 0700 directories and 0600 files. */
 export class AttachmentTemp {
   private readonly root: Promise<string>;

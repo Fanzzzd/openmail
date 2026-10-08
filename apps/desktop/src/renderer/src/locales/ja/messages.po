@@ -209,10 +209,6 @@ msgstr "以前の毎日の静かな時間の設定はまだ有効です。この
 msgid "Above quoted text"
 msgstr "引用文の上"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "絶対フォルダパス"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "フィルターの宛先を 1 つ選択します"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "電子メールプロバイダーを選択します。"
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "選択…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

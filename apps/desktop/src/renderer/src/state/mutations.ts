@@ -24,6 +24,7 @@ export const setAccountSettingsAtom = Atom.family((_id: string) =>
 export const moveAccountAtom = MailClient.mutation("MoveAccount");
 export const setAppleContactsAtom = MailClient.mutation("SetAppleContacts");
 export const setPrefsAtom = MailClient.mutation("SetPrefs");
+export const chooseAttachmentFolderAtom = MailClient.mutation("ChooseAttachmentFolder");
 export const saveNamedSignatureAtom = MailClient.mutation("SaveNamedSignature");
 export const deleteNamedSignatureAtom = MailClient.mutation("DeleteNamedSignature");
 export const setSignatureDefaultAtom = MailClient.mutation("SetSignatureDefault");

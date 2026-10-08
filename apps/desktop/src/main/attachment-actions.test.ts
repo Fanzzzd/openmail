@@ -1,4 +1,15 @@
-import { mkdtemp, readFile, readdir, rm, stat, mkdir, writeFile, utimes } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  mkdir,
+  writeFile,
+  utimes,
+  symlink,
+  chmod,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,7 +80,12 @@ vi.mock("electron", () => ({
 }));
 import { app, BrowserWindow, dialog } from "electron";
 import { attachmentAction, prepareAttachmentDrag } from "./attachment-actions";
-import { AttachmentTemp, attachmentTemp, cleanupAttachmentTemps } from "./attachment-temp";
+import {
+  AttachmentTemp,
+  attachmentTemp,
+  cleanupAttachmentTemps,
+  cleanupPrintTemps,
+} from "./attachment-temp";
 
 let folder: string;
 beforeAll(async () => {
@@ -468,6 +484,41 @@ it("startup removes previous-run roots while preserving live roots and unrelated
   await expect(stat(legacy)).rejects.toThrow();
   expect(await readFile(path.join(live, "private.txt"), "utf8")).toBe("keep");
   expect(await readFile(path.join(other, "private.txt"), "utf8")).toBe("keep");
+});
+it("startup removes print leftovers without following a symlinked print folder", async () => {
+  const legacy = path.join(folder, "openmail-print");
+  const job = path.join(folder, "openmail-print-AbCdEf");
+  const outside = await mkdtemp(path.join(tmpdir(), "om-print-target-"));
+  const link = path.join(folder, "openmail-print-LnKdEf");
+  try {
+    for (const root of [legacy, job]) {
+      await mkdir(root, { mode: 0o700 });
+      await writeFile(path.join(root, "message.html"), "private", { mode: 0o600 });
+    }
+    await writeFile(path.join(outside, "keep.html"), "keep");
+    await symlink(outside, link);
+    await cleanupPrintTemps(folder);
+    await expect(stat(legacy)).rejects.toThrow();
+    await expect(stat(job)).rejects.toThrow();
+    expect(await readFile(path.join(outside, "keep.html"), "utf8")).toBe("keep");
+  } finally {
+    await rm(outside, { recursive: true, force: true });
+  }
+});
+it("one print leftover that cannot be removed does not stop the sweep", async () => {
+  const stuck = path.join(folder, "openmail-print-StUcKk");
+  const locked = path.join(stuck, "locked");
+  const other = path.join(folder, "openmail-print-OtHeRr");
+  await mkdir(locked, { recursive: true });
+  await writeFile(path.join(locked, "message.html"), "private");
+  await chmod(locked, 0o500);
+  await mkdir(other);
+  try {
+    await cleanupPrintTemps(folder);
+    await expect(stat(other)).rejects.toThrow();
+  } finally {
+    await chmod(locked, 0o700);
+  }
 });
 it("releasing replaced batches reclaims the byte budget immediately", async () => {
   const store = new AttachmentTemp(folder);

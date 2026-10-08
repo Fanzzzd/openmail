@@ -9,6 +9,8 @@ export function quarantine(file: string): Effect.Effect<void> {
   if (process.platform !== "darwin") return Effect.void;
   const value = `0083;${Math.floor(Date.now() / 1000).toString(16)};OpenMail;`;
   return Effect.callback<void>((resume) => {
-    execFile("xattr", ["-w", "com.apple.quarantine", value, file], () => resume(Effect.void));
+    execFile("/usr/bin/xattr", ["-w", "com.apple.quarantine", value, file], () =>
+      resume(Effect.void),
+    );
   });
 }

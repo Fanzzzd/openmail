@@ -6,11 +6,11 @@ import { AsyncResult } from "effect/reactivity";
 import { useState } from "react";
 
 import { Keys } from "../state/keys";
-import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
+import { chooseAttachmentFolderAtom, setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, prefsAtom } from "../state/queries";
 import { useShortcutText } from "../use-shortcut-text";
 import { Checkbox } from "./ui/Checkbox";
-import { settingsBox, settingsHeading } from "./ui/form-styles";
+import { formButton, formInput, settingsBox, settingsHeading } from "./ui/form-styles";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
 const note = "mt-2 text-a11y-muted";
@@ -23,6 +23,10 @@ export function ReadingSettings() {
   const setPrefsMutation = useAtomSet(setPrefsAtom);
   const setPrefs = (patch: Partial<Prefs>) =>
     setPrefsMutation({ payload: { patch }, reactivityKeys: [Keys.prefs, Keys.threads] });
+  const chooseFolderMutation = useAtomSet(chooseAttachmentFolderAtom);
+  // The main process shows the folder picker and stores the path; Settings only displays it.
+  const chooseFolder = () =>
+    chooseFolderMutation({ payload: undefined, reactivityKeys: [Keys.prefs] });
 
   return (
     <div className="space-y-6">
@@ -139,32 +143,19 @@ export function ReadingSettings() {
             { value: "custom" as const, label: t`Custom folder` },
           ]}
           onValueChange={(kind) =>
-            setPrefs({
-              attachmentSaveFolder:
-                kind === "custom"
-                  ? {
-                      kind,
-                      path:
-                        prefs?.attachmentSaveFolder?.kind === "custom"
-                          ? prefs.attachmentSaveFolder.path
-                          : "",
-                    }
-                  : { kind },
-            })
+            kind === "custom" ? chooseFolder() : setPrefs({ attachmentSaveFolder: { kind } })
           }
         />
         {prefs?.attachmentSaveFolder?.kind === "custom" && (
-          <label className="block">
-            <span>{t`Folder path`}</span>
-            <input
-              className="w-full rounded border p-2"
-              placeholder={t`Absolute folder path`}
-              value={prefs.attachmentSaveFolder.path}
-              onChange={(e) =>
-                setPrefs({ attachmentSaveFolder: { kind: "custom", path: e.target.value } })
-              }
-            />
-          </label>
+          <div className="flex items-end gap-2">
+            <label className="block min-w-0 flex-1">
+              <span>{t`Folder path`}</span>
+              <input readOnly className={formInput} value={prefs.attachmentSaveFolder.path} />
+            </label>
+            <button type="button" className={formButton} onClick={chooseFolder}>
+              {t`Choose…`}
+            </button>
+          </div>
         )}
         <h3 className={settingsHeading}>
           <Trans>Open attachments from</Trans>

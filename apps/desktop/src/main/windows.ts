@@ -217,6 +217,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
     webPreferences: {
       preload: path.join(here, "../preload/index.cjs"),
       ...WINDOW_SECURITY,
+      devTools: !app.isPackaged,
     },
   });
   trustRenderer(

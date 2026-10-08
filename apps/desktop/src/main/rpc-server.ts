@@ -17,6 +17,8 @@ import {
   releaseAttachmentDrag,
 } from "./attachment-actions";
 import { clipboardAttachments } from "./clipboard-attachments";
+import { chooseAttachmentFolder } from "./attachment-folder";
+import { rendererPrefs } from "../shared/renderer-prefs";
 import { diagnosticsPreview, hasCrashReport, dismissCrashReport, localLog } from "./reliability";
 import { notificationActionCapabilities } from "../shared/desktop";
 import { notificationPermission, openNotificationSettings } from "./notification-permission";
@@ -27,6 +29,7 @@ import { RpcSerialization, RpcServer } from "effect/rpc";
 import {
   BrowserWindow,
   clipboard,
+  dialog,
   ipcMain,
   type IpcMainEvent,
   webContents,
@@ -220,7 +223,12 @@ const Handlers = MailRpcs.toLayer(
               : session.defaultSession.availableSpellCheckerLanguages,
           automatic: process.platform === "darwin",
         })),
-      SetPrefs: ({ patch }) => apple.setPrefs(patch),
+      SetPrefs: ({ patch }) => rendererPrefs(patch).pipe(Effect.flatMap(apple.setPrefs)),
+      ChooseAttachmentFolder: (_, { client }) =>
+        chooseAttachmentFolder(m, (options) => {
+          const parent = windowOf(client.id);
+          return parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options);
+        }),
       SuggestContacts: ({ query, exclude, accountIds }) =>
         apple.suggest(query, {
           ...(exclude === undefined ? {} : { exclude }),

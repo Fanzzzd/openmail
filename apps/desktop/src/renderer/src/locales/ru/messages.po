@@ -209,10 +209,6 @@ msgstr "Предыдущая ежедневная настройка тихих 
 msgid "Above quoted text"
 msgstr "Над цитируемым текстом"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Абсолютный путь к папке"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Выберите один пункт назначения для фил�
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Выберите своего поставщика электронной почты."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Выбрать…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

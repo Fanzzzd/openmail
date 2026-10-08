@@ -17,6 +17,7 @@ const native = vi.hoisted(() => {
     options: new Array<BrowserWindowConstructorOptions>(),
     html: "",
     file: "",
+    modes: { file: 0, folder: 0 },
     destroyed: vi.fn(),
     sandbox: vi.fn(),
     appendSwitch: vi.fn(),
@@ -42,6 +43,7 @@ vi.mock("electron", () => {
   return {
     app: Object.assign(new EventEmitter(), {
       getPath: () => native.directory,
+      isPackaged: true,
       enableSandbox: native.sandbox,
       commandLine: { appendSwitch: native.appendSwitch },
     }),
@@ -64,6 +66,10 @@ vi.mock("electron", () => {
       loadFile = async (file: string) => {
         native.file = file;
         native.html = await readFile(file, "utf8");
+        native.modes = {
+          file: (await stat(file)).mode & 0o777,
+          folder: (await stat(path.dirname(file))).mode & 0o777,
+        };
       };
     },
   };
@@ -141,13 +147,20 @@ it("prints untrusted mail in a scriptless private window and restricts local loa
     expect(native.options.at(-1)).toMatchObject({
       show: false,
       title: "OpenMail",
-      webPreferences: { ...WINDOW_SECURITY, javascript: false, spellcheck: false },
+      webPreferences: {
+        ...WINDOW_SECURITY,
+        javascript: false,
+        spellcheck: false,
+        devTools: false,
+      },
     });
+    expect(native.modes).toEqual({ file: 0o600, folder: 0o700 });
     expect(native.html).toContain("default-src 'none'");
     expect(native.html).not.toMatch(/<script|<iframe/);
     expect(native.spelling).toHaveBeenCalledWith(false);
     expect(native.destroyed).toHaveBeenCalledOnce();
     await expect(stat(native.file)).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(stat(path.dirname(native.file))).rejects.toMatchObject({ code: "ENOENT" });
     const gate = native.beforeRequest.mock.calls.at(-1)?.[0];
     if (!gate) throw new Error("Missing print resource gate");
     for (const url of [

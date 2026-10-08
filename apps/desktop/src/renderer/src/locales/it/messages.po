@@ -209,10 +209,6 @@ msgstr "Una precedente impostazione giornaliera delle ore di silenzio è ancora 
 msgid "Above quoted text"
 msgstr "Sopra il testo citato"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Percorso assoluto della cartella"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Scegli una destinazione per il filtro"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Scegli il tuo provider di posta elettronica."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Scegli…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

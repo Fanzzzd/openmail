@@ -213,10 +213,6 @@ msgstr "A previous daily quiet-hours setting is still active. Change this schedu
 msgid "Above quoted text"
 msgstr "Above quoted text"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Absolute folder path"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1160,6 +1156,10 @@ msgstr "Choose one destination for the filter"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Choose your email provider."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Choose…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"

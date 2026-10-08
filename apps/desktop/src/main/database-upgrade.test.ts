@@ -9,19 +9,27 @@ const state = vi.hoisted(() => ({
   show: vi.fn(),
   quit: vi.fn(),
   options: undefined as unknown,
+  openHandler: undefined as (() => unknown) | undefined,
+  contents: undefined as EventEmitter | undefined,
 }));
 vi.mock("electron", async () => {
   const { EventEmitter } = await import("node:events");
-  const app = Object.assign(new EventEmitter(), { quit: state.quit });
+  const app = Object.assign(new EventEmitter(), { quit: state.quit, isPackaged: true });
   class Window extends EventEmitter {
     static getAllWindows() {
       return [...state.windows];
     }
     private destroyed = false;
+    webContents = Object.assign(new EventEmitter(), {
+      setWindowOpenHandler: (handler: () => unknown) => {
+        state.openHandler = handler;
+      },
+    });
     constructor(options: unknown) {
       super();
       state.windows.add(this);
       state.options = options;
+      state.contents = this.webContents;
       app.emit("browser-window-created", undefined, this);
     }
     loadURL = state.load;
@@ -71,6 +79,28 @@ it("paints a sandboxed upgrade state before returning its cleanup callback", asy
   expect(html).toContain("<progress");
   dismiss();
   expect(state.windows.size).toBe(0);
+});
+
+it("uses the shared window hardening and denies drops, redirects, frames, popups and webviews", async () => {
+  const { WINDOW_SECURITY } = await import("./security-policy");
+  const { showDatabaseUpgrade } = await import("./database-upgrade");
+  await showDatabaseUpgrade();
+  expect(state.options).toMatchObject({
+    webPreferences: { ...WINDOW_SECURITY, javascript: false, spellcheck: false, devTools: false },
+  });
+  const contents = state.contents;
+  if (!contents) throw new Error("Missing upgrade window");
+  for (const name of [
+    "will-navigate",
+    "will-redirect",
+    "will-frame-navigate",
+    "will-attach-webview",
+  ]) {
+    const event = { preventDefault: vi.fn() };
+    contents.emit(name, event);
+    expect(event.preventDefault, name).toHaveBeenCalledOnce();
+  }
+  expect(state.openHandler?.()).toEqual({ action: "deny" });
 });
 
 it("default window closure quits without a listener, but dismissing the upgrade must not quit", async () => {

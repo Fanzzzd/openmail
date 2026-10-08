@@ -209,10 +209,6 @@ msgstr "Een eerdere dagelijkse stille uren-instelling is nog steeds actief. Wijz
 msgid "Above quoted text"
 msgstr "Boven geciteerde tekst"
 
-#: src/renderer/src/components/ReadingSettings.tsx
-msgid "Absolute folder path"
-msgstr "Absoluut mappad"
-
 #: src/renderer/src/components/ComposerAi.tsx
 #: src/renderer/src/components/InviteBanner.tsx
 #: src/renderer/src/components/TriageChip.tsx
@@ -1156,6 +1152,10 @@ msgstr "Kies één bestemming voor het filter"
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Choose your email provider."
 msgstr "Kies uw e-mailprovider."
+
+#: src/renderer/src/components/ReadingSettings.tsx
+msgid "Choose…"
+msgstr "Kiezen…"
 
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "Clear account cache"
