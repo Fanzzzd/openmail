@@ -40,6 +40,8 @@ core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，�
 
 阅读 HTML 的 CSS 清洗和可见文本提取直接导入 `css-tree/dist/csstree.esm`。css-tree 3.2.1 的 `exports["./dist/*"]` 指向 `./dist/*.js`，该入口是完整浏览器 ESM 包，不依赖根入口的 `module.createRequire`；因此不依赖 Metro 对根入口 `browser` 字段的重定向。手机 `metro.config.cjs` 使用 Expo 默认解析器，未改写此包的解析。`platform/node/css-browser.test.ts` 验证导出映射、浏览器包及实际 CSS 解析；本 slice 未运行 Metro。
 
+`HtmlText`（`platform/html-text.ts`）把 provider 解析中的 HTML 转文本交给服务，portable 默认在当前线程执行，手机端沿用。`NodePlatform` 提供 `platform/node/html-text.ts` 的 worker 池（min(2, CPU 数−1) 个，每封限时 2 s，超时改用去标签文本，连续三次无法启动则回到当前线程）。
+
 MailCodec、PdfWorker、AttachmentFiles、ImageNetwork 是必需的 Effect services，缺少 Layer 会在类型检查中报错。provider、阅读附件和 indexer 构建时捕获依赖，返回的方法不读调用方的隐藏 context。真实 NodeMailbox 回归测试覆盖 IMAP 原始 MIME fallback、正文/日历/嵌套附件、PDF 索引、文件缓存、图片输入和 SSRF 拒绝；仅替换 IMAP 传输和合成密码，使用临时数据库，不启动 Electron。
 
 手机数据库恢复位于 `platform/react-native/database-recovery.ts`，通过 `MobileDatabaseRecovery`、Effect FileSystem、AppPaths、PlatformCrypto 和结构化 op-sqlite 端口实现。用户表清单在 `platform/recovery-tables.ts`，两端共用。手机 OS 组装在 `apps/mobile/src/platform/database-recovery.ts`，前台和 headless 数据库共用恢复门；前台检查的结果与时间由 Effect FileSystem 持久保存，冷后台启动可复用未过期的成功记录。SQLite shim 只在 `packages/core/test-support`，不进入生产 build。完整性检查、隔离、抢救、provider 重同步与中断边界见[手机数据库说明](../apps/mobile/README.md#数据库)。

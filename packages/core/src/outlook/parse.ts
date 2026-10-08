@@ -3,43 +3,47 @@ import { type AttachmentRef, MEDIA_RAW_TOO_LARGE, pickAttachment } from "../atta
 import type { Account, Address, Attachment, IncomingMessage } from "../domain.js";
 import { PermanentError, ProviderError } from "../errors.js";
 import { cleanDisplayName, messageSecurity } from "../message-security.js";
-import { htmlToText } from "../mime.js";
 import { Buffer } from "../platform/bytes.js";
+import { finishInline, finishWith, type HtmlBody, HtmlText } from "../platform/html-text.js";
 import {
+  decodedBody,
   hasSignedContainer,
   MAX_MIME_BYTES,
-  withDecodedBody,
   withUuAttachments,
 } from "../platform/mime-compat.js";
 import type { OutlookClient } from "./client.js";
 import { AttachmentNames, GraphAddress, GraphMessage, writeFailure } from "./graph.js";
 
 export const makeOutlookRead = (client: OutlookClient) =>
-  Effect.sync(() => {
+  Effect.gen(function* () {
     const { codec, get, getBytes } = client;
+    const htmlText = yield* HtmlText;
+
+    const parseGraph = (raw: GraphMessage, label: string, attachments: readonly Attachment[]) =>
+      finishWith(htmlText, graphBody(raw, label, attachments));
 
     const incomingGraph = (
       account: Account,
       raw: GraphMessage,
       label: string,
       attachments: readonly Attachment[],
-    ) => {
-      const message = parseGraphMessage(raw, label, attachments);
-      if (!hasSignedContainer(message)) return Effect.succeed(message);
-      return fetchRaw(account, raw.id, MAX_MIME_BYTES).pipe(
-        Effect.catchTag("PermanentError", (error) =>
-          Effect.fail(new ProviderError({ message: error.message })),
-        ),
-        Effect.flatMap((source) =>
-          Effect.tryPromise({
-            try: () => codec.parse(source),
-            catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
-          }),
-        ),
-        Effect.map((parsed) => withDecodedBody(message, parsed)),
-        Effect.catch(() => Effect.succeed(message)),
-      );
-    };
+    ) =>
+      Effect.flatMap(parseGraph(raw, label, attachments), (message) => {
+        if (!hasSignedContainer(message)) return Effect.succeed(message);
+        return fetchRaw(account, raw.id, MAX_MIME_BYTES).pipe(
+          Effect.catchTag("PermanentError", (error) =>
+            Effect.fail(new ProviderError({ message: error.message })),
+          ),
+          Effect.flatMap((source) =>
+            Effect.tryPromise({
+              try: () => codec.parse(source),
+              catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
+            }),
+          ),
+          Effect.flatMap((parsed) => finishWith(htmlText, decodedBody(message, parsed))),
+          Effect.catch(() => Effect.succeed(message)),
+        );
+      });
 
     const fetchRaw = Effect.fn("Outlook.fetchRaw")(
       function* (account: Account, providerId: string, maxBytes?: number) {
@@ -114,6 +118,8 @@ export const makeOutlookRead = (client: OutlookClient) =>
       fetchRaw,
       fetchAttachment,
       incomingGraph,
+      parseGraph,
+      parseConcurrency: htmlText.concurrency,
     };
   });
 export type OutlookRead = Effect.Success<ReturnType<typeof makeOutlookRead>>;
@@ -130,15 +136,34 @@ function address(a: GraphAddress | null | undefined): Address {
   };
 }
 
-export function parseGraphMessage(
+export const parseGraphMessage = (
   raw: GraphMessage,
   folderLabel: string,
   attachments: readonly Attachment[],
-): IncomingMessage {
+): IncomingMessage => finishInline(graphBody(raw, folderLabel, attachments));
+
+export function graphBody(
+  raw: GraphMessage,
+  folderLabel: string,
+  attachments: readonly Attachment[],
+): HtmlBody<IncomingMessage> {
   const content = raw.body?.content ?? "";
   const isHtml = raw.body?.contentType.toLowerCase() === "html";
-  const html = isHtml ? content : "";
-  const text = isHtml ? htmlToText(content) : content;
+  return isHtml
+    ? {
+        html: content,
+        finish: (text) => graphMessage(raw, folderLabel, attachments, content, text),
+      }
+    : { finish: () => graphMessage(raw, folderLabel, attachments, "", content) };
+}
+
+function graphMessage(
+  raw: GraphMessage,
+  folderLabel: string,
+  attachments: readonly Attachment[],
+  html: string,
+  text: string,
+): IncomingMessage {
   const isUnread = raw.isRead === false;
   const isStarred = raw.flag?.flagStatus === "flagged";
 

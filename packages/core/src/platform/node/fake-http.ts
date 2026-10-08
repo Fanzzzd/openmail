@@ -50,3 +50,27 @@ export function fakeHttp(
   );
   return { client, layer: Layer.succeed(HttpClient.HttpClient)(client), calls };
 }
+
+type FakeRoute = FakeHttpReply | ((url: URL, call: FakeHttpCall) => FakeHttpReply);
+const GRAPH_FOLDERS = ["inbox", "sentitems", "drafts", "junkemail", "deleteditems"];
+
+/**
+ * Graph routes for the well-known folders (no Archive) and `custom` folder ids: each
+ * folder lookup returns `id-<name>`, and each delta is empty unless `deltas` replaces it.
+ */
+export function graphFolderRoutes(
+  deltas: Record<string, FakeRoute>,
+  custom: readonly string[] = [],
+): Record<string, FakeRoute> {
+  const routes: Record<string, FakeRoute> = {};
+  for (const name of GRAPH_FOLDERS)
+    routes[`GET /me/mailFolders/${name}`] = { json: { id: `id-${name}` } };
+  for (const key of [...GRAPH_FOLDERS, ...custom])
+    routes[`GET /me/mailFolders/${key}/messages/delta`] = deltas[key] ?? {
+      json: {
+        value: [],
+        "@odata.deltaLink": `https://graph.microsoft.com/v1.0/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`,
+      },
+    };
+  return routes;
+}

@@ -26,8 +26,9 @@ import { logSyncCrash, type SyncCrashDiagnostic } from "./sync-crash.js";
 import { makeSyncHealth } from "./sync-health.js";
 import { makeResetGuard, RESET_VERIFICATION_LIMIT } from "./sync-reset.js";
 
-/** Upserts from a pull land in transactions of this many, or every quarter second. */
-const WRITE_BATCH = 200;
+// Changes per write transaction (an Upsert and its Progress are two). Each one blocks
+// the main thread; 100 real messages took up to 509 ms of CPU, 10 took up to 104 ms.
+const WRITE_BATCH = 20;
 
 /**
  * A pull that failed on the network (no status: the connection dropped, DNS
@@ -186,7 +187,10 @@ export const makeSyncMailbox = (
                   Effect.map((a) => a.enabled !== false),
                 ),
               ),
-              Stream.runForEach(apply(currentAccount, notificationsReady)),
+              // Let timers and IPC run between write transactions.
+              Stream.runForEach((batch) =>
+                Effect.andThen(apply(currentAccount, notificationsReady)(batch), Effect.yieldNow),
+              ),
             );
         }),
       ),

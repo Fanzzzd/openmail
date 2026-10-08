@@ -3,13 +3,18 @@ import type { Account } from "../../../domain.js";
 import { imapSettingsKey } from "../../../imap-settings.js";
 import { keyedLock } from "../../../provider-http.js";
 import { Secrets, type ProviderAdapter } from "../../../services.js";
+import type { HtmlText } from "../../html-text.js";
 import { call, openImap, password, settingsOf, type Session } from "./session.js";
-export const makeImapPool = (open: typeof openImap, secrets: Secrets["Service"]) => {
+export const makeImapPool = (
+  open: typeof openImap,
+  secrets: Secrets["Service"],
+  htmlText: HtmlText,
+) => {
   const session = (account: Account) =>
     Effect.gen(function* () {
       const settings = yield* settingsOf(account);
       const pass = yield* password(secrets, account);
-      const s = yield* open(account.id, settings, pass);
+      const s: Session = { ...(yield* open(account.id, settings, pass)), htmlText };
       return { s, settings, pass };
     });
 

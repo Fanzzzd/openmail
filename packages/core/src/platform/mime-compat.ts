@@ -1,8 +1,9 @@
 import { TextDecoder as PortableDecoder } from "./text-decoder.js";
 import { Buffer } from "./bytes.js";
-import { charsetOf, decodeBytes, decodeHeader, htmlToText } from "../mime.js";
+import { charsetOf, decodeBytes, decodeHeader } from "../mime.js";
 import type { IncomingMessage } from "../domain.js";
 import type { MimeMessage, MimePart } from "./mail-codec.js";
+import { finishInline, type HtmlBody } from "./html-text.js";
 
 /** Normalize text before parsers that use the host's incomplete TextDecoder. */
 export function normalizeMimeCharsets(raw: Uint8Array, depth = 0): Uint8Array {
@@ -273,11 +274,16 @@ export const hasSignedContainer = (message: IncomingMessage, rootType = "") => {
   );
 };
 
-export function withDecodedBody(message: IncomingMessage, parsed: MimeMessage): IncomingMessage {
-  if (parsed.text === undefined && !parsed.html) return message;
+export const withDecodedBody = (message: IncomingMessage, parsed: MimeMessage) =>
+  finishInline(decodedBody(message, parsed));
+
+export function decodedBody(
+  message: IncomingMessage,
+  parsed: MimeMessage,
+): HtmlBody<IncomingMessage> {
+  if (parsed.text === undefined && !parsed.html) return { finish: () => message };
   const html = parsed.html || "";
-  const text = parsed.text ?? htmlToText(html);
-  return {
+  const decoded = (text: string): IncomingMessage => ({
     ...message,
     bodyText: text,
     bodyHtml: html,
@@ -289,7 +295,9 @@ export function withDecodedBody(message: IncomingMessage, parsed: MimeMessage): 
         mimeType: part.contentType,
         size: part.size,
       })),
-  };
+  });
+  const { text } = parsed;
+  return text === undefined ? { html, finish: decoded } : { finish: () => decoded(text) };
 }
 
 export function withUuAttachments(message: IncomingMessage): IncomingMessage {

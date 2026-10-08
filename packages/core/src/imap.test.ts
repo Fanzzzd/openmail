@@ -34,6 +34,7 @@ import {
 } from "./platform/node/imap/adapter.js";
 import { resolveImapSettings } from "./imap-settings.js";
 import { fetchMessages } from "./platform/node/imap/pull.js";
+import { HtmlText } from "./platform/html-text.js";
 import { Secrets } from "./services.js";
 const makeImap = unboundMakeImap.pipe(Effect.provideService(MailCodec, nodeMailCodec));
 const makeImapWith = (...args: Parameters<typeof unboundMakeImapWith>) =>
@@ -127,7 +128,7 @@ it.effect("MIME batches fetch source through the iterator and keep attachment me
       yield { seq: Number(range), uid: Number(range), source, flags: new Set<string>() };
     });
     const result = yield* fetchMessages(
-      { accountId: account.id, settings: account.imap, client },
+      { accountId: account.id, settings: account.imap, client, htmlText: yield* HtmlText },
       { path: "INBOX", label: "INBOX" },
       "7",
       [1, 2],

@@ -12,6 +12,7 @@ import {
   type ProviderAdapter,
   type ProviderPushContext,
 } from "../../../services.js";
+import { HtmlText } from "../../html-text.js";
 import { MailCodec } from "../../mail-codec.js";
 import { watchImapInbox } from "../imap-idle.js";
 import { imapSearch } from "../imap-search.js";
@@ -47,7 +48,11 @@ export const makeImapWith = (
       readCursor(Option.fromNullishOr(cursor)).folders[path] ??
       namespaces.get(account.id)?.folders[path];
 
-    const { session, pushSession, closeSessions } = yield* makeImapPool(open, secrets);
+    const { session, pushSession, closeSessions } = yield* makeImapPool(
+      open,
+      secrets,
+      yield* HtmlText,
+    );
     const pull: ProviderAdapter["pull"] = (account, cursor, scope) =>
       Stream.callback<Change, ProviderFailure>(
         (queue) =>

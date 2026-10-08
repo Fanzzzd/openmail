@@ -14,6 +14,7 @@ import { AppPaths } from "../paths.js";
 import { NodeRuntime, NodePaths } from "./runtime.js";
 import { appConfigFile } from "../../config.js";
 import { databaseLayer } from "./db.js";
+import { NodeHtmlText } from "./html-text.js";
 import { OAuthLoopback } from "./oauth.js";
 import { dataDir } from "./paths.js";
 import { makeSecretsKeyring } from "./secrets.js";
@@ -115,7 +116,7 @@ export const NodeSystem = Layer.mergeAll(
   NodePaths.pipe(Layer.provide(NodeBase)),
 );
 
-/** Desktop and CLI: node:sqlite, the OS keychain, config.json, loopback OAuth, fetch. */
+/** Desktop and CLI: node:sqlite, the OS keychain, config.json, loopback OAuth, fetch, HTML workers. */
 export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<PlatformServices> {
   const browser = opts.browser ?? (opts.openUrl ? callbackBrowser(opts.openUrl) : SystemBrowser);
   const http = FetchHttpClient.layer;
@@ -139,5 +140,6 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
     OAuthLoopback.pipe(Layer.provide([browser, http])),
     browser,
     http,
+    NodeHtmlText(),
   ).pipe(Layer.provideMerge(NodeSystem));
 }

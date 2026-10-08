@@ -177,6 +177,19 @@ NEAR 可能命中顺序或重叠不符的较新回复，因此精确会话头可
 OPENMAIL_PERF_MEASURE="search AROUND 3" OPENMAIL_PERF_REPORT=/tmp/openmail-around3.json pnpm test:perf
 ```
 
+## 同步时的主线程阻塞（slice 97）
+
+原因：真实 Outlook 首次同步（3,787 封 HTML）的前 60 s 里，主进程最长阻塞 670 ms。provider 解析在主线程调用 `htmlToText`，合计 37.9 s；每批写入事务含 200 条变更，在主线程一次跑完，真实库每事务 100 封时 CPU 最长 509 ms。
+
+修复：HTML 提取改走 `HtmlText` 服务，Node 用 worker 池（见[平台清单](platform-inventory.md)），真实库 3,799 封的输出与当前线程逐字节相同；`WRITE_BATCH` 降到 20 条变更，事务之间让出事件循环，每事务 10 封时 CPU 最长 104 ms。批次边界原本就按时间切，Cursor 仍只与之前的全部变更一起提交。
+
+`sync-performance.test.ts`（`test:perf`）经 Node worker 池和磁盘 WAL 数据库同步 2,000 封 HTML，断言 p99 阻塞低于 50 ms、最长阻塞低于 300 ms，负载低于 CPU 数时还要求没有超过 50 ms 的阻塞。三轮中位数（2026-10-08，串行，一分钟负载 36–52；修复前为当前线程提取加 200 条批次）：
+
+| 实现   | 同步耗时 s | 最长阻塞 ms | p99 阻塞 ms | 超过 50 ms 的阻塞 |
+| ------ | ---------: | ----------: | ----------: | ----------------: |
+| 修复前 |       37.1 |         527 |         387 |               241 |
+| 修复后 |       17.3 |          48 |         7.8 |                 0 |
+
 ## 写入与磁盘成本
 
 ```sh

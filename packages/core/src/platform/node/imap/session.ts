@@ -5,6 +5,7 @@ import type { Account, ImapSettings } from "../../../domain.js";
 import { AuthError, InvalidInput, ProviderError } from "../../../errors.js";
 import { resolveImapSettings } from "../../../imap-settings.js";
 import { Secrets, type ConnectInput } from "../../../services.js";
+import type { HtmlText } from "../../html-text.js";
 import { IDLE_RENEW_MS } from "../imap-idle.js";
 
 // NetEase (163, 126, yeah.net) rejects SELECT with "Unsafe Login" unless the
@@ -62,10 +63,15 @@ export function failure(
 
 // Connections
 
-export interface Session {
+export interface ImapConnection {
   accountId: string;
   settings: ImapSettings;
   client: ImapFlow;
+}
+
+/** A pooled connection with the adapter's HTML-to-text service. */
+export interface Session extends ImapConnection {
+  htmlText: HtmlText;
 }
 
 function ignore(): void {
@@ -73,7 +79,7 @@ function ignore(): void {
 }
 
 /** Logs out politely; a session that cannot is closed. */
-const logout = ({ client }: Session) =>
+const logout = ({ client }: ImapConnection) =>
   Effect.tryPromise(() => client.logout()).pipe(
     Effect.catch(() => Effect.sync(() => client.close())),
   );
@@ -101,13 +107,16 @@ export function openImap(accountId: string, settings: ImapSettings, password: st
       try: () => client.connect(),
       catch: (error) => failure(accountId, settings.imapHost, error),
     }).pipe(Effect.onError(() => Effect.sync(() => client.close())));
-    return { accountId, settings, client } satisfies Session;
+    return { accountId, settings, client } satisfies ImapConnection;
   });
   return Effect.acquireRelease(connect, logout);
 }
 
 /** Runs one imapflow call, mapping its rejection onto provider failures. */
-export function call<A>(s: Session, f: (client: ImapFlow, signal: AbortSignal) => Promise<A>) {
+export function call<A>(
+  s: ImapConnection,
+  f: (client: ImapFlow, signal: AbortSignal) => Promise<A>,
+) {
   const abort = () => s.client.close();
   return Effect.tryPromise({
     try: async (signal) => {
@@ -125,7 +134,7 @@ export function call<A>(s: Session, f: (client: ImapFlow, signal: AbortSignal) =
 
 /** ImapFlow swallows command/socket errors into false or undefined, never an empty UID set. */
 export const searchUids = Effect.fnUntraced(function* (
-  s: Session,
+  s: ImapConnection,
   query: Parameters<ImapFlow["search"]>[0],
 ) {
   const found = yield* call(s, (client) => client.search(query, { uid: true }));
@@ -135,7 +144,7 @@ export const searchUids = Effect.fnUntraced(function* (
 });
 
 /** LIST omission alone can mean a hidden/unselectable folder or an incomplete listing. */
-export const confirmFolderGone = Effect.fnUntraced(function* (s: Session, path: string) {
+export const confirmFolderGone = Effect.fnUntraced(function* (s: ImapConnection, path: string) {
   const absent = yield* call(s, async (client) => {
     try {
       await client.status(path, { uidValidity: true });

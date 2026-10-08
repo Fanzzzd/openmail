@@ -5,7 +5,7 @@ import { cachedHeaders, firstHeaders } from "../../../header-backfill.js";
 import { flagsOf, IMAP_SPECIAL_LABELS as SPECIAL_LABEL } from "../../../imap-helpers.js";
 
 import { messageSecurity } from "../../../message-security.js";
-import { htmlToText } from "../../../mime.js";
+import { finishInline, type HtmlBody } from "../../html-text.js";
 import { mimeAddresses, type MimeMessage } from "../../mail-codec.js";
 
 // Virtual folders that hold copies of mail from other folders.
@@ -102,21 +102,29 @@ function folderLabels(label: string, flags: Set<string> | undefined): string[] {
   return labels;
 }
 
-export function toIncoming(
-  parsed: MimeMessage,
-  meta: {
-    providerId: string;
-    authservId?: string | null;
-    label: string;
-    flags: Set<string> | undefined;
-    internalDate?: Date | string | undefined;
-    /** Overrides parsed attachments when the source was truncated. */
-    attachments?: Attachment[];
-    size?: number;
-  },
-): IncomingMessage {
+interface IncomingMeta {
+  providerId: string;
+  authservId?: string | null;
+  label: string;
+  flags: Set<string> | undefined;
+  internalDate?: Date | string | undefined;
+  /** Overrides parsed attachments when the source was truncated. */
+  attachments?: Attachment[];
+  size?: number;
+}
+
+export const toIncoming = (parsed: MimeMessage, meta: IncomingMeta) =>
+  finishInline(incomingBody(parsed, meta));
+
+export function incomingBody(parsed: MimeMessage, meta: IncomingMeta): HtmlBody<IncomingMessage> {
+  const plain = parsed.text;
+  return plain
+    ? { finish: () => incoming(parsed, meta, plain) }
+    : { html: parsed.html || "", finish: (text) => incoming(parsed, meta, text) };
+}
+
+function incoming(parsed: MimeMessage, meta: IncomingMeta, text: string): IncomingMessage {
   const html = parsed.html || "";
-  const text = parsed.text || htmlToText(html);
   const labels = folderLabels(meta.label, meta.flags);
   if (meta.flags?.has("$Important") || parsed.priority === "high") labels.push("IMPORTANT");
   const received = meta.internalDate ? new Date(meta.internalDate).getTime() : NaN;

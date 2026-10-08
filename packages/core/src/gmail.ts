@@ -8,7 +8,7 @@ import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "./optional-serv
 import { Buffer } from "./platform/bytes.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { MailCodec } from "./platform/mail-codec.js";
-import { hasSignedContainer, withDecodedBody, withUuAttachments } from "./platform/mime-compat.js";
+import { decodedBody, hasSignedContainer, withUuAttachments } from "./platform/mime-compat.js";
 import {
   BatchResponse,
   deferIfThrottled,
@@ -45,7 +45,7 @@ import {
   ProviderError,
   type ProviderFailure,
 } from "./errors.js";
-import { charsetOf, decodeHeader, decodeUtf8First, htmlToText, parseAddressList } from "./mime.js";
+import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "./mime.js";
 import {
   AppConfig,
   type Change,
@@ -59,6 +59,7 @@ import {
 } from "./services.js";
 
 import { makeGmailFeatures } from "./gmail-features.js";
+import { finishInline, finishWith, type HtmlBody, HtmlText } from "./platform/html-text.js";
 import { makeGmailSettings } from "./gmail-settings.js";
 import { makeProviderCalendar } from "./provider-calendar.js";
 import { gmailSearch, searchIncludesSpecialFolders } from "./search.js";
@@ -205,6 +206,7 @@ export const makeGmail: Effect.Effect<
 > = Effect.gen(function* () {
   const codec = yield* MailCodec;
   const crypto = yield* PlatformCrypto;
+  const htmlText = yield* HtmlText;
   const buildMime = (...args: Parameters<typeof unboundBuildMime>) =>
     unboundBuildMime(...args).pipe(Effect.provideService(MailCodec, codec));
   const http = yield* HttpClient.HttpClient;
@@ -437,23 +439,25 @@ export const makeGmail: Effect.Effect<
   /** None when the message was deleted between listing and fetching. */
   const fetchMessage = (accountId: string, id: string) =>
     get(accountId, GmailMessage, `/messages/${encodeURIComponent(id)}`, { format: "full" }).pipe(
-      Effect.flatMap((raw) => {
-        const message = parseGmailMessage(raw);
-        if (!hasSignedContainer(message, raw.payload.mimeType))
-          return Effect.succeed(Option.some(message));
-        return get(accountId, RawMessage, `/messages/${encodeURIComponent(id)}`, {
-          format: "raw",
-        }).pipe(
-          Effect.flatMap((source) =>
-            Effect.tryPromise({
-              try: () => codec.parse(Buffer.from(source.raw, "base64")),
-              catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
-            }),
-          ),
-          Effect.map((parsed) => Option.some(withDecodedBody(message, parsed))),
-          Effect.catch(() => Effect.succeed(Option.some(message))),
-        );
-      }),
+      Effect.flatMap((raw) =>
+        Effect.flatMap(finishWith(htmlText, gmailBody(raw)), (message) => {
+          if (!hasSignedContainer(message, raw.payload.mimeType))
+            return Effect.succeed(Option.some(message));
+          return get(accountId, RawMessage, `/messages/${encodeURIComponent(id)}`, {
+            format: "raw",
+          }).pipe(
+            Effect.flatMap((source) =>
+              Effect.tryPromise({
+                try: () => codec.parse(Buffer.from(source.raw, "base64")),
+                catch: () => new ProviderError({ message: "Cannot parse signed MIME" }),
+              }),
+            ),
+            Effect.flatMap((parsed) => finishWith(htmlText, decodedBody(message, parsed))),
+            Effect.map(Option.some),
+            Effect.catch(() => Effect.succeed(Option.some(message))),
+          );
+        }),
+      ),
       Effect.catchIf(
         (e) => e._tag === "ApiError" && e.status === 404,
         () => Effect.succeed(Option.none<IncomingMessage>()),
@@ -1416,7 +1420,10 @@ function attachmentParts(payload: GmailPart): GmailPart[] {
   return out;
 }
 
-export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
+export const parseGmailMessage = (raw: GmailMessage): IncomingMessage =>
+  finishInline(gmailBody(raw));
+
+function gmailBody(raw: GmailMessage): HtmlBody<IncomingMessage> {
   const headers = firstHeaders({ headers: raw.payload.headers ?? [] }, "last");
   let text = "";
   let html = "";
@@ -1445,32 +1452,34 @@ export function parseGmailMessage(raw: GmailMessage): IncomingMessage {
 
   const labels = raw.labelIds ?? [];
   const from = parseAddressList(headers.get("from"))[0] ?? { name: "", address: "" };
-  return withUuAttachments({
-    providerId: raw.id,
-    threadId: raw.threadId,
-    subject: decodeHeader(headers.get("subject") ?? ""),
-    from,
-    to: parseAddressList(headers.get("to")),
-    cc: parseAddressList(headers.get("cc")),
-    bcc: parseAddressList(headers.get("bcc")),
-    headers: (raw.payload.headers ?? []).map((h) => ({
-      name: h.name.toLowerCase(),
-      value: h.value,
-    })),
-    ...(headers.get("message-id") ? { rfcMessageId: headers.get("message-id") } : {}),
-    ...(raw.sizeEstimate !== undefined ? { size: raw.sizeEstimate } : {}),
-    replyTo: parseAddressList(headers.get("reply-to")),
-    date: Number(raw.internalDate),
-    snippet: decodeEntities(raw.snippet ?? ""),
-    bodyText: text || htmlToText(html),
-    bodyHtml: html,
-    security: messageSecurity(raw.payload.headers ?? [], "gmail"),
-    ...(calendarParts.length ? { hasCalendar: true } : {}),
-    labels,
-    attachments,
-    isUnread: labels.includes("UNREAD"),
-    isStarred: labels.includes("STARRED"),
-  });
+  const message = (bodyText: string) =>
+    withUuAttachments({
+      providerId: raw.id,
+      threadId: raw.threadId,
+      subject: decodeHeader(headers.get("subject") ?? ""),
+      from,
+      to: parseAddressList(headers.get("to")),
+      cc: parseAddressList(headers.get("cc")),
+      bcc: parseAddressList(headers.get("bcc")),
+      headers: (raw.payload.headers ?? []).map((h) => ({
+        name: h.name.toLowerCase(),
+        value: h.value,
+      })),
+      ...(headers.get("message-id") ? { rfcMessageId: headers.get("message-id") } : {}),
+      ...(raw.sizeEstimate !== undefined ? { size: raw.sizeEstimate } : {}),
+      replyTo: parseAddressList(headers.get("reply-to")),
+      date: Number(raw.internalDate),
+      snippet: decodeEntities(raw.snippet ?? ""),
+      bodyText,
+      bodyHtml: html,
+      security: messageSecurity(raw.payload.headers ?? [], "gmail"),
+      ...(calendarParts.length ? { hasCalendar: true } : {}),
+      labels,
+      attachments,
+      isUnread: labels.includes("UNREAD"),
+      isStarred: labels.includes("STARRED"),
+    });
+  return text ? { finish: () => message(text) } : { html, finish: message };
 }
 
 // Gmail's snippet is HTML-escaped.

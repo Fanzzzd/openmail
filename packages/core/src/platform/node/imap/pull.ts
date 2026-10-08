@@ -12,7 +12,8 @@ import type { Flags } from "../../../imap-helpers.js";
 import { flagsOf } from "../../../imap-helpers.js";
 import { type Change } from "../../../services.js";
 import { nodeMailCodec } from "../mail-codec.js";
-import { mapFolders, structureAttachments, toIncoming, type ImapSyncFolder } from "./parse.js";
+import { finishWith } from "../../html-text.js";
+import { incomingBody, mapFolders, structureAttachments, type ImapSyncFolder } from "./parse.js";
 import { call, confirmFolderGone, describe, failure, searchUids, type Session } from "./session.js";
 
 /** First sync pulls this window per folder; older mail is left on the server. */
@@ -56,8 +57,8 @@ export const fetchMessages = Effect.fnUntraced(function* (
     [large, true],
   ] as const) {
     if (!ids.length) continue;
-    // ImapFlow applies backpressure between iterator yields. Parse and release
-    // each raw source before asking for the next; no IMAP commands in this loop.
+    // ImapFlow applies backpressure between iterator yields. Parse as many raw
+    // sources at once as HTML extraction can use, in order; no IMAP commands here.
     yield* Stream.fromAsyncIterable(
       s.client.fetch(
         uidSet(ids),
@@ -73,30 +74,33 @@ export const fetchMessages = Effect.fnUntraced(function* (
       ),
       (error) => failure(s.accountId, s.settings.imapHost, error),
     ).pipe(
-      Stream.runForEach((m) =>
-        Effect.gen(function* () {
-          const source = m.source;
-          if (!source || m.flags?.has("\\Deleted")) return;
-          const parsed = yield* Effect.tryPromise({
-            try: () => nodeMailCodec.parse(new Uint8Array(source), { skipImageLinks: true }),
-            catch: (error) =>
-              new ProviderError({ message: `Cannot parse message ${m.uid}: ${describe(error)}` }),
-          });
-          out.push({
-            uid: m.uid,
-            flags: flagsOf(m.flags),
-            message: toIncoming(parsed, {
-              authservId: s.settings.authservId,
-              providerId: encodeProviderId(folder.path, uidValidity, m.uid),
-              label: folder.label,
-              flags: m.flags,
-              internalDate: m.internalDate,
-              size: heads.find((head) => head.uid === m.uid)?.size,
-              ...(truncated ? { attachments: structureAttachments(m.bodyStructure) } : {}),
-            }),
-          });
-        }),
+      Stream.mapEffect(
+        (m) =>
+          Effect.gen(function* () {
+            const source = m.source;
+            if (!source || m.flags?.has("\\Deleted")) return null;
+            const parsed = yield* Effect.tryPromise({
+              try: () => nodeMailCodec.parse(new Uint8Array(source), { skipImageLinks: true }),
+              catch: (error) =>
+                new ProviderError({ message: `Cannot parse message ${m.uid}: ${describe(error)}` }),
+            });
+            const message = yield* finishWith(
+              s.htmlText,
+              incomingBody(parsed, {
+                authservId: s.settings.authservId,
+                providerId: encodeProviderId(folder.path, uidValidity, m.uid),
+                label: folder.label,
+                flags: m.flags,
+                internalDate: m.internalDate,
+                size: heads.find((head) => head.uid === m.uid)?.size,
+                ...(truncated ? { attachments: structureAttachments(m.bodyStructure) } : {}),
+              }),
+            );
+            return { uid: m.uid, flags: flagsOf(m.flags), message };
+          }),
+        { concurrency: s.htmlText.concurrency },
       ),
+      Stream.runForEach((item) => Effect.sync(() => item && out.push(item))),
     );
   }
   return out;

@@ -35,7 +35,7 @@ import {
   writeFailure,
 } from "./graph.js";
 import type { OutlookRead } from "./parse.js";
-import { expandedAttachments, parseGraphMessage } from "./parse.js";
+import { expandedAttachments } from "./parse.js";
 import { makeOutlookPull } from "./pull.js";
 import { makeOutlookRecovery } from "./recovery.js";
 export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
@@ -409,16 +409,25 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
             readonly "@odata.nextLink"?: string;
           } = yield* loadPage;
 
+          // Parse the page in order, as many at once as HTML extraction can run.
+          const parsedPage = yield* Effect.forEach(
+            page.value,
+            (raw) => {
+              const label =
+                system.find((f) => f.id === raw.parentFolderId)?.label ??
+                folders.find((f) => f.id === raw.parentFolderId)?.id;
+              return label
+                ? reader.parseGraph(raw, label, expandedAttachments(raw) ?? [])
+                : Effect.succeed(undefined);
+            },
+            { concurrency: reader.parseConcurrency },
+          );
           let consumed = 0;
-          for (const raw of page.value) {
+          for (const [index, raw] of page.value.entries()) {
             scanned++;
             consumed++;
-            const label =
-              system.find((f) => f.id === raw.parentFolderId)?.label ??
-              folders.find((f) => f.id === raw.parentFolderId)?.id;
-            if (!label) continue;
-            const attachments = expandedAttachments(raw) ?? [];
-            const parsed = parseGraphMessage(raw, label, attachments);
+            const parsed = parsedPage[index];
+            if (!parsed) continue;
             const message: IncomingMessage = {
               ...parsed,
               bodyCached:

@@ -7,6 +7,7 @@ import { EMPTY_FILTER } from "./organization.js";
 import { draftCreation } from "./platform/node/draft-create-fixture.js";
 import {
   fakeHttp,
+  graphFolderRoutes,
   type FakeHttpCall as Call,
   type FakeHttpReply as Reply,
 } from "./platform/node/fake-http.js";
@@ -1176,17 +1177,8 @@ function mailbox(deltas: Record<string, Reply | ((url: URL) => Reply)>) {
       },
     },
     "GET /me/mailFolders/syncissues": { json: { id: "id-syncissues" } },
+    ...graphFolderRoutes(deltas, ["id-c1", "id-c2"]),
   };
-  for (const name of WELL_KNOWN)
-    routes[`GET /me/mailFolders/${name}`] = { json: { id: `id-${name}` } };
-  for (const key of [...WELL_KNOWN, "id-c1", "id-c2"]) {
-    routes[`GET /me/mailFolders/${key}/messages/delta`] = deltas[key] ?? {
-      json: {
-        value: [],
-        "@odata.deltaLink": `${GRAPH}/me/mailFolders/${key}/messages/delta?$deltatoken=${key}`,
-      },
-    };
-  }
   return routes;
 }
 
