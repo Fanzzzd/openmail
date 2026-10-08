@@ -52,8 +52,13 @@ const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =
     return { threads, pages, done, requested: wanted } satisfies Loaded;
   });
 
-export const pagedList = Atom.family((query: ListQuery) => {
-  const wanted = Atom.make(1);
+// Atom.family holds members weakly, so each family returns the atom itself.
+// A wrapper object would be collected while its atoms are still mounted, and
+// the next lookup would start a second list from page one.
+const wantedPages = Atom.family((_query: ListQuery) => Atom.make(1));
+
+const loadedPages = Atom.family((query: ListQuery) => {
+  const wanted = wantedPages(query);
   let requested = 0;
   const loaded = MailClient.runtime
     .atom((get) => {
@@ -90,10 +95,12 @@ export const pagedList = Atom.family((query: ListQuery) => {
       });
     })
     .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
-  return {
-    wanted,
-    loaded: query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded,
-  };
+  return query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded;
+});
+
+export const pagedList = (query: ListQuery) => ({
+  wanted: wantedPages(query),
+  loaded: loadedPages(query),
 });
 
 /** The query behind the list on screen; null on the overview, which has no list. */

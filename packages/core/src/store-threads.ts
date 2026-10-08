@@ -935,6 +935,8 @@ export const makeThreadsStore = ({
     )(sql`SELECT account_id, id, name, color, label_list_visibility, message_list_visibility FROM labels m
         WHERE m.account_id IN (SELECT id FROM accounts WHERE enabled=1) AND ${accountScope(sql, accountIds)}
         ORDER BY account_id, name`);
+    // Outlook categories live only in labels_json. Reading it from the covering
+    // index avoids walking every message row and its body overflow pages.
     const categories = yield* all(
       Schema.Struct({
         accountId: Schema.String,
@@ -944,7 +946,7 @@ export const makeThreadsStore = ({
       }),
     )(sql`
         SELECT DISTINCT m.account_id AS accountId, j.value AS id, substr(j.value,10) AS name, NULL AS color
-        FROM messages m JOIN accounts a ON a.id=m.account_id, json_each(m.labels_json) j
+        FROM messages m INDEXED BY messages_thread_labels JOIN accounts a ON a.id=m.account_id, json_each(m.labels_json) j
         WHERE a.enabled=1 AND a.provider='outlook' AND j.value LIKE 'category:%' AND ${accountScope(sql, accountIds)}`);
     return [
       ...new Map(

@@ -221,11 +221,48 @@ IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留�
 
 拼写菜单的 Set 在窗口关闭时移除监听器与闭包。原始 MIME 和会话查询的闲置 TTL 为零，读者卸载后释放；内嵌与派生图片保留两分钟。内存附件 LRU 上限 16 MiB、八封邮件，附件树按请求管理。持久磁盘附件缓存是另一层，容量与清理见[发布说明](release.md#旧邮件与缓存)。
 
-迁移和恢复检查在 core 就绪前完成。Vision 版本检查、搜索回填、媒体／语义批次与初次自动同步等任一窗口 `ready-to-show` 后启动。Node 测试验证首窗口关闭后第二窗口仍可释放等待，以及监听器清理。没有实测 Electron 首帧或 RSS；列表渲染计数来自 Node DOM。Apple Contacts 的进程内快照和清理限制见 [Apple Contacts](apple-contacts.md)，通用验证入口见[测试](testing.md)。
+迁移和恢复检查在 core 就绪前完成。Vision 版本检查、搜索回填、媒体／语义批次与初次自动同步等任一窗口 `ready-to-show` 后启动。Node 测试验证首窗口关闭后第二窗口仍可释放等待，以及监听器清理。Electron 实测见下一节。Apple Contacts 的进程内快照和清理限制见 [Apple Contacts](apple-contacts.md)，通用验证入口见[测试](testing.md)。
+
+### 桌面冷启动与内存实测（slice 102）
+
+真实邮箱只读副本：4,065 封邮件，2 个账户，数据库 238 MB。启动命令为 `OPENMAIL_READ_ONLY=1 electron-vite preview`，改动前后的构建交替冷启动，各 7 次取中位数，系统负载 8–12。基线为 `fc49dd3`。时间从 Electron 主进程启动算起，单位 ms。主进程和 renderer 的临时 performance mark 及 RPC 日志只在测量时加入，未提交。未打包的启动多一次约 70 ms 的 Dock 图标设置，前后两组都包含。
+
+| 指标                          |  改动前 |  改动后 |
+| ----------------------------- | ------: | ------: |
+| 主进程模块求值完成            |     479 |     456 |
+| 主窗口 `ready-to-show`        |     944 |     852 |
+| renderer 起点到入口脚本执行完 |     211 |     130 |
+| 首批列表行绘制                |    1098 |    1009 |
+| 启动时 `Threads` 请求次数     |       3 |       1 |
+| `Labels` RPC                  |   44–56 |       4 |
+| renderer 入口块（未压缩）     | 4.20 MB | 4.01 MB |
+
+改动如下：
+
+- `listLabels` 的 Outlook 分类查询原先按 `messages_body_sizes` 扫描每行邮件，读取 `labels_json` 时要越过正文溢出页。查询现改用覆盖索引 `messages_thread_labels`，耗时从 58 ms 降到 2 ms。它在首屏前执行，主线程 SQLite 串行，后续 RPC 原先都排在它后面。一次冷启动测到 1.4 s。`performance-plans.test.ts` 断言该计划。
+- `pagedList` 原先由 `Atom.family` 返回包装对象。family 只弱引用成员，GC 回收包装对象后，下一次读取会新建列表 atom，从第一页重新请求。启动时因此发出三次相同的 `Threads`。旧 atom 带着已加载的页保留 5 分钟闲置 TTL。现在每个 family 直接返回 atom，`threads-paging.test.ts` 在 GC 后检查挂载中的列表不变。
+- `electron-updater` 的 GitHub provider 改为首次检查更新时加载。主进程启动时加载约 1,100 个 ES 模块。Node compile cache 曾使模块求值提前约 70 ms，因安全原因不启用，见[安全说明](security.md)。
+- `openmail-app` 协议开启 `codeCache`。Chromium 第二次加载生成入口脚本的字节码缓存，第三次启动起使用。新构建的前两次启动仍约 211 ms。
+- core 声明 `"sideEffects": false`。ical.js 在导入时执行代码，原先经 schema 入口被打进 renderer。`bundle-split.test.ts` 检查构建产物：入口不含 ical.js 和语言目录，按需页面各自成块。
+
+改动前主进程 CPU profile 中，`ready` 前约 680 ms 用于 ESM 加载、编译和实例化；BrowserWindow 创建约 100 ms，在原生代码中。改动后首批列表行的关键路径主要是 renderer 首次渲染约 150 ms，主进程响应启动 RPC 均在 10 ms 内。renderer 开启压缩后入口为 1.97 MB，有字节码缓存时启动时间无可测差异，因此未启用。
+
+内存在启动后闲置 2 分钟、再依次打开会话后测量。JS 堆在 GC 后读取，RSS 来自 `ps`，单位 MB。改动前后交替各测两次，基线为 `d5dd012`，数值范围相同，合并列出：
+
+| 时点           | 主进程 RSS | 主进程堆 | renderer RSS | renderer 堆 |
+| -------------- | ---------: | -------: | -----------: | ----------: |
+| 闲置 2 分钟    |    288–293 |    44–46 |      185–223 |       15–19 |
+| 打开 20 个会话 |    299–311 |    46–51 |      281–296 |       20–26 |
+| 打开 60 个会话 |    305–309 |    47–48 |      327–337 |       21–23 |
+| 再闲置 150 秒  |    306–310 |    47–48 |      329–335 |       21–22 |
+
+改动前另有 4 次带临时日志的测量，其中 2 次 renderer 堆在 20 到 60 个会话后到 40–50 MB，闲置后不回落，与 GC 时机触发的重复列表 atom 相符。改动后 3 次都不超过 26 MB。改动前还有 2 次 renderer RSS 到 0.9 GB，JS 堆仍为 23–29 MB，原因未查明，改动后未出现。
+
+DOM 节点、文档数和事件监听器在打开 40 个会话后不增长。renderer RSS 随打开的会话上升，增长不在 JS 堆中，推测来自 Blink 的布局和图片解码。`messageBackgroundAtom` 与 `imagesLoadedAtom` 按会话保留每封打开过的邮件或会话一项，直到窗口关闭。renderer 中只发现这两处不设上限，每项只有一个小值。
 
 ## Renderer 构建
 
-设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小；初始入口仍包含 React、Effect／RPC／schema、Base UI 和邮件阅读代码。
+设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小。初始入口包含 Effect 0.86 MB、react-dom 0.65 MB、Base UI 0.61 MB，以及阅读器的 HTML 清理和可见文本代码（parse5、css-tree、tldts、entities、dompurify 共约 0.83 MB）。阅读器始终挂载，这部分随入口加载。
 
 AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词索引，再执行有序计数、无序计数和列表查询，三次查询合计须低于 3 秒。通过 [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries) 预筛选候选，词位置 CTE 每条查询只读取一次。索引未就绪时请求只执行 AND 回退，不写入或回填索引；这是自动回归上限，不是实机界面时延保证。
 

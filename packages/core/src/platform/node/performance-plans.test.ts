@@ -65,6 +65,7 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     yield* store.listThreads({ search: '"alpha AROUND 3 beta"', limit: 5 });
     const proximityQueries = trace.stop();
     trace.start();
+    yield* store.listLabels();
     yield* store.bodySizes;
     yield* store.evictBodyBudget(1, true);
     const queries = [...initialQueries, ...proximityQueries, ...trace.stop()];
@@ -101,6 +102,10 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     );
     assert.ok(window);
     assert.include(window.plan.join("\n"), "messages_account_date");
+    // Startup reads labels before the first list paint; categories must not walk message rows.
+    const categories = queries.find((q) => q.sql.includes("LIKE 'category:%'"));
+    assert.ok(categories);
+    assert.include(categories.plan.join("\n"), "COVERING INDEX messages_thread_labels");
     const sizes = queries.find((q) => q.sql.includes("SUM(body_bytes)"));
     assert.ok(sizes);
     assert.include(sizes.plan.join("\n"), "COVERING INDEX messages_body_sizes");

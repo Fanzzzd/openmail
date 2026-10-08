@@ -83,7 +83,10 @@ it("registers the app protocol before ready with minimal privileges and denies f
   expect(native.sandbox).toHaveBeenCalledOnce();
   expect(native.appendSwitch).toHaveBeenCalledWith("disable-breakpad");
   expect(native.schemes).toHaveBeenCalledWith([
-    { scheme: APP_SCHEME, privileges: { standard: true, secure: true, corsEnabled: true } },
+    {
+      scheme: APP_SCHEME,
+      privileges: { standard: true, secure: true, corsEnabled: true, codeCache: true },
+    },
   ]);
   const ses = {
     setPermissionRequestHandler: vi.fn(),

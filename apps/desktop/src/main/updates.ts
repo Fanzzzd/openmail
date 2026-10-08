@@ -1,6 +1,5 @@
 import { beginUpdateState, updateStateReporter } from "./update-state";
 import { setUpdateQuitPlan } from "./update-install";
-import { updateClient } from "./update-client";
 import { Mailbox, isSignedMacApp } from "@openmail/core";
 import { Effect, Layer, Stream } from "effect";
 import { app, BrowserWindow } from "electron";
@@ -30,14 +29,18 @@ export const shown = Effect.callback<void>((resume) => {
   return Effect.sync(cleanup);
 });
 
+/** electron-updater and its GitHub provider load on first use, not with the main process. */
+const loadUpdateClient = Effect.promise(() =>
+  Promise.all([import("electron-updater"), import("./update-client")]),
+).pipe(Effect.map(([updater, { updateClient }]) => updateClient(updater.default.autoUpdater)));
+
 export const UpdatesLive = Layer.effectDiscard(
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
     yield* Effect.gen(function* () {
       yield* shown;
       // The updater is loaded only after the UI is shown.
-      const updater = yield* Effect.promise(() => import("electron-updater"));
-      const client = updateClient(updater.default.autoUpdater);
+      const client = yield* loadUpdateClient;
       const removePlan = setUpdateQuitPlan(() =>
         Effect.runPromise(
           Effect.gen(function* () {
@@ -97,8 +100,7 @@ export function manualUpdateCheck(
     const result =
       app.isPackaged && process.platform === "darwin"
         ? yield* Effect.gen(function* () {
-            const updater = yield* Effect.promise(() => import("electron-updater"));
-            return yield* mailbox.checkUpdates(updateClient(updater.default.autoUpdater), {
+            return yield* mailbox.checkUpdates(yield* loadUpdateClient, {
               packaged: true,
               bundle: resolve(process.execPath, "../../.."),
               onState: updateStateReporter(),
@@ -128,8 +130,7 @@ export function checkForUpdateState(mailbox: Mailbox["Service"], download: boole
   const onState = updateStateReporter();
   return Effect.gen(function* () {
     if (!app.isPackaged || process.platform !== "darwin") return;
-    const updater = yield* Effect.promise(() => import("electron-updater"));
-    yield* mailbox.checkUpdates(updateClient(updater.default.autoUpdater), {
+    yield* mailbox.checkUpdates(yield* loadUpdateClient, {
       packaged: true,
       bundle: resolve(process.execPath, "../../.."),
       ...(download ? { autoDownload: true } : {}),

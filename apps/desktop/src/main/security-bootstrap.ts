@@ -10,7 +10,10 @@ export function registerSecuritySchemes() {
   app.on("session-created", (ses) => configurePermissions(ses));
   app.commandLine.appendSwitch("disable-breakpad");
   protocol.registerSchemesAsPrivileged([
-    { scheme: APP_SCHEME, privileges: { standard: true, secure: true, corsEnabled: true } },
+    {
+      scheme: APP_SCHEME,
+      privileges: { standard: true, secure: true, corsEnabled: true, codeCache: true },
+    },
   ]);
 }
 
