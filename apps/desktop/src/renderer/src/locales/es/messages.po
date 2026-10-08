@@ -5538,7 +5538,6 @@ msgstr "Sincronizar todo"
 
 #: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "Error de sincronización"
 
@@ -5568,8 +5567,8 @@ msgstr "Sincronizado {time}"
 msgid "Syncing {fetched}/{total}"
 msgstr "Sincronizando {fetched}/{total}"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "Sincronizando normalmente"
 

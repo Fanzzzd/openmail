@@ -725,7 +725,7 @@ export function ThreadView({
         )
           event.currentTarget.focus({ preventScroll: true });
       }}
-      className="selectable @container/thread flex-1 overflow-y-auto px-4 pb-10 outline-none @min-[520px]/thread:px-7"
+      className="selectable @container/thread flex-1 overflow-y-auto px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
     >
       <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
       {newest && (

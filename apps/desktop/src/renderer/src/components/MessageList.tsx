@@ -23,6 +23,7 @@ import { Paperclip, Star } from "lucide-react";
 import {
   useEffect,
   useCallback,
+  useId,
   memo,
   useRef,
   useState,
@@ -578,6 +579,10 @@ const Row = memo(function Row({
   const row = useRef<HTMLButtonElement>(null);
   const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
   const muted = accent ? "text-white" : "text-a11y-muted";
+  const matchesId = useId();
+  const attachmentHits = distinctAttachmentMatches(m.searchMatches).slice(0, 2);
+  const derivedHits = m.searchMatches?.length ? [] : (m.derivedMatches?.slice(0, 2) ?? []);
+  const hasHits = attachmentHits.length > 0 || derivedHits.length > 0;
   const chips = m.labels
     .flatMap((id) => labels.get(`${m.accountId}/${id}`) ?? [])
     .filter((l) => l.messageListVisibility !== "hide")
@@ -646,6 +651,7 @@ const Row = memo(function Row({
           ...(m.isUnread ? [t`Unread`] : []),
           ...(m.isStarred ? [t`Starred`] : []),
         ].join(", ")}
+        aria-describedby={hasHits ? matchesId : undefined}
         aria-selected={selected}
         aria-setsize={total}
         aria-posinset={position}
@@ -724,41 +730,43 @@ const Row = memo(function Row({
             )}
           </span>
         )}
-        {distinctAttachmentMatches(m.searchMatches)
-          .slice(0, 2)
-          .map((match, index) => (
-            <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-              <SearchSnippet match={match} lead={8} />
-            </span>
-          ))}
-        {!m.searchMatches?.length &&
-          m.derivedMatches?.slice(0, 2).map((hit, index) => (
-            <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
-              {hit.source.kind === "body" ? (
-                <Trans
-                  context="message text"
-                  comment="Email message text, never an anatomical body."
-                >
-                  Message body
-                </Trans>
-              ) : (
-                hit.source.name
-              )}
-              {hit.page !== null && (
-                <>
-                  {" "}
-                  · <Trans>Page {hit.page}</Trans>
-                </>
-              )}
-              {hit.region !== null && (
-                <>
-                  {" "}
-                  · <Trans>Image region</Trans>
-                </>
-              )}
-              : {hit.text}
-            </span>
-          ))}
+        {hasHits && (
+          // The row's name is short; matches describe it, so a search says why the row matched.
+          <span id={matchesId} className="block">
+            {attachmentHits.map((match, index) => (
+              <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+                <SearchSnippet match={match} lead={8} />
+              </span>
+            ))}
+            {derivedHits.map((hit, index) => (
+              <span key={index} className={`mt-1 block truncate text-[12px] ${muted}`}>
+                {hit.source.kind === "body" ? (
+                  <Trans
+                    context="message text"
+                    comment="Email message text, never an anatomical body."
+                  >
+                    Message body
+                  </Trans>
+                ) : (
+                  hit.source.name
+                )}
+                {hit.page !== null && (
+                  <>
+                    {" "}
+                    · <Trans>Page {hit.page}</Trans>
+                  </>
+                )}
+                {hit.region !== null && (
+                  <>
+                    {" "}
+                    · <Trans>Image region</Trans>
+                  </>
+                )}
+                : {hit.text}
+              </span>
+            ))}
+          </span>
+        )}
         {rule && (
           <span className="absolute right-3 bottom-0 left-7 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
         )}
@@ -806,11 +814,12 @@ function EmptyList({
     <div className="shrink-0 px-8 pt-8 pb-4 text-center text-a11y-muted">
       <p>{text}</p>
       {button && (
+        // aria-disabled keeps focus on Sync now while a sync runs; disabled would drop it.
         <button
           type="button"
-          onClick={button.onClick}
-          disabled={button.disabled}
-          className="mt-2 font-medium text-a11y-accent enabled:hover:underline disabled:opacity-50 dark:text-blue-400"
+          onClick={button.disabled ? undefined : button.onClick}
+          aria-disabled={button.disabled || undefined}
+          className="mt-2 font-medium text-a11y-accent hover:underline aria-disabled:no-underline aria-disabled:opacity-50 dark:text-blue-400"
         >
           {button.label}
         </button>

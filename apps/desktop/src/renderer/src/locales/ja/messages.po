@@ -5538,7 +5538,6 @@ msgstr "すべてを同期"
 
 #: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
 msgstr "同期に失敗しました"
 
@@ -5568,8 +5567,8 @@ msgstr "{time} を同期しました"
 msgid "Syncing {fetched}/{total}"
 msgstr "{fetched}/{total} を同期しています"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Syncing normally"
 msgstr "正常に同期しています"
 

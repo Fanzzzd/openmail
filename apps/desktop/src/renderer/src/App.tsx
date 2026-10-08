@@ -482,6 +482,7 @@ export function App({ composeId }: { composeId?: string }) {
           syncState={syncState}
           accountIssues={!docked}
           onReauth={mailActions.reauth}
+          onFocusList={() => navigation.focusList(selection.focus)}
         />
       }
       emptyActions={{
@@ -685,7 +686,8 @@ export function App({ composeId }: { composeId?: string }) {
                   ref={readerSlot}
                   data-mail-pane="reader"
                   tabIndex={-1}
-                  className="flex min-w-0 flex-1"
+                  // The pane fills the window, so a ring outside it would be off screen.
+                  className="flex min-w-0 flex-1 focus-visible:-outline-offset-2"
                 />
               )}
             </>

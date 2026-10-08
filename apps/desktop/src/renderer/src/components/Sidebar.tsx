@@ -67,7 +67,7 @@ import {
   PROFILE_BG,
 } from "../format";
 import { type MailEnv, withMail, syncNow, useRunMail } from "../state/mail";
-import { ReauthNotice, syncFailures } from "./MailStatusNotice";
+import { ReauthNotice, SyncStatusAnnouncement, syncFailures } from "./MailStatusNotice";
 import {
   prefsAtom,
   labelsAtom,
@@ -772,7 +772,8 @@ export function Sidebar({
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-a11y-muted">
         <span className="line-clamp-2 min-w-0 flex-1" title={failures.join("\n")}>
-          <span aria-hidden="true">{syncStatus()}</span>
+          {/* Readable on mount too: the announcement below stays silent until the state changes. */}
+          <span>{syncStatus()}</span>
           <SyncStatusAnnouncement failed={failures.length > 0} />
         </span>
         <Tip label={t`Settings`} shortcut={shortcut("settings")} side="top">
@@ -1158,18 +1159,5 @@ function Item(props: {
       </button>
       {props.disclosure}
     </div>
-  );
-}
-
-/** Sync ticks and progress stay visual; only entering/clearing failure is announced. */
-function SyncStatusAnnouncement({ failed }: { failed: boolean }) {
-  const { t } = useLingui();
-  const [state, setState] = useState<"initial" | "failed" | "cleared">("initial");
-  if (failed && state !== "failed") setState("failed");
-  else if (!failed && state === "failed") setState("cleared");
-  return (
-    <output aria-live="polite" aria-atomic="true" className="sr-only">
-      {state === "failed" ? t`Sync failed` : state === "cleared" ? t`Syncing normally` : ""}
-    </output>
   );
 }

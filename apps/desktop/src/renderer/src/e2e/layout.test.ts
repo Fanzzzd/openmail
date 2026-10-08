@@ -56,6 +56,10 @@ it("a narrow window shows the list or the reader, and goes back with the button,
     await eventually(() =>
       expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
     );
+    // The pane fills the window, so its focus ring is drawn inside.
+    expect(document.activeElement?.classList.contains("focus-visible:-outline-offset-2")).toBe(
+      true,
+    );
   };
   const backAt = async () => {
     await eventually(() => expect(reader()).toBeNull());
@@ -543,7 +547,12 @@ it("the list says when the computer is offline", async () => {
   act(() => {
     window.dispatchEvent(new Event("offline"));
   });
-  expect(screen.getByText("You're offline. Mail syncs again when you reconnect.")).toBeTruthy();
+  // The notice shows, and a polite status announces it once.
+  const offline = "You're offline. Mail syncs again when you reconnect.";
+  expect(screen.getByText(offline, { selector: "p" })).toBeTruthy();
+  expect(
+    screen.getAllByRole("status").filter((status) => status.textContent === offline),
+  ).toHaveLength(1);
   onLine.mockReturnValue(true);
   act(() => {
     window.dispatchEvent(new Event("online"));

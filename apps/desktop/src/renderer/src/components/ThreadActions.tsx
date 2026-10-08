@@ -226,6 +226,7 @@ export function ThreadActions({
         icon={Star}
         pressed={state.isStarred}
         pressedClass="fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400"
+        name={t`Star`}
         label={state.isStarred ? t`Unstar` : t`Star`}
         shortcut={shortcut("star")}
         onPressedChange={(value) => onOp({ kind: "star", value })}
@@ -236,6 +237,7 @@ export function ThreadActions({
         icon={Bookmark}
         pressed={state.isImportant}
         pressedClass="fill-orange-600 text-orange-600 dark:fill-orange-400 dark:text-orange-400"
+        name={t`Mark as important`}
         label={state.isImportant ? t`Mark as not important` : t`Mark as important`}
         shortcut={shortcut("important")}
         onPressedChange={(value) => onOp({ kind: "important", value })}
@@ -699,9 +701,13 @@ function Action({
   );
 }
 
-/** A toolbar button with an on state, like Star. */
+/**
+ * A toolbar button with an on state, like Star. `name` stays the same in both states, as
+ * aria-pressed carries the state; the tooltip `label` names what a click does.
+ */
 function Switch({
   icon: Icon,
+  name,
   label,
   shortcut,
   pressed,
@@ -709,6 +715,7 @@ function Switch({
   onPressedChange,
 }: {
   icon: Icon;
+  name: string;
   label: string;
   shortcut?: string;
   pressed: boolean;
@@ -718,7 +725,7 @@ function Switch({
   return (
     <Tip label={label} shortcut={shortcut}>
       <Toolbar.Button
-        aria-label={label}
+        aria-label={name}
         render={<Toggle pressed={pressed} onPressedChange={onPressedChange} />}
         className={button}
       >

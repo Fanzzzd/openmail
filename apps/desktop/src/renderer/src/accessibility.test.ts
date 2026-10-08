@@ -18,6 +18,7 @@ import {
   type CalendarInvite,
 } from "@openmail/core/schema";
 import { emptyDraft } from "./draft";
+import { builtPalette } from "./test-styles";
 
 const fixture = vi.hoisted(() => {
   vi.resetModules();
@@ -167,6 +168,7 @@ import { Reader, ThreadView } from "./components/Reader";
 import { ThreadActions } from "./components/ThreadActions";
 import { Sidebar } from "./components/Sidebar";
 import { MailStatusNotice } from "./components/MailStatusNotice";
+import { BatchActions } from "./components/BatchActions";
 import { Composer } from "./components/Composer";
 import { Settings } from "./components/Settings";
 import { Assistant, AiOutput } from "./components/AiPanel";
@@ -1002,19 +1004,24 @@ it("the list notice counts every account's sync errors but names only the open s
         syncState: { running: false, lastFinishedAt: 1, errors },
         accountIssues: true,
         onReauth: vi.fn(),
+        onFocusList: vi.fn(),
       }),
     );
   // An expired account in another space is its own notice there, not a sync failure here.
   const view = render(notice(["gmail:old: Sign in again"]));
   expect(view.container.textContent).toBe("");
+  // Visible text only: the status regions also hold "Sync failed".
+  const shown = (text: string) => screen.getByText(text, { selector: "p" });
   view.rerender(notice(["gmail:old: Sign in again", "gmail:work: Forbidden"]));
-  expect(screen.getByRole("alert").textContent).toContain("Could not sync work@example.com.");
+  expect(shown("Could not sync work@example.com.")).toBeTruthy();
   view.rerender(notice(["gmail:me: Forbidden"]));
-  expect(screen.getByRole("alert").textContent).toContain("Sync failed");
+  expect(shown("Sync failed")).toBeTruthy();
   // Offline joins the account notices instead of hiding them.
   view.rerender(notice(["gmail:work: Forbidden"], false));
-  expect(view.container.textContent).toContain("You're offline.");
-  expect(screen.getByRole("alert").textContent).toContain("Could not sync work@example.com.");
+  expect(shown("You're offline. Mail syncs again when you reconnect.")).toBeTruthy();
+  expect(shown("Could not sync work@example.com.")).toBeTruthy();
+  // Failures are polite statuses, never assertive alerts.
+  expect(screen.queryByRole("alert")).toBeNull();
 });
 
 it("a failed body refresh preserves the reader and cached preview with a non-blocking status", () => {
@@ -1424,6 +1431,421 @@ for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
     await audit();
   });
 }
+
+const listProps = (
+  overrides: Partial<Parameters<typeof MessageList>[0]> = {},
+): Parameters<typeof MessageList>[0] => ({
+  title: "Inbox",
+  threads: [thread],
+  loading: false,
+  exhausted: true,
+  showAccount: false,
+  searching: false,
+  searchingServer: false,
+  searchTruncated: false,
+  searchErrorAccounts: [],
+  searchReauthAccounts: [],
+  searchInputInvalid: false,
+  searchIgnored: [],
+  filters: { enabled: false, unread: false, starred: false, important: false, inInbox: false },
+  inLabel: false,
+  folderActions: null,
+  onFilters: vi.fn(),
+  labels: new Map(),
+  selectedId: null,
+  selectedIds: new Set(),
+  listRef: createRef<HTMLDivElement>(),
+  selectionSource: "mouse",
+  onSelect: vi.fn(),
+  onEndReached: vi.fn(),
+  rowActions: {
+    mailbox: "inbox",
+    labels: [],
+    stateOf: () => ({
+      provider: "gmail" as const,
+      isUnread: false,
+      isStarred: false,
+      isImportant: false,
+      labels: ["INBOX"],
+    }),
+    onOp: vi.fn(),
+    onSwipeOp: vi.fn(),
+    onCompose: vi.fn(),
+    onOpenWindow: vi.fn(),
+    onSnooze: vi.fn(),
+    onFilter: vi.fn(),
+  },
+  ...overrides,
+});
+
+it("audits the reader actions menu by keyboard, with folded shortcuts and focus return", async () => {
+  const user = userEvent.setup();
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h(ThreadActions, {
+          state: {
+            provider: "gmail",
+            isUnread: false,
+            isStarred: true,
+            isImportant: false,
+            labels: ["INBOX"],
+          },
+          mailbox: "inbox",
+          labels: [],
+          onOp: vi.fn(),
+          onCompose: vi.fn(),
+          onSnooze: vi.fn(),
+          labelPicker: false,
+          onLabelPicker: vi.fn(),
+        }),
+      ),
+    ),
+  );
+  const toolbar = screen.getByRole("toolbar", { name: "Conversation actions" });
+  for (const button of within(toolbar).getAllByRole("button"))
+    expect(button.getAttribute("aria-label")).toBeTruthy();
+  // A toggle keeps its name; aria-pressed carries the state.
+  expect(within(toolbar).getByRole("button", { name: "Star" }).getAttribute("aria-pressed")).toBe(
+    "true",
+  );
+  const more = within(toolbar).getByRole("button", { name: "Conversation actions" });
+  more.focus();
+  await user.keyboard("{Enter}");
+  const menu = await screen.findByRole("menu");
+  await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+  const first = document.activeElement;
+  await user.keyboard("{ArrowDown}");
+  expect(document.activeElement).not.toBe(first);
+  expect(document.activeElement?.getAttribute("role")).toBe("menuitem");
+  // A folded action keeps its name and its shortcut in the menu.
+  const unstar = within(menu).getByRole("menuitem", { name: /^Unstar/ });
+  expect(unstar.querySelector("kbd")?.textContent).toBeTruthy();
+  await audit();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(more));
+});
+
+it("audits the narrow batch bar, whose count badge leaves the full count to screen readers", async () => {
+  const user = userEvent.setup();
+  const onOp = vi.fn();
+  function Harness() {
+    const [picker, setPicker] = useState(false);
+    return localized(
+      h(
+        "main",
+        null,
+        h(BatchActions, {
+          rows: [thread, { ...thread, id: "second", isUnread: true }],
+          accounts: [account],
+          labels: [],
+          mailbox: "inbox",
+          onOp,
+          labelPicker: picker,
+          onLabelPicker: setPicker,
+          canLoadMore: true,
+          moreNotLoaded: 3,
+        }),
+      ),
+    );
+  }
+  render(h(Harness));
+  const badge = screen.getByText("2", { exact: true });
+  expect(badge.getAttribute("aria-hidden")).toBe("true");
+  expect(screen.getByText("2 selected (loaded)")).toBeTruthy();
+  expect(screen.getByText("3 more not loaded")).toBeTruthy();
+  for (const name of ["Archive", "Delete", "Mark as read", "Star", "Batch actions"])
+    expect(screen.getByRole("button", { name })).toBeTruthy();
+  await audit();
+  const menuButton = screen.getByRole("button", { name: "Batch actions" });
+  menuButton.focus();
+  await user.keyboard("{Enter}");
+  await screen.findByRole("menuitem", { name: /^Archive/ });
+  await audit();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(menuButton));
+});
+
+it("keeps focus on Sync now in an empty list while a sync runs", async () => {
+  const user = userEvent.setup();
+  const onSync = vi.fn();
+  const emptyActions = {
+    onClearSearch: vi.fn(),
+    onCompose: vi.fn(),
+    onSync,
+    syncing: false,
+  };
+  const view = render(
+    localized(h("main", null, h(MessageList, listProps({ threads: [], emptyActions })))),
+  );
+  const sync = screen.getByRole("button", { name: "Sync now" });
+  sync.focus();
+  await user.keyboard("{Enter}");
+  expect(onSync).toHaveBeenCalledTimes(1);
+  view.rerender(
+    localized(
+      h(
+        "main",
+        null,
+        h(
+          MessageList,
+          listProps({ threads: [], emptyActions: { ...emptyActions, syncing: true } }),
+        ),
+      ),
+    ),
+  );
+  expect(sync.getAttribute("aria-disabled")).toBe("true");
+  expect(document.activeElement).toBe(sync);
+  await user.keyboard("{Enter}");
+  expect(onSync).toHaveBeenCalledTimes(1);
+  await audit();
+});
+
+it("audits list notices, announces offline and sync failure once and keeps focus after Try again", async () => {
+  const user = userEvent.setup();
+  const notice = (
+    online: boolean,
+    syncState: Parameters<typeof MailStatusNotice>[0]["syncState"],
+  ) =>
+    localized(
+      h(
+        "main",
+        null,
+        h(
+          "section",
+          { "aria-label": "Inbox" },
+          h(MailStatusNotice, {
+            accounts: [account],
+            space: [account],
+            online,
+            syncState,
+            accountIssues: true,
+            onReauth: vi.fn(),
+            onFocusList: () => screen.getByRole("option").focus(),
+          }),
+          h(
+            "div",
+            { role: "listbox", tabIndex: -1, "aria-label": "Inbox" },
+            h("div", { role: "option", tabIndex: 0, "aria-selected": true }, "Meeting agenda"),
+          ),
+        ),
+      ),
+    );
+  const statuses = () => screen.getAllByRole("status").map((status) => status.textContent);
+  const ok = { running: false, errors: [], lastFinishedAt: 1 };
+  const failing = { running: false, errors: [`${account.id}: Forbidden`], lastFinishedAt: 1 };
+  const view = render(notice(true, ok));
+  expect(statuses()).toEqual(["", ""]);
+  view.rerender(notice(false, failing));
+  expect(statuses()).toEqual([
+    "You're offline. Mail syncs again when you reconnect.",
+    "Sync failed",
+  ]);
+  expect(screen.queryByRole("alert")).toBeNull();
+  await audit();
+  // Each sync cycle hides and shows the failure again; the announcement does not change.
+  const regions = screen.getAllByRole("status");
+  view.rerender(notice(false, { ...failing, running: true }));
+  view.rerender(notice(false, failing));
+  expect(screen.getAllByRole("status")).toEqual(regions);
+  expect(statuses()).toEqual([
+    "You're offline. Mail syncs again when you reconnect.",
+    "Sync failed",
+  ]);
+  // A remount, as on every search or view change, stays silent.
+  cleanup();
+  const remounted = render(notice(false, failing));
+  expect(statuses()).toEqual(["", ""]);
+  // Try again leaves while the sync runs; the list takes focus instead of the page.
+  const retry = screen.getByRole("button", { name: "Try again" });
+  retry.focus();
+  await user.keyboard("{Enter}");
+  remounted.rerender(notice(true, { ...failing, running: true }));
+  expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  expect(document.activeElement).toBe(screen.getByRole("option"));
+  remounted.rerender(notice(true, ok));
+  expect(statuses()).toEqual(["", "Syncing normally"]);
+});
+
+it("keeps list notices, the batch count badge, empty list text and search marks at WCAG AA", () => {
+  const palette = builtPalette();
+  const readable = (element: Element, name: string) => {
+    for (const theme of ["light", "dark"] as const)
+      expect(palette.contrast(element, theme), `${name} (${theme})`).toBeGreaterThanOrEqual(4.5);
+  };
+  const failing = { running: false, errors: [`${account.id}: Forbidden`], lastFinishedAt: 1 };
+  render(
+    localized(
+      h(
+        MessageList,
+        listProps({
+          notice: h(MailStatusNotice, {
+            accounts: [account],
+            space: [account],
+            online: false,
+            syncState: failing,
+            accountIssues: true,
+            onReauth: vi.fn(),
+            onFocusList: vi.fn(),
+          }),
+          selectionBar: h(BatchActions, {
+            rows: [thread, { ...thread, id: "second" }],
+            accounts: [account],
+            labels: [],
+            mailbox: "inbox",
+            onOp: vi.fn(),
+            labelPicker: false,
+            onLabelPicker: vi.fn(),
+            canLoadMore: false,
+            moreNotLoaded: null,
+          }),
+        }),
+      ),
+    ),
+  );
+  readable(
+    screen.getByText("You're offline. Mail syncs again when you reconnect.", { selector: "p" }),
+    "offline notice",
+  );
+  readable(screen.getByText("Could not sync me@example.com.", { selector: "p" }), "sync failure");
+  readable(screen.getByRole("button", { name: "Try again" }), "Try again");
+  readable(screen.getByText("2", { exact: true }), "batch count badge");
+  cleanup();
+
+  render(
+    localized(
+      h(
+        MessageList,
+        listProps({
+          threads: [],
+          emptyActions: {
+            onClearSearch: vi.fn(),
+            onCompose: vi.fn(),
+            onSync: vi.fn(),
+            syncing: false,
+          },
+        }),
+      ),
+    ),
+  );
+  readable(screen.getByText("No messages here"), "empty list text");
+  readable(screen.getByRole("button", { name: "Sync now" }), "Sync now");
+  cleanup();
+
+  const match = {
+    source: "attachment" as const,
+    messageId: message.id,
+    attachmentName: "agenda.pdf",
+    attachmentIndex: 0,
+    snippet: "budget review",
+    highlights: [{ start: 0, end: 6 }],
+  };
+  render(
+    localized(
+      h(
+        MessageList,
+        listProps({ searching: true, threads: [{ ...thread, searchMatches: [match] }] }),
+      ),
+    ),
+  );
+  const mark = screen.getByRole("option").querySelector("mark");
+  if (!mark) throw new Error("Missing search mark");
+  readable(mark, "search mark");
+  cleanup();
+
+  // The reader text's focus ring is drawn inside its scroll box, where it stays visible.
+  render(
+    localized(
+      h(ThreadView, { messages: [message], selectedId: message.id, single: true, notify: vi.fn() }),
+    ),
+  );
+  const ring = "focus-visible:-outline-offset-2";
+  expect(document.querySelector("[data-reader-text]")?.classList.contains(ring)).toBe(true);
+  expect(
+    palette.declarations(ring).some((decl) => /^outline-offset: calc\(.*-1\)/.test(decl)),
+  ).toBe(true);
+});
+
+it("describes search result rows by their attachment matches and audits the marks", async () => {
+  const match = {
+    source: "attachment" as const,
+    messageId: message.id,
+    attachmentName: "agenda.pdf",
+    attachmentIndex: 0,
+    snippet: "the quarterly budget review",
+    highlights: [{ start: 14, end: 20 }],
+  };
+  render(
+    localized(
+      h(
+        "main",
+        null,
+        h(
+          MessageList,
+          listProps({
+            searching: true,
+            threads: [{ ...thread, searchMatches: [match] }],
+          }),
+        ),
+      ),
+    ),
+  );
+  const option = screen.getByRole("option");
+  const description = document.getElementById(option.getAttribute("aria-describedby") ?? "");
+  expect(description?.textContent).toMatch(/^In attachment agenda\.pdf:.*budget/);
+  const mark = option.querySelector("mark");
+  expect(mark?.textContent).toBe("budget");
+  expect(mark?.className).toContain("text-neutral-950");
+  await audit();
+});
+
+it("opens the dates found menu by keyboard, audits it and returns focus", async () => {
+  const user = userEvent.setup();
+  fixture.values.set("prefsAtom", {
+    ...DEFAULT_PREFS,
+    labs: { ...DEFAULT_PREFS.labs, calendarDetection: true },
+  });
+  const prose = (key: string, value: string) => ({
+    key,
+    title: "Planning",
+    start: { kind: "date", value },
+    end: { kind: "date", value },
+    location: "",
+    description: "",
+    recurrence: [],
+    dateInput: value,
+  });
+  fixture.values.set("detectedEventsAtom", [
+    prose("one", "2026-10-05"),
+    prose("two", "2026-10-06"),
+  ]);
+  render(localized(h("main", null, h(DetectedCalendarEvents, { message }))));
+  const trigger = screen.getByRole("button", { name: "2 dates found" });
+  trigger.focus();
+  await user.keyboard("{Enter}");
+  expect(await screen.findAllByRole("menuitem")).toHaveLength(2);
+  await audit();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+});
+
+it("audits the settings tabs as a horizontal row in a narrow window", async () => {
+  vi.stubGlobal("innerWidth", 520);
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "general",
+        accounts: [account],
+        onClose: vi.fn(),
+        onAddAccount: vi.fn(),
+      }),
+    ),
+  );
+  expect(screen.getByRole("tablist").getAttribute("data-orientation")).toBe("horizontal");
+  await audit();
+});
 
 /**
  * Snapshot of reviewed moderate axe findings. Match fixture, rule and targets,

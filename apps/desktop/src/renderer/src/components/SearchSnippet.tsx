@@ -6,7 +6,8 @@ function MarkedSnippet({ match }: { match: SearchMatch }) {
     const before = match.snippet.slice(match.highlights[index - 1]?.end ?? 0, start);
     return [
       before,
-      <mark key={index} className="rounded bg-amber-300/40 text-inherit">
+      // Opaque with its own text color: a tint under inherited text fails AA on dark and accent rows.
+      <mark key={index} className="rounded bg-amber-200 text-neutral-950">
         {match.snippet.slice(start, end)}
       </mark>,
     ];
