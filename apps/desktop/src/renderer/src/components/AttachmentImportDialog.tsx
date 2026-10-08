@@ -10,7 +10,7 @@ import {
 } from "@openmail/core/schema";
 import { useRunMail, withMail } from "../state/mail";
 import { Dialog } from "./ui/Dialog";
-import { EmailFrame } from "./EmailFrame";
+import { LazyEmailFrame } from "./MessageBodyShell";
 
 /** Review imported data inside the app. Files never launch an OS handler. */
 export function AttachmentImportDialog({
@@ -71,7 +71,7 @@ export function AttachmentImportDialog({
       {failed && <p role="alert">{t`Could not import this attachment.`}</p>}
       {!inspection && !failed && <p>{t`Loading…`}</p>}
       {inspection?.kind === "html" && (
-        <EmailFrame
+        <LazyEmailFrame
           html={inspection.html}
           remote={false}
           background="light"

@@ -15,7 +15,7 @@ import { buildMime } from "./platform/node/compose.js";
 import { type Actor, DEFAULT_PREFS, type IncomingMessage, type OutgoingMessage } from "./domain.js";
 import { ProviderError } from "./errors.js";
 import { Mailbox } from "./mailbox.js";
-import { richComposeBody } from "./compose-body.js";
+import { applyComposeSignature, richComposeBody } from "./compose-body.js";
 import { SqlClient } from "effect/sql";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -24,7 +24,7 @@ import { join } from "node:path";
 import { MIGRATIONS } from "./platform/node/db.js";
 import { makeFakeProvider } from "./platform/node/fake-provider.js";
 import { Store, type ProviderAdapter } from "./services.js";
-import { applyComposeSignature, replyFromAddress } from "./signatures.js";
+import { replyFromAddress } from "./signatures.js";
 {
   const GMAIL = "gmail:me@gmail.com";
 

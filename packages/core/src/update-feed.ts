@@ -1,6 +1,7 @@
 import { Buffer } from "./platform/bytes.js";
 import { Schema } from "effect";
-import { compare, parse } from "semver";
+import compare from "semver/functions/compare.js";
+import parse from "semver/functions/parse.js";
 
 const Release = Schema.Struct({
   tag_name: Schema.String,

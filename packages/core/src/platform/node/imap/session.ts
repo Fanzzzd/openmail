@@ -1,6 +1,5 @@
 import { Effect, Option, Predicate } from "effect";
-import { ImapFlow } from "imapflow";
-import { createTransport } from "nodemailer";
+import type { ImapFlow } from "imapflow";
 import type { Account, ImapSettings } from "../../../domain.js";
 import { AuthError, InvalidInput, ProviderError } from "../../../errors.js";
 import { resolveImapSettings } from "../../../imap-settings.js";
@@ -92,9 +91,14 @@ const logout = ({ client }: ImapConnection) =>
     Effect.catch(() => Effect.sync(() => client.close())),
   );
 
+// A failed load maps like a failed connection.
+const load = <A>(accountId: string, host: string, module: () => Promise<A>) =>
+  Effect.tryPromise({ try: module, catch: (error) => failure(accountId, host, error) });
+
 /** One IMAP session, logged out when the scope closes. */
 export function openImap(accountId: string, settings: ImapSettings, password: string) {
   const connect = Effect.gen(function* () {
+    const { ImapFlow } = yield* load(accountId, settings.imapHost, () => import("imapflow"));
     const client = yield* Effect.sync(() => {
       const c = new ImapFlow({
         host: settings.imapHost,
@@ -169,35 +173,42 @@ export const confirmFolderGone = Effect.fnUntraced(function* (s: ImapConnection,
   return !listed.some((folder) => folder.path === path);
 });
 
-export function smtpTransport(settings: ImapSettings, password: string, onDataSent?: () => void) {
+export function smtpTransport(
+  accountId: string,
+  settings: ImapSettings,
+  password: string,
+  onDataSent?: () => void,
+) {
   return Effect.acquireRelease(
-    Effect.sync(() =>
-      createTransport({
-        host: settings.smtpHost,
-        port: settings.smtpPort,
-        secure: settings.smtpSecure,
-        requireTLS: !settings.smtpSecure,
-        auth: { user: settings.username, pass: password },
-        connectionTimeout: 20_000,
-        // Nodemailer emits this after its dot-stuffed DATA stream, including the terminator, ends.
-        // Consume only the phase marker; never log protocol bodies or credentials.
-        logger: {
-          trace: ignore,
-          debug: ignore,
-          info: (data: unknown) => {
-            if (
-              Predicate.isObject(data) &&
-              "tnx" in data &&
-              data.tnx === "message" &&
-              "outByteCount" in data
-            )
-              onDataSent?.();
+    Effect.map(
+      load(accountId, settings.smtpHost, () => import("nodemailer")),
+      ({ createTransport }) =>
+        createTransport({
+          host: settings.smtpHost,
+          port: settings.smtpPort,
+          secure: settings.smtpSecure,
+          requireTLS: !settings.smtpSecure,
+          auth: { user: settings.username, pass: password },
+          connectionTimeout: 20_000,
+          // Nodemailer emits this after its dot-stuffed DATA stream, including the terminator, ends.
+          // Consume only the phase marker; never log protocol bodies or credentials.
+          logger: {
+            trace: ignore,
+            debug: ignore,
+            info: (data: unknown) => {
+              if (
+                Predicate.isObject(data) &&
+                "tnx" in data &&
+                data.tnx === "message" &&
+                "outByteCount" in data
+              )
+                onDataSent?.();
+            },
+            warn: ignore,
+            error: ignore,
+            fatal: ignore,
           },
-          warn: ignore,
-          error: ignore,
-          fatal: ignore,
-        },
-      }),
+        }),
     ),
     (transport) => Effect.sync(() => transport.close()),
   );
@@ -239,7 +250,7 @@ export const connect = Effect.fnUntraced(function* (input: ConnectInput) {
   const { password: pass } = input.input;
   const s = yield* openImap(accountId, settings, pass);
   yield* call(s, (c) => c.noop());
-  const transport = yield* smtpTransport(settings, pass);
+  const transport = yield* smtpTransport(accountId, settings, pass);
   yield* Effect.tryPromise({
     try: () => transport.verify(),
     catch: (error) => failure(accountId, settings.smtpHost, error),

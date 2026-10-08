@@ -92,7 +92,7 @@ msgstr "{count, plural, other {# 件のメッセージで一部の宛先が拒�
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, other {# 件の送信済みメッセージが送信済みにありません}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {#個のトラッカーをブロック}}"
 
@@ -148,7 +148,7 @@ msgstr "{name} クライアント"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {#件のスレッド}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {#個のトラッキングピクセル}}"
 
@@ -575,7 +575,7 @@ msgstr "一時的に許可される"
 msgid "Always"
 msgstr "常に"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "いつもこの差出人から"
 
@@ -844,7 +844,7 @@ msgstr "引用文の下"
 msgid "Bigger text"
 msgstr "大きなテキスト"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "ロード前にブロックされました:"
 
@@ -1580,6 +1580,10 @@ msgstr "元の添付ファイルを読み込めませんでした: {reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "元の添付ファイルを読み込めませんでした。もう一度やり直してください。"
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "このメッセージを読み込めませんでした。"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2582,7 +2586,7 @@ msgid "Hide format bar"
 msgstr "フォーマットバーを隠す"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "引用されたテキストを非表示にする"
 
@@ -2966,7 +2970,7 @@ msgstr "明るい背景"
 msgid "Link URL"
 msgstr "リンクURL"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "画像の読み込み"
 
@@ -3006,7 +3010,7 @@ msgstr "画像を読み込み中…"
 msgid "Loading older messages…"
 msgstr "古いメッセージを読み込み中…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "リモート画像を読み込むと、メッセージを開いた日時と IP アドレスが送信者に伝わります。"
@@ -3020,6 +3024,7 @@ msgid "Loading the original from the server…"
 msgstr "サーバーからオリジナルをロードしています…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "読み込み中…"
@@ -3303,7 +3308,7 @@ msgstr "メッセージ本文のキャッシュ期間"
 msgid "Message text contains"
 msgstr "メッセージ本文に含む"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "メッセージ本文を更新できませんでした。キャッシュされた内容を表示しています。"
 
@@ -4447,7 +4452,7 @@ msgstr "リマインダー時間"
 msgid "Remote images"
 msgstr "リモート画像"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "リモート画像をブロックしました"
 
@@ -4718,6 +4723,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "保存期間を優先します。上限を超えても、スター付きメール、保存期間内のメッセージ本文、下書き、送信トレイのメールは保持します。ゼロにすると容量制限を無効にします。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "再試行"
 
@@ -5226,7 +5232,7 @@ msgid "Show original"
 msgstr "元のメッセージを表示"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "引用されたテキストを表示"
 
@@ -5615,7 +5621,7 @@ msgstr "文字サイズ"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "{client} OAuth クライアントはまだセットアップされていません。"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "本文がキャッシュされていません。接続後にこのメッセージをもう一度開いてください。"
 

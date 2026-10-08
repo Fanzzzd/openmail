@@ -7,7 +7,8 @@ import type { OutgoingMessage } from "../../../shared/api";
 import type { AppMessages } from "../App";
 import type { useMailSelection } from "../app/use-mail-selection";
 import { type ToastState } from "../components/Toast";
-import { toDraftInput, type Draft } from "../draft";
+import type { Draft } from "../draft";
+import { loadDrafts } from "../draft-loader";
 import { causeText } from "../errors";
 import { saveDraft, sendMessage, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
@@ -84,16 +85,18 @@ export function useComposeDelivery({
     let undoInProgress = false;
     const undoFinished = Deferred.makeUnsafe<void>();
     const saved = run(
-      delay === 0
-        ? saveDraft(toDraftInput(draft)).pipe(Effect.asVoid)
-        : withMail((call) =>
-            call("QueueUndoSend", {
-              draft: { ...toDraftInput(draft), message },
-              due,
-              archive: options.archive,
-              confirmResend,
-            }),
-          ),
+      Effect.flatMap(loadDrafts, ({ toDraftInput }) =>
+        delay === 0
+          ? saveDraft(toDraftInput(draft)).pipe(Effect.asVoid)
+          : withMail((call) =>
+              call("QueueUndoSend", {
+                draft: { ...toDraftInput(draft), message },
+                due,
+                archive: options.archive,
+                confirmResend,
+              }),
+            ),
+      ),
     );
     const deliver = () =>
       run(

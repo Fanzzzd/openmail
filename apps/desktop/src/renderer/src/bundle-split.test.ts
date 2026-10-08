@@ -4,7 +4,7 @@ import { expect, it } from "vitest";
 // Reads the production build, as security.test.ts does. Run `pnpm build` first.
 const assets = new URL("../../../out/renderer/assets/", import.meta.url);
 
-it("keeps rarely used screens, other locales and calendar parsing out of the renderer entry", async () => {
+it("keeps rarely used screens, other locales, calendar parsing and the HTML cleaner out of the renderer entry", async () => {
   const html = await readFile(new URL("../index.html", assets), "utf8");
   const entryName = /src="\.\/assets\/(index-[\w-]+\.js)"/.exec(html)?.[1];
   if (!entryName) throw new Error("renderer entry script not found");
@@ -19,6 +19,7 @@ it("keeps rarely used screens, other locales and calendar parsing out of the ren
     "InviteBanner",
     "Proposals",
     "RawMessage",
+    "MessageBody",
   ])
     expect(files.some((file) => file.startsWith(`${screen}-`) && file.endsWith(".js"))).toBe(true);
   // One chunk per locale, loaded when the language is activated.
@@ -27,4 +28,7 @@ it("keeps rarely used screens, other locales and calendar parsing out of the ren
   // ical.js runs code at import, so only core's sideEffects flag lets the
   // bundler drop it from the schema barrel.
   expect(entry).not.toMatch(/\bICAL\b/);
+  // The reader body chunk holds core's sanitizer and DOMPurify, so the list paints first.
+  expect(entry).not.toMatch(/function sanitizeReaderHtml\(/);
+  expect(entry).not.toContain("DOMPurify");
 });

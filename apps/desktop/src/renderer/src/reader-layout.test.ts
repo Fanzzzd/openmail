@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { beforeAll, afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createElement as h, type ReactNode } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { setupI18n } from "@lingui/core";
@@ -108,6 +108,10 @@ vi.mock("./components/ui/Menu", () => ({
 import { ThreadView } from "./components/Reader";
 import { InviteBanner } from "./components/InviteBanner";
 import { SearchField } from "./components/ui/SearchField";
+import { loadMessageBody } from "./components/MessageBodyShell";
+
+// The reader body is a lazy chunk; load it so renders below are synchronous.
+beforeAll(() => loadMessageBody());
 
 const i18n = setupI18n({ locale: "en", messages: { en: {} } });
 const localized = (node: ReactNode) => h(I18nProvider, { i18n }, node);

@@ -1,5 +1,4 @@
 import { Buffer } from "./platform/bytes.js";
-import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
 import { Cause, Context, Effect, Layer, Option, Redacted, Stream } from "effect";
 import { Chat, type Toolkit } from "effect/ai";
 import { HttpClient } from "effect/http";
@@ -36,6 +35,13 @@ export class Model extends Context.Service<
   }
 >()("openmail/Model") {}
 
+/** Never serialize provider errors: the cause is kept off the schema, for local diagnostics only. */
+const requestFailed = (cause: unknown) => {
+  const error = new ProviderError({ message: "AI request failed. Check your key and try again." });
+  Object.defineProperty(error, "cause", { value: cause, configurable: true });
+  return error;
+};
+
 /** Keychain lookup happens inside the request, after consent, never at Layer construction. */
 export const ModelAnthropic = Layer.effect(
   Model,
@@ -52,6 +58,10 @@ export const ModelAnthropic = Layer.effect(
               return yield* new InvalidInput({
                 message: "Save an Anthropic API key in AI settings.",
               });
+            const { AnthropicClient, AnthropicLanguageModel } = yield* Effect.tryPromise({
+              try: () => import("@effect/ai-anthropic"),
+              catch: requestFailed,
+            });
             const client = AnthropicClient.layer({ apiKey: Redacted.make(key.value) }).pipe(
               Layer.provide(Layer.succeed(HttpClient.HttpClient, http)),
             );
@@ -147,11 +157,7 @@ export const ModelAnthropic = Layer.effect(
           Stream.catchCause((cause) =>
             Cause.hasInterruptsOnly(cause)
               ? Stream.failCause(cause)
-              : Stream.fail(
-                  new ProviderError({
-                    message: "AI request failed. Check your key and try again.",
-                  }),
-                ),
+              : Stream.fail(requestFailed(Cause.squash(cause))),
           ),
         ),
     });

@@ -32,7 +32,7 @@
 | `fixtures/migration-open.mjs`                                        | fs、sqlite、Node 驱动                                     | Node 进程测试 fixture                                                                                |
 | `layers.ts`、`platform-memory.ts`、`testing.ts`、`fake-provider.ts`  | 间接依赖 Node 驱动或 MIME composer                        | Node 组装与测试适配器                                                                                |
 
-Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、`@effect/sql-sqlite-node`、`@napi-rs/keyring`、`sqlite-vec`、`onnxruntime-node`、`imapflow`、`nodemailer`、`mailparser`、`pdfjs-dist`。当前 Transformers 的模型 worker 也限定在 Node adapter；手机端未提供 `ModelRuntime`，端侧推理不支持，原因见手机端说明。`better-sqlite3` 同样在禁止清单，桌面仍使用 `node:sqlite`。
+Node 专用包包括 `@effect/platform-node`、`@effect/platform-node-shared`、`@effect/sql-sqlite-node`、`@napi-rs/keyring`、`sqlite-vec`、`onnxruntime-node`、`imapflow`、`nodemailer`、`mailparser`、`pdfjs-dist`。当前 Transformers 的模型 worker 也限定在 Node adapter；手机端未提供 `ModelRuntime`，端侧推理不支持，原因见手机端说明。`better-sqlite3` 同样在禁止清单，桌面仍使用 `node:sqlite`。imapflow、nodemailer、mailparser 和 `@effect/ai-anthropic` 在首次连接、构建、解析或 AI 请求时动态导入，桌面启动不加载，失败映射为原操作的错误类型；semver 按函数子路径导入（见[性能说明](performance.md#主进程懒加载与阅读器拆块slice-105)）。
 
 core 的字节操作集中到 `platform/bytes.ts`，Node 选用原生 Buffer，缺少该全局对象时回退到 `buffer/index.js` 的浏览器实现。该模块的 native Buffer 探测由导入守卫检查，边界规则见 AGENTS.md。base64url 明确转换字母表及 padding。TNEF 直接使用 Uint8Array / DataView，共享有界输入；UTF-16LE 手工保留 BOM 和独立代理码元，丢弃末尾单字节，保持原生 Buffer 的解码结果。同步 SHA-256 / HMAC 使用 `@noble/hashes` 的可移植实现，Node 的 `PlatformCrypto` 使用原生加密；随机数服务须由手机安全随机实现提供。
 

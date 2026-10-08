@@ -1,5 +1,4 @@
 import { compatibleMime } from "../mime-compat.js";
-import { simpleParser } from "mailparser";
 import type { MailCodecPort } from "../mail-codec.js";
 import { buildMime } from "./compose.js";
 import { PermanentError } from "../../errors.js";
@@ -18,6 +17,7 @@ export const makeNodeMailCodec = (parse: MailCodecPort["parse"]): MailCodecPort 
   build: buildMime,
 });
 export const nodeMailCodec = makeNodeMailCodec(async (raw, options) => {
+  const { simpleParser } = await import("mailparser");
   const parse = (inner: Uint8Array) => simpleParser(Buffer.from(inner), options);
   return compatibleMime(await parse(raw), parse, raw);
 });

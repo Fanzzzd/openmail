@@ -71,7 +71,7 @@ for (const protocol of ["imap", "smtp"] as const) {
                 Effect.scoped,
                 Effect.result,
               )
-            : yield* smtpTransport(settings, "never-send-this").pipe(
+            : yield* smtpTransport("test", settings, "never-send-this").pipe(
                 Effect.flatMap((transport) => Effect.tryPromise(() => transport.verify())),
                 Effect.scoped,
                 Effect.result,

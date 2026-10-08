@@ -1,6 +1,5 @@
 import { composeTransportHtml } from "../../compose-body.js";
 import { Effect } from "effect";
-import MailComposer from "nodemailer/lib/mail-composer";
 
 import type { Address, OutgoingMessage } from "../../domain.js";
 import { PermanentError } from "../../errors.js";
@@ -31,6 +30,13 @@ export const buildMime = Effect.fnUntraced(function* (
 ): Effect.fn.Return<Buffer, PermanentError> {
   const replying = message.mode === "reply" || message.mode === "replyAll";
   const references = [threading.references, threading.messageId].filter(Boolean).join(" ");
+  const { default: MailComposer } = yield* Effect.tryPromise({
+    try: () => import("nodemailer/lib/mail-composer"),
+    catch: (error) =>
+      new PermanentError({
+        message: `Could not build the message: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+  });
   const composer = new MailComposer({
     from: format(from),
     to: message.to.map(format),

@@ -12,9 +12,9 @@ import { MemoryPlatform } from "./platform/node/platform-memory.js";
 import { NodeSystem } from "./platform/node/platform-node.js";
 import { Providers } from "./services.js";
 import { StoreLive } from "./store.js";
-import { applyComposeSignature, orderedSignatures } from "./signatures.js";
+import { orderedSignatures } from "./signatures.js";
 import { applySignature } from "./compose-text.js";
-import { remoteComposeBody, richComposeBody } from "./compose-body.js";
+import { applyComposeSignature, remoteComposeBody, richComposeBody } from "./compose-body.js";
 {
   const temporary = Effect.acquireRelease(
     Effect.sync(() => mkdtempSync(join(tmpdir(), "om-fixture-"))),

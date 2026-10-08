@@ -1,12 +1,8 @@
 import { useLingui } from "@lingui/react/macro";
 import type { Signature } from "@openmail/core/schema";
-import {
-  applyComposeSignature,
-  FEEDBACK_DRAFT_PREFIX,
-  richComposeBody,
-  textComposeHtml,
-} from "@openmail/core/schema";
+import { FEEDBACK_DRAFT_PREFIX } from "@openmail/core/schema";
 import { Effect } from "effect";
+import { constVoid } from "effect/Function";
 import { Atom } from "effect/reactivity";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useEffectEvent, useState } from "react";
@@ -15,17 +11,10 @@ import { type DesktopEvent } from "../../../shared/desktop";
 import type { AppMessages } from "../App";
 import { type FeedbackInput } from "../components/Feedback";
 import { type ToastState } from "../components/Toast";
-import { resolveComposeSender } from "../compose-sender";
+import { defaultSignature, resolveComposeSender } from "../compose-sender";
 import { useComposeDelivery } from "../compose/use-compose-delivery";
-import {
-  draftFor,
-  emptyDraft,
-  fromStored,
-  toDraftInput,
-  defaultSignature,
-  type ComposeMode,
-  type Draft,
-} from "../draft";
+import type { ComposeMode, Draft } from "../draft";
+import { loadDrafts } from "../draft-loader";
 import { causeText } from "../errors";
 import { quoteChoice, readerSelectedText } from "../quote-selection";
 import { replySource, replyTarget, type ReaderSelection } from "../reader-selection";
@@ -90,7 +79,10 @@ export function useMailCompose({
   const [quotePrompt, setQuotePrompt] = useState<((useSelection: boolean) => void) | null>(null);
   const signatureFor = (accountId: string, mode: ComposeMode, from?: string) =>
     signatureAt(accountId, mode, from)?.text;
-  const signed = (draft: Draft): Draft => ({
+  const signed = (
+    { applyComposeSignature }: Effect.Success<typeof loadDrafts>,
+    draft: Draft,
+  ): Draft => ({
     ...draft,
     body: applyComposeSignature(
       draft.body,
@@ -111,13 +103,15 @@ export function useMailCompose({
           aliases: Atom.getResult(sendAsAtom),
         }),
       ),
-      Effect.map((sender) =>
+      Effect.flatMap((sender) =>
         sender
-          ? signed({
-              ...emptyDraft(sender.accountId),
-              from: { name: sender.name, address: sender.address },
-            })
-          : null,
+          ? Effect.map(loadDrafts, (drafts) =>
+              signed(drafts, {
+                ...drafts.emptyDraft(sender.accountId),
+                from: { name: sender.name, address: sender.address },
+              }),
+            )
+          : Effect.succeed(null),
       ),
     );
   const startNewMessage = (mailto?: Extract<DesktopEvent, { _tag: "Compose" }>["draft"]) =>
@@ -125,11 +119,19 @@ export function useMailCompose({
       newMessageDraft().pipe(
         Effect.flatMap((base) => {
           if (!base) return Effect.void;
-          const draft = mailto
-            ? signed({ ...base, ...mailto, body: richComposeBody(textComposeHtml(mailto.body)) })
-            : base;
-          setCompose(draft);
-          return mailto ? saveDraft(toDraftInput(draft)).pipe(Effect.asVoid) : Effect.void;
+          if (!mailto) {
+            setCompose(base);
+            return Effect.void;
+          }
+          return Effect.flatMap(loadDrafts, (drafts) => {
+            const draft = signed(drafts, {
+              ...base,
+              ...mailto,
+              body: drafts.richComposeBody(drafts.textComposeHtml(mailto.body)),
+            });
+            setCompose(draft);
+            return saveDraft(drafts.toDraftInput(draft)).pipe(Effect.asVoid);
+          });
         }),
         Effect.catchCause((cause) =>
           Effect.sync(() => {
@@ -143,8 +145,9 @@ export function useMailCompose({
     if (!id) return;
     run(
       withMail((call) => call("SendAgain", { id })).pipe(
+        Effect.flatMap((draft) => Effect.map(loadDrafts, ({ fromStored }) => fromStored(draft))),
         Effect.matchCause({
-          onSuccess: (draft) => setCompose(fromStored(draft)),
+          onSuccess: setCompose,
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: messages.cantOpenTheDraft(reason), tone: "error" });
@@ -173,7 +176,8 @@ export function useMailCompose({
           const last = replySource(thread, id);
           const account = accountList.find((a) => a.id === last?.accountId);
           if (!last || !account) return;
-          const draft = draftFor(
+          const drafts = yield* loadDrafts;
+          const draft = drafts.draftFor(
             mode,
             last,
             account,
@@ -182,7 +186,7 @@ export function useMailCompose({
             useSelection ? selectedText : undefined,
             { preference: prefs.replyFrom, aliases },
           );
-          setCompose(signed(draft));
+          setCompose(signed(drafts, draft));
         }).pipe(
           Effect.catchCause((cause) =>
             Effect.sync(() => {
@@ -200,11 +204,13 @@ export function useMailCompose({
   const openSavedDraft = (id: string) =>
     run(
       openDraft(id).pipe(
+        Effect.flatMap((d) =>
+          composeId
+            ? Effect.map(loadDrafts, ({ fromStored }) => setCompose(fromStored(d)))
+            : Effect.sync(() => run(withMail((call) => call("OpenComposeWindow", { id: d.id })))),
+        ),
         Effect.matchCause({
-          onSuccess: (d) => {
-            if (composeId) setCompose(fromStored(d));
-            else run(withMail((call) => call("OpenComposeWindow", { id: d.id })));
-          },
+          onSuccess: constVoid,
           onFailure: (cause) => {
             const reason = causeText(i18n, cause);
             say({ text: messages.cantOpenTheDraft(reason), tone: "error" });
@@ -225,7 +231,8 @@ export function useMailCompose({
   };
   const popOut = (draft: Draft) =>
     run(
-      saveDraft(toDraftInput(draft)).pipe(
+      loadDrafts.pipe(
+        Effect.flatMap(({ toDraftInput }) => saveDraft(toDraftInput(draft))),
         Effect.andThen(
           withMail((call) =>
             call("OpenComposeWindow", {
@@ -249,24 +256,28 @@ export function useMailCompose({
             say({ text: messages.connectAnAccountToSendFeedback, tone: "error" });
             return Effect.void;
           }
-          const draft = {
-            ...base,
-            id: `${FEEDBACK_DRAFT_PREFIX}${crypto.randomUUID()}`,
-            to: input.to,
-            subject: input.subject,
-            body: richComposeBody(textComposeHtml(input.body)),
-            attachments: input.attachments,
-          };
-          return saveDraft(toDraftInput(draft)).pipe(
-            Effect.andThen(
-              withMail((call) =>
-                call("OpenComposeWindow", {
-                  id: draft.id,
-                  recipients: { to: draft.to, cc: draft.cc, bcc: draft.bcc },
-                  transfer: true,
-                }),
-              ),
-            ),
+          return loadDrafts.pipe(
+            Effect.flatMap(({ richComposeBody, textComposeHtml, toDraftInput }) => {
+              const draft = {
+                ...base,
+                id: `${FEEDBACK_DRAFT_PREFIX}${crypto.randomUUID()}`,
+                to: input.to,
+                subject: input.subject,
+                body: richComposeBody(textComposeHtml(input.body)),
+                attachments: input.attachments,
+              };
+              return saveDraft(toDraftInput(draft)).pipe(
+                Effect.andThen(
+                  withMail((call) =>
+                    call("OpenComposeWindow", {
+                      id: draft.id,
+                      recipients: { to: draft.to, cc: draft.cc, bcc: draft.bcc },
+                      transfer: true,
+                    }),
+                  ),
+                ),
+              );
+            }),
           );
         }),
         Effect.catchCause(() =>
@@ -281,9 +292,11 @@ export function useMailCompose({
     if (composeId) {
       run(
         withMail((call) => call("ComposeWindowDraft", { id: composeId })).pipe(
+          Effect.flatMap(({ draft, recipients }) =>
+            Effect.map(loadDrafts, ({ fromStored }) => ({ ...fromStored(draft), ...recipients })),
+          ),
           Effect.matchCause({
-            onSuccess: ({ draft, recipients }) =>
-              setComposeState({ ...fromStored(draft), ...recipients }),
+            onSuccess: setComposeState,
             onFailure: startupDraftFailed,
           }),
         ),
@@ -308,7 +321,8 @@ export function useMailCompose({
       return;
     }
     run(
-      saveDraft(toDraftInput(draft)).pipe(
+      loadDrafts.pipe(
+        Effect.flatMap(({ toDraftInput }) => saveDraft(toDraftInput(draft))),
         Effect.matchCause({
           onSuccess: finishCompose,
           onFailure: (cause) => {

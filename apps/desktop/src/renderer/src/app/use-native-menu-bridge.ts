@@ -15,7 +15,7 @@ import type { AppMessages } from "../App";
 import { attachmentProblemMessage } from "../attachment-problem-message";
 import type { ThreadState } from "../focused-inbox";
 import type { ToastState } from "../components/Toast";
-import { toDraftInput } from "../draft";
+import { loadDrafts } from "../draft-loader";
 import { dispatchNativeAction } from "../native-actions";
 import { useDesktopEvents } from "../state/desktop";
 import { saveDraft, useRunMail, withMail } from "../state/mail";
@@ -129,7 +129,8 @@ export function useNativeMenuBridge({
                 return Effect.void;
               }
               const draft = { ...base, attachments: event.attachments };
-              return saveDraft(toDraftInput(draft)).pipe(
+              return loadDrafts.pipe(
+                Effect.flatMap(({ toDraftInput }) => saveDraft(toDraftInput(draft))),
                 Effect.flatMap((saved) =>
                   withMail((call) => call("OpenComposeWindow", { id: saved.id })),
                 ),

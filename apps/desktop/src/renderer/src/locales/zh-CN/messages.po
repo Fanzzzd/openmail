@@ -102,7 +102,7 @@ msgstr "{count, plural, other {# 封邮件有收件人被拒收}}"
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少副本}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {已拦截 # 个追踪器}}"
 
@@ -158,7 +158,7 @@ msgstr "{name} 客户端"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {# 个会话}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {# 个追踪像素}}"
 
@@ -585,7 +585,7 @@ msgstr "已临时允许"
 msgid "Always"
 msgstr "总是"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "总是加载此发件人的图片"
 
@@ -854,7 +854,7 @@ msgstr "引文下方"
 msgid "Bigger text"
 msgstr "放大文字"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
@@ -1590,6 +1590,10 @@ msgstr "无法加载原附件：{reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "无法加载原附件，请重试。"
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "无法加载此邮件。"
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2592,7 +2596,7 @@ msgid "Hide format bar"
 msgstr "隐藏格式栏"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "收起引用"
 
@@ -2976,7 +2980,7 @@ msgstr "浅色背景"
 msgid "Link URL"
 msgstr "链接地址"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "加载图片"
 
@@ -3016,7 +3020,7 @@ msgstr "正在加载图片…"
 msgid "Loading older messages…"
 msgstr "正在加载更早的邮件…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "加载远程图片会让发件人知道你何时打开消息，以及你的 IP 地址。"
@@ -3030,6 +3034,7 @@ msgid "Loading the original from the server…"
 msgstr "正在从服务器读取原始邮件…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "加载中…"
@@ -3313,7 +3318,7 @@ msgstr "消息文本缓存窗口"
 msgid "Message text contains"
 msgstr "消息文本包含"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "消息文本无法刷新。正在显示缓存版本。"
 
@@ -4457,7 +4462,7 @@ msgstr "提醒时间"
 msgid "Remote images"
 msgstr "远程图片"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "已拦截远程图片"
 
@@ -4728,6 +4733,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "保留期限优先。即使超过上限，也会保留星标邮件、期限内的消息文本、草稿和发件箱邮件。设为零可停用容量限制。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "重试"
 
@@ -5236,7 +5242,7 @@ msgid "Show original"
 msgstr "显示原始邮件"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "展开引用"
 
@@ -5625,7 +5631,7 @@ msgstr "文字大小"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "还没有填写 {client} 的 OAuth 客户端。"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"
 

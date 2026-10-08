@@ -92,7 +92,7 @@ msgstr "{count, plural, one {В # сообщении были отклонённ
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# отправленного сообщения нет в папке «Отправленные»} few {# отправленных сообщений нет в папке «Отправленные»} many {# отправленных сообщений нет в папке «Отправленные»} other {# отправленного сообщения нет в папке «Отправленные»}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Заблокирован # трекер} few {Заблокировано # трекера} many {Заблокировано # трекеров} other {Заблокировано # трекера}}"
 
@@ -148,7 +148,7 @@ msgstr "{name} клиент"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# переписка} few {# переписки} many {# переписок} other {# переписки}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# пиксель отслеживания} few {# пикселя отслеживания} many {# пикселей отслеживания} other {# пикселя отслеживания}}"
 
@@ -575,7 +575,7 @@ msgstr "Разрешено временно"
 msgid "Always"
 msgstr "Всегда"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "Всегда от этого отправителя"
 
@@ -844,7 +844,7 @@ msgstr "Под цитируемым текстом"
 msgid "Bigger text"
 msgstr "Текст большего размера"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Заблокировано перед загрузкой:"
 
@@ -1580,6 +1580,10 @@ msgstr "Не удалось загрузить исходные вложения
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Не удалось загрузить исходные вложения. Попробуйте еще раз."
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "Не удалось загрузить это сообщение."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2582,7 +2586,7 @@ msgid "Hide format bar"
 msgstr "Скрыть панель формата"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "Скрыть цитируемый текст"
 
@@ -2966,7 +2970,7 @@ msgstr "Светлый фон"
 msgid "Link URL"
 msgstr "URL-адрес ссылки"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "Загрузить изображения"
 
@@ -3006,7 +3010,7 @@ msgstr "Загрузка изображения…"
 msgid "Loading older messages…"
 msgstr "Загрузка старых сообщений…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Если загрузить удалённые изображения, отправитель узнает, когда вы открыли сообщение, и ваш IP-адрес."
@@ -3020,6 +3024,7 @@ msgid "Loading the original from the server…"
 msgstr "Загрузка оригинала с сервера…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Загрузка…"
@@ -3303,7 +3308,7 @@ msgstr "Период кэширования текста сообщений"
 msgid "Message text contains"
 msgstr "Текст сообщения содержит"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Не удалось обновить текст сообщения. Показана кешированная версия."
 
@@ -4447,7 +4452,7 @@ msgstr "Время напоминания"
 msgid "Remote images"
 msgstr "Удалённые изображения"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Удалённые изображения заблокированы"
 
@@ -4718,6 +4723,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "Сроки хранения имеют приоритет. Сообщения со звёздочкой, сохраняемые тексты сообщений, черновики и сообщения в исходящих остаются даже при превышении лимита. Ноль отключает лимит."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Повторить"
 
@@ -5226,7 +5232,7 @@ msgid "Show original"
 msgstr "Показать оригинал"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "Показать цитируемый текст"
 
@@ -5615,7 +5621,7 @@ msgstr "Размер текста"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Клиент OAuth {client} еще не настроен."
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Текст сообщения не сохранён в кэше. Попробуйте открыть сообщение снова после подключения."
 

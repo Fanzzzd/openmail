@@ -4,16 +4,9 @@ import {
   DEFAULT_PREFS,
   senderSpoofed,
   addressDomain,
-  htmlToText,
-  normalizeQuote,
-  EMPTY_QUOTE_HISTORY,
-  type QuoteHistory,
   type BatchResult,
   type MailOp,
-  splitRepeatedQuote,
   orderThread,
-  prepareMessageHtml,
-  type PreparedHtml,
   READER_ZOOMS,
   senderName,
   shouldLoadRemote,
@@ -27,7 +20,6 @@ import {
   type RefObject,
   useContext,
   useCallback,
-  useMemo,
   useEffect,
   useEffectEvent,
   useRef,
@@ -41,7 +33,6 @@ import {
   accountsAtom,
   knownSendersAtom,
   imageSendersAtom,
-  inlineImagesAtom,
   threadAtom,
 } from "../state/queries";
 import { UnsubscribeButton } from "./UnsubscribeButton";
@@ -59,7 +50,6 @@ import { SearchField } from "./ui/SearchField";
 import { iconButton, trafficLightInset } from "./ui/styles";
 import { Tip } from "./ui/Tip";
 import { BACK_SHORTCUT, isBackKey } from "../responsive-layout";
-import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Effect } from "effect";
 import { constVoid } from "effect/Function";
@@ -71,7 +61,6 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   FileDown,
-  ImageOff,
   Images,
   Mail,
   Minus,
@@ -79,7 +68,6 @@ import {
   Moon,
   Plus,
   Printer,
-  ShieldCheck,
   Star,
   Sun,
   Type,
@@ -101,9 +89,8 @@ import { imagesLoadedAtom, messageBackgroundAtom } from "../state/ui";
 import { attachmentMatches } from "./SearchSnippet";
 import { MediaMatches } from "./MediaMatches";
 import { Attachments } from "./Attachments";
-import { EmailFrame, type MessageBackground } from "./EmailFrame";
+import { LazyMessageBody, useMessageBodyState, type MessageBackground } from "./MessageBodyShell";
 import { MeetingLinks } from "./MeetingLinks";
-import { highlightBody } from "./body-text";
 
 import { useShortcutText } from "../use-shortcut-text";
 
@@ -111,7 +98,6 @@ import { useSaveMessage } from "./reader-actions";
 import { TOOLBAR_MIN_WIDTH } from "../toolbar-fit";
 import { isTypingTarget } from "../typing-target";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
-import { PickerPopover } from "./ui/Picker";
 
 /** Shows a one-line notice, the app's toast. */
 export type Notify = (toast: { text: string; tone?: "error" }) => void;
@@ -409,13 +395,6 @@ export function ThreadView({
       ),
     );
   };
-  const previousBodies = useMemo(() => {
-    const chronological = orderThread(stored, "oldest");
-    const bodies = chronological.map((prior) =>
-      normalizeQuote(prior.bodyText || htmlToText(prior.bodyHtml)),
-    );
-    return new Map(chronological.map((message, index) => [message.id, { bodies, before: index }]));
-  }, [stored]);
   const shown = single ? stored.filter((m) => m.id === selectedId) : stored;
   const messages = orderThread(shown, prefs.threadOrder);
   const addresses = [
@@ -504,9 +483,18 @@ export function ThreadView({
     );
   };
   // One notice per conversation, on the first open message still blocking remote images.
-  const imageNoticeId = messages.find(
-    (m) => open.has(m.id) && m.bodyCached !== false && !loadsRemote(m) && preparedHtml(m).hasRemote,
-  )?.id;
+  // Finding remote content needs the body chunk's parser.
+  const body = useMessageBodyState();
+  const imageNoticeId =
+    body && !(body instanceof Error)
+      ? messages.find(
+          (m) =>
+            open.has(m.id) &&
+            m.bodyCached !== false &&
+            !loadsRemote(m) &&
+            body.preparedHtml(m).hasRemote,
+        )?.id
+      : undefined;
   const toggle = (id: string) => {
     if (id === activeId && open.has(id)) setFinding(false);
     setOpen((prev) => {
@@ -944,7 +932,7 @@ export function ThreadView({
               onMessageOp={(op) => messageAction(m.id, op)}
               onUnreadFrom={() => unreadFrom(m.id)}
               onOpenSingle={() => run(openMessageWindow(m.id))}
-              previous={previousBodies.get(m.id) ?? EMPTY_QUOTE_HISTORY}
+              thread={stored}
               findQuery={finding && activeId === m.id ? findQuery : ""}
               findIndex={findIndex}
               onMatches={activeId === m.id ? reportMatches : undefined}
@@ -1070,18 +1058,6 @@ function MessageHead({
   );
 }
 
-const prepared = new WeakMap<Message, PreparedHtml>();
-function preparedHtml(m: Message): PreparedHtml {
-  let value = prepared.get(m);
-  if (!value) {
-    value = prepareMessageHtml(m.bodyHtml);
-    prepared.set(m, value);
-  }
-  return value;
-}
-
-const noInline = Atom.make(AsyncResult.success<Record<string, string>>({}));
-
 function Expanded({
   message: m,
   searchMatches,
@@ -1107,7 +1083,7 @@ function Expanded({
   onMessageOp,
   onUnreadFrom,
   onOpenSingle,
-  previous,
+  thread,
   findQuery,
   findIndex,
   onMatches,
@@ -1138,7 +1114,8 @@ function Expanded({
   onMessageOp: (op: Parameters<typeof modifyMessages>[1]) => void;
   onUnreadFrom: () => void;
   onOpenSingle: () => void;
-  previous: QuoteHistory;
+  /** Every stored message of the thread, for folding repeated quotes. */
+  thread: readonly Message[];
   findQuery: string;
   findIndex: number;
   onMatches: ((count: number) => void) | undefined;
@@ -1154,14 +1131,6 @@ function Expanded({
   const bySender = imageSenders.includes(address);
   const byDomain = domain !== "" && imageSenders.includes(domain);
   const authenticated = m.security?.dmarc === "pass";
-  const plain = preparedHtml(m);
-  // Embedded parts come from the cached message or the provider, never the sender's server.
-  const inline = AsyncResult.getOrElse(
-    useAtomValue(plain.hasCid ? inlineImagesAtom(m.id) : noInline),
-    () => ({}),
-  );
-  const html = plain.hasCid ? prepareMessageHtml(m.bodyHtml, { inline }) : plain;
-  const trackerCount = html.trackers.length + html.pixels;
 
   const background: MessageBackground =
     override ?? (defaultBackground === "theme" && dark ? "dark" : "light");
@@ -1172,11 +1141,11 @@ function Expanded({
       payload: { entry, allowed: value },
       reactivityKeys: [Keys.imageSenders],
     });
+  const alwaysLoad = address && authenticated ? () => allow(address, true) : undefined;
 
   const separator = t({ message: ", ", comment: "Separator between list items" });
   const to = m.to.map(displayName).join(separator) || "—";
   const cc = m.cc.map(displayName).join(separator);
-  const tradeOff = t`Loading remote images lets the sender see when you open a message and your IP address.`;
   return (
     <article
       data-message-id={m.id}
@@ -1325,177 +1294,22 @@ function Expanded({
         <Attachments message={m} notify={notify} matches={searchMatches} />
       )}
 
-      {(imageNotice || trackerCount > 0) && (
-        <div
-          data-images-notice={imageNotice || undefined}
-          className={`mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${imageNotice ? "rounded-md bg-neutral-100 px-3 py-1.5 text-neutral-600 dark:bg-white/5 dark:text-neutral-400" : ""}`}
-        >
-          {imageNotice && (
-            <>
-              <span className="flex items-center gap-1.5">
-                <ImageOff className="size-3.5 shrink-0" />
-                <Trans>Remote images blocked</Trans>
-              </span>
-              <button
-                type="button"
-                onClick={onLoadImages}
-                title={tradeOff}
-                className="font-medium whitespace-nowrap text-a11y-accent hover:underline dark:text-blue-400"
-              >
-                <Trans>Load images</Trans>
-              </button>
-              {address && authenticated && (
-                <button
-                  type="button"
-                  onClick={() => allow(address, true)}
-                  className="font-medium whitespace-nowrap text-a11y-accent hover:underline dark:text-blue-400"
-                >
-                  <Trans>Always from this sender</Trans>
-                </button>
-              )}
-            </>
-          )}
-          {trackerCount > 0 && (
-            <span className={imageNotice ? "ml-auto flex" : "flex"}>
-              <TrackerBadge trackers={html.trackers} pixels={html.pixels} />
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="pt-4">
-        {m.bodyRefresh === "failed" && (
-          <output className="mb-3 block text-a11y-muted">
-            <Trans>Message text could not be refreshed. Showing the cached version.</Trans>
-          </output>
-        )}
-        {m.bodyCached === false ? (
-          <>
-            <PlainBody
-              text={m.bodyText || m.snippet}
-              previous={previous}
-              background={background}
-              zoom={zoom}
-              findQuery={findQuery}
-              findIndex={findIndex}
-              onMatches={onMatches}
-            />
-            <output className="block px-4 text-a11y-muted">
-              <Trans>The body is not cached. Try opening this message again when connected.</Trans>
-            </output>
-          </>
-        ) : m.bodyHtml ? (
-          <EmailFrame
-            html={html.html}
-            remote={remote}
-            background={background}
-            zoom={zoom}
-            onKeyDown={onZoomKey}
-            onActivate={onActivate}
-            previous={previous}
-            findQuery={findQuery}
-            findIndex={findIndex}
-            onMatches={onMatches}
-          />
-        ) : (
-          <PlainBody
-            text={m.bodyText}
-            previous={previous}
-            background={background}
-            zoom={zoom}
-            findQuery={findQuery}
-            findIndex={findIndex}
-            onMatches={onMatches}
-          />
-        )}
-      </div>
-    </article>
-  );
-}
-
-/** "Blocked 2 trackers". Clicking it lists the services. */
-function TrackerBadge({ trackers, pixels }: { trackers: readonly string[]; pixels: number }) {
-  const { t } = useLingui();
-  const [open, setOpen] = useState(false);
-  const count = trackers.length + pixels;
-  const unknown = plural(pixels, { one: "# tracking pixel", other: "# tracking pixels" });
-  const list = [...trackers, ...(pixels > 0 ? [unknown] : [])];
-  return (
-    <PickerPopover
-      aria-label={plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
-      open={open}
-      onOpenChange={setOpen}
-      className="w-56"
-      trigger={
-        <button
-          type="button"
-          className="flex shrink-0 cursor-default items-center gap-1 rounded text-emerald-700 outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] dark:text-emerald-400"
-        >
-          <ShieldCheck className="size-3.5" />
-          {plural(count, { one: "Blocked # tracker", other: "Blocked # trackers" })}
-        </button>
-      }
-    >
-      <div className="px-3 py-2 text-[12px]">
-        <span className="mb-1 block font-medium">{t`Blocked before loading:`}</span>
-        {list.map((name) => (
-          <span key={name} className="block text-neutral-600 dark:text-neutral-300">
-            {name}
-          </span>
-        ))}
-      </div>
-    </PickerPopover>
-  );
-}
-
-function PlainBody({
-  text,
-  previous,
-  background,
-  zoom,
-  findQuery,
-  findIndex,
-  onMatches,
-}: {
-  text: string;
-  previous: QuoteHistory;
-  background: MessageBackground;
-  zoom: ReaderZoom;
-  findQuery: string;
-  findIndex: number;
-  onMatches: ((count: number) => void) | undefined;
-}) {
-  const { t } = useLingui();
-  const [showQuotes, setShowQuotes] = useState(false);
-  const parts = useMemo(() => splitRepeatedQuote(text, previous), [text, previous]);
-  const root = useRef<HTMLPreElement>(null);
-  const visible = parts.body + (showQuotes || findQuery ? parts.quote : "");
-  useEffect(() => {
-    if (!root.current) return constVoid;
-    root.current.textContent = visible;
-    const highlights = highlightBody(root.current, findQuery);
-    onMatches?.(highlights.count);
-    highlights.select(highlights.count ? findIndex % highlights.count : 0);
-    return () => highlights.dispose();
-  }, [visible, findQuery, findIndex, onMatches]);
-  return (
-    <>
-      <pre
-        ref={root}
-        dir="auto"
-        className={`rounded-lg p-4 font-sans leading-relaxed whitespace-pre-wrap ${background === "dark" ? "bg-black text-neutral-100" : "bg-white text-neutral-900"}`}
-        style={{ fontSize: (14 * zoom) / 100 }}
+      <LazyMessageBody
+        message={m}
+        thread={thread}
+        remote={remote}
+        imageNotice={imageNotice}
+        onLoadImages={onLoadImages}
+        onAlwaysLoad={alwaysLoad}
+        background={background}
+        zoom={zoom}
+        onZoomKey={onZoomKey}
+        onActivate={onActivate}
+        findQuery={findQuery}
+        findIndex={findIndex}
+        onMatches={onMatches}
       />
-      {parts.quote && (
-        <button
-          type="button"
-          className="px-4 text-a11y-accent"
-          onClick={() => setShowQuotes(!showQuotes)}
-        >
-          {showQuotes ? t`Hide quoted text` : t`Show quoted text`}
-        </button>
-      )}
-    </>
+    </article>
   );
 }
 

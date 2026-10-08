@@ -92,7 +92,7 @@ msgstr "{count, plural, one {# Nachricht hatte abgelehnte Empfänger} other {# N
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# gesendete Nachricht fehlt in Gesendet} other {# gesendete Nachrichten fehlen in Gesendet}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {# Tracker blockiert} other {# Tracker blockiert}}"
 
@@ -148,7 +148,7 @@ msgstr "{name} Kunde"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# Konversation} other {# Konversationen}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# Tracking-Pixel} other {# Tracking-Pixel}}"
 
@@ -575,7 +575,7 @@ msgstr "Vorübergehend erlaubt"
 msgid "Always"
 msgstr "Immer"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "Immer von diesem Absender"
 
@@ -844,7 +844,7 @@ msgstr "Unter dem zitierten Text"
 msgid "Bigger text"
 msgstr "Größerer Text"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Vor dem Laden blockiert:"
 
@@ -1580,6 +1580,10 @@ msgstr "Die ursprünglichen Anhänge konnten nicht geladen werden: {reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Die Originalanhänge konnten nicht geladen werden. Versuchen Sie es erneut."
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "Diese Nachricht konnte nicht geladen werden."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2582,7 +2586,7 @@ msgid "Hide format bar"
 msgstr "Formatleiste ausblenden"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "Zitierten Text ausblenden"
 
@@ -2966,7 +2970,7 @@ msgstr "Heller Hintergrund"
 msgid "Link URL"
 msgstr "Link-URL"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "Bilder laden"
 
@@ -3006,7 +3010,7 @@ msgstr "Bild wird geladen…"
 msgid "Loading older messages…"
 msgstr "Ältere Nachrichten werden geladen…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Wenn du entfernte Bilder lädst, sieht der Absender, wann du eine Nachricht öffnest, und deine IP-Adresse."
@@ -3020,6 +3024,7 @@ msgid "Loading the original from the server…"
 msgstr "Laden des Originals vom Server…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Laden…"
@@ -3303,7 +3308,7 @@ msgstr "Cachezeitraum für Nachrichtentext"
 msgid "Message text contains"
 msgstr "Nachrichtentext enthält"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Der Nachrichtentext konnte nicht aktualisiert werden. Die zwischengespeicherte Version wird angezeigt."
 
@@ -4447,7 +4452,7 @@ msgstr "Erinnerungszeit"
 msgid "Remote images"
 msgstr "Entfernte Bilder"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Entfernte Bilder blockiert"
 
@@ -4718,6 +4723,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "Aufbewahrungsfristen haben Vorrang. Markierte Nachrichten, aufbewahrte Nachrichtentexte, Entwürfe und Nachrichten im Postausgang bleiben auch bei Überschreitung des Limits erhalten. Null deaktiviert das Limit."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Erneut versuchen"
 
@@ -5226,7 +5232,7 @@ msgid "Show original"
 msgstr "Original anzeigen"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "Zitierten Text anzeigen"
 
@@ -5615,7 +5621,7 @@ msgstr "Textgröße"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Der {client} OAuth-Client ist noch nicht eingerichtet."
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Der Nachrichtentext ist nicht im Cache gespeichert. Die Nachricht bei bestehender Verbindung erneut öffnen."
 

@@ -41,19 +41,56 @@ export const searchTextAtom = Atom.make("").pipe(Atom.keepAlive);
 export const searchAtom = Atom.make((get) => get(searchTextAtom).trim());
 
 /**
+ * A map with insertion order as recency: setting a key makes it the newest,
+ * and keys past `limit` are dropped oldest first. `undefined` removes the key.
+ */
+export function remember<V>(
+  map: ReadonlyMap<string, V>,
+  key: string,
+  value: V | undefined,
+  limit: number,
+): ReadonlyMap<string, V> {
+  const next = new Map(map);
+  next.delete(key);
+  if (value !== undefined) next.set(key, value);
+  for (const oldest of next.keys()) {
+    if (next.size <= limit) break;
+    next.delete(oldest);
+  }
+  return next;
+}
+
+/** Session state per key: one kept-alive map holds the `limit` most recently set keys,
+ * and family members only derive from it, so unread members can be collected. */
+function boundedFamily<V>(limit: number, empty: V) {
+  const store = Atom.make<ReadonlyMap<string, V>>(new Map()).pipe(Atom.keepAlive);
+  return Atom.family((key: string) =>
+    Atom.writable(
+      (get) => get(store).get(key) ?? empty,
+      (ctx, value: V) =>
+        ctx.set(store, remember(ctx.get(store), key, value === empty ? undefined : value, limit)),
+    ),
+  );
+}
+
+export const MESSAGE_BACKGROUND_LIMIT = 200;
+export const IMAGES_LOADED_LIMIT = 100;
+
+/**
  * The background picked with a message's toggle for the session; null follows
  * the preference.
  */
-export const messageBackgroundAtom = Atom.family((_messageId: string) =>
-  Atom.make<"light" | "dark" | null>(null).pipe(Atom.keepAlive),
+export const messageBackgroundAtom = boundedFamily<"light" | "dark" | null>(
+  MESSAGE_BACKGROUND_LIMIT,
+  null,
 );
+
+const NO_IMAGES_LOADED: ReadonlySet<string> = new Set<string>();
 
 /**
  * Messages whose remote images were loaded by hand this session, keyed by
  * `readerThreadKey`, or by message id when conversations are off.
  */
-export const imagesLoadedAtom = Atom.family((_key: string) =>
-  Atom.make<ReadonlySet<string>>(new Set<string>()).pipe(Atom.keepAlive),
-);
+export const imagesLoadedAtom = boundedFamily(IMAGES_LOADED_LIMIT, NO_IMAGES_LOADED);
 
 export const searchScopeAtom = Atom.make<"all" | "folder">("all").pipe(Atom.keepAlive);

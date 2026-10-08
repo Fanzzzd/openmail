@@ -92,7 +92,7 @@ msgstr "{count, plural, one {# zpráva měla odmítnuté příjemce} few {# zpr�
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# odeslaná zpráva chybí v odeslané poště} few {# odeslané zprávy chybí v odeslané poště} other {# odeslaných zpráv chybí v odeslané poště}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Blokován # sledovací prvek} few {Blokovány # sledovací prvky} many {Blokováno # sledovacích prvků} other {Blokováno # sledovacích prvků}}"
 
@@ -148,7 +148,7 @@ msgstr "{name} klient"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# konverzace} few {# konverzace} many {# konverzací} other {# konverzací}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# sledovací pixel} few {# sledovací pixely} many {# sledovacích pixelů} other {# sledovacích pixelů}}"
 
@@ -575,7 +575,7 @@ msgstr "Dočasně povoleno"
 msgid "Always"
 msgstr "Vždy"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "Vždy od tohoto odesílatele"
 
@@ -844,7 +844,7 @@ msgstr "Pod citovaným textem"
 msgid "Bigger text"
 msgstr "Větší text"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Blokováno před načtením:"
 
@@ -1580,6 +1580,10 @@ msgstr "Nelze načíst původní přílohy: {reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Původní přílohy se nepodařilo načíst. Try again."
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "Tuto zprávu se nepodařilo načíst."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2582,7 +2586,7 @@ msgid "Hide format bar"
 msgstr "Skrýt formátovací lištu"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "Skrýt citovaný text"
 
@@ -2966,7 +2970,7 @@ msgstr "světlé pozadí"
 msgid "Link URL"
 msgstr "URL odkazu"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "Načíst obrázky"
 
@@ -3006,7 +3010,7 @@ msgstr "Načítání obrázku…"
 msgid "Loading older messages…"
 msgstr "Načítání starších zpráv…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Načtení vzdálených obrázků prozradí odesílateli, kdy zprávu otevřete, a vaši IP adresu."
@@ -3020,6 +3024,7 @@ msgid "Loading the original from the server…"
 msgstr "Načítání originálu ze serveru…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Načítání…"
@@ -3303,7 +3308,7 @@ msgstr "Doba uchování textu zpráv v mezipaměti"
 msgid "Message text contains"
 msgstr "Text zprávy obsahuje"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Text zprávy se nepodařilo obnovit. Zobrazuje se verze z mezipaměti."
 
@@ -4447,7 +4452,7 @@ msgstr "Čas připomenutí"
 msgid "Remote images"
 msgstr "Vzdálené obrázky"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Vzdálené obrázky zablokovány"
 
@@ -4718,6 +4723,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "Doba uchování má přednost. Zprávy s hvězdičkou, uchovávané texty zpráv, koncepty a zprávy ve složce k odeslání zůstanou i při překročení limitu. Nula vypne limit."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Zkusit znovu"
 
@@ -5226,7 +5232,7 @@ msgid "Show original"
 msgstr "Zobrazit originál"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "Zobrazit citovaný text"
 
@@ -5615,7 +5621,7 @@ msgstr "Velikost textu"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "Klient {client} OAuth ještě není nastaven."
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu otevřít znovu."
 

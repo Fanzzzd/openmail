@@ -1,5 +1,5 @@
 import { Effect, Option } from "effect";
-import { ImapFlow, type ListResponse, type ResponseEvent } from "imapflow";
+import type { ImapFlow, ListResponse, ResponseEvent } from "imapflow";
 import type { MailOp } from "../../../domain.js";
 import { PermanentError, ProviderError, type ProviderFailure } from "../../../errors.js";
 import {

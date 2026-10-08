@@ -1,6 +1,7 @@
-import { composeSender, type SendAs } from "@openmail/core/schema";
+import { composeSender, type SendAs, type Signature } from "@openmail/core/schema";
 import { Effect } from "effect";
 import type { Account, Prefs } from "../../shared/api";
+import type { ComposeMode } from "./draft";
 import type { View } from "./view";
 
 /** Wait for authoritative settings before choosing a new message's account or alias. */
@@ -16,4 +17,17 @@ export function resolveComposeSender<PE, PR, AE, AR>(options: {
       composeSender(options.accounts, aliases, prefs.defaultFrom, options.view, options.scope),
     ),
   );
+}
+
+/** The local signature for a sender: one for new messages, one for replies and forwards. */
+export function defaultSignature(
+  signatures: readonly Signature[],
+  accounts: readonly Account[],
+  accountId: string,
+  mode: ComposeMode,
+  from?: string,
+): Signature | undefined {
+  const address = (from ?? accounts.find((a) => a.id === accountId)?.email)?.toLowerCase();
+  const kind = mode === "new" ? "new" : "reply";
+  return signatures.find((s) => s.address === address && s.kind === kind);
 }

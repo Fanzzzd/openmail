@@ -92,7 +92,7 @@ msgstr "{count, plural, one {# bericht had geweigerde ontvangers} other {# beric
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# verstuurd bericht ontbreekt in Verstuurd} other {# verstuurde berichten ontbreken in Verstuurd}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {# tracker geblokkeerd} other {# trackers geblokkeerd}}"
 
@@ -148,7 +148,7 @@ msgstr "{name} klant"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# gesprek} other {# gesprekken}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# trackingpixel} other {# trackingpixels}}"
 
@@ -575,7 +575,7 @@ msgstr "Tijdelijk toegestaan"
 msgid "Always"
 msgstr "Altijd"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "Altijd van deze afzender"
 
@@ -844,7 +844,7 @@ msgstr "Onder geciteerde tekst"
 msgid "Bigger text"
 msgstr "Grotere tekst"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Geblokkeerd vóór laden:"
 
@@ -1580,6 +1580,10 @@ msgstr "Kon de originele bijlagen niet laden: {reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Kan de originele bijlagen niet laden. Probeer het opnieuw."
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "Kan dit bericht niet laden."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2582,7 +2586,7 @@ msgid "Hide format bar"
 msgstr "Opmaakbalk verbergen"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "Geciteerde tekst verbergen"
 
@@ -2966,7 +2970,7 @@ msgstr "Lichte achtergrond"
 msgid "Link URL"
 msgstr "Link-URL"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "Afbeeldingen laden"
 
@@ -3006,7 +3010,7 @@ msgstr "Afbeelding laden…"
 msgid "Loading older messages…"
 msgstr "Oudere berichten laden…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Als je externe afbeeldingen laadt, ziet de afzender wanneer je een bericht opent en wat je IP-adres is."
@@ -3020,6 +3024,7 @@ msgid "Loading the original from the server…"
 msgstr "Het origineel van de server laden..."
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Laden..."
@@ -3303,7 +3308,7 @@ msgstr "Bewaarperiode voor berichttekst"
 msgid "Message text contains"
 msgstr "Berichttekst bevat"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "De berichttekst kon niet worden vernieuwd. De opgeslagen versie wordt weergegeven."
 
@@ -4447,7 +4452,7 @@ msgstr "Herinneringstijd"
 msgid "Remote images"
 msgstr "Externe afbeeldingen"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Externe afbeeldingen geblokkeerd"
 
@@ -4718,6 +4723,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "Bewaartermijnen hebben voorrang. Berichten met een ster, bewaarde berichtteksten, concepten en berichten in het postvak uit blijven behouden als de limiet wordt overschreden. Nul schakelt het budget uit."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Probeer opnieuw"
 
@@ -5226,7 +5232,7 @@ msgid "Show original"
 msgstr "Toon origineel"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "Geciteerde tekst tonen"
 
@@ -5615,7 +5621,7 @@ msgstr "Tekstgrootte"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "De {client} OAuth-client is nog niet ingesteld."
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "De berichttekst is niet opgeslagen in de cache. Open dit bericht opnieuw zodra je verbinding hebt."
 

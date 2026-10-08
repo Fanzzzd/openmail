@@ -290,7 +290,7 @@ export const makeImapSend = ({
       );
 
       const phase = { dataSent: false };
-      const transport = yield* smtp(settings, pass, () => {
+      const transport = yield* smtp(account.id, settings, pass, () => {
         phase.dataSent = true;
       });
       const smtpRaw = stripBcc(raw);

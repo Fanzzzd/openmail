@@ -175,7 +175,7 @@ function fixture<A, E>(
             return { accountId: account.id, settings, client };
           }),
         smtpOverride ??
-          ((_settings, _password, onDataSent) =>
+          ((_accountId, _settings, _password, onDataSent) =>
             Effect.sync(() => {
               markDataSent = onDataSent ?? noData;
               return transport;
@@ -917,9 +917,9 @@ for (const disconnectAfterData of [false, true]) {
                 }
                 assert.strictEqual(submissions, disconnectAfterData ? 1 : 0);
               }),
-            (smtpSettings, pass, onDataSent) =>
+            (accountId, smtpSettings, pass, onDataSent) =>
               Effect.gen(function* () {
-                const original = yield* smtpTransport(smtpSettings, pass, onDataSent);
+                const original = yield* smtpTransport(accountId, smtpSettings, pass, onDataSent);
                 return yield* Effect.acquireRelease(
                   Effect.sync(() =>
                     createTransport({

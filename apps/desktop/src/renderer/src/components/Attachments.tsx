@@ -36,7 +36,7 @@ import { formatBytes } from "../format";
 import { useRunMail, withMail } from "../state/mail";
 import { prefsAtom } from "../state/queries";
 import type { Notify } from "./Reader";
-import { EmailFrame } from "./EmailFrame";
+import { LazyEmailFrame } from "./MessageBodyShell";
 import { DropdownMenu, MenuItem } from "./ui/Menu";
 import { Tip } from "./ui/Tip";
 
@@ -519,7 +519,7 @@ function EmbeddedReader({
         </dt>
         <dd>{message.date}</dd>
       </dl>
-      <EmailFrame
+      <LazyEmailFrame
         html={message.bodyHtml}
         remote={false}
         background="light"

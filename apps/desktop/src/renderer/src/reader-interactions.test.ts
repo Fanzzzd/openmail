@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, createElement, type ReactNode } from "react";
-import { expect, it, vi } from "vitest";
+import { beforeAll, expect, it, vi } from "vitest";
 import { setupI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { Effect } from "effect";
@@ -87,6 +87,10 @@ vi.mock("./components/ui/Menu", () => ({
   MenuSeparator: () => null,
 }));
 import { ThreadView } from "./components/Reader";
+import { loadMessageBody } from "./components/MessageBodyShell";
+
+// The reader body is a lazy chunk; load it so renders below are synchronous.
+beforeAll(() => loadMessageBody());
 
 const message = (id: string, date: number): Message => ({
   id,

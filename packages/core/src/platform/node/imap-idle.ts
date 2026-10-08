@@ -1,4 +1,4 @@
-import { ImapFlow } from "imapflow";
+import type { ImapFlow } from "imapflow";
 import type { ImapSettings } from "../../domain.js";
 import { IDLE_RENEW_MS } from "../../imap-idle.js";
 
@@ -11,6 +11,7 @@ export async function watchImapInbox(
   changed: () => void,
   ready: () => void,
 ) {
+  const { ImapFlow } = await import("imapflow");
   const client = new ImapFlow({
     host: settings.imapHost,
     port: settings.imapPort,

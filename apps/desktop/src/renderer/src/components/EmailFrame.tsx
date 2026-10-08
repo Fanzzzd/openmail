@@ -17,6 +17,7 @@ import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./emai
 import { sanitizeReaderHtml } from "./reader-html";
 import { isTypingTarget } from "../typing-target";
 import { DARK_CSS, fitDocument } from "./frame-style";
+import { FRAME_INITIAL_HEIGHT, frameSurface, type MessageBackground } from "./MessageBodyShell";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
 // and its own CSP blocks remote loads (tracking pixels) until images are
@@ -30,8 +31,6 @@ const ALLOWED =
   "default-src 'none'; img-src data: cid: https:; style-src 'unsafe-inline' https:; font-src data: https:";
 const FRAME_RESTRICTIONS =
   "script-src 'none'; object-src 'none'; frame-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'";
-
-export type MessageBackground = "light" | "dark";
 
 interface Props {
   presentation?: "reader" | "compose";
@@ -85,7 +84,7 @@ export function EmailFrame({
     view.select(view.count ? findIndex % view.count : 0);
     return () => view.dispose();
   }, [frameDocument, quotes, showQuotes, findQuery, findIndex, onMatches]);
-  const [height, setHeight] = useState(120);
+  const [height, setHeight] = useState(FRAME_INITIAL_HEIGHT);
   const [fit, setFit] = useState(true);
   const [wide, setWide] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -178,14 +177,7 @@ export function EmailFrame({
   };
 
   return (
-    <div
-      onMouseLeave={() => setHint(null)}
-      className={`overflow-hidden rounded-lg p-4 ${
-        background === "dark"
-          ? "bg-black ring-1 ring-white/10"
-          : "bg-white dark:ring-1 dark:ring-white/10"
-      }`}
-    >
+    <div onMouseLeave={() => setHint(null)} className={frameSurface(background)}>
       <iframe
         ref={frameRef}
         title={t`Message`}

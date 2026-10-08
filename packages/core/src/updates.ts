@@ -1,6 +1,6 @@
 import type { ProviderError } from "./errors.js";
 import type { UpdateState } from "./update-state.js";
-import { parse } from "semver";
+import parse from "semver/functions/parse.js";
 import { Effect, Option, Schema } from "effect";
 const ignoreError = (_error: Error) => null;
 import { AppVerifier } from "./platform/runtime.js";

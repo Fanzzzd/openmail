@@ -18,7 +18,8 @@ import {
   type SetStateAction,
 } from "react";
 import type { Account } from "../../../shared/api";
-import { defaultSignature, formatAddress, parseAddresses, type Draft } from "../draft";
+import { defaultSignature } from "../compose-sender";
+import { formatAddress, parseAddresses, type Draft } from "../draft";
 import {
   moveRecipient,
   recipientTokens,

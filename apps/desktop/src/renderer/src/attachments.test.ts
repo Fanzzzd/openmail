@@ -4,7 +4,7 @@ import { AsyncResult } from "effect/reactivity";
 import { setupI18n, i18n as globalI18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { DEFAULT_PREFS, type ReaderAttachment } from "@openmail/core/schema";
-import { expect, it, vi } from "vitest";
+import { beforeAll, expect, it, vi } from "vitest";
 import { testDom } from "./test-dom";
 
 const rpc = vi.hoisted(() => ({ calls: vi.fn(), partial: false }));
@@ -65,6 +65,10 @@ vi.mock("./components/ui/Tip", () => ({
   Tip: ({ children }: { children: ReactNode }) => children,
 }));
 import { AttachmentList } from "./components/Attachments";
+import { loadMessageBody } from "./components/MessageBodyShell";
+
+// The reader body is a lazy chunk; load it so renders below are synchronous.
+beforeAll(() => loadMessageBody());
 
 const files: ReaderAttachment[] = [
   {

@@ -258,11 +258,28 @@ IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留�
 
 改动前另有 4 次带临时日志的测量，其中 2 次 renderer 堆在 20 到 60 个会话后到 40–50 MB，闲置后不回落，与 GC 时机触发的重复列表 atom 相符。改动后 3 次都不超过 26 MB。改动前还有 2 次 renderer RSS 到 0.9 GB，JS 堆仍为 23–29 MB，原因未查明，改动后未出现。
 
-DOM 节点、文档数和事件监听器在打开 40 个会话后不增长。renderer RSS 随打开的会话上升，增长不在 JS 堆中，推测来自 Blink 的布局和图片解码。`messageBackgroundAtom` 与 `imagesLoadedAtom` 按会话保留每封打开过的邮件或会话一项，直到窗口关闭。renderer 中只发现这两处不设上限，每项只有一个小值。
+DOM 节点、文档数和事件监听器在打开 40 个会话后不增长。renderer RSS 随打开的会话上升，增长不在 JS 堆中，推测来自 Blink 的布局和图片解码。`messageBackgroundAtom` 与 `imagesLoadedAtom` 原先按会话保留每封打开过的邮件或会话一项，直到窗口关闭，slice 105 已加上限。
+
+### 主进程懒加载与阅读器拆块（slice 105）
+
+方法同上一节：同一份真实邮箱只读副本（`.backup` 后由当前迁移升级），改动前后的构建交替冷启动各 7 次取中位数，系统负载 9–28。基线为 `6315d39`。模块数由 `--inspect-brk` 下的 `Debugger.scriptParsed` 计到 `ready-to-show`。时间单位 ms。
+
+| 指标                          |  改动前 |  改动后 |
+| ----------------------------- | ------: | ------: |
+| 主进程 ES 模块（到窗口就绪）  |   1,069 |     796 |
+| 主进程模块求值完成            |     465 |     389 |
+| 主窗口 `ready-to-show`        |     867 |     761 |
+| renderer 起点到入口脚本执行完 |     132 |     113 |
+| 首批列表行绘制                |    1020 |     927 |
+| renderer 入口块（未压缩）     | 4.01 MB | 2.99 MB |
+
+- core 在首次使用时加载 imapflow、nodemailer（SMTP 与 MailComposer）、mailparser 和 `@effect/ai-anthropic`。动态导入失败映射为原操作的错误：IMAP 连接和 SMTP transport 为 `failure()` 的 ProviderError，MIME 构建为 PermanentError，解析为 “Cannot parse MIME message”，AI 请求为原有 ProviderError。semver 改为按函数子路径导入，从 47 个模块降到 10 个。PDF 和模型推理原本就在 worker 中。markdown-it（约 70 个模块，单独导入约 18 ms）仍随启动加载，`renderMarkdown` 及草稿指纹是同步的可移植接口，改成异步要改 drafts 解析和发送路径。
+- renderer 的 `MessageBody` 块包含正文、远程图片提示、追踪器徽章和引用折叠。块加载前显示与 EmailFrame 初始高度（120 px）相同的占位框；判断远程内容需要解析器，提示在块加载后出现。iframe 的 sandbox 与 CSP 未改。块加载失败时正文位置显示“Couldn't load this message.”和 Retry，失败结果不缓存，Retry 重新导入。附件内嵌邮件和导入预览经 `LazyEmailFrame` 使用同一块。入口里的撰写代码经 `draft-loader.ts` 动态加载 `draft.ts`。`applyComposeSignature` 从 `signatures.ts` 移到 `compose-body.ts`：签名 schema 被 RPC 定义引用，原先把整套清理代码带进入口。`bundle-split.test.ts` 断言入口不含 `sanitizeReaderHtml` 和 DOMPurify。
+- `messageBackgroundAtom` 与 `imagesLoadedAtom` 的值存在一个保活的 Map 中，按最近设置的顺序分别保留 200 封邮件和 100 个会话；family 成员只做派生，不再常驻。主窗口同一时间只打开一个会话，打开中的会话的决定不会被挤出，除非在该会话内对超过 200 封邮件分别切换背景。`state/ui.test.ts` 覆盖保留、淘汰和刷新顺序。
 
 ## Renderer 构建
 
-设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小。初始入口包含 Effect 0.86 MB、react-dom 0.65 MB、Base UI 0.61 MB，以及阅读器的 HTML 清理和可见文本代码（parse5、css-tree、tldts、entities、dompurify 共约 0.83 MB）。阅读器始终挂载，这部分随入口加载。
+设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小。初始入口包含 Effect 0.86 MB、react-dom 0.65 MB、Base UI 0.61 MB。邮件正文、EmailFrame、DOMPurify 和 core 的 HTML 清理与可见文本代码（parse5、css-tree、entities）在 `MessageBody` 和共享块中，见下一节。tldts（约 0.18 MB）仍在入口，邮件头的发件人仿冒提示和链接确认要用它。
 
 AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词索引，再执行有序计数、无序计数和列表查询，三次查询合计须低于 3 秒。通过 [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries) 预筛选候选，词位置 CTE 每条查询只读取一次。索引未就绪时请求只执行 AND 回退，不写入或回填索引；这是自动回归上限，不是实机界面时延保证。
 

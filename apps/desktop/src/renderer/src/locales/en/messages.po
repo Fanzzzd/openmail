@@ -96,7 +96,7 @@ msgstr "{count, plural, one {# message had rejected recipients} other {# message
 msgid "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 msgstr "{count, plural, one {# sent message is missing from Sent} other {# sent messages are missing from Sent}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 
@@ -152,7 +152,7 @@ msgstr "{name} client"
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# conversation} other {# conversations}}"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 
@@ -579,7 +579,7 @@ msgstr "Allowed temporarily"
 msgid "Always"
 msgstr "Always"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Always from this sender"
 msgstr "Always from this sender"
 
@@ -848,7 +848,7 @@ msgstr "Below quoted text"
 msgid "Bigger text"
 msgstr "Bigger text"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
@@ -1584,6 +1584,10 @@ msgstr "Couldn't load the original attachments: {reason}"
 #: src/renderer/src/components/Composer.tsx
 msgid "Couldn't load the original attachments. Try again."
 msgstr "Couldn't load the original attachments. Try again."
+
+#: src/renderer/src/components/MessageBodyShell.tsx
+msgid "Couldn't load this message."
+msgstr "Couldn't load this message."
 
 #: src/renderer/src/components/Reader.tsx
 msgid "Couldn't print: {reason}"
@@ -2586,7 +2590,7 @@ msgid "Hide format bar"
 msgstr "Hide format bar"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Hide quoted text"
 msgstr "Hide quoted text"
 
@@ -2970,7 +2974,7 @@ msgstr "Light background"
 msgid "Link URL"
 msgstr "Link URL"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Load images"
 msgstr "Load images"
 
@@ -3010,7 +3014,7 @@ msgstr "Loading image…"
 msgid "Loading older messages…"
 msgstr "Loading older messages…"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 #: src/renderer/src/components/ReadingSettings.tsx
 msgid "Loading remote images lets the sender see when you open a message and your IP address."
 msgstr "Loading remote images lets the sender see when you open a message and your IP address."
@@ -3024,6 +3028,7 @@ msgid "Loading the original from the server…"
 msgstr "Loading the original from the server…"
 
 #: src/renderer/src/components/AttachmentImportDialog.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "Loading…"
 msgstr "Loading…"
@@ -3307,7 +3312,7 @@ msgstr "Message text cache window"
 msgid "Message text contains"
 msgstr "Message text contains"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Message text could not be refreshed. Showing the cached version."
 msgstr "Message text could not be refreshed. Showing the cached version."
 
@@ -4451,7 +4456,7 @@ msgstr "Reminder time"
 msgid "Remote images"
 msgstr "Remote images"
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Remote images blocked"
 msgstr "Remote images blocked"
 
@@ -4722,6 +4727,7 @@ msgid "Retention windows take precedence. Starred messages, retained message tex
 msgstr "Retention windows take precedence. Starred messages, retained message texts, drafts and outbox messages are kept even when the limit is exceeded. Zero disables the budget."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
+#: src/renderer/src/components/MessageBodyShell.tsx
 msgid "Retry"
 msgstr "Retry"
 
@@ -5230,7 +5236,7 @@ msgid "Show original"
 msgstr "Show original"
 
 #: src/renderer/src/components/EmailFrame.tsx
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "Show quoted text"
 msgstr "Show quoted text"
 
@@ -5619,7 +5625,7 @@ msgstr "Text size"
 msgid "The {client} OAuth client is not set up yet."
 msgstr "The {client} OAuth client is not set up yet."
 
-#: src/renderer/src/components/Reader.tsx
+#: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "The body is not cached. Try opening this message again when connected."
 
