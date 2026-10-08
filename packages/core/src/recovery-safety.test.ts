@@ -1,3 +1,5 @@
+import { openUnversionedMigratedDatabase } from "../test-support/migrated-database.js";
+import { expectFileBytes } from "../test-support/file-bytes.js";
 import { applyNativeMigration } from "./platform/node/migrations.js";
 import { spawn, spawnSync } from "node:child_process";
 import {
@@ -38,8 +40,7 @@ afterEach(() => {
 });
 function fixture(dir: string, wal = false) {
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
+  const db = openUnversionedMigratedDatabase(file);
   const root = db
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -162,7 +163,7 @@ it("startup cleans partial recovery files and their journals while keeping the l
   writeFileSync(`${file}.recovery-abandoned`, "partial");
   writeFileSync(`${file}.recovery-abandoned-journal`, "partial journal");
   prepareDatabaseStartup(dir);
-  expect(readFileSync(file)).toEqual(before);
+  expectFileBytes(file, before);
   expect(existsSync(`${file}.recovery-abandoned`)).toBe(false);
   expect(existsSync(`${file}.recovery-abandoned-journal`)).toBe(false);
 });
@@ -206,15 +207,13 @@ for (const step of ["sidecar", "linked", "installed"] as const)
 it("a failed post-swap marker cannot make startup copy backup WALs onto a valid new database", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const old = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) applyNativeMigration(old, migration);
+  const old = openUnversionedMigratedDatabase(file);
   old.close();
   const identity = statSync(file);
   const backup = `${file}.corrupt-test`;
   linkSync(file, backup);
   const fresh = `${file}.recovery-test`;
-  const db = new DatabaseSync(fresh);
-  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
+  const db = openUnversionedMigratedDatabase(fresh);
   db.prepare("INSERT INTO prefs(key,value_json) VALUES (?,?)").run("new-only", "true");
   db.close();
   renameSync(fresh, file);
@@ -244,8 +243,7 @@ it("a failed post-swap marker cannot make startup copy backup WALs onto a valid 
 it("old corrupt backups without recovery markers do not block an intentional fresh start", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const seed = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) applyNativeMigration(seed, migration);
+  const seed = openUnversionedMigratedDatabase(file);
   seed.close();
   const result = rebuildCorruptDatabase(dir);
   expect(result.kind).toBe("recovered");
@@ -265,42 +263,46 @@ it("old corrupt backups without recovery markers do not block an intentional fre
   if (result.kind === "recovered") expect(existsSync(result.backup)).toBe(true);
 });
 
-it("four simultaneous first openers hold shared leases quickly without initializing the lock database", async () => {
+it("four simultaneous first openers each acquire a shared lease without initializing the lock database", async () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const start = join(dir, "start");
   const url = new URL("../dist/platform/node/database-access.js", import.meta.url).href;
-  const results = await Promise.all(
-    [0, 1, 2, 3].map(async (id) => {
-      const ready = join(dir, `ready-${id}`);
-      const result = join(dir, `result-${id}`);
-      const code = `import fs from 'node:fs'; const {acquireDatabaseAccess}=await import(${JSON.stringify(url)}); fs.writeFileSync(${JSON.stringify(ready)},'ready'); while(!fs.existsSync(${JSON.stringify(start)})) await new Promise(r=>setTimeout(r,2)); const at=Date.now(); const lease=acquireDatabaseAccess(${JSON.stringify(file)},'shared'); fs.writeFileSync(${JSON.stringify(result)},String(Date.now()-at)); await new Promise(r=>setTimeout(r,150)); lease.release();`;
-      const child = spawn(process.execPath, ["--input-type=module", "-e", code], {
-        stdio: "ignore",
-      });
-      const exit = new Promise<number | null>((resolve, reject) => {
-        child.once("error", reject);
-        child.once("exit", resolve);
-      });
-      try {
-        const deadline = Date.now() + 5000;
-        while (![0, 1, 2, 3].every((n) => existsSync(join(dir, `ready-${n}`)))) {
-          if (Date.now() > deadline) throw new Error("First openers failed to reach the barrier");
-          await new Promise((resolve) => {
-            setTimeout(resolve, 5);
-          });
-        }
-        if (!existsSync(start)) writeFileSync(start, "go");
-        const code = await exit;
-        return { code, elapsed: Number(readFileSync(result, "utf8")) };
-      } finally {
-        if (child.exitCode === null) child.kill();
-      }
+  // IPC barrier: every child has loaded the module before any of them opens the lock file.
+  const code = `const {acquireDatabaseAccess}=await import(${JSON.stringify(url)}); const next=()=>new Promise(r=>process.once('message',r)); process.send('ready'); await next(); const at=Date.now(); const lease=acquireDatabaseAccess(${JSON.stringify(file)},'shared'); process.send(String(Date.now()-at)); await next(); lease.release(); process.disconnect();`;
+  const children = [0, 1, 2, 3].map(() =>
+    spawn(process.execPath, ["--input-type=module", "-e", code], {
+      stdio: ["ignore", "ignore", "ignore", "ipc"],
     }),
   );
-  for (const result of results) {
-    expect(result.code).toBe(0);
-    expect(result.elapsed).toBeLessThan(1000);
+  try {
+    const exits = children.map(
+      (child) =>
+        new Promise<number | null>((resolve, reject) => {
+          child.once("error", reject);
+          child.once("exit", resolve);
+        }),
+    );
+    const message = (child: (typeof children)[number]) =>
+      new Promise<unknown>((resolve, reject) => {
+        child.once("message", resolve);
+        child.once("exit", () => reject(new Error("First opener exited early")));
+      });
+    await Promise.all(children.map(message));
+    // The guard-table creator waits for peer leases, so each child releases once it reports.
+    const acquired = children.map(async (child) => {
+      const ms = Number(await message(child));
+      child.send("release");
+      return ms;
+    });
+    for (const child of children) child.send("go");
+    const elapsed = await Promise.all(acquired);
+    for (const code of await Promise.all(exits)) expect(code).toBe(0);
+    for (const ms of elapsed) {
+      expect(Number.isFinite(ms)).toBe(true);
+      if (process.env["OPENMAIL_PERF"] === "1") expect(ms).toBeLessThan(1000);
+    }
+  } finally {
+    for (const child of children) if (child.exitCode === null) child.kill();
   }
   const lock = new DatabaseSync(`${file}.access-lock`, { readOnly: true });
   try {

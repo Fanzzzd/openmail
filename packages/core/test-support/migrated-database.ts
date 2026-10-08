@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -27,4 +27,20 @@ export function migratedDatabaseBytes(): Uint8Array {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+}
+
+/** Writes an independent copy of the migrated schema to `file`. */
+export function writeMigratedDatabase(file: string): void {
+  writeFileSync(file, migratedDatabaseBytes());
+}
+
+/**
+ * Opens a copy of the real schema at `file` with user_version 0, like a fixture built from
+ * bare migration scripts, so startup and recovery still replay every data migration.
+ */
+export function openUnversionedMigratedDatabase(file: string): DatabaseSync {
+  writeMigratedDatabase(file);
+  const db = new DatabaseSync(file);
+  db.exec("PRAGMA user_version=0");
+  return db;
 }

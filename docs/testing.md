@@ -23,6 +23,7 @@ pnpm exec oxfmt --check .
 - 墙钟预算只在 `OPENMAIL_PERF=1` 下断言，运行 `pnpm --filter @openmail/core test:perf`。
 - 数据库 fixture 用 [migrated-database.ts](../packages/core/test-support/migrated-database.ts) 生成独立副本。
 - 大文件用 [file-bytes.ts](../packages/core/test-support/file-bytes.ts) 比较完整字节。
+- 启动 worker 或 CLI 进程每次要几百毫秒。同一文件内复用 worker，做法见 `corpus-check.test.ts`。互不依赖的子进程测试用 `test.concurrent` 并发等待。每个测试最多串行等一次进程启动，前置启动放进 `beforeAll`。
 
 在 `packages/core` 重复并行运行以下命令，同时启动 4–6 个 `yes > /dev/null`；结束后终止本次创建的负载进程：
 

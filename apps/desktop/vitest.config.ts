@@ -14,5 +14,8 @@ export default defineConfig({
     globalSetup: ["../../packages/core/test-support/temp-directory.ts"],
     include: ["src/**/*.test.ts"],
     exclude: ["src/renderer/src/e2e/**"],
+    // Load the built core natively. Transforming its dist on every file costs ~2 s per file.
+    // Tests that need core mocks import core source explicitly.
+    server: { deps: { external: [/packages\/core\/dist\//] } },
   },
 });

@@ -34,6 +34,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import { NodeSystem } from "./platform-node.js";
+
+const planDetail = (rows: unknown) =>
+  Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ detail: Schema.String })))(rows)
+    .map((row) => row.detail)
+    .join("\n");
 it.effect("actual health, stale, reset and budget queries use indexed metadata", () => {
   const trace = traceQueries();
   return Effect.gen(function* () {
@@ -232,7 +237,9 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
           [{ name: "John Smith", address: "john@example.com", company: "Acme" }],
           1,
         );
-        yield* sql`WITH RECURSIVE entries(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM entries WHERE n<160000)
+        // No ANALYZE runs, so the plan does not depend on row count; only the timing log needs 160k.
+        const candidates = process.env.OPENMAIL_PERF === "1" ? 160_000 : 1000;
+        yield* sql`WITH RECURSIVE entries(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM entries WHERE n<${candidates})
       INSERT INTO contact_candidates(id,account_id,address,name,date,weight,source)
       SELECT 'fixture:'||n,${account.id},'person'||n||'@example.org','Correspondent '||n,0,1,1 FROM entries`;
         const statements: (readonly [string, ReadonlyArray<unknown>])[] = [];
@@ -250,12 +257,7 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
         const query = statements.find(([text]) => text.includes("contact_completion_fts"));
         assert.ok(query);
         const [text, parameters] = query;
-        const plan = yield* sql.unsafe(`EXPLAIN QUERY PLAN ${text}`, parameters);
-        const details = Schema.decodeUnknownSync(
-          Schema.Array(Schema.Struct({ detail: Schema.String })),
-        )(plan)
-          .map((row) => row.detail)
-          .join("\n");
+        const details = planDetail(yield* sql.unsafe(`EXPLAIN QUERY PLAN ${text}`, parameters));
         assert.match(details, /SEARCH c USING INTEGER PRIMARY KEY/);
         assert.match(details, /contact_candidates_(?:address|score)/);
         assert.match(details, /contact_completion_fts/);
@@ -265,7 +267,7 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
           { name: "John Smith", address: "john@example.com" },
         ]);
         yield* Effect.logInfo(
-          `160k contact completion: ${Math.round(performance.now() - started)} ms`,
+          `${candidates} contact completion: ${Math.round(performance.now() - started)} ms`,
         );
       }).pipe(Effect.provide(layer)),
   );
@@ -306,18 +308,40 @@ it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
         ],
       ] as const;
       for (const [index, statement] of plans) {
-        const rows = Schema.decodeUnknownSync(
-          Schema.Array(Schema.Struct({ detail: Schema.String })),
-        )(yield* statement);
-        const detail = rows.map((row) => row.detail).join("\n");
+        const detail = planDetail(yield* statement);
         assert.include(detail, index);
         if (index === "messages_starred_threads")
           assert.include(detail, "USING COVERING INDEX messages_starred_threads");
         assert.notMatch(detail, /SCAN (?:messages|pending_ops)(?:$|\n)|TEMP B-TREE/);
       }
+      // Store.threadMessageIds: the thread lookup must not walk the account by date.
+      const thread = planDetail(
+        yield* sql`EXPLAIN QUERY PLAN SELECT t.id FROM messages t
+        JOIN messages m ON t.account_id = m.account_id AND t.thread_id = m.thread_id
+        WHERE m.id = 'message' ORDER BY +t.date, t.rowid DESC`,
+      );
+      assert.match(
+        thread,
+        /SEARCH t USING (?:COVERING )?INDEX \w+ \(account_id=\? AND thread_id=\?\)/,
+      );
       const indexes =
         yield* sql`SELECT name FROM sqlite_master WHERE type='index' AND name IN ('messages_account_thread','messages_rfc_id')`;
       assert.deepStrictEqual(indexes, []);
+      // Same-date messages keep the order the account-date walk gave: newest rowid first.
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "ties@example.com");
+      for (const [providerId, date] of [
+        ["early", 500],
+        ["tie-a", 1000],
+        ["tie-b", 1000],
+        ["late", 2000],
+        ["tie-c", 1000],
+      ] as const)
+        yield* store.upsertMessage(account.id, message({ providerId, threadId: "ties", date }));
+      assert.deepStrictEqual(
+        yield* store.threadMessageIds(`${account.id}/tie-a`),
+        ["early", "tie-c", "tie-b", "tie-a", "late"].map((id) => `${account.id}/${id}`),
+      );
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
   );
 }

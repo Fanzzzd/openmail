@@ -534,7 +534,8 @@ function cleanTransportNodes(nodes: HtmlNode[]): HtmlNode[] {
       else delete node.attribs.style;
     }
     node.children = cleanTransportNodes(node.children);
-    if (!DomUtils.textContent(node).trim() && node.attribs.style) {
+    // Check the style first: textContent walks the subtree, which is quadratic on deep HTML.
+    if (node.attribs.style && !DomUtils.textContent(node).trim()) {
       const ast = parse(node.attribs.style, { context: "declarationList" });
       walk(ast, {
         visit: "Declaration",

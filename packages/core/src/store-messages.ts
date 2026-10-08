@@ -416,9 +416,11 @@ export const makeMessagesStore = ({
     });
 
     const threadMessageIds = Effect.fn("Store.threadMessageIds")(function* (id: string) {
+      // `+t.date` keeps the planner on an (account_id, thread_id) index instead of walking the
+      // account by date. Same-date messages keep the newest-rowid-first order explicitly.
       const rows = yield* all(MessageId)(sql`SELECT t.id FROM messages t
         JOIN messages m ON t.account_id = m.account_id AND t.thread_id = m.thread_id
-        WHERE m.id = ${id} ORDER BY t.date`);
+        WHERE m.id = ${id} ORDER BY +t.date, t.rowid DESC`);
       return rows.map((r) => r.id);
     });
 

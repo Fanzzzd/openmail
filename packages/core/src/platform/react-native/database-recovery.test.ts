@@ -16,7 +16,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { NodeFileSystem } from "@effect/platform-node";
 import { Clock, Effect, FileSystem, Layer, ManagedRuntime, PlatformError, Schema } from "effect";
 import { expectFileBytes } from "../../../test-support/file-bytes.js";
-import { migratedDatabaseBytes } from "../../../test-support/migrated-database.js";
+import { writeMigratedDatabase } from "../../../test-support/migrated-database.js";
 import { opSqliteShim } from "../../../test-support/op-sqlite.js";
 import { AppPaths } from "../paths.js";
 import { PlatformCrypto, sha256Hex, hmacSha256Hex } from "../crypto.js";
@@ -227,7 +227,7 @@ async function fixture() {
   };
   const runtime = createRuntime();
   const recovery = await runtime.runPromise(MobileDatabaseRecovery);
-  writeFileSync(join(root, "mail.db"), migratedDatabaseBytes());
+  writeMigratedDatabase(join(root, "mail.db"));
   const seed = new DatabaseSync(join(root, "mail.db"));
   try {
     seed.exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF");

@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, test, type TestContext } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
 import { ThreadSummary } from "@openmail/core/schema";
@@ -23,12 +23,21 @@ const CallResult = Schema.Struct({
   isError: Schema.optionalKey(Schema.Boolean),
 });
 const run = promisify(execFile);
-const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => {
-  for (const cleanup of cleanups.splice(0)) await cleanup();
-});
 
-async function client(allowWrites = false, cli = false, seed = false) {
+// Each test waits on its own child processes, so tests run concurrently and only
+// the slowest CLI start bounds the file. Cleanups belong to the test that made them.
+async function home(onTestFinished: TestContext["onTestFinished"], prefix: string) {
+  const directory = await mkdtemp(join(tmpdir(), prefix));
+  onTestFinished(() => rm(directory, { recursive: true, force: true }));
+  return directory;
+}
+
+async function client(
+  onTestFinished: TestContext["onTestFinished"],
+  allowWrites = false,
+  cli = false,
+  seed = false,
+) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
   if (seed) await seedAttachmentMail(directory);
   const child = spawn(
@@ -81,7 +90,7 @@ async function client(allowWrites = false, cli = false, seed = false) {
       handler.reject(new Error(`MCP exited ${code}: ${stderr}`));
     pending.clear();
   });
-  cleanups.push(async () => {
+  onTestFinished(async () => {
     child.kill();
     if (child.exitCode === null && child.signalCode === null)
       await new Promise<void>((resolve) => {
@@ -117,8 +126,11 @@ async function client(allowWrites = false, cli = false, seed = false) {
   return { request, directory };
 }
 
-test("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async () => {
-  const { request } = await client();
+test.concurrent("stdio MCP defaults to read-only tools, calls the shared Toolkit and rejects hidden writes", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request } = await client(onTestFinished);
   const list = Schema.decodeUnknownSync(ToolList)(await request("tools/list"));
   expect(list.tools.map((tool) => tool.name)).toContain("attachment_text");
   expect(list.tools.map((tool) => tool.name)).not.toContain("modify_threads");
@@ -135,8 +147,11 @@ test("stdio MCP defaults to read-only tools, calls the shared Toolkit and reject
   ).rejects.toThrow();
 }, 30_000);
 
-test("openmail mcp --allow-writes exposes only supported proposals and still checks app policy", async () => {
-  const { request } = await client(true, true);
+test.concurrent("openmail mcp --allow-writes exposes only supported proposals and still checks app policy", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request } = await client(onTestFinished, true, true);
   const list = Schema.decodeUnknownSync(ToolList)(await request("tools/list"));
   expect(list.tools.map((tool) => tool.name)).toEqual(
     expect.arrayContaining(["modify_threads", "snooze_threads", "draft_message"]),
@@ -159,9 +174,11 @@ test("openmail mcp --allow-writes exposes only supported proposals and still che
   expect(called.content[0]?.text).toContain("enabled account with AI consent");
 }, 30_000);
 
-test("write-mode help describes app-only permissions", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-policy-test-"));
-  cleanups.push(() => rm(directory, { recursive: true, force: true }));
+test.concurrent("write-mode help describes app-only permissions", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-policy-test-");
   const help = await run(process.execPath, ["dist/cli.js", "agents", "write-mode", "--help"], {
     env: { ...process.env, OPENMAIL_HOME: directory },
   });
@@ -169,9 +186,11 @@ test("write-mode help describes app-only permissions", async () => {
   expect(help.stdout).not.toMatch(/<mode>|\[mode\]/);
 });
 
-test("write-mode status distinguishes MCP proposals from direct rule writes", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "openmail-cli-policy-test-"));
-  cleanups.push(() => rm(directory, { recursive: true, force: true }));
+test.concurrent("write-mode status distinguishes MCP proposals from direct rule writes", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const directory = await home(onTestFinished, "openmail-cli-policy-test-");
   const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], {
     env: { ...process.env, OPENMAIL_HOME: directory },
   });
@@ -179,7 +198,8 @@ test("write-mode status distinguishes MCP proposals from direct rule writes", as
   expect(status.stdout).toContain("Sending requires confirmation in the app");
 });
 
-describe.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
+// The rejection runs under the hook timeout; each test then waits on at most one CLI start.
+describe.concurrent.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
   let directory: string;
   let options: { env: NodeJS.ProcessEnv };
   let failure: unknown;
@@ -194,14 +214,14 @@ describe.each(["allow", "propose"])("CLI write-mode %s", (mode) => {
   });
   afterAll(() => rm(directory, { recursive: true, force: true }));
 
-  test("rejects enabling writes", () => {
+  test("rejects enabling writes", ({ expect }) => {
     expect(failure).toMatchObject({
       code: 1,
       stderr: expect.stringContaining("Agent write mode can only be changed in the app"),
     });
   });
 
-  test("keeps the persisted write mode off after rejection", async () => {
+  test("keeps the persisted write mode off after rejection", async ({ expect }) => {
     const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);
     expect(status.stdout).toContain("Agent write mode: off.");
   });
@@ -258,8 +278,15 @@ async function seedAttachmentMail(directory: string) {
   );
 }
 
-test("MCP and CLI search expose attachment snippets only inside the untrusted envelope", async () => {
-  const { request, directory } = await client(false, false, true);
+test.concurrent("MCP and CLI search expose attachment snippets only inside the untrusted envelope", async ({
+  expect,
+  onTestFinished,
+}) => {
+  const { request, directory } = await client(onTestFinished, false, false, true);
+  // The CLI reads the same seeded database while the MCP server answers.
+  const cli = run(process.execPath, ["dist/cli.js", "search", "amount", "--json"], {
+    env: { ...process.env, OPENMAIL_HOME: directory },
+  });
   const called = Schema.decodeUnknownSync(CallResult)(
     await request("tools/call", {
       name: "search",
@@ -285,9 +312,7 @@ test("MCP and CLI search expose attachment snippets only inside the untrusted en
       highlights: [{ start: 6, end: 12 }],
     },
   ]);
-  const { stdout } = await run(process.execPath, ["dist/cli.js", "search", "amount", "--json"], {
-    env: { ...process.env, OPENMAIL_HOME: directory },
-  });
+  const { stdout } = await cli;
   const fromCli = Schema.decodeUnknownSync(envelope)(stdout);
   expect(fromCli.untrusted_mail.threads[0]?.searchMatches).toEqual(
     fromMcp.untrusted_mail.threads[0]?.searchMatches,

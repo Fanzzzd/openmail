@@ -39,7 +39,8 @@ import {
   Stream,
 } from "effect";
 import { ChildProcessSpawner } from "effect/process";
-import { NodeRuntime, NodeServices } from "@effect/platform-node";
+import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
+import * as NodeServices from "@effect/platform-node/NodeServices";
 import { Tool } from "effect/ai";
 import { Argument, CliError, Command, Flag, Prompt } from "effect/cli";
 

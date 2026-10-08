@@ -4,6 +4,7 @@ import { TestClock } from "effect/testing";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { writeMigratedDatabase } from "../test-support/migrated-database.js";
 
 import { databaseLayer } from "./platform/node/db.js";
 import type { IncomingMessage, MailOp, Provider } from "./domain.js";
@@ -57,7 +58,11 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
     () =>
       Effect.gen(function* () {
         const directory = yield* Effect.acquireRelease(
-          Effect.sync(() => mkdtempSync(join(tmpdir(), "openmail-batch-"))),
+          Effect.sync(() => {
+            const dir = mkdtempSync(join(tmpdir(), "openmail-batch-"));
+            writeMigratedDatabase(join(dir, "mail.db"));
+            return dir;
+          }),
           (dir) => Effect.sync(() => rmSync(dir, { recursive: true, force: true })),
         );
         const server = fakeServer(`${provider}@example.com`, [

@@ -1685,7 +1685,8 @@ it.effect("rebuilds keep the initial window instead of fetching every UID", () =
     Effect.gen(function* () {
       const search = vi
         .spyOn(client, "search")
-        .mockResolvedValue(Array.from({ length: 2000 }, (_, i) => i + 1));
+        // One UID past the 1000-message initial window.
+        .mockResolvedValue(Array.from({ length: 1001 }, (_, i) => i + 1));
       vi.spyOn(client, "fetchAll").mockImplementation(async (range) =>
         (typeof range === "string" ? parseUidSet(range) : []).map((uid) => ({
           seq: uid,

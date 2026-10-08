@@ -1,4 +1,8 @@
-import { applyNativeMigration } from "./platform/node/migrations.js";
+import {
+  openUnversionedMigratedDatabase,
+  writeMigratedDatabase,
+} from "../test-support/migrated-database.js";
+import { expectFileBytes } from "../test-support/file-bytes.js";
 import { RECOVERY_TABLES } from "./platform/node/database-recovery.js";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, expect, it } from "vitest";
@@ -301,8 +305,7 @@ it("resets a legacy database before migrations without deleting accounts", () =>
 
 it("keeps both remote draft ids when resetting a cache", () => {
   const dir = temp();
-  const db = new DatabaseSync(join(dir, "mail.db"));
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const db = openUnversionedMigratedDatabase(join(dir, "mail.db"));
   db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES (?,?,?,?)").run(
     "a",
     "gmail",
@@ -336,8 +339,7 @@ it("diagnostic markers cannot block startup when their temporary file is unwrita
 it("salvages every migrated non-cache table from a database with a damaged cache page", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const db = openUnversionedMigratedDatabase(file);
   const columnSchema = Schema.Array(
     Schema.Struct({
       name: Schema.String,
@@ -399,14 +401,13 @@ it("salvages every migrated non-cache table from a database with a damaged cache
   } finally {
     fresh.close();
   }
-  if (result.kind === "recovered") expect(readFileSync(result.backup)).toEqual(bytes);
+  if (result.kind === "recovered") expectFileBytes(result.backup, bytes);
 });
 
 it("skips unreadable preference rows and continues copying later readable pages", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const db = openUnversionedMigratedDatabase(file);
   for (let i = 1; i <= 60; i++)
     db.prepare("INSERT INTO prefs(key,value_json) VALUES (?,?)").run(
       `pref-${i}`,
@@ -454,8 +455,9 @@ it("skips unreadable preference rows and continues copying later readable pages"
 });
 
 it("enumerates every migrated plain table as retained state or disposable cache", () => {
-  const db = new DatabaseSync(":memory:");
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const file = join(temp(), "mail.db");
+  writeMigratedDatabase(file);
+  const db = new DatabaseSync(file);
   const cache = new Set([
     "body_cache_budget",
     "messages",
@@ -513,8 +515,7 @@ it("preserves the old WAL/SHM and salvages records committed only in the WAL", (
   const dir = temp();
   const sourceFile = join(sourceDir, "mail.db");
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(sourceFile);
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const db = openUnversionedMigratedDatabase(sourceFile);
   const root = db
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -538,7 +539,7 @@ it("preserves the old WAL/SHM and salvages records committed only in the WAL", (
   const result = resetLocalCache(dir);
   expect(result.kind).toBe("recovered");
   if (result.kind === "recovered") {
-    expect(readFileSync(`${result.backup}-wal`)).toEqual(beforeWal);
+    expectFileBytes(`${result.backup}-wal`, beforeWal);
     expect(existsSync(`${result.backup}-shm`)).toBe(true);
   }
   const fresh = new DatabaseSync(file);
@@ -554,8 +555,7 @@ it("preserves the old WAL/SHM and salvages records committed only in the WAL", (
 it("keeps a readable account when only its optional profile page is unreadable", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(file);
-  for (const script of MIGRATIONS) applyNativeMigration(db, script);
+  const db = openUnversionedMigratedDatabase(file);
   db.prepare("INSERT INTO profiles(id,name,icon,color,position) VALUES (?,?,?,?,?)").run(
     "p",
     "Work",
@@ -590,8 +590,7 @@ it("keeps a readable account when only its optional profile page is unreadable",
 it("refuses corrupt database replacement while another connection holds a read transaction", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const seed = new DatabaseSync(file);
-  for (const script of MIGRATIONS) applyNativeMigration(seed, script);
+  const seed = openUnversionedMigratedDatabase(file);
   const root = seed
     .prepare("SELECT rootpage FROM sqlite_master WHERE name='messages'")
     .get()?.rootpage;
@@ -606,7 +605,7 @@ it("refuses corrupt database replacement while another connection holds a read t
   other.prepare("SELECT name FROM sqlite_master").get();
   try {
     expect(() => resetLocalCache(dir)).toThrow("Close other OpenMail processes");
-    expect(readFileSync(file)).toEqual(bytes);
+    expectFileBytes(file, bytes);
   } finally {
     other.close();
   }
@@ -615,8 +614,7 @@ it("refuses corrupt database replacement while another connection holds a read t
 it("cache reset removes company metadata and repairs a damaged organization FTS index", () => {
   const dir = temp();
   const file = join(dir, "mail.db");
-  const db = new DatabaseSync(file);
-  for (const migration of MIGRATIONS) applyNativeMigration(db, migration);
+  const db = openUnversionedMigratedDatabase(file);
   db.prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)").run(
     "gmail:me@example.com",
     "gmail",

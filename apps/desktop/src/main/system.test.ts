@@ -9,7 +9,6 @@ vi.hoisted(() => {
   vi.doUnmock("./windows");
 });
 
-vi.mock("@openmail/core", () => import("../../../../packages/core/src/index.js"));
 vi.mock("electron", async () => {
   const { EventEmitter } = await import("node:events");
   const windows: FakeWindow[] = [];
@@ -157,9 +156,10 @@ vi.mock("electron", async () => {
 });
 
 import { Mailbox, messageLink } from "@openmail/core";
-import { fakeServer, TestMailbox } from "../../../../packages/core/src/platform/node/testing.js";
-import type { IncomingMessage } from "../../../../packages/core/src/domain.js";
+import { fakeServer, TestMailbox } from "@openmail/core/testing/node";
+import type { IncomingMessage } from "@openmail/core";
 import { Desktop, DesktopLive, receiveAppUrl, receiveOpenFile } from "./system";
+import { settle } from "./test-support/event-loop";
 import { createMainWindow, openComposeWindow, openThreadWindow } from "./windows";
 
 // Expose test-only observations without narrowing Electron's production API with a cast.
@@ -239,7 +239,6 @@ const localizedDesktopLayer = (mailbox: Layer.Layer<Mailbox>) =>
   ).pipe(Layer.provideMerge(DesktopLive.pipe(Layer.provideMerge(mailbox))));
 const desktopLayer = (server: ReturnType<typeof fakeServer>) =>
   localizedDesktopLayer(TestMailbox({ gmail: server }));
-const settle = Effect.sleep("20 millis");
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
 afterEach(() => {
   vi.useRealTimers();
@@ -282,7 +281,7 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
         yield* desktop.setSpace(second.webContents.id, profile.id);
         expect(observations.testState.badge).toHaveBeenLastCalledWith(0);
         first.focus();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);
         const events: unknown[] = [];
         yield* desktop.events(second.webContents.id).pipe(
@@ -296,7 +295,7 @@ it("buffers cold launch links, targets one main window, and keeps each window's 
         yield* Effect.yieldNow;
         second.focus();
         receiveAppUrl("mailto:to+tag@example.com?cc=c%40example.com&subject=hello&body=body");
-        yield* settle;
+        yield* settle();
         expect(events).toEqual([
           {
             _tag: "Compose",
@@ -326,11 +325,11 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
         const desktop = yield* Desktop;
         yield* m.connect({ provider: "gmail" });
         yield* m.sync();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(0);
         server.messages.set("new", incoming("new"));
         yield* m.pollInbox();
-        yield* settle;
+        yield* settle();
         const notification = observations.testState.notifications[0];
         expect(notification?.options.actions).toEqual([
           { type: "button", text: "Archive" },
@@ -345,18 +344,18 @@ it("notification clicks open threads; Archive and Delete are audited as the pers
           .pipe(Stream.take(1), Stream.runCollect);
         expect([...click]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/new" }]);
         notification.emit("action", { actionIndex: 0 });
-        yield* settle;
+        yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "new", op: { kind: "archive" } });
         expect((yield* m.audit(1))[0]?.actor).toBe("user:app");
         server.messages.set("delete", incoming("delete"));
         yield* m.pollInbox();
-        yield* settle;
+        yield* settle();
         observations.testState.notifications.at(-1)?.emit("action", { actionIndex: 1 });
-        yield* settle;
+        yield* settle();
         expect(server.pushed.at(-1)).toEqual({ providerId: "delete", op: { kind: "trash" } });
         expect((yield* m.audit(1))[0]?.actor).toBe("user:app");
         yield* m.sync();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
         // Closing a subscriber releases it; the next event waits for a new renderer.
         const waiting = yield* desktop
@@ -396,7 +395,7 @@ it.skipIf(process.platform !== "darwin")(
             .pipe(Stream.take(1), Stream.runCollect);
           expect([...click]).toEqual([{ _tag: "OpenThread", id: "gmail:me@gmail.com/one" }]);
           restored.emit("action", { actionIndex: 0 });
-          yield* settle;
+          yield* settle();
           expect(server.pushed.at(-1)).toEqual({ providerId: "one", op: { kind: "archive" } });
         }),
       ).pipe(Effect.provide(desktopLayer(server))),
@@ -455,7 +454,7 @@ it("a burst over five unread messages produces one summary notification", async 
         for (let n = 0; n < 6; n++)
           server.messages.set(String(n), { ...incoming(String(n)), date: Date.now() + 1000 });
         yield* m.pollInbox();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
         expect(observations.testState.notifications[0]?.options.title).toContain("6");
       }),
@@ -475,13 +474,13 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
         const desktop = yield* Desktop;
         yield* m.connect({ provider: "gmail" });
         yield* m.sync();
-        yield* settle;
+        yield* settle();
         const tray = observations.testState.trays[0];
         expect(tray).toBeDefined();
         if (!tray) return;
         expect(tray.title).toBe("");
         yield* m.setPrefs({ menuBarUnreadCount: true });
-        yield* settle;
+        yield* settle();
         if (process.platform === "darwin") expect(tray.title).toBe("55");
         const menu = Schema.decodeUnknownSync(
           Schema.Array(
@@ -503,7 +502,7 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
           .pipe(Stream.take(1), Stream.runCollect);
         expect(opened[0]?._tag).toBe("OpenThread");
         yield* m.setPrefs({ menuBarUnreadCount: false });
-        yield* settle;
+        yield* settle();
         expect(tray.title).toBe("");
       }),
     ).pipe(Effect.provide(desktopLayer(server))),
@@ -539,17 +538,17 @@ it("sleep resume restores Dock counts and delivers one Profile digest after mute
           { kind: "modify", threads: [`${account.id}/delete`], op: { kind: "trash" } },
           { kind: "user", surface: "app" },
         );
-        yield* settle;
+        yield* settle();
         expect(observations.testState.badge).toHaveBeenLastCalledWith(0);
         expect(observations.testState.notifications).toHaveLength(0);
         vi.setSystemTime(new Date(2026, 9, 5, 9));
         powerMonitor.emit("resume");
-        yield* settle;
+        yield* settle();
         expect(observations.testState.badge).toHaveBeenLastCalledWith(1);
         expect(observations.testState.notifications).toHaveLength(1);
         expect(observations.testState.notifications[0]?.options.title).toBe("1 new messages");
         powerMonitor.emit("resume");
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
       }),
     ).pipe(Effect.provide(desktopLayer(server))),
@@ -571,7 +570,7 @@ it("startup pending notifications wait for the first localized labels", async ()
     Effect.scoped(
       Effect.gen(function* () {
         const desktop = yield* Desktop;
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(0);
         yield* desktop.setLabels({
           ...englishLabels,
@@ -601,17 +600,17 @@ it("ungrouped digests name all accounts when merged, and the email for a single 
         gmail.messages.set("g", incoming("g"));
         outlook.messages.set("o", incoming("o"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         yield* mailbox.setPrefs({ quietHours: {} });
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(1);
         expect(observations.testState.notifications[0]?.options.body).toBe("All accounts");
         yield* mailbox.setPrefs({ quietHours: { all: { enabled: true, start: 0, end: 0 } } });
         gmail.messages.set("single", incoming("single"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         yield* mailbox.setPrefs({ quietHours: {} });
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
         expect(observations.testState.notifications[1]?.options.body).toBe(gmail.email);
       }),
@@ -650,15 +649,15 @@ it("the notification event consumer logs a SQL defect and processes later events
         const mailbox = yield* Mailbox;
         yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
-        yield* settle;
+        yield* settle();
         failNext = true;
         server.messages.set("first", incoming("first"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         expect(failures).toBe(1);
         server.messages.set("second", incoming("second"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(2);
       }),
     ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer))),
@@ -790,11 +789,11 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
           Effect.forkScoped,
         );
         yield* Effect.yieldNow;
-        yield* settle;
+        yield* settle();
         vi.mocked(app.quit).mockClear();
         const preventDefault = vi.fn();
         app.emit("before-quit", { preventDefault });
-        yield* settle;
+        yield* settle();
         expect(preventDefault).toHaveBeenCalledOnce();
         expect(dialog.showMessageBox).toHaveBeenCalled();
         expect(app.quit).not.toHaveBeenCalled();
@@ -804,7 +803,7 @@ it("before-quit requests renderer state, asks for pending sends, and resumes qui
           checkboxChecked: false,
         });
         app.emit("before-quit", { preventDefault });
-        yield* settle;
+        yield* settle();
         expect(app.quit).toHaveBeenCalledOnce();
         expect(yield* mailbox.queuedSends).toEqual([]);
         expect((yield* mailbox.openDraft("approved-quit-draft")).message.subject).toBe("Quit");
@@ -848,7 +847,7 @@ it("closing a main window with a pending send asks once, preserves it on Cancel 
         yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
         win.close();
         win.close();
-        yield* settle;
+        yield* settle();
         expect(win.isDestroyed()).toBe(false);
         expect(yield* mailbox.queuedSends).toHaveLength(1);
         expect(dialog.showMessageBox).toHaveBeenCalledOnce();
@@ -887,13 +886,13 @@ for (const platform of ["linux", "win32"] as const) {
             dialog.showMessageBox.mockClear();
             yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
             win.close();
-            yield* settle;
+            yield* settle();
             expect(win.isDestroyed()).toBe(false);
             expect(app.quit).not.toHaveBeenCalled();
             expect(dialog.showMessageBox).toHaveBeenCalledOnce();
             dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
             win.close();
-            yield* settle;
+            yield* settle();
             expect(win.isDestroyed()).toBe(true);
             expect(app.quit).toHaveBeenCalledOnce();
           }),
@@ -957,7 +956,7 @@ it("app quit approval closes pending-send windows without asking a second time",
         dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
         app.quit.mockImplementationOnce(() => win.close());
         app.emit("before-quit", { preventDefault: vi.fn() });
-        yield* settle;
+        yield* settle();
         expect(win.isDestroyed()).toBe(true);
         expect(dialog.showMessageBox).toHaveBeenCalledOnce();
       }),
@@ -976,7 +975,7 @@ it("closing a main window without pending sends needs no confirmation", async ()
         yield* desktop.setSendState(win.webContents.id, { pending: 0, undoAvailable: false });
         dialog.showMessageBox.mockClear();
         win.close();
-        yield* settle;
+        yield* settle();
         expect(win.isDestroyed()).toBe(true);
         expect(dialog.showMessageBox).not.toHaveBeenCalled();
       }),
@@ -993,10 +992,10 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
         const account = yield* mailbox.connect({ provider: "gmail" });
         yield* mailbox.sync();
         yield* mailbox.setPrefs({ notificationActions: ["menu", "read"] });
-        yield* settle;
+        yield* settle();
         server.messages.set("menu", incoming("menu"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         const menu = observations.testState.notifications.at(-1);
         expect(menu?.options.actions).toEqual(
           process.platform === "win32"
@@ -1011,33 +1010,33 @@ it("notification buttons keep their captured order; menu Mark read and disabled-
               ],
         );
         yield* mailbox.setPrefs({ notificationActions: ["trash"] });
-        yield* settle;
+        yield* settle();
         menu?.emit(
           "action",
           process.platform === "win32"
             ? { actionIndex: 0, selectionIndex: 2 }
             : { actionIndex: 2, selectionIndex: -1 },
         );
-        yield* settle;
+        yield* settle();
         expect(server.pushed.at(-1)).toEqual({
           providerId: "menu",
           op: { kind: "read", value: true },
         });
         server.messages.set("disabled", incoming("disabled"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         const disabled = observations.testState.notifications.at(-1);
         yield* mailbox.setAccountSettings(account.id, {
           enabled: false,
           description: "Personal",
           color: null,
         });
-        yield* settle;
+        yield* settle();
         expect(disabled?.close).toHaveBeenCalled();
         const count = observations.testState.notifications.length;
         server.messages.set("hidden", incoming("hidden"));
         yield* mailbox.pollInbox();
-        yield* settle;
+        yield* settle();
         expect(observations.testState.notifications).toHaveLength(count);
       }),
     ).pipe(Effect.provide(desktopLayer(server))),
@@ -1071,7 +1070,7 @@ it("the app menu exposes a manual update check and explains the unpackaged gate"
           .find((item) => item.label === "Check for Updates…")?.click;
         expect(typeof click).toBe("function");
         if (typeof click === "function") click();
-        yield* settle;
+        yield* settle();
         expect(messageBox).toHaveBeenCalledWith(
           expect.objectContaining({ message: "Update checks disabled" }),
         );
@@ -1094,11 +1093,11 @@ it("closes an orphaned compose renderer, but still asks about its cached pending
         const pending = openComposeWindow("orphan-pending");
         yield* desktop.setSendState(pending.webContents.id, { pending: 1, undoAvailable: true });
         pending.close();
-        yield* settle;
+        yield* settle();
         expect(pending.isDestroyed()).toBe(false);
         dialog.showMessageBox.mockResolvedValueOnce({ response: 1 });
         pending.close();
-        yield* settle;
+        yield* settle();
         expect(pending.isDestroyed()).toBe(true);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
@@ -1147,7 +1146,7 @@ it("native Attach Files reaches the focused standalone composer after merging th
           .events(compose.webContents.id)
           .pipe(Stream.take(1), Stream.runCollect, Effect.forkChild);
         yield* Effect.yieldNow;
-        yield* settle;
+        yield* settle();
         const fileMenu = Menu.setApplicationMenu.mock.calls
           .at(-1)?.[0]
           .find((item) => item.label === "File");
@@ -1172,7 +1171,7 @@ it("a crashed compose renderer with a stale event subscription can still close",
           Effect.forkScoped,
         );
         yield* Effect.yieldNow;
-        yield* settle;
+        yield* settle();
         vi.spyOn(win.webContents, "isCrashed").mockReturnValue(true);
         win.close();
         expect(win.isDestroyed()).toBe(true);
@@ -1194,12 +1193,12 @@ it("killed renderers drop stale listeners and keep cached pending sends protecte
           Effect.forkScoped,
         );
         yield* Effect.yieldNow;
-        yield* settle;
+        yield* settle();
         yield* desktop.setSendState(win.webContents.id, { pending: 1, undoAvailable: true });
         app.emit("render-process-gone", {}, win.webContents, { reason: "killed", exitCode: 9 });
         yield* desktop.setSendState(win.webContents.id, { pending: 0, undoAvailable: false });
         win.close();
-        yield* settle;
+        yield* settle();
         expect(win.isDestroyed()).toBe(false);
         expect(receive).not.toHaveBeenCalled();
         vi.spyOn(dialog, "showMessageBox").mockResolvedValueOnce({
@@ -1207,7 +1206,7 @@ it("killed renderers drop stale listeners and keep cached pending sends protecte
           checkboxChecked: false,
         });
         win.close();
-        yield* settle;
+        yield* settle();
         expect(win.isDestroyed()).toBe(true);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
@@ -1255,18 +1254,18 @@ it("thread window focus refreshes native menu capabilities and closed ids lose t
           gmail: true,
         });
         main.focus();
-        yield* settle;
+        yield* settle();
         expect(enabled()).toBe(false);
         reader.focus();
-        yield* settle;
+        yield* settle();
         expect(enabled()).toBe(true);
         reader.close();
         main.focus();
-        yield* settle;
+        yield* settle();
         // Simulate a late focus event with the closed client id to detect leaked capabilities.
         observations.testState.windows.push(reader);
         reader.focus();
-        yield* settle;
+        yield* settle();
         expect(enabled()).toBe(false);
         observations.testState.windows.pop();
       }).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
@@ -1348,7 +1347,7 @@ it("resume uses fallback inbox polling while IDLE reconnect owns its catch-up", 
       Effect.gen(function* () {
         const { powerMonitor } = yield* Effect.promise(() => import("electron"));
         powerMonitor.emit("resume");
-        yield* settle;
+        yield* settle();
         expect(calls).toEqual({ full: 0, inbox: 1, paused: false });
       }).pipe(Effect.provide(localizedDesktopLayer(mailbox))),
     ),

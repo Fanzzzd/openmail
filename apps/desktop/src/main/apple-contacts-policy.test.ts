@@ -8,6 +8,7 @@ import {
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { nextTurn } from "./test-support/event-loop";
 
 const snapshot = {
   status: "authorized",
@@ -221,9 +222,7 @@ it("revocation beats an earlier snapshot still loading", async () => {
   clock = 10_001;
   expect((await controller.poll()).status).toBe("denied");
   finish?.(JSON.stringify(snapshot));
-  await new Promise<void>((resolve) => {
-    setImmediate(resolve);
-  });
+  await nextTurn();
   expect(controller.cache.identifier("local@example.com")).toBeNull();
 });
 
