@@ -15,7 +15,7 @@ pnpm exec oxfmt --check .
 
 `pnpm build` 构建 core／CLI／桌面，并编译手机语言目录及检查类型。`pnpm test` 包含桌面完整邮件流程、桌面和手机 Lingui 目录同步／漏译，以及桌面术语与 ICU 检查。其他类型检查可单独运行 `pnpm check-types`。提交要求见 [AGENTS.md](../AGENTS.md)。
 
-`OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、不隔离模块、单测与 hook 超时 60 秒。普通运行保留文件隔离。完整邮件流程配置独立使用一个 worker 和 10 秒超时。
+`OPENMAIL_LOW_MEMORY_TESTS=1` 启用 `packages/core/vitest.low-memory.ts`：一个 worker、文件串行、单测与 hook 超时 60 秒。core 的测试文件共享一个模块图，但调用 `vi.mock` 或 `vi.doMock` 的文件单独放进隔离的 `mocking` 项目；共享模块图里这些文件会拿到先运行文件加载的真实模块，结果随文件顺序变化。普通运行，以及桌面、手机和 CLI 的所有运行，都隔离文件。完整邮件流程配置独立使用一个 worker 和 10 秒超时。
 
 ## 负载下的测试
 

@@ -10,8 +10,6 @@ import { tmpdir } from "node:os";
 import { modelFiles, type ModelFile } from "./platform/node/model-downloads.js";
 import { MODEL_BYTES, MODEL_FILES } from "./model-manifest.js";
 
-// Low-memory runs share modules; reload this graph so the fs mock reaches modelFiles.
-vi.hoisted(() => vi.resetModules());
 vi.mock("node:fs", async (importOriginal) => {
   const module = await importOriginal<typeof import("node:fs")>();
   return { ...module, createReadStream: vi.fn(module.createReadStream) };
