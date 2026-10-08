@@ -548,8 +548,8 @@ export function ThreadView({
         ? e.target.closest<HTMLElement>("[data-message-id]")?.dataset.messageId
         : undefined) ?? messageId;
     if (insideReader && e.isTrusted) activate(targetMessageId);
-    // Only same-realm targets count, so keys typed inside a message frame keep their shortcuts.
-    const typingFind = e.target instanceof Element && isTypingTarget(e.target);
+    // The helper is duck-typed, so form fields inside a message frame count as typing too.
+    const typingFind = isTypingTarget(e.target);
     if (insideReader && (!typingFind || e.target === findRef.current)) {
       const findAction = readerFindAction(prefs.shortcutSet, e, finding);
       if (findAction === "jump") {
@@ -595,8 +595,8 @@ export function ThreadView({
       (action === "forward" || action === "forwardAttachment" || action === "openMessageWeb");
     if (
       !findCommand &&
-      e.target instanceof Element &&
-      (isTypingTarget(e.target) || e.target.closest('[role="menu"]'))
+      (isTypingTarget(e.target) ||
+        (e.target instanceof Element && e.target.closest('[role="menu"]')))
     )
       return;
     const active = messages.find((m) => m.id === targetMessageId);
@@ -720,6 +720,7 @@ export function ThreadView({
       onMouseDownCapture={(event) => {
         if (
           event.target instanceof Element &&
+          // Wider than typing: clicks on any control or the message frame keep their own focus.
           !event.target.closest("button,a,input,textarea,select,iframe,[contenteditable]")
         )
           event.currentTarget.focus({ preventScroll: true });

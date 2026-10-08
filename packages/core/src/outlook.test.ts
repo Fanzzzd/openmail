@@ -35,6 +35,7 @@ import { renderMarkdown } from "./markdown.js";
 import { makeOutlook } from "./outlook.js";
 import { MARKDOWN_DRAFT_PROPERTY } from "./outlook/send.js";
 import { parseGraphMessage } from "./outlook/parse.js";
+import { HtmlText } from "./platform/html-text.js";
 import { MemoryPlatform, type MemoryPlatformOptions } from "./platform/node/platform-memory.js";
 import {
   importedMessage,
@@ -2676,6 +2677,41 @@ it.effect(
     );
   },
 );
+
+it.effect("Outlook server search extracts HTML text only for messages within the limit", () => {
+  const http = fakeHttp({
+    "GET /me/mailFolders": { json: { value: [] } },
+    "GET /me/mailFolders/inbox": { json: { id: "inbox-id" } },
+    "GET /me/messages": {
+      json: {
+        value: Array.from({ length: 10 }, (_, i) => ({
+          ...raw,
+          id: `hit-${i}`,
+          parentFolderId: "inbox-id",
+          hasAttachments: false,
+        })),
+      },
+    },
+  });
+  let extractions = 0;
+  const counting: HtmlText = {
+    htmlToText: (html) => Effect.sync(() => (extractions++, html)),
+    concurrency: 4,
+  };
+  return run(http, (a) => a.search(account, { search: "from:wang", limit: 3 })).pipe(
+    Effect.provideService(HtmlText, counting),
+    Effect.tap((page) =>
+      Effect.sync(() => {
+        assert.deepStrictEqual(
+          page.messages.map((m) => m.providerId),
+          ["hit-0", "hit-1", "hit-2"],
+        );
+        assert.isTrue(page.truncated);
+        assert.isAtMost(extractions, 3);
+      }),
+    ),
+  );
+});
 
 it.effect(
   "Outlook legacy vacation callers cannot widen external audience or replace internal replies",

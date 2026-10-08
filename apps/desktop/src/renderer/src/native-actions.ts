@@ -5,6 +5,7 @@ import {
   nativeActionUsesEditor,
 } from "../../shared/native-actions";
 import type { ShortcutSet } from "../../shared/shortcuts";
+import { isTypingTarget } from "./typing-target";
 
 export function shouldDropNativeAction(action: NativeAction, triggeredByAccelerator: boolean) {
   return (
@@ -12,7 +13,7 @@ export function shouldDropNativeAction(action: NativeAction, triggeredByAccelera
     NATIVE_MENUS.some(
       (menu) => menu.name !== "format" && menu.actions.some((candidate) => candidate === action),
     ) &&
-    Boolean(document.activeElement?.closest("input,textarea,select,[contenteditable]"))
+    isTypingTarget(document.activeElement)
   );
 }
 

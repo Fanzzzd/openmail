@@ -1,3 +1,5 @@
+import { isTypingTarget } from "./typing-target";
+
 /** Focus the adjacent pane, preserving message selection and text cursor behavior. */
 export function moveMailPaneFocus(
   document: Document,
@@ -7,9 +9,9 @@ export function moveMailPaneFocus(
   const active = document.activeElement;
   if (
     !active ||
-    active.closest(
-      'input,textarea,select,[contenteditable="true"],[role="menu"],[role="dialog"],[role="combobox"],[role="toolbar"],iframe',
-    )
+    isTypingTarget(active) ||
+    // Arrow keys also belong to menus, dialogs, comboboxes, toolbars and message frames.
+    active.closest('[role="menu"],[role="dialog"],[role="combobox"],[role="toolbar"],iframe')
   )
     return false;
   const order = ["sidebar", "list", "reader"];

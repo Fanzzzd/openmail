@@ -409,33 +409,36 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
             readonly "@odata.nextLink"?: string;
           } = yield* loadPage;
 
-          // Parse the page in order, as many at once as HTML extraction can run.
-          const parsedPage = yield* Effect.forEach(
-            page.value,
-            (raw) => {
-              const label =
-                system.find((f) => f.id === raw.parentFolderId)?.label ??
-                folders.find((f) => f.id === raw.parentFolderId)?.id;
-              return label
-                ? reader.parseGraph(raw, label, expandedAttachments(raw) ?? [])
-                : Effect.succeed(undefined);
-            },
-            { concurrency: reader.parseConcurrency },
-          );
           let consumed = 0;
-          for (const [index, raw] of page.value.entries()) {
-            scanned++;
-            consumed++;
-            const parsed = parsedPage[index];
-            if (!parsed) continue;
-            const message: IncomingMessage = {
-              ...parsed,
-              bodyCached:
-                !(raw.hasAttachments && raw.attachments === undefined) &&
-                !hasSignedContainer(parsed),
-            };
-            if (matchesSearch(message, query, folderNames, "outlook")) messages.push(message);
-            if (messages.length >= limit) break;
+          // Parse in order only as many as the limit still needs, so messages past the
+          // last result skip HTML extraction. A chunk can only fill the limit at its end.
+          while (consumed < page.value.length && messages.length < limit) {
+            const chunk = page.value.slice(consumed, consumed + limit - messages.length);
+            const parsedChunk = yield* Effect.forEach(
+              chunk,
+              (raw) => {
+                const label =
+                  system.find((f) => f.id === raw.parentFolderId)?.label ??
+                  folders.find((f) => f.id === raw.parentFolderId)?.id;
+                return label
+                  ? reader.parseGraph(raw, label, expandedAttachments(raw) ?? [])
+                  : Effect.succeed(undefined);
+              },
+              { concurrency: reader.parseConcurrency },
+            );
+            for (const [index, raw] of chunk.entries()) {
+              scanned++;
+              consumed++;
+              const parsed = parsedChunk[index];
+              if (!parsed) continue;
+              const message: IncomingMessage = {
+                ...parsed,
+                bodyCached:
+                  !(raw.hasAttachments && raw.attachments === undefined) &&
+                  !hasSignedContainer(parsed),
+              };
+              if (matchesSearch(message, query, folderNames, "outlook")) messages.push(message);
+            }
           }
           url = page["@odata.nextLink"]
             ? yield* nextPage(

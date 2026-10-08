@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, createElement, type ReactNode } from "react";
 import { expect, it, vi } from "vitest";
 import { setupI18n } from "@lingui/core";
@@ -252,5 +253,67 @@ it("sync preserves selected reply/find/expansion; forward/web keep their shortcu
     }
   } finally {
     dom.dispose();
+  }
+});
+
+it("keys typed into a form field inside the message frame do not run reader shortcuts", () => {
+  // A jsdom iframe is another realm: its elements fail the app's `instanceof Element`.
+  const frame = document.createElement("iframe");
+  frame.setAttribute("sandbox", "allow-same-origin");
+  document.body.append(frame);
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) throw new Error("Missing message frame");
+  const dom = testDom();
+  vi.stubGlobal("Element", dom.window.Element);
+  vi.stubGlobal("requestAnimationFrame", vi.fn());
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  frameDoc.body.innerHTML = "<p>Body</p><input>";
+  const input = frameDoc.querySelector("input");
+  if (!input) throw new Error("Missing frame input");
+  expect(input instanceof Element).toBe(false);
+  // EmailFrame forwards the frame document's keydown events to the reader.
+  frameDoc.addEventListener("keydown", (event) => calls.frameKey(event));
+  const compose = vi.fn();
+  const press = (target: EventTarget, key: string) => {
+    const event = new KeyboardEvent("keydown", {
+      key,
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    act(() => {
+      target.dispatchEvent(event);
+    });
+    return event;
+  };
+  try {
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n: setupI18n({ locale: "en", messages: { en: {} } }) },
+        createElement(ThreadView, {
+          messages: [{ ...message("only", 1), bodyHtml: "<p>Body</p>" }],
+          selectedId: "only",
+          single: false,
+          onSelectMessage: vi.fn(),
+          onComposeMessage: compose,
+          onActionDone: vi.fn(),
+          notify: vi.fn(),
+        }),
+      ),
+    );
+    expect(press(input, "r").defaultPrevented).toBe(false);
+    expect(press(input, "f").defaultPrevented).toBe(false);
+    expect(compose).not.toHaveBeenCalled();
+    expect(dom.element.querySelector('input[aria-label="Find in message"]')).toBeNull();
+    expect(press(frameDoc.body, "r").defaultPrevented).toBe(true);
+    expect(compose).toHaveBeenLastCalledWith("only", "reply", false);
+  } finally {
+    dom.dispose();
+    frame.remove();
   }
 });

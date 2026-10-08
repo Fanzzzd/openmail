@@ -15,6 +15,7 @@ import { presentBody } from "./body-text";
 import { type SyntheticEvent, useEffect, useMemo, useRef, useState } from "react";
 import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
 import { sanitizeReaderHtml } from "./reader-html";
+import { isTypingTarget } from "../typing-target";
 import { DARK_CSS, fitDocument } from "./frame-style";
 
 // Mail HTML is untrusted. It renders in a sandboxed iframe with scripts off,
@@ -138,11 +139,7 @@ export function EmailFrame({
     root.style.setProperty("overflow-y", "hidden", "important");
     frameDoc.body.style.setProperty("overflow", "visible", "important");
     const keydown = (event: KeyboardEvent) => {
-      if (
-        event.isTrusted &&
-        !frameDoc.activeElement?.closest("input,textarea,select,[contenteditable]")
-      )
-        keys.current?.(event);
+      if (event.isTrusted && !isTypingTarget(frameDoc.activeElement)) keys.current?.(event);
     };
     frameDoc.addEventListener("keydown", keydown);
     const stopActivation = listenForMessageActivation(frameDoc, () => activate.current());
