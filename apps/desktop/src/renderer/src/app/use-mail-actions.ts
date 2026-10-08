@@ -6,7 +6,7 @@ import { Reactivity } from "effect/reactivity";
 import { useState } from "react";
 import type { Account, Label, MailOp, ThreadSummary } from "../../../shared/api";
 import type { AppMessages } from "../App";
-import { type ThreadState } from "../components/ThreadActions";
+import type { ThreadState } from "../focused-inbox";
 import { type ToastState } from "../components/Toast";
 import { deleteKeyOp } from "../delete-key";
 import { causeText } from "../errors";

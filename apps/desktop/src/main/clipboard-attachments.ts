@@ -1,4 +1,4 @@
-import { DeviceError, type OutgoingAttachment } from "@openmail/core";
+import { COMPOSE_ATTACHMENT_LIMIT, DeviceError, type OutgoingAttachment } from "@openmail/core";
 import { Effect } from "effect";
 import { clipboard } from "electron";
 import { RASTER_IMAGE } from "../shared/native-compose";
@@ -21,7 +21,7 @@ export async function readClipboardAttachments(
     const payload = await item.getType(mimeType);
     if (!(payload instanceof Blob)) continue;
     total += payload.size;
-    if (total > 30 * 1024 * 1024) throw new Error("Clipboard image exceeds 30 MB.");
+    if (total > COMPOSE_ATTACHMENT_LIMIT) throw new Error("Clipboard image exceeds 30 MB.");
     images.push({
       filename: `clipboard-${images.length + 1}.${mimeType.slice(6)}`,
       mimeType,

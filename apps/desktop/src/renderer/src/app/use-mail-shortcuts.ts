@@ -10,7 +10,7 @@ import {
   spaceShortcut,
 } from "../../../shared/shortcuts";
 import { useThreadPrint } from "../components/Reader";
-import { type ThreadState } from "../components/ThreadActions";
+import type { ThreadState } from "../focused-inbox";
 import { usesDeletePreference } from "../delete-key";
 import { favoriteView, numberedFavorites } from "../favorite-navigation";
 import { moveMailPaneFocus } from "../pane-navigation";
@@ -24,6 +24,7 @@ import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
 import type { PaneNavigation } from "./use-pane-navigation";
 import { isBackKey } from "../responsive-layout";
+import { isTypingTarget } from "../typing-target";
 export function useMailShortcuts({
   panels,
   navigation,
@@ -383,11 +384,4 @@ export function useMailShortcuts({
   }, []);
 
   return {};
-}
-
-export function isTypingTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element &&
-    Boolean(target.closest('input,textarea,select,[contenteditable="true"]'))
-  );
 }

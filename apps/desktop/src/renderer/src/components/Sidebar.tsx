@@ -137,7 +137,7 @@ export function useMailboxCounts(view: View, accounts: readonly Account[], withi
 }
 
 /** The shortcut that opens the space at `index` among the user's spaces, for the first nine. */
-export function spaceShortcut(shortcutSet: string, index: number) {
+export function spaceShortcutLabel(shortcutSet: string, index: number) {
   return index < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${index + 1}` : undefined;
 }
 
@@ -901,7 +901,7 @@ function SpaceSwitcher({
           }
         >
           {profiles.map((p, i) => (
-            <Tip key={p.id} label={p.name} shortcut={spaceShortcut(shortcutSet, i)} side="top">
+            <Tip key={p.id} label={p.name} shortcut={spaceShortcutLabel(shortcutSet, i)} side="top">
               <Toolbar.Button
                 aria-label={p.name}
                 aria-current={space === p.id || undefined}

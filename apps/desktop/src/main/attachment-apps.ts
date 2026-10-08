@@ -5,9 +5,8 @@ import path from "node:path";
 import { nativeBinary } from "./native-binary";
 import { Effect, Schema } from "effect";
 import { Menu, type BrowserWindow } from "electron";
-import { DeviceError, deviceErrorReason } from "@openmail/core";
+import { DeviceError, deviceFailure } from "@openmail/core";
 
-const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
 const trustedRoots = [
   "/Applications",
   "/System/Applications",
@@ -22,7 +21,7 @@ const execute = (binary: string, args: string[]) =>
           error ? reject(error) : resolve(output),
         );
       }),
-    catch: failed,
+    catch: deviceFailure,
   });
 /** Roots are fixed in production. An injected root lets filesystem tests use private fixtures. */
 export async function validatedAttachmentApps(
@@ -60,10 +59,10 @@ export const registeredAttachmentApps = (file: string, roots = trustedRoots) =>
     const output = yield* execute(nativeBinary("attachment-apps"), [file]);
     const applications = yield* Schema.decodeUnknownEffect(
       Schema.fromJsonString(Schema.Array(Schema.String)),
-    )(output).pipe(Effect.mapError(failed));
+    )(output).pipe(Effect.mapError(deviceFailure));
     return yield* Effect.tryPromise({
       try: () => validatedAttachmentApps(applications, roots),
-      catch: failed,
+      catch: deviceFailure,
     });
   });
 const name = (application: string) => path.basename(application, ".app");
@@ -108,13 +107,13 @@ export const chooseAttachmentApp = (
           reject(error);
         }
       }),
-    catch: failed,
+    catch: deviceFailure,
   });
 export const openAttachmentWith = (application: string, file: string, roots = trustedRoots) =>
   Effect.gen(function* () {
     const checked = yield* Effect.tryPromise({
       try: () => validatedAttachmentApps([application], roots),
-      catch: failed,
+      catch: deviceFailure,
     });
     if (!checked.length)
       yield* new DeviceError({

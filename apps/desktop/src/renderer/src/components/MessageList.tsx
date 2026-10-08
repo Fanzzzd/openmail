@@ -35,7 +35,8 @@ import { displayName, previewText, shortDate } from "../format";
 import { AccountBadge } from "./AccountBadge";
 import type { Filters } from "../view";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "./ui/Menu";
-import { ThreadMenuItems, type ThreadState } from "./ThreadActions";
+import type { ThreadState } from "../focused-inbox";
+import { ThreadMenuItems } from "./ThreadActions";
 import { Tip } from "./ui/Tip";
 
 /** How the current selection was made. Keyboard selection gets the solid accent. */

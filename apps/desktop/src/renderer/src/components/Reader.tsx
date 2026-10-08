@@ -109,6 +109,7 @@ import { useShortcutText } from "../use-shortcut-text";
 
 import { useSaveMessage } from "./reader-actions";
 import { TOOLBAR_MIN_WIDTH } from "../toolbar-fit";
+import { isTypingTarget } from "../typing-target";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover } from "./ui/Picker";
 
@@ -547,9 +548,8 @@ export function ThreadView({
         ? e.target.closest<HTMLElement>("[data-message-id]")?.dataset.messageId
         : undefined) ?? messageId;
     if (insideReader && e.isTrusted) activate(targetMessageId);
-    const typingFind =
-      e.target instanceof Element &&
-      Boolean(e.target.closest("input,textarea,select,[contenteditable]"));
+    // Only same-realm targets count, so keys typed inside a message frame keep their shortcuts.
+    const typingFind = e.target instanceof Element && isTypingTarget(e.target);
     if (insideReader && (!typingFind || e.target === findRef.current)) {
       const findAction = readerFindAction(prefs.shortcutSet, e, finding);
       if (findAction === "jump") {
@@ -596,7 +596,7 @@ export function ThreadView({
     if (
       !findCommand &&
       e.target instanceof Element &&
-      e.target.closest('input,textarea,select,[contenteditable],[role="menu"]')
+      (isTypingTarget(e.target) || e.target.closest('[role="menu"]'))
     )
       return;
     const active = messages.find((m) => m.id === targetMessageId);
@@ -670,13 +670,7 @@ export function ThreadView({
       return;
     }
     if (!e.defaultPrevented && !e.repeat) {
-      const typing = Boolean(
-        e.target &&
-        "closest" in e.target &&
-        typeof e.target.closest === "function" &&
-        e.target.closest("input,textarea,select,[contenteditable]"),
-      );
-      const action = shortcutAction(prefs.shortcutSet, e, typing);
+      const action = shortcutAction(prefs.shortcutSet, e, isTypingTarget(e.target));
       if (
         action === "nextWindow" ||
         action === "previousWindow" ||

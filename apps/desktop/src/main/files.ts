@@ -17,6 +17,7 @@ import {
   type PerformError,
   DeviceError,
   deviceErrorReason,
+  deviceFailure,
   printableThread,
 } from "@openmail/core";
 
@@ -51,12 +52,10 @@ function subjectFilename(subject: string): string {
   return name || "message";
 }
 
-const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
-
 const write = (file: string, data: Uint8Array) =>
   Effect.tryPromise({
     try: () => writeFile(file, data),
-    catch: failed,
+    catch: deviceFailure,
   }).pipe(Effect.andThen(quarantine(file)));
 
 const exists = (file: string) =>
@@ -84,13 +83,14 @@ const attachmentFolder = Effect.fnUntraced(function* (m: MailboxService) {
   const folder = setting.kind === "downloads" ? app.getPath("downloads") : setting.path.trim();
   if (!path.isAbsolute(folder))
     return yield* new DeviceError({ message: "Choose an absolute attachment folder path" });
-  yield* Effect.tryPromise({ try: () => mkdir(folder, { recursive: true }), catch: failed });
+  yield* Effect.tryPromise({ try: () => mkdir(folder, { recursive: true }), catch: deviceFailure });
   return folder;
 });
 const writeNew = (file: string, data: Uint8Array) =>
-  Effect.tryPromise({ try: () => writeFile(file, data, { flag: "wx" }), catch: failed }).pipe(
-    Effect.andThen(quarantine(file)),
-  );
+  Effect.tryPromise({
+    try: () => writeFile(file, data, { flag: "wx" }),
+    catch: deviceFailure,
+  }).pipe(Effect.andThen(quarantine(file)));
 
 /** Cancellation happens before fetching MIME or creating any file. */
 export const saveMessage: (
@@ -224,7 +224,10 @@ export const openAttachment: (
           Effect.tap((file) => writeNew(file, content.data)),
         ),
       ]
-    : yield* Effect.tryPromise({ try: () => attachmentTemp(app).write([content]), catch: failed });
+    : yield* Effect.tryPromise({
+        try: () => attachmentTemp(app).write([content]),
+        catch: deviceFailure,
+      });
   const file = files[0];
   if (!file) return yield* new DeviceError({ message: "No attachment file" });
   yield* quarantine(file);
@@ -310,7 +313,7 @@ export const printThread: (
       await mkdir(folder, { recursive: true });
       await writeFile(file, html);
     },
-    catch: failed,
+    catch: deviceFailure,
   });
 
   printFiles.add(pathToFileURL(file).href);
@@ -337,12 +340,12 @@ export const printThread: (
   return yield* Effect.gen(function* () {
     yield* Effect.tryPromise({
       try: () => win.loadFile(file),
-      catch: failed,
+      catch: deviceFailure,
     });
     if (pdfPath) {
       const data = yield* Effect.tryPromise({
         try: () => win.webContents.printToPDF({ printBackground: true }),
-        catch: failed,
+        catch: deviceFailure,
       });
       yield* write(pdfPath, data);
       return true;
@@ -351,7 +354,7 @@ export const printThread: (
       win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
         // A cancelled print dialog reports "Print job canceled" or "cancelled".
         if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
-        else resume(Effect.fail(new DeviceError({ message: deviceErrorReason(reason) })));
+        else resume(Effect.fail(deviceFailure(reason)));
       });
     });
   }).pipe(

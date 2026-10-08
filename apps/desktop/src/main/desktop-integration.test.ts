@@ -5,7 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { expect, it, vi } from "vitest";
 import { Schema } from "effect";
-import { readDockFiles, DOCK_COMPOSE_LIMIT } from "./dock-files";
+import { COMPOSE_ATTACHMENT_LIMIT } from "@openmail/core";
+import { readDockFiles } from "./dock-files";
 import {
   NativeAction,
   NATIVE_MENUS,
@@ -41,7 +42,7 @@ it("Dock drops read bounded regular files and roundtrip as a deferred compose ev
       readDockFiles([path.join(directory, "missing-private-file.txt")]),
     ).rejects.toMatchObject({ reason: "unreadable", message: "unreadable" });
     const large = path.join(directory, "large.txt");
-    await writeFile(large, Buffer.alloc(DOCK_COMPOSE_LIMIT));
+    await writeFile(large, Buffer.alloc(COMPOSE_ATTACHMENT_LIMIT));
     await expect(readDockFiles([first, large])).rejects.toMatchObject({ reason: "tooLarge" });
     await expect(readDockFiles(Array.from({ length: 257 }, () => first))).rejects.toMatchObject({
       reason: "tooMany",

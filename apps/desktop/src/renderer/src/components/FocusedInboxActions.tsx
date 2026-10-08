@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { causeText, resultError } from "../errors";
 import { useRunMail, withMail } from "../state/mail";
 import { reauthAtom } from "../state/mutations";
-import type { ThreadState } from "./ThreadActions";
+import type { ThreadState } from "../focused-inbox";
 import { Alert, AlertCancel, alertPrimary } from "./ui/Dialog";
 import { DropdownMenu, MenuItem, MenuSeparator } from "./ui/Menu";
 

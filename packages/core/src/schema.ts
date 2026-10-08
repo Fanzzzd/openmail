@@ -25,7 +25,7 @@ export * from "./media.js";
 export * from "./calendar.js";
 export * from "./contacts.js";
 
-export { deviceErrorReason } from "./device-errors.js";
+export { deviceErrorReason, deviceFailure } from "./device-errors.js";
 export * from "./system.js";
 export * from "./cache.js";
 

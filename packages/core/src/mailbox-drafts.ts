@@ -3,6 +3,7 @@ import {
   attachmentProblem,
   attachmentProblemMessage,
   attachmentSizesProblem,
+  COMPOSE_ATTACHMENT_LIMIT,
   GMAIL_MIME_LIMIT,
 } from "./attachment-policy.js";
 import {
@@ -557,7 +558,7 @@ export const makeDraftsMailbox = (
     const source = yield* store.getMessage(id);
     const problem = attachmentSizesProblem(account.provider, source.attachments);
     if (problem) return yield* new InvalidInput({ message: attachmentProblemMessage(problem) });
-    if (source.attachments.reduce((total, file) => total + file.size, 0) > 30 * 1024 * 1024)
+    if (source.attachments.reduce((total, file) => total + file.size, 0) > COMPOSE_ATTACHMENT_LIMIT)
       return yield* new InvalidInput({
         message: "Original attachments exceed the 30 MB compose limit.",
       });

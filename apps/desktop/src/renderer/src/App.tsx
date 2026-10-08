@@ -47,7 +47,8 @@ import { Sidebar, SidebarToggle } from "./components/Sidebar";
 import { SidebarRail } from "./components/SidebarRail";
 import { railTrafficLightInset, trafficLightInset } from "./components/ui/styles";
 import { FocusedInboxPermission } from "./components/FocusedInboxActions";
-import { ThreadActions, type ThreadState } from "./components/ThreadActions";
+import { ThreadActions } from "./components/ThreadActions";
+import type { ThreadState } from "./focused-inbox";
 import { Toast, type ToastState } from "./components/Toast";
 import {
   Alert,

@@ -2,7 +2,7 @@ import type { DockFileReason } from "../shared/dock-files";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import path from "node:path";
-import type { OutgoingAttachment } from "@openmail/core";
+import { COMPOSE_ATTACHMENT_LIMIT, type OutgoingAttachment } from "@openmail/core";
 
 class DockFileError extends Error {
   constructor(readonly reason: DockFileReason) {
@@ -12,7 +12,6 @@ class DockFileError extends Error {
 export const dockFileReason = (error: unknown): DockFileReason =>
   error instanceof DockFileError ? error.reason : "unreadable";
 
-export const DOCK_COMPOSE_LIMIT = 30 * 1024 * 1024;
 /** Open handles and bounded reads prevent directory drops and growing-file races. */
 export async function readDockFiles(paths: readonly string[]): Promise<OutgoingAttachment[]> {
   try {
@@ -27,7 +26,7 @@ export async function readDockFiles(paths: readonly string[]): Promise<OutgoingA
       try {
         const info = await file.stat();
         if (!info.isFile()) throw new DockFileError("notFile");
-        const remaining = DOCK_COMPOSE_LIMIT - total;
+        const remaining = COMPOSE_ATTACHMENT_LIMIT - total;
         if (info.size > remaining) throw new DockFileError("tooLarge");
         const buffer = Buffer.alloc(Math.min(remaining + 1, info.size + 1));
         let length = 0;
@@ -37,7 +36,7 @@ export async function readDockFiles(paths: readonly string[]): Promise<OutgoingA
           length += chunk.bytesRead;
         }
         // A file that grows after stat is rejected; no unbounded allocation occurs.
-        if (length > info.size || total + length > DOCK_COMPOSE_LIMIT)
+        if (length > info.size || total + length > COMPOSE_ATTACHMENT_LIMIT)
           throw new DockFileError("changed");
         total += length;
         const ext = path.extname(filename).toLowerCase();

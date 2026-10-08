@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { nativeBinary } from "./native-binary";
 import { app, type BrowserWindow } from "electron";
 import { Effect, Schema } from "effect";
-import { DeviceError, attachmentBytes } from "@openmail/core";
+import { COMPOSE_ATTACHMENT_LIMIT, DeviceError, attachmentBytes } from "@openmail/core";
 import {
   GrammarIssue,
   NativePicker,
@@ -111,7 +111,7 @@ export function decodeNativeImages(output: string, kind: NativePicker) {
         !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(file.content) ||
         !file.content,
     ) ||
-    files.reduce((sum, file) => sum + attachmentBytes(file.content), 0) > 30 * 1024 * 1024
+    files.reduce((sum, file) => sum + attachmentBytes(file.content), 0) > COMPOSE_ATTACHMENT_LIMIT
   )
     throw new Error("Invalid picker result");
   return result;

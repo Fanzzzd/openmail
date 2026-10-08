@@ -4,6 +4,7 @@ import { AsyncResult } from "effect/reactivity";
 import { useEffect } from "react";
 import { shortcutAction } from "../../../shared/shortcuts";
 import { prefsAtom } from "../state/queries";
+import { isTypingTarget } from "../typing-target";
 import { useRunMail, withMail } from "../state/mail";
 
 export function WindowKeys() {
@@ -12,10 +13,7 @@ export function WindowKeys() {
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.repeat) return;
-      const typing =
-        event.target instanceof Element &&
-        Boolean(event.target.closest("input,textarea,select,[contenteditable]"));
-      const action = shortcutAction(prefs.shortcutSet, event, typing);
+      const action = shortcutAction(prefs.shortcutSet, event, isTypingTarget(event.target));
       if (
         action !== "nextWindow" &&
         action !== "previousWindow" &&

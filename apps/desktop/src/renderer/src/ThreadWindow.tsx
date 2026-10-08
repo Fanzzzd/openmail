@@ -21,7 +21,9 @@ import { ThreadView, useThreadPrint } from "./components/Reader";
 import { readerThreadKey } from "./reader-selection";
 import { useBatchUndo } from "./state/undo";
 import { FocusedInboxPermission } from "./components/FocusedInboxActions";
-import { ThreadActions, type ThreadState } from "./components/ThreadActions";
+import { ThreadActions } from "./components/ThreadActions";
+import type { ThreadState } from "./focused-inbox";
+import { isTypingTarget } from "./typing-target";
 import { Toast, type ToastState } from "./components/Toast";
 import { trafficLightInset } from "./components/ui/styles";
 import { causeText } from "./errors";
@@ -158,10 +160,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       (e.target instanceof Element && e.target.closest('[role="menu"],[role="dialog"]'))
     )
       return;
-    const typing =
-      e.target instanceof Element &&
-      Boolean(e.target.closest("input,textarea,select,[contenteditable]"));
-    const action = shortcutAction(prefs.shortcutSet, e, typing);
+    const action = shortcutAction(prefs.shortcutSet, e, isTypingTarget(e.target));
     if (!action) return;
     switch (action) {
       case "undo":

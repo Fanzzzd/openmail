@@ -16,6 +16,7 @@ import {
 import {
   DeviceError,
   deviceErrorReason,
+  deviceFailure,
   type AttachmentAction,
   type AttachmentActionResult,
   type Mailbox,
@@ -40,7 +41,6 @@ type DragRequest = Pick<Request, "messageId" | "paths" | "listId">;
 type Prepared =
   | { kind: "loading"; token: symbol }
   | { kind: "ready"; token: symbol; key: string; batch: TempBatch; expires: number };
-const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
 const keyOf = (request: DragRequest) => JSON.stringify([request.messageId, request.paths]);
 const prepared = new WeakMap<BrowserWindow, Map<string, Prepared>>();
 const slotOf = (request: { messageId: string; listId?: string }) =>
@@ -75,13 +75,13 @@ const temporary = Effect.fnUntraced(function* (
 ) {
   const batch = yield* Effect.tryPromise({
     try: () => attachmentTemp(app).writeBatch(parts),
-    catch: failed,
+    catch: deviceFailure,
   });
   for (const file of batch.files) yield* quarantine(file);
   return batch;
 });
 const remove = (batch: TempBatch) =>
-  Effect.tryPromise({ try: () => attachmentTemp(app).remove(batch), catch: failed });
+  Effect.tryPromise({ try: () => attachmentTemp(app).remove(batch), catch: deviceFailure });
 
 export const releaseAttachmentDrag = (
   parent: BrowserWindow | null,
@@ -157,7 +157,7 @@ const save = Effect.fnUntraced(function* (
   };
   const choice = yield* Effect.tryPromise({
     try: () => (parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options)),
-    catch: failed,
+    catch: deviceFailure,
   });
   const folder = choice.filePaths[0];
   if (choice.canceled || !folder) return countResult(0);
@@ -191,7 +191,7 @@ const save = Effect.fnUntraced(function* (
         }
         throw new Error("Too many duplicate filenames");
       },
-      catch: failed,
+      catch: deviceFailure,
     }).pipe(
       Effect.flatMap((file) => quarantine(file).pipe(Effect.as(file))),
       Effect.result,
@@ -234,7 +234,7 @@ export const attachmentAction: (
               "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=",
             ),
           }),
-        catch: failed,
+        catch: deviceFailure,
       });
       return countResult(cached.batch.files.length);
     }
@@ -252,7 +252,7 @@ export const attachmentAction: (
         if (process.platform === "darwin" && parent && first) {
           const previewed = yield* Effect.try({
             try: () => parent.previewFile(first),
-            catch: failed,
+            catch: deviceFailure,
           }).pipe(Effect.result);
           if (previewed._tag === "Success") return countResult(1);
         }
@@ -291,7 +291,7 @@ export const attachmentAction: (
       case "share":
         yield* Effect.try({
           try: () => new ShareMenu({ filePaths: files }).popup(parent ? { window: parent } : {}),
-          catch: failed,
+          catch: deviceFailure,
         });
         return countResult(files.length);
       case "copy":
@@ -302,7 +302,7 @@ export const attachmentAction: (
                 "text/uri-list": files.map((file) => pathToFileURL(file).href).join("\r\n"),
               }),
             ]),
-          catch: failed,
+          catch: deviceFailure,
         });
         return countResult(files.length);
       case "open":
@@ -313,8 +313,11 @@ export const attachmentAction: (
       }
     }
     for (const file of files) {
-      yield* Effect.tryPromise({ try: () => stat(file), catch: failed });
-      const error = yield* Effect.tryPromise({ try: () => shell.openPath(file), catch: failed });
+      yield* Effect.tryPromise({ try: () => stat(file), catch: deviceFailure });
+      const error = yield* Effect.tryPromise({
+        try: () => shell.openPath(file),
+        catch: deviceFailure,
+      });
       if (error) return yield* new DeviceError({ message: error });
     }
     return countResult(files.length);

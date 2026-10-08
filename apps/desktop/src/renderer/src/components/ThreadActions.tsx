@@ -32,7 +32,7 @@ import { MAIL_KEYS } from "../state/keys";
 import { resultError } from "../errors";
 import { LabelEditor } from "./OrganizationSettings";
 
-import type { Label, MailOp, Mailbox, Provider } from "../../../shared/api";
+import type { Label, MailOp, Mailbox } from "../../../shared/api";
 import { ContextSubmenu, DropdownMenu, MenuCheckboxItem, MenuItem, MenuSeparator } from "./ui/Menu";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "./ui/Picker";
 import { useShortcutText } from "../use-shortcut-text";
@@ -41,19 +41,11 @@ import { fittingCount, shownActions, withAnchor } from "../toolbar-fit";
 import { Tip } from "./ui/Tip";
 
 import { FocusedInboxActions } from "./FocusedInboxActions";
+import type { ThreadState } from "../focused-inbox";
 import { MultiOrganization } from "./MultiOrganization";
 
 type Icon = ComponentType<{ className?: string }>;
 type ComposeMode = "reply" | "replyAll" | "forward";
-
-export interface ThreadState {
-  provider: Provider;
-  focusedSender?: { messageId: string; address: string };
-  isUnread: boolean;
-  isStarred: boolean;
-  isImportant: boolean;
-  labels: string[];
-}
 
 /**
  * The actions fill the toolbar's width; those that do not fit stay in the

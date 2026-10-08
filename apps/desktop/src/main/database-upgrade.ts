@@ -1,3 +1,4 @@
+import { escapeHtml } from "@openmail/core/schema";
 import { app, BrowserWindow } from "electron";
 import { nativeRecoveryLabels } from "./native-i18n";
 
@@ -38,11 +39,7 @@ export async function showDatabaseUpgrade() {
     webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
   });
   upgradeWindows.add(window);
-  const title = labels.upgrading
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  const title = escapeHtml(labels.upgrading);
   const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${title}</title><style>body{font:16px system-ui;margin:40px;color:CanvasText;background:Canvas;color-scheme:light dark}progress{width:100%;margin-top:16px}</style><p>${title}</p><progress aria-label="${title}"></progress>`;
   await window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
   window.show();

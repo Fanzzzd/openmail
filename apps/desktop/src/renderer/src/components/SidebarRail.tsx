@@ -9,7 +9,7 @@ import { PROFILE_BG } from "../format";
 import { prefsAtom } from "../state/queries";
 import { useShortcutText } from "../use-shortcut-text";
 import { ALL, MAILBOX_NAMES, OVERVIEW, type SpaceId, spaceAccounts, type View } from "../view";
-import { MAILBOXES, spaceShortcut, useMailboxCounts } from "./Sidebar";
+import { MAILBOXES, spaceShortcutLabel, useMailboxCounts } from "./Sidebar";
 import { Tip } from "./ui/Tip";
 
 /** The mailboxes the rail shows, in the sidebar's order. The drawer has the rest. */
@@ -128,7 +128,7 @@ export function SidebarRail({
             <RailButton
               key={p.id}
               label={p.name}
-              shortcut={spaceShortcut(prefs.shortcutSet, i)}
+              shortcut={spaceShortcutLabel(prefs.shortcutSet, i)}
               current={view.space === p.id || undefined}
               badge={spaceUnread(p.id)}
               onClick={() => onSpace(p.id)}

@@ -4,6 +4,7 @@ import {
   attachmentBytes,
   attachmentProblem,
   attachmentSizesProblem,
+  COMPOSE_ATTACHMENT_LIMIT,
   customTemplateVariables,
   fillTemplate,
   inlineImageHtml,
@@ -26,8 +27,6 @@ import { inheritsOriginals, withOriginalAttachments } from "../compose-originals
 import { formatAddress, parseAddresses, type Draft } from "../draft";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { useRunMail, withMail } from "../state/mail";
-/** Total attachment size a draft may carry, inline images included. */
-const COMPOSE_LIMIT = 30 * 1024 * 1024;
 const encodedBytes = (files: readonly { content: string }[]) =>
   files.reduce((sum, file) => sum + attachmentBytes(file.content), 0);
 
@@ -136,7 +135,7 @@ export function useComposeEditor({
       showAttachmentProblem(problem);
       return;
     }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_LIMIT) {
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_ATTACHMENT_LIMIT) {
       setError(messages.attachmentsExceedThe30MBComposeLimit);
       return;
     }
@@ -177,7 +176,7 @@ export function useComposeEditor({
             const all = [...draft.attachments, ...files];
             const problem = account ? attachmentProblem(account.provider, all) : undefined;
             if (problem) showAttachmentProblem(problem);
-            else if (encodedBytes(all) > COMPOSE_LIMIT)
+            else if (encodedBytes(all) > COMPOSE_ATTACHMENT_LIMIT)
               setError(messages.attachmentsExceedThe30MBComposeLimit);
             else {
               if (files.length) appendAttachments(files, false);
@@ -251,7 +250,7 @@ export function useComposeEditor({
               ? attachmentProblem(account.provider, [...draft.attachments, file])
               : undefined;
             if (problem) showAttachmentProblem(problem);
-            else if (encodedBytes([...draft.attachments, file]) > COMPOSE_LIMIT)
+            else if (encodedBytes([...draft.attachments, file]) > COMPOSE_ATTACHMENT_LIMIT)
               setError(messages.attachmentsExceedThe30MBComposeLimit);
             else {
               appendAttachments([file], true);
@@ -280,7 +279,7 @@ export function useComposeEditor({
       showAttachmentProblem(problem);
       return;
     }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_LIMIT) {
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_ATTACHMENT_LIMIT) {
       setError(messages.attachmentsExceedThe30MBComposeLimit);
       return;
     }

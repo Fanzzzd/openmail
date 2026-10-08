@@ -25,6 +25,8 @@ export function attachmentBytes(content: string): number {
 }
 
 export const GMAIL_MIME_LIMIT = 25 * 1024 * 1024;
+/** Total attachment bytes one draft may carry, inline images included. */
+export const COMPOSE_ATTACHMENT_LIMIT = 30 * 1024 * 1024;
 // Outlook.com includes message text, inline images and attachments in this limit.
 export const OUTLOOK_MESSAGE_LIMIT = 25 * 1024 * 1024;
 export const OUTLOOK_ATTACHMENT_THRESHOLD = 3 * 1024 * 1024;

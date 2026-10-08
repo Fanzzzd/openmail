@@ -1,7 +1,16 @@
 import { Cause, Option } from "effect";
 import type { Message, Provider } from "../../shared/api";
-import type { ThreadState } from "./components/ThreadActions";
 import type { AppError } from "./errors";
+
+/** What the thread toolbar and menus act on. */
+export interface ThreadState {
+  provider: Provider;
+  focusedSender?: { messageId: string; address: string };
+  isUnread: boolean;
+  isStarred: boolean;
+  isImportant: boolean;
+  labels: string[];
+}
 
 export const FOCUSED_PERMISSION_EVENT = "openmail:focused-permission";
 export function requestFocusedPermission(cause: Cause.Cause<AppError>): boolean {
