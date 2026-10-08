@@ -30,7 +30,7 @@ const PAGE = 100;
 const SEARCH_LIMIT = 200;
 
 /** A thread query without its page cursor and size. */
-export type ListQuery = Omit<ThreadQuery, "before" | "beforeId" | "limit">;
+type ListQuery = Omit<ThreadQuery, "before" | "beforeId" | "limit">;
 
 /** Fetches pages until `wanted` are loaded, continuing from `from` when given. */
 const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =>

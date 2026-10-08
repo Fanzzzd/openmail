@@ -1,11 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { parseHTML } from "linkedom";
-import {
-  externalLinkTargets,
-  frameLinkTarget,
-  linkTargetUrl,
-  listenForLinkHints,
-} from "./email-links";
+import { externalLinkTargets, frameLinkTarget, listenForLinkHints } from "./email-links";
+import { externalUrl } from "../../../shared/external-url";
 
 it("uses the innermost SVG link rather than a surrounding HTML link", () => {
   for (const attribute of [
@@ -40,10 +36,10 @@ it("uses the innermost SVG link rather than a surrounding HTML link", () => {
 });
 
 it("removes userinfo so a spoofed login hint starts with its real destination", () => {
-  expect(linkTargetUrl("https://www.paypal.com:password@evil.example/login", "about:srcdoc")).toBe(
+  expect(externalUrl("https://www.paypal.com:password@evil.example/login", "about:srcdoc")).toBe(
     "https://evil.example/login",
   );
-  expect(linkTargetUrl("http://bank.com@evil.example:8080/?q=1", "about:srcdoc")).toBe(
+  expect(externalUrl("http://bank.com@evil.example:8080/?q=1", "about:srcdoc")).toBe(
     "http://evil.example:8080/?q=1",
   );
 });
@@ -78,13 +74,13 @@ it("HTML self targets, areas and SVG links use the existing external popup path"
 });
 
 it("shows navigable destinations as text, including relative and mailto links", () => {
-  expect(linkTargetUrl("../message?q=1", "https://example.com/mail/inbox")).toBe(
+  expect(externalUrl("../message?q=1", "https://example.com/mail/inbox")).toBe(
     "https://example.com/message?q=1",
   );
-  expect(linkTargetUrl("https://example.com/?a=<script>", "about:srcdoc")).toBe(
+  expect(externalUrl("https://example.com/?a=<script>", "about:srcdoc")).toBe(
     "https://example.com/?a=%3Cscript%3E",
   );
-  expect(linkTargetUrl("mailto:a@example.com", "about:srcdoc")).toBe("mailto:a@example.com");
+  expect(externalUrl("mailto:a@example.com", "about:srcdoc")).toBe("mailto:a@example.com");
   for (const url of [
     null,
     "",
@@ -93,7 +89,7 @@ it("shows navigable destinations as text, including relative and mailto links", 
     "file:///tmp/secret",
     "relative",
   ]) {
-    expect(linkTargetUrl(url, "about:srcdoc")).toBeNull();
+    expect(externalUrl(url, "about:srcdoc")).toBeNull();
   }
 });
 

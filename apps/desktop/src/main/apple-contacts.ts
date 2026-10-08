@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { nativeBinary } from "./native-binary";
 import { app, shell } from "electron";
 import { Effect } from "effect";
 import { appleContactVCard, DeviceError, type Address, type Mailbox } from "@openmail/core";
@@ -13,9 +12,7 @@ import { AttachmentTemp } from "./attachment-temp";
 
 const failed = () => new DeviceError({ message: "Contacts operation failed." });
 export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
-  const binary = app.isPackaged
-    ? path.join(process.resourcesPath, "native/contacts")
-    : fileURLToPath(new URL("../native/contacts", import.meta.url));
+  const binary = nativeBinary("contacts");
   const contacts = createAppleContactsController({
     platform: process.platform,
     prefs: () => Effect.runPromise(mailbox.prefs),

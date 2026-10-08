@@ -77,7 +77,6 @@ vi.mock("./components/TriageChip", () => ({ TriageChip: () => null }));
 vi.mock("./components/Attachments", () => ({ Attachments: () => null }));
 vi.mock("./components/InviteBanner", () => ({ InviteBanner: () => null }));
 vi.mock("./components/MeetingLinks", () => ({ MeetingLinks: () => null }));
-vi.mock("./components/SystemSettings", () => ({ useShortcutText: () => vi.fn() }));
 vi.mock("./components/reader-actions", () => ({ useSaveMessage: () => vi.fn() }));
 vi.mock("./components/ui/Menu", () => ({
   DropdownMenu: ({ trigger, children }: { trigger: ReactNode; children: ReactNode }) =>

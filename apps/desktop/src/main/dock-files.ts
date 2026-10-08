@@ -4,7 +4,7 @@ import { open } from "node:fs/promises";
 import path from "node:path";
 import type { OutgoingAttachment } from "@openmail/core";
 
-export class DockFileError extends Error {
+class DockFileError extends Error {
   constructor(readonly reason: DockFileReason) {
     super(reason);
   }

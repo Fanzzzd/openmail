@@ -80,7 +80,6 @@ vi.mock("./components/RecipientField", () => ({ RecipientField: () => null }));
 vi.mock("./components/ComposeEditor", () => ({ ComposeEditor: () => null }));
 vi.mock("./components/ComposerAi", () => ({ ComposerAi: () => null }));
 vi.mock("./components/DraftOrganization", () => ({ DraftOrganization: () => null }));
-vi.mock("./components/SystemSettings", () => ({ useShortcutText: () => () => "" }));
 vi.mock("./components/ui/Select", () => ({
   Select: (props: { value: string; "aria-label": string }) =>
     createElement("output", { "aria-label": props["aria-label"] }, props.value),
@@ -121,7 +120,6 @@ afterAll(() => {
     "./components/ComposeEditor",
     "./components/ComposerAi",
     "./components/DraftOrganization",
-    "./components/SystemSettings",
     "./components/ui/Select",
     "./components/ui/Tip",
     "./components/ui/Dialog",

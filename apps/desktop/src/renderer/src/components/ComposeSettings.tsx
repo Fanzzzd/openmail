@@ -18,10 +18,8 @@ import { setContactHiddenAtom, setPrefsAtom } from "../state/mutations";
 import { accountsAtom, sendAsAtom, hiddenContactsAtom, prefsAtom } from "../state/queries";
 import { Select } from "./ui/Select";
 import { Checkbox } from "./ui/Checkbox";
+import { settingsBox, settingsHeading } from "./ui/form-styles";
 import { SegmentedControl } from "./ui/SegmentedControl";
-
-const heading = "mb-2 text-[12px] font-semibold text-a11y-muted";
-const box = "rounded-lg border border-black/10 dark:border-white/10";
 
 /** Settings > Compose: undo send, signatures, templates, hidden recipients. */
 export function ComposeSettings() {
@@ -68,7 +66,7 @@ function UndoSend() {
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
     <section>
-      <h3 className={heading}>
+      <h3 className={settingsHeading}>
         <Trans>Undo Send</Trans>
       </h3>
       <SegmentedControl
@@ -107,10 +105,10 @@ function HiddenContacts() {
   if (hidden.length === 0) return null;
   return (
     <section>
-      <h3 className={heading}>
+      <h3 className={settingsHeading}>
         <Trans>Addresses no longer suggested</Trans>
       </h3>
-      <ul className={`${box} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
+      <ul className={`${settingsBox} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
         {hidden.map((address) => (
           <li key={address} className="flex items-center gap-3 px-3 py-1.5">
             <span className="min-w-0 flex-1 truncate">{address}</span>
@@ -156,7 +154,7 @@ function DefaultFrom() {
   const fixed = prefs.defaultFrom;
   return (
     <section>
-      <h3 className={heading}>{t`Default From address`}</h3>
+      <h3 className={settingsHeading}>{t`Default From address`}</h3>
       <Select
         aria-label={t`Default From address`}
         value={fixed ? senderKey(fixed) : "view"}
@@ -191,7 +189,7 @@ function QuoteSelection() {
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
     <section>
-      <h3 className={heading}>{t`Quote selected text`}</h3>
+      <h3 className={settingsHeading}>{t`Quote selected text`}</h3>
       <Select
         aria-label={t`Quote selected text`}
         value={prefs.quoteSelection}
@@ -216,7 +214,7 @@ function ComposeAppearance() {
     setPrefs({ payload: { patch }, reactivityKeys: [Keys.prefs] });
   return (
     <section className="space-y-3">
-      <h3 className={heading}>{t`Default compose font`}</h3>
+      <h3 className={settingsHeading}>{t`Default compose font`}</h3>
       <div className="flex gap-2">
         <Select
           aria-label={t`Font family`}
@@ -261,7 +259,7 @@ function ReplyFrom() {
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
     <section>
-      <h3 className={heading}>{t`Reply From`}</h3>
+      <h3 className={settingsHeading}>{t`Reply From`}</h3>
       <Select
         aria-label={t`Reply From`}
         value={prefs.replyFrom}

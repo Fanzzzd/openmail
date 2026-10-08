@@ -9,6 +9,7 @@ import {
   replySubject,
   forwardSubject,
   type SendAs,
+  type Signature,
   type SignatureOptions,
   type ComposeBody,
   outgoingComposeBody,
@@ -29,6 +30,19 @@ import type {
 } from "../../shared/api";
 
 export type ComposeMode = "new" | "reply" | "replyAll" | "forward";
+
+/** The local signature for a sender: one for new messages, one for replies and forwards. */
+export function defaultSignature(
+  signatures: readonly Signature[],
+  accounts: readonly Account[],
+  accountId: string,
+  mode: ComposeMode,
+  from?: string,
+): Signature | undefined {
+  const address = (from ?? accounts.find((a) => a.id === accountId)?.email)?.toLowerCase();
+  const kind = mode === "new" ? "new" : "reply";
+  return signatures.find((s) => s.address === address && s.kind === kind);
+}
 
 /**
  * What the compose window edits. Recipients stay as typed text; only the

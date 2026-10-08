@@ -14,8 +14,8 @@ import {
   type Vision,
 } from "@openmail/core";
 import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
-import { resolve, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
+import { nativeBinary } from "./native-binary";
 import { app, BrowserWindow, dialog, powerMonitor } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
@@ -85,9 +85,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 : yield* dataDir.pipe(Effect.provide(NodeSystem));
               if (!(yield* Effect.promise(() => prepareReliability(directory))))
                 yield* Effect.never;
-              const binary = app.isPackaged
-                ? join(process.resourcesPath, "native/vision")
-                : fileURLToPath(new URL("../native/vision", import.meta.url));
+              const binary = nativeBinary("vision");
               const painted = yield* Deferred.make<void>();
               const windows = new Map<BrowserWindow, () => void>();
               let released = false;

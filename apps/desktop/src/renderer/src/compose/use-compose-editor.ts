@@ -1,4 +1,4 @@
-import type { NativePicker } from "../../../shared/native-compose";
+import { RASTER_IMAGE, type NativePicker } from "../../../shared/native-compose";
 import { useLingui } from "@lingui/react/macro";
 import {
   attachmentBytes,
@@ -26,6 +26,11 @@ import { inheritsOriginals, withOriginalAttachments } from "../compose-originals
 import { formatAddress, parseAddresses, type Draft } from "../draft";
 import { EDIT_MESSAGE_TEXT } from "../message-text";
 import { useRunMail, withMail } from "../state/mail";
+/** Total attachment size a draft may carry, inline images included. */
+const COMPOSE_LIMIT = 30 * 1024 * 1024;
+const encodedBytes = (files: readonly { content: string }[]) =>
+  files.reduce((sum, file) => sum + attachmentBytes(file.content), 0);
+
 export function useComposeEditor({
   initial,
   prefs,
@@ -96,7 +101,7 @@ export function useComposeEditor({
     // A paste may finish after the user switches to plain text.
     const insertInline = inline && element instanceof HTMLDivElement && element.isContentEditable;
     const added = files.map((file) =>
-      insertInline && /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.mimeType)
+      insertInline && RASTER_IMAGE.test(file.mimeType)
         ? { ...file, contentId: file.contentId ?? `image-${crypto.randomUUID()}@openmail` }
         : file,
     );
@@ -131,7 +136,7 @@ export function useComposeEditor({
       showAttachmentProblem(problem);
       return;
     }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_LIMIT) {
       setError(messages.attachmentsExceedThe30MBComposeLimit);
       return;
     }
@@ -172,10 +177,7 @@ export function useComposeEditor({
             const all = [...draft.attachments, ...files];
             const problem = account ? attachmentProblem(account.provider, all) : undefined;
             if (problem) showAttachmentProblem(problem);
-            else if (
-              all.reduce((sum, file) => sum + attachmentBytes(file.content), 0) >
-              30 * 1024 * 1024
-            )
+            else if (encodedBytes(all) > COMPOSE_LIMIT)
               setError(messages.attachmentsExceedThe30MBComposeLimit);
             else {
               if (files.length) appendAttachments(files, false);
@@ -249,10 +251,7 @@ export function useComposeEditor({
               ? attachmentProblem(account.provider, [...draft.attachments, file])
               : undefined;
             if (problem) showAttachmentProblem(problem);
-            else if (
-              [...draft.attachments, file].reduce((sum, a) => sum + attachmentBytes(a.content), 0) >
-              30 * 1024 * 1024
-            )
+            else if (encodedBytes([...draft.attachments, file]) > COMPOSE_LIMIT)
               setError(messages.attachmentsExceedThe30MBComposeLimit);
             else {
               appendAttachments([file], true);
@@ -281,7 +280,7 @@ export function useComposeEditor({
       showAttachmentProblem(problem);
       return;
     }
-    if (sizes.reduce((sum, file) => sum + file.size, 0) > 30 * 1024 * 1024) {
+    if (sizes.reduce((sum, file) => sum + file.size, 0) > COMPOSE_LIMIT) {
       setError(messages.attachmentsExceedThe30MBComposeLimit);
       return;
     }

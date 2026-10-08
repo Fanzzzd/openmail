@@ -249,7 +249,7 @@ function printSession() {
 }
 let printSessionCache: Electron.Session | undefined;
 
-export interface PrintRequest {
+interface PrintRequest {
   id: string;
   only?: string | undefined;
   pdf: boolean;

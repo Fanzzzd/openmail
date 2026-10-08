@@ -1,4 +1,4 @@
-import { focusedSender, focusedSenderMessage } from "./focused-inbox";
+import { focusedSenderMessage, threadStateFor } from "./focused-inbox";
 import { Separator, Group, Panel } from "react-resizable-panels";
 import { useCallback, useState, type ComponentProps, useEffect } from "react";
 import type { Label, MailOp } from "../../shared/api";
@@ -237,14 +237,7 @@ export function App({ composeId }: { composeId?: string }) {
     : undefined;
   const threadState: ThreadState | null =
     selectedAccount && stateMessages
-      ? {
-          provider: selectedAccount.provider,
-          ...focusedSender(focusedMessage),
-          isUnread: stateMessages.some((m) => m.isUnread),
-          isStarred: stateMessages.some((m) => m.isStarred),
-          isImportant: stateMessages.some((m) => m.labels.includes("IMPORTANT")),
-          labels: [...new Set(stateMessages.flatMap((m) => m.labels))],
-        }
+      ? threadStateFor(selectedAccount.provider, stateMessages, focusedMessage)
       : null;
   const threadLabels = labels.filter((l) => l.accountId === selectedAccount?.id);
 

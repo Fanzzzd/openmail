@@ -2,6 +2,7 @@ import { useAtom } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
+import { PROFILE_COLORS } from "@openmail/core/schema";
 import { Exit } from "effect";
 import { useState } from "react";
 
@@ -20,16 +21,6 @@ import { Checkbox } from "./ui/Checkbox";
 import { Dialog } from "./ui/Dialog";
 
 const ICONS = ["💼", "🏠", "🏭", "🧪", "🎓", "✈️", "💰", "⭐"];
-const COLORS: ProfileColor[] = [
-  "blue",
-  "violet",
-  "rose",
-  "orange",
-  "amber",
-  "emerald",
-  "teal",
-  "slate",
-];
 
 interface Props {
   /** Edit this profile; omit to create one. */
@@ -150,7 +141,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             onValueChange={setColor}
             className="flex gap-2"
           >
-            {COLORS.map((c) => (
+            {PROFILE_COLORS.map((c) => (
               <Radio.Root
                 key={c}
                 value={c}

@@ -47,7 +47,7 @@ export const connectAtom = Atom.family((_choice: string) =>
   ),
 );
 
-export type ClientInput =
+type ClientInput =
   | { provider: "gmail"; clientId: string; clientSecret: string }
   | { provider: "outlook"; clientId: string };
 
@@ -77,7 +77,7 @@ export const decideAtom = Atom.family((id: number) =>
   MailClient.runtime.fn((approve: boolean) => decideProposal(id, approve)),
 );
 
-export interface ProfileSave {
+interface ProfileSave {
   /** The profile being edited; unset to create one. */
   profile?: Profile;
   input: ProfileInput;

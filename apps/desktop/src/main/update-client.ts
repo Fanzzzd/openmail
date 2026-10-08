@@ -6,7 +6,7 @@ import {
   type ProviderRuntimeOptions,
 } from "electron-updater/out/providers/Provider.js";
 
-export interface ManagedUpdateClient extends UpdateClient {
+interface ManagedUpdateClient extends UpdateClient {
   readonly downloadedVersion: string | null;
   reserveInstall(
     channel: "stable" | "latest",

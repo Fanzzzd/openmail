@@ -37,7 +37,7 @@ type InlineCommand = "bold" | "italic" | "underline" | "strikeThrough" | "unlink
  * composers move the group into "More formatting"; the rest always shows.
  */
 const TOOLBAR_TIERS = { style: 400, lists: 460, align: 490, quote: 550 } as const;
-export type ToolbarTier = keyof typeof TOOLBAR_TIERS;
+type ToolbarTier = keyof typeof TOOLBAR_TIERS;
 
 /** Which inline groups fit. An unmeasured toolbar (first paint, jsdom) shows them all. */
 function visibleTiers(width: number): Record<ToolbarTier, boolean> {

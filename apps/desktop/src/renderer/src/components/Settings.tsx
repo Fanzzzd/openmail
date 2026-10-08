@@ -42,6 +42,7 @@ import { CacheSettings } from "./CacheSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
+import { settingsHeading } from "./ui/form-styles";
 import { Select } from "./ui/Select";
 
 import { OrganizationSettings } from "./OrganizationSettings";
@@ -436,7 +437,7 @@ function General() {
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
     <section>
-      <h3 className="mb-2 text-[12px] font-semibold text-a11y-muted">
+      <h3 className={settingsHeading}>
         <Trans>Language</Trans>
       </h3>
       <Select

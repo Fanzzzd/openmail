@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { nativeBinary } from "./native-binary";
 import { app, type BrowserWindow } from "electron";
 import { Effect, Schema } from "effect";
 import { DeviceError, attachmentBytes } from "@openmail/core";
@@ -41,9 +40,7 @@ function execute(parent: BrowserWindow | null, name: Helper, mode: string, input
     running.add(name);
     busy.set(parent, running);
     const executable = name === "photos" ? "OpenMailPhotos.app/Contents/MacOS/photos" : "grammar";
-    const binary = app.isPackaged
-      ? path.join(process.resourcesPath, `native/${executable}`)
-      : fileURLToPath(new URL(`../native/${executable}`, import.meta.url));
+    const binary = nativeBinary(executable);
     const child = execFile(
       binary,
       [mode],

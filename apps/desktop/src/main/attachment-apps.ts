@@ -2,9 +2,9 @@ import { execFile } from "node:child_process";
 import { lstat } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { nativeBinary } from "./native-binary";
 import { Effect, Schema } from "effect";
-import { app, Menu, type BrowserWindow } from "electron";
+import { Menu, type BrowserWindow } from "electron";
 import { DeviceError, deviceErrorReason } from "@openmail/core";
 
 const failed = (error: unknown) => new DeviceError({ message: deviceErrorReason(error) });
@@ -57,10 +57,7 @@ export async function validatedAttachmentApps(
 }
 export const registeredAttachmentApps = (file: string, roots = trustedRoots) =>
   Effect.gen(function* () {
-    const binary = app.isPackaged
-      ? path.join(process.resourcesPath, "native/attachment-apps")
-      : fileURLToPath(new URL("../native/attachment-apps", import.meta.url));
-    const output = yield* execute(binary, [file]);
+    const output = yield* execute(nativeBinary("attachment-apps"), [file]);
     const applications = yield* Schema.decodeUnknownEffect(
       Schema.fromJsonString(Schema.Array(Schema.String)),
     )(output).pipe(Effect.mapError(failed));

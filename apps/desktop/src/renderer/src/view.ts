@@ -37,7 +37,7 @@ export const OUTLOOK_OTHER = msg({
   comment: "Outlook Other Inbox classification.",
 });
 
-export const CATEGORY_NAMES: Record<string, MessageDescriptor> = {
+const CATEGORY_NAMES: Record<string, MessageDescriptor> = {
   CATEGORY_PERSONAL: msg`Primary`,
   CATEGORY_SOCIAL: msg`Social`,
   CATEGORY_PROMOTIONS: msg`Promotions`,

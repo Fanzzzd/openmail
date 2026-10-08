@@ -1,8 +1,5 @@
 /** The parent reads DOM events directly. No script or postMessage runs in the mail. */
 import { externalUrl } from "../../../shared/external-url";
-export function linkTargetUrl(value: string | null, base: string): string | null {
-  return externalUrl(value, base);
-}
 
 export function listenForLinkHints(
   source: EventTarget,
@@ -53,7 +50,7 @@ export function frameLinkTarget(doc: Document, event: Event): string | null {
             typeof href.baseVal === "string"
           ? href.baseVal
           : value;
-  return linkTargetUrl(target, link.baseURI || doc.baseURI);
+  return externalUrl(target, link.baseURI || doc.baseURI);
 }
 
 /** SVG anchors do not inherit the HTML base target. Force the existing popup route. */

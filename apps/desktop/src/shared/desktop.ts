@@ -3,12 +3,15 @@ import { NativeAction } from "./native-actions";
 import { MailtoDraft, OutgoingAttachment } from "@openmail/core/schema";
 import { Schema } from "effect";
 
+/** Open a reply or forward of message `id`; the RPC payload and the desktop event share it. */
+export const ComposeMessageFields = {
+  id: Schema.String,
+  mode: Schema.Literals(["reply", "replyAll", "forward"]),
+  asAttachment: Schema.Boolean,
+};
+
 export const DesktopEvent = Schema.Union([
-  Schema.TaggedStruct("ComposeMessage", {
-    id: Schema.String,
-    mode: Schema.Literals(["reply", "replyAll", "forward"]),
-    asAttachment: Schema.Boolean,
-  }),
+  Schema.TaggedStruct("ComposeMessage", ComposeMessageFields),
   Schema.TaggedStruct("NativeAction", {
     action: NativeAction,
     triggeredByAccelerator: Schema.Boolean,

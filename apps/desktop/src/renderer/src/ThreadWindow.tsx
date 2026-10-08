@@ -1,4 +1,4 @@
-import { focusedSender, focusedSenderMessage, requestFocusedPermission } from "./focused-inbox";
+import { focusedSenderMessage, requestFocusedPermission, threadStateFor } from "./focused-inbox";
 import { nativeShareKind } from "../../shared/native-actions";
 import { Settings, ShortcutHelp, AddAccountDialog } from "./components/LazyDialogs";
 import { dispatchNativeAction, shouldDropNativeAction } from "./native-actions";
@@ -94,16 +94,7 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
       )
     : undefined;
   const state: ThreadState | null =
-    account && messages
-      ? {
-          provider: account.provider,
-          ...focusedSender(focusedMessage),
-          isUnread: messages.some((m) => m.isUnread),
-          isStarred: messages.some((m) => m.isStarred),
-          isImportant: messages.some((m) => m.labels.includes("IMPORTANT")),
-          labels: [...new Set(messages.flatMap((m) => m.labels))],
-        }
-      : null;
+    account && messages ? threadStateFor(account.provider, messages, focusedMessage) : null;
 
   // Opening the window counts as opening the thread, with the same delay.
   const unread = state?.isUnread ?? false;

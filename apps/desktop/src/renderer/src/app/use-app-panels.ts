@@ -48,7 +48,7 @@ export function useAppPanels() {
   };
 }
 
-export type AppDialog = "add" | "settings" | "proposals" | "help" | "feedback" | null;
+type AppDialog = "add" | "settings" | "proposals" | "help" | "feedback" | null;
 export function usePanelLayout({
   prefs,
   hasAccounts,

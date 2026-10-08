@@ -1,6 +1,9 @@
 import { Schema } from "effect";
 import { OutgoingAttachment } from "@openmail/core/schema";
 
+/** Image types compose shows inline. Other image types stay plain attachments. */
+export const RASTER_IMAGE = /^image\/(png|jpeg|gif|webp|avif|bmp)$/i;
+
 export const NativePicker = Schema.Literals(["photos", "continuity"]);
 export type NativePicker = typeof NativePicker.Type;
 export const NativePickerLabels = Schema.Struct({

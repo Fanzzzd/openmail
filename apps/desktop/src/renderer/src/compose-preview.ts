@@ -6,6 +6,7 @@ import {
   type ComposeBody,
 } from "@openmail/core/schema";
 import type { OutgoingAttachment } from "../../shared/api";
+import { RASTER_IMAGE } from "../../shared/native-compose";
 
 export function composePreviewHtml(
   body: Extract<ComposeBody, { kind: "rich" }>,
@@ -19,7 +20,7 @@ export function composePreviewHtml(
   const inline = Object.fromEntries(
     attachments.flatMap((file) => {
       const cid = file.contentId ? composeCid(`cid:${file.contentId}`)?.slice(4) : undefined;
-      return cid && /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(file.mimeType)
+      return cid && RASTER_IMAGE.test(file.mimeType)
         ? [[cid, `data:${file.mimeType};base64,${file.content}`]]
         : [];
     }),

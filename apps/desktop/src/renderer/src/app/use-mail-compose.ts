@@ -22,6 +22,7 @@ import {
   emptyDraft,
   fromStored,
   toDraftInput,
+  defaultSignature,
   type ComposeMode,
   type Draft,
 } from "../draft";
@@ -84,12 +85,8 @@ export function useMailCompose({
   const [closeRequested, setCloseRequested] = useState(0);
   const [crashFeedback, setCrashFeedback] = useState(false);
 
-  /** The local signature for an account: one for new messages, one for replies and forwards. */
-  const signatureAt = (accountId: string, mode: ComposeMode, from?: string) => {
-    const address = (from ?? accountList.find((a) => a.id === accountId)?.email)?.toLowerCase();
-    const kind = mode === "new" ? "new" : "reply";
-    return signatures.find((s) => s.address === address && s.kind === kind);
-  };
+  const signatureAt = (accountId: string, mode: ComposeMode, from?: string) =>
+    defaultSignature(signatures, accountList, accountId, mode, from);
   const [quotePrompt, setQuotePrompt] = useState<((useSelection: boolean) => void) | null>(null);
   const signatureFor = (accountId: string, mode: ComposeMode, from?: string) =>
     signatureAt(accountId, mode, from)?.text;

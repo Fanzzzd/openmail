@@ -124,7 +124,7 @@ export function useComposeGrammar({
     clear: () => setResult(null),
   };
 }
-export type ComposeGrammar = ReturnType<typeof useComposeGrammar>;
+type ComposeGrammar = ReturnType<typeof useComposeGrammar>;
 
 export function GrammarResults({ grammar, locked }: { grammar: ComposeGrammar; locked: boolean }) {
   const { t } = useLingui();

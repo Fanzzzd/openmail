@@ -69,7 +69,7 @@ import {
   styleEditor,
   stepEditorFontSize,
   replaceMarkdownEditor,
-  restoreFormatCaret,
+  restoreFormatSelection,
   type FormatAction,
 } from "../compose-format-dom";
 import { Keys } from "../state/keys";
@@ -447,7 +447,8 @@ export function ComposeEditor({
         if (undo.body.kind === "rich" && richRef.current) {
           richRef.current.innerHTML = richComposeBody(undo.body.html).html;
           lastEmitted.current = undo.body.html;
-          restoreFormatCaret(richRef.current, undo.caret);
+          // Put the caret back where the replacement was rather than at the end.
+          restoreFormatSelection(richRef.current, undo.caret, undo.caret);
           remember();
           onChange(undo.body);
         }

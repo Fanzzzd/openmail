@@ -10,11 +10,10 @@ import { setImageSenderAtom, setPrefsAtom } from "../state/mutations";
 import { imageSendersAtom, prefsAtom } from "../state/queries";
 import { useShortcutText } from "../use-shortcut-text";
 import { Checkbox } from "./ui/Checkbox";
+import { settingsBox, settingsHeading } from "./ui/form-styles";
 import { SegmentedControl } from "./ui/SegmentedControl";
 
-const heading = "mb-2 text-[12px] font-semibold text-a11y-muted";
 const note = "mt-2 text-a11y-muted";
-const box = "rounded-lg border border-black/10 dark:border-white/10";
 
 /** Settings > Reading: when mail counts as read, conversations, message look, remote images. */
 export function ReadingSettings() {
@@ -44,7 +43,7 @@ export function ReadingSettings() {
         <Trans>Show account names in unified folders</Trans>
       </label>
       <section className="space-y-2">
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Layout</Trans>
         </h3>
         <label htmlFor="layout-sidebar" className="flex items-center gap-2">
@@ -73,7 +72,7 @@ export function ReadingSettings() {
         </label>
       </section>
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Message list density</Trans>
         </h3>
         <SegmentedControl
@@ -89,7 +88,7 @@ export function ReadingSettings() {
         />
       </section>
       <section className="space-y-2">
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Special folder badges</Trans>
         </h3>
         {(
@@ -128,7 +127,7 @@ export function ReadingSettings() {
         </label>
       </section>
       <section className="space-y-2">
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Attachment save folder</Trans>
         </h3>
         <SegmentedControl
@@ -167,7 +166,7 @@ export function ReadingSettings() {
             />
           </label>
         )}
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Open attachments from</Trans>
         </h3>
         <SegmentedControl
@@ -181,7 +180,7 @@ export function ReadingSettings() {
         />
       </section>
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Mark as read</Trans>
         </h3>
         <SegmentedControl
@@ -207,7 +206,7 @@ export function ReadingSettings() {
       </section>
 
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Delete key action</Trans>
         </h3>
         <SegmentedControl
@@ -223,7 +222,7 @@ export function ReadingSettings() {
         />
       </section>
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Selection after moving messages</Trans>
         </h3>
         <SegmentedControl
@@ -239,7 +238,7 @@ export function ReadingSettings() {
       </section>
 
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Conversations</Trans>
         </h3>
         <label className="flex items-center gap-2">
@@ -266,7 +265,7 @@ export function ReadingSettings() {
       </section>
 
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Message background</Trans>
         </h3>
         <SegmentedControl
@@ -286,7 +285,7 @@ export function ReadingSettings() {
       </section>
 
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Text size</Trans>
         </h3>
         <SegmentedControl
@@ -301,7 +300,7 @@ export function ReadingSettings() {
       </section>
 
       <section>
-        <h3 className={heading}>
+        <h3 className={settingsHeading}>
           <Trans>Remote images</Trans>
         </h3>
         <SegmentedControl
@@ -349,7 +348,7 @@ function ImageSenders() {
 
   return (
     <section>
-      <h3 className={heading}>
+      <h3 className={settingsHeading}>
         <Trans>Always load remote images from</Trans>
       </h3>
       <form
@@ -377,7 +376,7 @@ function ImageSenders() {
         </button>
       </form>
       {senders.length > 0 && (
-        <ul className={`${box} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
+        <ul className={`${settingsBox} divide-y divide-black/[0.07] dark:divide-white/[0.08]`}>
           {senders.map((sender) => (
             <li key={sender} className="flex items-center gap-3 px-3 py-1.5">
               <span className="min-w-0 flex-1 truncate">{sender}</span>

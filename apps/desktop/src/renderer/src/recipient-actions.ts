@@ -4,7 +4,12 @@ import type { Address } from "../../shared/api";
 
 const RECIPIENT_FIELDS = ["to", "cc", "bcc"] as const;
 export type RecipientFieldName = (typeof RECIPIENT_FIELDS)[number];
-export type RecipientFields = Record<RecipientFieldName, string>;
+type RecipientFields = Record<RecipientFieldName, string>;
+/** The addresses in the field, trimmed, in order. */
+export const recipientTokens = (text: string) =>
+  splitAddresses(text)
+    .map((part) => part.trim())
+    .filter(Boolean);
 /** One atomic update retains unfinished text, names and quoted separators. */
 export function moveRecipient(
   fields: RecipientFields,
@@ -13,16 +18,12 @@ export function moveRecipient(
   index: number,
 ): RecipientFields {
   if (source === target) return fields;
-  const tokens = splitAddresses(fields[source])
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const tokens = recipientTokens(fields[source]);
   const token = tokens[index];
   if (!token) return fields;
   const address = parseAddresses(token).addresses[0];
   if (!address) return fields;
-  const destination = splitAddresses(fields[target])
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const destination = recipientTokens(fields[target]);
   const exists = parseAddresses(fields[target]).addresses.some(
     (a) => a.address.toLowerCase() === address.address.toLowerCase(),
   );
@@ -33,10 +34,8 @@ export function moveRecipient(
   };
 }
 export function replaceRecipient(value: string, index: number, address: Address): string {
-  return splitAddresses(value)
-    .map((token) => token.trim())
-    .filter(Boolean)
-    .map((token, i) => (i === index ? formatAddress(address) : token.trim()))
+  return recipientTokens(value)
+    .map((token, i) => (i === index ? formatAddress(address) : token))
     .filter(Boolean)
     .join(", ");
 }

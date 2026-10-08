@@ -3,7 +3,6 @@ import {
   applyComposeSignature,
   orderedSignatures,
   reconcileMentionRecipients,
-  splitAddresses,
   type Address,
   type Prefs,
 } from "@openmail/core/schema";
@@ -19,8 +18,13 @@ import {
   type SetStateAction,
 } from "react";
 import type { Account } from "../../../shared/api";
-import { formatAddress, parseAddresses, type Draft } from "../draft";
-import { moveRecipient, type RecipientDrag, type RecipientFieldName } from "../recipient-actions";
+import { defaultSignature, formatAddress, parseAddresses, type Draft } from "../draft";
+import {
+  moveRecipient,
+  recipientTokens,
+  type RecipientDrag,
+  type RecipientFieldName,
+} from "../recipient-actions";
 import { useRunMail, withMail } from "../state/mail";
 import { namedSignaturesAtom, sendAsAtom, signaturesAtom } from "../state/queries";
 
@@ -51,12 +55,8 @@ export function useComposeRecipients({
   const account = accounts.find((a) => a.id === draft.accountId);
   const library = AsyncResult.getOrElse(useAtomValue(namedSignaturesAtom), () => []);
   const defaultSignatures = AsyncResult.getOrElse(useAtomValue(signaturesAtom), () => []);
-  const signatureAt = (accountId: string, from: string | undefined) => {
-    const address = (from ?? accounts.find((a) => a.id === accountId)?.email)?.toLowerCase();
-    return defaultSignatures.find(
-      (s) => s.address === address && s.kind === (draft.mode === "new" ? "new" : "reply"),
-    );
-  };
+  const signatureAt = (accountId: string, from: string | undefined) =>
+    defaultSignature(defaultSignatures, accounts, accountId, draft.mode, from);
   const currentSignature =
     draft.signatureId === undefined
       ? signatureAt(draft.accountId, draft.from?.address)
@@ -71,9 +71,7 @@ export function useComposeRecipients({
     if (target !== "to") setShowBcc(true);
   };
   const dropChip = (target: RecipientFieldName, chip: RecipientDrag) => {
-    const tokens = splitAddresses(draft[chip.source])
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const tokens = recipientTokens(draft[chip.source]);
     if (tokens[chip.index] === chip.text) moveChip(chip.source, target, chip.index);
   };
   const aliases = AsyncResult.getOrElse(useAtomValue(sendAsAtom), () => []);

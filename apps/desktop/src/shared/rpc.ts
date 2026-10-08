@@ -103,6 +103,7 @@ import {
 } from "@openmail/core/schema";
 import { Schema, Struct } from "effect";
 import {
+  ComposeMessageFields,
   DefaultClientStatus,
   DesktopEvent,
   NotificationPermission,
@@ -610,13 +611,7 @@ export class MailRpcs extends RpcGroup.make(
     error,
   }),
   Rpc.make("ClipboardAttachments", { success: Schema.Array(OutgoingAttachment), error }),
-  Rpc.make("ComposeMessage", {
-    payload: {
-      id: Schema.String,
-      mode: Schema.Literals(["reply", "replyAll", "forward"]),
-      asAttachment: Schema.Boolean,
-    },
-  }),
+  Rpc.make("ComposeMessage", { payload: ComposeMessageFields }),
   Rpc.make("ComposeAttachments", {
     payload: { id: Schema.String },
     success: Schema.Array(OutgoingAttachment),

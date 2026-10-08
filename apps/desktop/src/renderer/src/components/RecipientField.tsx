@@ -1,6 +1,7 @@
 import {
   RECIPIENT_MIME,
   parseRecipientDrag,
+  recipientTokens,
   replaceRecipient,
   type RecipientDrag,
   type RecipientFieldName,
@@ -42,12 +43,6 @@ interface Props {
   showFullAddresses: boolean;
 }
 
-/** The addresses in the field, trimmed, in order. */
-const tokenize = (text: string) =>
-  splitAddresses(text)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
 /** Chips first, then the text being typed. The draft keeps recipients as this text. */
 const serialize = (chips: readonly string[], typed: string) => {
   const rest = typed.trimStart();
@@ -85,7 +80,7 @@ export function RecipientField({
 
   // The value is the source of truth. The last token is still being typed
   // only while it matches what this field holds as typed text.
-  const all = tokenize(value);
+  const all = recipientTokens(value);
   const pending = typed.trim();
   const closed = ADDRESS_SEPARATOR.test(value.trimEnd().slice(-1));
   const editing = pending !== "" && all.at(-1) === pending && !closed;

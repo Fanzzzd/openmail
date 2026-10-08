@@ -4,7 +4,7 @@ import type { KeyEvent } from "../../shared/shortcuts";
 export function usesDeletePreference(event: KeyEvent): boolean {
   return (event.key === "Backspace" || event.key === "Delete") && !event.metaKey && !event.ctrlKey;
 }
-export interface DeleteContext {
+interface DeleteContext {
   mailbox?: MailboxView;
   currentLabel?: string;
   provider?: Provider;

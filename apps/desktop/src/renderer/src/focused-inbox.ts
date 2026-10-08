@@ -1,5 +1,6 @@
 import { Cause, Option } from "effect";
-import type { Message } from "../../shared/api";
+import type { Message, Provider } from "../../shared/api";
+import type { ThreadState } from "./components/ThreadActions";
 import type { AppError } from "./errors";
 
 export const FOCUSED_PERMISSION_EVENT = "openmail:focused-permission";
@@ -20,6 +21,20 @@ export function requestFocusedPermission(cause: Cause.Cause<AppError>): boolean 
 /** Project an already selected external message into the toolbar's override target. */
 export const focusedSender = (message?: Pick<Message, "id" | "from">) =>
   message ? { focusedSender: { messageId: message.id, address: message.from.address } } : {};
+
+/** What the thread toolbar and menus act on for these messages. */
+export const threadStateFor = (
+  provider: Provider,
+  messages: readonly Message[],
+  focused: Message | undefined,
+): ThreadState => ({
+  provider,
+  ...focusedSender(focused),
+  isUnread: messages.some((m) => m.isUnread),
+  isStarred: messages.some((m) => m.isStarred),
+  isImportant: messages.some((m) => m.labels.includes("IMPORTANT")),
+  labels: [...new Set(messages.flatMap((m) => m.labels))],
+});
 
 /** Prefer the selected external message; otherwise use the newest external sender. */
 export function focusedSenderMessage(

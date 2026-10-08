@@ -1,12 +1,12 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 
-import { RPC_CHANNEL, type RpcBridge } from "../shared/channel";
+import { MAX_RPC_FRAME, RPC_CHANNEL, type RpcBridge } from "../shared/channel";
 
 // The renderer speaks Effect RPC; the preload only moves its JSON frames.
 // Nothing else crosses into the page.
 const bridge: RpcBridge = {
   send: (frame) => {
-    if (typeof frame === "string" && frame.length <= 64 * 1024 * 1024)
+    if (typeof frame === "string" && frame.length <= MAX_RPC_FRAME)
       ipcRenderer.send(RPC_CHANNEL, frame);
   },
   onFrame: (listener) => {

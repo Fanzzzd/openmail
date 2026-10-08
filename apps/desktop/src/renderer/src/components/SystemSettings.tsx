@@ -27,13 +27,12 @@ import { MAILBOX_NAMES } from "../view";
 import { Keys } from "../state/keys";
 import { useRunMail, withMail } from "../state/mail";
 import { setPrefsAtom } from "../state/mutations";
+import { ACTION_NAMES } from "../shortcut-names";
 import { prefsAtom, profilesAtom } from "../state/queries";
 import { Checkbox } from "./ui/Checkbox";
 import { Dialog, alertButton } from "./ui/Dialog";
 import { SegmentedControl } from "./ui/SegmentedControl";
 import { Select } from "./ui/Select";
-
-export { useShortcutText } from "../use-shortcut-text";
 
 export function DefaultMailClient() {
   const run = useRunMail();
@@ -433,11 +432,9 @@ const SET_NAMES: { value: ShortcutSet; label: MessageDescriptor }[] = [
   { value: "gmail", label: msg`Gmail` },
   { value: "apple", label: msg`Apple Mail` },
 ];
-export { ACTION_NAMES } from "../shortcut-names";
-import { ACTION_NAMES } from "../shortcut-names";
 
 const ACTIONS = Object.entries(ACTION_NAMES);
-export function ShortcutTable({ set }: { set: ShortcutSet }) {
+function ShortcutTable({ set }: { set: ShortcutSet }) {
   const { i18n } = useLingui();
   return (
     <table className="w-full text-left">

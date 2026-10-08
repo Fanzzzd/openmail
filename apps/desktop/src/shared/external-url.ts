@@ -7,7 +7,7 @@ export function hasAsciiControl(value: string, spaces = false): boolean {
 }
 
 /** The same policy is used for mail link hints and the OS browser boundary. */
-export const MAX_EXTERNAL_URL = 100_000;
+const MAX_EXTERNAL_URL = 100_000;
 const EXTERNAL_SCHEMES = new Set(["http:", "https:", "mailto:"]);
 
 export function externalUrl(value: unknown, base?: string): string | null {

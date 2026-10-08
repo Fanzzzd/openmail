@@ -101,7 +101,7 @@ export function incoming(
   };
 }
 
-export interface FlowHarness {
+interface FlowHarness {
   server: FakeServer;
   m: Mailbox["Service"];
   store: Store["Service"];

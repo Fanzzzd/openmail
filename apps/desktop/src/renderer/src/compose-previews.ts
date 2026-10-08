@@ -1,7 +1,7 @@
 import type { OutgoingAttachment } from "../../shared/api";
+import { RASTER_IMAGE } from "../../shared/native-compose";
 
 type ImagePart = OutgoingAttachment & { contentId: string };
-const raster = /^image\/(png|jpeg|gif|webp|avif|bmp)$/i;
 
 export function makeInlinePreviewCache(
   create = (file: OutgoingAttachment) => {
@@ -18,7 +18,7 @@ export function makeInlinePreviewCache(
       previous = files;
       const seen = new Set<string>();
       for (const file of files) {
-        if (!file.contentId || !raster.test(file.mimeType)) continue;
+        if (!file.contentId || !RASTER_IMAGE.test(file.mimeType)) continue;
         seen.add(file.contentId);
         const existing = entries.get(file.contentId);
         if (existing?.file.content === file.content && existing.file.mimeType === file.mimeType)

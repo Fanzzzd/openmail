@@ -384,11 +384,7 @@ export function replaceMarkdownEditor(
     } else document.execCommand("formatBlock", false, replacement.block);
   }
 }
-/** Restore the caret after an explicit replacement undo rather than dropping it at the end. */
-export function restoreFormatCaret(root: HTMLElement, offset: number): void {
-  restoreFormatSelection(root, offset, offset);
-}
-function restoreFormatSelection(root: HTMLElement, start: number, end: number): void {
+export function restoreFormatSelection(root: HTMLElement, start: number, end: number): void {
   const points = editorMatchPoints(root, start, end);
   if (!points) return;
   const range = document.createRange();

@@ -1,11 +1,10 @@
 import { Schema } from "effect";
 import type { RpcMessage } from "effect/rpc";
 import { MailError } from "@openmail/core/schema";
+import { MAX_RPC_FRAME } from "../shared/channel";
 import { PUBLIC_ERROR_MESSAGES } from "../shared/public-error-messages";
 import { MailRpcs } from "../shared/rpc";
 
-// A 30 MiB attachment batch expands to 40 MiB in base64. Bound the envelope too.
-export const MAX_RPC_FRAME = 64 * 1024 * 1024;
 const RequestId = Schema.Union([
   Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(128)),
   Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER })),

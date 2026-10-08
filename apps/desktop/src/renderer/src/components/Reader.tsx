@@ -114,7 +114,7 @@ import { PickerPopover } from "./ui/Picker";
 
 /** Shows a one-line notice, the app's toast. */
 export type Notify = (toast: { text: string; tone?: "error" }) => void;
-export type ReaderActionDone = (action: {
+type ReaderActionDone = (action: {
   result: BatchResult;
   ids: readonly string[];
   op: MailOp;

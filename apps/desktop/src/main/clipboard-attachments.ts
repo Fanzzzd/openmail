@@ -1,6 +1,7 @@
 import { DeviceError, type OutgoingAttachment } from "@openmail/core";
 import { Effect } from "effect";
 import { clipboard } from "electron";
+import { RASTER_IMAGE } from "../shared/native-compose";
 
 type ClipboardEntry = {
   readonly types: readonly string[];
@@ -15,7 +16,7 @@ export async function readClipboardAttachments(
   const images: OutgoingAttachment[] = [];
   let total = 0;
   for (const item of items) {
-    const mimeType = item.types.find((type) => /^image\/(png|jpeg|gif|webp|avif|bmp)$/i.test(type));
+    const mimeType = item.types.find((type) => RASTER_IMAGE.test(type));
     if (!mimeType) continue;
     const payload = await item.getType(mimeType);
     if (!(payload instanceof Blob)) continue;
