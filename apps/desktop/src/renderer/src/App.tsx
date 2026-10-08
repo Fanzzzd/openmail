@@ -63,7 +63,10 @@ import { messageMissing, causeText } from "./errors";
 import { MailClient } from "./rpc";
 import { useDesktopLabels } from "./state/desktop";
 import { liveUpdatesAtom } from "./state/events";
-import { networkChanged, useRunMail } from "./state/mail";
+import { networkChanged, syncNow, useRunMail } from "./state/mail";
+import { MailStatusNotice } from "./components/MailStatusNotice";
+import { useOnline } from "./use-online";
+import { accountName } from "./format";
 import {
   accountsAtom,
   labelPreferencesAtom,
@@ -83,6 +86,7 @@ import {
   MAILBOX_NAMES,
   OVERVIEW,
   scopeAccountIds,
+  spaceAccounts,
 } from "./view";
 
 import { GoToFolder } from "./components/GoToFolder";
@@ -94,13 +98,7 @@ export function App({ composeId }: { composeId?: string }) {
   useAtomMount(MailClient.runtime);
   useAtomMount(liveUpdatesAtom);
   const run = useRunMail();
-  useEffect(() => {
-    const onOnline = () => {
-      run(networkChanged);
-    };
-    window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
-  }, [run]);
+  const online = useOnline(() => run(networkChanged));
   useDesktopLabels();
   const strings = useAppMessages();
   const { t, i18n } = useLingui();
@@ -482,6 +480,26 @@ export function App({ composeId }: { composeId?: string }) {
     <MessageList
       leading={sidebarToggle}
       inset={leadingInset}
+      notice={
+        <MailStatusNotice
+          accounts={accountList}
+          space={spaceAccounts(view.space, accountList)}
+          online={online}
+          syncState={syncState}
+          accountIssues={!docked}
+          onReauth={mailActions.reauth}
+        />
+      }
+      emptyActions={{
+        onClearSearch: () => setQuery(""),
+        onCompose: () => startCompose("new"),
+        onSync: () => run(syncNow),
+        syncing: syncState.running,
+      }}
+      accountLabel={(id) => {
+        const account = accountList.find((a) => a.id === id);
+        return account ? accountName(account) : id;
+      }}
       searchBar={
         !prefs.readingPaneVisible || narrow ? (
           <SearchField value={query} onChange={setQuery} inputRef={searchRef} />

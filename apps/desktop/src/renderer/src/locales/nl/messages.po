@@ -55,8 +55,8 @@ msgstr "{0} meer niet geladen"
 msgid "{0} seconds"
 msgstr "{0} seconden"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "De aanmelding van {0} is verlopen. Synchronisatie is gepauzeerd."
 
@@ -1170,6 +1170,10 @@ msgstr "Wis alle caches"
 msgid "Clear formatting"
 msgstr "Wis opmaak"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "Zoekopdracht wissen"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Wis selectie"
@@ -1544,6 +1548,10 @@ msgstr "Kan de lokale cache niet resetten"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "De API-sleutel kon niet in de systeemsleutelhanger worden bewaard."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "Kan {names} niet synchroniseren."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3580,6 +3588,7 @@ msgstr "Nieuw label of map"
 msgid "New mail notifications"
 msgstr "Nieuwe e-mailmeldingen"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3694,6 +3703,10 @@ msgstr "Er is geen actueel label van toepassing. Verplaatsen naar prullenmand."
 msgid "No custom labels"
 msgstr "Geen aangepaste labels"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "Geen concepten"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Geen externe antwoorden"
@@ -3747,6 +3760,10 @@ msgstr "er zijn geen printers beschikbaar."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "Geen antwoord nodig"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "Geen berichten met ster. Geef een bericht een ster om het hier te vinden."
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5229,10 +5246,10 @@ msgstr "Zijbalk"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Meld u opnieuw aan"
 
@@ -5519,6 +5536,7 @@ msgstr "Synchroniseer aliassen en handtekeningen"
 msgid "Sync All"
 msgstr "Alles synchroniseren"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5532,6 +5550,7 @@ msgstr "Synchronisatie mislukt ({count})"
 msgid "Sync health"
 msgstr "Synchronisatiestatus"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5900,6 +5919,10 @@ msgstr "Sorteersuggesties worden gemaakt wanneer de app op de voorgrond staat of
 msgid "Trusted authentication service (optional)"
 msgstr "Vertrouwde authenticatiedienst (optioneel)"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "Opnieuw proberen"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Dinsdag"
@@ -5911,6 +5934,10 @@ msgstr "Inschakelen in instellingen"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "Uitschakelen"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "Filters uitschakelen"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6250,6 +6277,10 @@ msgstr "Jij (opdrachtregel)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Je hebt de nieuwste versie."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "Je bent offline. E-mail synchroniseert weer zodra je verbinding hebt."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

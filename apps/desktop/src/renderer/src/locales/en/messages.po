@@ -59,8 +59,8 @@ msgstr "{0} more not loaded"
 msgid "{0} seconds"
 msgstr "{0} seconds"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "{0}'s sign-in has expired. Sync is paused."
 
@@ -1174,6 +1174,10 @@ msgstr "Clear all caches"
 msgid "Clear formatting"
 msgstr "Clear formatting"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "Clear search"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Clear selection"
@@ -1548,6 +1552,10 @@ msgstr "Could not reset the local cache"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "Could not save the API key in the system keychain."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "Could not sync {names}."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3584,6 +3592,7 @@ msgstr "New label or folder"
 msgid "New mail notifications"
 msgstr "New mail notifications"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3698,6 +3707,10 @@ msgstr "No current label applies. Moving to Trash."
 msgid "No custom labels"
 msgstr "No custom labels"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "No drafts"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "No external replies"
@@ -3751,6 +3764,10 @@ msgstr "no printers are available."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "No response needed"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "No starred messages. Star a message to find it here."
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5233,10 +5250,10 @@ msgstr "Sidebar"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Sign in again"
 
@@ -5523,6 +5540,7 @@ msgstr "Sync aliases and signatures"
 msgid "Sync All"
 msgstr "Sync All"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5536,6 +5554,7 @@ msgstr "Sync failed ({count})"
 msgid "Sync health"
 msgstr "Sync health"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5904,6 +5923,10 @@ msgstr "Triage runs while the app is in the foreground or on AC power. Suggestio
 msgid "Trusted authentication service (optional)"
 msgstr "Trusted authentication service (optional)"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "Try again"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Tuesday"
@@ -5915,6 +5938,10 @@ msgstr "Turn it on in Settings"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "Turn off"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "Turn off filters"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6254,6 +6281,10 @@ msgstr "You (command line)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "You are up to date."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "You're offline. Mail syncs again when you reconnect."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

@@ -1,4 +1,5 @@
 import { constVoid } from "effect/Function";
+import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { railTrafficLightInset, trafficLightInset } from "../components/ui/styles";
@@ -447,4 +448,105 @@ it("a narrow window shows actions for several selected rows above the list", asy
     for (const id of ["one", "two"])
       expect((await h.run(h.store.getMessage(h.id(id)))).labels).not.toContain("INBOX");
   });
+});
+
+/** The block an empty list shows: its sentence and the button for the next step. */
+const emptyList = async (text: string) => {
+  const sentence = await screen.findByText(text);
+  return within(sentence.parentElement ?? sentence);
+};
+
+it("an empty list says why and offers the next step", async () => {
+  width = 1200;
+  current = await flow({ messages: [] });
+  const h = current;
+  const nav = await screen.findByRole("navigation", { name: "Mailboxes" });
+
+  const syncs = () => h.requests.filter((request) => request.tag === "Sync").length;
+  const before = syncs();
+  fireEvent.click((await emptyList("No messages here")).getByRole("button", { name: "Sync now" }));
+  await eventually(() => expect(syncs()).toBeGreaterThan(before));
+
+  fireEvent.click(screen.getByRole("button", { name: "Unread" }));
+  fireEvent.click(
+    (await emptyList("No messages match the filters")).getByRole("button", {
+      name: "Turn off filters",
+    }),
+  );
+  await screen.findByText("No messages here");
+
+  fireEvent.change(screen.getByLabelText("Search mail", { exact: true }), {
+    target: { value: "nothing-matches" },
+  });
+  fireEvent.click(
+    (await emptyList("No matching messages")).getByRole("button", { name: "Clear search" }),
+  );
+  await eventually(() =>
+    expect(screen.getByLabelText("Search mail", { exact: true })).toHaveProperty("value", ""),
+  );
+
+  fireEvent.click(within(nav).getByRole("button", { name: "Starred" }));
+  await screen.findByText("No starred messages. Star a message to find it here.");
+
+  fireEvent.click(within(nav).getByRole("button", { name: "Drafts" }));
+  fireEvent.click((await emptyList("No drafts")).getByRole("button", { name: "New message" }));
+  await eventually(() => expect(screen.getByRole("textbox", { name: "Subject" })).toBeTruthy());
+});
+
+it("an undocked sidebar moves sign-in and sync failures above the list", async () => {
+  width = 1200;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const list = () => document.querySelector<HTMLElement>('[data-mail-pane="list"]')!;
+
+  // Settings reads come first in a sync and swallow a one-off failure, so fail every call.
+  const failEvery = (error: ProviderError | AuthError | undefined) =>
+    Object.defineProperty(h.server, "failNext", {
+      configurable: true,
+      get: () => error,
+      set: constVoid,
+    });
+  // A 403 is not retried, so the sync fails at once.
+  failEvery(new ProviderError({ message: "Forbidden", status: 403 }));
+  await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
+  await eventually(() => expect(screen.getByText("Sync failed (1)")).toBeTruthy());
+  // The docked sidebar already reports it; the list does not repeat it.
+  expect(within(list()).queryByText(/Could not sync/)).toBeNull();
+
+  resize(800);
+  await eventually(() =>
+    expect(within(list()).getByText("Could not sync me@gmail.com.")).toBeTruthy(),
+  );
+  failEvery(undefined);
+  fireEvent.click(within(list()).getByRole("button", { name: "Try again" }));
+  await eventually(() => expect(within(list()).queryByText(/Could not sync/)).toBeNull());
+
+  failEvery(new AuthError({ message: "Expired" }));
+  await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
+  await eventually(() =>
+    expect(
+      within(list()).getByText("me@gmail.com's sign-in has expired. Sync is paused."),
+    ).toBeTruthy(),
+  );
+  // An expired account is not also reported as a sync failure.
+  expect(within(list()).queryByText(/Could not sync/)).toBeNull();
+  expect(within(list()).getByRole("button", { name: "Sign in again" })).toBeTruthy();
+});
+
+it("the list says when the computer is offline", async () => {
+  width = 520;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+  act(() => {
+    window.dispatchEvent(new Event("offline"));
+  });
+  expect(screen.getByText("You're offline. Mail syncs again when you reconnect.")).toBeTruthy();
+  onLine.mockReturnValue(true);
+  act(() => {
+    window.dispatchEvent(new Event("online"));
+  });
+  expect(screen.queryByText(/You're offline/)).toBeNull();
 });

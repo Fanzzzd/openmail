@@ -55,8 +55,8 @@ msgstr "Еще {0} не загружено"
 msgid "{0} seconds"
 msgstr "{0} секунд"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "Срок действия входа {0} истек. Синхронизация приостановлена."
 
@@ -1170,6 +1170,10 @@ msgstr "Очистить все кэши"
 msgid "Clear formatting"
 msgstr "Очистить форматирование"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "Очистить поиск"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Снять выделение"
@@ -1544,6 +1548,10 @@ msgstr "Не удалось сбросить локальный кеш"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "Не удалось сохранить ключ API в системной Связке ключей."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "Не удалось синхронизировать {names}."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3580,6 +3588,7 @@ msgstr "Новый ярлык или папка"
 msgid "New mail notifications"
 msgstr "Уведомления о новой почте"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3694,6 +3703,10 @@ msgstr "Текущая ярлык не применяется. Переноси�
 msgid "No custom labels"
 msgstr "Никаких пользовательских ярлыков"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "Нет черновиков"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Нет внешних ответов"
@@ -3747,6 +3760,10 @@ msgstr "принтеров нет."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "Ответ не требуется"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "Нет помеченных сообщений. Добавьте звезду к сообщению, чтобы найти его здесь."
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5229,10 +5246,10 @@ msgstr "Боковая панель"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Войдите снова"
 
@@ -5519,6 +5536,7 @@ msgstr "Синхронизировать псевдонимы и подписи"
 msgid "Sync All"
 msgstr "Синхронизировать все"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5532,6 +5550,7 @@ msgstr "Не удалось синхронизировать ({count})"
 msgid "Sync health"
 msgstr "Состояние синхронизации"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5900,6 +5919,10 @@ msgstr "Предложения по сортировке создаются, к�
 msgid "Trusted authentication service (optional)"
 msgstr "Доверенная служба аутентификации (необязательно)"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "Повторить"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Вторник"
@@ -5911,6 +5934,10 @@ msgstr "Включить в настройках"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "Выключить"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "Отключить фильтры"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6250,6 +6277,10 @@ msgstr "Вы (командная строка)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Установлена последняя версия."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "Нет подключения к сети. Почта снова синхронизируется после подключения."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

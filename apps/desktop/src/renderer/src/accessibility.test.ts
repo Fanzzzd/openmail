@@ -166,6 +166,7 @@ import { MessageList } from "./components/MessageList";
 import { Reader, ThreadView } from "./components/Reader";
 import { ThreadActions } from "./components/ThreadActions";
 import { Sidebar } from "./components/Sidebar";
+import { MailStatusNotice } from "./components/MailStatusNotice";
 import { Composer } from "./components/Composer";
 import { Settings } from "./components/Settings";
 import { Assistant, AiOutput } from "./components/AiPanel";
@@ -982,6 +983,38 @@ it("only announces entering and clearing sync failure, with a stable status role
   view.rerender(sidebar({ running: false, errors: [], lastFinishedAt: 361000 }));
   expect(status.textContent).toBe("Syncing normally");
   expect(within(footer).queryByRole("alert")).toBeNull();
+});
+
+it("the list notice counts every account's sync errors but names only the open space's", () => {
+  const work: Account = { ...account, id: "gmail:work", email: "work@example.com", profileId: "w" };
+  const expiredElsewhere: Account = {
+    ...work,
+    id: "gmail:old",
+    email: "old@example.com",
+    needsReauth: true,
+  };
+  const notice = (errors: string[], online = true) =>
+    localized(
+      h(MailStatusNotice, {
+        accounts: [work, expiredElsewhere, account],
+        space: [work],
+        online,
+        syncState: { running: false, lastFinishedAt: 1, errors },
+        accountIssues: true,
+        onReauth: vi.fn(),
+      }),
+    );
+  // An expired account in another space is its own notice there, not a sync failure here.
+  const view = render(notice(["gmail:old: Sign in again"]));
+  expect(view.container.textContent).toBe("");
+  view.rerender(notice(["gmail:old: Sign in again", "gmail:work: Forbidden"]));
+  expect(screen.getByRole("alert").textContent).toContain("Could not sync work@example.com.");
+  view.rerender(notice(["gmail:me: Forbidden"]));
+  expect(screen.getByRole("alert").textContent).toContain("Sync failed");
+  // Offline joins the account notices instead of hiding them.
+  view.rerender(notice(["gmail:work: Forbidden"], false));
+  expect(view.container.textContent).toContain("You're offline.");
+  expect(screen.getByRole("alert").textContent).toContain("Could not sync work@example.com.");
 });
 
 it("a failed body refresh preserves the reader and cached preview with a non-blocking status", () => {

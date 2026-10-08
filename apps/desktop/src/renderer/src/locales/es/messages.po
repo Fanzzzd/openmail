@@ -55,8 +55,8 @@ msgstr "{0} más no cargado"
 msgid "{0} seconds"
 msgstr "{0} segundos"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "El inicio de sesión de {0} ha caducado. La sincronización está en pausa."
 
@@ -1170,6 +1170,10 @@ msgstr "Vaciar todas las cachés"
 msgid "Clear formatting"
 msgstr "Borrar formato"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "Borrar búsqueda"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Borrar selección"
@@ -1544,6 +1548,10 @@ msgstr "No se pudo restablecer el caché local"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "No se pudo guardar la clave API en el llavero del sistema."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "No se pudo sincronizar {names}."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3580,6 +3588,7 @@ msgstr "Nueva etiqueta o carpeta"
 msgid "New mail notifications"
 msgstr "Nuevas notificaciones de correo"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3694,6 +3703,10 @@ msgstr "No se aplica ninguna etiqueta actual. Pasando a la Papelera."
 msgid "No custom labels"
 msgstr "Sin etiquetas personalizadas"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "No hay borradores"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Sin respuestas externas"
@@ -3747,6 +3760,10 @@ msgstr "No hay impresoras disponibles."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "No es necesario responder"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "No hay mensajes destacados. Destaca un mensaje para encontrarlo aquí."
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5229,10 +5246,10 @@ msgstr "Barra lateral"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Iniciar sesión nuevamente"
 
@@ -5519,6 +5536,7 @@ msgstr "Sincronizar alias y firmas"
 msgid "Sync All"
 msgstr "Sincronizar todo"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5532,6 +5550,7 @@ msgstr "Error de sincronización ({count})"
 msgid "Sync health"
 msgstr "Estado de sincronización"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5900,6 +5919,10 @@ msgstr "Las sugerencias se generan cuando la aplicación está en primer plano o
 msgid "Trusted authentication service (optional)"
 msgstr "Servicio de autenticación de confianza (opcional)"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "Reintentar"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Martes"
@@ -5911,6 +5934,10 @@ msgstr "Activarlo en los ajustes"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "Desactivar"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "Desactivar filtros"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6250,6 +6277,10 @@ msgstr "Tú (línea de comando)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Tienes la versión más reciente."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "Sin conexión. El correo se sincronizará de nuevo al reconectarte."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

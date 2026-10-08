@@ -67,6 +67,7 @@ import {
   PROFILE_BG,
 } from "../format";
 import { type MailEnv, withMail, syncNow, useRunMail } from "../state/mail";
+import { ReauthNotice, syncFailures } from "./MailStatusNotice";
 import {
   prefsAtom,
   labelsAtom,
@@ -345,6 +346,7 @@ export function Sidebar({
   );
   const spaceUnread = members.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
+  const failures = syncFailures(accounts, syncState);
   /** The footer line: progress while syncing, then failures or the last sync time. */
   const syncStatus = () => {
     if (syncState.running) {
@@ -353,8 +355,8 @@ export function Sidebar({
         total = i18n.number(progress.total);
       return t`Syncing ${fetched}/${total}`;
     }
-    if (syncState.errors.length) {
-      const count = i18n.number(syncState.errors.length);
+    if (failures.length) {
+      const count = i18n.number(failures.length);
       return t`Sync failed (${count})`;
     }
     if (!syncState.lastFinishedAt) return "";
@@ -463,21 +465,7 @@ export function Sidebar({
         {members
           .filter((a) => a.needsReauth)
           .map((a) => (
-            <div
-              key={a.id}
-              className="mx-1 mb-3 rounded-lg bg-red-500/[0.08] px-3 py-2 text-[12px] leading-relaxed"
-            >
-              <p className="text-red-700 dark:text-red-300">
-                <Trans>{a.email}'s sign-in has expired. Sync is paused.</Trans>
-              </p>
-              <button
-                type="button"
-                onClick={() => onReauth(a)}
-                className="mt-1 font-semibold text-red-700 hover:underline dark:text-red-300"
-              >
-                <Trans>Sign in again</Trans>
-              </button>
-            </div>
+            <ReauthNotice key={a.id} account={a} onReauth={onReauth} className="mx-1 mb-3" />
           ))}
 
         {proposals > 0 && (
@@ -783,9 +771,9 @@ export function Sidebar({
       </nav>
 
       <footer className="flex items-center gap-2 px-4 py-2 text-[12px] text-a11y-muted">
-        <span className="min-w-0 flex-1 truncate" title={syncState.errors.join("\n")}>
+        <span className="line-clamp-2 min-w-0 flex-1" title={failures.join("\n")}>
           <span aria-hidden="true">{syncStatus()}</span>
-          <SyncStatusAnnouncement failed={syncState.errors.length > 0} />
+          <SyncStatusAnnouncement failed={failures.length > 0} />
         </span>
         <Tip label={t`Settings`} shortcut={shortcut("settings")} side="top">
           <button

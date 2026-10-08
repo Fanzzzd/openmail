@@ -55,8 +55,8 @@ msgstr "{0} 個以上が読み込まれていません"
 msgid "{0} seconds"
 msgstr "{0} 秒"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "{0} さんのサインインの有効期限が切れました。同期は一時停止されています。"
 
@@ -1170,6 +1170,10 @@ msgstr "すべてのキャッシュを消去"
 msgid "Clear formatting"
 msgstr "書式をクリア"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "検索をクリア"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "選択を解除"
@@ -1544,6 +1548,10 @@ msgstr "ローカルキャッシュをリセットできませんでした"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "APIキーをシステムのキーチェーンに保存できませんでした。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "{names} を同期できませんでした。"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3580,6 +3588,7 @@ msgstr "新しいラベルまたはフォルダ"
 msgid "New mail notifications"
 msgstr "新着メール通知"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3694,6 +3703,10 @@ msgstr "現在のラベルは適用されません。ゴミ箱に移動します
 msgid "No custom labels"
 msgstr "カスタムラベルなし"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "下書きはありません"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "外部からの返信はありません"
@@ -3747,6 +3760,10 @@ msgstr "使用できるプリンターがありません。"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "返信不要"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "スター付きのメッセージはありません。メッセージにスターを付けるとここに表示されます。"
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5229,10 +5246,10 @@ msgstr "サイドバー"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "再度サインインしてください"
 
@@ -5519,6 +5536,7 @@ msgstr "エイリアスと署名を同期する"
 msgid "Sync All"
 msgstr "すべてを同期"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5532,6 +5550,7 @@ msgstr "同期に失敗しました ({count})"
 msgid "Sync health"
 msgstr "同期状態"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5900,6 +5919,10 @@ msgstr "アプリが前面にある場合、または電源に接続されてい
 msgid "Trusted authentication service (optional)"
 msgstr "信頼する認証サービス（任意）"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "再試行"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "火曜日"
@@ -5911,6 +5934,10 @@ msgstr "設定でオンにする"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "オフにする"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "フィルタをオフにする"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6250,6 +6277,10 @@ msgstr "あなた (コマンドライン)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "最新バージョンです。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "オフラインです。再接続するとメールの同期が再開されます。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

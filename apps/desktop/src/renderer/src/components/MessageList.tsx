@@ -50,6 +50,12 @@ interface Props {
   leading?: ReactNode;
   /** Left padding that clears the traffic lights when the top row sits under them. */
   inset?: string | undefined;
+  /** Connection or sync problems, above the rows. */
+  notice?: ReactNode;
+  /** The next step an empty list offers. */
+  emptyActions?: EmptyActions;
+  /** The name to show for an account id, in search errors. */
+  accountLabel?: (accountId: string) => string;
   title: string;
   threads: readonly ThreadSummary[];
   loading: boolean;
@@ -81,6 +87,14 @@ interface Props {
   rowActions: RowActions;
 }
 
+interface EmptyActions {
+  onClearSearch: () => void;
+  onCompose: () => void;
+  onSync: () => void;
+  /** A sync is running, so Sync now has nothing to start. */
+  syncing: boolean;
+}
+
 interface RowActions {
   grouped?: boolean;
   currentLabel?: string | undefined;
@@ -110,6 +124,9 @@ export function MessageList({
   selectionBar,
   leading,
   inset,
+  notice,
+  emptyActions,
+  accountLabel = (accountId) => accountId,
   threads,
   loading,
   loadingMore = false,
@@ -140,7 +157,7 @@ export function MessageList({
   const { t } = useLingui();
   const searchMessages = searchErrorAccounts.map(
     (accountId) =>
-      `${accountId}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
+      `${accountLabel(accountId)}: ${searchReauthAccounts.includes(accountId) ? t`Sign in again` : t`The server could not complete this search.`}`,
   );
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
@@ -288,6 +305,7 @@ export function MessageList({
         )}
       </div>
 
+      {notice}
       {searchingServer && (
         <output className="px-5 pb-2 text-[12px] text-a11y-muted">
           <Trans>Searching server…</Trans>
@@ -324,6 +342,18 @@ export function MessageList({
         >
           <Trans>Search could not finish:</Trans> {searchMessages.join("; ")}
         </output>
+      )}
+      {threads.length === 0 && !loading && (
+        <EmptyList
+          searching={searching}
+          filtered={
+            filters.enabled &&
+            (filters.unread || filters.starred || filters.important || filters.inInbox)
+          }
+          mailbox={rowActions.mailbox}
+          onClearFilters={() => onFilters({ ...filters, enabled: false })}
+          actions={emptyActions}
+        />
       )}
       <ContextMenuRoot
         onOpenChange={(open, details) => {
@@ -377,18 +407,6 @@ export function MessageList({
             />
           }
         >
-          {threads.length === 0 && !loading && (
-            <p className="p-8 text-center text-a11y-muted">
-              {searching ? (
-                <Trans>No matching messages</Trans>
-              ) : filters.enabled &&
-                (filters.unread || filters.starred || filters.important || filters.inInbox) ? (
-                <Trans>No messages match the filters</Trans>
-              ) : (
-                <Trans>No messages here</Trans>
-              )}
-            </p>
-          )}
           <div style={{ height: window.total, position: "relative" }}>
             <div style={{ transform: `translateY(${window.offset}px)` }}>
               {threads.slice(window.first, window.end).map((m, localIndex) => {
@@ -446,7 +464,8 @@ export function MessageList({
               <Trans>Loading older messages…</Trans>
             </>
           ) : exhausted ? (
-            <Trans>No more messages</Trans>
+            // An empty list already says so above.
+            threads.length > 0 && <Trans>No more messages</Trans>
           ) : (
             <button type="button" onClick={onEndReached}>
               <Trans>Load older messages</Trans>
@@ -747,3 +766,54 @@ const Row = memo(function Row({
     </div>
   );
 });
+
+/** Why the list is empty, with the step that changes it. */
+function EmptyList({
+  searching,
+  filtered,
+  mailbox,
+  onClearFilters,
+  actions,
+}: {
+  searching: boolean;
+  filtered: boolean;
+  mailbox: Mailbox;
+  onClearFilters: () => void;
+  actions: EmptyActions | undefined;
+}) {
+  let text: ReactNode = <Trans>No messages here</Trans>;
+  let button: { label: ReactNode; onClick: () => void; disabled?: boolean } | undefined =
+    actions && {
+      label: <Trans>Sync now</Trans>,
+      onClick: actions.onSync,
+      disabled: actions.syncing,
+    };
+  if (searching) {
+    text = <Trans>No matching messages</Trans>;
+    button = actions && { label: <Trans>Clear search</Trans>, onClick: actions.onClearSearch };
+  } else if (filtered) {
+    text = <Trans>No messages match the filters</Trans>;
+    button = { label: <Trans>Turn off filters</Trans>, onClick: onClearFilters };
+  } else if (mailbox === "drafts") {
+    text = <Trans>No drafts</Trans>;
+    button = actions && { label: <Trans>New message</Trans>, onClick: actions.onCompose };
+  } else if (mailbox === "starred") {
+    text = <Trans>No starred messages. Star a message to find it here.</Trans>;
+    button = undefined;
+  }
+  return (
+    <div className="shrink-0 px-8 pt-8 pb-4 text-center text-a11y-muted">
+      <p>{text}</p>
+      {button && (
+        <button
+          type="button"
+          onClick={button.onClick}
+          disabled={button.disabled}
+          className="mt-2 font-medium text-a11y-accent enabled:hover:underline disabled:opacity-50 dark:text-blue-400"
+        >
+          {button.label}
+        </button>
+      )}
+    </div>
+  );
+}

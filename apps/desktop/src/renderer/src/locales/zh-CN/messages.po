@@ -65,8 +65,8 @@ msgstr "另有 {0} 项未加载"
 msgid "{0} seconds"
 msgstr "{0} 秒"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "{0} 的登录已失效，暂停同步。"
 
@@ -1180,6 +1180,10 @@ msgstr "清除全部缓存"
 msgid "Clear formatting"
 msgstr "清除格式"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "清除搜索"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "清除选择"
@@ -1554,6 +1558,10 @@ msgstr "无法重置本地缓存"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "无法将 API 密钥存入系统钥匙串。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "无法同步 {names}。"
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3590,6 +3598,7 @@ msgstr "新建标签或文件夹"
 msgid "New mail notifications"
 msgstr "新邮件通知"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3704,6 +3713,10 @@ msgstr "无适用标签，改为移到废纸篓。"
 msgid "No custom labels"
 msgstr "没有自定义标签"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "没有草稿"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "关闭外部回复"
@@ -3757,6 +3770,10 @@ msgstr "没有可用的打印机。"
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "无需回复"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "没有星标邮件。给邮件加星标后会显示在这里。"
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5239,10 +5256,10 @@ msgstr "侧栏"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "重新登录"
 
@@ -5529,6 +5546,7 @@ msgstr "同步别名和签名"
 msgid "Sync All"
 msgstr "同步全部"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5542,6 +5560,7 @@ msgstr "同步失败（{count}）"
 msgid "Sync health"
 msgstr "同步状态"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5910,6 +5929,10 @@ msgstr "应用在前台或接电时生成整理建议。建议须经你确认。
 msgid "Trusted authentication service (optional)"
 msgstr "可信认证服务（可选）"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "重试"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "星期二"
@@ -5921,6 +5944,10 @@ msgstr "在设置中开启"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "停用"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "关闭筛选"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6260,6 +6287,10 @@ msgstr "你（命令行）"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "已是最新版本。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "你已离线。重新联网后会继续同步邮件。"
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."

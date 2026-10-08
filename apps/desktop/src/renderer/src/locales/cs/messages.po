@@ -55,8 +55,8 @@ msgstr "{0} další nenačteno"
 msgid "{0} seconds"
 msgstr "{0} sekund"
 
-#. placeholder {0}: a.email
-#: src/renderer/src/components/Sidebar.tsx
+#. placeholder {0}: account.email
+#: src/renderer/src/components/MailStatusNotice.tsx
 msgid "{0}'s sign-in has expired. Sync is paused."
 msgstr "Platnost přihlášení uživatele {0} vypršela. Synchronizace je pozastavena."
 
@@ -1170,6 +1170,10 @@ msgstr "Vymazat všechny mezipaměti"
 msgid "Clear formatting"
 msgstr "Odstranit formátování"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "Clear search"
+msgstr "Vymazat hledání"
+
 #: src/renderer/src/components/Attachments.tsx
 msgid "Clear selection"
 msgstr "Zrušit výběr"
@@ -1544,6 +1548,10 @@ msgstr "Nelze resetovat místní mezipaměť"
 #: src/renderer/src/errors.ts
 msgid "Could not save the API key in the system keychain."
 msgstr "Klíč API se nepodařilo uložit do systémové klíčenky."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Could not sync {names}."
+msgstr "{names} se nepodařilo synchronizovat."
 
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Couldn't copy address"
@@ -3580,6 +3588,7 @@ msgstr "Nový štítek nebo složka"
 msgid "New mail notifications"
 msgstr "Upozornění na novou poštu"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Proposals.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/components/SidebarRail.tsx
@@ -3694,6 +3703,10 @@ msgstr "Neplatí žádný aktuální štítek. Přesouvání do koše."
 msgid "No custom labels"
 msgstr "Žádné vlastní štítky"
 
+#: src/renderer/src/components/MessageList.tsx
+msgid "No drafts"
+msgstr "Žádné koncepty"
+
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No external replies"
 msgstr "Žádné externí odpovědi"
@@ -3747,6 +3760,10 @@ msgstr "nejsou k dispozici žádné tiskárny."
 #: src/renderer/src/components/ServerSettings.tsx
 msgid "No response needed"
 msgstr "Odpověď není nutná"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "No starred messages. Star a message to find it here."
+msgstr "Žádné zprávy s hvězdičkou. Označte zprávu hvězdičkou a najdete ji tady."
 
 #: src/renderer/src/state/desktop.ts
 msgid "No suggestions"
@@ -5229,10 +5246,10 @@ msgstr "Postranní panel"
 #: src/renderer/src/components/CalendarEvents.tsx
 #: src/renderer/src/components/ContactSettings.tsx
 #: src/renderer/src/components/FocusedInboxActions.tsx
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/ServerSettings.tsx
 #: src/renderer/src/components/Settings.tsx
-#: src/renderer/src/components/Sidebar.tsx
 msgid "Sign in again"
 msgstr "Znovu se přihlaste"
 
@@ -5519,6 +5536,7 @@ msgstr "Synchronizujte aliasy a podpisy"
 msgid "Sync All"
 msgstr "Synchronizovat vše"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
 #: src/renderer/src/components/Overview.tsx
 #: src/renderer/src/components/Sidebar.tsx
 msgid "Sync failed"
@@ -5532,6 +5550,7 @@ msgstr "Synchronizace se nezdařila ({count})"
 msgid "Sync health"
 msgstr "Stav synchronizace"
 
+#: src/renderer/src/components/MessageList.tsx
 #: src/renderer/src/components/Sidebar.tsx
 #: src/renderer/src/shortcut-names.ts
 msgid "Sync now"
@@ -5900,6 +5919,10 @@ msgstr "Návrhy třídění se vytvářejí, když je aplikace v popředí nebo 
 msgid "Trusted authentication service (optional)"
 msgstr "Důvěryhodná ověřovací služba (volitelné)"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Try again"
+msgstr "Zkusit znovu"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Tuesday"
 msgstr "Úterý"
@@ -5911,6 +5934,10 @@ msgstr "Zapnout v nastavení"
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turn off"
 msgstr "Vypnout"
+
+#: src/renderer/src/components/MessageList.tsx
+msgid "Turn off filters"
+msgstr "Vypnout filtry"
 
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Turned off"
@@ -6250,6 +6277,10 @@ msgstr "Vy (příkazový řádek)"
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "You are up to date."
 msgstr "Máte nejnovější verzi."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "You're offline. Mail syncs again when you reconnect."
+msgstr "Jste offline. Pošta se znovu synchronizuje po obnovení připojení."
 
 #: src/renderer/src/components/DraftSyncRecovery.tsx
 msgid "Your changes are saved on this Mac. Try again or keep a local copy."
