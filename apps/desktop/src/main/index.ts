@@ -23,7 +23,8 @@ import { desktopInferenceProcess } from "./inference";
 import { UpdatesLive } from "./updates";
 import { RpcServerLive } from "./rpc-server";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system";
-import { DEV_ICON, focusMainWindow } from "./windows";
+import { focusMainWindow } from "./windows";
+import { showDevIdentity } from "./app-identity";
 
 import { prepareReliability, diagnosticsLogger, localLog } from "./reliability";
 
@@ -70,7 +71,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
       ),
       Effect.andThen(
         Effect.sync(() => {
-          if (process.platform === "darwin" && DEV_ICON) app.dock?.setIcon(DEV_ICON);
+          showDevIdentity();
           if (app.isPackaged) app.setAsDefaultProtocolClient("openmail");
         }),
       ),

@@ -14,12 +14,10 @@ import { visibleBounds, windowStateFile } from "./window-state";
 
 import { APP_PAGE, developmentPage, readerWindowTitle, WINDOW_SECURITY } from "./security-policy";
 import { trustRenderer } from "./security";
+import { APP_TITLE, DEV_ICON } from "./app-identity";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MAC = process.platform === "darwin";
-// build/ is not packaged: the bundle icon comes from build/icon.icns. In dev the
-// dock and window would otherwise show Electron's icon.
-export const DEV_ICON = app.isPackaged ? undefined : path.join(here, "../../build/icon.png");
 
 /** Mail links open in the system browser; nothing navigates the app's own windows. */
 export function lockNavigation(win: BrowserWindow, kind: SavedWindow["kind"] = "main") {
@@ -197,7 +195,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
     minWidth: options.minWidth,
     minHeight: options.minHeight,
     show: false,
-    title: "OpenMail",
+    title: APP_TITLE,
     ...(MAC
       ? {
           ...(options.kind === undefined || options.kind === "main"

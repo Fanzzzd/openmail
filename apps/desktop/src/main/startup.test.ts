@@ -27,6 +27,8 @@ vi.mock("electron", () => ({
     isReady: () => true,
     isPackaged: true,
     setAsDefaultProtocolClient: native.register,
+    getVersion: () => "0.0.0",
+    setAboutPanelOptions: vi.fn(),
   }),
   BrowserWindow: { getAllWindows: () => [], getFocusedWindow: () => null },
   shell: { openExternal: vi.fn() },
@@ -71,7 +73,7 @@ vi.mock("./system", () => ({
   receiveAppUrl: native.urls,
   ready: Effect.void,
 }));
-vi.mock("./windows", () => ({ DEV_ICON: undefined, focusMainWindow: native.focus }));
+vi.mock("./windows", () => ({ focusMainWindow: native.focus }));
 
 const originalResourcesPath = Object.getOwnPropertyDescriptor(process, "resourcesPath");
 afterEach(() => {

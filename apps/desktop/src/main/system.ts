@@ -59,6 +59,7 @@ import {
   setRendererReloadGuard,
   setInlinePopOutHandler,
 } from "./windows";
+import { APP_TITLE } from "./app-identity";
 
 const activate = () => focusMainWindow();
 const allClosed = () => {
@@ -239,7 +240,7 @@ export const DesktopLive = Layer.effect(
     );
     trayIcon.setTemplateImage(true);
     const tray = new Tray(trayIcon);
-    tray.setToolTip("OpenMail");
+    tray.setToolTip(APP_TITLE);
     yield* Effect.addFinalizer(() => Effect.sync(() => tray.destroy()));
 
     let checkingUpdates = false;
@@ -322,7 +323,7 @@ export const DesktopLive = Layer.effect(
         app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
         if (process.platform === "darwin")
           tray.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
-        tray.setToolTip(`OpenMail · ${title} (${unread})`);
+        tray.setToolTip(`${APP_TITLE} · ${title} (${unread})`);
         tray.setContextMenu(
           Menu.buildFromTemplate([
             { label: `${title} (${unread})`, enabled: false },
