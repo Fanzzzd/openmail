@@ -9,13 +9,21 @@ import {
   ProviderError,
 } from "../errors.js";
 import { type DeleteFolder } from "../folder-actions.js";
+import { effectiveClients, refreshWithIssuer } from "../oauth-clients.js";
 import { OPTIONAL_SCOPES } from "../optional-services.js";
 import { MailCodec } from "../platform/mail-codec.js";
 import { Buffer } from "../platform/bytes.js";
 import { graphSearchErrorCode, logProviderFailure } from "../provider-diagnostics.js";
 import { makeProviderHttp, ApiError } from "../provider-http.js";
 import { graphPages } from "../provider-pages.js";
-import { AppConfig, type Connected, type ConnectInput, OAuth, Secrets } from "../services.js";
+import {
+  AppConfig,
+  type Connected,
+  type ConnectInput,
+  OAuth,
+  OAuthIssuers,
+  Secrets,
+} from "../services.js";
 import {
   AUTH_URL,
   CONCURRENCY,
@@ -44,6 +52,7 @@ export const makeOutlookClient = Effect.gen(function* () {
   const oauth = yield* OAuth;
 
   const config = yield* AppConfig;
+  const issuers = yield* OAuthIssuers;
 
   const secrets = yield* Secrets;
 
@@ -74,24 +83,33 @@ export const makeOutlookClient = Effect.gen(function* () {
         ),
       tokenLabel: "Microsoft",
       refresh: (accountId, refreshToken) =>
-        Effect.gen(function* () {
-          const { microsoft } = yield* config.read;
-          if (!microsoft)
-            return yield* new ProviderError({
-              message: "No Microsoft OAuth client configured",
-              reason: "configuration",
-            });
-          const res = yield* oauth
-            .refresh(accountId, { tokenUrl: TOKEN_URL, clientId: microsoft.clientId, refreshToken })
-            .pipe(
-              Effect.tapError((error) =>
-                logProviderFailure("outlook", accountId, HttpClientRequest.post(TOKEN_URL), error),
+        refreshWithIssuer(
+          { config, issuers },
+          { name: "Microsoft", pick: (clients) => clients.microsoft },
+          accountId,
+          (microsoft) =>
+            oauth
+              .refresh(accountId, {
+                tokenUrl: TOKEN_URL,
+                clientId: microsoft.clientId,
+                refreshToken,
+              })
+              .pipe(
+                Effect.tapError((error) =>
+                  logProviderFailure(
+                    "outlook",
+                    accountId,
+                    HttpClientRequest.post(TOKEN_URL),
+                    error,
+                  ),
+                ),
+                Effect.tap((res) =>
+                  Option.isSome(res.refreshToken)
+                    ? secrets.set(accountId, res.refreshToken.value)
+                    : Effect.void,
+                ),
               ),
-            );
-          if (Option.isSome(res.refreshToken))
-            yield* secrets.set(accountId, res.refreshToken.value);
-          return res;
-        }),
+        ),
       throttleReads: true,
       prepareRequest: (request) =>
         HttpClientRequest.setHeader(request, "prefer", request.headers.prefer ?? PREFER.prefer),
@@ -247,7 +265,7 @@ export const makeOutlookClient = Effect.gen(function* () {
         message: `Outlook cannot connect a ${input.provider} account`,
       });
     }
-    const { microsoft } = yield* config.read;
+    const { microsoft } = effectiveClients(yield* config.sources);
     if (!microsoft) return yield* new ClientNotConfigured({ provider: "outlook" });
     const res = yield* oauth.authorize({
       authUrl: AUTH_URL,
@@ -294,6 +312,7 @@ export const makeOutlookClient = Effect.gen(function* () {
     return {
       email: me.mail ?? me.userPrincipalName,
       secret: res.refreshToken.value,
+      clientId: microsoft.clientId,
       scopes: res.scopes ?? [],
     };
   });

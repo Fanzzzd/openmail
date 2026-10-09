@@ -1307,6 +1307,9 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    DROP TABLE duplicate_media_messages;`,
   // 42: ops that failed on connectivity retry early when the network comes back.
   `ALTER TABLE pending_ops ADD COLUMN retry_offline INTEGER NOT NULL DEFAULT 0;`,
+  // 43: the OAuth client ID that issued an account's refresh token. Public, so
+  // not a keychain item; NULL for accounts signed in before it was recorded.
+  `ALTER TABLE accounts ADD COLUMN oauth_client_id TEXT;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

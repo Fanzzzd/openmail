@@ -23,9 +23,11 @@ import type { SqlClient } from "effect/sql";
 import { NodeRuntime } from "./runtime.js";
 import { appConfigFile } from "../../config.js";
 import { databaseLayer } from "./db.js";
+import { OAuthIssuersSql } from "../../store-oauth-issuers.js";
 import {
   type AppConfig,
   Browser,
+  type OAuthIssuers,
   type ClientConfig,
   OAuth,
   Secrets,
@@ -119,6 +121,8 @@ export interface MemoryPlatformOptions {
   env?: Record<string, string>;
   /** What authorize and refresh return. Defaults to "access-token" / "refresh-token". */
   tokens?: TokenResponse;
+  /** openmail's own OAuth clients, as a desktop build would supply them. */
+  builtInClients?: ClientConfig;
   /** Replaces the fake OAuth methods, e.g. to make refresh fail with AuthError. */
   oauth?: Partial<OAuth["Service"]>;
 }
@@ -131,6 +135,7 @@ export type MemoryPlatformServices =
   | SqlClient.SqlClient
   | Secrets
   | AppConfig
+  | OAuthIssuers
   | OAuth
   | Browser
   | OpenedUrls
@@ -181,7 +186,7 @@ export function MemoryPlatform(
     Path.layer,
   );
 
-  const config = appConfigFile(MEMORY_DATA_DIR).pipe(
+  const config = appConfigFile(MEMORY_DATA_DIR, opts.builtInClients).pipe(
     Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(opts.env ?? {}))),
   );
 
@@ -200,7 +205,7 @@ export function MemoryPlatform(
 
   const browserWithUrls = browser.pipe(Layer.provideMerge(opened));
   return Layer.mergeAll(
-    databaseLayer(opts.database ?? ":memory:"),
+    OAuthIssuersSql.pipe(Layer.provideMerge(databaseLayer(opts.database ?? ":memory:"))),
     NodeRuntime,
     secrets,
     config,

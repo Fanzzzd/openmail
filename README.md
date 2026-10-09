@@ -4,7 +4,7 @@
 
 ## 当前功能
 
-- 账户：Gmail、个人 Outlook，以及 iCloud、Yahoo、QQ、163、Fastmail 和自定义 IMAP/SMTP。OAuth 使用用户自己注册的客户端；IMAP 使用应用专用密码或授权码。公司 M365 不在支持范围。
+- 账户：Gmail、个人 Outlook，以及 iCloud、Yahoo、QQ、163、Fastmail 和自定义 IMAP/SMTP。OAuth 默认使用 openmail 自己注册的客户端，也可以换成用户自己注册的客户端；IMAP 使用应用专用密码或授权码。公司 M365 不在支持范围。
 - 同步与整理：增量同步、离线操作队列、旧邮件回填、批量及单封操作、持久撤销记录、稍后提醒、标签与嵌套文件夹、Gmail 分类、服务器过滤器和自动回复。IMAP IDLE 提供新邮件信号，断线时保留轮询。
 - 撰写：草稿自动保存与双向同步、富文本／纯文本／Markdown、回复与转发、附件转发、发送并归档、0 至 30 秒撤销发送、附件提醒、模板、命名签名、发件地址选择和联系人补全。支持服务器联系人；macOS 可显式开启 Apple Contacts。
 - 阅读与搜索：会话和单封视图、消息文本查找、原始邮件与 EML、打印和 PDF、附件打开与保存、远程图片控制、追踪器拦截。本地全文检索支持布尔、短语、日期、大小等运算符，并可合并服务器搜索；可选本机 OCR、PDF 文本和语义索引。
@@ -29,7 +29,7 @@ pnpm dev
 
 `pnpm build` 构建 core、CLI 和桌面，同时编译手机端语言目录并检查类型。它不生成手机原生应用。`pnpm dev` 启动 Electron 桌面端。
 
-按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 注册自己的 OAuth 客户端，在 app 的账户引导中填入配置。构建后也可运行 `scripts/setup-oauth.sh` 完成配置与登录。IMAP 账户在 app 中选择预设并填写密码。
+构建带内置 OAuth 客户端时（见[发布](docs/release.md#内置-oauth-客户端)），在 app 的添加账户页直接登录 Gmail 或 Outlook。没有内置客户端或想用自己的客户端时，按 [Google](docs/setup-google.md) 或 [Microsoft](docs/setup-microsoft.md) 注册，在添加账户页填入。构建后也可运行 `scripts/setup-oauth.sh` 完成配置与登录。IMAP 账户在 app 中选择预设并填写密码。
 
 打包还需 Xcode 26 编译 Icon Composer 图标。生成本地 macOS arm64／x64 DMG 和 ZIP：
 

@@ -224,6 +224,7 @@ function runtime<A, E>(
     | HttpClient.HttpClient
     | import("./services.js").Secrets
     | import("./services.js").AppConfig
+    | import("./services.js").OAuthIssuers
     | import("./services.js").OAuth
     | import("./platform/mail-codec.js").MailCodec
   >,

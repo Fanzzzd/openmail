@@ -11,6 +11,7 @@ export function mailboxHandlers(m: Mailbox["Service"]) {
     SetGoogleClient: ({ clientId, clientSecret }) =>
       m.setClient({ google: { clientId: clientId.trim(), clientSecret: clientSecret.trim() } }),
     SetMicrosoftClient: ({ clientId }) => m.setClient({ microsoft: { clientId: clientId.trim() } }),
+    ClearClient: ({ provider }) => m.clearClient(provider === "gmail" ? "google" : "microsoft"),
     OptionalServices: ({ accountId }) => m.optionalServices(accountId),
     SetServiceEnabled: ({ accountId, service, enabled }) =>
       m.setServiceEnabled(accountId, service, enabled),

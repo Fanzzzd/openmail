@@ -246,6 +246,10 @@ msgstr "Prostor účtu"
 msgid "Accounts"
 msgstr "Účty"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Accounts you already added keep the client they signed in with."
+msgstr "Již přidané účty dál používají klienta, se kterým se přihlásily."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "Akce"
@@ -1046,6 +1050,10 @@ msgstr "Změnit režim"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "Změnit režim psaní?"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Change your OAuth client"
+msgstr "Změnit klienta OAuth"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Check for updates"
@@ -2101,6 +2109,10 @@ msgstr "Čas konce je odhadovaný. Před přidáním události jej zkontrolujte.
 msgid "Ends"
 msgstr "Konec"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
+msgstr "Zadejte jiného klienta OAuth, kterého jste si sami zaregistrovali. Nová přihlášení ho použijí. Viz {doc} v úložišti."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Zadejte budoucí čas připomenutí"
@@ -2121,6 +2133,10 @@ msgstr "Zadejte jeden klíč API."
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Zadejte název šablony."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
+msgstr "Zadejte klienta OAuth, kterého jste si sami zaregistrovali. Nová přihlášení ho použijí místo vestavěného klienta. Viz {doc} v úložišti."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3622,6 +3638,14 @@ msgstr "Nové zprávy"
 msgid "New profile"
 msgstr "Nový profil"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use openmail's built-in client."
+msgstr "Nová přihlášení používají vestavěného klienta openmail."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use your own OAuth client."
+msgstr "Nová přihlášení používají vašeho vlastního klienta OAuth."
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "Nový podpis"
@@ -4910,6 +4934,10 @@ msgstr "Uloženo na tomto Macu. Probíhá automatický pokus o synchronizaci."
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Uloženo na tomto Macu. Synchronizuje se, když je online."
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Saved. New sign-ins use this client."
+msgstr "Uloženo. Nová přihlášení použijí tohoto klienta."
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Saving…"
 msgstr "Ukládání…"
@@ -5278,8 +5306,16 @@ msgid "Sign in again to sync server contacts."
 msgstr "Pro synchronizaci kontaktů serveru se znovu přihlaste."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
-msgid "Sign In with Browser"
-msgstr "Přihlaste se pomocí prohlížeče"
+msgid "Sign in with {name}"
+msgstr "Přihlásit se přes {name}"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "Přihlaste se v prohlížeči svým účtem Google. openmail uloží přihlašovací token do klíčenky tohoto počítače."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "Přihlaste se v prohlížeči svým osobním účtem Microsoft (outlook.com nebo Hotmail). openmail uloží přihlašovací token do klíčenky tohoto počítače."
 
 #: src/renderer/src/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -5624,10 +5660,6 @@ msgstr "Klient {client} OAuth ještě není nastaven."
 #: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "Text zprávy není uložen v mezipaměti. Po připojení zkuste zprávu otevřít znovu."
-
-#: src/renderer/src/components/AddAccountDialog.tsx
-msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
-msgstr "Tlačítko níže otevře přihlašovací stránku {name}. openmail pouze čte vaši poštu. Tokeny jsou uloženy v systémové klíčence."
 
 #: src/renderer/src/errors.ts
 msgid "The calendar organizer does not match this invitation"
@@ -6146,6 +6178,10 @@ msgstr "Použijte výchozí adresu účtu"
 msgid "Use the address the message was sent to"
 msgstr "Použijte adresu, na kterou byla zpráva odeslána"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use the built-in client"
+msgstr "Použít vestavěného klienta"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "Použít aktuální účet"
@@ -6153,6 +6189,10 @@ msgstr "Použít aktuální účet"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
 msgstr "Použijte místní čas tohoto Macu. Mimo aktivní hodiny oznámení čekají a odznak Dock vylučuje prostor. Po obnovení aktivních hodin se nepřečtené příchody objeví v jednom souhrnu."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use your own OAuth client"
+msgstr "Použít vlastního klienta OAuth"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"

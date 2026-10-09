@@ -9,7 +9,7 @@ import { type ReactNode, useState } from "react";
 
 import type { Account, ImapConnectInput } from "../../../shared/api";
 import { type AppError, causeText, resultError } from "../errors";
-import { connectAtom, saveClientAtom } from "../state/mutations";
+import { clearClientAtom, connectAtom, saveClientAtom } from "../state/mutations";
 import { clientSetupAtom, imapPresetsAtom } from "../state/queries";
 import { ProviderIcon, type ProviderIconName } from "./ProviderIcon";
 import { Dialog } from "./ui/Dialog";
@@ -183,16 +183,11 @@ function OAuthStep({
   provider: OAuthProvider;
   onAdded: (account: Account) => void;
 }) {
-  const { t, i18n } = useLingui();
   const setup = AsyncResult.getOrElse(useAtomValue(clientSetupAtom), () => null);
-  const [clientId, setClientId] = useState("");
-  const [clientSecret, setClientSecret] = useState("");
-  const copy = OAUTH_COPY[provider];
-
-  const [saveClient, runSaveClient] = useAtom(saveClientAtom);
   const [signIn, runSignIn] = useAtom(connectAtom(provider), { mode: "promiseExit" });
-  const saveError = resultError(i18n, saveClient);
+  const { i18n } = useLingui();
   const signInError = resultError(i18n, signIn);
+  const { name, doc } = OAUTH_COPY[provider];
 
   const signInNow = async () => {
     const exit = await runSignIn({ provider });
@@ -205,88 +200,169 @@ function OAuthStep({
         <Trans>Loading settings…</Trans>
       </p>
     );
-  const configured = provider === "gmail" ? setup.googleConfigured : setup.microsoftConfigured;
+  const gmail = provider === "gmail";
+  const active = gmail ? setup.googleClient : setup.microsoftClient;
+  const configured = active !== "none";
+  const builtIn = gmail ? setup.googleBuiltIn : setup.microsoftBuiltIn;
 
-  if (!configured) {
-    const ready = clientId.trim() && (provider === "outlook" || clientSecret.trim());
-    const { name, doc } = copy;
+  // No built-in or saved client: the person registers one first.
+  if (!configured)
     return (
-      <form
-        aria-label={t`${name} client`}
-        className="mt-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!ready) return;
-          runSaveClient(
-            provider === "gmail"
-              ? { provider, clientId: clientId.trim(), clientSecret: clientSecret.trim() }
-              : { provider, clientId: clientId.trim() },
-          );
-        }}
-      >
-        <p className="text-a11y-muted">
-          {provider === "gmail" ? (
-            <Trans>
-              openmail signs in with an OAuth client you register yourself. First enter the OAuth
-              client you created in Google Cloud, with the Desktop app type. See {doc} in the
-              repository for the steps.
-            </Trans>
-          ) : (
-            <Trans>
-              openmail signs in with an OAuth client you register yourself. First enter the app you
-              registered in Azure, with the Mobile and desktop applications type. Only personal
-              outlook.com and Hotmail accounts are supported. See {doc} in the repository for the
-              steps.
-            </Trans>
-          )}
-        </p>
-        <Field
-          label={provider === "gmail" ? "Client ID" : "Application (client) ID"}
-          value={clientId}
-          onChange={setClientId}
-          autoFocus
-        />
-        {provider === "gmail" && (
-          <Field label="Client secret" value={clientSecret} onChange={setClientSecret} password />
+      <ClientForm provider={provider} autoFocus>
+        {provider === "gmail" ? (
+          <Trans>
+            openmail signs in with an OAuth client you register yourself. First enter the OAuth
+            client you created in Google Cloud, with the Desktop app type. See {doc} in the
+            repository for the steps.
+          </Trans>
+        ) : (
+          <Trans>
+            openmail signs in with an OAuth client you register yourself. First enter the app you
+            registered in Azure, with the Mobile and desktop applications type. Only personal
+            outlook.com and Hotmail accounts are supported. See {doc} in the repository for the
+            steps.
+          </Trans>
         )}
-        {saveError && <ErrorLine text={saveError} />}
-        <Actions>
-          <PrimaryButton disabled={!ready || saveClient.waiting}>
-            {saveClient.waiting ? (
-              <Trans context="in progress">Saving…</Trans>
-            ) : (
-              <Trans>Save</Trans>
-            )}
-          </PrimaryButton>
-        </Actions>
-      </form>
+      </ClientForm>
     );
-  }
 
-  const { name } = copy;
   return (
     <div className="mt-4">
       <p className="text-a11y-muted">
         {signIn.waiting ? (
           <Trans>Finish signing in in your browser, then come back here.</Trans>
+        ) : provider === "gmail" ? (
+          <Trans>
+            Sign in with your Google account in the browser. openmail keeps the sign-in token in
+            this computer's keychain.
+          </Trans>
         ) : (
           <Trans>
-            The button below opens the {name} sign-in page. openmail only reads your mail. Tokens
-            are kept in the system keychain.
+            Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser.
+            openmail keeps the sign-in token in this computer's keychain.
           </Trans>
         )}
       </p>
+      <p className="mt-2 text-[12px] text-a11y-muted">
+        {active === "own" ? (
+          <Trans>New sign-ins use your own OAuth client.</Trans>
+        ) : (
+          <Trans>New sign-ins use openmail's built-in client.</Trans>
+        )}
+      </p>
+      {active === "own" && builtIn && <UseBuiltIn provider={provider} />}
       {signInError && <ErrorLine text={signInError} />}
       <Actions>
         <PrimaryButton disabled={signIn.waiting} onClick={() => void signInNow()}>
           {signIn.waiting ? (
             <Trans>Waiting for sign-in…</Trans>
           ) : (
-            <Trans>Sign In with Browser</Trans>
+            <Trans>Sign in with {name}</Trans>
           )}
         </PrimaryButton>
       </Actions>
+      <details className="mt-4">
+        <summary className="cursor-pointer text-[12px] text-a11y-muted">
+          {builtIn ? (
+            <Trans>Use your own OAuth client</Trans>
+          ) : (
+            <Trans>Change your OAuth client</Trans>
+          )}
+        </summary>
+        <ClientForm provider={provider}>
+          {builtIn ? (
+            <Trans>
+              Enter an OAuth client you registered yourself. New sign-ins use it instead of the
+              built-in client. See {doc} in the repository.
+            </Trans>
+          ) : (
+            <Trans>
+              Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc}{" "}
+              in the repository.
+            </Trans>
+          )}
+        </ClientForm>
+      </details>
     </div>
+  );
+}
+
+/** Drops the person's own client from config.json. Accounts keep the client that signed them in. */
+function UseBuiltIn({ provider }: { provider: OAuthProvider }) {
+  const { i18n } = useLingui();
+  const [clear, runClear] = useAtom(clearClientAtom);
+  const clearError = resultError(i18n, clear);
+  return (
+    <>
+      <p className="mt-1 text-[12px] text-a11y-muted">
+        <Trans>Accounts you already added keep the client they signed in with.</Trans>{" "}
+        <button
+          type="button"
+          disabled={clear.waiting}
+          onClick={() => runClear(provider)}
+          className="text-a11y-accent hover:underline disabled:opacity-40 dark:text-blue-400"
+        >
+          <Trans>Use the built-in client</Trans>
+        </button>
+      </p>
+      {clearError && <ErrorLine text={clearError} />}
+    </>
+  );
+}
+
+/** The OAuth client fields, saved to config.json through the main process. */
+function ClientForm({
+  provider,
+  autoFocus,
+  children,
+}: {
+  provider: OAuthProvider;
+  autoFocus?: boolean;
+  children: ReactNode;
+}) {
+  const { t, i18n } = useLingui();
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [saveClient, runSaveClient] = useAtom(saveClientAtom);
+  const saveError = resultError(i18n, saveClient);
+  const ready = clientId.trim() && (provider === "outlook" || clientSecret.trim());
+  const { name } = OAUTH_COPY[provider];
+  return (
+    <form
+      aria-label={t`${name} client`}
+      className="mt-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!ready) return;
+        runSaveClient(
+          provider === "gmail"
+            ? { provider, clientId: clientId.trim(), clientSecret: clientSecret.trim() }
+            : { provider, clientId: clientId.trim() },
+        );
+      }}
+    >
+      <p className="text-a11y-muted">{children}</p>
+      <Field
+        label={provider === "gmail" ? "Client ID" : "Application (client) ID"}
+        value={clientId}
+        onChange={setClientId}
+        autoFocus={autoFocus}
+      />
+      {provider === "gmail" && (
+        <Field label="Client secret" value={clientSecret} onChange={setClientSecret} password />
+      )}
+      {saveError && <ErrorLine text={saveError} />}
+      {saveClient._tag === "Success" && (
+        <output className="mt-3 block text-[12px] text-a11y-muted">
+          <Trans>Saved. New sign-ins use this client.</Trans>
+        </output>
+      )}
+      <Actions>
+        <PrimaryButton disabled={!ready || saveClient.waiting}>
+          {saveClient.waiting ? <Trans context="in progress">Saving…</Trans> : <Trans>Save</Trans>}
+        </PrimaryButton>
+      </Actions>
+    </form>
   );
 }
 

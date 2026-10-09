@@ -102,19 +102,46 @@ export class Secrets extends Context.Service<
   }
 >()("openmail/Secrets") {}
 
-/** OAuth client registrations the person made (docs/setup-*.md). Stored in config.json, mode 600. */
+/** OAuth client registrations, per provider. */
 export interface ClientConfig {
   google?: { clientId: string; clientSecret: string };
   microsoft?: { clientId: string };
 }
 
+/**
+ * Where OAuth clients come from. `user` is what the person entered
+ * (config.json, mode 600, docs/setup-*.md). `env` is
+ * OPENMAIL_GOOGLE_CLIENT_ID/SECRET and OPENMAIL_MICROSOFT_CLIENT_ID at run
+ * time. `builtIn` is openmail's own registration, supplied by the host build.
+ */
+export interface ClientSources {
+  user: ClientConfig;
+  env: ClientConfig;
+  builtIn: ClientConfig;
+}
+
 export class AppConfig extends Context.Service<
   AppConfig,
   {
-    readonly read: Effect.Effect<ClientConfig>;
+    readonly sources: Effect.Effect<ClientSources>;
+    /** Writes the user's clients. Other sources are never written. */
     write(patch: ClientConfig): Effect.Effect<void>;
+    /** Removes the user's client for one provider, so new sign-ins fall back to the others. */
+    clearUser(provider: keyof ClientConfig): Effect.Effect<void>;
   }
 >()("openmail/AppConfig") {}
+
+/**
+ * The OAuth client ID that issued each account's refresh token
+ * (`accounts.oauth_client_id`). Provider adapters read it on refresh.
+ */
+export class OAuthIssuers extends Context.Service<
+  OAuthIssuers,
+  {
+    get(accountId: string): Effect.Effect<Option.Option<string>>;
+    set(accountId: string, clientId: string): Effect.Effect<void>;
+  }
+>()("openmail/OAuthIssuers") {}
 
 /** Opens a URL in the system browser. Consent pages must never open in an embedded webview. */
 export class Browser extends Context.Service<Browser, { open(url: string): Effect.Effect<void> }>()(
@@ -742,6 +769,8 @@ export interface Connected {
   scopes?: readonly string[];
   email: string;
   secret: string;
+  /** The OAuth client that issued `secret`. Refresh must use the same one. */
+  clientId?: string;
   imap?: ImapSettings;
 }
 

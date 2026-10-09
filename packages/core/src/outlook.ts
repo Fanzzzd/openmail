@@ -5,11 +5,11 @@ import { makeOutlookRead } from "./outlook/parse.js";
 import { makeOutlookSend } from "./outlook/send.js";
 import { makeOutlookSync } from "./outlook/sync.js";
 import type { MailCodec } from "./platform/mail-codec.js";
-import type { AppConfig, OAuth, ProviderAdapter, Secrets } from "./services.js";
+import type { AppConfig, OAuth, OAuthIssuers, ProviderAdapter, Secrets } from "./services.js";
 export const makeOutlook: Effect.Effect<
   ProviderAdapter,
   never,
-  HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
+  HttpClient.HttpClient | OAuth | AppConfig | OAuthIssuers | Secrets | MailCodec
 > = Effect.gen(function* () {
   const client = yield* makeOutlookClient;
   const parser = yield* makeOutlookRead(client);

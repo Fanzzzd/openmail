@@ -1,10 +1,11 @@
 import { assert, it, layer } from "@effect/vitest";
 import { ConfigProvider, Effect, Layer, Path, Ref } from "effect";
 
-import { appConfigFile } from "./config.js";
+import { appConfigFile, readClientsFile } from "./config.js";
+import { effectiveClients } from "./oauth-clients.js";
 import { dataDirFor } from "./platform/node/paths.js";
 import { MemoryFiles, MemoryFileSystem } from "./platform/node/platform-memory.js";
-import { AppConfig } from "./services.js";
+import { AppConfig, type ClientConfig } from "./services.js";
 
 const withEnv = (env: Record<string, string>) =>
   Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(env)));
@@ -40,11 +41,19 @@ layer(Path.layer)("dataDir", (it) => {
 const FILE = "/om/config.json";
 
 /** appConfigFile over the memory file system, with `env` as the process environment. */
-const configOn = (files: Record<string, string>, env: Record<string, string> = {}) =>
-  appConfigFile("/om").pipe(
+const configOn = (
+  files: Record<string, string>,
+  env: Record<string, string> = {},
+  builtIn: ClientConfig = {},
+) =>
+  appConfigFile("/om", builtIn).pipe(
     Layer.provideMerge(Layer.mergeAll(MemoryFileSystem(files), Path.layer)),
     Layer.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(env))),
   );
+
+const effective = Effect.flatMap(AppConfig, (config) =>
+  Effect.map(config.sources, effectiveClients),
+);
 
 const stored = Effect.gen(function* () {
   const mem = yield* MemoryFiles;
@@ -54,7 +63,7 @@ const stored = Effect.gen(function* () {
 it.effect("a missing file reads as no clients; a write creates it with mode 600", () =>
   Effect.gen(function* () {
     const config = yield* AppConfig;
-    assert.deepStrictEqual(yield* config.read, {});
+    assert.deepStrictEqual(yield* effective, {});
     yield* config.write({ microsoft: { clientId: "ms" } });
     const file = yield* stored;
     assert.ok(file);
@@ -63,7 +72,7 @@ it.effect("a missing file reads as no clients; a write creates it with mode 600"
       file.data,
       `${JSON.stringify({ microsoft: { clientId: "ms" } }, null, 2)}\n`,
     );
-    assert.deepStrictEqual(yield* config.read, { microsoft: { clientId: "ms" } });
+    assert.deepStrictEqual(yield* effective, { microsoft: { clientId: "ms" } });
   }).pipe(Effect.provide(configOn({}))),
 );
 
@@ -88,36 +97,116 @@ it.effect("a write keeps unknown keys and tightens an existing file to 600", () 
   ),
 );
 
-it.effect("env clients win on read and are never written", () =>
+it.effect(
+  "new sign-ins prefer the user's client, then env vars, then the built-in one; only user clients are written",
+  () =>
+    Effect.gen(function* () {
+      const config = yield* AppConfig;
+      assert.deepStrictEqual(yield* config.sources, {
+        user: { google: { clientId: "file-g", clientSecret: "file-s" } },
+        env: {
+          google: { clientId: "env-g", clientSecret: "env-s" },
+          microsoft: { clientId: "env-ms" },
+        },
+        builtIn: {
+          google: { clientId: "host-g", clientSecret: "host-s" },
+          microsoft: { clientId: "host-ms" },
+        },
+      });
+      assert.deepStrictEqual(yield* effective, {
+        google: { clientId: "file-g", clientSecret: "file-s" },
+        microsoft: { clientId: "env-ms" },
+      });
+      yield* config.write({ microsoft: { clientId: "saved" } });
+      const file = yield* stored;
+      assert.ok(file);
+      assert.deepStrictEqual(JSON.parse(file.data), {
+        google: { clientId: "file-g", clientSecret: "file-s" },
+        microsoft: { clientId: "saved" },
+      });
+      assert.deepStrictEqual((yield* effective).microsoft, { clientId: "saved" });
+    }).pipe(
+      Effect.provide(
+        configOn(
+          { [FILE]: JSON.stringify({ google: { clientId: "file-g", clientSecret: "file-s" } }) },
+          {
+            OPENMAIL_GOOGLE_CLIENT_ID: "env-g",
+            OPENMAIL_GOOGLE_CLIENT_SECRET: "env-s",
+            OPENMAIL_MICROSOFT_CLIENT_ID: "env-ms",
+          },
+          {
+            google: { clientId: "host-g", clientSecret: "host-s" },
+            microsoft: { clientId: "host-ms" },
+          },
+        ),
+      ),
+    ),
+);
+
+it.effect("without a user client, new sign-ins use the built-in one", () =>
+  Effect.gen(function* () {
+    assert.deepStrictEqual(yield* effective, {
+      google: { clientId: "host-g", clientSecret: "host-s" },
+    });
+  }).pipe(
+    Effect.provide(configOn({}, {}, { google: { clientId: "host-g", clientSecret: "host-s" } })),
+  ),
+);
+
+it.effect("a built-in clients file reads like config.json; a missing one reads as none", () =>
+  Effect.gen(function* () {
+    assert.deepStrictEqual(yield* readClientsFile("/repo/missing.json"), {});
+    assert.deepStrictEqual(yield* readClientsFile("/repo/clients.json"), {
+      microsoft: { clientId: "local-ms" },
+    });
+  }).pipe(
+    Effect.provide(
+      MemoryFileSystem({
+        "/repo/clients.json": JSON.stringify({ microsoft: { clientId: "local-ms" } }),
+      }),
+    ),
+  ),
+);
+
+it.effect("clearing the user's client keeps other keys and falls back to the built-in one", () =>
   Effect.gen(function* () {
     const config = yield* AppConfig;
-    assert.deepStrictEqual(yield* config.read, {
-      google: { clientId: "env-g", clientSecret: "env-s" },
-      microsoft: { clientId: "env-ms" },
-    });
-    yield* config.write({ microsoft: { clientId: "saved" } });
+    yield* config.clearUser("google");
     const file = yield* stored;
     assert.ok(file);
     assert.deepStrictEqual(JSON.parse(file.data), {
-      google: { clientId: "file-g", clientSecret: "file-s" },
-      microsoft: { clientId: "saved" },
+      future: { keep: true },
+      microsoft: { clientId: "ms" },
+    });
+    assert.deepStrictEqual((yield* effective).google, {
+      clientId: "host-g",
+      clientSecret: "host-s",
     });
   }).pipe(
     Effect.provide(
       configOn(
-        { [FILE]: JSON.stringify({ google: { clientId: "file-g", clientSecret: "file-s" } }) },
         {
-          OPENMAIL_GOOGLE_CLIENT_ID: "env-g",
-          OPENMAIL_GOOGLE_CLIENT_SECRET: "env-s",
-          OPENMAIL_MICROSOFT_CLIENT_ID: "env-ms",
+          [FILE]: JSON.stringify({
+            future: { keep: true },
+            microsoft: { clientId: "ms" },
+            google: { clientId: "g", clientSecret: "s" },
+          }),
         },
+        {},
+        { google: { clientId: "host-g", clientSecret: "host-s" } },
       ),
     ),
   ),
 );
 
+it.effect("a malformed clients file is ignored instead of stopping the command", () =>
+  Effect.gen(function* () {
+    assert.deepStrictEqual(yield* readClientsFile("/repo/clients.json"), {});
+  }).pipe(Effect.provide(MemoryFileSystem({ "/repo/clients.json": "{ not json" }))),
+);
+
 it.effect("a Google id without its secret is ignored", () =>
   Effect.gen(function* () {
-    assert.deepStrictEqual(yield* (yield* AppConfig).read, {});
+    assert.deepStrictEqual(yield* effective, {});
   }).pipe(Effect.provide(configOn({}, { OPENMAIL_GOOGLE_CLIENT_ID: "only-id" }))),
 );

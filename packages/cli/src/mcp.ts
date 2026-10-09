@@ -4,6 +4,7 @@ import { NodeMailbox } from "@openmail/core";
 import { Effect, Logger } from "effect";
 
 import { runMcp } from "./mcp-server.js";
+import { oauthClientsFile } from "./oauth-clients.js";
 
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
@@ -17,7 +18,7 @@ if (args.some((arg) => arg !== "--allow-writes")) {
   process.exit(1);
 }
 runMcp(args.includes("--allow-writes")).pipe(
-  Effect.provide(NodeMailbox()),
+  Effect.provide(NodeMailbox({ oauthClientsFile })),
   Effect.provideService(Logger.LogToStderr, true),
   NodeRuntime.runMain,
 );

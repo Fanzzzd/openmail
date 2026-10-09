@@ -1,6 +1,8 @@
 # Microsoft (Azure) OAuth 客户端设置
 
-openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 账户。凭证只存在本机，走 Microsoft Graph。
+桌面 app 和 CLI 默认用 openmail 自己注册的 Azure 公共客户端（`consumers` 租户，`http://localhost` 回调，无 secret）登录个人 outlook.com 账户，来源见[发布](release.md#内置-oauth-客户端)。添加 Outlook 时直接点 **Sign in with Microsoft**。
+
+本页是进阶和自托管路径：构建里没有内置客户端，或你想用自己在 Azure 注册的应用。在 app 的 **Use your own OAuth client** 里填入的 client ID 优先于内置客户端，只影响之后的新登录；已有账户继续用签发其 refresh token 的客户端，规则见 [Google 页](setup-google.md#账户与签发客户端)。凭证只存在本机，走 Microsoft Graph。
 
 > 只支持个人账户（outlook.com / hotmail / live）。公司或学校的 Microsoft 365 账户需要租户管理员先给应用授权，openmail 不绕过这一步。
 
@@ -12,7 +14,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 4. 注册后，在 **Overview** 页记下 **Application (client) ID**。
 5. 进入 **API permissions → Add a permission → Microsoft Graph → Delegated**，加上必需的 `Mail.ReadWrite`、`Mail.Send`、`User.Read`、`offline_access`、`MailboxSettings.ReadWrite`。新账户只请求这组基础权限。`MailboxSettings.ReadWrite` 是 masterCategories 分类管理所需权限，分类属于基础邮件标签功能。可选服务按下面的表添加；个人账户不需要管理员同意。
 6. 进入 **Authentication**，确认 **Allow public client flows** 打开（公共客户端用 PKCE，不用密钥）。
-7. 在 openmail 引导页填入 client ID，或用 CLI：
+7. 在 openmail 添加账户页填入 client ID（有内置客户端时在 **Use your own OAuth client** 里），或用 CLI：
 
    ```sh
    openmail config microsoft --client-id <application-client-id>
@@ -23,7 +25,7 @@ openmail 用你自己在 Azure 注册的公共客户端登录个人 outlook.com 
 
 ## 可选服务
 
-在 **Settings → Accounts → Optional services** 逐项连接。授权只使用自己注册的 client ID 和 Microsoft 官方 `consumers` 同意页；请求保留已知授权并添加本次服务 scope。新授权按 token 响应记录。完全没有 scope 记录的旧 Outlook 账户升级时按旧版完整权限登记，保留联系人和别名缓存；已记录的空授权或部分授权不会扩权。启动不清缓存，实际 403 仍按局部能力错误处理。普通重新登录和重新添加已有账户重列该账户已保存的 scopes；未指定地址重新添加时，先识别账户，再为已有账户补发保留权限的官方授权。
+在 **Settings → Accounts → Optional services** 逐项连接。授权只使用账户的签发客户端（openmail 内置或自己注册）和 Microsoft 官方 `consumers` 同意页；请求保留已知授权并添加本次服务 scope。新授权按 token 响应记录。完全没有 scope 记录的旧 Outlook 账户升级时按旧版完整权限登记，保留联系人和别名缓存；已记录的空授权或部分授权不会扩权。启动不清缓存，实际 403 仍按局部能力错误处理。普通重新登录和重新添加已有账户重列该账户已保存的 scopes；未指定地址重新添加时，先识别账户，再为已有账户补发保留权限的官方授权。
 
 停用只控制本机使用，不撤销 Microsoft 授权：
 

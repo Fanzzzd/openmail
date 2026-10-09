@@ -190,6 +190,7 @@ function stubMailbox(overrides: Partial<Service>): Layer.Layer<Mailbox> {
     reauth: () => notUsed("reauth"),
     clientSetup: notUsed("clientSetup"),
     setClient: () => notUsed("setClient"),
+    clearClient: () => notUsed("clearClient"),
     threads: () => notUsed("threads"),
     readerThread: () => Effect.die("unused"),
     thread: testThread,

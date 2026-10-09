@@ -13,6 +13,10 @@
       "types": "./dist/schema.d.ts",
       "default": "./dist/schema.js"
     },
+    "./oauth-client-sources": {
+      "types": "./dist/oauth-client-sources.d.ts",
+      "default": "./dist/oauth-client-sources.js"
+    },
     "./portable": {
       "types": "./dist/portable.d.ts",
       "default": "./dist/portable.js"

@@ -246,6 +246,10 @@ msgstr "Werkruimte van account"
 msgid "Accounts"
 msgstr "Accounts"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Accounts you already added keep the client they signed in with."
+msgstr "Accounts die u al heeft toegevoegd, houden de client waarmee ze zijn aangemeld."
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "Actie"
@@ -1046,6 +1050,10 @@ msgstr "Modus wijzigen"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "Schrijfmodus wijzigen?"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Change your OAuth client"
+msgstr "OAuth-client wijzigen"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Check for updates"
@@ -2101,6 +2109,10 @@ msgstr "De eindtijd is geschat. Controleer deze voordat u de afspraak toevoegt."
 msgid "Ends"
 msgstr "Eindigt"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
+msgstr "Voer een andere OAuth-client in die u zelf heeft geregistreerd. Nieuwe aanmeldingen gebruiken die. Zie {doc} in de repository."
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "Voer een toekomstige herinneringstijd in"
@@ -2121,6 +2133,10 @@ msgstr "Voer één API-sleutel in."
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Voer een sjabloonnaam in."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
+msgstr "Voer een OAuth-client in die u zelf heeft geregistreerd. Nieuwe aanmeldingen gebruiken die in plaats van de ingebouwde client. Zie {doc} in de repository."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3622,6 +3638,14 @@ msgstr "Nieuwe berichten"
 msgid "New profile"
 msgstr "Nieuw profiel"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use openmail's built-in client."
+msgstr "Nieuwe aanmeldingen gebruiken de ingebouwde client van openmail."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use your own OAuth client."
+msgstr "Nieuwe aanmeldingen gebruiken uw eigen OAuth-client."
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "Nieuwe handtekening"
@@ -4910,6 +4934,10 @@ msgstr "Opgeslagen op deze Mac. Automatische synchronisatie opnieuw proberen."
 msgid "Saved on this Mac. Syncs when online."
 msgstr "Opgeslagen op deze Mac. Synchroniseert wanneer online."
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Saved. New sign-ins use this client."
+msgstr "Bewaard. Nieuwe aanmeldingen gebruiken deze client."
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Saving…"
 msgstr "Bewaren…"
@@ -5278,8 +5306,16 @@ msgid "Sign in again to sync server contacts."
 msgstr "Meld u opnieuw aan om servercontacten te synchroniseren."
 
 #: src/renderer/src/components/AddAccountDialog.tsx
-msgid "Sign In with Browser"
-msgstr "Inloggen met browser"
+msgid "Sign in with {name}"
+msgstr "Inloggen met {name}"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "Log in de browser in met uw Google-account. openmail bewaart het aanmeldtoken in de sleutelhanger van deze computer."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "Log in de browser in met uw persoonlijke Microsoft-account (outlook.com of Hotmail). openmail bewaart het aanmeldtoken in de sleutelhanger van deze computer."
 
 #: src/renderer/src/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -5624,10 +5660,6 @@ msgstr "De {client} OAuth-client is nog niet ingesteld."
 #: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "De berichttekst is niet opgeslagen in de cache. Open dit bericht opnieuw zodra je verbinding hebt."
-
-#: src/renderer/src/components/AddAccountDialog.tsx
-msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
-msgstr "Met de onderstaande knop wordt de aanmeldingspagina {name} geopend. openmail leest alleen uw e-mail. Tokens worden bewaard in de systeemsleutelhanger."
 
 #: src/renderer/src/errors.ts
 msgid "The calendar organizer does not match this invitation"
@@ -6146,6 +6178,10 @@ msgstr "Gebruik het standaardaccountadres"
 msgid "Use the address the message was sent to"
 msgstr "Gebruik het adres waarnaar het bericht is verstuurd"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use the built-in client"
+msgstr "Ingebouwde client gebruiken"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "Gebruik het huidige account"
@@ -6153,6 +6189,10 @@ msgstr "Gebruik het huidige account"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
 msgstr "Gebruik de lokale tijd van deze Mac. Buiten actieve uren wachten meldingen en sluit de Dock-badge de ruimte uit. Wanneer de actieve uren worden hervat, verschijnen ongelezen aankomsten in één overzicht."
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use your own OAuth client"
+msgstr "Eigen OAuth-client gebruiken"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"

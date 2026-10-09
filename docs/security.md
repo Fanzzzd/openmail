@@ -16,7 +16,7 @@
 
 主进程不启用 Node compile cache。缓存目录可被同一用户的任何进程写入，Node 只用源码 CRC 校验，植入的字节码会在持有钥匙串 token 的签名主进程中运行，绕过 ASAR 完整性和 fuses。
 
-refresh token、IMAP 密码和 AI key 仅持久化于 core 的 `platform/node/secrets.ts` 系统钥匙串。renderer 仅获取配置状态；输入中的 key 临时经 IPC 保存，不写浏览器存储。浏览器存储仅保存界面设置，应用无复制凭据接口，主窗口和撰写窗口标题固定为 OpenMail；thread/message 使用去控制字符、最多 200 字符的主题。`main/index.ts` 的文件 logger 不记录原始错误；启动失败的 `Cause.pretty` 仅输出到 stderr；core `platform/node/diagnostics.ts` 在写入和导出时限制字段，账户只保留散列。未启用 crashReporter，并设置 disable-breakpad；系统自行生成的内存转储由操作系统策略管理。联系人和通知设置的系统协议由主进程固定构造，邮件不能指定。
+refresh token、IMAP 密码和 AI key 仅持久化于 core 的 `platform/node/secrets.ts` 系统钥匙串。renderer 仅获取配置状态；内置 OAuth 客户端值只编进主进程，renderer 只收到配置状态和来源，不含客户端值，见[发布](release.md#内置-oauth-客户端)；输入中的 key 临时经 IPC 保存，不写浏览器存储。浏览器存储仅保存界面设置，应用无复制凭据接口，主窗口和撰写窗口标题固定为 OpenMail；thread/message 使用去控制字符、最多 200 字符的主题。`main/index.ts` 的文件 logger 不记录原始错误；启动失败的 `Cause.pretty` 仅输出到 stderr；core `platform/node/diagnostics.ts` 在写入和导出时限制字段，账户只保留散列。未启用 crashReporter，并设置 disable-breakpad；系统自行生成的内存转储由操作系统策略管理。联系人和通知设置的系统协议由主进程固定构造，邮件不能指定。
 
 `electron-builder.config.cjs` 的 afterPack 调用 `build/security-fuses.cjs`，签名前关闭 RunAsNode、NODE_OPTIONS、CLI inspect、file 额外权限；开启 CookieEncryption、ASAR 完整性、OnlyLoadAppFromAsar。完整性依赖正式包的 ASAR 元数据和签名。参见 [fuses 文档](https://www.electronjs.org/docs/latest/tutorial/fuses)。
 

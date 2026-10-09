@@ -256,6 +256,10 @@ msgstr "账号所属空间"
 msgid "Accounts"
 msgstr "账户"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Accounts you already added keep the client they signed in with."
+msgstr "已添加的账户继续用登录时的客户端。"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "操作"
@@ -1056,6 +1060,10 @@ msgstr "切换模式"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "切换撰写模式？"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Change your OAuth client"
+msgstr "更换 OAuth 客户端"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Check for updates"
@@ -2111,6 +2119,10 @@ msgstr "结束时间为估算值。添加事件前请核对。"
 msgid "Ends"
 msgstr "结束条件"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
+msgstr "填入你自己注册的另一个 OAuth 客户端。之后的新登录使用它。参见仓库里的 {doc}。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "请输入未来的提醒时间"
@@ -2131,6 +2143,10 @@ msgstr "请输入单个 API 密钥。"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "请输入模板名称。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
+msgstr "填入你自己注册的 OAuth 客户端。之后的新登录改用它，不再用内置客户端。参见仓库里的 {doc}。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3632,6 +3648,14 @@ msgstr "新邮件"
 msgid "New profile"
 msgstr "新建 Profile"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use openmail's built-in client."
+msgstr "新登录使用 openmail 内置客户端。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use your own OAuth client."
+msgstr "新登录使用你自己的 OAuth 客户端。"
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "新建签名"
@@ -4920,6 +4944,10 @@ msgstr "已保存在此 Mac，将自动重试同步。"
 msgid "Saved on this Mac. Syncs when online."
 msgstr "已存到本机，联网后同步"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Saved. New sign-ins use this client."
+msgstr "已保存。之后的新登录使用这个客户端。"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Saving…"
 msgstr "正在保存…"
@@ -5288,8 +5316,16 @@ msgid "Sign in again to sync server contacts."
 msgstr "请重新登录以同步服务器联系人。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
-msgid "Sign In with Browser"
-msgstr "在浏览器中登录"
+msgid "Sign in with {name}"
+msgstr "用 {name} 登录"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "在浏览器里用你的 Google 账户登录。openmail 把登录令牌存在这台电脑的钥匙串里。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "在浏览器里用你的个人 Microsoft 账户（outlook.com 或 Hotmail）登录。openmail 把登录令牌存在这台电脑的钥匙串里。"
 
 #: src/renderer/src/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -5634,10 +5670,6 @@ msgstr "还没有填写 {client} 的 OAuth 客户端。"
 #: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "正文未缓存。联网后请重新打开这封邮件。"
-
-#: src/renderer/src/components/AddAccountDialog.tsx
-msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
-msgstr "点下面的按钮会打开 {name} 的登录页。openmail 只读取邮件，令牌存在系统钥匙串里。"
 
 #: src/renderer/src/errors.ts
 msgid "The calendar organizer does not match this invitation"
@@ -6156,6 +6188,10 @@ msgstr "使用账户默认地址"
 msgid "Use the address the message was sent to"
 msgstr "使用邮件收到时的地址"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use the built-in client"
+msgstr "改用内置客户端"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "使用当前账号"
@@ -6163,6 +6199,10 @@ msgstr "使用当前账号"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
 msgstr "按本机时间。非活跃时段暂停通知，Dock 不计该空间；恢复时汇总仍未读的新邮件。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use your own OAuth client"
+msgstr "使用自己的 OAuth 客户端"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"

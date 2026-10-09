@@ -24,7 +24,13 @@ import { type Model } from "./model.js";
 import { type PlatformCrypto } from "./platform/crypto.js";
 import { type MailCodec } from "./platform/mail-codec.js";
 import { type AppVerifier, type AttachmentFiles, type ImageNetwork } from "./platform/runtime.js";
-import { type AppConfig, type Providers, type Secrets, type Store } from "./services.js";
+import {
+  type AppConfig,
+  type OAuthIssuers,
+  type Providers,
+  type Secrets,
+  type Store,
+} from "./services.js";
 import { type UnsubscribeNetwork } from "./unsubscribe.js";
 
 export interface MailboxOptions {
@@ -67,6 +73,7 @@ export interface MailboxDependencies {
   providers: Providers["Service"];
   secrets: Secrets["Service"];
   config: AppConfig["Service"];
+  issuers: OAuthIssuers["Service"];
   model: typeof Model.Service;
   diskAttachments: ReturnType<typeof AttachmentFiles.Service.open> | undefined;
   options: MailboxOptions;

@@ -246,6 +246,10 @@ msgstr "アカウントのスペース"
 msgid "Accounts"
 msgstr "アカウント"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Accounts you already added keep the client they signed in with."
+msgstr "追加済みのアカウントは、サインインしたときのクライアントを使い続けます。"
+
 #: src/renderer/src/components/Settings.tsx
 msgid "Action"
 msgstr "アクション"
@@ -1046,6 +1050,10 @@ msgstr "モード変更"
 #: src/renderer/src/components/ComposeEditor.tsx
 msgid "Change writing mode?"
 msgstr "書き込みモードを変更しますか?"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Change your OAuth client"
+msgstr "OAuth クライアントを変更"
 
 #: src/renderer/src/components/UpdateSettings.tsx
 msgid "Check for updates"
@@ -2101,6 +2109,10 @@ msgstr "終了時刻は推定です。予定を追加する前に確認してく
 msgid "Ends"
 msgstr "終了"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter a different OAuth client you registered yourself. New sign-ins use it. See {doc} in the repository."
+msgstr "自分で登録した別の OAuth クライアントを入力します。新しいサインインではこのクライアントを使用します。リポジトリの {doc} を参照してください。"
+
 #: src/renderer/src/components/SnoozeDialog.tsx
 msgid "Enter a future reminder time"
 msgstr "将来のリマインダー時刻を入力してください"
@@ -2121,6 +2133,10 @@ msgstr "APIキーを1つ入力してください。"
 #: src/renderer/src/components/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "テンプレート名を入力します。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client. See {doc} in the repository."
+msgstr "自分で登録した OAuth クライアントを入力します。新しいサインインでは、組み込みクライアントの代わりにこのクライアントを使用します。リポジトリの {doc} を参照してください。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Enter the IMAP and SMTP servers your email provider gives you."
@@ -3622,6 +3638,14 @@ msgstr "新しいメッセージ"
 msgid "New profile"
 msgstr "新しいプロファイル"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use openmail's built-in client."
+msgstr "新しいサインインでは openmail の組み込みクライアントを使用します。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "New sign-ins use your own OAuth client."
+msgstr "新しいサインインでは自分の OAuth クライアントを使用します。"
+
 #: src/renderer/src/components/SignatureSettings.tsx
 msgid "New signature"
 msgstr "新しい署名"
@@ -4910,6 +4934,10 @@ msgstr "このMacに保存されています。同期を自動的に再試行し
 msgid "Saved on this Mac. Syncs when online."
 msgstr "このMacに保存されています。オンライン時に同期します。"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Saved. New sign-ins use this client."
+msgstr "保存しました。新しいサインインではこのクライアントを使用します。"
+
 #: src/renderer/src/components/Composer.tsx
 msgid "Saving…"
 msgstr "保存中…"
@@ -5278,8 +5306,16 @@ msgid "Sign in again to sync server contacts."
 msgstr "サーバーの連絡先を同期するには、再度サインインします。"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
-msgid "Sign In with Browser"
-msgstr "ブラウザでサインインする"
+msgid "Sign in with {name}"
+msgstr "{name} でサインイン"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your Google account in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "ブラウザで Google アカウントにサインインします。openmail はサインイン トークンをこのコンピュータのキーチェーンに保存します。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Sign in with your personal Microsoft account (outlook.com or Hotmail) in the browser. openmail keeps the sign-in token in this computer's keychain."
+msgstr "ブラウザで個人用 Microsoft アカウント（outlook.com または Hotmail）にサインインします。openmail はサインイン トークンをこのコンピュータのキーチェーンに保存します。"
 
 #: src/renderer/src/App.tsx
 msgid "Sign-in failed: {reason}"
@@ -5624,10 +5660,6 @@ msgstr "{client} OAuth クライアントはまだセットアップされてい
 #: src/renderer/src/components/MessageBody.tsx
 msgid "The body is not cached. Try opening this message again when connected."
 msgstr "本文がキャッシュされていません。接続後にこのメッセージをもう一度開いてください。"
-
-#: src/renderer/src/components/AddAccountDialog.tsx
-msgid "The button below opens the {name} sign-in page. openmail only reads your mail. Tokens are kept in the system keychain."
-msgstr "下のボタンをクリックすると、{name} サインイン ページが開きます。 openmail はメールを読むだけです。トークンはシステム キーチェーンに保存されます。"
 
 #: src/renderer/src/errors.ts
 msgid "The calendar organizer does not match this invitation"
@@ -6146,6 +6178,10 @@ msgstr "アカウントのデフォルトのアドレスを使用する"
 msgid "Use the address the message was sent to"
 msgstr "メッセージの送信先アドレスを使用する"
 
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use the built-in client"
+msgstr "組み込みクライアントを使用"
+
 #: src/renderer/src/components/ComposeSettings.tsx
 msgid "Use the current account"
 msgstr "現在のアカウントを使用"
@@ -6153,6 +6189,10 @@ msgstr "現在のアカウントを使用"
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "Use this Mac's local time. Outside active hours, notifications wait and the Dock badge excludes the space. When active hours resume, unread arrivals appear in one summary."
 msgstr "この Mac の現地時間を使用します。アクティブな時間外は、通知が待機し、Dock バッジがスペースを除外します。アクティブな時間が再開されると、未開封の到着が 1 つの概要に表示されます。"
+
+#: src/renderer/src/components/AddAccountDialog.tsx
+msgid "Use your own OAuth client"
+msgstr "自分の OAuth クライアントを使用"
 
 #: src/renderer/src/components/AddAccountDialog.tsx
 msgid "Username (defaults to the email address)"

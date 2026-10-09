@@ -26,7 +26,9 @@ export default function Accounts() {
   );
   const configured = (provider: "gmail" | "outlook") =>
     setup.kind === "ready" &&
-    (provider === "gmail" ? setup.value.googleConfigured : setup.value.microsoftConfigured);
+    (provider === "gmail"
+      ? setup.value.googleClient !== "none"
+      : setup.value.microsoftClient !== "none");
   const connect = async (provider: "gmail" | "outlook") => {
     if (busy) return;
     setBusy(true);
@@ -116,7 +118,7 @@ export default function Accounts() {
               disabled={busy}
             />
             {setup.kind === "ready" &&
-              (!setup.value.googleConfigured || !setup.value.microsoftConfigured) && (
+              (setup.value.googleClient === "none" || setup.value.microsoftClient === "none") && (
                 <Text style={styles.empty}>
                   {i18n._({
                     id: "Register mobile OAuth clients in app config to add accounts.",

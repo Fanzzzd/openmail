@@ -12,13 +12,20 @@ import type { SqlClient } from "effect/sql";
 import { AttachmentFiles, ImageNetwork, PdfWorker } from "../runtime.js";
 import { AppPaths } from "../paths.js";
 import { NodeRuntime, NodePaths } from "./runtime.js";
-import { appConfigFile } from "../../config.js";
+import { appConfigFile, readClientsFile } from "../../config.js";
+import { firstClients } from "../../oauth-clients.js";
 import { databaseLayer } from "./db.js";
 import { NodeHtmlText } from "./html-text.js";
 import { OAuthLoopback } from "./oauth.js";
 import { dataDir } from "./paths.js";
 import { makeSecretsKeyring } from "./secrets.js";
-import { type AppConfig, Browser, type OAuth, type Secrets } from "../../services.js";
+import {
+  type AppConfig,
+  Browser,
+  type ClientConfig,
+  type OAuth,
+  type Secrets,
+} from "../../services.js";
 
 /** Everything below the Store and the providers: what a platform has to supply. */
 export type PlatformServices =
@@ -48,6 +55,10 @@ export interface NodePlatformOptions {
   dataDir?: string;
   /** CLI notice before an OS keychain read, including during Layer acquisition. */
   beforeCredentialRead?: Effect.Effect<void>;
+  /** openmail's own OAuth clients, compiled into the desktop main process. */
+  oauthClients?: ClientConfig;
+  /** A JSON file of built-in OAuth clients, read when the layer builds. Used by the CLI in a checkout. */
+  oauthClientsFile?: string;
 }
 
 /** The OS command that opens `url` in the default browser. */
@@ -129,7 +140,13 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
           path.join(dir, "mail.db"),
           opts.onDatabaseUpgrade ? { onDatabaseUpgrade: opts.onDatabaseUpgrade } : {},
         ),
-        appConfigFile(dir),
+        appConfigFile(
+          dir,
+          firstClients(
+            opts.oauthClients ?? {},
+            opts.oauthClientsFile ? yield* readClientsFile(opts.oauthClientsFile) : {},
+          ),
+        ),
         Layer.succeed(AppPaths, { dataDirectory: Effect.succeed(dir) }),
       );
     }),

@@ -11,6 +11,7 @@ import {
   focusedInboxGranted,
   isOptionalService,
 } from "./optional-services.js";
+import { activeClient } from "./oauth-clients.js";
 import { type ConnectInput } from "./services.js";
 
 export const makeAccountsMailbox = (
@@ -20,7 +21,7 @@ export const makeAccountsMailbox = (
   },
   runtime: MailboxRuntimeState,
 ) => {
-  const { store, providers, secrets, changed, sync, mutate, config } = deps;
+  const { store, providers, secrets, changed, sync, mutate, config, issuers } = deps;
 
   // Accounts
 
@@ -69,6 +70,7 @@ export const makeAccountsMailbox = (
     }
     const account = yield* store.upsertAccount(input.provider, connected.email);
     yield* secrets.set(account.id, connected.secret);
+    if (connected.clientId) yield* issuers.set(account.id, connected.clientId);
     if (input.provider !== "imap")
       yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
     if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
@@ -191,12 +193,20 @@ export const makeAccountsMailbox = (
 
       reauth,
 
-      clientSetup: Effect.map(config.read, (c) => ({
-        googleConfigured: Boolean(c.google),
-        microsoftConfigured: Boolean(c.microsoft),
-      })),
+      clientSetup: Effect.map(config.sources, (sources) => {
+        const google = activeClient(sources, "google");
+        const microsoft = activeClient(sources, "microsoft");
+        return {
+          googleClient: google,
+          microsoftClient: microsoft,
+          googleBuiltIn: Boolean(sources.env.google ?? sources.builtIn.google),
+          microsoftBuiltIn: Boolean(sources.env.microsoft ?? sources.builtIn.microsoft),
+        };
+      }),
 
       setClient: (patch) => mutate(config.write(patch)),
+
+      clearClient: (provider) => mutate(config.clearUser(provider)),
 
       profiles: store.listProfiles,
 
@@ -219,6 +229,7 @@ export const makeAccountsMailbox = (
       | "reauth"
       | "clientSetup"
       | "setClient"
+      | "clearClient"
       | "profiles"
       | "createProfile"
       | "updateProfile"

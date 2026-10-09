@@ -5,6 +5,7 @@ export {
   Address,
   AgentIdentity,
   type AppLink,
+  type ClientConfig,
   AttachmentAction,
   AttachmentActionResult,
   AuditEntry,

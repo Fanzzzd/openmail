@@ -108,6 +108,7 @@ vi.mock("./state/mutations", () => ({
   saveDraftAtom: () => "saveDraftAtom",
   connectAtom: () => "connectAtom",
   saveClientAtom: "saveClientAtom",
+  clearClientAtom: "clearClientAtom",
   reauthAtom: () => "reauthAtom",
   authorizePermanentDeleteAtom: () => "authorizePermanentDeleteAtom",
   removeAccountAtom: () => "removeAccountAtom",
@@ -1084,8 +1085,21 @@ it("a failed body refresh preserves the reader and cached preview with a non-blo
   ).toBe("OUTPUT");
 });
 
+const NO_CLIENTS = {
+  googleClient: "none",
+  microsoftClient: "none",
+  googleBuiltIn: false,
+  microsoftBuiltIn: false,
+} as const;
+const BUILT_IN_CLIENTS = {
+  googleClient: "builtIn",
+  microsoftClient: "builtIn",
+  googleBuiltIn: true,
+  microsoftBuiltIn: true,
+} as const;
+
 it("existing accounts without an OAuth registration show the configuration state", () => {
-  fixture.values.set("clientSetupAtom", { googleConfigured: false, microsoftConfigured: false });
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
   render(
     localized(
       h(Settings, {
@@ -1448,12 +1462,71 @@ it("audits the composer attachment menu and send confirmation using the keyboard
 
 for (const choice of [null, "Other IMAP", "Gmail", "Outlook"] as const) {
   it(`audits the add-account ${choice ?? "provider chooser"} dialog`, async () => {
-    fixture.values.set("clientSetupAtom", { googleConfigured: false, microsoftConfigured: false });
+    fixture.values.set("clientSetupAtom", NO_CLIENTS);
     render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
     if (choice) fireEvent.click(screen.getByRole("button", { name: choice }));
     await audit();
   });
 }
+
+it("without a built-in or saved client, adding Gmail asks for the user's own client", () => {
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
+  const form = screen.getByRole("form", { name: "Google client" });
+  expect(within(form).getByLabelText("Client ID")).toBeTruthy();
+  expect(within(form).getByLabelText("Client secret")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Sign in with Google" })).toBeNull();
+  expect(screen.queryByText("Use your own OAuth client")).toBeNull();
+});
+
+for (const [choice, name] of [
+  ["Gmail", "Google"],
+  ["Outlook", "Microsoft"],
+] as const) {
+  it(`with a built-in client, adding ${choice} signs in directly and keeps own clients behind a disclosure`, async () => {
+    fixture.values.set("clientSetupAtom", BUILT_IN_CLIENTS);
+    render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+    fireEvent.click(screen.getByRole("button", { name: choice }));
+    expect(screen.getByRole("button", { name: `Sign in with ${name}` })).toBeTruthy();
+    expect(screen.getByText("New sign-ins use openmail's built-in client.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Use the built-in client" })).toBeNull();
+    const summary = screen.getByText("Use your own OAuth client");
+    const details = summary.closest("details");
+    expect(details?.open).toBe(false);
+    fireEvent.click(summary);
+    expect(details?.open).toBe(true);
+    expect(within(details!).getByRole("form", { name: `${name} client` })).toBeTruthy();
+    await audit();
+  });
+}
+
+it("with the user's own client active, the dialog says so and offers the built-in client", async () => {
+  fixture.decide.mockClear();
+  fixture.values.set("clientSetupAtom", { ...BUILT_IN_CLIENTS, googleClient: "own" });
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
+  expect(screen.getByText("New sign-ins use your own OAuth client.")).toBeTruthy();
+  expect(
+    screen.getByText("Accounts you already added keep the client they signed in with."),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Use the built-in client" }));
+  expect(fixture.decide).toHaveBeenCalledWith("gmail");
+  await audit();
+});
+
+it("with only the user's own client, the disclosure offers to change it, not a built-in one", () => {
+  fixture.values.set("clientSetupAtom", {
+    ...NO_CLIENTS,
+    googleClient: "own",
+  });
+  render(localized(h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn() })));
+  fireEvent.click(screen.getByRole("button", { name: "Gmail" }));
+  expect(screen.getByText("Change your OAuth client")).toBeTruthy();
+  expect(screen.queryByText("Use your own OAuth client")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Use the built-in client" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Sign in with Google" })).toBeTruthy();
+});
 
 const listProps = (
   overrides: Partial<Parameters<typeof MessageList>[0]> = {},

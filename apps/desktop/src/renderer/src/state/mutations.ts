@@ -61,6 +61,11 @@ export const saveClientAtom = MailClient.runtime.fn((c: ClientInput) =>
   ).pipe(Reactivity.mutation([Keys.setup])),
 );
 
+/** Removes the person's own client, so new sign-ins use the built-in one. */
+export const clearClientAtom = MailClient.runtime.fn((provider: "gmail" | "outlook") =>
+  withMail((call) => call("ClearClient", { provider })).pipe(Reactivity.mutation([Keys.setup])),
+);
+
 export const reauthAtom = Atom.family((accountId: string) =>
   MailClient.runtime.fn((feature?: AuthorizationFeature) => reauthAccount(accountId, feature)),
 );

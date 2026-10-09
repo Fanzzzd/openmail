@@ -8,6 +8,7 @@ import type { AttachmentFiles, ImageNetwork, PdfWorker } from "./platform/runtim
 import { MailboxLive, type MailboxOptions } from "./mailbox-live.js";
 import { ModelAnthropic } from "./model.js";
 import { StoreLive } from "./store.js";
+import { OAuthIssuersSql } from "./store-oauth-issuers.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { makeMobileImap } from "./platform/react-native/imap.js";
@@ -35,7 +36,7 @@ export const mobileProvidersLayer = Layer.effect(
     const adapters = { gmail, outlook, imap };
     return Providers.of({ get: (provider) => adapters[provider] });
   }),
-);
+).pipe(Layer.provideMerge(OAuthIssuersSql));
 
 /** Mailbox with portable persistence, providers and model; the caller supplies platform services. */
 export const PortableMailbox = (

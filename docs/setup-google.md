@@ -1,6 +1,27 @@
 # Google OAuth 客户端设置
 
-openmail 不是公开发布的应用。每个用户用自己的 Google Cloud 项目注册 OAuth 客户端，凭证只存在本机。
+桌面 app 和 CLI 默认用 openmail 自己注册的 Desktop 类型客户端登录，来源见[发布](release.md#内置-oauth-客户端)。添加 Gmail 时直接点 **Sign in with Google**，不需要下面的步骤。
+
+本页是进阶和自托管路径：构建里没有内置客户端，或你想用自己 Google Cloud 项目里的客户端。在 app 的 **Use your own OAuth client** 里填入的客户端优先于内置客户端，只影响之后的新登录；已有账户继续用签发其 refresh token 的客户端，见[账户与签发客户端](#账户与签发客户端)。
+
+## 内置客户端的发布状态
+
+内置客户端属于 Google Cloud 项目 `openmail-510100`，目前停在 **Testing**：
+
+- refresh token 每 7 天过期，到期后要重新登录。
+- 只有项目 **Audience → Test users** 列出的地址能登录，其他地址会被拒绝。
+
+切到 **In production** 但不提交验证时，7 天过期取消，最多 100 个用户，登录页显示“此应用未经验证”的警告。Gmail 的 `gmail.modify`、`gmail.send` 和 `https://mail.google.com/` 属于 restricted scope，完整验证需要通过 CASA 安全评估。依据：[Testing 状态的 token 过期](https://developers.google.com/identity/protocols/oauth2#expiration)、[未验证应用的用户上限](https://support.google.com/cloud/answer/7454865)、[restricted scope 验证](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification)。
+
+## 账户与签发客户端
+
+refresh token 只能和签发它的客户端一起使用。core 在登录成功后把签发客户端的 client ID 写进数据库的 `accounts.oauth_client_id`（迁移 43）。client ID 是公开值，不进钥匙串。续期时只用这个 client ID，在用户客户端、运行时环境变量和内置客户端里找完全相同的一个；都没有时报需要重新登录，不改用其他客户端。
+
+迁移 43 之前登录的账户没有记录。旧版本只会用环境变量或 `config.json` 里的客户端签发 token，所以续期先用环境变量的客户端，再用用户客户端，绝不用内置客户端；第一次续期成功后补记。两者都不在时，账户提示重新登录。删除账户时这条记录随账户行一起删除。
+
+添加账户页显示新登录用的是内置客户端还是你自己的客户端。用自己的客户端且有内置客户端时，可以点 **Use the built-in client** 删除 `config.json` 里的客户端；已添加的账户继续用登录时的客户端。实现见 [oauth-clients.ts](../packages/core/src/oauth-clients.ts)。
+
+## 注册自己的客户端
 
 1. 打开 <https://console.cloud.google.com/>，新建一个项目，比如 `openmail`。
 2. 进入 **APIs & Services → Library**，启用 **Gmail API**。使用可选日历或联系人服务时，再启用 **Google Calendar API** 或 **People API**。
@@ -12,7 +33,7 @@ openmail 不是公开发布的应用。每个用户用自己的 Google Cloud 项
    - Test users 的输入框在 iframe 里，脚本和 CDP 点不中，手动或用 computer use 操作。
 5. 在 **Data Access** 配置必需的 `gmail.modify`、`gmail.send`，完整前缀是 `https://www.googleapis.com/auth/`。新账户只请求这两个邮件权限。可选服务按下面的表逐项加入自己的项目。
 6. 进入 **Clients → Create client**，类型选 **Desktop app**，记下 Client ID 和 Client secret。
-7. 在 openmail app 的引导页填入这两个值，或者用 CLI：
+7. 在 openmail app 的添加账户页填入这两个值（有内置客户端时在 **Use your own OAuth client** 里），或者用 CLI：
 
    ```sh
    openmail config google --client-id <id> --client-secret <secret>

@@ -13,6 +13,7 @@ import { NodeSystem, NodePlatform, type NodePlatformOptions } from "./platform-n
 import { readOnlyAdapter } from "../../read-only.js";
 import { Providers } from "../../services.js";
 import { StoreLive } from "../../store.js";
+import { OAuthIssuersSql } from "../../store-oauth-issuers.js";
 
 export const ProvidersLive = Layer.effect(
   Providers,
@@ -29,7 +30,7 @@ export const ProvidersLive = Layer.effect(
       get: (provider) => (readOnly ? readOnlyAdapter(adapters[provider]) : adapters[provider]),
     });
   }),
-);
+).pipe(Layer.provideMerge(OAuthIssuersSql));
 
 /**
  * `openUrl` or `browser` opens OAuth consent pages (default: the OS opener);

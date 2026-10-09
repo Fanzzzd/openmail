@@ -90,11 +90,16 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
               MemoryPlatform(),
               Layer.succeed(HttpClient.HttpClient, client),
               Layer.succeed(AppConfig, {
-                read: Effect.succeed({
-                  google: { clientId: "own-google", clientSecret: "own-secret" },
-                  microsoft: { clientId: "own-microsoft" },
+                sources: Effect.succeed({
+                  user: {
+                    google: { clientId: "own-google", clientSecret: "own-secret" },
+                    microsoft: { clientId: "own-microsoft" },
+                  },
+                  env: {},
+                  builtIn: {},
                 }),
                 write: () => Effect.void,
+                clearUser: () => Effect.void,
               }),
               Layer.succeed(Secrets, {
                 get: () => Effect.succeed(Option.none()),

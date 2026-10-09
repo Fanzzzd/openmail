@@ -221,11 +221,16 @@ export class Mailbox extends Context.Service<
       accountId: string,
       feature?: AuthorizationFeature,
     ): Effect.Effect<Account, SignInError | NotFound | FeatureScopeMissing>;
+    /** Whether and from where each provider has a client. Never the client values. */
     readonly clientSetup: Effect.Effect<{
-      googleConfigured: boolean;
-      microsoftConfigured: boolean;
+      googleClient: "own" | "builtIn" | "none";
+      microsoftClient: "own" | "builtIn" | "none";
+      googleBuiltIn: boolean;
+      microsoftBuiltIn: boolean;
     }>;
     setClient(patch: ClientConfig): Effect.Effect<void>;
+    /** Removes the user's own client, so new sign-ins use the built-in one. */
+    clearClient(provider: keyof ClientConfig): Effect.Effect<void>;
 
     importCalendarAttachment(
       messageId: string,

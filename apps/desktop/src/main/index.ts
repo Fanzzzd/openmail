@@ -16,6 +16,7 @@ import {
 import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve } from "node:path";
 import { nativeBinary } from "./native-binary";
+import { builtInOAuthClients } from "./oauth-clients";
 import { app, BrowserWindow, dialog, powerMonitor } from "electron";
 import { desktopVision } from "./vision";
 import { desktopInferenceProcess } from "./inference";
@@ -156,6 +157,7 @@ if (app.isPackaged && !app.requestSingleInstanceLock()) {
                 resumeDesktopSends: true,
                 inferenceProcess: desktopInferenceProcess,
                 dataDir: directory,
+                oauthClients: builtInOAuthClients,
                 inboxPoll: "45 seconds",
                 imapIdle: true,
                 backgroundReady: Deferred.await(painted),

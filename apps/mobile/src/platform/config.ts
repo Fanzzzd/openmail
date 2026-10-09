@@ -22,6 +22,7 @@ export function clientConfig(config: MobileConfig, os: string): ClientConfig {
 }
 export const configLayer = (config: MobileConfig) =>
   Layer.succeed(AppConfig, {
-    read: Effect.succeed(clientConfig(config, Platform.OS)),
+    sources: Effect.succeed({ user: {}, env: {}, builtIn: clientConfig(config, Platform.OS) }),
     write: () => Effect.die(new Error("Register mobile clients in app config and rebuild")),
+    clearUser: () => Effect.die(new Error("Register mobile clients in app config and rebuild")),
   });

@@ -5,6 +5,7 @@ import { CACHED_HEADER_NAMES, type CachedHeaders, firstHeaders } from "./header-
 import { newMessageId } from "./message-id.js";
 import { messageSecurity } from "./message-security.js";
 import { BASE_SCOPES, OPTIONAL_SCOPES, isOptionalService } from "./optional-services.js";
+import { effectiveClients, refreshWithIssuer } from "./oauth-clients.js";
 import { Buffer } from "./platform/bytes.js";
 import { PlatformCrypto } from "./platform/crypto.js";
 import { MailCodec } from "./platform/mail-codec.js";
@@ -48,6 +49,7 @@ import {
 import { charsetOf, decodeHeader, decodeUtf8First, parseAddressList } from "./mime.js";
 import {
   AppConfig,
+  OAuthIssuers,
   type Change,
   type ConnectInput,
   type Connected,
@@ -202,7 +204,7 @@ const decode = providerDecode("Gmail");
 export const makeGmail: Effect.Effect<
   ProviderAdapter,
   never,
-  HttpClient.HttpClient | OAuth | AppConfig | Secrets | MailCodec
+  HttpClient.HttpClient | OAuth | AppConfig | OAuthIssuers | Secrets | MailCodec
 > = Effect.gen(function* () {
   const codec = yield* MailCodec;
   const crypto = yield* PlatformCrypto;
@@ -212,6 +214,7 @@ export const makeGmail: Effect.Effect<
   const http = yield* HttpClient.HttpClient;
   const oauth = yield* OAuth;
   const config = yield* AppConfig;
+  const issuers = yield* OAuthIssuers;
   const secrets = yield* Secrets;
 
   const { api, execute, clearTokens, connectivity } = yield* makeProviderHttp({
@@ -226,28 +229,24 @@ export const makeGmail: Effect.Effect<
       logProviderFailure("gmail", accountId, request, error),
     tokenLabel: "Google",
     refresh: (accountId, refreshToken) =>
-      Effect.gen(function* () {
-        const { google } = yield* config.read;
-        if (!google)
-          return yield* new ProviderError({
-            message: "No Google OAuth client configured",
-            reason: "configuration",
-          });
-        const res = yield* oauth
-          .refresh(accountId, {
-            tokenUrl: TOKEN_URL,
-            clientId: google.clientId,
-            clientSecret: google.clientSecret,
-            refreshToken,
-          })
-          .pipe(
-            Effect.tapError((error) =>
-              logProviderFailure("gmail", accountId, HttpClientRequest.post(TOKEN_URL), error),
+      refreshWithIssuer(
+        { config, issuers },
+        { name: "Google", pick: (clients) => clients.google },
+        accountId,
+        (google) =>
+          oauth
+            .refresh(accountId, {
+              tokenUrl: TOKEN_URL,
+              clientId: google.clientId,
+              clientSecret: google.clientSecret,
+              refreshToken,
+            })
+            .pipe(
+              Effect.tapError((error) =>
+                logProviderFailure("gmail", accountId, HttpClientRequest.post(TOKEN_URL), error),
+              ),
             ),
-          );
-
-        return res;
-      }),
+      ),
     throttleReads: false,
     prepareRequest: (request) => request,
     parseResponse: (text, contentType, request) =>
@@ -290,7 +289,7 @@ export const makeGmail: Effect.Effect<
         message: `Gmail cannot connect a ${input.provider} account`,
       });
     }
-    const { google } = yield* config.read;
+    const { google } = effectiveClients(yield* config.sources);
     if (!google) return yield* new ClientNotConfigured({ provider: "gmail" });
     const res = yield* oauth.authorize({
       authUrl: AUTH_URL,
@@ -342,6 +341,7 @@ export const makeGmail: Effect.Effect<
     return {
       email: profile.emailAddress,
       secret: res.refreshToken.value,
+      clientId: google.clientId,
       scopes: res.scopes ?? [],
     };
   });

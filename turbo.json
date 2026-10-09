@@ -6,6 +6,16 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "out/**"]
     },
+    "@openmail/desktop#build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "out/**"],
+      "env": [
+        "OPENMAIL_GOOGLE_CLIENT_ID",
+        "OPENMAIL_GOOGLE_CLIENT_SECRET",
+        "OPENMAIL_MICROSOFT_CLIENT_ID"
+      ],
+      "inputs": ["$TURBO_DEFAULT$", "oauth-clients.local.json"]
+    },
     "check-types": {
       "dependsOn": ["^build"]
     },

@@ -314,8 +314,8 @@ function AccountRow({
   const setup = AsyncResult.getOrElse(useAtomValue(clientSetupAtom), () => null);
   const missingClient =
     setup &&
-    ((a.provider === "gmail" && !setup.googleConfigured) ||
-      (a.provider === "outlook" && !setup.microsoftConfigured));
+    ((a.provider === "gmail" && setup.googleClient === "none") ||
+      (a.provider === "outlook" && setup.microsoftClient === "none"));
 
   const status =
     a.enabled === false

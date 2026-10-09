@@ -181,15 +181,19 @@ export class MailRpcs extends RpcGroup.make(
   Rpc.make("DecideAiTriage", { payload: { id: Schema.String, accept: Schema.Boolean }, error }),
   // Accounts and sign-in
   Rpc.make("ClientSetup", {
+    // Where each provider's client comes from. Client values never cross IPC.
     success: Schema.Struct({
-      googleConfigured: Schema.Boolean,
-      microsoftConfigured: Schema.Boolean,
+      googleClient: Schema.Literals(["own", "builtIn", "none"]),
+      microsoftClient: Schema.Literals(["own", "builtIn", "none"]),
+      googleBuiltIn: Schema.Boolean,
+      microsoftBuiltIn: Schema.Boolean,
     }),
   }),
   Rpc.make("SetGoogleClient", {
     payload: { clientId: Schema.String, clientSecret: Schema.String },
   }),
   Rpc.make("SetMicrosoftClient", { payload: { clientId: Schema.String } }),
+  Rpc.make("ClearClient", { payload: { provider: Schema.Literals(["gmail", "outlook"]) } }),
   Rpc.make("SetAccountSettings", {
     payload: { accountId: Schema.String, input: AccountSettings },
     error,

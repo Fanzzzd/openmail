@@ -14,3 +14,6 @@ docs/design/refs/
 apps/mobile/.expo/
 apps/mobile/ios/
 apps/mobile/android/
+
+# Built-in OAuth client values for local builds (docs/release.md)
+apps/desktop/oauth-clients.local.json

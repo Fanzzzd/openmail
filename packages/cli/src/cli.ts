@@ -54,6 +54,7 @@ import {
   syncTable,
 } from "./format.js";
 import { runMcp } from "./mcp-server.js";
+import { oauthClientsFile } from "./oauth-clients.js";
 import { withProgress } from "./sync-progress.js";
 
 const CLI: Actor = { kind: "user", surface: "cli" };
@@ -119,7 +120,9 @@ const configMicrosoft = Command.make(
 );
 
 const config = Command.make("config").pipe(
-  Command.withDescription("Store OAuth client registrations"),
+  Command.withDescription(
+    "Store your own OAuth client registrations, which win over the built-in ones",
+  ),
   Command.withSubcommands([configGoogle, configMicrosoft]),
 );
 
@@ -716,6 +719,7 @@ const cliMailbox = NodeMailbox({
   browser: CliBrowser.pipe(Layer.provide(NodeServices.layer)),
   backgroundFlush: false,
   beforeCredentialRead: Console.error("Reading credentials from the keychain…"),
+  oauthClientsFile,
 });
 
 const mailboxCommands = [

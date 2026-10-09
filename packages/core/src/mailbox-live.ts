@@ -51,7 +51,7 @@ import { MailCodec } from "./platform/mail-codec.js";
 import { AppVerifier, AttachmentFiles, ImageNetwork, type PdfWorker } from "./platform/runtime.js";
 import { readOnlyAdapter } from "./read-only.js";
 import { makeSemanticIndexer } from "./semantic-indexer.js";
-import { AppConfig, Providers, Secrets, Store } from "./services.js";
+import { AppConfig, OAuthIssuers, Providers, Secrets, Store } from "./services.js";
 import { makeSyncHealth } from "./sync-health.js";
 import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { checkStoredUpdates, startStoredUpdates, UPDATE_TOKEN_KEY } from "./updates.js";
@@ -64,7 +64,15 @@ export const MailboxLive = (
 ): Layer.Layer<
   Mailbox,
   never,
-  Store | Providers | Secrets | AppConfig | MailCodec | PdfWorker | AttachmentFiles | ImageNetwork
+  | Store
+  | Providers
+  | Secrets
+  | AppConfig
+  | OAuthIssuers
+  | MailCodec
+  | PdfWorker
+  | AttachmentFiles
+  | ImageNetwork
 > =>
   Layer.effect(
     Mailbox,
@@ -122,6 +130,8 @@ export const MailboxLive = (
       const secrets = yield* Secrets;
 
       const config = yield* AppConfig;
+
+      const issuers = yield* OAuthIssuers;
 
       const model = Option.getOrElse(yield* Effect.serviceOption(Model), () => ModelUnavailable);
 
@@ -204,6 +214,7 @@ export const MailboxLive = (
         providers,
         secrets,
         config,
+        issuers,
         model,
         diskAttachments,
         options,
