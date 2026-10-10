@@ -428,6 +428,7 @@ it.effect("unplugging interrupts model preparation before any job is claimed", (
       const run = yield* makeSemanticIndexer(
         {
           store: store.media,
+          markReauth: (id, error) => store.markReauth(id, error),
           vision: unavailableVision,
           onBattery: () => battery,
           busy: Effect.succeed(false),
@@ -501,6 +502,7 @@ it.effect("a newly busy desktop does not discard completed vector work", () =>
       const run = yield* makeSemanticIndexer(
         {
           store: store.media,
+          markReauth: (id, error) => store.markReauth(id, error),
           vision: unavailableVision,
           onBattery: () => false,
           busy: Effect.sync(() => busy),
@@ -599,6 +601,7 @@ it.effect("input activity does not abort an ongoing download; failures back off"
       };
       const input = {
         store: store.media,
+        markReauth: store.markReauth.bind(store),
         vision: unavailableVision,
         onBattery: () => false,
         busy: Effect.sync(() => busy),

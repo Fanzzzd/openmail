@@ -7,7 +7,12 @@ import {
 } from "react";
 import { useLingui, Trans } from "@lingui/react/macro";
 import { numberedFavorites, favoriteView } from "../favorite-navigation";
-import { systemFolderId, specialFolderBadge, DEFAULT_PREFS } from "@openmail/core/schema";
+import {
+  DEFAULT_PREFS,
+  isKeychainLocked,
+  specialFolderBadge,
+  systemFolderId,
+} from "@openmail/core/schema";
 import { Effect } from "effect";
 import {
   MESSAGE_DRAG,
@@ -67,7 +72,12 @@ import {
   PROFILE_BG,
 } from "../format";
 import { type MailEnv, withMail, syncNow, useRunMail } from "../state/mail";
-import { ReauthNotice, SyncStatusAnnouncement, syncFailures } from "./MailStatusNotice";
+import {
+  KeychainNotice,
+  ReauthNotice,
+  SyncStatusAnnouncement,
+  syncFailures,
+} from "./MailStatusNotice";
 import {
   prefsAtom,
   labelsAtom,
@@ -467,6 +477,7 @@ export function Sidebar({
           .map((a) => (
             <ReauthNotice key={a.id} account={a} onReauth={onReauth} className="mx-1 mb-3" />
           ))}
+        {failures.some(isKeychainLocked) && <KeychainNotice className="mx-1 mb-3" />}
 
         {proposals > 0 && (
           <div className="mb-4">

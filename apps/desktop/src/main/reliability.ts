@@ -2,6 +2,7 @@ import { requestRecoveryRelaunch } from "./recovery-actions";
 import { nativeRecoveryLabels } from "./native-i18n";
 import {
   ProviderDiagnostic,
+  ReauthDiagnostic,
   SyncResetDiagnostic,
   SyncCrashDiagnostic,
   checkLocalDatabase,
@@ -38,6 +39,11 @@ export const diagnosticsLogger = Logger.make((options) => {
     const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(message);
     if (reset._tag === "Some") {
       localLog("sync-reset", reset.value);
+      classified = true;
+    }
+    const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(message);
+    if (reauth._tag === "Some") {
+      localLog("reauth", reauth.value);
       classified = true;
     }
     const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);

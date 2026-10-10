@@ -201,7 +201,7 @@ export const makeFlushMailbox = (
                   }
                   const error = outcome.failure;
                   if (error._tag === "AuthError") {
-                    yield* store.setNeedsReauth(account.id, true);
+                    yield* store.markReauth(account.id, error);
                     result.reauth.push(account.id);
                   }
                   for (const item of owned) {

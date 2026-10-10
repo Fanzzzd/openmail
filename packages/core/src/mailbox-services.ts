@@ -18,6 +18,7 @@ export function makeOptionalServiceMailbox(
           account.provider,
           yield* store.grantedScopes(accountId),
           yield* store.disabledServices(accountId),
+          yield* store.enabledServices(accountId),
         );
       }),
     setServiceEnabled: (accountId, service, enabled) =>

@@ -8,7 +8,7 @@
 
 内置客户端属于 Google Cloud 项目 `openmail-510100`，目前停在 **Testing**：
 
-- refresh token 每 7 天过期，到期后要重新登录。
+- refresh token 每 7 天过期，到期后要重新登录。core 在登录时记录签发时间。内置客户端签发的 token 在签发至少 6.5 天后收到 `invalid_grant` 时，原因记为 `testing_mode_expiry`，界面说明 Google 目前把 OpenMail 的登录限制为 7 天，请用户重新登录。
 - 只有项目 **Audience → Test users** 列出的地址能登录，其他地址会被拒绝。
 
 切到 **In production** 但不提交验证时，7 天过期取消，最多 100 个用户，登录页显示“此应用未经验证”的警告。Gmail 的 `gmail.modify`、`gmail.send` 和 `https://mail.google.com/` 属于 restricted scope，完整验证需要通过 CASA 安全评估。依据：[Testing 状态的 token 过期](https://developers.google.com/identity/protocols/oauth2#expiration)、[未验证应用的用户上限](https://support.google.com/cloud/answer/7454865)、[restricted scope 验证](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification)。
@@ -65,6 +65,8 @@ Desktop 类型客户端的 secret 按 Google 的定义不算机密。openmail �
 | Gmail Settings | `gmail.settings.basic`                         | Gmail API           |
 
 scope 都使用 `https://www.googleapis.com/auth/` 前缀。只授予 `contacts.readonly` 时仍可使用已保存联系人；其他联系人需要另一个 scope。日历操作、自动回复和过滤器修改在对应服务未授权或停用时给出入口提示，不停止收发。
+
+点某个服务的 **Connect** 时，同一次授权还会请求用户打开过、后来失去授权的服务；迁移 44 的 `enabled_json` 记录用户打开过哪些服务。从未打开过的服务不请求。请求的服务多于所点的一个时，打开浏览器前先列出其余服务，用户点 **Continue** 才继续。重新登录和连接服务都带 `login_hint`，Google 和 Microsoft 直接选中该账户。
 
 Google 的[桌面 OAuth 文档](https://developers.google.com/identity/protocols/oauth2/native-app#identify-access-scopes)注明 installed apps 不支持增量授权。本实现重新走同意页并明确重列已知授权，不能据参数或本机测试认定真实客户端可无损增加授权。尚未真实账户验收；如授权页拒绝，检查自己项目的 API 与 Data Access，保留此限制，不换用其他应用客户端。
 

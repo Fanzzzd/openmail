@@ -96,8 +96,9 @@ import type { BackfillPage, BackfillState, CacheWindow, CacheWindowInput } from 
 export class Secrets extends Context.Service<
   Secrets,
   {
+    /** None only when the item does not exist; a locked keychain fails with reason "keychain". */
     get(key: string): Effect.Effect<Option.Option<string>, ProviderError>;
-    set(key: string, value: string): Effect.Effect<void>;
+    set(key: string, value: string): Effect.Effect<void, ProviderError>;
     remove(key: string): Effect.Effect<void>;
   }
 >()("openmail/Secrets") {}
@@ -140,6 +141,9 @@ export class OAuthIssuers extends Context.Service<
   {
     get(accountId: string): Effect.Effect<Option.Option<string>>;
     set(accountId: string, clientId: string): Effect.Effect<void>;
+    /** When the stored refresh token was issued by a sign-in (`accounts.oauth_issued_at`). */
+    issuedAt(accountId: string): Effect.Effect<Option.Option<number>>;
+    setIssuedAt(accountId: string, at: number): Effect.Effect<void>;
   }
 >()("openmail/OAuthIssuers") {}
 
@@ -171,7 +175,7 @@ export interface TokenResponse {
 /**
  * Authorization-code flow with PKCE (RFC 8252). Desktop and CLI use a
  * loopback redirect; mobile will use an app URL scheme behind the same
- * interface. `refresh` maps invalid_grant to AuthError.
+ * interface. `refresh` maps the definitive OAuth error codes to AuthError (reauth.ts).
  */
 export class OAuth extends Context.Service<
   OAuth,
@@ -268,8 +272,13 @@ export class Store extends Context.Service<
     ): Effect.Effect<void>;
     setAccountProfile(id: string, profileId: string | null): Effect.Effect<void>;
     setImapSettings(id: string, settings: ImapSettings): Effect.Effect<void>;
-    setNeedsReauth(id: string, value: boolean): Effect.Effect<void>;
+    /** Pauses the account until a new sign-in and records why, once per change, in diagnostics. */
+    markReauth(id: string, error: AuthError): Effect.Effect<void>;
+    /** A successful sign-in clears the mark and its reason. */
+    clearReauth(id: string): Effect.Effect<void>;
     disabledServices(id: string): Effect.Effect<readonly OptionalService[]>;
+    /** Services the person turned on or connected; untouched ones are not listed. */
+    enabledServices(id: string): Effect.Effect<readonly OptionalService[]>;
     setServiceEnabled(id: string, service: OptionalService, enabled: boolean): Effect.Effect<void>;
     grantedScopes(id: string): Effect.Effect<readonly string[]>;
     setGrantedScopes(id: string, scopes: readonly string[]): Effect.Effect<void>;
@@ -787,6 +796,11 @@ export interface ProviderSearchPage {
 export interface ProviderAdapter {
   /** Clear only local outage backoff after wake or network change; retain server Retry-After. */
   resetConnectivity?(): Effect.Effect<void>;
+  /**
+   * Refreshes the OAuth token when this process has not done so for `maxAge` ms, so an
+   * idle refresh token stays in use. True when it refreshed. Not a mailbox read or write.
+   */
+  keepAlive?(accountId: string, maxAge: number): Effect.Effect<boolean, AuthError | ProviderError>;
   /** Bounded metadata-only reads. Unavailable rows stay for normal verification. */
   fetchCachedHeaders?(
     account: Account,

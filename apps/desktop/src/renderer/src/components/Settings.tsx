@@ -41,6 +41,8 @@ import { SpellcheckSettings } from "./SpellcheckSettings";
 import { CacheSettings } from "./CacheSettings";
 import { ProviderIcon } from "./ProviderIcon";
 import { ReadingSettings } from "./ReadingSettings";
+import { reauthText } from "./MailStatusNotice";
+import { isKeychainLocked } from "@openmail/core/schema";
 import { Alert, AlertCancel, alertDanger, Dialog } from "./ui/Dialog";
 import { settingsHeading } from "./ui/form-styles";
 import { Select } from "./ui/Select";
@@ -317,19 +319,17 @@ function AccountRow({
     ((a.provider === "gmail" && setup.googleClient === "none") ||
       (a.provider === "outlook" && setup.microsoftClient === "none"));
 
-  const status =
-    a.enabled === false
-      ? { text: t`Disabled`, className: "text-a11y-muted" }
-      : missingClient
-        ? {
-            text: i18n._(OAUTH_CONFIGURATION_ERROR),
-            className: "text-orange-700 dark:text-orange-400",
-          }
-        : a.needsReauth
-          ? { text: t`Needs sign-in`, className: "text-a11y-danger" }
-          : a.lastSyncError
-            ? { text: t`Last sync failed`, className: "text-orange-700 dark:text-orange-400" }
-            : { text: t`Syncing normally`, className: "text-a11y-muted" };
+  const warning = "text-orange-700 dark:text-orange-400";
+  const accountStatus = () => {
+    if (a.enabled === false) return { text: t`Disabled`, className: "text-a11y-muted" };
+    if (missingClient) return { text: i18n._(OAUTH_CONFIGURATION_ERROR), className: warning };
+    if (a.needsReauth) return { text: t`Needs sign-in`, className: "text-a11y-danger" };
+    if (isKeychainLocked(a.lastSyncError))
+      return { text: t`Keychain is locked`, className: warning };
+    if (a.lastSyncError) return { text: t`Last sync failed`, className: warning };
+    return { text: t`Syncing normally`, className: "text-a11y-muted" };
+  };
+  const status = accountStatus();
 
   return (
     <li
@@ -344,7 +344,7 @@ function AccountRow({
         </span>
         <span
           className={`block truncate text-[12px] ${status.className}`}
-          title={a.lastSyncError ?? undefined}
+          title={a.needsReauth ? reauthText(i18n, a) : (a.lastSyncError ?? undefined)}
         >
           {reauth.waiting
             ? t`Finish signing in in your browser`

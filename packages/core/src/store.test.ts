@@ -9,6 +9,7 @@ import { SqlClient } from "effect/sql";
 import { databaseLayer, MIGRATIONS, splitStatements } from "./platform/node/db.js";
 import { DEFAULT_LIST_FILTERS, type Actor, type Command, type IncomingMessage } from "./domain.js";
 import { MemoryFileSystem, MemoryPlatform } from "./platform/node/platform-memory.js";
+import { AuthError } from "./errors.js";
 import { Store } from "./services.js";
 import { applyOpToLabels, folderTarget, StoreLive } from "./store.js";
 function message(overrides: Partial<IncomingMessage>): IncomingMessage {
@@ -262,11 +263,15 @@ it.effect("accounts keep sync state, IMAP settings and labels", () =>
         smtpSecure: true,
       };
       yield* store.setImapSettings(id, imap);
-      yield* store.setNeedsReauth(id, true);
+      yield* store.markReauth(
+        id,
+        new AuthError({ accountId: id, message: "refused", reason: "imap_auth_failed" }),
+      );
       yield* store.setSyncError(id, "offline");
       const account = yield* store.getAccount(id);
       assert.deepStrictEqual(account.imap, imap);
       assert.strictEqual(account.needsReauth, true);
+      assert.strictEqual(account.reauthReason, "imap_auth_failed");
       assert.strictEqual(account.lastSyncError, "offline");
       assert.strictEqual(typeof account.lastSyncedAt, "number");
 

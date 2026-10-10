@@ -175,7 +175,7 @@ export const makeOutboxMailbox = (
       .pipe(
         Effect.tapError((error) =>
           Effect.all([
-            error._tag === "AuthError" ? store.setNeedsReauth(accountId, true) : Effect.void,
+            error._tag === "AuthError" ? store.markReauth(accountId, error) : Effect.void,
             command.draftId && isDefiniteSendFailure(error)
               ? store.setSendUncertain(command.draftId, false)
               : Effect.void,

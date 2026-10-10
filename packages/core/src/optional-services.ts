@@ -17,6 +17,8 @@ export const isOptionalService = (
 export const ServiceGrant = Schema.Struct({
   service: OptionalService,
   state: Schema.Literals(["notGranted", "granted", "turnedOff"]),
+  /** Not granted, but the person turned it on earlier: a new consent asks for it again. */
+  wanted: Schema.optionalKey(Schema.Literal(true)),
 });
 export type ServiceGrant = typeof ServiceGrant.Type;
 
@@ -88,17 +90,31 @@ export function serviceGrants(
   provider: Provider,
   scopes: readonly string[],
   disabled: readonly OptionalService[],
+  enabled: readonly OptionalService[] = [],
 ): ServiceGrant[] {
   if (provider === "imap") return [];
-  return OptionalService.literals.map((service) => ({
-    service,
-    state: disabled.includes(service)
-      ? "turnedOff"
-      : serviceGranted(provider, service, scopes)
-        ? "granted"
-        : "notGranted",
-  }));
+  return OptionalService.literals.map((service): ServiceGrant => {
+    if (disabled.includes(service)) return { service, state: "turnedOff" };
+    if (serviceGranted(provider, service, scopes)) return { service, state: "granted" };
+    return enabled.includes(service)
+      ? { service, state: "notGranted", wanted: true }
+      : { service, state: "notGranted" };
+  });
 }
+
+/**
+ * The services one consent page asks for when the person connects `service`: that one,
+ * plus services they turned on earlier that lost their grant. Never untouched services.
+ */
+export const consentBatch = (
+  grants: readonly ServiceGrant[],
+  service: OptionalService,
+): OptionalService[] => [
+  service,
+  ...grants
+    .filter((grant) => grant.service !== service && grant.wanted === true)
+    .map((grant) => grant.service),
+];
 
 export function serviceAvailable(
   store: Store["Service"],

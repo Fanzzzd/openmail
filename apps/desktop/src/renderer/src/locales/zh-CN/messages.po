@@ -65,11 +65,6 @@ msgstr "另有 {0} 项未加载"
 msgid "{0} seconds"
 msgstr "{0} 秒"
 
-#. placeholder {0}: account.email
-#: src/renderer/src/components/MailStatusNotice.tsx
-msgid "{0}'s sign-in has expired. Sync is paused."
-msgstr "{0} 的登录已失效，暂停同步。"
-
 #: src/renderer/src/components/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
@@ -137,6 +132,22 @@ msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {faile
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} 已重新登录"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email} needs to grant mail permissions again. Sync is paused."
+msgstr "{email} 需要重新授予邮件权限，暂停同步。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s saved sign-in is missing from the keychain. Sync is paused."
+msgstr "钥匙串里找不到 {email} 保存的登录信息，暂停同步。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in has expired. Sync is paused."
+msgstr "{email} 的登录已失效，暂停同步。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
+msgstr "{email} 的登录已被撤销或已过期，暂停同步。"
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -984,6 +995,7 @@ msgstr "暂时无法连接邮件服务器。"
 #: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1340,6 +1352,10 @@ msgstr "连接日历"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "请在设置 → 账户 → 可选服务中连接此服务。"
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connecting also asks for {pendingNames}."
+msgstr "这次连接还会请求：{pendingNames}。"
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
 msgstr "联系人组"
@@ -1386,6 +1402,7 @@ msgid "Content matches"
 msgstr "内容命中"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 msgid "Continue"
 msgstr "继续"
@@ -2552,6 +2569,10 @@ msgstr "Gmail 设置"
 msgid "Go to folder"
 msgstr "前往文件夹"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
+msgstr "Google 目前把 OpenMail 的登录限制为 7 天。重新登录即可继续同步 {email}。"
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Granted"
 msgstr "已授权"
@@ -2879,6 +2900,10 @@ msgstr "已保留在此 Mac"
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "快捷键帮助"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Keychain is locked"
+msgstr "钥匙串已锁定"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
@@ -5695,6 +5720,10 @@ msgstr "结束时间须晚于开始时间"
 msgid "The filter applies to future mail on the server."
 msgstr "过滤器会处理服务器上的新邮件。"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
+msgstr "钥匙串已锁定。解锁电脑后会自动恢复同步。"
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "上限包含数据库、附件、WAL 和恢复副本。受保护内容可超过上限。"
@@ -5707,6 +5736,10 @@ msgstr "无法验证本地数据库"
 msgid "The local database was recovered"
 msgstr "本地数据库已恢复"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The mail server rejected the password for {email}. Sync is paused."
+msgstr "邮件服务器拒绝了 {email} 的密码，暂停同步。"
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "菜单最多显示当前空间的 50 封未读邮件。"
@@ -5718,6 +5751,10 @@ msgstr "正文提到了附件，但还没有添加。"
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
 msgstr "邮件已发送，但“已发送”中缺少副本。"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
+msgstr "为 {email} 登录的 OAuth 客户端已不在配置中，暂停同步。"
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."

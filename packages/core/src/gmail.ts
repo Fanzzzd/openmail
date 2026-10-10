@@ -217,7 +217,7 @@ export const makeGmail: Effect.Effect<
   const issuers = yield* OAuthIssuers;
   const secrets = yield* Secrets;
 
-  const { api, execute, clearTokens, connectivity } = yield* makeProviderHttp({
+  const { api, execute, clearTokens, connectivity, keepAlive } = yield* makeProviderHttp({
     http,
     secrets,
     concurrency: CONCURRENCY,
@@ -231,7 +231,7 @@ export const makeGmail: Effect.Effect<
     refresh: (accountId, refreshToken) =>
       refreshWithIssuer(
         { config, issuers },
-        { name: "Google", pick: (clients) => clients.google },
+        { name: "Google", pick: (clients) => clients.google, testingMode: true },
         accountId,
         (google) =>
           oauth
@@ -1226,6 +1226,7 @@ export const makeGmail: Effect.Effect<
   };
   return {
     resetConnectivity: () => connectivity.reset,
+    keepAlive,
     fetchCachedHeaders: (account, ids) =>
       fetchCachedHeaders(account, ids).pipe(Effect.provideService(BackgroundRead, true)),
     folderStatus,

@@ -3,7 +3,7 @@ import { incoming as makeIncoming, TestMailbox, fakeServer } from "./platform/no
 import { assert, it } from "@effect/vitest";
 import { Deferred, Effect, Fiber, Layer, Option, Stream } from "effect";
 import { HttpClient, HttpClientResponse } from "effect/http";
-import { BASE_SCOPES, OPTIONAL_SCOPES, serviceGrants } from "./optional-services.js";
+import { BASE_SCOPES, consentBatch, OPTIONAL_SCOPES, serviceGrants } from "./optional-services.js";
 import { makeGmail } from "./gmail.js";
 import { makeOutlook } from "./outlook.js";
 import { Mailbox } from "./mailbox.js";
@@ -519,3 +519,52 @@ import { GMAIL_PERMANENT_DELETE_SCOPE } from "./folder-actions.js";
     );
   });
 }
+
+it.effect(
+  "connecting a service also asks for services turned on earlier, never untouched ones, with the login hint",
+  () => {
+    const server = fakeServer("me@gmail.com");
+    server.grantedScopes = [...BASE_SCOPES.gmail, ...OPTIONAL_SCOPES.gmail.calendar];
+    return Effect.gen(function* () {
+      const m = yield* Mailbox;
+      const account = yield* m.connect({ provider: "gmail" });
+      // Calendar was turned on, then lost its grant at a later sign-in.
+      yield* m.setServiceEnabled(account.id, "calendar", true);
+      server.grantedScopes = [...BASE_SCOPES.gmail];
+      yield* m.reauth(account.id);
+      assert.deepStrictEqual(yield* m.optionalServices(account.id), [
+        { service: "contacts", state: "notGranted" },
+        { service: "calendar", state: "notGranted", wanted: true },
+        { service: "settings", state: "notGranted" },
+      ]);
+      server.grantedScopes = [
+        ...BASE_SCOPES.gmail,
+        ...OPTIONAL_SCOPES.gmail.calendar,
+        ...OPTIONAL_SCOPES.gmail.settings,
+      ];
+      yield* m.reauth(account.id, "settings");
+      const request = server.connects.at(-1);
+      assert.strictEqual(request?.provider !== "imap" && request?.loginHint, "me@gmail.com");
+      const scopes = request?.provider === "imap" ? [] : (request?.grantedScopes ?? []);
+      assert.includeMembers(
+        [...scopes],
+        [...OPTIONAL_SCOPES.gmail.settings, ...OPTIONAL_SCOPES.gmail.calendar],
+      );
+      // Contacts was never turned on, so it is not requested.
+      assert.notInclude(scopes, OPTIONAL_SCOPES.gmail.contacts[0]);
+      assert.deepStrictEqual(
+        (yield* m.optionalServices(account.id)).map((grant) => grant.state),
+        ["notGranted", "granted", "granted"],
+      );
+    }).pipe(Effect.provide(TestMailbox({ gmail: server })));
+  },
+);
+
+it("the consent batch is the clicked service plus wanted ones", () => {
+  const grants = serviceGrants("outlook", [...BASE_SCOPES.outlook], [], ["contacts"]);
+  assert.deepStrictEqual(consentBatch(grants, "calendar"), ["calendar", "contacts"]);
+  assert.deepStrictEqual(consentBatch(grants, "contacts"), ["contacts"]);
+  assert.deepStrictEqual(consentBatch(serviceGrants("outlook", [], [], []), "calendar"), [
+    "calendar",
+  ]);
+});

@@ -1,6 +1,7 @@
-import { Effect, Option } from "effect";
+import { Clock, Effect, Option } from "effect";
 
 import { AuthError, ProviderError } from "./errors.js";
+import { isTestingModeExpiry } from "./reauth.js";
 import type { AppConfig, ClientConfig, ClientSources, OAuthIssuers } from "./services.js";
 
 /** Per provider, the first source that has a client. */
@@ -49,10 +50,17 @@ export const clientForToken = <C extends { readonly clientId: string }>(
  * Refreshes an account's token with the client that issued it, or asks for a
  * new sign-in when that client is gone. An account signed in before issuers
  * were recorded gets its issuer recorded after the first refresh that succeeds.
+ * With `testingMode`, an invalid_grant at least 6.5 days after sign-in on a
+ * token from the built-in client (its Google app is in Testing) is reported as
+ * Google's Testing-mode expiry. The status of an own client is unknown.
  */
 export const refreshWithIssuer = <C extends { readonly clientId: string }, A>(
   deps: { config: AppConfig["Service"]; issuers: OAuthIssuers["Service"] },
-  provider: { name: string; pick: (clients: ClientConfig) => C | undefined },
+  provider: {
+    name: string;
+    pick: (clients: ClientConfig) => C | undefined;
+    testingMode?: boolean;
+  },
   accountId: string,
   refresh: (client: C) => Effect.Effect<A, AuthError | ProviderError>,
 ): Effect.Effect<A, AuthError | ProviderError> =>
@@ -70,13 +78,30 @@ export const refreshWithIssuer = <C extends { readonly clientId: string }, A>(
         return yield* new AuthError({
           accountId,
           message: `The ${provider.name} OAuth client that signed in this account is not configured; sign in again`,
+          reason: "client_mismatch",
         });
       return yield* new ProviderError({
         message: `No ${provider.name} OAuth client configured`,
         reason: "configuration",
       });
     }
-    const result = yield* refresh(client);
+    const result = yield* refresh(client).pipe(
+      Effect.catchIf(
+        (error) =>
+          provider.testingMode === true &&
+          client.clientId === provider.pick(sources.builtIn)?.clientId &&
+          error._tag === "AuthError" &&
+          error.reason === "token_revoked",
+        (error) =>
+          Effect.gen(function* () {
+            const issued = yield* deps.issuers.issuedAt(accountId);
+            const now = yield* Clock.currentTimeMillis;
+            return yield* Option.isSome(issued) && isTestingModeExpiry(issued.value, now)
+              ? new AuthError({ accountId, message: error.message, reason: "testing_mode_expiry" })
+              : error;
+          }),
+      ),
+    );
     if (Option.isNone(issuer)) yield* deps.issuers.set(accountId, client.clientId);
     return result;
   });

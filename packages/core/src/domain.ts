@@ -4,6 +4,7 @@
  * the TypeScript types are derived from them.
  */
 import { Schema } from "effect";
+import { ReauthReason } from "./errors.js";
 
 /** gmail and outlook use OAuth and their own APIs; imap covers iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server. */
 export const Provider = Schema.Literals(["gmail", "outlook", "imap"]);
@@ -40,6 +41,8 @@ export const Account = Schema.Struct({
   profileId: Schema.NullOr(Schema.String),
   /** The provider rejected credentials or a mail scope. Optional settings scope errors stay in their screens. */
   needsReauth: Schema.Boolean,
+  /** Why the account needs a new sign-in. Absent while it does not, and for marks before migration 44. */
+  reauthReason: Schema.optionalKey(ReauthReason),
   /** For imap accounts: which preset or server. Never contains the password. */
   imap: Schema.optionalKey(ImapSettings),
 });

@@ -10,6 +10,9 @@ import {
   serviceGranted,
   focusedInboxGranted,
   isOptionalService,
+  consentBatch,
+  OPTIONAL_SCOPES,
+  serviceGrants,
 } from "./optional-services.js";
 import { activeClient } from "./oauth-clients.js";
 import { type ConnectInput } from "./services.js";
@@ -35,8 +38,15 @@ export const makeAccountsMailbox = (
               account.provider === input.provider &&
               account.email.toLowerCase() === (input.loginHint ?? expect)?.toLowerCase(),
           );
+    // A known account keeps its stored grant; scopes the caller adds (a batch of
+    // optional services) come on top of it.
     const scopes = hinted
-      ? yield* store.grantedScopes(hinted.id)
+      ? [
+          ...new Set([
+            ...(yield* store.grantedScopes(hinted.id)),
+            ...(input.provider === "imap" ? [] : (input.grantedScopes ?? [])),
+          ]),
+        ]
       : input.provider === "imap"
         ? []
         : (input.grantedScopes ?? []);
@@ -72,10 +82,12 @@ export const makeAccountsMailbox = (
     yield* secrets.set(account.id, connected.secret);
     if (connected.clientId) yield* issuers.set(account.id, connected.clientId);
     if (input.provider !== "imap")
+      yield* issuers.setIssuedAt(account.id, yield* Clock.currentTimeMillis);
+    if (input.provider !== "imap")
       yield* store.setGrantedScopes(account.id, connected.scopes ?? []);
     if (connected.imap) yield* store.setImapSettings(account.id, connected.imap);
     yield* providers.get(account.provider).closeSessions?.(account.id) ?? Effect.void;
-    yield* store.setNeedsReauth(account.id, false);
+    yield* store.clearReauth(account.id);
     yield* store.setSyncError(account.id, null);
     yield* store.appendAudit({
       actor: { kind: "user", surface: "app" },
@@ -112,7 +124,25 @@ export const makeAccountsMailbox = (
         message: "IMAP accounts sign in again by adding the address with a new password.",
       });
     }
-    const grantedScopes = yield* store.grantedScopes(accountId);
+    const stored = yield* store.grantedScopes(accountId);
+    // One consent page for the clicked service and the services the person turned on
+    // earlier that lost their grant. Untouched services are never requested.
+    const provider = account.provider;
+    const batch = isOptionalService(feature)
+      ? consentBatch(
+          serviceGrants(
+            provider,
+            stored,
+            yield* store.disabledServices(accountId),
+            yield* store.enabledServices(accountId),
+          ),
+          feature,
+        )
+      : [];
+    const grantedScopes = [
+      ...stored,
+      ...batch.flatMap((service) => OPTIONAL_SCOPES[provider][service]),
+    ];
     const result = yield* connect(
       account.provider === "gmail"
         ? {

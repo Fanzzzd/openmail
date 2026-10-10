@@ -55,11 +55,6 @@ msgstr "{0} meer niet geladen"
 msgid "{0} seconds"
 msgstr "{0} seconden"
 
-#. placeholder {0}: account.email
-#: src/renderer/src/components/MailStatusNotice.tsx
-msgid "{0}'s sign-in has expired. Sync is paused."
-msgstr "De aanmelding van {0} is verlopen. Synchronisatie is gepauzeerd."
-
 #: src/renderer/src/components/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} ongelezen"
@@ -127,6 +122,22 @@ msgstr "{done} voltooid · {queued} in wachtrij · {running} actief · {failed} 
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} is opnieuw aangemeld"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email} needs to grant mail permissions again. Sync is paused."
+msgstr "{email} moet opnieuw toestemming geven voor e-mail. Synchronisatie is gepauzeerd."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s saved sign-in is missing from the keychain. Sync is paused."
+msgstr "De opgeslagen aanmelding van {email} ontbreekt in de sleutelhanger. Synchronisatie is gepauzeerd."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in has expired. Sync is paused."
+msgstr "De aanmelding van {email} is verlopen. Synchronisatie is gepauzeerd."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
+msgstr "De aanmelding van {email} is ingetrokken of verlopen. Synchronisatie is gepauzeerd."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -974,6 +985,7 @@ msgstr "De mailserver is momenteel niet bereikbaar."
 #: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1330,6 +1342,10 @@ msgstr "Agenda verbinden"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Verbind deze dienst via Instellingen → Accounts → Optionele diensten."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connecting also asks for {pendingNames}."
+msgstr "Bij het verbinden wordt ook gevraagd om {pendingNames}."
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
 msgstr "Contactgroep"
@@ -1376,6 +1392,7 @@ msgid "Content matches"
 msgstr "Inhoud komt overeen"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 msgid "Continue"
 msgstr "Ga door"
@@ -2542,6 +2559,10 @@ msgstr "Gmail-instellingen"
 msgid "Go to folder"
 msgstr "Ga naar map"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
+msgstr "Google beperkt aanmelden bij OpenMail momenteel tot 7 dagen. Meld u opnieuw aan om {email} te blijven synchroniseren."
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Granted"
 msgstr "Toegestaan"
@@ -2869,6 +2890,10 @@ msgstr "Op deze Mac bewaard"
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "Sneltoetsen"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Keychain is locked"
+msgstr "Sleutelhanger is vergrendeld"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
@@ -5685,6 +5710,10 @@ msgstr "Het einde moet na het begin liggen"
 msgid "The filter applies to future mail on the server."
 msgstr "Het filter is van toepassing op toekomstige e-mail op de server."
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
+msgstr "De sleutelhanger is vergrendeld. Ontgrendel uw computer, dan gaat de synchronisatie vanzelf verder."
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "De limiet omvat de database, bijlagen, WAL en herstelkopieën. Beschermde inhoud kan de limiet overschrijden."
@@ -5697,6 +5726,10 @@ msgstr "De lokale database kan niet worden geverifieerd"
 msgid "The local database was recovered"
 msgstr "De lokale database is hersteld"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The mail server rejected the password for {email}. Sync is paused."
+msgstr "De mailserver heeft het wachtwoord voor {email} geweigerd. Synchronisatie is gepauzeerd."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "Het menu bevat maximaal 50 ongelezen berichten in de huidige ruimte."
@@ -5708,6 +5741,10 @@ msgstr "Het bericht vermeldt een bijlage, maar deze is niet toegevoegd."
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
 msgstr "Het bericht is verstuurd, maar de kopie ontbreekt in Verstuurd."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
+msgstr "De OAuth-client waarmee {email} is aangemeld, is niet meer geconfigureerd. Synchronisatie is gepauzeerd."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."

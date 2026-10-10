@@ -3,7 +3,8 @@ import { uncertainWrite } from "./provider-retry.js";
 import { richComposeBody } from "./compose-body.js";
 import { Effect, Schema, Option } from "effect";
 import { CATEGORIES, type Account } from "./domain.js";
-import { AuthError, ProviderError, SettingsScopeMissing } from "./errors.js";
+import { ProviderError, SettingsScopeMissing } from "./errors.js";
+import { authFailure } from "./reauth.js";
 import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
 import {
@@ -174,8 +175,8 @@ export function makeGmailSettings<
             accountId: account.id,
             message: "Sign in again to enable account settings",
           });
-        if (e._tag === "AuthError" || e.status === 401)
-          return new AuthError({ accountId: account.id, message: e.message ?? "Sign in again" });
+        const auth = authFailure(account.id, e);
+        if (auth) return auth;
         return new ProviderError({
           message: e.message ?? e.body ?? "Gmail settings request failed",
           ...(e.status !== undefined ? { status: e.status } : {}),

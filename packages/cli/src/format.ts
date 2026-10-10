@@ -16,7 +16,10 @@ export function accountTable(rows: readonly Account[]): string {
   return rows
     .map((a) => {
       const synced = a.lastSyncedAt ? new Date(a.lastSyncedAt).toLocaleString() : "never";
-      const reauth = a.needsReauth ? `  needs sign-in: openmail accounts reauth ${a.id}` : "";
+      const reason = a.reauthReason ? ` (${a.reauthReason})` : "";
+      const reauth = a.needsReauth
+        ? `  needs sign-in${reason}: openmail accounts reauth ${a.id}`
+        : "";
       const error = a.lastSyncError ? `  error: ${a.lastSyncError}` : "";
       return `${a.id}  last sync: ${synced}${reauth}${error}`;
     })

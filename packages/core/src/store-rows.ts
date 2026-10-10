@@ -17,6 +17,7 @@ import {
   QueuedOp,
 } from "./domain.js";
 import { DerivedChunk } from "./media.js";
+import { ReauthReason } from "./errors.js";
 import { cleanDisplayName } from "./message-security.js";
 import { type PendingOp } from "./services.js";
 
@@ -32,6 +33,7 @@ export const AccountRow = Schema.Struct({
   profile_id: Schema.NullOr(Schema.String),
   settings_json: Schema.NullOr(Schema.fromJsonString(ImapSettings)),
   needs_reauth: Schema.BooleanFromBit,
+  reauth_reason: Schema.NullOr(Schema.String),
   enabled: Schema.BooleanFromBit,
   description: Schema.String,
   color: Schema.NullOr(Schema.String),
@@ -155,6 +157,8 @@ export const Mode = Schema.Struct({ modify: AgentWriteMode });
 
 export const Next = Schema.Struct({ next: Schema.Number });
 
+const isReauthReason = Schema.is(ReauthReason);
+
 export function toAccount(r: typeof AccountRow.Type): Account {
   return {
     id: r.id,
@@ -165,6 +169,7 @@ export function toAccount(r: typeof AccountRow.Type): Account {
     lastSyncError: r.last_sync_error,
     profileId: r.profile_id,
     needsReauth: r.needs_reauth,
+    ...(r.needs_reauth && isReauthReason(r.reauth_reason) ? { reauthReason: r.reauth_reason } : {}),
     enabled: r.enabled,
     description: r.description,
     color: r.color,

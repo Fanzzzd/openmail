@@ -11,6 +11,8 @@ export const READ_ONLY_METHODS = Object.freeze([
   "folderStatus",
   "closeSessions",
   "resetConnectivity",
+  // A token refresh, not a mailbox write: keeps idle refresh tokens alive in read-only sessions too.
+  "keepAlive",
   "fetchMessage",
   "fetchCachedHeaders",
   "verifyResetCandidates",

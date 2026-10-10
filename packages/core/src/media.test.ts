@@ -319,6 +319,7 @@ const indexerFor = (
 ) =>
   makeIndexer({
     store: store.media,
+    markReauth: (id, error) => store.markReauth(id, error),
     vision: options.vision ?? fakeVision,
     onBattery: options.battery ?? (() => false),
     busy: options.busy ?? Effect.succeed(false),
@@ -504,6 +505,7 @@ it.effect(
         );
         const indexer = yield* makeIndexer({
           store: store.media,
+          markReauth: (id, error) => store.markReauth(id, error),
           vision: fakeVision,
           onBattery: () => true,
           busy: Effect.succeed(false),
@@ -878,7 +880,7 @@ it.effect("authentication failures suspend the account until sign-in without exh
       const [job] = yield* sql`SELECT status,attempts FROM derived_jobs WHERE message_id=${id}`;
       assert.deepStrictEqual({ ...job }, { status: "queued", attempts: 0 });
       authorized = true;
-      yield* store.setNeedsReauth(account.id, false);
+      yield* store.clearReauth(account.id);
       assert.strictEqual(yield* indexer.batch(), 1);
     }),
   ),

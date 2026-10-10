@@ -131,18 +131,7 @@ export function makeMediaStore(
   return {
     vectors,
     deleteVectorsForMessages,
-    deferFetch: (job: DerivedJob, now: number, reauth: boolean) =>
-      sql
-        .withTransaction(
-          Effect.gen(function* () {
-            if (reauth)
-              yield* run(
-                sql`UPDATE accounts SET needs_reauth=1 WHERE id=(SELECT account_id FROM messages WHERE id=${job.message_id})`,
-              );
-            yield* release(job, now + 60_000);
-          }),
-        )
-        .pipe(Effect.orDie),
+    deferFetch: (job: DerivedJob, now: number) => release(job, now + 60_000),
     paused,
     chunks,
     claim,

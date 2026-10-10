@@ -55,11 +55,6 @@ msgstr "{0} más no cargado"
 msgid "{0} seconds"
 msgstr "{0} segundos"
 
-#. placeholder {0}: account.email
-#: src/renderer/src/components/MailStatusNotice.tsx
-msgid "{0}'s sign-in has expired. Sync is paused."
-msgstr "El inicio de sesión de {0} ha caducado. La sincronización está en pausa."
-
 #: src/renderer/src/components/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# cuenta} other {# cuentas}}, {total} sin leer"
@@ -127,6 +122,22 @@ msgstr "{done} completado · {queued} en cola · {running} en ejecución · {fai
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} ha iniciado sesión nuevamente"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email} needs to grant mail permissions again. Sync is paused."
+msgstr "{email} debe volver a conceder los permisos de correo. La sincronización está en pausa."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s saved sign-in is missing from the keychain. Sync is paused."
+msgstr "El inicio de sesión guardado de {email} no está en el llavero. La sincronización está en pausa."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in has expired. Sync is paused."
+msgstr "El inicio de sesión de {email} ha caducado. La sincronización está en pausa."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
+msgstr "El inicio de sesión de {email} se revocó o caducó. La sincronización está en pausa."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -974,6 +985,7 @@ msgstr "No se puede conectar con el servidor de correo en este momento."
 #: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1330,6 +1342,10 @@ msgstr "Conectar el calendario"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Conecta este servicio en Ajustes → Cuentas → Servicios opcionales."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connecting also asks for {pendingNames}."
+msgstr "Al conectar también se pedirá acceso a {pendingNames}."
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
 msgstr "Grupo de contacto"
@@ -1376,6 +1392,7 @@ msgid "Content matches"
 msgstr "Coincidencias de contenido"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 msgid "Continue"
 msgstr "Continuar"
@@ -2542,6 +2559,10 @@ msgstr "Ajustes de Gmail"
 msgid "Go to folder"
 msgstr "Ir a la carpeta"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
+msgstr "Google limita por ahora el inicio de sesión en OpenMail a 7 días. Vuelve a iniciar sesión para seguir sincronizando {email}."
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Granted"
 msgstr "Autorizado"
@@ -2869,6 +2890,10 @@ msgstr "Mantenido en esta Mac"
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Keychain is locked"
+msgstr "El llavero está bloqueado"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
@@ -5685,6 +5710,10 @@ msgstr "El final debe ser después del comienzo."
 msgid "The filter applies to future mail on the server."
 msgstr "El filtro se aplica al correo futuro en el servidor."
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
+msgstr "El llavero está bloqueado. Desbloquea el equipo y la sincronización se reanudará sola."
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "El límite incluye la base de datos, los adjuntos, el WAL y las copias de recuperación. El contenido protegido puede superarlo."
@@ -5697,6 +5726,10 @@ msgstr "No se pudo verificar la base de datos local"
 msgid "The local database was recovered"
 msgstr "La base de datos local fue recuperada."
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The mail server rejected the password for {email}. Sync is paused."
+msgstr "El servidor de correo rechazó la contraseña de {email}. La sincronización está en pausa."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "El menú enumera hasta 50 mensajes no leídos en el espacio actual."
@@ -5708,6 +5741,10 @@ msgstr "El mensaje menciona un archivo adjunto, pero no se agrega ninguno."
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
 msgstr "El mensaje se envió, pero falta su copia en Enviados."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
+msgstr "El cliente OAuth con el que inició sesión {email} ya no está configurado. La sincronización está en pausa."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."

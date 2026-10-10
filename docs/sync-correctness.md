@@ -171,3 +171,27 @@ resetConnectivity 让因断网失败的排队操作立即到期，429／5xx 的�
 同步中的 provider 缺陷返回固定失败文案并允许后续账户和下一轮自动同步继续；runSync 的维护异常也会释放共享等待和 running 状态。手动同步的中断传播并释放状态；自动循环静默处理纯中断并继续下一轮，关闭作用域时正常取消且不记录崩溃。崩溃诊断只保留 pull／verification／health／headers／maintenance 阶段及 defect／failure 分类，不记录 Cause 的内容。原有单条 sync-crashed 日志没有这些字段，无法据此还原那次具体异常。回归见 `uid-remap.test.ts`、`provider-connectivity.test.ts`、`outlook.test.ts`、`gmail.test.ts`。
 
 Graph 搜索集合的 `$select` 不含 internetMessageHeaders，attachments 的 name／contentType／size／isInline 元数据经 `$expand` 一次取得；搜索不逐项 GET 附件或 MIME，服务商省略附件扩展或存在签名容器时，将正文标为待完整读取，打开阅读器后再补齐。未完成的搜索结果保留已缓存的附件清单，阅读器补全同时写入完整附件清单，避免空扩展或原始签名容器覆盖已解码的 PDF 等附件。标点词保留转义后的 KQL 引号。Graph 普通搜索词仅使用一层 `$search="词"`，短语及属性查询保留 KQL 转义，不混入 `$filter` 或 `$orderby`。搜索请求使用读取错误映射；桌面使用 Lingui 搜索专用文案并保留本地结果。实现依据 [Graph 搜索文档](https://learn.microsoft.com/en-us/graph/search-query-parameter)，回归覆盖 E64KZJ、短语转义和搜索拒绝。脱敏日志未包含 Graph 响应错误码或查询，普通词的双层引号及集合上的 internetMessageHeaders 选择已移除，附件扩展保留；不能仅凭原日志证明哪一项导致该次拒绝。搜索失败诊断记录 operation=search 和固定枚举的 Graph error.code，未知值记为 unknown；不记录响应 message 或 query。只读真实数据库备份中，Gmail CATEGORY_PERSONAL 有 22 条消息、21 个线程；Outlook Drafts 有 40 条消息、37 个线程，其中 38 条早于 90 天。两账户 drafts 表及 pending_ops 均为 0，没有孤立草稿、local-only 草稿或队列重复计数。真实服务商计数请求未成功，不能据此把这些缓存行排除，也不能认定差值来自本地 SQL；保留待服务商总数确认的结论。
+
+## 重新登录的判定
+
+只有确定的答复会让账户暂停并提示重新登录，并在 `accounts.reauth_reason`（迁移 44）和诊断 `reauth` 事件里记下原因：
+
+| 触发                                                                           | 原因代码              |
+| ------------------------------------------------------------------------------ | --------------------- |
+| token 端点返回 400／401 `invalid_grant` 或 `interaction_required`              | `token_revoked`       |
+| 内置 Google 客户端签发的 token 返回 `invalid_grant`，且签发时间至少在 6.5 天前 | `testing_mode_expiry` |
+| token 端点返回 `consent_required`                                              | `scope_missing`       |
+| `invalid_client`、`unauthorized_client`，或签发 token 的客户端已不在配置里     | `client_mismatch`     |
+| 钥匙串里没有该账户的条目                                                       | `keychain_missing`    |
+| TCP 和 TLS 已建立后 IMAP LOGIN 被拒，或 SMTP 535                               | `imap_auth_failed`    |
+| API 401：清掉缓存的 access token，强制刷新一次后重试，仍是 401                 | `token_revoked`       |
+
+其余都按可重试处理：断网和 DNS 失败、5xx、429、超时、强制刷新前的单次 401、token 端点的其他 4xx，以及 RFC 5530 的 `UNAVAILABLE`、`INUSE`、`LIMIT`、`SERVERBUG` 登录拒绝和 SMTP 454。发送的 401 同样先刷新再重试：401 表示服务端没有处理请求。
+
+内置客户端的 Google 应用处于 Testing，所以只对它使用这条时间判断。自己的客户端发布状态未知，没有签发时间的账户也无法判断，两者都记为 `token_revoked`。
+
+钥匙串读写失败（睡眠后锁定、`errSecInteractionNotAllowed`）在 Node adapter 里按 250 ms 起的指数退避重试三次；用户取消或拒绝提示（`errSecUserCanceled`，-128）时不重试。最终失败时返回 `reason: "keychain"` 的 ProviderError，不标记重新登录；同步错误显示为钥匙串已锁定。`@napi-rs/keyring` 只在条目不存在时返回 undefined，其他情况都 reject。
+
+token 刷新按账户串行。Microsoft 轮换 refresh token：新 token 先写入钥匙串，写完才使用新的 access token。写入前重读钥匙串，条目已不存在说明账户在刷新期间被删除，此时不写入。写入失败时钥匙串保留旧 token（个人账户的旧 token 仍有效），新 token 留在内存里，下次刷新先重试写入再使用。刷新返回 `invalid_grant` 时重读一次钥匙串；CLI 或 MCP 已换成新 token 时用新 token 重试一次，没有变化才标记。
+
+桌面后台在启动 1 分钟后检查一次，之后每 6 小时检查一次，本进程超过 6 天没有刷新的 OAuth 账户会刷新一次 token，停用、暂停同步和只读会话也执行；它不拉取邮件，也不写邮箱。停用的账户不同步，所以每次启动 app 会刷新一次，app 一直开着时每 6 天一次。Microsoft 个人账户的 refresh token 闲置 90 天过期，这个间隔让运行中的 app 不会碰到这条限制。实现见 [reauth.ts](../packages/core/src/reauth.ts)、[provider-http.ts](../packages/core/src/provider-http.ts)、[token-keepalive.ts](../packages/core/src/token-keepalive.ts)，回归见 [reauth.test.ts](../packages/core/src/reauth.test.ts)。

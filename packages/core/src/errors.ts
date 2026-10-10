@@ -1,6 +1,29 @@
 import { Schema } from "effect";
 
 /**
+ * Why an account needs a new sign-in. Only definitive answers produce one: an OAuth
+ * error code, an IMAP login refusal, a 401 that survives a forced refresh, or a
+ * missing keychain item. Stored on the account (migration 44) and in diagnostics.
+ */
+export const ReauthReason = Schema.Literals([
+  "token_revoked",
+  "testing_mode_expiry",
+  "scope_missing",
+  "client_mismatch",
+  "keychain_missing",
+  "imap_auth_failed",
+]);
+export type ReauthReason = typeof ReauthReason.Type;
+
+/** The message a keychain read failure carries; the UI shows it as "Keychain is locked". */
+export const KEYCHAIN_LOCKED_MESSAGE = "The keychain is locked or unavailable";
+
+/** A sync error, bare or as "accountId: message", that comes from a locked keychain. */
+export const isKeychainLocked = (error: string | null) =>
+  error !== null &&
+  (error === KEYCHAIN_LOCKED_MESSAGE || error.endsWith(`: ${KEYCHAIN_LOCKED_MESSAGE}`));
+
+/**
  * The provider rejected the stored credentials after token refresh. The account
  * is marked as needing a new sign-in and its queue pauses until then.
  */
@@ -8,6 +31,8 @@ export class AuthError extends Schema.TaggedError<AuthError>()("AuthError", {
   /** Unset when sign-in fails before an account exists (consent denied, timeout). */
   accountId: Schema.optionalKey(Schema.String),
   message: Schema.String,
+  /** Unset means a provider 401 after a forced refresh, recorded as token_revoked. */
+  reason: Schema.optionalKey(ReauthReason),
 }) {}
 
 /** A request the provider will never accept (unknown id, message gone). Not retried. */
@@ -23,7 +48,8 @@ export class PermanentError extends Schema.TaggedError<PermanentError>()("Perman
 export class ProviderError extends Schema.TaggedError<ProviderError>()("ProviderError", {
   message: Schema.String,
   status: Schema.optionalKey(Schema.Number),
-  reason: Schema.optionalKey(Schema.Literals(["configuration", "connection"])),
+  /** `keychain`: the OS keychain could not be read (locked after sleep). Never a sign-in problem. */
+  reason: Schema.optionalKey(Schema.Literals(["configuration", "connection", "keychain"])),
   deferred: Schema.optionalKey(Schema.Boolean),
   retryAfter: Schema.optionalKey(Schema.String),
 }) {}

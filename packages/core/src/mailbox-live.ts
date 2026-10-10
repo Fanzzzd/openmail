@@ -377,6 +377,7 @@ export const MailboxLive = (
           readingMailbox.service.attachment(id, index).pipe(Effect.map((part) => part.data)),
         inline: (id) => readingMailbox.localInline(id),
         changed,
+        markReauth: (id, error) => store.markReauth(id, error),
       } satisfies import("./indexer.js").IndexerInput;
 
       const indexer = yield* makeIndexer(indexInput);
@@ -441,9 +442,14 @@ export const MailboxLive = (
             const trimmed = token.trim();
             if (trimmed.length > 4096 || /[\r\n]/.test(trimmed))
               yield* new InvalidInput({ message: "Enter a single access token" });
-            yield* trimmed
-              ? secrets.set(UPDATE_TOKEN_KEY, trimmed)
-              : secrets.remove(UPDATE_TOKEN_KEY);
+            yield* (
+              trimmed ? secrets.set(UPDATE_TOKEN_KEY, trimmed) : secrets.remove(UPDATE_TOKEN_KEY)
+            ).pipe(
+              Effect.mapError(
+                () =>
+                  new InvalidInput({ message: "Could not save the token in the system keychain." }),
+              ),
+            );
             yield* emit({ _tag: "UpdateSettingsChanged", resetState: true });
           }),
 

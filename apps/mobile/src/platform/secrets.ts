@@ -30,7 +30,10 @@ const read = (key: string) => SecureStore.getItemAsync(key, options);
 const write = (key: string, value: string) => SecureStore.setItemAsync(key, value, options);
 const remove = (key: string) => SecureStore.deleteItemAsync(key, options);
 const unavailable = () =>
-  new ProviderError({ message: "Secure storage is unavailable; unlock the device and try again" });
+  new ProviderError({
+    message: "Secure storage is unavailable; unlock the device and try again",
+    reason: "keychain",
+  });
 
 /** Recreate existing iOS items while unlocked; SecItemUpdate changes only the value.
  * The verified backup remains authoritative through any failure or process exit. */
@@ -78,15 +81,17 @@ export const secretsLayer = Layer.succeed(Secrets, {
       catch: unavailable,
     }).pipe(Effect.map(Option.fromNullishOr)),
   set: (key, value) =>
-    Effect.tryPromise(() =>
-      withSecretLock(key, async () => {
-        if (Platform.OS === "ios" && (await read(secretBackupKey(key))) !== null) {
-          await remove(secretMigrationKey(key));
-          await write(secretBackupKey(key), value);
-        }
-        await write(secretKey(key), value);
-      }),
-    ).pipe(Effect.orDie),
+    Effect.tryPromise({
+      try: () =>
+        withSecretLock(key, async () => {
+          if (Platform.OS === "ios" && (await read(secretBackupKey(key))) !== null) {
+            await remove(secretMigrationKey(key));
+            await write(secretBackupKey(key), value);
+          }
+          await write(secretKey(key), value);
+        }),
+      catch: unavailable,
+    }),
   remove: (key) =>
     Effect.tryPromise(() =>
       withSecretLock(key, async () => {

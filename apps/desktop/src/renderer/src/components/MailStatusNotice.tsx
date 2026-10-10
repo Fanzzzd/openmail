@@ -1,4 +1,7 @@
+import type { I18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { isKeychainLocked } from "@openmail/core/schema";
 import { useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 
 import type { Account, SyncState } from "../../../shared/api";
@@ -71,7 +74,43 @@ function SyncFailure({
   );
 }
 
-/** An account whose token expired: say so and offer the sign-in. */
+/** Why `account` must sign in again, from the reason core recorded when it paused sync. */
+export function reauthText(i18n: I18n, account: Account): string {
+  const email = account.email;
+  switch (account.reauthReason) {
+    case "testing_mode_expiry":
+      // Core only reports this for the built-in client, whose app OpenMail publishes.
+      return i18n._(
+        msg`Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing ${email}.`,
+      );
+    case "scope_missing":
+      return i18n._(msg`${email} needs to grant mail permissions again. Sync is paused.`);
+    case "client_mismatch":
+      return i18n._(
+        msg`The OAuth client that signed in ${email} is no longer configured. Sync is paused.`,
+      );
+    case "keychain_missing":
+      return i18n._(msg`${email}'s saved sign-in is missing from the keychain. Sync is paused.`);
+    case "imap_auth_failed":
+      return i18n._(msg`The mail server rejected the password for ${email}. Sync is paused.`);
+    case "token_revoked":
+      return i18n._(msg`${email}'s sign-in was revoked or has expired. Sync is paused.`);
+    default:
+      // Marked before migration 44 recorded reasons.
+      return i18n._(msg`${email}'s sign-in has expired. Sync is paused.`);
+  }
+}
+
+/** The keychain could not be read, usually locked after sleep. Not a sign-in problem. */
+export function KeychainNotice({ className = "" }: { className?: string }) {
+  return (
+    <p className={`${box} bg-orange-500/[0.08] text-orange-800 dark:text-orange-300 ${className}`}>
+      <Trans>The keychain is locked. Unlock your computer and sync resumes on its own.</Trans>
+    </p>
+  );
+}
+
+/** An account that must sign in again: say why and offer the sign-in. */
 export function ReauthNotice({
   account,
   onReauth,
@@ -81,11 +120,10 @@ export function ReauthNotice({
   onReauth: (account: Account) => void;
   className?: string;
 }) {
+  const { i18n } = useLingui();
   return (
     <div className={`${danger} ${className}`}>
-      <p>
-        <Trans>{account.email}'s sign-in has expired. Sync is paused.</Trans>
-      </p>
+      <p>{reauthText(i18n, account)}</p>
       <button type="button" onClick={() => onReauth(account)} className={`mt-1 ${action}`}>
         <Trans>Sign in again</Trans>
       </button>
@@ -120,7 +158,9 @@ export function MailStatusNotice({
 }) {
   const { t } = useLingui();
   const expired = accountIssues ? space.filter((a) => a.needsReauth) : [];
-  const failed = accountIssues ? syncFailures(accounts, syncState) : [];
+  const failures = accountIssues ? syncFailures(accounts, syncState) : [];
+  const keychain = failures.some(isKeychainLocked);
+  const failed = failures.filter((failure) => !isKeychainLocked(failure));
   const offline = t`You're offline. Mail syncs again when you reconnect.`;
   const names = space
     .filter((a) => failed.some((e) => e.startsWith(`${a.id}: `)))
@@ -130,8 +170,8 @@ export function MailStatusNotice({
   return (
     <>
       <ChangeAnnouncement text={online ? "" : offline} />
-      {accountIssues && <SyncStatusAnnouncement failed={failed.length > 0} />}
-      {(!online || expired.length > 0 || showFailure) && (
+      {accountIssues && <SyncStatusAnnouncement failed={failures.length > 0} />}
+      {(!online || expired.length > 0 || showFailure || keychain) && (
         <div className="mx-3 mb-2 grid gap-2">
           {!online && (
             <p className={`${box} bg-black/[0.04] text-a11y-muted dark:bg-white/5`}>{offline}</p>
@@ -139,6 +179,7 @@ export function MailStatusNotice({
           {expired.map((a) => (
             <ReauthNotice key={a.id} account={a} onReauth={onReauth} />
           ))}
+          {keychain && <KeychainNotice />}
           {showFailure && <SyncFailure names={names} failed={failed} onFocusList={onFocusList} />}
         </div>
       )}

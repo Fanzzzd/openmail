@@ -10,12 +10,19 @@ import {
   type ProfileInput,
   type Provider,
 } from "./domain.js";
-import { InvalidInput, NotFound } from "./errors.js";
+import { type AuthError, InvalidInput, NotFound } from "./errors.js";
+import { logReauth, reauthReason } from "./reauth.js";
 import { type PlatformCrypto } from "./platform/crypto.js";
 import { type Store } from "./services.js";
 import { all, first, run } from "./sql-rows.js";
 import { type makeMediaStore } from "./store-media.js";
 import { accountId, AccountRow, Cursor, Next, toAccount } from "./store-rows.js";
+
+const ReauthRow = Schema.Struct({
+  provider: AccountRow.fields.provider,
+  needs_reauth: AccountRow.fields.needs_reauth,
+  reauth_reason: AccountRow.fields.reauth_reason,
+});
 
 export const makeAccountsStore = ({
   sql,
@@ -33,7 +40,7 @@ export const makeAccountsStore = ({
   const accountRows = all(AccountRow);
 
   const ACCOUNT_COLUMNS = sql.literal(`id, provider, email, created_at, last_synced_at,
-      COALESCE(last_sync_error,(SELECT poll_error FROM incoming_state WHERE account_id=accounts.id)) AS last_sync_error, profile_id, settings_json, needs_reauth, enabled, description, color, position`);
+      COALESCE(last_sync_error,(SELECT poll_error FROM incoming_state WHERE account_id=accounts.id)) AS last_sync_error, profile_id, settings_json, needs_reauth, reauth_reason, enabled, description, color, position`);
 
   const listAccounts = accountRows(
     sql`SELECT ${ACCOUNT_COLUMNS} FROM accounts ORDER BY position, created_at, id`,
@@ -162,8 +169,21 @@ export const makeAccountsStore = ({
     run(sql`UPDATE accounts SET settings_json = ${JSON.stringify(settings)} WHERE id = ${id}`),
   );
 
-  const setNeedsReauth = Effect.fn("Store.setNeedsReauth")((id: string, value: boolean) =>
-    run(sql`UPDATE accounts SET needs_reauth = ${value ? 1 : 0} WHERE id = ${id}`),
+  const markReauth = Effect.fn("Store.markReauth")(function* (id: string, error: AuthError) {
+    const reason = reauthReason(error);
+    const current = yield* first(ReauthRow)(
+      sql`SELECT provider, needs_reauth, reauth_reason FROM accounts WHERE id = ${id}`,
+    );
+    if (Option.isNone(current)) return;
+    if (current.value.needs_reauth && current.value.reauth_reason === reason) return;
+    yield* run(
+      sql`UPDATE accounts SET needs_reauth = 1, reauth_reason = ${reason} WHERE id = ${id}`,
+    );
+    yield* logReauth(current.value.provider, id, reason);
+  });
+
+  const clearReauth = Effect.fn("Store.clearReauth")((id: string) =>
+    run(sql`UPDATE accounts SET needs_reauth = 0, reauth_reason = NULL WHERE id = ${id}`),
   );
 
   const setSyncError = Effect.fn("Store.setSyncError")((id: string, error: string | null) =>
@@ -265,7 +285,8 @@ export const makeAccountsStore = ({
     setAccountSettings,
     moveAccount,
     setImapSettings,
-    setNeedsReauth,
+    markReauth,
+    clearReauth,
     setGrantedScopes: (id, scopes) =>
       run(sql`INSERT INTO account_oauth_scopes (account_id, scopes_json)
         VALUES (${id}, ${JSON.stringify([...new Set(scopes)])}) ON CONFLICT(account_id) DO UPDATE SET scopes_json=excluded.scopes_json`),
@@ -295,7 +316,8 @@ export const makeAccountsStore = ({
     | "setAccountSettings"
     | "moveAccount"
     | "setImapSettings"
-    | "setNeedsReauth"
+    | "markReauth"
+    | "clearReauth"
     | "setGrantedScopes"
     | "setSyncError"
     | "getSyncCursor"

@@ -1,7 +1,8 @@
 import { reconcileProviderWrite, sameProviderWrite } from "./provider-write.js";
 import { Effect, Schema, Option } from "effect";
 import type { Account } from "./domain.js";
-import { AuthError, PermanentError, ProviderError, SettingsScopeMissing } from "./errors.js";
+import { PermanentError, ProviderError, SettingsScopeMissing } from "./errors.js";
+import { authFailure } from "./reauth.js";
 import { graphTimestamp } from "./graph-time.js";
 import { escapeHtml } from "./print.js";
 import { htmlToText } from "./mime.js";
@@ -239,8 +240,8 @@ export function makeOutlookSettings<
             accountId: account.id,
             message: "Sign in again to enable account settings",
           });
-        if (e._tag === "AuthError" || ("status" in e && e.status === 401))
-          return new AuthError({ accountId: account.id, message: e.message ?? "Sign in again" });
+        const auth = authFailure(account.id, e);
+        if (auth) return auth;
         return new ProviderError({
           message:
             e.message ?? ("body" in e ? e.body : undefined) ?? "Outlook settings request failed",

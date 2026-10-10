@@ -4,6 +4,8 @@ import { SyncResetDiagnostic } from "../../sync-reset.js";
 export { SyncResetDiagnostic } from "../../sync-reset.js";
 import { ProviderDiagnostic } from "../../provider-diagnostics.js";
 export { ProviderDiagnostic } from "../../provider-diagnostics.js";
+import { ReauthDiagnostic } from "../../reauth.js";
+export { ReauthDiagnostic } from "../../reauth.js";
 import {
   databaseQuickCheck,
   rebuildCorruptDatabase,
@@ -38,6 +40,7 @@ const DiagnosticEvent = Schema.Literals([
   "sync-reset",
   "rpc-auth-failure",
   "rpc-failure",
+  "reauth",
 ]);
 export type DiagnosticEvent = typeof DiagnosticEvent.Type;
 const RuntimeReason = Schema.Literals([
@@ -132,6 +135,17 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       ),
     };
   }
+  const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(data);
+  if (event === "reauth" && reauth._tag === "Some")
+    return {
+      at,
+      event,
+      provider: reauth.value.provider,
+      reason: reauth.value.reason,
+      accountHash: /^[a-f0-9]{16}$/.test(reauth.value.accountHash)
+        ? reauth.value.accountHash
+        : undefined,
+    };
   const isRpcFailure = event === "rpc-failure" || event === "rpc-auth-failure";
   const rpc =
     isRpcFailure &&

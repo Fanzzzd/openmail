@@ -1310,6 +1310,12 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
   // 43: the OAuth client ID that issued an account's refresh token. Public, so
   // not a keychain item; NULL for accounts signed in before it was recorded.
   `ALTER TABLE accounts ADD COLUMN oauth_client_id TEXT;`,
+  // 44: why an account needs a new sign-in (a fixed reason code, no secrets), when its
+  // OAuth refresh token was issued (Google's Testing-mode 7-day expiry), and which optional
+  // services the person turned on, so a new consent asks only for those.
+  `ALTER TABLE accounts ADD COLUMN reauth_reason TEXT;
+  ALTER TABLE accounts ADD COLUMN oauth_issued_at INTEGER;
+  ALTER TABLE account_optional_services ADD COLUMN enabled_json TEXT NOT NULL DEFAULT '[]';`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

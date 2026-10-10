@@ -3,6 +3,7 @@ import type { ImapFlow } from "imapflow";
 import type { Account, ImapSettings } from "../../../domain.js";
 import { AuthError, InvalidInput, ProviderError } from "../../../errors.js";
 import { resolveImapSettings } from "../../../imap-settings.js";
+import { isLoginRefusal } from "../../../reauth.js";
 import { Secrets, type ConnectInput } from "../../../services.js";
 import type { HtmlText } from "../../html-text.js";
 import { IDLE_RENEW_MS } from "../imap-idle.js";
@@ -16,12 +17,26 @@ const CLIENT_INFO = { name: "openmail", version: "0.1.0", vendor: "openmail" };
 // Errors
 
 // imapflow marks failed logins with `authenticationFailed`; nodemailer uses EAUTH / 535.
+// Both only exist once the server answered the login, so TCP and TLS already succeeded.
+// A 4xx SMTP auth reply (454 temporary failure) is retryable.
 export function isAuthFailure(error: unknown): boolean {
   if (!Predicate.isObject(error)) return false;
-  return (
+  const refused =
     ("authenticationFailed" in error && error.authenticationFailed === true) ||
     ("code" in error && error.code === "EAUTH") ||
-    ("responseCode" in error && error.responseCode === 535)
+    ("responseCode" in error && error.responseCode === 535);
+  return (
+    refused &&
+    isLoginRefusal({
+      imapCode:
+        "serverResponseCode" in error && Predicate.isString(error.serverResponseCode)
+          ? error.serverResponseCode
+          : undefined,
+      smtpCode:
+        "responseCode" in error && typeof error.responseCode === "number"
+          ? error.responseCode
+          : undefined,
+    })
   );
 }
 
@@ -58,7 +73,11 @@ export function failure(
       message: `${host}: TLS is required before authentication. ${describe(error)}`,
     });
   if (isAuthFailure(error)) {
-    return new AuthError({ accountId, message: `${host} rejected the login: ${describe(error)}` });
+    return new AuthError({
+      accountId,
+      message: `${host} rejected the login: ${describe(error)}`,
+      reason: "imap_auth_failed",
+    });
   }
   if (/unsafe login/i.test(describe(error))) {
     return new ProviderError({
@@ -223,6 +242,7 @@ export const password = (secrets: Secrets["Service"], account: Account) =>
             new AuthError({
               accountId: account.id,
               message: "No stored password. Add the account again.",
+              reason: "keychain_missing",
             }),
           ),
         onSome: Effect.succeed,
@@ -237,6 +257,8 @@ export const settingsOf = (account: Account) =>
         new AuthError({
           accountId: account.id,
           message: "The account has no IMAP settings. Add it again.",
+          // Adding the account again is the fix, the same as for a refused login.
+          reason: "imap_auth_failed",
         }),
       );
 

@@ -64,6 +64,8 @@ frame 标识依据：[Electron WebFrameMain](https://www.electronjs.org/docs/lat
 
 `failure` 分为 `http`、`transport`、`credentials`、`configuration`、`other`。只有实际传输失败用 status 0；缺少 OAuth client 属于 configuration，无 HTTP 状态。凭证失败与局部服务权限不足分别处理，可选端点的权限 403 在重新登录前停止重复请求，不暂停正常邮件同步；限流或未启用 API 不按此规则缓存。
 
+`reauth` 事件在账户被标记为需要重新登录时写入一次，只含时间、服务商、原因代码和账户 ID 的 16 位 SHA-256 前缀。原因代码的含义见[同步正确性](sync-correctness.md#重新登录的判定)。
+
 `sync-reset` 诊断还记录服务商、listing／reset／verification 阶段、账户与文件夹哈希，以及列出、保留、候选、已验证和延期等计数，不记录候选 ID。runtime-error 的 sync-crashed 还允许固定 phase 和 causeKind，不导出异常内容或堆栈。RPC renderer 回调显式返回 void，防止 Fiber 经 contextBridge 返回时触发克隆错误；回归用 structuredClone 检查 JSON 帧和回调返回值。事件定义见 [sync-reset.ts](../packages/core/src/sync-reset.ts)，落盘与导出沿用同一字段白名单。
 
 每文件默认 256 KiB，另保留最多三份轮转档。Feedback 展示导出预览并让用户选择附件，创建反馈草稿不自动上传；旧日志在预览时重新按白名单编码。RPC 失败仅记录方法名，不记录参数，正常中断不记录。实现见 [provider-diagnostics.ts](../packages/core/src/provider-diagnostics.ts)、[diagnostics.ts](../packages/core/src/platform/node/diagnostics.ts)、[reliability.ts](../apps/desktop/src/main/reliability.ts)和 [Feedback.tsx](../apps/desktop/src/renderer/src/components/Feedback.tsx)，回归见 [provider-diagnostics.test.ts](../packages/core/src/provider-diagnostics.test.ts)。

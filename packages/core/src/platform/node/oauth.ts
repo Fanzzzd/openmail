@@ -5,6 +5,7 @@ import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 
 import { AuthError, ProviderError } from "../../errors.js";
 import { tokenTimeout } from "../../provider-retry.js";
+import { tokenEndpointFailure } from "../../reauth.js";
 import { type AuthorizeRequest, Browser, OAuth, type TokenResponse } from "../../services.js";
 
 /**
@@ -98,16 +99,11 @@ export const OAuthLoopback: Layer.Layer<
             ),
           );
         if (res.status < 200 || res.status >= 300) {
+          // invalid_grant: the refresh token was revoked, expired (Google's 7-day
+          // limit for apps in Testing) or issued to another client. Only the
+          // definitive OAuth codes ask for a new sign-in; the rest are retried.
           const text = yield* Effect.orElseSucceed(res.text, () => "");
-          // invalid_grant: the refresh token was revoked, expired (Google's
-          // 7-day limit for apps in Testing) or issued to another client.
-          if (res.status === 400 && text.includes("invalid_grant")) {
-            return yield* new AuthError({ accountId, message: `Sign-in expired: ${text}` });
-          }
-          return yield* new ProviderError({
-            message: `Token endpoint ${res.status}: ${text}`,
-            status: res.status,
-          });
+          return yield* tokenEndpointFailure(accountId, res.status, text);
         }
         const json = yield* HttpClientResponse.schemaBodyJson(TokenJson)(res).pipe(
           Effect.mapError(

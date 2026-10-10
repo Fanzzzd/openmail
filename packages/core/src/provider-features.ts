@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import type { Account } from "./domain.js";
-import { AuthError, FeatureScopeMissing, InvalidInput, ProviderError } from "./errors.js";
+import { FeatureScopeMissing, InvalidInput, ProviderError } from "./errors.js";
+import { authFailure } from "./reauth.js";
 
 /** Translate optional API permissions before they reach the mail authentication path. */
 export function featureRequest<
@@ -34,8 +35,8 @@ export function featureRequest<
           feature,
           message: `Sign in again to enable ${feature}`,
         });
-      if (error._tag === "AuthError" || error.status === 401)
-        return new AuthError({ accountId: account.id, message: error.message ?? "Sign in again" });
+      const auth = authFailure(account.id, error);
+      if (auth) return auth;
       return new ProviderError({
         message: error.message ?? error.body ?? `${feature} request failed`,
         ...(error.status ? { status: error.status } : {}),

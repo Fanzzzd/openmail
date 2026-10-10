@@ -1,8 +1,8 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { OptionalService } from "@openmail/core/schema";
+import { consentBatch, type OptionalService } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Account } from "../../../shared/api";
 import { resultError } from "../errors";
 import { MailClient } from "../rpc";
@@ -71,6 +71,11 @@ export function OptionalServices({
   const grants = AsyncResult.getOrElse(snapshot, () => []);
   const [authorization, authorize] = useAtom(reauthAtom(account.id));
   const [result, toggle] = useAtom(switchAtom);
+  /** A consent that also covers services turned on earlier, waiting for the person to confirm. */
+  const [pending, setPending] = useState<{
+    service: OptionalService;
+    others: OptionalService[];
+  } | null>(null);
   useEffect(() => {
     if (focus) ref.current?.focus();
   }, [focus]);
@@ -80,6 +85,9 @@ export function OptionalServices({
     calendar: t`Calendar`,
     settings: account.provider === "gmail" ? t`Gmail Settings` : t`MailboxSettings`,
   };
+  const pendingNames = pending
+    ? new Intl.ListFormat(i18n.locale).format(pending.others.map((service) => names[service]))
+    : "";
   return (
     <section
       ref={ref}
@@ -104,7 +112,11 @@ export function OptionalServices({
               type="button"
               disabled={authorization.waiting || result.waiting || account.enabled === false}
               className="text-a11y-accent"
-              onClick={() => authorize(service)}
+              onClick={() => {
+                const others = consentBatch(grants, service).slice(1);
+                if (others.length) setPending({ service, others });
+                else authorize(service);
+              }}
             >
               <Trans>Connect</Trans>
             </button>
@@ -128,6 +140,24 @@ export function OptionalServices({
           </label>
         </div>
       ))}
+      {pending && (
+        <p className="text-xs">
+          <Trans>Connecting also asks for {pendingNames}.</Trans>{" "}
+          <button
+            type="button"
+            className="text-a11y-accent"
+            onClick={() => {
+              authorize(pending.service);
+              setPending(null);
+            }}
+          >
+            <Trans>Continue</Trans>
+          </button>{" "}
+          <button type="button" className="text-a11y-accent" onClick={() => setPending(null)}>
+            <Trans>Cancel</Trans>
+          </button>
+        </p>
+      )}
       {authorization.waiting && (
         <p className="text-xs text-a11y-muted">
           <Trans>Finish signing in in your browser</Trans>

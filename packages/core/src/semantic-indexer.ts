@@ -1,7 +1,7 @@
 import { messageModelText } from "./visible-text.js";
 import { makeDownloadBudget } from "./download-budget.js";
 import { Clock, Effect, Option, Semaphore } from "effect";
-import type { IndexerInput } from "./indexer.js";
+import { markIfAuth, type IndexerInput } from "./indexer.js";
 import { MediaError, type ModelRuntime, type VectorItem } from "./media.js";
 import type { Store } from "./services.js";
 import { textChunks } from "./text-chunks.js";
@@ -169,9 +169,11 @@ export const makeSemanticIndexer = Effect.fn("makeSemanticIndexer")(function* (
                 if (error._tag === "InferenceRuntimeError") {
                   retryAt = (yield* Clock.currentTimeMillis) + 60_000;
                   yield* semantic.release(job.value, Date.now() + 60_000);
-                } else if (error._tag === "AuthError" || error._tag === "ProviderError")
-                  yield* semantic.deferFetch(job.value, Date.now(), error._tag === "AuthError");
-                else if (error.message === "Indexing suspended") yield* semantic.release(job.value);
+                } else if (error._tag === "AuthError" || error._tag === "ProviderError") {
+                  yield* markIfAuth(input, job.value.message_id, error);
+                  yield* semantic.deferFetch(job.value, Date.now());
+                } else if (error.message === "Indexing suspended")
+                  yield* semantic.release(job.value);
                 else yield* semantic.retry(job.value, Date.now());
               }),
             ),

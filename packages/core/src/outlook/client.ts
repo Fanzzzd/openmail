@@ -56,66 +56,64 @@ export const makeOutlookClient = Effect.gen(function* () {
 
   const secrets = yield* Secrets;
 
-  const { api, execute, readBytes, matchesBytes, deferReads, clearTokens, connectivity } =
-    yield* makeProviderHttp({
-      http,
-      secrets,
-      concurrency: CONCURRENCY,
-      serializeSend: true,
-      sending: () => SendRequest,
-      background: (request) =>
-        request.method === "GET" || new URL(request.url).pathname.endsWith("/$batch"),
-      permits: (request) => (new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1),
-      logFailure: (accountId, request, error, body) =>
-        Effect.flatMap(SearchRequest, (searching) =>
-          logProviderFailure(
-            "outlook",
-            accountId,
-            request,
-            error,
-            body === "json" && searching
-              ? {
-                  operation: "search",
-                  errorCode: graphSearchErrorCode(error._tag === "ApiError" ? error.body : ""),
-                }
-              : undefined,
-          ),
-        ),
-      tokenLabel: "Microsoft",
-      refresh: (accountId, refreshToken) =>
-        refreshWithIssuer(
-          { config, issuers },
-          { name: "Microsoft", pick: (clients) => clients.microsoft },
+  const {
+    api,
+    execute,
+    readBytes,
+    matchesBytes,
+    deferReads,
+    clearTokens,
+    connectivity,
+    keepAlive,
+  } = yield* makeProviderHttp({
+    http,
+    secrets,
+    concurrency: CONCURRENCY,
+    serializeSend: true,
+    sending: () => SendRequest,
+    background: (request) =>
+      request.method === "GET" || new URL(request.url).pathname.endsWith("/$batch"),
+    permits: (request) => (new URL(request.url).pathname.endsWith("/$batch") ? CONCURRENCY : 1),
+    logFailure: (accountId, request, error, body) =>
+      Effect.flatMap(SearchRequest, (searching) =>
+        logProviderFailure(
+          "outlook",
           accountId,
-          (microsoft) =>
-            oauth
-              .refresh(accountId, {
-                tokenUrl: TOKEN_URL,
-                clientId: microsoft.clientId,
-                refreshToken,
-              })
-              .pipe(
-                Effect.tapError((error) =>
-                  logProviderFailure(
-                    "outlook",
-                    accountId,
-                    HttpClientRequest.post(TOKEN_URL),
-                    error,
-                  ),
-                ),
-                Effect.tap((res) =>
-                  Option.isSome(res.refreshToken)
-                    ? secrets.set(accountId, res.refreshToken.value)
-                    : Effect.void,
-                ),
-              ),
+          request,
+          error,
+          body === "json" && searching
+            ? {
+                operation: "search",
+                errorCode: graphSearchErrorCode(error._tag === "ApiError" ? error.body : ""),
+              }
+            : undefined,
         ),
-      throttleReads: true,
-      prepareRequest: (request) =>
-        HttpClientRequest.setHeader(request, "prefer", request.headers.prefer ?? PREFER.prefer),
-      parseResponse: (text) => JSON.parse(text),
-      isTransient,
-    });
+      ),
+    tokenLabel: "Microsoft",
+    refresh: (accountId, refreshToken) =>
+      refreshWithIssuer(
+        { config, issuers },
+        { name: "Microsoft", pick: (clients) => clients.microsoft },
+        accountId,
+        (microsoft) =>
+          oauth
+            .refresh(accountId, {
+              tokenUrl: TOKEN_URL,
+              clientId: microsoft.clientId,
+              refreshToken,
+            })
+            .pipe(
+              Effect.tapError((error) =>
+                logProviderFailure("outlook", accountId, HttpClientRequest.post(TOKEN_URL), error),
+              ),
+            ),
+      ),
+    throttleReads: true,
+    prepareRequest: (request) =>
+      HttpClientRequest.setHeader(request, "prefer", request.headers.prefer ?? PREFER.prefer),
+    parseResponse: (text) => JSON.parse(text),
+    isTransient,
+  });
 
   const headersDenied = new Set<string>();
 
@@ -319,6 +317,7 @@ export const makeOutlookClient = Effect.gen(function* () {
   return {
     codec,
     connectivity,
+    keepAlive,
     deferReads,
     api,
     get,

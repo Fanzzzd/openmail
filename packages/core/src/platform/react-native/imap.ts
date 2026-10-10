@@ -33,6 +33,7 @@ import {
   SendUncertain,
   type ProviderFailure,
 } from "../../errors.js";
+import { isLoginRefusal } from "../../reauth.js";
 import { serverSavesSent, resolveImapSettings, imapSettingsKey } from "../../imap-settings.js";
 import {
   copyProgressKey,
@@ -267,8 +268,10 @@ export async function smtpSession(
       if (final) throw uncertain();
       throw error;
     });
-    if (code === 535 || code === 534)
-      throw new AuthError({ accountId, message: "SMTP login rejected" });
+    if (code === 454 || code === 534 || code === 535)
+      throw isLoginRefusal({ smtpCode: code })
+        ? new AuthError({ accountId, message: "SMTP login rejected", reason: "imap_auth_failed" })
+        : new ProviderError({ message: `SMTP login deferred (${code})` });
     if (!expected.includes(code)) {
       if (code >= 500) throw new PermanentError({ message: `SMTP rejected the message (${code})` });
       throw new ProviderError({ message: `SMTP command rejected (${code})` });
@@ -575,7 +578,11 @@ export const makeMobileImap = Effect.gen(function* () {
       if (!account.imap) return yield* new PermanentError({ message: "Missing IMAP settings" });
       const stored = yield* secrets.get(account.id);
       if (Option.isNone(stored))
-        return yield* new AuthError({ accountId: account.id, message: "No stored app password" });
+        return yield* new AuthError({
+          accountId: account.id,
+          message: "No stored app password",
+          reason: "keychain_missing",
+        });
       return { settings: account.imap, pass: stored.value };
     });
   const open = async (
@@ -614,8 +621,16 @@ export const makeMobileImap = Effect.gen(function* () {
               );
             } else await client.command(`LOGIN ${mailQuote(settings.username)} ${mailQuote(pass)}`);
           } catch (error) {
-            if (error instanceof ImapCommandError && error.status === "NO")
-              throw new AuthError({ accountId, message: "IMAP login rejected" });
+            if (
+              error instanceof ImapCommandError &&
+              error.status === "NO" &&
+              isLoginRefusal({ imapCode: error.responseCode })
+            )
+              throw new AuthError({
+                accountId,
+                message: "IMAP login rejected",
+                reason: "imap_auth_failed",
+              });
             throw error;
           }
         }

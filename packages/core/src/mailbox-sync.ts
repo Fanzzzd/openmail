@@ -13,6 +13,7 @@ import {
 } from "effect";
 import { type Account, type FlushResult, type SyncResult } from "./domain.js";
 import { type AuthError, type ProviderError } from "./errors.js";
+import { runTokenKeepAlive } from "./token-keepalive.js";
 import { backfillCachedHeaders } from "./header-backfill.js";
 import { ImapIdle } from "./imap-idle.js";
 import { type makeCacheMailbox } from "./mailbox-cache.js";
@@ -94,7 +95,7 @@ export const makeSyncMailbox = (
       lock.withPermits(1),
       Effect.catch((error) =>
         error._tag === "AuthError"
-          ? store.setNeedsReauth(account.id, true)
+          ? store.markReauth(account.id, error)
           : error._tag === "ProviderError" && (error.status === 429 || error.deferred)
             ? Effect.logInfo("Header backfill deferred")
             : Effect.logWarning("Header backfill failed"),
@@ -142,9 +143,9 @@ export const makeSyncMailbox = (
     if (account.needsReauth) {
       return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
     }
-    const failed = (text: string, auth: boolean) =>
+    const failed = (text: string, auth: AuthError | undefined) =>
       Effect.gen(function* () {
-        if (auth) yield* store.setNeedsReauth(account.id, true);
+        if (auth) yield* store.markReauth(account.id, auth);
         yield* scope ? store.setInboxError(account.id, text) : store.setSyncError(account.id, text);
         return {
           accountId: account.id,
@@ -246,12 +247,14 @@ export const makeSyncMailbox = (
       ),
       // `counts` is filled while the stream runs, so read it afterwards.
       Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
-      Effect.catch((error) => failed(error.message, error._tag === "AuthError")),
+      Effect.catch((error) =>
+        failed(error.message, error._tag === "AuthError" ? error : undefined),
+      ),
       // A bug in one provider must not stop the other accounts from syncing.
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
-          : logSyncCrash(cause, phase).pipe(Effect.andThen(failed(SYNC_RETRY_MESSAGE, false))),
+          : logSyncCrash(cause, phase).pipe(Effect.andThen(failed(SYNC_RETRY_MESSAGE, undefined))),
       ),
     );
   });
@@ -475,6 +478,11 @@ export const makeSyncMailbox = (
         .organization()
         .wakeSnoozed()
         .pipe(Effect.repeat(Schedule.spaced("30 seconds")), Effect.forkScoped);
+      // Runs while sync is paused and in read-only sessions: it only refreshes tokens.
+      yield* backgroundReady.pipe(
+        Effect.andThen(runTokenKeepAlive(store, providers, changed)),
+        Effect.forkScoped,
+      );
       yield* backgroundReady.pipe(
         Effect.andThen(
           Effect.suspend(() => (runtime.syncPaused ? Effect.void : sync())).pipe(

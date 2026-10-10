@@ -526,11 +526,14 @@ it("an undocked sidebar moves sign-in and sync failures above the list", async (
   fireEvent.click(within(list()).getByRole("button", { name: "Try again" }));
   await eventually(() => expect(within(list()).queryByText(/Could not sync/)).toBeNull());
 
+  // An AuthError without a reason is a 401 after the forced refresh: token_revoked.
   failEvery(new AuthError({ message: "Expired" }));
   await h.event({ _tag: "NativeAction", action: "sync", triggeredByAccelerator: false });
   await eventually(() =>
     expect(
-      within(list()).getByText("me@gmail.com's sign-in has expired. Sync is paused."),
+      within(list()).getByText(
+        "me@gmail.com's sign-in was revoked or has expired. Sync is paused.",
+      ),
     ).toBeTruthy(),
   );
   // An expired account is not also reported as a sync failure.

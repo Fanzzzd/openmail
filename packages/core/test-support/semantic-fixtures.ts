@@ -79,6 +79,7 @@ export const indexer = (
   makeSemanticIndexer(
     {
       store: store.media,
+      markReauth: (id, error) => store.markReauth(id, error),
       vision: unavailableVision,
       onBattery: () => battery,
       busy: Effect.succeed(busy),

@@ -2,6 +2,7 @@ import { Effect, Layer, Option, Schema } from "effect";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { AuthError, ProviderError } from "../../errors.js";
 import { tokenTimeout } from "../../provider-retry.js";
+import { tokenEndpointFailure } from "../../reauth.js";
 import { OAuth, type AuthorizeRequest, type TokenResponse } from "../../services.js";
 
 export interface MobileAuthSession {
@@ -48,19 +49,8 @@ export const mobileOAuthLayer = (session: MobileAuthSession) =>
             );
           if (response.status < 200 || response.status >= 300) {
             // Inspect only the machine error code. Never expose tokens or response bodies.
-            const error = yield* response.json.pipe(Effect.orElseSucceed(() => null));
-            if (
-              typeof error === "object" &&
-              error !== null &&
-              "error" in error &&
-              error.error === "invalid_grant"
-            ) {
-              return yield* new AuthError({ accountId, message: "Sign-in expired; sign in again" });
-            }
-            return yield* new ProviderError({
-              message: "Token exchange failed",
-              status: response.status,
-            });
+            const text = yield* response.text.pipe(Effect.orElseSucceed(() => ""));
+            return yield* tokenEndpointFailure(accountId, response.status, text);
           }
           const token = yield* HttpClientResponse.schemaBodyJson(TokenJson)(response).pipe(
             Effect.mapError(() => new ProviderError({ message: "Unexpected token response" })),

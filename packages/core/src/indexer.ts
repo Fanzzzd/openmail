@@ -1,5 +1,5 @@
 import { makeDownloadBudget } from "./download-budget.js";
-import type { AuthError, ProviderError, PermanentError, NotFound } from "./errors.js";
+import { AuthError, type ProviderError, type PermanentError, type NotFound } from "./errors.js";
 import { Context, Effect, Option, Semaphore } from "effect";
 import type { Message } from "./domain.js";
 import {
@@ -43,7 +43,21 @@ export interface IndexerInput {
   >;
   readonly reserveBytes?: (bytes: number) => Effect.Effect<void>;
   readonly changed: Effect.Effect<unknown>;
+  /** Pauses the account after a definitive sign-in failure. */
+  readonly markReauth: (accountId: string, error: AuthError) => Effect.Effect<void>;
 }
+
+/** Marks the account of `messageId` when fetching its content failed with an AuthError. */
+export const markIfAuth = (
+  input: IndexerInput,
+  messageId: string,
+  error: { readonly _tag: string },
+) =>
+  error instanceof AuthError
+    ? input
+        .message(messageId)
+        .pipe(Effect.flatMap((message) => input.markReauth(message.accountId, error)))
+    : Effect.void;
 export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInput) {
   const { store, vision } = input;
   const { extract: pdfText } = yield* PdfWorker;
@@ -185,9 +199,10 @@ export const makeIndexer = Effect.fn("makeIndexer")(function* (input: IndexerInp
             }).pipe(
               Effect.catch((error) =>
                 error._tag === "AuthError" || error._tag === "ProviderError"
-                  ? store
-                      .deferFetch(job.value, Date.now(), error._tag === "AuthError")
-                      .pipe(Effect.tap(() => input.changed))
+                  ? markIfAuth(input, job.value.message_id, error).pipe(
+                      Effect.andThen(store.deferFetch(job.value, Date.now())),
+                      Effect.tap(() => input.changed),
+                    )
                   : error.message === "Indexing suspended"
                     ? store.release(job.value)
                     : store.retry(job.value, Date.now()),

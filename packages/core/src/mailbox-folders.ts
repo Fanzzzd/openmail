@@ -35,7 +35,7 @@ export function makeFolderMailbox(
     effect.pipe(
       Effect.tapError((error) =>
         error._tag === "AuthError"
-          ? store.setNeedsReauth(account.id, true).pipe(Effect.andThen(changed))
+          ? store.markReauth(account.id, error).pipe(Effect.andThen(changed))
           : error._tag === "FeatureScopeMissing" && error.feature === "permanentDelete"
             ? store.grantedScopes(account.id).pipe(
                 Effect.flatMap((scopes) =>

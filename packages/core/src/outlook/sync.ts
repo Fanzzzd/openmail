@@ -40,7 +40,7 @@ import { makeOutlookPull } from "./pull.js";
 import { makeOutlookRecovery } from "./recovery.js";
 export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
   Effect.sync(() => {
-    const { connectivity, api, get, write, connect } = client;
+    const { connectivity, api, get, write, connect, keepAlive } = client;
 
     // Server writes are authoritative while Graph folder listings catch up.
     const pendingFolders = new Map<
@@ -478,6 +478,7 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
       ...makeOutlookRecovery(client, reader, { listCustomFolders, fetchAttachments }),
       ...makeOutlookFolders(client),
       resetConnectivity: () => connectivity.reset,
+      keepAlive,
       ...settings,
       setClassificationOverride,
       ...makeOutlookFeatures(get, write),
@@ -533,6 +534,7 @@ export const makeOutlookSync = (client: OutlookClient, reader: OutlookRead) =>
     } satisfies Pick<
       ProviderAdapter,
       | "resetConnectivity"
+      | "keepAlive"
       | "search"
       | "changeLabel"
       | "connect"

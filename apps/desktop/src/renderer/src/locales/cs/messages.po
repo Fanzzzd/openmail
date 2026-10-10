@@ -55,11 +55,6 @@ msgstr "{0} další nenačteno"
 msgid "{0} seconds"
 msgstr "{0} sekund"
 
-#. placeholder {0}: account.email
-#: src/renderer/src/components/MailStatusNotice.tsx
-msgid "{0}'s sign-in has expired. Sync is paused."
-msgstr "Platnost přihlášení uživatele {0} vypršela. Synchronizace je pozastavena."
-
 #: src/renderer/src/components/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
 msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} other {# účtů}}, nepřečtených: {total}"
@@ -127,6 +122,22 @@ msgstr "{done} dokončeno · {queued} ve frontě · {running} běží · {failed
 #: src/renderer/src/App.tsx
 msgid "{email} is signed in again"
 msgstr "{email} je znovu přihlášen"
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email} needs to grant mail permissions again. Sync is paused."
+msgstr "{email} musí znovu udělit oprávnění k poště. Synchronizace je pozastavena."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s saved sign-in is missing from the keychain. Sync is paused."
+msgstr "Uložené přihlášení uživatele {email} v klíčence chybí. Synchronizace je pozastavena."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in has expired. Sync is paused."
+msgstr "Platnost přihlášení uživatele {email} vypršela. Synchronizace je pozastavena."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "{email}'s sign-in was revoked or has expired. Sync is paused."
+msgstr "Přihlášení uživatele {email} bylo odvoláno nebo vypršelo. Synchronizace je pozastavena."
 
 #: src/renderer/src/components/TriageChip.tsx
 msgid "{hours, plural, one {Snooze for # hour} other {Snooze for # hours}}"
@@ -974,6 +985,7 @@ msgstr "K poštovnímu serveru se nyní nelze připojit."
 #: src/renderer/src/components/FocusedInboxActions.tsx
 #: src/renderer/src/components/FolderActions.tsx
 #: src/renderer/src/components/LinkConfirmDialog.tsx
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/OrganizationSettings.tsx
 #: src/renderer/src/components/PermanentDeletePermission.tsx
 #: src/renderer/src/components/ProfileEditor.tsx
@@ -1330,6 +1342,10 @@ msgstr "Připojit kalendář"
 msgid "Connect this service in Settings → Accounts → Optional services."
 msgstr "Připojte tuto službu v Nastavení → Účty → Volitelné služby."
 
+#: src/renderer/src/components/OptionalServices.tsx
+msgid "Connecting also asks for {pendingNames}."
+msgstr "Připojení si vyžádá také: {pendingNames}."
+
 #: src/renderer/src/components/RecipientField.tsx
 msgid "Contact group"
 msgstr "Kontaktní skupina"
@@ -1376,6 +1392,7 @@ msgid "Content matches"
 msgstr "Obsah se shoduje"
 
 #: src/main/native-i18n.ts
+#: src/renderer/src/components/OptionalServices.tsx
 #: src/renderer/src/components/UnsubscribeButton.tsx
 msgid "Continue"
 msgstr "Pokračovat"
@@ -2542,6 +2559,10 @@ msgstr "Nastavení Gmailu"
 msgid "Go to folder"
 msgstr "Přejděte do složky"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "Google currently limits OpenMail's sign-in to 7 days. Sign in again to keep syncing {email}."
+msgstr "Google nyní omezuje přihlášení do OpenMail na 7 dní. Přihlaste se znovu, aby synchronizace {email} pokračovala."
+
 #: src/renderer/src/components/OptionalServices.tsx
 msgid "Granted"
 msgstr "Povoleno"
@@ -2869,6 +2890,10 @@ msgstr "Ponecháno na tomto Macu"
 #: src/renderer/src/state/desktop.ts
 msgid "Keyboard shortcuts"
 msgstr "Klávesové zkratky"
+
+#: src/renderer/src/components/Settings.tsx
+msgid "Keychain is locked"
+msgstr "Klíčenka je zamčená"
 
 #: src/renderer/src/App.tsx
 #: src/renderer/src/components/FailedOpNotice.tsx
@@ -5685,6 +5710,10 @@ msgstr "Konec musí být po startu"
 msgid "The filter applies to future mail on the server."
 msgstr "Filtr se vztahuje na budoucí poštu na serveru."
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The keychain is locked. Unlock your computer and sync resumes on its own."
+msgstr "Klíčenka je zamčená. Odemkněte počítač a synchronizace se obnoví sama."
+
 #: src/renderer/src/components/CacheSettings.tsx
 msgid "The limit includes the database, attachments, WAL and recovery copies. Protected content may exceed it."
 msgstr "Limit zahrnuje databázi, přílohy, WAL a kopie pro obnovu. Chráněný obsah jej může překročit."
@@ -5697,6 +5726,10 @@ msgstr "Místní databázi se nepodařilo ověřit"
 msgid "The local database was recovered"
 msgstr "Místní databáze byla obnovena"
 
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The mail server rejected the password for {email}. Sync is paused."
+msgstr "Poštovní server odmítl heslo pro {email}. Synchronizace je pozastavena."
+
 #: src/renderer/src/components/SystemSettings.tsx
 msgid "The menu lists up to 50 unread messages in the current space."
 msgstr "Nabídka obsahuje až 50 nepřečtených zpráv v aktuálním prostoru."
@@ -5708,6 +5741,10 @@ msgstr "Zpráva zmiňuje přílohu, ale žádná není přidána."
 #: src/renderer/src/components/FailedOpNotice.tsx
 msgid "The message was sent, but its copy is missing from Sent."
 msgstr "Zpráva byla odeslána, ale její kopie chybí v odeslané poště."
+
+#: src/renderer/src/components/MailStatusNotice.tsx
+msgid "The OAuth client that signed in {email} is no longer configured. Sync is paused."
+msgstr "Klient OAuth, který přihlásil {email}, už není nakonfigurován. Synchronizace je pozastavena."
 
 #: src/renderer/src/errors.ts
 msgid "the operation failed."

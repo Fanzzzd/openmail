@@ -11,12 +11,7 @@ import { Buffer } from "./platform/bytes.js";
 import { TextDecoder } from "./platform/text-decoder.js";
 import { BackgroundRead, makeProviderConnectivity } from "./provider-connectivity.js";
 import { makeOptionalPermissions } from "./provider-diagnostics.js";
-import {
-  isProviderSend,
-  requestNotSent,
-  retryAfterMillis,
-  retryProviderRequest,
-} from "./provider-retry.js";
+import { requestNotSent, retryAfterMillis, retryProviderRequest } from "./provider-retry.js";
 import type { OAuth, Secrets } from "./services.js";
 
 /** A non-2xx response, or a transport failure as status 0, before it becomes a ProviderFailure. */
@@ -145,28 +140,107 @@ interface ProviderHttpOptions {
 
 /** Access tokens are cached in memory; refresh tokens remain in Secrets. */
 export const makeProviderHttp = (options: ProviderHttpOptions) =>
-  Effect.gen(function* () {
+  Effect.sync(() => {
     const { http, secrets } = options;
     const tokens = new Map<string, { token: string; expiresAt: number }>();
-    // Refresh is serialized because Graph rotates refresh tokens. Parallel
-    // refreshes would race to save the replacement in the keychain.
-    const refreshLock = yield* Semaphore.make(1);
+    /** When each account last refreshed successfully in this process, for the keep-alive. */
+    const refreshedAt = new Map<string, number>();
+    /** Rotated refresh tokens the keychain refused; see docs/sync-correctness.md#重新登录的判定. */
+    const unsaved = new Map<string, string>();
+    // Per account, because Graph rotates refresh tokens and parallel refreshes would race to save them.
+    const refreshLock = keyedLock(1);
+
+    /** Saves a rotated token, or keeps it in memory to retry; skips an account removed meanwhile. */
+    const saveRotated = (accountId: string, token: string) =>
+      Effect.gen(function* () {
+        const current = yield* Effect.result(secrets.get(accountId));
+        if (current._tag === "Success" && Option.isNone(current.success)) {
+          unsaved.delete(accountId);
+          return;
+        }
+        const saved =
+          current._tag === "Failure"
+            ? current
+            : yield* Effect.result(secrets.set(accountId, token));
+        if (saved._tag === "Success") unsaved.delete(accountId);
+        else {
+          unsaved.set(accountId, token);
+          yield* Effect.logWarning("Rotated refresh token not saved; keeping the previous one");
+        }
+      });
+
+    const storedRefreshToken = (accountId: string) =>
+      Effect.gen(function* () {
+        const pending = unsaved.get(accountId);
+        if (pending !== undefined) {
+          yield* saveRotated(accountId, pending);
+          return pending;
+        }
+        // A keychain read error stays a retryable ProviderError. Only a missing item is final.
+        const stored = yield* secrets.get(accountId);
+        if (Option.isNone(stored))
+          return yield* new AuthError({
+            accountId,
+            message: `No ${options.tokenLabel} refresh token; sign in again`,
+            reason: "keychain_missing",
+          });
+        return stored.value;
+      });
+
+    /** Persist a rotated refresh token before its access token is used. */
+    const keepRotated = (accountId: string, used: string, rotated: Option.Option<string>) =>
+      Option.isNone(rotated) || rotated.value === used
+        ? // Still current. An unsaved token other than the one that worked is obsolete.
+          Effect.sync(() => {
+            if (unsaved.get(accountId) !== used) unsaved.delete(accountId);
+          })
+        : saveRotated(accountId, rotated.value);
+
+    const refreshNow = (accountId: string) =>
+      Effect.gen(function* () {
+        const used = yield* storedRefreshToken(accountId);
+        const result = yield* options.refresh(accountId, used).pipe(
+          Effect.map((res) => ({ res, used })),
+          // Another process (CLI, MCP) may have rotated the token: re-read it once.
+          Effect.catchIf(
+            (error) => error._tag === "AuthError",
+            (error) =>
+              Effect.gen(function* () {
+                const again = yield* secrets.get(accountId);
+                if (Option.isNone(again) || again.value === used) return yield* error;
+                const res = yield* options.refresh(accountId, again.value);
+                return { res, used: again.value };
+              }),
+          ),
+        );
+        yield* keepRotated(accountId, result.used, result.res.refreshToken);
+        const now = yield* Clock.currentTimeMillis;
+        tokens.set(accountId, {
+          token: result.res.accessToken,
+          expiresAt: now + result.res.expiresIn * 1000,
+        });
+        refreshedAt.set(accountId, now);
+        return result.res.accessToken;
+      });
+
     const accessToken = (accountId: string): Effect.Effect<string, AuthError | ProviderError> =>
-      refreshLock.withPermits(1)(
+      refreshLock(accountId).withPermits(1)(
         Effect.gen(function* () {
           const now = yield* Clock.currentTimeMillis;
           const cached = tokens.get(accountId);
           if (cached && cached.expiresAt > now + 60_000) return cached.token;
-          const refreshToken = yield* secrets.get(accountId);
-          if (Option.isNone(refreshToken)) {
-            return yield* new AuthError({
-              accountId,
-              message: `No ${options.tokenLabel} refresh token; sign in again`,
-            });
-          }
-          const res = yield* options.refresh(accountId, refreshToken.value);
-          tokens.set(accountId, { token: res.accessToken, expiresAt: now + res.expiresIn * 1000 });
-          return res.accessToken;
+          return yield* refreshNow(accountId);
+        }),
+      );
+
+    /** Refreshes an account not refreshed for `maxAge`; see docs/sync-correctness.md#重新登录的判定. */
+    const keepAlive = (accountId: string, maxAge: number) =>
+      refreshLock(accountId).withPermits(1)(
+        Effect.gen(function* () {
+          const last = refreshedAt.get(accountId);
+          if (last !== undefined && (yield* Clock.currentTimeMillis) - last < maxAge) return false;
+          yield* refreshNow(accountId);
+          return true;
         }),
       );
 
@@ -275,13 +349,14 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       );
     const retryUnauthorized = <A, E, R>(
       accountId: string,
-      request: HttpClientRequest.HttpClientRequest,
       attempt: Effect.Effect<A, E, R>,
       retry: () => Effect.Effect<A, E, R>,
     ) =>
       attempt.pipe(
         Effect.catchIf(
-          (error) => error instanceof ApiError && error.status === 401 && !isProviderSend(request),
+          // A 401 rejects the request before the provider acts on it, sends included.
+          // One forced refresh and retry; a second 401 means the grant is really gone.
+          (error) => error instanceof ApiError && error.status === 401,
           () =>
             Effect.sync(() => tokens.delete(accountId)).pipe(Effect.andThen(Effect.suspend(retry))),
         ),
@@ -293,7 +368,6 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
     ) =>
       retryUnauthorized(
         accountId,
-        request,
         Effect.gen(function* () {
           yield* checkReadDeadline(accountId, sending);
           return yield* accessToken(accountId);
@@ -363,7 +437,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
           background && !sending,
         );
       });
-      return retryUnauthorized(accountId, request, attempt, () => attempt).pipe(
+      return retryUnauthorized(accountId, attempt, () => attempt).pipe(
         Effect.tapError((error) => options.logFailure(accountId, request, error, "bytes")),
       );
     };
@@ -423,7 +497,18 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
       });
     const clearTokens = () => {
       tokens.clear();
+      // A new sign-in stored a fresh refresh token; an unsaved rotated one is obsolete.
+      unsaved.clear();
       permissions.clear();
     };
-    return { api, execute, readBytes, matchesBytes, deferReads, clearTokens, connectivity };
+    return {
+      api,
+      execute,
+      readBytes,
+      matchesBytes,
+      deferReads,
+      clearTokens,
+      connectivity,
+      keepAlive,
+    };
   });
