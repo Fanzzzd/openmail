@@ -1,0 +1,59 @@
+---
+title: Adding accounts
+description: Sign in to Gmail, a personal Outlook account, or an IMAP mailbox.
+---
+
+Add accounts from the add account screen on first launch, or later from **Settings → Accounts**.
+
+## Gmail
+
+1. Click **Sign in with Google**.
+2. Your browser opens Google's sign-in page. Choose the account and review the permissions.
+3. Google returns you to OpenMail, which stores the refresh token in the macOS Keychain.
+
+Google may show a warning that the app is unverified. See the [FAQ](/docs/faq#why-does-google-show-an-unverified-app-warning).
+
+New Gmail accounts grant two permissions: read and modify mail (`gmail.modify`) and send mail (`gmail.send`). Contacts, Calendar and Gmail settings are optional and are requested only when you connect them. See [Optional services](#optional-services).
+
+## Outlook
+
+1. Click **Sign in with Microsoft**.
+2. Your browser opens Microsoft's sign-in page for personal accounts. Sign in and approve the permissions.
+
+OpenMail supports personal Microsoft accounts: outlook.com, hotmail.com and live.com. Work and school Microsoft 365 accounts need an administrator to approve the app for the organization, and OpenMail does not support them.
+
+New Outlook accounts request `Mail.ReadWrite`, `Mail.Send`, `User.Read`, `offline_access` and `MailboxSettings.ReadWrite`. The last one is needed to list and manage Outlook categories.
+
+## IMAP and SMTP
+
+OpenMail has presets for iCloud, Yahoo, QQ Mail, 163 Mail and Fastmail, plus a custom option for any other server.
+
+1. Choose the preset, or **Custom** and enter the IMAP and SMTP host names.
+2. Enter your address and an app-specific password. Most providers require one when two-factor authentication is on. Create it in the provider's account security settings:
+   - iCloud: Apple Account, Sign-In and Security, App-Specific Passwords.
+   - Yahoo: Account Security, generate app password.
+   - Fastmail: Settings, Privacy & Security, new app password with IMAP and SMTP access.
+   - QQ Mail and 163 Mail: turn on IMAP/SMTP in web mail settings, then generate an authorization code.
+3. OpenMail stores the password in the macOS Keychain.
+
+OpenMail connects to IMAP and SMTP only over TLS. New mail arrives through IMAP IDLE, with polling as a fallback.
+
+## Optional services
+
+Each Gmail and Outlook account can connect extra services in **Settings → Accounts → Optional services**. Connecting one opens the provider's consent page again for that permission.
+
+| Service         | Used for                                                | Google permission                              | Microsoft permission           |
+| --------------- | ------------------------------------------------------- | ---------------------------------------------- | ------------------------------ |
+| Contacts        | Address completion from your saved and other contacts   | `contacts.readonly`, `contacts.other.readonly` | `Contacts.Read`, `People.Read` |
+| Calendar        | Answering invitations and showing conflicts             | `calendar.events`                              | `Calendars.ReadWrite`          |
+| Server settings | Creating and editing filters or rules, and auto-replies | `gmail.settings.basic`                         | `MailboxSettings.ReadWrite`    |
+
+Turning a service off stops OpenMail from using it. It does not revoke the permission at Google or Microsoft. To revoke access completely, remove OpenMail at [myaccount.google.com/permissions](https://myaccount.google.com/permissions) or [account.live.com/consent/Manage](https://account.live.com/consent/Manage).
+
+## Permanent delete in Gmail
+
+The `gmail.modify` permission cannot permanently delete mail. When you first permanently delete a message or empty Trash, OpenMail asks you to sign in again and grant full Gmail access (`https://mail.google.com/`). Normal sign-in never requests it.
+
+## Removing an account
+
+Remove an account in **Settings → Accounts**. OpenMail deletes the account's local mail and its Keychain entry. Your mail on the server is not touched.

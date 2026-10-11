@@ -1,0 +1,48 @@
+---
+title: Security model
+description: How OpenMail treats mail content, credentials and outgoing data.
+---
+
+OpenMail treats message HTML, attachments, links and everything received from a mail server as untrusted. The goal is to stop a message from running code, reading files on your Mac, or getting at your sign-in tokens and API keys.
+
+## Credentials
+
+- Refresh tokens, IMAP passwords and your Anthropic API key are stored only in the macOS Keychain.
+- They are never written to the database, logs or browser storage. The app's interface can see whether a key is set, but not the key itself.
+- OpenMail signs in through the provider's own page in your browser. It does not ask for your Google or Microsoft password.
+
+## Reading mail
+
+- Message HTML renders in a sandboxed frame with scripts, forms, plugins and nested frames disabled.
+- A content security policy inside that frame blocks remote resources. Remote images load only after you allow them, for one message, for known senders, or always. Allowed images load over HTTPS only.
+- Known tracking pixels are blocked, and tracking parameters such as `utm_*`, `fbclid` and `gclid` are removed from links you open. You can turn link cleaning off in **Settings → Reading**.
+- Before opening a link whose text shows a different domain than its target, or whose host uses international characters, OpenMail asks you to confirm and shows both forms.
+- Sender authentication (SPF, DKIM, DMARC) is read from the top Authentication-Results header added by the receiving server. Lower headers, which a sender could forge, are ignored.
+
+## Attachments
+
+- Executables, disk images, macro documents and similar file types cannot be opened from OpenMail. You can still save them.
+- Saved and opened files get the macOS quarantine flag, so Gatekeeper checks them.
+- HTML and SVG attachments preview in the same script-free frame as messages.
+- Calendar and contact files open in an in-app preview. Adding them to Calendar or Contacts takes a separate click.
+
+## Unsubscribe
+
+OpenMail shows the unsubscribe target and asks before acting. It sends a one-click HTTPS request only when the message passes DKIM and the signature covers the unsubscribe headers. Otherwise it offers a mailto unsubscribe, which opens a draft for you to send.
+
+## The app itself
+
+- Every window runs with context isolation, a sandbox and web security on. Node.js is not available to the interface.
+- Navigation, redirects and new windows from content are blocked. Only http and https links open in your browser.
+- Signed release builds use the macOS hardened runtime. Electron fuses turn off running as Node, `NODE_OPTIONS` and the inspector, and turn on ASAR integrity checks.
+- Crash reporting is turned off.
+
+## AI and agents
+
+- AI features are off by default and need per-account permission. See [AI features](/docs/ai).
+- Text hidden by CSS is removed before mail goes to a model, and mail is marked as untrusted data.
+- MCP is read-only by default. Changes from agents are proposals that you approve in the app, and sending always needs your confirmation. See [CLI and MCP](/docs/cli-and-mcp).
+
+## Diagnostics
+
+OpenMail keeps a small diagnostics log on your Mac. It records fixed fields only: time, provider, HTTP method, endpoint template, status, a failure category and a hashed account ID. It does not record message content, addresses, full URLs or tokens. The log is never uploaded. **Feedback** shows a preview and lets you choose whether to attach it to a draft you send yourself.

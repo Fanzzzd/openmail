@@ -1,0 +1,51 @@
+---
+title: FAQ
+description: Answers to common questions about sign-in, privacy and supported accounts.
+---
+
+## Why does Google show an unverified app warning?
+
+Gmail access needs scopes that Google classifies as restricted (`gmail.modify` and `gmail.send`). Google verifies apps that request restricted scopes through a review that includes a third-party security assessment. OpenMail has not completed that review yet, so Google shows "Google hasn't verified this app" on the sign-in page.
+
+To continue, click **Advanced**, then **Go to OpenMail (unsafe)**. The warning is about the review status. It does not change what the app can do: OpenMail still gets only the permissions listed on the consent screen, and your mail still goes only to your Mac. Google limits unverified apps to 100 users.
+
+If you prefer not to rely on OpenMail's Google project, [register your own OAuth client](/docs/own-oauth-client).
+
+## Why do I need to sign in again?
+
+OpenMail pauses an account and asks you to sign in again only when the provider gives a definite answer that the saved sign-in no longer works. Network errors, timeouts and server errors are retried instead.
+
+| Message in the app                                                   | Cause                                                                                                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Google currently limits OpenMail's sign-in to 7 days                 | OpenMail's Google project is in Google's testing mode, where Google expires refresh tokens after 7 days. This ends when the project is published. |
+| Sign-in was revoked or has expired                                   | You removed OpenMail's access in your Google or Microsoft account, changed your password, or the token expired.                                   |
+| Needs to grant mail permissions again                                | A permission OpenMail needs was not granted.                                                                                                      |
+| The OAuth client that signed in this account is no longer configured | You removed or replaced the OAuth client that issued this account's token.                                                                        |
+| Saved sign-in is missing from the keychain                           | The Keychain entry for the account was deleted.                                                                                                   |
+| The mail server rejected the password                                | The IMAP or SMTP server rejected the app-specific password.                                                                                       |
+
+Microsoft expires refresh tokens for personal accounts after 90 days without use. While the app is open, OpenMail refreshes each account's token about every 6 days, even for paused accounts, so this limit is not reached.
+
+## Where is my mail stored?
+
+In `~/Library/Application Support/openmail` on your Mac. Sign-in tokens and passwords are in the macOS Keychain. Nothing is stored on an OpenMail server, because there is none.
+
+## Does OpenMail collect analytics?
+
+No. OpenMail has no analytics, telemetry or crash reporting. See the [privacy policy](/privacy) for every server the app can contact.
+
+## Can I use a work or school Microsoft 365 account?
+
+No. Those accounts need an administrator to approve the app for the organization. OpenMail supports personal Microsoft accounts only.
+
+## How do I remove OpenMail's access to my account?
+
+Remove the account in **Settings → Accounts**, which deletes its local mail and Keychain entry. Then revoke access at [myaccount.google.com/permissions](https://myaccount.google.com/permissions) for Google or [account.live.com/consent/Manage](https://account.live.com/consent/Manage) for Microsoft.
+
+## Is there a mobile app?
+
+A mobile app is in development and not available yet.
+
+## How do I contact the developer?
+
+Email [klausfanzd@gmail.com](mailto:klausfanzd@gmail.com).

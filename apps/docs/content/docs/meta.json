@@ -1,0 +1,13 @@
+{
+  "title": "Docs",
+  "pages": [
+    "index",
+    "accounts",
+    "own-oauth-client",
+    "keyboard-shortcuts",
+    "ai",
+    "cli-and-mcp",
+    "security",
+    "faq"
+  ]
+}

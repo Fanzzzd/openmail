@@ -185,7 +185,10 @@
     "apps/web/scripts/_tmp-vendor/**",
     "packages/drawnix/src/**",
     "packages/drawnix-react-board/src/**",
-    "packages/drawnix-react-text/src/**"
+    "packages/drawnix-react-text/src/**",
+    "apps/docs/.next/**",
+    "apps/docs/out/**",
+    "apps/docs/next-env.d.ts"
   ],
   "options": {
     "typeAware": true

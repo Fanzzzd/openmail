@@ -1,0 +1,36 @@
+{
+  "name": "@openmail/docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenMail website: product page, documentation, privacy policy and terms",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "start": "serve out",
+    "check-types": "next typegen && tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json",
+    "test": "vitest run",
+    "shortcuts": "vitest run -u shortcuts"
+  },
+  "dependencies": {
+    "fumadocs-core": "16.17.1",
+    "fumadocs-mdx": "15.4.7",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.17.1",
+    "next": "16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@openmail/core": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "postcss": "^8.5.28",
+    "serve": "^14.2.6",
+    "tailwindcss": "^4.3.3",
+    "typescript": "catalog:",
+    "vitest": "^5.0.2"
+  }
+}

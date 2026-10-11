@@ -1,0 +1,43 @@
+---
+title: Getting started
+description: What OpenMail is, what it runs on, and how to set it up.
+---
+
+OpenMail is a mail client for macOS. It syncs your accounts into a SQLite database on your Mac and works from that copy. Reading, searching and organizing happen locally. Changes you make offline go into a queue and reach the server when you are back online.
+
+The desktop app, the `openmail` command line tool and the MCP server all use the same local database.
+
+## Status
+
+OpenMail is in early testing. There is no public download yet. Signed builds are distributed to testers directly.
+
+## Requirements
+
+- macOS on Apple silicon or Intel.
+- A Gmail account, a personal Microsoft account (outlook.com, hotmail.com, live.com), or a mailbox with IMAP and SMTP access.
+
+## First run
+
+1. Open OpenMail. The add account screen appears.
+2. Pick **Gmail**, **Outlook** or an IMAP provider. See [Adding accounts](/docs/accounts).
+3. OpenMail downloads recent mail first, then fills in older mail in the background.
+
+## What the app includes
+
+- **Sync and organize.** Incremental sync, an offline change queue, batch actions, undo history that survives a restart, snooze, labels and nested folders, Gmail categories, server filters and auto-replies.
+- **Compose.** Drafts autosave and sync both ways. Rich text, plain text and Markdown. Reply, forward and forward as attachment, send and archive, undo send from 0 to 30 seconds, attachment reminders, templates, named signatures, send-as addresses and contact completion.
+- **Read and search.** Conversation and single-message views, find in message, raw source and EML export, print and PDF, remote image control and tracker blocking. Local full-text search supports boolean, phrase, date and size operators and can include server results.
+- **On-device indexing.** Optional OCR for images, text from PDFs and semantic search. Models are downloaded once (about 226 MB) when you turn this on, and processing runs on your Mac.
+- **Mac app.** Profiles that group accounts, notification schedules, a menu bar item, multiple windows, spell check, mailto links and three [keyboard shortcut sets](/docs/keyboard-shortcuts). The interface is available in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.
+- **AI.** Off by default. See [AI features](/docs/ai).
+- **CLI and MCP.** See [CLI and MCP](/docs/cli-and-mcp).
+
+## Where OpenMail keeps data
+
+| Data                                        | Location                                   |
+| ------------------------------------------- | ------------------------------------------ |
+| Mail, attachments, search index, settings   | `~/Library/Application Support/openmail`   |
+| Refresh tokens, IMAP passwords, AI API key  | macOS Keychain                             |
+| Your own OAuth client ID and secret, if any | `config.json` in the data folder, mode 600 |
+
+Set the `OPENMAIL_HOME` environment variable to use a different data folder for the app, CLI and MCP server.

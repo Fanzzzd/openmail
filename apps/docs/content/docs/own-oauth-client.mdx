@@ -1,0 +1,59 @@
+---
+title: Using your own OAuth client
+description: Register a Google or Microsoft OAuth client in your own developer account and sign in with it.
+---
+
+OpenMail signs in with its own registered OAuth clients by default. You can register your own client instead. Reasons to do this:
+
+- You want sign-in to depend only on a project you control.
+- You build OpenMail yourself and the build has no built-in client.
+
+Open the add account screen and choose **Use your own OAuth client**. A client you enter there takes priority over the built-in client for new sign-ins. Accounts you already added keep using the client that signed them in, because a refresh token only works with the client that issued it. To go back, click **Use the built-in client**.
+
+Your client ID and secret are stored in `config.json` in the OpenMail data folder with file mode 600. Refresh tokens go into the macOS Keychain.
+
+## Google
+
+1. Open the [Google Cloud console](https://console.cloud.google.com/) and create a project.
+2. In **APIs & Services → Library**, enable the **Gmail API**. If you plan to use the optional services, also enable the **Google Calendar API** and the **People API**.
+3. In **Google Auth Platform → Branding**, enter an app name and your email address. Choose **External** as the user type.
+4. In **Audience**, pick a publishing status:
+   - **Testing.** Only addresses listed under **Test users** can sign in, and Google expires refresh tokens after 7 days. Add your Gmail address as a test user.
+   - **In production** without verification. Tokens do not expire after 7 days. Google shows an unverified app warning at sign-in. Click **Advanced**, then continue to your app. Unverified apps are limited to 100 users.
+5. In **Data Access**, add the scopes `https://www.googleapis.com/auth/gmail.modify` and `https://www.googleapis.com/auth/gmail.send`. Add these as well if you need them:
+   - Contacts: `contacts.readonly` and `contacts.other.readonly`
+   - Calendar: `calendar.events`
+   - Gmail settings (filters, auto-replies): `gmail.settings.basic`
+   - Permanent delete: `https://mail.google.com/`
+
+   The short names above all use the `https://www.googleapis.com/auth/` prefix.
+
+6. In **Clients → Create client**, choose **Desktop app**. Copy the client ID and client secret.
+7. In OpenMail, paste both values under **Use your own OAuth client**, then click **Sign in with Google**.
+
+Google does not treat the secret of a Desktop app client as confidential. OpenMail uses PKCE for the sign-in flow.
+
+## Microsoft
+
+Personal Microsoft accounts only. Work and school accounts need an administrator and are not supported.
+
+1. Microsoft requires a directory before you can register an app. A free Azure account creates a Default Directory for you.
+2. In the [Azure portal](https://portal.azure.com/), open **Microsoft Entra ID → App registrations → New registration**.
+3. Enter a name. Under **Supported account types**, choose **Personal Microsoft accounts only**.
+4. Under **Redirect URI**, choose **Public client/native (mobile & desktop)** and enter `http://localhost`. Microsoft accepts any port on localhost for this redirect.
+5. Copy the **Application (client) ID** from the Overview page.
+6. In **API permissions → Add a permission → Microsoft Graph → Delegated permissions**, add `Mail.ReadWrite`, `Mail.Send`, `User.Read`, `offline_access` and `MailboxSettings.ReadWrite`. For optional services, add `Contacts.Read` and `People.Read` (Contacts) or `Calendars.ReadWrite` (Calendar).
+7. In **Authentication**, turn on **Allow public client flows**. The app uses PKCE and has no secret.
+8. In OpenMail, paste the client ID under **Use your own OAuth client**, then click **Sign in with Microsoft**.
+
+## Command line
+
+The CLI uses the same configuration:
+
+```sh
+openmail config google --client-id <id> --client-secret <secret>
+openmail accounts add gmail
+
+openmail config microsoft --client-id <application-client-id>
+openmail accounts add outlook
+```

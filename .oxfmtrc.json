@@ -1,4 +1,12 @@
 {
   "printWidth": 100,
-  "ignorePatterns": ["apps/desktop/out/**", "apps/desktop/release/**", "pnpm-lock.yaml"]
+  "ignorePatterns": [
+    "apps/desktop/out/**",
+    "apps/desktop/release/**",
+    "pnpm-lock.yaml",
+    "apps/docs/.next/**",
+    "apps/docs/out/**",
+    "apps/docs/next-env.d.ts",
+    "apps/docs/content/docs/keyboard-shortcuts.mdx"
+  ]
 }

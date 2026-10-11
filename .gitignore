@@ -17,3 +17,10 @@ apps/mobile/android/
 
 # Built-in OAuth client values for local builds (docs/release.md)
 apps/desktop/oauth-clients.local.json
+
+# Next.js build state for the docs site
+apps/docs/.next/
+apps/docs/.source/
+apps/docs/next-env.d.ts
+apps/docs/.vercel/
+apps/docs/*.tsbuildinfo

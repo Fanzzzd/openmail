@@ -16,6 +16,11 @@
       ],
       "inputs": ["$TURBO_DEFAULT$", "oauth-clients.local.json"]
     },
+    "@openmail/docs#build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "out/**"],
+      "env": ["NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION"]
+    },
     "check-types": {
       "dependsOn": ["^build"]
     },

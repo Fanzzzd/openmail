@@ -1,0 +1,88 @@
+---
+title: CLI and MCP
+description: Use your local mail from the command line and from MCP clients such as Claude.
+---
+
+The `openmail` command line tool and the MCP server read the same local database as the desktop app. They do not start the app.
+
+## Install the command
+
+The CLI comes with the OpenMail source. After building it, link the command globally:
+
+```sh
+pnpm --dir packages/cli link --global
+```
+
+## Common commands
+
+```sh
+openmail accounts list
+openmail sync
+openmail list --mailbox inbox --unread --json
+openmail search 'from:billing has:attachment' --json
+openmail search 'invoice' --server --json
+openmail health --json
+openmail tools --json
+```
+
+`openmail tools --json` lists every tool with its input schema. Each tool can also be run as `openmail tool <name> --input-json '{...}' --json`.
+
+The CLI has no send command. Sending happens in the app.
+
+## Connect an MCP client
+
+`openmail mcp` runs an MCP server over stdio. For Claude Desktop, add this to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "openmail": {
+      "command": "openmail",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+If the client cannot find the command, replace `openmail` with the full path printed by `command -v openmail`.
+
+For Claude Code:
+
+```sh
+claude mcp add --transport stdio openmail -- openmail mcp
+```
+
+## Read-only by default
+
+By default the MCP server only offers read tools: list accounts, labels and threads, search, read a thread, read templates and signatures, suggest contacts, read attachment text, list invitations, and sync.
+
+An MCP client can only read accounts for which you turned on **Allow sending mail text to the model** in **Settings → AI Access**. OpenMail checks this on every call. Mail reaches the MCP client, and from there the model provider that client uses. Choose clients you trust.
+
+Tool results put all mail content in an `untrusted_mail` field with a notice, so the model treats message text as data, not as instructions.
+
+## Proposing changes
+
+Write tools need two switches:
+
+1. Start the server with `openmail mcp --allow-writes`.
+2. Turn on write access in **Settings → AI Access**.
+
+Even then, the server adds only three tools: organize threads (archive, read or unread, star, add or remove labels), snooze, and draft a message. Each call creates a proposal. You review and approve it in the app. Drafts stay on your Mac until you open and save them. Sending always requires you to confirm in the app.
+
+There are no tools for permanent delete, emptying Trash, creating rules, forwarding settings, account or OAuth changes, or AI settings.
+
+## Read-only sessions
+
+Set `OPENMAIL_READ_ONLY=1` before starting the CLI or MCP server to block every write to the mail server, including queued changes. Local state can still change, and OpenMail can still read from the network and refresh tokens.
+
+```json
+{
+  "mcpServers": {
+    "openmail": {
+      "command": "openmail",
+      "args": ["mcp"],
+      "env": { "OPENMAIL_READ_ONLY": "1" }
+    }
+  }
+}
+```
